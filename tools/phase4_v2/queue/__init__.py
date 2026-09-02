@@ -28,6 +28,16 @@ from .core import (
     WorkUnitSnapshot,
     WorkUnitStatus,
 )
+from .fanout import (
+    AtomicDocumentSetGateway,
+    FanoutPublishReceipt,
+    TrackerDocument,
+    TrackerDocumentSet,
+    TrackerFormat,
+    TrackerTarget,
+    document_set_sha256,
+    publish_tracker_fanout,
+)
 from .github_contents import (
     CommandResult,
     GitHubContentsError,
@@ -54,6 +64,7 @@ from .tracker import (
 
 __all__ = [
     "AtomicIssueGateway",
+    "AtomicDocumentSetGateway",
     "CapabilityPin",
     "CommandResult",
     "CompletionConflictError",
@@ -62,6 +73,7 @@ __all__ = [
     "ExecutionMode",
     "FinishDisposition",
     "FinishResult",
+    "FanoutPublishReceipt",
     "GitHubContentsError",
     "GitHubContentsGateway",
     "GitHubContentsTarget",
@@ -87,11 +99,17 @@ __all__ = [
     "QueueSnapshot",
     "StaleLeaseError",
     "TerminalOutcome",
+    "TrackerDocument",
+    "TrackerDocumentSet",
+    "TrackerFormat",
+    "TrackerTarget",
     "WorkUnitStatus",
     "WorkUnitSnapshot",
     "managed_block_generation",
     "managed_block_sha256",
     "publish_tracker",
+    "publish_tracker_fanout",
+    "document_set_sha256",
     "render_html",
     "render_markdown",
     "replace_managed_block",
