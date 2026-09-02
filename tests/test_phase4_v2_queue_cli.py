@@ -85,7 +85,7 @@ class _MemoryPublicationGateway:
             before
         ):
             return False
-        self.documents = {
+        self.documents |= {
             document.path: document.body for document in documents if document.body is not None
         }
         self.revision = "b" * 40
