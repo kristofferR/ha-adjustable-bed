@@ -2037,6 +2037,25 @@ _SEMANTIC_COLLECTION_POINTERS = frozenset(
         "/actions",
         "/expected_action_rules",
         "/command_bindings",
+        "/selectors",
+        "/selection_rules",
+        "/discovery_rules",
+        "/gatt_services",
+        "/gatt_characteristics",
+        "/transforms",
+        "/checksums",
+        "/framings",
+        "/packet_fields",
+        "/packet_builders",
+        "/authentications",
+        "/bufferings",
+        "/parser_fields",
+        "/notification_parsers",
+        "/timings",
+        "/lifecycles",
+        "/transports",
+        "/action_parameters",
+        "/action_mappings",
     }
 )
 
@@ -2407,16 +2426,18 @@ def _resolve_semantic_pointer(root: object, pointer: str) -> object:
 
 def _semantic_data(document: ProtocolIRDocument) -> dict[str, object]:
     data = document.to_data()
-    return {
-        key: cast(object, data[key])
-        for key in (
+    collection_names = getattr(
+        document,
+        "semantic_collection_names",
+        (
             "variant_spaces",
             "protocols",
             "actions",
             "expected_action_rules",
             "command_bindings",
-        )
-    }
+        ),
+    )
+    return {key: cast(object, data[key]) for key in collection_names}
 
 
 def _content_id(prefix: str, data: Mapping[str, object]) -> str:
