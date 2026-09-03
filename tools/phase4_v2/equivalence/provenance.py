@@ -23,8 +23,11 @@ from tools.phase4_v2.ir.model import AttestedRootEvidence, AttestedRootEvidenceM
 from .core import (
     ActivatedValidatorAuthority,
     AuthenticatedValidatorEnvelope,
+    ByteIdentityProof,
     FrozenPackageRef,
+    LedgerDecision,
     Route,
+    RoutingPins,
     validate_authenticated_validator_envelope,
     validate_frozen_package_ref,
 )
@@ -310,6 +313,8 @@ class AuthenticatedExactReuseProvenance:
     target_root_id: str
     target_occurrence_identity_sha256: str
     byte_identity_proof_id: str
+    byte_identity_proof: ByteIdentityProof
+    ledger_decision: LedgerDecision
     ledger_decision_completion_sha256: str
     root_plan_sha256: str
 
@@ -332,6 +337,8 @@ def exact_reuse_provenance_payload(
     target_root_id: str,
     target_occurrence_identity_sha256: str,
     byte_identity_proof_id: str,
+    byte_identity_proof: ByteIdentityProof,
+    ledger_decision: LedgerDecision,
     ledger_decision_completion_sha256: str,
     root_plan_sha256: str,
     signature: str,
@@ -341,11 +348,24 @@ def exact_reuse_provenance_payload(
     envelope = validate_authenticated_validator_envelope(source.envelope)
     if envelope.authority != authority or source_root not in source.report.validated_root_evidence:
         _fail("exact-reuse source is not authenticated by the signing authority")
+    if (
+        type(byte_identity_proof) is not ByteIdentityProof
+        or type(ledger_decision) is not LedgerDecision
+        or byte_identity_proof.content_id != byte_identity_proof_id
+        or ledger_decision.byte_identity_proof_id != byte_identity_proof_id
+        or ledger_decision.content_id != ledger_decision_completion_sha256
+        or ledger_decision.target_root_id != target_root_id
+        or ledger_decision.source_root_id != source_root.target_root_id
+        or ledger_decision.source_audit_receipt_sha256 != source.report.validation_receipt_sha256
+    ):
+        _fail("exact-reuse proof and ledger decision do not close the signed audit")
     values = {
         "authority_sha256": authority.activation_sha256,
         "byte_identity_proof_id": byte_identity_proof_id,
+        "byte_identity_proof": byte_identity_proof.to_data(),
         "inherited_semantic_root_sha256": source_root.semantic_root_sha256,
         "ledger_decision_completion_sha256": ledger_decision_completion_sha256,
+        "ledger_decision": ledger_decision.to_data(),
         "root_plan_sha256": root_plan_sha256,
         "schema": EXACT_REUSE_PROVENANCE_SCHEMA,
         "source_bundle_sha256": source.report.bundle_sha256,
@@ -357,7 +377,7 @@ def exact_reuse_provenance_payload(
         "target_root_id": target_root_id,
     }
     for name, value in values.items():
-        if name not in {"schema"} and (
+        if name not in {"schema", "byte_identity_proof", "ledger_decision"} and (
             type(value) is not str or re.fullmatch(r"[0-9a-f]{64}", value) is None
         ):
             _fail(f"{name} must be an exact digest")
@@ -432,12 +452,42 @@ def load_authenticated_exact_reuse_provenance(
         or source.report.bundle_sha256 != payload["source_bundle_sha256"]
     ):
         _fail("exact-reuse provenance differs from its authenticated source report")
+    try:
+        proof_data = payload["byte_identity_proof"]
+        decision_data = payload["ledger_decision"]
+        if type(proof_data) is not dict or type(decision_data) is not dict:
+            raise TypeError
+        proof = ByteIdentityProof(**proof_data)
+        decision_values = dict(decision_data)
+        decision_values["route"] = Route(decision_values["route"])
+        decision_values["local_only_domains"] = tuple(decision_values["local_only_domains"])
+        decision_values["pins"] = RoutingPins(**decision_values["pins"])
+        decision = LedgerDecision(**decision_values)
+    except (TypeError, ValueError, KeyError) as error:
+        raise ProvenanceAuthenticationError("exact-reuse typed proof is invalid") from error
+    if (
+        proof.content_id != payload["byte_identity_proof_id"]
+        or decision.byte_identity_proof_id != proof.content_id
+        or decision.content_id != payload["ledger_decision_completion_sha256"]
+        or decision.target_root_id != payload["target_root_id"]
+        or decision.source_root_id != payload["source_root_id"]
+        or decision.source_audit_receipt_sha256 != payload["source_validation_receipt_sha256"]
+    ):
+        _fail("exact-reuse typed proof and decision do not reproduce")
     result = object.__new__(AuthenticatedExactReuseProvenance)
     object.__setattr__(result, "authority", authority)
     object.__setattr__(result, "canonical_bytes", canonical_bytes)
     for name in AuthenticatedExactReuseProvenance.__dataclass_fields__:
         if name not in {"authority", "canonical_bytes"}:
-            object.__setattr__(result, name, payload[name])
+            object.__setattr__(
+                result,
+                name,
+                proof
+                if name == "byte_identity_proof"
+                else decision
+                if name == "ledger_decision"
+                else payload[name],
+            )
     return result
 
 

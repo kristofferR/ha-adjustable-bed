@@ -12,7 +12,10 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 import tools.phase4_v2.equivalence.core as core
 from tools.phase4_v2.equivalence import (
+    ByteIdentityProof,
+    LedgerDecision,
     ProvenanceAuthenticationError,
+    Route,
     authenticated_validator_envelope_payload,
     build_authenticated_source_report_registry,
     exact_reuse_provenance_payload,
@@ -126,14 +129,35 @@ def test_exact_reuse_preimage_is_signed_and_target_bound(monkeypatch: pytest.Mon
     key, authority, registry = _source(monkeypatch)
     source = registry.entries[0]
     root = source.report.validated_root_evidence[0]
+    proof = ByteIdentityProof(
+        *sorted((root.target_root_id, SHA[13])),
+        "DEX",
+        SHA[0],
+        SHA[1],
+        SHA[2],
+        SHA[3],
+        SHA[4],
+    )
+    decision = LedgerDecision(
+        SHA[13],
+        Route.EXACT_REUSE,
+        "exact_test",
+        SHA[4],
+        root.target_root_id,
+        proof.content_id,
+        root.target_root_id,
+        source.report.validation_receipt_sha256,
+    )
     kwargs = {
         "authority": authority,
         "source": source,
         "source_root": root,
         "target_root_id": SHA[13],
         "target_occurrence_identity_sha256": SHA[14],
-        "byte_identity_proof_id": SHA[3],
-        "ledger_decision_completion_sha256": SHA[4],
+        "byte_identity_proof_id": proof.content_id,
+        "byte_identity_proof": proof,
+        "ledger_decision": decision,
+        "ledger_decision_completion_sha256": decision.content_id,
         "root_plan_sha256": SHA[5],
     }
     unsigned = exact_reuse_provenance_payload(**kwargs, signature="0" * 128)  # type: ignore[arg-type]

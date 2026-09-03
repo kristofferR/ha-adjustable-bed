@@ -23,12 +23,15 @@ from tools.phase4_v2.equivalence import (
     PACKAGE_QUEUE_UNIT_KIND,
     PACKAGE_VALIDATION_RECEIPT_QUEUE_UNIT_KIND,
     PREPARATION_QUEUE_UNIT_KIND,
+    AuthenticatedExactReuseProvenance,
     AuthenticatedPackageExecutionEnvelope,
+    AuthenticatedSourceReportRegistry,
     CapabilityPin,
     ExtractorCapability,
     FrozenPackageExecutionPlan,
     FrozenPackageRef,
     ValidatedPackageOutput,
+    build_authenticated_source_report_registry,
     build_validated_package_output,
     execution_authority_capability,
     execution_envelope_payload,
@@ -179,6 +182,8 @@ class AuthenticatedSyntheticPackage:
     report_bytes: bytes
     report_manifest_bytes: bytes
     preparation_receipt: PreparationReceipt
+    source_registry: AuthenticatedSourceReportRegistry
+    exact_reuse_receipts: tuple[AuthenticatedExactReuseProvenance, ...]
 
 
 class _Gateway:
@@ -709,6 +714,8 @@ def complete_authenticated_synthetic_package_inputs(
         (inputs.report_root / "analysis.json").read_bytes(),
         (inputs.report_root / "REPORT.SHA256").read_bytes(),
         inputs.preparation_receipt,
+        build_authenticated_source_report_registry(((inputs.package_ref, inputs.source_envelope),)),
+        (),
     )
 
 
