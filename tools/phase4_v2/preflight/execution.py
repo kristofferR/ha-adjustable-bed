@@ -14,6 +14,7 @@ import selectors
 import shutil
 import stat
 import subprocess
+import sys
 import tempfile
 import time
 from collections.abc import Mapping, Sequence
@@ -39,8 +40,8 @@ from .core import (
 
 EXECUTION_SCHEMA = "phase4-v2-preparation-execution-v2"
 EXECUTION_CACHE_SCHEMA = "phase4-v2-preparation-cache-v2"
-EXECUTION_PROFILE_REVISION = "phase4-v2-execution-profile-v2"
-SANDBOX_REVISION = "phase4-v2-bwrap-sandbox-v2"
+EXECUTION_PROFILE_REVISION = "phase4-v2-execution-profile-v3"
+SANDBOX_REVISION = "phase4-v2-bwrap-sandbox-v3"
 EXECUTION_ATTESTATION_REVISION = "phase4-v2-execution-attestation-v1"
 CANDIDATE_INDEX_SCHEMA = "phase4-v2-ble-candidate-index-v1"
 CANDIDATE_CONTRACT_REVISION = "phase4-v2-ble-candidate-contract-v2"
@@ -59,6 +60,55 @@ _BWRAP_NAMES = ("bwrap", "bubblewrap")
 _TRUSTED_CACHE_OBJECTS: dict[str, tuple[int, int, str]] = {}
 _ED25519_PUBLIC_KEY = re.compile(r"^[0-9a-f]{64}$")
 _ED25519_SIGNATURE = re.compile(r"^[0-9a-f]{128}$")
+_QUOTA_KEEPER_SCRIPT = r"""
+import ctypes
+import os
+import sys
+
+mountpoint, size, nodes, ready, control = sys.argv[1:]
+ready_descriptor = int(ready)
+control_descriptor = int(control)
+
+def write_file(path, payload):
+    descriptor = os.open(path, os.O_WRONLY | getattr(os, "O_CLOEXEC", 0))
+    try:
+        os.write(descriptor, payload)
+    finally:
+        os.close(descriptor)
+
+def mount(source, target, filesystem, flags, data):
+    libc = ctypes.CDLL(None, use_errno=True)
+    function = libc.mount
+    function.argtypes = (ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p,
+                         ctypes.c_ulong, ctypes.c_char_p)
+    function.restype = ctypes.c_int
+    if function(source, target, filesystem, flags, data) != 0:
+        error = ctypes.get_errno()
+        raise OSError(error, os.strerror(error))
+
+try:
+    outer_uid, outer_gid = os.getuid(), os.getgid()
+    os.unshare(os.CLONE_NEWUSER)
+    try:
+        write_file("/proc/self/setgroups", b"deny\n")
+    except FileNotFoundError:
+        pass
+    write_file("/proc/self/uid_map", f"0 {outer_uid} 1\n".encode("ascii"))
+    write_file("/proc/self/gid_map", f"0 {outer_gid} 1\n".encode("ascii"))
+    os.unshare(os.CLONE_NEWNS)
+    mount(None, b"/", None, (1 << 18) | 16384, None)
+    options = f"size={size},nr_inodes={int(nodes) + 1},mode=0777".encode("ascii")
+    mount(b"tmpfs", os.fsencode(mountpoint), b"tmpfs", 2 | 4 | 8, options)
+    os.write(ready_descriptor, b"READY\n")
+    os.close(ready_descriptor)
+    while os.read(control_descriptor, 1):
+        pass
+except BaseException as error:
+    try:
+        os.write(ready_descriptor, f"ERROR:{type(error).__name__}\n".encode("ascii"))
+    except OSError:
+        pass
+"""
 _CANDIDATE_SIGNALS: tuple[tuple[str, bytes], ...] = (
     ("android.bluetooth.descriptor", b"Landroid/bluetooth/"),
     ("android.bluetooth.namespace", b"android.bluetooth"),
@@ -373,10 +423,12 @@ class ExecutionProfile:
             "limits": self.limits.to_data(),
             "revision": self.revision,
             "sandbox": {
-                "host_filesystem": "READ_ONLY",
+                "host_filesystem": "NOT_MOUNTED",
                 "network": "DISABLED",
+                "output_allocation": "KERNEL_CAPPED_TMPFS",
                 "process_namespace": "PRIVATE",
                 "revision": self.sandbox_revision,
+                "runtime_root": "SEALED_CONTENT_ADDRESSED",
                 "writable_scope": "PRIVATE_WORKSPACE",
             },
         }
@@ -627,6 +679,32 @@ class _SealedExecutable:
             shutil.rmtree(self.snapshot_directory, ignore_errors=True)
 
 
+@dataclass(slots=True)
+class _QuotaFilesystem:
+    descriptor: int
+    setup_userns_descriptor: int
+    mountns_descriptor: int
+    keeper: subprocess.Popen[bytes]
+    control_descriptor: int
+    mountpoint: Path
+
+    @property
+    def path(self) -> Path:
+        return Path(f"/proc/{self.keeper.pid}/root/{self.mountpoint.relative_to('/')}")
+
+    def close(self) -> None:
+        os.close(self.control_descriptor)
+        try:
+            self.keeper.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            self.keeper.kill()
+            self.keeper.wait()
+        os.close(self.descriptor)
+        os.close(self.setup_userns_descriptor)
+        os.close(self.mountns_descriptor)
+        shutil.rmtree(self.mountpoint, ignore_errors=True)
+
+
 def _canonical_json(value: object) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
 
@@ -695,6 +773,94 @@ def _fsync_directory(path: Path) -> None:
         os.fsync(descriptor)
     finally:
         os.close(descriptor)
+
+
+def _create_quota_filesystem(limits: ExecutionLimits) -> _QuotaFilesystem:
+    """Create a private tmpfs whose kernel limit covers visible and unlinked output."""
+
+    mountpoint = Path(tempfile.mkdtemp(prefix="phase4-output-quota.", dir="/var/tmp"))
+    ready_read, ready_write = os.pipe()
+    control_read, control_write = os.pipe()
+    try:
+        keeper = subprocess.Popen(  # noqa: S603 - fixed interpreter and embedded helper
+            (
+                sys.executable,
+                "-I",
+                "-c",
+                _QUOTA_KEEPER_SCRIPT,
+                os.fspath(mountpoint),
+                str(limits.max_output_bytes),
+                str(limits.max_output_nodes),
+                str(ready_write),
+                str(control_read),
+            ),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            close_fds=True,
+            pass_fds=(ready_write, control_read),
+            env={"LANG": "C.UTF-8", "LC_ALL": "C.UTF-8", "PATH": "/usr/bin:/bin"},
+        )
+    except OSError as error:
+        for descriptor in (ready_read, ready_write, control_read, control_write):
+            os.close(descriptor)
+        shutil.rmtree(mountpoint, ignore_errors=True)
+        raise PreparationError("kernel-enforced output quota helper is unavailable") from error
+    os.close(ready_write)
+    os.close(control_read)
+    descriptor = setup_userns_descriptor = mountns_descriptor = -1
+    with selectors.DefaultSelector() as selector:
+        selector.register(ready_read, selectors.EVENT_READ)
+        ready = bool(selector.select(timeout=min(5.0, limits.version_timeout_seconds)))
+    try:
+        response = os.read(ready_read, 128) if ready else b""
+    finally:
+        os.close(ready_read)
+    if response != b"READY\n":
+        os.close(control_write)
+        try:
+            keeper.wait(timeout=1)
+        except subprocess.TimeoutExpired:
+            keeper.kill()
+            keeper.wait()
+        shutil.rmtree(mountpoint, ignore_errors=True)
+        raise PreparationError("kernel-enforced output quota is unavailable")
+    try:
+        descriptor = os.open(
+            f"/proc/{keeper.pid}/root/{mountpoint.relative_to('/')}",
+            os.O_RDONLY
+            | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_DIRECTORY", 0),
+        )
+        setup_userns_descriptor = os.open(
+            f"/proc/{keeper.pid}/ns/user",
+            os.O_RDONLY | getattr(os, "O_CLOEXEC", 0),
+        )
+        mountns_descriptor = os.open(
+            f"/proc/{keeper.pid}/ns/mnt",
+            os.O_RDONLY | getattr(os, "O_CLOEXEC", 0),
+        )
+    except OSError as error:
+        for opened_descriptor in (
+            descriptor,
+            setup_userns_descriptor,
+            mountns_descriptor,
+        ):
+            if opened_descriptor >= 0:
+                os.close(opened_descriptor)
+        os.close(control_write)
+        keeper.wait()
+        shutil.rmtree(mountpoint, ignore_errors=True)
+        raise PreparationError("kernel-enforced output quota is inaccessible") from error
+    return _QuotaFilesystem(
+        descriptor,
+        setup_userns_descriptor,
+        mountns_descriptor,
+        keeper,
+        control_write,
+        mountpoint,
+    )
 
 
 def _sync_output_tree(root: Path, outputs: Sequence[OutputMember]) -> None:
@@ -861,6 +1027,8 @@ def _run_bounded(
     pass_fds: tuple[int, ...] = (),
     limits: ExecutionLimits | None = None,
     monitored_output_descriptor: int | None = None,
+    user_namespace_descriptor: int | None = None,
+    mount_namespace_descriptor: int | None = None,
 ) -> _RunResult:
     process: subprocess.Popen[bytes] | None = None
     stdout = bytearray()
@@ -869,6 +1037,11 @@ def _run_bounded(
     try:
 
         def apply_limits() -> None:
+            if user_namespace_descriptor is not None:
+                if mount_namespace_descriptor is None:
+                    raise OSError("mount namespace descriptor is missing")
+                os.setns(user_namespace_descriptor, os.CLONE_NEWUSER)
+                os.setns(mount_namespace_descriptor, os.CLONE_NEWNS)
             if limits is None:
                 return
             resource.setrlimit(
@@ -929,7 +1102,7 @@ def _run_bounded(
                         return _RunResult(None, bytes(stdout), bytes(stderr), "TOOL_OUTPUT_LIMIT")
         process.wait(timeout=max(0.0, deadline - time.monotonic()))
         return _RunResult(process.returncode, bytes(stdout), bytes(stderr), None)
-    except OSError, subprocess.TimeoutExpired:
+    except OSError, subprocess.SubprocessError:
         if process is not None:
             _stop_process(process)
         return _RunResult(None, bytes(stdout), bytes(stderr), "TOOL_EXECUTION_FAILED")
@@ -1027,6 +1200,9 @@ def _run_sandboxed(
     stream_limit: int,
     workspace_identity: tuple[int, int] | None = None,
     monitor_output: bool = False,
+    quota_output_descriptor: int | None = None,
+    quota_setup_userns_descriptor: int | None = None,
+    quota_mountns_descriptor: int | None = None,
 ) -> _RunResult:
     workspace_descriptor = -1
     output_descriptor = -1
@@ -1039,7 +1215,7 @@ def _run_sandboxed(
             | getattr(os, "O_NOFOLLOW", 0)
             | getattr(os, "O_DIRECTORY", 0),
         )
-        if monitor_output:
+        if monitor_output and quota_output_descriptor is None:
             output_descriptor = os.open(
                 workspace / "output",
                 os.O_RDONLY
@@ -1063,23 +1239,29 @@ def _run_sandboxed(
         command = [
             f"/proc/self/fd/{executor_descriptor}",
             "--unshare-user",
-            "--disable-userns",
             "--unshare-all",
-            "--die-with-parent",
-            "--new-session",
-            "--cap-drop",
-            "ALL",
-            "--ro-bind-fd",
-            str(executable.runtime_descriptor),
-            "/",
-            "--proc",
-            "/proc",
-            "--dev",
-            "/dev",
-            "--bind-fd",
-            str(workspace_descriptor),
-            "/run",
+            "--disable-userns",
         ]
+        command.extend(
+            (
+                "--die-with-parent",
+                "--new-session",
+                "--cap-drop",
+                "ALL",
+                "--ro-bind-fd",
+                str(executable.runtime_descriptor),
+                "/",
+                "--proc",
+                "/proc",
+                "--dev",
+                "/dev",
+                "--bind-fd",
+                str(workspace_descriptor),
+                "/run",
+            )
+        )
+        if quota_output_descriptor is not None:
+            command.extend(("--bind-fd", str(quota_output_descriptor), "/run/output"))
         if executable.runtime_descriptor is None:
             raise PreparationError("sealed runtime root is missing")
         command.extend(("--clearenv",))
@@ -1099,11 +1281,22 @@ def _run_sandboxed(
                     workspace_descriptor,
                     executable.descriptor,
                     executable.runtime_descriptor,
+                    quota_output_descriptor,
+                    quota_setup_userns_descriptor,
+                    quota_mountns_descriptor,
                 )
                 if descriptor is not None
             ),
             limits=profile.limits,
-            monitored_output_descriptor=output_descriptor if monitor_output else None,
+            monitored_output_descriptor=(
+                quota_output_descriptor
+                if monitor_output and quota_output_descriptor is not None
+                else output_descriptor
+                if monitor_output
+                else None
+            ),
+            user_namespace_descriptor=quota_setup_userns_descriptor,
+            mount_namespace_descriptor=quota_mountns_descriptor,
         )
     finally:
         for descriptor in (executor_descriptor, workspace_descriptor, output_descriptor):
@@ -1116,6 +1309,7 @@ def _copy_runtime_file_at(
     name: str,
     destination: Path,
     limit: int,
+    expected: os.stat_result | None = None,
 ) -> tuple[str, int]:
     source_descriptor = os.open(
         name,
@@ -1127,6 +1321,8 @@ def _copy_runtime_file_at(
         before = os.fstat(source_descriptor)
         if not stat.S_ISREG(before.st_mode) or before.st_size > limit:
             raise PreparationError("runtime closure contains an invalid file")
+        if expected is not None and _runtime_metadata(before) != _runtime_metadata(expected):
+            raise PreparationError("runtime closure changed while sealing")
         destination_descriptor = os.open(
             destination,
             os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_CLOEXEC", 0),
@@ -1147,18 +1343,25 @@ def _copy_runtime_file_at(
             offset += len(chunk)
         os.fsync(destination_descriptor)
         after = os.fstat(source_descriptor)
-        if (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns) != (
-            after.st_dev,
-            after.st_ino,
-            after.st_size,
-            after.st_mtime_ns,
-        ):
+        if _runtime_metadata(before) != _runtime_metadata(after):
             raise PreparationError("runtime closure changed while sealing")
         return digest.hexdigest(), total
     finally:
         if destination_descriptor >= 0:
             os.close(destination_descriptor)
         os.close(source_descriptor)
+
+
+def _runtime_metadata(node: os.stat_result) -> tuple[int, ...]:
+    return (
+        node.st_dev,
+        node.st_ino,
+        node.st_mode,
+        node.st_nlink,
+        node.st_size,
+        node.st_mtime_ns,
+        node.st_ctime_ns,
+    )
 
 
 def _seal_executable(path: Path, runtime_root: str, limits: ExecutionLimits) -> _SealedExecutable:
@@ -1191,76 +1394,91 @@ def _seal_executable(path: Path, runtime_root: str, limits: ExecutionLimits) -> 
             | getattr(os, "O_NOFOLLOW", 0)
             | getattr(os, "O_DIRECTORY", 0),
         )
-        stack = [(source_descriptor, snapshot_root, PurePosixPath())]
-        try:
-            while stack:
-                source_directory_descriptor, target_directory, relative_parent = stack.pop()
-                try:
-                    with os.scandir(source_directory_descriptor) as entries:
-                        children = sorted(entries, key=lambda item: item.name)
-                    for child in children:
-                        nodes += 1
-                        if nodes > limits.max_runtime_files:
-                            raise PreparationError("runtime closure node limit exceeded")
-                        node = child.stat(follow_symlinks=False)
-                        relative = (relative_parent / child.name).as_posix()
-                        target = target_directory / child.name
-                        if stat.S_ISDIR(node.st_mode):
-                            child_descriptor = os.open(
-                                child.name,
-                                os.O_RDONLY
-                                | getattr(os, "O_CLOEXEC", 0)
-                                | getattr(os, "O_NOFOLLOW", 0)
-                                | getattr(os, "O_DIRECTORY", 0),
-                                dir_fd=source_directory_descriptor,
-                            )
-                            opened = os.fstat(child_descriptor)
-                            if (node.st_dev, node.st_ino) != (opened.st_dev, opened.st_ino):
-                                os.close(child_descriptor)
-                                raise PreparationError("runtime closure changed while sealing")
-                            target.mkdir(mode=stat.S_IMODE(node.st_mode) & 0o777)
-                            inventory.append(
-                                {
-                                    "bytes": 0,
-                                    "mode": stat.S_IMODE(node.st_mode),
-                                    "path": relative,
-                                    "sha256": None,
-                                }
-                            )
-                            stack.append(
-                                (
-                                    child_descriptor,
-                                    target,
-                                    relative_parent / child.name,
-                                )
-                            )
-                            continue
-                        if not stat.S_ISREG(node.st_mode):
-                            raise PreparationError(
-                                "runtime closure contains a symlink or special node"
-                            )
-                        digest, size = _copy_runtime_file_at(
-                            source_directory_descriptor,
-                            child.name,
-                            target,
-                            limits.max_runtime_file_bytes,
-                        )
-                        total += size
-                        if total > limits.max_runtime_bytes:
-                            raise PreparationError("runtime closure aggregate byte limit exceeded")
+
+        def seal_directory(
+            source_directory_descriptor: int,
+            target_directory: Path,
+            relative_parent: PurePosixPath,
+            depth: int,
+        ) -> None:
+            nonlocal nodes, total
+            if depth > 256:
+                raise PreparationError("runtime closure directory depth limit exceeded")
+            before = os.fstat(source_directory_descriptor)
+            with os.scandir(source_directory_descriptor) as entries:
+                children = sorted(entries, key=lambda item: item.name)
+            initial_names = tuple(child.name for child in children)
+            for child in children:
+                nodes += 1
+                if nodes > limits.max_runtime_files:
+                    raise PreparationError("runtime closure node limit exceeded")
+                node = child.stat(follow_symlinks=False)
+                relative = (relative_parent / child.name).as_posix()
+                target = target_directory / child.name
+                if stat.S_ISDIR(node.st_mode):
+                    child_descriptor = os.open(
+                        child.name,
+                        os.O_RDONLY
+                        | getattr(os, "O_CLOEXEC", 0)
+                        | getattr(os, "O_NOFOLLOW", 0)
+                        | getattr(os, "O_DIRECTORY", 0),
+                        dir_fd=source_directory_descriptor,
+                    )
+                    try:
+                        opened = os.fstat(child_descriptor)
+                        if _runtime_metadata(node) != _runtime_metadata(opened):
+                            raise PreparationError("runtime closure changed while sealing")
+                        target.mkdir(mode=stat.S_IMODE(opened.st_mode) & 0o777)
                         inventory.append(
                             {
-                                "bytes": size,
-                                "mode": stat.S_IMODE(node.st_mode),
+                                "bytes": 0,
+                                "mode": stat.S_IMODE(opened.st_mode),
                                 "path": relative,
-                                "sha256": digest,
+                                "sha256": None,
                             }
                         )
-                finally:
-                    os.close(source_directory_descriptor)
+                        seal_directory(
+                            child_descriptor,
+                            target,
+                            relative_parent / child.name,
+                            depth + 1,
+                        )
+                    finally:
+                        os.close(child_descriptor)
+                    continue
+                if not stat.S_ISREG(node.st_mode):
+                    raise PreparationError("runtime closure contains a symlink or special node")
+                digest, size = _copy_runtime_file_at(
+                    source_directory_descriptor,
+                    child.name,
+                    target,
+                    limits.max_runtime_file_bytes,
+                    node,
+                )
+                total += size
+                if total > limits.max_runtime_bytes:
+                    raise PreparationError("runtime closure aggregate byte limit exceeded")
+                inventory.append(
+                    {
+                        "bytes": size,
+                        "mode": stat.S_IMODE(node.st_mode),
+                        "path": relative,
+                        "sha256": digest,
+                    }
+                )
+            after = os.fstat(source_directory_descriptor)
+            with os.scandir(source_directory_descriptor) as entries:
+                final_names = tuple(sorted(entry.name for entry in entries))
+            if (
+                _runtime_metadata(before) != _runtime_metadata(after)
+                or initial_names != final_names
+            ):
+                raise PreparationError("runtime closure directory changed while sealing")
+
+        try:
+            seal_directory(source_descriptor, snapshot_root, PurePosixPath(), 0)
         finally:
-            for descriptor, _target, _relative in stack:
-                os.close(descriptor)
+            os.close(source_descriptor)
         inventory.sort(key=lambda item: str(item["path"]))
         runtime_sha256 = hashlib.sha256(_canonical_json(inventory)).hexdigest()
         for relative in ("run", "tmp", "home", "var", "var/tmp", "proc", "dev"):
@@ -1475,6 +1693,38 @@ def _output_members(output: Path, limits: ExecutionLimits) -> tuple[OutputMember
     if not records:
         raise _OutputValidationError("OUTPUT_EMPTY")
     return tuple(records)
+
+
+def _materialize_quota_output(
+    quota: _QuotaFilesystem,
+    destination: Path,
+    limits: ExecutionLimits,
+) -> None:
+    """Copy the quiescent, quota-backed output into the durable workspace."""
+
+    for output in _output_members(quota.path, limits):
+        relative = PurePosixPath(output.path)
+        target_parent = destination.joinpath(*relative.parts[:-1])
+        target_parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        source_parent = quota.path.joinpath(*relative.parts[:-1])
+        source_descriptor = os.open(
+            source_parent,
+            os.O_RDONLY
+            | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_DIRECTORY", 0),
+        )
+        try:
+            digest, size = _copy_runtime_file_at(
+                source_descriptor,
+                relative.name,
+                target_parent / relative.name,
+                limits.max_output_file_bytes,
+            )
+        finally:
+            os.close(source_descriptor)
+        if (digest, size) != (output.sha256, output.bytes):
+            raise PreparationError("quota-backed output changed during materialization")
 
 
 def _copy_input(member: ArtifactMember, destination: Path) -> None:
@@ -1718,22 +1968,38 @@ def _execute_one(
 
     workspace = Path(tempfile.mkdtemp(prefix=f"{key}.", dir=cache.work))
     try:
-        for name in ("home", "tmp", "output"):
+        for name in ("home", "tmp"):
             (workspace / name).mkdir(mode=0o700)
         input_path = workspace / "input.apk"
         _copy_input(member, input_path)
         arguments = _normalized_arguments(spec)
-        run = _run_sandboxed(
-            binary,
-            arguments,
-            workspace=workspace,
-            profile=execution_profile,
-            timeout=limits.tool_timeout_seconds,
-            stream_limit=limits.max_tool_stream_bytes,
-            workspace_identity=(workspace.stat().st_dev, workspace.stat().st_ino),
-            monitor_output=True,
-        )
+        quota = _create_quota_filesystem(limits)
+        quota_failure: str | None = None
+        try:
+            run = _run_sandboxed(
+                binary,
+                arguments,
+                workspace=workspace,
+                profile=execution_profile,
+                timeout=limits.tool_timeout_seconds,
+                stream_limit=limits.max_tool_stream_bytes,
+                workspace_identity=(workspace.stat().st_dev, workspace.stat().st_ino),
+                monitor_output=True,
+                quota_output_descriptor=quota.descriptor,
+                quota_setup_userns_descriptor=quota.setup_userns_descriptor,
+                quota_mountns_descriptor=quota.mountns_descriptor,
+            )
+            try:
+                _materialize_quota_output(quota, workspace / "output", limits)
+            except _OutputValidationError as error:
+                quota_failure = error.code
+            except PreparationError:
+                quota_failure = "OUTPUT_INVALID"
+        finally:
+            quota.close()
         failures: list[str] = []
+        if quota_failure is not None:
+            failures.append(quota_failure)
         if run.failure is not None:
             failures.append(run.failure)
         elif run.exit_code != 0:
@@ -1746,12 +2012,13 @@ def _execute_one(
         if warnings:
             failures.append("TOOL_DIAGNOSTIC")
         outputs: tuple[OutputMember, ...] = ()
-        try:
-            outputs = _output_members(workspace / "output", limits)
-        except _OutputValidationError as err:
-            failures.append(err.code)
-        except PreparationError:
-            failures.append("OUTPUT_INVALID")
+        if quota_failure is None:
+            try:
+                outputs = _output_members(workspace / "output", limits)
+            except _OutputValidationError as err:
+                failures.append(err.code)
+            except PreparationError:
+                failures.append("OUTPUT_INVALID")
         try:
             input_digest, input_size = _hash_file(input_path, max_bytes=member.size)
         except OSError, PreparationError:

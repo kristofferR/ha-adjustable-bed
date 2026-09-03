@@ -44,6 +44,7 @@ def build_static_tool(
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 static void mkdirs(char *path) {{

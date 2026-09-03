@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import shutil
+import threading
 import time
 import zipfile
 from pathlib import Path
@@ -274,7 +275,7 @@ def test_workspace_and_cache_symlink_swaps_fail_closed(tmp_path: Path) -> None:
         sealed.close()
 
 
-def test_live_aggregate_quota_stops_writer_before_tool_timeout(
+def test_kernel_aggregate_quota_stops_writer_before_tool_timeout(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     preflight = _preflight(monkeypatch, tmp_path)
@@ -282,16 +283,17 @@ def test_live_aggregate_quota_stops_writer_before_tool_timeout(
         tmp_path,
         outputs={},
         extra_source=(
-            "char bytes[800]; memset(bytes, 1, sizeof(bytes)); char path[128]; "
+            "char bytes[6000]; memset(bytes, 1, sizeof(bytes)); char path[128]; "
             'for(int i=0;i<2;i++){snprintf(path,sizeof(path),"%s/chunk-%d",output,i); '
-            "int fd=open(path,O_WRONLY|O_CREAT|O_TRUNC,0600); write(fd,bytes,sizeof(bytes)); close(fd);} "
+            "int fd=open(path,O_WRONLY|O_CREAT|O_TRUNC,0600); "
+            "if(fd<0 || write(fd,bytes,sizeof(bytes))!=(ssize_t)sizeof(bytes))return 17; close(fd);} "
             "sleep(2);"
         ),
     )
     limits = ExecutionLimits(
         tool_timeout_seconds=3,
-        max_output_file_bytes=1_024,
-        max_output_bytes=1_024,
+        max_output_file_bytes=8_192,
+        max_output_bytes=8_192,
     )
     started = time.monotonic()
     result = execute_preparation(
@@ -305,6 +307,107 @@ def test_live_aggregate_quota_stops_writer_before_tool_timeout(
 
     assert time.monotonic() - started < 1.5
     assert result.status == "BLOCKED"
-    assert all("OUTPUT_AGGREGATE_BYTE_LIMIT" in item.failures for item in result.invocations), [
+    assert all("TOOL_EXIT_NONZERO" in item.failures for item in result.invocations), [
         item.failures for item in result.invocations
     ]
+
+
+def test_kernel_quota_counts_open_unlinked_output(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    preflight = _preflight(monkeypatch, tmp_path)
+    tool = build_static_tool(
+        tmp_path,
+        outputs={},
+        extra_source=(
+            "int exhausted=0; int held[64]; char path[256]; char bytes[65536]; "
+            "memset(bytes,1,sizeof(bytes)); "
+            'for(int i=0;i<64;i++){snprintf(path,sizeof(path),"%s/hidden-%d",output,i); '
+            "held[i]=open(path,O_WRONLY|O_CREAT|O_EXCL,0600); if(held[i]<0){exhausted=1;break;} "
+            "unlink(path); if(write(held[i],bytes,sizeof(bytes))!=(ssize_t)sizeof(bytes)){exhausted=1;break;}} "
+            "if(!exhausted)sleep(2);"
+        ),
+    )
+    limits = ExecutionLimits(tool_timeout_seconds=3, max_output_bytes=1024 * 1024)
+    started = time.monotonic()
+    result = execute_preparation(
+        preflight,
+        tool_specs=_specs(tool),
+        cache_directory=tmp_path / "unlink-cache",
+        output_directory=tmp_path / "unlink-result",
+        pipeline_revision="pipeline-security-v1",
+        execution_profile=build_execution_profile(limits),
+    )
+
+    assert time.monotonic() - started < 1.5
+    assert result.status == "BLOCKED"
+    assert all("OUTPUT_EMPTY" in item.failures for item in result.invocations)
+
+
+def test_kernel_quota_is_shared_by_output_writer_processes(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    preflight = _preflight(monkeypatch, tmp_path)
+    tool = build_static_tool(
+        tmp_path,
+        outputs={},
+        extra_source=(
+            "pid_t children[4]; char bytes[524288]; memset(bytes,1,sizeof(bytes)); "
+            "for(int i=0;i<4;i++){children[i]=fork(); if(children[i]==0){char path[256]; "
+            'snprintf(path,sizeof(path),"%s/child-%d",output,i); int fd=open(path,O_WRONLY|O_CREAT|O_EXCL,0600); '
+            "unlink(path); _exit(fd<0 || write(fd,bytes,sizeof(bytes))!=(ssize_t)sizeof(bytes) ? 42 : 0);}} "
+            "int exhausted=0,status=0; for(int i=0;i<4;i++){waitpid(children[i],&status,0); "
+            "if(!WIFEXITED(status)||WEXITSTATUS(status)!=0)exhausted=1;} if(!exhausted)sleep(2);"
+        ),
+    )
+    limits = ExecutionLimits(tool_timeout_seconds=3, max_output_bytes=1024 * 1024)
+    started = time.monotonic()
+    result = execute_preparation(
+        preflight,
+        tool_specs=_specs(tool),
+        cache_directory=tmp_path / "multiprocess-cache",
+        output_directory=tmp_path / "multiprocess-result",
+        pipeline_revision="pipeline-security-v1",
+        execution_profile=build_execution_profile(limits),
+    )
+
+    assert time.monotonic() - started < 1.5
+    assert result.status == "BLOCKED"
+    assert all("OUTPUT_EMPTY" in item.failures for item in result.invocations)
+
+
+@pytest.mark.parametrize("mutation", ["add", "remove", "rename"])
+def test_runtime_seal_rejects_nested_directory_mutation(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    mutation: str,
+) -> None:
+    tool = _tool(tmp_path, _OUTPUT_BODY)
+    nested = tool.parent / "nested"
+    nested.mkdir()
+    victim = nested / "aa-victim"
+    victim.write_text("stable", encoding="utf-8")
+    trigger = nested / "zz-trigger"
+    trigger.write_text("trigger", encoding="utf-8")
+    original_copy = execution._copy_runtime_file_at
+
+    def mutate_after_copy(*args: object, **kwargs: object):
+        result = original_copy(*args, **kwargs)  # type: ignore[arg-type]
+        if args[1] == "zz-trigger":
+
+            def mutate() -> None:
+                if mutation == "add":
+                    (nested / "added").write_text("new", encoding="utf-8")
+                elif mutation == "remove":
+                    victim.unlink()
+                else:
+                    victim.rename(nested / "renamed")
+
+            actor = threading.Thread(target=mutate)
+            actor.start()
+            actor.join()
+        return result
+
+    monkeypatch.setattr(execution, "_copy_runtime_file_at", mutate_after_copy)
+    with pytest.raises(PreparationError, match="directory changed"):
+        execution._seal_executable(tool, str(tool.parent), ExecutionLimits())
