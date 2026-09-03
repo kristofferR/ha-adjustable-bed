@@ -758,6 +758,10 @@ class Queue:
         execution_mode: ExecutionMode = ExecutionMode.NORMAL,
     ) -> None:
         """Add an immutable work definition, idempotently when identical."""
+        if _requires_exact_reuse_batch_materializer(unit_id, kind):
+            raise QueueConflictError(
+                "exact-reuse prerequisites require the atomic typed materializer"
+            )
         _validate_identifier(unit_id, "unit_id")
         _validate_identifier(kind, "kind")
         _validate_reserved_unit_kind(unit_id, kind)
@@ -3851,6 +3855,29 @@ def _requires_trusted_completion_adapter(unit_id: str, kind: str) -> bool:
         or kind.startswith(_TRUSTED_COMPLETION_KIND_PREFIX)
         or any(unit_id.startswith(prefix) for prefix in _reserved_unit_kinds())
     )
+
+
+def _requires_exact_reuse_batch_materializer(unit_id: str, kind: str) -> bool:
+    from tools.phase4_v2.equivalence.prerequisite import (
+        EXACT_REUSE_DIRECT_AUDIT_QUEUE_KIND,
+        EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX,
+        EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND,
+        EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX,
+        EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND,
+        EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX,
+    )
+
+    kinds = {
+        EXACT_REUSE_DIRECT_AUDIT_QUEUE_KIND,
+        EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND,
+        EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND,
+    }
+    prefixes = (
+        f"{EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX}:",
+        f"{EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX}:",
+        f"{EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX}:",
+    )
+    return kind in kinds or unit_id.startswith(prefixes)
 
 
 def _validate_reserved_materialization_source(

@@ -465,6 +465,12 @@ def test_generic_private_materializer_cannot_split_atomic_prerequisites(
     queue = _queue(tmp_path)
     completion = exact_reuse_prerequisite_completions(fixture.receipt)[0]
     with pytest.raises(QueueConflictError, match="atomic typed materializer"):
+        queue.enqueue(
+            completion.parent_unit_id,
+            kind=EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND,
+            input_digest=fixture.receipt.receipt_sha256,
+        )
+    with pytest.raises(QueueConflictError, match="atomic typed materializer"):
         queue._materialize_authenticated_row(
             completion.parent_unit_id,
             authentication=fixture.receipt,
