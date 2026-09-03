@@ -44,6 +44,7 @@ from .plan import (
     PACKAGE_QUEUE_UNIT_KIND,
     PREPARATION_QUEUE_UNIT_KIND,
     AcceptedTargetRootInventory,
+    CompletionPin,
     PackageExecutionPlan,
     PackageLocalPlan,
     PackagePlanStatus,
@@ -57,6 +58,11 @@ from .plan import (
 )
 from .plan import (
     PACKAGE_QUEUE_UNIT_PREFIX as PACKAGE_QUEUE_UNIT_PREFIX,
+)
+from .prerequisite import (
+    AuthenticatedExactReusePrerequisite,
+    exact_reuse_prerequisite_completions,
+    validate_authenticated_exact_reuse_prerequisite,
 )
 
 PACKAGE_VALIDATION_RECEIPT_QUEUE_UNIT_KIND = "trusted-package-validation-receipt"
@@ -108,6 +114,14 @@ class FinishedPreparationWork:
 
     binding: PreparationPlanBinding
     queue_result: FinishResult
+
+
+@dataclass(frozen=True, slots=True)
+class MaterializedExactReusePrerequisites:
+    """All exact completion identities authorized by one pre-plan receipt."""
+
+    completions: tuple[CompletionPin, CompletionPin, CompletionPin]
+    input_digest: str
 
 
 class PackagePlanInputMismatchError(InputDigestMismatchError):
@@ -195,6 +209,33 @@ def finish_target_inventory(
     accepted = accept_target_inventory(validate_target_inventory_envelope(envelope))
     result = queue.finish_target_inventory_envelope(lease, envelope=envelope)
     return accepted, result.finish_result
+
+
+def materialize_exact_reuse_prerequisites(
+    queue: Queue,
+    receipt: AuthenticatedExactReusePrerequisite,
+    *,
+    priority: int = 0,
+) -> MaterializedExactReusePrerequisites:
+    """Atomically publish the semantic, decision, and audit prerequisite rows."""
+
+    receipt = validate_authenticated_exact_reuse_prerequisite(receipt)
+    queue._materialize_exact_reuse_prerequisite_rows(receipt, priority=priority)
+    return MaterializedExactReusePrerequisites(
+        exact_reuse_prerequisite_completions(receipt), receipt.receipt_sha256
+    )
+
+
+def finish_exact_reuse_prerequisite(
+    queue: Queue,
+    lease: Lease,
+    *,
+    receipt: AuthenticatedExactReusePrerequisite,
+) -> FinishResult:
+    """Finish one of the exact three rows authorized by the signed receipt."""
+
+    receipt = validate_authenticated_exact_reuse_prerequisite(receipt)
+    return queue.finish_exact_reuse_prerequisite(lease, receipt=receipt).finish_result
 
 
 def materialize_package_preparation(

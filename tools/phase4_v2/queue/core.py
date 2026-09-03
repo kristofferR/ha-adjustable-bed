@@ -32,6 +32,7 @@ if TYPE_CHECKING:
         PreparationPlanBinding,
         ValidatedPackageOutput,
     )
+    from tools.phase4_v2.equivalence.prerequisite import AuthenticatedExactReusePrerequisite
     from tools.phase4_v2.preflight.registry import (
         ActivatedPreparationAuthority,
         PreparationReceipt,
@@ -602,6 +603,11 @@ class _TargetInventoryPublication:
 
 
 @dataclass(frozen=True, slots=True)
+class _ExactReusePrerequisitePublication:
+    receipt: AuthenticatedExactReusePrerequisite
+
+
+@dataclass(frozen=True, slots=True)
 class _ValidatedPackageOutputPublication:
     output: object
     execution_plan: object
@@ -836,6 +842,161 @@ class Queue:
             execution_mode=execution_mode,
         )
 
+    def _materialize_exact_reuse_prerequisite_rows(
+        self,
+        receipt: AuthenticatedExactReusePrerequisite,
+        *,
+        priority: int,
+    ) -> tuple[str, str, str]:
+        """Atomically insert all three rows authorized by one signed receipt."""
+        from tools.phase4_v2.equivalence.prerequisite import (
+            EXACT_REUSE_DIRECT_AUDIT_QUEUE_KIND,
+            EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND,
+            EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND,
+            exact_reuse_prerequisite_capabilities,
+            exact_reuse_prerequisite_completions,
+            exact_reuse_prerequisite_dependencies,
+            validate_authenticated_exact_reuse_prerequisite,
+        )
+
+        receipt = validate_authenticated_exact_reuse_prerequisite(receipt)
+        capabilities = tuple(
+            CapabilityPin(pin.name, pin.revision, pin.digest)
+            for pin in exact_reuse_prerequisite_capabilities(receipt)
+        )
+        dependencies = tuple(
+            CompletionDependencyPin(pin.parent_unit_id, pin.revision, pin.digest)
+            for pin in exact_reuse_prerequisite_dependencies(receipt)
+        )
+        completions = exact_reuse_prerequisite_completions(receipt)
+        kinds = (
+            EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND,
+            EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND,
+            EXACT_REUSE_DIRECT_AUDIT_QUEUE_KIND,
+        )
+        if type(priority) is not int or not _MIN_PRIORITY <= priority <= _MAX_PRIORITY:
+            raise ValueError("priority must be a bounded integer")
+        capabilities = tuple(sorted(capabilities, key=lambda pin: pin.capability))
+        dependencies = tuple(sorted(dependencies, key=lambda pin: pin.parent_unit_id))
+        expected_capabilities = tuple(
+            (pin.capability, pin.revision, pin.digest) for pin in capabilities
+        )
+        expected_dependencies = tuple(
+            (pin.parent_unit_id, pin.revision, pin.digest) for pin in dependencies
+        )
+        definitions: list[tuple[str, str, int, str, str]] = []
+        for completion, kind in zip(completions, kinds, strict=True):
+            _validate_identifier(completion.parent_unit_id, "unit_id")
+            _validate_identifier(kind, "kind")
+            _validate_reserved_unit_kind(completion.parent_unit_id, kind)
+            _validate_reserved_materialization_source(
+                receipt,
+                unit_id=completion.parent_unit_id,
+                kind=kind,
+                cluster_id=None,
+                input_digest=receipt.receipt_sha256,
+                capability_pins=capabilities,
+                dependency_pins=dependencies,
+            )
+            definitions.append(
+                (
+                    completion.parent_unit_id,
+                    kind,
+                    priority,
+                    ExecutionMode.NORMAL.value,
+                    receipt.receipt_sha256,
+                )
+            )
+        with self._immediate() as connection:
+            for unit_id, kind, row_priority, execution_mode, input_digest in definitions:
+                definition = (kind, None, row_priority, execution_mode, input_digest)
+                existing = connection.execute(
+                    """
+                    SELECT kind, cluster_id, priority, execution_mode, input_digest
+                    FROM work_units WHERE unit_id = ?
+                    """,
+                    (unit_id,),
+                ).fetchone()
+                if existing is not None:
+                    observed_capabilities = tuple(
+                        tuple(row)
+                        for row in connection.execute(
+                            """
+                            SELECT capability, required_revision, required_digest
+                            FROM capability_requirements
+                            WHERE unit_id = ? ORDER BY capability
+                            """,
+                            (unit_id,),
+                        ).fetchall()
+                    )
+                    observed_dependencies = tuple(
+                        tuple(row)
+                        for row in connection.execute(
+                            """
+                            SELECT parent_unit_id, required_revision, required_digest
+                            FROM dependencies
+                            WHERE unit_id = ? ORDER BY parent_unit_id
+                            """,
+                            (unit_id,),
+                        ).fetchall()
+                    )
+                    if (
+                        tuple(existing) != definition
+                        or observed_capabilities != expected_capabilities
+                        or observed_dependencies != expected_dependencies
+                    ):
+                        raise QueueConflictError(f"materialized work unit changed: {unit_id}")
+                    continue
+                ordinal_row = connection.execute(
+                    "SELECT COALESCE(MAX(ordinal), 0) + 1 AS ordinal FROM work_units"
+                ).fetchone()
+                try:
+                    connection.execute(
+                        """
+                        INSERT INTO work_units(
+                            unit_id, kind, cluster_id, priority, ordinal,
+                            execution_mode, status, input_digest
+                        ) VALUES (?, ?, NULL, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            unit_id,
+                            kind,
+                            row_priority,
+                            int(ordinal_row["ordinal"]),
+                            execution_mode,
+                            WorkUnitStatus.READY.value,
+                            input_digest,
+                        ),
+                    )
+                    connection.executemany(
+                        """
+                        INSERT INTO capability_requirements(
+                            unit_id, capability, required_revision, required_digest
+                        ) VALUES (?, ?, ?, ?)
+                        """,
+                        ((unit_id, *pin) for pin in expected_capabilities),
+                    )
+                    connection.executemany(
+                        """
+                        INSERT INTO dependencies(
+                            unit_id, parent_unit_id, required_revision, required_digest
+                        ) VALUES (?, ?, ?, ?)
+                        """,
+                        ((unit_id, *pin) for pin in expected_dependencies),
+                    )
+                except sqlite3.IntegrityError as error:
+                    raise QueueConflictError(
+                        f"could not materialize work unit: {unit_id}"
+                    ) from error
+            # Re-read every protected authority after the writes but before
+            # commit so a concurrent rotation rolls the whole batch back.
+            validate_authenticated_exact_reuse_prerequisite(receipt)
+        return (
+            receipt.receipt_sha256,
+            receipt.receipt_sha256,
+            receipt.receipt_sha256,
+        )
+
     def _materialize_authenticated_row(
         self,
         unit_id: str,
@@ -1016,7 +1177,9 @@ class Queue:
                     ((unit_id, *pin) for pin in expected_dependencies),
                 )
             except sqlite3.IntegrityError as error:
-                raise QueueConflictError(f"could not materialize work unit: {unit_id}") from error
+                raise QueueConflictError(
+                    f"could not materialize work unit: {unit_id}"
+                ) from error
         return input_digest
 
     def register_capability(self, capability: str, revision: str, digest: str) -> None:
@@ -1856,6 +2019,50 @@ class Queue:
             finish_result=result,
         )
 
+    def finish_exact_reuse_prerequisite(
+        self, lease: Lease, *, receipt: AuthenticatedExactReusePrerequisite
+    ) -> InputCheckedFinishResult:
+        """Reauthenticate and publish one exact signed pre-plan prerequisite."""
+        from tools.phase4_v2.equivalence.prerequisite import (
+            exact_reuse_prerequisite_completions,
+            validate_authenticated_exact_reuse_prerequisite,
+        )
+
+        receipt = validate_authenticated_exact_reuse_prerequisite(receipt)
+        completion = next(
+            (
+                item
+                for item in exact_reuse_prerequisite_completions(receipt)
+                if item.parent_unit_id == lease.unit_id
+            ),
+            None,
+        )
+        if completion is None:
+            raise QueueConflictError("lease is not a prerequisite authorized by this receipt")
+        guard = self._try_acquire_publication_guard(wait=True)
+        if guard is None:
+            raise QueueConflictError("tracker publication prevented attempt completion")
+        try:
+            result = self._finish_with_publication_guard(
+                lease,
+                TerminalOutcome.ACCEPTED,
+                output_digest=completion.digest,
+                completion_revision=completion.revision,
+                expected_input_digest=receipt.receipt_sha256,
+                terminalize_input_mismatch=True,
+                trusted_publication=_ExactReusePrerequisitePublication(receipt),
+            )
+        finally:
+            os.close(guard)
+        return InputCheckedFinishResult(
+            disposition=(
+                InputCheckedFinishDisposition.INPUT_MISMATCH
+                if result.disposition is FinishDisposition.TERMINAL_ONLY
+                else InputCheckedFinishDisposition.ACCEPTED
+            ),
+            finish_result=result,
+        )
+
     def _leased_orchestration_identity(self, lease: Lease) -> tuple[str, str]:
         with self._connect() as connection:
             self._require_live_lease(connection, lease)
@@ -2169,6 +2376,7 @@ class Queue:
             _PackageReceiptPublication
             | _PreparationReceiptPublication
             | _TargetInventoryPublication
+            | _ExactReusePrerequisitePublication
             | _ValidatedPackageOutputPublication
             | _AuthenticatedOrchestrationStagePublication
             | None
@@ -2193,6 +2401,14 @@ class Queue:
             )
         elif isinstance(trusted_publication, _TargetInventoryPublication):
             self._validate_target_inventory_publication(
+                lease,
+                trusted_publication,
+                output_digest=output_digest,
+                completion_revision=completion_revision,
+                expected_input_digest=expected_input_digest,
+            )
+        elif isinstance(trusted_publication, _ExactReusePrerequisitePublication):
+            self._validate_exact_reuse_prerequisite_publication(
                 lease,
                 trusted_publication,
                 output_digest=output_digest,
@@ -2281,6 +2497,27 @@ class Queue:
                         inventory_authority_capability(envelope.authority),
                         inventory_extractor_capability(envelope.extractor),
                     ),
+                )
+            elif isinstance(trusted_publication, _ExactReusePrerequisitePublication):
+                from tools.phase4_v2.equivalence.prerequisite import (
+                    exact_reuse_prerequisite_capabilities,
+                    validate_authenticated_exact_reuse_prerequisite,
+                )
+
+                receipt = validate_authenticated_exact_reuse_prerequisite(
+                    trusted_publication.receipt
+                )
+                self._validate_exact_reuse_prerequisite_publication(
+                    lease,
+                    trusted_publication,
+                    output_digest=output_digest,
+                    completion_revision=completion_revision,
+                    expected_input_digest=expected_input_digest,
+                )
+                _require_exact_active_capabilities(
+                    connection,
+                    lease.unit_id,
+                    exact_reuse_prerequisite_capabilities(receipt),
                 )
             elif isinstance(trusted_publication, _PreparationReceiptPublication):
                 # Rebuild the binding after the write transaction starts so a
@@ -2451,6 +2688,16 @@ class Queue:
                 "UPDATE work_units SET status = ? WHERE unit_id = ?",
                 (next_status.value, lease.unit_id),
             )
+            if isinstance(trusted_publication, _ExactReusePrerequisitePublication):
+                from tools.phase4_v2.equivalence.prerequisite import (
+                    validate_authenticated_exact_reuse_prerequisite,
+                )
+
+                # The re-read occurs after publication writes and before the
+                # SQLite commit. Rotation during publication therefore aborts.
+                validate_authenticated_exact_reuse_prerequisite(
+                    trusted_publication.receipt
+                )
             return FinishResult(
                 disposition=disposition,
                 unit_id=lease.unit_id,
@@ -2623,6 +2870,41 @@ class Queue:
             or expected_input_digest != envelope.receipt_sha256
         ):
             raise QueueConflictError("publication does not belong to the target inventory")
+
+    @staticmethod
+    def _validate_exact_reuse_prerequisite_publication(
+        lease: Lease,
+        publication: _ExactReusePrerequisitePublication,
+        *,
+        output_digest: str | None,
+        completion_revision: str | None,
+        expected_input_digest: str | None,
+    ) -> None:
+        from tools.phase4_v2.equivalence.prerequisite import (
+            AuthenticatedExactReusePrerequisite,
+            exact_reuse_prerequisite_completions,
+            validate_authenticated_exact_reuse_prerequisite,
+        )
+
+        if type(publication.receipt) is not AuthenticatedExactReusePrerequisite:
+            raise QueueConflictError("exact-reuse publication changed type")
+        receipt = validate_authenticated_exact_reuse_prerequisite(publication.receipt)
+        completion = next(
+            (
+                item
+                for item in exact_reuse_prerequisite_completions(receipt)
+                if item.parent_unit_id == lease.unit_id
+            ),
+            None,
+        )
+        if (
+            completion is None
+            or output_digest != completion.digest
+            or completion_revision != completion.revision
+            or expected_input_digest != receipt.receipt_sha256
+            or lease.input_digest != receipt.receipt_sha256
+        ):
+            raise QueueConflictError("publication does not belong to the exact-reuse prerequisite")
 
     @staticmethod
     def _validate_package_output_publication(
@@ -3536,11 +3818,22 @@ def _reserved_unit_kinds() -> dict[str, str]:
         PACKAGE_QUEUE_UNIT_KIND,
         PACKAGE_QUEUE_UNIT_PREFIX,
     )
+    from tools.phase4_v2.equivalence.prerequisite import (
+        EXACT_REUSE_DIRECT_AUDIT_QUEUE_KIND,
+        EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX,
+        EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND,
+        EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX,
+        EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND,
+        EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX,
+    )
 
     return {
         **_RESERVED_UNIT_KINDS,
         f"{INVENTORY_QUEUE_UNIT_PREFIX}:": INVENTORY_QUEUE_UNIT_KIND,
         f"{PACKAGE_QUEUE_UNIT_PREFIX}:": PACKAGE_QUEUE_UNIT_KIND,
+        f"{EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX}:": EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND,
+        f"{EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX}:": EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND,
+        f"{EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX}:": EXACT_REUSE_DIRECT_AUDIT_QUEUE_KIND,
     }
 
 
@@ -3587,7 +3880,54 @@ def _validate_reserved_materialization_source(
         preparation_capability_pins,
         preparation_queue_unit_id,
     )
+    from tools.phase4_v2.equivalence.prerequisite import (
+        EXACT_REUSE_DIRECT_AUDIT_QUEUE_KIND,
+        EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND,
+        EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND,
+        AuthenticatedExactReusePrerequisite,
+        exact_reuse_prerequisite_capabilities,
+        exact_reuse_prerequisite_completions,
+        exact_reuse_prerequisite_dependencies,
+        validate_authenticated_exact_reuse_prerequisite,
+    )
     from tools.phase4_v2.preflight.registry import ActivatedPreparationAuthority
+
+    if type(authentication) is AuthenticatedExactReusePrerequisite:
+        receipt = validate_authenticated_exact_reuse_prerequisite(authentication)
+        completion_kinds = dict(
+            zip(
+                exact_reuse_prerequisite_completions(receipt),
+                (
+                    EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND,
+                    EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND,
+                    EXACT_REUSE_DIRECT_AUDIT_QUEUE_KIND,
+                ),
+                strict=True,
+            )
+        )
+        completion = next(
+            (item for item in completion_kinds if item.parent_unit_id == unit_id), None
+        )
+        expected_capabilities = tuple(
+            CapabilityPin(item.name, item.revision, item.digest)
+            for item in exact_reuse_prerequisite_capabilities(receipt)
+        )
+        expected_dependencies = tuple(
+            CompletionDependencyPin(item.parent_unit_id, item.revision, item.digest)
+            for item in exact_reuse_prerequisite_dependencies(receipt)
+        )
+        if (
+            completion is None
+            or kind != completion_kinds[completion]
+            or input_digest != receipt.receipt_sha256
+            or tuple(sorted(capability_pins, key=lambda item: item.capability))
+            != tuple(sorted(expected_capabilities, key=lambda item: item.capability))
+            or tuple(sorted(dependency_pins, key=lambda item: item.parent_unit_id))
+            != tuple(sorted(expected_dependencies, key=lambda item: item.parent_unit_id))
+            or cluster_id is not None
+        ):
+            raise QueueConflictError("exact-reuse row differs from its signed prerequisite")
+        return
 
     if type(authentication) is AuthenticatedValidatorEnvelope:
         envelope = validate_authenticated_validator_envelope(authentication)
