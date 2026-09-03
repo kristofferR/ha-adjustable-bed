@@ -1864,7 +1864,7 @@ def test_pinned_ir_requires_exact_semantic_evidence_coverage(tmp_path: Path) -> 
     diagnostic = next(item for item in receipt.diagnostics if item.code == "PINNED_IR_INVALID")
     assert dict(diagnostic.context) == {
         "ir_code": "missing_evidence_binding",
-        "ir_path": "/actions/raise/@key",
+        "ir_path": "/actions/raise/summary",
     }
 
 
