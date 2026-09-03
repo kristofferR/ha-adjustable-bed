@@ -298,6 +298,7 @@ class RootProvenance:
     source_package_ref_id: str | None
     source_occurrence_identity_sha256: str | None
     source_validation_receipt_sha256: str | None
+    source_raw_receipt_sha256: str | None
     report_pointer: str
     evidence_anchor_ids: tuple[str, ...]
     blockers: tuple[str, ...] = ()
@@ -334,12 +335,18 @@ class RootProvenance:
             "root.source_validation_receipt_sha256",
             optional=True,
         )
+        source_raw_receipt = _sha256(
+            self.source_raw_receipt_sha256,
+            "root.source_raw_receipt_sha256",
+            optional=True,
+        )
         if self.route is Route.FULL_ANALYSIS:
             if (
                 semantic is None
                 or source is not None
                 or source_occurrence is None
                 or source_receipt is None
+                or source_raw_receipt is None
                 or source_package is None
                 or blockers
                 or not anchors
@@ -351,6 +358,7 @@ class RootProvenance:
                 or source is None
                 or source_occurrence is None
                 or source_receipt is None
+                or source_raw_receipt is None
                 or source_package is None
                 or blockers
                 or not anchors
@@ -362,6 +370,7 @@ class RootProvenance:
                 or source is not None
                 or source_occurrence is not None
                 or source_receipt is not None
+                or source_raw_receipt is not None
                 or source_package is not None
                 or not blockers
             ):
@@ -382,6 +391,7 @@ class RootProvenance:
             "source_package_ref_id": self.source_package_ref_id,
             "source_occurrence_identity_sha256": self.source_occurrence_identity_sha256,
             "source_validation_receipt_sha256": self.source_validation_receipt_sha256,
+            "source_raw_receipt_sha256": self.source_raw_receipt_sha256,
             "target_root_id": self.target_root_id,
         }
 
@@ -814,6 +824,7 @@ def _parse_root(raw: dict[str, object]) -> RootProvenance:
         source_validation_receipt_sha256=cast(
             str | None, raw["source_validation_receipt_sha256"]
         ),
+        source_raw_receipt_sha256=cast(str | None, raw["source_raw_receipt_sha256"]),
         report_pointer=cast(str, raw["report_pointer"]),
         evidence_anchor_ids=tuple(cast(list[str], raw["evidence_anchor_ids"])),
         blockers=tuple(cast(list[str], raw["blockers"])),

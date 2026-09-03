@@ -11,6 +11,7 @@ from unittest.mock import patch
 import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from jsonschema import Draft202012Validator
 
 import tools.phase4_v2.raw_source as raw_source_module
 from tests.phase4_v2_orchestration_testing import (
@@ -22,18 +23,31 @@ from tests.phase4_v2_orchestration_testing import (
 from tools.phase4_v2.equivalence import (
     ApplicationRoot,
     AuthenticatedTargetInventoryEnvelope,
+    ByteIdentityProof,
     ExtractorCapability,
+    LedgerDecision,
+    Route,
     TargetRootInventory,
     TargetRootOccurrence,
+    authenticated_validator_envelope_payload,
+    build_authenticated_raw_source_report_registry,
+    exact_reuse_provenance_payload,
+    exact_reuse_provenance_signing_bytes,
+    load_authenticated_exact_reuse_provenance,
     load_authenticated_target_inventory_envelope,
+    load_authenticated_validator_envelope,
     target_inventory_envelope_payload,
     target_inventory_signing_bytes,
+    validator_envelope_signing_bytes,
 )
+from tools.phase4_v2.ir import final_schema_document
 from tools.phase4_v2.raw_source import (
     AuthenticatedRawSourceCollection,
+    AuthenticatedRawSourceRegistry,
     RawSourceAnchor,
     RawSourceAuthenticationError,
     RawSourceMember,
+    RawSourceReauthenticationInput,
     authenticate_raw_source_collection,
     build_authenticated_raw_source_registry,
     canonical_scalar_sha256,
@@ -44,6 +58,7 @@ from tools.phase4_v2.raw_source import (
     reauthenticate_raw_source_registry,
     validate_authenticated_raw_source_collection,
 )
+from tools.phase4_v2.validator import derive_raw_source_validator_receipt
 
 
 def _digest(label: str) -> str:
@@ -218,6 +233,247 @@ def test_genuine_raw_source_genesis_reauthenticates(genesis: GenesisFixture) -> 
     assert restored.receipt_sha256 == genesis.collection.receipt_sha256
     assert restored.semantic_root_sha256 == genesis.payload["semantic_root_sha256"]
     assert restored.anchors[0].decoded_value == "synthetic fixture"
+
+
+def _raw_registry_inputs(
+    genesis: GenesisFixture,
+) -> tuple[
+    AuthenticatedRawSourceRegistry,
+    tuple[RawSourceReauthenticationInput, ...],
+]:
+    registry = build_authenticated_raw_source_registry(
+        (
+            (
+                genesis.envelope,
+                genesis.package.package_ref,
+                genesis.root,
+                genesis.package.preparation_receipt,
+                genesis.package.preparation_authority,
+                genesis.inventory,
+            ),
+        )
+    )
+    inputs = (
+        (
+            genesis.package.package_ref,
+            genesis.root,
+            genesis.package.preparation_receipt,
+            genesis.package.preparation_authority,
+            genesis.inventory,
+        ),
+    )
+    return registry, inputs
+
+
+def _enriched_envelope(genesis: GenesisFixture):
+    registry, inputs = _raw_registry_inputs(genesis)
+    receipt = derive_raw_source_validator_receipt(
+        genesis.package.source_envelope,
+        raw_source_registry=registry,
+        raw_source_inputs=inputs,
+    )
+    canonical = authenticated_validator_envelope_payload(
+        receipt,
+        genesis.trust.validator_authority,
+        signature=genesis.trust.validator_key.sign(
+            validator_envelope_signing_bytes(receipt, genesis.trust.validator_authority)
+        ).hex(),
+    )
+    return load_authenticated_validator_envelope(
+        canonical, authority=genesis.trust.validator_authority
+    )
+
+
+def test_signed_enriched_validator_report_closes_raw_genesis(
+    genesis: GenesisFixture,
+) -> None:
+    registry, inputs = _raw_registry_inputs(genesis)
+    enriched = _enriched_envelope(genesis)
+    source_registry = build_authenticated_raw_source_report_registry(
+        ((genesis.package.package_ref, enriched),),
+        raw_source_registry=registry,
+        raw_source_inputs=inputs,
+    )
+    source = source_registry.entries[0]
+    assert source.report.raw_source_receipt_sha256s == (
+        genesis.collection.receipt_sha256,
+    )
+    assert source.report.validated_root_evidence[0].semantic_root_sha256 == (
+        genesis.collection.semantic_root_sha256
+    )
+    assert source.raw_sources == (genesis.collection,)
+    final_schema = final_schema_document()
+    Draft202012Validator(
+        {
+            "$schema": final_schema["$schema"],
+            "$ref": "#/$defs/validated_report",
+            "$defs": final_schema["$defs"],
+        }
+    ).validate(source.report.to_data())
+
+
+def test_v2_exact_reuse_provenance_binds_raw_receipt(genesis: GenesisFixture) -> None:
+    registry, inputs = _raw_registry_inputs(genesis)
+    enriched = _enriched_envelope(genesis)
+    source_registry = build_authenticated_raw_source_report_registry(
+        ((genesis.package.package_ref, enriched),),
+        raw_source_registry=registry,
+        raw_source_inputs=inputs,
+    )
+    source = source_registry.entries[0]
+    source_root = source.report.validated_root_evidence[0]
+    target_root_id = _digest("raw-v2-target-root")
+    left_root, right_root = sorted((source_root.target_root_id, target_root_id))
+    proof = ByteIdentityProof(
+        left_root_id=left_root,
+        right_root_id=right_root,
+        root_kind="DEX",
+        extractor_capability_id=_digest("raw-v2-extractor"),
+        content_root_sha256=_digest("raw-v2-content"),
+        inventory_sha256=_digest("raw-v2-inventory"),
+        dependency_root_sha256=_digest("raw-v2-dependencies"),
+        inventory_acceptance_sha256=_digest("raw-v2-proof-version"),
+    )
+    decision = LedgerDecision(
+        target_root_id,
+        Route.EXACT_REUSE,
+        "raw_v2_exact",
+        _digest("raw-v2-local"),
+        source_root.target_root_id,
+        proof.content_id,
+        source_root.target_root_id,
+        genesis.collection.receipt_sha256,
+    )
+    kwargs = {
+        "authority": genesis.trust.validator_authority,
+        "source": source,
+        "source_root": source_root,
+        "target_root_id": target_root_id,
+        "target_occurrence_identity_sha256": _digest("raw-v2-target-occurrence"),
+        "byte_identity_proof_id": proof.content_id,
+        "byte_identity_proof": proof,
+        "ledger_decision": decision,
+        "ledger_decision_completion_sha256": decision.content_id,
+        "root_plan_sha256": _digest("raw-v2-root-plan"),
+    }
+    unsigned = exact_reuse_provenance_payload(
+        **kwargs, signature="0" * 128  # type: ignore[arg-type]
+    )
+    payload = json.loads(unsigned)["payload"]
+    canonical = exact_reuse_provenance_payload(
+        **kwargs,  # type: ignore[arg-type]
+        signature=genesis.trust.validator_key.sign(
+            exact_reuse_provenance_signing_bytes(payload)
+        ).hex(),
+    )
+    restored = load_authenticated_exact_reuse_provenance(
+        canonical,
+        authority=genesis.trust.validator_authority,
+        registry=source_registry,
+    )
+    assert restored.source_raw_receipt_sha256 == genesis.collection.receipt_sha256
+    assert restored.source_validation_receipt_sha256 == enriched.receipt_sha256
+    transplanted = json.loads(canonical)
+    transplanted["payload"]["target_root_id"] = _digest("transplanted-target")
+    with pytest.raises(ValueError, match="signature"):
+        load_authenticated_exact_reuse_provenance(
+            json.dumps(transplanted, sort_keys=True, separators=(",", ":")).encode(),
+            authority=genesis.trust.validator_authority,
+            registry=source_registry,
+        )
+    forged = json.loads(canonical)
+    forged["payload"]["ledger_decision"]["target_root_id"] = _digest(
+        "forged-decision-target"
+    )
+    forged["signature"] = genesis.trust.validator_key.sign(
+        exact_reuse_provenance_signing_bytes(forged["payload"])
+    ).hex()
+    with pytest.raises(ValueError, match="reproduce"):
+        load_authenticated_exact_reuse_provenance(
+            json.dumps(forged, sort_keys=True, separators=(",", ":")).encode(),
+            authority=genesis.trust.validator_authority,
+            registry=source_registry,
+        )
+    unrelated_left, unrelated_right = sorted(
+        (_digest("unrelated-a"), _digest("unrelated-b"))
+    )
+    unrelated_proof = ByteIdentityProof(
+        left_root_id=unrelated_left,
+        right_root_id=unrelated_right,
+        root_kind="DEX",
+        extractor_capability_id=_digest("unrelated-extractor"),
+        content_root_sha256=_digest("unrelated-content"),
+        inventory_sha256=_digest("unrelated-inventory"),
+        dependency_root_sha256=_digest("unrelated-dependencies"),
+        inventory_acceptance_sha256=_digest("unrelated-proof-version"),
+    )
+    unrelated_decision = LedgerDecision(
+        target_root_id,
+        Route.EXACT_REUSE,
+        "raw_v2_unrelated",
+        _digest("raw-v2-local"),
+        source_root.target_root_id,
+        unrelated_proof.content_id,
+        source_root.target_root_id,
+        genesis.collection.receipt_sha256,
+    )
+    with pytest.raises(ValueError, match="do not close"):
+        exact_reuse_provenance_payload(
+            authority=genesis.trust.validator_authority,
+            source=source,
+            source_root=source_root,
+            target_root_id=target_root_id,
+            target_occurrence_identity_sha256=_digest("raw-v2-target-occurrence"),
+            byte_identity_proof_id=unrelated_proof.content_id,
+            byte_identity_proof=unrelated_proof,
+            ledger_decision=unrelated_decision,
+            ledger_decision_completion_sha256=unrelated_decision.content_id,
+            root_plan_sha256=_digest("raw-v2-root-plan"),
+            signature="0" * 128,
+        )
+
+
+def test_raw_registry_cannot_cross_same_artifact_validator_envelopes(
+    genesis: GenesisFixture,
+) -> None:
+    registry, inputs = _raw_registry_inputs(genesis)
+    enriched = _enriched_envelope(genesis)
+    with pytest.raises(ValueError, match="exactly cover this package"):
+        derive_raw_source_validator_receipt(
+            enriched,
+            raw_source_registry=registry,
+            raw_source_inputs=inputs,
+        )
+
+
+def test_raw_registry_enforces_aggregate_anchor_limit(
+    genesis: GenesisFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(raw_source_module, "_MAX_REGISTRY_ANCHORS", 1)
+    entry = (
+        genesis.envelope,
+        genesis.package.package_ref,
+        genesis.root,
+        genesis.package.preparation_receipt,
+        genesis.package.preparation_authority,
+        genesis.inventory,
+    )
+    with pytest.raises(RawSourceAuthenticationError, match="aggregate anchor"):
+        build_authenticated_raw_source_registry((entry, entry))
+
+
+def test_raw_registry_reauthentication_bounds_inputs(
+    genesis: GenesisFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    registry, inputs = _raw_registry_inputs(genesis)
+    monkeypatch.setattr(raw_source_module, "_MAX_REGISTRY_COLLECTIONS", 1)
+    with pytest.raises(RawSourceAuthenticationError, match="exact immutable"):
+        reauthenticate_raw_source_registry(registry, inputs=inputs * 2)
+    with pytest.raises(RawSourceAuthenticationError, match="five-tuples"):
+        reauthenticate_raw_source_registry(
+            registry,
+            inputs=((genesis.package.package_ref,),),  # type: ignore[arg-type]
+        )
 
 
 def test_raw_source_forged_signature_fails(genesis: GenesisFixture) -> None:

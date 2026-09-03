@@ -112,11 +112,13 @@ class ValidationReceipt:
     validated_evidence_members: tuple[EvidenceMemberAttestation, ...] = ()
     validated_evidence_anchors: tuple[EvidenceAnchorAttestation, ...] = ()
     validated_root_evidence: tuple[ValidatedRootEvidenceAttestation, ...] = ()
+    raw_source_binding_revision: str | None = None
+    raw_source_receipt_sha256s: tuple[str, ...] = ()
     validation_receipt_sha256: str | None = None
 
     def to_dict(self) -> dict[str, object]:
         """Return a canonical JSON-compatible representation."""
-        return {
+        result: dict[str, object] = {
             "accepted": self.accepted,
             "bundle_sha256": self.bundle_sha256,
             "contract_revision": self.contract_revision,
@@ -143,6 +145,10 @@ class ValidationReceipt:
             "validated_root_evidence": [item.to_dict() for item in self.validated_root_evidence],
             "validator_revision": self.validator_revision,
         }
+        if self.raw_source_receipt_sha256s:
+            result["raw_source_binding_revision"] = self.raw_source_binding_revision
+            result["raw_source_receipt_sha256s"] = list(self.raw_source_receipt_sha256s)
+        return result
 
     def to_json(self) -> str:
         """Return the deterministic single-line receipt."""
@@ -777,6 +783,7 @@ def _compact_receipt(receipt: ValidationReceipt) -> ValidationReceipt:
         validated_evidence_members=(),
         validated_evidence_anchors=(),
         validated_root_evidence=(),
+        raw_source_receipt_sha256s=(),
         validation_receipt_sha256=None,
     )
     compact_payload = _canonical_receipt_bytes(compact.identity_payload())

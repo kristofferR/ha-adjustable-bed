@@ -18,6 +18,7 @@ PROVENANCE_IDENTITY_REVISION = "phase4-provenance-identity-v4"
 SUPPORTED_VALIDATOR_REVISION = "phase4-v2-bundle-validator-v5"
 SUPPORTED_CONTRACT_REVISION = "phase4-v2-validation-input-v4"
 BOUND_VALIDATION_PROFILE = "BOUND_V4"
+RAW_SOURCE_VALIDATION_BINDING_REVISION = "phase4-v2-raw-source-validator-binding-v1"
 _DEPENDENCY_NAMES = ("corpus", "evidence_lineage", "ir", "preflight", "schema")
 _ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]*$")
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
@@ -191,9 +192,11 @@ class ValidatedReport:
     validated_evidence_members: tuple[AttestedEvidenceMember, ...]
     validated_evidence_anchors: tuple[AttestedEvidenceAnchor, ...]
     validated_root_evidence: tuple[AttestedRootEvidence, ...]
+    raw_source_binding_revision: str | None = None
+    raw_source_receipt_sha256s: tuple[str, ...] = ()
 
     def to_data(self) -> dict[str, object]:
-        return {
+        result: dict[str, object] = {
             "bundle_sha256": self.bundle_sha256,
             "contract_revision": self.contract_revision,
             "declared_members": self.declared_members,
@@ -213,6 +216,12 @@ class ValidatedReport:
             "validation_receipt_sha256": self.validation_receipt_sha256,
             "validator_revision": self.validator_revision,
         }
+        if self.raw_source_receipt_sha256s:
+            result["raw_source_binding_revision"] = self.raw_source_binding_revision
+            result["raw_source_receipt_sha256s"] = list(
+                self.raw_source_receipt_sha256s
+            )
+        return result
 
 
 @dataclass(frozen=True, slots=True)
@@ -1134,7 +1143,20 @@ def _bind_receipt_data(
         "validation_receipt_sha256",
         "validator_revision",
     }
-    _expect_keys(receipt, path="$.receipt", required=required)
+    _expect_keys(
+        receipt,
+        path="$.receipt",
+        required=required,
+        optional={"raw_source_binding_revision", "raw_source_receipt_sha256s"},
+    )
+    if ("raw_source_binding_revision" in receipt) != (
+        "raw_source_receipt_sha256s" in receipt
+    ):
+        _fail(
+            "incomplete_raw_source_binding",
+            "$.receipt",
+            "raw-source binding revision and receipt set must appear together",
+        )
     if not _expect_bool(receipt["accepted"], "$.receipt.accepted"):
         _fail("validator_rejected", "$.receipt.accepted", "validator receipt was not accepted")
     if not _expect_bool(receipt["source_unchanged"], "$.receipt.source_unchanged"):
@@ -1217,8 +1239,7 @@ def _bind_receipt_data(
             "receipt identity does not match caller trust",
         )
 
-    report = _parse_validated_report(
-        {
+    report_data: dict[str, object] = {
             "bundle_sha256": receipt["bundle_sha256"],
             "contract_revision": contract_revision,
             "declared_members": declared,
@@ -1233,7 +1254,16 @@ def _bind_receipt_data(
             "validation_profile": profile,
             "validation_receipt_sha256": embedded_receipt_sha256,
             "validator_revision": validator_revision,
-        },
+        }
+    if "raw_source_receipt_sha256s" in receipt:
+        report_data["raw_source_binding_revision"] = receipt[
+            "raw_source_binding_revision"
+        ]
+        report_data["raw_source_receipt_sha256s"] = receipt[
+            "raw_source_receipt_sha256s"
+        ]
+    report = _parse_validated_report(
+        report_data,
         "$.receipt",
     )
     checked = _expect_integer(
@@ -1298,11 +1328,11 @@ def _parse_attested_anchor(raw: object, path: str) -> AttestedEvidenceAnchor:
     pointer = _expect_string(value["ir_pointer"], f"{path}.ir_pointer")
     _validate_json_pointer(pointer, f"{path}.ir_pointer", allow_root=False)
     representation = _expect_string(value["representation"], f"{path}.representation")
-    if representation not in {"hex", "utf8"}:
+    if representation not in {"hex", "json-scalar", "utf8"}:
         _fail(
             "unknown_evidence_representation",
             f"{path}.representation",
-            "representation must be 'hex' or 'utf8'",
+            "representation must be 'hex', 'json-scalar', or 'utf8'",
         )
     return AttestedEvidenceAnchor(
         id=_expect_nonempty_string(value["id"], f"{path}.id", max_length=256),
@@ -1449,6 +1479,7 @@ def _parse_validated_report(raw: object, path: str) -> ValidatedReport:
             "validated_evidence_anchors",
             "validated_root_evidence",
         },
+        optional={"raw_source_binding_revision", "raw_source_receipt_sha256s"},
     )
     report = ValidatedReport(
         validator_revision=_expect_nonempty_string(
@@ -1491,7 +1522,37 @@ def _parse_validated_report(raw: object, path: str) -> ValidatedReport:
         validated_root_evidence=_parse_attested_root_evidence(
             value["validated_root_evidence"], f"{path}.validated_root_evidence"
         ),
+        raw_source_binding_revision=(
+            _expect_nonempty_string(
+                value["raw_source_binding_revision"],
+                f"{path}.raw_source_binding_revision",
+                max_length=256,
+            )
+            if "raw_source_binding_revision" in value
+            else None
+        ),
+        raw_source_receipt_sha256s=_parse_raw_source_receipt_digests(
+            value.get("raw_source_receipt_sha256s", []),
+            f"{path}.raw_source_receipt_sha256s",
+        ),
     )
+    if (report.raw_source_binding_revision is None) != (
+        not report.raw_source_receipt_sha256s
+    ):
+        _fail(
+            "incomplete_raw_source_binding",
+            path,
+            "raw-source binding revision and receipt set must appear together",
+        )
+    if (
+        report.raw_source_binding_revision is not None
+        and report.raw_source_binding_revision != RAW_SOURCE_VALIDATION_BINDING_REVISION
+    ):
+        _fail(
+            "unsupported_raw_source_binding_revision",
+            f"{path}.raw_source_binding_revision",
+            "raw-source binding revision is unsupported",
+        )
     _validate_report_attestations(report, path)
     return report
 
@@ -1593,7 +1654,7 @@ def _validate_report_attestations(report: ValidatedReport, path: str) -> None:
 
 
 def _validated_report_identity_input(report: ValidatedReport) -> dict[str, object]:
-    return {
+    result: dict[str, object] = {
         "accepted": True,
         "bundle_sha256": report.bundle_sha256,
         "contract_revision": report.contract_revision,
@@ -1615,6 +1676,33 @@ def _validated_report_identity_input(report: ValidatedReport) -> dict[str, objec
         "validation_profile": report.validation_profile,
         "validator_revision": report.validator_revision,
     }
+    if report.raw_source_receipt_sha256s:
+        result["raw_source_binding_revision"] = report.raw_source_binding_revision
+        result["raw_source_receipt_sha256s"] = list(
+            report.raw_source_receipt_sha256s
+        )
+    return result
+
+
+def _parse_raw_source_receipt_digests(raw: object, path: str) -> tuple[str, ...]:
+    values = _expect_array(raw, path)
+    if len(values) > _MAX_PROVENANCE_REFERENCES:
+        _fail(
+            "raw_source_receipt_set_too_large",
+            path,
+            "raw-source receipt set exceeds its bounded limit",
+        )
+    result = tuple(
+        _expect_sha256(item, f"{path}[{index}]")
+        for index, item in enumerate(values)
+    )
+    if result != tuple(sorted(set(result))):
+        _fail(
+            "noncanonical_raw_source_receipts",
+            path,
+            "raw-source receipts must be sorted and unique",
+        )
+    return result
 
 
 def _parse_source_package(raw: object, path: str) -> SourcePackage:
@@ -1671,11 +1759,11 @@ def _parse_evidence_anchor(raw: object, path: str) -> EvidenceAnchor:
     pointer = _expect_string(value["ir_pointer"], f"{path}.ir_pointer")
     _validate_json_pointer(pointer, f"{path}.ir_pointer", allow_root=False)
     representation = _expect_string(value["representation"], f"{path}.representation")
-    if representation not in {"hex", "utf8"}:
+    if representation not in {"hex", "json-scalar", "utf8"}:
         _fail(
             "unknown_evidence_representation",
             f"{path}.representation",
-            "representation must be 'hex' or 'utf8'",
+            "representation must be 'hex', 'json-scalar', or 'utf8'",
         )
     return EvidenceAnchor(
         id=_expect_nonempty_string(value["id"], f"{path}.id", max_length=256),

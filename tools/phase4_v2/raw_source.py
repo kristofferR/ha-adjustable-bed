@@ -29,6 +29,14 @@ if TYPE_CHECKING:
     from tools.phase4_v2.equivalence.core import ApplicationRoot, FrozenPackageRef
     from tools.phase4_v2.equivalence.inventory import AuthenticatedTargetInventoryEnvelope
 
+type RawSourceReauthenticationInput = tuple[
+    FrozenPackageRef,
+    ApplicationRoot,
+    PreparationReceipt,
+    ActivatedPreparationAuthority,
+    AuthenticatedTargetInventoryEnvelope,
+]
+
 RAW_SOURCE_AUTHORITY_SCHEMA = "phase4-v2-raw-source-authority-v1"
 RAW_SOURCE_ENVELOPE_SCHEMA = "phase4-v2-authenticated-raw-source-v1"
 RAW_SOURCE_COLLECTION_REVISION = "phase4-v2-raw-source-collection-v1"
@@ -45,6 +53,11 @@ _MAX_RAW_ANCHOR_BYTES = 16 * 1024**2
 _MAX_RAW_BYTES = 64 * 1024**2
 _MAX_PATH_BYTES = 8_192
 _MAX_POINTER_BYTES = 8_192
+_MAX_REGISTRY_COLLECTIONS = 4_096
+_MAX_REGISTRY_ENVELOPE_BYTES = 64 * 1024**2
+_MAX_REGISTRY_MEMBERS = 4_096
+_MAX_REGISTRY_ANCHORS = 4_096
+_MAX_REGISTRY_RAW_BYTES = 64 * 1024**2
 
 type JsonScalar = str | int | bool
 
@@ -945,14 +958,27 @@ def build_authenticated_raw_source_registry(
 ) -> AuthenticatedRawSourceRegistry:
     """Build an exact immutable registry, reloading authority for every entry."""
 
-    if type(entries) is not tuple or not entries or len(entries) > _MAX_MEMBERS:
+    if (
+        type(entries) is not tuple
+        or not entries
+        or len(entries) > _MAX_REGISTRY_COLLECTIONS
+    ):
         _fail("raw-source registry must be a bounded non-empty tuple")
     authority = load_protected_raw_source_authority()
     accepted: list[AuthenticatedRawSourceCollection] = []
+    envelope_bytes = 0
+    member_count = 0
+    anchor_count = 0
+    raw_bytes = 0
     for entry in entries:
         if type(entry) is not tuple or len(entry) != 6:
             _fail("raw-source registry entries must be exact six-tuples")
         envelope, package_ref, root, receipt, prep_authority, inventory = entry
+        if type(envelope) is not bytes:
+            _fail("raw-source registry envelopes must be exact bytes")
+        envelope_bytes += len(envelope)
+        if envelope_bytes > _MAX_REGISTRY_ENVELOPE_BYTES:
+            _fail("raw-source registry exceeds its aggregate envelope byte limit")
         authenticated = authenticate_raw_source_collection(
             envelope,
             package_ref=package_ref,
@@ -963,6 +989,15 @@ def build_authenticated_raw_source_registry(
         )
         if authenticated.authority != authority:
             _fail("raw-source registry spans multiple authority activations")
+        member_count += len(authenticated.members)
+        anchor_count += len(authenticated.anchors)
+        raw_bytes += sum(len(anchor.raw_bytes) for anchor in authenticated.anchors)
+        if member_count > _MAX_REGISTRY_MEMBERS:
+            _fail("raw-source registry exceeds its aggregate member limit")
+        if anchor_count > _MAX_REGISTRY_ANCHORS:
+            _fail("raw-source registry exceeds its aggregate anchor limit")
+        if raw_bytes > _MAX_REGISTRY_RAW_BYTES:
+            _fail("raw-source registry exceeds its aggregate raw byte limit")
         accepted.append(authenticated)
     accepted.sort(key=lambda item: (item.package_ref_id, item.occurrence_identity_sha256))
     if len({item.receipt_sha256 for item in accepted}) != len(accepted):
@@ -986,20 +1021,22 @@ def build_authenticated_raw_source_registry(
 def reauthenticate_raw_source_registry(
     registry: AuthenticatedRawSourceRegistry,
     *,
-    inputs: tuple[
-        tuple[
-            FrozenPackageRef,
-            ApplicationRoot,
-            PreparationReceipt,
-            ActivatedPreparationAuthority,
-            AuthenticatedTargetInventoryEnvelope,
-        ], ...
-    ],
+    inputs: tuple[RawSourceReauthenticationInput, ...],
 ) -> AuthenticatedRawSourceRegistry:
     """Reauthenticate retained envelope bytes at a later validator/IR boundary."""
 
-    if type(registry) is not AuthenticatedRawSourceRegistry or type(inputs) is not tuple:
-        _fail("raw-source reauthentication requires exact immutable records")
+    if (
+        type(registry) is not AuthenticatedRawSourceRegistry
+        or type(registry.entries) is not tuple
+        or not registry.entries
+        or len(registry.entries) > _MAX_REGISTRY_COLLECTIONS
+        or type(inputs) is not tuple
+        or not inputs
+        or len(inputs) > _MAX_REGISTRY_COLLECTIONS
+    ):
+        _fail("raw-source reauthentication inputs are missing or not exact immutable records")
+    if any(type(item) is not tuple or len(item) != 5 for item in inputs):
+        _fail("raw-source reauthentication inputs must be exact five-tuples")
     by_identity = {
         (package.content_id, root.content_id): (
             package,

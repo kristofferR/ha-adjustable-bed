@@ -87,6 +87,9 @@ def root_for(package: FrozenPackageRef, route: Route = Route.FULL_ANALYSIS) -> R
         source_validation_receipt_sha256=(
             None if route is Route.BLOCKED else sha(package.package_name + ":source-receipt")
         ),
+        source_raw_receipt_sha256=(
+            None if route is Route.BLOCKED else sha(package.package_name + ":raw-source-receipt")
+        ),
         report_pointer="/roots/0",
         evidence_anchor_ids=("conflict-anchor", "leaf-anchor", "root-anchor")
         if route is not Route.BLOCKED

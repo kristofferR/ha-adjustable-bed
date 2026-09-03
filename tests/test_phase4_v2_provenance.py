@@ -19,7 +19,6 @@ from tools.phase4_v2.equivalence import (
     authenticated_validator_envelope_payload,
     build_authenticated_source_report_registry,
     exact_reuse_provenance_payload,
-    exact_reuse_provenance_signing_bytes,
     frozen_package_ref_from_validator_envelope,
     load_activated_validator_authority,
     load_authenticated_exact_reuse_provenance,
@@ -125,7 +124,9 @@ def test_registry_retains_exact_signed_report_and_root_completion(
     assert completion.digest == source.report.validation_receipt_sha256
 
 
-def test_exact_reuse_preimage_is_signed_and_target_bound(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_legacy_exact_reuse_without_raw_source_is_rejected(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     key, authority, registry = _source(monkeypatch)
     source = registry.entries[0]
     root = source.report.validated_root_evidence[0]
@@ -160,37 +161,8 @@ def test_exact_reuse_preimage_is_signed_and_target_bound(monkeypatch: pytest.Mon
         "ledger_decision_completion_sha256": decision.content_id,
         "root_plan_sha256": SHA[5],
     }
-    unsigned = exact_reuse_provenance_payload(**kwargs, signature="0" * 128)  # type: ignore[arg-type]
-    payload = json.loads(unsigned)["payload"]
-    signed = exact_reuse_provenance_payload(
-        **kwargs,  # type: ignore[arg-type]
-        signature=key.sign(exact_reuse_provenance_signing_bytes(payload)).hex(),
-    )
-    authenticated = load_authenticated_exact_reuse_provenance(
-        signed, authority=authority, registry=registry
-    )
-    assert authenticated.source_occurrence_identity_sha256 == root.target_occurrence_identity_sha256
-    assert authenticated.byte_identity_proof == proof
-    assert authenticated.ledger_decision == decision
-    transplanted = json.loads(signed)
-    transplanted["payload"]["target_root_id"] = SHA[2]
-    with pytest.raises(ProvenanceAuthenticationError, match="signature"):
-        load_authenticated_exact_reuse_provenance(
-            json.dumps(transplanted, sort_keys=True, separators=(",", ":")).encode(),
-            authority=authority,
-            registry=registry,
-        )
-    forged = json.loads(signed)
-    forged["payload"]["ledger_decision"]["target_root_id"] = SHA[2]
-    forged["signature"] = key.sign(
-        exact_reuse_provenance_signing_bytes(forged["payload"])
-    ).hex()
-    with pytest.raises(ProvenanceAuthenticationError, match="reproduce"):
-        load_authenticated_exact_reuse_provenance(
-            json.dumps(forged, sort_keys=True, separators=(",", ":")).encode(),
-            authority=authority,
-            registry=registry,
-        )
+    with pytest.raises(ProvenanceAuthenticationError, match="raw-source receipt"):
+        exact_reuse_provenance_payload(**kwargs, signature="0" * 128)  # type: ignore[arg-type]
 
 
 def test_exact_reuse_rejects_an_unrelated_byte_identity_proof(
@@ -212,7 +184,7 @@ def test_exact_reuse_rejects_an_unrelated_byte_identity_proof(
         root.target_root_id,
         source.report.validation_receipt_sha256,
     )
-    with pytest.raises(ProvenanceAuthenticationError, match="do not close"):
+    with pytest.raises(ProvenanceAuthenticationError, match="raw-source receipt"):
         exact_reuse_provenance_payload(
             authority=authority,
             source=source,

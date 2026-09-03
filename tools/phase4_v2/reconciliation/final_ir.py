@@ -229,11 +229,13 @@ def derive_authenticated_final_ir_package_surface(
                 raise ReconciliationError("authenticated evidence member differs from final IR")
             member_keys[member.member] = matches[0]
         root_anchor_keys: list[str] = []
+        raw_anchors = {item.id: item for item in binding.raw_source_anchors}
         for anchor in binding.attested_evidence_anchors:
             try:
                 anchor_key = anchor_keys_by_id[anchor.id]
                 ir_anchor = anchors[anchor_key]
                 member_key = member_keys[anchor.member]
+                raw_anchor = raw_anchors[anchor.id]
             except KeyError as error:
                 raise ReconciliationError("authenticated root anchor is absent from final IR") from error
             if (
@@ -246,6 +248,13 @@ def derive_authenticated_final_ir_package_surface(
                 or ir_anchor.value_sha256 != anchor.value_sha256
             ):
                 raise ReconciliationError("authenticated root anchor metadata differs from final IR")
+            if (
+                anchor.ir_pointer != raw_anchor.source_ir_pointer
+                or anchor.value_sha256 != raw_anchor.value_sha256
+            ):
+                raise ReconciliationError(
+                    "validator anchor does not exactly preserve its raw-source value"
+                )
             if anchor_key in used_anchor_keys:
                 raise ReconciliationError("final IR evidence anchors are assigned to multiple roots")
             used_anchor_keys.add(anchor_key)
@@ -266,6 +275,7 @@ def derive_authenticated_final_ir_package_surface(
                 source_package_ref_id=binding.source_package_ref_id,
                 source_occurrence_identity_sha256=binding.source_occurrence_identity_sha256,
                 source_validation_receipt_sha256=binding.source_validation_receipt_sha256,
+                source_raw_receipt_sha256=binding.source_raw_receipt_sha256,
                 report_pointer=f"/authoritative_root_results/{all_result_locations[location_key]}",
                 evidence_anchor_ids=tuple(sorted(root_anchor_keys)),
             )

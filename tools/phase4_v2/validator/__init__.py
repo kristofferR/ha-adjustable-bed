@@ -27,6 +27,11 @@ from .lineage import (
     TrustedProducer,
     bind_evidence_lineage,
 )
+from .raw_source import (
+    RAW_SOURCE_VALIDATION_BINDING_REVISION,
+    RawSourceValidationError,
+    derive_raw_source_validator_receipt,
+)
 
 __all__ = [
     "VALIDATOR_REVISION",
@@ -44,6 +49,9 @@ __all__ = [
     "VALIDATION_INPUT",
     "load_json_strict",
     "validate_report_bundle",
+    "RawSourceValidationError",
+    "RAW_SOURCE_VALIDATION_BINDING_REVISION",
+    "derive_raw_source_validator_receipt",
     "LINEAGE_SCHEMA_REVISION",
     "EvidenceLineageManifest",
     "EvidenceLineageTrust",
