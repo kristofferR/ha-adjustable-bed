@@ -3,14 +3,19 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import sqlite3
 from contextlib import closing
 from dataclasses import replace
 from pathlib import Path
 
 import pytest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+import tools.phase4_v2.orchestration.completion as stage_completion
 from tools.phase4_v2.orchestration import (
+    STAGE_AUTHORITY_REVISION,
     ContextExit,
     FollowUpAction,
     LaunchRequest,
@@ -41,6 +46,41 @@ def _digest(value: str) -> str:
     return hashlib.sha256(value.encode()).hexdigest()
 
 
+def _canonical(value: object) -> bytes:
+    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+
+
+_AUTHORITY_KEYS: dict[str, Ed25519PrivateKey] = {}
+_AUTHORITY_DOCUMENTS: dict[str, bytes] = {}
+
+
+@pytest.fixture(autouse=True)
+def _protected_stage_authorities(monkeypatch: pytest.MonkeyPatch) -> None:
+    _AUTHORITY_KEYS.clear()
+    _AUTHORITY_DOCUMENTS.clear()
+    config: dict[str, tuple[str, int]] = {}
+    for stage in ("audit", "reconciliation", "implementation", "publication"):
+        key = Ed25519PrivateKey.from_private_bytes(
+            hashlib.sha256(f"synthetic-stage-key:{stage}".encode()).digest()
+        )
+        public = key.public_key().public_bytes(
+            serialization.Encoding.Raw, serialization.PublicFormat.Raw
+        )
+        document = _canonical(
+            {
+                "authority_id": f"synthetic-{stage}",
+                "generation": 1,
+                "public_key": public.hex(),
+                "revision": STAGE_AUTHORITY_REVISION,
+                "stage": stage,
+            }
+        )
+        _AUTHORITY_KEYS[stage] = key
+        _AUTHORITY_DOCUMENTS[stage] = document
+        config[stage] = (hashlib.sha256(b"phase4-v2:stage-authority\0" + document).hexdigest(), 1)
+    monkeypatch.setattr(stage_completion, "_load_stage_authority_config", lambda: config)
+
+
 def _enqueue_stage(
     queue: Queue,
     unit_id: str,
@@ -61,13 +101,61 @@ def _enqueue_stage(
 def _accept(queue: Queue, lease: Lease, marker: str) -> None:
     unit = next(item for item in queue.snapshot().units if item.unit_id == lease.unit_id)
     assert unit.cluster_id is not None
-    queue._finish_trusted_orchestration_stage(
-        lease,
-        kind=unit.kind,
-        cluster_id=unit.cluster_id,
-        expected_input_digest=lease.input_digest,
-        output_digest=_digest(f"output:{marker}"),
-        completion_revision="orchestration-test-v1",
+    stage = unit.kind.rsplit("-", 1)[-1]
+    authority = stage_completion.load_stage_authority(_AUTHORITY_DOCUMENTS[stage])
+    common: dict[str, object] = {
+        "accepted": True,
+        "authority_sha256": authority.authority_sha256,
+        "cluster_id": unit.cluster_id,
+        "diagnostics": [],
+        "graph_sha256": _digest(f"graph:{marker}"),
+        "stage": stage,
+        "stage_input_sha256": lease.input_digest,
+    }
+    if stage == "audit":
+        payload = {
+            **common,
+            "analysis_completion_revision": "test-v1",
+            "analysis_completion_sha256": _digest("analysis"),
+            "package_ref_id": _digest(marker),
+            "revision": stage_completion.PACKAGE_AUDIT_COMPLETION_REVISION,
+        }
+    elif stage == "reconciliation":
+        payload = {
+            **common,
+            "package_audit_receipts": [],
+            "reconciliation_result_sha256": _digest(marker),
+            "completeness_receipt_sha256": _digest("complete"),
+            "disposition_ledger_sha256": _digest("ledger"),
+            "revision": stage_completion.CLUSTER_RECONCILIATION_COMPLETION_REVISION,
+        }
+    elif stage == "implementation":
+        payload = {
+            **common,
+            "reconciliation_receipt_sha256": _digest("reconciliation"),
+            "disposition_ledger_sha256": _digest("ledger"),
+            "implementation_output_sha256": _digest(marker),
+            "revision": stage_completion.CLUSTER_IMPLEMENTATION_COMPLETION_REVISION,
+        }
+    else:
+        payload = {
+            **common,
+            "implementation_receipt_sha256": _digest("implementation"),
+            "queue_generation_sha256": queue.snapshot().generation_id,
+            "document_set_sha256": _digest("documents"),
+            "publication_config_sha256": _digest("config"),
+            "before_revision": "a" * 40,
+            "after_revision": "a" * 40,
+            "paths": ["issues/436.md"],
+            "changed": False,
+            "revision": stage_completion.TRACKER_PUBLICATION_COMPLETION_REVISION,
+        }
+    signing = f"phase4-v2:signed-stage-receipt:{stage}".encode() + b"\0" + _canonical(payload)
+    canonical_receipt = _canonical(
+        {"payload": payload, "signature": _AUTHORITY_KEYS[stage].sign(signing).hex()}
+    )
+    queue.finish_authenticated_orchestration_stage(
+        lease, authority=authority, canonical_receipt=canonical_receipt
     )
 
 

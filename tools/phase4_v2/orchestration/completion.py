@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import sqlite3
+import stat
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
@@ -18,6 +20,7 @@ from tools.phase4_v2.queue import (
     ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
     ORCHESTRATION_PACKAGE_AUDIT_KIND,
     ORCHESTRATION_TRACKER_PUBLICATION_KIND,
+    CapabilityPin,
     CompletionDependencyPin,
     FanoutPublishReceipt,
     InputCheckedFinishResult,
@@ -62,30 +65,38 @@ class ActivatedStageAuthority:
     public_key: str
     canonical_bytes: bytes
     authority_sha256: str
+    generation: int
 
     def __init__(self) -> None:
         raise ValueError("stage authorities must be loaded from a pinned activation")
 
 
-def load_stage_authority(
-    canonical_bytes: bytes,
-    *,
-    expected_sha256: str,
-    expected_stage: str,
+def load_stage_authority(canonical_bytes: bytes) -> ActivatedStageAuthority:
+    """Activate canonical authority bytes against deployment-owned protected pins."""
+
+    return _load_stage_authority_with_config(canonical_bytes, _load_stage_authority_config())
+
+
+def _load_stage_authority_with_config(
+    canonical_bytes: bytes, config: Mapping[str, tuple[str, int]]
 ) -> ActivatedStageAuthority:
-    """Activate exact canonical public-key bytes under an out-of-band digest pin."""
 
     raw = _canonical_document(canonical_bytes, "stage authority")
-    if _authority_sha256(canonical_bytes) != _digest(expected_sha256, "authority pin"):
-        raise QueueConflictError("stage authority does not match its external activation pin")
-    _keys(raw, {"authority_id", "public_key", "revision", "stage"}, "stage authority")
+    _keys(raw, {"authority_id", "generation", "public_key", "revision", "stage"}, "stage authority")
     stage = _stage(raw["stage"])
-    if stage != _stage(expected_stage):
-        raise QueueConflictError("stage authority was activated for another stage")
+    expected = config.get(stage)
+    if expected is None:
+        raise QueueConflictError("stage authority has no protected activation")
+    expected_sha256, expected_generation = expected
+    if _authority_sha256(canonical_bytes) != expected_sha256:
+        raise QueueConflictError("stage authority does not match protected activation")
     if raw["revision"] != STAGE_AUTHORITY_REVISION:
         raise QueueConflictError("stage authority revision is unsupported")
     authority_id = _token(raw["authority_id"], "authority id")
     public_key = _digest(raw["public_key"], "authority public key")
+    generation = raw["generation"]
+    if type(generation) is not int or generation < 1 or generation != expected_generation:
+        raise QueueConflictError("stage authority generation does not match protected activation")
     Ed25519PublicKey.from_public_bytes(bytes.fromhex(public_key))
     result = object.__new__(ActivatedStageAuthority)
     object.__setattr__(result, "stage", stage)
@@ -93,7 +104,19 @@ def load_stage_authority(
     object.__setattr__(result, "public_key", public_key)
     object.__setattr__(result, "canonical_bytes", canonical_bytes)
     object.__setattr__(result, "authority_sha256", expected_sha256)
+    object.__setattr__(result, "generation", generation)
     return result
+
+
+def stage_authority_capability(authority: ActivatedStageAuthority) -> CapabilityPin:
+    """Derive the sole canonical queue capability from a protected authority."""
+
+    restored = _revalidate_authority(authority)
+    return CapabilityPin(
+        f"phase4-v2-stage-authority:{restored.stage}",
+        f"{STAGE_AUTHORITY_REVISION}:generation:{restored.generation}",
+        restored.authority_sha256,
+    )
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -323,6 +346,7 @@ def finish_package_audit(
     receipt = _reauthenticate(
         receipt, TrustedPackageAuditReceipt, authority, load_package_audit_receipt
     )
+    _require_graph_authority(graph.audit_capability_pins, authority)
     package = {item.package_ref_id: item for item in graph.packages}.get(receipt.package_ref_id)
     if package is None:
         raise QueueConflictError("package audit receipt belongs to another cluster")
@@ -352,7 +376,8 @@ def finish_package_audit(
         ORCHESTRATION_PACKAGE_AUDIT_KIND,
         expected_input,
         PACKAGE_AUDIT_COMPLETION_REVISION,
-        receipt.receipt_sha256,
+        authority,
+        receipt.canonical_bytes,
     )
 
 
@@ -368,6 +393,7 @@ def finish_cluster_reconciliation(
     receipt = _reauthenticate(
         receipt, TrustedReconciliationReceipt, authority, load_reconciliation_receipt
     )
+    _require_graph_authority(graph.reconciliation_capability_pins, authority)
     expected_input = _validate_reconciliation(queue, graph, receipt)
     if lease.unit_id != cluster_reconciliation_unit_id(graph):
         raise QueueConflictError("reconciliation receipt belongs to another stage")
@@ -378,7 +404,8 @@ def finish_cluster_reconciliation(
         ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
         expected_input,
         CLUSTER_RECONCILIATION_COMPLETION_REVISION,
-        receipt.receipt_sha256,
+        authority,
+        receipt.canonical_bytes,
     )
 
 
@@ -402,6 +429,7 @@ def finish_cluster_implementation(
     receipt = _reauthenticate(
         receipt, TrustedImplementationReceipt, authority, load_implementation_receipt
     )
+    _require_graph_authority(graph.implementation_capability_pins, authority)
     expected_input = _validate_implementation(queue, graph, reconciliation_receipt, receipt)
     if lease.unit_id != cluster_implementation_unit_id(graph):
         raise QueueConflictError("implementation receipt belongs to another stage")
@@ -412,7 +440,8 @@ def finish_cluster_implementation(
         ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
         expected_input,
         CLUSTER_IMPLEMENTATION_COMPLETION_REVISION,
-        receipt.receipt_sha256,
+        authority,
+        receipt.canonical_bytes,
     )
 
 
@@ -447,6 +476,7 @@ def finish_tracker_publication(
     receipt = _reauthenticate(
         receipt, TrustedPublicationReceipt, authority, load_publication_receipt
     )
+    _require_graph_authority(graph.publication_capability_pins, authority)
     if type(fanout_receipt) is not FanoutPublishReceipt:
         raise QueueConflictError("publication requires the exact production fanout receipt")
     _validate_fanout_event(queue, lease, fanout_receipt)
@@ -466,6 +496,7 @@ def finish_tracker_publication(
     fanout_values = (
         fanout_receipt.queue_generation,
         fanout_receipt.document_set_sha256,
+        fanout_receipt.publication_config_sha256,
         fanout_receipt.before_revision,
         fanout_receipt.after_revision,
         fanout_receipt.paths,
@@ -474,6 +505,7 @@ def finish_tracker_publication(
     receipt_values = (
         receipt.queue_generation_sha256,
         receipt.document_set_sha256,
+        receipt.publication_config_sha256,
         receipt.before_revision,
         receipt.after_revision,
         receipt.paths,
@@ -496,7 +528,8 @@ def finish_tracker_publication(
         ORCHESTRATION_TRACKER_PUBLICATION_KIND,
         expected_input,
         TRACKER_PUBLICATION_COMPLETION_REVISION,
-        receipt.receipt_sha256,
+        authority,
+        receipt.canonical_bytes,
     )
 
 
@@ -600,6 +633,7 @@ def _validate_fanout_event(queue: Queue, lease: Lease, receipt: FanoutPublishRec
     payload = json.loads(encoded, object_pairs_hook=_unique_object)
     expected = {
         "generation": receipt.queue_generation,
+        "publication_config_sha256": receipt.publication_config_sha256,
         "targets": list(receipt.paths),
     }
     if receipt.changed:
@@ -623,17 +657,22 @@ def _finish(
     kind: str,
     expected_input: str,
     completion_revision: str,
-    receipt_sha256: str,
+    authority: ActivatedStageAuthority,
+    canonical_receipt: bytes,
 ) -> StageCompletion:
-    result = queue._finish_trusted_orchestration_stage(
-        lease,
-        kind=kind,
-        cluster_id=graph.cluster_id,
-        expected_input_digest=expected_input,
-        output_digest=receipt_sha256,
-        completion_revision=completion_revision,
+    del graph, kind, expected_input, completion_revision
+    result = queue.finish_authenticated_orchestration_stage(
+        lease, authority=authority, canonical_receipt=canonical_receipt
     )
-    return StageCompletion(receipt_sha256, result)
+    restored = _load_signed(canonical_receipt, authority, authority.stage)
+    return StageCompletion(restored[1], result)
+
+
+def _require_graph_authority(
+    pins: tuple[CapabilityPin, ...], authority: ActivatedStageAuthority
+) -> None:
+    if pins != (stage_authority_capability(authority),):
+        raise QueueConflictError("graph stage capability does not match protected authority")
 
 
 def _reauthenticate[
@@ -664,13 +703,11 @@ def _load_signed(
 ) -> tuple[dict[str, object], str]:
     if type(authority) is not ActivatedStageAuthority:
         raise QueueConflictError("stage receipt requires an exact activated authority")
-    restored = load_stage_authority(
-        authority.canonical_bytes,
-        expected_sha256=authority.authority_sha256,
-        expected_stage=stage,
-    )
+    restored = _revalidate_authority(authority)
     if restored != authority:
         raise QueueConflictError("stage authority fields do not match their activation preimage")
+    if restored.stage != stage:
+        raise QueueConflictError("stage authority was activated for another stage")
     document = _canonical_document(canonical_bytes, f"{stage} receipt")
     _keys(document, {"payload", "signature"}, f"{stage} receipt envelope")
     payload = document["payload"]
@@ -690,6 +727,70 @@ def _load_signed(
     except InvalidSignature as error:
         raise QueueConflictError("stage receipt signature is invalid") from error
     return payload, _receipt_sha256(stage, canonical_bytes)
+
+
+def _revalidate_authority(authority: ActivatedStageAuthority) -> ActivatedStageAuthority:
+    if type(authority) is not ActivatedStageAuthority:
+        raise QueueConflictError("stage receipt requires an exact activated authority")
+    return load_stage_authority(authority.canonical_bytes)
+
+
+def _load_stage_authority_config() -> dict[str, tuple[str, int]]:
+    directory_flags = (
+        os.O_RDONLY
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_DIRECTORY", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    try:
+        directory = os.open("/etc/ha-adjustable-bed", directory_flags)
+    except OSError as error:
+        raise QueueConflictError("protected stage authority config is unavailable") from error
+    try:
+        _validate_protected_directory(os.fstat(directory))
+        flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+        try:
+            descriptor = os.open("phase4-v2-stage-authorities.json", flags, dir_fd=directory)
+        except OSError as error:
+            raise QueueConflictError("protected stage authority config is unavailable") from error
+        try:
+            _validate_protected_file(os.fstat(descriptor))
+            chunks: list[bytes] = []
+            remaining = 16 * 1024 + 1
+            while remaining:
+                chunk = os.read(descriptor, min(4096, remaining))
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                remaining -= len(chunk)
+        finally:
+            os.close(descriptor)
+    finally:
+        os.close(directory)
+    raw = b"".join(chunks)
+    document = _canonical_document(raw, "protected stage authority config")
+    _keys(document, set(_STAGES), "protected stage authority config")
+    result: dict[str, tuple[str, int]] = {}
+    for stage in sorted(_STAGES):
+        entry = document[stage]
+        if type(entry) is not dict:
+            raise ValueError("protected stage authority entry must be an object")
+        _keys(entry, {"authority_sha256", "generation"}, "protected stage authority entry")
+        generation = entry["generation"]
+        if type(generation) is not int or generation < 1:
+            raise ValueError("protected stage authority generation must be positive")
+        result[stage] = (_digest(entry["authority_sha256"], "protected authority"), generation)
+    return result
+
+
+def _validate_protected_directory(metadata: os.stat_result) -> None:
+    if not stat.S_ISDIR(metadata.st_mode) or metadata.st_uid != 0 or metadata.st_mode & 0o022:
+        raise QueueConflictError("protected stage authority parent is unsafe")
+
+
+def _validate_protected_file(metadata: os.stat_result) -> None:
+    if not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != 0 or metadata.st_mode & 0o022:
+        raise QueueConflictError("protected stage authority config is unsafe")
 
 
 def _new_receipt[

@@ -22,6 +22,7 @@ from .completion import (
     load_publication_receipt,
     load_reconciliation_receipt,
     load_stage_authority,
+    stage_authority_capability,
 )
 from .graph import (
     CLUSTER_GRAPH_REVISION,
@@ -97,6 +98,7 @@ __all__ = [
     "route_follow_up",
     "run_synthetic_acceptance",
     "stage_input_sha256",
+    "stage_authority_capability",
     "tracker_publication_unit_id",
     "validate_cluster_graph",
 ]

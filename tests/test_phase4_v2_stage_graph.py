@@ -12,6 +12,7 @@ import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+import tools.phase4_v2.orchestration.completion as stage_completion
 import tools.phase4_v2.queue.core as queue_core
 from tools.phase4_v2.equivalence.plan import (
     PACKAGE_EXECUTION_PLAN_REVISION,
@@ -48,6 +49,7 @@ from tools.phase4_v2.orchestration import (
     materialize_cluster_graph,
     package_audit_unit_id,
     run_synthetic_acceptance,
+    stage_authority_capability,
 )
 from tools.phase4_v2.queue import (
     CapabilityPin,
@@ -70,6 +72,42 @@ _TARGETS = (
     TrackerTarget("issues/436.md", TrackerFormat.MARKDOWN),
     TrackerTarget("public/queue.html", TrackerFormat.HTML),
 )
+_PROTECTED_CONFIG: dict[str, tuple[str, int]] = {}
+_GRAPH_AUTHORITIES: dict[str, dict[str, tuple[Ed25519PrivateKey, ActivatedStageAuthority]]] = {}
+
+
+@pytest.fixture(autouse=True)
+def _protected_stage_config(monkeypatch: pytest.MonkeyPatch) -> None:
+    _PROTECTED_CONFIG.clear()
+    _GRAPH_AUTHORITIES.clear()
+
+    def load_config() -> dict[str, tuple[str, int]]:
+        if _PROTECTED_CONFIG:
+            return dict(_PROTECTED_CONFIG)
+        result: dict[str, tuple[str, int]] = {}
+        for stage in ("audit", "reconciliation", "implementation", "publication"):
+            key = Ed25519PrivateKey.from_private_bytes(
+                hashlib.sha256(f"synthetic-stage-key:{stage}".encode()).digest()
+            )
+            public = key.public_key().public_bytes(
+                serialization.Encoding.Raw, serialization.PublicFormat.Raw
+            )
+            canonical = _canonical(
+                {
+                    "authority_id": f"synthetic-{stage}",
+                    "generation": 1,
+                    "public_key": public.hex(),
+                    "revision": STAGE_AUTHORITY_REVISION,
+                    "stage": stage,
+                }
+            )
+            result[stage] = (
+                hashlib.sha256(b"phase4-v2:stage-authority\0" + canonical).hexdigest(),
+                1,
+            )
+        return result
+
+    monkeypatch.setattr(stage_completion, "_load_stage_authority_config", load_config)
 
 
 class _Gateway:
@@ -214,9 +252,12 @@ def _activate(queue: Queue, pins: tuple[CapabilityPin, ...]) -> None:
 
 def _graph(queue: Queue, cluster: str, names: tuple[str, ...]) -> ClusterGraphPlan:
     plans = tuple(_frozen_plan(cluster, name) for name in names)
-    stage_pins = tuple(
-        _pin(f"{stage}:{cluster}") for stage in WorkStage if stage.value != "analysis"
-    )
+    authorities = {
+        stage: _authority(stage)
+        for stage in ("audit", "reconciliation", "implementation", "publication")
+    }
+    _GRAPH_AUTHORITIES[cluster] = authorities
+    stage_pins = tuple(stage_authority_capability(authorities[stage][1]) for stage in authorities)
     package_pins = tuple(
         CapabilityPin(pin.name, pin.revision, pin.digest)
         for plan in plans
@@ -227,10 +268,10 @@ def _graph(queue: Queue, cluster: str, names: tuple[str, ...]) -> ClusterGraphPl
     return build_cluster_graph(
         queue,
         plans,
-        audit_capability_pins=(stage_pins[0],),
-        reconciliation_capability_pins=(stage_pins[1],),
-        implementation_capability_pins=(stage_pins[2],),
-        publication_capability_pins=(stage_pins[3],),
+        audit_authority=authorities["audit"][1],
+        reconciliation_authority=authorities["reconciliation"][1],
+        implementation_authority=authorities["implementation"][1],
+        publication_authority=authorities["publication"][1],
     )
 
 
@@ -274,13 +315,15 @@ def _authority(stage: str) -> tuple[Ed25519PrivateKey, ActivatedStageAuthority]:
     canonical = _canonical(
         {
             "authority_id": f"synthetic-{stage}",
+            "generation": 1,
             "public_key": public.hex(),
             "revision": STAGE_AUTHORITY_REVISION,
             "stage": stage,
         }
     )
     digest = hashlib.sha256(b"phase4-v2:stage-authority\0" + canonical).hexdigest()
-    return key, load_stage_authority(canonical, expected_sha256=digest, expected_stage=stage)
+    _PROTECTED_CONFIG[stage] = (digest, 1)
+    return key, load_stage_authority(canonical)
 
 
 def _signed(
@@ -327,10 +370,7 @@ def _complete_analysis_fixture(queue: Queue, lease: Lease) -> None:
 
 def test_graph_and_authenticated_receipts_follow_real_stage_adapters(queue: Queue) -> None:
     graph = _graph(queue, "cluster-011", ("alpha", "beta"))
-    authorities = {
-        stage: _authority(stage)
-        for stage in ("audit", "reconciliation", "implementation", "publication")
-    }
+    authorities = _GRAPH_AUTHORITIES[graph.cluster_id]
     first = materialize_cluster_graph(queue, graph)
     assert first.materialized_units == first.analysis_units
     for index in range(2):
@@ -441,14 +481,17 @@ def test_graph_and_authenticated_receipts_follow_real_stage_adapters(queue: Queu
     materialize_cluster_graph(queue, graph)
     publication_lease = _claim(queue, WorkStage.TRACKER_PUBLICATION, "publication")
     key, publication_authority = authorities["publication"]
-    invented_fanout = FanoutPublishReceipt(
-        queue.snapshot().generation_id,
-        "a" * 40,
-        "b" * 40,
-        _digest("invented-documents"),
-        tuple(item.path for item in _TARGETS),
-        True,
-    )
+    invented_fanout = object.__new__(FanoutPublishReceipt)
+    for name, value in {
+        "queue_generation": queue.snapshot().generation_id,
+        "before_revision": "a" * 40,
+        "after_revision": "b" * 40,
+        "document_set_sha256": _digest("invented-documents"),
+        "publication_config_sha256": _digest("invented-config"),
+        "paths": tuple(item.path for item in _TARGETS),
+        "changed": True,
+    }.items():
+        object.__setattr__(invented_fanout, name, value)
     invented_publication = load_publication_receipt(
         _signed(
             "publication",
@@ -463,7 +506,7 @@ def test_graph_and_authenticated_receipts_follow_real_stage_adapters(queue: Queu
                 "graph_sha256": graph.content_id,
                 "implementation_receipt_sha256": implementation.receipt_sha256,
                 "paths": list(invented_fanout.paths),
-                "publication_config_sha256": _digest("publication-config"),
+                "publication_config_sha256": invented_fanout.publication_config_sha256,
                 "queue_generation_sha256": invented_fanout.queue_generation,
                 "revision": TRACKER_PUBLICATION_COMPLETION_REVISION,
                 "stage_input_sha256": publication_lease.input_digest,
@@ -501,7 +544,7 @@ def test_graph_and_authenticated_receipts_follow_real_stage_adapters(queue: Queu
                 "graph_sha256": graph.content_id,
                 "implementation_receipt_sha256": implementation.receipt_sha256,
                 "paths": list(fanout.paths),
-                "publication_config_sha256": _digest("publication-config"),
+                "publication_config_sha256": fanout.publication_config_sha256,
                 "queue_generation_sha256": fanout.queue_generation,
                 "revision": TRACKER_PUBLICATION_COMPLETION_REVISION,
                 "stage_input_sha256": publication_lease.input_digest,
@@ -532,14 +575,20 @@ def test_graph_constructors_and_inactive_capabilities_fail_closed(queue: Queue) 
     with pytest.raises(ValueError, match="frozen execution plans"):
         ClusterGraphPlan()
     plan = _frozen_plan("cluster", "alpha")
+    authorities = {stage: _authority(stage)[1] for stage in _PROTECTED_CONFIG or ()}
+    if not authorities:
+        authorities = {
+            stage: _authority(stage)[1]
+            for stage in ("audit", "reconciliation", "implementation", "publication")
+        }
     with pytest.raises(QueueConflictError, match="active queue head"):
         build_cluster_graph(
             queue,
             (plan,),
-            audit_capability_pins=(_pin("audit"),),
-            reconciliation_capability_pins=(_pin("reconciliation"),),
-            implementation_capability_pins=(_pin("implementation"),),
-            publication_capability_pins=(_pin("publication"),),
+            audit_authority=authorities["audit"],
+            reconciliation_authority=authorities["reconciliation"],
+            implementation_authority=authorities["implementation"],
+            publication_authority=authorities["publication"],
         )
     graph = _graph(queue, "cluster-sealed", ("alpha",))
     object.__setattr__(graph, "cluster_id", "cluster-transplanted")
@@ -549,12 +598,10 @@ def test_graph_constructors_and_inactive_capabilities_fail_closed(queue: Queue) 
 
 def test_authority_and_receipt_forgery_wrong_key_and_mutation_fail_closed() -> None:
     key, authority = _authority("audit")
-    with pytest.raises(QueueConflictError, match="external activation pin"):
-        load_stage_authority(
-            authority.canonical_bytes,
-            expected_sha256="0" * 64,
-            expected_stage="audit",
-        )
+    _PROTECTED_CONFIG["audit"] = ("0" * 64, 1)
+    with pytest.raises(QueueConflictError, match="protected activation"):
+        load_stage_authority(authority.canonical_bytes)
+    _PROTECTED_CONFIG["audit"] = (authority.authority_sha256, authority.generation)
     payload = {
         "accepted": True,
         "analysis_completion_revision": VALIDATED_PACKAGE_OUTPUT_REVISION,

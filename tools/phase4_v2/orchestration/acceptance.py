@@ -47,6 +47,7 @@ from .completion import (
     ActivatedStageAuthority,
     TrustedImplementationReceipt,
     TrustedReconciliationReceipt,
+    _load_stage_authority_with_config,
     finish_cluster_implementation,
     finish_cluster_reconciliation,
     finish_package_audit,
@@ -55,7 +56,7 @@ from .completion import (
     load_package_audit_receipt,
     load_publication_receipt,
     load_reconciliation_receipt,
-    load_stage_authority,
+    stage_authority_capability,
 )
 from .graph import (
     CLUSTER_IMPLEMENTATION_COMPLETION_REVISION,
@@ -170,7 +171,7 @@ def run_synthetic_acceptance(
     queue = Queue(database, attempts_root)
     queue.initialize()
     keys, authorities = _authorities()
-    states = _build_graphs(queue, config)
+    states = _build_graphs(queue, config, authorities)
     for state in states.values():
         materialize_cluster_graph(queue, state.graph)
     # Package report validation has its own exhaustive acceptance suite. This bounded
@@ -413,7 +414,7 @@ def _finish_stage(
                 "graph_sha256": graph.content_id,
                 "implementation_receipt_sha256": implementation.receipt_sha256,
                 "paths": list(fanout.paths),
-                "publication_config_sha256": _digest("synthetic-publication-config"),
+                "publication_config_sha256": fanout.publication_config_sha256,
                 "queue_generation_sha256": fanout.queue_generation,
                 "revision": TRACKER_PUBLICATION_COMPLETION_REVISION,
                 "stage_input_sha256": lease.input_digest,
@@ -437,7 +438,11 @@ def _finish_stage(
     )
 
 
-def _build_graphs(queue: Queue, config: SyntheticAcceptanceConfig) -> dict[str, _ClusterState]:
+def _build_graphs(
+    queue: Queue,
+    config: SyntheticAcceptanceConfig,
+    authorities: dict[str, ActivatedStageAuthority],
+) -> dict[str, _ClusterState]:
     result: dict[str, _ClusterState] = {}
     for cluster_index in range(config.clusters):
         cluster = f"synthetic-cluster:{cluster_index:04d}"
@@ -445,7 +450,7 @@ def _build_graphs(queue: Queue, config: SyntheticAcceptanceConfig) -> dict[str, 
             _frozen_plan(cluster, package_index)
             for package_index in range(config.units_per_cluster)
         )
-        stage_pins = tuple(_pin(f"{stage}:{cluster}") for stage in _STAGE_NAMES)
+        stage_pins = tuple(stage_authority_capability(authorities[stage]) for stage in _STAGE_NAMES)
         package_pins = tuple(
             CapabilityPin(pin.name, pin.revision, pin.digest)
             for plan in plans
@@ -458,10 +463,10 @@ def _build_graphs(queue: Queue, config: SyntheticAcceptanceConfig) -> dict[str, 
         graph = build_cluster_graph(
             queue,
             plans,
-            audit_capability_pins=(stage_pins[0],),
-            reconciliation_capability_pins=(stage_pins[1],),
-            implementation_capability_pins=(stage_pins[2],),
-            publication_capability_pins=(stage_pins[3],),
+            audit_authority=authorities["audit"],
+            reconciliation_authority=authorities["reconciliation"],
+            implementation_authority=authorities["implementation"],
+            publication_authority=authorities["publication"],
         )
         result[cluster] = _ClusterState(graph, {})
     return result
@@ -532,6 +537,8 @@ def _cluster_for(queue: Queue, unit_id: str) -> str:
 def _authorities() -> tuple[dict[str, Ed25519PrivateKey], dict[str, ActivatedStageAuthority]]:
     keys: dict[str, Ed25519PrivateKey] = {}
     authorities: dict[str, ActivatedStageAuthority] = {}
+    documents: dict[str, bytes] = {}
+    config: dict[str, tuple[str, int]] = {}
     for stage in _STAGE_NAMES:
         key = Ed25519PrivateKey.from_private_bytes(
             hashlib.sha256(f"synthetic-stage-key:{stage}".encode()).digest()
@@ -542,6 +549,7 @@ def _authorities() -> tuple[dict[str, Ed25519PrivateKey], dict[str, ActivatedSta
         canonical = _canonical(
             {
                 "authority_id": f"synthetic-{stage}",
+                "generation": 1,
                 "public_key": public.hex(),
                 "revision": STAGE_AUTHORITY_REVISION,
                 "stage": stage,
@@ -549,9 +557,10 @@ def _authorities() -> tuple[dict[str, Ed25519PrivateKey], dict[str, ActivatedSta
         )
         digest = hashlib.sha256(b"phase4-v2:stage-authority\0" + canonical).hexdigest()
         keys[stage] = key
-        authorities[stage] = load_stage_authority(
-            canonical, expected_sha256=digest, expected_stage=stage
-        )
+        documents[stage] = canonical
+        config[stage] = (digest, 1)
+    for stage in _STAGE_NAMES:
+        authorities[stage] = _load_stage_authority_with_config(documents[stage], config)
     return keys, authorities
 
 

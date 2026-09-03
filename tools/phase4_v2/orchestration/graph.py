@@ -7,6 +7,7 @@ import json
 import re
 import sqlite3
 from dataclasses import dataclass, field
+from typing import cast
 
 from tools.phase4_v2.equivalence.plan import (
     VALIDATED_PACKAGE_OUTPUT_REVISION,
@@ -173,10 +174,10 @@ def build_cluster_graph(
     queue: Queue,
     plans: tuple[FrozenPackageExecutionPlan, ...],
     *,
-    audit_capability_pins: tuple[CapabilityPin, ...],
-    reconciliation_capability_pins: tuple[CapabilityPin, ...],
-    implementation_capability_pins: tuple[CapabilityPin, ...],
-    publication_capability_pins: tuple[CapabilityPin, ...],
+    audit_authority: object,
+    reconciliation_authority: object,
+    implementation_authority: object,
+    publication_authority: object,
     priorities: tuple[int, ...] | None = None,
 ) -> ClusterGraphPlan:
     """Build one graph only from canonical plans and currently activated pins."""
@@ -205,12 +206,25 @@ def build_cluster_graph(
         or any(type(item) is not int or not -(2**31) <= item < 2**31 for item in priorities)
     ):
         raise ValueError("cluster graph priorities must match the frozen plans")
-    stage_pins = (
-        audit_capability_pins,
-        reconciliation_capability_pins,
-        implementation_capability_pins,
-        publication_capability_pins,
+    from .completion import ActivatedStageAuthority, stage_authority_capability
+
+    authorities = (
+        audit_authority,
+        reconciliation_authority,
+        implementation_authority,
+        publication_authority,
     )
+    if any(type(item) is not ActivatedStageAuthority for item in authorities):
+        raise ValueError("cluster graph requires exact protected stage authorities")
+    activated = cast(tuple[ActivatedStageAuthority, ...], authorities)
+    if tuple(item.stage for item in activated) != (
+        "audit",
+        "reconciliation",
+        "implementation",
+        "publication",
+    ):
+        raise ValueError("cluster graph authorities do not match their stages")
+    stage_pins = tuple((stage_authority_capability(item),) for item in activated)
     for name, pins in zip(
         ("audit", "reconciliation", "implementation", "publication"),
         stage_pins,
@@ -254,10 +268,10 @@ def build_cluster_graph(
     object.__setattr__(
         graph, "packages", tuple(sorted(packages, key=lambda item: item.package_ref_id))
     )
-    object.__setattr__(graph, "audit_capability_pins", audit_capability_pins)
-    object.__setattr__(graph, "reconciliation_capability_pins", reconciliation_capability_pins)
-    object.__setattr__(graph, "implementation_capability_pins", implementation_capability_pins)
-    object.__setattr__(graph, "publication_capability_pins", publication_capability_pins)
+    object.__setattr__(graph, "audit_capability_pins", stage_pins[0])
+    object.__setattr__(graph, "reconciliation_capability_pins", stage_pins[1])
+    object.__setattr__(graph, "implementation_capability_pins", stage_pins[2])
+    object.__setattr__(graph, "publication_capability_pins", stage_pins[3])
     object.__setattr__(graph, "revision", CLUSTER_GRAPH_REVISION)
     graph._validate()
     return graph
