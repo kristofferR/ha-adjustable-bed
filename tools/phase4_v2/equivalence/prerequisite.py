@@ -358,6 +358,8 @@ def _validate_inputs(
     source = _authenticated_source(source)
     source_inventory = validate_target_inventory_envelope(source_inventory)
     target_inventory = validate_target_inventory_envelope(target_inventory)
+    if source_inventory.authority != target_inventory.authority:
+        _fail("source and target inventories use different protected authorities")
     if type(source_root) is not ApplicationRoot or type(target_root) is not ApplicationRoot:
         _fail("exact ApplicationRoot records are required")
     if type(extractor) is not ExtractorCapability or type(proof) is not ByteIdentityProof:
