@@ -15,8 +15,8 @@ from typing import Never, Protocol, cast
 
 SCHEMA_REVISION = "phase4-protocol-ir-core-v0.5.0-2026-08-31"
 PROVENANCE_IDENTITY_REVISION = "phase4-provenance-identity-v4"
-SUPPORTED_VALIDATOR_REVISION = "phase4-v2-bundle-validator-v4"
-SUPPORTED_CONTRACT_REVISION = "phase4-v2-validation-input-v3"
+SUPPORTED_VALIDATOR_REVISION = "phase4-v2-bundle-validator-v5"
+SUPPORTED_CONTRACT_REVISION = "phase4-v2-validation-input-v4"
 BOUND_VALIDATION_PROFILE = "BOUND_V4"
 _DEPENDENCY_NAMES = ("corpus", "evidence_lineage", "ir", "preflight", "schema")
 _ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]*$")
@@ -144,6 +144,36 @@ class AttestedEvidenceAnchor:
 
 
 @dataclass(frozen=True, slots=True)
+class AttestedRootEvidenceMember:
+    member: str
+    member_sha256: str
+    evidence_anchor_ids: tuple[str, ...]
+
+    def to_data(self) -> dict[str, object]:
+        return {
+            "evidence_anchor_ids": list(self.evidence_anchor_ids),
+            "member": self.member,
+            "member_sha256": self.member_sha256,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class AttestedRootEvidence:
+    target_root_id: str
+    target_occurrence_identity_sha256: str
+    semantic_root_sha256: str
+    evidence_members: tuple[AttestedRootEvidenceMember, ...]
+
+    def to_data(self) -> dict[str, object]:
+        return {
+            "evidence_members": [item.to_data() for item in self.evidence_members],
+            "semantic_root_sha256": self.semantic_root_sha256,
+            "target_occurrence_identity_sha256": self.target_occurrence_identity_sha256,
+            "target_root_id": self.target_root_id,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class ValidatedReport:
     """Exact accepted BOUND_V4 receipt and all provenance attestations."""
 
@@ -160,6 +190,7 @@ class ValidatedReport:
     dependency_digests: tuple[tuple[str, str], ...]
     validated_evidence_members: tuple[AttestedEvidenceMember, ...]
     validated_evidence_anchors: tuple[AttestedEvidenceAnchor, ...]
+    validated_root_evidence: tuple[AttestedRootEvidence, ...]
 
     def to_data(self) -> dict[str, object]:
         return {
@@ -177,6 +208,7 @@ class ValidatedReport:
             "validated_evidence_members": [
                 member.to_data() for member in self.validated_evidence_members
             ],
+            "validated_root_evidence": [item.to_data() for item in self.validated_root_evidence],
             "validation_profile": self.validation_profile,
             "validation_receipt_sha256": self.validation_receipt_sha256,
             "validator_revision": self.validator_revision,
@@ -319,8 +351,7 @@ class VariantSpace:
                 _fail(
                     "variant_space_too_large",
                     "$.variant_spaces",
-                    "variant space exceeds "
-                    f"{_MAX_VARIANT_PROFILE_CANDIDATES} candidate profiles",
+                    f"variant space exceeds {_MAX_VARIANT_PROFILE_CANDIDATES} candidate profiles",
                 )
             profile = tuple(zip(names, combination, strict=True))
             profile_map = dict(profile)
@@ -827,9 +858,7 @@ def validate_universe(document: ProtocolIRDocument) -> UniverseValidation:
     """Compare expected action coverage with the command-binding multiset."""
 
     spaces = dict(document.variant_spaces)
-    referenced_space_ids = {
-        protocol.variant_space for _protocol_id, protocol in document.protocols
-    }
+    referenced_space_ids = {protocol.variant_space for _protocol_id, protocol in document.protocols}
     profiles_by_space: dict[str, tuple[Profile, ...]] = {}
     materialized_profiles = 0
     for space_id in sorted(referenced_space_ids):
@@ -1100,6 +1129,7 @@ def _bind_receipt_data(
         "validated_artifact_identity",
         "validated_evidence_anchors",
         "validated_evidence_members",
+        "validated_root_evidence",
         "validation_profile",
         "validation_receipt_sha256",
         "validator_revision",
@@ -1199,6 +1229,7 @@ def _bind_receipt_data(
             "validated_artifact_identity": receipt["validated_artifact_identity"],
             "validated_evidence_anchors": receipt["validated_evidence_anchors"],
             "validated_evidence_members": receipt["validated_evidence_members"],
+            "validated_root_evidence": receipt["validated_root_evidence"],
             "validation_profile": profile,
             "validation_receipt_sha256": embedded_receipt_sha256,
             "validator_revision": validator_revision,
@@ -1316,6 +1347,87 @@ def _parse_attested_anchors(raw: object, path: str) -> tuple[AttestedEvidenceAnc
     return anchors
 
 
+def _parse_attested_root_evidence(raw: object, path: str) -> tuple[AttestedRootEvidence, ...]:
+    values = _expect_array(raw, path)
+    if len(values) > _MAX_PROVENANCE_REFERENCES:
+        _fail("root_evidence_limit_exceeded", path, "root evidence exceeds its item limit")
+    roots: list[AttestedRootEvidence] = []
+    for index, raw_root in enumerate(values):
+        root_path = f"{path}[{index}]"
+        root = _expect_object(raw_root, root_path)
+        _expect_keys(
+            root,
+            path=root_path,
+            required={
+                "evidence_members",
+                "semantic_root_sha256",
+                "target_occurrence_identity_sha256",
+                "target_root_id",
+            },
+        )
+        evidence_members: list[AttestedRootEvidenceMember] = []
+        raw_members = _expect_array(root["evidence_members"], f"{root_path}.evidence_members")
+        if not raw_members or len(raw_members) > _MAX_PROVENANCE_REFERENCES:
+            _fail(
+                "invalid_root_evidence_members",
+                root_path,
+                "evidence members must be nonempty and bounded",
+            )
+        for member_index, raw_member in enumerate(raw_members):
+            member_path = f"{root_path}.evidence_members[{member_index}]"
+            member = _expect_object(raw_member, member_path)
+            _expect_keys(
+                member,
+                path=member_path,
+                required={"evidence_anchor_ids", "member", "member_sha256"},
+            )
+            anchor_ids = tuple(
+                _expect_nonempty_string(item, f"{member_path}.evidence_anchor_ids", max_length=256)
+                for item in _expect_array(
+                    member["evidence_anchor_ids"], f"{member_path}.evidence_anchor_ids"
+                )
+            )
+            if not anchor_ids or anchor_ids != tuple(sorted(set(anchor_ids))):
+                _fail(
+                    "invalid_root_evidence_anchors",
+                    member_path,
+                    "anchor IDs must be nonempty, sorted, and unique",
+                )
+            evidence_members.append(
+                AttestedRootEvidenceMember(
+                    _expect_nonempty_string(
+                        member["member"],
+                        f"{member_path}.member",
+                        max_length=_MAX_REPORT_PATH_LENGTH,
+                    ),
+                    _expect_sha256(member["member_sha256"], f"{member_path}.member_sha256"),
+                    anchor_ids,
+                )
+            )
+        if len({item.member for item in evidence_members}) != len(evidence_members):
+            _fail("duplicate_root_evidence_member", root_path, "evidence members must be unique")
+        if evidence_members != sorted(evidence_members, key=lambda item: item.member.encode()):
+            _fail(
+                "noncanonical_root_evidence_members", root_path, "evidence members must be sorted"
+            )
+        roots.append(
+            AttestedRootEvidence(
+                _expect_sha256(root["target_root_id"], f"{root_path}.target_root_id"),
+                _expect_sha256(
+                    root["target_occurrence_identity_sha256"],
+                    f"{root_path}.target_occurrence_identity_sha256",
+                ),
+                _expect_sha256(root["semantic_root_sha256"], f"{root_path}.semantic_root_sha256"),
+                tuple(evidence_members),
+            )
+        )
+    result = tuple(roots)
+    keys = tuple(_canonical_json(item.to_data()) for item in result)
+    if keys != tuple(sorted(set(keys))):
+        _fail("noncanonical_root_evidence", path, "root evidence must be canonically sorted")
+    return result
+
+
 def _parse_validated_report(raw: object, path: str) -> ValidatedReport:
     value = _expect_object(raw, path)
     _expect_keys(
@@ -1335,6 +1447,7 @@ def _parse_validated_report(raw: object, path: str) -> ValidatedReport:
             "dependency_digests",
             "validated_evidence_members",
             "validated_evidence_anchors",
+            "validated_root_evidence",
         },
     )
     report = ValidatedReport(
@@ -1374,6 +1487,9 @@ def _parse_validated_report(raw: object, path: str) -> ValidatedReport:
         ),
         validated_evidence_anchors=_parse_attested_anchors(
             value["validated_evidence_anchors"], f"{path}.validated_evidence_anchors"
+        ),
+        validated_root_evidence=_parse_attested_root_evidence(
+            value["validated_root_evidence"], f"{path}.validated_root_evidence"
         ),
     )
     _validate_report_attestations(report, path)
@@ -1440,6 +1556,31 @@ def _validate_report_attestations(report: ValidatedReport, path: str) -> None:
                 f"{path}.validated_evidence_anchors[{index}].member_sha256",
                 "attested anchor member digest does not match its attested member",
             )
+    anchors = {item.id: item for item in report.validated_evidence_anchors}
+    for root_index, root in enumerate(report.validated_root_evidence):
+        for member_index, root_member in enumerate(root.evidence_members):
+            member = members.get(root_member.member)
+            member_path = (
+                f"{path}.validated_root_evidence[{root_index}].evidence_members[{member_index}]"
+            )
+            if member is None or member.sha256 != root_member.member_sha256:
+                _fail(
+                    "invalid_root_evidence_member",
+                    member_path,
+                    "root evidence member is not retained",
+                )
+            for anchor_id in root_member.evidence_anchor_ids:
+                anchor = anchors.get(anchor_id)
+                if (
+                    anchor is None
+                    or anchor.member != root_member.member
+                    or anchor.member_sha256 != root_member.member_sha256
+                ):
+                    _fail(
+                        "invalid_root_evidence_anchor",
+                        member_path,
+                        "root evidence anchor is not retained for its member",
+                    )
     reproduced_identity = hashlib.sha256(
         _canonical_json(_validated_report_identity_input(report))
     ).hexdigest()
@@ -1470,6 +1611,7 @@ def _validated_report_identity_input(report: ValidatedReport) -> dict[str, objec
         "validated_evidence_members": [
             member.to_data() for member in report.validated_evidence_members
         ],
+        "validated_root_evidence": [item.to_data() for item in report.validated_root_evidence],
         "validation_profile": report.validation_profile,
         "validator_revision": report.validator_revision,
     }
@@ -1949,13 +2091,10 @@ def _validate_provenance(document: ProtocolIRDocument) -> None:
 
 def _validate_provenance_expansion_bounds(document: ProtocolIRDocument) -> None:
     source_set_sizes = {
-        source_set_id: len(source_set.anchors)
-        for source_set_id, source_set in document.source_sets
+        source_set_id: len(source_set.anchors) for source_set_id, source_set in document.source_sets
     }
     direct_edges = sum(len(source_set.anchors) for _, source_set in document.source_sets)
-    direct_edges += sum(
-        len(binding.source_sets) for _, binding in document.evidence_bindings
-    )
+    direct_edges += sum(len(binding.source_sets) for _, binding in document.evidence_bindings)
     if direct_edges > _MAX_PROVENANCE_EDGES:
         _fail(
             "provenance_graph_too_large",
@@ -1970,8 +2109,7 @@ def _validate_provenance_expansion_bounds(document: ProtocolIRDocument) -> None:
                 _fail(
                     "provenance_expansion_too_large",
                     "$.evidence_bindings",
-                    "binding-to-anchor expansion exceeds "
-                    f"{_MAX_PROVENANCE_EXPANSIONS} references",
+                    f"binding-to-anchor expansion exceeds {_MAX_PROVENANCE_EXPANSIONS} references",
                 )
 
 

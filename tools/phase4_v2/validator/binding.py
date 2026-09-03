@@ -37,8 +37,8 @@ from .lineage import (
     bind_evidence_lineage,
 )
 
-CONTRACT_REVISION = "phase4-v2-validation-input-v3"
-PACKAGE_CONTRACT_REVISION = "phase4-v2-package-validation-input-v2"
+CONTRACT_REVISION = "phase4-v2-validation-input-v4"
+PACKAGE_CONTRACT_REVISION = "phase4-v2-package-validation-input-v3"
 PREFLIGHT_SCHEMA = "phase4-v2-preflight-v3"
 _LEGACY_PREFLIGHT_SCHEMA = "phase4-v2-preflight-v2"
 VALIDATION_INPUT = "validation-input.json"
@@ -172,6 +172,7 @@ class BindingResult:
     validated_artifact_identity: ArtifactIdentityAttestation | None
     validated_evidence_members: tuple[EvidenceMemberAttestation, ...]
     validated_evidence_anchors: tuple[EvidenceAnchorAttestation, ...]
+    validated_root_evidence: tuple[ValidatedRootEvidenceAttestation, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -184,6 +185,40 @@ class EvidenceMemberAttestation:
 
     def to_dict(self) -> dict[str, str]:
         return {"member": self.member, "owner": self.owner, "sha256": self.sha256}
+
+
+@dataclass(frozen=True, slots=True, order=True)
+class ValidatedRootEvidenceMember:
+    """One exact evidence member and anchor set retained for a root result."""
+
+    member: str
+    member_sha256: str
+    evidence_anchor_ids: tuple[str, ...]
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "evidence_anchor_ids": list(self.evidence_anchor_ids),
+            "member": self.member,
+            "member_sha256": self.member_sha256,
+        }
+
+
+@dataclass(frozen=True, slots=True, order=True)
+class ValidatedRootEvidenceAttestation:
+    """Canonical validator-retained provenance for one analyzed target root."""
+
+    target_root_id: str
+    target_occurrence_identity_sha256: str
+    semantic_root_sha256: str
+    evidence_members: tuple[ValidatedRootEvidenceMember, ...]
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "evidence_members": [item.to_dict() for item in self.evidence_members],
+            "semantic_root_sha256": self.semantic_root_sha256,
+            "target_occurrence_identity_sha256": self.target_occurrence_identity_sha256,
+            "target_root_id": self.target_root_id,
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -256,9 +291,7 @@ def validate_binding_contract(
     read_range: RangeReader,
 ) -> BindingResult:
     """Validate one closed, protocol-neutral provenance contract."""
-    expected_contract_revision, dependency_names = _dependency_contract(
-        expected_dependencies
-    )
+    expected_contract_revision, dependency_names = _dependency_contract(expected_dependencies)
     pins = tuple(
         sorted(
             expected_dependencies.as_pairs()
@@ -280,7 +313,7 @@ def validate_binding_contract(
                 )
             )
     if diagnostics:
-        return _result(diagnostics, pins, 0, None, None, (), ())
+        return _result(diagnostics, pins, 0, None, None, (), (), ())
 
     if not isinstance(document, dict):
         return _result(
@@ -293,6 +326,7 @@ def validate_binding_contract(
             0,
             None,
             None,
+            (),
             (),
             (),
         )
@@ -310,6 +344,7 @@ def validate_binding_contract(
             0,
             None,
             None,
+            (),
             (),
             (),
         )
@@ -352,7 +387,12 @@ def validate_binding_contract(
         _dependency_member(dependencies, "preflight"),
         diagnostics,
     )
-    trusted_evidence, trusted_evidence_scopes, trusted_root_analyses = _validate_evidence_lineage(
+    (
+        trusted_evidence,
+        trusted_evidence_scopes,
+        trusted_root_analyses,
+        declared_root_evidence,
+    ) = _validate_evidence_lineage(
         expected_evidence_lineage,
         expected_dependencies,
         artifact_identity,
@@ -392,6 +432,12 @@ def validate_binding_contract(
         read_range,
         diagnostics,
     )
+    validated_root_evidence = _validate_root_evidence_attestations(
+        declared_root_evidence,
+        validated_members,
+        validated_anchors,
+        diagnostics,
+    )
     if package_contract:
         _validate_package_report(
             dependencies,
@@ -405,6 +451,11 @@ def validate_binding_contract(
             ir_document,
             diagnostics,
         )
+        _validate_exact_root_evidence_set(
+            json_documents.get("analysis.json"),
+            validated_root_evidence,
+            diagnostics,
+        )
     return _result(
         diagnostics,
         pins,
@@ -413,6 +464,7 @@ def validate_binding_contract(
         artifact_identity,
         validated_members,
         validated_anchors,
+        validated_root_evidence,
     )
 
 
@@ -563,9 +615,7 @@ def _validate_preflight_identity(
         return None
     artifact_files = cast(list[dict[str, object]], document["artifact_members"])
     if not _valid_preflight_classification(document["classification"], artifact_files):
-        diagnostics.append(
-            BindingDiagnostic("PINNED_PREFLIGHT_CLASSIFICATION_INVALID", member)
-        )
+        diagnostics.append(BindingDiagnostic("PINNED_PREFLIGHT_CLASSIFICATION_INVALID", member))
         return None
     classification = cast(dict[str, object], document["classification"])
     if classification["status"] != "READY" or classification["blockers"] != []:
@@ -691,9 +741,7 @@ def _valid_preflight_member_name(value: str, *, require_apk: bool) -> bool:
     )
 
 
-def _valid_preflight_classification(
-    value: object, artifact_files: list[dict[str, object]]
-) -> bool:
+def _valid_preflight_classification(value: object, artifact_files: list[dict[str, object]]) -> bool:
     if not _is_exact_object(value, {"stacks", "routes", "status", "blockers", "members"}):
         return False
     stacks = _canonical_string_list(value["stacks"], require_nonempty=True)
@@ -720,8 +768,12 @@ def _valid_preflight_classification(
     artifact_names = [cast(str, item["name"]) for item in artifact_files]
     if names != artifact_names:
         return False
-    aggregate_stacks = tuple(sorted({stack for _, item, _, _, _ in parsed_members for stack in item}))
-    aggregate_routes = tuple(sorted({route for _, _, item, _, _ in parsed_members for route in item}))
+    aggregate_stacks = tuple(
+        sorted({stack for _, item, _, _, _ in parsed_members for stack in item})
+    )
+    aggregate_routes = tuple(
+        sorted({route for _, _, item, _, _ in parsed_members for route in item})
+    )
     member_blockers = {blocker for _, _, _, _, item in parsed_members for blocker in item}
     coherent = (status == "READY") == (not blockers)
     return (
@@ -729,7 +781,10 @@ def _valid_preflight_classification(
         and tuple(routes) == aggregate_routes
         and set(blockers).issuperset(member_blockers)
         and coherent
-        and all((member_status == "READY") == (not item_blockers) for *_, member_status, item_blockers in parsed_members)
+        and all(
+            (member_status == "READY") == (not item_blockers)
+            for *_, member_status, item_blockers in parsed_members
+        )
     )
 
 
@@ -753,17 +808,13 @@ def _valid_preflight_member_classification(
         or any(stack not in _STACK_ROUTES for stack in stacks)
     ):
         return None
-    expected_routes = tuple(
-        sorted({route for stack in stacks for route in _STACK_ROUTES[stack]})
-    )
+    expected_routes = tuple(sorted({route for stack in stacks for route in _STACK_ROUTES[stack]}))
     if tuple(routes) != expected_routes:
         return None
     return name, tuple(stacks), tuple(routes), cast(str, status), tuple(blockers)
 
 
-def _canonical_string_list(
-    value: object, *, require_nonempty: bool = False
-) -> list[str] | None:
+def _canonical_string_list(value: object, *, require_nonempty: bool = False) -> list[str] | None:
     if not _is_string_list(value):
         return None
     typed = cast(list[str], value)
@@ -864,18 +915,17 @@ def _validate_evidence_lineage(
     dict[str, str],
     dict[str, frozenset[str]],
     dict[tuple[str, str], frozenset[str]],
+    tuple[ValidatedRootEvidenceAttestation, ...],
 ]:
     if trust is None:
-        diagnostics.append(
-            BindingDiagnostic("TRUSTED_EVIDENCE_LINEAGE_REQUIRED", VALIDATION_INPUT)
-        )
-        return {}, {}, {}
+        diagnostics.append(BindingDiagnostic("TRUSTED_EVIDENCE_LINEAGE_REQUIRED", VALIDATION_INPUT))
+        return {}, {}, {}, ()
     if artifact_identity is None:
-        return {}, {}, {}
+        return {}, {}, {}, ()
     artifact_sources = _preflight_artifact_sources(preflight_document)
     member_routes = _preflight_member_routes(preflight_document)
     if artifact_sources is None or member_routes is None:
-        return {}, {}, {}
+        return {}, {}, {}, ()
     try:
         value = bind_evidence_lineage(
             trust.payload,
@@ -896,7 +946,7 @@ def _validate_evidence_lineage(
                 ),
             )
         )
-        return {}, {}, {}
+        return {}, {}, {}, ()
     covered_routes: set[tuple[str, str]] = set()
     for item in value.members:
         node = nodes.get(item.report_member)
@@ -912,17 +962,15 @@ def _validate_evidence_lineage(
                     item.report_member,
                 )
             )
-            return {}, {}, {}
+            return {}, {}, {}, ()
         if any(
             item.producer.route not in member_routes.get(source.name, frozenset())
             for source in item.source_artifact_members
         ):
             diagnostics.append(
-                BindingDiagnostic(
-                    "TRUSTED_EVIDENCE_LINEAGE_ROUTE_MISMATCH", item.report_member
-                )
+                BindingDiagnostic("TRUSTED_EVIDENCE_LINEAGE_ROUTE_MISMATCH", item.report_member)
             )
-            return {}, {}, {}
+            return {}, {}, {}, ()
         covered_routes.update(
             (source.name, item.producer.route) for source in item.source_artifact_members
         )
@@ -931,11 +979,9 @@ def _validate_evidence_lineage(
             for source in item.source_artifact_members
         ):
             diagnostics.append(
-                BindingDiagnostic(
-                    "TRUSTED_EVIDENCE_LINEAGE_SOURCE_MISMATCH", item.report_member
-                )
+                BindingDiagnostic("TRUSTED_EVIDENCE_LINEAGE_SOURCE_MISMATCH", item.report_member)
             )
-            return {}, {}, {}
+            return {}, {}, {}, ()
     required_routes = {
         (member, route) for member, routes in member_routes.items() for route in routes
     }
@@ -949,15 +995,16 @@ def _validate_evidence_lineage(
                 (("member", missing_member), ("route", missing_route)),
             )
         )
-        return {}, {}, {}
+        return {}, {}, {}, ()
     if len(value.members) > _MAX_EVIDENCE_MEMBER_COUNT:
         diagnostics.append(
             BindingDiagnostic("TRUSTED_EVIDENCE_MEMBER_LIMIT_EXCEEDED", VALIDATION_INPUT)
         )
-        return {}, {}, {}
+        return {}, {}, {}, ()
     trusted: dict[str, str] = {}
     scopes: dict[str, frozenset[str]] = {}
     root_analyses: dict[tuple[str, str], set[str]] = {}
+    retained: dict[tuple[str, str, str], list[ValidatedRootEvidenceMember]] = {}
     for member, digest in value.member_digests:
         if not isinstance(member, str) or not path_is_safe(member) or not _is_digest(digest):
             diagnostics.append(
@@ -982,10 +1029,21 @@ def _validate_evidence_lineage(
                 attestation.target_occurrence_identity_sha256,
             )
             root_analyses.setdefault(identity, set()).add(attestation.semantic_root_sha256)
+            retained.setdefault((*identity, attestation.semantic_root_sha256), []).append(
+                ValidatedRootEvidenceMember(
+                    item.report_member,
+                    item.sha256,
+                    attestation.evidence_anchor_ids,
+                )
+            )
     return (
         trusted,
         scopes,
         {identity: frozenset(values) for identity, values in root_analyses.items()},
+        tuple(
+            ValidatedRootEvidenceAttestation(root_id, occurrence, semantic, tuple(sorted(members)))
+            for (root_id, occurrence, semantic), members in sorted(retained.items())
+        ),
     )
 
 
@@ -1001,6 +1059,94 @@ def _validate_package_dependency_documents(
         member = _dependency_member(dependencies, name)
         if member not in json_documents:
             diagnostics.append(BindingDiagnostic(code, member))
+
+
+def _validate_exact_root_evidence_set(
+    report: object,
+    retained: tuple[ValidatedRootEvidenceAttestation, ...],
+    diagnostics: list[BindingDiagnostic],
+) -> None:
+    if not isinstance(report, dict) or not isinstance(
+        results := report.get("authoritative_root_results"), list
+    ):
+        return
+    expected: set[tuple[str, str, str]] = set()
+    for item in results:
+        if not isinstance(item, dict) or item.get("route") != "FULL_ANALYSIS":
+            continue
+        result = item.get("result")
+        analysis = result.get("analysis") if isinstance(result, dict) else None
+        if not isinstance(analysis, dict):
+            continue
+        values = (
+            item.get("target_root_id"),
+            item.get("target_occurrence_identity_sha256"),
+            analysis.get("semantic_root_sha256"),
+        )
+        if all(_is_digest(value) for value in values):
+            expected.add(cast(tuple[str, str, str], values))
+    actual = {
+        (
+            item.target_root_id,
+            item.target_occurrence_identity_sha256,
+            item.semantic_root_sha256,
+        )
+        for item in retained
+    }
+    if not expected.issubset(actual):
+        diagnostics.append(
+            BindingDiagnostic("PACKAGE_REPORT_ROOT_EVIDENCE_SET_MISMATCH", "analysis.json")
+        )
+
+
+def _validate_root_evidence_attestations(
+    declared: tuple[ValidatedRootEvidenceAttestation, ...],
+    members: tuple[EvidenceMemberAttestation, ...],
+    anchors: tuple[EvidenceAnchorAttestation, ...],
+    diagnostics: list[BindingDiagnostic],
+) -> tuple[ValidatedRootEvidenceAttestation, ...]:
+    member_index = {item.member: item for item in members}
+    anchor_index = {item.id: item for item in anchors}
+    valid: list[ValidatedRootEvidenceAttestation] = []
+    for root in declared:
+        root_valid = True
+        seen_members: set[str] = set()
+        for evidence in root.evidence_members:
+            member = member_index.get(evidence.member)
+            if (
+                evidence.member in seen_members
+                or member is None
+                or member.sha256 != evidence.member_sha256
+            ):
+                diagnostics.append(
+                    BindingDiagnostic(
+                        "ROOT_EVIDENCE_MEMBER_INVALID",
+                        evidence.member,
+                        (("target_root_id", root.target_root_id),),
+                    )
+                )
+                root_valid = False
+                continue
+            seen_members.add(evidence.member)
+            for anchor_id in evidence.evidence_anchor_ids:
+                anchor = anchor_index.get(anchor_id)
+                if (
+                    anchor is None
+                    or anchor.member != evidence.member
+                    or anchor.member_sha256 != evidence.member_sha256
+                    or anchor.owner != member.owner
+                ):
+                    diagnostics.append(
+                        BindingDiagnostic(
+                            "ROOT_EVIDENCE_ANCHOR_INVALID",
+                            evidence.member,
+                            (("anchor_id", anchor_id), ("target_root_id", root.target_root_id)),
+                        )
+                    )
+                    root_valid = False
+        if root_valid:
+            valid.append(root)
+    return tuple(valid)
 
 
 def _validate_package_report(
@@ -1218,9 +1364,7 @@ def _root_plan_identity(
         return None
     route = value.get("route")
     identity = value.get("reuse") if route == "EXACT_REUSE" else value
-    if route not in {"BLOCKED", "EXACT_REUSE", "FULL_ANALYSIS"} or not isinstance(
-        identity, dict
-    ):
+    if route not in {"BLOCKED", "EXACT_REUSE", "FULL_ANALYSIS"} or not isinstance(identity, dict):
         return None
     root_id = identity.get("target_root_id")
     occurrence = identity.get("target_occurrence_identity_sha256")
@@ -1271,11 +1415,7 @@ def _root_result_identity(
         cast(str, occurrence),
         cast(str, route),
         cast(str, reuse["source_root_id"]) if isinstance(reuse, dict) else None,
-        (
-            cast(str, reuse["inherited_semantic_root_sha256"])
-            if isinstance(reuse, dict)
-            else None
-        ),
+        (cast(str, reuse["inherited_semantic_root_sha256"]) if isinstance(reuse, dict) else None),
     )
 
 
@@ -1702,6 +1842,7 @@ def _result(
     validated_artifact_identity: ArtifactIdentityAttestation | None,
     validated_members: tuple[EvidenceMemberAttestation, ...],
     validated_anchors: tuple[EvidenceAnchorAttestation, ...],
+    validated_root_evidence: tuple[ValidatedRootEvidenceAttestation, ...],
 ) -> BindingResult:
     ordered = tuple(
         sorted(
@@ -1721,4 +1862,5 @@ def _result(
         validated_artifact_identity=validated_artifact_identity,
         validated_evidence_members=validated_members,
         validated_evidence_anchors=validated_anchors,
+        validated_root_evidence=validated_root_evidence,
     )

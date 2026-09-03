@@ -6,6 +6,8 @@ from .binding import (
     VALIDATION_INPUT,
     DependencyPins,
     PackageDependencyPins,
+    ValidatedRootEvidenceAttestation,
+    ValidatedRootEvidenceMember,
 )
 from .bundle import (
     BOUND_VALIDATION_PROFILE,
@@ -31,6 +33,8 @@ __all__ = [
     "Diagnostic",
     "DependencyPins",
     "PackageDependencyPins",
+    "ValidatedRootEvidenceAttestation",
+    "ValidatedRootEvidenceMember",
     "CONTRACT_REVISION",
     "PACKAGE_CONTRACT_REVISION",
     "BOUND_VALIDATION_PROFILE",

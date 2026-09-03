@@ -14,6 +14,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 import tools.phase4_v2.equivalence.core as equivalence_core_module
+import tools.phase4_v2.equivalence.execution as execution_module
 import tools.phase4_v2.equivalence.inventory as inventory_module
 import tools.phase4_v2.equivalence.plan as plan_module
 import tools.phase4_v2.preflight.registry as registry_module
@@ -36,6 +37,14 @@ from tools.phase4_v2.equivalence.core import (
     validator_authority_payload,
     validator_authority_pin_payload,
     validator_envelope_signing_bytes,
+)
+from tools.phase4_v2.equivalence.execution import (
+    execution_authority_payload,
+    execution_authority_pin_payload,
+    execution_envelope_payload,
+    execution_envelope_signing_bytes,
+    load_activated_execution_authority,
+    load_authenticated_package_execution_envelope,
 )
 from tools.phase4_v2.equivalence.inventory import (
     ActivatedInventoryAuthority,
@@ -103,6 +112,7 @@ from tools.phase4_v2.preflight.registry import (
     load_activated_preparation_authority,
 )
 from tools.phase4_v2.queue import (
+    CompletionDependencyPin,
     DependencyNotSatisfiedError,
     FinishDisposition,
     InputCheckedFinishDisposition,
@@ -128,6 +138,8 @@ from tools.phase4_v2.validator.binding import (
     ArtifactIdentityAttestation,
     EvidenceAnchorAttestation,
     EvidenceMemberAttestation,
+    ValidatedRootEvidenceAttestation,
+    ValidatedRootEvidenceMember,
 )
 
 SHA_A = "a" * 64
@@ -218,6 +230,17 @@ _INVENTORY_AUTHORITY_PAYLOAD = inventory_authority_payload(
 _INVENTORY_ACTIVATION_SHA256 = json.loads(
     inventory_authority_pin_payload(_INVENTORY_AUTHORITY_PAYLOAD)
 )["activation_sha256"]
+_EXECUTION_KEY = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(SHA_C))
+_EXECUTION_AUTHORITY_PAYLOAD = execution_authority_payload(
+    authority_id="phase4-execution",
+    public_key=_EXECUTION_KEY.public_key()
+    .public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+    .hex(),
+    generation=1,
+)
+_EXECUTION_ACTIVATION_SHA256 = json.loads(
+    execution_authority_pin_payload(_EXECUTION_AUTHORITY_PAYLOAD)
+)["activation_sha256"]
 
 
 def _validator_envelope() -> AuthenticatedValidatorEnvelope:
@@ -256,6 +279,17 @@ def _activate_test_validator(monkeypatch: pytest.MonkeyPatch) -> None:
         "_read_protected_inventory_pin",
         lambda: _INVENTORY_ACTIVATION_SHA256,
     )
+    monkeypatch.setattr(
+        execution_module,
+        "_read_protected_execution_pin",
+        lambda: _EXECUTION_ACTIVATION_SHA256,
+    )
+    monkeypatch.setattr(
+        registry_module,
+        "_read_protected_activation_digest",
+        lambda: hashlib.sha256(_AUTHORITY_PAYLOAD).hexdigest(),
+    )
+
 
 _AUTHORITY_DATA = {
     "candidate_contract_sha256": CANDIDATE_CONTRACT_SHA256,
@@ -421,9 +455,7 @@ def test_target_inventory_boundary_rejects_forgery_rotation_and_generic_finish(
             output_digest=accepted.inventory.content_id,
             completion_revision=TARGET_ROOT_INVENTORY_REVISION,
         )
-    monkeypatch.setattr(
-        inventory_module, "_read_protected_inventory_pin", lambda: SHA_F
-    )
+    monkeypatch.setattr(inventory_module, "_read_protected_inventory_pin", lambda: SHA_F)
     with pytest.raises(InventoryAuthenticationError, match="protected activation"):
         validate_target_inventory_envelope(envelope)
     assert work.unit_id == accepted.completion.parent_unit_id
@@ -577,6 +609,31 @@ def _receipt(
             version_name="1.7",
             artifact_digest=SHA_B,
         ),
+        evidence_anchors_checked=1,
+        validated_evidence_members=(
+            EvidenceMemberAttestation("evidence/source.txt", SHA_B, SHA_D),
+        ),
+        validated_evidence_anchors=(
+            EvidenceAnchorAttestation(
+                "root-anchor",
+                SHA_B,
+                "evidence/source.txt",
+                SHA_D,
+                0,
+                1,
+                "/root",
+                "utf8",
+                SHA_A,
+            ),
+        ),
+        validated_root_evidence=(
+            ValidatedRootEvidenceAttestation(
+                SHA_E,
+                SHA_F,
+                SHA_C,
+                (ValidatedRootEvidenceMember("evidence/source.txt", SHA_D, ("root-anchor",)),),
+            ),
+        ),
     )
     payload = json.dumps(
         initial.identity_payload(),
@@ -648,6 +705,40 @@ def _stub_valid_report(
     return report_root, receipt
 
 
+def _execution_envelope(
+    plan: PackageExecutionPlan, report_root: Path, receipt: ValidationReceipt
+) -> object:
+    authority = load_activated_execution_authority(_EXECUTION_AUTHORITY_PAYLOAD)
+    frozen = freeze_package_execution_plan(plan)
+    assert receipt.validation_receipt_sha256 is not None
+    assert receipt.bundle_sha256 is not None
+    output = plan_module.build_validated_package_output(
+        execution_plan=plan,
+        receipt=receipt,
+        trusted_validation_receipt_sha256=receipt.validation_receipt_sha256,
+    )
+    fields = {
+        "authority": authority,
+        "receipt_bytes": receipt.to_json().encode(),
+        "package_ref_id": frozen.target_package_ref_id,
+        "execution_plan_sha256": frozen.canonical_sha256,
+        "execution_plan_id": frozen.digest,
+        "output_content_id": output.content_id,
+        "report_bundle_sha256": receipt.bundle_sha256,
+        "corpus_sha256": hashlib.sha256(
+            (report_root / "inputs" / "corpus.json").read_bytes()
+        ).hexdigest(),
+        "evidence_lineage_sha256": hashlib.sha256(TRUSTED_EVIDENCE_LINEAGE.payload).hexdigest(),
+        "ir_sha256": hashlib.sha256((report_root / "inputs" / "ir.json").read_bytes()).hexdigest(),
+    }
+    unsigned = execution_envelope_payload(**fields, signature="0" * 128)
+    payload = json.loads(unsigned)["payload"]
+    signature = _EXECUTION_KEY.sign(execution_envelope_signing_bytes(payload)).hex()
+    return load_authenticated_package_execution_envelope(
+        execution_envelope_payload(**fields, signature=signature), authority=authority
+    )
+
+
 @pytest.fixture
 def queue(tmp_path: Path) -> Queue:
     instance = Queue(tmp_path / "state" / "queue.sqlite3", tmp_path / "attempts")
@@ -675,9 +766,7 @@ def test_validator_envelope_rejects_authority_rotation_after_load(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     envelope = _validator_envelope()
-    monkeypatch.setattr(
-        equivalence_core_module, "_read_protected_validator_pin", lambda: SHA_F
-    )
+    monkeypatch.setattr(equivalence_core_module, "_read_protected_validator_pin", lambda: SHA_F)
     with pytest.raises(EquivalenceError, match="protected activation"):
         validate_authenticated_validator_envelope(envelope)
 
@@ -689,9 +778,7 @@ def test_queue_rejects_validator_authority_rotation_after_claim(
     materialize_package_validation_receipt(queue, envelope)
     lease = queue.claim("validator-importer")
     assert lease is not None
-    monkeypatch.setattr(
-        equivalence_core_module, "_read_protected_validator_pin", lambda: SHA_F
-    )
+    monkeypatch.setattr(equivalence_core_module, "_read_protected_validator_pin", lambda: SHA_F)
     with pytest.raises(EquivalenceError, match="protected activation"):
         finish_package_validation_receipt(queue, lease, envelope=envelope)
     unit = next(item for item in queue.snapshot().units if item.unit_id == lease.unit_id)
@@ -778,16 +865,21 @@ def test_preparation_requires_independently_active_capabilities(queue: Queue) ->
     assert finished.binding.completion.parent_unit_id == work.unit_id
 
 
-def test_preparation_adapter_rejects_unpinned_and_transplanted_receipts(queue: Queue) -> None:
-    unit_id = plan_module.preparation_queue_unit_id(TARGET_PACKAGE_REF_ID)
-    queue.materialize_work_unit(
-        unit_id,
-        kind=plan_module.PREPARATION_QUEUE_UNIT_KIND,
-        input_digest=SHA_A,
+def test_preparation_finish_rejects_protected_authority_rotation(
+    monkeypatch: pytest.MonkeyPatch, queue: Queue
+) -> None:
+    _activate_preparation_capabilities(queue)
+    work = materialize_package_preparation(
+        queue,
+        package_ref=TARGET_PACKAGE_REF,
+        package_local=_local_plan(),
+        authority=PREPARATION_AUTHORITY,
     )
-    lease = queue.claim("untrusted-preparation-worker")
-    assert lease is not None and lease.unit_id == unit_id
-    with pytest.raises(QueueConflictError, match="exact activated capabilities"):
+    lease = queue.claim("preparation-worker")
+    assert lease is not None
+    monkeypatch.setattr(registry_module, "_read_protected_activation_digest", lambda: SHA_F)
+
+    with pytest.raises(RuntimeError, match="activated"):
         finish_package_preparation(
             queue,
             lease,
@@ -795,6 +887,19 @@ def test_preparation_adapter_rejects_unpinned_and_transplanted_receipts(queue: Q
             package_local=_local_plan(),
             receipt=PREPARATION_RECEIPT,
             authority=PREPARATION_AUTHORITY,
+        )
+
+    unit = next(item for item in queue.snapshot().units if item.unit_id == work.unit_id)
+    assert unit.output_digest is None
+
+
+def test_preparation_adapter_rejects_unpinned_and_transplanted_receipts(queue: Queue) -> None:
+    unit_id = plan_module.preparation_queue_unit_id(TARGET_PACKAGE_REF_ID)
+    with pytest.raises(QueueConflictError, match="authenticated typed materializer"):
+        queue.materialize_work_unit(
+            unit_id,
+            kind=plan_module.PREPARATION_QUEUE_UNIT_KIND,
+            input_digest=SHA_A,
         )
 
     other_queue = Queue(
@@ -1201,12 +1306,67 @@ def test_finish_builds_bound_output_and_publishes_its_exact_identity(
         execution_plan=plan,
         report_root=report_root,
         evidence_lineage_payload=TRUSTED_EVIDENCE_LINEAGE.payload,
+        execution_envelope=_execution_envelope(plan, report_root, receipt),
     )
 
     assert finished.queue_result.disposition is FinishDisposition.COMPLETED
     assert finished.queue_result.output_digest == finished.output.content_id
     assert finished.output.execution_plan_id == materialized.input_digest
     assert finished.output.validation_receipt_sha256 == receipt.validation_receipt_sha256
+
+
+def test_finish_rejects_execution_authority_rotation_after_envelope_load(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, queue: Queue
+) -> None:
+    plan = _full_plan()
+    report_root, receipt = _stub_valid_report(monkeypatch, tmp_path, plan)
+    envelope = _execution_envelope(plan, report_root, receipt)
+    _publish_prerequisites(queue, plan)
+    materialized = materialize_package_execution_plan(queue, plan)
+    assert materialized is not None
+    lease = queue.claim("package-worker")
+    assert lease is not None
+    monkeypatch.setattr(execution_module, "_read_protected_execution_pin", lambda: SHA_F)
+
+    with pytest.raises(ValueError, match="protected activation"):
+        finish_package_execution_plan(
+            queue,
+            lease,
+            execution_plan=plan,
+            report_root=report_root,
+            evidence_lineage_payload=TRUSTED_EVIDENCE_LINEAGE.payload,
+            execution_envelope=envelope,
+        )
+
+    unit = next(item for item in queue.snapshot().units if item.unit_id == materialized.unit_id)
+    assert unit.output_digest is None
+
+
+def test_finish_rejects_materialized_plan_requirement_tampering(
+    queue: Queue,
+) -> None:
+    plan = _full_plan()
+    frozen = freeze_package_execution_plan(plan)
+    capabilities = tuple(
+        plan_module.CapabilityPin(item.name, item.revision, item.digest)
+        for item in frozen.required_capabilities
+    )
+    forged = (replace(capabilities[0], digest=SHA_F), *capabilities[1:])
+    dependencies = tuple(
+        CompletionDependencyPin(item.parent_unit_id, item.revision, item.digest)
+        for item in frozen.required_completions
+    )
+
+    with pytest.raises(QueueConflictError, match="exact frozen plan"):
+        queue._materialize_authenticated_row(
+            package_queue_unit_id(frozen.target_package_ref_id),
+            authentication=plan,
+            kind=PACKAGE_QUEUE_UNIT_KIND,
+            capability_pins=forged,
+            dependency_pins=dependencies,
+            input_digest=frozen.digest,
+            cluster_id=frozen.cluster_id,
+        )
 
 
 def test_validated_package_output_rejects_generic_completion(queue: Queue) -> None:
@@ -1246,6 +1406,7 @@ def test_finish_rejects_missing_report_before_publication(
             execution_plan=plan,
             report_root=tmp_path / "missing-report",
             evidence_lineage_payload=TRUSTED_EVIDENCE_LINEAGE.payload,
+            execution_envelope=object(),
         )
 
     assert queue.status(materialized.unit_id) is WorkUnitStatus.LEASED
@@ -1266,7 +1427,7 @@ def test_finish_rejects_plan_drift_without_an_accepted_completion(
 ) -> None:
     original = _full_plan()
     changed = _full_plan(reason="changed_routing_evidence")
-    report_root, _ = _stub_valid_report(monkeypatch, tmp_path, changed)
+    report_root, receipt = _stub_valid_report(monkeypatch, tmp_path, changed)
     _publish_prerequisites(queue, original)
     materialized = materialize_package_execution_plan(queue, original)
     assert materialized is not None
@@ -1281,6 +1442,7 @@ def test_finish_rejects_plan_drift_without_an_accepted_completion(
             execution_plan=changed,
             report_root=report_root,
             evidence_lineage_payload=TRUSTED_EVIDENCE_LINEAGE.payload,
+            execution_envelope=_execution_envelope(changed, report_root, receipt),
         )
 
     assert raised.value.output.execution_plan_id == freeze_package_execution_plan(changed).digest
@@ -1315,6 +1477,7 @@ def test_finish_fences_plan_mutation_while_output_is_built(
     lease = queue.claim("package-worker")
     assert lease is not None and lease.unit_id == materialized.unit_id
     original_builder = plan_module.build_validated_package_output
+    envelope = _execution_envelope(plan, report_root, receipt)
 
     def build_then_mutate(
         *,
@@ -1345,6 +1508,7 @@ def test_finish_fences_plan_mutation_while_output_is_built(
             execution_plan=plan,
             report_root=report_root,
             evidence_lineage_payload=TRUSTED_EVIDENCE_LINEAGE.payload,
+            execution_envelope=envelope,
         )
 
     assert queue.status(materialized.unit_id) is WorkUnitStatus.REPAIR_REQUIRED
@@ -1455,6 +1619,7 @@ def test_finish_rejects_lease_for_a_different_package_plan(queue: Queue) -> None
             execution_plan=plan,
             report_root=Path("unused"),
             evidence_lineage_payload=TRUSTED_EVIDENCE_LINEAGE.payload,
+            execution_envelope=object(),
         )
 
 
@@ -1479,6 +1644,7 @@ def test_wrong_lease_is_untouched_before_report_validation(
             execution_plan=plan,
             report_root=Path("unused"),
             evidence_lineage_payload=TRUSTED_EVIDENCE_LINEAGE.payload,
+            execution_envelope=object(),
         )
 
     assert queue.status("unrelated") is WorkUnitStatus.LEASED

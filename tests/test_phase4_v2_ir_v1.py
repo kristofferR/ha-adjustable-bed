@@ -230,6 +230,7 @@ def _authorized_document(
                 "sha256": member_digest,
             }
         ],
+        "validated_root_evidence": [],
         "validation_profile": core.BOUND_VALIDATION_PROFILE,
         "validator_revision": core.SUPPORTED_VALIDATOR_REVISION,
     }

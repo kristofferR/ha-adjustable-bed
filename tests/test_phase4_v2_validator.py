@@ -177,8 +177,7 @@ def _complete_analysis_report(
             }
         ],
         "completion_gates": [
-            {"gate": gate, "result": "PASS", "evidence": ["synthetic"]}
-            for gate in gates
+            {"gate": gate, "result": "PASS", "evidence": ["synthetic"]} for gate in gates
         ],
         "limitations": ["No reachable protocol exists in this synthetic fixture."],
         "blockers": [],
@@ -446,15 +445,14 @@ def _trusted_lineage(
             {
                 "authoritative_root_analyses": [
                     {
+                        "evidence_anchor_ids": ["value"],
                         "semantic_root_sha256": _EVIDENCE_DIGEST,
                         "target_occurrence_identity_sha256": "b" * 64,
                         "target_root_id": "a" * 64,
                     }
                 ],
                 "package_local_domains": (
-                    list(_PACKAGE_DOMAINS)
-                    if isinstance(pins, PackageDependencyPins)
-                    else []
+                    list(_PACKAGE_DOMAINS) if isinstance(pins, PackageDependencyPins) else []
                 ),
                 "producer": {
                     "invocation_sha256": "8" * 64,
@@ -642,9 +640,7 @@ def test_bound_profile_requires_complete_schema_valid_identity_bound_analysis(
 
 
 @pytest.mark.parametrize("member", ["ANALYSIS.md", "SEARCH_LOG.md", "reproducers/vector.py"])
-def test_bound_profile_requires_every_frozen_report_artifact(
-    tmp_path: Path, member: str
-) -> None:
+def test_bound_profile_requires_every_frozen_report_artifact(tmp_path: Path, member: str) -> None:
     report, members, pins, _ = _bound_bundle(tmp_path)
     del members[member]
     (report / member).unlink()
@@ -687,9 +683,7 @@ def test_package_output_profile_attests_exact_six_pin_contract(tmp_path: Path) -
 
 
 @pytest.mark.parametrize("member", ["ANALYSIS.md", "SEARCH_LOG.md", "reproducers/vector.py"])
-def test_package_profile_requires_every_frozen_report_artifact(
-    tmp_path: Path, member: str
-) -> None:
+def test_package_profile_requires_every_frozen_report_artifact(tmp_path: Path, member: str) -> None:
     report, members, pins, _ = _package_bound_bundle(tmp_path)
     del members[member]
     (report / member).unlink()
@@ -713,15 +707,11 @@ def test_package_profile_rejects_empty_reproducer_artifact(tmp_path: Path) -> No
 
     receipt = _validate_package_bound(report, pins)
 
-    assert "FROZEN_REPORT_REPRODUCER_MISSING" in {
-        item.code for item in receipt.diagnostics
-    }
+    assert "FROZEN_REPORT_REPRODUCER_MISSING" in {item.code for item in receipt.diagnostics}
 
 
 @pytest.mark.parametrize("member", ["ANALYSIS.md", "SEARCH_LOG.md"])
-def test_package_profile_rejects_empty_mandatory_document(
-    tmp_path: Path, member: str
-) -> None:
+def test_package_profile_rejects_empty_mandatory_document(tmp_path: Path, member: str) -> None:
     report, members, pins, _ = _package_bound_bundle(tmp_path)
     (report / member).write_bytes(b"")
     members[member] = b""
@@ -729,9 +719,7 @@ def test_package_profile_rejects_empty_mandatory_document(
 
     receipt = _validate_package_bound(report, pins)
 
-    assert "FROZEN_REPORT_MEMBER_MISSING" in {
-        item.code for item in receipt.diagnostics
-    }
+    assert "FROZEN_REPORT_MEMBER_MISSING" in {item.code for item in receipt.diagnostics}
 
 
 @pytest.mark.parametrize(
@@ -906,8 +894,89 @@ def test_package_profile_binds_each_authoritative_root_result_to_its_plan(
     )
 
     receipt = _validate_package_bound(report, pins)
-    assert "PACKAGE_REPORT_ROOT_SET_MISMATCH" in {
-        item.code for item in receipt.diagnostics
+    assert "PACKAGE_REPORT_ROOT_SET_MISMATCH" in {item.code for item in receipt.diagnostics}
+
+
+def test_package_profile_rejects_root_attestation_with_unknown_anchor(tmp_path: Path) -> None:
+    report, _, pins, _ = _package_bound_bundle(tmp_path)
+    trust = _trusted_lineage(pins)
+    document = json.loads(trust.payload)
+    document["members"][0]["authoritative_root_analyses"][0]["evidence_anchor_ids"] = ["missing"]
+    payload = json.dumps(document, sort_keys=True, separators=(",", ":")).encode()
+    receipt = validate_report_bundle(
+        report,
+        expected_dependencies=pins,
+        expected_evidence_lineage=replace(
+            trust,
+            payload=payload,
+            expected_manifest_sha256=hashlib.sha256(payload).hexdigest(),
+        ),
+    )
+
+    assert "ROOT_EVIDENCE_ANCHOR_INVALID" in {item.code for item in receipt.diagnostics}
+
+
+def test_package_profile_retains_two_roots_sharing_one_evidence_member(tmp_path: Path) -> None:
+    report, members, pins, contract = _package_bound_bundle(tmp_path)
+    roots = [("a" * 64, "b" * 64), ("c" * 64, "d" * 64)]
+    root_plans = [
+        {
+            "analysis_capabilities": [],
+            "analysis_dependencies": [],
+            "reason": "fixture",
+            "revision": "phase4-v2-root-execution-plan-v2",
+            "route": "FULL_ANALYSIS",
+            "target_occurrence_identity_sha256": occurrence,
+            "target_root_id": root_id,
+        }
+        for root_id, occurrence in roots
+    ]
+    root_results = [
+        {
+            "result": {
+                "analysis": {"semantic_root_sha256": _EVIDENCE_DIGEST},
+                "status": "COMPLETE",
+            },
+            "route": "FULL_ANALYSIS",
+            "target_occurrence_identity_sha256": occurrence,
+            "target_root_id": root_id,
+        }
+        for root_id, occurrence in roots
+    ]
+    pins = _set_package_roots(
+        report,
+        members,
+        pins,
+        contract,
+        root_plans=root_plans,
+        root_results=root_results,
+    )
+    trust = _trusted_lineage(pins)
+    document = json.loads(trust.payload)
+    analyses = document["members"][0]["authoritative_root_analyses"]
+    analyses.append(
+        {
+            "evidence_anchor_ids": ["value"],
+            "semantic_root_sha256": _EVIDENCE_DIGEST,
+            "target_occurrence_identity_sha256": "d" * 64,
+            "target_root_id": "c" * 64,
+        }
+    )
+    payload = json.dumps(document, sort_keys=True, separators=(",", ":")).encode()
+    receipt = validate_report_bundle(
+        report,
+        expected_dependencies=pins,
+        expected_evidence_lineage=replace(
+            trust,
+            payload=payload,
+            expected_manifest_sha256=hashlib.sha256(payload).hexdigest(),
+        ),
+    )
+
+    assert receipt.accepted is True
+    assert len(receipt.validated_root_evidence) == 2
+    assert {item.evidence_members[0].member for item in receipt.validated_root_evidence} == {
+        _EVIDENCE_MEMBER
     }
 
 
@@ -939,9 +1008,7 @@ def test_package_profile_rejects_unattested_full_analysis_semantic_root(
 
     receipt = _validate_package_bound(report, pins)
 
-    assert "PACKAGE_REPORT_FULL_ANALYSIS_UNATTESTED" in {
-        item.code for item in receipt.diagnostics
-    }
+    assert "PACKAGE_REPORT_FULL_ANALYSIS_UNATTESTED" in {item.code for item in receipt.diagnostics}
     assert receipt.accepted is False
 
 
@@ -974,9 +1041,7 @@ def test_package_profile_rejects_anchor_hash_as_full_analysis_semantic_root(
 
     receipt = _validate_package_bound(report, pins)
 
-    assert "PACKAGE_REPORT_FULL_ANALYSIS_UNATTESTED" in {
-        item.code for item in receipt.diagnostics
-    }
+    assert "PACKAGE_REPORT_FULL_ANALYSIS_UNATTESTED" in {item.code for item in receipt.diagnostics}
     assert receipt.accepted is False
 
 
@@ -1008,9 +1073,7 @@ def test_package_profile_rejects_semantic_root_attested_for_another_root(
 
     receipt = _validate_package_bound(report, pins)
 
-    assert "PACKAGE_REPORT_FULL_ANALYSIS_UNATTESTED" in {
-        item.code for item in receipt.diagnostics
-    }
+    assert "PACKAGE_REPORT_FULL_ANALYSIS_UNATTESTED" in {item.code for item in receipt.diagnostics}
     assert receipt.accepted is False
 
 
@@ -1146,9 +1209,7 @@ def test_package_profile_rejects_invalid_route_payload(
         pins,
         contract,
         root_plans=[plan],
-        root_results=[
-            {**root, "result": {result_name: payload, "status": "COMPLETE"}}
-        ],
+        root_results=[{**root, "result": {result_name: payload, "status": "COMPLETE"}}],
     )
 
     receipt = _validate_package_bound(report, pins)
@@ -1232,9 +1293,7 @@ def test_package_profile_rejects_exact_reuse_result_from_unpinned_source(
     )
     receipt = _validate_package_bound(report, pins)
 
-    assert "PACKAGE_REPORT_ROOT_SET_MISMATCH" in {
-        item.code for item in receipt.diagnostics
-    }
+    assert "PACKAGE_REPORT_ROOT_SET_MISMATCH" in {item.code for item in receipt.diagnostics}
 
 
 @pytest.mark.parametrize(
@@ -1357,9 +1416,7 @@ def test_package_profile_requires_explicit_root_plan_set(tmp_path: Path) -> None
     assert isinstance(updated_pins, PackageDependencyPins)
     receipt = _validate_package_bound(report, updated_pins)
 
-    assert "PINNED_EXECUTION_PLAN_INVALID" in {
-        item.code for item in receipt.diagnostics
-    }
+    assert "PINNED_EXECUTION_PLAN_INVALID" in {item.code for item in receipt.diagnostics}
 
 
 def test_package_profile_binds_report_to_preflight_identity(tmp_path: Path) -> None:
@@ -2226,9 +2283,7 @@ def test_lineage_identity_is_rechecked_at_bundle_boundary(tmp_path: Path) -> Non
     )
 
     diagnostic = next(
-        item
-        for item in receipt.diagnostics
-        if item.code == "TRUSTED_EVIDENCE_LINEAGE_INVALID"
+        item for item in receipt.diagnostics if item.code == "TRUSTED_EVIDENCE_LINEAGE_INVALID"
     )
     assert dict(diagnostic.context)["lineage_code"] == "artifact_digest_mismatch"
 
@@ -2244,9 +2299,7 @@ def test_lineage_producer_route_must_be_required_by_preflight(tmp_path: Path) ->
     forged = EvidenceLineageTrust(
         payload=payload,
         expected_manifest_sha256=hashlib.sha256(payload).hexdigest(),
-        trusted_producers=(
-            TrustedProducer("phase4-extract-v1", "jadx", _LINEAGE_TOOL_SHA256),
-        ),
+        trusted_producers=(TrustedProducer("phase4-extract-v1", "jadx", _LINEAGE_TOOL_SHA256),),
     )
 
     receipt = validate_report_bundle(
@@ -2255,9 +2308,7 @@ def test_lineage_producer_route_must_be_required_by_preflight(tmp_path: Path) ->
         expected_evidence_lineage=forged,
     )
 
-    assert "TRUSTED_EVIDENCE_LINEAGE_ROUTE_MISMATCH" in {
-        item.code for item in receipt.diagnostics
-    }
+    assert "TRUSTED_EVIDENCE_LINEAGE_ROUTE_MISMATCH" in {item.code for item in receipt.diagnostics}
 
 
 def test_lineage_completion_size_must_match_substantive_bundle_output(tmp_path: Path) -> None:
@@ -2318,9 +2369,7 @@ def test_lineage_cannot_borrow_route_from_another_artifact_member(tmp_path: Path
             },
         ],
     }
-    changed_pins = _replace_dependency(
-        report, members, pins, contract, "preflight", preflight
-    )
+    changed_pins = _replace_dependency(report, members, pins, contract, "preflight", preflight)
     evidence_members = contract["evidence_members"]
     anchors = contract["anchors"]
     assert isinstance(evidence_members, list)
@@ -2346,17 +2395,13 @@ def test_lineage_cannot_borrow_route_from_another_artifact_member(tmp_path: Path
                 },
                 "report_member": _EVIDENCE_MEMBER,
                 "sha256": _EVIDENCE_DIGEST,
-                "source_artifact_members": [
-                    {"name": "split.apk", "sha256": "6" * 64}
-                ],
+                "source_artifact_members": [{"name": "split.apk", "sha256": "6" * 64}],
             }
         ],
         "preflight_sha256": changed_pins.preflight_sha256,
         "schema": LINEAGE_SCHEMA_REVISION,
     }
-    lineage_payload = json.dumps(
-        lineage_document, sort_keys=True, separators=(",", ":")
-    ).encode()
+    lineage_payload = json.dumps(lineage_document, sort_keys=True, separators=(",", ":")).encode()
     lineage = EvidenceLineageTrust(
         payload=lineage_payload,
         expected_manifest_sha256=hashlib.sha256(lineage_payload).hexdigest(),
@@ -2369,9 +2414,7 @@ def test_lineage_cannot_borrow_route_from_another_artifact_member(tmp_path: Path
         expected_evidence_lineage=lineage,
     )
 
-    assert "TRUSTED_EVIDENCE_LINEAGE_ROUTE_MISMATCH" in {
-        item.code for item in receipt.diagnostics
-    }
+    assert "TRUSTED_EVIDENCE_LINEAGE_ROUTE_MISMATCH" in {item.code for item in receipt.diagnostics}
 
 
 def test_lineage_must_cover_every_required_member_route(tmp_path: Path) -> None:
@@ -2392,9 +2435,7 @@ def test_lineage_must_cover_every_required_member_route(tmp_path: Path) -> None:
             }
         ],
     }
-    changed_pins = _replace_dependency(
-        report, members, pins, contract, "preflight", preflight
-    )
+    changed_pins = _replace_dependency(report, members, pins, contract, "preflight", preflight)
 
     receipt = validate_report_bundle(
         report,
@@ -2444,9 +2485,7 @@ def test_legacy_blocked_preflight_cannot_issue_bound_receipt(tmp_path: Path) -> 
         "status": "BLOCKED",
         "blockers": ["stack_detection_not_exhaustive"],
     }
-    changed_pins = _replace_dependency(
-        report, members, pins, contract, "preflight", preflight
-    )
+    changed_pins = _replace_dependency(report, members, pins, contract, "preflight", preflight)
 
     receipt = _validate_bound(report, changed_pins)
 
@@ -2470,15 +2509,11 @@ def test_v3_preflight_status_and_blockers_must_be_coherent(
     assert isinstance(classification, dict)
     classification["status"] = status
     classification["blockers"] = blockers
-    changed_pins = _replace_dependency(
-        report, members, pins, contract, "preflight", preflight
-    )
+    changed_pins = _replace_dependency(report, members, pins, contract, "preflight", preflight)
 
     receipt = _validate_bound(report, changed_pins)
 
-    assert "PINNED_PREFLIGHT_CLASSIFICATION_INVALID" in {
-        item.code for item in receipt.diagnostics
-    }
+    assert "PINNED_PREFLIGHT_CLASSIFICATION_INVALID" in {item.code for item in receipt.diagnostics}
 
 
 def test_coherent_v3_blocked_preflight_is_not_ready(tmp_path: Path) -> None:
@@ -2494,9 +2529,7 @@ def test_coherent_v3_blocked_preflight_is_not_ready(tmp_path: Path) -> None:
     assert isinstance(member, dict)
     member["status"] = "BLOCKED"
     member["blockers"] = ["unknown_application_stack:base.apk"]
-    changed_pins = _replace_dependency(
-        report, members, pins, contract, "preflight", preflight
-    )
+    changed_pins = _replace_dependency(report, members, pins, contract, "preflight", preflight)
 
     receipt = _validate_bound(report, changed_pins)
 

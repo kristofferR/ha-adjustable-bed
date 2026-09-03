@@ -81,6 +81,8 @@ from tools.phase4_v2.validator.binding import (
     ArtifactIdentityAttestation,
     EvidenceAnchorAttestation,
     EvidenceMemberAttestation,
+    ValidatedRootEvidenceAttestation,
+    ValidatedRootEvidenceMember,
 )
 
 SHA_A = "a" * 64
@@ -327,6 +329,17 @@ def mixed_plan() -> PackageExecutionPlan:
 
 def receipt(*, bundle: str = SHA_D, plan: PackageExecutionPlan | None = None) -> ValidationReceipt:
     frozen_plan = freeze_package_execution_plan(plan or mixed_plan())
+    plan_data = json.loads(frozen_plan.canonical_bytes)
+    root_evidence = tuple(
+        ValidatedRootEvidenceAttestation(
+            item["target_root_id"],
+            item["target_occurrence_identity_sha256"],
+            SHA_0,
+            (ValidatedRootEvidenceMember("evidence/root.txt", SHA_D, ("root",)),),
+        )
+        for item in plan_data["root_plans"]
+        if item["route"] == "FULL_ANALYSIS"
+    )
     initial = ValidationReceipt(
         validator_revision=VALIDATOR_REVISION,
         accepted=True,
@@ -353,6 +366,14 @@ def receipt(*, bundle: str = SHA_D, plan: PackageExecutionPlan | None = None) ->
             version_name="1.7",
             artifact_digest=SHA_B,
         ),
+        evidence_anchors_checked=1,
+        validated_evidence_members=(EvidenceMemberAttestation("evidence/root.txt", SHA_B, SHA_D),),
+        validated_evidence_anchors=(
+            EvidenceAnchorAttestation(
+                "root", SHA_B, "evidence/root.txt", SHA_D, 0, 1, "/root", "utf8", SHA_A
+            ),
+        ),
+        validated_root_evidence=root_evidence,
     )
     payload = json.dumps(
         initial.identity_payload(),
@@ -518,6 +539,13 @@ def test_freeze_deduplicates_shared_inherited_semantic_roots() -> None:
 
     assert frozen.inherited_semantic_roots == (SHA_0,)
 
+    forged = object.__new__(type(frozen))
+    for name in type(frozen).__dataclass_fields__:
+        object.__setattr__(forged, name, getattr(frozen, name))
+    object.__setattr__(forged, "inherited_semantic_roots", (SHA_A,))
+    with pytest.raises(EquivalenceError, match="derive from canonical root plans"):
+        plan_module.validate_frozen_package_execution_plan(forged)
+
 
 def test_full_route_has_no_reuse_pins_and_mixed_plan_is_allowed() -> None:
     plan = mixed_plan()
@@ -615,7 +643,9 @@ def test_omitted_extra_or_transplanted_roots_are_rejected() -> None:
     object.__setattr__(
         other,
         "completion",
-        CompletionPin("inventory:other", TARGET_ROOT_INVENTORY_REVISION, other.inventory.content_id),
+        CompletionPin(
+            "inventory:other", TARGET_ROOT_INVENTORY_REVISION, other.inventory.content_id
+        ),
     )
     with pytest.raises(InventoryAuthenticationError, match="authenticated provenance"):
         exact_root(other)

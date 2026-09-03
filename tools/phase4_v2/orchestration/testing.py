@@ -720,6 +720,7 @@ def _authorized_final_ir() -> tuple[dict[str, object], dict[str, str]]:
         "validated_evidence_members": [
             {"member": member, "owner": artifact.artifact_digest, "sha256": member_digest}
         ],
+        "validated_root_evidence": [],
         "validation_profile": BOUND_VALIDATION_PROFILE,
         "validator_revision": SUPPORTED_VALIDATOR_REVISION,
     }

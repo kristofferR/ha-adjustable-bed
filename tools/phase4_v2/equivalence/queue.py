@@ -135,8 +135,9 @@ def materialize_package_validation_receipt(
     envelope = validate_authenticated_validator_envelope(envelope)
     package_ref = frozen_package_ref_from_validator_envelope(envelope)
     completion = package_validation_receipt_completion(package_ref)
-    queue.materialize_work_unit(
+    queue._materialize_authenticated_row(
         completion.parent_unit_id,
+        authentication=envelope,
         kind=PACKAGE_VALIDATION_RECEIPT_QUEUE_UNIT_KIND,
         input_digest=completion.digest,
         priority=priority,
@@ -169,8 +170,9 @@ def materialize_target_inventory(
     pin = inventory_authority_capability(envelope.authority)
     extractor_pin = inventory_extractor_capability(envelope.extractor)
     unit_id = target_inventory_queue_unit_id(envelope.package_ref.content_id)
-    input_digest = queue.materialize_work_unit(
+    input_digest = queue._materialize_authenticated_row(
         unit_id,
+        authentication=envelope,
         kind=INVENTORY_QUEUE_UNIT_KIND,
         capability_pins=tuple(
             QueueCapabilityPin(item.name, item.revision, item.digest)
@@ -230,8 +232,9 @@ def materialize_package_preparation(
         raise QueueConflictError("preparation package identity does not match its frozen reference")
     capabilities = preparation_capability_pins(authority)
     unit_id = preparation_queue_unit_id(package_ref_id)
-    input_digest = queue.materialize_work_unit(
+    input_digest = queue._materialize_authenticated_row(
         unit_id,
+        authentication=(package_ref, package_local, authority),
         kind=PREPARATION_QUEUE_UNIT_KIND,
         capability_pins=tuple(
             QueueCapabilityPin(pin.name, pin.revision, pin.digest) for pin in capabilities
@@ -289,8 +292,9 @@ def materialize_package_execution_plan(
     )
 
     unit_id = package_queue_unit_id(frozen.target_package_ref_id)
-    input_digest = queue.materialize_work_unit(
+    input_digest = queue._materialize_authenticated_row(
         unit_id,
+        authentication=execution_plan,
         kind=PACKAGE_QUEUE_UNIT_KIND,
         capability_pins=tuple(
             QueueCapabilityPin(pin.name, pin.revision, pin.digest)
@@ -317,6 +321,7 @@ def finish_package_execution_plan(
     execution_plan: PackageExecutionPlan,
     report_root: Path,
     evidence_lineage_payload: bytes,
+    execution_envelope: object,
 ) -> FinishedPackageWork:
     """Validate and publish a package report from live trusted inputs."""
     frozen = freeze_package_execution_plan(execution_plan)
@@ -330,6 +335,7 @@ def finish_package_execution_plan(
             execution_plan=execution_plan,
             report_root=report_root,
             evidence_lineage_payload=evidence_lineage_payload,
+            execution_envelope=execution_envelope,
         )
     except InputDigestMismatchError as error:
         raise PackagePlanInputMismatchError(

@@ -22,6 +22,7 @@ from tools.phase4_v2.preflight.registry import (
     PREPARATION_RECEIPT_REVISION,
     ActivatedPreparationAuthority,
     PreparationReceipt,
+    load_activated_preparation_authority,
 )
 from tools.phase4_v2.validator import (
     PACKAGE_BOUND_VALIDATION_PROFILE,
@@ -35,6 +36,8 @@ from tools.phase4_v2.validator.binding import (
     ArtifactIdentityAttestation,
     EvidenceAnchorAttestation,
     EvidenceMemberAttestation,
+    ValidatedRootEvidenceAttestation,
+    ValidatedRootEvidenceMember,
 )
 
 from .core import (
@@ -56,7 +59,7 @@ TARGET_ROOT_INVENTORY_REVISION = "phase4-v2-target-root-inventory-v1"
 EXACT_REUSE_PINS_REVISION = "phase4-v2-exact-reuse-pins-v2"
 ROOT_EXECUTION_PLAN_REVISION = "phase4-v2-root-execution-plan-v2"
 PACKAGE_EXECUTION_PLAN_REVISION = "phase4-v2-package-execution-plan-v3"
-VALIDATED_PACKAGE_OUTPUT_REVISION = "phase4-v2-validated-package-output-v3"
+VALIDATED_PACKAGE_OUTPUT_REVISION = "phase4-v2-validated-package-output-v4"
 PACKAGE_QUEUE_UNIT_KIND = "validated-package-output"
 PACKAGE_QUEUE_UNIT_PREFIX = "package-output"
 PREPARATION_QUEUE_UNIT_KIND = "prepared-package-input"
@@ -465,7 +468,11 @@ def preparation_capability_pins(
         authority_bytes = _canonical_bytes(authority.to_data()) + b"\n"
     except (AttributeError, TypeError, ValueError) as error:
         raise EquivalenceError("preparation authority is invalid") from error
-    if hashlib.sha256(authority_bytes).hexdigest() != authority.activation_sha256:
+    try:
+        restored_authority = load_activated_preparation_authority(authority_bytes)
+    except ValueError as error:
+        raise EquivalenceError("preparation authority activation is invalid") from error
+    if restored_authority != authority:
         _fail("preparation authority does not reproduce its external activation")
     if authority.candidate_contract_sha256 != CANDIDATE_CONTRACT_SHA256:
         _fail("preparation authority uses an unsupported candidate contract")
@@ -1691,6 +1698,30 @@ def _new_frozen_package_execution_plan(
         _fail("snapshot status does not match its canonical preimage")
     if decoded.get("authoritative_root_count") != root_count:
         _fail("snapshot root count does not match its canonical preimage")
+    decoded_roots = decoded.get("root_plans")
+    if not isinstance(decoded_roots, list):
+        _fail("snapshot root plans are absent from its canonical preimage")
+    derived_semantic_roots: set[str] = set()
+    derived_audit_digests: set[str] = set()
+    for root in decoded_roots:
+        if not isinstance(root, dict) or root.get("route") != Route.EXACT_REUSE.value:
+            continue
+        reuse = root.get("reuse")
+        if not isinstance(reuse, dict):
+            _fail("snapshot exact-reuse root has no canonical reuse binding")
+        semantic_root = reuse.get("inherited_semantic_root_sha256")
+        audit = reuse.get("direct_semantic_audit_completion")
+        if not isinstance(semantic_root, str) or not isinstance(audit, dict):
+            _fail("snapshot exact-reuse root has malformed semantic bindings")
+        audit_digest = audit.get("digest")
+        if not isinstance(audit_digest, str):
+            _fail("snapshot exact-reuse root has malformed audit completion")
+        derived_semantic_roots.add(semantic_root)
+        derived_audit_digests.add(audit_digest)
+    if inherited_semantic_roots != tuple(sorted(derived_semantic_roots)):
+        _fail("snapshot inherited semantic roots do not derive from canonical root plans")
+    if semantic_audit_completion_digests != tuple(sorted(derived_audit_digests)):
+        _fail("snapshot audit completions do not derive from canonical root plans")
     local = decoded.get("package_local")
     if not isinstance(local, dict) or (
         local.get("package_name"),
@@ -1943,12 +1974,13 @@ class ValidatedPackageOutput:
     target_final_ir_schema_revision: str
     target_final_ir_schema_sha256: str
     target_final_ir_json_sha256: str
+    validated_root_evidence: tuple[ValidatedRootEvidenceAttestation, ...]
     revision: str
 
     def __init__(self) -> None:
         _fail("ValidatedPackageOutput must be created by the trusted receipt factory")
 
-    def to_data(self) -> dict[str, str]:
+    def to_data(self) -> dict[str, object]:
         return {
             "execution_plan_id": self.execution_plan_id,
             "revision": self.revision,
@@ -1961,6 +1993,7 @@ class ValidatedPackageOutput:
             "target_final_ir_schema_sha256": self.target_final_ir_schema_sha256,
             "target_final_ir_json_sha256": self.target_final_ir_json_sha256,
             "validation_receipt_sha256": self.validation_receipt_sha256,
+            "validated_root_evidence": [item.to_dict() for item in self.validated_root_evidence],
         }
 
     @property
@@ -2096,6 +2129,58 @@ def _snapshot_receipt(receipt: ValidationReceipt) -> ValidationReceipt:
         )
         if item.end_byte <= item.start_byte:
             _fail("evidence anchor range is invalid")
+    if type(receipt.validated_root_evidence) is not tuple:
+        _fail("validated root evidence must be an exact tuple")
+    root_evidence: list[ValidatedRootEvidenceAttestation] = []
+    for root in receipt.validated_root_evidence:
+        if type(root) is not ValidatedRootEvidenceAttestation:
+            _fail("validated root evidence contains a non-exact attestation")
+        evidence_members: list[ValidatedRootEvidenceMember] = []
+        for evidence in root.evidence_members:
+            if type(evidence) is not ValidatedRootEvidenceMember:
+                _fail("validated root evidence contains a non-exact member")
+            anchor_ids = tuple(
+                _receipt_string(item, "root evidence anchor ID", maximum=256)
+                for item in evidence.evidence_anchor_ids
+            )
+            if not anchor_ids or anchor_ids != tuple(sorted(set(anchor_ids))):
+                _fail("validated root evidence anchor IDs are not canonical")
+            evidence_members.append(
+                ValidatedRootEvidenceMember(
+                    _receipt_string(evidence.member, "root evidence member"),
+                    _receipt_sha(evidence.member_sha256, "root evidence member digest"),
+                    anchor_ids,
+                )
+            )
+        copied_root = ValidatedRootEvidenceAttestation(
+            _receipt_sha(root.target_root_id, "root evidence target root"),
+            _receipt_sha(
+                root.target_occurrence_identity_sha256, "root evidence occurrence identity"
+            ),
+            _receipt_sha(root.semantic_root_sha256, "root evidence semantic root"),
+            tuple(evidence_members),
+        )
+        root_evidence.append(copied_root)
+    if tuple(root_evidence) != tuple(sorted(set(root_evidence))):
+        _fail("validated root evidence is not canonical")
+    member_index = {item.member: item for item in members}
+    anchor_index = {item.id: item for item in anchors}
+    for root in root_evidence:
+        if not root.evidence_members:
+            _fail("validated root evidence has no evidence members")
+        for evidence in root.evidence_members:
+            member = member_index.get(evidence.member)
+            if member is None or member.sha256 != evidence.member_sha256:
+                _fail("validated root evidence member is not retained by the receipt")
+            for anchor_id in evidence.evidence_anchor_ids:
+                anchor = anchor_index.get(anchor_id)
+                if (
+                    anchor is None
+                    or anchor.member != evidence.member
+                    or anchor.member_sha256 != evidence.member_sha256
+                    or anchor.owner != member.owner
+                ):
+                    _fail("validated root evidence anchor is not retained for its member")
     dependencies = _exact_pair_tuple(receipt.dependency_digests, "validator dependency digests")
     if tuple(name for name, _ in dependencies) != _PACKAGE_RECEIPT_DEPENDENCIES:
         _fail("validator dependency digests are not the exact BOUND_V5 set")
@@ -2142,6 +2227,7 @@ def _snapshot_receipt(receipt: ValidationReceipt) -> ValidationReceipt:
         validated_artifact_identity=copied_identity,
         validated_evidence_members=tuple(members),
         validated_evidence_anchors=tuple(anchors),
+        validated_root_evidence=tuple(root_evidence),
         validation_receipt_sha256=_receipt_sha(
             receipt.validation_receipt_sha256,
             "receipt.validation_receipt_sha256",
@@ -2226,6 +2312,18 @@ def build_validated_package_output(
     forbidden = {*plan.inherited_semantic_roots, *plan.semantic_audit_completion_digests}
     if frozen_receipt.bundle_sha256 in forbidden:
         _fail("source semantic-root evidence cannot serve as the target package report")
+    canonical_plan = json.loads(plan.canonical_bytes)
+    expected_full_roots = {
+        (item["target_root_id"], item["target_occurrence_identity_sha256"])
+        for item in canonical_plan["root_plans"]
+        if item["route"] == Route.FULL_ANALYSIS.value
+    }
+    retained_full_roots = {
+        (item.target_root_id, item.target_occurrence_identity_sha256)
+        for item in frozen_receipt.validated_root_evidence
+    }
+    if retained_full_roots != expected_full_roots:
+        _fail("validator receipt does not retain the exact FULL root evidence set")
     output = object.__new__(ValidatedPackageOutput)
     object.__setattr__(output, "target_package_ref_id", plan.target_package_ref_id)
     object.__setattr__(output, "execution_plan_id", plan.digest)
@@ -2237,5 +2335,6 @@ def build_validated_package_output(
     object.__setattr__(output, "target_final_ir_schema_revision", FINAL_SCHEMA_REVISION)
     object.__setattr__(output, "target_final_ir_schema_sha256", FINAL_IR_SCHEMA_SHA256)
     object.__setattr__(output, "target_final_ir_json_sha256", final_ir_sha256)
+    object.__setattr__(output, "validated_root_evidence", frozen_receipt.validated_root_evidence)
     object.__setattr__(output, "revision", VALIDATED_PACKAGE_OUTPUT_REVISION)
     return output

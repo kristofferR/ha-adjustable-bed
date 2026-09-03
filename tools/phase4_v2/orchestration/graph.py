@@ -394,8 +394,9 @@ def materialize_cluster_graph(queue: Queue, graph: ClusterGraphPlan) -> ClusterG
     publication_id = tracker_publication_unit_id(graph)
 
     for package in graph.packages:
-        queue.materialize_work_unit(
+        queue._materialize_authenticated_row(
             package.unit_id,
+            authentication=graph,
             kind=ORCHESTRATION_PACKAGE_ANALYSIS_KIND,
             cluster_id=graph.cluster_id,
             input_digest=package.input_sha256,
@@ -413,8 +414,9 @@ def materialize_cluster_graph(queue: Queue, graph: ClusterGraphPlan) -> ClusterG
         if analysis.revision != VALIDATED_PACKAGE_OUTPUT_REVISION:
             raise QueueConflictError("package analysis completion revision is unsupported")
         dependencies = (analysis,)
-        queue.materialize_work_unit(
+        queue._materialize_authenticated_row(
             package_audit_unit_id(graph, package.package_ref_id),
+            authentication=graph,
             kind=ORCHESTRATION_PACKAGE_AUDIT_KIND,
             cluster_id=graph.cluster_id,
             capability_pins=graph.audit_capability_pins,
@@ -445,8 +447,9 @@ def materialize_cluster_graph(queue: Queue, graph: ClusterGraphPlan) -> ClusterG
     ):
         raise QueueConflictError("package audit completion revision is unsupported")
     if len(audit_completions) == len(graph.packages):
-        queue.materialize_work_unit(
+        queue._materialize_authenticated_row(
             reconciliation_id,
+            authentication=graph,
             kind=ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
             cluster_id=graph.cluster_id,
             capability_pins=graph.reconciliation_capability_pins,
@@ -464,8 +467,9 @@ def materialize_cluster_graph(queue: Queue, graph: ClusterGraphPlan) -> ClusterG
     reconciliation = completion_pins(snapshot).get(reconciliation_id)
     if reconciliation is not None:
         dependencies = (reconciliation,)
-        queue.materialize_work_unit(
+        queue._materialize_authenticated_row(
             implementation_id,
+            authentication=graph,
             kind=ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
             cluster_id=graph.cluster_id,
             capability_pins=graph.implementation_capability_pins,
@@ -483,8 +487,9 @@ def materialize_cluster_graph(queue: Queue, graph: ClusterGraphPlan) -> ClusterG
     implementation = completion_pins(snapshot).get(implementation_id)
     if implementation is not None:
         dependencies = (implementation,)
-        queue.materialize_work_unit(
+        queue._materialize_authenticated_row(
             publication_id,
+            authentication=graph,
             kind=ORCHESTRATION_TRACKER_PUBLICATION_KIND,
             cluster_id=graph.cluster_id,
             capability_pins=graph.publication_capability_pins,
