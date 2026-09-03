@@ -79,7 +79,6 @@ from tools.phase4_v2.equivalence import (
     load_authenticated_exact_reuse_prerequisite,
     load_authenticated_exact_reuse_provenance,
     load_authenticated_package_execution_envelope,
-    load_authenticated_target_inventory_envelope,
     load_authenticated_validator_envelope,
     materialize_exact_reuse_prerequisites,
     materialize_package_execution_plan,
@@ -90,8 +89,6 @@ from tools.phase4_v2.equivalence import (
     route_application_root,
     semantic_root_audit_from_authenticated_prerequisite,
     source_report_root_completion,
-    target_inventory_envelope_payload,
-    target_inventory_signing_bytes,
 )
 from tools.phase4_v2.ir import dumps_final_ir, loads_final_ir, render_final_ir_markdown
 from tools.phase4_v2.orchestration.completion import (
@@ -139,6 +136,10 @@ from tools.phase4_v2.queue import (
     publish_tracker_fanout,
 )
 from tools.phase4_v2.queue.publication_config import TrackerPublicationConfig
+from tools.phase4_v2.raw_source import (
+    AuthenticatedPackageLocalEvidence,
+    PackageLocalEvidenceReauthenticationInput,
+)
 from tools.phase4_v2.reconciliation import (
     PackageSurface,
     derive_authenticated_final_ir_package_surface,
@@ -230,6 +231,9 @@ class AuthenticatedSyntheticPackage:
     application_roots: tuple[ApplicationRoot, ...]
     extractor: ExtractorCapability
     source_registry: AuthenticatedSourceReportRegistry
+    package_local_evidence: AuthenticatedPackageLocalEvidence
+    package_local_evidence_inputs: PackageLocalEvidenceReauthenticationInput
+    package_local_validator_envelope: object
     exact_reuse_receipts: tuple[AuthenticatedExactReuseProvenance, ...]
 
 
@@ -457,7 +461,11 @@ def _finish_stage(
         analysis = next(item for item in queue.snapshot().units if item.unit_id == package.unit_id)
         authenticated_package = state.packages[package.package_ref_id]
         final_data, trusted_receipts = _authorized_final_ir(
-            authenticated_package.source_registry
+            authenticated_package.source_registry,
+            package_local_evidence=authenticated_package.package_local_evidence,
+            package_local_validator_envelope=(
+                authenticated_package.package_local_validator_envelope
+            ),
         )
         final_json = _canonical(final_data) + b"\n"
         final_document = loads_final_ir(final_json, trusted_receipts=trusted_receipts)
@@ -473,6 +481,13 @@ def _finish_stage(
             canonical_json=dumps_final_ir(final_document),
             markdown=render_final_ir_markdown(final_document),
             source_registry=authenticated_package.source_registry,
+            package_local_evidence=authenticated_package.package_local_evidence,
+            package_local_evidence_inputs=(
+                authenticated_package.package_local_evidence_inputs
+            ),
+            package_local_validator_envelope=(
+                authenticated_package.package_local_validator_envelope
+            ),
             exact_reuse_receipts=authenticated_package.exact_reuse_receipts,
         ).package_surface
         receipt = load_package_audit_receipt(
@@ -938,26 +953,7 @@ def _authenticate_synthetic_inputs(
         inventory_extractor_capability(extractor),
     ):
         activate_synthetic_capability(queue, pin, active_capabilities)
-    unsigned = target_inventory_envelope_payload(
-        package_ref=partial.package_ref,
-        inventory=partial.target_inventory,
-        extractor=extractor,
-        authority=trust.inventory_authority,
-        signature="0" * 128,
-    )
-    payload = json.loads(unsigned)["payload"]
-    signature = trust.inventory_key.sign(target_inventory_signing_bytes(payload)).hex()
-    envelope = load_authenticated_target_inventory_envelope(
-        target_inventory_envelope_payload(
-            package_ref=partial.package_ref,
-            inventory=partial.target_inventory,
-            extractor=extractor,
-            authority=trust.inventory_authority,
-            signature=signature,
-        ),
-        authority=trust.inventory_authority,
-        package_ref=partial.package_ref,
-    )
+    envelope = partial.inventory_envelope
     materialize_target_inventory(queue, envelope)
     inventory_lease = _claim_required(queue, INVENTORY_QUEUE_UNIT_KIND)
     inventory, _inventory_result = finish_target_inventory(
@@ -994,6 +990,9 @@ def _finish_authenticated_package(
         execution_plan=inputs.execution_plan,
         receipt=receipt,
         trusted_validation_receipt_sha256=receipt.validation_receipt_sha256,
+        package_local_evidence=partial.package_local_evidence,
+        package_local_evidence_inputs=partial.package_local_evidence_inputs,
+        package_local_validator_envelope=partial.package_local_validator_envelope,
     )
     unsigned_execution = execution_envelope_payload(
         authority=trust.execution_authority,
@@ -1037,6 +1036,9 @@ def _finish_authenticated_package(
         report_root=inputs.report_root,
         evidence_lineage_payload=inputs.lineage.payload,
         execution_envelope=execution_envelope,
+        package_local_evidence=partial.package_local_evidence,
+        package_local_evidence_inputs=partial.package_local_evidence_inputs,
+        package_local_validator_envelope=partial.package_local_validator_envelope,
     )
     if finished.output != output:
         raise RuntimeError("queue publication changed the validated package output")
@@ -1053,6 +1055,9 @@ def _finish_authenticated_package(
         partial.application_roots,
         partial.extractor,
         source_registry,
+        partial.package_local_evidence,
+        partial.package_local_evidence_inputs,
+        partial.package_local_validator_envelope,
         exact_reuse_receipts,
     )
 

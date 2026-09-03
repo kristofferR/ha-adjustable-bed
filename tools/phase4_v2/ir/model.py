@@ -19,6 +19,9 @@ SUPPORTED_VALIDATOR_REVISION = "phase4-v2-bundle-validator-v5"
 SUPPORTED_CONTRACT_REVISION = "phase4-v2-validation-input-v4"
 BOUND_VALIDATION_PROFILE = "BOUND_V4"
 RAW_SOURCE_VALIDATION_BINDING_REVISION = "phase4-v2-raw-source-validator-binding-v1"
+PACKAGE_LOCAL_VALIDATION_BINDING_REVISION = (
+    "phase4-v2-package-local-validator-binding-v1"
+)
 _DEPENDENCY_NAMES = ("corpus", "evidence_lineage", "ir", "preflight", "schema")
 _ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]*$")
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
@@ -1546,7 +1549,11 @@ def _parse_validated_report(raw: object, path: str) -> ValidatedReport:
         )
     if (
         report.raw_source_binding_revision is not None
-        and report.raw_source_binding_revision != RAW_SOURCE_VALIDATION_BINDING_REVISION
+        and report.raw_source_binding_revision
+        not in {
+            RAW_SOURCE_VALIDATION_BINDING_REVISION,
+            PACKAGE_LOCAL_VALIDATION_BINDING_REVISION,
+        }
     ):
         _fail(
             "unsupported_raw_source_binding_revision",

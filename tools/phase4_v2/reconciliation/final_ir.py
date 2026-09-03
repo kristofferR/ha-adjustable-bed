@@ -12,11 +12,14 @@ from tools.phase4_v2.equivalence import (
     AuthenticatedExactReuseProvenance,
     AuthenticatedPackageExecutionEnvelope,
     AuthenticatedSourceReportRegistry,
+    AuthenticatedValidatorEnvelope,
     FrozenPackageExecutionPlan,
     FrozenPackageRef,
     Route,
     ValidatedPackageOutput,
     bind_authenticated_plan_root_provenance,
+    bind_package_local_evidence,
+    load_authenticated_validator_envelope,
     package_queue_unit_id,
     validate_authenticated_package_output,
     validate_frozen_package_ref,
@@ -26,6 +29,7 @@ from tools.phase4_v2.ir import (
     FINAL_SCHEMA_REVISION,
     FinalProtocolIRDocument,
     SelectorKind,
+    build_source_package,
     dumps_final_ir,
     validate_final_ir_markdown,
     validate_final_universe,
@@ -33,6 +37,13 @@ from tools.phase4_v2.ir import (
 from tools.phase4_v2.ir import model as ir_core
 from tools.phase4_v2.ir import v1 as final_ir_model
 from tools.phase4_v2.queue import Queue, WorkUnitStatus
+from tools.phase4_v2.raw_source import (
+    AuthenticatedPackageLocalEvidence,
+    PackageLocalEvidenceReauthenticationInput,
+    RawSourceAuthenticationError,
+    reauthenticate_package_local_evidence,
+)
+from tools.phase4_v2.validator import validate_package_local_validator_envelope
 
 from .model import (
     AreaSurface,
@@ -45,6 +56,8 @@ from .model import (
     LeafProvenance,
     LedgerDisposition,
     NormalizedClaim,
+    PackageLocalProvenance,
+    PackageLocalTarget,
     PackageSurface,
     ReconciliationError,
     RootProvenance,
@@ -106,11 +119,39 @@ def derive_authenticated_final_ir_package_surface(
     canonical_json: bytes,
     markdown: str,
     source_registry: AuthenticatedSourceReportRegistry,
+    package_local_evidence: AuthenticatedPackageLocalEvidence,
+    package_local_evidence_inputs: PackageLocalEvidenceReauthenticationInput,
+    package_local_validator_envelope: AuthenticatedValidatorEnvelope,
     exact_reuse_receipts: tuple[AuthenticatedExactReuseProvenance, ...] = (),
 ) -> FinalIRSurfaceDerivation:
     """Derive a surface only from an accepted, signed package publication."""
 
     package_ref = validate_frozen_package_ref(package_ref)
+    try:
+        local_evidence = reauthenticate_package_local_evidence(
+            package_local_evidence,
+            inputs=package_local_evidence_inputs,
+        )
+        base_envelope = load_authenticated_validator_envelope(
+            package_ref.validator_envelope_bytes,
+            authority=package_ref.validator_authority,
+        )
+        local_envelope = validate_package_local_validator_envelope(
+            base_envelope,
+            package_local_validator_envelope,
+            evidence=local_evidence,
+            evidence_inputs=package_local_evidence_inputs,
+        )
+        expected_local_binding = bind_package_local_evidence(
+            package_ref=package_ref,
+            evidence=local_evidence,
+            evidence_inputs=package_local_evidence_inputs,
+            enriched_validator_envelope=local_envelope,
+        )
+    except (ValueError, RawSourceAuthenticationError) as error:
+        raise ReconciliationError("target package-local evidence authentication failed") from error
+    if execution_plan.package_local_evidence.to_data() != expected_local_binding.to_data():
+        raise ReconciliationError("target package-local evidence differs from the frozen plan")
     authenticated = validate_authenticated_package_output(validated_output, execution_envelope)
     if type(authenticated) is not ValidatedPackageOutput:
         raise ReconciliationError("authenticated package output has an invalid type")
@@ -162,6 +203,13 @@ def derive_authenticated_final_ir_package_surface(
     results = report.get("authoritative_root_results") if type(report) is dict else None
     if type(results) is not list:
         raise ReconciliationError("package report has no authoritative root results")
+    local_results = report.get("package_local_domains") if type(report) is dict else None
+    if type(local_results) is not dict or set(local_results) != set(
+        local_evidence.mandatory_domains
+    ):
+        raise ReconciliationError(
+            "package report does not contain the exact authenticated local domain set"
+        )
     report_roots = {
         (
             item.get("target_root_id"),
@@ -191,7 +239,15 @@ def derive_authenticated_final_ir_package_surface(
         if existing is not None and existing != binding.source_package:
             raise ReconciliationError("authenticated source package identities are ambiguous")
         contributing_packages[binding.source_package_ref_id] = binding.source_package
-    if set(document_packages.values()) != set(contributing_packages.values()):
+    local_source_package_id, local_source_package = build_source_package(
+        local_envelope.report.validated_artifact_identity,
+        local_envelope.report,
+    )
+    if (
+        local_source_package_id != execution_plan.package_local_evidence.source_package_id
+        or set(document_packages.values())
+        != {*contributing_packages.values(), local_source_package}
+    ):
         raise ReconciliationError("final IR source packages differ from authenticated provenance")
     package_keys = {
         package_ref_id: next(
@@ -201,7 +257,18 @@ def derive_authenticated_final_ir_package_surface(
     }
     files = dict(document.evidence_files)
     anchors = dict(document.evidence_anchors)
-    anchor_keys_by_id = {anchor.id: key for key, anchor in document.evidence_anchors}
+    local_package_key = next(
+        key for key, package in document_packages.items() if package == local_source_package
+    )
+    anchor_keys_by_package_and_id: dict[tuple[str, str], str] = {}
+    for key, anchor in document.evidence_anchors:
+        evidence_file = files.get(anchor.file)
+        if evidence_file is None:
+            raise ReconciliationError("final IR anchor references an unknown evidence file")
+        qualified = (evidence_file.package, anchor.id)
+        if qualified in anchor_keys_by_package_and_id:
+            raise ReconciliationError("final IR contains a duplicate package-qualified anchor ID")
+        anchor_keys_by_package_and_id[qualified] = key
     all_result_locations = {
         (item.get("target_root_id"), item.get("target_occurrence_identity_sha256")): index
         for index, item in enumerate(results)
@@ -212,6 +279,78 @@ def derive_authenticated_final_ir_package_surface(
     }
     roots_list: list[RootProvenance] = []
     used_anchor_keys: set[str] = set()
+    local_member_keys: dict[str, str] = {}
+    for member in local_envelope.report.validated_evidence_members:
+        matches = [
+            key
+            for key, evidence_file in files.items()
+            if evidence_file.package == local_package_key
+            and evidence_file.member == member.member
+            and evidence_file.sha256 == member.sha256
+            and member.owner == package_ref.artifact_digest
+        ]
+        if len(matches) != 1:
+            raise ReconciliationError(
+                "authenticated package-local evidence member differs from final IR"
+            )
+        local_member_keys[member.member] = matches[0]
+    raw_local_by_id = {item.id: item for item in local_evidence.anchors}
+    local_anchor_keys: list[str] = []
+    local_targets: list[tuple[str, str, str]] = []
+    for anchor in local_envelope.report.validated_evidence_anchors:
+        try:
+            anchor_key = anchor_keys_by_package_and_id[(local_package_key, anchor.id)]
+            ir_anchor = anchors[anchor_key]
+            raw_local = raw_local_by_id[anchor.id]
+        except KeyError as error:
+            raise ReconciliationError(
+                "authenticated package-local anchor is absent from final IR"
+            ) from error
+        if (
+            ir_anchor.file != local_member_keys.get(anchor.member)
+            or anchor.owner != package_ref.artifact_digest
+            or ir_anchor.start_byte != anchor.start_byte
+            or ir_anchor.end_byte != anchor.end_byte
+            or ir_anchor.ir_pointer != anchor.ir_pointer
+            or ir_anchor.representation != anchor.representation
+            or ir_anchor.value_sha256 != anchor.value_sha256
+            or anchor.ir_pointer != raw_local.raw.source_ir_pointer
+            or anchor.value_sha256 != raw_local.raw.value_sha256
+        ):
+            raise ReconciliationError(
+                "authenticated package-local anchor metadata differs from final IR"
+            )
+        if anchor_key in used_anchor_keys:
+            raise ReconciliationError("final IR evidence anchor has multiple provenance owners")
+        used_anchor_keys.add(anchor_key)
+        local_anchor_keys.append(anchor_key)
+        local_targets.append(
+            (anchor_key, raw_local.terminal_ir_pointer, raw_local.local_domain)
+        )
+    if set(raw_local_by_id) != {item.id for item in local_envelope.report.validated_evidence_anchors}:
+        raise ReconciliationError("package-local validator anchors differ from raw evidence")
+    package_local_provenance = PackageLocalProvenance(
+        package_ref_id=package_ref.content_id,
+        source_package_id=local_source_package_id,
+        source_validation_receipt_sha256=local_envelope.report.validation_receipt_sha256,
+        source_raw_receipt_sha256=local_evidence.receipt_sha256,
+        report_pointer="/package_local_domains",
+        mandatory_domains=local_evidence.mandatory_domains,
+        evidence_anchor_ids=tuple(sorted(local_anchor_keys)),
+        targets=tuple(
+            sorted(
+                (
+                    PackageLocalTarget(anchor, domain, target)
+                    for anchor, target, domain in local_targets
+                ),
+                key=lambda item: (
+                    item.terminal_ir_pointer,
+                    item.local_domain,
+                    item.evidence_anchor_id,
+                ),
+            )
+        ),
+    )
     for binding in bindings:
         source_package_key = package_keys[binding.source_package_ref_id]
         artifact_digest = binding.source_package.artifact.artifact_digest
@@ -232,7 +371,7 @@ def derive_authenticated_final_ir_package_surface(
         raw_anchors = {item.id: item for item in binding.raw_source_anchors}
         for anchor in binding.attested_evidence_anchors:
             try:
-                anchor_key = anchor_keys_by_id[anchor.id]
+                anchor_key = anchor_keys_by_package_and_id[(source_package_key, anchor.id)]
                 ir_anchor = anchors[anchor_key]
                 member_key = member_keys[anchor.member]
                 raw_anchor = raw_anchors[anchor.id]
@@ -285,15 +424,39 @@ def derive_authenticated_final_ir_package_surface(
     roots = tuple(roots_list)
     if len(roots) != len(all_result_locations):
         raise ReconciliationError("retained root attestations do not match the exact report roots")
-    return _derive_final_ir_package_surface(
+    derived = _derive_final_ir_package_surface(
         package_ref=package_ref,
         report_sha256=authenticated.target_report_sha256,
         report_revision=authenticated.target_report_revision,
+        package_local=package_local_provenance,
         roots=tuple(sorted(roots, key=lambda item: item.content_id)),
         document=document,
         canonical_json=canonical_json,
         markdown=markdown,
+        local_targets=tuple(sorted(local_targets)),
     )
+    try:
+        if (
+            reauthenticate_package_local_evidence(
+                local_evidence, inputs=package_local_evidence_inputs
+            )
+            != local_evidence
+            or validate_package_local_validator_envelope(
+                base_envelope,
+                local_envelope,
+                evidence=local_evidence,
+                evidence_inputs=package_local_evidence_inputs,
+            )
+            != local_envelope
+        ):
+            raise ReconciliationError(
+                "target package-local evidence changed during final reconciliation"
+            )
+    except (ValueError, RawSourceAuthenticationError) as error:
+        raise ReconciliationError(
+            "target package-local authority changed during final reconciliation"
+        ) from error
+    return derived
 
 
 def _derive_final_ir_package_surface(
@@ -301,10 +464,12 @@ def _derive_final_ir_package_surface(
     package_ref: FrozenPackageRef,
     report_sha256: str,
     report_revision: str,
+    package_local: PackageLocalProvenance,
     roots: tuple[RootProvenance, ...],
     document: FinalProtocolIRDocument,
     canonical_json: bytes,
     markdown: str,
+    local_targets: tuple[tuple[str, str, str], ...],
 ) -> FinalIRSurfaceDerivation:
     """Reproduce one complete package surface solely from canonical final-IR semantics."""
 
@@ -343,7 +508,9 @@ def _derive_final_ir_package_surface(
             and not pointer.endswith("/@key")
         )
     )
-    provenance_by_pointer = _leaf_provenance(reproduced, roots, leaf_pointers)
+    provenance_by_pointer = _leaf_provenance(
+        reproduced, roots, package_local, local_targets, leaf_pointers
+    )
     claims_by_area: dict[ComparisonArea, list[NormalizedClaim]] = {
         area: [] for area in ComparisonArea
     }
@@ -410,6 +577,7 @@ def _derive_final_ir_package_surface(
         package_ref,
         report_sha256,
         report_revision,
+        package_local,
         roots,
         areas,
     )
@@ -426,6 +594,8 @@ def _derive_final_ir_package_surface(
 def _leaf_provenance(
     document: FinalProtocolIRDocument,
     roots: tuple[RootProvenance, ...],
+    package_local: PackageLocalProvenance,
+    local_targets: tuple[tuple[str, str, str], ...],
     pointers: tuple[str, ...],
 ) -> dict[str, tuple[LeafProvenance, ...]]:
     bindings: dict[str, ir_core.EvidenceBinding] = {}
@@ -435,16 +605,43 @@ def _leaf_provenance(
         bindings[binding.target] = binding
     source_sets = dict(document.source_sets)
     declared_anchors = set(dict(document.evidence_anchors))
-    roots_by_anchor: dict[str, list[RootProvenance]] = {}
+    owners_by_anchor: dict[str, list[RootProvenance | PackageLocalProvenance]] = {}
     for root in roots:
         for anchor in root.evidence_anchor_ids:
-            roots_by_anchor.setdefault(anchor, []).append(root)
-    if set(roots_by_anchor) != declared_anchors or any(
-        len(owners) != 1 for owners in roots_by_anchor.values()
+            owners_by_anchor.setdefault(anchor, []).append(root)
+    for anchor in package_local.evidence_anchor_ids:
+        owners_by_anchor.setdefault(anchor, []).append(package_local)
+    if set(owners_by_anchor) != declared_anchors or any(
+        len(owners) != 1 for owners in owners_by_anchor.values()
     ):
-        raise ReconciliationError("root provenance does not exactly partition final IR anchors")
+        raise ReconciliationError("authenticated provenance does not partition final IR anchors")
+    target_by_local_anchor = {
+        anchor: target for anchor, target, _domain in local_targets
+    }
+    domain_by_local_anchor = {
+        anchor: domain for anchor, _target, domain in local_targets
+    }
+    if (
+        set(target_by_local_anchor) != set(package_local.evidence_anchor_ids)
+        or len({target for _anchor, target, _domain in local_targets}) != len(local_targets)
+        or set(domain_by_local_anchor.values()) != set(package_local.mandatory_domains)
+        or set(local_targets)
+        != {
+            (
+                item.evidence_anchor_id,
+                item.terminal_ir_pointer,
+                item.local_domain,
+            )
+            for item in package_local.targets
+        }
+    ):
+        raise ReconciliationError("package-local terminal mapping is not exact")
+    local_pointers = set(target_by_local_anchor.values())
+    if not local_pointers <= set(pointers):
+        raise ReconciliationError("package-local evidence targets a non-semantic or closure leaf")
 
     result: dict[str, tuple[LeafProvenance, ...]] = {}
+    consumed_local_anchors: set[str] = set()
     for pointer in pointers:
         binding = bindings.get(pointer)
         if binding is None:
@@ -453,9 +650,20 @@ def _leaf_provenance(
         for source_set_id in binding.source_sets:
             source_set = source_sets[source_set_id]
             for anchor in source_set.anchors:
-                owners = roots_by_anchor.get(anchor, ())
+                owners = owners_by_anchor.get(anchor, ())
                 if len(owners) != 1:
-                    raise ReconciliationError("final IR anchor has ambiguous root provenance")
+                    raise ReconciliationError("final IR anchor has ambiguous provenance")
+                is_local_owner = type(owners[0]) is PackageLocalProvenance
+                if (pointer in local_pointers) != is_local_owner:
+                    raise ReconciliationError(
+                        "local and reusable semantic evidence are not an exact partition"
+                    )
+                if is_local_owner:
+                    if target_by_local_anchor.get(anchor) != pointer:
+                        raise ReconciliationError(
+                            "package-local anchor is bound to another terminal leaf"
+                        )
+                    consumed_local_anchors.add(anchor)
                 grouped.setdefault(owners[0].content_id, set()).add(anchor)
         result[pointer] = tuple(
             sorted(
@@ -468,6 +676,8 @@ def _leaf_provenance(
         )
         if not result[pointer]:
             raise ReconciliationError("final IR leaf evidence has no root provenance")
+    if consumed_local_anchors != set(package_local.evidence_anchor_ids):
+        raise ReconciliationError("package-local evidence anchors are not exactly consumed")
     return result
 
 

@@ -10,7 +10,11 @@ from dataclasses import dataclass, replace
 from enum import StrEnum
 from typing import Literal, NamedTuple, Never, cast, overload
 
-from tools.phase4_v2.ir import FINAL_SCHEMA_REVISION, final_schema_document
+from tools.phase4_v2.ir import (
+    FINAL_SCHEMA_REVISION,
+    build_source_package,
+    final_schema_document,
+)
 from tools.phase4_v2.preflight.execution import (
     CANDIDATE_CONTRACT_REVISION,
     CANDIDATE_CONTRACT_SHA256,
@@ -26,12 +30,19 @@ from tools.phase4_v2.preflight.registry import (
     load_activated_preparation_authority,
     validate_preparation_receipt_authority,
 )
+from tools.phase4_v2.raw_source import (
+    AuthenticatedPackageLocalEvidence,
+    PackageLocalEvidenceReauthenticationInput,
+    RawSourceAuthenticationError,
+    reauthenticate_package_local_evidence,
+)
 from tools.phase4_v2.validator import (
     PACKAGE_BOUND_VALIDATION_PROFILE,
     PACKAGE_CONTRACT_REVISION,
     VALIDATOR_REVISION,
     Diagnostic,
     ValidationReceipt,
+    validate_package_local_validator_envelope,
 )
 from tools.phase4_v2.validator.binding import (
     PACKAGE_LOCAL_DOMAIN_RESULT_SCHEMA,
@@ -48,6 +59,7 @@ from .core import (
     LEDGER_DECISION_REVISION,
     LOCAL_ONLY_DOMAINS,
     ApplicationRoot,
+    AuthenticatedValidatorEnvelope,
     EquivalenceError,
     ExtractorCapability,
     FrozenPackageRef,
@@ -56,12 +68,15 @@ from .core import (
     validate_frozen_package_ref,
 )
 
-PACKAGE_LOCAL_PLAN_REVISION = "phase4-v2-package-local-plan-v3"
+PACKAGE_LOCAL_EVIDENCE_BINDING_REVISION = (
+    "phase4-v2-package-local-evidence-binding-v1"
+)
+PACKAGE_LOCAL_PLAN_REVISION = "phase4-v2-package-local-plan-v4"
 TARGET_ROOT_INVENTORY_REVISION = "phase4-v2-target-root-inventory-v1"
 EXACT_REUSE_PINS_REVISION = "phase4-v2-exact-reuse-pins-v4"
 ROOT_EXECUTION_PLAN_REVISION = "phase4-v2-root-execution-plan-v3"
-PACKAGE_EXECUTION_PLAN_REVISION = "phase4-v2-package-execution-plan-v5"
-VALIDATED_PACKAGE_OUTPUT_REVISION = "phase4-v2-validated-package-output-v6"
+PACKAGE_EXECUTION_PLAN_REVISION = "phase4-v2-package-execution-plan-v6"
+VALIDATED_PACKAGE_OUTPUT_REVISION = "phase4-v2-validated-package-output-v7"
 PACKAGE_QUEUE_UNIT_KIND = "validated-package-output"
 PACKAGE_QUEUE_UNIT_PREFIX = "package-output"
 PREPARATION_QUEUE_UNIT_KIND = "prepared-package-input"
@@ -366,6 +381,169 @@ def _completion_tuple(values: tuple[CompletionPin, ...], field: str) -> tuple[Co
 
 
 @dataclass(frozen=True, slots=True)
+class PackageLocalEvidenceBinding:
+    """Plan pin for target-owned, raw-authenticated package-local evidence."""
+
+    package_ref_id: str
+    raw_receipt_sha256: str
+    raw_authority_sha256: str
+    validation_receipt_sha256: str
+    source_package_id: str
+    validator_evidence_sha256: str
+    preparation_receipt_sha256: str
+    target_inventory_receipt_sha256: str
+    mandatory_domains: tuple[str, ...]
+    evidence_member_ids: tuple[str, ...]
+    evidence_anchor_ids: tuple[str, ...]
+    producer_capabilities: tuple[CapabilityPin, ...]
+    revision: str = PACKAGE_LOCAL_EVIDENCE_BINDING_REVISION
+
+    def __post_init__(self) -> None:
+        _sha(self.package_ref_id, "package-local evidence package reference")
+        _sha(self.raw_receipt_sha256, "package-local raw receipt")
+        _sha(self.raw_authority_sha256, "package-local raw authority")
+        _sha(self.validation_receipt_sha256, "package-local validation receipt")
+        _text(self.source_package_id, "package-local source package ID", 256)
+        if (
+            not self.source_package_id.startswith("pkg:")
+            or _SHA.fullmatch(self.source_package_id[4:]) is None
+        ):
+            _fail("package-local source package ID is invalid")
+        _sha(self.validator_evidence_sha256, "package-local validator evidence")
+        _sha(self.preparation_receipt_sha256, "package-local preparation receipt")
+        _sha(self.target_inventory_receipt_sha256, "package-local target inventory receipt")
+        if self.mandatory_domains != tuple(sorted(LOCAL_ONLY_DOMAINS)):
+            _fail("package-local evidence must cover the exact local domain set")
+        for field, values in (
+            ("package-local member IDs", self.evidence_member_ids),
+            ("package-local anchor IDs", self.evidence_anchor_ids),
+        ):
+            if (
+                type(values) is not tuple
+                or not values
+                or len(values) > _MAX_RECEIPT_ITEMS
+                or any(type(item) is not str or not item for item in values)
+                or values != tuple(sorted(set(values)))
+            ):
+                _fail(f"{field} must be a bounded sorted unique tuple")
+        producers = _capability_tuple(
+            self.producer_capabilities,
+            "package-local evidence producer capabilities",
+            nonempty=True,
+        )
+        object.__setattr__(self, "producer_capabilities", producers)
+        _revision(
+            self.revision,
+            PACKAGE_LOCAL_EVIDENCE_BINDING_REVISION,
+            "package-local evidence binding",
+        )
+
+    def to_data(self) -> dict[str, object]:
+        return {
+            "evidence_anchor_ids": list(self.evidence_anchor_ids),
+            "evidence_member_ids": list(self.evidence_member_ids),
+            "mandatory_domains": list(self.mandatory_domains),
+            "package_ref_id": self.package_ref_id,
+            "preparation_receipt_sha256": self.preparation_receipt_sha256,
+            "producer_capabilities": [item.to_data() for item in self.producer_capabilities],
+            "raw_receipt_sha256": self.raw_receipt_sha256,
+            "raw_authority_sha256": self.raw_authority_sha256,
+            "revision": self.revision,
+            "source_package_id": self.source_package_id,
+            "target_inventory_receipt_sha256": self.target_inventory_receipt_sha256,
+            "validator_evidence_sha256": self.validator_evidence_sha256,
+            "validation_receipt_sha256": self.validation_receipt_sha256,
+        }
+
+    @property
+    def content_id(self) -> str:
+        return _content_id("phase4-v2:package-local-evidence-binding", self.to_data())
+
+
+def bind_package_local_evidence(
+    *,
+    package_ref: FrozenPackageRef,
+    evidence: AuthenticatedPackageLocalEvidence,
+    evidence_inputs: PackageLocalEvidenceReauthenticationInput,
+    enriched_validator_envelope: AuthenticatedValidatorEnvelope,
+) -> PackageLocalEvidenceBinding:
+    """Bind local raw evidence and its non-circular validator attestation to a plan."""
+
+    from .core import load_authenticated_validator_envelope
+
+    package_ref = validate_frozen_package_ref(package_ref)
+    try:
+        local = reauthenticate_package_local_evidence(evidence, inputs=evidence_inputs)
+        base = load_authenticated_validator_envelope(
+            package_ref.validator_envelope_bytes,
+            authority=package_ref.validator_authority,
+        )
+        enriched = validate_package_local_validator_envelope(
+            base,
+            enriched_validator_envelope,
+            evidence=local,
+            evidence_inputs=evidence_inputs,
+        )
+    except (EquivalenceError, RawSourceAuthenticationError, ValueError) as error:
+        raise EquivalenceError("package-local evidence authentication failed") from error
+    source_package_id, _source_package = build_source_package(
+        enriched.report.validated_artifact_identity,
+        enriched.report,
+    )
+    validator_evidence_sha256 = hashlib.sha256(
+        _canonical_bytes(
+            {
+                "anchors": [item.to_data() for item in enriched.report.validated_evidence_anchors],
+                "members": [item.to_data() for item in enriched.report.validated_evidence_members],
+            }
+        )
+    ).hexdigest()
+    producers = tuple(
+        sorted(
+            {
+                CapabilityPin(item.producer_name, item.producer_revision, item.producer_digest)
+                for item in local.members
+            },
+            key=lambda item: item.name,
+        )
+    )
+    return PackageLocalEvidenceBinding(
+        package_ref_id=package_ref.content_id,
+        raw_receipt_sha256=local.receipt_sha256,
+        raw_authority_sha256=local.authority.activation_sha256,
+        validation_receipt_sha256=enriched.report.validation_receipt_sha256,
+        source_package_id=source_package_id,
+        validator_evidence_sha256=validator_evidence_sha256,
+        preparation_receipt_sha256=local.preparation_receipt_sha256,
+        target_inventory_receipt_sha256=local.target_inventory_receipt_sha256,
+        mandatory_domains=local.mandatory_domains,
+        evidence_member_ids=tuple(sorted(item.id for item in local.members)),
+        evidence_anchor_ids=tuple(sorted(item.id for item in local.anchors)),
+        producer_capabilities=producers,
+    )
+
+
+def _local_evidence(value: PackageLocalEvidenceBinding) -> PackageLocalEvidenceBinding:
+    if type(value) is not PackageLocalEvidenceBinding:
+        _fail("package-local plan requires exact authenticated evidence binding")
+    return PackageLocalEvidenceBinding(
+        value.package_ref_id,
+        value.raw_receipt_sha256,
+        value.raw_authority_sha256,
+        value.validation_receipt_sha256,
+        value.source_package_id,
+        value.validator_evidence_sha256,
+        value.preparation_receipt_sha256,
+        value.target_inventory_receipt_sha256,
+        value.mandatory_domains,
+        value.evidence_member_ids,
+        value.evidence_anchor_ids,
+        value.producer_capabilities,
+        value.revision,
+    )
+
+
+@dataclass(frozen=True, slots=True)
 class PackageLocalPlan:
     target_package_ref_id: str
     package_name: str
@@ -375,6 +553,7 @@ class PackageLocalPlan:
     requirements_sha256: str
     pipeline_capability: CapabilityPin
     evidence_producer_capabilities: tuple[CapabilityPin, ...]
+    evidence: PackageLocalEvidenceBinding
     mandatory_domains: tuple[str, ...] = LOCAL_ONLY_DOMAINS
     revision: str = PACKAGE_LOCAL_PLAN_REVISION
 
@@ -403,6 +582,14 @@ class PackageLocalPlan:
             nonempty=True,
         )
         object.__setattr__(self, "evidence_producer_capabilities", producers)
+        evidence = _local_evidence(self.evidence)
+        if (
+            evidence.package_ref_id != self.target_package_ref_id
+            or evidence.mandatory_domains != tuple(sorted(self.mandatory_domains))
+            or not set(evidence.producer_capabilities) <= set(producers)
+        ):
+            _fail("package-local evidence differs from its plan identity or producers")
+        object.__setattr__(self, "evidence", evidence)
         _revision(self.revision, PACKAGE_LOCAL_PLAN_REVISION, "package-local plan revision")
 
     def to_data(self) -> dict[str, object]:
@@ -413,6 +600,7 @@ class PackageLocalPlan:
             "evidence_producer_capabilities": [
                 item.to_data() for item in self.evidence_producer_capabilities
             ],
+            "evidence": self.evidence.to_data(),
             "requirements_sha256": self.requirements_sha256,
             "revision": self.revision,
             "target_artifact_digest": self.target_artifact_digest,
@@ -438,6 +626,7 @@ def _local(value: PackageLocalPlan) -> PackageLocalPlan:
         value.requirements_sha256,
         value.pipeline_capability,
         value.evidence_producer_capabilities,
+        value.evidence,
         value.mandatory_domains,
         value.revision,
     )
@@ -1607,6 +1796,12 @@ class PackageExecutionPlan:
             _fail("package-local evidence producers differ from accepted preparation routes")
         if accepted.inventory.target_package_ref_id != self.target_package_ref_id:
             _fail("target-root inventory targets a different package")
+        if (
+            local.evidence.preparation_receipt_sha256 != preparation.receipt_sha256
+            or local.evidence.target_inventory_receipt_sha256
+            != hashlib.sha256(accepted.canonical_envelope).hexdigest()
+        ):
+            _fail("package-local evidence pins transplanted preparation or inventory")
         if type(self.root_plans) is not tuple or not self.root_plans:
             _fail("package execution plan requires at least one root plan")
         if len(self.root_plans) > _MAX_ROOTS:
@@ -1773,6 +1968,44 @@ class FrozenPreparationPlanBinding(NamedTuple):
         }
 
 
+class FrozenPackageLocalEvidenceBinding(NamedTuple):
+    """Tuple-backed target-local evidence identity carried to reconciliation."""
+
+    package_ref_id: str
+    raw_receipt_sha256: str
+    raw_authority_sha256: str
+    validation_receipt_sha256: str
+    source_package_id: str
+    validator_evidence_sha256: str
+    preparation_receipt_sha256: str
+    target_inventory_receipt_sha256: str
+    mandatory_domains: tuple[str, ...]
+    evidence_member_ids: tuple[str, ...]
+    evidence_anchor_ids: tuple[str, ...]
+    producer_capabilities: tuple[FrozenCapabilityPin, ...]
+    revision: str
+
+    def to_data(self) -> dict[str, object]:
+        return {
+            "evidence_anchor_ids": list(self.evidence_anchor_ids),
+            "evidence_member_ids": list(self.evidence_member_ids),
+            "mandatory_domains": list(self.mandatory_domains),
+            "package_ref_id": self.package_ref_id,
+            "preparation_receipt_sha256": self.preparation_receipt_sha256,
+            "producer_capabilities": [
+                {"digest": item.digest, "name": item.name, "revision": item.revision}
+                for item in self.producer_capabilities
+            ],
+            "raw_receipt_sha256": self.raw_receipt_sha256,
+            "raw_authority_sha256": self.raw_authority_sha256,
+            "revision": self.revision,
+            "source_package_id": self.source_package_id,
+            "target_inventory_receipt_sha256": self.target_inventory_receipt_sha256,
+            "validator_evidence_sha256": self.validator_evidence_sha256,
+            "validation_receipt_sha256": self.validation_receipt_sha256,
+        }
+
+
 def _frozen_capability(value: CapabilityPin) -> FrozenCapabilityPin:
     copied = _capability(value, "frozen capability")
     return FrozenCapabilityPin(copied.name, copied.revision, copied.digest)
@@ -1801,6 +2034,27 @@ def _frozen_preparation(value: PreparationPlanBinding) -> FrozenPreparationPlanB
     )
 
 
+def _frozen_local_evidence(
+    value: PackageLocalEvidenceBinding,
+) -> FrozenPackageLocalEvidenceBinding:
+    copied = _local_evidence(value)
+    return FrozenPackageLocalEvidenceBinding(
+        copied.package_ref_id,
+        copied.raw_receipt_sha256,
+        copied.raw_authority_sha256,
+        copied.validation_receipt_sha256,
+        copied.source_package_id,
+        copied.validator_evidence_sha256,
+        copied.preparation_receipt_sha256,
+        copied.target_inventory_receipt_sha256,
+        copied.mandatory_domains,
+        copied.evidence_member_ids,
+        copied.evidence_anchor_ids,
+        tuple(_frozen_capability(item) for item in copied.producer_capabilities),
+        copied.revision,
+    )
+
+
 @dataclass(frozen=True, slots=True, init=False)
 class FrozenPackageExecutionPlan:
     """Canonical immutable snapshot consumed by trust-sensitive adapters."""
@@ -1817,6 +2071,7 @@ class FrozenPackageExecutionPlan:
     target_artifact_digest: str
     preflight_sha256: str
     preparation: FrozenPreparationPlanBinding
+    package_local_evidence: FrozenPackageLocalEvidenceBinding
     inherited_semantic_roots: tuple[str, ...]
     semantic_audit_completion_digests: tuple[str, ...]
     required_capabilities: tuple[FrozenCapabilityPin, ...]
@@ -1845,6 +2100,7 @@ def _new_frozen_package_execution_plan(
     target_artifact_digest: str,
     preflight_sha256: str,
     preparation: FrozenPreparationPlanBinding,
+    package_local_evidence: FrozenPackageLocalEvidenceBinding,
     inherited_semantic_roots: tuple[str, ...],
     semantic_audit_completion_digests: tuple[str, ...],
     required_capabilities: tuple[FrozenCapabilityPin, ...],
@@ -1863,6 +2119,7 @@ def _new_frozen_package_execution_plan(
         "target_artifact_digest": target_artifact_digest,
         "preflight_sha256": preflight_sha256,
         "preparation": preparation,
+        "package_local_evidence": package_local_evidence,
         "inherited_semantic_roots": inherited_semantic_roots,
         "semantic_audit_completion_digests": semantic_audit_completion_digests,
         "required_capabilities": required_capabilities,
@@ -2001,6 +2258,7 @@ def _new_frozen_package_execution_plan(
         or set(local)
         != {
             "evidence_producer_capabilities",
+            "evidence",
             "mandatory_domains",
             "package_name",
             "pipeline_capability",
@@ -2048,6 +2306,16 @@ def _new_frozen_package_execution_plan(
         preflight_sha256,
     ):
         _fail("snapshot preparation targets a different package identity")
+    if type(package_local_evidence) is not FrozenPackageLocalEvidenceBinding:
+        _fail("snapshot package-local evidence must use an exact immutable binding")
+    if local.get("evidence") != package_local_evidence.to_data():
+        _fail("snapshot package-local evidence differs from its canonical preimage")
+    if (
+        package_local_evidence.package_ref_id != target_package_ref_id
+        or package_local_evidence.preparation_receipt_sha256
+        != preparation.receipt_sha256
+    ):
+        _fail("snapshot package-local evidence targets another package or preparation")
     if type(required_completions) is not tuple or any(
         type(item) is not FrozenCompletionPin for item in required_completions
     ):
@@ -2148,6 +2416,7 @@ def _validate_frozen_package_execution_plan(
         target_artifact_digest=value.target_artifact_digest,
         preflight_sha256=value.preflight_sha256,
         preparation=value.preparation,
+        package_local_evidence=value.package_local_evidence,
         inherited_semantic_roots=value.inherited_semantic_roots,
         semantic_audit_completion_digests=value.semantic_audit_completion_digests,
         required_capabilities=value.required_capabilities,
@@ -2234,6 +2503,7 @@ def freeze_package_execution_plan(value: PackageExecutionPlan) -> FrozenPackageE
         target_artifact_digest=frozen.package_local.target_artifact_digest,
         preflight_sha256=frozen.package_local.requirements_sha256,
         preparation=_frozen_preparation(frozen.preparation),
+        package_local_evidence=_frozen_local_evidence(frozen.package_local.evidence),
         inherited_semantic_roots=frozen.inherited_semantic_roots,
         semantic_audit_completion_digests=tuple(
             sorted(
@@ -2291,6 +2561,8 @@ class ValidatedPackageOutput:
     target_final_ir_schema_revision: str
     target_final_ir_schema_sha256: str
     target_final_ir_json_sha256: str
+    package_local_raw_receipt_sha256: str
+    package_local_raw_authority_sha256: str
     validated_root_evidence: tuple[ValidatedRootEvidenceAttestation, ...]
     revision: str
 
@@ -2309,6 +2581,8 @@ class ValidatedPackageOutput:
             "target_final_ir_schema_revision": self.target_final_ir_schema_revision,
             "target_final_ir_schema_sha256": self.target_final_ir_schema_sha256,
             "target_final_ir_json_sha256": self.target_final_ir_json_sha256,
+            "package_local_raw_authority_sha256": self.package_local_raw_authority_sha256,
+            "package_local_raw_receipt_sha256": self.package_local_raw_receipt_sha256,
             "validation_receipt_sha256": self.validation_receipt_sha256,
             "validated_root_evidence": [item.to_dict() for item in self.validated_root_evidence],
         }
@@ -2572,9 +2846,20 @@ def build_validated_package_output(
     execution_plan: PackageExecutionPlan,
     receipt: ValidationReceipt,
     trusted_validation_receipt_sha256: str,
+    package_local_evidence: AuthenticatedPackageLocalEvidence,
+    package_local_evidence_inputs: PackageLocalEvidenceReauthenticationInput,
+    package_local_validator_envelope: AuthenticatedValidatorEnvelope,
 ) -> ValidatedPackageOutput:
     if type(execution_plan) is not PackageExecutionPlan:
         _fail("validated output requires an exact PackageExecutionPlan")
+    expected_local = bind_package_local_evidence(
+        package_ref=execution_plan.target_package_ref,
+        evidence=package_local_evidence,
+        evidence_inputs=package_local_evidence_inputs,
+        enriched_validator_envelope=package_local_validator_envelope,
+    )
+    if expected_local != execution_plan.package_local.evidence:
+        _fail("package output uses package-local evidence outside its execution plan")
     plan = freeze_package_execution_plan(execution_plan)
     if plan.status is not PackagePlanStatus.EXECUTABLE:
         _fail("a blocked package execution plan cannot produce a validated output")
@@ -2626,6 +2911,36 @@ def build_validated_package_output(
         plan.target_artifact_digest,
     ):
         _fail("validator receipt targets a different artifact identity")
+    local_binding = plan.package_local_evidence
+    local_anchor_ids = set(local_binding.evidence_anchor_ids)
+    local_anchors = tuple(
+        item
+        for item in frozen_receipt.validated_evidence_anchors
+        if item.id in local_anchor_ids
+    )
+    if tuple(sorted(item.id for item in local_anchors)) != local_binding.evidence_anchor_ids:
+        _fail("validator receipt does not contain the exact target-local anchor set")
+    local_member_paths = {item.member for item in local_anchors}
+    local_members = tuple(
+        item
+        for item in frozen_receipt.validated_evidence_members
+        if item.member in local_member_paths
+    )
+    local_evidence_sha256 = hashlib.sha256(
+        _canonical_bytes(
+            {
+                "anchors": [item.to_dict() for item in local_anchors],
+                "members": [item.to_dict() for item in local_members],
+            }
+        )
+    ).hexdigest()
+    if (
+        not local_anchors
+        or any(item.owner != plan.target_artifact_digest for item in local_anchors)
+        or any(item.owner != plan.target_artifact_digest for item in local_members)
+        or local_evidence_sha256 != local_binding.validator_evidence_sha256
+    ):
+        _fail("validator receipt target-local evidence differs from the frozen raw binding")
     forbidden = {*plan.inherited_semantic_roots, *plan.semantic_audit_completion_digests}
     if frozen_receipt.bundle_sha256 in forbidden:
         _fail("source semantic-root evidence cannot serve as the target package report")
@@ -2654,6 +2969,26 @@ def build_validated_package_output(
     object.__setattr__(output, "target_final_ir_schema_revision", FINAL_SCHEMA_REVISION)
     object.__setattr__(output, "target_final_ir_schema_sha256", FINAL_IR_SCHEMA_SHA256)
     object.__setattr__(output, "target_final_ir_json_sha256", final_ir_sha256)
+    object.__setattr__(
+        output,
+        "package_local_raw_receipt_sha256",
+        plan.package_local_evidence.raw_receipt_sha256,
+    )
+    object.__setattr__(
+        output,
+        "package_local_raw_authority_sha256",
+        plan.package_local_evidence.raw_authority_sha256,
+    )
     object.__setattr__(output, "validated_root_evidence", frozen_receipt.validated_root_evidence)
     object.__setattr__(output, "revision", VALIDATED_PACKAGE_OUTPUT_REVISION)
+    if (
+        bind_package_local_evidence(
+            package_ref=execution_plan.target_package_ref,
+            evidence=package_local_evidence,
+            evidence_inputs=package_local_evidence_inputs,
+            enriched_validator_envelope=package_local_validator_envelope,
+        )
+        != expected_local
+    ):
+        _fail("package-local evidence changed during output validation")
     return output

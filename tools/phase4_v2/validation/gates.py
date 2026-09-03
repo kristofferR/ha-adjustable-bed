@@ -20,6 +20,7 @@ from tools.phase4_v2.equivalence import (
     AuthenticatedExactReuseProvenance,
     AuthenticatedPackageExecutionEnvelope,
     AuthenticatedSourceReportRegistry,
+    AuthenticatedValidatorEnvelope,
     FrozenPackageExecutionPlan,
     FrozenPackageRef,
     FrozenPreparationPlanBinding,
@@ -50,6 +51,10 @@ from tools.phase4_v2.preflight import (
     PreparationReceipt,
 )
 from tools.phase4_v2.queue import Queue, QueueConflictError
+from tools.phase4_v2.raw_source import (
+    AuthenticatedPackageLocalEvidence,
+    PackageLocalEvidenceReauthenticationInput,
+)
 from tools.phase4_v2.reconciliation import (
     ClosureStatus,
     ComparisonDecision,
@@ -496,6 +501,9 @@ def _validate_completion(
     report_bytes: bytes,
     report_manifest_bytes: bytes,
     source_registry: AuthenticatedSourceReportRegistry,
+    package_local_evidence: AuthenticatedPackageLocalEvidence,
+    package_local_evidence_inputs: PackageLocalEvidenceReauthenticationInput,
+    package_local_validator_envelope: AuthenticatedValidatorEnvelope,
     exact_reuse_receipts: tuple[AuthenticatedExactReuseProvenance, ...],
     reconciliation_input: ReconciliationInput,
     authenticated_reconciliation_input: AuthenticatedReconciliationInput,
@@ -624,6 +632,9 @@ def _validate_completion(
                     canonical_json=final_ir_json,
                     markdown=final_ir_markdown,
                     source_registry=source_registry,
+                    package_local_evidence=package_local_evidence,
+                    package_local_evidence_inputs=package_local_evidence_inputs,
+                    package_local_validator_envelope=package_local_validator_envelope,
                     exact_reuse_receipts=exact_reuse_receipts,
                 ),
             ),
@@ -665,6 +676,8 @@ def _validate_completion(
             validated_output.target_report_sha256,
             validated_output.target_final_ir_schema_sha256,
             validated_output.target_final_ir_json_sha256,
+            validated_output.package_local_raw_receipt_sha256,
+            validated_output.package_local_raw_authority_sha256,
         )
         if any(not _is_digest(item) for item in output_digests) or (
             validated_output.revision,
@@ -682,6 +695,14 @@ def _validate_completion(
             final_schema_sha256,
         ):
             findings.add("VALIDATED_OUTPUT_INVALID", "/validated_output")
+        local_binding = getattr(execution_plan, "package_local_evidence", None)
+        if (
+            validated_output.package_local_raw_receipt_sha256
+            != getattr(local_binding, "raw_receipt_sha256", None)
+            or validated_output.package_local_raw_authority_sha256
+            != getattr(local_binding, "raw_authority_sha256", None)
+        ):
+            findings.add("VALIDATED_OUTPUT_INVALID", "/validated_output/package_local")
         matching = (
             [item for item in reconciliation.packages if item.package_ref_id == target]
             if type(reconciliation) is ReconciliationResult
@@ -827,6 +848,9 @@ def validate_completion(
     report_bytes: bytes,
     report_manifest_bytes: bytes,
     source_registry: AuthenticatedSourceReportRegistry,
+    package_local_evidence: AuthenticatedPackageLocalEvidence,
+    package_local_evidence_inputs: PackageLocalEvidenceReauthenticationInput,
+    package_local_validator_envelope: AuthenticatedValidatorEnvelope,
     exact_reuse_receipts: tuple[AuthenticatedExactReuseProvenance, ...] = (),
     reconciliation_input: ReconciliationInput,
     authenticated_reconciliation_input: AuthenticatedReconciliationInput,
@@ -854,6 +878,9 @@ def validate_completion(
             report_bytes=report_bytes,
             report_manifest_bytes=report_manifest_bytes,
             source_registry=source_registry,
+            package_local_evidence=package_local_evidence,
+            package_local_evidence_inputs=package_local_evidence_inputs,
+            package_local_validator_envelope=package_local_validator_envelope,
             exact_reuse_receipts=exact_reuse_receipts,
             reconciliation_input=reconciliation_input,
             authenticated_reconciliation_input=authenticated_reconciliation_input,

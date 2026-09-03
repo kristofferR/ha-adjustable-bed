@@ -6,7 +6,7 @@ import copy
 import hashlib
 import json
 
-INPUT_SCHEMA_REVISION = "phase4-v2-reconciliation-input-v4"
+INPUT_SCHEMA_REVISION = "phase4-v2-reconciliation-input-v5"
 COMPARISON_AREAS = (
     "actions",
     "authentication",
@@ -153,6 +153,7 @@ _SCHEMA: dict[str, object] = {
                     "type": "array",
                 },
                 "package_ref_id": _SHA256,
+                "package_local": {"$ref": "#/$defs/package_local_provenance"},
                 "report_revision": _TOKEN,
                 "report_sha256": _SHA256,
                 "roots": {
@@ -162,7 +163,65 @@ _SCHEMA: dict[str, object] = {
                     "type": "array",
                 },
             },
-            "required": ["areas", "package_ref_id", "report_revision", "report_sha256", "roots"],
+            "required": [
+                "areas",
+                "package_local",
+                "package_ref_id",
+                "report_revision",
+                "report_sha256",
+                "roots",
+            ],
+            "type": "object",
+        },
+        "package_local_provenance": {
+            "additionalProperties": False,
+            "properties": {
+                "evidence_anchor_ids": {**_STRING_SET, "minItems": 1},
+                "mandatory_domains": {**_STRING_SET, "minItems": 1},
+                "package_ref_id": _SHA256,
+                "report_pointer": _POINTER,
+                "source_package_id": {
+                    "maxLength": 256,
+                    "pattern": "^pkg:[0-9a-f]{64}$",
+                    "type": "string",
+                },
+                "source_raw_receipt_sha256": _SHA256,
+                "source_validation_receipt_sha256": _SHA256,
+                "targets": {
+                    "items": {"$ref": "#/$defs/package_local_target"},
+                    "maxItems": 4096,
+                    "minItems": 1,
+                    "type": "array",
+                },
+            },
+            "required": [
+                "evidence_anchor_ids",
+                "mandatory_domains",
+                "package_ref_id",
+                "report_pointer",
+                "source_package_id",
+                "source_raw_receipt_sha256",
+                "source_validation_receipt_sha256",
+                "targets",
+            ],
+            "type": "object",
+        },
+        "package_local_target": {
+            "additionalProperties": False,
+            "properties": {
+                "evidence_anchor_id": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string",
+                },
+                "local_domain": _TOKEN,
+                "terminal_ir_pointer": _POINTER,
+            },
+            "required": [
+                "evidence_anchor_id",
+                "local_domain",
+                "terminal_ir_pointer",
+            ],
             "type": "object",
         },
         "root_provenance": {

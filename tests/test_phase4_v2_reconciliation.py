@@ -11,7 +11,7 @@ from jsonschema.validators import Draft202012Validator
 
 import tools.phase4_v2.equivalence.core as equivalence_core_module
 from tests.phase4_v2_authenticated_fixtures import authenticated_package_ref
-from tools.phase4_v2.equivalence import FrozenPackageRef, Route
+from tools.phase4_v2.equivalence import LOCAL_ONLY_DOMAINS, FrozenPackageRef, Route
 from tools.phase4_v2.reconciliation import (
     COMPARISON_AREAS,
     INPUT_SCHEMA_CANONICAL_BYTES,
@@ -28,6 +28,8 @@ from tools.phase4_v2.reconciliation import (
     LeafProvenance,
     LedgerDisposition,
     NormalizedClaim,
+    PackageLocalProvenance,
+    PackageLocalTarget,
     PackageSurface,
     ReconciliationError,
     ReconciliationInput,
@@ -154,27 +156,60 @@ def package_surface(
 ) -> PackageSurface:
     package = frozen_package(name)
     root = root_for(package, route)
-    provenance = LeafProvenance(
+    root_provenance = LeafProvenance(
         root_ref_id=root.content_id,
         report_pointer="/normalized/value",
         evidence_anchor_ids=("leaf-anchor",),
     )
+    local_targets = tuple(
+        PackageLocalTarget(
+            evidence_anchor_id=f"local-{domain}",
+            terminal_ir_pointer=f"/{area.value}/surface",
+            local_domain=domain,
+        )
+        for domain, area in zip(
+            sorted(LOCAL_ONLY_DOMAINS),
+            tuple(ComparisonArea)[: len(LOCAL_ONLY_DOMAINS)],
+            strict=True,
+        )
+    )
+    package_local = PackageLocalProvenance(
+        package_ref_id=package.content_id,
+        source_package_id=f"pkg:{sha(name + ':local-source')}",
+        source_validation_receipt_sha256=sha(name + ":local-validation"),
+        source_raw_receipt_sha256=sha(name + ":local-raw"),
+        report_pointer="/package_local_domains",
+        mandatory_domains=tuple(sorted(LOCAL_ONLY_DOMAINS)),
+        evidence_anchor_ids=tuple(sorted(item.evidence_anchor_id for item in local_targets)),
+        targets=tuple(sorted(local_targets, key=lambda item: item.terminal_ir_pointer)),
+    )
+    local_by_pointer = {item.terminal_ir_pointer: item for item in local_targets}
     areas = tuple(
         surface(
             area,
-            provenance,
+            (
+                LeafProvenance(
+                    root_ref_id=package_local.content_id,
+                    report_pointer=f"/{area.value}/surface",
+                    evidence_anchor_ids=(local_by_pointer[f"/{area.value}/surface"].evidence_anchor_id,),
+                )
+                if f"/{area.value}/surface" in local_by_pointer
+                else root_provenance
+            ),
             value=(values or {}).get(area, True),
             closure=(ClosureStatus.INCOMPLETE if area in incomplete else ClosureStatus.COMPLETE),
             dispositions=(dispositions or {}).get(area, ()),
             extra_claims=(extra_claims or {}).get(area, ()),
         )
         for area in ComparisonArea
-        if area not in missing and route is not Route.BLOCKED
+        if area not in missing
+        and (route is not Route.BLOCKED or f"/{area.value}/surface" in local_by_pointer)
     )
     return PackageSurface(
         package_ref=package,
         report_sha256=sha(name + ":report"),
         report_revision="synthetic-report-v1",
+        package_local=package_local,
         roots=(root,),
         areas=areas,
     )
@@ -234,7 +269,7 @@ def test_atom_sources_are_sorted_and_deduplicated_by_root() -> None:
     packages: list[PackageSurface] = []
     for name in ("org.example.one", "org.example.two"):
         package = package_surface(name)
-        area = package.areas[0]
+        area = package.areas[-1]
         claim = area.claims[0]
         second = replace(claim.provenance[0], report_pointer="/normalized/second")
         changed_claim = replace(
@@ -244,7 +279,7 @@ def test_atom_sources_are_sorted_and_deduplicated_by_root() -> None:
         packages.append(
             replace(
                 package,
-                areas=(replace(area, claims=(changed_claim,)), *package.areas[1:]),
+                areas=(*package.areas[:-1], replace(area, claims=(changed_claim,))),
             )
         )
 
@@ -435,21 +470,12 @@ def test_action_identity_change_is_not_normalized_into_false_equality() -> None:
     assert decision.decision is ComparisonDecision.DIFFERENT
 
 
-def test_conflicting_claim_identity_is_preserved_as_a_contradiction() -> None:
+def test_duplicate_claim_identity_is_rejected_before_reconciliation() -> None:
     area = ComparisonArea.GATT
     base = package_surface("org.example.conflict")
     conflict = claim_for(base, area, "different")
-    conflicted = package_surface("org.example.conflict", extra_claims={area: (conflict,)})
-    other = package_surface("org.example.other")
-
-    result = reconcile(cluster(conflicted, other))
-
-    contradiction = next(item for item in result.contradictions if item.area is area)
-    assert contradiction.code == "CONFLICTING_SEMANTIC_IDENTITY"
-    assert len(contradiction.atom_ids) == 2
-    decision = next(item for item in result.pair_decisions if item.area is area)
-    assert decision.decision is ComparisonDecision.INCOMPLETE
-    assert contradiction.content_id in decision.contradiction_ids
+    with pytest.raises(ReconciliationError, match="duplicate semantic claim keys"):
+        package_surface("org.example.conflict", extra_claims={area: (conflict,)})
 
 
 def test_duplicate_disposition_is_a_contradiction_not_silently_deduplicated() -> None:
@@ -502,7 +528,7 @@ def test_blocked_root_keeps_every_pair_area_incomplete_without_false_promotion()
 
     assert {item.decision for item in result.pair_decisions} == {ComparisonDecision.INCOMPLETE}
     assert result.required_full_promotions == ()
-    assert len(result.repairs_required) == 22
+    assert len(result.repairs_required) == 16
     assert all(
         any("ROOT_BLOCKED" in reason for reason in item.incomplete_reasons)
         for item in result.pair_decisions
@@ -581,18 +607,18 @@ def test_loader_and_values_enforce_resource_and_unicode_bounds(
 
 def test_model_rejects_foreign_root_provenance_and_noncanonical_order() -> None:
     package = package_surface("org.example.one")
-    area = package.areas[0]
+    area = package.areas[-1]
     foreign = replace(area.claims[0].provenance[0], root_ref_id=sha("foreign"))
     claim = replace(area.claims[0], provenance=(foreign,))
     bad_area = replace(area, claims=(claim,))
     with pytest.raises(ReconciliationError, match="outside its package"):
-        replace(package, areas=(bad_area, *package.areas[1:]))
+        replace(package, areas=(*package.areas[:-1], bad_area))
 
     unattested = replace(area.claims[0].provenance[0], evidence_anchor_ids=("unknown",))
     unattested_claim = replace(area.claims[0], provenance=(unattested,))
     unattested_area = replace(area, claims=(unattested_claim,))
     with pytest.raises(ReconciliationError, match="not attested by its root"):
-        replace(package, areas=(unattested_area, *package.areas[1:]))
+        replace(package, areas=(*package.areas[:-1], unattested_area))
 
     first = package_surface("org.example.one")
     second = package_surface("org.example.two")

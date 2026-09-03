@@ -37,6 +37,10 @@ if TYPE_CHECKING:
         ActivatedPreparationAuthority,
         PreparationReceipt,
     )
+    from tools.phase4_v2.raw_source import (
+        AuthenticatedPackageLocalEvidence,
+        PackageLocalEvidenceReauthenticationInput,
+    )
 
 SCHEMA_REVISION = 3
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$")
@@ -612,6 +616,9 @@ class _ValidatedPackageOutputPublication:
     output: object
     execution_plan: object
     execution_envelope: object
+    package_local_evidence: AuthenticatedPackageLocalEvidence
+    package_local_evidence_inputs: PackageLocalEvidenceReauthenticationInput
+    package_local_validator_envelope: AuthenticatedValidatorEnvelope
 
 
 @dataclass(frozen=True, slots=True)
@@ -2272,6 +2279,9 @@ class Queue:
         report_root: Path,
         evidence_lineage_payload: bytes,
         execution_envelope: object,
+        package_local_evidence: AuthenticatedPackageLocalEvidence,
+        package_local_evidence_inputs: PackageLocalEvidenceReauthenticationInput,
+        package_local_validator_envelope: AuthenticatedValidatorEnvelope,
     ) -> tuple[ValidatedPackageOutput, InputCheckedFinishResult]:
         """Validate report bytes, then publish one reserved package output."""
         from tools.phase4_v2.equivalence.execution import (
@@ -2339,6 +2349,9 @@ class Queue:
             execution_plan=execution_plan,
             receipt=receipt,
             trusted_validation_receipt_sha256=receipt_sha256,
+            package_local_evidence=package_local_evidence,
+            package_local_evidence_inputs=package_local_evidence_inputs,
+            package_local_validator_envelope=package_local_validator_envelope,
         )
         if (
             execution_envelope.receipt_bytes != receipt.to_json().encode()
@@ -2382,7 +2395,12 @@ class Queue:
                 expected_input_digest=frozen.digest,
                 terminalize_input_mismatch=True,
                 trusted_publication=_ValidatedPackageOutputPublication(
-                    output, execution_plan, execution_envelope
+                    output,
+                    execution_plan,
+                    execution_envelope,
+                    package_local_evidence,
+                    package_local_evidence_inputs,
+                    package_local_validator_envelope,
                 ),
             )
         finally:
@@ -2798,6 +2816,16 @@ class Queue:
                 validate_authenticated_exact_reuse_prerequisite(
                     trusted_publication.receipt
                 )
+            elif isinstance(trusted_publication, _ValidatedPackageOutputPublication):
+                # Reauthenticate the retained local evidence after all queue
+                # writes and before commit so authority rotation rolls back.
+                self._validate_package_output_publication(
+                    lease,
+                    trusted_publication,
+                    output_digest=output_digest,
+                    completion_revision=completion_revision,
+                    expected_input_digest=expected_input_digest,
+                )
             elif isinstance(trusted_publication, _AuthenticatedTrackerPublication):
                 from tools.phase4_v2.queue.fanout import (
                     FanoutPublishReceipt,
@@ -3079,15 +3107,47 @@ class Queue:
         )
         from tools.phase4_v2.equivalence.plan import (
             VALIDATED_PACKAGE_OUTPUT_REVISION,
+            PackageExecutionPlan,
             ValidatedPackageOutput,
+            bind_package_local_evidence,
+            freeze_package_execution_plan,
             package_queue_unit_id,
+        )
+        from tools.phase4_v2.raw_source import (
+            AuthenticatedPackageLocalEvidence,
+            reauthenticate_package_local_evidence,
         )
 
         output = publication.output
         if type(publication.execution_envelope) is not AuthenticatedPackageExecutionEnvelope:
             raise QueueConflictError("package publication lost its execution envelope")
         envelope = validate_package_execution_envelope(publication.execution_envelope)
-        if type(output) is not ValidatedPackageOutput or (
+        if (
+            type(output) is not ValidatedPackageOutput
+            or type(publication.execution_plan) is not PackageExecutionPlan
+            or type(publication.package_local_evidence)
+            is not AuthenticatedPackageLocalEvidence
+        ):
+            raise QueueConflictError("package publication inputs changed type")
+        try:
+            local = reauthenticate_package_local_evidence(
+                publication.package_local_evidence,
+                inputs=publication.package_local_evidence_inputs,
+            )
+            local_binding = bind_package_local_evidence(
+                package_ref=publication.execution_plan.target_package_ref,
+                evidence=local,
+                evidence_inputs=publication.package_local_evidence_inputs,
+                enriched_validator_envelope=(
+                    publication.package_local_validator_envelope
+                ),
+            )
+            frozen_plan = freeze_package_execution_plan(publication.execution_plan)
+        except (AttributeError, TypeError, ValueError) as error:
+            raise QueueConflictError(
+                "package-local evidence authentication failed during publication"
+            ) from error
+        if (
             lease.unit_id != package_queue_unit_id(output.target_package_ref_id)
             or output_digest != output.content_id
             or completion_revision != VALIDATED_PACKAGE_OUTPUT_REVISION
@@ -3095,6 +3155,10 @@ class Queue:
             or envelope.output_content_id != output.content_id
             or envelope.execution_plan_id != output.execution_plan_id
             or envelope.package_ref_id != output.target_package_ref_id
+            or local_binding.to_data() != frozen_plan.package_local_evidence.to_data()
+            or output.package_local_raw_receipt_sha256 != local.receipt_sha256
+            or output.package_local_raw_authority_sha256
+            != local.authority.activation_sha256
         ):
             raise QueueConflictError("publication does not belong to the validated package output")
 

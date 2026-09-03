@@ -8,15 +8,21 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, cast
 
 from tools.phase4_v2.raw_source import (
+    AuthenticatedPackageLocalEvidence,
     AuthenticatedRawSourceRegistry,
+    PackageLocalEvidenceReauthenticationInput,
     RawSourceAuthenticationError,
     RawSourceReauthenticationInput,
+    reauthenticate_package_local_evidence,
     reauthenticate_raw_source_registry,
 )
 
 from .bundle import _canonical_receipt_bytes
 
 RAW_SOURCE_VALIDATION_BINDING_REVISION = "phase4-v2-raw-source-validator-binding-v1"
+PACKAGE_LOCAL_VALIDATION_BINDING_REVISION = (
+    "phase4-v2-package-local-validator-binding-v1"
+)
 
 if TYPE_CHECKING:
     from tools.phase4_v2.equivalence.core import AuthenticatedValidatorEnvelope
@@ -24,6 +30,135 @@ if TYPE_CHECKING:
 
 class RawSourceValidationError(ValueError):
     """Raw-source evidence could not be admitted into a validator receipt."""
+
+
+def derive_package_local_validator_receipt(
+    base_envelope: AuthenticatedValidatorEnvelope,
+    *,
+    evidence: AuthenticatedPackageLocalEvidence,
+    evidence_inputs: PackageLocalEvidenceReauthenticationInput,
+) -> bytes:
+    """Derive a non-circular validator receipt for target package-local evidence."""
+
+    from tools.phase4_v2.equivalence.core import (
+        AuthenticatedValidatorEnvelope,
+        frozen_package_ref_from_validator_envelope,
+        validate_authenticated_validator_envelope,
+    )
+
+    if type(base_envelope) is not AuthenticatedValidatorEnvelope:
+        raise RawSourceValidationError(
+            "package-local derivation requires an authenticated validator envelope"
+        )
+    base = validate_authenticated_validator_envelope(base_envelope)
+    base_ref = frozen_package_ref_from_validator_envelope(base)
+    try:
+        local = reauthenticate_package_local_evidence(evidence, inputs=evidence_inputs)
+    except RawSourceAuthenticationError as error:
+        raise RawSourceValidationError(
+            "package-local raw evidence authentication failed"
+        ) from error
+    identity = base.report.validated_artifact_identity
+    if (
+        local.package_ref_id != base_ref.content_id
+        or (local.package_name, local.version_code, local.artifact_digest)
+        != (identity.package_name, identity.version_code, identity.artifact_digest)
+    ):
+        raise RawSourceValidationError(
+            "package-local evidence does not exactly cover the base package"
+        )
+    members = {item.id: item for item in local.members}
+    member_records = [
+        {
+            "member": item.path,
+            "owner": local.artifact_digest,
+            "sha256": item.sha256,
+        }
+        for item in sorted(local.members, key=lambda item: item.path.encode())
+    ]
+    anchors = [
+        {
+            "end_byte": item.raw.end_byte,
+            "id": item.id,
+            "ir_pointer": item.raw.source_ir_pointer,
+            "member": members[item.member_id].path,
+            "member_sha256": members[item.member_id].sha256,
+            "owner": local.artifact_digest,
+            "representation": item.raw.representation,
+            "start_byte": item.raw.start_byte,
+            "value_sha256": item.raw.value_sha256,
+        }
+        for item in sorted(local.anchors, key=lambda item: item.id.encode())
+    ]
+    try:
+        receipt = json.loads(base.receipt_payload)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise RawSourceValidationError("base validator receipt is not JSON") from error
+    if type(receipt) is not dict:
+        raise RawSourceValidationError("base validator receipt is not an object")
+    receipt = cast(dict[str, object], receipt)
+    if receipt.get("accepted") is not True or receipt.get("source_unchanged") is not True:
+        raise RawSourceValidationError("base validator receipt is not accepted and stable")
+    receipt["evidence_anchors_checked"] = len(anchors)
+    receipt["validated_evidence_members"] = member_records
+    receipt["validated_evidence_anchors"] = anchors
+    receipt["validated_root_evidence"] = []
+    receipt["raw_source_receipt_sha256s"] = [local.receipt_sha256]
+    receipt["raw_source_binding_revision"] = PACKAGE_LOCAL_VALIDATION_BINDING_REVISION
+    receipt.pop("validation_receipt_sha256", None)
+    receipt["validation_receipt_sha256"] = hashlib.sha256(
+        _canonical_receipt_bytes(receipt)
+    ).hexdigest()
+    if validate_authenticated_validator_envelope(base) != base:
+        raise RawSourceValidationError(
+            "base validator envelope changed during package-local derivation"
+        )
+    try:
+        restored = reauthenticate_package_local_evidence(local, inputs=evidence_inputs)
+    except RawSourceAuthenticationError as error:
+        raise RawSourceValidationError(
+            "package-local evidence changed during validator derivation"
+        ) from error
+    if restored != local:
+        raise RawSourceValidationError(
+            "package-local evidence changed during validator derivation"
+        )
+    return _canonical_receipt_bytes(receipt)
+
+
+def validate_package_local_validator_envelope(
+    base_envelope: AuthenticatedValidatorEnvelope,
+    enriched_envelope: AuthenticatedValidatorEnvelope,
+    *,
+    evidence: AuthenticatedPackageLocalEvidence,
+    evidence_inputs: PackageLocalEvidenceReauthenticationInput,
+) -> AuthenticatedValidatorEnvelope:
+    """Authenticate an enriched local envelope against its exact finite genesis."""
+
+    from tools.phase4_v2.equivalence.core import (
+        AuthenticatedValidatorEnvelope,
+        validate_authenticated_validator_envelope,
+    )
+
+    if type(enriched_envelope) is not AuthenticatedValidatorEnvelope:
+        raise RawSourceValidationError(
+            "package-local validator envelope must use the exact authenticated type"
+        )
+    enriched = validate_authenticated_validator_envelope(enriched_envelope)
+    expected = derive_package_local_validator_receipt(
+        base_envelope,
+        evidence=evidence,
+        evidence_inputs=evidence_inputs,
+    )
+    if enriched.receipt_payload != expected or enriched.authority != base_envelope.authority:
+        raise RawSourceValidationError(
+            "package-local validator envelope differs from authenticated local evidence"
+        )
+    if validate_authenticated_validator_envelope(enriched) != enriched:
+        raise RawSourceValidationError(
+            "package-local validator envelope changed during validation"
+        )
+    return enriched
 
 
 def derive_raw_source_validator_receipt(

@@ -69,6 +69,7 @@ from tools.phase4_v2.equivalence.plan import (
     RootExecutionPlan,
     TargetRootInventory,
     TargetRootOccurrence,
+    bind_package_local_evidence,
     build_package_execution_plan,
     freeze_package_execution_plan,
     preparation_evidence_producer_capabilities,
@@ -122,12 +123,20 @@ from tools.phase4_v2.preflight import (
 )
 from tools.phase4_v2.raw_source import (
     ActivatedRawSourceAuthority,
+    AuthenticatedPackageLocalEvidence,
+    PackageLocalEvidenceAnchor,
+    PackageLocalEvidenceMember,
+    PackageLocalEvidenceReauthenticationInput,
     RawSourceAnchor,
     RawSourceMember,
     RawSourceReauthenticationInput,
+    authenticate_package_local_evidence,
     build_authenticated_raw_source_registry,
     canonical_scalar_sha256,
     load_protected_raw_source_authority,
+    package_local_evidence_envelope_payload,
+    package_local_evidence_payload,
+    package_local_evidence_signing_bytes,
     raw_source_authority_payload,
     raw_source_collection_payload,
     raw_source_envelope_payload,
@@ -142,6 +151,7 @@ from tools.phase4_v2.validator import (
     EvidenceLineageTrust,
     PackageDependencyPins,
     TrustedProducer,
+    derive_package_local_validator_receipt,
     derive_raw_source_validator_receipt,
     validate_report_bundle,
 )
@@ -182,6 +192,24 @@ class SyntheticPackageInputs:
     report_root: Path
     dependencies: PackageDependencyPins
     lineage: EvidenceLineageTrust
+
+
+_LOCAL_TERMINAL_TARGETS = {
+    "configuration": "/protocols/primary/variant_space",
+    "lifecycle": "/lifecycles/command/phases/0",
+    "negative_closure": "/actions/stop/summary",
+    "reachability": "/expected_action_rules/expect_raise/action",
+    "resources": "/gatt_services/service/uuid",
+    "selectors": "/selectors/side/dimension",
+}
+_LOCAL_SEMANTIC_VALUES = {
+    "configuration": "variants",
+    "lifecycle": "CONNECT",
+    "negative_closure": "Stop",
+    "reachability": "raise",
+    "resources": "service",
+    "selectors": "side",
+}
 
 
 @contextmanager
@@ -409,6 +437,34 @@ def build_synthetic_package_inputs(
             )
             for index in range(root_count)
         )
+        inventory = TargetRootInventory(
+            package_ref.content_id,
+            tuple(
+                TargetRootOccurrence(root.content_id, root.occurrence_identity_sha256)
+                for root in application_roots
+            ),
+        )
+        inventory_envelope = _sign_target_inventory_envelope(
+            package_ref=package_ref,
+            inventory=inventory,
+            extractor=extractor,
+            trust=trust,
+        )
+        local_evidence, local_inputs, local_validator_envelope = (
+            _build_package_local_evidence(
+                package_ref=package_ref,
+                preparation_receipt=receipt,
+                preparation_authority=trust.preparation_authority,
+                target_inventory=inventory_envelope,
+                trust=trust,
+            )
+        )
+        local_binding = bind_package_local_evidence(
+            package_ref=package_ref,
+            evidence=local_evidence,
+            evidence_inputs=local_inputs,
+            enriched_validator_envelope=local_validator_envelope,
+        )
         package_local = PackageLocalPlan(
             package_ref.content_id,
             package_name,
@@ -424,13 +480,7 @@ def build_synthetic_package_inputs(
             preparation_evidence_producer_capabilities(
                 receipt, trust.preparation_authority
             ),
-        )
-        inventory = TargetRootInventory(
-            package_ref.content_id,
-            tuple(
-                TargetRootOccurrence(root.content_id, root.occurrence_identity_sha256)
-                for root in application_roots
-            ),
+            local_binding,
         )
         # The accepted preparation binding is supplied later by the queue's
         # trusted finish adapter. The authenticated inventory adapter similarly
@@ -449,6 +499,10 @@ def build_synthetic_package_inputs(
             tuple((item.name, item.sha256) for item in preflight.artifact_members),
             package_root,
             trust.tool_sha256,
+            inventory_envelope,
+            local_evidence,
+            local_inputs,
+            local_validator_envelope,
         )
 
 
@@ -467,6 +521,10 @@ class IncompleteSyntheticPackage:
     artifact_members: tuple[tuple[str, str], ...]
     package_root: Path
     tool_sha256: str
+    inventory_envelope: AuthenticatedTargetInventoryEnvelope
+    package_local_evidence: AuthenticatedPackageLocalEvidence
+    package_local_evidence_inputs: PackageLocalEvidenceReauthenticationInput
+    package_local_validator_envelope: AuthenticatedValidatorEnvelope
 
     @property
     def target_root(self) -> str:
@@ -552,6 +610,139 @@ def _sign_validator_receipt(
         payload, trust.validator_authority, signature=signature
     )
     return load_authenticated_validator_envelope(envelope, authority=trust.validator_authority)
+
+
+def _sign_target_inventory_envelope(
+    *,
+    package_ref: FrozenPackageRef,
+    inventory: TargetRootInventory,
+    extractor: inventory_module.ExtractorCapability,
+    trust: SyntheticTrust,
+) -> AuthenticatedTargetInventoryEnvelope:
+    unsigned = inventory_module.target_inventory_envelope_payload(
+        package_ref=package_ref,
+        inventory=inventory,
+        extractor=extractor,
+        authority=trust.inventory_authority,
+        signature="0" * 128,
+    )
+    payload = json.loads(unsigned)["payload"]
+    signature = trust.inventory_key.sign(
+        inventory_module.target_inventory_signing_bytes(payload)
+    ).hex()
+    return inventory_module.load_authenticated_target_inventory_envelope(
+        inventory_module.target_inventory_envelope_payload(
+            package_ref=package_ref,
+            inventory=inventory,
+            extractor=extractor,
+            authority=trust.inventory_authority,
+            signature=signature,
+        ),
+        authority=trust.inventory_authority,
+        package_ref=package_ref,
+    )
+
+
+def _build_package_local_evidence(
+    *,
+    package_ref: FrozenPackageRef,
+    preparation_receipt: PreparationReceipt,
+    preparation_authority: ActivatedPreparationAuthority,
+    target_inventory: AuthenticatedTargetInventoryEnvelope,
+    trust: SyntheticTrust,
+) -> tuple[
+    AuthenticatedPackageLocalEvidence,
+    PackageLocalEvidenceReauthenticationInput,
+    AuthenticatedValidatorEnvelope,
+]:
+    local_bytes = _synthetic_local_output()
+    local_path = f"evidence/sha256/{hashlib.sha256(local_bytes).hexdigest()}"
+    invocation, output = next(
+        (invocation, output)
+        for invocation in preparation_receipt.invocations
+        if invocation.status == "COMPLETE" and invocation.route == "apktool"
+        for output in invocation.outputs
+        if output.path == local_path
+    )
+    output_bytes = local_bytes
+    if (
+        len(output_bytes) != output.bytes
+        or hashlib.sha256(output_bytes).hexdigest() != output.sha256
+    ):
+        raise RuntimeError(
+            "synthetic package-local bytes differ from preparation output: "
+            f"expected {len(output_bytes)}/{hashlib.sha256(output_bytes).hexdigest()}, "
+            f"got {output.bytes}/{output.sha256} at {output.path}"
+        )
+    member = PackageLocalEvidenceMember(
+        id=f"local-member-{package_ref.content_id[:16]}",
+        path=output.path,
+        sha256=output.sha256,
+        byte_length=output.bytes,
+        producer_name=invocation.route,
+        producer_revision=preparation_receipt.pipeline_revision,
+        producer_digest=invocation.tool.binary_sha256,
+        invocation_sha256=hashlib.sha256(_canonical(invocation.to_data())).hexdigest(),
+    )
+    anchors = tuple(
+        sorted(
+            (
+                PackageLocalEvidenceAnchor(
+                    raw=RawSourceAnchor(
+                        id=f"local-{package_ref.content_id[:12]}-{domain}",
+                        member_id=member.id,
+                        start_byte=output_bytes.index(value.encode()),
+                        end_byte=output_bytes.index(value.encode()) + len(value.encode()),
+                        raw_bytes=value.encode(),
+                        representation="utf8",
+                        decoded_value=value,
+                        value_sha256=canonical_scalar_sha256(value),
+                        source_ir_pointer=_LOCAL_TERMINAL_TARGETS[domain],
+                    ),
+                    local_domain=domain,
+                    terminal_ir_pointer=_LOCAL_TERMINAL_TARGETS[domain],
+                )
+                for domain, value in _LOCAL_SEMANTIC_VALUES.items()
+            )
+        )
+    )
+    payload = package_local_evidence_payload(
+        package_ref=package_ref,
+        preparation_receipt=preparation_receipt,
+        preparation_authority=preparation_authority,
+        target_inventory=target_inventory,
+        members=(member,),
+        anchors=anchors,
+    )
+    envelope_bytes = package_local_evidence_envelope_payload(
+        payload,
+        trust.raw_source_key.sign(package_local_evidence_signing_bytes(payload)).hex(),
+    )
+    local = authenticate_package_local_evidence(
+        envelope_bytes,
+        package_ref=package_ref,
+        preparation_receipt=preparation_receipt,
+        preparation_authority=preparation_authority,
+        target_inventory=target_inventory,
+    )
+    inputs: PackageLocalEvidenceReauthenticationInput = (
+        package_ref,
+        preparation_receipt,
+        preparation_authority,
+        target_inventory,
+    )
+    enriched = _sign_validator_receipt(
+        derive_package_local_validator_receipt(
+            load_authenticated_validator_envelope(
+                package_ref.validator_envelope_bytes,
+                authority=package_ref.validator_authority,
+            ),
+            evidence=local,
+            evidence_inputs=inputs,
+        ),
+        trust,
+    )
+    return local, inputs, enriched
 
 
 def build_raw_backed_source_registry(
@@ -802,10 +993,17 @@ def _package_report(
 ) -> tuple[Path, PackageDependencyPins, EvidenceLineageTrust]:
     root = partial.package_root / "package-report"
     root.mkdir()
-    local_evidence = b"CLOSED"
+    local_record = partial.package_local_evidence.members[0]
+    local_evidence = _synthetic_local_output()
     local_digest = hashlib.sha256(local_evidence).hexdigest()
-    local_member = f"evidence/sha256/{local_digest}"
-    final_ir, trusted = _authorized_final_ir(source_registry)
+    local_member = local_record.path
+    if local_digest != local_record.sha256 or len(local_evidence) != local_record.byte_length:
+        raise RuntimeError("synthetic report bytes differ from authenticated local evidence")
+    final_ir, trusted = _authorized_final_ir(
+        source_registry,
+        package_local_evidence=partial.package_local_evidence,
+        package_local_validator_envelope=partial.package_local_validator_envelope,
+    )
     final_ir_bytes = _json_line(final_ir)
     final_document = loads_final_ir(final_ir_bytes, trusted_receipts=trusted)
     markdown = render_final_ir_markdown(final_document).encode()
@@ -903,14 +1101,15 @@ def _package_report(
     ]
     anchors = [
         {
-            "id": "local-evidence",
+            "id": item.id,
             "owner": partial.package_local.target_artifact_digest,
             "member": local_member,
-            "start_byte": 0,
-            "end_byte": len(local_evidence),
-            "ir_pointer": "/domain_closure/status",
-            "representation": "utf8",
+            "start_byte": item.raw.start_byte,
+            "end_byte": item.raw.end_byte,
+            "ir_pointer": item.raw.source_ir_pointer,
+            "representation": item.raw.representation,
         }
+        for item in partial.package_local_evidence.anchors
     ]
     if full_roots:
         evidence_members.append(
@@ -946,8 +1145,6 @@ def _package_report(
     lineage = _package_lineage(
         partial,
         dependencies.preflight_sha256,
-        local_member,
-        local_evidence,
         root_member if full_roots else None,
         root_evidence if full_roots else None,
         full_roots[0] if full_roots else None,
@@ -980,8 +1177,6 @@ class _PreflightView:
 def _package_lineage(
     partial: IncompleteSyntheticPackage,
     preflight_sha256: str,
-    local_member: str,
-    local_evidence: bytes,
     root_member: str | None,
     root_evidence: bytes | None,
     full_root: FullAnalysisRootPlan | None,
@@ -989,21 +1184,27 @@ def _package_lineage(
     source_members = [
         {"name": name, "sha256": digest} for name, digest in partial.artifact_members
     ]
-    local_producer = TrustedProducer("pipeline-v1", "apktool", partial.tool_sha256)
+    local_record = partial.package_local_evidence.members[0]
+    local_evidence = _synthetic_local_output()
+    local_producer = TrustedProducer(
+        local_record.producer_revision,
+        local_record.producer_name,
+        local_record.producer_digest,
+    )
     producers = [local_producer]
     members = [
         {
             "authoritative_root_analyses": [],
             "package_local_domains": list(LOCAL_ONLY_DOMAINS),
             "producer": {
-                "invocation_sha256": _digest("synthetic-local-invocation"),
+                "invocation_sha256": local_record.invocation_sha256,
                 "outcome": "SUCCEEDED",
                 "output_size": len(local_evidence),
                 "pipeline_revision": local_producer.pipeline_revision,
                 "route": local_producer.route,
                 "tool_sha256": local_producer.tool_sha256,
             },
-            "report_member": local_member,
+            "report_member": local_record.path,
             "sha256": hashlib.sha256(local_evidence).hexdigest(),
             "source_artifact_members": source_members,
         }
@@ -1248,6 +1449,9 @@ def _synthetic_terminal_semantics() -> dict[str, object]:
 
 def _authorized_final_ir(
     source_registry: AuthenticatedSourceReportRegistry | None = None,
+    *,
+    package_local_evidence: AuthenticatedPackageLocalEvidence | None = None,
+    package_local_validator_envelope: AuthenticatedValidatorEnvelope | None = None,
 ) -> tuple[dict[str, object], dict[str, str]]:
     data: dict[str, object] = {
         "schema_revision": FINAL_SCHEMA_REVISION,
@@ -1264,6 +1468,13 @@ def _authorized_final_ir(
         },
     }
     if source_registry is not None:
+        if (
+            package_local_evidence is None
+            or package_local_validator_envelope is None
+        ):
+            raise RuntimeError(
+                "synthetic authenticated final IR requires package-local evidence"
+            )
         packages: dict[str, object] = {}
         files: dict[str, object] = {}
         final_anchors: dict[str, object] = {}
@@ -1271,6 +1482,9 @@ def _authorized_final_ir(
         bindings: dict[str, object] = {}
         sets_by_pointer: dict[str, list[str]] = {}
         trusted: dict[str, str] = {}
+        local_targets = {
+            item.terminal_ir_pointer for item in package_local_evidence.anchors
+        }
         for source in source_registry.entries:
             if len(source.report.validated_root_evidence) != 1:
                 raise RuntimeError("synthetic final IR requires one root per source report")
@@ -1311,8 +1525,44 @@ def _authorized_final_ir(
                     package=package_id, anchors=(anchor_id,)
                 )
                 source_sets[source_set_id] = source_set.to_data()
-                sets_by_pointer.setdefault(anchor.ir_pointer, []).append(source_set_id)
+                if anchor.ir_pointer not in local_targets:
+                    sets_by_pointer.setdefault(anchor.ir_pointer, []).append(source_set_id)
             trusted[source.report.validation_receipt_sha256] = source.report.bundle_sha256
+        local_report = package_local_validator_envelope.report
+        local_package_id, local_package = build_source_package(
+            local_report.validated_artifact_identity,
+            local_report,
+        )
+        packages[local_package_id] = local_package.to_data()
+        local_file_ids: dict[str, str] = {}
+        for member in local_report.validated_evidence_members:
+            file_id, evidence_file = build_evidence_file(
+                package=local_package_id,
+                member=member.member,
+                sha256=member.sha256,
+            )
+            local_file_ids[member.member] = file_id
+            files[file_id] = evidence_file.to_data()
+        local_by_id = {item.id: item for item in package_local_evidence.anchors}
+        for anchor in local_report.validated_evidence_anchors:
+            local = local_by_id[anchor.id]
+            anchor_id, evidence_anchor = build_evidence_anchor(
+                id=anchor.id,
+                file=local_file_ids[anchor.member],
+                start_byte=anchor.start_byte,
+                end_byte=anchor.end_byte,
+                ir_pointer=anchor.ir_pointer,
+                representation=anchor.representation,
+                value_sha256=anchor.value_sha256,
+            )
+            final_anchors[anchor_id] = evidence_anchor.to_data()
+            source_set_id, source_set = build_source_set(
+                package=local_package_id,
+                anchors=(anchor_id,),
+            )
+            source_sets[source_set_id] = source_set.to_data()
+            sets_by_pointer.setdefault(local.terminal_ir_pointer, []).append(source_set_id)
+        trusted[local_report.validation_receipt_sha256] = local_report.bundle_sha256
         for pointer, source_set_ids in sets_by_pointer.items():
             binding_id, binding = build_evidence_binding(
                 target=pointer,
@@ -1576,11 +1826,19 @@ def _build_static_tool(emit_candidates: bool = True) -> Path:
     source = tool_root / "fixture.c"
     binary = tool_root / "fixture-tool"
     semantic_body = "BluetoothGatt" + "x" * 16_384
+    local_body = _synthetic_local_output().decode()
+    local_digest = hashlib.sha256(local_body.encode()).hexdigest()
     output_statements = (
-        f'if(strcmp(route,"apktool")==0)write_file(out,"smali","App.smali","{semantic_body}");\n'
-        f' if(strcmp(route,"jadx")==0)write_file(out,"sources","App.java","{semantic_body}");'
+        (
+            f'if(strcmp(route,"apktool")==0)write_file(out,"smali","App.smali","{semantic_body}");\n'
+            f' if(strcmp(route,"jadx")==0)write_file(out,"sources","App.java","{semantic_body}");'
+        )
         if emit_candidates
-        else 'write_file(out,"smali","App.smali","synthetic fixture");'
+        else 'if(strcmp(route,"apktool")==0)write_file(out,"smali","App.smali","synthetic fixture");'
+    )
+    output_statements += (
+        f' if(strcmp(route,"apktool")==0)write_file(out,"evidence/sha256",'
+        f'"{local_digest}","{local_body}");'
     )
     source.write_text(
         r"""#include <fcntl.h>
@@ -1590,7 +1848,11 @@ def _build_static_tool(emit_candidates: bool = True) -> Path:
 #include <sys/stat.h>
 #include <unistd.h>
 static void write_file(const char *root, const char *dir, const char *name, const char *body) {
- char d[4096], p[4096]; snprintf(d,sizeof(d),"%s/%s",root,dir); mkdir(d,0700);
+ char d[4096], p[4096]; snprintf(d,sizeof(d),"%s/%s",root,dir);
+ for(char *cursor=d+strlen(root)+1;*cursor;cursor++)if(*cursor=='/'){
+  *cursor='\0';mkdir(d,0700);*cursor='/';
+ }
+ mkdir(d,0700);
  snprintf(p,sizeof(p),"%s/%s",d,name); int fd=open(p,O_WRONLY|O_CREAT|O_TRUNC,0600);
  if(fd<0||write(fd,body,strlen(body))!=(ssize_t)strlen(body)) exit(92); close(fd);
 }
@@ -1611,6 +1873,13 @@ int main(int argc,char **argv) {
     )
     source.unlink()
     return binary
+
+
+def _synthetic_local_output() -> bytes:
+    return (
+        b"BluetoothGatt|variants|CONNECT|Stop|raise|service|side|"
+        + b"x" * 16_384
+    )
 
 
 def _write(root: Path, relative: str, payload: bytes, members: dict[str, bytes]) -> None:

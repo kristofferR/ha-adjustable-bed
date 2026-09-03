@@ -37,10 +37,20 @@ type RawSourceReauthenticationInput = tuple[
     ActivatedPreparationAuthority,
     AuthenticatedTargetInventoryEnvelope,
 ]
+type PackageLocalEvidenceReauthenticationInput = tuple[
+    FrozenPackageRef,
+    PreparationReceipt,
+    ActivatedPreparationAuthority,
+    AuthenticatedTargetInventoryEnvelope,
+]
 
 RAW_SOURCE_AUTHORITY_SCHEMA = "phase4-v2-raw-source-authority-v1"
 RAW_SOURCE_ENVELOPE_SCHEMA = "phase4-v2-authenticated-raw-source-v1"
 RAW_SOURCE_COLLECTION_REVISION = "phase4-v2-raw-source-collection-v1"
+PACKAGE_LOCAL_EVIDENCE_ENVELOPE_SCHEMA = (
+    "phase4-v2-authenticated-package-local-evidence-v1"
+)
+PACKAGE_LOCAL_EVIDENCE_REVISION = "phase4-v2-package-local-evidence-v1"
 _AUTHORITY_PATH = Path("/etc/ha-adjustable-bed/phase4-v2-raw-source-authority.json")
 _SHA = re.compile(r"^[0-9a-f]{64}$")
 _TOKEN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}$")
@@ -472,6 +482,98 @@ class AuthenticatedRawSourceRegistry:
 
     def __init__(self) -> None:
         _fail("raw-source registries require authenticated construction")
+
+
+@dataclass(frozen=True, slots=True, order=True)
+class PackageLocalEvidenceMember:
+    """One raw-authority-attested output of an authenticated producer route."""
+
+    id: str
+    path: str
+    sha256: str
+    byte_length: int
+    producer_name: str
+    producer_revision: str
+    producer_digest: str
+    invocation_sha256: str
+
+    def __post_init__(self) -> None:
+        _token(self.id, "package-local member ID")
+        _path(self.path, "package-local member path")
+        _sha(self.sha256, "package-local member digest")
+        _token(self.producer_name, "package-local producer name")
+        _token(self.producer_revision, "package-local producer revision")
+        _sha(self.producer_digest, "package-local producer digest")
+        _sha(self.invocation_sha256, "package-local invocation digest")
+        if type(self.byte_length) is not int or not 0 <= self.byte_length <= 2**63 - 1:
+            _fail("package-local member byte length is invalid")
+
+    def to_data(self) -> dict[str, object]:
+        return {
+            "byte_length": self.byte_length,
+            "id": self.id,
+            "invocation_sha256": self.invocation_sha256,
+            "path": self.path,
+            "producer_digest": self.producer_digest,
+            "producer_name": self.producer_name,
+            "producer_revision": self.producer_revision,
+            "sha256": self.sha256,
+        }
+
+
+@dataclass(frozen=True, slots=True, order=True)
+class PackageLocalEvidenceAnchor:
+    """One local-domain claim and its exact terminal semantic destination."""
+
+    raw: RawSourceAnchor
+    local_domain: str
+    terminal_ir_pointer: str
+
+    def __post_init__(self) -> None:
+        if type(self.raw) is not RawSourceAnchor:
+            _fail("package-local anchor requires an exact raw anchor")
+        self.raw.__post_init__()
+        _token(self.local_domain, "package-local anchor domain")
+        _pointer(self.terminal_ir_pointer, "package-local terminal pointer")
+
+    @property
+    def id(self) -> str:
+        return self.raw.id
+
+    @property
+    def member_id(self) -> str:
+        return self.raw.member_id
+
+    def to_data(self) -> dict[str, object]:
+        return {
+            **self.raw.to_data(),
+            "local_domain": self.local_domain,
+            "terminal_ir_pointer": self.terminal_ir_pointer,
+        }
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class AuthenticatedPackageLocalEvidence:
+    """Root-independent target-package evidence with finite raw provenance."""
+
+    authority: ActivatedRawSourceAuthority
+    package_ref_id: str
+    package_name: str
+    version_code: str
+    artifact_digest: str
+    preparation_receipt_sha256: str
+    target_inventory_receipt_sha256: str
+    output_manifest_sha256: str
+    tool_lineage_sha256: str
+    upstream_digests: tuple[tuple[str, str], ...]
+    mandatory_domains: tuple[str, ...]
+    members: tuple[PackageLocalEvidenceMember, ...]
+    anchors: tuple[PackageLocalEvidenceAnchor, ...]
+    canonical_bytes: bytes
+    receipt_sha256: str
+
+    def __init__(self) -> None:
+        _fail("package-local evidence requires signature authentication")
 
 
 def _preparation_lineage(receipt: PreparationReceipt) -> tuple[str, str, tuple[tuple[str, str], ...]]:
@@ -929,6 +1031,402 @@ def authenticate_raw_source_collection(
     for name, value in values.items():
         object.__setattr__(result, name, value)
     return result
+
+
+def package_local_evidence_signing_bytes(payload: dict[str, object]) -> bytes:
+    """Return domain-separated bytes for an external package-local signer."""
+
+    return b"phase4-v2:signed-package-local-evidence\0" + _canonical(payload)
+
+
+def _validated_package_local_records(
+    *,
+    preparation_receipt: PreparationReceipt,
+    preparation_authority: ActivatedPreparationAuthority,
+    members: tuple[PackageLocalEvidenceMember, ...],
+    anchors: tuple[PackageLocalEvidenceAnchor, ...],
+) -> tuple[tuple[str, ...], str]:
+    from tools.phase4_v2.equivalence.core import LOCAL_ONLY_DOMAINS
+    from tools.phase4_v2.equivalence.plan import (
+        preparation_evidence_producer_capabilities,
+    )
+
+    if (
+        type(members) is not tuple
+        or not members
+        or len(members) > _MAX_MEMBERS
+        or any(type(item) is not PackageLocalEvidenceMember for item in members)
+        or type(anchors) is not tuple
+        or not anchors
+        or len(anchors) > _MAX_ANCHORS
+        or any(type(item) is not PackageLocalEvidenceAnchor for item in anchors)
+    ):
+        _fail("package-local evidence records are empty, over limit, or incorrectly typed")
+    allowed = {
+        (item.name, item.revision, item.digest)
+        for item in preparation_evidence_producer_capabilities(
+            preparation_receipt,
+            preparation_authority,
+        )
+    }
+    for member in members:
+        member.__post_init__()
+        if (
+            member.producer_name,
+            member.producer_revision,
+            member.producer_digest,
+        ) not in allowed:
+            _fail("package-local member uses an unauthenticated producer route")
+        matching_invocations = tuple(
+            invocation
+            for invocation in preparation_receipt.invocations
+            if invocation.status == "COMPLETE"
+            and invocation.route == member.producer_name
+            and preparation_receipt.pipeline_revision == member.producer_revision
+            and invocation.tool.binary_sha256 == member.producer_digest
+            and hashlib.sha256(_canonical(invocation.to_data())).hexdigest()
+            == member.invocation_sha256
+            and sum(
+                output.path == member.path
+                and output.sha256 == member.sha256
+                and output.bytes == member.byte_length
+                for output in invocation.outputs
+            )
+            == 1
+        )
+        if len(matching_invocations) != 1:
+            _fail("package-local member does not match one exact preparation output")
+    for anchor in anchors:
+        anchor.__post_init__()
+    member_by_id = {item.id: item for item in members}
+    raw_total = sum(len(item.raw.raw_bytes) for item in anchors)
+    domains = tuple(sorted({item.local_domain for item in anchors}))
+    if (
+        tuple(sorted(members)) != members
+        or tuple(sorted(anchors)) != anchors
+        or len(member_by_id) != len(members)
+        or len({item.path for item in members}) != len(members)
+        or len({item.id for item in anchors}) != len(anchors)
+        or len({item.raw.source_ir_pointer for item in anchors}) != len(anchors)
+        or len({item.terminal_ir_pointer for item in anchors}) != len(anchors)
+        or len({(item.member_id, item.raw.start_byte, item.raw.end_byte) for item in anchors})
+        != len(anchors)
+        or any(
+            item.member_id not in member_by_id
+            or item.raw.end_byte > member_by_id[item.member_id].byte_length
+            for item in anchors
+        )
+        or {item.member_id for item in anchors} != set(member_by_id)
+        or raw_total > _MAX_RAW_BYTES
+        or domains != tuple(sorted(LOCAL_ONLY_DOMAINS))
+    ):
+        _fail("package-local evidence is not an exact canonical local-domain closure")
+    output_manifest_sha256 = hashlib.sha256(
+        _canonical([item.to_data() for item in members])
+    ).hexdigest()
+    return domains, output_manifest_sha256
+
+
+def _package_local_payload(
+    *,
+    authority: ActivatedRawSourceAuthority,
+    package_ref: FrozenPackageRef,
+    preparation_receipt: PreparationReceipt,
+    preparation_authority: ActivatedPreparationAuthority,
+    target_inventory: AuthenticatedTargetInventoryEnvelope,
+    members: tuple[PackageLocalEvidenceMember, ...],
+    anchors: tuple[PackageLocalEvidenceAnchor, ...],
+) -> dict[str, object]:
+    from tools.phase4_v2.equivalence.core import validate_frozen_package_ref
+    from tools.phase4_v2.equivalence.inventory import validate_target_inventory_envelope
+
+    package_ref = validate_frozen_package_ref(package_ref)
+    preparation_receipt = _validate_preparation(preparation_receipt, preparation_authority)
+    target_inventory = validate_target_inventory_envelope(target_inventory)
+    if (
+        target_inventory.package_ref != package_ref
+        or (
+            preparation_receipt.package_name,
+            preparation_receipt.version_code,
+            preparation_receipt.artifact_digest,
+            preparation_receipt.preflight_manifest_sha256,
+        )
+        != (
+            package_ref.package_name,
+            package_ref.version_code,
+            package_ref.artifact_digest,
+            package_ref.preflight_sha256,
+        )
+    ):
+        _fail("package-local evidence upstream identity belongs to another package")
+    domains, output_sha = _validated_package_local_records(
+        preparation_receipt=preparation_receipt,
+        preparation_authority=preparation_authority,
+        members=members,
+        anchors=anchors,
+    )
+    _preparation_output_sha, tool_sha, upstream = _preparation_lineage(preparation_receipt)
+    return {
+        "anchors": [item.to_data() for item in anchors],
+        "artifact_digest": package_ref.artifact_digest,
+        "authority_generation": authority.generation,
+        "authority_id": authority.authority_id,
+        "mandatory_domains": list(domains),
+        "members": [item.to_data() for item in members],
+        "output_manifest_sha256": output_sha,
+        "package_name": package_ref.package_name,
+        "package_ref_id": package_ref.content_id,
+        "preparation_receipt_sha256": preparation_receipt.content_id,
+        "revision": PACKAGE_LOCAL_EVIDENCE_REVISION,
+        "target_inventory_receipt_sha256": target_inventory.receipt_sha256,
+        "tool_lineage_sha256": tool_sha,
+        "upstream_digests": dict(upstream),
+        "version_code": package_ref.version_code,
+    }
+
+
+def package_local_evidence_payload(
+    *,
+    package_ref: FrozenPackageRef,
+    preparation_receipt: PreparationReceipt,
+    preparation_authority: ActivatedPreparationAuthority,
+    target_inventory: AuthenticatedTargetInventoryEnvelope,
+    members: tuple[PackageLocalEvidenceMember, ...],
+    anchors: tuple[PackageLocalEvidenceAnchor, ...],
+) -> dict[str, object]:
+    """Render raw-authority data for target package-local execution outputs.
+
+    By signing, the external authority attests that every retained byte range is
+    an exact slice of the named output produced by its pinned invocation.
+    """
+
+    authority = load_protected_raw_source_authority()
+    payload = _package_local_payload(
+        authority=authority,
+        package_ref=package_ref,
+        preparation_receipt=preparation_receipt,
+        preparation_authority=preparation_authority,
+        target_inventory=target_inventory,
+        members=members,
+        anchors=anchors,
+    )
+    if load_protected_raw_source_authority() != authority:
+        _fail("raw-source authority changed while building package-local evidence")
+    return payload
+
+
+def package_local_evidence_envelope_payload(
+    payload: dict[str, object], signature: str
+) -> bytes:
+    """Wrap signed package-local evidence in its canonical envelope."""
+
+    if type(signature) is not str or re.fullmatch(r"[0-9a-f]{128}", signature) is None:
+        _fail("package-local evidence signature is invalid")
+    return _canonical(
+        {
+            "payload": payload,
+            "schema": PACKAGE_LOCAL_EVIDENCE_ENVELOPE_SCHEMA,
+            "signature": signature,
+        }
+    ) + b"\n"
+
+
+def _parse_package_local_records(
+    payload: dict[str, object],
+) -> tuple[
+    tuple[PackageLocalEvidenceMember, ...], tuple[PackageLocalEvidenceAnchor, ...]
+]:
+    raw_members = payload["members"]
+    raw_anchors = payload["anchors"]
+    if type(raw_members) is not list or type(raw_anchors) is not list:
+        _fail("package-local member and anchor records must be arrays")
+    members = tuple(
+        PackageLocalEvidenceMember(
+            _token(item["id"], f"members[{index}].id"),
+            _path(item["path"], f"members[{index}].path"),
+            _sha(item["sha256"], f"members[{index}].sha256"),
+            cast(int, item["byte_length"]),
+            _token(item["producer_name"], f"members[{index}].producer_name"),
+            _token(item["producer_revision"], f"members[{index}].producer_revision"),
+            _sha(item["producer_digest"], f"members[{index}].producer_digest"),
+            _sha(item["invocation_sha256"], f"members[{index}].invocation_sha256"),
+        )
+        for index, raw in enumerate(raw_members)
+        for item in (
+            _exact(
+                raw,
+                {
+                    "byte_length",
+                    "id",
+                    "invocation_sha256",
+                    "path",
+                    "producer_digest",
+                    "producer_name",
+                    "producer_revision",
+                    "sha256",
+                },
+                f"members[{index}]",
+            ),
+        )
+    )
+    anchors = tuple(
+        PackageLocalEvidenceAnchor(
+            RawSourceAnchor(
+                _token(item["id"], f"anchors[{index}].id"),
+                _token(item["member_id"], f"anchors[{index}].member_id"),
+                cast(int, item["start_byte"]),
+                cast(int, item["end_byte"]),
+                bytes.fromhex(cast(str, item["raw_hex"])),
+                cast(str, item["representation"]),
+                cast(JsonScalar, item["decoded_value"]),
+                _sha(item["value_sha256"], f"anchors[{index}].value_sha256"),
+                _pointer(item["source_ir_pointer"], f"anchors[{index}].source_ir_pointer"),
+            ),
+            _token(item["local_domain"], f"anchors[{index}].local_domain"),
+            _pointer(item["terminal_ir_pointer"], f"anchors[{index}].terminal_ir_pointer"),
+        )
+        for index, raw in enumerate(raw_anchors)
+        for item in (
+            _exact(
+                raw,
+                {
+                    "decoded_value",
+                    "end_byte",
+                    "id",
+                    "local_domain",
+                    "member_id",
+                    "raw_hex",
+                    "representation",
+                    "source_ir_pointer",
+                    "start_byte",
+                    "terminal_ir_pointer",
+                    "value_sha256",
+                },
+                f"anchors[{index}]",
+            ),
+        )
+    )
+    return members, anchors
+
+
+def authenticate_package_local_evidence(
+    envelope_bytes: bytes,
+    *,
+    package_ref: FrozenPackageRef,
+    preparation_receipt: PreparationReceipt,
+    preparation_authority: ActivatedPreparationAuthority,
+    target_inventory: AuthenticatedTargetInventoryEnvelope,
+) -> AuthenticatedPackageLocalEvidence:
+    """Authenticate one exact target package-local raw-evidence receipt."""
+
+    authority = load_protected_raw_source_authority()
+    envelope = _exact(
+        _load_canonical(
+            envelope_bytes,
+            maximum=_MAX_ENVELOPE_BYTES,
+            label="package-local evidence envelope",
+        ),
+        {"payload", "schema", "signature"},
+        "package-local evidence envelope",
+    )
+    if envelope["schema"] != PACKAGE_LOCAL_EVIDENCE_ENVELOPE_SCHEMA:
+        _fail("package-local evidence envelope schema is unsupported")
+    payload = _exact(
+        envelope["payload"],
+        {
+            "anchors",
+            "artifact_digest",
+            "authority_generation",
+            "authority_id",
+            "mandatory_domains",
+            "members",
+            "output_manifest_sha256",
+            "package_name",
+            "package_ref_id",
+            "preparation_receipt_sha256",
+            "revision",
+            "target_inventory_receipt_sha256",
+            "tool_lineage_sha256",
+            "upstream_digests",
+            "version_code",
+        },
+        "package-local evidence payload",
+    )
+    signature = envelope["signature"]
+    if type(signature) is not str or re.fullmatch(r"[0-9a-f]{128}", signature) is None:
+        _fail("package-local evidence signature is invalid")
+    try:
+        Ed25519PublicKey.from_public_bytes(bytes.fromhex(authority.public_key)).verify(
+            bytes.fromhex(signature), package_local_evidence_signing_bytes(payload)
+        )
+    except (InvalidSignature, ValueError) as error:
+        raise RawSourceAuthenticationError(
+            "package-local evidence signature verification failed"
+        ) from error
+    try:
+        members, anchors = _parse_package_local_records(payload)
+    except (KeyError, TypeError, ValueError) as error:
+        raise RawSourceAuthenticationError(
+            "package-local evidence records are invalid"
+        ) from error
+    expected = _package_local_payload(
+        authority=authority,
+        package_ref=package_ref,
+        preparation_receipt=preparation_receipt,
+        preparation_authority=preparation_authority,
+        target_inventory=target_inventory,
+        members=members,
+        anchors=anchors,
+    )
+    if payload != expected:
+        _fail("package-local evidence differs from its authenticated inputs")
+    if load_protected_raw_source_authority() != authority:
+        _fail("raw-source authority changed during package-local authentication")
+    result = object.__new__(AuthenticatedPackageLocalEvidence)
+    for name, value in {
+        "authority": authority,
+        "package_ref_id": expected["package_ref_id"],
+        "package_name": expected["package_name"],
+        "version_code": expected["version_code"],
+        "artifact_digest": expected["artifact_digest"],
+        "preparation_receipt_sha256": expected["preparation_receipt_sha256"],
+        "target_inventory_receipt_sha256": expected[
+            "target_inventory_receipt_sha256"
+        ],
+        "output_manifest_sha256": expected["output_manifest_sha256"],
+        "tool_lineage_sha256": expected["tool_lineage_sha256"],
+        "upstream_digests": tuple(cast(dict[str, str], expected["upstream_digests"]).items()),
+        "mandatory_domains": tuple(cast(list[str], expected["mandatory_domains"])),
+        "members": members,
+        "anchors": anchors,
+        "canonical_bytes": envelope_bytes,
+        "receipt_sha256": hashlib.sha256(envelope_bytes).hexdigest(),
+    }.items():
+        object.__setattr__(result, name, value)
+    return result
+
+
+def reauthenticate_package_local_evidence(
+    evidence: AuthenticatedPackageLocalEvidence,
+    *,
+    inputs: PackageLocalEvidenceReauthenticationInput,
+) -> AuthenticatedPackageLocalEvidence:
+    """Reauthenticate retained package-local evidence at a consumer boundary."""
+
+    if type(evidence) is not AuthenticatedPackageLocalEvidence:
+        _fail("package-local evidence must use the exact authenticated type")
+    if type(inputs) is not tuple or len(inputs) != 4:
+        _fail("package-local evidence inputs must use one exact immutable tuple")
+    restored = authenticate_package_local_evidence(
+        evidence.canonical_bytes,
+        package_ref=inputs[0],
+        preparation_receipt=inputs[1],
+        preparation_authority=inputs[2],
+        target_inventory=inputs[3],
+    )
+    if restored != evidence:
+        _fail("package-local evidence changed after authentication")
+    return restored
 
 
 def validate_authenticated_raw_source_collection(

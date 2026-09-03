@@ -23,6 +23,10 @@ from tools.phase4_v2.queue import (
     Queue,
     QueueConflictError,
 )
+from tools.phase4_v2.raw_source import (
+    AuthenticatedPackageLocalEvidence,
+    PackageLocalEvidenceReauthenticationInput,
+)
 
 from .core import (
     AuthenticatedValidatorEnvelope,
@@ -382,6 +386,9 @@ def finish_package_execution_plan(
     report_root: Path,
     evidence_lineage_payload: bytes,
     execution_envelope: object,
+    package_local_evidence: AuthenticatedPackageLocalEvidence,
+    package_local_evidence_inputs: PackageLocalEvidenceReauthenticationInput,
+    package_local_validator_envelope: AuthenticatedValidatorEnvelope,
 ) -> FinishedPackageWork:
     """Validate and publish a package report from live trusted inputs."""
     frozen = freeze_package_execution_plan(execution_plan)
@@ -396,6 +403,9 @@ def finish_package_execution_plan(
             report_root=report_root,
             evidence_lineage_payload=evidence_lineage_payload,
             execution_envelope=execution_envelope,
+            package_local_evidence=package_local_evidence,
+            package_local_evidence_inputs=package_local_evidence_inputs,
+            package_local_validator_envelope=package_local_validator_envelope,
         )
     except InputDigestMismatchError as error:
         raise PackagePlanInputMismatchError(

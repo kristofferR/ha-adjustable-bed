@@ -132,6 +132,9 @@ class _Case:
             "report_bytes": target.report_bytes,
             "report_manifest_bytes": target.report_manifest_bytes,
             "source_registry": target.source_registry,
+            "package_local_evidence": target.package_local_evidence,
+            "package_local_evidence_inputs": target.package_local_evidence_inputs,
+            "package_local_validator_envelope": target.package_local_validator_envelope,
             "exact_reuse_receipts": target.exact_reuse_receipts,
             "reconciliation_input": self.reconciliation_input,
             "authenticated_reconciliation_input": self.authenticated_reconciliation_input,
@@ -147,7 +150,11 @@ class _Case:
 
 
 def _terminal(queue: Queue, package: AuthenticatedSyntheticPackage) -> _TerminalPackage:
-    data, receipts = _authorized_final_ir(package.source_registry)
+    data, receipts = _authorized_final_ir(
+        package.source_registry,
+        package_local_evidence=package.package_local_evidence,
+        package_local_validator_envelope=package.package_local_validator_envelope,
+    )
     encoded = json.dumps(data, sort_keys=True, separators=(",", ":")).encode() + b"\n"
     document = loads_final_ir(encoded, trusted_receipts=receipts)
     canonical = dumps_final_ir(document)
@@ -164,6 +171,9 @@ def _terminal(queue: Queue, package: AuthenticatedSyntheticPackage) -> _Terminal
         canonical_json=canonical,
         markdown=markdown,
         source_registry=package.source_registry,
+        package_local_evidence=package.package_local_evidence,
+        package_local_evidence_inputs=package.package_local_evidence_inputs,
+        package_local_validator_envelope=package.package_local_validator_envelope,
         exact_reuse_receipts=package.exact_reuse_receipts,
     )
     return _TerminalPackage(
@@ -423,17 +433,25 @@ def test_genuine_authenticated_full_chain_is_accepted(case: _Case) -> None:
     )
 
 
-def test_genuine_authenticated_mixed_route_set_is_accepted(tmp_path: Path) -> None:
-    with _case_context(tmp_path, route_mode="mixed") as route_case:
+@pytest.mark.parametrize(
+    ("route_mode", "expected_routes"),
+    [
+        ("mixed", {"FULL_ANALYSIS", "EXACT_REUSE"}),
+        ("all_reuse", {"EXACT_REUSE"}),
+    ],
+)
+def test_genuine_authenticated_reuse_route_sets_are_accepted(
+    tmp_path: Path, route_mode: str, expected_routes: set[str]
+) -> None:
+    with _case_context(tmp_path, route_mode=route_mode) as route_case:
         receipt = validate_completion(**route_case.arguments())
 
         assert receipt.accepted
         assert receipt.action_count == 1
         assert receipt.variant_count == 1
-        assert {root.route.value for root in route_case.target.surface.roots} == {
-            "FULL_ANALYSIS",
-            "EXACT_REUSE",
-        }
+        assert {
+            root.route.value for root in route_case.target.surface.roots
+        } == expected_routes
         assert len(route_case.target.authenticated.exact_reuse_receipts) == 1
 
 

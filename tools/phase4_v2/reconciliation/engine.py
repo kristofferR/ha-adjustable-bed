@@ -25,7 +25,7 @@ from .model import (
     loads_input,
 )
 
-RESULT_REVISION = "phase4-v2-reconciliation-result-v1"
+RESULT_REVISION = "phase4-v2-reconciliation-result-v2"
 _MAX_RESULT_ATOM_REFERENCES = 1_000_000
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
 _TOKEN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}$")
@@ -230,11 +230,13 @@ class PackageResultReference:
     package_ref_id: str
     package_surface_id: str
     report_sha256: str
+    package_local_ref_id: str
     roots: tuple[RootResultReference, ...]
 
     def to_data(self) -> dict[str, object]:
         return {
             "package_ref_id": self.package_ref_id,
+            "package_local_ref_id": self.package_local_ref_id,
             "package_surface_id": self.package_surface_id,
             "report_sha256": self.report_sha256,
             "roots": [item.to_data() for item in self.roots],
@@ -271,10 +273,15 @@ class ReconciliationResult:
         if package_ids != tuple(sorted(set(package_ids))):
             raise ReconciliationError("result packages must be sorted and unique")
         roots: dict[tuple[str, str], Route] = {}
+        package_local_sources: set[tuple[str, str]] = set()
         for package in self.packages:
             _require_digest(package.package_ref_id, "result package reference")
             _require_digest(package.package_surface_id, "result package surface")
             _require_digest(package.report_sha256, "result report")
+            _require_digest(package.package_local_ref_id, "result package-local provenance")
+            package_local_sources.add(
+                (package.package_ref_id, package.package_local_ref_id)
+            )
             if (
                 type(package.roots) is not tuple
                 or any(type(item) is not RootResultReference for item in package.roots)
@@ -348,7 +355,11 @@ class ReconciliationResult:
                 _require_digest(source.root_ref_id, "atom source root")
             if atom.sources != tuple(sorted(set(atom.sources))):
                 raise ReconciliationError("result atom sources must be sorted and unique")
-            if any((item.package_ref_id, item.root_ref_id) not in roots for item in atom.sources):
+            if any(
+                (item.package_ref_id, item.root_ref_id) not in roots
+                and (item.package_ref_id, item.root_ref_id) not in package_local_sources
+                for item in atom.sources
+            ):
                 raise ReconciliationError("result atom references an unknown root")
         atom_packages = {
             atom.content_id: {source.package_ref_id for source in atom.sources}
@@ -383,7 +394,11 @@ class ReconciliationResult:
                 raise ReconciliationError("result contradiction identity is invalid")
             _require_sorted_digests(item.atom_ids, "contradiction atom IDs", set(atom_ids))
             _require_sorted_digests(item.root_ref_ids, "contradiction root IDs")
-            if any((item.package_ref_id, root_id) not in roots for root_id in item.root_ref_ids):
+            if any(
+                (item.package_ref_id, root_id) not in roots
+                and (item.package_ref_id, root_id) not in package_local_sources
+                for root_id in item.root_ref_ids
+            ):
                 raise ReconciliationError("result contradiction references an unknown root")
 
         if type(self.area_aggregates) is not tuple or any(
@@ -940,8 +955,8 @@ def _promote_atom_sources(
         for source in atoms[atom_id].sources:
             if source.package_ref_id != package_ref_id:
                 continue
-            root = roots[(package_ref_id, source.root_ref_id)]
-            if root.route is Route.EXACT_REUSE:
+            root = roots.get((package_ref_id, source.root_ref_id))
+            if root is not None and root.route is Route.EXACT_REUSE:
                 promotions.add(
                     FullPromotion(
                         package_ref_id,
@@ -1012,5 +1027,6 @@ def _package_reference(package: PackageSurface) -> PackageResultReference:
         package_ref_id=package.package_ref.content_id,
         package_surface_id=package.content_id,
         report_sha256=package.report_sha256,
+        package_local_ref_id=package.package_local.content_id,
         roots=roots,
     )

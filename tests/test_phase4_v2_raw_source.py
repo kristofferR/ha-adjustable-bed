@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
+from typing import cast
 from unittest.mock import patch
 
 import pytest
@@ -44,13 +46,19 @@ from tools.phase4_v2.ir import final_schema_document
 from tools.phase4_v2.raw_source import (
     AuthenticatedRawSourceCollection,
     AuthenticatedRawSourceRegistry,
+    PackageLocalEvidenceAnchor,
+    PackageLocalEvidenceMember,
     RawSourceAnchor,
     RawSourceAuthenticationError,
     RawSourceMember,
     RawSourceReauthenticationInput,
+    authenticate_package_local_evidence,
     authenticate_raw_source_collection,
     build_authenticated_raw_source_registry,
     canonical_scalar_sha256,
+    package_local_evidence_envelope_payload,
+    package_local_evidence_payload,
+    package_local_evidence_signing_bytes,
     raw_source_authority_payload,
     raw_source_collection_payload,
     raw_source_envelope_payload,
@@ -58,7 +66,11 @@ from tools.phase4_v2.raw_source import (
     reauthenticate_raw_source_registry,
     validate_authenticated_raw_source_collection,
 )
-from tools.phase4_v2.validator import derive_raw_source_validator_receipt
+from tools.phase4_v2.validator import (
+    derive_package_local_validator_receipt,
+    derive_raw_source_validator_receipt,
+    validate_package_local_validator_envelope,
+)
 
 
 def _digest(label: str) -> str:
@@ -233,6 +245,146 @@ def test_genuine_raw_source_genesis_reauthenticates(genesis: GenesisFixture) -> 
     assert restored.receipt_sha256 == genesis.collection.receipt_sha256
     assert restored.semantic_root_sha256 == genesis.payload["semantic_root_sha256"]
     assert restored.anchors[0].decoded_value == "synthetic fixture"
+
+
+def _package_local_evidence(genesis: GenesisFixture):
+    invocation = next(
+        item
+        for item in genesis.package.preparation_receipt.invocations
+        if item.status == "COMPLETE" and item.outputs and item.tool.binary_sha256 is not None
+    )
+    output = invocation.outputs[0]
+    member = PackageLocalEvidenceMember(
+        "package-local-output",
+        output.path,
+        output.sha256,
+        output.bytes,
+        invocation.route,
+        genesis.package.preparation_receipt.pipeline_revision,
+        cast(str, invocation.tool.binary_sha256),
+        hashlib.sha256(
+            json.dumps(
+                invocation.to_data(), sort_keys=True, separators=(",", ":")
+            ).encode()
+        ).hexdigest(),
+    )
+    domains_and_targets = (
+        ("configuration", "/protocols/primary/variant_space"),
+        ("lifecycle", "/lifecycles/command/phases/0"),
+        ("negative_closure", "/actions/stop/summary"),
+        ("reachability", "/expected_action_rules/expect_raise/action"),
+        ("resources", "/gatt_services/service/uuid"),
+        ("selectors", "/selectors/side/dimension"),
+    )
+    anchors = tuple(
+        sorted(
+            (
+                PackageLocalEvidenceAnchor(
+                    RawSourceAnchor(
+                        f"local-{domain}",
+                        member.id,
+                        index,
+                        index + 1,
+                        b"x",
+                        "utf8",
+                        "x",
+                        canonical_scalar_sha256("x"),
+                        f"/analysis/{domain}/value",
+                    ),
+                    domain,
+                    target,
+                )
+                for index, (domain, target) in enumerate(domains_and_targets)
+            )
+        )
+    )
+    payload = package_local_evidence_payload(
+        package_ref=genesis.package.package_ref,
+        preparation_receipt=genesis.package.preparation_receipt,
+        preparation_authority=genesis.package.preparation_authority,
+        target_inventory=genesis.inventory,
+        members=(member,),
+        anchors=anchors,
+    )
+    envelope = package_local_evidence_envelope_payload(
+        payload,
+        genesis.key.sign(package_local_evidence_signing_bytes(payload)).hex(),
+    )
+    inputs = (
+        genesis.package.package_ref,
+        genesis.package.preparation_receipt,
+        genesis.package.preparation_authority,
+        genesis.inventory,
+    )
+    evidence = authenticate_package_local_evidence(
+        envelope,
+        package_ref=inputs[0],
+        preparation_receipt=inputs[1],
+        preparation_authority=inputs[2],
+        target_inventory=inputs[3],
+    )
+    return evidence, inputs, payload
+
+
+def test_package_local_raw_genesis_closes_enriched_validator(
+    genesis: GenesisFixture,
+) -> None:
+    evidence, inputs, _payload = _package_local_evidence(genesis)
+    receipt = derive_package_local_validator_receipt(
+        genesis.package.source_envelope,
+        evidence=evidence,
+        evidence_inputs=inputs,
+    )
+    canonical = authenticated_validator_envelope_payload(
+        receipt,
+        genesis.trust.validator_authority,
+        signature=genesis.trust.validator_key.sign(
+            validator_envelope_signing_bytes(receipt, genesis.trust.validator_authority)
+        ).hex(),
+    )
+    enriched = load_authenticated_validator_envelope(
+        canonical, authority=genesis.trust.validator_authority
+    )
+    assert (
+        validate_package_local_validator_envelope(
+            genesis.package.source_envelope,
+            enriched,
+            evidence=evidence,
+            evidence_inputs=inputs,
+        )
+        == enriched
+    )
+    assert enriched.report.raw_source_receipt_sha256s == (evidence.receipt_sha256,)
+    assert not enriched.report.validated_root_evidence
+
+
+def test_package_local_forgery_and_domain_omission_fail(
+    genesis: GenesisFixture,
+) -> None:
+    _evidence, inputs, payload = _package_local_evidence(genesis)
+    forged = package_local_evidence_envelope_payload(payload, "0" * 128)
+    with pytest.raises(RawSourceAuthenticationError, match="signature"):
+        authenticate_package_local_evidence(
+            forged,
+            package_ref=inputs[0],
+            preparation_receipt=inputs[1],
+            preparation_authority=inputs[2],
+            target_inventory=inputs[3],
+        )
+    changed = json.loads(json.dumps(payload))
+    changed["anchors"] = cast(list[object], changed["anchors"])[:-1]
+    resigned = package_local_evidence_envelope_payload(
+        changed,
+        genesis.key.sign(package_local_evidence_signing_bytes(changed)).hex(),
+    )
+    with pytest.raises(RawSourceAuthenticationError, match="local-domain closure"):
+        authenticate_package_local_evidence(
+            resigned,
+            package_ref=inputs[0],
+            preparation_receipt=inputs[1],
+            preparation_authority=inputs[2],
+            target_inventory=inputs[3],
+        )
 
 
 def _raw_registry_inputs(

@@ -7,6 +7,8 @@ import json
 import sqlite3
 from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
+from typing import cast
 from unittest.mock import patch
 
 import pytest
@@ -18,6 +20,7 @@ import tools.phase4_v2.equivalence.execution as execution_module
 import tools.phase4_v2.equivalence.inventory as inventory_module
 import tools.phase4_v2.equivalence.plan as plan_module
 import tools.phase4_v2.preflight.registry as registry_module
+import tools.phase4_v2.raw_source as raw_source_module
 import tools.phase4_v2.validator as validator_module
 from tools.phase4_v2.equivalence.core import (
     EQUIVALENCE_SCHEMA_REVISION,
@@ -62,6 +65,7 @@ from tools.phase4_v2.equivalence.inventory import (
 from tools.phase4_v2.equivalence.plan import (
     EXACT_REUSE_PIPELINE_CAPABILITY,
     FINAL_IR_SCHEMA_SHA256,
+    LOCAL_ONLY_DOMAINS,
     PACKAGE_EXECUTION_PLAN_REVISION,
     PACKAGE_PIPELINE_CAPABILITY,
     PACKAGE_REPORT_SCHEMA_SHA256,
@@ -73,6 +77,7 @@ from tools.phase4_v2.equivalence.plan import (
     CompletionPin,
     FullAnalysisRootPlan,
     PackageExecutionPlan,
+    PackageLocalEvidenceBinding,
     PackageLocalPlan,
     PreparationPlanBinding,
     SemanticRootAudit,
@@ -90,7 +95,6 @@ from tools.phase4_v2.equivalence.plan import (
 from tools.phase4_v2.equivalence.queue import (
     PACKAGE_QUEUE_UNIT_KIND,
     PackagePlanInputMismatchError,
-    finish_package_execution_plan,
     finish_package_preparation,
     finish_package_validation_receipt,
     finish_target_inventory,
@@ -99,6 +103,9 @@ from tools.phase4_v2.equivalence.queue import (
     materialize_package_validation_receipt,
     materialize_target_inventory,
     package_queue_unit_id,
+)
+from tools.phase4_v2.equivalence.queue import (
+    finish_package_execution_plan as _finish_package_execution_plan,
 )
 from tools.phase4_v2.preflight.execution import (
     CANDIDATE_CONTRACT_SHA256,
@@ -126,6 +133,10 @@ from tools.phase4_v2.queue import (
     QueueConflictError,
     TerminalOutcome,
     WorkUnitStatus,
+)
+from tools.phase4_v2.raw_source import (
+    AuthenticatedPackageLocalEvidence,
+    PackageLocalEvidenceReauthenticationInput,
 )
 from tools.phase4_v2.validator import (
     BOUND_VALIDATION_PROFILE,
@@ -386,7 +397,44 @@ def test_completion_limit_applies_after_exact_pin_deduplication() -> None:
     assert plan_module._merge_completions([completion] * 300) == (completion,)
 
 
-def _local_plan(*, version_name: str = "1.7") -> PackageLocalPlan:
+def _local_attestations() -> tuple[
+    tuple[EvidenceMemberAttestation, ...], tuple[EvidenceAnchorAttestation, ...]
+]:
+    member = EvidenceMemberAttestation("evidence/local.txt", SHA_B, SHA_D)
+    anchors = tuple(
+        EvidenceAnchorAttestation(
+            f"local-{domain}",
+            SHA_B,
+            member.member,
+            member.sha256,
+            index,
+            index + 1,
+            f"/local/{domain}",
+            "utf8",
+            SHA_A,
+        )
+        for index, domain in enumerate(sorted(LOCAL_ONLY_DOMAINS))
+    )
+    return (member,), anchors
+
+
+def _local_plan(
+    accepted: AcceptedTargetRootInventory | None = None,
+    *,
+    version_name: str = "1.7",
+) -> PackageLocalPlan:
+    producer = _PREPARATION_PRODUCER
+    members, anchors = _local_attestations()
+    validator_evidence_sha256 = hashlib.sha256(
+        json.dumps(
+            {
+                "anchors": [item.to_dict() for item in anchors],
+                "members": [item.to_dict() for item in members],
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+    ).hexdigest()
     return PackageLocalPlan(
         target_package_ref_id=TARGET_PACKAGE_REF_ID,
         package_name="org.example.target",
@@ -399,7 +447,25 @@ def _local_plan(*, version_name: str = "1.7") -> PackageLocalPlan:
             PACKAGE_EXECUTION_PLAN_REVISION,
             SHA_F,
         ),
-        evidence_producer_capabilities=(_PREPARATION_PRODUCER,),
+        evidence_producer_capabilities=(producer,),
+        evidence=PackageLocalEvidenceBinding(
+            package_ref_id=TARGET_PACKAGE_REF_ID,
+            raw_receipt_sha256=SHA_A,
+            raw_authority_sha256=SHA_B,
+            validation_receipt_sha256=SHA_C,
+            source_package_id=f"pkg:{SHA_D}",
+            validator_evidence_sha256=validator_evidence_sha256,
+            preparation_receipt_sha256=PREPARATION_RECEIPT.content_id,
+            target_inventory_receipt_sha256=(
+                hashlib.sha256(accepted.canonical_envelope).hexdigest()
+                if accepted is not None
+                else SHA_A
+            ),
+            mandatory_domains=tuple(sorted(LOCAL_ONLY_DOMAINS)),
+            evidence_member_ids=("local-member",),
+            evidence_anchor_ids=tuple(f"local-{item}" for item in sorted(LOCAL_ONLY_DOMAINS)),
+            producer_capabilities=(producer,),
+        ),
     )
 
 
@@ -519,12 +585,13 @@ def test_target_inventory_envelope_rejects_transplanted_package() -> None:
 
 def _full_plan(*, reason: str = "no_exact_identity") -> PackageExecutionPlan:
     accepted = _accepted_inventory((SHA_E, SHA_F))
+    local = _local_plan(accepted)
     return build_package_execution_plan(
         cluster_id=CLUSTER_ID,
         target_package_ref_id=TARGET_PACKAGE_REF_ID,
         target_package_ref=TARGET_PACKAGE_REF,
-        package_local=_local_plan(),
-        preparation=_preparation_binding(),
+        package_local=local,
+        preparation=_preparation_binding(local),
         accepted_target_inventory=accepted,
         root_plans=(
             FullAnalysisRootPlan(
@@ -540,12 +607,13 @@ def _full_plan(*, reason: str = "no_exact_identity") -> PackageExecutionPlan:
 
 def _blocked_plan() -> PackageExecutionPlan:
     accepted = _accepted_inventory((SHA_E, SHA_F))
+    local = _local_plan(accepted)
     return build_package_execution_plan(
         cluster_id=CLUSTER_ID,
         target_package_ref_id=TARGET_PACKAGE_REF_ID,
         target_package_ref=TARGET_PACKAGE_REF,
-        package_local=_local_plan(),
-        preparation=_preparation_binding(),
+        package_local=local,
+        preparation=_preparation_binding(local),
         accepted_target_inventory=accepted,
         root_plans=(BlockedRootPlan(SHA_E, SHA_F, ("missing_authoritative_root",)),),
     )
@@ -553,6 +621,7 @@ def _blocked_plan() -> PackageExecutionPlan:
 
 def _reuse_plan() -> PackageExecutionPlan:
     accepted = _accepted_inventory((SHA_C, SHA_D))
+    local = _local_plan(accepted)
     extractor = ExtractorCapability(
         name="dex-root-inventory",
         implementation_sha256=SHA_A,
@@ -638,8 +707,8 @@ def _reuse_plan() -> PackageExecutionPlan:
         cluster_id=CLUSTER_ID,
         target_package_ref_id=TARGET_PACKAGE_REF_ID,
         target_package_ref=TARGET_PACKAGE_REF,
-        package_local=_local_plan(),
-        preparation=_preparation_binding(),
+        package_local=local,
+        preparation=_preparation_binding(local),
         accepted_target_inventory=accepted,
         root_plans=(build_exact_reuse_root_plan(audit),),
     )
@@ -653,6 +722,7 @@ def _receipt(
     ir_sha256: str = SHA_B,
     lineage_sha256: str = SHA_0,
 ) -> ValidationReceipt:
+    local_members, local_anchors = _local_attestations()
     initial = ValidationReceipt(
         validator_revision=VALIDATOR_REVISION,
         accepted=True,
@@ -679,9 +749,10 @@ def _receipt(
             version_name="1.7",
             artifact_digest=SHA_B,
         ),
-        evidence_anchors_checked=1,
+        evidence_anchors_checked=1 + len(local_anchors),
         validated_evidence_members=(
             EvidenceMemberAttestation("evidence/source.txt", SHA_B, SHA_D),
+            *local_members,
         ),
         validated_evidence_anchors=(
             EvidenceAnchorAttestation(
@@ -695,6 +766,7 @@ def _receipt(
                 "utf8",
                 SHA_A,
             ),
+            *local_anchors,
         ),
         validated_root_evidence=(
             ValidatedRootEvidenceAttestation(
@@ -782,11 +854,20 @@ def _execution_envelope(
     frozen = freeze_package_execution_plan(plan)
     assert receipt.validation_receipt_sha256 is not None
     assert receipt.bundle_sha256 is not None
-    output = plan_module.build_validated_package_output(
-        execution_plan=plan,
-        receipt=receipt,
-        trusted_validation_receipt_sha256=receipt.validation_receipt_sha256,
-    )
+    local, local_inputs, local_envelope = _local_authentication(plan)
+    with patch.object(
+        plan_module,
+        "bind_package_local_evidence",
+        return_value=plan.package_local.evidence,
+    ):
+        output = plan_module.build_validated_package_output(
+            execution_plan=plan,
+            receipt=receipt,
+            trusted_validation_receipt_sha256=receipt.validation_receipt_sha256,
+            package_local_evidence=local,
+            package_local_evidence_inputs=local_inputs,
+            package_local_validator_envelope=local_envelope,
+        )
     fields = {
         "authority": authority,
         "receipt_bytes": receipt.to_json().encode(),
@@ -807,6 +888,63 @@ def _execution_envelope(
     return load_authenticated_package_execution_envelope(
         execution_envelope_payload(**fields, signature=signature), authority=authority
     )
+
+
+def _local_authentication(
+    plan: PackageExecutionPlan,
+) -> tuple[
+    AuthenticatedPackageLocalEvidence,
+    PackageLocalEvidenceReauthenticationInput,
+    AuthenticatedValidatorEnvelope,
+]:
+    evidence = object.__new__(AuthenticatedPackageLocalEvidence)
+    object.__setattr__(evidence, "receipt_sha256", plan.package_local.evidence.raw_receipt_sha256)
+    authority = SimpleNamespace(
+        activation_sha256=plan.package_local.evidence.raw_authority_sha256
+    )
+    object.__setattr__(evidence, "authority", authority)
+    return (
+        evidence,
+        cast(PackageLocalEvidenceReauthenticationInput, ()),
+        cast(AuthenticatedValidatorEnvelope, object()),
+    )
+
+
+def finish_package_execution_plan(
+    queue: Queue,
+    lease: Lease,
+    *,
+    execution_plan: PackageExecutionPlan,
+    report_root: Path,
+    evidence_lineage_payload: bytes,
+    execution_envelope: object,
+):
+    """Keep queue tests focused; raw authentication has its own hostile suite."""
+
+    evidence, inputs, local_envelope = _local_authentication(execution_plan)
+    with (
+        patch.object(
+            plan_module,
+            "bind_package_local_evidence",
+            return_value=execution_plan.package_local.evidence,
+        ),
+        patch.object(
+            raw_source_module,
+            "reauthenticate_package_local_evidence",
+            return_value=evidence,
+        ),
+    ):
+        return _finish_package_execution_plan(
+            queue,
+            lease,
+            execution_plan=execution_plan,
+            report_root=report_root,
+            evidence_lineage_payload=evidence_lineage_payload,
+            execution_envelope=execution_envelope,
+            package_local_evidence=evidence,
+            package_local_evidence_inputs=inputs,
+            package_local_validator_envelope=local_envelope,
+        )
 
 
 @pytest.fixture
@@ -1576,11 +1714,17 @@ def test_finish_fences_plan_mutation_while_output_is_built(
         execution_plan: PackageExecutionPlan,
         receipt: ValidationReceipt,
         trusted_validation_receipt_sha256: str,
+        package_local_evidence: AuthenticatedPackageLocalEvidence,
+        package_local_evidence_inputs: PackageLocalEvidenceReauthenticationInput,
+        package_local_validator_envelope: AuthenticatedValidatorEnvelope,
     ) -> ValidatedPackageOutput:
         output = original_builder(
             execution_plan=execution_plan,
             receipt=receipt,
             trusted_validation_receipt_sha256=trusted_validation_receipt_sha256,
+            package_local_evidence=package_local_evidence,
+            package_local_evidence_inputs=package_local_evidence_inputs,
+            package_local_validator_envelope=package_local_validator_envelope,
         )
         object.__setattr__(plan, "package_local", _local_plan(version_name="1.8"))
         return output

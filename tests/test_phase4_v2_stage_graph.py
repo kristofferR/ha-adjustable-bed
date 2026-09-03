@@ -26,6 +26,7 @@ from tests.phase4_v2_orchestration_testing import (
 from tools.phase4_v2.equivalence.plan import (
     LOCAL_ONLY_DOMAINS,
     PACKAGE_EXECUTION_PLAN_REVISION,
+    PACKAGE_LOCAL_EVIDENCE_BINDING_REVISION,
     PACKAGE_LOCAL_PLAN_REVISION,
     PACKAGE_PIPELINE_CAPABILITY,
     PREPARATION_RECEIPT_REVISION,
@@ -33,6 +34,7 @@ from tools.phase4_v2.equivalence.plan import (
     FrozenCapabilityPin,
     FrozenCompletionPin,
     FrozenPackageExecutionPlan,
+    FrozenPackageLocalEvidenceBinding,
     FrozenPreparationPlanBinding,
     PackagePlanStatus,
 )
@@ -210,6 +212,21 @@ def _frozen_plan(cluster: str, name: str) -> FrozenPackageExecutionPlan:
         preparation_capabilities,
         (capability,),
     )
+    package_local_evidence = FrozenPackageLocalEvidenceBinding(
+        package_ref,
+        _digest(f"local-raw:{cluster}:{name}"),
+        _digest(f"local-authority:{cluster}:{name}"),
+        _digest(f"local-validation:{cluster}:{name}"),
+        f"pkg:{_digest(f'local-package:{cluster}:{name}')}",
+        _digest(f"local-validator-evidence:{cluster}:{name}"),
+        preparation.receipt_sha256,
+        _digest(f"inventory-envelope:{cluster}:{name}"),
+        tuple(sorted(LOCAL_ONLY_DOMAINS)),
+        (f"local-member:{cluster}:{name}",),
+        tuple(f"local-{item}" for item in sorted(LOCAL_ONLY_DOMAINS)),
+        (capability,),
+        PACKAGE_LOCAL_EVIDENCE_BINDING_REVISION,
+    )
     required_capabilities = tuple(
         sorted(
             (*preparation_capabilities, capability, pipeline_capability),
@@ -227,6 +244,7 @@ def _frozen_plan(cluster: str, name: str) -> FrozenPackageExecutionPlan:
                     "revision": capability.revision,
                 }
             ],
+            "evidence": package_local_evidence.to_data(),
             "mandatory_domains": list(LOCAL_ONLY_DOMAINS),
             "package_name": f"org.example.{name}",
             "pipeline_capability": {
@@ -291,6 +309,7 @@ def _frozen_plan(cluster: str, name: str) -> FrozenPackageExecutionPlan:
         "target_artifact_digest": _digest(f"artifact:{cluster}:{name}"),
         "preflight_sha256": _digest(f"preflight:{cluster}:{name}"),
         "preparation": preparation,
+        "package_local_evidence": package_local_evidence,
         "inherited_semantic_roots": (),
         "semantic_audit_completion_digests": (),
         "required_capabilities": required_capabilities,

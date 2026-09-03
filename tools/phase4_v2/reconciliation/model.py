@@ -13,7 +13,12 @@ from typing import Never, cast
 
 from jsonschema.validators import Draft202012Validator
 
-from tools.phase4_v2.equivalence import FrozenPackageRef, Route, validate_frozen_package_ref
+from tools.phase4_v2.equivalence import (
+    LOCAL_ONLY_DOMAINS,
+    FrozenPackageRef,
+    Route,
+    validate_frozen_package_ref,
+)
 
 from .schema import COMPARISON_AREAS, INPUT_SCHEMA_REVISION, schema_document
 
@@ -401,8 +406,120 @@ class RootProvenance:
 
 
 @dataclass(frozen=True, slots=True)
+class PackageLocalTarget:
+    """Signed local-domain classification for one terminal semantic leaf."""
+
+    evidence_anchor_id: str
+    local_domain: str
+    terminal_ir_pointer: str
+
+    def __post_init__(self) -> None:
+        _text(self.evidence_anchor_id, "package_local.target.anchor", maximum=256)
+        _token(self.local_domain, "package_local.target.domain")
+        _pointer(self.terminal_ir_pointer, "package_local.target.pointer")
+
+    def to_data(self) -> dict[str, object]:
+        return {
+            "evidence_anchor_id": self.evidence_anchor_id,
+            "local_domain": self.local_domain,
+            "terminal_ir_pointer": self.terminal_ir_pointer,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class PackageLocalProvenance:
+    """Authenticated target-owned evidence for non-reusable package-local leaves."""
+
+    package_ref_id: str
+    source_package_id: str
+    source_validation_receipt_sha256: str
+    source_raw_receipt_sha256: str
+    report_pointer: str
+    mandatory_domains: tuple[str, ...]
+    evidence_anchor_ids: tuple[str, ...]
+    targets: tuple[PackageLocalTarget, ...]
+
+    def __post_init__(self) -> None:
+        _sha256(self.package_ref_id, "package_local.package_ref_id")
+        _text(self.source_package_id, "package_local.source_package_id", maximum=256)
+        if (
+            not self.source_package_id.startswith("pkg:")
+            or _SHA256.fullmatch(self.source_package_id[4:]) is None
+        ):
+            _fail("package-local source package ID is invalid")
+        _sha256(
+            self.source_validation_receipt_sha256,
+            "package_local.source_validation_receipt_sha256",
+        )
+        _sha256(self.source_raw_receipt_sha256, "package_local.source_raw_receipt_sha256")
+        _pointer(self.report_pointer, "package_local.report_pointer")
+        if self.report_pointer != "/package_local_domains":
+            _fail("package-local provenance report pointer is not canonical")
+        _ordered_texts(
+            self.mandatory_domains,
+            "package_local.mandatory_domains",
+            maximum_count=32,
+            require_nonempty=True,
+        )
+        if (
+            type(self.targets) is not tuple
+            or not self.targets
+            or len(self.targets) > _MAX_ANCHORS
+            or any(type(item) is not PackageLocalTarget for item in self.targets)
+        ):
+            _fail("package-local targets must be bounded exact immutable records")
+        for item in self.targets:
+            item.__post_init__()
+        if (
+            self.targets
+            != tuple(
+                sorted(
+                    self.targets,
+                    key=lambda item: (
+                        item.terminal_ir_pointer,
+                        item.local_domain,
+                        item.evidence_anchor_id,
+                    ),
+                )
+            )
+            or len({item.evidence_anchor_id for item in self.targets}) != len(self.targets)
+            or len({item.terminal_ir_pointer for item in self.targets}) != len(self.targets)
+            or {item.evidence_anchor_id for item in self.targets}
+            != set(self.evidence_anchor_ids)
+            or {item.local_domain for item in self.targets} != set(LOCAL_ONLY_DOMAINS)
+            or self.mandatory_domains != tuple(sorted(LOCAL_ONLY_DOMAINS))
+        ):
+            _fail("package-local targets are not an exact local-domain anchor mapping")
+        _ordered_texts(
+            self.evidence_anchor_ids,
+            "package_local.evidence_anchor_ids",
+            require_nonempty=True,
+        )
+
+    def to_data(self) -> dict[str, object]:
+        return {
+            "evidence_anchor_ids": list(self.evidence_anchor_ids),
+            "mandatory_domains": list(self.mandatory_domains),
+            "package_ref_id": self.package_ref_id,
+            "report_pointer": self.report_pointer,
+            "source_package_id": self.source_package_id,
+            "source_raw_receipt_sha256": self.source_raw_receipt_sha256,
+            "source_validation_receipt_sha256": self.source_validation_receipt_sha256,
+            "targets": [item.to_data() for item in self.targets],
+        }
+
+    @property
+    def content_id(self) -> str:
+        return _content_id("phase4-v2:package-local-provenance", self.to_data())
+
+
+@dataclass(frozen=True, slots=True)
 class LeafProvenance:
-    """Exact report node and artifact anchors supporting one normalized leaf."""
+    """Exact report node and artifact anchors supporting one normalized leaf.
+
+    ``root_ref_id`` retains its v1 field name but may reference the package-local
+    provenance record for a local-only leaf.
+    """
 
     root_ref_id: str
     report_pointer: str
@@ -604,6 +721,7 @@ class PackageSurface:
     package_ref: FrozenPackageRef
     report_sha256: str
     report_revision: str
+    package_local: PackageLocalProvenance
     roots: tuple[RootProvenance, ...]
     areas: tuple[AreaSurface, ...]
 
@@ -611,6 +729,11 @@ class PackageSurface:
         validate_frozen_package_ref(self.package_ref)
         _sha256(self.report_sha256, "package.report_sha256")
         _token(self.report_revision, "package.report_revision")
+        if type(self.package_local) is not PackageLocalProvenance:
+            _fail("package.package_local must use exact PackageLocalProvenance")
+        self.package_local.__post_init__()
+        if self.package_local.package_ref_id != self.package_ref.content_id:
+            _fail("package-local provenance targets another package")
         if (
             type(self.roots) is not tuple
             or not self.roots
@@ -627,6 +750,7 @@ class PackageSurface:
             _fail("package.roots must be sorted by content ID")
         root_ids = {item.content_id for item in self.roots}
         roots_by_id = {item.content_id: item for item in self.roots}
+        provenance_ids = root_ids | {self.package_local.content_id}
         if len(root_ids) != len(self.roots):
             _fail("package.roots contains duplicate root provenance")
         if type(self.areas) is not tuple or len(self.areas) > len(ComparisonArea):
@@ -639,32 +763,71 @@ class PackageSurface:
             _fail("package.areas must be sorted")
         if len({item.area for item in self.areas}) != len(self.areas):
             _fail("package.areas contains a duplicate area")
+        local_id = self.package_local.content_id
+        local_targets = {
+            item.terminal_ir_pointer: item.evidence_anchor_id
+            for item in self.package_local.targets
+        }
+        all_claims = tuple(claim for area in self.areas for claim in area.claims)
+        claims = {claim.key: claim for claim in all_claims}
+        if len(claims) != len(all_claims):
+            _fail("package surface contains duplicate semantic claim keys")
+        if not set(local_targets) <= set(claims):
+            _fail("package-local targets are absent from normalized semantic claims")
+        for pointer, claim in claims.items():
+            local_provenance = tuple(
+                item for item in claim.provenance if item.root_ref_id == local_id
+            )
+            if pointer in local_targets:
+                if (
+                    len(claim.provenance) != 1
+                    or len(local_provenance) != 1
+                    or local_provenance[0].evidence_anchor_ids
+                    != (local_targets[pointer],)
+                    or local_provenance[0].report_pointer != pointer
+                ):
+                    _fail("package-local claim does not use its exact exclusive target anchor")
+            elif local_provenance:
+                _fail("nonlocal claim uses target package-local provenance")
         for area in self.areas:
             for provenance in (item for claim in area.claims for item in claim.provenance):
-                if provenance.root_ref_id not in root_ids:
-                    _fail("claim provenance references a root outside its package")
-                if roots_by_id[provenance.root_ref_id].route is Route.BLOCKED:
-                    _fail("claim provenance cannot reference a blocked root")
-                if not set(provenance.evidence_anchor_ids) <= set(
-                    roots_by_id[provenance.root_ref_id].evidence_anchor_ids
+                if provenance.root_ref_id not in provenance_ids:
+                    _fail("claim provenance references evidence outside its package")
+                if (
+                    provenance.root_ref_id in roots_by_id
+                    and roots_by_id[provenance.root_ref_id].route is Route.BLOCKED
                 ):
+                    _fail("claim provenance cannot reference a blocked root")
+                owner_anchors = (
+                    roots_by_id[provenance.root_ref_id].evidence_anchor_ids
+                    if provenance.root_ref_id in roots_by_id
+                    else self.package_local.evidence_anchor_ids
+                )
+                if not set(provenance.evidence_anchor_ids) <= set(owner_anchors):
                     _fail("claim provenance contains an anchor not attested by its root")
             for provenance in (
                 item for disposition in area.dispositions for item in disposition.provenance
             ):
-                if provenance.root_ref_id not in root_ids:
-                    _fail("disposition provenance references a root outside its package")
-                if roots_by_id[provenance.root_ref_id].route is Route.BLOCKED:
-                    _fail("disposition provenance cannot reference a blocked root")
-                if not set(provenance.evidence_anchor_ids) <= set(
-                    roots_by_id[provenance.root_ref_id].evidence_anchor_ids
+                if provenance.root_ref_id not in provenance_ids:
+                    _fail("disposition provenance references evidence outside its package")
+                if (
+                    provenance.root_ref_id in roots_by_id
+                    and roots_by_id[provenance.root_ref_id].route is Route.BLOCKED
                 ):
+                    _fail("disposition provenance cannot reference a blocked root")
+                owner_anchors = (
+                    roots_by_id[provenance.root_ref_id].evidence_anchor_ids
+                    if provenance.root_ref_id in roots_by_id
+                    else self.package_local.evidence_anchor_ids
+                )
+                if not set(provenance.evidence_anchor_ids) <= set(owner_anchors):
                     _fail("disposition provenance contains an anchor not attested by its root")
 
     def to_data(self) -> dict[str, object]:
         return {
             "areas": [item.to_data() for item in self.areas],
             "package_ref_id": self.package_ref.content_id,
+            "package_local": self.package_local.to_data(),
             "report_revision": self.report_revision,
             "report_sha256": self.report_sha256,
             "roots": [item.to_data() for item in self.roots],
@@ -804,8 +967,33 @@ def _parse_package(
         package_ref=package_ref,
         report_sha256=cast(str, raw["report_sha256"]),
         report_revision=cast(str, raw["report_revision"]),
+        package_local=_parse_package_local(
+            cast(dict[str, object], raw["package_local"])
+        ),
         roots=roots,
         areas=areas,
+    )
+
+
+def _parse_package_local(raw: dict[str, object]) -> PackageLocalProvenance:
+    return PackageLocalProvenance(
+        package_ref_id=cast(str, raw["package_ref_id"]),
+        source_package_id=cast(str, raw["source_package_id"]),
+        source_validation_receipt_sha256=cast(
+            str, raw["source_validation_receipt_sha256"]
+        ),
+        source_raw_receipt_sha256=cast(str, raw["source_raw_receipt_sha256"]),
+        report_pointer=cast(str, raw["report_pointer"]),
+        mandatory_domains=tuple(cast(list[str], raw["mandatory_domains"])),
+        evidence_anchor_ids=tuple(cast(list[str], raw["evidence_anchor_ids"])),
+        targets=tuple(
+            PackageLocalTarget(
+                evidence_anchor_id=cast(str, item["evidence_anchor_id"]),
+                local_domain=cast(str, item["local_domain"]),
+                terminal_ir_pointer=cast(str, item["terminal_ir_pointer"]),
+            )
+            for item in cast(list[dict[str, object]], raw["targets"])
+        ),
     )
 
 
