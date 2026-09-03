@@ -556,7 +556,7 @@ class TestRichmatFeatureDetection:
         mock_richmat_config_entry_data: dict,
         mock_coordinator_connected,
     ):
-        """Richmat BT6500 should expose head/feet/pillow/lumbar only."""
+        """Richmat BT6500 should expose its native motor controls only."""
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="BedTech BT6500",
@@ -579,10 +579,17 @@ class TestRichmatFeatureDetection:
         assert [spec.key for spec in controller.motor_control_specs] == [
             "head",
             "feet",
+            "head_feet",
             "pillow",
             "lumbar",
         ]
-        assert controller.stale_motor_entity_keys == {"back", "legs", "pillow", "lumbar"}
+        assert controller.stale_motor_entity_keys == {
+            "back",
+            "legs",
+            "head_feet",
+            "pillow",
+            "lumbar",
+        }
 
     def test_qrrm_wilinke_supports_rgb_light_and_timer(self):
         """QRRM WiLinke remotes should expose RGB light and timer controls."""

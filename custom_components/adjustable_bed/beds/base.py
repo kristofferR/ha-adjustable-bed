@@ -1010,6 +1010,11 @@ class BedController(ABC):
         return False
 
     @property
+    def has_head_feet_support(self) -> bool:
+        """Return True if bed has combined head and feet motor control."""
+        return False
+
+    @property
     def has_tilt_support(self) -> bool:
         """Return True if bed has tilt motor control."""
         return False
@@ -1443,6 +1448,20 @@ class BedController(ABC):
     def stale_motor_entity_keys(self) -> frozenset[str]:
         """Return motor entity keys that should be removed when this controller loads."""
         return frozenset()
+
+    # Combined head and feet control (optional)
+
+    async def move_head_feet_up(self) -> None:
+        """Move head and feet up together."""
+        raise NotImplementedError("Combined head and feet control not supported on this bed")
+
+    async def move_head_feet_down(self) -> None:
+        """Move head and feet down together."""
+        raise NotImplementedError("Combined head and feet control not supported on this bed")
+
+    async def move_head_feet_stop(self) -> None:
+        """Immediately stop combined head and feet movement."""
+        raise NotImplementedError("Combined head and feet control not supported on this bed")
 
     # Lumbar motor control (optional - only some beds have this)
 

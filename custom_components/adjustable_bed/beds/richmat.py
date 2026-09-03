@@ -397,7 +397,7 @@ class RichmatController(BedController):
     @property
     def stale_motor_entity_keys(self) -> frozenset[str]:
         """Remove legacy generic motor aliases when Richmat layout changes."""
-        return frozenset({"back", "legs", "pillow", "lumbar"})
+        return frozenset({"back", "legs", "head_feet", "pillow", "lumbar"})
 
     @property
     def supports_lights(self) -> bool:
