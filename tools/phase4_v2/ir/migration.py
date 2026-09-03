@@ -11,8 +11,9 @@ from typing import NoReturn
 
 from .model import IRDiagnostic, IRValidationError
 
-MIGRATION_REVISION = "phase4-analysis-v1.12-to-ir-v1"
+MIGRATION_REVISION = "phase4-analysis-v1.12-to-ir-v1.2"
 SOURCE_SCHEMA_REVISION = "phase4-analysis-v1.12-2026-07-26"
+TARGET_SCHEMA_REVISION = "phase4-protocol-ir-v1.2.0-2026-09-03"
 _MAX_BYTES = 64 * 1024**2
 _MAX_DEPTH = 128
 _MAX_NODES = 2_000_000
@@ -81,12 +82,15 @@ class V112MigrationPlan:
     unmodeled_paths: tuple[str, ...]
     revision: str = MIGRATION_REVISION
     source_schema_revision: str = SOURCE_SCHEMA_REVISION
+    target_schema_revision: str = TARGET_SCHEMA_REVISION
 
     def __post_init__(self) -> None:
         if self.revision != MIGRATION_REVISION:
             raise ValueError("unsupported migration revision")
         if self.source_schema_revision != SOURCE_SCHEMA_REVISION:
             raise ValueError("unsupported source schema revision")
+        if self.target_schema_revision != TARGET_SCHEMA_REVISION:
+            raise ValueError("unsupported target schema revision")
         if len(self.source_sha256) != 64 or any(
             character not in "0123456789abcdef" for character in self.source_sha256
         ):
@@ -125,6 +129,7 @@ class V112MigrationPlan:
             "source_schema_revision": self.source_schema_revision,
             "source_sha256": self.source_sha256,
             "status": self.status.value,
+            "target_schema_revision": self.target_schema_revision,
             "unmodeled_paths": list(self.unmodeled_paths),
         }
 

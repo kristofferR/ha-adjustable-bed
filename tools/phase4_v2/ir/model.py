@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Never, Protocol, cast
 
-SCHEMA_REVISION = "phase4-protocol-ir-core-v0.5.0-2026-08-31"
+SCHEMA_REVISION = "phase4-protocol-ir-core-v0.6.0-2026-09-03"
 PROVENANCE_IDENTITY_REVISION = "phase4-provenance-identity-v4"
 SUPPORTED_VALIDATOR_REVISION = "phase4-v2-bundle-validator-v5"
 SUPPORTED_CONTRACT_REVISION = "phase4-v2-validation-input-v4"

@@ -3,6 +3,7 @@
 from .migration import (
     MIGRATION_REVISION,
     SOURCE_SCHEMA_REVISION,
+    TARGET_SCHEMA_REVISION,
     MigratedClaim,
     MigrationDomain,
     MigrationStatus,
@@ -118,6 +119,7 @@ __all__ = [
     "PROVENANCE_IDENTITY_REVISION",
     "SCHEMA_REVISION",
     "SOURCE_SCHEMA_REVISION",
+    "TARGET_SCHEMA_REVISION",
     "SUPPORTED_CONTRACT_REVISION",
     "SUPPORTED_VALIDATOR_REVISION",
     "ActionDefinition",
