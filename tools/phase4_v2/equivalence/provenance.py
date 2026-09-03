@@ -32,6 +32,8 @@ from .plan import CompletionPin, FrozenPackageExecutionPlan, validate_frozen_pac
 
 SOURCE_REPORT_ROOT_COMPLETION_REVISION = "phase4-v2-source-report-root-v1"
 EXACT_REUSE_PROVENANCE_SCHEMA = "phase4-v2-authenticated-exact-reuse-provenance-v1"
+_MAX_SOURCE_REPORTS = 4_096
+_MAX_ROOTS = 250_000
 
 
 class ProvenanceAuthenticationError(ValueError):
@@ -72,6 +74,8 @@ def build_authenticated_source_report_registry(
 
     accepted: list[AuthenticatedSourceReport] = []
     for package_ref, envelope in entries:
+        if len(accepted) >= _MAX_SOURCE_REPORTS:
+            _fail("source report registry exceeds its entry limit")
         package_ref = validate_frozen_package_ref(package_ref)
         envelope = validate_authenticated_validator_envelope(envelope)
         if (
@@ -183,6 +187,11 @@ def bind_authenticated_plan_root_provenance(
         validate_authenticated_exact_reuse_provenance(item, registry)
         for item in exact_reuse_receipts
     )
+    if len(receipts) > _MAX_ROOTS:
+        _fail("exact-reuse provenance receipt set exceeds its limit")
+    if len({item.canonical_bytes for item in receipts}) != len(receipts):
+        _fail("exact-reuse provenance receipt set contains duplicates")
+    consumed_receipts: set[bytes] = set()
     bindings: list[AuthenticatedRootProvenance] = []
     for root in raw["root_plans"]:
         route = Route(root["route"])
@@ -217,10 +226,15 @@ def bind_authenticated_plan_root_provenance(
                 and item.ledger_decision_completion_sha256
                 == reuse["ledger_decision_completion"]["digest"]
                 and item.byte_identity_proof_id == reuse["byte_identity_proof_id"]
+                and item.root_plan_sha256
+                == hashlib.sha256(
+                    json.dumps(root, sort_keys=True, separators=(",", ":")).encode()
+                ).hexdigest()
             ]
             if len(matching_receipts) != 1:
                 _fail("EXACT_REUSE root does not bind one signed audit preimage")
             audit = matching_receipts[0]
+            consumed_receipts.add(audit.canonical_bytes)
             for source in registry.entries:
                 if source.package_ref.content_id != audit.source_package_ref_id:
                     continue
@@ -272,6 +286,8 @@ def bind_authenticated_plan_root_provenance(
         bindings.append(binding)
     if not bindings:
         _fail("executable plan must contain at least one provenance-bound root")
+    if consumed_receipts != {item.canonical_bytes for item in receipts}:
+        _fail("exact-reuse provenance receipt set contains an unused receipt")
     return tuple(
         sorted(
             bindings, key=lambda item: (item.target_root_id, item.target_occurrence_identity_sha256)
@@ -295,6 +311,7 @@ class AuthenticatedExactReuseProvenance:
     target_occurrence_identity_sha256: str
     byte_identity_proof_id: str
     ledger_decision_completion_sha256: str
+    root_plan_sha256: str
 
     def __init__(self) -> None:
         _fail("exact-reuse provenance requires signature verification")
@@ -316,6 +333,7 @@ def exact_reuse_provenance_payload(
     target_occurrence_identity_sha256: str,
     byte_identity_proof_id: str,
     ledger_decision_completion_sha256: str,
+    root_plan_sha256: str,
     signature: str,
 ) -> bytes:
     """Render the canonical externally signed exact-reuse audit preimage."""
@@ -328,6 +346,7 @@ def exact_reuse_provenance_payload(
         "byte_identity_proof_id": byte_identity_proof_id,
         "inherited_semantic_root_sha256": source_root.semantic_root_sha256,
         "ledger_decision_completion_sha256": ledger_decision_completion_sha256,
+        "root_plan_sha256": root_plan_sha256,
         "schema": EXACT_REUSE_PROVENANCE_SCHEMA,
         "source_bundle_sha256": source.report.bundle_sha256,
         "source_occurrence_identity_sha256": source_root.target_occurrence_identity_sha256,

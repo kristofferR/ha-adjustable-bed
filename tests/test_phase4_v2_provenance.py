@@ -134,6 +134,7 @@ def test_exact_reuse_preimage_is_signed_and_target_bound(monkeypatch: pytest.Mon
         "target_occurrence_identity_sha256": SHA[14],
         "byte_identity_proof_id": SHA[3],
         "ledger_decision_completion_sha256": SHA[4],
+        "root_plan_sha256": SHA[5],
     }
     unsigned = exact_reuse_provenance_payload(**kwargs, signature="0" * 128)  # type: ignore[arg-type]
     payload = json.loads(unsigned)["payload"]
