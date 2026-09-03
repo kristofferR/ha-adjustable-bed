@@ -485,6 +485,8 @@ def test_raw_source_forged_signature_fails(genesis: GenesisFixture) -> None:
 @pytest.mark.parametrize(
     ("field", "replacement"),
     [
+        ("package_name", "org.example.transplanted"),
+        ("version_code", "999"),
         ("package_ref_id", "1" * 64),
         ("artifact_digest", "2" * 64),
         ("target_root_id", "3" * 64),
@@ -493,14 +495,29 @@ def test_raw_source_forged_signature_fails(genesis: GenesisFixture) -> None:
         ("target_inventory_receipt_sha256", "6" * 64),
         ("output_manifest_sha256", "7" * 64),
         ("tool_lineage_sha256", "8" * 64),
+        ("semantic_root_sha256", "9" * 64),
+        ("upstream_digests", ["a" * 64]),
     ],
 )
 def test_signed_identity_or_lineage_transplant_fails(
-    genesis: GenesisFixture, field: str, replacement: str
+    genesis: GenesisFixture, field: str, replacement: object
 ) -> None:
     payload = dict(genesis.payload)
     payload[field] = replacement
-    with pytest.raises(RawSourceAuthenticationError, match="identity|lineage"):
+    with pytest.raises(RawSourceAuthenticationError, match="identity|lineage|semantic"):
+        authenticate_raw_source_collection(genesis.sign(payload), **genesis.inputs)
+
+
+@pytest.mark.parametrize("mutation", ["missing", "extra"])
+def test_missing_or_extra_raw_source_field_fails(
+    genesis: GenesisFixture, mutation: str
+) -> None:
+    payload = dict(genesis.payload)
+    if mutation == "missing":
+        del payload["semantic_root_sha256"]
+    else:
+        payload["caller_trusted_value"] = "forbidden"
+    with pytest.raises(RawSourceAuthenticationError, match="exact expected fields"):
         authenticate_raw_source_collection(genesis.sign(payload), **genesis.inputs)
 
 
