@@ -67,6 +67,7 @@ from tools.phase4_v2.equivalence.plan import (
 )
 from tools.phase4_v2.equivalence.provenance import (
     build_authenticated_source_report_registry,
+    source_report_root_completion,
 )
 from tools.phase4_v2.ir import (
     FINAL_DOMAIN_COLLECTIONS,
@@ -380,6 +381,7 @@ def finish_synthetic_package_inputs(
                         partial.tool_sha256,
                     ),
                 ),
+                (source_report_root_completion(source, source_roots[0]),),
             ),
         ),
     )

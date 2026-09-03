@@ -28,9 +28,14 @@ from .core import (
     validate_authenticated_validator_envelope,
     validate_frozen_package_ref,
 )
-from .plan import CompletionPin, FrozenPackageExecutionPlan, validate_frozen_package_execution_plan
+from .plan import (
+    CompletionPin,
+    FrozenPackageExecutionPlan,
+    package_validation_receipt_completion,
+    validate_frozen_package_execution_plan,
+)
 
-SOURCE_REPORT_ROOT_COMPLETION_REVISION = "phase4-v2-source-report-root-v1"
+SOURCE_REPORT_ROOT_COMPLETION_REVISION = "phase4-v2-package-validation-receipt-v1"
 EXACT_REUSE_PROVENANCE_SCHEMA = "phase4-v2-authenticated-exact-reuse-provenance-v1"
 _MAX_SOURCE_REPORTS = 4_096
 _MAX_ROOTS = 250_000
@@ -119,16 +124,9 @@ def source_report_root_unit_id(
 
     if type(source) is not AuthenticatedSourceReport or type(root) is not AttestedRootEvidence:
         _fail("source-root completion requires exact authenticated records")
-    preimage = json.dumps(
-        {
-            "package_ref_id": source.package_ref.content_id,
-            "receipt_sha256": source.report.validation_receipt_sha256,
-            "root": root.to_data(),
-        },
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode()
-    return f"source-root:{hashlib.sha256(preimage).hexdigest()}"
+    if root not in source.report.validated_root_evidence:
+        _fail("source root is absent from the authenticated report")
+    return package_validation_receipt_completion(source.package_ref).parent_unit_id
 
 
 def source_report_root_completion(
@@ -138,11 +136,10 @@ def source_report_root_completion(
 
     if root not in source.report.validated_root_evidence:
         _fail("source root is absent from the authenticated report")
-    return CompletionPin(
-        source_report_root_unit_id(source, root),
-        SOURCE_REPORT_ROOT_COMPLETION_REVISION,
-        source.report.validation_receipt_sha256,
-    )
+    completion = package_validation_receipt_completion(source.package_ref)
+    if completion.parent_unit_id != source_report_root_unit_id(source, root):
+        _fail("source report completion identity did not reproduce")
+    return completion
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -199,6 +196,7 @@ def bind_authenticated_plan_root_provenance(
             _fail("blocked roots cannot produce authenticated provenance")
         matches: list[tuple[AuthenticatedSourceReport, AttestedRootEvidence]] = []
         if route is Route.FULL_ANALYSIS:
+            dependencies = root["analysis_dependencies"]
             target_root_id = root["target_root_id"]
             target_occurrence = root["target_occurrence_identity_sha256"]
             for source in registry.entries:
@@ -208,6 +206,8 @@ def bind_authenticated_plan_root_provenance(
                     if (
                         attestation.target_root_id == target_root_id
                         and attestation.target_occurrence_identity_sha256 == target_occurrence
+                        and source_report_root_completion(source, attestation).to_data()
+                        in dependencies
                     ):
                         matches.append((source, attestation))
         else:
