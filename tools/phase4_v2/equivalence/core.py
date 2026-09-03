@@ -250,26 +250,10 @@ def _validate_validator_authority(
 ) -> ActivatedValidatorAuthority:
     if type(authority) is not ActivatedValidatorAuthority:
         _fail("exact activated validator authority is required")
-    if hashlib.sha256(authority.canonical_bytes).hexdigest() != authority.activation_sha256:
-        _fail("validator authority no longer reproduces its activation")
-    raw = _canonical_json_document(
-        authority.canonical_bytes, "validator authority", trailing_newline=True
-    )
-    observed = (
-        raw.get("authority_id"),
-        raw.get("public_key"),
-        raw.get("validator_revision"),
-        raw.get("contract_revision"),
-    )
-    expected = (
-        authority.authority_id,
-        authority.public_key,
-        authority.validator_revision,
-        authority.contract_revision,
-    )
-    if raw.get("schema") != VALIDATOR_AUTHORITY_SCHEMA or observed != expected:
+    restored = load_activated_validator_authority(authority.canonical_bytes)
+    if restored != authority:
         _fail("validator authority fields changed after activation")
-    return authority
+    return restored
 
 
 def _validate_pins(pins: RoutingPins) -> None:
@@ -327,7 +311,7 @@ class RoutingPins:
         }
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, init=False)
 class FrozenPackageRef:
     """Frozen package identity and its trusted package-local validation roots."""
 
@@ -336,7 +320,14 @@ class FrozenPackageRef:
     artifact_digest: str
     preflight_sha256: str
     validation_receipt_sha256: str
+    validator_authority: ActivatedValidatorAuthority
+    validator_envelope_bytes: bytes
     revision: str = PACKAGE_REF_REVISION
+
+    def __init__(self) -> None:
+        raise ValueError(
+            "frozen package references derive only from an authenticated validator envelope"
+        )
 
     def __post_init__(self) -> None:
         if (
@@ -349,6 +340,10 @@ class FrozenPackageRef:
         _sha256(self.artifact_digest, "artifact_digest")
         _sha256(self.preflight_sha256, "preflight_sha256")
         _sha256(self.validation_receipt_sha256, "validation_receipt_sha256")
+        if type(self.validator_authority) is not ActivatedValidatorAuthority:
+            _fail("frozen package reference requires its exact validator authority")
+        if type(self.validator_envelope_bytes) is not bytes:
+            _fail("frozen package reference requires exact validator envelope bytes")
         if self.revision != PACKAGE_REF_REVISION:
             _fail("unsupported frozen package reference revision")
 
@@ -359,6 +354,10 @@ class FrozenPackageRef:
             "preflight_sha256": self.preflight_sha256,
             "revision": self.revision,
             "validation_receipt_sha256": self.validation_receipt_sha256,
+            "validator_authority_sha256": self.validator_authority.activation_sha256,
+            "validator_envelope_sha256": hashlib.sha256(
+                self.validator_envelope_bytes
+            ).hexdigest(),
             "version_code": self.version_code,
         }
 
@@ -613,13 +612,35 @@ def frozen_package_ref_from_validator_envelope(
     preflight_sha256 = dependencies.get("preflight")
     if preflight_sha256 is None:
         _fail("authenticated validator envelope has no preflight dependency")
-    return _new_frozen_package_ref(
-        package_name=identity.package_name,
-        version_code=identity.version_code,
-        artifact_digest=identity.artifact_digest,
-        preflight_sha256=preflight_sha256,
-        validation_receipt_sha256=envelope.receipt_sha256,
+    result = object.__new__(FrozenPackageRef)
+    for name, value in (
+        ("package_name", identity.package_name),
+        ("version_code", identity.version_code),
+        ("artifact_digest", identity.artifact_digest),
+        ("preflight_sha256", preflight_sha256),
+        ("validation_receipt_sha256", envelope.receipt_sha256),
+        ("validator_authority", envelope.authority),
+        ("validator_envelope_bytes", envelope.canonical_bytes),
+        ("revision", PACKAGE_REF_REVISION),
+    ):
+        object.__setattr__(result, name, value)
+    result.__post_init__()
+    return result
+
+
+def validate_frozen_package_ref(package_ref: FrozenPackageRef) -> FrozenPackageRef:
+    """Reauthenticate a package reference from its retained signed provenance."""
+
+    if type(package_ref) is not FrozenPackageRef:
+        _fail("exact frozen package reference is required")
+    envelope = load_authenticated_validator_envelope(
+        package_ref.validator_envelope_bytes,
+        authority=package_ref.validator_authority,
     )
+    restored = frozen_package_ref_from_validator_envelope(envelope)
+    if restored != package_ref:
+        _fail("frozen package reference differs from its authenticated provenance")
+    return restored
 
 
 def validate_authenticated_validator_envelope(
@@ -636,23 +657,6 @@ def validate_authenticated_validator_envelope(
     if restored != envelope:
         _fail("validator envelope fields changed after authentication")
     return restored
-
-
-def _new_frozen_package_ref(
-    *,
-    package_name: str,
-    version_code: str,
-    artifact_digest: str,
-    preflight_sha256: str,
-    validation_receipt_sha256: str,
-) -> FrozenPackageRef:
-    return FrozenPackageRef(
-        package_name=package_name,
-        version_code=version_code,
-        artifact_digest=artifact_digest,
-        preflight_sha256=preflight_sha256,
-        validation_receipt_sha256=validation_receipt_sha256,
-    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -1400,16 +1404,7 @@ def _copy_pins(item: RoutingPins) -> RoutingPins:
 
 
 def _copy_package(item: FrozenPackageRef) -> FrozenPackageRef:
-    if not isinstance(item, FrozenPackageRef):
-        _fail("packages must use the immutable FrozenPackageRef type")
-    return FrozenPackageRef(
-        package_name=item.package_name,
-        version_code=item.version_code,
-        artifact_digest=item.artifact_digest,
-        preflight_sha256=item.preflight_sha256,
-        validation_receipt_sha256=item.validation_receipt_sha256,
-        revision=item.revision,
-    )
+    return validate_frozen_package_ref(item)
 
 
 def _copy_capability(item: ExtractorCapability) -> ExtractorCapability:

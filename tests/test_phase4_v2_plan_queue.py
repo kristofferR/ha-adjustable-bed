@@ -13,6 +13,7 @@ import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+import tools.phase4_v2.equivalence.core as equivalence_core_module
 import tools.phase4_v2.equivalence.plan as plan_module
 import tools.phase4_v2.preflight.registry as registry_module
 import tools.phase4_v2.validator as validator_module
@@ -30,6 +31,7 @@ from tools.phase4_v2.equivalence.core import (
     frozen_package_ref_from_validator_envelope,
     load_activated_validator_authority,
     load_authenticated_validator_envelope,
+    validate_authenticated_validator_envelope,
     validator_authority_payload,
     validator_authority_pin_payload,
     validator_envelope_signing_bytes,
@@ -46,7 +48,6 @@ from tools.phase4_v2.equivalence.plan import (
     BlockedRootPlan,
     CapabilityPin,
     CompletionPin,
-    FrozenPackageRef,
     FullAnalysisRootPlan,
     PackageExecutionPlan,
     PackageLocalPlan,
@@ -178,35 +179,22 @@ SOURCE_RECEIPT = replace(
 )
 assert SOURCE_RECEIPT.validation_receipt_sha256 is not None
 
-TARGET_PACKAGE_REF = FrozenPackageRef(
-    package_name="org.example.target",
-    version_code="17",
-    artifact_digest=SHA_B,
-    preflight_sha256=SHA_C,
-    validation_receipt_sha256=SOURCE_RECEIPT.validation_receipt_sha256,
-)
-TARGET_PACKAGE_REF_ID = TARGET_PACKAGE_REF.content_id
-
 _VALIDATOR_KEY = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(SHA_B))
+_VALIDATOR_AUTHORITY_PAYLOAD = validator_authority_payload(
+    authority_id="phase4-validator",
+    public_key=_VALIDATOR_KEY.public_key()
+    .public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+    .hex(),
+    validator_revision=VALIDATOR_REVISION,
+    contract_revision=CONTRACT_REVISION,
+)
+_VALIDATOR_ACTIVATION_SHA256 = json.loads(
+    validator_authority_pin_payload(_VALIDATOR_AUTHORITY_PAYLOAD)
+)["activation_sha256"]
 
 
 def _validator_envelope() -> AuthenticatedValidatorEnvelope:
-    public_key = _VALIDATOR_KEY.public_key().public_bytes(
-        serialization.Encoding.Raw,
-        serialization.PublicFormat.Raw,
-    )
-    authority_payload = validator_authority_payload(
-        authority_id="phase4-validator",
-        public_key=public_key.hex(),
-        validator_revision=VALIDATOR_REVISION,
-        contract_revision=CONTRACT_REVISION,
-    )
-    pin_payload = json.loads(validator_authority_pin_payload(authority_payload))
-    with patch(
-        "tools.phase4_v2.equivalence.core._read_protected_validator_pin",
-        return_value=pin_payload["activation_sha256"],
-    ):
-        authority = load_activated_validator_authority(authority_payload)
+    authority = load_activated_validator_authority(_VALIDATOR_AUTHORITY_PAYLOAD)
     receipt_payload = SOURCE_RECEIPT.to_json().encode()
     signature = _VALIDATOR_KEY.sign(
         validator_envelope_signing_bytes(receipt_payload, authority)
@@ -217,6 +205,24 @@ def _validator_envelope() -> AuthenticatedValidatorEnvelope:
         signature=signature,
     )
     return load_authenticated_validator_envelope(envelope_payload, authority=authority)
+
+
+with patch.object(
+    equivalence_core_module,
+    "_read_protected_validator_pin",
+    return_value=_VALIDATOR_ACTIVATION_SHA256,
+):
+    TARGET_PACKAGE_REF = frozen_package_ref_from_validator_envelope(_validator_envelope())
+TARGET_PACKAGE_REF_ID = TARGET_PACKAGE_REF.content_id
+
+
+@pytest.fixture(autouse=True)
+def _activate_test_validator(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        equivalence_core_module,
+        "_read_protected_validator_pin",
+        lambda: _VALIDATOR_ACTIVATION_SHA256,
+    )
 
 _AUTHORITY_DATA = {
     "candidate_contract_sha256": CANDIDATE_CONTRACT_SHA256,
@@ -533,6 +539,33 @@ def test_validator_envelope_is_factory_locked_and_protected(queue: Queue) -> Non
         load_activated_validator_authority(envelope.authority.canonical_bytes)
 
 
+def test_validator_envelope_rejects_authority_rotation_after_load(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    envelope = _validator_envelope()
+    monkeypatch.setattr(
+        equivalence_core_module, "_read_protected_validator_pin", lambda: SHA_F
+    )
+    with pytest.raises(EquivalenceError, match="protected activation"):
+        validate_authenticated_validator_envelope(envelope)
+
+
+def test_queue_rejects_validator_authority_rotation_after_claim(
+    queue: Queue, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    envelope = _validator_envelope()
+    materialize_package_validation_receipt(queue, envelope)
+    lease = queue.claim("validator-importer")
+    assert lease is not None
+    monkeypatch.setattr(
+        equivalence_core_module, "_read_protected_validator_pin", lambda: SHA_F
+    )
+    with pytest.raises(EquivalenceError, match="protected activation"):
+        finish_package_validation_receipt(queue, lease, envelope=envelope)
+    unit = next(item for item in queue.snapshot().units if item.unit_id == lease.unit_id)
+    assert unit.status is WorkUnitStatus.LEASED
+
+
 def test_validator_envelope_rejects_signed_payload_tampering(queue: Queue) -> None:
     envelope = _validator_envelope()
     tampered = json.loads(envelope.canonical_bytes)
@@ -552,24 +585,10 @@ def test_validator_envelope_rejects_signed_payload_tampering(queue: Queue) -> No
 
 def test_validator_envelope_cannot_complete_a_transplanted_package(queue: Queue) -> None:
     envelope = _validator_envelope()
-    transplanted = FrozenPackageRef(
-        package_name=TARGET_PACKAGE_REF.package_name,
-        version_code=TARGET_PACKAGE_REF.version_code,
-        artifact_digest=TARGET_PACKAGE_REF.artifact_digest,
-        preflight_sha256=TARGET_PACKAGE_REF.preflight_sha256,
-        validation_receipt_sha256=SHA_F,
-    )
-    completion = package_validation_receipt_completion(transplanted)
-    queue.materialize_work_unit(
-        completion.parent_unit_id,
-        kind="trusted-package-validation-receipt",
-        input_digest=completion.digest,
-    )
-    lease = queue.claim("forged-validator-importer")
-    assert lease is not None
-
-    with pytest.raises(QueueConflictError, match="does not belong"):
-        finish_package_validation_receipt(queue, lease, envelope=envelope)
+    transplanted = frozen_package_ref_from_validator_envelope(envelope)
+    object.__setattr__(transplanted, "validation_receipt_sha256", SHA_F)
+    with pytest.raises(EquivalenceError, match="authenticated provenance"):
+        package_validation_receipt_completion(transplanted)
 
 
 def _activate_preparation_capabilities(queue: Queue) -> None:

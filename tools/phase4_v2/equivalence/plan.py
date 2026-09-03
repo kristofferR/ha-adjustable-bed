@@ -48,6 +48,7 @@ from .core import (
     FrozenPackageRef,
     LedgerDecision,
     Route,
+    validate_frozen_package_ref,
 )
 
 PACKAGE_LOCAL_PLAN_REVISION = "phase4-v2-package-local-plan-v2"
@@ -316,16 +317,7 @@ def _completion(value: CompletionPin, field: str) -> CompletionPin:
 
 def package_validation_receipt_completion(package_ref: FrozenPackageRef) -> CompletionPin:
     """Return the completion that externally attests a frozen package receipt."""
-    if type(package_ref) is not FrozenPackageRef:
-        _fail("package validation receipt requires an exact FrozenPackageRef")
-    frozen = FrozenPackageRef(
-        package_ref.package_name,
-        package_ref.version_code,
-        package_ref.artifact_digest,
-        package_ref.preflight_sha256,
-        package_ref.validation_receipt_sha256,
-        package_ref.revision,
-    )
+    frozen = validate_frozen_package_ref(package_ref)
     return CompletionPin(
         f"package-validation-receipt:{frozen.content_id}",
         PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
@@ -586,8 +578,7 @@ def _new_accepted_preparation_plan_binding(
 ) -> PreparationPlanBinding:
     """Bind one validated receipt to the package plan and external activation."""
 
-    if type(package_ref) is not FrozenPackageRef:
-        _fail("preparation binding requires an exact FrozenPackageRef")
+    package_ref = validate_frozen_package_ref(package_ref)
     local = _local(package_local)
     receipt_sha256, capabilities = _validated_preparation_receipt(receipt, authority)
     package_ref_id = package_ref.content_id
@@ -1365,16 +1356,7 @@ class PackageExecutionPlan:
     def __post_init__(self) -> None:
         _sha(self.target_package_ref_id, "plan.target_package_ref_id")
         _token(self.cluster_id, "plan.cluster_id")
-        if type(self.target_package_ref) is not FrozenPackageRef:
-            _fail("plan requires an exact FrozenPackageRef")
-        target_package_ref = FrozenPackageRef(
-            self.target_package_ref.package_name,
-            self.target_package_ref.version_code,
-            self.target_package_ref.artifact_digest,
-            self.target_package_ref.preflight_sha256,
-            self.target_package_ref.validation_receipt_sha256,
-            self.target_package_ref.revision,
-        )
+        target_package_ref = validate_frozen_package_ref(self.target_package_ref)
         local = _local(self.package_local)
         preparation = _preparation(self.preparation)
         accepted = _accepted_inventory(self.accepted_target_inventory)

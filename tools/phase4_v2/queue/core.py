@@ -120,6 +120,9 @@ class _AuthenticatedStageReceipt(Protocol):
     @property
     def authority_sha256(self) -> str: ...
 
+    @property
+    def graph_sha256(self) -> str: ...
+
 
 def _unsupported_schema_revision(revision: object) -> QueueError:
     message = f"unsupported queue schema revision: {revision}"
@@ -605,6 +608,7 @@ class _AuthenticatedOrchestrationStagePublication:
     cluster_id: str
     authority: object
     canonical_receipt: bytes
+    graph: object
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -1717,6 +1721,7 @@ class Queue:
         *,
         authority: object,
         canonical_receipt: bytes,
+        graph: object,
     ) -> InputCheckedFinishResult:
         """Verify a signed stage receipt itself before publishing its exact digest."""
         if type(canonical_receipt) is not bytes:
@@ -1727,8 +1732,11 @@ class Queue:
             canonical_receipt,
             authority,
         )
+        graph_content_id = _validated_cluster_graph_content_id(graph)
         if receipt.cluster_id != cluster_id or receipt.stage_input_sha256 != lease.input_digest:
             raise QueueConflictError("signed orchestration receipt belongs to another lease input")
+        if receipt.graph_sha256 != graph_content_id:
+            raise QueueConflictError("signed orchestration receipt belongs to another graph")
         self.verify_schema()
         guard = self._try_acquire_publication_guard(wait=True)
         if guard is None:
@@ -1746,6 +1754,7 @@ class Queue:
                     cluster_id=cluster_id,
                     authority=authority,
                     canonical_receipt=canonical_receipt,
+                    graph=graph,
                 ),
             )
         finally:
@@ -2109,11 +2118,13 @@ class Queue:
                 trusted_publication.canonical_receipt,
                 trusted_publication.authority,
             )
+            graph_content_id = _validated_cluster_graph_content_id(trusted_publication.graph)
             if (
                 trusted_publication.kind not in _TRUSTED_ORCHESTRATION_STAGE_KINDS
                 or restored.cluster_id != trusted_publication.cluster_id
                 or restored.stage_input_sha256 != expected_input_digest
                 or restored.receipt_sha256 != output_digest
+                or restored.graph_sha256 != graph_content_id
                 or restored_revision != completion_revision
                 or expected_input_digest != lease.input_digest
             ):
@@ -2137,6 +2148,28 @@ class Queue:
                 or unit["cluster_id"] != trusted_publication.cluster_id
             ):
                 raise QueueConflictError("orchestration receipt belongs to another stage")
+            if isinstance(trusted_publication, _AuthenticatedOrchestrationStagePublication):
+                restored, restored_revision = _load_authenticated_orchestration_receipt(
+                    trusted_publication.kind,
+                    trusted_publication.canonical_receipt,
+                    trusted_publication.authority,
+                )
+                graph_content_id = _validated_cluster_graph_content_id(
+                    trusted_publication.graph
+                )
+                if (
+                    restored.graph_sha256 != graph_content_id
+                    or restored.receipt_sha256 != output_digest
+                    or restored_revision != completion_revision
+                ):
+                    raise QueueConflictError(
+                        "orchestration receipt changed before transactional publication"
+                    )
+                _require_exact_active_stage_authority(
+                    connection,
+                    lease.unit_id,
+                    trusted_publication.authority,
+                )
             terminal = connection.execute(
                 """
                 SELECT outcome, output_digest, completion_revision
@@ -3367,6 +3400,57 @@ def _load_authenticated_orchestration_receipt(
             TRACKER_PUBLICATION_COMPLETION_REVISION,
         )
     raise QueueConflictError("queue kind has no authenticated orchestration receipt")
+
+
+def _validated_cluster_graph_content_id(graph: object) -> str:
+    from tools.phase4_v2.orchestration.graph import (
+        ClusterGraphPlan,
+        validate_cluster_graph,
+    )
+
+    if type(graph) is not ClusterGraphPlan:
+        raise QueueConflictError("orchestration completion requires the exact cluster graph")
+    return validate_cluster_graph(graph).content_id
+
+
+def _require_exact_active_stage_authority(
+    connection: sqlite3.Connection,
+    unit_id: str,
+    authority: object,
+) -> None:
+    from tools.phase4_v2.orchestration.completion import (
+        ActivatedStageAuthority,
+        stage_authority_capability,
+    )
+
+    if type(authority) is not ActivatedStageAuthority:
+        raise QueueConflictError("orchestration completion requires an activated authority")
+    pin = stage_authority_capability(authority)
+    requirements = tuple(
+        tuple(row)
+        for row in connection.execute(
+            """
+            SELECT capability, required_revision, required_digest
+            FROM capability_requirements
+            WHERE unit_id = ? ORDER BY capability
+            """,
+            (unit_id,),
+        ).fetchall()
+    )
+    expected = ((pin.capability, pin.revision, pin.digest),)
+    if requirements != expected:
+        raise QueueConflictError(
+            "orchestration unit does not require exactly its signing authority"
+        )
+    head = connection.execute(
+        """
+        SELECT revision, digest FROM pipeline_capability_activations
+        WHERE capability = ? ORDER BY activation_id DESC LIMIT 1
+        """,
+        (pin.capability,),
+    ).fetchone()
+    if head is None or tuple(head) != (pin.revision, pin.digest):
+        raise QueueConflictError("orchestration signing authority is not the active head")
 
 
 def _validate_digest(value: str, label: str) -> None:

@@ -30,6 +30,7 @@ from .core import (
     FrozenPackageRef,
     frozen_package_ref_from_validator_envelope,
     validate_authenticated_validator_envelope,
+    validate_frozen_package_ref,
 )
 from .plan import (
     PACKAGE_QUEUE_UNIT_KIND,
@@ -149,8 +150,12 @@ def materialize_package_preparation(
 ) -> MaterializedPreparationWork:
     """Materialize one package preparation against independently active pins."""
 
-    if type(package_ref) is not FrozenPackageRef:
-        raise QueueConflictError("preparation requires an exact frozen package reference")
+    try:
+        package_ref = validate_frozen_package_ref(package_ref)
+    except ValueError as error:
+        raise QueueConflictError(
+            "preparation requires an authenticated frozen package reference"
+        ) from error
     if type(package_local) is not PackageLocalPlan:
         raise QueueConflictError("preparation requires an exact package-local plan")
     package_ref_id = package_ref.content_id
