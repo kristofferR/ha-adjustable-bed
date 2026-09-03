@@ -434,21 +434,20 @@ def test_three_row_materialization_rolls_back_on_partial_existing_conflict(
     _activate(queue, fixture)
     _publish_dependencies(queue, fixture)
     first, second, third = exact_reuse_prerequisite_completions(fixture.receipt)
-    queue._materialize_authenticated_row(
-        second.parent_unit_id,
-        authentication=fixture.receipt,
-        kind=EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND,
-        capability_pins=tuple(
-            QueueCapabilityPin(pin.name, pin.revision, pin.digest)
-            for pin in exact_reuse_prerequisite_capabilities(fixture.receipt)
-        ),
-        dependency_pins=tuple(
-            CompletionDependencyPin(pin.parent_unit_id, pin.revision, pin.digest)
-            for pin in exact_reuse_prerequisite_dependencies(fixture.receipt)
-        ),
-        input_digest=fixture.receipt.receipt_sha256,
-        priority=1,
-    )
+    with sqlite3.connect(queue.database) as connection:
+        connection.execute(
+            """
+            INSERT INTO work_units(
+                unit_id, kind, cluster_id, priority, ordinal,
+                execution_mode, status, input_digest
+            ) VALUES (?, ?, NULL, 1, 999, 'NORMAL', 'READY', ?)
+            """,
+            (
+                second.parent_unit_id,
+                EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND,
+                fixture.receipt.receipt_sha256,
+            ),
+        )
     with pytest.raises(QueueConflictError, match="changed"):
         materialize_exact_reuse_prerequisites(queue, fixture.receipt)
     with sqlite3.connect(queue.database) as connection:
@@ -457,6 +456,30 @@ def test_three_row_materialization_rolls_back_on_partial_existing_conflict(
             (first.parent_unit_id, third.parent_unit_id),
         ).fetchall()
     assert rows == []
+
+
+def test_generic_private_materializer_cannot_split_atomic_prerequisites(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixture = _build_fixture(tmp_path, monkeypatch)
+    queue = _queue(tmp_path)
+    completion = exact_reuse_prerequisite_completions(fixture.receipt)[0]
+    with pytest.raises(QueueConflictError, match="atomic typed materializer"):
+        queue._materialize_authenticated_row(
+            completion.parent_unit_id,
+            authentication=fixture.receipt,
+            kind=EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND,
+            capability_pins=tuple(
+                QueueCapabilityPin(pin.name, pin.revision, pin.digest)
+                for pin in exact_reuse_prerequisite_capabilities(fixture.receipt)
+            ),
+            dependency_pins=tuple(
+                CompletionDependencyPin(pin.parent_unit_id, pin.revision, pin.digest)
+                for pin in exact_reuse_prerequisite_dependencies(fixture.receipt)
+            ),
+            input_digest=fixture.receipt.receipt_sha256,
+        )
+    assert queue.snapshot().units == ()
 
 
 def test_authority_rejects_constructor_and_noncanonical_pin(

@@ -1011,6 +1011,14 @@ class Queue:
         execution_mode: ExecutionMode = ExecutionMode.NORMAL,
     ) -> str:
         """Insert a row already derived by one of this class's typed adapters."""
+        from tools.phase4_v2.equivalence.prerequisite import (
+            AuthenticatedExactReusePrerequisite,
+        )
+
+        if type(authentication) is AuthenticatedExactReusePrerequisite:
+            raise QueueConflictError(
+                "exact-reuse prerequisites require the atomic typed materializer"
+            )
         _validate_identifier(unit_id, "unit_id")
         _validate_identifier(kind, "kind")
         capability_pins = tuple(capability_pins)
