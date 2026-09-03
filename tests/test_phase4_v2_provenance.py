@@ -191,3 +191,14 @@ def test_exact_reuse_preimage_is_signed_and_target_bound(monkeypatch: pytest.Mon
             authority=authority,
             registry=registry,
         )
+
+
+@pytest.mark.parametrize("payload", ["{}", b"", b"x" * (4 * 1024 * 1024 + 1)])
+def test_exact_reuse_loader_rejects_non_exact_or_oversized_bytes(
+    monkeypatch: pytest.MonkeyPatch, payload: object
+) -> None:
+    _key, authority, registry = _source(monkeypatch)
+    with pytest.raises(ProvenanceAuthenticationError, match="bounded exact bytes"):
+        load_authenticated_exact_reuse_provenance(  # type: ignore[arg-type]
+            payload, authority=authority, registry=registry
+        )

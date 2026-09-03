@@ -41,6 +41,7 @@ from .plan import (
 SOURCE_REPORT_ROOT_COMPLETION_REVISION = "phase4-v2-package-validation-receipt-v1"
 EXACT_REUSE_PROVENANCE_SCHEMA = "phase4-v2-authenticated-exact-reuse-provenance-v1"
 _MAX_SOURCE_REPORTS = 4_096
+_MAX_EXACT_REUSE_RECEIPT_BYTES = 4 * 1024 * 1024
 
 
 class ProvenanceAuthenticationError(ValueError):
@@ -189,7 +190,17 @@ def bind_authenticated_plan_root_provenance(
     for item in exact_reuse_receipts:
         if len(receipt_items) >= expected_reuse_count:
             _fail("exact-reuse provenance receipt set exceeds the planned root count")
-        receipt_items.append(validate_authenticated_exact_reuse_provenance(item, registry))
+        if type(item) is not AuthenticatedExactReuseProvenance:
+            _fail("exact authenticated exact-reuse provenance is required")
+        restored = _load_authenticated_exact_reuse_provenance(
+            item.canonical_bytes,
+            authority=item.authority,
+            registry=registry,
+            reauthenticate_registry=False,
+        )
+        if restored != item:
+            _fail("exact-reuse provenance changed after authentication")
+        receipt_items.append(restored)
     receipts = tuple(receipt_items)
     if len({item.canonical_bytes for item in receipts}) != len(receipts):
         _fail("exact-reuse provenance receipt set contains duplicates")
@@ -398,6 +409,28 @@ def load_authenticated_exact_reuse_provenance(
 ) -> AuthenticatedExactReuseProvenance:
     """Verify a signed audit preimage against its independently signed source report."""
 
+    return _load_authenticated_exact_reuse_provenance(
+        canonical_bytes,
+        authority=authority,
+        registry=registry,
+        reauthenticate_registry=True,
+    )
+
+
+def _load_authenticated_exact_reuse_provenance(
+    canonical_bytes: bytes,
+    *,
+    authority: ActivatedValidatorAuthority,
+    registry: AuthenticatedSourceReportRegistry,
+    reauthenticate_registry: bool,
+) -> AuthenticatedExactReuseProvenance:
+    if (
+        type(canonical_bytes) is not bytes
+        or not canonical_bytes
+        or len(canonical_bytes) > _MAX_EXACT_REUSE_RECEIPT_BYTES
+    ):
+        _fail("exact-reuse provenance must be bounded exact bytes")
+
     try:
         document = json.loads(canonical_bytes)
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
@@ -428,9 +461,10 @@ def load_authenticated_exact_reuse_provenance(
         raise ProvenanceAuthenticationError(
             "exact-reuse provenance signature is invalid"
         ) from error
-    registry = build_authenticated_source_report_registry(
-        (item.package_ref, item.envelope) for item in registry.entries
-    )
+    if reauthenticate_registry:
+        registry = build_authenticated_source_report_registry(
+            (item.package_ref, item.envelope) for item in registry.entries
+        )
     sources = [
         item
         for item in registry.entries
