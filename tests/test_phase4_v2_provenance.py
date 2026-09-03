@@ -170,11 +170,24 @@ def test_exact_reuse_preimage_is_signed_and_target_bound(monkeypatch: pytest.Mon
         signed, authority=authority, registry=registry
     )
     assert authenticated.source_occurrence_identity_sha256 == root.target_occurrence_identity_sha256
+    assert authenticated.byte_identity_proof == proof
+    assert authenticated.ledger_decision == decision
     transplanted = json.loads(signed)
     transplanted["payload"]["target_root_id"] = SHA[2]
     with pytest.raises(ProvenanceAuthenticationError, match="signature"):
         load_authenticated_exact_reuse_provenance(
             json.dumps(transplanted, sort_keys=True, separators=(",", ":")).encode(),
+            authority=authority,
+            registry=registry,
+        )
+    forged = json.loads(signed)
+    forged["payload"]["ledger_decision"]["target_root_id"] = SHA[2]
+    forged["signature"] = key.sign(
+        exact_reuse_provenance_signing_bytes(forged["payload"])
+    ).hex()
+    with pytest.raises(ProvenanceAuthenticationError, match="reproduce"):
+        load_authenticated_exact_reuse_provenance(
+            json.dumps(forged, sort_keys=True, separators=(",", ":")).encode(),
             authority=authority,
             registry=registry,
         )
