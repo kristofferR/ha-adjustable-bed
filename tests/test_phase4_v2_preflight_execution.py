@@ -23,9 +23,12 @@ from tools.phase4_v2.preflight import (
     ToolSpec,
     execute_preparation,
     execute_registered_preparation,
+    load_activated_preparation_authority,
     load_preparation_receipt,
     preflight_delivery,
+    preparation_authority_payload,
 )
+from tools.phase4_v2.preflight.execution import build_execution_profile, qualify_tool
 
 
 def _ready_preflight(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
@@ -135,9 +138,22 @@ def _registry(
     extra_flag: str | None = None,
 ) -> ApprovedToolRegistry:
     flags = ("--deterministic",) + ((extra_flag,) if extra_flag is not None else ())
+    spec = ToolSpec(
+        str(tool),
+        ("--version",),
+        (*flags, "apktool", "{input}", "{output}"),
+        flags,
+    )
+    record = qualify_tool(spec, build_execution_profile())
+    assert record.binary_sha256 is not None
+    assert record.version is not None
+    assert record.runtime_sha256 is not None
+    assert record.runtime_files is not None
     qualification = ToolQualification(
-        qualification_sha256 or hashlib.sha256(tool.read_bytes()).hexdigest(),
-        "fixture-tool 1.2.3",
+        qualification_sha256 or record.binary_sha256,
+        record.version,
+        record.runtime_sha256,
+        record.runtime_files,
     )
     return ApprovedToolRegistry(
         "fixture-registry-v1",
@@ -163,6 +179,15 @@ def _registry(
     )
 
 
+def _activated(registry: ApprovedToolRegistry):
+    profile = build_execution_profile()
+    payload = preparation_authority_payload(registry, profile)
+    authority = load_activated_preparation_authority(
+        payload, expected_activation_sha256=hashlib.sha256(payload).hexdigest()
+    )
+    return profile, authority
+
+
 def test_registered_preparation_binds_the_complete_approved_contract(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -184,11 +209,13 @@ def test_registered_preparation_binds_the_complete_approved_contract(
         },
     )
     registry = _registry(tool)
+    profile, authority = _activated(registry)
 
     receipt = execute_registered_preparation(
         preflight,
         registry=registry,
-        expected_registry_sha256=registry.sha256,
+        authority=authority,
+        execution_profile=profile,
         cache_directory=tmp_path / "cache",
         output_directory=tmp_path / "result",
     )
@@ -206,7 +233,9 @@ def test_registered_preparation_binds_the_complete_approved_contract(
         tmp_path / "result",
         preflight=preflight,
         registry=registry,
-        expected_registry_sha256=registry.sha256,
+        authority=authority,
+        execution_profile=profile,
+        cache_directory=tmp_path / "cache",
         expected_manifest_sha256=receipt.manifest_sha256,
         expected_candidate_index_sha256=receipt.candidate_index_sha256,
     )
@@ -220,23 +249,27 @@ def test_registered_preparation_rejects_untrusted_registry_and_tool_build(
     tool = _tool(tmp_path)
     registry = _registry(tool)
     changed = _registry(tool, extra_flag="--changed")
+    profile, authority = _activated(registry)
 
-    with pytest.raises(PreparationError, match="canonical|externally trusted digest"):
+    with pytest.raises(PreparationError, match="activated authority"):
         execute_registered_preparation(
             preflight,
             registry=changed,
-            expected_registry_sha256=registry.sha256,
+            authority=authority,
+            execution_profile=profile,
             cache_directory=tmp_path / "cache-a",
             output_directory=tmp_path / "result-a",
         )
     assert not (tmp_path / "result-a").exists()
 
     unqualified = _registry(tool, qualification_sha256="f" * 64)
+    unqualified_profile, unqualified_authority = _activated(unqualified)
     with pytest.raises(PreparationError, match="tool build is not approved"):
         execute_registered_preparation(
             preflight,
             registry=unqualified,
-            expected_registry_sha256=unqualified.sha256,
+            authority=unqualified_authority,
+            execution_profile=unqualified_profile,
             cache_directory=tmp_path / "cache-b",
             output_directory=tmp_path / "result-b",
         )
@@ -250,10 +283,12 @@ def test_frozen_preparation_requires_external_payload_pins(
     preflight = _ready_preflight(monkeypatch, tmp_path)
     tool = _tool(tmp_path)
     registry = _registry(tool)
+    profile, authority = _activated(registry)
     receipt = execute_registered_preparation(
         preflight,
         registry=registry,
-        expected_registry_sha256=registry.sha256,
+        authority=authority,
+        execution_profile=profile,
         cache_directory=tmp_path / "cache",
         output_directory=tmp_path / "result",
     )
@@ -265,7 +300,9 @@ def test_frozen_preparation_requires_external_payload_pins(
             tmp_path / "result",
             preflight=preflight,
             registry=registry,
-            expected_registry_sha256=registry.sha256,
+            authority=authority,
+            execution_profile=profile,
+            cache_directory=tmp_path / "cache",
             expected_manifest_sha256=receipt.manifest_sha256,
             expected_candidate_index_sha256=receipt.candidate_index_sha256,
         )
@@ -283,11 +320,13 @@ def test_registered_preparation_accepts_only_authoritative_jadx_fallback(
         },
     )
     registry = _registry(tool)
+    profile, authority = _activated(registry)
 
     receipt = execute_registered_preparation(
         preflight,
         registry=registry,
-        expected_registry_sha256=registry.sha256,
+        authority=authority,
+        execution_profile=profile,
         cache_directory=tmp_path / "cache",
         output_directory=tmp_path / "result",
     )
@@ -354,9 +393,9 @@ def test_complete_invocations_are_cached_and_pipeline_and_flags_invalidate(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     preflight = _ready_preflight(monkeypatch, tmp_path)
-    counter = tmp_path / "invocations"
-    tool = _tool(tmp_path, counter=counter)
+    tool = _tool(tmp_path)
     cache = tmp_path / "cache"
+    objects = cache / "objects" / EXECUTION_CACHE_SCHEMA
 
     for destination in ("one", "two"):
         execute_preparation(
@@ -366,7 +405,7 @@ def test_complete_invocations_are_cached_and_pipeline_and_flags_invalidate(
             output_directory=tmp_path / destination,
             pipeline_revision="pipeline-v1",
         )
-    assert counter.read_text(encoding="utf-8").splitlines() == ["apktool", "jadx"]
+    assert len(list(objects.iterdir())) == 2
 
     execute_preparation(
         preflight,
@@ -382,22 +421,14 @@ def test_complete_invocations_are_cached_and_pipeline_and_flags_invalidate(
         output_directory=tmp_path / "four",
         pipeline_revision="pipeline-v2",
     )
-    assert counter.read_text(encoding="utf-8").splitlines() == [
-        "apktool",
-        "jadx",
-        "apktool",
-        "jadx",
-        "apktool",
-        "jadx",
-    ]
+    assert len(list(objects.iterdir())) == 6
 
 
 def test_approved_registry_digest_invalidates_preparation_cache(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     preflight = _ready_preflight(monkeypatch, tmp_path)
-    counter = tmp_path / "invocations"
-    tool = _tool(tmp_path, counter=counter)
+    tool = _tool(tmp_path)
     cache = tmp_path / "cache"
 
     for name, registry_sha256 in (("one", "a" * 64), ("two", "a" * 64), ("three", "b" * 64)):
@@ -410,12 +441,8 @@ def test_approved_registry_digest_invalidates_preparation_cache(
             tool_registry_sha256=registry_sha256,
         )
 
-    assert counter.read_text(encoding="utf-8").splitlines() == [
-        "apktool",
-        "jadx",
-        "apktool",
-        "jadx",
-    ]
+    objects = cache / "objects" / EXECUTION_CACHE_SCHEMA
+    assert len(list(objects.iterdir())) == 4
 
 
 def test_warning_is_exactly_recorded_and_fails_closed(

@@ -6,8 +6,10 @@ import builtins
 import errno
 import hashlib
 import json
+import math
 import os
 import re
+import resource
 import selectors
 import shutil
 import stat
@@ -15,14 +17,23 @@ import subprocess
 import tempfile
 import time
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path, PurePosixPath
 from typing import Literal
 
-from .core import PREFLIGHT_SCHEMA, ArtifactMember, PreflightResult, _rename_noreplace
+from .core import (
+    PREFLIGHT_SCHEMA,
+    ArtifactMember,
+    PreflightResult,
+    _make_private_directory_at,
+    _rename_noreplace,
+    _rename_noreplace_at,
+)
 
 EXECUTION_SCHEMA = "phase4-v2-preparation-execution-v1"
 EXECUTION_CACHE_SCHEMA = "phase4-v2-preparation-cache-v1"
+EXECUTION_PROFILE_REVISION = "phase4-v2-execution-profile-v1"
+SANDBOX_REVISION = "phase4-v2-bwrap-sandbox-v1"
 CANDIDATE_INDEX_SCHEMA = "phase4-v2-ble-candidate-index-v1"
 CANDIDATE_CONTRACT_REVISION = "phase4-v2-ble-candidate-contract-v2"
 
@@ -36,6 +47,8 @@ _SOURCE_SUFFIXES = frozenset({".java", ".kt"})
 _SMALI_SUFFIX = ".smali"
 _MAX_CACHE_MANIFEST_BYTES = 128 * 1024**2
 _CHUNK = 1024 * 1024
+_BWRAP_NAMES = ("bwrap", "bubblewrap")
+_TRUSTED_CACHE_OBJECTS: dict[str, tuple[int, int, str]] = {}
 _CANDIDATE_SIGNALS: tuple[tuple[str, bytes], ...] = (
     ("android.bluetooth.descriptor", b"Landroid/bluetooth/"),
     ("android.bluetooth.namespace", b"android.bluetooth"),
@@ -126,31 +139,102 @@ class ExecutionLimits:
     max_candidates: int = 250_000
     max_result_manifest_bytes: int = 256 * 1024**2
     max_candidate_index_bytes: int = 256 * 1024**2
+    max_address_space_bytes: int = 8 * 1024**3
+    max_processes: int = 4_096
+    max_open_files: int = 1_024
 
     def validate(self) -> None:
-        values = (
-            self.tool_timeout_seconds,
-            self.version_timeout_seconds,
-            self.max_tool_stream_bytes,
-            self.max_version_stream_bytes,
-            self.max_tool_binary_bytes,
-            self.max_invocations,
-            self.max_output_files,
-            self.max_total_output_files,
-            self.max_output_nodes,
-            self.max_output_path_bytes,
-            self.max_output_file_bytes,
-            self.max_output_bytes,
-            self.max_warning_records,
-            self.max_warning_line_bytes,
-            self.max_candidate_file_bytes,
-            self.max_candidate_bytes,
-            self.max_candidates,
-            self.max_result_manifest_bytes,
-            self.max_candidate_index_bytes,
-        )
-        if any(value <= 0 for value in values):
-            raise PreparationError("execution limits must be positive")
+        defaults = type(self)()
+        for name in self.__dataclass_fields__:
+            value = getattr(self, name)
+            maximum = getattr(defaults, name)
+            if name.endswith("_seconds"):
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(value, int | float)
+                    or not math.isfinite(value)
+                    or value <= 0
+                    or value > maximum
+                    or not float(value * 1_000).is_integer()
+                ):
+                    raise PreparationError(
+                        "execution timeouts must be finite positive whole milliseconds "
+                        "within the immutable profile ceiling"
+                    )
+            elif type(value) is not int or not 0 < value <= maximum:
+                raise PreparationError(
+                    "execution limits must be positive integers within immutable ceilings"
+                )
+
+    def to_data(self) -> dict[str, int]:
+        self.validate()
+        return {
+            name: (
+                int(getattr(self, name) * 1_000)
+                if name.endswith("_seconds")
+                else getattr(self, name)
+            )
+            for name in self.__dataclass_fields__
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class ExecutionProfile:
+    """Exact executor, sandbox, and resource contract authorized for one run."""
+
+    limits: ExecutionLimits
+    executor_sha256: str
+    executor_version: str
+    revision: str = EXECUTION_PROFILE_REVISION
+    sandbox_revision: str = SANDBOX_REVISION
+    sha256: str = field(default="")
+
+    def __post_init__(self) -> None:
+        if type(self.limits) is not ExecutionLimits:
+            raise PreparationError("execution profile limits must be exact ExecutionLimits")
+        self.limits.validate()
+        if self.revision != EXECUTION_PROFILE_REVISION:
+            raise PreparationError("execution profile revision is unsupported")
+        if self.sandbox_revision != SANDBOX_REVISION:
+            raise PreparationError("execution sandbox revision is unsupported")
+        if re.fullmatch(r"[0-9a-f]{64}", self.executor_sha256) is None:
+            raise PreparationError("execution profile executor digest is invalid")
+        if (
+            type(self.executor_version) is not str
+            or not self.executor_version
+            or len(self.executor_version) > 16_384
+            or any(value in self.executor_version for value in ("\x00", "\r", "\n"))
+        ):
+            raise PreparationError("execution profile executor version is invalid")
+        expected = hashlib.sha256(_canonical_json(self.to_data(include_sha256=False))).hexdigest()
+        if type(self.sha256) is not str:
+            raise PreparationError("execution profile digest is invalid")
+        if self.sha256:
+            if self.sha256 != expected:
+                raise PreparationError("execution profile digest is not canonical")
+        else:
+            object.__setattr__(self, "sha256", expected)
+
+    def to_data(self, *, include_sha256: bool = True) -> dict[str, object]:
+        result: dict[str, object] = {
+            "executor": {
+                "binary_sha256": self.executor_sha256,
+                "name": "bubblewrap",
+                "version": self.executor_version,
+            },
+            "limits": self.limits.to_data(),
+            "revision": self.revision,
+            "sandbox": {
+                "host_filesystem": "READ_ONLY",
+                "network": "DISABLED",
+                "process_namespace": "PRIVATE",
+                "revision": self.sandbox_revision,
+                "writable_scope": "PRIVATE_WORKSPACE",
+            },
+        }
+        if include_sha256:
+            result["sha256"] = self.sha256
+        return result
 
 
 @dataclass(frozen=True, slots=True)
@@ -163,16 +247,31 @@ class ToolSpec:
     flags: tuple[str, ...] = ()
 
     def validate(self) -> None:
-        if not self.executable or any(value in self.executable for value in ("\x00", "\r", "\n")):
+        if (
+            type(self.executable) is not str
+            or not self.executable
+            or any(value in self.executable for value in ("\x00", "\r", "\n"))
+            or type(self.version_arguments) is not tuple
+            or type(self.arguments) is not tuple
+            or type(self.flags) is not tuple
+            or any(
+                type(value) is not str
+                for value in (*self.version_arguments, *self.arguments, *self.flags)
+            )
+        ):
             raise PreparationError("tool executable must be a non-empty path or command")
         if not self.version_arguments:
             raise PreparationError("tool version arguments must not be empty")
         if len(self.version_arguments) > 128 or len(self.arguments) > 4_096:
             raise PreparationError("tool argument count exceeds the configured contract limit")
-        if any(
-            not value or "\x00" in value or len(value.encode("utf-8")) > 16 * 1024
-            for value in (*self.version_arguments, *self.arguments)
-        ):
+        try:
+            invalid_argument = any(
+                not value or "\x00" in value or len(value.encode("utf-8")) > 16 * 1024
+                for value in (*self.version_arguments, *self.arguments)
+            )
+        except UnicodeEncodeError as error:
+            raise PreparationError("tool argument is not valid Unicode") from error
+        if invalid_argument:
             raise PreparationError("tool argument is empty, unsafe, or too large")
         if any(value in _PLACEHOLDERS for value in self.version_arguments):
             raise PreparationError("tool version arguments cannot contain path placeholders")
@@ -204,6 +303,8 @@ class ToolRecord:
     executable: str
     binary_bytes: int | None
     binary_sha256: str | None
+    runtime_files: int | None
+    runtime_sha256: str | None
     version_arguments: tuple[str, ...]
     version: str | None
     version_stdout: StreamDigest
@@ -216,6 +317,8 @@ class ToolRecord:
             "binary_sha256": self.binary_sha256,
             "executable": self.executable,
             "failure": self.failure,
+            "runtime_files": self.runtime_files,
+            "runtime_sha256": self.runtime_sha256,
             "version": self.version,
             "version_arguments": list(self.version_arguments),
             "version_stderr": self.version_stderr.to_data(),
@@ -318,6 +421,7 @@ class PreparationResult:
     output_directory: Path
     artifact_digest: str
     pipeline_revision: str
+    execution_profile_sha256: str
     status: Literal["COMPLETE", "BLOCKED"]
     invocations: tuple[InvocationRecord, ...]
     candidates: tuple[CandidateRecord, ...]
@@ -338,6 +442,26 @@ class _RunResult:
 class _PreparedInvocation:
     record: InvocationRecord
     cache_directory: Path | None
+
+
+@dataclass(slots=True)
+class _SealedExecutable:
+    path: Path
+    descriptor: int
+    binary_sha256: str
+    binary_bytes: int
+    runtime_root: Path
+    runtime_sha256: str
+    runtime_files: int
+    snapshot_directory: Path | None = None
+    runtime_descriptor: int | None = None
+
+    def close(self) -> None:
+        os.close(self.descriptor)
+        if self.runtime_descriptor is not None:
+            os.close(self.runtime_descriptor)
+        if self.snapshot_directory is not None:
+            shutil.rmtree(self.snapshot_directory, ignore_errors=True)
 
 
 def _canonical_json(value: object) -> bytes:
@@ -450,6 +574,21 @@ def _safe_relative_path(value: str) -> str:
     return value
 
 
+def _reject_symlink_ancestry(path: Path, label: str) -> None:
+    current = path
+    while True:
+        try:
+            node = current.lstat()
+        except FileNotFoundError:
+            pass
+        else:
+            if stat.S_ISLNK(node.st_mode):
+                raise PreparationError(f"{label} contains a symlink ancestor")
+        if current.parent == current:
+            return
+        current = current.parent
+
+
 def _hash_file(path: Path, *, max_bytes: int) -> tuple[str, int]:
     before = path.lstat()
     if not stat.S_ISREG(before.st_mode) or before.st_size > max_bytes:
@@ -473,6 +612,30 @@ def _hash_file(path: Path, *, max_bytes: int) -> tuple[str, int]:
     identity_after = (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns)
     if identity_before != identity_after or total != before.st_size:
         raise PreparationError(f"file changed while hashing: {path.name}")
+    return digest.hexdigest(), total
+
+
+def _hash_descriptor(descriptor: int, *, max_bytes: int) -> tuple[str, int]:
+    before = os.fstat(descriptor)
+    if not stat.S_ISREG(before.st_mode) or before.st_size > max_bytes:
+        raise PreparationError("descriptor is not a bounded regular file")
+    digest = hashlib.sha256()
+    total = 0
+    offset = 0
+    while chunk := os.pread(descriptor, _CHUNK, offset):
+        total += len(chunk)
+        if total > max_bytes:
+            raise PreparationError("descriptor exceeds byte limit")
+        digest.update(chunk)
+        offset += len(chunk)
+    after = os.fstat(descriptor)
+    if (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns) != (
+        after.st_dev,
+        after.st_ino,
+        after.st_size,
+        after.st_mtime_ns,
+    ) or total != before.st_size:
+        raise PreparationError("descriptor changed while hashing")
     return digest.hexdigest(), total
 
 
@@ -500,13 +663,33 @@ def _run_bounded(
     environment: Mapping[str, str],
     timeout: float,
     stream_limit: int,
+    pass_fds: tuple[int, ...] = (),
+    limits: ExecutionLimits | None = None,
 ) -> _RunResult:
     process: subprocess.Popen[bytes] | None = None
     stdout = bytearray()
     stderr = bytearray()
     streams: dict[int, tuple[Literal["stdout", "stderr"], bytearray]] = {}
     try:
-        process = subprocess.Popen(  # noqa: S603 - executable was resolved and content-addressed
+
+        def apply_limits() -> None:
+            if limits is None:
+                return
+            resource.setrlimit(
+                resource.RLIMIT_AS,
+                (limits.max_address_space_bytes, limits.max_address_space_bytes),
+            )
+            resource.setrlimit(resource.RLIMIT_NPROC, (limits.max_processes, limits.max_processes))
+            resource.setrlimit(
+                resource.RLIMIT_NOFILE, (limits.max_open_files, limits.max_open_files)
+            )
+            resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+            resource.setrlimit(
+                resource.RLIMIT_FSIZE,
+                (limits.max_output_file_bytes, limits.max_output_file_bytes),
+            )
+
+        process = subprocess.Popen(  # noqa: S603 - executable is held open and content-addressed
             list(arguments),
             cwd=cwd,
             env=dict(environment),
@@ -514,6 +697,8 @@ def _run_bounded(
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             start_new_session=True,
+            pass_fds=pass_fds,
+            preexec_fn=apply_limits,
         )
         assert process.stdout is not None and process.stderr is not None
         streams = {
@@ -568,49 +753,371 @@ def _controlled_environment(workspace: Path) -> dict[str, str]:
     }
 
 
+def _open_executable(path: Path, max_bytes: int) -> tuple[int, str, int]:
+    descriptor = os.open(
+        path,
+        os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0),
+    )
+    try:
+        node = os.fstat(descriptor)
+        if not stat.S_ISREG(node.st_mode) or not node.st_mode & 0o111:
+            raise PreparationError("executable is not a regular executable file")
+        digest, size = _hash_descriptor(descriptor, max_bytes=max_bytes)
+    except BaseException:
+        os.close(descriptor)
+        raise
+    return descriptor, digest, size
+
+
+def _resolve_bwrap(limits: ExecutionLimits) -> tuple[Path, int, str, int]:
+    executable = next((shutil.which(name) for name in _BWRAP_NAMES if shutil.which(name)), None)
+    if executable is None:
+        raise PreparationError("bubblewrap is required for secure preparation execution")
+    path = Path(executable).resolve(strict=True)
+    descriptor, digest, size = _open_executable(path, limits.max_tool_binary_bytes)
+    return path, descriptor, digest, size
+
+
+def build_execution_profile(limits: ExecutionLimits | None = None) -> ExecutionProfile:
+    """Qualify the mandatory local sandbox executor into a canonical profile."""
+
+    selected = limits or ExecutionLimits()
+    selected.validate()
+    _path, descriptor, digest, _size = _resolve_bwrap(selected)
+    try:
+        run = _run_bounded(
+            (f"/proc/self/fd/{descriptor}", "--version"),
+            cwd=Path("/"),
+            environment={"LANG": "C.UTF-8", "LC_ALL": "C.UTF-8", "PATH": "/usr/bin:/bin"},
+            timeout=selected.version_timeout_seconds,
+            stream_limit=selected.max_version_stream_bytes,
+            pass_fds=(descriptor,),
+            limits=selected,
+        )
+    finally:
+        os.close(descriptor)
+    if run.failure is not None or run.exit_code != 0:
+        raise PreparationError("bubblewrap qualification failed")
+    raw_version = run.stdout.strip() or run.stderr.strip()
+    try:
+        version = raw_version.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as error:
+        raise PreparationError("bubblewrap version is not UTF-8") from error
+    if not version:
+        raise PreparationError("bubblewrap version is empty")
+    return ExecutionProfile(selected, digest, version)
+
+
+def _open_profile_executor(profile: ExecutionProfile) -> int:
+    _path, descriptor, digest, _size = _resolve_bwrap(profile.limits)
+    if digest != profile.executor_sha256:
+        os.close(descriptor)
+        raise PreparationError("sandbox executor no longer matches the execution profile")
+    return descriptor
+
+
+def _run_sandboxed(
+    executable: _SealedExecutable,
+    arguments: Sequence[str],
+    *,
+    workspace: Path,
+    profile: ExecutionProfile,
+    timeout: float,
+    stream_limit: int,
+    workspace_identity: tuple[int, int] | None = None,
+) -> _RunResult:
+    empty_directory = Path(tempfile.mkdtemp(prefix="phase4-empty.", dir="/var/tmp"))
+    empty_descriptor = -1
+    workspace_descriptor = -1
+    executor_descriptor = -1
+    try:
+        empty_descriptor = os.open(
+            empty_directory,
+            os.O_RDONLY
+            | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_DIRECTORY", 0),
+        )
+        workspace_descriptor = os.open(
+            workspace,
+            os.O_RDONLY
+            | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_DIRECTORY", 0),
+        )
+        executor_descriptor = _open_profile_executor(profile)
+        workspace_node = os.fstat(workspace_descriptor)
+        if (
+            workspace_identity is not None
+            and (
+                workspace_node.st_dev,
+                workspace_node.st_ino,
+            )
+            != workspace_identity
+        ):
+            raise PreparationError("execution workspace identity changed before sandbox entry")
+        environment = _controlled_environment(Path("/run"))
+        sandbox_executable = f"/mnt/{executable.path.name}"
+        command = [
+            f"/proc/self/fd/{executor_descriptor}",
+            "--unshare-user",
+            "--disable-userns",
+            "--unshare-all",
+            "--die-with-parent",
+            "--new-session",
+            "--cap-drop",
+            "ALL",
+            "--ro-bind",
+            "/",
+            "/",
+            "--ro-bind-fd",
+            str(empty_descriptor),
+            "/tmp",
+            "--ro-bind",
+            "/tmp",
+            "/home",
+            "--ro-bind",
+            "/tmp",
+            "/var/tmp",
+            "--proc",
+            "/proc",
+            "--dev",
+            "/dev",
+            "--bind-fd",
+            str(workspace_descriptor),
+            "/run",
+        ]
+        if executable.runtime_descriptor is not None:
+            command.extend(
+                (
+                    "--ro-bind-fd",
+                    str(executable.runtime_descriptor),
+                    "/mnt",
+                )
+            )
+        else:
+            command.extend(
+                (
+                    "--perms",
+                    "0555",
+                    "--ro-bind-data",
+                    str(executable.descriptor),
+                    sandbox_executable,
+                )
+            )
+        command.extend(("--clearenv",))
+        for name, value in sorted(environment.items()):
+            command.extend(("--setenv", name, value))
+        command.extend(("--chdir", "/run", "--", sandbox_executable, *arguments))
+        return _run_bounded(
+            command,
+            cwd=Path("/"),
+            environment={"LANG": "C.UTF-8", "LC_ALL": "C.UTF-8", "PATH": "/usr/bin:/bin"},
+            timeout=timeout,
+            stream_limit=stream_limit,
+            pass_fds=tuple(
+                descriptor
+                for descriptor in (
+                    executor_descriptor,
+                    workspace_descriptor,
+                    executable.descriptor,
+                    executable.runtime_descriptor,
+                    empty_descriptor,
+                )
+                if descriptor is not None
+            ),
+            limits=profile.limits,
+        )
+    finally:
+        for descriptor in (executor_descriptor, workspace_descriptor, empty_descriptor):
+            if descriptor >= 0:
+                os.close(descriptor)
+        shutil.rmtree(empty_directory, ignore_errors=True)
+
+
+def _copy_runtime_file(source: Path, destination: Path, limit: int) -> tuple[str, int]:
+    source_descriptor = os.open(
+        source,
+        os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0),
+    )
+    destination_descriptor = -1
+    try:
+        before = os.fstat(source_descriptor)
+        if not stat.S_ISREG(before.st_mode) or before.st_size > limit:
+            raise PreparationError("runtime closure contains an invalid file")
+        destination_descriptor = os.open(
+            destination,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_CLOEXEC", 0),
+            stat.S_IMODE(before.st_mode) & 0o777,
+        )
+        digest = hashlib.sha256()
+        total = 0
+        offset = 0
+        while chunk := os.pread(source_descriptor, _CHUNK, offset):
+            total += len(chunk)
+            if total > limit:
+                raise PreparationError("runtime closure exceeds its byte limit")
+            digest.update(chunk)
+            view = memoryview(chunk)
+            while view:
+                written = os.write(destination_descriptor, view)
+                view = view[written:]
+            offset += len(chunk)
+        os.fsync(destination_descriptor)
+        after = os.fstat(source_descriptor)
+        if (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns) != (
+            after.st_dev,
+            after.st_ino,
+            after.st_size,
+            after.st_mtime_ns,
+        ):
+            raise PreparationError("runtime closure changed while sealing")
+        return digest.hexdigest(), total
+    finally:
+        if destination_descriptor >= 0:
+            os.close(destination_descriptor)
+        os.close(source_descriptor)
+
+
+def _seal_executable(path: Path, limits: ExecutionLimits) -> _SealedExecutable:
+    original_descriptor, binary_sha256, binary_bytes = _open_executable(
+        path, limits.max_tool_binary_bytes
+    )
+    if not os.access(path.parent, os.W_OK):
+        return _SealedExecutable(
+            path,
+            original_descriptor,
+            binary_sha256,
+            binary_bytes,
+            path,
+            binary_sha256,
+            1,
+        )
+    os.close(original_descriptor)
+    snapshot_directory = Path(tempfile.mkdtemp(prefix="phase4-runtime.", dir="/var/tmp"))
+    snapshot_root = snapshot_directory / "root"
+    snapshot_root.mkdir(mode=0o700)
+    inventory: list[dict[str, object]] = []
+    total = 0
+    nodes = 0
+    try:
+        stack = [(path.parent, snapshot_root)]
+        while stack:
+            source_directory, target_directory = stack.pop()
+            with os.scandir(source_directory) as entries:
+                children = sorted(entries, key=lambda item: item.name)
+            for child in children:
+                nodes += 1
+                if nodes > limits.max_output_nodes:
+                    raise PreparationError("runtime closure node limit exceeded")
+                node = child.stat(follow_symlinks=False)
+                source = Path(child.path)
+                relative = source.relative_to(path.parent).as_posix()
+                target = target_directory / child.name
+                if stat.S_ISDIR(node.st_mode):
+                    # Nested trees are hidden in the sandbox. A launcher that depends on
+                    # one therefore fails closed instead of consuming an unsealed helper.
+                    continue
+                if not stat.S_ISREG(node.st_mode):
+                    raise PreparationError("runtime closure contains a symlink or special node")
+                digest, size = _copy_runtime_file(
+                    source, target, min(limits.max_tool_binary_bytes, limits.max_output_file_bytes)
+                )
+                total += size
+                if total > limits.max_output_bytes:
+                    raise PreparationError("runtime closure aggregate byte limit exceeded")
+                inventory.append(
+                    {
+                        "bytes": size,
+                        "mode": stat.S_IMODE(node.st_mode),
+                        "path": relative,
+                        "sha256": digest,
+                    }
+                )
+        inventory.sort(key=lambda item: str(item["path"]))
+        runtime_sha256 = hashlib.sha256(_canonical_json(inventory)).hexdigest()
+        sealed_path = snapshot_root / path.name
+        sealed_descriptor, sealed_sha256, sealed_bytes = _open_executable(
+            sealed_path, limits.max_tool_binary_bytes
+        )
+        if (sealed_sha256, sealed_bytes) != (binary_sha256, binary_bytes):
+            os.close(sealed_descriptor)
+            raise PreparationError("sealed executable identity mismatch")
+        runtime_descriptor = os.open(
+            snapshot_root,
+            os.O_RDONLY
+            | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_DIRECTORY", 0),
+        )
+        return _SealedExecutable(
+            path,
+            sealed_descriptor,
+            binary_sha256,
+            binary_bytes,
+            snapshot_root,
+            runtime_sha256,
+            len(inventory),
+            snapshot_directory,
+            runtime_descriptor,
+        )
+    except BaseException:
+        shutil.rmtree(snapshot_directory, ignore_errors=True)
+        raise
+
+
 def _tool_record(
-    spec: ToolSpec, workspace: Path, limits: ExecutionLimits
-) -> tuple[ToolRecord, Path | None]:
+    spec: ToolSpec,
+    workspace: Path,
+    limits: ExecutionLimits,
+    profile: ExecutionProfile,
+) -> tuple[ToolRecord, _SealedExecutable | None]:
     requested_name = Path(spec.executable).name
     empty = StreamDigest.from_bytes(b"")
     executable = shutil.which(spec.executable)
     if executable is None:
         return (
             ToolRecord(
-                requested_name,
-                None,
-                None,
-                spec.version_arguments,
-                None,
-                empty,
-                empty,
-                "TOOL_NOT_FOUND",
+                executable=requested_name,
+                binary_bytes=None,
+                binary_sha256=None,
+                runtime_files=None,
+                runtime_sha256=None,
+                version_arguments=spec.version_arguments,
+                version=None,
+                version_stdout=empty,
+                version_stderr=empty,
+                failure="TOOL_NOT_FOUND",
             ),
             None,
         )
     try:
         binary = Path(executable).resolve(strict=True)
-        binary_sha256, binary_bytes = _hash_file(binary, max_bytes=limits.max_tool_binary_bytes)
+        sealed = _seal_executable(binary, limits)
     except OSError, PreparationError:
         return (
             ToolRecord(
-                requested_name,
-                None,
-                None,
-                spec.version_arguments,
-                None,
-                empty,
-                empty,
-                "TOOL_BINARY_INVALID",
+                executable=requested_name,
+                binary_bytes=None,
+                binary_sha256=None,
+                runtime_files=None,
+                runtime_sha256=None,
+                version_arguments=spec.version_arguments,
+                version=None,
+                version_stdout=empty,
+                version_stderr=empty,
+                failure="TOOL_BINARY_INVALID",
             ),
             None,
         )
-    run = _run_bounded(
-        (str(binary), *spec.version_arguments),
-        cwd=workspace,
-        environment=_controlled_environment(workspace),
+    run = _run_sandboxed(
+        sealed,
+        spec.version_arguments,
+        workspace=workspace,
+        profile=profile,
         timeout=limits.version_timeout_seconds,
         stream_limit=limits.max_version_stream_bytes,
+        workspace_identity=(workspace.stat().st_dev, workspace.stat().st_ino),
     )
     failure = run.failure
     if failure is None and run.exit_code != 0:
@@ -627,26 +1134,41 @@ def _tool_record(
                 failure = "TOOL_VERSION_EMPTY"
         if failure is not None:
             version = None
-    try:
-        after_sha256, after_bytes = _hash_file(binary, max_bytes=limits.max_tool_binary_bytes)
-    except OSError, PreparationError:
-        failure = "TOOL_BINARY_CHANGED"
-    else:
-        if (after_sha256, after_bytes) != (binary_sha256, binary_bytes):
-            failure = "TOOL_BINARY_CHANGED"
     return (
         ToolRecord(
-            requested_name,
-            binary_bytes,
-            binary_sha256,
-            spec.version_arguments,
-            version,
-            StreamDigest.from_bytes(run.stdout),
-            StreamDigest.from_bytes(run.stderr),
-            failure,
+            executable=requested_name,
+            binary_bytes=sealed.binary_bytes,
+            binary_sha256=sealed.binary_sha256,
+            runtime_files=sealed.runtime_files,
+            runtime_sha256=sealed.runtime_sha256,
+            version_arguments=spec.version_arguments,
+            version=version,
+            version_stdout=StreamDigest.from_bytes(run.stdout),
+            version_stderr=StreamDigest.from_bytes(run.stderr),
+            failure=failure,
         ),
-        binary,
+        sealed,
     )
+
+
+def qualify_tool(spec: ToolSpec, execution_profile: ExecutionProfile) -> ToolRecord:
+    """Return the exact sandboxed build/runtime identity used by execution."""
+
+    if type(spec) is not ToolSpec or type(execution_profile) is not ExecutionProfile:
+        raise PreparationError("tool qualification requires exact trusted contract types")
+    spec.validate()
+    execution_profile.__post_init__()
+    workspace = Path(tempfile.mkdtemp(prefix="phase4-qualification.", dir="/var/tmp"))
+    sealed: _SealedExecutable | None = None
+    try:
+        for name in ("home", "tmp"):
+            (workspace / name).mkdir(mode=0o700)
+        record, sealed = _tool_record(spec, workspace, execution_profile.limits, execution_profile)
+        return record
+    finally:
+        if sealed is not None:
+            sealed.close()
+        shutil.rmtree(workspace, ignore_errors=True)
 
 
 def _warning_records(
@@ -758,6 +1280,7 @@ def _invocation_key(
     spec: ToolSpec,
     pipeline_revision: str,
     tool_registry_sha256: str | None,
+    execution_profile_sha256: str,
 ) -> str:
     return hashlib.sha256(
         _canonical_json(
@@ -769,6 +1292,7 @@ def _invocation_key(
                 "input_sha256": member.sha256,
                 "member": member.name,
                 "pipeline_revision": pipeline_revision,
+                "execution_profile_sha256": execution_profile_sha256,
                 "tool_registry_sha256": tool_registry_sha256,
                 "preflight_schema": PREFLIGHT_SCHEMA,
                 "route": route,
@@ -792,10 +1316,15 @@ class PreparationCache:
 
     def __init__(self, root: Path | str) -> None:
         self.root = Path(os.path.abspath(os.fspath(root)))
+        _reject_symlink_ancestry(self.root, "preparation cache root")
         self.objects = self.root / "objects" / EXECUTION_CACHE_SCHEMA
         self.work = self.root / "work"
         self.objects.mkdir(parents=True, exist_ok=True)
         self.work.mkdir(parents=True, exist_ok=True)
+        for directory in (self.root, self.objects, self.work):
+            node = directory.lstat()
+            if not stat.S_ISDIR(node.st_mode) or stat.S_ISLNK(node.st_mode):
+                raise PreparationError("preparation cache path is not a regular directory")
 
     def _object(self, key: str) -> Path:
         if re.fullmatch(r"[0-9a-f]{64}", key) is None:
@@ -806,12 +1335,17 @@ class PreparationCache:
         self, key: str, expected: InvocationRecord, limits: ExecutionLimits
     ) -> _PreparedInvocation | None:
         target = self._object(key)
+        trusted = _TRUSTED_CACHE_OBJECTS.get(os.fspath(target))
+        if trusted is None:
+            return None
         try:
             target_stat = target.lstat()
         except FileNotFoundError:
             return None
         if not stat.S_ISDIR(target_stat.st_mode) or stat.S_ISLNK(target_stat.st_mode):
             raise PreparationCacheError("cache object is not a regular directory")
+        if (target_stat.st_dev, target_stat.st_ino) != trusted[:2]:
+            raise PreparationCacheError("trusted cache object identity changed")
         try:
             names = {entry.name for entry in os.scandir(target)}
             if names != {"OBJECT.COMPLETE", "manifest.json", "outputs", "stderr.bin", "stdout.bin"}:
@@ -820,6 +1354,8 @@ class PreparationCache:
             marker = _read_bounded(target / "OBJECT.COMPLETE", 256).decode("ascii").strip().split()
             if marker != [hashlib.sha256(manifest_payload).hexdigest(), "manifest.json"]:
                 raise PreparationCacheError("cache manifest seal mismatch")
+            if hashlib.sha256(manifest_payload).hexdigest() != trusted[2]:
+                raise PreparationCacheError("trusted cache manifest changed")
             raw = json.loads(manifest_payload, object_pairs_hook=_reject_duplicate_keys)
             if (
                 not isinstance(raw, dict)
@@ -857,10 +1393,11 @@ def _execute_one(
     route: str,
     spec: ToolSpec,
     tool: ToolRecord,
-    binary: Path | None,
+    binary: _SealedExecutable | None,
     pipeline_revision: str,
     tool_registry_sha256: str | None,
     limits: ExecutionLimits,
+    execution_profile: ExecutionProfile,
 ) -> _PreparedInvocation:
     key = None
     empty = StreamDigest.from_bytes(b"")
@@ -892,6 +1429,7 @@ def _execute_one(
         spec=spec,
         pipeline_revision=pipeline_revision,
         tool_registry_sha256=tool_registry_sha256,
+        execution_profile_sha256=execution_profile.sha256,
     )
     expected = InvocationRecord(
         member.name,
@@ -920,12 +1458,14 @@ def _execute_one(
         input_path = workspace / "input.apk"
         _copy_input(member, input_path)
         arguments = _normalized_arguments(spec)
-        run = _run_bounded(
-            (str(binary), *arguments),
-            cwd=workspace,
-            environment=_controlled_environment(workspace),
+        run = _run_sandboxed(
+            binary,
+            arguments,
+            workspace=workspace,
+            profile=execution_profile,
             timeout=limits.tool_timeout_seconds,
             stream_limit=limits.max_tool_stream_bytes,
+            workspace_identity=(workspace.stat().st_dev, workspace.stat().st_ino),
         )
         failures: list[str] = []
         if run.failure is not None:
@@ -953,13 +1493,6 @@ def _execute_one(
         else:
             if (input_digest, input_size) != (member.sha256, member.size):
                 failures.append("INPUT_MUTATED")
-        try:
-            binary_digest, binary_size = _hash_file(binary, max_bytes=limits.max_tool_binary_bytes)
-        except OSError, PreparationError:
-            failures.append("TOOL_BINARY_CHANGED")
-        else:
-            if (binary_digest, binary_size) != (tool.binary_sha256, tool.binary_bytes):
-                failures.append("TOOL_BINARY_CHANGED")
         record = InvocationRecord(
             member.name,
             member.sha256,
@@ -1015,12 +1548,25 @@ def _publish_cache_object(
         try:
             _rename_noreplace(temporary, target)
             keep = True
+            node = target.lstat()
+            _TRUSTED_CACHE_OBJECTS[os.fspath(target)] = (
+                node.st_dev,
+                node.st_ino,
+                hashlib.sha256(manifest).hexdigest(),
+            )
             _fsync_directory(cache.objects)
             return target
         except OSError as err:
             if err.errno not in {errno.EEXIST, errno.ENOTEMPTY}:
                 raise
-            return target
+            trusted = _TRUSTED_CACHE_OBJECTS.get(os.fspath(target))
+            if trusted is not None:
+                node = target.lstat()
+                if (node.st_dev, node.st_ino) == trusted[:2]:
+                    return target
+            raise PreparationCacheError(
+                "untrusted cache object already occupies cache key"
+            ) from err
     finally:
         if not keep:
             shutil.rmtree(temporary, ignore_errors=True)
@@ -1166,7 +1712,17 @@ def _publish_result(
         raise PreparationError("preparation output parent must be an existing regular directory")
     if destination.exists() or destination.is_symlink():
         raise PreparationError("preparation output destination already exists")
-    temporary = Path(tempfile.mkdtemp(prefix=f".{destination.name}.", dir=parent))
+    parent_descriptor = os.open(
+        parent,
+        os.O_RDONLY
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+        | getattr(os, "O_DIRECTORY", 0),
+    )
+    parent_identity = os.fstat(parent_descriptor)
+    temporary_name = _make_private_directory_at(parent_descriptor, f".{destination.name}.")
+    temporary = parent / temporary_name
+    temporary_identity = temporary.lstat()
     published = False
     try:
         _write_new_file(temporary / "manifest.json", manifest)
@@ -1180,12 +1736,33 @@ def _publish_result(
             ).encode("ascii"),
         )
         _fsync_directory(temporary)
-        _rename_noreplace(temporary, destination)
+        current_parent = os.fstat(parent_descriptor)
+        current_temporary = temporary.lstat()
+        if (current_parent.st_dev, current_parent.st_ino) != (
+            parent_identity.st_dev,
+            parent_identity.st_ino,
+        ) or (current_temporary.st_dev, current_temporary.st_ino) != (
+            temporary_identity.st_dev,
+            temporary_identity.st_ino,
+        ):
+            raise PreparationError("preparation output ancestry changed during publication")
+        _rename_noreplace_at(
+            parent_descriptor,
+            os.fsencode(temporary_name),
+            parent_descriptor,
+            os.fsencode(destination.name),
+        )
         published = True
-        _fsync_directory(parent)
+        os.fsync(parent_descriptor)
     finally:
         if not published:
-            shutil.rmtree(temporary, ignore_errors=True)
+            current_parent = os.fstat(parent_descriptor)
+            if (current_parent.st_dev, current_parent.st_ino) == (
+                parent_identity.st_dev,
+                parent_identity.st_ino,
+            ):
+                shutil.rmtree(temporary, ignore_errors=True)
+        os.close(parent_descriptor)
 
 
 def execute_preparation(
@@ -1196,13 +1773,19 @@ def execute_preparation(
     output_directory: Path | str,
     pipeline_revision: str,
     tool_registry_sha256: str | None = None,
-    approved_tool_builds: Mapping[str, frozenset[tuple[str, str]]] | None = None,
+    approved_tool_builds: Mapping[str, frozenset[tuple[str, str, str, int]]] | None = None,
     limits: ExecutionLimits | None = None,
+    execution_profile: ExecutionProfile | None = None,
 ) -> PreparationResult:
     """Execute every routed tool and publish a deterministic package-local manifest."""
 
-    selected_limits = limits or ExecutionLimits()
-    selected_limits.validate()
+    if limits is not None and execution_profile is not None:
+        raise PreparationError("provide execution_profile or limits, not both")
+    selected_profile = execution_profile or build_execution_profile(limits)
+    if type(selected_profile) is not ExecutionProfile:
+        raise PreparationError("execution profile must be an exact ExecutionProfile")
+    selected_profile.__post_init__()
+    selected_limits = selected_profile.limits
     _validate_token(pipeline_revision, "pipeline revision")
     if tool_registry_sha256 is not None and (
         type(tool_registry_sha256) is not str
@@ -1222,13 +1805,17 @@ def execute_preparation(
             for build in builds:
                 if (
                     type(build) is not tuple
-                    or len(build) != 2
+                    or len(build) != 4
                     or type(build[0]) is not str
                     or re.fullmatch(r"[0-9a-f]{64}", build[0]) is None
                     or type(build[1]) is not str
                     or not build[1]
                     or len(build[1]) > 16_384
                     or any(character in build[1] for character in ("\x00", "\r", "\n"))
+                    or type(build[2]) is not str
+                    or re.fullmatch(r"[0-9a-f]{64}", build[2]) is None
+                    or type(build[3]) is not int
+                    or not 1 <= build[3] <= selected_limits.max_output_nodes
                 ):
                     raise PreparationError("approved tool build identity is invalid")
     if preflight.decision.status != "READY" or preflight.package_identity is None:
@@ -1241,7 +1828,6 @@ def execute_preparation(
         raise PreparationError("preflight artifact and classification member sets differ")
     if len(tool_specs) > 256:
         raise PreparationError("tool route configuration exceeds the route limit")
-    cache = PreparationCache(cache_directory)
     required_routes = sorted(
         {route for member in preflight.decision.members for route in member.routes}
     )
@@ -1254,8 +1840,8 @@ def execute_preparation(
         _validate_token(route, "tool route")
         spec.validate()
 
-    probe_workspace = Path(tempfile.mkdtemp(prefix="probe.", dir=cache.work))
-    tools: dict[str, tuple[ToolRecord, Path | None]] = {}
+    probe_workspace = Path(tempfile.mkdtemp(prefix="phase4-probe.", dir="/var/tmp"))
+    tools: dict[str, tuple[ToolRecord, _SealedExecutable | None]] = {}
     try:
         for name in ("home", "tmp"):
             (probe_workspace / name).mkdir(mode=0o700)
@@ -1265,7 +1851,16 @@ def execute_preparation(
                 empty = StreamDigest.from_bytes(b"")
                 tools[route] = (
                     ToolRecord(
-                        route, None, None, (), None, empty, empty, "TOOL_ROUTE_UNCONFIGURED"
+                        executable=route,
+                        binary_bytes=None,
+                        binary_sha256=None,
+                        runtime_files=None,
+                        runtime_sha256=None,
+                        version_arguments=(),
+                        version=None,
+                        version_stdout=empty,
+                        version_stderr=empty,
+                        failure="TOOL_ROUTE_UNCONFIGURED",
                     ),
                     None,
                 )
@@ -1274,45 +1869,66 @@ def execute_preparation(
                 route_workspace.mkdir(mode=0o700)
                 for name in ("home", "tmp"):
                     (route_workspace / name).mkdir(mode=0o700)
-                tool, binary = _tool_record(configured_spec, route_workspace, selected_limits)
+                tool, binary = _tool_record(
+                    configured_spec, route_workspace, selected_limits, selected_profile
+                )
                 if (
                     approved_tool_builds is not None
                     and tool.failure is None
-                    and (tool.binary_sha256, tool.version)
+                    and (
+                        tool.binary_sha256,
+                        tool.version,
+                        tool.runtime_sha256,
+                        tool.runtime_files,
+                    )
                     not in approved_tool_builds.get(route, frozenset())
                 ):
                     tool = replace(tool, failure="TOOL_BUILD_UNAPPROVED")
+                    assert binary is not None
+                    binary.close()
                     binary = None
                 tools[route] = (tool, binary)
+    except BaseException:
+        for _tool, binary in tools.values():
+            if binary is not None:
+                binary.close()
+        raise
     finally:
         shutil.rmtree(probe_workspace, ignore_errors=True)
 
+    cache = PreparationCache(cache_directory)
     member_by_name = {member.name: member for member in preflight.artifact_members}
     prepared: list[_PreparedInvocation] = []
     total_output_files = 0
-    for classification in preflight.decision.members:
-        member = member_by_name[classification.name]
-        for route in classification.routes:
-            configured_spec = tool_specs.get(route)
-            tool, binary = tools[route]
-            if configured_spec is None:
-                configured_spec = ToolSpec(route, ("--version",), ("{input}", "{output}"))
-            invocation = _execute_one(
-                cache=cache,
-                artifact_digest=preflight.artifact_digest,
-                member=member,
-                route=route,
-                spec=configured_spec,
-                tool=tool,
-                binary=binary,
-                pipeline_revision=pipeline_revision,
-                tool_registry_sha256=tool_registry_sha256,
-                limits=selected_limits,
-            )
-            prepared.append(invocation)
-            total_output_files += len(invocation.record.outputs)
-            if total_output_files > selected_limits.max_total_output_files:
-                raise PreparationError("preparation total output file limit exceeded")
+    try:
+        for classification in preflight.decision.members:
+            member = member_by_name[classification.name]
+            for route in classification.routes:
+                configured_spec = tool_specs.get(route)
+                tool, binary = tools[route]
+                if configured_spec is None:
+                    configured_spec = ToolSpec(route, ("--version",), ("{input}", "{output}"))
+                invocation = _execute_one(
+                    cache=cache,
+                    artifact_digest=preflight.artifact_digest,
+                    member=member,
+                    route=route,
+                    spec=configured_spec,
+                    tool=tool,
+                    binary=binary,
+                    pipeline_revision=pipeline_revision,
+                    tool_registry_sha256=tool_registry_sha256,
+                    limits=selected_limits,
+                    execution_profile=selected_profile,
+                )
+                prepared.append(invocation)
+                total_output_files += len(invocation.record.outputs)
+                if total_output_files > selected_limits.max_total_output_files:
+                    raise PreparationError("preparation total output file limit exceeded")
+    finally:
+        for _tool, binary in tools.values():
+            if binary is not None:
+                binary.close()
     adjusted = _apply_jadx_fallbacks(prepared)
     aggregate_failures: list[str] = []
     try:
@@ -1349,6 +1965,10 @@ def execute_preparation(
             "sha256": CANDIDATE_CONTRACT_SHA256,
         },
         "failures": aggregate_failures,
+        "execution_profile": {
+            "revision": selected_profile.revision,
+            "sha256": selected_profile.sha256,
+        },
         "invocations": [record.to_data() for record in records],
         "package_identity": preflight.package_identity.public_dict(),
         "pipeline_revision": pipeline_revision,
@@ -1370,6 +1990,7 @@ def execute_preparation(
         destination,
         preflight.artifact_digest,
         pipeline_revision,
+        selected_profile.sha256,
         status,
         records,
         candidates,
