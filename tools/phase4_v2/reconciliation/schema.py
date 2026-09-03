@@ -6,7 +6,7 @@ import copy
 import hashlib
 import json
 
-INPUT_SCHEMA_REVISION = "phase4-v2-reconciliation-input-v2"
+INPUT_SCHEMA_REVISION = "phase4-v2-reconciliation-input-v3"
 COMPARISON_AREAS = (
     "actions",
     "authentication",
@@ -176,6 +176,9 @@ _SCHEMA: dict[str, object] = {
                 "route": {"enum": ["BLOCKED", "EXACT_REUSE", "FULL_ANALYSIS"]},
                 "semantic_root_sha256": {"oneOf": [_SHA256, {"type": "null"}]},
                 "source_root_id": {"oneOf": [_SHA256, {"type": "null"}]},
+                "source_package_ref_id": {"oneOf": [_SHA256, {"type": "null"}]},
+                "source_occurrence_identity_sha256": {"oneOf": [_SHA256, {"type": "null"}]},
+                "source_validation_receipt_sha256": {"oneOf": [_SHA256, {"type": "null"}]},
                 "target_root_id": _SHA256,
             },
             "required": [
@@ -187,6 +190,9 @@ _SCHEMA: dict[str, object] = {
                 "route",
                 "semantic_root_sha256",
                 "source_root_id",
+                "source_package_ref_id",
+                "source_occurrence_identity_sha256",
+                "source_validation_receipt_sha256",
                 "target_root_id",
             ],
             "type": "object",

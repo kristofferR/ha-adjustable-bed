@@ -42,7 +42,7 @@ def test_surface_rejects_report_plan_output_and_envelope_transplants(tmp_path: P
             )
             for index in range(2)
         )
-        data, receipts = _authorized_final_ir()
+        data, receipts = _authorized_final_ir(packages[0].source_registry)
         document = loads_final_ir(
             json.dumps(data, sort_keys=True, separators=(",", ":")).encode() + b"\n",
             trusted_receipts=receipts,
@@ -61,9 +61,11 @@ def test_surface_rejects_report_plan_output_and_envelope_transplants(tmp_path: P
             "document": document,
             "canonical_json": canonical,
             "markdown": markdown,
+            "source_registry": first.source_registry,
+            "exact_reuse_receipts": first.exact_reuse_receipts,
         }
+        assert derive_authenticated_final_ir_package_surface(**common).package_surface.package_ref == first.package_ref
         for field, transplanted in (
-            ("report_bytes", first.report_bytes),
             ("execution_plan", second.frozen_plan),
             ("validated_output", second.output),
             ("execution_envelope", second.execution_envelope),

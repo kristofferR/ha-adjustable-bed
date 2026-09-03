@@ -193,6 +193,41 @@ def test_exact_reuse_preimage_is_signed_and_target_bound(monkeypatch: pytest.Mon
         )
 
 
+def test_exact_reuse_rejects_an_unrelated_byte_identity_proof(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _key, authority, registry = _source(monkeypatch)
+    source = registry.entries[0]
+    root = source.report.validated_root_evidence[0]
+    proof = ByteIdentityProof(
+        *sorted((SHA[0], SHA[1])), "DEX", SHA[2], SHA[3], SHA[4], SHA[5], SHA[6]
+    )
+    decision = LedgerDecision(
+        SHA[13],
+        Route.EXACT_REUSE,
+        "unrelated_proof",
+        SHA[4],
+        root.target_root_id,
+        proof.content_id,
+        root.target_root_id,
+        source.report.validation_receipt_sha256,
+    )
+    with pytest.raises(ProvenanceAuthenticationError, match="do not close"):
+        exact_reuse_provenance_payload(
+            authority=authority,
+            source=source,
+            source_root=root,
+            target_root_id=SHA[13],
+            target_occurrence_identity_sha256=SHA[14],
+            byte_identity_proof_id=proof.content_id,
+            byte_identity_proof=proof,
+            ledger_decision=decision,
+            ledger_decision_completion_sha256=decision.content_id,
+            root_plan_sha256=SHA[5],
+            signature="0" * 128,
+        )
+
+
 @pytest.mark.parametrize("payload", ["{}", b"", b"x" * (4 * 1024 * 1024 + 1)])
 def test_exact_reuse_loader_rejects_non_exact_or_oversized_bytes(
     monkeypatch: pytest.MonkeyPatch, payload: object

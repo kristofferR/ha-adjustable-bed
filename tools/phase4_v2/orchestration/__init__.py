@@ -8,11 +8,13 @@ from .acceptance import (
 from .completion import (
     STAGE_AUTHORITY_REVISION,
     ActivatedStageAuthority,
+    AuthenticatedReconciliationInput,
     StageCompletion,
     TrustedImplementationReceipt,
     TrustedPackageAuditReceipt,
     TrustedPublicationReceipt,
     TrustedReconciliationReceipt,
+    build_authenticated_reconciliation_input,
     finish_cluster_implementation,
     finish_cluster_reconciliation,
     finish_package_audit,
@@ -23,6 +25,7 @@ from .completion import (
     load_reconciliation_receipt,
     load_stage_authority,
     stage_authority_capability,
+    validate_authenticated_reconciliation_input,
 )
 from .graph import (
     CLUSTER_GRAPH_REVISION,
@@ -56,6 +59,7 @@ from .model import FollowUp, FollowUpAction, WorkStage, route_follow_up
 __all__ = [
     "ContextExit",
     "ActivatedStageAuthority",
+    "AuthenticatedReconciliationInput",
     "CLUSTER_GRAPH_REVISION",
     "CLUSTER_IMPLEMENTATION_COMPLETION_REVISION",
     "CLUSTER_RECONCILIATION_COMPLETION_REVISION",
@@ -83,6 +87,7 @@ __all__ = [
     "cluster_implementation_unit_id",
     "cluster_reconciliation_unit_id",
     "build_cluster_graph",
+    "build_authenticated_reconciliation_input",
     "finish_cluster_implementation",
     "finish_cluster_reconciliation",
     "finish_package_audit",
@@ -101,4 +106,5 @@ __all__ = [
     "stage_authority_capability",
     "tracker_publication_unit_id",
     "validate_cluster_graph",
+    "validate_authenticated_reconciliation_input",
 ]

@@ -80,6 +80,13 @@ def root_for(package: FrozenPackageRef, route: Route = Route.FULL_ANALYSIS) -> R
         route=route,
         semantic_root_sha256=(None if route is Route.BLOCKED else sha("shared-semantic")),
         source_root_id=(sha("source-root") if route is Route.EXACT_REUSE else None),
+        source_package_ref_id=(None if route is Route.BLOCKED else package.content_id),
+        source_occurrence_identity_sha256=(
+            None if route is Route.BLOCKED else sha(package.package_name + ":source-occurrence")
+        ),
+        source_validation_receipt_sha256=(
+            None if route is Route.BLOCKED else sha(package.package_name + ":source-receipt")
+        ),
         report_pointer="/roots/0",
         evidence_anchor_ids=("conflict-anchor", "leaf-anchor", "root-anchor")
         if route is not Route.BLOCKED

@@ -370,6 +370,8 @@ def exact_reuse_provenance_payload(
         or ledger_decision.target_root_id != target_root_id
         or ledger_decision.source_root_id != source_root.target_root_id
         or ledger_decision.source_audit_receipt_sha256 != source.report.validation_receipt_sha256
+        or {byte_identity_proof.left_root_id, byte_identity_proof.right_root_id}
+        != {target_root_id, source_root.target_root_id}
     ):
         _fail("exact-reuse proof and ledger decision do not close the signed audit")
     values = {
@@ -508,6 +510,8 @@ def _load_authenticated_exact_reuse_provenance(
         or decision.target_root_id != payload["target_root_id"]
         or decision.source_root_id != payload["source_root_id"]
         or decision.source_audit_receipt_sha256 != payload["source_validation_receipt_sha256"]
+        or {proof.left_root_id, proof.right_root_id}
+        != {payload["target_root_id"], payload["source_root_id"]}
     ):
         _fail("exact-reuse typed proof and decision do not reproduce")
     result = object.__new__(AuthenticatedExactReuseProvenance)

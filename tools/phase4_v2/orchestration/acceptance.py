@@ -53,6 +53,7 @@ from tools.phase4_v2.equivalence import (
     target_inventory_envelope_payload,
     target_inventory_signing_bytes,
 )
+from tools.phase4_v2.ir import dumps_final_ir, loads_final_ir, render_final_ir_markdown
 from tools.phase4_v2.preflight import PreparationReceipt
 from tools.phase4_v2.queue import (
     Lease,
@@ -68,13 +69,20 @@ from tools.phase4_v2.queue import (
     publish_tracker_fanout,
 )
 from tools.phase4_v2.queue.publication_config import TrackerPublicationConfig
+from tools.phase4_v2.reconciliation import (
+    PackageSurface,
+    derive_authenticated_final_ir_package_surface,
+    reconcile,
+)
 from tools.phase4_v2.validator import validate_report_bundle
 
 from .completion import (
     STAGE_AUTHORITY_REVISION,
     ActivatedStageAuthority,
     TrustedImplementationReceipt,
+    TrustedPackageAuditReceipt,
     TrustedReconciliationReceipt,
+    build_authenticated_reconciliation_input,
     finish_cluster_implementation,
     finish_cluster_reconciliation,
     finish_package_audit,
@@ -100,6 +108,7 @@ from .model import WorkStage
 from .testing import (
     IncompleteSyntheticPackage,
     SyntheticTrust,
+    _authorized_final_ir,
     build_synthetic_package_inputs,
     finish_synthetic_package_inputs,
     protected_fixture_trust,
@@ -157,7 +166,9 @@ class SyntheticAcceptanceReport:
 @dataclass(slots=True)
 class _ClusterState:
     graph: ClusterGraphPlan
-    audit_receipts: dict[str, str]
+    packages: dict[str, AuthenticatedSyntheticPackage]
+    audit_receipts: dict[str, TrustedPackageAuditReceipt]
+    package_surfaces: dict[str, PackageSurface]
     reconciliation: TrustedReconciliationReceipt | None = None
     implementation: TrustedImplementationReceipt | None = None
 
@@ -378,6 +389,28 @@ def _finish_stage(
             if package_audit_unit_id(graph, item.package_ref_id) == lease.unit_id
         )
         analysis = next(item for item in queue.snapshot().units if item.unit_id == package.unit_id)
+        authenticated_package = state.packages[package.package_ref_id]
+        final_data, trusted_receipts = _authorized_final_ir(
+            authenticated_package.source_registry
+        )
+        final_json = json.dumps(
+            final_data, sort_keys=True, separators=(",", ":")
+        ).encode() + b"\n"
+        final_document = loads_final_ir(final_json, trusted_receipts=trusted_receipts)
+        surface = derive_authenticated_final_ir_package_surface(
+            package_ref=authenticated_package.package_ref,
+            execution_plan=authenticated_package.frozen_plan,
+            queue=queue,
+            validated_output=authenticated_package.output,
+            execution_envelope=authenticated_package.execution_envelope,
+            report_bytes=authenticated_package.report_bytes,
+            report_manifest_bytes=authenticated_package.report_manifest_bytes,
+            document=final_document,
+            canonical_json=dumps_final_ir(final_document),
+            markdown=render_final_ir_markdown(final_document),
+            source_registry=authenticated_package.source_registry,
+            exact_reuse_receipts=authenticated_package.exact_reuse_receipts,
+        ).package_surface
         receipt = load_package_audit_receipt(
             _signed(
                 "audit",
@@ -385,7 +418,7 @@ def _finish_stage(
                     "accepted": True,
                     "analysis_completion_revision": analysis.completion_revision,
                     "analysis_completion_sha256": analysis.output_digest,
-                    "package_surface_sha256": _digest(f"surface:{package.package_ref_id}"),
+                    "package_surface_sha256": surface.content_id,
                     "cluster_id": graph.cluster_id,
                     "diagnostics": [],
                     "graph_sha256": graph.content_id,
@@ -398,16 +431,25 @@ def _finish_stage(
             ),
             authorities["audit"],
         )
-        result = finish_package_audit(
+        finish_package_audit(
             queue,
             lease,
             graph=graph,
             authority=authorities["audit"],
             receipt=receipt,
         )
-        state.audit_receipts[package.package_ref_id] = result.receipt_sha256
+        state.audit_receipts[package.package_ref_id] = receipt
+        state.package_surfaces[package.package_ref_id] = surface
         return
     if unit.kind == WorkStage.CLUSTER_RECONCILIATION.value:
+        authenticated_input = build_authenticated_reconciliation_input(
+            queue=queue,
+            graph=graph,
+            authority=authorities["audit"],
+            package_surfaces=tuple(state.package_surfaces.values()),
+            audit_receipts=tuple(state.audit_receipts.values()),
+        )
+        reconciliation_result = reconcile(authenticated_input.reconciliation_input)
         receipt = load_reconciliation_receipt(
             _signed(
                 "reconciliation",
@@ -419,9 +461,10 @@ def _finish_stage(
                     "disposition_ledger_sha256": _digest(f"ledger:{graph.cluster_id}"),
                     "graph_sha256": graph.content_id,
                     "package_audit_receipts": [
-                        list(item) for item in sorted(state.audit_receipts.items())
+                        [package_id, item.receipt_sha256]
+                        for package_id, item in sorted(state.audit_receipts.items())
                     ],
-                    "reconciliation_result_sha256": _digest(f"result:{graph.cluster_id}"),
+                    "reconciliation_result_sha256": reconciliation_result.content_id,
                     "revision": CLUSTER_RECONCILIATION_COMPLETION_REVISION,
                     "stage_input_sha256": lease.input_digest,
                 },
@@ -538,8 +581,8 @@ def _build_graphs(
         activate_synthetic_capability(queue, pin, active_capabilities)
     for cluster_index in range(config.clusters):
         cluster = f"synthetic-cluster:{cluster_index:04d}"
-        plans = tuple(
-            complete_synthetic_package_inputs(
+        completed_packages = tuple(
+            complete_authenticated_synthetic_package_inputs(
                 queue,
                 build_synthetic_package_inputs(
                     fixtures_root / cluster,
@@ -554,13 +597,18 @@ def _build_graphs(
         )
         graph = build_cluster_graph(
             queue,
-            plans,
+            tuple(item.frozen_plan for item in completed_packages),
             audit_authority=authorities["audit"],
             reconciliation_authority=authorities["reconciliation"],
             implementation_authority=authorities["implementation"],
             publication_authority=authorities["publication"],
         )
-        result[cluster] = _ClusterState(graph, {})
+        result[cluster] = _ClusterState(
+            graph,
+            {item.package_ref.content_id: item for item in completed_packages},
+            {},
+            {},
+        )
     return result
 
 

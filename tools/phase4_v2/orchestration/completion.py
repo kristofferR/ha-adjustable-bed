@@ -28,6 +28,7 @@ from tools.phase4_v2.queue import (
     Queue,
     QueueConflictError,
 )
+from tools.phase4_v2.reconciliation import PackageSurface, ReconciliationInput
 
 from .graph import (
     CLUSTER_IMPLEMENTATION_COMPLETION_REVISION,
@@ -208,6 +209,19 @@ class StageCompletion:
     queue_result: InputCheckedFinishResult
 
 
+@dataclass(frozen=True, slots=True, init=False)
+class AuthenticatedReconciliationInput:
+    """Exact cluster surface set retained with every signed peer audit."""
+
+    reconciliation_input: ReconciliationInput
+    graph: ClusterGraphPlan
+    authority: ActivatedStageAuthority
+    audit_receipts: tuple[TrustedPackageAuditReceipt, ...]
+
+    def __init__(self) -> None:
+        raise ValueError("authenticated reconciliation inputs require the trusted factory")
+
+
 def load_package_audit_receipt(
     canonical_bytes: bytes, authority: ActivatedStageAuthority
 ) -> TrustedPackageAuditReceipt:
@@ -381,6 +395,93 @@ def finish_package_audit(
         authority,
         receipt.canonical_bytes,
     )
+
+
+def build_authenticated_reconciliation_input(
+    *,
+    queue: Queue,
+    graph: ClusterGraphPlan,
+    authority: ActivatedStageAuthority,
+    package_surfaces: tuple[PackageSurface, ...],
+    audit_receipts: tuple[TrustedPackageAuditReceipt, ...],
+) -> AuthenticatedReconciliationInput:
+    """Admit the exact graph package surfaces authenticated by completed audits."""
+
+    graph = validate_cluster_graph(graph)
+    _require_graph_authority(graph.audit_capability_pins, authority)
+    expected_count = len(graph.packages)
+    if (
+        type(package_surfaces) is not tuple
+        or type(audit_receipts) is not tuple
+        or len(package_surfaces) != expected_count
+        or len(audit_receipts) != expected_count
+        or any(type(item) is not PackageSurface for item in package_surfaces)
+        or any(type(item) is not TrustedPackageAuditReceipt for item in audit_receipts)
+    ):
+        raise QueueConflictError("reconciliation requires bounded exact package and audit tuples")
+    graph_packages = {item.package_ref_id: item for item in graph.packages}
+    surfaces = {item.package_ref.content_id: item for item in package_surfaces}
+    if len(surfaces) != len(package_surfaces) or set(surfaces) != set(graph_packages):
+        raise QueueConflictError("reconciliation surfaces differ from the exact graph package set")
+    receipts: dict[str, TrustedPackageAuditReceipt] = {}
+    snapshot = queue.snapshot()
+    for retained in audit_receipts:
+        receipt = _reauthenticate(
+            retained, TrustedPackageAuditReceipt, authority, load_package_audit_receipt
+        )
+        if receipt.package_ref_id in receipts:
+            raise QueueConflictError("reconciliation contains duplicate package audit receipts")
+        package = graph_packages.get(receipt.package_ref_id)
+        surface = surfaces.get(receipt.package_ref_id)
+        audit = completion_pin(snapshot, package_audit_unit_id(graph, receipt.package_ref_id))
+        analysis = completion_pin(snapshot, package.unit_id) if package is not None else None
+        if (
+            package is None
+            or surface is None
+            or not receipt.accepted
+            or receipt.graph_sha256 != graph.content_id
+            or receipt.cluster_id != graph.cluster_id
+            or receipt.package_surface_sha256 != surface.content_id
+            or analysis is None
+            or receipt.analysis_completion_revision != analysis.revision
+            or receipt.analysis_completion_sha256 != analysis.digest
+            or audit is None
+            or audit.revision != PACKAGE_AUDIT_COMPLETION_REVISION
+            or audit.digest != receipt.receipt_sha256
+        ):
+            raise QueueConflictError("package surface lacks its exact completed authenticated audit")
+        receipts[receipt.package_ref_id] = receipt
+    if set(receipts) != set(graph_packages):
+        raise QueueConflictError("reconciliation audit receipts differ from the graph package set")
+    reconciliation_input = ReconciliationInput(
+        graph.cluster_id,
+        tuple(sorted(package_surfaces, key=lambda item: item.package_ref.content_id)),
+    )
+    result = object.__new__(AuthenticatedReconciliationInput)
+    object.__setattr__(result, "reconciliation_input", reconciliation_input)
+    object.__setattr__(result, "graph", graph)
+    object.__setattr__(result, "authority", authority)
+    object.__setattr__(result, "audit_receipts", tuple(receipts[key] for key in sorted(receipts)))
+    return result
+
+
+def validate_authenticated_reconciliation_input(
+    queue: Queue, value: AuthenticatedReconciliationInput
+) -> AuthenticatedReconciliationInput:
+    """Reauthenticate all retained peer audits and exact graph surfaces."""
+
+    if type(value) is not AuthenticatedReconciliationInput:
+        raise QueueConflictError("authenticated reconciliation input is required")
+    restored = build_authenticated_reconciliation_input(
+        queue=queue,
+        graph=value.graph,
+        authority=value.authority,
+        package_surfaces=value.reconciliation_input.packages,
+        audit_receipts=value.audit_receipts,
+    )
+    if restored != value:
+        raise QueueConflictError("authenticated reconciliation input changed after admission")
+    return restored
 
 
 def finish_cluster_reconciliation(

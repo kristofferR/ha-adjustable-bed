@@ -153,6 +153,7 @@ def _receipt_payload(**overrides: object) -> tuple[bytes, str]:
                 "sha256": _EVIDENCE_SHA256,
             }
         ],
+        "validated_root_evidence": [],
         "validation_profile": BOUND_VALIDATION_PROFILE,
         "validator_revision": SUPPORTED_VALIDATOR_REVISION,
     }
@@ -980,7 +981,7 @@ def test_retained_attestations_must_reproduce_the_trusted_receipt_identity() -> 
     assert caught.value.diagnostics[0].code == "receipt_identity_mismatch"
 
 
-def test_source_set_anchor_attestation_must_match_semantic_target() -> None:
+def test_source_anchor_remapping_still_requires_the_same_semantic_value() -> None:
     data, identifiers = _provenance_document()
     bindings = data["evidence_bindings"]
     assert isinstance(bindings, dict)
@@ -994,9 +995,7 @@ def test_source_set_anchor_attestation_must_match_semantic_target() -> None:
     with pytest.raises(IRValidationError) as caught:
         _load(data)
 
-    assert any(
-        item.code == "evidence_target_attestation_mismatch" for item in caught.value.diagnostics
-    )
+    assert any(item.code == "evidence_value_attestation_mismatch" for item in caught.value.diagnostics)
 
 
 def test_authorized_loader_requires_external_receipt_trust_and_exact_coverage() -> None:
@@ -1054,7 +1053,7 @@ def test_authorized_loader_rejects_invented_empty_definition_and_identifier() ->
     missing = {
         item.path for item in caught.value.diagnostics if item.code == "missing_evidence_binding"
     }
-    assert missing == {"/actions/invented", "/actions/invented/@key"}
+    assert missing == {"/actions/invented"}
 
 
 def test_source_package_rejects_artifact_substitution_at_construction() -> None:

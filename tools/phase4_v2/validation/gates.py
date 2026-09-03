@@ -18,7 +18,9 @@ from tools.phase4_v2.equivalence import (
     PREPARATION_PIPELINE_CAPABILITY,
     PREPARATION_REGISTRY_CAPABILITY,
     VALIDATED_PACKAGE_OUTPUT_REVISION,
+    AuthenticatedExactReuseProvenance,
     AuthenticatedPackageExecutionEnvelope,
+    AuthenticatedSourceReportRegistry,
     FrozenCapabilityPin,
     FrozenPackageExecutionPlan,
     FrozenPackageRef,
@@ -32,6 +34,10 @@ from tools.phase4_v2.ir import (
     FINAL_SCHEMA_REVISION,
     FinalProtocolIRDocument,
     final_schema_document,
+)
+from tools.phase4_v2.orchestration import (
+    AuthenticatedReconciliationInput,
+    validate_authenticated_reconciliation_input,
 )
 from tools.phase4_v2.preflight import (
     CANDIDATE_CONTRACT_REVISION,
@@ -488,7 +494,10 @@ def _validate_completion(
     package_ref: FrozenPackageRef,
     report_bytes: bytes,
     report_manifest_bytes: bytes,
+    source_registry: AuthenticatedSourceReportRegistry,
+    exact_reuse_receipts: tuple[AuthenticatedExactReuseProvenance, ...],
     reconciliation_input: ReconciliationInput,
+    authenticated_reconciliation_input: AuthenticatedReconciliationInput,
     reconciliation: ReconciliationResult,
     reconciliation_json: bytes,
     reconciliation_markdown: str,
@@ -499,6 +508,21 @@ def _validate_completion(
     pins: ValidationPins,
 ) -> CompletenessReceipt:
     findings = _Findings()
+    authenticated_cluster_input = cast(
+        AuthenticatedReconciliationInput | None,
+        findings.guard(
+            "RECONCILIATION_INPUT_AUTHENTICATION_INVALID",
+            "/reconciliation_input",
+            lambda: validate_authenticated_reconciliation_input(
+                queue, authenticated_reconciliation_input
+            ),
+        ),
+    )
+    if (
+        authenticated_cluster_input is None
+        or authenticated_cluster_input.reconciliation_input != reconciliation_input
+    ):
+        findings.add("RECONCILIATION_INPUT_AUTHENTICATION_INVALID", "/reconciliation_input")
     authenticated_output = findings.guard(
         "VALIDATED_OUTPUT_AUTHENTICATION_INVALID",
         "/validated_output",
@@ -598,6 +622,8 @@ def _validate_completion(
                     document=final_ir,
                     canonical_json=final_ir_json,
                     markdown=final_ir_markdown,
+                    source_registry=source_registry,
+                    exact_reuse_receipts=exact_reuse_receipts,
                 ),
             ),
         )
@@ -813,7 +839,10 @@ def validate_completion(
     package_ref: FrozenPackageRef,
     report_bytes: bytes,
     report_manifest_bytes: bytes,
+    source_registry: AuthenticatedSourceReportRegistry,
+    exact_reuse_receipts: tuple[AuthenticatedExactReuseProvenance, ...] = (),
     reconciliation_input: ReconciliationInput,
+    authenticated_reconciliation_input: AuthenticatedReconciliationInput,
     reconciliation: ReconciliationResult,
     reconciliation_json: bytes,
     reconciliation_markdown: str,
@@ -837,7 +866,10 @@ def validate_completion(
             package_ref=package_ref,
             report_bytes=report_bytes,
             report_manifest_bytes=report_manifest_bytes,
+            source_registry=source_registry,
+            exact_reuse_receipts=exact_reuse_receipts,
             reconciliation_input=reconciliation_input,
+            authenticated_reconciliation_input=authenticated_reconciliation_input,
             reconciliation=reconciliation,
             reconciliation_json=reconciliation_json,
             reconciliation_markdown=reconciliation_markdown,

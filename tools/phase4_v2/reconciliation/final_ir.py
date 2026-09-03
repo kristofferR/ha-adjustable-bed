@@ -9,11 +9,14 @@ from typing import cast
 
 from tools.phase4_v2.equivalence import (
     VALIDATED_PACKAGE_OUTPUT_REVISION,
+    AuthenticatedExactReuseProvenance,
     AuthenticatedPackageExecutionEnvelope,
+    AuthenticatedSourceReportRegistry,
     FrozenPackageExecutionPlan,
     FrozenPackageRef,
     Route,
     ValidatedPackageOutput,
+    bind_authenticated_plan_root_provenance,
     package_queue_unit_id,
     validate_authenticated_package_output,
     validate_frozen_package_ref,
@@ -102,6 +105,8 @@ def derive_authenticated_final_ir_package_surface(
     document: FinalProtocolIRDocument,
     canonical_json: bytes,
     markdown: str,
+    source_registry: AuthenticatedSourceReportRegistry,
+    exact_reuse_receipts: tuple[AuthenticatedExactReuseProvenance, ...] = (),
 ) -> FinalIRSurfaceDerivation:
     """Derive a surface only from an accepted, signed package publication."""
 
@@ -157,11 +162,6 @@ def derive_authenticated_final_ir_package_surface(
     results = report.get("authoritative_root_results") if type(report) is dict else None
     if type(results) is not list:
         raise ReconciliationError("package report has no authoritative root results")
-    result_locations = {
-        (item.get("target_root_id"), item.get("target_occurrence_identity_sha256")): index
-        for index, item in enumerate(results)
-        if type(item) is dict and item.get("route") == Route.FULL_ANALYSIS.value
-    }
     report_roots = {
         (
             item.get("target_root_id"),
@@ -181,35 +181,99 @@ def derive_authenticated_final_ir_package_surface(
     }
     if report_roots != attested_roots:
         raise ReconciliationError("report roots differ from retained validator attestations")
-    anchor_keys_by_id = {anchor.id: key for key, anchor in document.evidence_anchors}
-    retained_anchor_ids = {
-        anchor
-        for attestation in authenticated.validated_root_evidence
-        for member in attestation.evidence_members
-        for anchor in member.evidence_anchor_ids
-    }
-    if not retained_anchor_ids <= set(anchor_keys_by_id):
-        raise ReconciliationError("retained root evidence names anchors outside the final IR")
-    roots = tuple(
-        RootProvenance(
-            package_ref.content_id,
-            attestation.target_root_id,
-            attestation.target_occurrence_identity_sha256,
-            Route.FULL_ANALYSIS,
-            attestation.semantic_root_sha256,
-            None,
-            f"/authoritative_root_results/{result_locations[(attestation.target_root_id, attestation.target_occurrence_identity_sha256)]}",
-            tuple(
-                sorted(
-                    anchor_keys_by_id[anchor]
-                    for member in attestation.evidence_members
-                    for anchor in member.evidence_anchor_ids
-                )
-            ),
-        )
-        for attestation in authenticated.validated_root_evidence
+    bindings = bind_authenticated_plan_root_provenance(
+        execution_plan, source_registry, exact_reuse_receipts=exact_reuse_receipts
     )
-    if len(roots) != len(result_locations):
+    document_packages = dict(document.source_packages)
+    contributing_packages: dict[str, ir_core.SourcePackage] = {}
+    for binding in bindings:
+        existing = contributing_packages.get(binding.source_package_ref_id)
+        if existing is not None and existing != binding.source_package:
+            raise ReconciliationError("authenticated source package identities are ambiguous")
+        contributing_packages[binding.source_package_ref_id] = binding.source_package
+    if set(document_packages.values()) != set(contributing_packages.values()):
+        raise ReconciliationError("final IR source packages differ from authenticated provenance")
+    package_keys = {
+        package_ref_id: next(
+            key for key, package in document_packages.items() if package == authenticated_package
+        )
+        for package_ref_id, authenticated_package in contributing_packages.items()
+    }
+    files = dict(document.evidence_files)
+    anchors = dict(document.evidence_anchors)
+    anchor_keys_by_id = {anchor.id: key for key, anchor in document.evidence_anchors}
+    all_result_locations = {
+        (item.get("target_root_id"), item.get("target_occurrence_identity_sha256")): index
+        for index, item in enumerate(results)
+        if type(item) is dict and item.get("route") in {
+            Route.FULL_ANALYSIS.value,
+            Route.EXACT_REUSE.value,
+        }
+    }
+    roots_list: list[RootProvenance] = []
+    used_anchor_keys: set[str] = set()
+    for binding in bindings:
+        source_package_key = package_keys[binding.source_package_ref_id]
+        artifact_digest = binding.source_package.artifact.artifact_digest
+        member_keys: dict[str, str] = {}
+        for member in binding.attested_evidence_members:
+            matches = [
+                key
+                for key, evidence_file in files.items()
+                if evidence_file.package == source_package_key
+                and evidence_file.member == member.member
+                and evidence_file.sha256 == member.sha256
+                and member.owner == artifact_digest
+            ]
+            if len(matches) != 1:
+                raise ReconciliationError("authenticated evidence member differs from final IR")
+            member_keys[member.member] = matches[0]
+        root_anchor_keys: list[str] = []
+        for anchor in binding.attested_evidence_anchors:
+            try:
+                anchor_key = anchor_keys_by_id[anchor.id]
+                ir_anchor = anchors[anchor_key]
+                member_key = member_keys[anchor.member]
+            except KeyError as error:
+                raise ReconciliationError("authenticated root anchor is absent from final IR") from error
+            if (
+                anchor.owner != artifact_digest
+                or ir_anchor.file != member_key
+                or ir_anchor.start_byte != anchor.start_byte
+                or ir_anchor.end_byte != anchor.end_byte
+                or ir_anchor.ir_pointer != anchor.ir_pointer
+                or ir_anchor.representation != anchor.representation
+                or ir_anchor.value_sha256 != anchor.value_sha256
+            ):
+                raise ReconciliationError("authenticated root anchor metadata differs from final IR")
+            if anchor_key in used_anchor_keys:
+                raise ReconciliationError("final IR evidence anchors are assigned to multiple roots")
+            used_anchor_keys.add(anchor_key)
+            root_anchor_keys.append(anchor_key)
+        location_key = (binding.target_root_id, binding.target_occurrence_identity_sha256)
+        if location_key not in all_result_locations:
+            raise ReconciliationError("authenticated plan root is absent from the package report")
+        roots_list.append(
+            RootProvenance(
+                package_ref_id=package_ref.content_id,
+                target_root_id=binding.target_root_id,
+                occurrence_identity_sha256=binding.target_occurrence_identity_sha256,
+                route=binding.route,
+                semantic_root_sha256=binding.semantic_root_sha256,
+                source_root_id=(
+                    binding.source_root_id if binding.route is Route.EXACT_REUSE else None
+                ),
+                source_package_ref_id=binding.source_package_ref_id,
+                source_occurrence_identity_sha256=binding.source_occurrence_identity_sha256,
+                source_validation_receipt_sha256=binding.source_validation_receipt_sha256,
+                report_pointer=f"/authoritative_root_results/{all_result_locations[location_key]}",
+                evidence_anchor_ids=tuple(sorted(root_anchor_keys)),
+            )
+        )
+    if used_anchor_keys != set(anchors):
+        raise ReconciliationError("final IR evidence anchors are not an exact root partition")
+    roots = tuple(roots_list)
+    if len(roots) != len(all_result_locations):
         raise ReconciliationError("retained root attestations do not match the exact report roots")
     return _derive_final_ir_package_surface(
         package_ref=package_ref,
@@ -261,7 +325,14 @@ def _derive_final_ir_package_surface(
             raise ReconciliationError("final IR roots are not complete for the target package")
 
     semantic = ir_core._semantic_data(cast(ir_core.ProtocolIRDocument, reproduced))
-    leaf_pointers = tuple(sorted(ir_core._semantic_leaf_pointers(semantic)))
+    leaf_pointers = tuple(
+        sorted(
+            pointer
+            for pointer in ir_core._semantic_leaf_pointers(semantic)
+            if not pointer.startswith("/domain_closure/")
+            and not pointer.endswith("/@key")
+        )
+    )
     provenance_by_pointer = _leaf_provenance(reproduced, roots, leaf_pointers)
     claims_by_area: dict[ComparisonArea, list[NormalizedClaim]] = {
         area: [] for area in ComparisonArea
@@ -364,7 +435,6 @@ def _leaf_provenance(
         raise ReconciliationError("root provenance does not exactly partition final IR anchors")
 
     result: dict[str, tuple[LeafProvenance, ...]] = {}
-    used_anchors: set[str] = set()
     for pointer in pointers:
         binding = bindings.get(pointer)
         if binding is None:
@@ -377,7 +447,6 @@ def _leaf_provenance(
                 if len(owners) != 1:
                     raise ReconciliationError("final IR anchor has ambiguous root provenance")
                 grouped.setdefault(owners[0].content_id, set()).add(anchor)
-                used_anchors.add(anchor)
         result[pointer] = tuple(
             sorted(
                 (
@@ -389,8 +458,6 @@ def _leaf_provenance(
         )
         if not result[pointer]:
             raise ReconciliationError("final IR leaf evidence has no root provenance")
-    if used_anchors != declared_anchors:
-        raise ReconciliationError("final IR contains anchors outside semantic leaf provenance")
     return result
 
 

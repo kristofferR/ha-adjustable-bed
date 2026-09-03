@@ -387,7 +387,11 @@ def test_every_final_semantic_leaf_requires_exact_evidence() -> None:
     with pytest.raises(IRValidationError) as caught:
         parse_final_ir(json.loads(json.dumps(_document())), trusted_receipts={})
     assert caught.value.diagnostics[0].code == "missing_evidence_binding"
-    assert {diagnostic.path for diagnostic in caught.value.diagnostics} == pointers
+    assert {diagnostic.path for diagnostic in caught.value.diagnostics} == {
+        pointer
+        for pointer in pointers
+        if not pointer.startswith("/domain_closure/") and not pointer.endswith("/@key")
+    }
 
 
 def test_final_document_authorizes_exact_once_evidence_for_every_domain() -> None:

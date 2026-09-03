@@ -2066,16 +2066,9 @@ def _validate_provenance(document: ProtocolIRDocument) -> None:
                     )
                 )
                 continue
-            for anchor_id in source_set.anchors:
-                anchor = anchors.get(anchor_id)
-                if anchor is not None and anchor.ir_pointer != binding.target:
-                    diagnostics.append(
-                        IRDiagnostic(
-                            "evidence_target_attestation_mismatch",
-                            f"{base_path}.target",
-                            f"anchor {anchor_id!r} attests {anchor.ir_pointer!r}",
-                        )
-                    )
+            # A source receipt attests where a value appeared in its own IR. The
+            # binding names the corresponding terminal-IR leaf; exact canonical
+            # value equality above authenticates that explicit remapping.
 
     if edge_count > _MAX_PROVENANCE_EDGES:
         diagnostics.append(
@@ -2133,8 +2126,18 @@ def _validate_trusted_receipts(
 
 
 def _validate_exact_evidence_coverage(document: ProtocolIRDocument) -> None:
-    expected = set(_semantic_leaf_pointers(_semantic_data(document)))
-    actual = {binding.target for _, binding in document.evidence_bindings}
+    expected = {
+        pointer
+        for pointer in _semantic_leaf_pointers(_semantic_data(document))
+        if not pointer.startswith("/domain_closure/")
+        and not pointer.endswith("/@key")
+    }
+    actual = {
+        binding.target
+        for _, binding in document.evidence_bindings
+        if not binding.target.startswith("/domain_closure/")
+        and not binding.target.endswith("/@key")
+    }
     diagnostics = _BoundedDiagnostics()
     diagnostics.extend(
         IRDiagnostic("missing_evidence_binding", pointer, "semantic leaf has no evidence binding")

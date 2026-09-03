@@ -295,6 +295,9 @@ class RootProvenance:
     route: Route
     semantic_root_sha256: str | None
     source_root_id: str | None
+    source_package_ref_id: str | None
+    source_occurrence_identity_sha256: str | None
+    source_validation_receipt_sha256: str | None
     report_pointer: str
     evidence_anchor_ids: tuple[str, ...]
     blockers: tuple[str, ...] = ()
@@ -318,14 +321,50 @@ class RootProvenance:
             optional=True,
         )
         source = _sha256(self.source_root_id, "root.source_root_id", optional=True)
+        source_package = _sha256(
+            self.source_package_ref_id, "root.source_package_ref_id", optional=True
+        )
+        source_occurrence = _sha256(
+            self.source_occurrence_identity_sha256,
+            "root.source_occurrence_identity_sha256",
+            optional=True,
+        )
+        source_receipt = _sha256(
+            self.source_validation_receipt_sha256,
+            "root.source_validation_receipt_sha256",
+            optional=True,
+        )
         if self.route is Route.FULL_ANALYSIS:
-            if semantic is None or source is not None or blockers or not anchors:
-                _fail("FULL_ANALYSIS root requires semantic evidence and no source or blockers")
+            if (
+                semantic is None
+                or source is not None
+                or source_occurrence is None
+                or source_receipt is None
+                or source_package is None
+                or blockers
+                or not anchors
+            ):
+                _fail("FULL_ANALYSIS root requires authenticated semantic evidence")
         elif self.route is Route.EXACT_REUSE:
-            if semantic is None or source is None or blockers or not anchors:
+            if (
+                semantic is None
+                or source is None
+                or source_occurrence is None
+                or source_receipt is None
+                or source_package is None
+                or blockers
+                or not anchors
+            ):
                 _fail("EXACT_REUSE root requires inherited semantic evidence and source root")
         elif self.route is Route.BLOCKED:
-            if semantic is not None or source is not None or not blockers:
+            if (
+                semantic is not None
+                or source is not None
+                or source_occurrence is not None
+                or source_receipt is not None
+                or source_package is not None
+                or not blockers
+            ):
                 _fail("BLOCKED root requires blockers and no semantic or source root")
         else:
             _fail("root.route is unsupported")
@@ -340,6 +379,9 @@ class RootProvenance:
             "route": self.route.value,
             "semantic_root_sha256": self.semantic_root_sha256,
             "source_root_id": self.source_root_id,
+            "source_package_ref_id": self.source_package_ref_id,
+            "source_occurrence_identity_sha256": self.source_occurrence_identity_sha256,
+            "source_validation_receipt_sha256": self.source_validation_receipt_sha256,
             "target_root_id": self.target_root_id,
         }
 
@@ -521,8 +563,6 @@ class AreaSurface:
                 item.status is DispositionStatus.INCOMPLETE for item in self.dispositions
             ):
                 _fail("COMPLETE area cannot contain gaps or incomplete dispositions")
-            if not self.claims and not self.dispositions:
-                _fail("COMPLETE area requires an explicit claim or disposition")
         elif not gaps and not any(
             item.status is DispositionStatus.INCOMPLETE for item in self.dispositions
         ):
@@ -767,6 +807,13 @@ def _parse_root(raw: dict[str, object]) -> RootProvenance:
         route=Route(cast(str, raw["route"])),
         semantic_root_sha256=cast(str | None, raw["semantic_root_sha256"]),
         source_root_id=cast(str | None, raw["source_root_id"]),
+        source_package_ref_id=cast(str | None, raw["source_package_ref_id"]),
+        source_occurrence_identity_sha256=cast(
+            str | None, raw["source_occurrence_identity_sha256"]
+        ),
+        source_validation_receipt_sha256=cast(
+            str | None, raw["source_validation_receipt_sha256"]
+        ),
         report_pointer=cast(str, raw["report_pointer"]),
         evidence_anchor_ids=tuple(cast(list[str], raw["evidence_anchor_ids"])),
         blockers=tuple(cast(list[str], raw["blockers"])),

@@ -13,7 +13,7 @@ from typing import ClassVar, cast
 
 from . import model as core
 
-FINAL_SCHEMA_REVISION = "phase4-protocol-ir-v1.0.0-2026-09-03"
+FINAL_SCHEMA_REVISION = "phase4-protocol-ir-v1.1.0-2026-09-03"
 _MAX_DEFINITIONS = 250_000
 _MAX_REFERENCES = 4_096
 _MAX_DOMAIN_EXPANSIONS = 1_000_000

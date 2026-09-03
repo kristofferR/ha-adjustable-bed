@@ -66,6 +66,7 @@ from tools.phase4_v2.equivalence.plan import (
     freeze_package_execution_plan,
 )
 from tools.phase4_v2.equivalence.provenance import (
+    AuthenticatedSourceReportRegistry,
     build_authenticated_source_report_registry,
     source_report_root_completion,
 )
@@ -148,11 +149,13 @@ class SyntheticPackageInputs:
 
 
 @contextmanager
-def protected_fixture_trust(root: Path) -> Iterator[SyntheticTrust]:
+def protected_fixture_trust(
+    root: Path, *, emit_candidates: bool = True
+) -> Iterator[SyntheticTrust]:
     """Create deterministic fixture credentials admitted by protected-pin readers."""
 
     root.mkdir(parents=True)
-    tool = _build_static_tool()
+    tool = _build_static_tool(emit_candidates)
     profile = build_execution_profile()
     registry = _registry(tool, profile)
     # This classmethod is the explicit test-only bootstrap counterpart of the
@@ -500,7 +503,7 @@ def _source_report(
         package_scopes=(),
         target_root=target_root,
         occurrence=occurrence,
-        evidence_anchor_id="schema",
+        evidence_anchor_ids=("schema",),
     )
     return root, pins, lineage
 
@@ -514,7 +517,10 @@ def _package_report(
     evidence = b"CLOSED"
     evidence_digest = hashlib.sha256(evidence).hexdigest()
     evidence_member = f"evidence/sha256/{evidence_digest}"
-    final_ir, trusted = _authorized_final_ir()
+    source_registry = build_authenticated_source_report_registry(
+        ((partial.package_ref, partial.source_envelope),)
+    )
+    final_ir, trusted = _authorized_final_ir(source_registry)
     final_ir_bytes = _json_line(final_ir)
     final_document = loads_final_ir(final_ir_bytes, trusted_receipts=trusted)
     markdown = render_final_ir_markdown(final_document).encode()
@@ -616,7 +622,7 @@ def _package_report(
         package_scopes=LOCAL_ONLY_DOMAINS,
         target_root=partial.target_root,
         occurrence=partial.occurrence,
-        evidence_anchor_id="evidence-1",
+        evidence_anchor_ids=("evidence-1",),
     )
     return root, dependencies, lineage
 
@@ -653,7 +659,7 @@ def _lineage(
     package_scopes: tuple[str, ...],
     target_root: str | None,
     occurrence: str | None,
-    evidence_anchor_id: str,
+    evidence_anchor_ids: tuple[str, ...],
 ) -> EvidenceLineageTrust:
     artifact_digest = preflight.artifact_digest
     artifact_members = preflight.artifact_members
@@ -667,7 +673,7 @@ def _lineage(
                 "semantic_root_sha256": hashlib.sha256(evidence).hexdigest(),
                 "target_occurrence_identity_sha256": occurrence,
                 "target_root_id": target_root,
-                "evidence_anchor_ids": [evidence_anchor_id],
+                "evidence_anchor_ids": list(evidence_anchor_ids),
             }
         ]
     )
@@ -701,7 +707,9 @@ def _lineage(
     )
 
 
-def _authorized_final_ir() -> tuple[dict[str, object], dict[str, str]]:
+def _authorized_final_ir(
+    source_registry: AuthenticatedSourceReportRegistry | None = None,
+) -> tuple[dict[str, object], dict[str, str]]:
     data: dict[str, object] = {
         "schema_revision": FINAL_SCHEMA_REVISION,
         "source_packages": {},
@@ -716,6 +724,69 @@ def _authorized_final_ir() -> tuple[dict[str, object], dict[str, str]]:
             "unmodeled_paths": [],
         },
     }
+    if source_registry is not None:
+        if len(source_registry.entries) != 1:
+            raise RuntimeError("synthetic final IR requires one authenticated source report")
+        source = source_registry.entries[0]
+        if len(source.report.validated_root_evidence) != 1:
+            raise RuntimeError("synthetic final IR requires one authenticated source root")
+        root = source.report.validated_root_evidence[0]
+        root_anchor_ids = {
+            anchor_id
+            for member in root.evidence_members
+            for anchor_id in member.evidence_anchor_ids
+        }
+        package_id, package = build_source_package(
+            source.source_package.artifact, source.source_package.report
+        )
+        files: dict[str, object] = {}
+        file_ids: dict[str, str] = {}
+        root_members = {item.member for item in root.evidence_members}
+        for member in source.report.validated_evidence_members:
+            if member.member not in root_members:
+                continue
+            file_id, evidence_file = build_evidence_file(
+                package=package_id, member=member.member, sha256=member.sha256
+            )
+            file_ids[member.member] = file_id
+            files[file_id] = evidence_file.to_data()
+        final_anchors: dict[str, object] = {}
+        source_sets: dict[str, object] = {}
+        bindings: dict[str, object] = {}
+        for anchor in source.report.validated_evidence_anchors:
+            if anchor.id not in root_anchor_ids:
+                continue
+            anchor_id, evidence_anchor = build_evidence_anchor(
+                id=anchor.id,
+                file=file_ids[anchor.member],
+                start_byte=anchor.start_byte,
+                end_byte=anchor.end_byte,
+                ir_pointer=anchor.ir_pointer,
+                representation=anchor.representation,
+                value_sha256=anchor.value_sha256,
+            )
+            final_anchors[anchor_id] = evidence_anchor.to_data()
+        source_set_id, source_set = build_source_set(
+            package=package_id, anchors=tuple(sorted(final_anchors))
+        )
+        source_sets[source_set_id] = source_set.to_data()
+        for index in range(3):
+            binding_id, binding = build_evidence_binding(
+                target=f"/actions/candidate-{index}/summary",
+                source_sets=(source_set_id,),
+            )
+            bindings[binding_id] = binding.to_data()
+        data["source_packages"] = {package_id: package.to_data()}
+        data["evidence_files"] = files
+        data["evidence_anchors"] = final_anchors
+        data["source_sets"] = source_sets
+        data["evidence_bindings"] = bindings
+        data["actions"] = {
+            f"candidate-{index}": {"summary": SCHEMA_REVISION} for index in range(3)
+        }
+        return data, {
+            source.report.validation_receipt_sha256: source.report.bundle_sha256
+        }
     pointers = [
         "/domain_closure/status",
         *(f"/domain_closure/domains/{index}" for index in range(len(FINAL_DOMAIN_COLLECTIONS))),
@@ -959,10 +1030,16 @@ def _registry(tool: Path, profile: ExecutionProfile) -> ApprovedToolRegistry:
 
 
 @cache
-def _build_static_tool() -> Path:
+def _build_static_tool(emit_candidates: bool = True) -> Path:
     tool_root = Path(tempfile.mkdtemp(prefix="phase4-v2-synthetic-tool-"))
     source = tool_root / "fixture.c"
     binary = tool_root / "fixture-tool"
+    output_statements = (
+        'if(strcmp(route,"apktool")==0)write_file(out,"smali","App.smali","Landroid/bluetooth/BluetoothGatt;");\n'
+        ' if(strcmp(route,"jadx")==0)write_file(out,"sources","App.java","android.bluetooth.BluetoothGatt");'
+        if emit_candidates
+        else 'write_file(out,"smali","App.smali","synthetic fixture");'
+    )
     source.write_text(
         r"""#include <fcntl.h>
 #include <stdio.h>
@@ -978,8 +1055,9 @@ static void write_file(const char *root, const char *dir, const char *name, cons
 int main(int argc,char **argv) {
  if(argc==2&&strcmp(argv[1],"--version")==0){puts("synthetic-tool 1.0");return 0;}
  if(argc<5)return 90; const char *route=argv[argc-3],*out=argv[argc-1];
- if(strcmp(route,"apktool")==0)write_file(out,"smali","App.smali","Landroid/bluetooth/BluetoothGatt;");
- if(strcmp(route,"jadx")==0)write_file(out,"sources","App.java","android.bluetooth.BluetoothGatt");
+ """
+        + output_statements
+        + r"""
  return 0;
 }""",
         encoding="utf-8",
