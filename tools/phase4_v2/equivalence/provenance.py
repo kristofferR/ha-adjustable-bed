@@ -190,14 +190,17 @@ def bind_authenticated_plan_root_provenance(
             _fail("blocked roots cannot produce authenticated provenance")
         matches: list[tuple[AuthenticatedSourceReport, AttestedRootEvidence]] = []
         if route is Route.FULL_ANALYSIS:
-            dependencies = root["analysis_dependencies"]
-            for source in registry.entries:
-                for attestation in source.report.validated_root_evidence:
-                    expected = source_report_root_completion(source, attestation).to_data()
-                    if expected in dependencies:
-                        matches.append((source, attestation))
             target_root_id = root["target_root_id"]
             target_occurrence = root["target_occurrence_identity_sha256"]
+            for source in registry.entries:
+                if source.package_ref.content_id != plan.target_package_ref_id:
+                    continue
+                for attestation in source.report.validated_root_evidence:
+                    if (
+                        attestation.target_root_id == target_root_id
+                        and attestation.target_occurrence_identity_sha256 == target_occurrence
+                    ):
+                        matches.append((source, attestation))
         else:
             reuse = root["reuse"]
             target_root_id = reuse["target_root_id"]

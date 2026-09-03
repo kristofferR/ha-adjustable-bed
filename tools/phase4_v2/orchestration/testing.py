@@ -65,6 +65,9 @@ from tools.phase4_v2.equivalence.plan import (
     build_package_execution_plan,
     freeze_package_execution_plan,
 )
+from tools.phase4_v2.equivalence.provenance import (
+    build_authenticated_source_report_registry,
+)
 from tools.phase4_v2.ir import (
     FINAL_DOMAIN_COLLECTIONS,
     FINAL_SCHEMA_REVISION,
@@ -216,9 +219,11 @@ def protected_fixture_trust(root: Path) -> Iterator[SyntheticTrust]:
 
 
 def _public_key_hex(key: Ed25519PrivateKey) -> str:
-    return key.public_key().public_bytes(
-        serialization.Encoding.Raw, serialization.PublicFormat.Raw
-    ).hex()
+    return (
+        key.public_key()
+        .public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+        .hex()
+    )
 
 
 def _write_zip_member(archive: zipfile.ZipFile, name: str, payload: bytes) -> None:
@@ -269,11 +274,15 @@ def build_synthetic_package_inputs(
             output_directory=package_root / "preparation-result",
         )
         preflight_bytes = _canonical(preflight.manifest())
+        target_root = _digest(f"root:{cluster_id}:{package_index}")
+        occurrence = _digest(f"occurrence:{cluster_id}:{package_index}")
         source_report, source_pins, source_lineage = _source_report(
             package_root / "source-report",
             preflight=preflight,
             preflight_bytes=preflight_bytes,
             tool_sha256=trust.tool_sha256,
+            target_root=target_root,
+            occurrence=occurrence,
         )
         source_receipt = validate_report_bundle(
             source_report,
@@ -299,8 +308,6 @@ def build_synthetic_package_inputs(
                 _digest("synthetic-package-pipeline"),
             ),
         )
-        target_root = _digest(f"root:{cluster_id}:{package_index}")
-        occurrence = _digest(f"occurrence:{cluster_id}:{package_index}")
         inventory = TargetRootInventory(
             package_ref.content_id, (TargetRootOccurrence(target_root, occurrence),)
         )
@@ -347,6 +354,13 @@ def finish_synthetic_package_inputs(
 ) -> SyntheticPackageInputs:
     """Build a production package plan and matching immutable report bundle."""
 
+    source_registry = build_authenticated_source_report_registry(
+        ((partial.package_ref, partial.source_envelope),)
+    )
+    source = source_registry.entries[0]
+    source_roots = source.report.validated_root_evidence
+    if len(source_roots) != 1:
+        raise RuntimeError("synthetic source report must authenticate exactly one root")
     execution_plan = build_package_execution_plan(
         target_package_ref_id=partial.package_ref.content_id,
         target_package_ref=partial.package_ref,
@@ -409,6 +423,8 @@ def _source_report(
     preflight: PreflightResult,
     preflight_bytes: bytes,
     tool_sha256: str,
+    target_root: str,
+    occurrence: str,
 ) -> tuple[Path, DependencyPins, EvidenceLineageTrust]:
     if preflight.package_identity is None:
         raise RuntimeError("synthetic source report requires a package identity")
@@ -480,8 +496,9 @@ def _source_report(
         evidence,
         tool_sha256,
         package_scopes=(),
-        target_root=None,
-        occurrence=None,
+        target_root=target_root,
+        occurrence=occurrence,
+        evidence_anchor_id="schema",
     )
     return root, pins, lineage
 
@@ -597,6 +614,7 @@ def _package_report(
         package_scopes=LOCAL_ONLY_DOMAINS,
         target_root=partial.target_root,
         occurrence=partial.occurrence,
+        evidence_anchor_id="evidence-1",
     )
     return root, dependencies, lineage
 
@@ -633,6 +651,7 @@ def _lineage(
     package_scopes: tuple[str, ...],
     target_root: str | None,
     occurrence: str | None,
+    evidence_anchor_id: str,
 ) -> EvidenceLineageTrust:
     artifact_digest = preflight.artifact_digest
     artifact_members = preflight.artifact_members
@@ -646,7 +665,7 @@ def _lineage(
                 "semantic_root_sha256": hashlib.sha256(evidence).hexdigest(),
                 "target_occurrence_identity_sha256": occurrence,
                 "target_root_id": target_root,
-                "evidence_anchor_ids": ["evidence-1"],
+                "evidence_anchor_ids": [evidence_anchor_id],
             }
         ]
     )
