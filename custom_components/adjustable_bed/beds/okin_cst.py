@@ -739,10 +739,18 @@ class OkinCstController(BedController):
 
     async def massage_wave_next(self) -> None:
         """Select the next direct wave on profiles that also need timer step."""
+        if not self.supports_massage_wave_direction_control:
+            raise NotImplementedError(
+                f"Command is not supported by CST profile {self._profile.key}"
+            )
         await self._send_next_wave(1)
 
     async def massage_wave_previous(self) -> None:
         """Select the previous direct wave on profiles that also need timer step."""
+        if not self.supports_massage_wave_direction_control:
+            raise NotImplementedError(
+                f"Command is not supported by CST profile {self._profile.key}"
+            )
         await self._send_next_wave(-1)
 
     async def _send_next_wave(self, direction: int) -> None:

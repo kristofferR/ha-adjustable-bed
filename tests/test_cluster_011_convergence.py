@@ -483,6 +483,8 @@ async def test_profile_actions_route_artifact_fields_exactly(
     [
         (OKIN_CST_VARIANT_AVIADA, "massage_head_up"),
         (OKIN_CST_VARIANT_RESIDENT, "massage_toggle"),
+        (OKIN_CST_VARIANT_SANCTUARY, "massage_wave_next"),
+        (OKIN_CST_VARIANT_SANCTUARY, "massage_wave_previous"),
         (OKIN_CST_VARIANT_CAREFREE, "massage_head_up"),
         (OKIN_CST_VARIANT_CAREFREE, "massage_toggle"),
         (OKIN_CST_VARIANT_CAREFREE, "massage_mode_step"),
