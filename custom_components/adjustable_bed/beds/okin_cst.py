@@ -747,6 +747,10 @@ class OkinCstController(BedController):
 
     async def _send_next_wave(self, direction: int) -> None:
         """Cycle the three directly addressable wave frames."""
+        if not self.supports_massage:
+            raise NotImplementedError(
+                f"Command is not supported by CST profile {self._profile.key}"
+            )
         commands = (
             CstRemoteCommands.MASSAGE_WAVE_1,
             CstRemoteCommands.MASSAGE_WAVE_2,

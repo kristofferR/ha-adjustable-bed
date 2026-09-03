@@ -226,7 +226,7 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "label": "CST / Rize / Nectar Motion",
                 "description": (
                     "Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, "
-                    "II Clarity, MF900, Support, newer Nectar Motion, and some OKIN-* bases"
+                    "II Clarity, Rize MF900, Support, newer Nectar Motion, and some OKIN-* bases"
                 ),
                 "hint": "Try this for OKIN-* beds with 62741525 plus 90311625/00001530 GATT services",
             },

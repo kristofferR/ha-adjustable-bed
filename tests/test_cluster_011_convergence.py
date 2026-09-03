@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -44,6 +45,23 @@ _M_MEMORY = (
     "0c02000100000000000000000000",
     "0c02080100000000000000000000",
 )
+
+
+def _assert_command_and_stop_sequence(
+    write: AsyncMock, expected_hex: str
+) -> asyncio.Event:
+    """Assert one command followed by two uncancellable STOP writes."""
+    assert len(write.await_args_list) == 3
+    command, first_stop, second_stop = write.await_args_list
+    assert command.args[0].hex() == expected_hex
+
+    stop_event = first_stop.kwargs["cancel_event"]
+    assert isinstance(stop_event, asyncio.Event)
+    assert not stop_event.is_set()
+    for stop in (first_stop, second_stop):
+        assert stop.args == (build_cst_command(),)
+        assert stop.kwargs == {"cancel_event": stop_event}
+    return stop_event
 
 
 @dataclass(frozen=True)
@@ -457,7 +475,7 @@ async def test_profile_actions_route_artifact_fields_exactly(
     with patch.object(controller, "write_command", write):
         await method()
 
-    assert write.await_args_list[0].args[0].hex() == expected_hex
+    _assert_command_and_stop_sequence(write, expected_hex)
 
 
 @pytest.mark.parametrize(
@@ -467,6 +485,9 @@ async def test_profile_actions_route_artifact_fields_exactly(
         (OKIN_CST_VARIANT_RESIDENT, "massage_toggle"),
         (OKIN_CST_VARIANT_CAREFREE, "massage_head_up"),
         (OKIN_CST_VARIANT_CAREFREE, "massage_toggle"),
+        (OKIN_CST_VARIANT_CAREFREE, "massage_mode_step"),
+        (OKIN_CST_VARIANT_CAREFREE, "massage_wave_next"),
+        (OKIN_CST_VARIANT_CAREFREE, "massage_wave_previous"),
     ],
 )
 async def test_profile_actions_reject_unproven_commands_without_writing(
@@ -503,9 +524,10 @@ async def test_every_profile_memory_slot_uses_its_exact_vectors(
     with patch.object(controller, "write_command", write):
         for slot, (recall_hex, program_hex) in enumerate(expected.memory_vectors, start=1):
             await controller.preset_memory(slot)
-            assert write.await_args_list[0].args[0].hex() == recall_hex
+            recall_stop_event = _assert_command_and_stop_sequence(write, recall_hex)
             write.reset_mock()
 
             await controller.program_memory(slot)
-            assert write.await_args_list[0].args[0].hex() == program_hex
+            program_stop_event = _assert_command_and_stop_sequence(write, program_hex)
+            assert program_stop_event is not recall_stop_event
             write.reset_mock()
