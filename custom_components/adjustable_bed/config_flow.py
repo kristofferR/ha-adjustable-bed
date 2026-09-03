@@ -207,6 +207,16 @@ def _is_valid_motor_count(
     return motor_count in _motor_count_options(bed_type, protocol_variant)
 
 
+def _normalize_fixed_motor_count(
+    bed_type: str | None,
+    protocol_variant: str,
+    motor_count: int,
+) -> int:
+    """Replace a stale form value when the profile fixes the motor count."""
+    options = _motor_count_options(bed_type, protocol_variant)
+    return options[0] if len(options) == 1 else motor_count
+
+
 def _default_motor_count(
     bed_type: str | None,
     device_name: str | None = None,
@@ -834,7 +844,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
 
-            motor_count = user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+            motor_count = _normalize_fixed_motor_count(
+                selected_bed_type,
+                protocol_variant,
+                user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
+            )
+            user_input[CONF_MOTOR_COUNT] = motor_count
             if selected_bed_type and not _is_valid_motor_count(
                 selected_bed_type, protocol_variant, motor_count
             ):
@@ -1547,7 +1562,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, str(discovery_source))
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
 
-            motor_count = user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+            motor_count = _normalize_fixed_motor_count(
+                bed_type,
+                protocol_variant,
+                user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
+            )
+            user_input[CONF_MOTOR_COUNT] = motor_count
             if bed_type != BED_TYPE_AUTO_DETECT and not _is_valid_motor_count(
                 bed_type, protocol_variant, motor_count
             ):
@@ -1785,7 +1805,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
                 protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
 
-                motor_count = user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+                motor_count = _normalize_fixed_motor_count(
+                    bed_type,
+                    protocol_variant,
+                    user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
+                )
+                user_input[CONF_MOTOR_COUNT] = motor_count
                 if not _is_valid_motor_count(bed_type, protocol_variant, motor_count):
                     errors[CONF_MOTOR_COUNT] = "invalid_motor_count_for_bed_type"
 

@@ -1557,6 +1557,32 @@ class TestBluetoothDiscoveryFlow:
         assert result["step_id"] == "bluetooth_confirm"
         assert result["errors"] == {"base": "auto_detect_failed"}
 
+    async def test_bluetooth_confirm_normalizes_cst_profile_motor_count(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info: MagicMock,
+    ) -> None:
+        """A two-motor CST profile must replace the detected three-motor default."""
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        flow._discovery_info = mock_bluetooth_service_info
+
+        result = await flow.async_step_bluetooth_confirm(
+            user_input={
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_CAREFREE,
+                CONF_NAME: "Carefree Bed",
+                CONF_MOTOR_COUNT: 3,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        assert result["step_id"] == "bluetooth_pairing"
+        assert flow._manual_data is not None
+        assert flow._manual_data[CONF_MOTOR_COUNT] == 2
+
     async def test_manual_config_auto_detect_failure_reprompts(
         self,
         hass: HomeAssistant,
@@ -1584,6 +1610,32 @@ class TestBluetoothDiscoveryFlow:
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "manual_config"
         assert result["errors"] == {"base": "auto_detect_failed"}
+
+    async def test_manual_config_normalizes_cst_profile_motor_count(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info: MagicMock,
+    ) -> None:
+        """A three-motor CST profile must replace the generic two-motor default."""
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        flow._discovery_info = mock_bluetooth_service_info
+
+        result = await flow.async_step_manual_config(
+            user_input={
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_MF900,
+                CONF_NAME: "MF900 Bed",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        assert result["step_id"] == "manual_pairing"
+        assert flow._manual_data is not None
+        assert flow._manual_data[CONF_MOTOR_COUNT] == 3
 
     async def test_manual_config_auto_detect_resolves(
         self,
@@ -1856,6 +1908,46 @@ class TestManualFlow:
         assert result["title"] == "Manual Bed"
         assert result["data"][CONF_ADDRESS] == "11:22:33:44:55:66"
         assert result["data"][CONF_BED_TYPE] == BED_TYPE_LINAK
+        assert result["data"][CONF_MOTOR_COUNT] == 3
+
+    async def test_manual_entry_normalizes_cst_profile_motor_count(
+        self, hass: HomeAssistant, enable_custom_integrations
+    ) -> None:
+        """A CST profile must not require changing the generic motor-count field."""
+        del enable_custom_integrations
+        with patch(
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+            return_value=[],
+        ):
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_USER},
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_ADDRESS: "manual"},
+            )
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_ADDRESS: "11:22:33:44:55:66",
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_MF900,
+                CONF_NAME: "MF900 Bed",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        assert result["step_id"] == "manual_pairing"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={"action": "skip_pairing"},
+        )
+        assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_MOTOR_COUNT] == 3
 
     async def test_manual_entry_malouf_collects_layout(
