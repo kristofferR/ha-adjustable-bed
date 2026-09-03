@@ -93,7 +93,7 @@ def test_identity_tool_output_is_bounded_while_streaming(
 ) -> None:
     tool = tmp_path / "noisy-tool"
     tool.write_text(
-        f"#!{sys.executable}\n"
+        "#!/usr/bin/env python3\n"
         "import os\n"
         "chunk = b'x' * (64 * 1024)\n"
         "for _ in range(100):\n"

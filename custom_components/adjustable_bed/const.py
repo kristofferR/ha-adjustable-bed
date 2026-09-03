@@ -1024,6 +1024,41 @@ REMACRO_READ_CHAR_UUID: Final = "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
 
+# Okin CST product profiles. The shared service and ``OKIN-*`` local-name
+# prefix do not identify which fixed app capability set the receiver uses, so
+# auto preserves the established MF900 behavior and the other profiles remain
+# explicit user selections.
+OKIN_CST_VARIANT_SANCTUARY: Final = "cst_sanctuary"
+OKIN_CST_VARIANT_RESIDENT: Final = "cst_resident"
+OKIN_CST_VARIANT_AVIADA: Final = "cst_aviada"
+OKIN_CST_VARIANT_BOB: Final = "cst_bob"
+OKIN_CST_VARIANT_CONTEMPO: Final = "cst_contempo"
+OKIN_CST_VARIANT_CAREFREE: Final = "cst_carefree"
+OKIN_CST_VARIANT_CLARITY: Final = "cst_clarity"
+OKIN_CST_VARIANT_MF900: Final = "cst_mf900"
+OKIN_CST_VARIANT_SUPPORT: Final = "cst_support"
+OKIN_CST_VARIANTS: Final = {
+    VARIANT_AUTO: "Auto (MF900 profile)",
+    OKIN_CST_VARIANT_SANCTUARY: "Rize Sanctuary",
+    OKIN_CST_VARIANT_RESIDENT: "Rize Resident",
+    OKIN_CST_VARIANT_AVIADA: "Rize Aviada",
+    OKIN_CST_VARIANT_BOB: "Rize Bob",
+    OKIN_CST_VARIANT_CONTEMPO: "Rize Contempo",
+    OKIN_CST_VARIANT_CAREFREE: "Rize II Carefree",
+    OKIN_CST_VARIANT_CLARITY: "Rize II Clarity",
+    OKIN_CST_VARIANT_MF900: "Rize MF900 / Mattress Firm 900-O",
+    OKIN_CST_VARIANT_SUPPORT: "Support",
+}
+OKIN_CST_THREE_MOTOR_VARIANTS: Final = frozenset(
+    {
+        VARIANT_AUTO,
+        OKIN_CST_VARIANT_AVIADA,
+        OKIN_CST_VARIANT_CONTEMPO,
+        OKIN_CST_VARIANT_MF900,
+        OKIN_CST_VARIANT_SUPPORT,
+    }
+)
+
 # STAR25 controllers select their packet dialect from Device Information 0x2A29.
 # StarCode is selected when the manufacturer text contains "star"; missing,
 # unreadable, empty, or other values select the legacy CB25 packet family.
@@ -1867,6 +1902,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     *(_variant for _variant in OKIN_DOT_VARIANTS if _variant != VARIANT_AUTO),
     OKIN_64BIT_VARIANT_NORDIC,
     OKIN_64BIT_VARIANT_CUSTOM,
+    *(_variant for _variant in OKIN_CST_VARIANTS if _variant != VARIANT_AUTO),
     SLEEPYS_BOX25_VARIANT_STAR,
     SLEEPYS_BOX25_VARIANT_LEGACY,
     # SBI/Q-Plus variants

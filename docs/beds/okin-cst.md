@@ -1,12 +1,15 @@
 # Okin CST (CSTProtocol)
 
 **Status:** Static analysis complete; hardware validation pending
-**Ref:** Phase 4 clean-room analysis of `com.okin.bedding.rizemf900` 1.1.2
+**Ref:** Nine frozen Phase 4 cluster 011 clean-room reports and accepted
+cluster reconciliation
 
 ## Known Brands
 
-- Mattress Firm 900-O / MFirm 900-O
-- Rize MF900
+- Mattress Firm 900-O / MFirm 900-O and Rize MF900
+- Rize Sanctuary, Resident, Aviada, Bob, and Contempo
+- Rize II Carefree and Rize II Clarity
+- Support
 - Nectar Motion / some `OKIN-*` Nectar bases
 
 ## Detection
@@ -19,6 +22,10 @@
 | BLE Pairing | Required |
 
 Manual selection may be needed since the service UUID is shared with other Okin protocols.
+The shared UUID and the official apps' common `OKIN-*` name filter do not
+distinguish the nine product layouts. Select the matching **Protocol variant**
+in the integration options. `Auto` preserves the MF900 profile for existing
+entries.
 Do not choose CST solely because diagnostics show both the CSS and Nordic DFU
 services. That connected GATT signature is also exposed by RF ECO BT stair
 actuators. Device Information model `MEGAMAT MBZ` identifies RF ECO BT. Choose
@@ -110,6 +117,25 @@ Multiple motor bits can be OR'd together for simultaneous movement.
 | Massage Wave 2 | `0x00100000` |
 | Massage Wave 3 | `0x00200000` |
 
+### Product-specific massage fields
+
+| Product | Action | Primary | Secondary |
+|---|---|---:|---:|
+| Sanctuary, Resident | Head + | `0x00000800` | `0x00000000` |
+| Sanctuary, Resident | Head - | `0x00800000` | `0x00000000` |
+| Sanctuary, Resident | Foot + | `0x00000400` | `0x00000000` |
+| Sanctuary, Resident | Foot - | `0x01000000` | `0x00000000` |
+| Bob | Head - | `0x00800000` | `0x00800000` |
+| Bob | Foot - | `0x01000000` | `0x01000000` |
+| Support | Head - | `0x00800000` | `0x00800000` |
+| Support | Foot - | `0x00000000` | `0x01000000` |
+| Sanctuary, Bob | Full-body massage | `0x00000000` | `0x00000100` |
+| Resident | Timer step | `0x00000200` | `0x00000000` |
+
+Bob and Support use the same primary-only zone-increase fields as Sanctuary and
+Resident. Every product with massage uses the shared wave and massage-off
+fields above.
+
 ### Timing
 
 The Android app sends the active command immediately and every 100 ms while a
@@ -130,14 +156,35 @@ memories. Home Assistant exposes those as numbered memory slots:
 | Memory 2 | Incline |
 | Memory 3 | Lounge |
 
-## Features
+Other product variants expose only the accepted app's reachable slots. Resident
+adds a fourth `M` slot; Sanctuary and Bob expose Zero-G and Lounge; Carefree
+exposes only Zero-G. The other profiles use the three MF900 mappings above.
 
-- 3 motors: head, foot, lumbar
-- Flat, Zero-G, anti-snore, lounge, and incline presets
-- 3 programmable preset memory slots: Zero-G, Incline, and Lounge
-- Discrete light on/off plus toggle
-- Massage with global intensity control, stop, and three wave modes
-- Under-bed light toggle and discrete on/off; no RGB command was found in the app
+## Product profiles
+
+| Variant | Motors | Presets beyond Flat | Programmable memories | Massage | Light |
+|---|---|---|---:|---|---|
+| Sanctuary | Head, foot | Anti-snore, lounge, Zero-G | 2 | Head/foot intensity, 3 waves, full-body start, off | Toggle and discrete on/off |
+| Resident | Head, foot | Anti-snore, lounge, Zero-G, incline | 4, including `M` | Head/foot intensity, 3 waves, timer step, off | None in the shipped UI |
+| Aviada | Head, foot, lumbar | Anti-snore, lounge, Zero-G, incline | 3 | Global intensity, 3 waves, off | Toggle and discrete on/off |
+| Bob | Head, foot | Anti-snore, lounge, Zero-G | 2 | Head/foot intensity, 3 waves, full-body start, off | Toggle and discrete on/off |
+| Contempo | Head, foot, lumbar | Anti-snore, lounge, Zero-G, incline | 3 | Global intensity, 3 waves, off | Toggle and discrete on/off |
+| Carefree | Head, foot | Anti-snore, Zero-G | 1 | None | Toggle and discrete on/off |
+| Clarity II | Head, foot | Anti-snore, lounge, Zero-G, incline | 3 | Global intensity, 3 waves, off | Toggle and discrete on/off |
+| MF900 | Head, foot, lumbar | Anti-snore, lounge, Zero-G, incline | 3 | Global intensity, 3 waves, off | Toggle and discrete on/off |
+| Support | Head, foot, lumbar | Anti-snore, lounge, Zero-G, incline | 3 | Head/foot intensity, 3 waves, off | Toggle and discrete on/off |
+
+The zoned decrease frames are not interchangeable. Bob routes both zone-down
+commands through both CST fields, Support routes foot-down through only the
+secondary field, and Sanctuary/Resident use only the primary field. Selecting
+the product profile is therefore required for safe zoned massage controls.
+
+## Shared features
+
+- Two or three motors depending on product profile
+- Product-specific presets and one to four programmable memories
+- Product-specific global or head/foot massage controls and three wave modes
+- Under-bed light controls on every profile except Resident
 - No decoded motor-position feedback
 
 ## Relationship to Other Okin Protocols
@@ -147,15 +194,26 @@ and in which 32-bit field carries each remote action.
 
 ## App
 
-- **Android:** Mattress Firm 900 - O / MFirm 900-O (`com.okin.bedding.rizemf900`)
+- **Android:** the nine product packages listed in the source table below
 - **Android:** `com.okin.bedding.nectarmotion` (historically associated with this
   profile; not part of this clean-room run)
 
 ## Source
 
-The command table and timing above come from a COMPLETE Phase 4 clean-room
-analysis of the frozen MFirm 900-O 1.1.2 XAPK, archive SHA-256
-`a4f5ae67b2b9b870e6413d08597364041ac6947c7ba5445eb1979498895ff46f`.
-The analysis covered all 24 reachable control frames and independently checked
-the Java decompilation against smali bytecode. Physical behavior still needs
-validation on target hardware.
+The command table, product profiles, and timing come from nine COMPLETE, frozen
+Phase 4 cluster 011 reports. Their accepted artifact-set SHA-256 identities are:
+
+| Package | Version | Artifact-set SHA-256 |
+|---|---|---|
+| `com.okin.bedding.rizeSanctuary` | 1.0.1 (2) | `90b494007dd120b4da9498c8d259411bb2a8f2e643a22433792486d896f535d0` |
+| `com.okin.bedding.rizeResident` | 1.0.1 (2) | `26a33ef79aa50f0b899d934c01aad8641b97da58bd9b78134122ac56d33eeaa9` |
+| `com.okin.bedding.rizeaviada` | 1.0.1 (2) | `fc1cbef8715de115455a4931264941bf44ad10adc819811496a82221e85b6241` |
+| `com.okin.bedding.rizebob` | 1.0.1 (2) | `237ffd39af4e8179a1c83f07cfd53364d66d127f3ccdd7ea1394ea3c6bfca437` |
+| `com.okin.bedding.rizecontempo` | 1.0.2 (3) | `9c8ef59a2addb92c9b81c330d629d495c606e6b0d06f67e31c19e7cd8e112ea9` |
+| `com.okin.bedding.rizeiicarefree` | 1.0.1 (2) | `204617a5b4b60247478125dd6cfdfaadf769581fe77b874b3f9fc47ff271234f` |
+| `com.okin.bedding.rizeiiclarity` | 1.0.1 (2) | `998bcd5962de74c85d3ebf36778007f6cbe11b4c1992477a454fca1a3ab80c1a` |
+| `com.okin.bedding.rizemf900` | 1.1.2 (4) | `a4f5ae67b2b9b870e6413d08597364041ac6947c7ba5445eb1979498895ff46f` |
+| `com.okin.bedding.support` | 1.0.4 (5) | `c2e01cdc9727f3608bcbd58076fecfa9c84176b343750079284b246e6aba2e00` |
+
+The cluster reconciliation closed all 99 package/domain comparisons with no
+blocker. Physical behavior remains unverified on target hardware.
