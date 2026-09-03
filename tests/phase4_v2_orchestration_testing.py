@@ -20,6 +20,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 import tools.phase4_v2.equivalence.core as equivalence_core
 import tools.phase4_v2.equivalence.execution as execution_module
 import tools.phase4_v2.equivalence.inventory as inventory_module
+import tools.phase4_v2.equivalence.prerequisite as prerequisite_module
 import tools.phase4_v2.ir.model as ir_core
 import tools.phase4_v2.ir.v1 as final_ir_model
 import tools.phase4_v2.preflight.core as preflight_core
@@ -65,10 +66,17 @@ from tools.phase4_v2.equivalence.plan import (
     PackageExecutionPlan,
     PackageLocalPlan,
     PreparationPlanBinding,
+    RootExecutionPlan,
     TargetRootInventory,
     TargetRootOccurrence,
     build_package_execution_plan,
     freeze_package_execution_plan,
+)
+from tools.phase4_v2.equivalence.prerequisite import (
+    ActivatedExactReuseAuthority,
+    exact_reuse_authority_payload,
+    exact_reuse_authority_pin_payload,
+    load_activated_exact_reuse_authority,
 )
 from tools.phase4_v2.equivalence.provenance import (
     AuthenticatedSourceReportRegistry,
@@ -153,6 +161,12 @@ class SyntheticTrust:
     raw_source_key: Ed25519PrivateKey
     raw_source_authority: ActivatedRawSourceAuthority
     tool_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class SyntheticExactReuseTrust:
+    key: Ed25519PrivateKey
+    authority: ActivatedExactReuseAuthority
 
 
 @dataclass(frozen=True, slots=True)
@@ -262,6 +276,25 @@ def protected_fixture_trust(
         )
 
 
+@contextmanager
+def protected_exact_reuse_trust() -> Iterator[SyntheticExactReuseTrust]:
+    """Activate the deterministic test-only exact-reuse signing authority."""
+
+    key = Ed25519PrivateKey.from_private_bytes(b"q" * 32)
+    payload = exact_reuse_authority_payload(
+        authority_id="exact-reuse-test",
+        public_key=_public_key_hex(key),
+        generation=1,
+    )
+    activation = json.loads(exact_reuse_authority_pin_payload(payload))["activation_sha256"]
+    with patch.object(
+        prerequisite_module,
+        "_read_protected_exact_reuse_authority_pin",
+        return_value=activation,
+    ):
+        yield SyntheticExactReuseTrust(key, load_activated_exact_reuse_authority(payload))
+
+
 def _public_key_hex(key: Ed25519PrivateKey) -> str:
     return (
         key.public_key()
@@ -283,6 +316,7 @@ def build_synthetic_package_inputs(
     cluster_id: str,
     package_index: int,
     trust: SyntheticTrust,
+    root_count: int = 1,
 ) -> IncompleteSyntheticPackage:
     """Build one real signed preparation and two genuinely validated reports."""
 
@@ -325,17 +359,6 @@ def build_synthetic_package_inputs(
             configuration_sha256=_digest("synthetic-inventory-configuration"),
             capability_revision="synthetic-inventory-v1",
         )
-        application_root = ApplicationRoot(
-            package_ref_id="0" * 64,
-            root_kind="android",
-            extractor_capability_id=extractor.content_id,
-            occurrence_identity_sha256=occurrence,
-            content_root_sha256=_digest("synthetic-content-root"),
-            inventory_sha256=_digest("synthetic-root-inventory"),
-            dependency_root_sha256=_digest("synthetic-dependency-root"),
-            inventory_complete=True,
-            dependency_closure_complete=True,
-        )
         source_report, source_pins, source_lineage = _source_report(
             package_root / "source-report",
             preflight=preflight,
@@ -355,16 +378,35 @@ def build_synthetic_package_inputs(
             raise RuntimeError("synthetic preflight lost its package identity")
         source_envelope = _sign_validator_receipt(source_receipt.to_json().encode(), trust)
         package_ref = equivalence_core.frozen_package_ref_from_validator_envelope(source_envelope)
-        application_root = ApplicationRoot(
-            package_ref_id=package_ref.content_id,
-            root_kind=application_root.root_kind,
-            extractor_capability_id=application_root.extractor_capability_id,
-            occurrence_identity_sha256=application_root.occurrence_identity_sha256,
-            content_root_sha256=application_root.content_root_sha256,
-            inventory_sha256=application_root.inventory_sha256,
-            dependency_root_sha256=application_root.dependency_root_sha256,
-            inventory_complete=True,
-            dependency_closure_complete=True,
+        if type(root_count) is not int or not 1 <= root_count <= 2:
+            raise ValueError("synthetic root count must be one or two")
+        application_roots = tuple(
+            ApplicationRoot(
+                package_ref_id=package_ref.content_id,
+                root_kind="android",
+                extractor_capability_id=extractor.content_id,
+                occurrence_identity_sha256=(
+                    occurrence if index == 0 else _digest(f"occurrence:{cluster_id}:{package_index}:1")
+                ),
+                content_root_sha256=(
+                    _digest("synthetic-content-root")
+                    if index == 0
+                    else _digest(f"synthetic-content-root:{package_name}:{index}")
+                ),
+                inventory_sha256=(
+                    _digest("synthetic-root-inventory")
+                    if index == 0
+                    else _digest(f"synthetic-root-inventory:{package_name}:{index}")
+                ),
+                dependency_root_sha256=(
+                    _digest("synthetic-dependency-root")
+                    if index == 0
+                    else _digest(f"synthetic-dependency-root:{package_name}:{index}")
+                ),
+                inventory_complete=True,
+                dependency_closure_complete=True,
+            )
+            for index in range(root_count)
         )
         package_local = PackageLocalPlan(
             package_ref.content_id,
@@ -381,7 +423,10 @@ def build_synthetic_package_inputs(
         )
         inventory = TargetRootInventory(
             package_ref.content_id,
-            (TargetRootOccurrence(application_root.content_id, occurrence),),
+            tuple(
+                TargetRootOccurrence(root.content_id, root.occurrence_identity_sha256)
+                for root in application_roots
+            ),
         )
         # The accepted preparation binding is supplied later by the queue's
         # trusted finish adapter. The authenticated inventory adapter similarly
@@ -393,7 +438,7 @@ def build_synthetic_package_inputs(
             trust.preparation_authority,
             source_envelope,
             inventory,
-            application_root,
+            application_roots,
             extractor,
             occurrence,
             preflight_bytes,
@@ -411,7 +456,7 @@ class IncompleteSyntheticPackage:
     preparation_authority: ActivatedPreparationAuthority
     source_envelope: AuthenticatedValidatorEnvelope
     target_inventory: TargetRootInventory
-    application_root: ApplicationRoot
+    application_roots: tuple[ApplicationRoot, ...]
     extractor: inventory_module.ExtractorCapability
     occurrence: str
     preflight_bytes: bytes
@@ -423,6 +468,10 @@ class IncompleteSyntheticPackage:
     def target_root(self) -> str:
         return self.application_root.content_id
 
+    @property
+    def application_root(self) -> ApplicationRoot:
+        return self.application_roots[0]
+
 
 def finish_synthetic_package_inputs(
     partial: IncompleteSyntheticPackage,
@@ -430,21 +479,20 @@ def finish_synthetic_package_inputs(
     preparation: PreparationPlanBinding,
     target_inventory: AcceptedTargetRootInventory,
     source_registry: AuthenticatedSourceReportRegistry,
+    root_plans: tuple[RootExecutionPlan, ...] | None = None,
 ) -> SyntheticPackageInputs:
     """Build a production package plan and matching immutable report bundle."""
 
-    source = source_registry.entries[0]
-    source_roots = source.report.validated_root_evidence
-    if len(source_roots) != 1:
-        raise RuntimeError("synthetic source report must authenticate exactly one root")
-    execution_plan = build_package_execution_plan(
-        target_package_ref_id=partial.package_ref.content_id,
-        target_package_ref=partial.package_ref,
-        cluster_id=_cluster_from_package_root(partial.package_root),
-        package_local=partial.package_local,
-        preparation=preparation,
-        accepted_target_inventory=target_inventory,
-        root_plans=(
+    if root_plans is None:
+        source = next(
+            item
+            for item in source_registry.entries
+            if item.package_ref.content_id == partial.package_ref.content_id
+        )
+        source_roots = source.report.validated_root_evidence
+        if len(source_roots) != 1:
+            raise RuntimeError("synthetic FULL source report must authenticate exactly one root")
+        root_plans = (
             FullAnalysisRootPlan(
                 partial.target_root,
                 partial.occurrence,
@@ -458,7 +506,15 @@ def finish_synthetic_package_inputs(
                 ),
                 (source_report_root_completion(source, source_roots[0]),),
             ),
-        ),
+        )
+    execution_plan = build_package_execution_plan(
+        target_package_ref_id=partial.package_ref.content_id,
+        target_package_ref=partial.package_ref,
+        cluster_id=_cluster_from_package_root(partial.package_root),
+        package_local=partial.package_local,
+        preparation=preparation,
+        accepted_target_inventory=target_inventory,
+        root_plans=root_plans,
     )
     report, dependencies, lineage = _package_report(partial, execution_plan, source_registry)
     return SyntheticPackageInputs(
@@ -498,6 +554,7 @@ def build_raw_backed_source_registry(
     partial: IncompleteSyntheticPackage,
     target_inventory: AuthenticatedTargetInventoryEnvelope,
     trust: SyntheticTrust,
+    root_indexes: tuple[int, ...] = (0,),
 ) -> AuthenticatedSourceReportRegistry:
     """Bind one synthetic package's signed source report to exact raw scalars."""
 
@@ -551,40 +608,61 @@ def build_raw_backed_source_registry(
             )
         )
         offset += len(encoded) + 1
-    payload = raw_source_collection_payload(
-        package_ref=partial.package_ref,
-        root=partial.application_root,
-        preparation_receipt=partial.preparation_receipt,
-        preparation_authority=partial.preparation_authority,
-        target_inventory=target_inventory,
-        members=(member,),
-        anchors=tuple(anchors),
-    )
-    envelope = raw_source_envelope_payload(
-        payload,
-        trust.raw_source_key.sign(raw_source_signing_bytes(payload)).hex(),
-    )
-    raw_registry = build_authenticated_raw_source_registry(
-        (
+    entries = []
+    inputs_list: list[RawSourceReauthenticationInput] = []
+    for root_index in root_indexes:
+        root = partial.application_roots[root_index]
+        rooted_anchors = tuple(
+            RawSourceAnchor(
+                anchor.id.replace(
+                    partial.package_ref.content_id[:12],
+                    f"{partial.package_ref.content_id[:8]}{root_index:04d}",
+                ),
+                anchor.member_id,
+                anchor.start_byte,
+                anchor.end_byte,
+                anchor.raw_bytes,
+                anchor.representation,
+                anchor.decoded_value,
+                anchor.value_sha256,
+                anchor.source_ir_pointer,
+            )
+            for anchor in anchors
+        )
+        payload = raw_source_collection_payload(
+            package_ref=partial.package_ref,
+            root=root,
+            preparation_receipt=partial.preparation_receipt,
+            preparation_authority=partial.preparation_authority,
+            target_inventory=target_inventory,
+            members=(member,),
+            anchors=rooted_anchors,
+        )
+        envelope = raw_source_envelope_payload(
+            payload,
+            trust.raw_source_key.sign(raw_source_signing_bytes(payload)).hex(),
+        )
+        entries.append(
             (
                 envelope,
                 partial.package_ref,
-                partial.application_root,
+                root,
                 partial.preparation_receipt,
                 partial.preparation_authority,
                 target_inventory,
-            ),
+            )
         )
-    )
-    inputs: tuple[RawSourceReauthenticationInput, ...] = (
-        (
-            partial.package_ref,
-            partial.application_root,
-            partial.preparation_receipt,
-            partial.preparation_authority,
-            target_inventory,
-        ),
-    )
+        inputs_list.append(
+            (
+                partial.package_ref,
+                root,
+                partial.preparation_receipt,
+                partial.preparation_authority,
+                target_inventory,
+            )
+        )
+    raw_registry = build_authenticated_raw_source_registry(tuple(entries))
+    inputs: tuple[RawSourceReauthenticationInput, ...] = tuple(inputs_list)
     enriched_receipt = derive_raw_source_validator_receipt(
         partial.source_envelope,
         raw_source_registry=raw_registry,
@@ -595,6 +673,35 @@ def build_raw_backed_source_registry(
         ((partial.package_ref, enriched),),
         raw_source_registry=raw_registry,
         raw_source_inputs=inputs,
+    )
+
+
+def merge_raw_backed_source_registries(
+    *registries: AuthenticatedSourceReportRegistry,
+) -> AuthenticatedSourceReportRegistry:
+    """Merge independently authenticated synthetic source registries exactly."""
+
+    raw_entries = []
+    raw_inputs: list[RawSourceReauthenticationInput] = []
+    report_entries = []
+    for registry in registries:
+        if registry.raw_source_registry is None:
+            raise ValueError("synthetic source registry is not raw-backed")
+        inputs = {
+            (package.content_id, root.content_id): item
+            for item in registry.raw_source_inputs
+            for package, root, *_rest in (item,)
+        }
+        for collection in registry.raw_source_registry.entries:
+            trusted = inputs[(collection.package_ref_id, collection.target_root_id)]
+            raw_entries.append((collection.canonical_bytes, *trusted))
+            raw_inputs.append(trusted)
+        report_entries.extend((item.package_ref, item.envelope) for item in registry.entries)
+    raw_registry = build_authenticated_raw_source_registry(tuple(raw_entries))
+    return build_authenticated_raw_source_report_registry(
+        tuple(report_entries),
+        raw_source_registry=raw_registry,
+        raw_source_inputs=tuple(raw_inputs),
     )
 
 
@@ -691,9 +798,9 @@ def _package_report(
 ) -> tuple[Path, PackageDependencyPins, EvidenceLineageTrust]:
     root = partial.package_root / "package-report"
     root.mkdir()
-    evidence = b"CLOSED"
-    evidence_digest = hashlib.sha256(evidence).hexdigest()
-    evidence_member = f"evidence/sha256/{evidence_digest}"
+    local_evidence = b"CLOSED"
+    local_digest = hashlib.sha256(local_evidence).hexdigest()
+    local_member = f"evidence/sha256/{local_digest}"
     final_ir, trusted = _authorized_final_ir(source_registry)
     final_ir_bytes = _json_line(final_ir)
     final_document = loads_final_ir(final_ir_bytes, trusted_receipts=trusted)
@@ -707,7 +814,7 @@ def _package_report(
         "inputs/preflight.json": partial.preflight_bytes,
         "inputs/report_schema.json": PACKAGE_REPORT_SCHEMA_CANONICAL_BYTES,
         "inputs/schema.json": FINAL_IR_SCHEMA_CANONICAL_BYTES,
-        evidence_member: evidence,
+        local_member: local_evidence,
     }
     dependencies = PackageDependencyPins(
         hashlib.sha256(partial.preflight_bytes).hexdigest(),
@@ -717,24 +824,50 @@ def _package_report(
         frozen.canonical_sha256,
         PACKAGE_REPORT_SCHEMA_SHA256,
     )
-    semantic_root = evidence_digest
-    report = {
-        "authoritative_root_results": [
-            {
-                "result": {
-                    "analysis": {"semantic_root_sha256": semantic_root},
-                    "status": "COMPLETE",
-                },
-                "route": "FULL_ANALYSIS",
-                "target_occurrence_identity_sha256": partial.occurrence,
-                "target_root_id": partial.target_root,
+    full_roots = [
+        root_plan
+        for root_plan in execution_plan.root_plans
+        if isinstance(root_plan, FullAnalysisRootPlan)
+    ]
+    root_evidence = b"Raise"
+    root_digest = hashlib.sha256(root_evidence).hexdigest()
+    root_member = f"evidence/sha256/{root_digest}"
+    if full_roots:
+        inputs[root_member] = root_evidence
+    authoritative_root_results = []
+    for root_plan in execution_plan.root_plans:
+        if isinstance(root_plan, FullAnalysisRootPlan):
+            root_semantic = root_digest
+            result = {
+                "analysis": {"semantic_root_sha256": root_semantic},
+                "status": "COMPLETE",
             }
-        ],
+        else:
+            root_semantic = root_plan.reuse.inherited_semantic_root_sha256
+            result = {
+                "reuse": {
+                    "inherited_semantic_root_sha256": root_semantic,
+                    "source_root_id": root_plan.reuse.source_root_id,
+                },
+                "status": "COMPLETE",
+            }
+        authoritative_root_results.append(
+            {
+                "result": result,
+                "route": root_plan.route.value,
+                "target_occurrence_identity_sha256": (
+                    root_plan.target_occurrence_identity_sha256
+                ),
+                "target_root_id": root_plan.target_root_id,
+            }
+        )
+    report = {
+        "authoritative_root_results": authoritative_root_results,
         "final_ir_json_sha256": dependencies.ir_sha256,
         "final_ir_markdown_sha256": hashlib.sha256(markdown).hexdigest(),
         "final_ir_schema_revision": FINAL_SCHEMA_REVISION,
         "package_local_domains": {
-            domain: {"evidence": [evidence_member], "status": "COMPLETE"}
+            domain: {"evidence": [local_member], "status": "COMPLETE"}
             for domain in LOCAL_ONLY_DOMAINS
         },
         "report_revision": PACKAGE_REPORT_REVISION,
@@ -756,47 +889,64 @@ def _package_report(
         destination = root / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(payload)
+    evidence_members = [
+        {
+            "member": local_member,
+            "owner": partial.package_local.target_artifact_digest,
+            "package_local_domains": list(LOCAL_ONLY_DOMAINS),
+            "sha256": local_digest,
+        }
+    ]
+    anchors = [
+        {
+            "id": "local-evidence",
+            "owner": partial.package_local.target_artifact_digest,
+            "member": local_member,
+            "start_byte": 0,
+            "end_byte": len(local_evidence),
+            "ir_pointer": "/domain_closure/status",
+            "representation": "utf8",
+        }
+    ]
+    if full_roots:
+        evidence_members.append(
+            {
+                "member": root_member,
+                "owner": partial.package_local.target_artifact_digest,
+                "package_local_domains": [],
+                "sha256": root_digest,
+            }
+        )
+        anchors.append(
+            {
+                "id": "root-evidence",
+                "owner": partial.package_local.target_artifact_digest,
+                "member": root_member,
+                "start_byte": 0,
+                "end_byte": len(root_evidence),
+                "ir_pointer": "/actions/raise/summary",
+                "representation": "utf8",
+            }
+        )
     contract = {
         "contract_revision": PACKAGE_CONTRACT_REVISION,
         "dependencies": {
             name: {"member": f"inputs/{name}.json", "sha256": digest}
             for name, digest in dependencies.as_pairs()
         },
-        "evidence_members": [
-            {
-                "member": evidence_member,
-                "owner": partial.package_local.target_artifact_digest,
-                "package_local_domains": list(LOCAL_ONLY_DOMAINS),
-                "sha256": evidence_digest,
-            }
-        ],
-        "anchors": [
-            {
-                "id": "evidence-1",
-                "owner": partial.package_local.target_artifact_digest,
-                "member": evidence_member,
-                "start_byte": 0,
-                "end_byte": len(evidence),
-                "ir_pointer": "/domain_closure/status",
-                "representation": "utf8",
-            }
-        ],
+        "evidence_members": evidence_members,
+        "anchors": anchors,
     }
     _write(root, "validation-input.json", _json_line(contract), members)
     _write_manifest(root, members)
-    # The same artifact member has both routes. Lineage therefore has one
-    # independently authenticated evidence member per route; only the first is
-    # used by the report contract.
-    lineage = _lineage(
-        _PreflightView(partial),
+    lineage = _package_lineage(
+        partial,
         dependencies.preflight_sha256,
-        evidence_member,
-        evidence,
-        partial.tool_sha256,
-        package_scopes=LOCAL_ONLY_DOMAINS,
-        target_root=partial.target_root,
-        occurrence=partial.occurrence,
-        evidence_anchor_ids=("evidence-1",),
+        local_member,
+        local_evidence,
+        root_member if full_roots else None,
+        root_evidence if full_roots else None,
+        full_roots[0] if full_roots else None,
     )
     return root, dependencies, lineage
 
@@ -823,6 +973,82 @@ class _PreflightView:
         object.__setattr__(self, "decision", None)
 
 
+def _package_lineage(
+    partial: IncompleteSyntheticPackage,
+    preflight_sha256: str,
+    local_member: str,
+    local_evidence: bytes,
+    root_member: str | None,
+    root_evidence: bytes | None,
+    full_root: FullAnalysisRootPlan | None,
+) -> EvidenceLineageTrust:
+    source_members = [
+        {"name": name, "sha256": digest} for name, digest in partial.artifact_members
+    ]
+    local_producer = TrustedProducer("pipeline-v1", "apktool", partial.tool_sha256)
+    producers = [local_producer]
+    members = [
+        {
+            "authoritative_root_analyses": [],
+            "package_local_domains": list(LOCAL_ONLY_DOMAINS),
+            "producer": {
+                "invocation_sha256": _digest("synthetic-local-invocation"),
+                "outcome": "SUCCEEDED",
+                "output_size": len(local_evidence),
+                "pipeline_revision": local_producer.pipeline_revision,
+                "route": local_producer.route,
+                "tool_sha256": local_producer.tool_sha256,
+            },
+            "report_member": local_member,
+            "sha256": hashlib.sha256(local_evidence).hexdigest(),
+            "source_artifact_members": source_members,
+        }
+    ]
+    if root_member is not None and root_evidence is not None and full_root is not None:
+        root_producer = TrustedProducer("pipeline-v1", "apktool", partial.tool_sha256)
+        if root_producer not in producers:
+            producers.append(root_producer)
+        members.append(
+            {
+                "authoritative_root_analyses": [
+                    {
+                        "semantic_root_sha256": hashlib.sha256(root_evidence).hexdigest(),
+                        "target_occurrence_identity_sha256": (
+                            full_root.target_occurrence_identity_sha256
+                        ),
+                        "target_root_id": full_root.target_root_id,
+                        "evidence_anchor_ids": ["root-evidence"],
+                    }
+                ],
+                "package_local_domains": [],
+                "producer": {
+                    "invocation_sha256": _digest("synthetic-root-invocation"),
+                    "outcome": "SUCCEEDED",
+                    "output_size": len(root_evidence),
+                    "pipeline_revision": root_producer.pipeline_revision,
+                    "route": root_producer.route,
+                    "tool_sha256": root_producer.tool_sha256,
+                },
+                "report_member": root_member,
+                "sha256": hashlib.sha256(root_evidence).hexdigest(),
+                "source_artifact_members": source_members,
+            }
+        )
+    members.sort(key=lambda item: str(item["report_member"]).encode())
+    document = {
+        "artifact_digest": partial.package_local.target_artifact_digest,
+        "members": members,
+        "preflight_sha256": preflight_sha256,
+        "schema": LINEAGE_SCHEMA_REVISION,
+    }
+    payload = _canonical(document)
+    return EvidenceLineageTrust(
+        payload,
+        hashlib.sha256(payload).hexdigest(),
+        tuple(sorted(producers, key=lambda item: (item.pipeline_revision, item.route))),
+    )
+
+
 def _lineage(
     preflight: PreflightResult | _PreflightView,
     preflight_sha256: str,
@@ -834,11 +1060,12 @@ def _lineage(
     target_root: str | None,
     occurrence: str | None,
     evidence_anchor_ids: tuple[str, ...],
+    producer: TrustedProducer | None = None,
 ) -> EvidenceLineageTrust:
     artifact_digest = preflight.artifact_digest
     artifact_members = preflight.artifact_members
     source_members = [{"name": item.name, "sha256": item.sha256} for item in artifact_members]
-    producer = TrustedProducer("pipeline-v1", "apktool", tool_sha256)
+    producer = producer or TrustedProducer("pipeline-v1", "apktool", tool_sha256)
     root_analyses = (
         []
         if target_root is None or occurrence is None

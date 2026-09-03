@@ -18,11 +18,13 @@ from tests.phase4_v2_orchestration_acceptance import (
     AuthenticatedSyntheticPackage,
     _protected_stage_authorities,
     _signed,
+    complete_authenticated_exact_reuse_synthetic_package_inputs,
     complete_authenticated_synthetic_package_inputs,
 )
 from tests.phase4_v2_orchestration_testing import (
     _authorized_final_ir,
     build_synthetic_package_inputs,
+    protected_exact_reuse_trust,
     protected_fixture_trust,
 )
 from tests.test_phase4_v2_ir import _authorized_single_leaf_document, _trusted_receipts
@@ -308,28 +310,59 @@ def _case_context(
     root: Path,
     surface_mutator: Callable[[tuple[PackageSurface, ...]], tuple[PackageSurface, ...]]
     | None = None,
+    route_mode: str = "full",
 ) -> Iterator[_Case]:
     queue = Queue(root / "queue.sqlite3", root / "attempts")
     queue.initialize()
     with (
         protected_fixture_trust(root / "trust") as trust,
+        protected_exact_reuse_trust() as exact_trust,
         _protected_stage_authorities() as (keys, authorities),
     ):
         active: set[tuple[str, str, str]] = set()
-        authenticated = tuple(
-            complete_authenticated_synthetic_package_inputs(
+        if route_mode == "full":
+            authenticated = tuple(
+                complete_authenticated_synthetic_package_inputs(
+                    queue,
+                    build_synthetic_package_inputs(
+                        root / "cluster-gates",
+                        cluster_id="cluster-gates",
+                        package_index=index,
+                        trust=trust,
+                    ),
+                    trust,
+                    active,
+                )
+                for index in range(2)
+            )
+        else:
+            source = complete_authenticated_synthetic_package_inputs(
                 queue,
                 build_synthetic_package_inputs(
                     root / "cluster-gates",
                     cluster_id="cluster-gates",
-                    package_index=index,
+                    package_index=1,
                     trust=trust,
                 ),
                 trust,
                 active,
             )
-            for index in range(2)
-        )
+            target = complete_authenticated_exact_reuse_synthetic_package_inputs(
+                queue,
+                build_synthetic_package_inputs(
+                    root / "cluster-gates",
+                    cluster_id="cluster-gates",
+                    package_index=0,
+                    trust=trust,
+                    root_count=2 if route_mode == "mixed" else 1,
+                ),
+                source,
+                trust,
+                exact_trust,
+                active,
+                include_full_root=route_mode == "mixed",
+            )
+            authenticated = (target, source)
         packages = tuple(_terminal(queue, item) for item in authenticated)
         surfaces = tuple(item.surface for item in packages)
         if surface_mutator is not None:
@@ -388,6 +421,20 @@ def test_genuine_authenticated_full_chain_is_accepted(case: _Case) -> None:
         for package in case.packages
         for root in package.surface.roots
     )
+
+
+def test_genuine_authenticated_mixed_route_set_is_accepted(tmp_path: Path) -> None:
+    with _case_context(tmp_path, route_mode="mixed") as route_case:
+        receipt = validate_completion(**route_case.arguments())
+
+        assert receipt.accepted
+        assert receipt.action_count == 1
+        assert receipt.variant_count == 1
+        assert {root.route.value for root in route_case.target.surface.roots} == {
+            "FULL_ANALYSIS",
+            "EXACT_REUSE",
+        }
+        assert len(route_case.target.authenticated.exact_reuse_receipts) == 1
 
 
 @pytest.mark.parametrize(

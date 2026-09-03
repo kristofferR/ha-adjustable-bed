@@ -21,29 +21,54 @@ import tools.phase4_v2.orchestration.completion as completion_module
 import tools.phase4_v2.queue.fanout as fanout_module
 from tests.phase4_v2_orchestration_testing import (
     IncompleteSyntheticPackage,
+    SyntheticExactReuseTrust,
+    SyntheticPackageInputs,
     SyntheticTrust,
     _authorized_final_ir,
     build_raw_backed_source_registry,
     build_synthetic_package_inputs,
     finish_synthetic_package_inputs,
+    merge_raw_backed_source_registries,
     protected_fixture_trust,
 )
 from tools.phase4_v2.equivalence import (
+    EQUIVALENCE_SCHEMA_REVISION,
+    EXACT_REUSE_DIRECT_AUDIT_QUEUE_KIND,
+    EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND,
+    EXACT_REUSE_PIPELINE_CAPABILITY,
+    EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND,
     INVENTORY_QUEUE_UNIT_KIND,
     PACKAGE_QUEUE_UNIT_KIND,
     PACKAGE_VALIDATION_RECEIPT_QUEUE_UNIT_KIND,
     PREPARATION_QUEUE_UNIT_KIND,
+    AcceptedTargetRootInventory,
+    ApplicationRoot,
     AuthenticatedExactReuseProvenance,
     AuthenticatedPackageExecutionEnvelope,
     AuthenticatedSourceReportRegistry,
+    AuthenticatedTargetInventoryEnvelope,
     CapabilityPin,
+    ExtractorCapability,
     FrozenPackageExecutionPlan,
     FrozenPackageRef,
+    FullAnalysisRootPlan,
+    PreparationPlanBinding,
+    RootExecutionPlan,
+    RoutingPins,
     ValidatedPackageOutput,
+    build_authenticated_source_report_registry,
+    build_exact_reuse_root_plan,
     build_validated_package_output,
+    exact_reuse_authority_capability,
+    exact_reuse_prerequisite_envelope_payload,
+    exact_reuse_prerequisite_payload,
+    exact_reuse_prerequisite_signing_bytes,
+    exact_reuse_provenance_payload,
+    exact_reuse_provenance_signing_bytes,
     execution_authority_capability,
     execution_envelope_payload,
     execution_envelope_signing_bytes,
+    finish_exact_reuse_prerequisite,
     finish_package_execution_plan,
     finish_package_preparation,
     finish_package_validation_receipt,
@@ -51,13 +76,20 @@ from tools.phase4_v2.equivalence import (
     freeze_package_execution_plan,
     inventory_authority_capability,
     inventory_extractor_capability,
+    load_authenticated_exact_reuse_prerequisite,
+    load_authenticated_exact_reuse_provenance,
     load_authenticated_package_execution_envelope,
     load_authenticated_target_inventory_envelope,
+    load_authenticated_validator_envelope,
+    materialize_exact_reuse_prerequisites,
     materialize_package_execution_plan,
     materialize_package_preparation,
     materialize_package_validation_receipt,
     materialize_target_inventory,
     preparation_capability_pins,
+    route_application_root,
+    semantic_root_audit_from_authenticated_prerequisite,
+    source_report_root_completion,
     target_inventory_envelope_payload,
     target_inventory_signing_bytes,
 )
@@ -91,7 +123,7 @@ from tools.phase4_v2.orchestration.graph import (
     package_audit_unit_id,
 )
 from tools.phase4_v2.orchestration.model import WorkStage
-from tools.phase4_v2.preflight import PreparationReceipt
+from tools.phase4_v2.preflight import ActivatedPreparationAuthority, PreparationReceipt
 from tools.phase4_v2.queue import (
     GitHubTreeGateway,
     Lease,
@@ -193,6 +225,10 @@ class AuthenticatedSyntheticPackage:
     report_bytes: bytes
     report_manifest_bytes: bytes
     preparation_receipt: PreparationReceipt
+    preparation_authority: ActivatedPreparationAuthority
+    inventory_envelope: AuthenticatedTargetInventoryEnvelope
+    application_roots: tuple[ApplicationRoot, ...]
+    extractor: ExtractorCapability
     source_registry: AuthenticatedSourceReportRegistry
     exact_reuse_receipts: tuple[AuthenticatedExactReuseProvenance, ...]
 
@@ -657,6 +693,219 @@ def complete_authenticated_synthetic_package_inputs(
     trust: SyntheticTrust,
     active_capabilities: set[tuple[str, str, str]],
 ) -> AuthenticatedSyntheticPackage:
+    preparation, inventory, envelope = _authenticate_synthetic_inputs(
+        queue, partial, trust, active_capabilities
+    )
+    source_registry = build_raw_backed_source_registry(partial, envelope, trust)
+
+    inputs = finish_synthetic_package_inputs(
+        partial,
+        preparation=preparation,
+        target_inventory=inventory,
+        source_registry=source_registry,
+    )
+    return _finish_authenticated_package(
+        queue,
+        partial,
+        inputs,
+        trust,
+        active_capabilities,
+        inventory_envelope=envelope,
+        source_registry=source_registry,
+        exact_reuse_receipts=(),
+    )
+
+
+def complete_authenticated_exact_reuse_synthetic_package_inputs(
+    queue: Queue,
+    partial: IncompleteSyntheticPackage,
+    source_package: AuthenticatedSyntheticPackage,
+    trust: SyntheticTrust,
+    exact_trust: SyntheticExactReuseTrust,
+    active_capabilities: set[tuple[str, str, str]],
+    *,
+    include_full_root: bool,
+) -> AuthenticatedSyntheticPackage:
+    """Complete one genuine all-reuse or mixed FULL+EXACT_REUSE package."""
+
+    expected_roots = 2 if include_full_root else 1
+    if len(partial.application_roots) != expected_roots:
+        raise ValueError("synthetic target root count does not match the requested route mix")
+    preparation, inventory, inventory_envelope = _authenticate_synthetic_inputs(
+        queue, partial, trust, active_capabilities
+    )
+    source = source_package.source_registry.entries[0]
+    prerequisite_source = build_authenticated_source_report_registry(
+        (
+            (
+                source_package.package_ref,
+                load_authenticated_validator_envelope(
+                    source_package.package_ref.validator_envelope_bytes,
+                    authority=source_package.package_ref.validator_authority,
+                ),
+            ),
+        )
+    ).entries[0]
+    source_root = source_package.application_roots[0]
+    target_root = partial.application_roots[0]
+    source_raw = next(
+        item for item in source.raw_sources if item.target_root_id == source_root.content_id
+    )
+    decision, proof = route_application_root(
+        target_root,
+        (source_root,),
+        pins=RoutingPins(),
+        trusted_direct_audits={source_root.content_id: source_raw.receipt_sha256},
+        trusted_inventory_receipts={
+            source_root.content_id: source_package.inventory_envelope.receipt_sha256,
+            target_root.content_id: inventory_envelope.receipt_sha256,
+        },
+    )
+    if proof is None:
+        raise RuntimeError("synthetic exact route did not produce an identity proof")
+    pipeline = CapabilityPin(
+        EXACT_REUSE_PIPELINE_CAPABILITY,
+        EQUIVALENCE_SCHEMA_REVISION,
+        _digest("synthetic-equivalence-pipeline"),
+    )
+    prerequisite_kwargs = {
+        "source": prerequisite_source,
+        "source_raw": source_raw,
+        "source_inventory": source_package.inventory_envelope,
+        "source_preparation_receipt": source_package.preparation_receipt,
+        "source_preparation_authority": source_package.preparation_authority,
+        "source_root": source_root,
+        "target_inventory": inventory_envelope,
+        "target_root": target_root,
+        "extractor": partial.extractor,
+        "proof": proof,
+        "decision": decision,
+        "equivalence_pipeline": pipeline,
+        "authority": exact_trust.authority,
+    }
+    prerequisite_payload = exact_reuse_prerequisite_payload(**prerequisite_kwargs)
+    prerequisite_bytes = exact_reuse_prerequisite_envelope_payload(
+        prerequisite_payload,
+        signature=exact_trust.key.sign(
+            exact_reuse_prerequisite_signing_bytes(prerequisite_payload)
+        ).hex(),
+    )
+    prerequisite = load_authenticated_exact_reuse_prerequisite(
+        prerequisite_bytes, **prerequisite_kwargs
+    )
+    for pin in (exact_reuse_authority_capability(exact_trust.authority), pipeline):
+        activate_synthetic_capability(queue, pin, active_capabilities)
+    materialize_exact_reuse_prerequisites(queue, prerequisite)
+    for kind in (
+        EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND,
+        EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND,
+        EXACT_REUSE_DIRECT_AUDIT_QUEUE_KIND,
+    ):
+        lease = _claim_required(queue, kind)
+        finish_exact_reuse_prerequisite(queue, lease, receipt=prerequisite)
+    exact_root_plan = build_exact_reuse_root_plan(
+        semantic_root_audit_from_authenticated_prerequisite(prerequisite)
+    )
+
+    source_registry = source_package.source_registry
+    root_plans: list[RootExecutionPlan] = [exact_root_plan]
+    if include_full_root:
+        target_registry = build_raw_backed_source_registry(
+            partial, inventory_envelope, trust, root_indexes=(1,)
+        )
+        source_registry = merge_raw_backed_source_registries(
+            source_package.source_registry, target_registry
+        )
+        target_source = next(
+            item
+            for item in target_registry.entries
+            if item.package_ref.content_id == partial.package_ref.content_id
+        )
+        target_attestation = target_source.report.validated_root_evidence[0]
+        full_root = partial.application_roots[1]
+        if target_attestation.target_root_id != full_root.content_id:
+            raise RuntimeError("synthetic FULL attestation targets the wrong root")
+        root_plans.append(
+            FullAnalysisRootPlan(
+                full_root.content_id,
+                full_root.occurrence_identity_sha256,
+                "synthetic mixed-route analysis",
+                (CapabilityPin("apktool", "pipeline-v1", partial.tool_sha256),),
+                (source_report_root_completion(target_source, target_attestation),),
+            )
+        )
+    inputs = finish_synthetic_package_inputs(
+        partial,
+        preparation=preparation,
+        target_inventory=inventory,
+        source_registry=source_registry,
+        root_plans=tuple(root_plans),
+    )
+    frozen = freeze_package_execution_plan(inputs.execution_plan)
+    exact_root_data = next(
+        item for item in json.loads(frozen.canonical_bytes)["root_plans"]
+        if item["route"] == "EXACT_REUSE"
+    )
+    root_plan_sha256 = hashlib.sha256(
+        json.dumps(exact_root_data, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    source_attestation = source.report.validated_root_evidence[0]
+    unsigned_provenance = exact_reuse_provenance_payload(
+        authority=trust.validator_authority,
+        source=source,
+        source_root=source_attestation,
+        target_root_id=target_root.content_id,
+        target_occurrence_identity_sha256=target_root.occurrence_identity_sha256,
+        byte_identity_proof_id=proof.content_id,
+        byte_identity_proof=proof,
+        ledger_decision=decision,
+        ledger_decision_completion_sha256=decision.content_id,
+        root_plan_sha256=root_plan_sha256,
+        signature="0" * 128,
+    )
+    provenance_payload = json.loads(unsigned_provenance)["payload"]
+    provenance_bytes = exact_reuse_provenance_payload(
+        authority=trust.validator_authority,
+        source=source,
+        source_root=source_attestation,
+        target_root_id=target_root.content_id,
+        target_occurrence_identity_sha256=target_root.occurrence_identity_sha256,
+        byte_identity_proof_id=proof.content_id,
+        byte_identity_proof=proof,
+        ledger_decision=decision,
+        ledger_decision_completion_sha256=decision.content_id,
+        root_plan_sha256=root_plan_sha256,
+        signature=trust.validator_key.sign(
+            exact_reuse_provenance_signing_bytes(provenance_payload)
+        ).hex(),
+    )
+    provenance = load_authenticated_exact_reuse_provenance(
+        provenance_bytes,
+        authority=trust.validator_authority,
+        registry=source_registry,
+    )
+    return _finish_authenticated_package(
+        queue,
+        partial,
+        inputs,
+        trust,
+        active_capabilities,
+        inventory_envelope=inventory_envelope,
+        source_registry=source_registry,
+        exact_reuse_receipts=(provenance,),
+    )
+
+
+def _authenticate_synthetic_inputs(
+    queue: Queue,
+    partial: IncompleteSyntheticPackage,
+    trust: SyntheticTrust,
+    active_capabilities: set[tuple[str, str, str]],
+) -> tuple[
+    PreparationPlanBinding,
+    AcceptedTargetRootInventory,
+    AuthenticatedTargetInventoryEnvelope,
+]:
     for pin in preparation_capability_pins(
         partial.preparation_authority,
     ):
@@ -712,14 +961,20 @@ def complete_authenticated_synthetic_package_inputs(
     inventory, _inventory_result = finish_target_inventory(
         queue, inventory_lease, envelope=envelope
     )
-    source_registry = build_raw_backed_source_registry(partial, envelope, trust)
+    return preparation, inventory, envelope
 
-    inputs = finish_synthetic_package_inputs(
-        partial,
-        preparation=preparation,
-        target_inventory=inventory,
-        source_registry=source_registry,
-    )
+
+def _finish_authenticated_package(
+    queue: Queue,
+    partial: IncompleteSyntheticPackage,
+    inputs: SyntheticPackageInputs,
+    trust: SyntheticTrust,
+    active_capabilities: set[tuple[str, str, str]],
+    *,
+    inventory_envelope: AuthenticatedTargetInventoryEnvelope,
+    source_registry: AuthenticatedSourceReportRegistry,
+    exact_reuse_receipts: tuple[AuthenticatedExactReuseProvenance, ...],
+) -> AuthenticatedSyntheticPackage:
     frozen = freeze_package_execution_plan(inputs.execution_plan)
     for pin in frozen.required_capabilities:
         activate_synthetic_capability(queue, pin, active_capabilities)
@@ -730,6 +985,8 @@ def complete_authenticated_synthetic_package_inputs(
         expected_dependencies=inputs.dependencies,
         expected_evidence_lineage=inputs.lineage,
     )
+    if not receipt.accepted:
+        raise RuntimeError(f"synthetic package report failed: {receipt.diagnostics}")
     assert receipt.validation_receipt_sha256 is not None
     output = build_validated_package_output(
         execution_plan=inputs.execution_plan,
@@ -789,8 +1046,12 @@ def complete_authenticated_synthetic_package_inputs(
         (inputs.report_root / "analysis.json").read_bytes(),
         (inputs.report_root / "REPORT.SHA256").read_bytes(),
         inputs.preparation_receipt,
+        inputs.preparation_authority,
+        inventory_envelope,
+        partial.application_roots,
+        partial.extractor,
         source_registry,
-        (),
+        exact_reuse_receipts,
     )
 
 
