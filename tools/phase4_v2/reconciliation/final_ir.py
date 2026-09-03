@@ -98,6 +98,7 @@ def derive_authenticated_final_ir_package_surface(
     validated_output: ValidatedPackageOutput,
     execution_envelope: AuthenticatedPackageExecutionEnvelope,
     report_bytes: bytes,
+    report_manifest_bytes: bytes,
     document: FinalProtocolIRDocument,
     canonical_json: bytes,
     markdown: str,
@@ -136,6 +137,16 @@ def derive_authenticated_final_ir_package_surface(
     ).encode()
     if report_bytes not in {canonical_report, canonical_report + b"\n"}:
         raise ReconciliationError("package report is not canonical JSON")
+    try:
+        receipt = json.loads(execution_envelope.receipt_bytes)
+        manifest_sha256 = receipt["report_manifest_sha256"]
+    except (KeyError, TypeError, json.JSONDecodeError) as error:
+        raise ReconciliationError("signed receipt has no report manifest authority") from error
+    if hashlib.sha256(report_manifest_bytes).hexdigest() != manifest_sha256:
+        raise ReconciliationError("report manifest differs from the signed receipt")
+    analysis_entry = f"{hashlib.sha256(report_bytes).hexdigest()}  analysis.json"
+    if analysis_entry not in report_manifest_bytes.decode("utf-8", errors="strict").splitlines():
+        raise ReconciliationError("analysis report is absent from the signed report manifest")
     results = report.get("authoritative_root_results") if type(report) is dict else None
     if type(results) is not list:
         raise ReconciliationError("package report has no authoritative root results")

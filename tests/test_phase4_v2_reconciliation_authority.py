@@ -57,6 +57,7 @@ def test_surface_rejects_report_plan_output_and_envelope_transplants(tmp_path: P
             "validated_output": first.output,
             "execution_envelope": first.execution_envelope,
             "report_bytes": first.report_bytes,
+            "report_manifest_bytes": first.report_manifest_bytes,
             "document": document,
             "canonical_json": canonical,
             "markdown": markdown,

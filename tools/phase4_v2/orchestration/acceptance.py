@@ -176,6 +176,7 @@ class AuthenticatedSyntheticPackage:
     execution_envelope: AuthenticatedPackageExecutionEnvelope
     package_ref: FrozenPackageRef
     report_bytes: bytes
+    report_manifest_bytes: bytes
 
 
 class _Gateway:
@@ -703,6 +704,7 @@ def complete_authenticated_synthetic_package_inputs(
         execution_envelope,
         inputs.package_ref,
         (inputs.report_root / "analysis.json").read_bytes(),
+        (inputs.report_root / "REPORT.SHA256").read_bytes(),
     )
 
 
