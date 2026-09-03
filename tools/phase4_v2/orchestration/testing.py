@@ -1,0 +1,977 @@
+"""Protocol-neutral fixture producers for the production-path acceptance harness."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import subprocess
+import tempfile
+import zipfile
+from collections.abc import Iterator
+from contextlib import contextmanager
+from dataclasses import dataclass
+from functools import cache
+from pathlib import Path
+from unittest.mock import patch
+
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+import tools.phase4_v2.equivalence.core as equivalence_core
+import tools.phase4_v2.equivalence.inventory as inventory_module
+import tools.phase4_v2.preflight.core as preflight_core
+import tools.phase4_v2.preflight.registry as registry_module
+from tools.phase4_v2.equivalence.core import (
+    ActivatedValidatorAuthority,
+    AuthenticatedValidatorEnvelope,
+    authenticated_validator_envelope_payload,
+    load_activated_validator_authority,
+    load_authenticated_validator_envelope,
+    validator_authority_payload,
+    validator_authority_pin_payload,
+    validator_envelope_signing_bytes,
+)
+from tools.phase4_v2.equivalence.inventory import (
+    ActivatedInventoryAuthority,
+    inventory_authority_payload,
+    inventory_authority_pin_payload,
+    load_activated_inventory_authority,
+)
+from tools.phase4_v2.equivalence.plan import (
+    FINAL_IR_SCHEMA_CANONICAL_BYTES,
+    FINAL_IR_SCHEMA_SHA256,
+    LOCAL_ONLY_DOMAINS,
+    PACKAGE_EXECUTION_PLAN_REVISION,
+    PACKAGE_PIPELINE_CAPABILITY,
+    PACKAGE_REPORT_REVISION,
+    PACKAGE_REPORT_SCHEMA_CANONICAL_BYTES,
+    PACKAGE_REPORT_SCHEMA_SHA256,
+    AcceptedTargetRootInventory,
+    CapabilityPin,
+    FrozenPackageRef,
+    FullAnalysisRootPlan,
+    PackageExecutionPlan,
+    PackageLocalPlan,
+    PreparationPlanBinding,
+    TargetRootInventory,
+    TargetRootOccurrence,
+    build_package_execution_plan,
+    freeze_package_execution_plan,
+)
+from tools.phase4_v2.ir import (
+    FINAL_DOMAIN_COLLECTIONS,
+    FINAL_SCHEMA_REVISION,
+    SCHEMA_REVISION,
+    SUPPORTED_CONTRACT_REVISION,
+    SUPPORTED_VALIDATOR_REVISION,
+    bind_validator_receipt,
+    build_artifact_identity,
+    build_evidence_anchor,
+    build_evidence_binding,
+    build_evidence_file,
+    build_source_package,
+    build_source_set,
+    loads_final_ir,
+    render_final_ir_markdown,
+    schema_document,
+)
+from tools.phase4_v2.preflight import (
+    REQUIRED_PREPARATION_ROUTES,
+    ActivatedPreparationAuthority,
+    ApprovedRoute,
+    ApprovedToolRegistry,
+    ExecutionProfile,
+    OutputSufficiencyContract,
+    PreflightResult,
+    PreparationExecutionSigner,
+    PreparationReceipt,
+    ToolQualification,
+    ToolSpec,
+    build_execution_profile,
+    execute_registered_preparation,
+    load_activated_preparation_authority,
+    preflight_delivery,
+    preparation_authority_payload,
+    qualify_tool,
+)
+from tools.phase4_v2.validator import (
+    BOUND_VALIDATION_PROFILE,
+    CONTRACT_REVISION,
+    LINEAGE_SCHEMA_REVISION,
+    PACKAGE_CONTRACT_REVISION,
+    DependencyPins,
+    EvidenceLineageTrust,
+    PackageDependencyPins,
+    TrustedProducer,
+    validate_report_bundle,
+)
+
+
+@dataclass(frozen=True, slots=True)
+class SyntheticTrust:
+    preparation_signer: PreparationExecutionSigner
+    preparation_registry: ApprovedToolRegistry
+    preparation_profile: ExecutionProfile
+    preparation_authority: ActivatedPreparationAuthority
+    validator_key: Ed25519PrivateKey
+    validator_authority: ActivatedValidatorAuthority
+    inventory_key: Ed25519PrivateKey
+    inventory_authority: ActivatedInventoryAuthority
+    tool_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class SyntheticPackageInputs:
+    package_ref: FrozenPackageRef
+    package_local: PackageLocalPlan
+    preparation_receipt: PreparationReceipt
+    preparation_authority: ActivatedPreparationAuthority
+    source_envelope: AuthenticatedValidatorEnvelope
+    target_inventory: AcceptedTargetRootInventory
+    execution_plan: PackageExecutionPlan
+    report_root: Path
+    dependencies: PackageDependencyPins
+    lineage: EvidenceLineageTrust
+
+
+@contextmanager
+def protected_fixture_trust(root: Path) -> Iterator[SyntheticTrust]:
+    """Create deterministic fixture credentials admitted by protected-pin readers."""
+
+    root.mkdir(parents=True)
+    tool = _build_static_tool()
+    profile = build_execution_profile()
+    registry = _registry(tool, profile)
+    # This classmethod is the explicit test-only bootstrap counterpart of the
+    # production root-owned credential loader. The resulting signer still signs
+    # every receipt, and consumers authenticate it against the protected pin.
+    preparation_signer = PreparationExecutionSigner._from_private_bytes(b"p" * 32)
+    authority_payload = preparation_authority_payload(
+        registry, profile, preparation_signer.public_key
+    )
+    preparation_pin = hashlib.sha256(authority_payload).hexdigest()
+    preparation_patch = patch.object(
+        registry_module, "_read_protected_activation_digest", return_value=preparation_pin
+    )
+    validator_key = Ed25519PrivateKey.from_private_bytes(b"v" * 32)
+    validator_payload = validator_authority_payload(
+        authority_id="synthetic-validator",
+        public_key=_public_key_hex(validator_key),
+        validator_revision=SUPPORTED_VALIDATOR_REVISION,
+        contract_revision=SUPPORTED_CONTRACT_REVISION,
+    )
+    validator_pin = json.loads(validator_authority_pin_payload(validator_payload))[
+        "activation_sha256"
+    ]
+    validator_patch = patch.object(
+        equivalence_core, "_read_protected_validator_pin", return_value=validator_pin
+    )
+    inventory_key = Ed25519PrivateKey.from_private_bytes(b"i" * 32)
+    inventory_payload = inventory_authority_payload(
+        authority_id="synthetic-inventory",
+        public_key=_public_key_hex(inventory_key),
+        generation=1,
+    )
+    inventory_pin = json.loads(inventory_authority_pin_payload(inventory_payload))[
+        "activation_sha256"
+    ]
+    inventory_patch = patch.object(
+        inventory_module, "_read_protected_inventory_pin", return_value=inventory_pin
+    )
+    with preparation_patch, validator_patch, inventory_patch:
+        yield SyntheticTrust(
+            preparation_signer,
+            registry,
+            profile,
+            load_activated_preparation_authority(authority_payload),
+            validator_key,
+            load_activated_validator_authority(validator_payload),
+            inventory_key,
+            load_activated_inventory_authority(inventory_payload),
+            hashlib.sha256(tool.read_bytes()).hexdigest(),
+        )
+
+
+def _public_key_hex(key: Ed25519PrivateKey) -> str:
+    return key.public_key().public_bytes(
+        serialization.Encoding.Raw, serialization.PublicFormat.Raw
+    ).hex()
+
+
+def _write_zip_member(archive: zipfile.ZipFile, name: str, payload: bytes) -> None:
+    member = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+    member.compress_type = zipfile.ZIP_STORED
+    member.external_attr = 0o100644 << 16
+    archive.writestr(member, payload)
+
+
+def build_synthetic_package_inputs(
+    root: Path,
+    *,
+    cluster_id: str,
+    package_index: int,
+    trust: SyntheticTrust,
+) -> IncompleteSyntheticPackage:
+    """Build one real signed preparation and two genuinely validated reports."""
+
+    package_name = f"org.example.synthetic.c{cluster_id.rsplit(':', 1)[-1]}.p{package_index}"
+    package_root = root / package_name
+    package_root.mkdir(parents=True)
+    artifact = package_root / "base.apk"
+    with zipfile.ZipFile(artifact, "w") as archive:
+        _write_zip_member(archive, "AndroidManifest.xml", b"synthetic-manifest")
+        _write_zip_member(archive, "res/raw/synthetic.txt", b"synthetic-resource")
+    (package_root / "sealed").mkdir()
+
+    def identity(arguments: tuple[str, ...], **_kwargs: object) -> tuple[str, None]:
+        if arguments[0] == "aapt2":
+            return (
+                f"package: name='{package_name}' versionCode='1' versionName='1.0'\n",
+                None,
+            )
+        return f"Signer #1 certificate SHA-256 digest: {'9' * 64}\n", None
+
+    with (
+        patch.object(preflight_core, "_run_identity_tool", side_effect=identity),
+        preflight_delivery([artifact], sealing_directory=package_root / "sealed") as preflight,
+    ):
+        receipt = execute_registered_preparation(
+            preflight,
+            registry=trust.preparation_registry,
+            authority=trust.preparation_authority,
+            execution_profile=trust.preparation_profile,
+            execution_signer=trust.preparation_signer,
+            cache_directory=package_root / "preparation-cache",
+            output_directory=package_root / "preparation-result",
+        )
+        preflight_bytes = _canonical(preflight.manifest())
+        source_report, source_pins, source_lineage = _source_report(
+            package_root / "source-report",
+            preflight=preflight,
+            preflight_bytes=preflight_bytes,
+            tool_sha256=trust.tool_sha256,
+        )
+        source_receipt = validate_report_bundle(
+            source_report,
+            expected_dependencies=source_pins,
+            expected_evidence_lineage=source_lineage,
+        )
+        if not source_receipt.accepted:
+            raise RuntimeError(f"synthetic source report failed: {source_receipt.diagnostics}")
+        if preflight.package_identity is None:
+            raise RuntimeError("synthetic preflight lost its package identity")
+        source_envelope = _sign_validator_receipt(source_receipt.to_json().encode(), trust)
+        package_ref = equivalence_core.frozen_package_ref_from_validator_envelope(source_envelope)
+        package_local = PackageLocalPlan(
+            package_ref.content_id,
+            package_name,
+            "1",
+            "1.0",
+            preflight.artifact_digest,
+            hashlib.sha256(preflight_bytes).hexdigest(),
+            CapabilityPin(
+                PACKAGE_PIPELINE_CAPABILITY,
+                PACKAGE_EXECUTION_PLAN_REVISION,
+                _digest("synthetic-package-pipeline"),
+            ),
+        )
+        target_root = _digest(f"root:{cluster_id}:{package_index}")
+        occurrence = _digest(f"occurrence:{cluster_id}:{package_index}")
+        inventory = TargetRootInventory(
+            package_ref.content_id, (TargetRootOccurrence(target_root, occurrence),)
+        )
+        # The accepted preparation binding is supplied later by the queue's
+        # trusted finish adapter. The authenticated inventory adapter similarly
+        # turns this raw inventory into an AcceptedTargetRootInventory.
+        return IncompleteSyntheticPackage(
+            package_ref,
+            package_local,
+            receipt,
+            trust.preparation_authority,
+            source_envelope,
+            inventory,
+            target_root,
+            occurrence,
+            preflight_bytes,
+            tuple((item.name, item.sha256) for item in preflight.artifact_members),
+            package_root,
+            trust.tool_sha256,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class IncompleteSyntheticPackage:
+    package_ref: FrozenPackageRef
+    package_local: PackageLocalPlan
+    preparation_receipt: PreparationReceipt
+    preparation_authority: ActivatedPreparationAuthority
+    source_envelope: AuthenticatedValidatorEnvelope
+    target_inventory: TargetRootInventory
+    target_root: str
+    occurrence: str
+    preflight_bytes: bytes
+    artifact_members: tuple[tuple[str, str], ...]
+    package_root: Path
+    tool_sha256: str
+
+
+def finish_synthetic_package_inputs(
+    partial: IncompleteSyntheticPackage,
+    *,
+    preparation: PreparationPlanBinding,
+    target_inventory: AcceptedTargetRootInventory,
+) -> SyntheticPackageInputs:
+    """Build a production package plan and matching immutable report bundle."""
+
+    execution_plan = build_package_execution_plan(
+        target_package_ref_id=partial.package_ref.content_id,
+        target_package_ref=partial.package_ref,
+        cluster_id=_cluster_from_package_root(partial.package_root),
+        package_local=partial.package_local,
+        preparation=preparation,
+        accepted_target_inventory=target_inventory,
+        root_plans=(
+            FullAnalysisRootPlan(
+                partial.target_root,
+                partial.occurrence,
+                "synthetic authoritative analysis",
+                (
+                    CapabilityPin(
+                        "apktool",
+                        "pipeline-v1",
+                        partial.tool_sha256,
+                    ),
+                ),
+            ),
+        ),
+    )
+    report, dependencies, lineage = _package_report(partial, execution_plan)
+    return SyntheticPackageInputs(
+        partial.package_ref,
+        partial.package_local,
+        partial.preparation_receipt,
+        partial.preparation_authority,
+        partial.source_envelope,
+        target_inventory,
+        execution_plan,
+        report,
+        dependencies,
+        lineage,
+    )
+
+
+def _cluster_from_package_root(root: Path) -> str:
+    cluster = root.parent.name
+    if not cluster.startswith("synthetic-cluster:"):
+        raise RuntimeError("synthetic package root lost its cluster identity")
+    return cluster
+
+
+def _sign_validator_receipt(
+    payload: bytes, trust: SyntheticTrust
+) -> AuthenticatedValidatorEnvelope:
+    signature = trust.validator_key.sign(
+        validator_envelope_signing_bytes(payload, trust.validator_authority)
+    ).hex()
+    envelope = authenticated_validator_envelope_payload(
+        payload, trust.validator_authority, signature=signature
+    )
+    return load_authenticated_validator_envelope(envelope, authority=trust.validator_authority)
+
+
+def _source_report(
+    root: Path,
+    *,
+    preflight: PreflightResult,
+    preflight_bytes: bytes,
+    tool_sha256: str,
+) -> tuple[Path, DependencyPins, EvidenceLineageTrust]:
+    if preflight.package_identity is None:
+        raise RuntimeError("synthetic source report requires a package identity")
+    root.mkdir()
+    evidence = (SCHEMA_REVISION + "\n" + SCHEMA_REVISION).encode()
+    evidence_digest = hashlib.sha256(evidence).hexdigest()
+    evidence_member = f"evidence/sha256/{evidence_digest}"
+    inputs = {
+        "inputs/corpus.json": _json_line({"kind": "synthetic-corpus"}),
+        "inputs/ir.json": _json_line(_empty_current_ir()),
+        "inputs/preflight.json": preflight_bytes,
+        "inputs/schema.json": _json_line(schema_document()),
+        evidence_member: evidence,
+    }
+    members = {
+        "ANALYSIS.md": b"Synthetic validation fixture.\n",
+        "SEARCH_LOG.md": b"Synthetic validation fixture.\n",
+        "reproducers/vector.py": b"# Deterministic synthetic evidence reproducer.\n",
+        "analysis.json": _json_line(
+            _complete_analysis_report(
+                artifact_digest=preflight.artifact_digest,
+                package_name=preflight.package_identity.package_name,
+            )
+        ),
+        **inputs,
+    }
+    for relative, payload in members.items():
+        destination = root / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(payload)
+    digests = {name: hashlib.sha256(payload).hexdigest() for name, payload in inputs.items()}
+    pins = DependencyPins(
+        digests["inputs/preflight.json"],
+        digests["inputs/ir.json"],
+        digests["inputs/schema.json"],
+        digests["inputs/corpus.json"],
+    )
+    contract = {
+        "contract_revision": CONTRACT_REVISION,
+        "dependencies": {
+            name: {"member": f"inputs/{name}.json", "sha256": digest}
+            for name, digest in pins.as_pairs()
+        },
+        "evidence_members": [
+            {
+                "member": evidence_member,
+                "owner": preflight.artifact_digest,
+                "sha256": evidence_digest,
+            }
+        ],
+        "anchors": [
+            {
+                "id": "schema",
+                "owner": preflight.artifact_digest,
+                "member": evidence_member,
+                "start_byte": 0,
+                "end_byte": len(SCHEMA_REVISION),
+                "ir_pointer": "/schema_revision",
+                "representation": "utf8",
+            }
+        ],
+    }
+    _write(root, "validation-input.json", _json_line(contract), members)
+    _write_manifest(root, members)
+    lineage = _lineage(
+        preflight,
+        pins.preflight_sha256,
+        evidence_member,
+        evidence,
+        tool_sha256,
+        package_scopes=(),
+        target_root=None,
+        occurrence=None,
+    )
+    return root, pins, lineage
+
+
+def _package_report(
+    partial: IncompleteSyntheticPackage,
+    execution_plan: PackageExecutionPlan,
+) -> tuple[Path, PackageDependencyPins, EvidenceLineageTrust]:
+    root = partial.package_root / "package-report"
+    root.mkdir()
+    evidence = b"CLOSED"
+    evidence_digest = hashlib.sha256(evidence).hexdigest()
+    evidence_member = f"evidence/sha256/{evidence_digest}"
+    final_ir, trusted = _authorized_final_ir()
+    final_ir_bytes = _json_line(final_ir)
+    final_document = loads_final_ir(final_ir_bytes, trusted_receipts=trusted)
+    markdown = render_final_ir_markdown(final_document).encode()
+    frozen = freeze_package_execution_plan(execution_plan)
+    corpus = _json_line({"kind": "synthetic-corpus"})
+    inputs = {
+        "inputs/corpus.json": corpus,
+        "inputs/execution_plan.json": frozen.canonical_bytes,
+        "inputs/ir.json": final_ir_bytes,
+        "inputs/preflight.json": partial.preflight_bytes,
+        "inputs/report_schema.json": PACKAGE_REPORT_SCHEMA_CANONICAL_BYTES,
+        "inputs/schema.json": FINAL_IR_SCHEMA_CANONICAL_BYTES,
+        evidence_member: evidence,
+    }
+    dependencies = PackageDependencyPins(
+        hashlib.sha256(partial.preflight_bytes).hexdigest(),
+        hashlib.sha256(final_ir_bytes).hexdigest(),
+        FINAL_IR_SCHEMA_SHA256,
+        hashlib.sha256(corpus).hexdigest(),
+        frozen.canonical_sha256,
+        PACKAGE_REPORT_SCHEMA_SHA256,
+    )
+    semantic_root = evidence_digest
+    report = {
+        "authoritative_root_results": [
+            {
+                "result": {
+                    "analysis": {"semantic_root_sha256": semantic_root},
+                    "status": "COMPLETE",
+                },
+                "route": "FULL_ANALYSIS",
+                "target_occurrence_identity_sha256": partial.occurrence,
+                "target_root_id": partial.target_root,
+            }
+        ],
+        "final_ir_json_sha256": dependencies.ir_sha256,
+        "final_ir_markdown_sha256": hashlib.sha256(markdown).hexdigest(),
+        "final_ir_schema_revision": FINAL_SCHEMA_REVISION,
+        "package_local_domains": {
+            domain: {"evidence": [evidence_member], "status": "COMPLETE"}
+            for domain in LOCAL_ONLY_DOMAINS
+        },
+        "report_revision": PACKAGE_REPORT_REVISION,
+        "target_package_identity": {
+            "artifact_digest": partial.package_local.target_artifact_digest,
+            "package_name": partial.package_local.package_name,
+            "version_code": partial.package_local.version_code,
+            "version_name": partial.package_local.version_name,
+        },
+    }
+    members = {
+        "ANALYSIS.md": markdown,
+        "SEARCH_LOG.md": b"Synthetic production-path acceptance fixture.\n",
+        "reproducers/vector.py": b"# Deterministic synthetic evidence reproducer.\n",
+        "analysis.json": _json_line(report),
+        **inputs,
+    }
+    for relative, payload in members.items():
+        destination = root / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(payload)
+    contract = {
+        "contract_revision": PACKAGE_CONTRACT_REVISION,
+        "dependencies": {
+            name: {"member": f"inputs/{name}.json", "sha256": digest}
+            for name, digest in dependencies.as_pairs()
+        },
+        "evidence_members": [
+            {
+                "member": evidence_member,
+                "owner": partial.package_local.target_artifact_digest,
+                "package_local_domains": list(LOCAL_ONLY_DOMAINS),
+                "sha256": evidence_digest,
+            }
+        ],
+        "anchors": [
+            {
+                "id": "closed",
+                "owner": partial.package_local.target_artifact_digest,
+                "member": evidence_member,
+                "start_byte": 0,
+                "end_byte": len(evidence),
+                "ir_pointer": "/domain_closure/status",
+                "representation": "utf8",
+            }
+        ],
+    }
+    _write(root, "validation-input.json", _json_line(contract), members)
+    _write_manifest(root, members)
+    # The same artifact member has both routes. Lineage therefore has one
+    # independently authenticated evidence member per route; only the first is
+    # used by the report contract.
+    lineage = _lineage(
+        _PreflightView(partial),
+        dependencies.preflight_sha256,
+        evidence_member,
+        evidence,
+        partial.tool_sha256,
+        package_scopes=LOCAL_ONLY_DOMAINS,
+        target_root=partial.target_root,
+        occurrence=partial.occurrence,
+    )
+    return root, dependencies, lineage
+
+
+@dataclass(frozen=True, slots=True)
+class _MemberView:
+    name: str
+    sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class _PreflightView:
+    artifact_digest: str
+    artifact_members: tuple[_MemberView, ...]
+    decision: object
+
+    def __init__(self, partial: IncompleteSyntheticPackage) -> None:
+        object.__setattr__(self, "artifact_digest", partial.package_local.target_artifact_digest)
+        object.__setattr__(
+            self,
+            "artifact_members",
+            tuple(_MemberView(*item) for item in partial.artifact_members),
+        )
+        object.__setattr__(self, "decision", None)
+
+
+def _lineage(
+    preflight: PreflightResult | _PreflightView,
+    preflight_sha256: str,
+    evidence_member: str,
+    evidence: bytes,
+    tool_sha256: str,
+    *,
+    package_scopes: tuple[str, ...],
+    target_root: str | None,
+    occurrence: str | None,
+) -> EvidenceLineageTrust:
+    artifact_digest = preflight.artifact_digest
+    artifact_members = preflight.artifact_members
+    source_members = [{"name": item.name, "sha256": item.sha256} for item in artifact_members]
+    producer = TrustedProducer("pipeline-v1", "apktool", tool_sha256)
+    root_analyses = (
+        []
+        if target_root is None or occurrence is None
+        else [
+            {
+                "semantic_root_sha256": hashlib.sha256(evidence).hexdigest(),
+                "target_occurrence_identity_sha256": occurrence,
+                "target_root_id": target_root,
+            }
+        ]
+    )
+    document = {
+        "artifact_digest": artifact_digest,
+        "members": [
+            {
+                "authoritative_root_analyses": root_analyses,
+                "package_local_domains": list(package_scopes),
+                "producer": {
+                    "invocation_sha256": _digest("synthetic-invocation"),
+                    "outcome": "SUCCEEDED",
+                    "output_size": len(evidence),
+                    "pipeline_revision": producer.pipeline_revision,
+                    "route": producer.route,
+                    "tool_sha256": producer.tool_sha256,
+                },
+                "report_member": evidence_member,
+                "sha256": hashlib.sha256(evidence).hexdigest(),
+                "source_artifact_members": source_members,
+            }
+        ],
+        "preflight_sha256": preflight_sha256,
+        "schema": LINEAGE_SCHEMA_REVISION,
+    }
+    payload = _canonical(document)
+    return EvidenceLineageTrust(
+        payload,
+        hashlib.sha256(payload).hexdigest(),
+        (producer,),
+    )
+
+
+def _authorized_final_ir() -> tuple[dict[str, object], dict[str, str]]:
+    data: dict[str, object] = {
+        "schema_revision": FINAL_SCHEMA_REVISION,
+        "source_packages": {},
+        "evidence_files": {},
+        "evidence_anchors": {},
+        "source_sets": {},
+        "evidence_bindings": {},
+        **{name: {} for name in FINAL_DOMAIN_COLLECTIONS},
+        "domain_closure": {
+            "status": "CLOSED",
+            "domains": list(FINAL_DOMAIN_COLLECTIONS),
+            "unmodeled_paths": [],
+        },
+    }
+    pointers = [
+        "/domain_closure/status",
+        *(f"/domain_closure/domains/{index}" for index in range(len(FINAL_DOMAIN_COLLECTIONS))),
+        "/domain_closure/unmodeled_paths",
+    ]
+    artifact = build_artifact_identity(
+        package_name="synthetic.protocol",
+        version_code="1",
+        version_name="1.0",
+        artifact_digest="a" * 64,
+    )
+    member = "evidence/synthetic.txt"
+    member_digest = hashlib.sha256(b"synthetic").hexdigest()
+    values = ["CLOSED", *FINAL_DOMAIN_COLLECTIONS, []]
+    attestations = [
+        {
+            "id": f"claim-{index}",
+            "owner": artifact.artifact_digest,
+            "member": member,
+            "member_sha256": member_digest,
+            "start_byte": index,
+            "end_byte": index + 1,
+            "ir_pointer": pointer,
+            "representation": "utf8",
+            "value_sha256": hashlib.sha256(_canonical(value)).hexdigest(),
+        }
+        for index, (pointer, value) in enumerate(zip(pointers, values, strict=True))
+    ]
+    attestations.sort(key=lambda item: str(item["id"]).encode())
+    receipt_data = {
+        "accepted": True,
+        "bundle_sha256": "b" * 64,
+        "contract_revision": CONTRACT_REVISION,
+        "declared_members": 1,
+        "dependency_digests": {
+            name: str(index) * 64
+            for index, name in enumerate(
+                ("corpus", "evidence_lineage", "ir", "preflight", "schema"), start=1
+            )
+        },
+        "diagnostics": [],
+        "discovered_members": 1,
+        "evidence_anchors_checked": len(attestations),
+        "report_manifest_sha256": "c" * 64,
+        "source_unchanged": True,
+        "validated_artifact_identity": artifact.to_data(),
+        "validated_evidence_anchors": attestations,
+        "validated_evidence_members": [
+            {"member": member, "owner": artifact.artifact_digest, "sha256": member_digest}
+        ],
+        "validation_profile": BOUND_VALIDATION_PROFILE,
+        "validator_revision": SUPPORTED_VALIDATOR_REVISION,
+    }
+    receipt_id = hashlib.sha256(_canonical(receipt_data)).hexdigest()
+    receipt_data["validation_receipt_sha256"] = receipt_id
+    report = bind_validator_receipt(
+        _canonical(receipt_data),
+        trusted_validator_revision=SUPPORTED_VALIDATOR_REVISION,
+        trusted_contract_revision=SUPPORTED_CONTRACT_REVISION,
+        trusted_dependency_digests=receipt_data["dependency_digests"],
+        trusted_receipt_sha256=receipt_id,
+    )
+    package_id, package = build_source_package(artifact, report)
+    file_id, evidence_file = build_evidence_file(
+        package=package_id, member=member, sha256=member_digest
+    )
+    anchors: dict[str, object] = {}
+    source_sets: dict[str, object] = {}
+    bindings: dict[str, object] = {}
+    for item in attestations:
+        anchor_id, anchor = build_evidence_anchor(
+            id=str(item["id"]),
+            file=file_id,
+            start_byte=int(item["start_byte"]),
+            end_byte=int(item["end_byte"]),
+            ir_pointer=str(item["ir_pointer"]),
+            representation="utf8",
+            value_sha256=str(item["value_sha256"]),
+        )
+        source_set_id, source_set = build_source_set(package=package_id, anchors=(anchor_id,))
+        binding_id, binding = build_evidence_binding(
+            target=str(item["ir_pointer"]), source_sets=(source_set_id,)
+        )
+        anchors[anchor_id] = anchor.to_data()
+        source_sets[source_set_id] = source_set.to_data()
+        bindings[binding_id] = binding.to_data()
+    data["source_packages"] = {package_id: package.to_data()}
+    data["evidence_files"] = {file_id: evidence_file.to_data()}
+    data["evidence_anchors"] = anchors
+    data["source_sets"] = source_sets
+    data["evidence_bindings"] = bindings
+    return data, {receipt_id: report.bundle_sha256}
+
+
+def _empty_current_ir() -> dict[str, object]:
+    return {
+        "actions": {},
+        "command_bindings": {},
+        "evidence_anchors": {},
+        "evidence_bindings": {},
+        "evidence_files": {},
+        "expected_action_rules": {},
+        "protocols": {},
+        "schema_revision": SCHEMA_REVISION,
+        "source_packages": {},
+        "source_sets": {},
+        "variant_spaces": {},
+    }
+
+
+def _complete_analysis_report(*, artifact_digest: str, package_name: str) -> dict[str, object]:
+    gates = (
+        "identity_verified",
+        "stack_coverage",
+        "artifact_inventory",
+        "decompiler_warnings_resolved",
+        "search_passes_recorded",
+        "transport_callsites_dispositioned",
+        "protocol_candidates_dispositioned",
+        "control_actions_traced",
+        "command_rows_complete",
+        "test_vectors_reproducible",
+        "feature_domains_searched",
+        "second_pass_clean",
+        "variant_reconciliation",
+        "schema_validation",
+        "report_agreement",
+        "cleanroom_isolation",
+        "uncertainties_actionable",
+    )
+    return {
+        "schema_revision": "phase4-analysis-v1.12-2026-07-26",
+        "status": "COMPLETE",
+        "artifact": {
+            "app_name": "Synthetic fixture",
+            "package_id": package_name,
+            "version_name": "1.0",
+            "version_code": "1",
+            "artifact_set_sha256": artifact_digest,
+            "files": [{"file": "base.apk", "size": 1, "sha256": "f" * 64}],
+            "signer_certificate_sha256": ["9" * 64],
+            "source": "synthetic fixture",
+        },
+        "analyst": {
+            "identity": "synthetic",
+            "prompt_revision": "synthetic",
+            "started_at": "2026-01-01T00:00:00Z",
+            "completed_at": "2026-01-01T00:00:01Z",
+        },
+        "tool_coverage": [
+            {
+                "tool": "synthetic",
+                "version": "1",
+                "purpose": "validation fixture",
+                "status": "COMPLETE",
+            }
+        ],
+        "application_stacks": [
+            {"stack": "android", "present": True, "coverage": "COMPLETE", "evidence": ["synthetic"]}
+        ],
+        "variant_inventory": [],
+        "candidate_ledger": [
+            {
+                "id": "candidate-1",
+                "category": "transport",
+                "source": "synthetic",
+                "disposition": "DEAD/UNUSED",
+                "evidence": ["synthetic"],
+            }
+        ],
+        "protocols": [],
+        "test_vectors": [],
+        "evidence": [
+            {
+                "id": "evidence-1",
+                "claim": "Synthetic fixture",
+                "paths": ["ANALYSIS.md"],
+                "confidence": "VERIFIED",
+            }
+        ],
+        "completion_gates": [
+            {"gate": gate, "result": "PASS", "evidence": ["synthetic"]} for gate in gates
+        ],
+        "limitations": ["No reachable protocol exists in this synthetic fixture."],
+        "blockers": [],
+        "deferred_external_validation": [],
+    }
+
+
+def _registry(tool: Path, profile: ExecutionProfile) -> ApprovedToolRegistry:
+    spec = ToolSpec(
+        str(tool),
+        ("--version",),
+        ("--deterministic", "apktool", "{input}", "{output}"),
+        ("--deterministic",),
+        str(tool.parent),
+    )
+    record = qualify_tool(spec, profile)
+    if any(
+        value is None
+        for value in (
+            record.binary_sha256,
+            record.version,
+            record.runtime_sha256,
+            record.runtime_files,
+        )
+    ):
+        raise RuntimeError("synthetic tool qualification failed")
+    assert record.binary_sha256 is not None
+    assert record.version is not None
+    assert record.runtime_sha256 is not None
+    assert record.runtime_files is not None
+    qualification = ToolQualification(
+        record.binary_sha256,
+        record.version,
+        record.runtime_sha256,
+        record.runtime_files,
+    )
+    return ApprovedToolRegistry(
+        "synthetic-registry-v1",
+        "pipeline-v1",
+        tuple(
+            ApprovedRoute(
+                route,
+                ToolSpec(
+                    str(tool),
+                    ("--version",),
+                    ("--deterministic", route, "{input}", "{output}"),
+                    ("--deterministic",),
+                    str(tool.parent),
+                ),
+                (qualification,),
+                OutputSufficiencyContract(
+                    required_suffixes=((".smali",) if route == "apktool" else (".java",))
+                ),
+            )
+            for route in REQUIRED_PREPARATION_ROUTES
+        ),
+    )
+
+
+@cache
+def _build_static_tool() -> Path:
+    tool_root = Path(tempfile.mkdtemp(prefix="phase4-v2-synthetic-tool-"))
+    source = tool_root / "fixture.c"
+    binary = tool_root / "fixture-tool"
+    source.write_text(
+        r"""#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+static void write_file(const char *root, const char *dir, const char *name, const char *body) {
+ char d[4096], p[4096]; snprintf(d,sizeof(d),"%s/%s",root,dir); mkdir(d,0700);
+ snprintf(p,sizeof(p),"%s/%s",d,name); int fd=open(p,O_WRONLY|O_CREAT|O_TRUNC,0600);
+ if(fd<0||write(fd,body,strlen(body))!=(ssize_t)strlen(body)) exit(92); close(fd);
+}
+int main(int argc,char **argv) {
+ if(argc==2&&strcmp(argv[1],"--version")==0){puts("synthetic-tool 1.0");return 0;}
+ if(argc<5)return 90; const char *route=argv[argc-3],*out=argv[argc-1];
+ if(strcmp(route,"apktool")==0)write_file(out,"smali","App.smali","Landroid/bluetooth/BluetoothGatt;");
+ if(strcmp(route,"jadx")==0)write_file(out,"sources","App.java","android.bluetooth.BluetoothGatt");
+ return 0;
+}""",
+        encoding="utf-8",
+    )
+    subprocess.run(
+        ["gcc", "-static", "-O2", "-s", str(source), "-o", str(binary)],
+        check=True,
+        capture_output=True,
+    )
+    source.unlink()
+    return binary
+
+
+def _write(root: Path, relative: str, payload: bytes, members: dict[str, bytes]) -> None:
+    destination = root / relative
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_bytes(payload)
+    members[relative] = payload
+
+
+def _write_manifest(root: Path, members: dict[str, bytes]) -> None:
+    (root / "REPORT.SHA256").write_text(
+        "".join(
+            f"{hashlib.sha256(payload).hexdigest()}  {path}\n"
+            for path, payload in sorted(members.items())
+        ),
+        encoding="utf-8",
+    )
+
+
+def _canonical(value: object) -> bytes:
+    return json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
+    ).encode()
+
+
+def _json_line(value: object) -> bytes:
+    return _canonical(value) + b"\n"
+
+
+def _digest(value: str) -> str:
+    return hashlib.sha256(value.encode()).hexdigest()

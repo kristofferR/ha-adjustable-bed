@@ -670,5 +670,5 @@ def test_production_path_acceptance_is_seed_deterministic(tmp_path: Path) -> Non
     second = run_synthetic_acceptance(tmp_path / "second", config)
 
     assert first == second
-    assert first.unit_count == 9
+    assert first.unit_count == 13
     assert first.published_clusters == 1

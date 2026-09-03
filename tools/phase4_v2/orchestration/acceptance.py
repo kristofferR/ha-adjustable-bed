@@ -6,29 +6,43 @@ import hashlib
 import json
 import random
 import sqlite3
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import closing
+from contextlib import closing, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Protocol
 from unittest.mock import patch
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-import tools.phase4_v2.queue.core as queue_core
-from tools.phase4_v2.equivalence.plan import (
-    PACKAGE_EXECUTION_PLAN_REVISION,
+import tools.phase4_v2.orchestration.completion as completion_module
+from tools.phase4_v2.equivalence import (
+    INVENTORY_QUEUE_UNIT_KIND,
+    PACKAGE_QUEUE_UNIT_KIND,
+    PACKAGE_VALIDATION_RECEIPT_QUEUE_UNIT_KIND,
     PREPARATION_QUEUE_UNIT_KIND,
-    PREPARATION_RECEIPT_REVISION,
-    VALIDATED_PACKAGE_OUTPUT_REVISION,
-    FrozenCapabilityPin,
-    FrozenCompletionPin,
+    CapabilityPin,
+    ExtractorCapability,
     FrozenPackageExecutionPlan,
-    FrozenPreparationPlanBinding,
-    PackagePlanStatus,
+    finish_package_execution_plan,
+    finish_package_preparation,
+    finish_package_validation_receipt,
+    finish_target_inventory,
+    freeze_package_execution_plan,
+    inventory_authority_capability,
+    inventory_extractor_capability,
+    load_authenticated_target_inventory_envelope,
+    materialize_package_execution_plan,
+    materialize_package_preparation,
+    materialize_package_validation_receipt,
+    materialize_target_inventory,
+    preparation_capability_pins,
+    target_inventory_envelope_payload,
+    target_inventory_signing_bytes,
 )
 from tools.phase4_v2.queue import (
-    CapabilityPin,
     Lease,
     Queue,
     StaleLeaseError,
@@ -47,7 +61,6 @@ from .completion import (
     ActivatedStageAuthority,
     TrustedImplementationReceipt,
     TrustedReconciliationReceipt,
-    _load_stage_authority_with_config,
     finish_cluster_implementation,
     finish_cluster_reconciliation,
     finish_package_audit,
@@ -56,6 +69,7 @@ from .completion import (
     load_package_audit_receipt,
     load_publication_receipt,
     load_reconciliation_receipt,
+    load_stage_authority,
     stage_authority_capability,
 )
 from .graph import (
@@ -69,6 +83,13 @@ from .graph import (
     package_audit_unit_id,
 )
 from .model import WorkStage
+from .testing import (
+    IncompleteSyntheticPackage,
+    SyntheticTrust,
+    build_synthetic_package_inputs,
+    finish_synthetic_package_inputs,
+    protected_fixture_trust,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,7 +117,7 @@ class SyntheticAcceptanceConfig:
             or not 0 <= self.crash_probability < 1
         ):
             raise ValueError("crash_probability must be at least zero and below one")
-        maximum = self.clusters * (3 * self.units_per_cluster + 3)
+        maximum = self.clusters * (self.units_per_cluster + 3)
         if type(self.forced_initial_crashes) is not int or not (
             0 <= self.forced_initial_crashes <= maximum
         ):
@@ -125,6 +146,17 @@ class _ClusterState:
     audit_receipts: dict[str, str]
     reconciliation: TrustedReconciliationReceipt | None = None
     implementation: TrustedImplementationReceipt | None = None
+
+
+class _CapabilityIdentity(Protocol):
+    @property
+    def name(self) -> str: ...
+
+    @property
+    def revision(self) -> str: ...
+
+    @property
+    def digest(self) -> str: ...
 
 
 class _Gateway:
@@ -166,18 +198,27 @@ def run_synthetic_acceptance(
 
     if root.exists():
         raise ValueError("synthetic acceptance root must not already exist")
+    with (
+        _protected_stage_authorities() as (keys, authorities),
+        protected_fixture_trust(root / "fixture-trust") as trust,
+    ):
+        return _run_synthetic_acceptance(root, config, keys, authorities, trust)
+
+
+def _run_synthetic_acceptance(
+    root: Path,
+    config: SyntheticAcceptanceConfig,
+    keys: dict[str, Ed25519PrivateKey],
+    authorities: dict[str, ActivatedStageAuthority],
+    trust: SyntheticTrust,
+) -> SyntheticAcceptanceReport:
     database = root / "state" / "queue.sqlite3"
     attempts_root = root / "attempts"
     queue = Queue(database, attempts_root)
     queue.initialize()
-    keys, authorities = _authorities()
-    states = _build_graphs(queue, config, authorities)
+    states = _build_graphs(queue, config, authorities, trust, root / "fixtures")
     for state in states.values():
         materialize_cluster_graph(queue, state.graph)
-    # Package report validation has its own exhaustive acceptance suite. This bounded
-    # harness enters at its immutable completion revision, then exercises every
-    # cluster-owned production adapter and the real fanout publisher.
-    _complete_analysis_inputs(queue)
 
     generator = random.Random(config.seed)
     attempts = crashes = recovered = fenced = rounds = 0
@@ -260,11 +301,11 @@ def run_synthetic_acceptance(
                     raise RuntimeError("recovered worker was not fenced")
 
     final = queue.snapshot()
-    expected_units = config.clusters * (3 * config.units_per_cluster + 3)
+    expected_units = config.clusters * (5 * config.units_per_cluster + 3)
     if len(final.units) != expected_units:
         raise RuntimeError("production graph lost or added a work unit")
     workspace_count = sum(1 for unit in attempts_root.iterdir() for _child in unit.iterdir())
-    setup_attempts = 2 * config.clusters * config.units_per_cluster
+    setup_attempts = 4 * config.clusters * config.units_per_cluster
     if workspace_count != attempts + setup_attempts:
         raise RuntimeError("an attempt workspace was lost or overwritten")
     return SyntheticAcceptanceReport(
@@ -442,24 +483,36 @@ def _build_graphs(
     queue: Queue,
     config: SyntheticAcceptanceConfig,
     authorities: dict[str, ActivatedStageAuthority],
+    trust: SyntheticTrust,
+    fixtures_root: Path,
 ) -> dict[str, _ClusterState]:
     result: dict[str, _ClusterState] = {}
+    active_capabilities: set[tuple[str, str, str]] = set()
+    for stage in _STAGE_NAMES:
+        stage_pin = stage_authority_capability(authorities[stage])
+        activate_synthetic_capability(
+            queue,
+            CapabilityPin(stage_pin.capability, stage_pin.revision, stage_pin.digest),
+            active_capabilities,
+        )
+    for pin in preparation_capability_pins(trust.preparation_authority):
+        activate_synthetic_capability(queue, pin, active_capabilities)
     for cluster_index in range(config.clusters):
         cluster = f"synthetic-cluster:{cluster_index:04d}"
         plans = tuple(
-            _frozen_plan(cluster, package_index)
+            complete_synthetic_package_inputs(
+                queue,
+                build_synthetic_package_inputs(
+                    fixtures_root / cluster,
+                    cluster_id=cluster,
+                    package_index=package_index,
+                    trust=trust,
+                ),
+                trust,
+                active_capabilities,
+            )
             for package_index in range(config.units_per_cluster)
         )
-        stage_pins = tuple(stage_authority_capability(authorities[stage]) for stage in _STAGE_NAMES)
-        package_pins = tuple(
-            CapabilityPin(pin.name, pin.revision, pin.digest)
-            for plan in plans
-            for pin in plan.required_capabilities
-        )
-        for pin in (*package_pins, *stage_pins):
-            queue.register_capability(pin.capability, pin.revision, pin.digest)
-            queue.activate_capability_from_absent(pin.capability, pin.revision, pin.digest)
-        _complete_preparation_inputs(queue, plans)
         graph = build_cluster_graph(
             queue,
             plans,
@@ -472,59 +525,107 @@ def _build_graphs(
     return result
 
 
-def _complete_preparation_inputs(
-    queue: Queue, plans: tuple[FrozenPackageExecutionPlan, ...]
-) -> None:
-    original = queue_core._requires_trusted_completion_adapter
-    for plan in plans:
-        completion = plan.preparation.completion
-        queue.materialize_work_unit(
-            completion.parent_unit_id,
-            kind=PREPARATION_QUEUE_UNIT_KIND,
-            capability_pins=tuple(
-                CapabilityPin(item.name, item.revision, item.digest)
-                for item in plan.preparation.capabilities
-            ),
-            input_digest=_digest(f"prep-input:{plan.target_package_ref_id}"),
-        )
-        lease = queue.claim("synthetic-preparation", allowed_kinds=(PREPARATION_QUEUE_UNIT_KIND,))
-        if lease is None:
-            raise RuntimeError("synthetic preparation did not become ready")
-        with patch.object(
-            queue_core,
-            "_requires_trusted_completion_adapter",
-            side_effect=lambda unit_id, kind, lease_id=lease.unit_id: (
-                False if unit_id == lease_id else original(unit_id, kind)
-            ),
-        ):
-            queue.finish(
-                lease,
-                TerminalOutcome.ACCEPTED,
-                output_digest=completion.digest,
-                completion_revision=completion.revision,
-            )
+def complete_synthetic_package_inputs(
+    queue: Queue,
+    partial: IncompleteSyntheticPackage,
+    trust: SyntheticTrust,
+    active_capabilities: set[tuple[str, str, str]],
+) -> FrozenPackageExecutionPlan:
+    materialize_package_preparation(
+        queue,
+        package_ref=partial.package_ref,
+        package_local=partial.package_local,
+        authority=partial.preparation_authority,
+    )
+    preparation_lease = _claim_required(queue, PREPARATION_QUEUE_UNIT_KIND)
+    preparation = finish_package_preparation(
+        queue,
+        preparation_lease,
+        package_ref=partial.package_ref,
+        package_local=partial.package_local,
+        receipt=partial.preparation_receipt,
+        authority=partial.preparation_authority,
+    ).binding
 
+    materialize_package_validation_receipt(queue, partial.source_envelope)
+    validation_lease = _claim_required(queue, PACKAGE_VALIDATION_RECEIPT_QUEUE_UNIT_KIND)
+    finish_package_validation_receipt(
+        queue, validation_lease, envelope=partial.source_envelope
+    )
 
-def _complete_analysis_inputs(queue: Queue) -> None:
-    original = queue_core._requires_trusted_completion_adapter
-    while lease := queue.claim(
-        "synthetic-package-validator", allowed_kinds=(WorkStage.PACKAGE_ANALYSIS.value,)
+    extractor = ExtractorCapability(
+        name="phase4-v2-synthetic-inventory-extractor",
+        implementation_sha256=trust.tool_sha256,
+        configuration_sha256=_digest("synthetic-inventory-configuration"),
+        capability_revision="synthetic-inventory-v1",
+    )
+    for pin in (
+        inventory_authority_capability(trust.inventory_authority),
+        inventory_extractor_capability(extractor),
     ):
-        lease_id = lease.unit_id
-        with patch.object(
-            queue_core,
-            "_requires_trusted_completion_adapter",
-            side_effect=lambda unit_id, kind, active_id=lease_id: (
-                False if unit_id == active_id else original(unit_id, kind)
-            ),
-        ):
-            queue.finish(
-                lease,
-                TerminalOutcome.ACCEPTED,
-                expected_input_digest=lease.input_digest,
-                output_digest=_digest(f"validated:{lease.unit_id}"),
-                completion_revision=VALIDATED_PACKAGE_OUTPUT_REVISION,
-            )
+        activate_synthetic_capability(queue, pin, active_capabilities)
+    unsigned = target_inventory_envelope_payload(
+        package_ref=partial.package_ref,
+        inventory=partial.target_inventory,
+        extractor=extractor,
+        authority=trust.inventory_authority,
+        signature="0" * 128,
+    )
+    payload = json.loads(unsigned)["payload"]
+    signature = trust.inventory_key.sign(target_inventory_signing_bytes(payload)).hex()
+    envelope = load_authenticated_target_inventory_envelope(
+        target_inventory_envelope_payload(
+            package_ref=partial.package_ref,
+            inventory=partial.target_inventory,
+            extractor=extractor,
+            authority=trust.inventory_authority,
+            signature=signature,
+        ),
+        authority=trust.inventory_authority,
+        package_ref=partial.package_ref,
+    )
+    materialize_target_inventory(queue, envelope)
+    inventory_lease = _claim_required(queue, INVENTORY_QUEUE_UNIT_KIND)
+    inventory, _inventory_result = finish_target_inventory(
+        queue, inventory_lease, envelope=envelope
+    )
+
+    inputs = finish_synthetic_package_inputs(
+        partial, preparation=preparation, target_inventory=inventory
+    )
+    frozen = freeze_package_execution_plan(inputs.execution_plan)
+    for pin in frozen.required_capabilities:
+        activate_synthetic_capability(queue, pin, active_capabilities)
+    materialize_package_execution_plan(queue, inputs.execution_plan)
+    analysis_lease = _claim_required(queue, PACKAGE_QUEUE_UNIT_KIND)
+    finish_package_execution_plan(
+        queue,
+        analysis_lease,
+        execution_plan=inputs.execution_plan,
+        report_root=inputs.report_root,
+        evidence_lineage_payload=inputs.lineage.payload,
+    )
+    return frozen
+
+
+def activate_synthetic_capability(
+    queue: Queue,
+    pin: _CapabilityIdentity,
+    active_capabilities: set[tuple[str, str, str]],
+) -> None:
+    identity = (pin.name, pin.revision, pin.digest)
+    if identity in active_capabilities:
+        return
+    queue.register_capability(*identity)
+    queue.activate_capability_from_absent(*identity)
+    active_capabilities.add(identity)
+
+
+def _claim_required(queue: Queue, kind: str) -> Lease:
+    lease = queue.claim(f"synthetic-{kind}", allowed_kinds=(kind,))
+    if lease is None:
+        raise RuntimeError(f"synthetic {kind} input did not become ready")
+    return lease
 
 
 def _cluster_for(queue: Queue, unit_id: str) -> str:
@@ -534,7 +635,10 @@ def _cluster_for(queue: Queue, unit_id: str) -> str:
     return unit.cluster_id
 
 
-def _authorities() -> tuple[dict[str, Ed25519PrivateKey], dict[str, ActivatedStageAuthority]]:
+@contextmanager
+def _protected_stage_authorities() -> Iterator[
+    tuple[dict[str, Ed25519PrivateKey], dict[str, ActivatedStageAuthority]]
+]:
     keys: dict[str, Ed25519PrivateKey] = {}
     authorities: dict[str, ActivatedStageAuthority] = {}
     documents: dict[str, bytes] = {}
@@ -559,9 +663,10 @@ def _authorities() -> tuple[dict[str, Ed25519PrivateKey], dict[str, ActivatedSta
         keys[stage] = key
         documents[stage] = canonical
         config[stage] = (digest, 1)
-    for stage in _STAGE_NAMES:
-        authorities[stage] = _load_stage_authority_with_config(documents[stage], config)
-    return keys, authorities
+    with patch.object(completion_module, "_load_stage_authority_config", return_value=config):
+        for stage in _STAGE_NAMES:
+            authorities[stage] = load_stage_authority(documents[stage])
+        yield keys, authorities
 
 
 def _signed(
@@ -575,96 +680,6 @@ def _signed(
         f"phase4-v2:signed-stage-receipt:{stage}".encode() + b"\0" + _canonical(payload)
     ).hex()
     return _canonical({"payload": payload, "signature": signature})
-
-
-def _frozen_plan(cluster: str, index: int) -> FrozenPackageExecutionPlan:
-    package = f"p{index:04d}"
-    package_ref = _digest(f"package:{cluster}:{package}")
-    capability = FrozenCapabilityPin(
-        f"analysis:{cluster}:{package}",
-        "synthetic-analysis-v1",
-        _digest(f"cap:{cluster}:{package}"),
-    )
-    preparation_capabilities = tuple(
-        FrozenCapabilityPin(
-            f"preparation-{kind}:{cluster}:{package}",
-            f"preparation-{kind}-v1",
-            _digest(f"preparation-{kind}:{cluster}:{package}"),
-        )
-        for kind in ("authority", "candidate", "execution", "registry")
-    )
-    preparation_completion = FrozenCompletionPin(
-        f"package-preparation:{package_ref}",
-        PREPARATION_RECEIPT_REVISION,
-        _digest(f"receipt:{cluster}:{package}"),
-    )
-    preparation = FrozenPreparationPlanBinding(
-        package_ref,
-        f"org.example.{package}",
-        "1",
-        "1.0",
-        _digest(f"artifact:{cluster}:{package}"),
-        _digest(f"preflight:{cluster}:{package}"),
-        preparation_completion.digest,
-        preparation_completion,
-        preparation_capabilities,
-    )
-    required_capabilities = tuple(
-        sorted((*preparation_capabilities, capability), key=lambda item: item.name)
-    )
-    data = {
-        "authoritative_root_count": 1,
-        "cluster_id": cluster,
-        "package_local": {
-            "package_name": f"org.example.{package}",
-            "requirements_sha256": _digest(f"preflight:{cluster}:{package}"),
-            "target_artifact_digest": _digest(f"artifact:{cluster}:{package}"),
-            "version_code": "1",
-            "version_name": "1.0",
-        },
-        "preparation": preparation.to_data(),
-        "required_capabilities": [
-            {"digest": item.digest, "name": item.name, "revision": item.revision}
-            for item in required_capabilities
-        ],
-        "required_completions": [
-            {
-                "digest": preparation_completion.digest,
-                "parent_unit_id": preparation_completion.parent_unit_id,
-                "revision": preparation_completion.revision,
-            }
-        ],
-        "revision": PACKAGE_EXECUTION_PLAN_REVISION,
-        "status": PackagePlanStatus.EXECUTABLE.value,
-        "target_package_ref_id": package_ref,
-    }
-    canonical = _canonical(data)
-    result = object.__new__(FrozenPackageExecutionPlan)
-    values = {
-        "target_package_ref_id": package_ref,
-        "cluster_id": cluster,
-        "canonical_bytes": canonical,
-        "digest": hashlib.sha256(b"phase4-v2:package-execution-plan\0" + canonical).hexdigest(),
-        "status": PackagePlanStatus.EXECUTABLE,
-        "root_count": 1,
-        "package_name": f"org.example.{package}",
-        "version_code": "1",
-        "version_name": "1.0",
-        "target_artifact_digest": _digest(f"artifact:{cluster}:{package}"),
-        "preflight_sha256": _digest(f"preflight:{cluster}:{package}"),
-        "preparation": preparation,
-        "inherited_semantic_roots": (),
-        "semantic_audit_completion_digests": (),
-        "required_capabilities": required_capabilities,
-        "required_completions": (preparation_completion,),
-    }
-    for field, value in values.items():
-        object.__setattr__(result, field, value)
-    return result
-
-
-def _pin(name: str) -> CapabilityPin:
-    return CapabilityPin(name, f"{name}-v1", _digest(name))
 
 
 def _canonical(value: object) -> bytes:

@@ -13,7 +13,9 @@ import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+import tools.phase4_v2.orchestration.acceptance as synthetic_acceptance
 import tools.phase4_v2.orchestration.completion as stage_completion
+from tools.phase4_v2.equivalence import preparation_capability_pins
 from tools.phase4_v2.orchestration import (
     STAGE_AUTHORITY_REVISION,
     ContextExit,
@@ -21,13 +23,25 @@ from tools.phase4_v2.orchestration import (
     LaunchRequest,
     SyntheticAcceptanceConfig,
     WorkStage,
+    build_cluster_graph,
     launch_one,
+    materialize_cluster_graph,
     route_follow_up,
     run_synthetic_acceptance,
+)
+from tools.phase4_v2.orchestration.graph import (
+    ClusterGraphPlan,
+    cluster_reconciliation_unit_id,
+    package_audit_unit_id,
+)
+from tools.phase4_v2.orchestration.testing import (
+    build_synthetic_package_inputs,
+    protected_fixture_trust,
 )
 from tools.phase4_v2.queue import (
     MAX_ACTIVE_ORCHESTRATION_CLUSTERS,
     MAX_ACTIVE_ORCHESTRATION_LEASES_PER_CLUSTER,
+    FinishResult,
     Lease,
     Queue,
     TerminalOutcome,
@@ -52,12 +66,14 @@ def _canonical(value: object) -> bytes:
 
 _AUTHORITY_KEYS: dict[str, Ed25519PrivateKey] = {}
 _AUTHORITY_DOCUMENTS: dict[str, bytes] = {}
+_STAGE_GRAPHS: dict[str, ClusterGraphPlan] = {}
 
 
 @pytest.fixture(autouse=True)
 def _protected_stage_authorities(monkeypatch: pytest.MonkeyPatch) -> None:
     _AUTHORITY_KEYS.clear()
     _AUTHORITY_DOCUMENTS.clear()
+    _STAGE_GRAPHS.clear()
     config: dict[str, tuple[str, int]] = {}
     for stage in ("audit", "reconciliation", "implementation", "publication"):
         key = Ed25519PrivateKey.from_private_bytes(
@@ -98,26 +114,84 @@ def _enqueue_stage(
     )
 
 
+def _materialize_real_graph(
+    queue: Queue,
+    root: Path,
+    cluster: str,
+    *,
+    advance_to_reconciliation: bool,
+) -> ClusterGraphPlan:
+    authorities = {
+        stage: stage_completion.load_stage_authority(_AUTHORITY_DOCUMENTS[stage])
+        for stage in ("audit", "reconciliation", "implementation", "publication")
+    }
+    active: set[tuple[str, str, str]] = set()
+    for authority in authorities.values():
+        pin = stage_completion.stage_authority_capability(authority)
+        queue.register_capability(pin.capability, pin.revision, pin.digest)
+        queue.activate_capability_from_absent(pin.capability, pin.revision, pin.digest)
+    with protected_fixture_trust(root / "trust") as trust:
+        for pin in preparation_capability_pins(trust.preparation_authority):
+            synthetic_acceptance.activate_synthetic_capability(queue, pin, active)
+        plan = synthetic_acceptance.complete_synthetic_package_inputs(
+            queue,
+            build_synthetic_package_inputs(
+                root / cluster,
+                cluster_id=cluster,
+                package_index=0,
+                trust=trust,
+            ),
+            trust,
+            active,
+        )
+        graph = build_cluster_graph(
+            queue,
+            (plan,),
+            audit_authority=authorities["audit"],
+            reconciliation_authority=authorities["reconciliation"],
+            implementation_authority=authorities["implementation"],
+            publication_authority=authorities["publication"],
+        )
+    _STAGE_GRAPHS[cluster] = graph
+    materialize_cluster_graph(queue, graph)
+    if advance_to_reconciliation:
+        audit = queue.claim("fixture-audit", allowed_kinds=(WorkStage.PACKAGE_AUDIT.value,))
+        assert audit is not None and audit.unit_id == package_audit_unit_id(
+            graph, graph.packages[0].package_ref_id
+        )
+        _accept(queue, audit, "fixture-audit")
+    return graph
+
+
 def _accept(queue: Queue, lease: Lease, marker: str) -> None:
     unit = next(item for item in queue.snapshot().units if item.unit_id == lease.unit_id)
     assert unit.cluster_id is not None
     stage = unit.kind.rsplit("-", 1)[-1]
+    graph = _STAGE_GRAPHS[unit.cluster_id]
     authority = stage_completion.load_stage_authority(_AUTHORITY_DOCUMENTS[stage])
     common: dict[str, object] = {
         "accepted": True,
         "authority_sha256": authority.authority_sha256,
         "cluster_id": unit.cluster_id,
         "diagnostics": [],
-        "graph_sha256": _digest(f"graph:{marker}"),
+        "graph_sha256": graph.content_id,
         "stage": stage,
         "stage_input_sha256": lease.input_digest,
     }
     if stage == "audit":
+        package = next(
+            item
+            for item in graph.packages
+            if package_audit_unit_id(graph, item.package_ref_id) == lease.unit_id
+        )
+        analysis = next(
+            item for item in queue.snapshot().units if item.unit_id == package.unit_id
+        )
         payload = {
             **common,
-            "analysis_completion_revision": "test-v1",
-            "analysis_completion_sha256": _digest("analysis"),
-            "package_ref_id": _digest(marker),
+            "analysis_completion_revision": analysis.completion_revision,
+            "analysis_completion_sha256": analysis.output_digest,
+            "package_ref_id": package.package_ref_id,
             "revision": stage_completion.PACKAGE_AUDIT_COMPLETION_REVISION,
         }
     elif stage == "reconciliation":
@@ -155,8 +229,9 @@ def _accept(queue: Queue, lease: Lease, marker: str) -> None:
         {"payload": payload, "signature": _AUTHORITY_KEYS[stage].sign(signing).hex()}
     )
     queue.finish_authenticated_orchestration_stage(
-        lease, authority=authority, canonical_receipt=canonical_receipt
+        lease, authority=authority, canonical_receipt=canonical_receipt, graph=graph
     )
+    materialize_cluster_graph(queue, graph)
 
 
 @pytest.mark.parametrize(
@@ -293,34 +368,20 @@ def test_database_bounds_leases_inside_one_cluster(queue: Queue) -> None:
     assert queue.claim("one-too-many") is None
 
 
-def test_reconciliation_waits_for_existing_implementation_debt(queue: Queue) -> None:
-    _enqueue_stage(
+def test_reconciliation_waits_for_existing_implementation_debt(
+    queue: Queue, tmp_path: Path
+) -> None:
+    first_graph = _materialize_real_graph(
         queue,
-        "reconciliation-1",
-        WorkStage.CLUSTER_RECONCILIATION,
-        "cluster-001",
-        priority=100,
+        tmp_path / "first",
+        "synthetic-cluster:001",
+        advance_to_reconciliation=True,
     )
-    _enqueue_stage(
+    second_graph = _materialize_real_graph(
         queue,
-        "implementation-1",
-        WorkStage.CLUSTER_IMPLEMENTATION,
-        "cluster-001",
-        priority=100,
-    )
-    _enqueue_stage(
-        queue,
-        "reconciliation-2",
-        WorkStage.CLUSTER_RECONCILIATION,
-        "cluster-002",
-        priority=90,
-    )
-    _enqueue_stage(
-        queue,
-        "implementation-2",
-        WorkStage.CLUSTER_IMPLEMENTATION,
-        "cluster-002",
-        priority=90,
+        tmp_path / "second",
+        "synthetic-cluster:002",
+        advance_to_reconciliation=True,
     )
 
     assert (
@@ -347,23 +408,22 @@ def test_reconciliation_waits_for_existing_implementation_debt(queue: Queue) -> 
         allowed_kinds=(WorkStage.CLUSTER_RECONCILIATION.value,),
     )
     assert second is not None
-    assert second.unit_id == "reconciliation-2"
+    assert second.unit_id == cluster_reconciliation_unit_id(second_graph)
+    assert first.unit_id == cluster_reconciliation_unit_id(first_graph)
 
 
-def test_reconciliation_leases_are_serialized_across_clusters(queue: Queue) -> None:
-    for index in range(2):
-        _enqueue_stage(
+def test_reconciliation_leases_are_serialized_across_clusters(
+    queue: Queue, tmp_path: Path
+) -> None:
+    graphs = tuple(
+        _materialize_real_graph(
             queue,
-            f"reconciliation-{index}",
-            WorkStage.CLUSTER_RECONCILIATION,
-            f"cluster-{index}",
+            tmp_path / f"cluster-{index}",
+            f"synthetic-cluster:{index:03d}",
+            advance_to_reconciliation=True,
         )
-        _enqueue_stage(
-            queue,
-            f"implementation-{index}",
-            WorkStage.CLUSTER_IMPLEMENTATION,
-            f"cluster-{index}",
-        )
+        for index in range(2)
+    )
     first = queue.claim("reconciler-1")
     second = queue.claim("reconciler-2")
     assert first is not None
@@ -385,28 +445,36 @@ def test_reconciliation_leases_are_serialized_across_clusters(queue: Queue) -> N
         allowed_kinds=(WorkStage.CLUSTER_RECONCILIATION.value,),
     )
     assert second is not None
-    assert second.unit_id == "reconciliation-1"
+    assert second.unit_id == cluster_reconciliation_unit_id(graphs[1])
 
 
-def test_reconciliation_can_create_bounded_implementation_debt(queue: Queue) -> None:
-    _enqueue_stage(
+def test_reconciliation_can_create_bounded_implementation_debt(
+    queue: Queue, tmp_path: Path
+) -> None:
+    graph = _materialize_real_graph(
         queue,
-        "reconciliation",
-        WorkStage.CLUSTER_RECONCILIATION,
-        "cluster-001",
+        tmp_path / "first",
+        "synthetic-cluster:001",
+        advance_to_reconciliation=True,
     )
 
     lease = queue.claim("reconciler")
     assert lease is not None
-    assert lease.unit_id == "reconciliation"
+    assert lease.unit_id == cluster_reconciliation_unit_id(graph)
     _accept(queue, lease, "reconciliation")
-    _enqueue_stage(
+    _materialize_real_graph(
         queue,
-        "second-reconciliation",
-        WorkStage.CLUSTER_RECONCILIATION,
-        "cluster-002",
+        tmp_path / "second",
+        "synthetic-cluster:002",
+        advance_to_reconciliation=True,
     )
-    assert queue.claim("second-reconciler") is None
+    assert (
+        queue.claim(
+            "second-reconciler",
+            allowed_kinds=(WorkStage.CLUSTER_RECONCILIATION.value,),
+        )
+        is None
+    )
 
 
 def test_tracker_publication_requires_accepted_implementation(queue: Queue) -> None:
@@ -444,8 +512,15 @@ class _CompletingAdapter:
         return _CompletingHandle(self.queue, request)
 
 
-def test_launcher_hands_off_only_a_bounded_fresh_context(queue: Queue) -> None:
-    _enqueue_stage(queue, "audit", WorkStage.PACKAGE_AUDIT, "cluster-001")
+def test_launcher_hands_off_only_a_bounded_fresh_context(
+    queue: Queue, tmp_path: Path
+) -> None:
+    _materialize_real_graph(
+        queue,
+        tmp_path / "launcher",
+        "synthetic-cluster:001",
+        advance_to_reconciliation=False,
+    )
     adapter = _CompletingAdapter(queue)
 
     receipt = launch_one(
@@ -561,7 +636,32 @@ def test_launcher_never_routes_from_a_replacement_attempt(queue: Queue) -> None:
     queue.finish(adapter.handle.replacement, TerminalOutcome.FAILED)
 
 
-def test_seeded_synthetic_crash_harness_converges_and_fences(tmp_path: Path) -> None:
+def test_seeded_synthetic_crash_harness_converges_and_fences(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    generic_finish = Queue.finish
+
+    def reject_generic_acceptance(
+        self: Queue,
+        lease: Lease,
+        outcome: TerminalOutcome,
+        *,
+        output_digest: str | None = None,
+        completion_revision: str | None = None,
+        expected_input_digest: str | None = None,
+    ) -> FinishResult:
+        if outcome is TerminalOutcome.ACCEPTED:
+            pytest.fail("acceptance used generic finish for a trusted completion")
+        return generic_finish(
+            self,
+            lease,
+            outcome,
+            output_digest=output_digest,
+            completion_revision=completion_revision,
+            expected_input_digest=expected_input_digest,
+        )
+
+    monkeypatch.setattr(Queue, "finish", reject_generic_acceptance)
     report = run_synthetic_acceptance(
         tmp_path / "synthetic-run",
         SyntheticAcceptanceConfig(
@@ -574,7 +674,7 @@ def test_seeded_synthetic_crash_harness_converges_and_fences(tmp_path: Path) -> 
         ),
     )
 
-    assert report.unit_count == 45
+    assert report.unit_count == 69
     assert report.attempt_count >= report.unit_count
     assert report.injected_crashes > 0
     assert report.recovered_attempts == report.injected_crashes
