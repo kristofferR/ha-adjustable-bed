@@ -81,6 +81,14 @@ def _is_digest(value: object) -> bool:
     )
 
 
+def _is_signature(value: object) -> bool:
+    return (
+        type(value) is str
+        and len(value) == 128
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
 def _bounded_text(value: object, maximum: int = 8_192) -> bool:
     if type(value) is not str or not value:
         return False
@@ -249,6 +257,8 @@ def _validate_preparation(
         or not _bounded_text(preparation.pipeline_revision, 200)
         or preparation.execution_profile_revision != EXECUTION_PROFILE_REVISION
         or not _is_digest(preparation.execution_profile_sha256)
+        or not _is_digest(preparation.executor_public_key)
+        or not _is_signature(preparation.execution_signature)
         or not _bounded_text(preparation.package_name, 256)
         or not _bounded_text(preparation.version_code, 256)
         or not _bounded_text(preparation.version_name, 256)
