@@ -8,7 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from unittest.mock import patch
 
-from . import model
+from tools.phase4_v2.benchmark import model
 
 
 @dataclass(slots=True)

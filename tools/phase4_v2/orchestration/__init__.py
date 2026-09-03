@@ -1,10 +1,5 @@
 """Safe orchestration primitives for independent Phase 4 v2 workers."""
 
-from .acceptance import (
-    SyntheticAcceptanceConfig,
-    SyntheticAcceptanceReport,
-    run_synthetic_acceptance,
-)
 from .completion import (
     STAGE_AUTHORITY_REVISION,
     ActivatedStageAuthority,
@@ -76,8 +71,6 @@ __all__ = [
     "PackageAnalysisUnit",
     "StageCompletion",
     "STAGE_AUTHORITY_REVISION",
-    "SyntheticAcceptanceConfig",
-    "SyntheticAcceptanceReport",
     "TRACKER_PUBLICATION_COMPLETION_REVISION",
     "TrustedImplementationReceipt",
     "TrustedPackageAuditReceipt",
@@ -101,7 +94,6 @@ __all__ = [
     "load_stage_authority",
     "package_audit_unit_id",
     "route_follow_up",
-    "run_synthetic_acceptance",
     "stage_input_sha256",
     "stage_authority_capability",
     "tracker_publication_unit_id",

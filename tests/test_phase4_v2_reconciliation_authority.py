@@ -7,15 +7,15 @@ from pathlib import Path
 
 import pytest
 
-from tools.phase4_v2.ir import dumps_final_ir, loads_final_ir, render_final_ir_markdown
-from tools.phase4_v2.orchestration.acceptance import (
+from tests.phase4_v2_orchestration_acceptance import (
     complete_authenticated_synthetic_package_inputs,
 )
-from tools.phase4_v2.orchestration.testing import (
+from tests.phase4_v2_orchestration_testing import (
     _authorized_final_ir,
     build_synthetic_package_inputs,
     protected_fixture_trust,
 )
+from tools.phase4_v2.ir import dumps_final_ir, loads_final_ir, render_final_ir_markdown
 from tools.phase4_v2.queue import Queue
 from tools.phase4_v2.reconciliation import (
     ReconciliationError,

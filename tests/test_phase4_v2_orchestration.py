@@ -13,30 +13,32 @@ import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-import tools.phase4_v2.orchestration.acceptance as synthetic_acceptance
+import tests.phase4_v2_orchestration_acceptance as synthetic_acceptance
 import tools.phase4_v2.orchestration.completion as stage_completion
+from tests.phase4_v2_orchestration_acceptance import (
+    SyntheticAcceptanceConfig,
+    run_synthetic_acceptance,
+)
+from tests.phase4_v2_orchestration_testing import (
+    build_synthetic_package_inputs,
+    protected_fixture_trust,
+)
 from tools.phase4_v2.equivalence import preparation_capability_pins
 from tools.phase4_v2.orchestration import (
     STAGE_AUTHORITY_REVISION,
     ContextExit,
     FollowUpAction,
     LaunchRequest,
-    SyntheticAcceptanceConfig,
     WorkStage,
     build_cluster_graph,
     launch_one,
     materialize_cluster_graph,
     route_follow_up,
-    run_synthetic_acceptance,
 )
 from tools.phase4_v2.orchestration.graph import (
     ClusterGraphPlan,
     cluster_reconciliation_unit_id,
     package_audit_unit_id,
-)
-from tools.phase4_v2.orchestration.testing import (
-    build_synthetic_package_inputs,
-    protected_fixture_trust,
 )
 from tools.phase4_v2.queue import (
     MAX_ACTIVE_ORCHESTRATION_CLUSTERS,

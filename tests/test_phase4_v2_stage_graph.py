@@ -13,6 +13,15 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 import tools.phase4_v2.orchestration.completion as stage_completion
+from tests.phase4_v2_orchestration_acceptance import (
+    SyntheticAcceptanceConfig,
+    complete_synthetic_package_inputs,
+    run_synthetic_acceptance,
+)
+from tests.phase4_v2_orchestration_testing import (
+    build_synthetic_package_inputs,
+    protected_fixture_trust,
+)
 from tools.phase4_v2.equivalence.plan import (
     PACKAGE_EXECUTION_PLAN_REVISION,
     PREPARATION_RECEIPT_REVISION,
@@ -32,7 +41,6 @@ from tools.phase4_v2.orchestration import (
     ActivatedStageAuthority,
     ClusterGraphPlan,
     PackageAnalysisUnit,
-    SyntheticAcceptanceConfig,
     WorkStage,
     build_cluster_graph,
     finish_cluster_implementation,
@@ -46,13 +54,7 @@ from tools.phase4_v2.orchestration import (
     load_stage_authority,
     materialize_cluster_graph,
     package_audit_unit_id,
-    run_synthetic_acceptance,
     stage_authority_capability,
-)
-from tools.phase4_v2.orchestration.acceptance import complete_synthetic_package_inputs
-from tools.phase4_v2.orchestration.testing import (
-    build_synthetic_package_inputs,
-    protected_fixture_trust,
 )
 from tools.phase4_v2.queue import (
     CapabilityPin,

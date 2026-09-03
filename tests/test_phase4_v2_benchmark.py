@@ -11,6 +11,7 @@ import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+from tests.phase4_v2_benchmark_testing import BenchmarkAuthorityTestDeployment
 from tools.phase4_v2.benchmark import (
     BENCHMARK_REVISION,
     REQUIRED_CONTRACT_ISSUES,
@@ -55,7 +56,6 @@ from tools.phase4_v2.benchmark import (
     load_trusted_benchmark_authority as production_load_trusted_benchmark_authority,
 )
 from tools.phase4_v2.benchmark import model as benchmark_model
-from tools.phase4_v2.benchmark.testing import BenchmarkAuthorityTestDeployment
 
 _DIGEST = "a" * 64
 _AUTHORITY_KEY = Ed25519PrivateKey.from_private_bytes(b"r" * 32)

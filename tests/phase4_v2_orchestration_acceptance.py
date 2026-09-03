@@ -18,6 +18,14 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 import tools.phase4_v2.orchestration.completion as completion_module
+from tests.phase4_v2_orchestration_testing import (
+    IncompleteSyntheticPackage,
+    SyntheticTrust,
+    _authorized_final_ir,
+    build_synthetic_package_inputs,
+    finish_synthetic_package_inputs,
+    protected_fixture_trust,
+)
 from tools.phase4_v2.equivalence import (
     INVENTORY_QUEUE_UNIT_KIND,
     PACKAGE_QUEUE_UNIT_KIND,
@@ -54,6 +62,35 @@ from tools.phase4_v2.equivalence import (
     target_inventory_signing_bytes,
 )
 from tools.phase4_v2.ir import dumps_final_ir, loads_final_ir, render_final_ir_markdown
+from tools.phase4_v2.orchestration.completion import (
+    STAGE_AUTHORITY_REVISION,
+    ActivatedStageAuthority,
+    TrustedImplementationReceipt,
+    TrustedPackageAuditReceipt,
+    TrustedReconciliationReceipt,
+    build_authenticated_reconciliation_input,
+    finish_cluster_implementation,
+    finish_cluster_reconciliation,
+    finish_package_audit,
+    finish_tracker_publication,
+    load_implementation_receipt,
+    load_package_audit_receipt,
+    load_publication_receipt,
+    load_reconciliation_receipt,
+    load_stage_authority,
+    stage_authority_capability,
+)
+from tools.phase4_v2.orchestration.graph import (
+    CLUSTER_IMPLEMENTATION_COMPLETION_REVISION,
+    CLUSTER_RECONCILIATION_COMPLETION_REVISION,
+    PACKAGE_AUDIT_COMPLETION_REVISION,
+    TRACKER_PUBLICATION_COMPLETION_REVISION,
+    ClusterGraphPlan,
+    build_cluster_graph,
+    materialize_cluster_graph,
+    package_audit_unit_id,
+)
+from tools.phase4_v2.orchestration.model import WorkStage
 from tools.phase4_v2.preflight import PreparationReceipt
 from tools.phase4_v2.queue import (
     Lease,
@@ -75,44 +112,6 @@ from tools.phase4_v2.reconciliation import (
     reconcile,
 )
 from tools.phase4_v2.validator import validate_report_bundle
-
-from .completion import (
-    STAGE_AUTHORITY_REVISION,
-    ActivatedStageAuthority,
-    TrustedImplementationReceipt,
-    TrustedPackageAuditReceipt,
-    TrustedReconciliationReceipt,
-    build_authenticated_reconciliation_input,
-    finish_cluster_implementation,
-    finish_cluster_reconciliation,
-    finish_package_audit,
-    finish_tracker_publication,
-    load_implementation_receipt,
-    load_package_audit_receipt,
-    load_publication_receipt,
-    load_reconciliation_receipt,
-    load_stage_authority,
-    stage_authority_capability,
-)
-from .graph import (
-    CLUSTER_IMPLEMENTATION_COMPLETION_REVISION,
-    CLUSTER_RECONCILIATION_COMPLETION_REVISION,
-    PACKAGE_AUDIT_COMPLETION_REVISION,
-    TRACKER_PUBLICATION_COMPLETION_REVISION,
-    ClusterGraphPlan,
-    build_cluster_graph,
-    materialize_cluster_graph,
-    package_audit_unit_id,
-)
-from .model import WorkStage
-from .testing import (
-    IncompleteSyntheticPackage,
-    SyntheticTrust,
-    _authorized_final_ir,
-    build_synthetic_package_inputs,
-    finish_synthetic_package_inputs,
-    protected_fixture_trust,
-)
 
 
 @dataclass(frozen=True, slots=True)
@@ -393,9 +392,7 @@ def _finish_stage(
         final_data, trusted_receipts = _authorized_final_ir(
             authenticated_package.source_registry
         )
-        final_json = json.dumps(
-            final_data, sort_keys=True, separators=(",", ":")
-        ).encode() + b"\n"
+        final_json = _canonical(final_data) + b"\n"
         final_document = loads_final_ir(final_json, trusted_receipts=trusted_receipts)
         surface = derive_authenticated_final_ir_package_surface(
             package_ref=authenticated_package.package_ref,
