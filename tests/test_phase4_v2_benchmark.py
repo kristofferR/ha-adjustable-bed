@@ -9,6 +9,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from tools.phase4_v2.benchmark import (
+    BENCHMARK_REVISION,
     REQUIRED_CONTRACT_ISSUES,
     REQUIRED_COVERAGE_TAGS,
     REQUIRED_MUTATIONS,
@@ -33,16 +34,22 @@ from tools.phase4_v2.benchmark import (
     MutationKind,
     MutationResult,
     OracleSuite,
+    PinnedAuthorityKeys,
     RolloutDecision,
     TimingPhase,
     TimingSample,
     TimingSuite,
     TokenSample,
+    TrialSchedule,
+    TrustedBenchmarkAuthority,
     benchmark_json,
     finalize_benchmark,
+    load_trusted_benchmark_authority,
 )
 
 _DIGEST = "a" * 64
+_ANALYST_KEY = Ed25519PrivateKey.from_private_bytes(b"l" * 32)
+_MUTATION_KEY = Ed25519PrivateKey.from_private_bytes(b"m" * 32)
 _AUDIT_KEY = Ed25519PrivateKey.from_private_bytes(b"a" * 32)
 _TELEMETRY_KEY = Ed25519PrivateKey.from_private_bytes(b"t" * 32)
 
@@ -63,7 +70,7 @@ def _digest(index: int) -> str:
 
 
 def _artifacts() -> tuple[
-    BenchmarkAuthority,
+    TrustedBenchmarkAuthority,
     BenchmarkPlan,
     OracleSuite,
     BenchmarkRun,
@@ -79,8 +86,11 @@ def _artifacts() -> tuple[
         run_identity_sha256=_digest(1_001),
         toolchain_sha256=_digest(1_002),
         harness_sha256=_digest(1_003),
-        analyst_identity_sha256=_digest(1_004),
-        mutation_runner_identity_sha256=_digest(1_005),
+        execution_nonce_sha256=_digest(1_004),
+        analyst_identity_sha256=_sha256_hex(_public_key(_ANALYST_KEY)),
+        analyst_public_key=_public_key(_ANALYST_KEY),
+        mutation_runner_identity_sha256=_sha256_hex(_public_key(_MUTATION_KEY)),
+        mutation_runner_public_key=_public_key(_MUTATION_KEY),
         auditor_identity_sha256=_sha256_hex(_public_key(_AUDIT_KEY)),
         auditor_public_key=_public_key(_AUDIT_KEY),
         telemetry_collector_identity_sha256=_sha256_hex(_public_key(_TELEMETRY_KEY)),
@@ -116,6 +126,7 @@ def _artifacts() -> tuple[
             MutationDeclaration(kind, _digest(index + 300))
             for index, kind in enumerate(sorted(REQUIRED_MUTATIONS, key=lambda item: item.value))
         ),
+        trial_schedule=TrialSchedule(("trial-a", "trial-b")),
         oracle_sha256=oracle.content_id,
         authority_sha256=authority.content_id,
     )
@@ -147,16 +158,21 @@ def _artifacts() -> tuple[
     )
     run = BenchmarkRun(
         plan_sha256=plan.content_id,
+        oracle_sha256=oracle.content_id,
         authority_sha256=authority.content_id,
         corpus_sha256=authority.corpus_sha256,
         run_identity_sha256=authority.run_identity_sha256,
         toolchain_sha256=authority.toolchain_sha256,
         harness_sha256=authority.harness_sha256,
+        execution_nonce_sha256=authority.execution_nonce_sha256,
         analyst_identity_sha256=authority.analyst_identity_sha256,
         mutation_runner_identity_sha256=authority.mutation_runner_identity_sha256,
         cases=cases,
         mutations=mutations,
+        analyst_signature="0" * 128,
+        mutation_runner_signature="0" * 128,
     )
+    run = _signed_run(run)
     audit_subjects = (
         *((AuditSubjectKind.CASE, item.case_id, item.content_id) for item in run.cases),
         *((AuditSubjectKind.MUTATION, item.kind.value, item.content_id) for item in run.mutations),
@@ -164,6 +180,10 @@ def _artifacts() -> tuple[
     audits = _signed_audit_suite(
         IndependentAuditSuite(
             authority_sha256=authority.content_id,
+            plan_sha256=plan.content_id,
+            oracle_sha256=oracle.content_id,
+            run_sha256=run.content_id,
+            execution_nonce_sha256=authority.execution_nonce_sha256,
             auditor_identity_sha256=authority.auditor_identity_sha256,
             receipts=tuple(
                 sorted(
@@ -184,51 +204,57 @@ def _artifacts() -> tuple[
     host = _digest(1_008)
     timings = _signed_timing_suite(
         TimingSuite(
-            authority.content_id,
-            authority.corpus_sha256,
-            authority.run_identity_sha256,
-            authority.telemetry_collector_identity_sha256,
-            host,
-            tuple(
+            authority_sha256=authority.content_id,
+            plan_sha256=plan.content_id,
+            oracle_sha256=oracle.content_id,
+            run_sha256=run.content_id,
+            execution_nonce_sha256=authority.execution_nonce_sha256,
+            corpus_sha256=authority.corpus_sha256,
+            run_identity_sha256=authority.run_identity_sha256,
+            collector_identity_sha256=authority.telemetry_collector_identity_sha256,
+            host_identity_sha256=host,
+            samples=tuple(
                 sorted(
                     sample
+                    for trial_index, trial_id in enumerate(plan.trial_schedule.trial_ids)
                     for index, case in enumerate(plan.cases)
                     for sample in (
                         TimingSample(
-                            "trial-0",
+                            trial_id,
                             case.case_id,
                             TimingPhase.LEGACY,
-                            index * 10_000,
-                            index * 10_000 + 3_000,
+                            trial_index * 1_000_000 + index * 10_000,
+                            trial_index * 1_000_000 + index * 10_000 + 3_000,
                             authority.telemetry_collector_identity_sha256,
                             host,
                         ),
                         TimingSample(
-                            "trial-0",
+                            trial_id,
                             case.case_id,
                             TimingPhase.V2,
-                            index * 10_000 + 4_000,
-                            index * 10_000 + 5_000,
+                            trial_index * 1_000_000 + index * 10_000 + 4_000,
+                            trial_index * 1_000_000 + index * 10_000 + 5_000,
                             authority.telemetry_collector_identity_sha256,
                             host,
                         ),
                     )
                 )
             ),
-            tuple(
+            token_samples=tuple(
                 sorted(
                     sample
+                    for trial_id in plan.trial_schedule.trial_ids
                     for case in plan.cases
                     for sample in (
                         TokenSample(
-                            "trial-0",
+                            trial_id,
                             case.case_id,
                             TimingPhase.LEGACY,
                             5_000,
                             authority.telemetry_collector_identity_sha256,
                         ),
                         TokenSample(
-                            "trial-0",
+                            trial_id,
                             case.case_id,
                             TimingPhase.V2,
                             1_000,
@@ -237,15 +263,16 @@ def _artifacts() -> tuple[
                     )
                 )
             ),
-            "0" * 128,
+            signature="0" * 128,
         )
     )
-    return authority, plan, oracle, run, audits, timings
+    trusted = _trusted(authority)
+    return trusted, plan, oracle, run, audits, timings
 
 
 def _finalize(
     artifacts: tuple[
-        BenchmarkAuthority,
+        TrustedBenchmarkAuthority,
         BenchmarkPlan,
         OracleSuite,
         BenchmarkRun,
@@ -334,27 +361,37 @@ def test_benchmark_rejects_each_quality_regression(change: str, code: str) -> No
 
 
 def test_benchmark_rejects_identity_contract_and_commitment_drift() -> None:
-    authority, plan, oracle, run, audits, timings = _artifacts()
-    changed = replace(authority, toolchain_sha256=_digest(9_999))
+    trusted, plan, oracle, run, audits, timings = _artifacts()
+    changed = replace(trusted.authority, toolchain_sha256=_digest(9_999))
 
-    report = finalize_benchmark(changed, plan, oracle, run, audits, timings)
-
-    assert {
-        "authority_commitment_mismatch",
-        "run_authority_mismatch",
-        "audit_authority_mismatch",
-        "timing_authority_mismatch",
-    } <= {item.code for item in report.diagnostics}
+    with pytest.raises(ValueError, match="protected benchmark authority"):
+        finalize_benchmark(
+            cast(TrustedBenchmarkAuthority, changed), plan, oracle, run, audits, timings
+        )
+    with pytest.raises(ValueError, match="digest does not match"):
+        load_trusted_benchmark_authority(
+            benchmark_json(changed),
+            expected_sha256=trusted.content_id,
+            pinned_keys=_pinned_keys(),
+        )
 
 
 def test_authority_requires_exact_contract_set_and_independent_actors() -> None:
-    authority, *_ = _artifacts()
+    trusted, *_ = _artifacts()
+    authority = trusted.authority
     with pytest.raises(ValueError, match="exact ordered issues"):
         replace(authority, contracts=authority.contracts[:-1])
     with pytest.raises(ValueError, match="independent"):
         replace(
             authority,
             auditor_identity_sha256=authority.analyst_identity_sha256,
+        )
+    with pytest.raises(ValueError, match="public keys must be unique"):
+        PinnedAuthorityKeys(
+            authority.analyst_public_key,
+            authority.mutation_runner_public_key,
+            authority.auditor_public_key,
+            authority.auditor_public_key,
         )
 
 
@@ -468,6 +505,158 @@ def test_audit_and_timing_attestations_cannot_be_forged_by_copying_identity() ->
     }
 
 
+def test_protected_authority_loader_rejects_self_issuance_wrong_pins_and_noncanonical_json() -> (
+    None
+):
+    trusted, plan, oracle, run, audits, timings = _artifacts()
+    authority = trusted.authority
+
+    assert _trusted(authority).content_id == authority.content_id
+    protected_slot = "_authority"
+    with pytest.raises(AttributeError, match="immutable"):
+        setattr(trusted, protected_slot, replace(authority, harness_sha256=_digest(9_999)))
+    with pytest.raises(AttributeError, match="immutable"):
+        delattr(trusted, protected_slot)
+    with pytest.raises(ValueError, match="protected benchmark authority"):
+        finalize_benchmark(
+            cast(TrustedBenchmarkAuthority, authority),
+            plan,
+            oracle,
+            run,
+            audits,
+            timings,
+        )
+    wrong_key = Ed25519PrivateKey.from_private_bytes(b"w" * 32)
+    wrong_pins = replace(_pinned_keys(), analyst_public_key=_public_key(wrong_key))
+    with pytest.raises(ValueError, match="do not match protected"):
+        load_trusted_benchmark_authority(
+            benchmark_json(authority),
+            expected_sha256=authority.content_id,
+            pinned_keys=wrong_pins,
+        )
+    with pytest.raises(ValueError, match="canonical JSON"):
+        load_trusted_benchmark_authority(
+            benchmark_json(authority).replace(b'"contracts":', b'"contracts" :', 1),
+            expected_sha256=authority.content_id,
+            pinned_keys=_pinned_keys(),
+        )
+
+
+def test_protected_authority_loader_rejects_duplicate_keys_and_parser_bounds() -> None:
+    trusted, *_ = _artifacts()
+    authority = trusted.authority
+    raw = benchmark_json(authority)
+    duplicate = raw.replace(
+        b"{",
+        b'{"revision":"' + BENCHMARK_REVISION.encode() + b'",',
+        1,
+    )
+    with pytest.raises(ValueError, match="strict JSON"):
+        load_trusted_benchmark_authority(
+            duplicate,
+            expected_sha256=authority.content_id,
+            pinned_keys=_pinned_keys(),
+        )
+    with pytest.raises(ValueError, match="size limit"):
+        load_trusted_benchmark_authority(
+            b" " * (64 * 1024 + 1),
+            expected_sha256=authority.content_id,
+            pinned_keys=_pinned_keys(),
+        )
+    with pytest.raises(ValueError, match="depth limit"):
+        load_trusted_benchmark_authority(
+            (b"[" * 13) + b"0" + (b"]" * 13),
+            expected_sha256=authority.content_id,
+            pinned_keys=_pinned_keys(),
+        )
+    with pytest.raises(ValueError, match="node limit"):
+        load_trusted_benchmark_authority(
+            b"[" + b",".join(b"0" for _ in range(513)) + b"]",
+            expected_sha256=authority.content_id,
+            pinned_keys=_pinned_keys(),
+        )
+
+
+def test_audit_and_telemetry_suites_cannot_replay_across_plan_or_run() -> None:
+    authority, plan, oracle, run, audits, timings = _artifacts()
+    changed_plan = replace(plan, minimum_throughput_ratio=2)
+    changed_run = _signed_run(replace(run, plan_sha256=changed_plan.content_id))
+
+    report = finalize_benchmark(
+        authority,
+        changed_plan,
+        oracle,
+        changed_run,
+        audits,
+        timings,
+    )
+
+    assert {"audit_context_mismatch", "timing_authority_mismatch"} <= {
+        item.code for item in report.diagnostics
+    }
+
+    changed_case = replace(run.cases[0], completed_stack_routes=("jadx",))
+    transplanted_run = _signed_run(replace(run, cases=(changed_case, *run.cases[1:])))
+    report = finalize_benchmark(
+        authority,
+        plan,
+        oracle,
+        transplanted_run,
+        audits,
+        timings,
+    )
+    assert {"audit_context_mismatch", "timing_authority_mismatch"} <= {
+        item.code for item in report.diagnostics
+    }
+
+
+def test_signed_subset_of_frozen_trial_schedule_is_rejected() -> None:
+    authority, plan, oracle, run, audits, timings = _artifacts()
+    subset = _signed_timing_suite(
+        replace(
+            timings,
+            samples=tuple(item for item in timings.samples if item.trial_id == "trial-a"),
+            token_samples=tuple(
+                item for item in timings.token_samples if item.trial_id == "trial-a"
+            ),
+        )
+    )
+
+    report = finalize_benchmark(authority, plan, oracle, run, audits, subset)
+
+    assert {"timing_schedule_mismatch", "token_schedule_mismatch"} <= {
+        item.code for item in report.diagnostics
+    }
+
+
+@pytest.mark.parametrize(
+    ("actor", "code"),
+    [
+        ("analyst", "analyst_signature_invalid"),
+        ("mutation", "mutation_runner_signature_invalid"),
+    ],
+)
+def test_run_producers_must_use_their_distinct_pinned_keys(actor: str, code: str) -> None:
+    authority, plan, oracle, run, _audits, timings = _artifacts()
+    if actor == "analyst":
+        changed_run = _signed_run(run, analyst_key=_MUTATION_KEY)
+    else:
+        changed_run = _signed_run(run, mutation_key=_ANALYST_KEY)
+    audits = _audit_suite(authority, changed_run)
+    timings = _signed_timing_suite(replace(timings, run_sha256=changed_run.content_id))
+
+    report = finalize_benchmark(authority, plan, oracle, changed_run, audits, timings)
+
+    assert code in {item.code for item in report.diagnostics}
+
+
+def test_trial_schedule_rejects_duplicates_and_unbounded_counts() -> None:
+    with pytest.raises(ValueError, match="must be unique"):
+        TrialSchedule(("trial-a", "trial-a"))
+    with pytest.raises(ValueError, match="1 to 1000"):
+        TrialSchedule(tuple(f"trial-{index}" for index in range(1_001)))
+
+
 def test_blind_plan_contains_no_oracle_findings_or_aggregate_timings() -> None:
     _authority, plan, _oracle, _run, _audits, _timings = _artifacts()
 
@@ -530,16 +719,23 @@ def test_runtime_types_are_strict() -> None:
         )
 
 
-def _audit_suite(authority: BenchmarkAuthority, run: BenchmarkRun) -> IndependentAuditSuite:
+def _audit_suite(
+    authority: BenchmarkAuthority | TrustedBenchmarkAuthority,
+    run: BenchmarkRun,
+) -> IndependentAuditSuite:
     subjects = (
         *((AuditSubjectKind.CASE, item.case_id, item.content_id) for item in run.cases),
         *((AuditSubjectKind.MUTATION, item.kind.value, item.content_id) for item in run.mutations),
     )
     return _signed_audit_suite(
         IndependentAuditSuite(
-            authority.content_id,
-            authority.auditor_identity_sha256,
-            tuple(
+            authority_sha256=authority.content_id,
+            plan_sha256=run.plan_sha256,
+            oracle_sha256=run.oracle_sha256,
+            run_sha256=run.content_id,
+            execution_nonce_sha256=run.execution_nonce_sha256,
+            auditor_identity_sha256=cast(str, authority.auditor_identity_sha256),
+            receipts=tuple(
                 sorted(
                     AuditReceipt(
                         kind,
@@ -547,12 +743,12 @@ def _audit_suite(authority: BenchmarkAuthority, run: BenchmarkRun) -> Independen
                         digest,
                         AuditDecision.ACCEPTED,
                         _digest(index + 7_000),
-                        authority.auditor_identity_sha256,
+                        cast(str, authority.auditor_identity_sha256),
                     )
                     for index, (kind, subject_id, digest) in enumerate(subjects)
                 )
             ),
-            "0" * 128,
+            signature="0" * 128,
         )
     )
 
@@ -563,6 +759,41 @@ def _signed_audit_suite(suite: IndependentAuditSuite) -> IndependentAuditSuite:
 
 def _signed_timing_suite(suite: TimingSuite) -> TimingSuite:
     return replace(suite, signature=_TELEMETRY_KEY.sign(suite.signing_bytes).hex())
+
+
+def _signed_run(
+    run: BenchmarkRun,
+    *,
+    analyst_key: Ed25519PrivateKey = _ANALYST_KEY,
+    mutation_key: Ed25519PrivateKey = _MUTATION_KEY,
+) -> BenchmarkRun:
+    analyst_signed = replace(
+        run,
+        analyst_signature=analyst_key.sign(run.analyst_signing_bytes).hex(),
+    )
+    return replace(
+        analyst_signed,
+        mutation_runner_signature=mutation_key.sign(
+            analyst_signed.mutation_runner_signing_bytes
+        ).hex(),
+    )
+
+
+def _pinned_keys() -> PinnedAuthorityKeys:
+    return PinnedAuthorityKeys(
+        _public_key(_ANALYST_KEY),
+        _public_key(_MUTATION_KEY),
+        _public_key(_AUDIT_KEY),
+        _public_key(_TELEMETRY_KEY),
+    )
+
+
+def _trusted(authority: BenchmarkAuthority) -> TrustedBenchmarkAuthority:
+    return load_trusted_benchmark_authority(
+        benchmark_json(authority),
+        expected_sha256=authority.content_id,
+        pinned_keys=_pinned_keys(),
+    )
 
 
 def _sha256_hex(value: str) -> str:
