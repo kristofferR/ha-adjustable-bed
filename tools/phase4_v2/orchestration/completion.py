@@ -660,9 +660,12 @@ def _finish(
     authority: ActivatedStageAuthority,
     canonical_receipt: bytes,
 ) -> StageCompletion:
-    del graph, kind, expected_input, completion_revision
+    del kind, expected_input, completion_revision
     result = queue.finish_authenticated_orchestration_stage(
-        lease, authority=authority, canonical_receipt=canonical_receipt
+        lease,
+        graph=graph,
+        authority=authority,
+        canonical_receipt=canonical_receipt,
     )
     restored = _load_signed(canonical_receipt, authority, authority.stage)
     return StageCompletion(restored[1], result)
