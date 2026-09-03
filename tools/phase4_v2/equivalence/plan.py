@@ -8,7 +8,7 @@ import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
 from enum import StrEnum
-from typing import Literal, NamedTuple, Never, overload
+from typing import Literal, NamedTuple, Never, cast, overload
 
 from tools.phase4_v2.ir import FINAL_SCHEMA_REVISION, final_schema_document
 from tools.phase4_v2.preflight.execution import (
@@ -56,7 +56,7 @@ from .core import (
 
 PACKAGE_LOCAL_PLAN_REVISION = "phase4-v2-package-local-plan-v2"
 TARGET_ROOT_INVENTORY_REVISION = "phase4-v2-target-root-inventory-v1"
-EXACT_REUSE_PINS_REVISION = "phase4-v2-exact-reuse-pins-v2"
+EXACT_REUSE_PINS_REVISION = "phase4-v2-exact-reuse-pins-v3"
 ROOT_EXECUTION_PLAN_REVISION = "phase4-v2-root-execution-plan-v2"
 PACKAGE_EXECUTION_PLAN_REVISION = "phase4-v2-package-execution-plan-v3"
 VALIDATED_PACKAGE_OUTPUT_REVISION = "phase4-v2-validated-package-output-v4"
@@ -1027,6 +1027,7 @@ class ExactReusePins:
     target_root_id: str
     target_occurrence_identity_sha256: str
     inherited_semantic_root_sha256: str
+    byte_identity_proof_id: str
     inherited_semantic_root_completion: CompletionPin
     target_inventory_completion: CompletionPin
     ledger_decision_completion: CompletionPin
@@ -1044,6 +1045,7 @@ class ExactReusePins:
         _sha(self.target_root_id, "reuse.target_root_id")
         _sha(self.target_occurrence_identity_sha256, "reuse.occurrence")
         _sha(self.inherited_semantic_root_sha256, "reuse.semantic_root")
+        _sha(self.byte_identity_proof_id, "reuse.byte_identity_proof_id")
         semantic_root = _completion(
             self.inherited_semantic_root_completion, "reuse semantic root completion"
         )
@@ -1089,6 +1091,7 @@ class ExactReusePins:
             "extractor_capability": self.extractor_capability.to_data(),
             "extractor_record_revision": self.extractor_record_revision,
             "inherited_semantic_root_sha256": self.inherited_semantic_root_sha256,
+            "byte_identity_proof_id": self.byte_identity_proof_id,
             "inherited_semantic_root_completion": (
                 self.inherited_semantic_root_completion.to_data()
             ),
@@ -1109,6 +1112,7 @@ def _reuse(value: ExactReusePins) -> ExactReusePins:
         target_root_id=value.target_root_id,
         target_occurrence_identity_sha256=value.target_occurrence_identity_sha256,
         inherited_semantic_root_sha256=value.inherited_semantic_root_sha256,
+        byte_identity_proof_id=value.byte_identity_proof_id,
         inherited_semantic_root_completion=value.inherited_semantic_root_completion,
         target_inventory_completion=value.target_inventory_completion,
         ledger_decision_completion=value.ledger_decision_completion,
@@ -1126,6 +1130,7 @@ def _new_reuse_pins(
     target_root_id: str,
     target_occurrence_identity_sha256: str,
     inherited_semantic_root_sha256: str,
+    byte_identity_proof_id: str,
     inherited_semantic_root_completion: CompletionPin,
     target_inventory_completion: CompletionPin,
     ledger_decision_completion: CompletionPin,
@@ -1141,6 +1146,7 @@ def _new_reuse_pins(
         ("target_root_id", target_root_id),
         ("target_occurrence_identity_sha256", target_occurrence_identity_sha256),
         ("inherited_semantic_root_sha256", inherited_semantic_root_sha256),
+        ("byte_identity_proof_id", byte_identity_proof_id),
         ("inherited_semantic_root_completion", inherited_semantic_root_completion),
         ("target_inventory_completion", target_inventory_completion),
         ("ledger_decision_completion", ledger_decision_completion),
@@ -1185,6 +1191,7 @@ def build_exact_reuse_root_plan(audit: SemanticRootAudit) -> ExactReuseRootPlan:
         target_root_id=audit.target_root_id,
         target_occurrence_identity_sha256=audit.target_occurrence_identity_sha256,
         inherited_semantic_root_sha256=audit.inherited_semantic_root_sha256,
+        byte_identity_proof_id=cast(str, audit.ledger_decision.byte_identity_proof_id),
         inherited_semantic_root_completion=semantic_root,
         target_inventory_completion=inventory,
         ledger_decision_completion=ledger,
@@ -2322,10 +2329,9 @@ def build_validated_package_output(
         (item.target_root_id, item.target_occurrence_identity_sha256)
         for item in frozen_receipt.validated_root_evidence
     }
-    if (
-        retained_full_roots != expected_full_roots
-        or len(frozen_receipt.validated_root_evidence) != len(expected_full_roots)
-    ):
+    if retained_full_roots != expected_full_roots or len(
+        frozen_receipt.validated_root_evidence
+    ) != len(expected_full_roots):
         _fail("validator receipt does not retain the exact FULL root evidence set")
     output = object.__new__(ValidatedPackageOutput)
     object.__setattr__(output, "target_package_ref_id", plan.target_package_ref_id)
