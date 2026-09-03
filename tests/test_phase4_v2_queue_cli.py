@@ -28,7 +28,10 @@ from tools.phase4_v2.queue import (
     replace_managed_block,
 )
 from tools.phase4_v2.queue.cli import main
-from tools.phase4_v2.queue.publication_config import PUBLICATION_CONFIG_REVISION
+from tools.phase4_v2.queue.publication_config import (
+    PUBLICATION_CONFIG_REVISION,
+    parse_publication_config,
+)
 
 
 @pytest.fixture
@@ -509,6 +512,8 @@ def test_cli_publishes_complete_target_set_and_emits_canonical_receipt(
 
     def gateway_factory(repository: str, branch: str) -> _MemoryPublicationGateway:
         constructed.append((repository, branch))
+        gateway.repository = repository
+        gateway.branch = branch
         return gateway
 
     monkeypatch.setattr(queue_cli, "GitHubTreeGateway", gateway_factory)
@@ -544,7 +549,9 @@ def test_cli_publishes_complete_target_set_and_emits_canonical_receipt(
             {"path": "public/queue.html", "format": "HTML"},
         ],
     }
-    assert len(receipt["publication_config_sha256"]) == 64
+    assert receipt["publication_config_sha256"] == parse_publication_config(
+        receipt["publication_config"]
+    ).sha256
     assert gateway.writes == 1
     generation = receipt["queue_generation"].encode()
     assert generation in gateway.documents["issues/436.md"]

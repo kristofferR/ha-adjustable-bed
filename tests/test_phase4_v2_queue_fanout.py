@@ -19,6 +19,7 @@ from tools.phase4_v2.queue import (
     publication_config_sha256,
     publish_tracker_fanout,
 )
+from tools.phase4_v2.queue.publication_config import TrackerPublicationConfig
 
 _REVISION = "a" * 40
 _NEXT_REVISION = "b" * 40
@@ -27,10 +28,13 @@ _TARGETS = (
     TrackerTarget("issues/443.md", TrackerFormat.MARKDOWN),
     TrackerTarget("public/queue.html", TrackerFormat.HTML),
 )
+_CONFIG = TrackerPublicationConfig("owner/repository", "tracker", _TARGETS)
 
 
 class _MemorySetGateway:
-    def __init__(self) -> None:
+    def __init__(self, repository: str = _CONFIG.repository, branch: str = _CONFIG.branch) -> None:
+        self.repository = repository
+        self.branch = branch
         self.revision = _REVISION
         self.documents: dict[str, bytes] = {}
         self.reject = False
@@ -89,11 +93,11 @@ def test_fanout_publishes_markdown_and_html_from_one_snapshot(
     queue, lease = publisher
     gateway = _MemorySetGateway()
 
-    receipt = publish_tracker_fanout(queue, lease, gateway, _TARGETS)
+    receipt = publish_tracker_fanout(queue, lease, gateway, _CONFIG)
 
     assert receipt.changed
     assert receipt.paths == tuple(item.path for item in _TARGETS)
-    assert receipt.publication_config_sha256 == publication_config_sha256(_TARGETS)
+    assert receipt.publication_config_sha256 == publication_config_sha256(_CONFIG)
     markdown = gateway.documents["issues/436.md"]
     assert markdown == gateway.documents["issues/443.md"]
     assert receipt.queue_generation.encode() in markdown
@@ -108,9 +112,9 @@ def test_fanout_is_idempotent_without_a_second_commit(
 ) -> None:
     queue, lease = publisher
     gateway = _MemorySetGateway()
-    publish_tracker_fanout(queue, lease, gateway, _TARGETS)
+    publish_tracker_fanout(queue, lease, gateway, _CONFIG)
 
-    receipt = publish_tracker_fanout(queue, lease, gateway, _TARGETS)
+    receipt = publish_tracker_fanout(queue, lease, gateway, _CONFIG)
 
     assert not receipt.changed
     assert gateway.writes == 1
@@ -125,7 +129,7 @@ def test_fanout_rejects_atomic_compare_and_swap_conflict(
     gateway.reject = True
 
     with pytest.raises(PublisherConflictError, match="document set changed"):
-        publish_tracker_fanout(queue, lease, gateway, _TARGETS)
+        publish_tracker_fanout(queue, lease, gateway, _CONFIG)
     assert gateway.writes == 0
 
 
@@ -137,19 +141,18 @@ def test_fanout_fails_closed_on_inexact_readback(
     gateway.corrupt_readback = True
 
     with pytest.raises(PublisherPostWriteConflictError, match="exact readback"):
-        publish_tracker_fanout(queue, lease, gateway, _TARGETS)
+        publish_tracker_fanout(queue, lease, gateway, _CONFIG)
 
 
 def test_fanout_rejects_unsorted_duplicate_or_unsafe_targets(
     publisher: tuple[Queue, Lease],
 ) -> None:
-    queue, lease = publisher
-    gateway = _MemorySetGateway()
+    _queue, _lease = publisher
 
     with pytest.raises(ValueError, match="sorted"):
-        publish_tracker_fanout(queue, lease, gateway, tuple(reversed(_TARGETS)))
+        TrackerPublicationConfig(_CONFIG.repository, _CONFIG.branch, tuple(reversed(_TARGETS)))
     with pytest.raises(ValueError, match="unique"):
-        publish_tracker_fanout(queue, lease, gateway, (_TARGETS[0], _TARGETS[0]))
+        TrackerPublicationConfig(_CONFIG.repository, _CONFIG.branch, (_TARGETS[0], _TARGETS[0]))
     with pytest.raises(ValueError, match="canonical"):
         TrackerTarget("../queue.md", TrackerFormat.MARKDOWN)
 
@@ -165,7 +168,35 @@ def test_publication_config_binds_renderer_format() -> None:
     markdown = (TrackerTarget("queue/output", TrackerFormat.MARKDOWN),)
     html = (TrackerTarget("queue/output", TrackerFormat.HTML),)
 
-    assert publication_config_sha256(markdown) != publication_config_sha256(html)
+    assert publication_config_sha256(
+        TrackerPublicationConfig("owner/repository", "tracker", markdown)
+    ) != publication_config_sha256(TrackerPublicationConfig("owner/repository", "tracker", html))
+
+
+def test_fanout_rejects_cross_repository_and_branch_replay(
+    publisher: tuple[Queue, Lease],
+) -> None:
+    queue, lease = publisher
+    other_repository = TrackerPublicationConfig("other/repository", "tracker", _TARGETS)
+    other_branch = TrackerPublicationConfig("owner/repository", "other", _TARGETS)
+
+    assert other_repository.sha256 != _CONFIG.sha256
+    assert other_branch.sha256 != _CONFIG.sha256
+    with pytest.raises(PublisherConflictError, match="endpoint"):
+        publish_tracker_fanout(queue, lease, _MemorySetGateway(), other_repository)
+    with pytest.raises(PublisherConflictError, match="endpoint"):
+        publish_tracker_fanout(queue, lease, _MemorySetGateway(), other_branch)
+
+
+def test_fanout_rejects_gateway_bound_to_another_endpoint(
+    publisher: tuple[Queue, Lease],
+) -> None:
+    queue, lease = publisher
+
+    with pytest.raises(PublisherConflictError, match="endpoint"):
+        publish_tracker_fanout(
+            queue, lease, _MemorySetGateway("attacker/repository", "tracker"), _CONFIG
+        )
 
 
 def test_document_set_duplicate_path_with_different_presence_fails_closed() -> None:
@@ -205,7 +236,7 @@ def test_fanout_bounds_targets_before_rendering(publisher: tuple[Queue, Lease]) 
         TrackerTarget(f"issues/{index:03d}.md", TrackerFormat.MARKDOWN) for index in range(33)
     )
 
-    with pytest.raises(ValueError, match="non-empty exact tuple"):
-        publish_tracker_fanout(queue, lease, _MemorySetGateway(), targets)
+    with pytest.raises(ValueError, match="non-empty bounded exact tuple"):
+        TrackerPublicationConfig(_CONFIG.repository, _CONFIG.branch, targets)
     with pytest.raises(ValueError, match="canonical"):
         TrackerTarget("issues/", TrackerFormat.MARKDOWN)

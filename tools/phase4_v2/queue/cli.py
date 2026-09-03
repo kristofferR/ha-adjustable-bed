@@ -271,11 +271,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             config = parse_publication_config(_read_json_file(args.config_file))
             lease = _lease_from_file(args.lease_file)
             gateway = GitHubTreeGateway(config.repository, config.branch)
-            receipt = publish_tracker_fanout(queue, lease, gateway, config.targets)
+            receipt = publish_tracker_fanout(queue, lease, gateway, config)
             _emit(
                 {
                     "publication_config": config.to_data(),
-                    "publication_config_sha256": config.sha256,
                     **asdict(receipt),
                 }
             )

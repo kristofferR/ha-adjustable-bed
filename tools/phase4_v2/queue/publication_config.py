@@ -21,6 +21,22 @@ class TrackerPublicationConfig:
     branch: str
     targets: tuple[TrackerTarget, ...]
 
+    def __post_init__(self) -> None:
+        validated = GitHubContentsTarget(self.repository, self.branch, "tracker")
+        if (validated.repository, validated.branch) != (self.repository, self.branch):
+            raise ValueError("publication endpoint is not canonical")
+        if (
+            type(self.targets) is not tuple
+            or not self.targets
+            or len(self.targets) > _MAX_TARGETS
+            or any(type(item) is not TrackerTarget for item in self.targets)
+        ):
+            raise ValueError("publication targets must be a non-empty bounded exact tuple")
+        if self.targets != tuple(sorted(self.targets)):
+            raise ValueError("publication targets must be sorted")
+        if len({target.path for target in self.targets}) != len(self.targets):
+            raise ValueError("publication target paths must be unique")
+
     def to_data(self) -> dict[str, object]:
         return {
             "schema_revision": PUBLICATION_CONFIG_REVISION,

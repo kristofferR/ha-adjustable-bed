@@ -10,7 +10,10 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
+
+if TYPE_CHECKING:
+    from .publication_config import TrackerPublicationConfig
 
 from .core import Lease, Queue, _TrackerPublicationCheckpointGrant
 from .publisher import PublisherConflictError, PublisherPostWriteConflictError
@@ -112,13 +115,23 @@ def publish_tracker_fanout(
     queue: Queue,
     lease: Lease,
     gateway: AtomicDocumentSetGateway,
-    targets: tuple[TrackerTarget, ...],
+    config: TrackerPublicationConfig,
 ) -> FanoutPublishReceipt:
     """Atomically publish every tracker view from one immutable snapshot."""
 
-    canonical_targets = _targets(targets)
+    from .publication_config import TrackerPublicationConfig
+
+    if type(config) is not TrackerPublicationConfig:
+        raise ValueError("fanout requires an exact tracker publication config")
+    canonical_targets = _targets(config.targets)
+    endpoint = (
+        getattr(gateway, "repository", getattr(gateway, "_repository", None)),
+        getattr(gateway, "branch", getattr(gateway, "_branch", None)),
+    )
+    if endpoint != (config.repository, config.branch):
+        raise PublisherConflictError("tracker gateway endpoint does not match publication config")
     paths = tuple(item.path for item in canonical_targets)
-    config_sha256 = publication_config_sha256(canonical_targets)
+    config_sha256 = config.sha256
     with _publication_guard(queue):
         queue.renew(lease, ttl_seconds=300)
         snapshot = queue.snapshot()
@@ -217,16 +230,14 @@ def publish_tracker_fanout(
         return receipt
 
 
-def publication_config_sha256(targets: tuple[TrackerTarget, ...]) -> str:
-    """Hash the exact canonical path and renderer-format configuration."""
+def publication_config_sha256(config: TrackerPublicationConfig) -> str:
+    """Return the full repository, branch, path, and format commitment."""
 
-    canonical = _targets(targets)
-    payload = json.dumps(
-        [[target.path, target.format.value] for target in canonical],
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode()
-    return hashlib.sha256(b"phase4-v2:tracker-publication-config\0" + payload).hexdigest()
+    from .publication_config import TrackerPublicationConfig
+
+    if type(config) is not TrackerPublicationConfig:
+        raise ValueError("publication config must be an exact TrackerPublicationConfig")
+    return config.sha256
 
 
 def document_set_sha256(documents: tuple[TrackerDocument, ...]) -> str:
