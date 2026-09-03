@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, Never, cast
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
+from tools.phase4_v2.preflight.execution import PreparationError
 from tools.phase4_v2.preflight.registry import (
     ActivatedPreparationAuthority,
     PreparationReceipt,
@@ -68,6 +69,18 @@ class RawSourceAuthenticationError(ValueError):
 
 def _fail(message: str) -> Never:
     raise RawSourceAuthenticationError(message)
+
+
+def _validate_preparation(
+    receipt: PreparationReceipt,
+    authority: ActivatedPreparationAuthority,
+) -> PreparationReceipt:
+    try:
+        return validate_preparation_receipt_authority(receipt, authority)
+    except PreparationError as error:
+        raise RawSourceAuthenticationError(
+            "raw-source preparation authentication failed"
+        ) from error
 
 
 def _canonical(value: object) -> bytes:
@@ -556,7 +569,7 @@ def raw_source_collection_payload(
 
     authority = load_protected_raw_source_authority()
     package_ref = validate_frozen_package_ref(package_ref)
-    preparation_receipt = validate_preparation_receipt_authority(
+    preparation_receipt = _validate_preparation(
         preparation_receipt, preparation_authority
     )
     target_inventory = validate_target_inventory_envelope(target_inventory)
@@ -666,7 +679,7 @@ def authenticate_raw_source_collection(
     root.__post_init__()
     if root.package_ref_id != package_ref.content_id:
         _fail("raw-source root belongs to another package")
-    preparation_receipt = validate_preparation_receipt_authority(
+    preparation_receipt = _validate_preparation(
         preparation_receipt, preparation_authority
     )
     target_inventory = validate_target_inventory_envelope(target_inventory)
