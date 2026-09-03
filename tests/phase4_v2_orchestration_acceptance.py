@@ -23,6 +23,7 @@ from tests.phase4_v2_orchestration_testing import (
     IncompleteSyntheticPackage,
     SyntheticTrust,
     _authorized_final_ir,
+    build_raw_backed_source_registry,
     build_synthetic_package_inputs,
     finish_synthetic_package_inputs,
     protected_fixture_trust,
@@ -36,11 +37,9 @@ from tools.phase4_v2.equivalence import (
     AuthenticatedPackageExecutionEnvelope,
     AuthenticatedSourceReportRegistry,
     CapabilityPin,
-    ExtractorCapability,
     FrozenPackageExecutionPlan,
     FrozenPackageRef,
     ValidatedPackageOutput,
-    build_authenticated_source_report_registry,
     build_validated_package_output,
     execution_authority_capability,
     execution_envelope_payload,
@@ -682,12 +681,7 @@ def complete_authenticated_synthetic_package_inputs(
     validation_lease = _claim_required(queue, PACKAGE_VALIDATION_RECEIPT_QUEUE_UNIT_KIND)
     finish_package_validation_receipt(queue, validation_lease, envelope=partial.source_envelope)
 
-    extractor = ExtractorCapability(
-        name="phase4-v2-synthetic-inventory-extractor",
-        implementation_sha256=trust.tool_sha256,
-        configuration_sha256=_digest("synthetic-inventory-configuration"),
-        capability_revision="synthetic-inventory-v1",
-    )
+    extractor = partial.extractor
     for pin in (
         inventory_authority_capability(trust.inventory_authority),
         inventory_extractor_capability(extractor),
@@ -718,9 +712,13 @@ def complete_authenticated_synthetic_package_inputs(
     inventory, _inventory_result = finish_target_inventory(
         queue, inventory_lease, envelope=envelope
     )
+    source_registry = build_raw_backed_source_registry(partial, envelope, trust)
 
     inputs = finish_synthetic_package_inputs(
-        partial, preparation=preparation, target_inventory=inventory
+        partial,
+        preparation=preparation,
+        target_inventory=inventory,
+        source_registry=source_registry,
     )
     frozen = freeze_package_execution_plan(inputs.execution_plan)
     for pin in frozen.required_capabilities:
@@ -791,7 +789,7 @@ def complete_authenticated_synthetic_package_inputs(
         (inputs.report_root / "analysis.json").read_bytes(),
         (inputs.report_root / "REPORT.SHA256").read_bytes(),
         inputs.preparation_receipt,
-        build_authenticated_source_report_registry(((inputs.package_ref, inputs.source_envelope),)),
+        source_registry,
         (),
     )
 

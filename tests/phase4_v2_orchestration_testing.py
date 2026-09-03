@@ -20,10 +20,14 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 import tools.phase4_v2.equivalence.core as equivalence_core
 import tools.phase4_v2.equivalence.execution as execution_module
 import tools.phase4_v2.equivalence.inventory as inventory_module
+import tools.phase4_v2.ir.model as ir_core
+import tools.phase4_v2.ir.v1 as final_ir_model
 import tools.phase4_v2.preflight.core as preflight_core
 import tools.phase4_v2.preflight.registry as registry_module
+import tools.phase4_v2.raw_source as raw_source_module
 from tools.phase4_v2.equivalence.core import (
     ActivatedValidatorAuthority,
+    ApplicationRoot,
     AuthenticatedValidatorEnvelope,
     authenticated_validator_envelope_payload,
     load_activated_validator_authority,
@@ -40,6 +44,7 @@ from tools.phase4_v2.equivalence.execution import (
 )
 from tools.phase4_v2.equivalence.inventory import (
     ActivatedInventoryAuthority,
+    AuthenticatedTargetInventoryEnvelope,
     inventory_authority_payload,
     inventory_authority_pin_payload,
     load_activated_inventory_authority,
@@ -67,7 +72,7 @@ from tools.phase4_v2.equivalence.plan import (
 )
 from tools.phase4_v2.equivalence.provenance import (
     AuthenticatedSourceReportRegistry,
-    build_authenticated_source_report_registry,
+    build_authenticated_raw_source_report_registry,
     source_report_root_completion,
 )
 from tools.phase4_v2.ir import (
@@ -106,6 +111,19 @@ from tools.phase4_v2.preflight import (
     preparation_authority_payload,
     qualify_tool,
 )
+from tools.phase4_v2.raw_source import (
+    ActivatedRawSourceAuthority,
+    RawSourceAnchor,
+    RawSourceMember,
+    RawSourceReauthenticationInput,
+    build_authenticated_raw_source_registry,
+    canonical_scalar_sha256,
+    load_protected_raw_source_authority,
+    raw_source_authority_payload,
+    raw_source_collection_payload,
+    raw_source_envelope_payload,
+    raw_source_signing_bytes,
+)
 from tools.phase4_v2.validator import (
     BOUND_VALIDATION_PROFILE,
     CONTRACT_REVISION,
@@ -115,6 +133,7 @@ from tools.phase4_v2.validator import (
     EvidenceLineageTrust,
     PackageDependencyPins,
     TrustedProducer,
+    derive_raw_source_validator_receipt,
     validate_report_bundle,
 )
 
@@ -131,6 +150,8 @@ class SyntheticTrust:
     inventory_authority: ActivatedInventoryAuthority
     execution_key: Ed25519PrivateKey
     execution_authority: ActivatedExecutionAuthority
+    raw_source_key: Ed25519PrivateKey
+    raw_source_authority: ActivatedRawSourceAuthority
     tool_sha256: str
 
 
@@ -206,7 +227,24 @@ def protected_fixture_trust(
     execution_patch = patch.object(
         execution_module, "_read_protected_execution_pin", return_value=execution_pin
     )
-    with preparation_patch, validator_patch, inventory_patch, execution_patch:
+    raw_source_key = Ed25519PrivateKey.from_private_bytes(b"r" * 32)
+    raw_source_payload = raw_source_authority_payload(
+        authority_id="raw-source-test",
+        generation=1,
+        public_key=_public_key_hex(raw_source_key),
+    )
+    raw_source_patch = patch.object(
+        raw_source_module,
+        "_read_protected_raw_source_authority",
+        return_value=raw_source_payload,
+    )
+    with (
+        preparation_patch,
+        validator_patch,
+        inventory_patch,
+        execution_patch,
+        raw_source_patch,
+    ):
         yield SyntheticTrust(
             preparation_signer,
             registry,
@@ -218,6 +256,8 @@ def protected_fixture_trust(
             load_activated_inventory_authority(inventory_payload),
             execution_key,
             load_activated_execution_authority(execution_payload),
+            raw_source_key,
+            load_protected_raw_source_authority(),
             hashlib.sha256(tool.read_bytes()).hexdigest(),
         )
 
@@ -278,14 +318,30 @@ def build_synthetic_package_inputs(
             output_directory=package_root / "preparation-result",
         )
         preflight_bytes = _canonical(preflight.manifest())
-        target_root = _digest(f"root:{cluster_id}:{package_index}")
         occurrence = _digest(f"occurrence:{cluster_id}:{package_index}")
+        extractor = inventory_module.ExtractorCapability(
+            name="phase4-v2-synthetic-inventory-extractor",
+            implementation_sha256=trust.tool_sha256,
+            configuration_sha256=_digest("synthetic-inventory-configuration"),
+            capability_revision="synthetic-inventory-v1",
+        )
+        application_root = ApplicationRoot(
+            package_ref_id="0" * 64,
+            root_kind="android",
+            extractor_capability_id=extractor.content_id,
+            occurrence_identity_sha256=occurrence,
+            content_root_sha256=_digest("synthetic-content-root"),
+            inventory_sha256=_digest("synthetic-root-inventory"),
+            dependency_root_sha256=_digest("synthetic-dependency-root"),
+            inventory_complete=True,
+            dependency_closure_complete=True,
+        )
         source_report, source_pins, source_lineage = _source_report(
             package_root / "source-report",
             preflight=preflight,
             preflight_bytes=preflight_bytes,
             tool_sha256=trust.tool_sha256,
-            target_root=target_root,
+            target_root=_digest(f"provisional-root:{cluster_id}:{package_index}"),
             occurrence=occurrence,
         )
         source_receipt = validate_report_bundle(
@@ -299,6 +355,17 @@ def build_synthetic_package_inputs(
             raise RuntimeError("synthetic preflight lost its package identity")
         source_envelope = _sign_validator_receipt(source_receipt.to_json().encode(), trust)
         package_ref = equivalence_core.frozen_package_ref_from_validator_envelope(source_envelope)
+        application_root = ApplicationRoot(
+            package_ref_id=package_ref.content_id,
+            root_kind=application_root.root_kind,
+            extractor_capability_id=application_root.extractor_capability_id,
+            occurrence_identity_sha256=application_root.occurrence_identity_sha256,
+            content_root_sha256=application_root.content_root_sha256,
+            inventory_sha256=application_root.inventory_sha256,
+            dependency_root_sha256=application_root.dependency_root_sha256,
+            inventory_complete=True,
+            dependency_closure_complete=True,
+        )
         package_local = PackageLocalPlan(
             package_ref.content_id,
             package_name,
@@ -313,7 +380,8 @@ def build_synthetic_package_inputs(
             ),
         )
         inventory = TargetRootInventory(
-            package_ref.content_id, (TargetRootOccurrence(target_root, occurrence),)
+            package_ref.content_id,
+            (TargetRootOccurrence(application_root.content_id, occurrence),),
         )
         # The accepted preparation binding is supplied later by the queue's
         # trusted finish adapter. The authenticated inventory adapter similarly
@@ -325,7 +393,8 @@ def build_synthetic_package_inputs(
             trust.preparation_authority,
             source_envelope,
             inventory,
-            target_root,
+            application_root,
+            extractor,
             occurrence,
             preflight_bytes,
             tuple((item.name, item.sha256) for item in preflight.artifact_members),
@@ -342,12 +411,17 @@ class IncompleteSyntheticPackage:
     preparation_authority: ActivatedPreparationAuthority
     source_envelope: AuthenticatedValidatorEnvelope
     target_inventory: TargetRootInventory
-    target_root: str
+    application_root: ApplicationRoot
+    extractor: inventory_module.ExtractorCapability
     occurrence: str
     preflight_bytes: bytes
     artifact_members: tuple[tuple[str, str], ...]
     package_root: Path
     tool_sha256: str
+
+    @property
+    def target_root(self) -> str:
+        return self.application_root.content_id
 
 
 def finish_synthetic_package_inputs(
@@ -355,12 +429,10 @@ def finish_synthetic_package_inputs(
     *,
     preparation: PreparationPlanBinding,
     target_inventory: AcceptedTargetRootInventory,
+    source_registry: AuthenticatedSourceReportRegistry,
 ) -> SyntheticPackageInputs:
     """Build a production package plan and matching immutable report bundle."""
 
-    source_registry = build_authenticated_source_report_registry(
-        ((partial.package_ref, partial.source_envelope),)
-    )
     source = source_registry.entries[0]
     source_roots = source.report.validated_root_evidence
     if len(source_roots) != 1:
@@ -388,7 +460,7 @@ def finish_synthetic_package_inputs(
             ),
         ),
     )
-    report, dependencies, lineage = _package_report(partial, execution_plan)
+    report, dependencies, lineage = _package_report(partial, execution_plan, source_registry)
     return SyntheticPackageInputs(
         partial.package_ref,
         partial.package_local,
@@ -420,6 +492,110 @@ def _sign_validator_receipt(
         payload, trust.validator_authority, signature=signature
     )
     return load_authenticated_validator_envelope(envelope, authority=trust.validator_authority)
+
+
+def build_raw_backed_source_registry(
+    partial: IncompleteSyntheticPackage,
+    target_inventory: AuthenticatedTargetInventoryEnvelope,
+    trust: SyntheticTrust,
+) -> AuthenticatedSourceReportRegistry:
+    """Bind one synthetic package's signed source report to exact raw scalars."""
+
+    invocation_index, output = next(
+        (index, output)
+        for index, invocation in enumerate(partial.preparation_receipt.invocations)
+        for output in invocation.outputs
+        if output.bytes >= 48
+    )
+    member = RawSourceMember(
+        "semantic-source",
+        invocation_index,
+        output.path,
+        output.sha256,
+        output.bytes,
+    )
+    semantic = ir_core._semantic_data(
+        final_ir_model._parse_final_ir_structure(_synthetic_terminal_semantics())
+    )
+    pointers = tuple(
+        sorted(
+            pointer
+            for pointer in ir_core._semantic_leaf_pointers(semantic)
+            if not pointer.startswith("/domain_closure/")
+            and not pointer.endswith("/@key")
+        )
+    )
+    offset = 0
+    anchors: list[RawSourceAnchor] = []
+    for index, pointer in enumerate(pointers):
+        value = ir_core._resolve_semantic_pointer(semantic, pointer)
+        if type(value) is str:
+            encoded = value.encode()
+            representation = "utf8"
+        elif type(value) in {int, bool}:
+            encoded = json.dumps(value, separators=(",", ":")).encode()
+            representation = "json-scalar"
+        else:
+            raise RuntimeError(f"synthetic semantic leaf is not a raw scalar: {pointer}")
+        anchors.append(
+            RawSourceAnchor(
+                f"semantic-{partial.package_ref.content_id[:12]}-{index:02d}",
+                member.id,
+                offset,
+                offset + len(encoded),
+                encoded,
+                representation,
+                value,
+                canonical_scalar_sha256(value),
+                pointer,
+            )
+        )
+        offset += len(encoded) + 1
+    payload = raw_source_collection_payload(
+        package_ref=partial.package_ref,
+        root=partial.application_root,
+        preparation_receipt=partial.preparation_receipt,
+        preparation_authority=partial.preparation_authority,
+        target_inventory=target_inventory,
+        members=(member,),
+        anchors=tuple(anchors),
+    )
+    envelope = raw_source_envelope_payload(
+        payload,
+        trust.raw_source_key.sign(raw_source_signing_bytes(payload)).hex(),
+    )
+    raw_registry = build_authenticated_raw_source_registry(
+        (
+            (
+                envelope,
+                partial.package_ref,
+                partial.application_root,
+                partial.preparation_receipt,
+                partial.preparation_authority,
+                target_inventory,
+            ),
+        )
+    )
+    inputs: tuple[RawSourceReauthenticationInput, ...] = (
+        (
+            partial.package_ref,
+            partial.application_root,
+            partial.preparation_receipt,
+            partial.preparation_authority,
+            target_inventory,
+        ),
+    )
+    enriched_receipt = derive_raw_source_validator_receipt(
+        partial.source_envelope,
+        raw_source_registry=raw_registry,
+        raw_source_inputs=inputs,
+    )
+    enriched = _sign_validator_receipt(enriched_receipt, trust)
+    return build_authenticated_raw_source_report_registry(
+        ((partial.package_ref, enriched),),
+        raw_source_registry=raw_registry,
+        raw_source_inputs=inputs,
+    )
 
 
 def _source_report(
@@ -511,15 +687,13 @@ def _source_report(
 def _package_report(
     partial: IncompleteSyntheticPackage,
     execution_plan: PackageExecutionPlan,
+    source_registry: AuthenticatedSourceReportRegistry,
 ) -> tuple[Path, PackageDependencyPins, EvidenceLineageTrust]:
     root = partial.package_root / "package-report"
     root.mkdir()
     evidence = b"CLOSED"
     evidence_digest = hashlib.sha256(evidence).hexdigest()
     evidence_member = f"evidence/sha256/{evidence_digest}"
-    source_registry = build_authenticated_source_report_registry(
-        ((partial.package_ref, partial.source_envelope),)
-    )
     final_ir, trusted = _authorized_final_ir(source_registry)
     final_ir_bytes = _json_line(final_ir)
     final_document = loads_final_ir(final_ir_bytes, trusted_receipts=trusted)
@@ -707,6 +881,140 @@ def _lineage(
     )
 
 
+def _synthetic_terminal_semantics() -> dict[str, object]:
+    """Return one closed, nontrivial protocol universe with scalar evidence leaves."""
+
+    data: dict[str, object] = {
+        "schema_revision": FINAL_SCHEMA_REVISION,
+        "source_packages": {},
+        "evidence_files": {},
+        "evidence_anchors": {},
+        "source_sets": {},
+        "evidence_bindings": {},
+        **{name: {} for name in FINAL_DOMAIN_COLLECTIONS},
+        "variant_spaces": {
+            "variants": {
+                "dimensions": {"side": ["left"]},
+                "constraints": [{"op": "always"}],
+            }
+        },
+        "protocols": {"primary": {"variant_space": "variants"}},
+        "actions": {
+            "raise": {"summary": "Raise"},
+            "stop": {"summary": "Stop"},
+        },
+        "expected_action_rules": {
+            "expect_raise": {
+                "protocol": "primary",
+                "action": "raise",
+                "when": {"op": "always"},
+            }
+        },
+        "selectors": {
+            "side": {
+                "variant_space": "variants",
+                "dimension": "side",
+                "kind": "VARIANT",
+                "values": ["left"],
+            }
+        },
+        "selection_rules": {
+            "select": {"protocol": "primary", "when": {"op": "always"}}
+        },
+        "discovery_rules": {
+            "discover": {
+                "selection_rule": "select",
+                "matchers": [
+                    {"field": "SERVICE_UUID", "operation": "EQUALS", "value": "service"}
+                ],
+            }
+        },
+        "gatt_services": {"service": {"uuid": "service", "role": "CONTROL"}},
+        "gatt_characteristics": {
+            "write": {
+                "service": "service",
+                "uuid": "write",
+                "roles": ["WRITE"],
+                "write_modes": ["WITHOUT_RESPONSE"],
+            }
+        },
+        "transforms": {"identity": {"operation": "IDENTITY"}},
+        "checksums": {
+            "checksum": {
+                "algorithm": "SUM8",
+                "start_byte": 0,
+                "end_byte": 1,
+                "output_width": 1,
+            }
+        },
+        "framings": {"frame": {"prefix_hex": "aa", "suffix_hex": "55"}},
+        "packet_fields": {
+            "command": {
+                "offset": 0,
+                "width": 1,
+                "source": "CONSTANT",
+                "constant_hex": "01",
+                "transforms": ["identity"],
+            }
+        },
+        "packet_builders": {
+            "builder": {
+                "fields": ["command"],
+                "framing": "frame",
+                "checksum": "checksum",
+            }
+        },
+        "authentications": {"auth": {"method": "PIN", "selectors": ["side"]}},
+        "bufferings": {"datagram": {"mode": "DATAGRAM"}},
+        "parser_fields": {
+            "state": {
+                "offset": 0,
+                "width": 1,
+                "target_selector": "side",
+                "transforms": ["identity"],
+            }
+        },
+        "notification_parsers": {
+            "parser": {"buffering": "datagram", "fields": ["state"]}
+        },
+        "timings": {
+            "movement": {
+                "repeat_count": 1,
+                "repeat_interval_ms": 100,
+                "cancellation": "AFTER_FRAME",
+                "release": "STOP_ACTION",
+                "release_action": "stop",
+            }
+        },
+        "lifecycles": {"command": {"phases": ["CONNECT", "WRITE", "DISCONNECT"]}},
+        "transports": {
+            "transport": {
+                "characteristic": "write",
+                "write_mode": "WITHOUT_RESPONSE",
+                "packet_builder": "builder",
+                "notification_parser": "parser",
+                "authentication": "auth",
+                "timing": "movement",
+                "lifecycle": "command",
+            }
+        },
+        "action_mappings": {
+            "raise_mapping": {
+                "protocol": "primary",
+                "action": "raise",
+                "transport": "transport",
+                "when": {"op": "always"},
+            }
+        },
+        "domain_closure": {
+            "status": "CLOSED",
+            "domains": list(FINAL_DOMAIN_COLLECTIONS),
+            "unmodeled_paths": [],
+        },
+    }
+    return data
+
+
 def _authorized_final_ir(
     source_registry: AuthenticatedSourceReportRegistry | None = None,
 ) -> tuple[dict[str, object], dict[str, str]]:
@@ -725,68 +1033,70 @@ def _authorized_final_ir(
         },
     }
     if source_registry is not None:
-        if len(source_registry.entries) != 1:
-            raise RuntimeError("synthetic final IR requires one authenticated source report")
-        source = source_registry.entries[0]
-        if len(source.report.validated_root_evidence) != 1:
-            raise RuntimeError("synthetic final IR requires one authenticated source root")
-        root = source.report.validated_root_evidence[0]
-        root_anchor_ids = {
-            anchor_id
-            for member in root.evidence_members
-            for anchor_id in member.evidence_anchor_ids
-        }
-        package_id, package = build_source_package(
-            source.source_package.artifact, source.source_package.report
-        )
+        packages: dict[str, object] = {}
         files: dict[str, object] = {}
-        file_ids: dict[str, str] = {}
-        root_members = {item.member for item in root.evidence_members}
-        for member in source.report.validated_evidence_members:
-            if member.member not in root_members:
-                continue
-            file_id, evidence_file = build_evidence_file(
-                package=package_id, member=member.member, sha256=member.sha256
-            )
-            file_ids[member.member] = file_id
-            files[file_id] = evidence_file.to_data()
         final_anchors: dict[str, object] = {}
         source_sets: dict[str, object] = {}
         bindings: dict[str, object] = {}
-        for anchor in source.report.validated_evidence_anchors:
-            if anchor.id not in root_anchor_ids:
-                continue
-            anchor_id, evidence_anchor = build_evidence_anchor(
-                id=anchor.id,
-                file=file_ids[anchor.member],
-                start_byte=anchor.start_byte,
-                end_byte=anchor.end_byte,
-                ir_pointer=anchor.ir_pointer,
-                representation=anchor.representation,
-                value_sha256=anchor.value_sha256,
+        sets_by_pointer: dict[str, list[str]] = {}
+        trusted: dict[str, str] = {}
+        for source in source_registry.entries:
+            if len(source.report.validated_root_evidence) != 1:
+                raise RuntimeError("synthetic final IR requires one root per source report")
+            root = source.report.validated_root_evidence[0]
+            root_anchor_ids = {
+                anchor_id
+                for member in root.evidence_members
+                for anchor_id in member.evidence_anchor_ids
+            }
+            package_id, package = build_source_package(
+                source.source_package.artifact, source.source_package.report
             )
-            final_anchors[anchor_id] = evidence_anchor.to_data()
-        source_set_id, source_set = build_source_set(
-            package=package_id, anchors=tuple(sorted(final_anchors))
-        )
-        source_sets[source_set_id] = source_set.to_data()
-        for index in range(3):
+            packages[package_id] = package.to_data()
+            file_ids: dict[str, str] = {}
+            root_members = {item.member for item in root.evidence_members}
+            for member in source.report.validated_evidence_members:
+                if member.member not in root_members:
+                    continue
+                file_id, evidence_file = build_evidence_file(
+                    package=package_id, member=member.member, sha256=member.sha256
+                )
+                file_ids[member.member] = file_id
+                files[file_id] = evidence_file.to_data()
+            for anchor in source.report.validated_evidence_anchors:
+                if anchor.id not in root_anchor_ids:
+                    continue
+                anchor_id, evidence_anchor = build_evidence_anchor(
+                    id=anchor.id,
+                    file=file_ids[anchor.member],
+                    start_byte=anchor.start_byte,
+                    end_byte=anchor.end_byte,
+                    ir_pointer=anchor.ir_pointer,
+                    representation=anchor.representation,
+                    value_sha256=anchor.value_sha256,
+                )
+                final_anchors[anchor_id] = evidence_anchor.to_data()
+                source_set_id, source_set = build_source_set(
+                    package=package_id, anchors=(anchor_id,)
+                )
+                source_sets[source_set_id] = source_set.to_data()
+                sets_by_pointer.setdefault(anchor.ir_pointer, []).append(source_set_id)
+            trusted[source.report.validation_receipt_sha256] = source.report.bundle_sha256
+        for pointer, source_set_ids in sets_by_pointer.items():
             binding_id, binding = build_evidence_binding(
-                target=f"/actions/candidate-{index}/summary",
-                source_sets=(source_set_id,),
+                target=pointer,
+                source_sets=tuple(sorted(source_set_ids)),
             )
             bindings[binding_id] = binding.to_data()
-        data["source_packages"] = {package_id: package.to_data()}
+        data["source_packages"] = packages
         data["evidence_files"] = files
         data["evidence_anchors"] = final_anchors
         data["source_sets"] = source_sets
         data["evidence_bindings"] = bindings
-        data["actions"] = {
-            f"candidate-{index}": {"summary": SCHEMA_REVISION} for index in range(3)
-        }
-        return data, {
-            source.report.validation_receipt_sha256: source.report.bundle_sha256
-        }
+        semantics = _synthetic_terminal_semantics()
+        for name in (*FINAL_DOMAIN_COLLECTIONS, "domain_closure"):
+            data[name] = semantics[name]
+        return data, trusted
     pointers = [
         "/domain_closure/status",
         *(f"/domain_closure/domains/{index}" for index in range(len(FINAL_DOMAIN_COLLECTIONS))),
@@ -1034,9 +1344,10 @@ def _build_static_tool(emit_candidates: bool = True) -> Path:
     tool_root = Path(tempfile.mkdtemp(prefix="phase4-v2-synthetic-tool-"))
     source = tool_root / "fixture.c"
     binary = tool_root / "fixture-tool"
+    semantic_body = "BluetoothGatt" + "x" * 16_384
     output_statements = (
-        'if(strcmp(route,"apktool")==0)write_file(out,"smali","App.smali","Landroid/bluetooth/BluetoothGatt;");\n'
-        ' if(strcmp(route,"jadx")==0)write_file(out,"sources","App.java","android.bluetooth.BluetoothGatt");'
+        f'if(strcmp(route,"apktool")==0)write_file(out,"smali","App.smali","{semantic_body}");\n'
+        f' if(strcmp(route,"jadx")==0)write_file(out,"sources","App.java","{semantic_body}");'
         if emit_candidates
         else 'write_file(out,"smali","App.smali","synthetic fixture");'
     )

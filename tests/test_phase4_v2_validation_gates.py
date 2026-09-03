@@ -379,9 +379,9 @@ def test_genuine_authenticated_full_chain_is_accepted(case: _Case) -> None:
 
     assert first.accepted
     assert first.content_id == second.content_id
-    assert first.candidate_count == 3
-    assert first.action_count == 0
-    assert first.variant_count == 0
+    assert first.candidate_count == 23
+    assert first.action_count == 1
+    assert first.variant_count == 1
     assert first.warning_count == 0
     assert all(
         root.route.value == "FULL_ANALYSIS"
@@ -523,34 +523,38 @@ def test_authenticated_candidate_ledger_cannot_omit_or_add_atoms(
 
 
 @pytest.mark.parametrize("kind", [DispositionKind.ACTION, DispositionKind.VARIANT])
-def test_authenticated_action_and_variant_ledgers_reject_extras(
-    tmp_path: Path, kind: DispositionKind
+@pytest.mark.parametrize("omit", [True, False], ids=["omission", "extra"])
+def test_authenticated_action_and_variant_ledgers_require_exact_sets(
+    tmp_path: Path, kind: DispositionKind, omit: bool
 ) -> None:
     area_kind = (
         ComparisonArea.ACTIONS if kind is DispositionKind.ACTION else ComparisonArea.MODELS_VARIANTS
     )
 
-    def add(surfaces: tuple[PackageSurface, ...]) -> tuple[PackageSurface, ...]:
+    def mutate(surfaces: tuple[PackageSurface, ...]) -> tuple[PackageSurface, ...]:
         target = surfaces[0]
         index = next(index for index, area in enumerate(target.areas) if area.area is area_kind)
         area = target.areas[index]
-        witness = next(
-            item
-            for source_area in target.areas
-            for item in source_area.dispositions
-            if item.kind is DispositionKind.CANDIDATE
-        )
-        extra = LedgerDisposition(
-            kind,
-            f"{kind.value.lower()}:{_sha('hostile extra')}",
-            DispositionStatus.EXCLUDED,
-            "hostile-extra",
-            (),
-            witness.provenance,
-        )
+        matching = tuple(item for item in area.dispositions if item.kind is kind)
+        if not matching:
+            raise RuntimeError("rich terminal fixture produced no requested dispositions")
+        if omit:
+            dispositions = tuple(item for item in area.dispositions if item != matching[-1])
+        else:
+            extra = LedgerDisposition(
+                kind,
+                f"{kind.value.lower()}:{_sha('hostile extra')}",
+                DispositionStatus.EXCLUDED,
+                "hostile-extra",
+                (),
+                matching[0].provenance,
+            )
+            dispositions = tuple(
+                sorted((*area.dispositions, extra), key=lambda item: item.sort_key)
+            )
         changed = replace(
             area,
-            dispositions=tuple(sorted((*area.dispositions, extra), key=lambda item: item.sort_key)),
+            dispositions=dispositions,
         )
         surface = replace(
             target,
@@ -558,7 +562,7 @@ def test_authenticated_action_and_variant_ledgers_reject_extras(
         )
         return (surface, *surfaces[1:])
 
-    with _case_context(tmp_path, add) as changed_case:
+    with _case_context(tmp_path, mutate) as changed_case:
         result = _codes(changed_case)
 
     assert f"{kind.value}_FINAL_IR_SET_MISMATCH" in result
