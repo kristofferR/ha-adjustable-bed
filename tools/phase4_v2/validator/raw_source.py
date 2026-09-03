@@ -150,4 +150,20 @@ def derive_raw_source_validator_receipt(
     receipt["validation_receipt_sha256"] = hashlib.sha256(
         _canonical_receipt_bytes(receipt)
     ).hexdigest()
+    if validate_authenticated_validator_envelope(base) != base:
+        raise RawSourceValidationError(
+            "base validator envelope changed during raw-source derivation"
+        )
+    try:
+        restored_registry = reauthenticate_raw_source_registry(
+            registry, inputs=raw_source_inputs
+        )
+    except RawSourceAuthenticationError as error:
+        raise RawSourceValidationError(
+            "raw-source registry changed during validator derivation"
+        ) from error
+    if restored_registry != registry:
+        raise RawSourceValidationError(
+            "raw-source registry changed during validator derivation"
+        )
     return _canonical_receipt_bytes(receipt)
