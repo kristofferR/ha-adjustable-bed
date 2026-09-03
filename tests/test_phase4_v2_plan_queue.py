@@ -581,6 +581,23 @@ def _reuse_plan() -> PackageExecutionPlan:
         source_audit_receipt_sha256=SHA_1,
         pins=RoutingPins(),
     )
+    prerequisite_receipt = hashlib.sha256(b"signed-prerequisite").hexdigest()
+    prerequisite_capabilities = tuple(
+        sorted(
+            (
+                CapabilityPin("phase4-v2-exact-reuse-authority", "authority-v1", SHA_D),
+                CapabilityPin(
+                    EXACT_REUSE_PIPELINE_CAPABILITY,
+                    EQUIVALENCE_SCHEMA_REVISION,
+                    SHA_F,
+                ),
+                CapabilityPin(
+                    "extractor:dex", "dex-implementation-2026.08", extractor.content_id
+                ),
+            ),
+            key=lambda item: item.name,
+        )
+    )
     audit: SemanticRootAudit = build_semantic_root_audit(
         source_root=source,
         ledger_decision=decision,
@@ -590,14 +607,21 @@ def _reuse_plan() -> PackageExecutionPlan:
         inherited_semantic_root_completion=build_semantic_root_completion(
             source_root=source,
             inherited_semantic_root_sha256=SHA_0,
-            parent_unit_id="semantic-root:source",
+            parent_unit_id=(
+                f"{plan_module.EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX}:"
+                f"{prerequisite_receipt}"
+            ),
         ),
         target_inventory_completion=accepted.completion,
         ledger_decision_completion=CompletionPin(
-            "ledger:target", LEDGER_DECISION_REVISION, decision.content_id
+            f"{plan_module.EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX}:{prerequisite_receipt}",
+            LEDGER_DECISION_REVISION,
+            decision.content_id,
         ),
         direct_semantic_audit_completion=CompletionPin(
-            "audit:source", SEMANTIC_ROOT_COMPLETION_REVISION, SHA_1
+            f"{plan_module.EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX}:{prerequisite_receipt}",
+            SEMANTIC_ROOT_COMPLETION_REVISION,
+            SHA_1,
         ),
         extractor_capability=CapabilityPin(
             "extractor:dex", "dex-implementation-2026.08", extractor.content_id
@@ -607,6 +631,8 @@ def _reuse_plan() -> PackageExecutionPlan:
             EQUIVALENCE_SCHEMA_REVISION,
             SHA_F,
         ),
+        exact_reuse_prerequisite_receipt_sha256=prerequisite_receipt,
+        exact_reuse_prerequisite_capabilities=prerequisite_capabilities,
     )
     return build_package_execution_plan(
         cluster_id=CLUSTER_ID,
@@ -1336,17 +1362,20 @@ def test_same_package_reference_with_changed_plan_conflicts(queue: Queue) -> Non
         materialize_package_execution_plan(queue, changed)
 
 
-def test_all_reuse_still_materializes_distinct_package_unit(queue: Queue) -> None:
+def test_all_reuse_rejects_unbacked_prerequisite_completion_rows(queue: Queue) -> None:
     plan = _reuse_plan()
     frozen = freeze_package_execution_plan(plan)
     for pin in frozen.required_completions:
+        if pin.parent_unit_id.startswith("exact-reuse-"):
+            continue
         _materialize_prerequisite(queue, pin)
 
-    materialized = materialize_package_execution_plan(queue, plan)
-
-    assert materialized is not None
-    assert materialized.unit_id not in {pin.parent_unit_id for pin in frozen.required_completions}
-    assert queue.status(materialized.unit_id) is WorkUnitStatus.READY
+    with pytest.raises(DependencyNotSatisfiedError, match="exact-reuse"):
+        materialize_package_execution_plan(queue, plan)
+    assert all(
+        item.unit_id != package_queue_unit_id(TARGET_PACKAGE_REF_ID)
+        for item in queue.snapshot().units
+    )
 
 
 def test_finish_builds_bound_output_and_publishes_its_exact_identity(

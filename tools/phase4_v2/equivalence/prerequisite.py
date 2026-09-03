@@ -15,6 +15,7 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from tools.phase4_v2.preflight.registry import (
+    PREPARATION_RECEIPT_REVISION,
     ActivatedPreparationAuthority,
     PreparationReceipt,
 )
@@ -40,7 +41,11 @@ from .inventory import (
 )
 from .plan import (
     EQUIVALENCE_SCHEMA_REVISION,
+    EXACT_REUSE_AUTHORITY_CAPABILITY,
+    EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX,
+    EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX,
     EXACT_REUSE_PIPELINE_CAPABILITY,
+    EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX,
     LEDGER_DECISION_REVISION,
     SEMANTIC_ROOT_COMPLETION_REVISION,
     CapabilityPin,
@@ -49,6 +54,7 @@ from .plan import (
     build_semantic_root_audit,
     build_semantic_root_completion,
     package_validation_receipt_completion,
+    preparation_queue_unit_id,
 )
 from .provenance import (
     AuthenticatedSourceReport,
@@ -58,13 +64,9 @@ from .provenance import (
 EXACT_REUSE_AUTHORITY_SCHEMA = "phase4-v2-exact-reuse-authority-v1"
 EXACT_REUSE_AUTHORITY_PIN_SCHEMA = "phase4-v2-exact-reuse-authority-pin-v1"
 EXACT_REUSE_PREREQUISITE_SCHEMA = "phase4-v2-authenticated-exact-reuse-prerequisite-v1"
-EXACT_REUSE_AUTHORITY_CAPABILITY = "phase4-v2-exact-reuse-authority"
 EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND = "trusted-exact-reuse-semantic-root"
 EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND = "trusted-exact-reuse-ledger-decision"
 EXACT_REUSE_DIRECT_AUDIT_QUEUE_KIND = "trusted-exact-reuse-direct-audit"
-EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX = "exact-reuse-semantic-root"
-EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX = "exact-reuse-ledger-decision"
-EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX = "exact-reuse-direct-audit"
 _PIN_PATH = Path("/etc/ha-adjustable-bed/phase4-v2-exact-reuse-authority.pin.json")
 _MAX_AUTHORITY_BYTES = 64 * 1024
 _MAX_RECEIPT_BYTES = 4 * 1024 * 1024
@@ -637,20 +639,30 @@ def exact_reuse_prerequisite_capabilities(
     receipt: AuthenticatedExactReusePrerequisite,
 ) -> tuple[CapabilityPin, ...]:
     receipt = validate_authenticated_exact_reuse_prerequisite(receipt)
-    return (
-        exact_reuse_authority_capability(receipt.authority),
-        inventory_authority_capability(receipt.target_inventory.authority),
-        inventory_extractor_capability(receipt.extractor),
-        receipt.equivalence_pipeline,
+    return tuple(
+        sorted(
+            (
+                exact_reuse_authority_capability(receipt.authority),
+                inventory_authority_capability(receipt.target_inventory.authority),
+                inventory_extractor_capability(receipt.extractor),
+                receipt.equivalence_pipeline,
+            ),
+            key=lambda item: item.name,
+        )
     )
 
 
 def exact_reuse_prerequisite_dependencies(
     receipt: AuthenticatedExactReusePrerequisite,
-) -> tuple[CompletionPin, CompletionPin, CompletionPin]:
+) -> tuple[CompletionPin, CompletionPin, CompletionPin, CompletionPin]:
     receipt = validate_authenticated_exact_reuse_prerequisite(receipt)
     return (
         package_validation_receipt_completion(receipt.source.package_ref),
+        CompletionPin(
+            preparation_queue_unit_id(receipt.source.package_ref.content_id),
+            PREPARATION_RECEIPT_REVISION,
+            receipt.source_preparation_receipt.content_id,
+        ),
         accept_target_inventory(receipt.source_inventory).completion,
         accept_target_inventory(receipt.target_inventory).completion,
     )
@@ -677,6 +689,8 @@ def semantic_root_audit_from_authenticated_prerequisite(
         direct_semantic_audit_completion=direct,
         extractor_capability=inventory_extractor_capability(receipt.extractor),
         equivalence_pipeline=receipt.equivalence_pipeline,
+        exact_reuse_prerequisite_receipt_sha256=receipt.receipt_sha256,
+        exact_reuse_prerequisite_capabilities=exact_reuse_prerequisite_capabilities(receipt),
     )
 
 

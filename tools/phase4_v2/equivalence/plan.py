@@ -58,10 +58,10 @@ from .core import (
 
 PACKAGE_LOCAL_PLAN_REVISION = "phase4-v2-package-local-plan-v3"
 TARGET_ROOT_INVENTORY_REVISION = "phase4-v2-target-root-inventory-v1"
-EXACT_REUSE_PINS_REVISION = "phase4-v2-exact-reuse-pins-v3"
-ROOT_EXECUTION_PLAN_REVISION = "phase4-v2-root-execution-plan-v2"
-PACKAGE_EXECUTION_PLAN_REVISION = "phase4-v2-package-execution-plan-v4"
-VALIDATED_PACKAGE_OUTPUT_REVISION = "phase4-v2-validated-package-output-v5"
+EXACT_REUSE_PINS_REVISION = "phase4-v2-exact-reuse-pins-v4"
+ROOT_EXECUTION_PLAN_REVISION = "phase4-v2-root-execution-plan-v3"
+PACKAGE_EXECUTION_PLAN_REVISION = "phase4-v2-package-execution-plan-v5"
+VALIDATED_PACKAGE_OUTPUT_REVISION = "phase4-v2-validated-package-output-v6"
 PACKAGE_QUEUE_UNIT_KIND = "validated-package-output"
 PACKAGE_QUEUE_UNIT_PREFIX = "package-output"
 PREPARATION_QUEUE_UNIT_KIND = "prepared-package-input"
@@ -74,8 +74,12 @@ PREPARATION_PIPELINE_CAPABILITY = "phase4-v2-preparation-pipeline"
 SEMANTIC_ROOT_COMPLETION_REVISION = "phase4-v2-semantic-root-completion-v1"
 PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION = "phase4-v2-package-validation-receipt-v1"
 EXACT_REUSE_PIPELINE_CAPABILITY = "phase4-v2-exact-reuse"
+EXACT_REUSE_AUTHORITY_CAPABILITY = "phase4-v2-exact-reuse-authority"
+EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX = "exact-reuse-semantic-root"
+EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX = "exact-reuse-ledger-decision"
+EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX = "exact-reuse-direct-audit"
 PACKAGE_PIPELINE_CAPABILITY = "phase4-v2-package-analysis"
-SEMANTIC_ROOT_AUDIT_REVISION = "phase4-v2-semantic-root-audit-v1"
+SEMANTIC_ROOT_AUDIT_REVISION = "phase4-v2-semantic-root-audit-v2"
 PACKAGE_REPORT_REVISION = "phase4-v2-package-report-v2"
 PACKAGE_REPORT_SCHEMA_REVISION = "phase4-v2-package-report-schema-v3"
 FINAL_IR_SCHEMA_CANONICAL_BYTES = json.dumps(
@@ -869,6 +873,8 @@ class SemanticRootAudit:
     direct_semantic_audit_completion: CompletionPin
     extractor_capability: CapabilityPin
     equivalence_pipeline: CapabilityPin
+    exact_reuse_prerequisite_receipt_sha256: str
+    exact_reuse_prerequisite_capabilities: tuple[CapabilityPin, ...]
     binding_sha256: str
     revision: str
 
@@ -880,6 +886,12 @@ class SemanticRootAudit:
             "accepted_target_inventory": self.accepted_target_inventory.to_data(),
             "direct_semantic_audit_completion": self.direct_semantic_audit_completion.to_data(),
             "equivalence_pipeline": self.equivalence_pipeline.to_data(),
+            "exact_reuse_prerequisite_capabilities": [
+                item.to_data() for item in self.exact_reuse_prerequisite_capabilities
+            ],
+            "exact_reuse_prerequisite_receipt_sha256": (
+                self.exact_reuse_prerequisite_receipt_sha256
+            ),
             "extractor_capability": self.extractor_capability.to_data(),
             "extractor": self.extractor.to_data(),
             "extractor_capability_id": self.extractor_capability_id,
@@ -916,6 +928,8 @@ def build_semantic_root_audit(
     direct_semantic_audit_completion: CompletionPin,
     extractor_capability: CapabilityPin,
     equivalence_pipeline: CapabilityPin,
+    exact_reuse_prerequisite_receipt_sha256: str,
+    exact_reuse_prerequisite_capabilities: tuple[CapabilityPin, ...],
 ) -> SemanticRootAudit:
     if type(source_root) is not ApplicationRoot:
         _fail("semantic audit requires an exact ApplicationRoot")
@@ -934,6 +948,16 @@ def build_semantic_root_audit(
     semantic_root_pin = semantic_root_completion.completion
     extractor_pin = _capability(extractor_capability, "semantic audit extractor")
     pipeline_pin = _capability(equivalence_pipeline, "semantic audit pipeline")
+    _sha(
+        exact_reuse_prerequisite_receipt_sha256,
+        "semantic audit exact-reuse prerequisite receipt",
+    )
+    prerequisite_receipt = exact_reuse_prerequisite_receipt_sha256
+    prerequisite_capabilities = _capability_tuple(
+        exact_reuse_prerequisite_capabilities,
+        "semantic audit exact-reuse prerequisite capabilities",
+        nonempty=True,
+    )
     _sha(inherited_semantic_root_sha256, "semantic audit inherited root")
     _revision(
         semantic_root_pin.revision,
@@ -974,6 +998,24 @@ def build_semantic_root_audit(
     if pipeline_pin.name != EXACT_REUSE_PIPELINE_CAPABILITY:
         _fail("semantic audit pipeline capability has the wrong name")
     _revision(pipeline_pin.revision, EQUIVALENCE_SCHEMA_REVISION, "semantic audit pipeline")
+    prerequisite_by_name = {item.name: item for item in prerequisite_capabilities}
+    if (
+        EXACT_REUSE_AUTHORITY_CAPABILITY not in prerequisite_by_name
+        or prerequisite_by_name.get(pipeline_pin.name) != pipeline_pin
+        or prerequisite_by_name.get(extractor_pin.name) != extractor_pin
+    ):
+        _fail("semantic audit prerequisite capabilities omit its authenticated route")
+    expected_units = (
+        f"{EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX}:{prerequisite_receipt}",
+        f"{EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX}:{prerequisite_receipt}",
+        f"{EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX}:{prerequisite_receipt}",
+    )
+    if (
+        semantic_root_pin.parent_unit_id,
+        ledger_pin.parent_unit_id,
+        audit_pin.parent_unit_id,
+    ) != expected_units:
+        _fail("semantic audit completions do not derive from one signed prerequisite")
     values: dict[str, object] = {
         "source_root": replace(source_root),
         "ledger_decision": replace(ledger_decision),
@@ -990,6 +1032,8 @@ def build_semantic_root_audit(
         "direct_semantic_audit_completion": audit_pin,
         "extractor_capability": extractor_pin,
         "equivalence_pipeline": pipeline_pin,
+        "exact_reuse_prerequisite_receipt_sha256": prerequisite_receipt,
+        "exact_reuse_prerequisite_capabilities": prerequisite_capabilities,
         "revision": SEMANTIC_ROOT_AUDIT_REVISION,
     }
     values["binding_sha256"] = _semantic_audit_binding_sha256(values)
@@ -1011,6 +1055,16 @@ def _semantic_audit_binding_sha256(values: Mapping[str, object]) -> str:
         {
             "direct_semantic_audit_completion": pin_data("direct_semantic_audit_completion"),
             "equivalence_pipeline": pin_data("equivalence_pipeline"),
+            "exact_reuse_prerequisite_capabilities": [
+                item.to_data()
+                for item in cast(
+                    tuple[CapabilityPin, ...],
+                    values["exact_reuse_prerequisite_capabilities"],
+                )
+            ],
+            "exact_reuse_prerequisite_receipt_sha256": values[
+                "exact_reuse_prerequisite_receipt_sha256"
+            ],
             "extractor_capability": pin_data("extractor_capability"),
             "extractor_capability_id": values["extractor_capability_id"],
             "inherited_semantic_root_completion": pin_data("inherited_semantic_root_completion"),
@@ -1052,6 +1106,10 @@ def _semantic_audit(value: SemanticRootAudit) -> SemanticRootAudit:
     binding_values = {
         "direct_semantic_audit_completion": value.direct_semantic_audit_completion,
         "equivalence_pipeline": value.equivalence_pipeline,
+        "exact_reuse_prerequisite_capabilities": value.exact_reuse_prerequisite_capabilities,
+        "exact_reuse_prerequisite_receipt_sha256": (
+            value.exact_reuse_prerequisite_receipt_sha256
+        ),
         "extractor_capability": extractor_pin,
         "extractor_capability_id": value.extractor_capability_id,
         "inherited_semantic_root_completion": value.inherited_semantic_root_completion,
@@ -1077,6 +1135,12 @@ def _semantic_audit(value: SemanticRootAudit) -> SemanticRootAudit:
         direct_semantic_audit_completion=value.direct_semantic_audit_completion,
         extractor_capability=value.extractor_capability,
         equivalence_pipeline=value.equivalence_pipeline,
+        exact_reuse_prerequisite_receipt_sha256=(
+            value.exact_reuse_prerequisite_receipt_sha256
+        ),
+        exact_reuse_prerequisite_capabilities=(
+            value.exact_reuse_prerequisite_capabilities
+        ),
     )
     if rebuilt.to_data() != value.to_data():
         _fail("semantic audit source relationships no longer reproduce")
@@ -1096,6 +1160,8 @@ class ExactReusePins:
     direct_semantic_audit_completion: CompletionPin
     extractor_capability: CapabilityPin
     equivalence_pipeline: CapabilityPin
+    exact_reuse_prerequisite_receipt_sha256: str
+    exact_reuse_prerequisite_capabilities: tuple[CapabilityPin, ...]
     extractor_record_revision: str = EXTRACTOR_CAPABILITY_REVISION
     revision: str = EXACT_REUSE_PINS_REVISION
 
@@ -1108,6 +1174,10 @@ class ExactReusePins:
         _sha(self.target_occurrence_identity_sha256, "reuse.occurrence")
         _sha(self.inherited_semantic_root_sha256, "reuse.semantic_root")
         _sha(self.byte_identity_proof_id, "reuse.byte_identity_proof_id")
+        _sha(
+            self.exact_reuse_prerequisite_receipt_sha256,
+            "reuse exact-reuse prerequisite receipt",
+        )
         semantic_root = _completion(
             self.inherited_semantic_root_completion, "reuse semantic root completion"
         )
@@ -1116,6 +1186,11 @@ class ExactReusePins:
         audit = _completion(self.direct_semantic_audit_completion, "reuse semantic audit")
         extractor = _capability(self.extractor_capability, "reuse extractor")
         pipeline = _capability(self.equivalence_pipeline, "reuse pipeline")
+        prerequisite_capabilities = _capability_tuple(
+            self.exact_reuse_prerequisite_capabilities,
+            "reuse exact-reuse prerequisite capabilities",
+            nonempty=True,
+        )
         _revision(inventory.revision, TARGET_ROOT_INVENTORY_REVISION, "inventory completion")
         _revision(ledger.revision, LEDGER_DECISION_REVISION, "ledger completion")
         _revision(audit.revision, SEMANTIC_ROOT_COMPLETION_REVISION, "semantic audit")
@@ -1138,18 +1213,40 @@ class ExactReusePins:
         if pipeline.name != EXACT_REUSE_PIPELINE_CAPABILITY:
             _fail("exact reuse pipeline capability has the wrong name")
         _revision(pipeline.revision, EQUIVALENCE_SCHEMA_REVISION, "equivalence pipeline")
+        expected_units = (
+            f"{EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX}:{self.exact_reuse_prerequisite_receipt_sha256}",
+            f"{EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX}:{self.exact_reuse_prerequisite_receipt_sha256}",
+            f"{EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX}:{self.exact_reuse_prerequisite_receipt_sha256}",
+        )
+        if (
+            semantic_root.parent_unit_id,
+            ledger.parent_unit_id,
+            audit.parent_unit_id,
+        ) != expected_units:
+            _fail("reuse completions do not derive from one signed prerequisite")
         object.__setattr__(self, "target_inventory_completion", inventory)
         object.__setattr__(self, "ledger_decision_completion", ledger)
         object.__setattr__(self, "direct_semantic_audit_completion", audit)
         object.__setattr__(self, "inherited_semantic_root_completion", semantic_root)
         object.__setattr__(self, "extractor_capability", extractor)
         object.__setattr__(self, "equivalence_pipeline", pipeline)
+        object.__setattr__(
+            self,
+            "exact_reuse_prerequisite_capabilities",
+            prerequisite_capabilities,
+        )
         _revision(self.revision, EXACT_REUSE_PINS_REVISION, "reuse pins revision")
 
     def to_data(self) -> dict[str, object]:
         return {
             "direct_semantic_audit_completion": self.direct_semantic_audit_completion.to_data(),
             "equivalence_pipeline": self.equivalence_pipeline.to_data(),
+            "exact_reuse_prerequisite_capabilities": [
+                item.to_data() for item in self.exact_reuse_prerequisite_capabilities
+            ],
+            "exact_reuse_prerequisite_receipt_sha256": (
+                self.exact_reuse_prerequisite_receipt_sha256
+            ),
             "extractor_capability": self.extractor_capability.to_data(),
             "extractor_record_revision": self.extractor_record_revision,
             "inherited_semantic_root_sha256": self.inherited_semantic_root_sha256,
@@ -1181,6 +1278,12 @@ def _reuse(value: ExactReusePins) -> ExactReusePins:
         direct_semantic_audit_completion=value.direct_semantic_audit_completion,
         extractor_capability=value.extractor_capability,
         equivalence_pipeline=value.equivalence_pipeline,
+        exact_reuse_prerequisite_receipt_sha256=(
+            value.exact_reuse_prerequisite_receipt_sha256
+        ),
+        exact_reuse_prerequisite_capabilities=(
+            value.exact_reuse_prerequisite_capabilities
+        ),
         extractor_record_revision=value.extractor_record_revision,
         revision=value.revision,
     )
@@ -1199,6 +1302,8 @@ def _new_reuse_pins(
     direct_semantic_audit_completion: CompletionPin,
     extractor_capability: CapabilityPin,
     equivalence_pipeline: CapabilityPin,
+    exact_reuse_prerequisite_receipt_sha256: str,
+    exact_reuse_prerequisite_capabilities: tuple[CapabilityPin, ...],
     extractor_record_revision: str = EXTRACTOR_CAPABILITY_REVISION,
     revision: str = EXACT_REUSE_PINS_REVISION,
 ) -> ExactReusePins:
@@ -1215,6 +1320,11 @@ def _new_reuse_pins(
         ("direct_semantic_audit_completion", direct_semantic_audit_completion),
         ("extractor_capability", extractor_capability),
         ("equivalence_pipeline", equivalence_pipeline),
+        (
+            "exact_reuse_prerequisite_receipt_sha256",
+            exact_reuse_prerequisite_receipt_sha256,
+        ),
+        ("exact_reuse_prerequisite_capabilities", exact_reuse_prerequisite_capabilities),
         ("extractor_record_revision", extractor_record_revision),
         ("revision", revision),
     ):
@@ -1260,6 +1370,12 @@ def build_exact_reuse_root_plan(audit: SemanticRootAudit) -> ExactReuseRootPlan:
         direct_semantic_audit_completion=direct,
         extractor_capability=extractor,
         equivalence_pipeline=pipeline,
+        exact_reuse_prerequisite_receipt_sha256=(
+            audit.exact_reuse_prerequisite_receipt_sha256
+        ),
+        exact_reuse_prerequisite_capabilities=(
+            audit.exact_reuse_prerequisite_capabilities
+        ),
     )
     return ExactReuseRootPlan(pins)
 
@@ -1555,6 +1671,7 @@ class PackageExecutionPlan:
             yield inventory_extractor_capability(self.accepted_target_inventory.extractor)
             for item in self.root_plans:
                 if type(item) is ExactReuseRootPlan:
+                    yield from item.reuse.exact_reuse_prerequisite_capabilities
                     yield item.reuse.extractor_capability
                     yield item.reuse.equivalence_pipeline
                 elif type(item) is FullAnalysisRootPlan:
@@ -1786,12 +1903,85 @@ def _new_frozen_package_execution_plan(
         _fail("snapshot root plans are absent from its canonical preimage")
     derived_semantic_roots: set[str] = set()
     derived_audit_digests: set[str] = set()
+    derived_prerequisite_capabilities: list[dict[str, object]] = []
     for root in decoded_roots:
         if not isinstance(root, dict) or root.get("route") != Route.EXACT_REUSE.value:
             continue
+        if set(root) != {"reuse", "revision", "route"} or root.get(
+            "revision"
+        ) != ROOT_EXECUTION_PLAN_REVISION:
+            _fail("snapshot exact-reuse root has an unsupported schema")
         reuse = root.get("reuse")
-        if not isinstance(reuse, dict):
+        if not isinstance(reuse, dict) or set(reuse) != {
+            "byte_identity_proof_id",
+            "direct_semantic_audit_completion",
+            "equivalence_pipeline",
+            "exact_reuse_prerequisite_capabilities",
+            "exact_reuse_prerequisite_receipt_sha256",
+            "extractor_capability",
+            "extractor_record_revision",
+            "inherited_semantic_root_completion",
+            "inherited_semantic_root_sha256",
+            "ledger_decision_completion",
+            "revision",
+            "source_root_id",
+            "target_inventory_completion",
+            "target_occurrence_identity_sha256",
+            "target_root_id",
+        }:
             _fail("snapshot exact-reuse root has no canonical reuse binding")
+        if reuse.get("revision") != EXACT_REUSE_PINS_REVISION:
+            _fail("snapshot exact-reuse pins use an unsupported revision")
+        prerequisite_receipt = reuse.get("exact_reuse_prerequisite_receipt_sha256")
+        _sha(cast(str, prerequisite_receipt), "snapshot exact-reuse prerequisite receipt")
+        completions = (
+            (
+                reuse.get("inherited_semantic_root_completion"),
+                EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX,
+            ),
+            (
+                reuse.get("ledger_decision_completion"),
+                EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX,
+            ),
+            (
+                reuse.get("direct_semantic_audit_completion"),
+                EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX,
+            ),
+        )
+        if any(
+            not isinstance(completion, dict)
+            or completion.get("parent_unit_id") != f"{prefix}:{prerequisite_receipt}"
+            for completion, prefix in completions
+        ):
+            _fail("snapshot exact-reuse completions do not bind one prerequisite")
+        prerequisite_capabilities = reuse.get("exact_reuse_prerequisite_capabilities")
+        if (
+            not isinstance(prerequisite_capabilities, list)
+            or not prerequisite_capabilities
+            or len(prerequisite_capabilities) > _MAX_ROOT_CAPABILITIES
+            or any(
+                not isinstance(item, dict)
+                or set(item) != {"digest", "name", "revision"}
+                or type(item.get("name")) is not str
+                or type(item.get("revision")) is not str
+                or type(item.get("digest")) is not str
+                or _SHA.fullmatch(cast(str, item.get("digest"))) is None
+                for item in prerequisite_capabilities
+            )
+            or prerequisite_capabilities
+            != sorted(
+                prerequisite_capabilities,
+                key=lambda item: (
+                    cast(str, item["name"]),
+                    cast(str, item["revision"]),
+                    cast(str, item["digest"]),
+                ),
+            )
+            or len({cast(str, item["name"]) for item in prerequisite_capabilities})
+            != len(prerequisite_capabilities)
+        ):
+            _fail("snapshot exact-reuse prerequisite capabilities are invalid")
+        derived_prerequisite_capabilities.extend(prerequisite_capabilities)
         semantic_root = reuse.get("inherited_semantic_root_sha256")
         audit = reuse.get("direct_semantic_audit_completion")
         if not isinstance(semantic_root, str) or not isinstance(audit, dict):
@@ -1878,6 +2068,8 @@ def _new_frozen_package_execution_plan(
         _fail("snapshot capabilities do not match its canonical preimage")
     if decoded.get("required_completions") != expected_completion_data:
         _fail("snapshot completions do not match its canonical preimage")
+    if any(item not in expected_capability_data for item in derived_prerequisite_capabilities):
+        _fail("snapshot capabilities omit an exact-reuse prerequisite pin")
     if any(item not in required_capabilities for item in preparation.capabilities):
         _fail("snapshot capabilities omit an accepted preparation pin")
     evidence_producer_data = [

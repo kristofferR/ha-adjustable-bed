@@ -219,12 +219,32 @@ def semantic_audit(
     semantic_root: str = SHA_0,
     unit_suffix: str | None = None,
     bind_unrelated_source: bool = False,
+    use_arbitrary_completion_ids: bool = False,
 ) -> SemanticRootAudit:
+    prerequisite_receipt = hashlib.sha256(
+        f"prerequisite:{unit_suffix or root_id}".encode()
+    ).hexdigest()
     extractor = ExtractorCapability(
         name="dex-root-inventory",
         implementation_sha256=SHA_A,
         configuration_sha256=SHA_B,
         capability_revision="dex-implementation-2026.08",
+    )
+    prerequisite_capabilities = tuple(
+        sorted(
+            (
+                CapabilityPin("phase4-v2-exact-reuse-authority", "authority-v1", SHA_B),
+                CapabilityPin(
+                    EXACT_REUSE_PIPELINE_CAPABILITY,
+                    EQUIVALENCE_SCHEMA_REVISION,
+                    SHA_F,
+                ),
+                CapabilityPin(
+                    "extractor:dex", "dex-implementation-2026.08", extractor.content_id
+                ),
+            ),
+            key=lambda item: item.name,
+        )
     )
     source = ApplicationRoot(
         package_ref_id=SHA_A,
@@ -251,6 +271,21 @@ def semantic_audit(
     completion_source = (
         replace(source, occurrence_identity_sha256=SHA_D) if bind_unrelated_source else source
     )
+    semantic_unit = (
+        "ordinary:semantic"
+        if use_arbitrary_completion_ids
+        else f"{plan_module.EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX}:{prerequisite_receipt}"
+    )
+    ledger_unit = (
+        "ordinary:ledger"
+        if use_arbitrary_completion_ids
+        else f"{plan_module.EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX}:{prerequisite_receipt}"
+    )
+    audit_unit = (
+        "ordinary:audit"
+        if use_arbitrary_completion_ids
+        else f"{plan_module.EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX}:{prerequisite_receipt}"
+    )
     audit = build_semantic_root_audit(
         source_root=source,
         ledger_decision=decision,
@@ -260,14 +295,18 @@ def semantic_audit(
         inherited_semantic_root_completion=build_semantic_root_completion(
             source_root=completion_source,
             inherited_semantic_root_sha256=semantic_root,
-            parent_unit_id="semantic-root:source",
+            parent_unit_id=semantic_unit,
         ),
         target_inventory_completion=accepted.completion,
         ledger_decision_completion=CompletionPin(
-            f"ledger:{unit_suffix or 'target'}", LEDGER_DECISION_REVISION, decision.content_id
+            ledger_unit,
+            LEDGER_DECISION_REVISION,
+            decision.content_id,
         ),
         direct_semantic_audit_completion=CompletionPin(
-            f"audit:{unit_suffix or 'source'}", SEMANTIC_ROOT_COMPLETION_REVISION, SHA_1
+            audit_unit,
+            SEMANTIC_ROOT_COMPLETION_REVISION,
+            SHA_1,
         ),
         extractor_capability=CapabilityPin(
             "extractor:dex", "dex-implementation-2026.08", extractor.content_id
@@ -277,6 +316,8 @@ def semantic_audit(
             EQUIVALENCE_SCHEMA_REVISION,
             SHA_F,
         ),
+        exact_reuse_prerequisite_receipt_sha256=prerequisite_receipt,
+        exact_reuse_prerequisite_capabilities=prerequisite_capabilities,
     )
     return audit
 
@@ -446,19 +487,29 @@ def test_exact_route_binds_every_queue_dependency_unambiguously() -> None:
     data = root.reuse.to_data()
 
     assert root.route is Route.EXACT_REUSE
+    prerequisite_receipt = root.reuse.exact_reuse_prerequisite_receipt_sha256
     assert data["target_inventory_completion"] == accepted.completion.to_data()
     assert data["ledger_decision_completion"] == {
-        "parent_unit_id": "ledger:target",
+        "parent_unit_id": (
+            f"{plan_module.EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX}:"
+            f"{prerequisite_receipt}"
+        ),
         "revision": LEDGER_DECISION_REVISION,
         "digest": root.reuse.ledger_decision_completion.digest,
     }
     assert data["direct_semantic_audit_completion"] == {
-        "parent_unit_id": "audit:source",
+        "parent_unit_id": (
+            f"{plan_module.EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX}:"
+            f"{prerequisite_receipt}"
+        ),
         "revision": SEMANTIC_ROOT_COMPLETION_REVISION,
         "digest": SHA_1,
     }
     assert data["inherited_semantic_root_completion"] == {
-        "parent_unit_id": "semantic-root:source",
+        "parent_unit_id": (
+            f"{plan_module.EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX}:"
+            f"{prerequisite_receipt}"
+        ),
         "revision": SEMANTIC_ROOT_COMPLETION_REVISION,
         "digest": root.reuse.inherited_semantic_root_completion.digest,
     }
@@ -517,6 +568,14 @@ def test_semantic_root_requires_its_own_typed_completion() -> None:
         build_exact_reuse_root_plan(audit)
 
 
+def test_semantic_audit_rejects_arbitrary_generic_completion_units() -> None:
+    with pytest.raises(EquivalenceError, match="one signed prerequisite"):
+        semantic_audit(
+            accepted_inventory((SHA_C, SHA_D)),
+            use_arbitrary_completion_ids=True,
+        )
+
+
 def test_semantic_root_completion_binds_the_audited_source_root() -> None:
     accepted = accepted_inventory((SHA_C, SHA_D))
 
@@ -570,15 +629,19 @@ def test_full_route_has_no_reuse_pins_and_mixed_plan_is_allowed() -> None:
         "extractor:dex",
         "analyzer:full",
         "phase4-v2-target-inventory-authority",
+        "phase4-v2-exact-reuse-authority",
         "test-inventory",
     }
     assert {item.parent_unit_id for item in plan.required_completions} == {
         plan_module.preparation_queue_unit_id(TARGET_PACKAGE_REF_ID),
         f"package-validation-receipt:{TARGET_PACKAGE_REF_ID}",
         plan.accepted_target_inventory.completion.parent_unit_id,
-        "ledger:target",
-        "audit:source",
-        "semantic-root:source",
+        f"{plan_module.EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX}:"
+        f"{next(item for item in plan.root_plans if type(item) is ExactReuseRootPlan).reuse.exact_reuse_prerequisite_receipt_sha256}",
+        f"{plan_module.EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX}:"
+        f"{next(item for item in plan.root_plans if type(item) is ExactReuseRootPlan).reuse.exact_reuse_prerequisite_receipt_sha256}",
+        f"{plan_module.EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX}:"
+        f"{next(item for item in plan.root_plans if type(item) is ExactReuseRootPlan).reuse.exact_reuse_prerequisite_receipt_sha256}",
     }
 
 
@@ -659,7 +722,13 @@ def test_aggregate_queue_requirements_reject_conflicting_pins() -> None:
             root_plans=(
                 exact,
                 full_root(
-                    dependencies=(CompletionPin("ledger:target", LEDGER_DECISION_REVISION, SHA_B),)
+                    dependencies=(
+                        CompletionPin(
+                            exact.reuse.ledger_decision_completion.parent_unit_id,
+                            LEDGER_DECISION_REVISION,
+                            SHA_B,
+                        ),
+                    )
                 ),
             ),
         )

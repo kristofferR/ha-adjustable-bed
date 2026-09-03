@@ -51,6 +51,7 @@ from tools.phase4_v2.equivalence import (
     exact_reuse_prerequisite_payload,
     exact_reuse_prerequisite_signing_bytes,
     finish_exact_reuse_prerequisite,
+    finish_package_preparation,
     finish_package_validation_receipt,
     finish_target_inventory,
     inventory_authority_capability,
@@ -62,8 +63,11 @@ from tools.phase4_v2.equivalence import (
     load_authenticated_exact_reuse_prerequisite,
     load_authenticated_target_inventory_envelope,
     materialize_exact_reuse_prerequisites,
+    materialize_package_preparation,
     materialize_package_validation_receipt,
     materialize_target_inventory,
+    preparation_capability_pins,
+    preparation_queue_unit_id,
     route_application_root,
     semantic_root_audit_from_authenticated_prerequisite,
     target_inventory_envelope_payload,
@@ -302,6 +306,7 @@ def _queue(tmp_path: Path) -> Queue:
 
 def _activate(queue: Queue, fixture: ExactReuseFixture) -> None:
     pins = (
+        *preparation_capability_pins(fixture.source_package.preparation_authority),
         inventory_authority_capability(fixture.target_inventory.authority),
         inventory_extractor_capability(fixture.target_inventory.extractor),
         exact_reuse_authority_capability(fixture.exact_authority),
@@ -313,6 +318,22 @@ def _activate(queue: Queue, fixture: ExactReuseFixture) -> None:
 
 
 def _publish_dependencies(queue: Queue, fixture: ExactReuseFixture) -> None:
+    materialize_package_preparation(
+        queue,
+        package_ref=fixture.source_package.package_ref,
+        package_local=fixture.source_package.package_local,
+        authority=fixture.source_package.preparation_authority,
+    )
+    lease = queue.claim("source-preparation", allowed_kinds=("prepared-package-input",))
+    assert lease is not None
+    finish_package_preparation(
+        queue,
+        lease,
+        package_ref=fixture.source_package.package_ref,
+        package_local=fixture.source_package.package_local,
+        receipt=fixture.source_package.preparation_receipt,
+        authority=fixture.source_package.preparation_authority,
+    )
     materialize_package_validation_receipt(queue, fixture.source.envelope)
     lease = queue.claim("source-validator", allowed_kinds=("trusted-package-validation-receipt",))
     assert lease is not None
@@ -334,6 +355,12 @@ def test_signed_prerequisites_materialize_and_finish_exact_three(
 
     work = materialize_exact_reuse_prerequisites(queue, fixture.receipt)
     assert work.completions == exact_reuse_prerequisite_completions(fixture.receipt)
+    assert any(
+        item.parent_unit_id
+        == preparation_queue_unit_id(fixture.source_package.package_ref.content_id)
+        and item.digest == fixture.source_package.preparation_receipt.content_id
+        for item in exact_reuse_prerequisite_dependencies(fixture.receipt)
+    )
     assert semantic_root_audit_from_authenticated_prerequisite(fixture.receipt).target_root_id
     for kind, completion in zip(
         (

@@ -45,6 +45,7 @@ from .plan import (
     PREPARATION_QUEUE_UNIT_KIND,
     AcceptedTargetRootInventory,
     CompletionPin,
+    ExactReuseRootPlan,
     PackageExecutionPlan,
     PackageLocalPlan,
     PackagePlanStatus,
@@ -331,6 +332,24 @@ def materialize_package_execution_plan(
             for pin in frozen.preparation.capabilities
         ),
     )
+    for root in execution_plan.root_plans:
+        if type(root) is not ExactReuseRootPlan:
+            continue
+        capabilities = tuple(
+            QueueCapabilityPin(pin.name, pin.revision, pin.digest)
+            for pin in root.reuse.exact_reuse_prerequisite_capabilities
+        )
+        for completion in (
+            root.reuse.inherited_semantic_root_completion,
+            root.reuse.ledger_decision_completion,
+            root.reuse.direct_semantic_audit_completion,
+        ):
+            queue.require_formal_completion(
+                completion.parent_unit_id,
+                revision=completion.revision,
+                digest=completion.digest,
+                capability_pins=capabilities,
+            )
 
     unit_id = package_queue_unit_id(frozen.target_package_ref_id)
     input_digest = queue._materialize_authenticated_row(
