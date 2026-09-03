@@ -18,7 +18,6 @@ from .engine import (
 from .final_ir import (
     FinalIRSurfaceDerivation,
     derive_authenticated_final_ir_package_surface,
-    derive_final_ir_package_surface,
 )
 from .model import (
     AreaSurface,
@@ -80,7 +79,6 @@ __all__ = [
     "RootResultReference",
     "SemanticAtom",
     "dumps_input",
-    "derive_final_ir_package_surface",
     "derive_authenticated_final_ir_package_surface",
     "loads_input",
     "reconcile",

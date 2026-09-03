@@ -435,22 +435,42 @@ def _package_bound_bundle(
 
 def _trusted_lineage(
     pins: DependencyPins | PackageDependencyPins,
+    *,
+    report: Path | None = None,
 ) -> EvidenceLineageTrust:
     artifact_digest = _preflight_digest(
         "artifact", [{"name": "base.apk", "size": 1, "sha256": "f" * 64}]
     )
+    root_analyses: list[dict[str, object]] = []
+    if isinstance(pins, PackageDependencyPins):
+        if report is None:
+            root_analyses = [{
+                "evidence_anchor_ids": ["value"],
+                "semantic_root_sha256": _EVIDENCE_DIGEST,
+                "target_occurrence_identity_sha256": "b" * 64,
+                "target_root_id": "a" * 64,
+            }]
+        else:
+            analysis = json.loads((report / "analysis.json").read_bytes())
+            root_analyses = [
+                {
+                    "evidence_anchor_ids": ["value"],
+                    "semantic_root_sha256": item["result"]["analysis"]["semantic_root_sha256"],
+                    "target_occurrence_identity_sha256": item["target_occurrence_identity_sha256"],
+                    "target_root_id": item["target_root_id"],
+                }
+                for item in analysis.get("authoritative_root_results", [])
+                if item.get("route") == "FULL_ANALYSIS"
+                and isinstance(item.get("result", {}).get("analysis"), dict)
+                and item["result"]["analysis"].get("semantic_root_sha256") == _EVIDENCE_DIGEST
+                and item.get("target_root_id") == "a" * 64
+                and item.get("target_occurrence_identity_sha256") == "b" * 64
+            ]
     document = {
         "artifact_digest": artifact_digest,
         "members": [
             {
-                "authoritative_root_analyses": [
-                    {
-                        "evidence_anchor_ids": ["value"],
-                        "semantic_root_sha256": _EVIDENCE_DIGEST,
-                        "target_occurrence_identity_sha256": "b" * 64,
-                        "target_root_id": "a" * 64,
-                    }
-                ],
+                "authoritative_root_analyses": root_analyses,
                 "package_local_domains": (
                     list(_PACKAGE_DOMAINS) if isinstance(pins, PackageDependencyPins) else []
                 ),
@@ -543,7 +563,7 @@ def _validate_package_bound(report: Path, pins: PackageDependencyPins):
     return validate_report_bundle(
         report,
         expected_dependencies=pins,
-        expected_evidence_lineage=_trusted_lineage(pins),
+        expected_evidence_lineage=_trusted_lineage(pins, report=report),
     )
 
 
@@ -580,8 +600,8 @@ def test_pinned_dependencies_and_evidence_anchors_are_reproduced(tmp_path: Path)
     assert first.accepted is True
     assert first.dependency_digests == tuple(
         sorted(
-            pins.as_pairs()
-            + (("evidence_lineage", _trusted_lineage(pins).expected_manifest_sha256),)
+                pins.as_pairs()
+                + (("evidence_lineage", _trusted_lineage(pins, report=report).expected_manifest_sha256),)
         )
     )
     assert first.evidence_anchors_checked == 2
@@ -671,7 +691,7 @@ def test_package_output_profile_attests_exact_six_pin_contract(tmp_path: Path) -
     assert first.dependency_digests == tuple(
         sorted(
             pins.as_pairs()
-            + (("evidence_lineage", _trusted_lineage(pins).expected_manifest_sha256),)
+            + (("evidence_lineage", _trusted_lineage(pins, report=report).expected_manifest_sha256),)
         )
     )
     assert dict(first.dependency_digests)["execution_plan"] == pins.execution_plan_sha256
@@ -1676,7 +1696,7 @@ def test_cli_receipt_output_binds_without_newline_rewriting(
     tmp_path: Path,
 ) -> None:
     report, _, pins, _ = _bound_bundle(tmp_path)
-    lineage = _trusted_lineage(pins)
+    lineage = _trusted_lineage(pins, report=report)
     lineage_path = tmp_path / "trusted-lineage.json"
     lineage_path.write_bytes(lineage.payload)
     monkeypatch.setattr(
@@ -1737,7 +1757,7 @@ def test_cli_selects_package_profile_only_with_both_package_pins(
     tmp_path: Path,
 ) -> None:
     report, _, pins, _ = _package_bound_bundle(tmp_path)
-    lineage = _trusted_lineage(pins)
+    lineage = _trusted_lineage(pins, report=report)
     lineage_path = tmp_path / "trusted-lineage.json"
     lineage_path.write_bytes(lineage.payload)
     monkeypatch.setattr(

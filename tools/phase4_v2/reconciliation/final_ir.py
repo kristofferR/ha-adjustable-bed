@@ -145,8 +145,15 @@ def derive_authenticated_final_ir_package_surface(
     if hashlib.sha256(report_manifest_bytes).hexdigest() != manifest_sha256:
         raise ReconciliationError("report manifest differs from the signed receipt")
     analysis_entry = f"{hashlib.sha256(report_bytes).hexdigest()}  analysis.json"
-    if analysis_entry not in report_manifest_bytes.decode("utf-8", errors="strict").splitlines():
+    manifest_entries = report_manifest_bytes.decode("utf-8", errors="strict").splitlines()
+    if analysis_entry not in manifest_entries:
         raise ReconciliationError("analysis report is absent from the signed report manifest")
+    ir_digest = hashlib.sha256(canonical_json).hexdigest()
+    if (
+        ir_digest != authenticated.target_final_ir_json_sha256
+        or f"{ir_digest}  inputs/ir.json" not in manifest_entries
+    ):
+        raise ReconciliationError("final IR differs from the signed package report")
     results = report.get("authoritative_root_results") if type(report) is dict else None
     if type(results) is not list:
         raise ReconciliationError("package report has no authoritative root results")
@@ -204,7 +211,7 @@ def derive_authenticated_final_ir_package_surface(
     )
     if len(roots) != len(result_locations):
         raise ReconciliationError("retained root attestations do not match the exact report roots")
-    return derive_final_ir_package_surface(
+    return _derive_final_ir_package_surface(
         package_ref=package_ref,
         report_sha256=authenticated.target_report_sha256,
         report_revision=authenticated.target_report_revision,
@@ -215,7 +222,7 @@ def derive_authenticated_final_ir_package_surface(
     )
 
 
-def derive_final_ir_package_surface(
+def _derive_final_ir_package_surface(
     *,
     package_ref: FrozenPackageRef,
     report_sha256: str,
