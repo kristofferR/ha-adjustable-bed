@@ -12,7 +12,7 @@ from enum import StrEnum
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-BENCHMARK_REVISION = "phase4-v2-benchmark-v3"
+BENCHMARK_REVISION = "phase4-v2-benchmark-v4"
 TRIAL_POLICY_REVISION = "phase4-v2-paired-monotonic-token-v1"
 REQUIRED_CONTRACT_ISSUES = (544, 545, 546, 547, 548, 549)
 _ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$")
@@ -30,6 +30,7 @@ _MAX_JSON_DEPTH = 12
 _MAX_JSON_NODES = 512
 _MAX_JSON_STRING_LENGTH = 4_096
 _AUTHORITY_SEAL = object()
+_PROTECTED_REFERENCE_SEAL = object()
 
 
 class MutationKind(StrEnum):
@@ -100,6 +101,74 @@ class ContractPin:
         return {"issue": self.issue, "revision": self.revision, "sha256": self.sha256}
 
 
+@dataclass(frozen=True, slots=True, order=True)
+class CorpusMember:
+    member_id: str
+    input_sha256: str
+
+    def __post_init__(self) -> None:
+        _identifier(self.member_id, "corpus member id")
+        _digest(self.input_sha256, "corpus member digest")
+
+    def to_data(self) -> dict[str, str]:
+        return {"input_sha256": self.input_sha256, "member_id": self.member_id}
+
+
+@dataclass(frozen=True, slots=True)
+class CorpusManifest:
+    members: tuple[CorpusMember, ...]
+
+    def __post_init__(self) -> None:
+        _tuple_of(self.members, CorpusMember, "corpus members")
+        if not self.members or tuple(sorted(self.members)) != self.members:
+            raise ValueError("corpus members must be non-empty and sorted")
+        _unique((item.member_id for item in self.members), label="corpus member ids")
+
+    @property
+    def content_id(self) -> str:
+        return _content_id(self.to_data())
+
+    def to_data(self) -> dict[str, object]:
+        return {"members": [item.to_data() for item in self.members]}
+
+
+class ProtectedAuthorityReference:
+    """Opaque trust root provisioned by a protected maintainer/CI bootstrap."""
+
+    __slots__ = ("_public_key", "_reference_sha256", "_seal")
+
+    def __init__(self, public_key: str, reference_sha256: str, seal: object) -> None:
+        if seal is not _PROTECTED_REFERENCE_SEAL:
+            raise ValueError("authority trust reference must come from protected bootstrap")
+        _public_key(public_key, "authority signer")
+        _digest(reference_sha256, "protected authority reference")
+        object.__setattr__(self, "_public_key", public_key)
+        object.__setattr__(self, "_reference_sha256", reference_sha256)
+        object.__setattr__(self, "_seal", seal)
+
+    def __setattr__(self, name: str, value: object) -> None:
+        raise AttributeError("protected authority reference is immutable")
+
+    def __delattr__(self, name: str) -> None:
+        raise AttributeError("protected authority reference is immutable")
+
+    @property
+    def public_key(self) -> str:
+        return self._public_key
+
+    @property
+    def reference_sha256(self) -> str:
+        return self._reference_sha256
+
+
+def _bootstrap_protected_authority_reference(
+    public_key: str, reference_sha256: str
+) -> ProtectedAuthorityReference:
+    """Internal bootstrap hook; benchmark invocations must receive its sealed result."""
+
+    return ProtectedAuthorityReference(public_key, reference_sha256, _PROTECTED_REFERENCE_SEAL)
+
+
 @dataclass(frozen=True, slots=True)
 class PinnedAuthorityKeys:
     """Public keys supplied by the protected rollout configuration."""
@@ -127,6 +196,10 @@ class BenchmarkAuthority:
     """Immutable identities approved outside benchmark execution."""
 
     contracts: tuple[ContractPin, ...]
+    plan_contract_sha256: str
+    oracle_sha256: str
+    trial_schedule_sha256: str
+    corpus_manifest: CorpusManifest
     corpus_sha256: str
     run_identity_sha256: str
     toolchain_sha256: str
@@ -140,6 +213,8 @@ class BenchmarkAuthority:
     auditor_public_key: str
     telemetry_collector_identity_sha256: str
     telemetry_collector_public_key: str
+    protected_reference_sha256: str
+    signature: str
     revision: str = BENCHMARK_REVISION
 
     def __post_init__(self) -> None:
@@ -150,6 +225,10 @@ class BenchmarkAuthority:
             raise ValueError("contract pins must contain exact ordered issues #544 through #549")
         values = (
             ("corpus", self.corpus_sha256),
+            ("plan contract", self.plan_contract_sha256),
+            ("oracle", self.oracle_sha256),
+            ("trial schedule", self.trial_schedule_sha256),
+            ("protected reference", self.protected_reference_sha256),
             ("run identity", self.run_identity_sha256),
             ("toolchain", self.toolchain_sha256),
             ("harness", self.harness_sha256),
@@ -161,6 +240,10 @@ class BenchmarkAuthority:
         )
         for label, value in values:
             _digest(value, label)
+        if type(self.corpus_manifest) is not CorpusManifest:
+            raise ValueError("corpus manifest must be a CorpusManifest")
+        if self.corpus_sha256 != self.corpus_manifest.content_id:
+            raise ValueError("corpus digest must bind the canonical member manifest")
         actors = (
             self.analyst_identity_sha256,
             self.mutation_runner_identity_sha256,
@@ -194,28 +277,42 @@ class BenchmarkAuthority:
         )
         if len(set(public_keys)) != len(public_keys):
             raise ValueError("benchmark actor public keys must be independent")
+        if type(self.signature) is not str or _ED25519_SIGNATURE.fullmatch(self.signature) is None:
+            raise ValueError("authority signature must be a lowercase Ed25519 signature")
+
+    @property
+    def signing_bytes(self) -> bytes:
+        return _signing_bytes("benchmark-authority", self.unsigned_data())
 
     @property
     def content_id(self) -> str:
         return _content_id(self.to_data())
 
     def to_data(self) -> dict[str, object]:
+        return {**self.unsigned_data(), "signature": self.signature}
+
+    def unsigned_data(self) -> dict[str, object]:
         return {
             "analyst_identity_sha256": self.analyst_identity_sha256,
             "analyst_public_key": self.analyst_public_key,
             "auditor_identity_sha256": self.auditor_identity_sha256,
             "auditor_public_key": self.auditor_public_key,
             "contracts": [item.to_data() for item in self.contracts],
+            "corpus_manifest": self.corpus_manifest.to_data(),
             "corpus_sha256": self.corpus_sha256,
             "execution_nonce_sha256": self.execution_nonce_sha256,
             "harness_sha256": self.harness_sha256,
             "mutation_runner_identity_sha256": self.mutation_runner_identity_sha256,
             "mutation_runner_public_key": self.mutation_runner_public_key,
+            "oracle_sha256": self.oracle_sha256,
+            "plan_contract_sha256": self.plan_contract_sha256,
+            "protected_reference_sha256": self.protected_reference_sha256,
             "revision": self.revision,
             "run_identity_sha256": self.run_identity_sha256,
             "telemetry_collector_identity_sha256": self.telemetry_collector_identity_sha256,
             "telemetry_collector_public_key": self.telemetry_collector_public_key,
             "toolchain_sha256": self.toolchain_sha256,
+            "trial_schedule_sha256": self.trial_schedule_sha256,
         }
 
 
@@ -264,6 +361,10 @@ class TrialSchedule:
         for trial_id in self.trial_ids:
             _identifier(trial_id, "trial id")
         _unique(self.trial_ids, label="trial ids")
+
+    @property
+    def content_id(self) -> str:
+        return _content_id(self.to_data())
 
     def to_data(self) -> dict[str, object]:
         return {
@@ -317,11 +418,13 @@ class EvidenceQuality:
 @dataclass(frozen=True, slots=True)
 class BenchmarkCase:
     case_id: str
+    corpus_member_id: str
     input_sha256: str
     coverage_tags: tuple[str, ...]
 
     def __post_init__(self) -> None:
         _identifier(self.case_id, "case id")
+        _identifier(self.corpus_member_id, "case corpus member id")
         _digest(self.input_sha256, "case input digest")
         _tuple_of(self.coverage_tags, str, "coverage tags")
         _unique_ids(self.coverage_tags, "coverage tags")
@@ -329,6 +432,7 @@ class BenchmarkCase:
     def to_data(self) -> dict[str, object]:
         return {
             "case_id": self.case_id,
+            "corpus_member_id": self.corpus_member_id,
             "coverage_tags": list(self.coverage_tags),
             "input_sha256": self.input_sha256,
         }
@@ -337,15 +441,21 @@ class BenchmarkCase:
 @dataclass(frozen=True, slots=True, order=True)
 class MutationDeclaration:
     kind: MutationKind
+    corpus_member_id: str
     input_sha256: str
 
     def __post_init__(self) -> None:
         if type(self.kind) is not MutationKind:
             raise ValueError("mutation kind must be a MutationKind")
+        _identifier(self.corpus_member_id, "mutation corpus member id")
         _digest(self.input_sha256, "mutation input digest")
 
     def to_data(self) -> dict[str, str]:
-        return {"input_sha256": self.input_sha256, "kind": self.kind.value}
+        return {
+            "corpus_member_id": self.corpus_member_id,
+            "input_sha256": self.input_sha256,
+            "kind": self.kind.value,
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -395,9 +505,20 @@ class BenchmarkPlan:
     def content_id(self) -> str:
         return _content_id(self.to_data())
 
+    @property
+    def contract_id(self) -> str:
+        """Plan commitment excluding the circular authority commitment."""
+
+        return _content_id(self.contract_data())
+
     def to_data(self) -> dict[str, object]:
         return {
             "authority_sha256": self.authority_sha256,
+            **self.contract_data(),
+        }
+
+    def contract_data(self) -> dict[str, object]:
+        return {
             "cases": [item.to_data() for item in self.cases],
             "minimum_throughput_ratio": self.minimum_throughput_ratio,
             "minimum_token_reduction_ratio": self.minimum_token_reduction_ratio,
@@ -998,16 +1119,17 @@ class BenchmarkReport:
 def load_trusted_benchmark_authority(
     raw: bytes,
     *,
-    expected_sha256: str,
-    pinned_keys: PinnedAuthorityKeys,
+    protected_reference: ProtectedAuthorityReference,
 ) -> TrustedBenchmarkAuthority:
-    """Load the exact canonical authority protected by external trust roots."""
+    """Load an authority signed by the protected maintainer/CI trust root."""
 
     if type(raw) is not bytes or not raw or len(raw) > _MAX_AUTHORITY_BYTES:
         raise ValueError("authority document must be non-empty bytes within the size limit")
-    _digest(expected_sha256, "expected authority digest")
-    if type(pinned_keys) is not PinnedAuthorityKeys:
-        raise ValueError("authority keys must be externally pinned")
+    if (
+        type(protected_reference) is not ProtectedAuthorityReference
+        or protected_reference._seal is not _PROTECTED_REFERENCE_SEAL
+    ):
+        raise ValueError("authority signer must be a protected reference")
     try:
         decoded = raw.decode("utf-8")
         data = json.loads(
@@ -1026,16 +1148,22 @@ def load_trusted_benchmark_authority(
             "auditor_identity_sha256",
             "auditor_public_key",
             "contracts",
+            "corpus_manifest",
             "corpus_sha256",
             "execution_nonce_sha256",
             "harness_sha256",
             "mutation_runner_identity_sha256",
             "mutation_runner_public_key",
+            "oracle_sha256",
+            "plan_contract_sha256",
+            "protected_reference_sha256",
             "revision",
             "run_identity_sha256",
+            "signature",
             "telemetry_collector_identity_sha256",
             "telemetry_collector_public_key",
             "toolchain_sha256",
+            "trial_schedule_sha256",
         },
         "authority",
     )
@@ -1050,8 +1178,23 @@ def load_trusted_benchmark_authority(
                 _exact_str(item["sha256"], f"contract {index} digest"),
             )
         )
+    manifest_data = _exact_object(root["corpus_manifest"], {"members"}, "corpus manifest")
+    members_data = _exact_list(manifest_data["members"], "corpus members")
+    members: list[CorpusMember] = []
+    for index, value in enumerate(members_data):
+        item = _exact_object(value, {"member_id", "input_sha256"}, f"corpus member {index}")
+        members.append(
+            CorpusMember(
+                _exact_str(item["member_id"], f"corpus member {index} id"),
+                _exact_str(item["input_sha256"], f"corpus member {index} digest"),
+            )
+        )
     authority = BenchmarkAuthority(
         contracts=tuple(contracts),
+        plan_contract_sha256=_exact_str(root["plan_contract_sha256"], "plan contract digest"),
+        oracle_sha256=_exact_str(root["oracle_sha256"], "oracle digest"),
+        trial_schedule_sha256=_exact_str(root["trial_schedule_sha256"], "trial schedule digest"),
+        corpus_manifest=CorpusManifest(tuple(members)),
         corpus_sha256=_exact_str(root["corpus_sha256"], "corpus digest"),
         run_identity_sha256=_exact_str(root["run_identity_sha256"], "run identity"),
         toolchain_sha256=_exact_str(root["toolchain_sha256"], "toolchain digest"),
@@ -1073,20 +1216,22 @@ def load_trusted_benchmark_authority(
         telemetry_collector_public_key=_exact_str(
             root["telemetry_collector_public_key"], "telemetry collector public key"
         ),
+        protected_reference_sha256=_exact_str(
+            root["protected_reference_sha256"], "protected reference"
+        ),
+        signature=_exact_str(root["signature"], "authority signature"),
         revision=_exact_str(root["revision"], "benchmark revision"),
     )
     if raw != benchmark_json(authority):
         raise ValueError("authority document must use exact canonical JSON encoding")
-    if authority.content_id != expected_sha256:
-        raise ValueError("authority digest does not match protected configuration")
-    actual_keys = PinnedAuthorityKeys(
-        authority.analyst_public_key,
-        authority.mutation_runner_public_key,
-        authority.auditor_public_key,
-        authority.telemetry_collector_public_key,
-    )
-    if actual_keys != pinned_keys:
-        raise ValueError("authority public keys do not match protected configuration")
+    if authority.protected_reference_sha256 != protected_reference.reference_sha256:
+        raise ValueError("authority does not match the protected trust reference")
+    if not _verify_signature(
+        protected_reference.public_key,
+        authority.signature,
+        authority.signing_bytes,
+    ):
+        raise ValueError("authority signature is invalid for the protected trust reference")
     return TrustedBenchmarkAuthority(authority, _AUTHORITY_SEAL)
 
 
@@ -1108,6 +1253,14 @@ def finalize_benchmark(
     diagnostics: list[BenchmarkDiagnostic] = []
     if plan.authority_sha256 != authority.content_id:
         diagnostics.append(_diag("authority_commitment_mismatch", "$.plan.authority_sha256"))
+    if plan.contract_id != authority.plan_contract_sha256:
+        diagnostics.append(_diag("plan_contract_mismatch", "$.authority.plan_contract_sha256"))
+    if plan.oracle_sha256 != authority.oracle_sha256:
+        diagnostics.append(_diag("authority_oracle_mismatch", "$.authority.oracle_sha256"))
+    if plan.trial_schedule.content_id != authority.trial_schedule_sha256:
+        diagnostics.append(
+            _diag("authority_trial_schedule_mismatch", "$.authority.trial_schedule_sha256")
+        )
     if oracle.content_id != plan.oracle_sha256:
         diagnostics.append(_diag("oracle_commitment_mismatch", "$.plan.oracle_sha256"))
     if run.plan_sha256 != plan.content_id:
@@ -1115,6 +1268,7 @@ def finalize_benchmark(
     if run.oracle_sha256 != oracle.content_id:
         diagnostics.append(_diag("run_oracle_mismatch", "$.run.oracle_sha256"))
     _check_run_authority(authority, run, diagnostics)
+    _check_corpus_membership(authority, plan, diagnostics)
     _check_cases(plan, oracle, run, diagnostics)
     _check_mutations(plan, run, diagnostics)
     _check_audits(authority, plan, oracle, run, audits, diagnostics)
@@ -1130,6 +1284,27 @@ def finalize_benchmark(
         RolloutDecision.AUTHORIZE if not diagnostics else RolloutDecision.REJECT,
         tuple(diagnostics),
     )
+
+
+def _check_corpus_membership(
+    authority: BenchmarkAuthority,
+    plan: BenchmarkPlan,
+    diagnostics: list[BenchmarkDiagnostic],
+) -> None:
+    members = {item.member_id: item.input_sha256 for item in authority.corpus_manifest.members}
+    for case in plan.cases:
+        if members.get(case.corpus_member_id) != case.input_sha256:
+            diagnostics.append(
+                _diag("case_corpus_membership_invalid", f"$.plan.cases.{case.case_id}")
+            )
+    for mutation in plan.mutations:
+        if members.get(mutation.corpus_member_id) != mutation.input_sha256:
+            diagnostics.append(
+                _diag(
+                    "mutation_corpus_membership_invalid",
+                    f"$.plan.mutations.{mutation.kind.value}",
+                )
+            )
 
 
 def _check_run_authority(

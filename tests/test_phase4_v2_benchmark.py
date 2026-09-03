@@ -26,6 +26,8 @@ from tools.phase4_v2.benchmark import (
     CaseOracle,
     CaseResult,
     ContractPin,
+    CorpusManifest,
+    CorpusMember,
     EvidenceQuality,
     FindingIdentity,
     FindingResult,
@@ -35,6 +37,7 @@ from tools.phase4_v2.benchmark import (
     MutationResult,
     OracleSuite,
     PinnedAuthorityKeys,
+    ProtectedAuthorityReference,
     RolloutDecision,
     TimingPhase,
     TimingSample,
@@ -46,8 +49,10 @@ from tools.phase4_v2.benchmark import (
     finalize_benchmark,
     load_trusted_benchmark_authority,
 )
+from tools.phase4_v2.benchmark import model as benchmark_model
 
 _DIGEST = "a" * 64
+_AUTHORITY_KEY = Ed25519PrivateKey.from_private_bytes(b"r" * 32)
 _ANALYST_KEY = Ed25519PrivateKey.from_private_bytes(b"l" * 32)
 _MUTATION_KEY = Ed25519PrivateKey.from_private_bytes(b"m" * 32)
 _AUDIT_KEY = Ed25519PrivateKey.from_private_bytes(b"a" * 32)
@@ -77,25 +82,6 @@ def _artifacts() -> tuple[
     IndependentAuditSuite,
     TimingSuite,
 ]:
-    authority = BenchmarkAuthority(
-        contracts=tuple(
-            ContractPin(issue, f"issue-{issue}-v1", _digest(issue))
-            for issue in REQUIRED_CONTRACT_ISSUES
-        ),
-        corpus_sha256=_digest(1_000),
-        run_identity_sha256=_digest(1_001),
-        toolchain_sha256=_digest(1_002),
-        harness_sha256=_digest(1_003),
-        execution_nonce_sha256=_digest(1_004),
-        analyst_identity_sha256=_sha256_hex(_public_key(_ANALYST_KEY)),
-        analyst_public_key=_public_key(_ANALYST_KEY),
-        mutation_runner_identity_sha256=_sha256_hex(_public_key(_MUTATION_KEY)),
-        mutation_runner_public_key=_public_key(_MUTATION_KEY),
-        auditor_identity_sha256=_sha256_hex(_public_key(_AUDIT_KEY)),
-        auditor_public_key=_public_key(_AUDIT_KEY),
-        telemetry_collector_identity_sha256=_sha256_hex(_public_key(_TELEMETRY_KEY)),
-        telemetry_collector_public_key=_public_key(_TELEMETRY_KEY),
-    )
     case_tags = (*sorted(REQUIRED_COVERAGE_TAGS), "simple-managed")
     identities = tuple(
         FindingIdentity("transport", f"finding-{index}", _digest(index + 1))
@@ -113,23 +99,66 @@ def _artifacts() -> tuple[
             for index, _tag in enumerate(case_tags)
         )
     )
+    mutations = tuple(
+        MutationDeclaration(kind, f"mutation-{index}", _digest(index + 300))
+        for index, kind in enumerate(sorted(REQUIRED_MUTATIONS, key=lambda item: item.value))
+    )
+    manifest = CorpusManifest(
+        tuple(
+            sorted(
+                (
+                    *(
+                        CorpusMember(f"case-{index}", _digest(index + 100))
+                        for index in range(len(case_tags))
+                    ),
+                    *(CorpusMember(item.corpus_member_id, item.input_sha256) for item in mutations),
+                )
+            )
+        )
+    )
     plan = BenchmarkPlan(
         cases=tuple(
             BenchmarkCase(
                 case_id=f"case-{index}",
+                corpus_member_id=f"case-{index}",
                 input_sha256=_digest(index + 100),
                 coverage_tags=(tag,),
             )
             for index, tag in enumerate(case_tags)
         ),
-        mutations=tuple(
-            MutationDeclaration(kind, _digest(index + 300))
-            for index, kind in enumerate(sorted(REQUIRED_MUTATIONS, key=lambda item: item.value))
-        ),
+        mutations=mutations,
         trial_schedule=TrialSchedule(("trial-a", "trial-b")),
         oracle_sha256=oracle.content_id,
-        authority_sha256=authority.content_id,
+        authority_sha256=_DIGEST,
     )
+    authority = _signed_authority(
+        BenchmarkAuthority(
+            contracts=tuple(
+                ContractPin(issue, f"issue-{issue}-v1", _digest(issue))
+                for issue in REQUIRED_CONTRACT_ISSUES
+            ),
+            plan_contract_sha256=plan.contract_id,
+            oracle_sha256=oracle.content_id,
+            trial_schedule_sha256=plan.trial_schedule.content_id,
+            corpus_manifest=manifest,
+            corpus_sha256=manifest.content_id,
+            run_identity_sha256=_digest(1_001),
+            toolchain_sha256=_digest(1_002),
+            harness_sha256=_digest(1_003),
+            execution_nonce_sha256=_digest(1_004),
+            analyst_identity_sha256=_sha256_hex(_public_key(_ANALYST_KEY)),
+            analyst_public_key=_public_key(_ANALYST_KEY),
+            mutation_runner_identity_sha256=_sha256_hex(_public_key(_MUTATION_KEY)),
+            mutation_runner_public_key=_public_key(_MUTATION_KEY),
+            auditor_identity_sha256=_sha256_hex(_public_key(_AUDIT_KEY)),
+            auditor_public_key=_public_key(_AUDIT_KEY),
+            telemetry_collector_identity_sha256=_sha256_hex(_public_key(_TELEMETRY_KEY)),
+            telemetry_collector_public_key=_public_key(_TELEMETRY_KEY),
+            protected_reference_sha256=_digest(9_000),
+            signature="0" * 128,
+        )
+    )
+    plan = replace(plan, authority_sha256=authority.content_id)
     cases = tuple(
         CaseResult(
             case_id=f"case-{index}",
@@ -146,7 +175,7 @@ def _artifacts() -> tuple[
         )
         for index, _tag in enumerate(case_tags)
     )
-    mutations = tuple(
+    mutation_results = tuple(
         MutationResult(
             declaration.kind,
             declaration.input_sha256,
@@ -168,7 +197,7 @@ def _artifacts() -> tuple[
         analyst_identity_sha256=authority.analyst_identity_sha256,
         mutation_runner_identity_sha256=authority.mutation_runner_identity_sha256,
         cases=cases,
-        mutations=mutations,
+        mutations=mutation_results,
         analyst_signature="0" * 128,
         mutation_runner_signature="0" * 128,
     )
@@ -368,11 +397,10 @@ def test_benchmark_rejects_identity_contract_and_commitment_drift() -> None:
         finalize_benchmark(
             cast(TrustedBenchmarkAuthority, changed), plan, oracle, run, audits, timings
         )
-    with pytest.raises(ValueError, match="digest does not match"):
+    with pytest.raises(ValueError, match="signature is invalid"):
         load_trusted_benchmark_authority(
             benchmark_json(changed),
-            expected_sha256=trusted.content_id,
-            pinned_keys=_pinned_keys(),
+            protected_reference=_protected_reference(),
         )
 
 
@@ -512,6 +540,8 @@ def test_protected_authority_loader_rejects_self_issuance_wrong_pins_and_noncano
     authority = trusted.authority
 
     assert _trusted(authority).content_id == authority.content_id
+    with pytest.raises(ValueError, match="protected bootstrap"):
+        ProtectedAuthorityReference(_public_key(_AUTHORITY_KEY), _digest(9_000), object())
     protected_slot = "_authority"
     with pytest.raises(AttributeError, match="immutable"):
         setattr(trusted, protected_slot, replace(authority, harness_sha256=_digest(9_999)))
@@ -527,18 +557,17 @@ def test_protected_authority_loader_rejects_self_issuance_wrong_pins_and_noncano
             timings,
         )
     wrong_key = Ed25519PrivateKey.from_private_bytes(b"w" * 32)
-    wrong_pins = replace(_pinned_keys(), analyst_public_key=_public_key(wrong_key))
-    with pytest.raises(ValueError, match="do not match protected"):
+    self_issued = replace(authority, signature="0" * 128)
+    self_issued = replace(self_issued, signature=wrong_key.sign(self_issued.signing_bytes).hex())
+    with pytest.raises(ValueError, match="signature is invalid"):
         load_trusted_benchmark_authority(
-            benchmark_json(authority),
-            expected_sha256=authority.content_id,
-            pinned_keys=wrong_pins,
+            benchmark_json(self_issued),
+            protected_reference=_protected_reference(),
         )
     with pytest.raises(ValueError, match="canonical JSON"):
         load_trusted_benchmark_authority(
             benchmark_json(authority).replace(b'"contracts":', b'"contracts" :', 1),
-            expected_sha256=authority.content_id,
-            pinned_keys=_pinned_keys(),
+            protected_reference=_protected_reference(),
         )
 
 
@@ -554,26 +583,22 @@ def test_protected_authority_loader_rejects_duplicate_keys_and_parser_bounds() -
     with pytest.raises(ValueError, match="strict JSON"):
         load_trusted_benchmark_authority(
             duplicate,
-            expected_sha256=authority.content_id,
-            pinned_keys=_pinned_keys(),
+            protected_reference=_protected_reference(),
         )
     with pytest.raises(ValueError, match="size limit"):
         load_trusted_benchmark_authority(
             b" " * (64 * 1024 + 1),
-            expected_sha256=authority.content_id,
-            pinned_keys=_pinned_keys(),
+            protected_reference=_protected_reference(),
         )
     with pytest.raises(ValueError, match="depth limit"):
         load_trusted_benchmark_authority(
             (b"[" * 13) + b"0" + (b"]" * 13),
-            expected_sha256=authority.content_id,
-            pinned_keys=_pinned_keys(),
+            protected_reference=_protected_reference(),
         )
     with pytest.raises(ValueError, match="node limit"):
         load_trusted_benchmark_authority(
             b"[" + b",".join(b"0" for _ in range(513)) + b"]",
-            expected_sha256=authority.content_id,
-            pinned_keys=_pinned_keys(),
+            protected_reference=_protected_reference(),
         )
 
 
@@ -608,6 +633,62 @@ def test_audit_and_telemetry_suites_cannot_replay_across_plan_or_run() -> None:
     assert {"audit_context_mismatch", "timing_authority_mismatch"} <= {
         item.code for item in report.diagnostics
     }
+
+
+def test_authority_rejects_substituted_oracle_and_trial_schedule() -> None:
+    authority, plan, oracle, run, audits, timings = _artifacts()
+    changed_oracle = replace(
+        oracle,
+        cases=(
+            replace(oracle.cases[0], candidate_ids=("substituted-candidate",)),
+            *oracle.cases[1:],
+        ),
+    )
+    changed_plan = replace(plan, oracle_sha256=changed_oracle.content_id)
+    report = finalize_benchmark(authority, changed_plan, changed_oracle, run, audits, timings)
+    assert {"authority_oracle_mismatch", "plan_contract_mismatch"} <= {
+        item.code for item in report.diagnostics
+    }
+
+    changed_schedule = TrialSchedule(tuple(reversed(plan.trial_schedule.trial_ids)))
+    changed_plan = replace(plan, trial_schedule=changed_schedule)
+    report = finalize_benchmark(authority, changed_plan, oracle, run, audits, timings)
+    assert {"authority_trial_schedule_mismatch", "plan_contract_mismatch"} <= {
+        item.code for item in report.diagnostics
+    }
+
+
+def test_signed_authority_rejects_substituted_corpus_manifest() -> None:
+    trusted, *_ = _artifacts()
+    authority = trusted.authority
+    changed_member = replace(authority.corpus_manifest.members[0], input_sha256=_digest(9_999))
+    changed_manifest = CorpusManifest(
+        tuple(sorted((changed_member, *authority.corpus_manifest.members[1:])))
+    )
+    substituted = replace(
+        authority,
+        corpus_manifest=changed_manifest,
+        corpus_sha256=changed_manifest.content_id,
+    )
+
+    with pytest.raises(ValueError, match="signature is invalid"):
+        load_trusted_benchmark_authority(
+            benchmark_json(substituted),
+            protected_reference=_protected_reference(),
+        )
+
+
+def test_every_case_and_mutation_must_prove_exact_corpus_membership() -> None:
+    authority, plan, oracle, run, audits, timings = _artifacts()
+    changed_case = replace(plan.cases[0], corpus_member_id=plan.mutations[0].corpus_member_id)
+    changed_plan = replace(plan, cases=(changed_case, *plan.cases[1:]))
+    report = finalize_benchmark(authority, changed_plan, oracle, run, audits, timings)
+    assert "case_corpus_membership_invalid" in {item.code for item in report.diagnostics}
+
+    changed_mutation = replace(plan.mutations[0], corpus_member_id=plan.cases[0].corpus_member_id)
+    changed_plan = replace(plan, mutations=(changed_mutation, *plan.mutations[1:]))
+    report = finalize_benchmark(authority, changed_plan, oracle, run, audits, timings)
+    assert "mutation_corpus_membership_invalid" in {item.code for item in report.diagnostics}
 
 
 def test_signed_subset_of_frozen_trial_schedule_is_rejected() -> None:
@@ -701,7 +782,7 @@ def test_runtime_types_are_strict() -> None:
     with pytest.raises(ValueError, match="CandidateDisposition"):
         CandidateResult("candidate", cast(CandidateDisposition, "UNEXPLAINED"))
     with pytest.raises(ValueError, match="MutationKind"):
-        MutationDeclaration(cast(MutationKind, "REMOVED_CALLSITE"), _DIGEST)
+        MutationDeclaration(cast(MutationKind, "REMOVED_CALLSITE"), "member", _DIGEST)
     with pytest.raises(ValueError, match="package bound"):
         EvidenceQuality(1, cast(bool, 1), ("jadx",))
     with pytest.raises(ValueError, match="mutation detected"):
@@ -779,6 +860,19 @@ def _signed_run(
     )
 
 
+def _signed_authority(authority: BenchmarkAuthority) -> BenchmarkAuthority:
+    return replace(
+        authority,
+        signature=_AUTHORITY_KEY.sign(authority.signing_bytes).hex(),
+    )
+
+
+def _protected_reference() -> ProtectedAuthorityReference:
+    return benchmark_model._bootstrap_protected_authority_reference(
+        _public_key(_AUTHORITY_KEY), _digest(9_000)
+    )
+
+
 def _pinned_keys() -> PinnedAuthorityKeys:
     return PinnedAuthorityKeys(
         _public_key(_ANALYST_KEY),
@@ -791,8 +885,7 @@ def _pinned_keys() -> PinnedAuthorityKeys:
 def _trusted(authority: BenchmarkAuthority) -> TrustedBenchmarkAuthority:
     return load_trusted_benchmark_authority(
         benchmark_json(authority),
-        expected_sha256=authority.content_id,
-        pinned_keys=_pinned_keys(),
+        protected_reference=_protected_reference(),
     )
 
 
