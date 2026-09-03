@@ -643,7 +643,7 @@ def reconcile(value: ReconciliationInput) -> ReconciliationResult:
     # mutation of otherwise frozen records before any decision is made.
     frozen = loads_input(
         dumps_input(value),
-        package_refs={item.package_ref.content_id: item.package_ref for item in value.packages},
+        trusted_input=value,
     )
     packages = {item.package_ref.content_id: item for item in frozen.packages}
     roots = {

@@ -686,9 +686,24 @@ def dumps_input(value: ReconciliationInput) -> bytes:
 def loads_input(
     payload: str | bytes,
     *,
+    trusted_input: ReconciliationInput,
+) -> ReconciliationInput:
+    """Verify serialized input against an already authority-derived snapshot."""
+    if type(trusted_input) is not ReconciliationInput:
+        _fail("trusted input must use the exact ReconciliationInput type")
+    expected = dumps_input(trusted_input)
+    supplied = payload.encode("utf-8", errors="strict") if type(payload) is str else payload
+    if type(supplied) is not bytes or supplied != expected:
+        _fail("serialized input differs from the authority-derived reconciliation input")
+    return trusted_input
+
+
+def _loads_untrusted_input(
+    payload: str | bytes,
+    *,
     package_refs: Mapping[str, FrozenPackageRef],
 ) -> ReconciliationInput:
-    """Load strict JSON through the closed schema and immutable typed model."""
+    """Internal schema parser; never an authority boundary."""
     raw = _decode_json(payload)
     errors = sorted(
         _SCHEMA_VALIDATOR.iter_errors(raw),

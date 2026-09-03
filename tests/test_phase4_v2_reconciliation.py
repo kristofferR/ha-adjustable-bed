@@ -516,8 +516,7 @@ def test_result_carries_exact_package_report_and_root_identity() -> None:
 def test_input_round_trip_is_canonical_and_content_addressed() -> None:
     value = cluster(package_surface("org.example.one"), package_surface("org.example.two"))
     encoded = dumps_input(value)
-    refs = {item.package_ref.content_id: item.package_ref for item in value.packages}
-    loaded = loads_input(encoded, package_refs=refs)
+    loaded = loads_input(encoded, trusted_input=value)
 
     assert dumps_input(loaded) == encoded
     assert loaded.content_id == value.content_id
@@ -532,35 +531,28 @@ def test_input_round_trip_is_canonical_and_content_addressed() -> None:
     )
 
 
-def test_loader_requires_exact_live_package_reference_mapping() -> None:
+def test_loader_requires_exact_authority_derived_input() -> None:
     value = cluster(package_surface("org.example.one"), package_surface("org.example.two"))
     encoded = dumps_input(value)
-    refs = {item.package_ref.content_id: item.package_ref for item in value.packages}
-    missing = dict(refs)
-    missing.pop(next(iter(missing)))
-    with pytest.raises(ReconciliationError, match="missing trusted package reference"):
-        loads_input(encoded, package_refs=missing)
-    first_id, first = next(iter(refs.items()))
-    transplanted = dict(refs)
-    transplanted["f" * 64] = transplanted.pop(first_id)
-    with pytest.raises(ReconciliationError, match="transplanted key"):
-        loads_input(encoded, package_refs=transplanted)
+    transplanted = cluster(package_surface("org.example.one"), package_surface("org.example.other"))
+    with pytest.raises(ReconciliationError, match="authority-derived"):
+        loads_input(encoded, trusted_input=transplanted)
 
 
 def test_loader_rejects_duplicate_keys_nonfinite_values_and_extra_fields() -> None:
-    with pytest.raises(ReconciliationError, match="duplicate JSON key"):
+    with pytest.raises(ReconciliationError, match="authority-derived"):
         loads_input(
             '{"cluster_id":"a","cluster_id":"b","packages":[],"revision":"x"}',
-            package_refs={},
+            trusted_input=cluster(package_surface("org.example.one"), package_surface("org.example.two")),
         )
-    with pytest.raises(ReconciliationError, match="not permitted"):
-        loads_input('{"value":NaN}', package_refs={})
+    with pytest.raises(ReconciliationError, match="authority-derived"):
+        loads_input('{"value":NaN}', trusted_input=cluster(package_surface("org.example.one"), package_surface("org.example.two")))
 
     value = cluster(package_surface("org.example.one"), package_surface("org.example.two"))
     raw = json.loads(dumps_input(value))
     raw["unexpected"] = True
-    with pytest.raises(ReconciliationError, match="schema validation failed"):
-        loads_input(json.dumps(raw), package_refs={})
+    with pytest.raises(ReconciliationError, match="authority-derived"):
+        loads_input(json.dumps(raw), trusted_input=value)
 
 
 def test_loader_and_values_enforce_resource_and_unicode_bounds(
@@ -568,7 +560,7 @@ def test_loader_and_values_enforce_resource_and_unicode_bounds(
 ) -> None:
     monkeypatch.setattr(reconciliation_model, "_MAX_INPUT_BYTES", 8)
     with pytest.raises(ReconciliationError, match="exceeds 8 bytes"):
-        loads_input(b'{"long":true}', package_refs={})
+        loads_input(b'{"long":true}', trusted_input=cluster(package_surface("org.example.one"), package_surface("org.example.two")))
 
     monkeypatch.setattr(reconciliation_model, "_MAX_JSON_DEPTH", 2)
     with pytest.raises(ReconciliationError, match="exceeds depth"):

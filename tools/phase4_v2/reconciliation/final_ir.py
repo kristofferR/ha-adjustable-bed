@@ -7,7 +7,17 @@ import json
 from dataclasses import dataclass
 from typing import cast
 
-from tools.phase4_v2.equivalence import FrozenPackageRef
+from tools.phase4_v2.equivalence import (
+    VALIDATED_PACKAGE_OUTPUT_REVISION,
+    AuthenticatedPackageExecutionEnvelope,
+    FrozenPackageExecutionPlan,
+    FrozenPackageRef,
+    Route,
+    ValidatedPackageOutput,
+    package_queue_unit_id,
+    validate_authenticated_package_output,
+    validate_frozen_package_ref,
+)
 from tools.phase4_v2.ir import (
     FINAL_DOMAIN_COLLECTIONS,
     FINAL_SCHEMA_REVISION,
@@ -19,6 +29,7 @@ from tools.phase4_v2.ir import (
 )
 from tools.phase4_v2.ir import model as ir_core
 from tools.phase4_v2.ir import v1 as final_ir_model
+from tools.phase4_v2.queue import Queue, WorkUnitStatus
 
 from .model import (
     AreaSurface,
@@ -77,6 +88,120 @@ class FinalIRSurfaceDerivation:
     candidate_ids: tuple[str, ...]
     action_ids: tuple[str, ...]
     variant_ids: tuple[str, ...]
+
+
+def derive_authenticated_final_ir_package_surface(
+    *,
+    package_ref: FrozenPackageRef,
+    execution_plan: FrozenPackageExecutionPlan,
+    queue: Queue,
+    validated_output: ValidatedPackageOutput,
+    execution_envelope: AuthenticatedPackageExecutionEnvelope,
+    report_bytes: bytes,
+    document: FinalProtocolIRDocument,
+    canonical_json: bytes,
+    markdown: str,
+) -> FinalIRSurfaceDerivation:
+    """Derive a surface only from an accepted, signed package publication."""
+
+    package_ref = validate_frozen_package_ref(package_ref)
+    authenticated = validate_authenticated_package_output(validated_output, execution_envelope)
+    if type(authenticated) is not ValidatedPackageOutput:
+        raise ReconciliationError("authenticated package output has an invalid type")
+    completion = next(
+        (
+            item
+            for item in queue.snapshot().units
+            if item.unit_id == package_queue_unit_id(package_ref.content_id)
+        ),
+        None,
+    )
+    if (
+        execution_plan.target_package_ref_id != package_ref.content_id
+        or execution_plan.digest != authenticated.execution_plan_id
+        or completion is None
+        or completion.status is not WorkUnitStatus.COMPLETED
+        or completion.completion_revision != VALIDATED_PACKAGE_OUTPUT_REVISION
+        or completion.output_digest != authenticated.content_id
+    ):
+        raise ReconciliationError("package completion does not bind the authenticated output")
+    if type(report_bytes) is not bytes:
+        raise ReconciliationError("report must be exact immutable bytes")
+    try:
+        report = json.loads(report_bytes)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ReconciliationError("package report is invalid JSON") from error
+    canonical_report = json.dumps(
+        report, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    ).encode()
+    if report_bytes not in {canonical_report, canonical_report + b"\n"}:
+        raise ReconciliationError("package report is not canonical JSON")
+    results = report.get("authoritative_root_results") if type(report) is dict else None
+    if type(results) is not list:
+        raise ReconciliationError("package report has no authoritative root results")
+    result_locations = {
+        (item.get("target_root_id"), item.get("target_occurrence_identity_sha256")): index
+        for index, item in enumerate(results)
+        if type(item) is dict and item.get("route") == Route.FULL_ANALYSIS.value
+    }
+    report_roots = {
+        (
+            item.get("target_root_id"),
+            item.get("target_occurrence_identity_sha256"),
+            item.get("result", {}).get("analysis", {}).get("semantic_root_sha256"),
+        )
+        for item in results
+        if type(item) is dict and item.get("route") == Route.FULL_ANALYSIS.value
+    }
+    attested_roots = {
+        (
+            item.target_root_id,
+            item.target_occurrence_identity_sha256,
+            item.semantic_root_sha256,
+        )
+        for item in authenticated.validated_root_evidence
+    }
+    if report_roots != attested_roots:
+        raise ReconciliationError("report roots differ from retained validator attestations")
+    anchor_keys_by_id = {anchor.id: key for key, anchor in document.evidence_anchors}
+    retained_anchor_ids = {
+        anchor
+        for attestation in authenticated.validated_root_evidence
+        for member in attestation.evidence_members
+        for anchor in member.evidence_anchor_ids
+    }
+    if not retained_anchor_ids <= set(anchor_keys_by_id):
+        raise ReconciliationError("retained root evidence names anchors outside the final IR")
+    roots = tuple(
+        RootProvenance(
+            package_ref.content_id,
+            attestation.target_root_id,
+            attestation.target_occurrence_identity_sha256,
+            Route.FULL_ANALYSIS,
+            attestation.semantic_root_sha256,
+            None,
+            f"/authoritative_root_results/{result_locations[(attestation.target_root_id, attestation.target_occurrence_identity_sha256)]}",
+            tuple(
+                sorted(
+                    anchor_keys_by_id[anchor]
+                    for member in attestation.evidence_members
+                    for anchor in member.evidence_anchor_ids
+                )
+            ),
+        )
+        for attestation in authenticated.validated_root_evidence
+    )
+    if len(roots) != len(result_locations):
+        raise ReconciliationError("retained root attestations do not match the exact report roots")
+    return derive_final_ir_package_surface(
+        package_ref=package_ref,
+        report_sha256=authenticated.target_report_sha256,
+        report_revision=authenticated.target_report_revision,
+        roots=tuple(sorted(roots, key=lambda item: item.content_id)),
+        document=document,
+        canonical_json=canonical_json,
+        markdown=markdown,
+    )
 
 
 def derive_final_ir_package_surface(

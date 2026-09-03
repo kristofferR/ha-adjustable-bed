@@ -1012,6 +1012,57 @@ def test_package_profile_rejects_unattested_full_analysis_semantic_root(
     assert receipt.accepted is False
 
 
+def test_package_profile_rejects_extra_semantic_attestation_for_same_root(
+    tmp_path: Path,
+) -> None:
+    report, members, pins, contract = _package_bound_bundle(tmp_path)
+    root = {
+        "route": "FULL_ANALYSIS",
+        "target_occurrence_identity_sha256": "b" * 64,
+        "target_root_id": "a" * 64,
+    }
+    pins = _set_package_roots(
+        report,
+        members,
+        pins,
+        contract,
+        root_plans=[root],
+        root_results=[
+            {
+                **root,
+                "result": {
+                    "analysis": {"semantic_root_sha256": _EVIDENCE_DIGEST},
+                    "status": "COMPLETE",
+                },
+            }
+        ],
+    )
+    trust = _trusted_lineage(pins)
+    document = json.loads(trust.payload)
+    document["members"][0]["authoritative_root_analyses"].append(
+        {
+            "evidence_anchor_ids": ["value"],
+            "semantic_root_sha256": "c" * 64,
+            "target_occurrence_identity_sha256": "b" * 64,
+            "target_root_id": "a" * 64,
+        }
+    )
+    payload = json.dumps(document, sort_keys=True, separators=(",", ":")).encode()
+    receipt = validate_report_bundle(
+        report,
+        expected_dependencies=pins,
+        expected_evidence_lineage=replace(
+            trust,
+            payload=payload,
+            expected_manifest_sha256=hashlib.sha256(payload).hexdigest(),
+        ),
+    )
+
+    assert "PACKAGE_REPORT_ROOT_EVIDENCE_SET_MISMATCH" in {
+        item.code for item in receipt.diagnostics
+    }
+
+
 def test_package_profile_rejects_anchor_hash_as_full_analysis_semantic_root(
     tmp_path: Path,
 ) -> None:

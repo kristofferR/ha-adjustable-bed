@@ -15,7 +15,11 @@ from .engine import (
     SemanticAtom,
     reconcile,
 )
-from .final_ir import FinalIRSurfaceDerivation, derive_final_ir_package_surface
+from .final_ir import (
+    FinalIRSurfaceDerivation,
+    derive_authenticated_final_ir_package_surface,
+    derive_final_ir_package_surface,
+)
 from .model import (
     AreaSurface,
     CanonicalValue,
@@ -77,6 +81,7 @@ __all__ = [
     "SemanticAtom",
     "dumps_input",
     "derive_final_ir_package_surface",
+    "derive_authenticated_final_ir_package_surface",
     "loads_input",
     "reconcile",
     "render_json",

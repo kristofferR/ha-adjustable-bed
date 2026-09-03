@@ -1093,7 +1093,12 @@ def _validate_exact_root_evidence_set(
         )
         for item in retained
     }
-    if not expected.issubset(actual):
+    expected_identities = {(root, occurrence) for root, occurrence, _semantic in expected}
+    if not expected.issubset(actual) or any(
+        (root, occurrence) in expected_identities and triple not in expected
+        for triple in actual
+        for root, occurrence, _semantic in (triple,)
+    ):
         diagnostics.append(
             BindingDiagnostic("PACKAGE_REPORT_ROOT_EVIDENCE_SET_MISMATCH", "analysis.json")
         )

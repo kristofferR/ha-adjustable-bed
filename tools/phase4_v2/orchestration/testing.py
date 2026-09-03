@@ -18,6 +18,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 import tools.phase4_v2.equivalence.core as equivalence_core
+import tools.phase4_v2.equivalence.execution as execution_module
 import tools.phase4_v2.equivalence.inventory as inventory_module
 import tools.phase4_v2.preflight.core as preflight_core
 import tools.phase4_v2.preflight.registry as registry_module
@@ -30,6 +31,12 @@ from tools.phase4_v2.equivalence.core import (
     validator_authority_payload,
     validator_authority_pin_payload,
     validator_envelope_signing_bytes,
+)
+from tools.phase4_v2.equivalence.execution import (
+    ActivatedExecutionAuthority,
+    execution_authority_payload,
+    execution_authority_pin_payload,
+    load_activated_execution_authority,
 )
 from tools.phase4_v2.equivalence.inventory import (
     ActivatedInventoryAuthority,
@@ -117,6 +124,8 @@ class SyntheticTrust:
     validator_authority: ActivatedValidatorAuthority
     inventory_key: Ed25519PrivateKey
     inventory_authority: ActivatedInventoryAuthority
+    execution_key: Ed25519PrivateKey
+    execution_authority: ActivatedExecutionAuthority
     tool_sha256: str
 
 
@@ -178,7 +187,19 @@ def protected_fixture_trust(root: Path) -> Iterator[SyntheticTrust]:
     inventory_patch = patch.object(
         inventory_module, "_read_protected_inventory_pin", return_value=inventory_pin
     )
-    with preparation_patch, validator_patch, inventory_patch:
+    execution_key = Ed25519PrivateKey.from_private_bytes(b"e" * 32)
+    execution_payload = execution_authority_payload(
+        authority_id="synthetic-execution",
+        public_key=_public_key_hex(execution_key),
+        generation=1,
+    )
+    execution_pin = json.loads(execution_authority_pin_payload(execution_payload))[
+        "activation_sha256"
+    ]
+    execution_patch = patch.object(
+        execution_module, "_read_protected_execution_pin", return_value=execution_pin
+    )
+    with preparation_patch, validator_patch, inventory_patch, execution_patch:
         yield SyntheticTrust(
             preparation_signer,
             registry,
@@ -188,6 +209,8 @@ def protected_fixture_trust(root: Path) -> Iterator[SyntheticTrust]:
             load_activated_validator_authority(validator_payload),
             inventory_key,
             load_activated_inventory_authority(inventory_payload),
+            execution_key,
+            load_activated_execution_authority(execution_payload),
             hashlib.sha256(tool.read_bytes()).hexdigest(),
         )
 
@@ -214,7 +237,8 @@ def build_synthetic_package_inputs(
 ) -> IncompleteSyntheticPackage:
     """Build one real signed preparation and two genuinely validated reports."""
 
-    package_name = f"org.example.synthetic.c{cluster_id.rsplit(':', 1)[-1]}.p{package_index}"
+    cluster_token = hashlib.sha256(cluster_id.encode()).hexdigest()[:12]
+    package_name = f"org.example.synthetic.c{cluster_token}.p{package_index}"
     package_root = root / package_name
     package_root.mkdir(parents=True)
     artifact = package_root / "base.apk"
@@ -362,7 +386,7 @@ def finish_synthetic_package_inputs(
 
 def _cluster_from_package_root(root: Path) -> str:
     cluster = root.parent.name
-    if not cluster.startswith("synthetic-cluster:"):
+    if not cluster:
         raise RuntimeError("synthetic package root lost its cluster identity")
     return cluster
 
@@ -549,7 +573,7 @@ def _package_report(
         ],
         "anchors": [
             {
-                "id": "closed",
+                "id": "evidence-1",
                 "owner": partial.package_local.target_artifact_digest,
                 "member": evidence_member,
                 "start_byte": 0,
@@ -622,6 +646,7 @@ def _lineage(
                 "semantic_root_sha256": hashlib.sha256(evidence).hexdigest(),
                 "target_occurrence_identity_sha256": occurrence,
                 "target_root_id": target_root,
+                "evidence_anchor_ids": ["evidence-1"],
             }
         ]
     )

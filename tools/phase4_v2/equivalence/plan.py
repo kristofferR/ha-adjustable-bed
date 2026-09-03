@@ -2322,7 +2322,10 @@ def build_validated_package_output(
         (item.target_root_id, item.target_occurrence_identity_sha256)
         for item in frozen_receipt.validated_root_evidence
     }
-    if retained_full_roots != expected_full_roots:
+    if (
+        retained_full_roots != expected_full_roots
+        or len(frozen_receipt.validated_root_evidence) != len(expected_full_roots)
+    ):
         _fail("validator receipt does not retain the exact FULL root evidence set")
     output = object.__new__(ValidatedPackageOutput)
     object.__setattr__(output, "target_package_ref_id", plan.target_package_ref_id)

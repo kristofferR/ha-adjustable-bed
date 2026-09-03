@@ -4,19 +4,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+import tempfile
 from dataclasses import asdict
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 import tools.phase4_v2.orchestration.completion as stage_completion
-import tools.phase4_v2.queue.core as queue_core
 from tools.phase4_v2.equivalence.plan import (
     PACKAGE_EXECUTION_PLAN_REVISION,
-    PREPARATION_QUEUE_UNIT_KIND,
     PREPARATION_RECEIPT_REVISION,
     VALIDATED_PACKAGE_OUTPUT_REVISION,
     FrozenCapabilityPin,
@@ -51,13 +49,17 @@ from tools.phase4_v2.orchestration import (
     run_synthetic_acceptance,
     stage_authority_capability,
 )
+from tools.phase4_v2.orchestration.acceptance import complete_synthetic_package_inputs
+from tools.phase4_v2.orchestration.testing import (
+    build_synthetic_package_inputs,
+    protected_fixture_trust,
+)
 from tools.phase4_v2.queue import (
     CapabilityPin,
     FanoutPublishReceipt,
     Lease,
     Queue,
     QueueConflictError,
-    TerminalOutcome,
     TrackerDocument,
     TrackerDocumentSet,
     TrackerFormat,
@@ -67,11 +69,13 @@ from tools.phase4_v2.queue import (
     publish_tracker_fanout,
 )
 from tools.phase4_v2.queue.cli import main as queue_main
+from tools.phase4_v2.queue.publication_config import TrackerPublicationConfig
 
 _TARGETS = (
     TrackerTarget("issues/436.md", TrackerFormat.MARKDOWN),
     TrackerTarget("public/queue.html", TrackerFormat.HTML),
 )
+_PUBLICATION_CONFIG = TrackerPublicationConfig("owner/repository", "tracker", _TARGETS)
 _PROTECTED_CONFIG: dict[str, tuple[str, int]] = {}
 _GRAPH_AUTHORITIES: dict[str, dict[str, tuple[Ed25519PrivateKey, ActivatedStageAuthority]]] = {}
 
@@ -112,6 +116,8 @@ def _protected_stage_config(monkeypatch: pytest.MonkeyPatch) -> None:
 
 class _Gateway:
     def __init__(self) -> None:
+        self.repository = _PUBLICATION_CONFIG.repository
+        self.branch = _PUBLICATION_CONFIG.branch
         self.revision = "a" * 40
         self.documents: dict[str, bytes] = {}
 
@@ -215,6 +221,25 @@ def _frozen_plan(cluster: str, name: str) -> FrozenPackageExecutionPlan:
                 "revision": preparation_completion.revision,
             }
         ],
+        "root_plans": [
+            {
+                "analysis_capabilities": [
+                    {
+                        "digest": capability.digest,
+                        "name": capability.name,
+                        "revision": capability.revision,
+                    }
+                ],
+                "analysis_dependencies": [],
+                "reason": "synthetic",
+                "revision": "phase4-v2-root-execution-plan-v2",
+                "route": "FULL_ANALYSIS",
+                "target_occurrence_identity_sha256": _digest(
+                    f"occurrence:{cluster}:{name}"
+                ),
+                "target_root_id": _digest(f"root:{cluster}:{name}"),
+            }
+        ],
         "revision": PACKAGE_EXECUTION_PLAN_REVISION,
         "status": PackagePlanStatus.EXECUTABLE.value,
         "target_package_ref_id": package_ref,
@@ -251,20 +276,30 @@ def _activate(queue: Queue, pins: tuple[CapabilityPin, ...]) -> None:
 
 
 def _graph(queue: Queue, cluster: str, names: tuple[str, ...]) -> ClusterGraphPlan:
-    plans = tuple(_frozen_plan(cluster, name) for name in names)
+    fixture_root = Path(tempfile.mkdtemp(prefix="phase4-stage-graph-"))
+    with protected_fixture_trust(fixture_root / "trust") as trust:
+        active_capabilities: set[tuple[str, str, str]] = set()
+        plans = tuple(
+            complete_synthetic_package_inputs(
+                queue,
+                build_synthetic_package_inputs(
+                    fixture_root / cluster,
+                    cluster_id=cluster,
+                    package_index=index,
+                    trust=trust,
+                ),
+                trust=trust,
+                active_capabilities=active_capabilities,
+            )
+            for index, _name in enumerate(names)
+        )
     authorities = {
         stage: _authority(stage)
         for stage in ("audit", "reconciliation", "implementation", "publication")
     }
     _GRAPH_AUTHORITIES[cluster] = authorities
     stage_pins = tuple(stage_authority_capability(authorities[stage][1]) for stage in authorities)
-    package_pins = tuple(
-        CapabilityPin(pin.name, pin.revision, pin.digest)
-        for plan in plans
-        for pin in plan.required_capabilities
-    )
-    _activate(queue, (*package_pins, *stage_pins))
-    _complete_preparation_fixtures(queue, plans)
+    _activate(queue, stage_pins)
     return build_cluster_graph(
         queue,
         plans,
@@ -273,38 +308,6 @@ def _graph(queue: Queue, cluster: str, names: tuple[str, ...]) -> ClusterGraphPl
         implementation_authority=authorities["implementation"][1],
         publication_authority=authorities["publication"][1],
     )
-
-
-def _complete_preparation_fixtures(
-    queue: Queue, plans: tuple[FrozenPackageExecutionPlan, ...]
-) -> None:
-    original = queue_core._requires_trusted_completion_adapter
-    for plan in plans:
-        completion = plan.preparation.completion
-        queue.materialize_work_unit(
-            completion.parent_unit_id,
-            kind=PREPARATION_QUEUE_UNIT_KIND,
-            capability_pins=tuple(
-                CapabilityPin(item.name, item.revision, item.digest)
-                for item in plan.preparation.capabilities
-            ),
-            input_digest=_digest(f"prep-input:{plan.target_package_ref_id}"),
-        )
-        lease = queue.claim("preparation-fixture", allowed_kinds=(PREPARATION_QUEUE_UNIT_KIND,))
-        assert lease is not None
-        with patch.object(
-            queue_core,
-            "_requires_trusted_completion_adapter",
-            side_effect=lambda unit_id, kind, lease_id=lease.unit_id: (
-                False if unit_id == lease_id else original(unit_id, kind)
-            ),
-        ):
-            queue.finish(
-                lease,
-                TerminalOutcome.ACCEPTED,
-                output_digest=completion.digest,
-                completion_revision=completion.revision,
-            )
 
 
 def _authority(stage: str) -> tuple[Ed25519PrivateKey, ActivatedStageAuthority]:
@@ -349,35 +352,11 @@ def _claim(queue: Queue, stage: WorkStage, owner: str) -> Lease:
     return lease
 
 
-def _complete_analysis_fixture(queue: Queue, lease: Lease) -> None:
-    """Only the package validator boundary is substituted by this stage-graph unit test."""
-    original = queue_core._requires_trusted_completion_adapter
-    with patch.object(
-        queue_core,
-        "_requires_trusted_completion_adapter",
-        side_effect=lambda unit_id, kind: (
-            False if unit_id == lease.unit_id else original(unit_id, kind)
-        ),
-    ):
-        queue.finish(
-            lease,
-            TerminalOutcome.ACCEPTED,
-            expected_input_digest=lease.input_digest,
-            output_digest=_digest(f"analysis:{lease.unit_id}"),
-            completion_revision=VALIDATED_PACKAGE_OUTPUT_REVISION,
-        )
-
-
 def test_graph_and_authenticated_receipts_follow_real_stage_adapters(queue: Queue) -> None:
     graph = _graph(queue, "cluster-011", ("alpha", "beta"))
     authorities = _GRAPH_AUTHORITIES[graph.cluster_id]
     first = materialize_cluster_graph(queue, graph)
-    assert first.materialized_units == first.analysis_units
-    for index in range(2):
-        _complete_analysis_fixture(
-            queue, _claim(queue, WorkStage.PACKAGE_ANALYSIS, f"analysis-{index}")
-        )
-    materialize_cluster_graph(queue, graph)
+    assert set(first.materialized_units) == {*first.analysis_units, *first.audit_units}
 
     audit_receipts = []
     for index in range(2):
@@ -529,7 +508,7 @@ def test_graph_and_authenticated_receipts_follow_real_stage_adapters(queue: Queu
             fanout_receipt=invented_fanout,
             receipt=invented_publication,
         )
-    fanout = publish_tracker_fanout(queue, publication_lease, _Gateway(), _TARGETS)
+    fanout = publish_tracker_fanout(queue, publication_lease, _Gateway(), _PUBLICATION_CONFIG)
     publication = load_publication_receipt(
         _signed(
             "publication",
@@ -628,8 +607,6 @@ def test_generic_cli_cannot_accept_reserved_semantic_stage(
     queue: Queue, tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     graph = _graph(queue, "cluster-cli", ("alpha",))
-    materialize_cluster_graph(queue, graph)
-    _complete_analysis_fixture(queue, _claim(queue, WorkStage.PACKAGE_ANALYSIS, "analysis"))
     materialize_cluster_graph(queue, graph)
     lease = _claim(queue, WorkStage.PACKAGE_AUDIT, "audit")
     lease_file = tmp_path / "lease.json"

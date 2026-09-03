@@ -18,11 +18,14 @@ from tools.phase4_v2.equivalence import (
     PREPARATION_PIPELINE_CAPABILITY,
     PREPARATION_REGISTRY_CAPABILITY,
     VALIDATED_PACKAGE_OUTPUT_REVISION,
+    AuthenticatedPackageExecutionEnvelope,
     FrozenCapabilityPin,
     FrozenPackageExecutionPlan,
+    FrozenPackageRef,
     FrozenPreparationPlanBinding,
     PackagePlanStatus,
     ValidatedPackageOutput,
+    validate_authenticated_package_output,
     validate_frozen_package_execution_plan,
 )
 from tools.phase4_v2.ir import (
@@ -43,13 +46,14 @@ from tools.phase4_v2.preflight import (
     InvocationRecord,
     PreparationReceipt,
 )
+from tools.phase4_v2.queue import Queue
 from tools.phase4_v2.reconciliation import (
     ClosureStatus,
     ComparisonDecision,
     FinalIRSurfaceDerivation,
     ReconciliationInput,
     ReconciliationResult,
-    derive_final_ir_package_surface,
+    derive_authenticated_final_ir_package_surface,
     reconcile,
     render_json,
     render_markdown,
@@ -479,6 +483,10 @@ def _validate_completion(
     preparation: PreparationReceipt,
     execution_plan: FrozenPackageExecutionPlan,
     validated_output: ValidatedPackageOutput,
+    execution_envelope: AuthenticatedPackageExecutionEnvelope,
+    queue: Queue,
+    package_ref: FrozenPackageRef,
+    report_bytes: bytes,
     reconciliation_input: ReconciliationInput,
     reconciliation: ReconciliationResult,
     reconciliation_json: bytes,
@@ -490,6 +498,11 @@ def _validate_completion(
     pins: ValidationPins,
 ) -> CompletenessReceipt:
     findings = _Findings()
+    authenticated_output = findings.guard(
+        "VALIDATED_OUTPUT_AUTHENTICATION_INVALID",
+        "/validated_output",
+        lambda: validate_authenticated_package_output(validated_output, execution_envelope),
+    )
     final_schema_sha256 = cast(
         str | None,
         findings.guard(
@@ -573,11 +586,13 @@ def _validate_completion(
             findings.guard(
                 "FINAL_IR_DERIVATION_INVALID",
                 "/final_ir",
-                lambda: derive_final_ir_package_surface(
-                    package_ref=target_surface.package_ref,
-                    report_sha256=getattr(validated_output, "target_report_sha256", ""),
-                    report_revision=PACKAGE_REPORT_REVISION,
-                    roots=target_surface.roots,
+                lambda: derive_authenticated_final_ir_package_surface(
+                    package_ref=package_ref,
+                    execution_plan=execution_plan,
+                    queue=queue,
+                    validated_output=validated_output,
+                    execution_envelope=execution_envelope,
+                    report_bytes=report_bytes,
                     document=final_ir,
                     canonical_json=final_ir_json,
                     markdown=final_ir_markdown,
@@ -602,7 +617,7 @@ def _validate_completion(
     if any(status is WarningStatus.BLOCKING for status in warning_dispositions.values()):
         findings.add("WARNING_BLOCKING", "/adapter/warning_dispositions")
 
-    if type(validated_output) is not ValidatedPackageOutput:
+    if type(validated_output) is not ValidatedPackageOutput or authenticated_output is None:
         findings.add("VALIDATED_OUTPUT_TYPE_INVALID", "/validated_output")
         output_id = ""
     else:
@@ -791,6 +806,10 @@ def validate_completion(
     preparation: PreparationReceipt,
     execution_plan: FrozenPackageExecutionPlan,
     validated_output: ValidatedPackageOutput,
+    execution_envelope: AuthenticatedPackageExecutionEnvelope,
+    queue: Queue,
+    package_ref: FrozenPackageRef,
+    report_bytes: bytes,
     reconciliation_input: ReconciliationInput,
     reconciliation: ReconciliationResult,
     reconciliation_json: bytes,
@@ -810,6 +829,10 @@ def validate_completion(
             preparation=preparation,
             execution_plan=execution_plan,
             validated_output=validated_output,
+            execution_envelope=execution_envelope,
+            queue=queue,
+            package_ref=package_ref,
+            report_bytes=report_bytes,
             reconciliation_input=reconciliation_input,
             reconciliation=reconciliation,
             reconciliation_json=reconciliation_json,

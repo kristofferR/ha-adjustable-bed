@@ -23,9 +23,16 @@ from tools.phase4_v2.equivalence import (
     PACKAGE_QUEUE_UNIT_KIND,
     PACKAGE_VALIDATION_RECEIPT_QUEUE_UNIT_KIND,
     PREPARATION_QUEUE_UNIT_KIND,
+    AuthenticatedPackageExecutionEnvelope,
     CapabilityPin,
     ExtractorCapability,
     FrozenPackageExecutionPlan,
+    FrozenPackageRef,
+    ValidatedPackageOutput,
+    build_validated_package_output,
+    execution_authority_capability,
+    execution_envelope_payload,
+    execution_envelope_signing_bytes,
     finish_package_execution_plan,
     finish_package_preparation,
     finish_package_validation_receipt,
@@ -33,6 +40,7 @@ from tools.phase4_v2.equivalence import (
     freeze_package_execution_plan,
     inventory_authority_capability,
     inventory_extractor_capability,
+    load_authenticated_package_execution_envelope,
     load_authenticated_target_inventory_envelope,
     materialize_package_execution_plan,
     materialize_package_preparation,
@@ -55,6 +63,8 @@ from tools.phase4_v2.queue import (
     document_set_sha256,
     publish_tracker_fanout,
 )
+from tools.phase4_v2.queue.publication_config import TrackerPublicationConfig
+from tools.phase4_v2.validator import validate_report_bundle
 
 from .completion import (
     STAGE_AUTHORITY_REVISION,
@@ -159,8 +169,19 @@ class _CapabilityIdentity(Protocol):
     def digest(self) -> str: ...
 
 
+@dataclass(frozen=True, slots=True)
+class AuthenticatedSyntheticPackage:
+    frozen_plan: FrozenPackageExecutionPlan
+    output: ValidatedPackageOutput
+    execution_envelope: AuthenticatedPackageExecutionEnvelope
+    package_ref: FrozenPackageRef
+    report_bytes: bytes
+
+
 class _Gateway:
     def __init__(self) -> None:
+        self.repository = "synthetic/repository"
+        self.branch = "tracker"
         self.revision = "a" * 40
         self.documents: dict[str, bytes] = {}
 
@@ -228,6 +249,7 @@ def _run_synthetic_acceptance(
         TrackerTarget("issues/436.md", TrackerFormat.MARKDOWN),
         TrackerTarget("public/queue.html", TrackerFormat.HTML),
     )
+    publication_config = TrackerPublicationConfig(gateway.repository, gateway.branch, targets)
     while True:
         for state in states.values():
             materialize_cluster_graph(queue, state.graph)
@@ -266,7 +288,15 @@ def _run_synthetic_acceptance(
                 crashed.append(lease)
                 continue
             state = states[_cluster_for(queue, lease.unit_id)]
-            _finish_stage(queue, lease, state, keys, authorities, gateway, targets)
+            _finish_stage(
+                queue,
+                lease,
+                state,
+                keys,
+                authorities,
+                gateway,
+                publication_config,
+            )
             snapshot = queue.snapshot()
             reconciliation_done = {
                 item.cluster_id
@@ -329,7 +359,7 @@ def _finish_stage(
     keys: dict[str, Ed25519PrivateKey],
     authorities: dict[str, ActivatedStageAuthority],
     gateway: _Gateway,
-    targets: tuple[TrackerTarget, ...],
+    publication_config: TrackerPublicationConfig,
 ) -> None:
     graph = state.graph
     unit = next(item for item in queue.snapshot().units if item.unit_id == lease.unit_id)
@@ -440,7 +470,7 @@ def _finish_stage(
     implementation = state.implementation
     if reconciliation is None or implementation is None:
         raise RuntimeError("publication was scheduled without implementation")
-    fanout = publish_tracker_fanout(queue, lease, gateway, targets)
+    fanout = publish_tracker_fanout(queue, lease, gateway, publication_config)
     receipt = load_publication_receipt(
         _signed(
             "publication",
@@ -531,6 +561,21 @@ def complete_synthetic_package_inputs(
     trust: SyntheticTrust,
     active_capabilities: set[tuple[str, str, str]],
 ) -> FrozenPackageExecutionPlan:
+    return complete_authenticated_synthetic_package_inputs(
+        queue, partial, trust, active_capabilities
+    ).frozen_plan
+
+
+def complete_authenticated_synthetic_package_inputs(
+    queue: Queue,
+    partial: IncompleteSyntheticPackage,
+    trust: SyntheticTrust,
+    active_capabilities: set[tuple[str, str, str]],
+) -> AuthenticatedSyntheticPackage:
+    for pin in preparation_capability_pins(
+        partial.preparation_authority,
+    ):
+        activate_synthetic_capability(queue, pin, active_capabilities)
     materialize_package_preparation(
         queue,
         package_ref=partial.package_ref,
@@ -549,9 +594,7 @@ def complete_synthetic_package_inputs(
 
     materialize_package_validation_receipt(queue, partial.source_envelope)
     validation_lease = _claim_required(queue, PACKAGE_VALIDATION_RECEIPT_QUEUE_UNIT_KIND)
-    finish_package_validation_receipt(
-        queue, validation_lease, envelope=partial.source_envelope
-    )
+    finish_package_validation_receipt(queue, validation_lease, envelope=partial.source_envelope)
 
     extractor = ExtractorCapability(
         name="phase4-v2-synthetic-inventory-extractor",
@@ -596,16 +639,71 @@ def complete_synthetic_package_inputs(
     frozen = freeze_package_execution_plan(inputs.execution_plan)
     for pin in frozen.required_capabilities:
         activate_synthetic_capability(queue, pin, active_capabilities)
+    execution_capability = execution_authority_capability(trust.execution_authority)
+    activate_synthetic_capability(queue, CapabilityPin(*execution_capability), active_capabilities)
+    receipt = validate_report_bundle(
+        inputs.report_root,
+        expected_dependencies=inputs.dependencies,
+        expected_evidence_lineage=inputs.lineage,
+    )
+    assert receipt.validation_receipt_sha256 is not None
+    output = build_validated_package_output(
+        execution_plan=inputs.execution_plan,
+        receipt=receipt,
+        trusted_validation_receipt_sha256=receipt.validation_receipt_sha256,
+    )
+    unsigned_execution = execution_envelope_payload(
+        authority=trust.execution_authority,
+        receipt_bytes=receipt.to_json().encode(),
+        package_ref_id=frozen.target_package_ref_id,
+        execution_plan_sha256=frozen.canonical_sha256,
+        execution_plan_id=frozen.digest,
+        output_content_id=output.content_id,
+        report_bundle_sha256=receipt.bundle_sha256 or "",
+        corpus_sha256=inputs.dependencies.corpus_sha256,
+        evidence_lineage_sha256=inputs.lineage.expected_manifest_sha256,
+        ir_sha256=inputs.dependencies.ir_sha256,
+        signature="0" * 128,
+    )
+    execution_payload = json.loads(unsigned_execution)["payload"]
+    execution_signature = trust.execution_key.sign(
+        execution_envelope_signing_bytes(execution_payload)
+    ).hex()
+    execution_envelope = load_authenticated_package_execution_envelope(
+        execution_envelope_payload(
+            authority=trust.execution_authority,
+            receipt_bytes=receipt.to_json().encode(),
+            package_ref_id=frozen.target_package_ref_id,
+            execution_plan_sha256=frozen.canonical_sha256,
+            execution_plan_id=frozen.digest,
+            output_content_id=output.content_id,
+            report_bundle_sha256=receipt.bundle_sha256 or "",
+            corpus_sha256=inputs.dependencies.corpus_sha256,
+            evidence_lineage_sha256=inputs.lineage.expected_manifest_sha256,
+            ir_sha256=inputs.dependencies.ir_sha256,
+            signature=execution_signature,
+        ),
+        authority=trust.execution_authority,
+    )
     materialize_package_execution_plan(queue, inputs.execution_plan)
     analysis_lease = _claim_required(queue, PACKAGE_QUEUE_UNIT_KIND)
-    finish_package_execution_plan(
+    finished = finish_package_execution_plan(
         queue,
         analysis_lease,
         execution_plan=inputs.execution_plan,
         report_root=inputs.report_root,
         evidence_lineage_payload=inputs.lineage.payload,
+        execution_envelope=execution_envelope,
     )
-    return frozen
+    if finished.output != output:
+        raise RuntimeError("queue publication changed the validated package output")
+    return AuthenticatedSyntheticPackage(
+        frozen,
+        output,
+        execution_envelope,
+        inputs.package_ref,
+        (inputs.report_root / "analysis.json").read_bytes(),
+    )
 
 
 def activate_synthetic_capability(
