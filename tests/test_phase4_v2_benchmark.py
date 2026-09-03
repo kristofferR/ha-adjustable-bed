@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import stat
 from dataclasses import replace
-from pathlib import Path
 from typing import cast
 
 import pytest
@@ -46,10 +47,15 @@ from tools.phase4_v2.benchmark import (
     TrialSchedule,
     TrustedBenchmarkAuthority,
     benchmark_json,
-    finalize_benchmark,
-    load_trusted_benchmark_authority,
+)
+from tools.phase4_v2.benchmark import (
+    finalize_benchmark as production_finalize_benchmark,
+)
+from tools.phase4_v2.benchmark import (
+    load_trusted_benchmark_authority as production_load_trusted_benchmark_authority,
 )
 from tools.phase4_v2.benchmark import model as benchmark_model
+from tools.phase4_v2.benchmark.testing import BenchmarkAuthorityTestDeployment
 
 _DIGEST = "a" * 64
 _AUTHORITY_KEY = Ed25519PrivateKey.from_private_bytes(b"r" * 32)
@@ -57,14 +63,32 @@ _ANALYST_KEY = Ed25519PrivateKey.from_private_bytes(b"l" * 32)
 _MUTATION_KEY = Ed25519PrivateKey.from_private_bytes(b"m" * 32)
 _AUDIT_KEY = Ed25519PrivateKey.from_private_bytes(b"a" * 32)
 _TELEMETRY_KEY = Ed25519PrivateKey.from_private_bytes(b"t" * 32)
-_TEST_CONFIG_PATH: Path | None = None
+_TEST_DEPLOYMENT: BenchmarkAuthorityTestDeployment | None = None
 
 
 @pytest.fixture(autouse=True)
-def _protected_config_test_seam(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    global _TEST_CONFIG_PATH
-    _TEST_CONFIG_PATH = tmp_path / "deployment-owned-authority.json"
-    monkeypatch.setattr(benchmark_model, "_PROTECTED_AUTHORITY_CONFIG_PATH", _TEST_CONFIG_PATH)
+def _protected_config_test_seam() -> None:
+    global _TEST_DEPLOYMENT
+    _TEST_DEPLOYMENT = BenchmarkAuthorityTestDeployment(b"")
+
+
+def load_trusted_benchmark_authority(raw: bytes) -> TrustedBenchmarkAuthority:
+    if _TEST_DEPLOYMENT is None:
+        raise AssertionError("protected config test seam was not installed")
+    return _TEST_DEPLOYMENT.load(raw)
+
+
+def finalize_benchmark(
+    authority: TrustedBenchmarkAuthority,
+    plan: BenchmarkPlan,
+    oracle: OracleSuite,
+    run: BenchmarkRun,
+    audits: IndependentAuditSuite,
+    timings: TimingSuite,
+) -> BenchmarkReport:
+    if _TEST_DEPLOYMENT is None:
+        raise AssertionError("protected config test seam was not installed")
+    return _TEST_DEPLOYMENT.finalize(authority, plan, oracle, run, audits, timings)
 
 
 def _public_key(private_key: Ed25519PrivateKey) -> str:
@@ -573,7 +597,9 @@ def test_protected_authority_loader_rejects_self_issuance_wrong_pins_and_noncano
         )
 
 
-def test_protected_config_pins_generation_and_finalize_reverifies_retained_bytes() -> None:
+def test_protected_config_pins_generation_and_finalize_reverifies_retained_bytes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     trusted, plan, oracle, run, audits, timings = _artifacts()
     authority = _authority_for_test(trusted)
     replay = _signed_authority(replace(authority, generation=2, signature="0" * 128))
@@ -582,21 +608,71 @@ def test_protected_config_pins_generation_and_finalize_reverifies_retained_bytes
     with pytest.raises(ValueError, match="generation does not match"):
         load_trusted_benchmark_authority(replay_bytes)
 
+    _write_test_config(replay_bytes, generation=replay.generation)
+    with pytest.raises(ValueError, match="rotated after authority load"):
+        finalize_benchmark(trusted, plan, oracle, run, audits, timings)
+    if _TEST_DEPLOYMENT is None:
+        raise AssertionError("protected config test seam was not installed")
+    rotated_config = benchmark_model._parse_protected_authority_config(
+        _TEST_DEPLOYMENT.protected_config
+    )
+    reloads = 0
+
+    def reload_rotated_config() -> object:
+        nonlocal reloads
+        reloads += 1
+        return rotated_config
+
+    monkeypatch.setattr(benchmark_model, "_load_protected_authority_config", reload_rotated_config)
+    with pytest.raises(ValueError, match="rotated after authority load"):
+        production_finalize_benchmark(trusted, plan, oracle, run, audits, timings)
+    assert reloads == 1
+
     _write_test_config(benchmark_json(authority), generation=authority.generation)
     object.__setattr__(trusted, "_canonical_bytes", replay_bytes)
     with pytest.raises(ValueError, match="bytes do not match"):
         finalize_benchmark(trusted, plan, oracle, run, audits, timings)
 
 
-def test_protected_config_rejects_invocation_writable_permissions() -> None:
+def test_production_config_source_ignores_injected_global(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     trusted, *_ = _artifacts()
     authority = _authority_for_test(trusted)
-    if _TEST_CONFIG_PATH is None:
-        raise AssertionError("protected config test seam was not installed")
-    _TEST_CONFIG_PATH.chmod(0o666)
+    opened: list[object] = []
+
+    def unavailable(path: object, *_args: object, **_kwargs: object) -> int:
+        opened.append(path)
+        raise FileNotFoundError
+
+    with monkeypatch.context() as patched:
+        patched.setattr(
+            benchmark_model, "_PROTECTED_AUTHORITY_CONFIG_PATH", "/attacker", raising=False
+        )
+        patched.setattr(benchmark_model.os, "open", unavailable)
+        with pytest.raises(ValueError, match="config is unavailable"):
+            production_load_trusted_benchmark_authority(benchmark_json(authority))
+
+    assert opened == ["/etc/ha-adjustable-bed"]
+
+
+def test_protected_config_rejects_non_root_owner_and_unsafe_parent() -> None:
+    non_root_file = os.stat_result((stat.S_IFREG | 0o600, 0, 0, 1, 1_000, 0, 0, 0, 0, 0))
+    unsafe_parent = os.stat_result((stat.S_IFDIR | 0o722, 0, 0, 1, 0, 0, 0, 0, 0, 0))
+    symlink_file = os.stat_result((stat.S_IFLNK | 0o600, 0, 0, 1, 0, 0, 0, 0, 0, 0))
+    writable_file = os.stat_result((stat.S_IFREG | 0o606, 0, 0, 1, 0, 0, 0, 0, 0, 0))
+    plain_parent = os.stat_result((stat.S_IFREG | 0o700, 0, 0, 1, 0, 0, 0, 0, 0, 0))
 
     with pytest.raises(ValueError, match="ownership or mode is unsafe"):
-        load_trusted_benchmark_authority(benchmark_json(authority))
+        benchmark_model._validate_protected_file(non_root_file)
+    with pytest.raises(ValueError, match="must be a regular file"):
+        benchmark_model._validate_protected_file(symlink_file)
+    with pytest.raises(ValueError, match="ownership or mode is unsafe"):
+        benchmark_model._validate_protected_file(writable_file)
+    with pytest.raises(ValueError, match="parent ownership or mode is unsafe"):
+        benchmark_model._validate_protected_directory(unsafe_parent)
+    with pytest.raises(ValueError, match="parent must be a directory"):
+        benchmark_model._validate_protected_directory(plain_parent)
 
 
 def test_protected_authority_loader_rejects_duplicate_keys_and_parser_bounds() -> None:
@@ -952,21 +1028,23 @@ def _write_test_config(
     generation: int,
     signing_key: Ed25519PrivateKey = _AUTHORITY_KEY,
 ) -> None:
-    if _TEST_CONFIG_PATH is None:
+    if _TEST_DEPLOYMENT is None:
         raise AssertionError("protected config test seam was not installed")
     config = {
         "authority_sha256": hashlib.sha256(authority_bytes).hexdigest(),
         "generation": generation,
         "signing_public_key": _public_key(signing_key),
     }
-    _TEST_CONFIG_PATH.write_bytes(
+    _TEST_DEPLOYMENT.protected_config = (
         json.dumps(config, sort_keys=True, separators=(",", ":")).encode() + b"\n"
     )
-    _TEST_CONFIG_PATH.chmod(0o600)
 
 
 def _authority_for_test(trusted: TrustedBenchmarkAuthority) -> BenchmarkAuthority:
-    return benchmark_model._reverify_trusted_authority(trusted)
+    if _TEST_DEPLOYMENT is None:
+        raise AssertionError("protected config test seam was not installed")
+    config = benchmark_model._parse_protected_authority_config(_TEST_DEPLOYMENT.protected_config)
+    return benchmark_model._reverify_trusted_authority(trusted, config)
 
 
 def _sha256_hex(value: str) -> str:

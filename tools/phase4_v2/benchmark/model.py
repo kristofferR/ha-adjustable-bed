@@ -10,7 +10,6 @@ import stat
 from collections.abc import Hashable, Iterable
 from dataclasses import dataclass
 from enum import StrEnum
-from pathlib import Path
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -33,7 +32,6 @@ _MAX_JSON_DEPTH = 12
 _MAX_JSON_NODES = 512
 _MAX_JSON_STRING_LENGTH = 4_096
 _AUTHORITY_SEAL = object()
-_PROTECTED_AUTHORITY_CONFIG_PATH = Path("/etc/ha-adjustable-bed/phase4-v2-benchmark-authority.json")
 
 
 class MutationKind(StrEnum):
@@ -1086,13 +1084,18 @@ def load_trusted_benchmark_authority(raw: bytes) -> TrustedBenchmarkAuthority:
     """Load the exact authority pinned by deployment-owned protected config."""
 
     config = _load_protected_authority_config()
+    return _load_trusted_benchmark_authority_with_config(raw, config)
+
+
+def _load_trusted_benchmark_authority_with_config(
+    raw: bytes, config: _ProtectedAuthorityConfig
+) -> TrustedBenchmarkAuthority:
     authority = _parse_authority_document(raw)
     _verify_authority_against_config(raw, authority, config)
     return TrustedBenchmarkAuthority(raw, config, authority.content_id, _AUTHORITY_SEAL)
 
 
 def _parse_authority_document(raw: bytes) -> BenchmarkAuthority:
-
     if type(raw) is not bytes or not raw or len(raw) > _MAX_AUTHORITY_BYTES:
         raise ValueError("authority document must be non-empty bytes within the size limit")
     try:
@@ -1191,28 +1194,60 @@ def _parse_authority_document(raw: bytes) -> BenchmarkAuthority:
 
 
 def _load_protected_authority_config() -> _ProtectedAuthorityConfig:
-    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    directory_flags = (
+        os.O_RDONLY
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_DIRECTORY", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
     try:
-        descriptor = os.open(_PROTECTED_AUTHORITY_CONFIG_PATH, flags)
+        directory = os.open("/etc/ha-adjustable-bed", directory_flags)
     except OSError as error:
         raise ValueError("protected authority config is unavailable") from error
     try:
-        metadata = os.fstat(descriptor)
-        if not stat.S_ISREG(metadata.st_mode):
-            raise ValueError("protected authority config must be a regular file")
-        if metadata.st_uid not in {0, os.geteuid()} or metadata.st_mode & 0o022:
-            raise ValueError("protected authority config ownership or mode is unsafe")
-        chunks: list[bytes] = []
-        remaining = 8 * 1024 + 1
-        while remaining:
-            chunk = os.read(descriptor, min(4 * 1024, remaining))
-            if not chunk:
-                break
-            chunks.append(chunk)
-            remaining -= len(chunk)
-        raw = b"".join(chunks)
+        _validate_protected_directory(os.fstat(directory))
+        file_flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+        try:
+            descriptor = os.open(
+                "phase4-v2-benchmark-authority.json",
+                file_flags,
+                dir_fd=directory,
+            )
+        except OSError as error:
+            raise ValueError("protected authority config is unavailable") from error
+        try:
+            _validate_protected_file(os.fstat(descriptor))
+            chunks: list[bytes] = []
+            remaining = 8 * 1024 + 1
+            while remaining:
+                chunk = os.read(descriptor, min(4 * 1024, remaining))
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                remaining -= len(chunk)
+            raw = b"".join(chunks)
+        finally:
+            os.close(descriptor)
     finally:
-        os.close(descriptor)
+        os.close(directory)
+    return _parse_protected_authority_config(raw)
+
+
+def _validate_protected_directory(metadata: os.stat_result) -> None:
+    if not stat.S_ISDIR(metadata.st_mode):
+        raise ValueError("protected authority parent must be a directory")
+    if metadata.st_uid != 0 or metadata.st_mode & 0o022:
+        raise ValueError("protected authority parent ownership or mode is unsafe")
+
+
+def _validate_protected_file(metadata: os.stat_result) -> None:
+    if not stat.S_ISREG(metadata.st_mode):
+        raise ValueError("protected authority config must be a regular file")
+    if metadata.st_uid != 0 or metadata.st_mode & 0o022:
+        raise ValueError("protected authority config ownership or mode is unsafe")
+
+
+def _parse_protected_authority_config(raw: bytes) -> _ProtectedAuthorityConfig:
     if not raw or len(raw) > 8 * 1024:
         raise ValueError("protected authority config exceeds its size bound")
     try:
@@ -1257,12 +1292,15 @@ def _verify_authority_against_config(
 
 def _reverify_trusted_authority(
     trusted_authority: TrustedBenchmarkAuthority,
+    current_config: _ProtectedAuthorityConfig,
 ) -> BenchmarkAuthority:
     if (
         type(trusted_authority) is not TrustedBenchmarkAuthority
         or trusted_authority._seal is not _AUTHORITY_SEAL
     ):
         raise ValueError("finalization requires a protected benchmark authority")
+    if current_config != trusted_authority._config:
+        raise ValueError("protected authority config rotated after authority load")
     authority = _parse_authority_document(trusted_authority._canonical_bytes)
     _verify_authority_against_config(
         trusted_authority._canonical_bytes,
@@ -1284,7 +1322,27 @@ def finalize_benchmark(
 ) -> BenchmarkReport:
     """Reveal committed inputs and deterministically decide rollout."""
 
-    authority = _reverify_trusted_authority(trusted_authority)
+    return _finalize_benchmark_with_config(
+        trusted_authority,
+        plan,
+        oracle,
+        run,
+        audits,
+        timings,
+        _load_protected_authority_config(),
+    )
+
+
+def _finalize_benchmark_with_config(
+    trusted_authority: TrustedBenchmarkAuthority,
+    plan: BenchmarkPlan,
+    oracle: OracleSuite,
+    run: BenchmarkRun,
+    audits: IndependentAuditSuite,
+    timings: TimingSuite,
+    current_config: _ProtectedAuthorityConfig,
+) -> BenchmarkReport:
+    authority = _reverify_trusted_authority(trusted_authority, current_config)
     diagnostics: list[BenchmarkDiagnostic] = []
     if plan.authority_sha256 != authority.content_id:
         diagnostics.append(_diag("authority_commitment_mismatch", "$.plan.authority_sha256"))
