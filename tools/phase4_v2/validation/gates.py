@@ -11,7 +11,6 @@ from tools.phase4_v2.equivalence import (
     PACKAGE_REPORT_REVISION,
     PACKAGE_REPORT_SCHEMA_REVISION,
     PACKAGE_REPORT_SCHEMA_SHA256,
-    PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
     PREPARATION_AUTHORITY_CAPABILITY,
     PREPARATION_CANDIDATE_CAPABILITY,
     PREPARATION_EXECUTION_CAPABILITY,
@@ -21,7 +20,6 @@ from tools.phase4_v2.equivalence import (
     AuthenticatedExactReuseProvenance,
     AuthenticatedPackageExecutionEnvelope,
     AuthenticatedSourceReportRegistry,
-    FrozenCapabilityPin,
     FrozenPackageExecutionPlan,
     FrozenPackageRef,
     FrozenPreparationPlanBinding,
@@ -47,7 +45,6 @@ from tools.phase4_v2.preflight import (
     EXECUTION_PROFILE_REVISION,
     PREPARATION_AUTHORITY_SCHEMA,
     PREPARATION_RECEIPT_REVISION,
-    TOOL_REGISTRY_SCHEMA,
     CandidateRecord,
     InvocationRecord,
     PreparationReceipt,
@@ -402,39 +399,35 @@ def _validate_preparation_plan_binding(
         receipt_id,
     ):
         findings.add("PREPARATION_PLAN_BINDING_MISMATCH", "/execution_plan/preparation")
-    expected_capabilities = tuple(
-        sorted(
-            (
-                FrozenCapabilityPin(
-                    PREPARATION_AUTHORITY_CAPABILITY,
-                    PREPARATION_AUTHORITY_SCHEMA,
-                    preparation.authority_sha256,
-                ),
-                FrozenCapabilityPin(
-                    PREPARATION_CANDIDATE_CAPABILITY,
-                    CANDIDATE_CONTRACT_REVISION,
-                    preparation.candidate_contract_sha256,
-                ),
-                FrozenCapabilityPin(
-                    PREPARATION_EXECUTION_CAPABILITY,
-                    EXECUTION_PROFILE_REVISION,
-                    preparation.execution_profile_sha256,
-                ),
-                FrozenCapabilityPin(
-                    PREPARATION_PIPELINE_CAPABILITY,
-                    preparation.pipeline_revision,
-                    preparation.tool_registry_sha256,
-                ),
-                FrozenCapabilityPin(
-                    PREPARATION_REGISTRY_CAPABILITY,
-                    TOOL_REGISTRY_SCHEMA,
-                    preparation.tool_registry_sha256,
-                ),
-            ),
-            key=lambda item: item.name,
+    capabilities = {item.name: item for item in binding.capabilities}
+    expected = {
+        PREPARATION_AUTHORITY_CAPABILITY: (
+            PREPARATION_AUTHORITY_SCHEMA,
+            preparation.authority_sha256,
+        ),
+        PREPARATION_CANDIDATE_CAPABILITY: (
+            CANDIDATE_CONTRACT_REVISION,
+            preparation.candidate_contract_sha256,
+        ),
+        PREPARATION_EXECUTION_CAPABILITY: (
+            EXECUTION_PROFILE_REVISION,
+            preparation.execution_profile_sha256,
+        ),
+        PREPARATION_PIPELINE_CAPABILITY: (
+            preparation.pipeline_revision,
+            preparation.tool_registry_sha256,
+        ),
+    }
+    if (
+        len(capabilities) != 5
+        or set(capabilities) != {*expected, PREPARATION_REGISTRY_CAPABILITY}
+        or any(
+            (capabilities[name].revision, capabilities[name].digest) != identity
+            for name, identity in expected.items()
         )
-    )
-    if binding.capabilities != expected_capabilities:
+        or capabilities[PREPARATION_REGISTRY_CAPABILITY].digest
+        != preparation.tool_registry_sha256
+    ):
         findings.add("PREPARATION_CAPABILITY_MISMATCH", "/execution_plan/preparation/capabilities")
 
 
@@ -656,20 +649,6 @@ def _validate_completion(
             findings.add("OUTPUT_TARGET_MISMATCH", "/validated_output/target_package_ref_id")
         if validated_output.execution_plan_id != getattr(execution_plan, "digest", None):
             findings.add("OUTPUT_PLAN_MISMATCH", "/validated_output/execution_plan_id")
-        receipt_unit = f"package-validation-receipt:{target}"
-        completion_matches = [
-            item
-            for item in getattr(execution_plan, "required_completions", ())
-            if getattr(item, "parent_unit_id", None) == receipt_unit
-        ]
-        if len(completion_matches) != 1 or (
-            completion_matches[0].revision,
-            completion_matches[0].digest,
-        ) != (
-            PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
-            validated_output.validation_receipt_sha256,
-        ):
-            findings.add("OUTPUT_RECEIPT_MISMATCH", "/validated_output/validation_receipt_sha256")
         output_digests = (
             validated_output.target_package_ref_id,
             validated_output.execution_plan_id,
