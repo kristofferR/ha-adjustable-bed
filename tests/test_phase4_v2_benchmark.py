@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from dataclasses import replace
+from pathlib import Path
 from typing import cast
 
 import pytest
@@ -36,8 +38,6 @@ from tools.phase4_v2.benchmark import (
     MutationKind,
     MutationResult,
     OracleSuite,
-    PinnedAuthorityKeys,
-    ProtectedAuthorityReference,
     RolloutDecision,
     TimingPhase,
     TimingSample,
@@ -57,6 +57,14 @@ _ANALYST_KEY = Ed25519PrivateKey.from_private_bytes(b"l" * 32)
 _MUTATION_KEY = Ed25519PrivateKey.from_private_bytes(b"m" * 32)
 _AUDIT_KEY = Ed25519PrivateKey.from_private_bytes(b"a" * 32)
 _TELEMETRY_KEY = Ed25519PrivateKey.from_private_bytes(b"t" * 32)
+_TEST_CONFIG_PATH: Path | None = None
+
+
+@pytest.fixture(autouse=True)
+def _protected_config_test_seam(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    global _TEST_CONFIG_PATH
+    _TEST_CONFIG_PATH = tmp_path / "deployment-owned-authority.json"
+    monkeypatch.setattr(benchmark_model, "_PROTECTED_AUTHORITY_CONFIG_PATH", _TEST_CONFIG_PATH)
 
 
 def _public_key(private_key: Ed25519PrivateKey) -> str:
@@ -154,7 +162,7 @@ def _artifacts() -> tuple[
             auditor_public_key=_public_key(_AUDIT_KEY),
             telemetry_collector_identity_sha256=_sha256_hex(_public_key(_TELEMETRY_KEY)),
             telemetry_collector_public_key=_public_key(_TELEMETRY_KEY),
-            protected_reference_sha256=_digest(9_000),
+            generation=1,
             signature="0" * 128,
         )
     )
@@ -391,35 +399,33 @@ def test_benchmark_rejects_each_quality_regression(change: str, code: str) -> No
 
 def test_benchmark_rejects_identity_contract_and_commitment_drift() -> None:
     trusted, plan, oracle, run, audits, timings = _artifacts()
-    changed = replace(trusted.authority, toolchain_sha256=_digest(9_999))
+    changed = _signed_authority(
+        replace(
+            _authority_for_test(trusted),
+            toolchain_sha256=_digest(9_999),
+            signature="0" * 128,
+        )
+    )
 
     with pytest.raises(ValueError, match="protected benchmark authority"):
         finalize_benchmark(
             cast(TrustedBenchmarkAuthority, changed), plan, oracle, run, audits, timings
         )
-    with pytest.raises(ValueError, match="signature is invalid"):
+    with pytest.raises(ValueError, match="bytes do not match"):
         load_trusted_benchmark_authority(
             benchmark_json(changed),
-            protected_reference=_protected_reference(),
         )
 
 
 def test_authority_requires_exact_contract_set_and_independent_actors() -> None:
     trusted, *_ = _artifacts()
-    authority = trusted.authority
+    authority = _authority_for_test(trusted)
     with pytest.raises(ValueError, match="exact ordered issues"):
         replace(authority, contracts=authority.contracts[:-1])
     with pytest.raises(ValueError, match="independent"):
         replace(
             authority,
             auditor_identity_sha256=authority.analyst_identity_sha256,
-        )
-    with pytest.raises(ValueError, match="public keys must be unique"):
-        PinnedAuthorityKeys(
-            authority.analyst_public_key,
-            authority.mutation_runner_public_key,
-            authority.auditor_public_key,
-            authority.auditor_public_key,
         )
 
 
@@ -537,12 +543,10 @@ def test_protected_authority_loader_rejects_self_issuance_wrong_pins_and_noncano
     None
 ):
     trusted, plan, oracle, run, audits, timings = _artifacts()
-    authority = trusted.authority
+    authority = _authority_for_test(trusted)
 
     assert _trusted(authority).content_id == authority.content_id
-    with pytest.raises(ValueError, match="protected bootstrap"):
-        ProtectedAuthorityReference(_public_key(_AUTHORITY_KEY), _digest(9_000), object())
-    protected_slot = "_authority"
+    protected_slot = "_canonical_bytes"
     with pytest.raises(AttributeError, match="immutable"):
         setattr(trusted, protected_slot, replace(authority, harness_sha256=_digest(9_999)))
     with pytest.raises(AttributeError, match="immutable"):
@@ -559,21 +563,45 @@ def test_protected_authority_loader_rejects_self_issuance_wrong_pins_and_noncano
     wrong_key = Ed25519PrivateKey.from_private_bytes(b"w" * 32)
     self_issued = replace(authority, signature="0" * 128)
     self_issued = replace(self_issued, signature=wrong_key.sign(self_issued.signing_bytes).hex())
-    with pytest.raises(ValueError, match="signature is invalid"):
+    with pytest.raises(ValueError, match="bytes do not match"):
         load_trusted_benchmark_authority(
             benchmark_json(self_issued),
-            protected_reference=_protected_reference(),
         )
     with pytest.raises(ValueError, match="canonical JSON"):
         load_trusted_benchmark_authority(
             benchmark_json(authority).replace(b'"contracts":', b'"contracts" :', 1),
-            protected_reference=_protected_reference(),
         )
+
+
+def test_protected_config_pins_generation_and_finalize_reverifies_retained_bytes() -> None:
+    trusted, plan, oracle, run, audits, timings = _artifacts()
+    authority = _authority_for_test(trusted)
+    replay = _signed_authority(replace(authority, generation=2, signature="0" * 128))
+    replay_bytes = benchmark_json(replay)
+    _write_test_config(replay_bytes, generation=1)
+    with pytest.raises(ValueError, match="generation does not match"):
+        load_trusted_benchmark_authority(replay_bytes)
+
+    _write_test_config(benchmark_json(authority), generation=authority.generation)
+    object.__setattr__(trusted, "_canonical_bytes", replay_bytes)
+    with pytest.raises(ValueError, match="bytes do not match"):
+        finalize_benchmark(trusted, plan, oracle, run, audits, timings)
+
+
+def test_protected_config_rejects_invocation_writable_permissions() -> None:
+    trusted, *_ = _artifacts()
+    authority = _authority_for_test(trusted)
+    if _TEST_CONFIG_PATH is None:
+        raise AssertionError("protected config test seam was not installed")
+    _TEST_CONFIG_PATH.chmod(0o666)
+
+    with pytest.raises(ValueError, match="ownership or mode is unsafe"):
+        load_trusted_benchmark_authority(benchmark_json(authority))
 
 
 def test_protected_authority_loader_rejects_duplicate_keys_and_parser_bounds() -> None:
     trusted, *_ = _artifacts()
-    authority = trusted.authority
+    authority = _authority_for_test(trusted)
     raw = benchmark_json(authority)
     duplicate = raw.replace(
         b"{",
@@ -583,22 +611,18 @@ def test_protected_authority_loader_rejects_duplicate_keys_and_parser_bounds() -
     with pytest.raises(ValueError, match="strict JSON"):
         load_trusted_benchmark_authority(
             duplicate,
-            protected_reference=_protected_reference(),
         )
     with pytest.raises(ValueError, match="size limit"):
         load_trusted_benchmark_authority(
             b" " * (64 * 1024 + 1),
-            protected_reference=_protected_reference(),
         )
     with pytest.raises(ValueError, match="depth limit"):
         load_trusted_benchmark_authority(
             (b"[" * 13) + b"0" + (b"]" * 13),
-            protected_reference=_protected_reference(),
         )
     with pytest.raises(ValueError, match="node limit"):
         load_trusted_benchmark_authority(
             b"[" + b",".join(b"0" for _ in range(513)) + b"]",
-            protected_reference=_protected_reference(),
         )
 
 
@@ -660,7 +684,7 @@ def test_authority_rejects_substituted_oracle_and_trial_schedule() -> None:
 
 def test_signed_authority_rejects_substituted_corpus_manifest() -> None:
     trusted, *_ = _artifacts()
-    authority = trusted.authority
+    authority = _authority_for_test(trusted)
     changed_member = replace(authority.corpus_manifest.members[0], input_sha256=_digest(9_999))
     changed_manifest = CorpusManifest(
         tuple(sorted((changed_member, *authority.corpus_manifest.members[1:])))
@@ -671,10 +695,9 @@ def test_signed_authority_rejects_substituted_corpus_manifest() -> None:
         corpus_sha256=changed_manifest.content_id,
     )
 
-    with pytest.raises(ValueError, match="signature is invalid"):
+    with pytest.raises(ValueError, match="bytes do not match"):
         load_trusted_benchmark_authority(
             benchmark_json(substituted),
-            protected_reference=_protected_reference(),
         )
 
 
@@ -683,12 +706,57 @@ def test_every_case_and_mutation_must_prove_exact_corpus_membership() -> None:
     changed_case = replace(plan.cases[0], corpus_member_id=plan.mutations[0].corpus_member_id)
     changed_plan = replace(plan, cases=(changed_case, *plan.cases[1:]))
     report = finalize_benchmark(authority, changed_plan, oracle, run, audits, timings)
-    assert "case_corpus_membership_invalid" in {item.code for item in report.diagnostics}
+    assert {
+        "case_corpus_membership_invalid",
+        "corpus_member_reused",
+        "corpus_member_set_mismatch",
+    } <= {item.code for item in report.diagnostics}
 
     changed_mutation = replace(plan.mutations[0], corpus_member_id=plan.cases[0].corpus_member_id)
     changed_plan = replace(plan, mutations=(changed_mutation, *plan.mutations[1:]))
     report = finalize_benchmark(authority, changed_plan, oracle, run, audits, timings)
     assert "mutation_corpus_membership_invalid" in {item.code for item in report.diagnostics}
+
+    duplicated_case = replace(plan.cases[1], corpus_member_id=plan.cases[0].corpus_member_id)
+    changed_plan = replace(plan, cases=(plan.cases[0], duplicated_case, *plan.cases[2:]))
+    report = finalize_benchmark(authority, changed_plan, oracle, run, audits, timings)
+    assert {"corpus_member_reused", "corpus_member_set_mismatch"} <= {
+        item.code for item in report.diagnostics
+    }
+
+
+def test_manifest_cannot_contain_unassigned_extra_member() -> None:
+    trusted, plan, oracle, run, audits, timings = _artifacts()
+    authority = _authority_for_test(trusted)
+    manifest = CorpusManifest(
+        tuple(
+            sorted(
+                (*authority.corpus_manifest.members, CorpusMember("unused-extra", _digest(9_999)))
+            )
+        )
+    )
+    expanded = _signed_authority(
+        replace(
+            authority,
+            corpus_manifest=manifest,
+            corpus_sha256=manifest.content_id,
+            signature="0" * 128,
+        )
+    )
+    expanded_trusted = _trusted(expanded)
+    expanded_plan = replace(plan, authority_sha256=expanded.content_id)
+
+    report = finalize_benchmark(expanded_trusted, expanded_plan, oracle, run, audits, timings)
+
+    assert "corpus_member_set_mismatch" in {item.code for item in report.diagnostics}
+
+    with pytest.raises(ValueError, match="member ids must be unique"):
+        CorpusManifest(
+            (
+                CorpusMember("duplicate", _digest(1)),
+                CorpusMember("duplicate", _digest(2)),
+            )
+        )
 
 
 def test_signed_subset_of_frozen_trial_schedule_is_rejected() -> None:
@@ -804,6 +872,11 @@ def _audit_suite(
     authority: BenchmarkAuthority | TrustedBenchmarkAuthority,
     run: BenchmarkRun,
 ) -> IndependentAuditSuite:
+    authority_data = (
+        _authority_for_test(authority)
+        if type(authority) is TrustedBenchmarkAuthority
+        else authority
+    )
     subjects = (
         *((AuditSubjectKind.CASE, item.case_id, item.content_id) for item in run.cases),
         *((AuditSubjectKind.MUTATION, item.kind.value, item.content_id) for item in run.mutations),
@@ -815,7 +888,7 @@ def _audit_suite(
             oracle_sha256=run.oracle_sha256,
             run_sha256=run.content_id,
             execution_nonce_sha256=run.execution_nonce_sha256,
-            auditor_identity_sha256=cast(str, authority.auditor_identity_sha256),
+            auditor_identity_sha256=authority_data.auditor_identity_sha256,
             receipts=tuple(
                 sorted(
                     AuditReceipt(
@@ -824,7 +897,7 @@ def _audit_suite(
                         digest,
                         AuditDecision.ACCEPTED,
                         _digest(index + 7_000),
-                        cast(str, authority.auditor_identity_sha256),
+                        authority_data.auditor_identity_sha256,
                     )
                     for index, (kind, subject_id, digest) in enumerate(subjects)
                 )
@@ -867,26 +940,33 @@ def _signed_authority(authority: BenchmarkAuthority) -> BenchmarkAuthority:
     )
 
 
-def _protected_reference() -> ProtectedAuthorityReference:
-    return benchmark_model._bootstrap_protected_authority_reference(
-        _public_key(_AUTHORITY_KEY), _digest(9_000)
-    )
-
-
-def _pinned_keys() -> PinnedAuthorityKeys:
-    return PinnedAuthorityKeys(
-        _public_key(_ANALYST_KEY),
-        _public_key(_MUTATION_KEY),
-        _public_key(_AUDIT_KEY),
-        _public_key(_TELEMETRY_KEY),
-    )
-
-
 def _trusted(authority: BenchmarkAuthority) -> TrustedBenchmarkAuthority:
-    return load_trusted_benchmark_authority(
-        benchmark_json(authority),
-        protected_reference=_protected_reference(),
+    raw = benchmark_json(authority)
+    _write_test_config(raw, generation=authority.generation)
+    return load_trusted_benchmark_authority(raw)
+
+
+def _write_test_config(
+    authority_bytes: bytes,
+    *,
+    generation: int,
+    signing_key: Ed25519PrivateKey = _AUTHORITY_KEY,
+) -> None:
+    if _TEST_CONFIG_PATH is None:
+        raise AssertionError("protected config test seam was not installed")
+    config = {
+        "authority_sha256": hashlib.sha256(authority_bytes).hexdigest(),
+        "generation": generation,
+        "signing_public_key": _public_key(signing_key),
+    }
+    _TEST_CONFIG_PATH.write_bytes(
+        json.dumps(config, sort_keys=True, separators=(",", ":")).encode() + b"\n"
     )
+    _TEST_CONFIG_PATH.chmod(0o600)
+
+
+def _authority_for_test(trusted: TrustedBenchmarkAuthority) -> BenchmarkAuthority:
+    return benchmark_model._reverify_trusted_authority(trusted)
 
 
 def _sha256_hex(value: str) -> str:

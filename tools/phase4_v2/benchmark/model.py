@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
+import stat
 from collections.abc import Hashable, Iterable
 from dataclasses import dataclass
 from enum import StrEnum
+from pathlib import Path
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -30,7 +33,7 @@ _MAX_JSON_DEPTH = 12
 _MAX_JSON_NODES = 512
 _MAX_JSON_STRING_LENGTH = 4_096
 _AUTHORITY_SEAL = object()
-_PROTECTED_REFERENCE_SEAL = object()
+_PROTECTED_AUTHORITY_CONFIG_PATH = Path("/etc/ha-adjustable-bed/phase4-v2-benchmark-authority.json")
 
 
 class MutationKind(StrEnum):
@@ -132,65 +135,6 @@ class CorpusManifest:
         return {"members": [item.to_data() for item in self.members]}
 
 
-class ProtectedAuthorityReference:
-    """Opaque trust root provisioned by a protected maintainer/CI bootstrap."""
-
-    __slots__ = ("_public_key", "_reference_sha256", "_seal")
-
-    def __init__(self, public_key: str, reference_sha256: str, seal: object) -> None:
-        if seal is not _PROTECTED_REFERENCE_SEAL:
-            raise ValueError("authority trust reference must come from protected bootstrap")
-        _public_key(public_key, "authority signer")
-        _digest(reference_sha256, "protected authority reference")
-        object.__setattr__(self, "_public_key", public_key)
-        object.__setattr__(self, "_reference_sha256", reference_sha256)
-        object.__setattr__(self, "_seal", seal)
-
-    def __setattr__(self, name: str, value: object) -> None:
-        raise AttributeError("protected authority reference is immutable")
-
-    def __delattr__(self, name: str) -> None:
-        raise AttributeError("protected authority reference is immutable")
-
-    @property
-    def public_key(self) -> str:
-        return self._public_key
-
-    @property
-    def reference_sha256(self) -> str:
-        return self._reference_sha256
-
-
-def _bootstrap_protected_authority_reference(
-    public_key: str, reference_sha256: str
-) -> ProtectedAuthorityReference:
-    """Internal bootstrap hook; benchmark invocations must receive its sealed result."""
-
-    return ProtectedAuthorityReference(public_key, reference_sha256, _PROTECTED_REFERENCE_SEAL)
-
-
-@dataclass(frozen=True, slots=True)
-class PinnedAuthorityKeys:
-    """Public keys supplied by the protected rollout configuration."""
-
-    analyst_public_key: str
-    mutation_runner_public_key: str
-    auditor_public_key: str
-    telemetry_collector_public_key: str
-
-    def __post_init__(self) -> None:
-        keys = (
-            self.analyst_public_key,
-            self.mutation_runner_public_key,
-            self.auditor_public_key,
-            self.telemetry_collector_public_key,
-        )
-        for key in keys:
-            _public_key(key, "pinned authority")
-        if len(set(keys)) != len(keys):
-            raise ValueError("pinned authority public keys must be unique")
-
-
 @dataclass(frozen=True, slots=True)
 class BenchmarkAuthority:
     """Immutable identities approved outside benchmark execution."""
@@ -213,7 +157,7 @@ class BenchmarkAuthority:
     auditor_public_key: str
     telemetry_collector_identity_sha256: str
     telemetry_collector_public_key: str
-    protected_reference_sha256: str
+    generation: int
     signature: str
     revision: str = BENCHMARK_REVISION
 
@@ -228,7 +172,6 @@ class BenchmarkAuthority:
             ("plan contract", self.plan_contract_sha256),
             ("oracle", self.oracle_sha256),
             ("trial schedule", self.trial_schedule_sha256),
-            ("protected reference", self.protected_reference_sha256),
             ("run identity", self.run_identity_sha256),
             ("toolchain", self.toolchain_sha256),
             ("harness", self.harness_sha256),
@@ -240,6 +183,8 @@ class BenchmarkAuthority:
         )
         for label, value in values:
             _digest(value, label)
+        if type(self.generation) is not int or self.generation < 1:
+            raise ValueError("authority generation must be a positive integer")
         if type(self.corpus_manifest) is not CorpusManifest:
             raise ValueError("corpus manifest must be a CorpusManifest")
         if self.corpus_sha256 != self.corpus_manifest.content_id:
@@ -306,7 +251,7 @@ class BenchmarkAuthority:
             "mutation_runner_public_key": self.mutation_runner_public_key,
             "oracle_sha256": self.oracle_sha256,
             "plan_contract_sha256": self.plan_contract_sha256,
-            "protected_reference_sha256": self.protected_reference_sha256,
+            "generation": self.generation,
             "revision": self.revision,
             "run_identity_sha256": self.run_identity_sha256,
             "telemetry_collector_identity_sha256": self.telemetry_collector_identity_sha256,
@@ -316,15 +261,43 @@ class BenchmarkAuthority:
         }
 
 
+@dataclass(frozen=True, slots=True)
+class _ProtectedAuthorityConfig:
+    authority_sha256: str
+    generation: int
+    signing_public_key: str
+
+    def __post_init__(self) -> None:
+        _digest(self.authority_sha256, "protected authority digest")
+        if type(self.generation) is not int or self.generation < 1:
+            raise ValueError("protected authority generation must be a positive integer")
+        _public_key(self.signing_public_key, "protected authority signer")
+
+    def to_data(self) -> dict[str, object]:
+        return {
+            "authority_sha256": self.authority_sha256,
+            "generation": self.generation,
+            "signing_public_key": self.signing_public_key,
+        }
+
+
 class TrustedBenchmarkAuthority:
     """Authority admitted only through the protected canonical loader."""
 
-    __slots__ = ("_authority", "_seal")
+    __slots__ = ("_authority_content_id", "_canonical_bytes", "_config", "_seal")
 
-    def __init__(self, authority: BenchmarkAuthority, seal: object) -> None:
+    def __init__(
+        self,
+        canonical_bytes: bytes,
+        config: _ProtectedAuthorityConfig,
+        authority_content_id: str,
+        seal: object,
+    ) -> None:
         if seal is not _AUTHORITY_SEAL:
             raise ValueError("benchmark authority must be loaded from protected configuration")
-        object.__setattr__(self, "_authority", authority)
+        object.__setattr__(self, "_canonical_bytes", canonical_bytes)
+        object.__setattr__(self, "_config", config)
+        object.__setattr__(self, "_authority_content_id", authority_content_id)
         object.__setattr__(self, "_seal", seal)
 
     def __setattr__(self, name: str, value: object) -> None:
@@ -334,15 +307,8 @@ class TrustedBenchmarkAuthority:
         raise AttributeError("trusted benchmark authority is immutable")
 
     @property
-    def authority(self) -> BenchmarkAuthority:
-        return self._authority
-
-    @property
     def content_id(self) -> str:
-        return self._authority.content_id
-
-    def __getattr__(self, name: str) -> object:
-        return getattr(self._authority, name)
+        return self._authority_content_id
 
 
 @dataclass(frozen=True, slots=True)
@@ -1116,20 +1082,19 @@ class BenchmarkReport:
         }
 
 
-def load_trusted_benchmark_authority(
-    raw: bytes,
-    *,
-    protected_reference: ProtectedAuthorityReference,
-) -> TrustedBenchmarkAuthority:
-    """Load an authority signed by the protected maintainer/CI trust root."""
+def load_trusted_benchmark_authority(raw: bytes) -> TrustedBenchmarkAuthority:
+    """Load the exact authority pinned by deployment-owned protected config."""
+
+    config = _load_protected_authority_config()
+    authority = _parse_authority_document(raw)
+    _verify_authority_against_config(raw, authority, config)
+    return TrustedBenchmarkAuthority(raw, config, authority.content_id, _AUTHORITY_SEAL)
+
+
+def _parse_authority_document(raw: bytes) -> BenchmarkAuthority:
 
     if type(raw) is not bytes or not raw or len(raw) > _MAX_AUTHORITY_BYTES:
         raise ValueError("authority document must be non-empty bytes within the size limit")
-    if (
-        type(protected_reference) is not ProtectedAuthorityReference
-        or protected_reference._seal is not _PROTECTED_REFERENCE_SEAL
-    ):
-        raise ValueError("authority signer must be a protected reference")
     try:
         decoded = raw.decode("utf-8")
         data = json.loads(
@@ -1151,12 +1116,12 @@ def load_trusted_benchmark_authority(
             "corpus_manifest",
             "corpus_sha256",
             "execution_nonce_sha256",
+            "generation",
             "harness_sha256",
             "mutation_runner_identity_sha256",
             "mutation_runner_public_key",
             "oracle_sha256",
             "plan_contract_sha256",
-            "protected_reference_sha256",
             "revision",
             "run_identity_sha256",
             "signature",
@@ -1216,23 +1181,97 @@ def load_trusted_benchmark_authority(
         telemetry_collector_public_key=_exact_str(
             root["telemetry_collector_public_key"], "telemetry collector public key"
         ),
-        protected_reference_sha256=_exact_str(
-            root["protected_reference_sha256"], "protected reference"
-        ),
+        generation=_exact_int(root["generation"], "authority generation"),
         signature=_exact_str(root["signature"], "authority signature"),
         revision=_exact_str(root["revision"], "benchmark revision"),
     )
     if raw != benchmark_json(authority):
         raise ValueError("authority document must use exact canonical JSON encoding")
-    if authority.protected_reference_sha256 != protected_reference.reference_sha256:
-        raise ValueError("authority does not match the protected trust reference")
+    return authority
+
+
+def _load_protected_authority_config() -> _ProtectedAuthorityConfig:
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(_PROTECTED_AUTHORITY_CONFIG_PATH, flags)
+    except OSError as error:
+        raise ValueError("protected authority config is unavailable") from error
+    try:
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode):
+            raise ValueError("protected authority config must be a regular file")
+        if metadata.st_uid not in {0, os.geteuid()} or metadata.st_mode & 0o022:
+            raise ValueError("protected authority config ownership or mode is unsafe")
+        chunks: list[bytes] = []
+        remaining = 8 * 1024 + 1
+        while remaining:
+            chunk = os.read(descriptor, min(4 * 1024, remaining))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        raw = b"".join(chunks)
+    finally:
+        os.close(descriptor)
+    if not raw or len(raw) > 8 * 1024:
+        raise ValueError("protected authority config exceeds its size bound")
+    try:
+        data = json.loads(
+            raw.decode("utf-8"),
+            object_pairs_hook=_reject_duplicate_pairs,
+            parse_constant=_reject_json_constant,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as error:
+        raise ValueError("protected authority config is not strict JSON") from error
+    root = _exact_object(
+        data,
+        {"authority_sha256", "generation", "signing_public_key"},
+        "protected authority config",
+    )
+    config = _ProtectedAuthorityConfig(
+        authority_sha256=_exact_str(root["authority_sha256"], "protected authority digest"),
+        generation=_exact_int(root["generation"], "protected authority generation"),
+        signing_public_key=_exact_str(root["signing_public_key"], "protected authority signer"),
+    )
+    if raw != _canonical(config.to_data()) + b"\n":
+        raise ValueError("protected authority config must use exact canonical JSON encoding")
+    return config
+
+
+def _verify_authority_against_config(
+    raw: bytes,
+    authority: BenchmarkAuthority,
+    config: _ProtectedAuthorityConfig,
+) -> None:
+    if _content_digest(raw) != config.authority_sha256:
+        raise ValueError("authority bytes do not match protected configuration")
+    if authority.generation != config.generation:
+        raise ValueError("authority generation does not match protected configuration")
     if not _verify_signature(
-        protected_reference.public_key,
+        config.signing_public_key,
         authority.signature,
         authority.signing_bytes,
     ):
-        raise ValueError("authority signature is invalid for the protected trust reference")
-    return TrustedBenchmarkAuthority(authority, _AUTHORITY_SEAL)
+        raise ValueError("authority signature is invalid for protected configuration")
+
+
+def _reverify_trusted_authority(
+    trusted_authority: TrustedBenchmarkAuthority,
+) -> BenchmarkAuthority:
+    if (
+        type(trusted_authority) is not TrustedBenchmarkAuthority
+        or trusted_authority._seal is not _AUTHORITY_SEAL
+    ):
+        raise ValueError("finalization requires a protected benchmark authority")
+    authority = _parse_authority_document(trusted_authority._canonical_bytes)
+    _verify_authority_against_config(
+        trusted_authority._canonical_bytes,
+        authority,
+        trusted_authority._config,
+    )
+    if authority.content_id != trusted_authority._authority_content_id:
+        raise ValueError("trusted authority content identity changed")
+    return authority
 
 
 def finalize_benchmark(
@@ -1245,11 +1284,7 @@ def finalize_benchmark(
 ) -> BenchmarkReport:
     """Reveal committed inputs and deterministically decide rollout."""
 
-    if type(trusted_authority) is not TrustedBenchmarkAuthority:
-        raise ValueError("finalization requires a protected benchmark authority")
-    if trusted_authority._seal is not _AUTHORITY_SEAL:
-        raise ValueError("finalization requires a protected benchmark authority")
-    authority = trusted_authority.authority
+    authority = _reverify_trusted_authority(trusted_authority)
     diagnostics: list[BenchmarkDiagnostic] = []
     if plan.authority_sha256 != authority.content_id:
         diagnostics.append(_diag("authority_commitment_mismatch", "$.plan.authority_sha256"))
@@ -1292,6 +1327,14 @@ def _check_corpus_membership(
     diagnostics: list[BenchmarkDiagnostic],
 ) -> None:
     members = {item.member_id: item.input_sha256 for item in authority.corpus_manifest.members}
+    declared_ids = (
+        *(case.corpus_member_id for case in plan.cases),
+        *(mutation.corpus_member_id for mutation in plan.mutations),
+    )
+    if len(set(declared_ids)) != len(declared_ids):
+        diagnostics.append(_diag("corpus_member_reused", "$.plan"))
+    if set(declared_ids) != set(members):
+        diagnostics.append(_diag("corpus_member_set_mismatch", "$.authority.corpus_manifest"))
     for case in plan.cases:
         if members.get(case.corpus_member_id) != case.input_sha256:
             diagnostics.append(
