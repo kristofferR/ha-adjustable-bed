@@ -54,8 +54,11 @@ from tools.phase4_v2.equivalence import (
     finish_package_validation_receipt,
     finish_target_inventory,
     inventory_authority_capability,
+    inventory_authority_payload,
+    inventory_authority_pin_payload,
     inventory_extractor_capability,
     load_activated_exact_reuse_authority,
+    load_activated_inventory_authority,
     load_authenticated_exact_reuse_prerequisite,
     load_authenticated_target_inventory_envelope,
     materialize_exact_reuse_prerequisites,
@@ -474,3 +477,67 @@ def test_authority_rejects_constructor_and_noncanonical_pin(
         lambda: activation,
     )
     assert load_activated_exact_reuse_authority(payload).activation_sha256 == activation
+
+
+def test_mixed_inventory_authorities_fail_even_across_pin_rotation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixture = _build_fixture(tmp_path, monkeypatch)
+    key = Ed25519PrivateKey.from_private_bytes(b"b" * 32)
+    authority_bytes = inventory_authority_payload(
+        authority_id="rotated-inventory", public_key=_public_key(key), generation=2
+    )
+    activation = json.loads(inventory_authority_pin_payload(authority_bytes))[
+        "activation_sha256"
+    ]
+    monkeypatch.setattr(
+        inventory_module, "_read_protected_inventory_pin", lambda: activation
+    )
+    authority = load_activated_inventory_authority(authority_bytes)
+    inventory = fixture.target_inventory.inventory
+    extractor = fixture.target_inventory.extractor
+    package_ref = fixture.target_inventory.package_ref
+    unsigned = target_inventory_envelope_payload(
+        package_ref=package_ref,
+        inventory=inventory,
+        extractor=extractor,
+        authority=authority,
+        signature="0" * 128,
+    )
+    payload = json.loads(unsigned)["payload"]
+    rotated = load_authenticated_target_inventory_envelope(
+        target_inventory_envelope_payload(
+            package_ref=package_ref,
+            inventory=inventory,
+            extractor=extractor,
+            authority=authority,
+            signature=key.sign(target_inventory_signing_bytes(payload)).hex(),
+        ),
+        authority=authority,
+        package_ref=package_ref,
+    )
+    activations = iter(
+        (
+            fixture.source_inventory.authority.activation_sha256,
+            rotated.authority.activation_sha256,
+        )
+    )
+    monkeypatch.setattr(
+        inventory_module, "_read_protected_inventory_pin", lambda: next(activations)
+    )
+    with pytest.raises(ExactReuseAuthenticationError, match="different protected authorities"):
+        exact_reuse_prerequisite_payload(
+            source=fixture.source,
+            source_raw=fixture.raw_source,
+            source_inventory=fixture.source_inventory,
+            source_preparation_receipt=fixture.source_package.preparation_receipt,
+            source_preparation_authority=fixture.source_package.preparation_authority,
+            source_root=fixture.receipt.source_root,
+            target_inventory=rotated,
+            target_root=fixture.receipt.target_root,
+            extractor=fixture.receipt.extractor,
+            proof=fixture.receipt.proof,
+            decision=fixture.receipt.decision,
+            equivalence_pipeline=fixture.receipt.equivalence_pipeline,
+            authority=fixture.exact_authority,
+        )
