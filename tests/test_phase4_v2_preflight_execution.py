@@ -544,10 +544,9 @@ def test_crash_partial_and_unsafe_outputs_fail_closed(
     [
         ("noisy", ExecutionLimits(max_tool_stream_bytes=128), "TOOL_OUTPUT_LIMIT"),
         ("timeout", ExecutionLimits(tool_timeout_seconds=0.05), "TOOL_TIMEOUT"),
-        ("mutate-input", ExecutionLimits(), "INPUT_MUTATED"),
     ],
 )
-def test_stream_timeout_and_input_mutation_limits_fail_closed(
+def test_stream_and_timeout_limits_fail_closed(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     mode: str,
@@ -568,6 +567,26 @@ def test_stream_timeout_and_input_mutation_limits_fail_closed(
 
     assert result.status == "BLOCKED"
     assert failure in next(item for item in result.invocations if item.route == "jadx").failures
+
+
+def test_sandbox_input_is_read_only(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    preflight = _ready_preflight(monkeypatch, tmp_path)
+    artifact_digest = hashlib.sha256((tmp_path / "base.apk").read_bytes()).hexdigest()
+    tool = _tool(tmp_path, modes={"jadx": "mutate-input"})
+
+    result = execute_preparation(
+        preflight,
+        tool_specs=_specs(tool),
+        cache_directory=tmp_path / "cache",
+        output_directory=tmp_path / "result",
+        pipeline_revision="pipeline-v1",
+    )
+
+    assert result.status == "COMPLETE"
+    assert hashlib.sha256((tmp_path / "base.apk").read_bytes()).hexdigest() == artifact_digest
 
 
 def test_suspicious_jadx_requires_nonempty_smali_fallback(

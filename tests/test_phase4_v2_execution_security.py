@@ -131,6 +131,12 @@ def test_profile_is_canonical_bounded_and_manifest_bound(
         "sha256": profile.sha256,
     }
     assert profile.to_data()["limits"]["tool_timeout_seconds"] == 1_250  # type: ignore[index]
+    sandbox = profile.to_data()["sandbox"]
+    assert isinstance(sandbox, dict)
+    assert sandbox["seccomp"] == {
+        "revision": execution.SECCOMP_POLICY_REVISION,
+        "sha256": execution.SECCOMP_POLICY_SHA256,
+    }
     assert all(item.tool.runtime_sha256 for item in result.invocations)
 
     for hostile in (
@@ -158,6 +164,20 @@ def test_missing_sandbox_support_fails_closed(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setattr(execution.shutil, "which", lambda _name: None)
     with pytest.raises(PreparationError, match="bubblewrap is required"):
         build_execution_profile()
+
+
+def test_seccomp_policy_fails_closed_on_unsupported_architecture(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    profile = build_execution_profile()
+    current = os.uname()
+    monkeypatch.setattr(
+        execution.os,
+        "uname",
+        lambda: os.uname_result((*current[:4], "aarch64")),
+    )
+    with pytest.raises(PreparationError, match="does not support this architecture"):
+        execution._open_seccomp_policy(profile)
 
 
 def test_self_consistent_caller_preseed_is_never_trusted(
@@ -260,6 +280,7 @@ def test_workspace_and_cache_symlink_swaps_fail_closed(tmp_path: Path) -> None:
     workspace.mkdir()
     for name in ("home", "tmp", "output"):
         (workspace / name).mkdir()
+    quota = execution._create_quota_filesystem(profile.limits)
     try:
         with pytest.raises(PreparationError, match="workspace identity changed"):
             execution._run_sandboxed(
@@ -270,8 +291,12 @@ def test_workspace_and_cache_symlink_swaps_fail_closed(tmp_path: Path) -> None:
                 timeout=1,
                 stream_limit=1_024,
                 workspace_identity=(0, 0),
+                quota_output_descriptor=quota.descriptor,
+                quota_setup_userns_descriptor=quota.setup_userns_descriptor,
+                quota_mountns_descriptor=quota.mountns_descriptor,
             )
     finally:
+        quota.close()
         sealed.close()
 
 
@@ -410,4 +435,111 @@ def test_runtime_seal_rejects_nested_directory_mutation(
 
     monkeypatch.setattr(execution, "_copy_runtime_file_at", mutate_after_copy)
     with pytest.raises(PreparationError, match="directory changed"):
+        execution._seal_executable(tool, str(tool.parent), ExecutionLimits())
+
+
+def test_kernel_quota_covers_all_private_workspace_paths(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    preflight = _preflight(monkeypatch, tmp_path)
+    tool = build_static_tool(
+        tmp_path,
+        outputs={},
+        extra_source=(
+            'const char *roots[]={"/run/tmp","/run/home","/run/output"}; '
+            "int held[64],exhausted=0; "
+            "char bytes[65536],path[256]; memset(bytes,1,sizeof(bytes)); "
+            'for(int i=0;i<64;i++){snprintf(path,sizeof(path),"%s/hidden-%d",roots[i%3],i); '
+            "held[i]=open(path,O_WRONLY|O_CREAT|O_EXCL,0600); if(held[i]<0){exhausted=1;break;} "
+            "unlink(path); if(write(held[i],bytes,sizeof(bytes))!=(ssize_t)sizeof(bytes)){exhausted=1;break;}} "
+            "if(!exhausted)sleep(2);"
+        ),
+    )
+    limits = ExecutionLimits(tool_timeout_seconds=3, max_output_bytes=1024 * 1024)
+    started = time.monotonic()
+    result = execute_preparation(
+        preflight,
+        tool_specs=_specs(tool),
+        cache_directory=tmp_path / "private-path-cache",
+        output_directory=tmp_path / "private-path-result",
+        pipeline_revision="pipeline-security-v1",
+        execution_profile=build_execution_profile(limits),
+    )
+
+    assert time.monotonic() - started < 1.5
+    assert result.status == "BLOCKED"
+    assert all("OUTPUT_EMPTY" in item.failures for item in result.invocations)
+
+
+def test_run_root_denies_writes_outside_private_subdirectories(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    preflight = _preflight(monkeypatch, tmp_path)
+    tool = build_static_tool(
+        tmp_path,
+        outputs={
+            "apktool": {"App.smali": "android.bluetooth.BluetoothGatt"},
+            "jadx": {"App.java": "android.bluetooth.BluetoothGatt"},
+        },
+        extra_source=(
+            'int fd=open("/run/escape",O_WRONLY|O_CREAT,0600); '
+            'if(fd>=0){write(fd,"x",1);close(fd);return 17;}'
+        ),
+    )
+    result = _execute(preflight, tool, tmp_path, "run-escape")
+
+    assert result.status == "COMPLETE"
+
+
+def test_seccomp_denies_multiprocess_and_unlinked_fd_xattrs(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    preflight = _preflight(monkeypatch, tmp_path)
+    tool = build_static_tool(
+        tmp_path,
+        outputs={},
+        extra_source=(
+            "pid_t children[4]; for(int i=0;i<4;i++){children[i]=fork(); if(children[i]==0){"
+            'char path[128]; snprintf(path,sizeof(path),"/run/tmp/xattr-%d",i); '
+            "int fd=open(path,O_RDWR|O_CREAT|O_EXCL,0600); if(fd<0)_exit(40); "
+            'if(fsetxattr(fd,"user.attack","x",1,0)!=-1||errno!=EPERM)_exit(41); '
+            'if(setxattr(path,"user.attack","x",1,0)!=-1||errno!=EPERM)_exit(42); '
+            'if(lsetxattr(path,"user.attack","x",1,0)!=-1||errno!=EPERM)_exit(43); '
+            'if(removexattr(path,"user.attack")!=-1||errno!=EPERM)_exit(44); '
+            'if(lremovexattr(path,"user.attack")!=-1||errno!=EPERM)_exit(45); '
+            'unlink(path); if(fremovexattr(fd,"user.attack")!=-1||errno!=EPERM)_exit(46); '
+            "if(syscall(463,-1,0,0,0,0)!=-1||errno!=EPERM)_exit(47); "
+            "if(syscall(466,-1,0,0)!=-1||errno!=EPERM)_exit(48); close(fd); _exit(0);}} "
+            "if(syscall(425,1,0)!=-1||errno!=EPERM)_exit(49); "
+            "int failed=0,status=0; for(int i=0;i<4;i++){waitpid(children[i],&status,0); "
+            "if(!WIFEXITED(status)||WEXITSTATUS(status)!=0)failed=1;} if(failed)sleep(2); "
+            'write_member(output,strcmp(route,"apktool")==0?"App.smali":"App.java",'
+            '"android.bluetooth.BluetoothGatt");'
+        ),
+    )
+    started = time.monotonic()
+    result = _execute(preflight, tool, tmp_path, "xattr-seccomp")
+
+    assert time.monotonic() - started < 1.5
+    assert result.status == "COMPLETE"
+
+
+def test_second_runtime_walk_rejects_earlier_file_content_mutation(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    tool = _tool(tmp_path, _OUTPUT_BODY)
+    earlier = tool.parent / "aa-earlier"
+    earlier.write_text("original", encoding="utf-8")
+    later = tool.parent / "zz-later"
+    later.write_text("later", encoding="utf-8")
+    original_copy = execution._copy_runtime_file_at
+
+    def mutate_after_later_copy(*args: object, **kwargs: object):
+        result = original_copy(*args, **kwargs)  # type: ignore[arg-type]
+        if args[1] == "zz-later":
+            earlier.write_text("mutated!", encoding="utf-8")
+        return result
+
+    monkeypatch.setattr(execution, "_copy_runtime_file_at", mutate_after_later_copy)
+    with pytest.raises(PreparationError, match="between sealing passes"):
         execution._seal_executable(tool, str(tool.parent), ExecutionLimits())
