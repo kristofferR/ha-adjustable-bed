@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import json
+import stat
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
+import tools.phase4_v2.queue.fanout as fanout_module
 from tools.phase4_v2.queue import (
     FanoutPublishReceipt,
+    GitHubTreeGateway,
     Lease,
     PublisherConflictError,
     PublisherPostWriteConflictError,
@@ -29,6 +34,16 @@ _TARGETS = (
     TrackerTarget("public/queue.html", TrackerFormat.HTML),
 )
 _CONFIG = TrackerPublicationConfig("owner/repository", "tracker", _TARGETS)
+_PROTECTED_CONFIG_LOADER = fanout_module._load_protected_publication_config_sha256
+
+
+@pytest.fixture(autouse=True)
+def _protected_publication_config(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        fanout_module,
+        "_load_protected_publication_config_sha256",
+        lambda: _CONFIG.sha256,
+    )
 
 
 class _MemorySetGateway:
@@ -77,6 +92,22 @@ class _MemorySetGateway:
         return True
 
 
+def _sealed_gateway(
+    monkeypatch: pytest.MonkeyPatch, backend: _MemorySetGateway
+) -> GitHubTreeGateway:
+    monkeypatch.setattr(
+        GitHubTreeGateway,
+        "read",
+        lambda _self, paths: backend.read(paths),
+    )
+    monkeypatch.setattr(
+        GitHubTreeGateway,
+        "compare_and_replace",
+        lambda _self, **values: backend.compare_and_replace(**values),
+    )
+    return GitHubTreeGateway(backend.repository, backend.branch)
+
+
 @pytest.fixture
 def publisher(tmp_path: Path) -> tuple[Queue, Lease]:
     queue = Queue(tmp_path / "state" / "queue.sqlite3", tmp_path / "attempts")
@@ -89,11 +120,14 @@ def publisher(tmp_path: Path) -> tuple[Queue, Lease]:
 
 def test_fanout_publishes_markdown_and_html_from_one_snapshot(
     publisher: tuple[Queue, Lease],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     queue, lease = publisher
     gateway = _MemorySetGateway()
 
-    receipt = publish_tracker_fanout(queue, lease, gateway, _CONFIG)
+    receipt = publish_tracker_fanout(
+        queue, lease, _sealed_gateway(monkeypatch, gateway), _CONFIG
+    )
 
     assert receipt.changed
     assert receipt.paths == tuple(item.path for item in _TARGETS)
@@ -109,12 +143,14 @@ def test_fanout_publishes_markdown_and_html_from_one_snapshot(
 
 def test_fanout_is_idempotent_without_a_second_commit(
     publisher: tuple[Queue, Lease],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     queue, lease = publisher
     gateway = _MemorySetGateway()
-    publish_tracker_fanout(queue, lease, gateway, _CONFIG)
+    sealed = _sealed_gateway(monkeypatch, gateway)
+    publish_tracker_fanout(queue, lease, sealed, _CONFIG)
 
-    receipt = publish_tracker_fanout(queue, lease, gateway, _CONFIG)
+    receipt = publish_tracker_fanout(queue, lease, sealed, _CONFIG)
 
     assert not receipt.changed
     assert gateway.writes == 1
@@ -123,25 +159,31 @@ def test_fanout_is_idempotent_without_a_second_commit(
 
 def test_fanout_rejects_atomic_compare_and_swap_conflict(
     publisher: tuple[Queue, Lease],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     queue, lease = publisher
     gateway = _MemorySetGateway()
     gateway.reject = True
 
     with pytest.raises(PublisherConflictError, match="document set changed"):
-        publish_tracker_fanout(queue, lease, gateway, _CONFIG)
+        publish_tracker_fanout(
+            queue, lease, _sealed_gateway(monkeypatch, gateway), _CONFIG
+        )
     assert gateway.writes == 0
 
 
 def test_fanout_fails_closed_on_inexact_readback(
     publisher: tuple[Queue, Lease],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     queue, lease = publisher
     gateway = _MemorySetGateway()
     gateway.corrupt_readback = True
 
     with pytest.raises(PublisherPostWriteConflictError, match="exact readback"):
-        publish_tracker_fanout(queue, lease, gateway, _CONFIG)
+        publish_tracker_fanout(
+            queue, lease, _sealed_gateway(monkeypatch, gateway), _CONFIG
+        )
 
 
 def test_fanout_rejects_unsorted_duplicate_or_unsafe_targets(
@@ -175,6 +217,7 @@ def test_publication_config_binds_renderer_format() -> None:
 
 def test_fanout_rejects_cross_repository_and_branch_replay(
     publisher: tuple[Queue, Lease],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     queue, lease = publisher
     other_repository = TrackerPublicationConfig("other/repository", "tracker", _TARGETS)
@@ -182,21 +225,163 @@ def test_fanout_rejects_cross_repository_and_branch_replay(
 
     assert other_repository.sha256 != _CONFIG.sha256
     assert other_branch.sha256 != _CONFIG.sha256
-    with pytest.raises(PublisherConflictError, match="endpoint"):
-        publish_tracker_fanout(queue, lease, _MemorySetGateway(), other_repository)
-    with pytest.raises(PublisherConflictError, match="endpoint"):
-        publish_tracker_fanout(queue, lease, _MemorySetGateway(), other_branch)
+    gateway = _sealed_gateway(monkeypatch, _MemorySetGateway())
+    with pytest.raises(PublisherConflictError, match="protected deployment pin"):
+        publish_tracker_fanout(queue, lease, gateway, other_repository)
+    with pytest.raises(PublisherConflictError, match="protected deployment pin"):
+        publish_tracker_fanout(queue, lease, gateway, other_branch)
 
 
 def test_fanout_rejects_gateway_bound_to_another_endpoint(
     publisher: tuple[Queue, Lease],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     queue, lease = publisher
 
     with pytest.raises(PublisherConflictError, match="endpoint"):
         publish_tracker_fanout(
-            queue, lease, _MemorySetGateway("attacker/repository", "tracker"), _CONFIG
+            queue,
+            lease,
+            _sealed_gateway(
+                monkeypatch, _MemorySetGateway("attacker/repository", "tracker")
+            ),
+            _CONFIG,
         )
+
+
+def test_fanout_rejects_caller_supplied_gateway_and_subclass(
+    publisher: tuple[Queue, Lease],
+) -> None:
+    queue, lease = publisher
+
+    with pytest.raises(PublisherConflictError, match="sealed GitHub tree gateway"):
+        publish_tracker_fanout(queue, lease, _MemorySetGateway(), _CONFIG)
+
+    class HostileGateway(GitHubTreeGateway):
+        def read(self, paths: tuple[str, ...]) -> TrackerDocumentSet:
+            return _MemorySetGateway().read(paths)
+
+    with pytest.raises(PublisherConflictError, match="sealed GitHub tree gateway"):
+        publish_tracker_fanout(
+            queue,
+            lease,
+            HostileGateway(_CONFIG.repository, _CONFIG.branch),
+            _CONFIG,
+        )
+
+
+def test_fanout_requires_exact_protected_publication_config(
+    publisher: tuple[Queue, Lease], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    queue, lease = publisher
+    monkeypatch.setattr(
+        fanout_module,
+        "_load_protected_publication_config_sha256",
+        lambda: "f" * 64,
+    )
+
+    with pytest.raises(PublisherConflictError, match="protected deployment pin"):
+        publish_tracker_fanout(
+            queue,
+            lease,
+            GitHubTreeGateway(_CONFIG.repository, _CONFIG.branch),
+            _CONFIG,
+        )
+
+
+def test_protected_publication_config_fails_closed_when_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        fanout_module,
+        "_load_protected_publication_config_sha256",
+        _PROTECTED_CONFIG_LOADER,
+    )
+
+    def unavailable(*_args: object, **_kwargs: object) -> int:
+        raise PermissionError("synthetic denial")
+
+    monkeypatch.setattr(fanout_module.os, "open", unavailable)
+
+    with pytest.raises(PublisherConflictError, match="unavailable"):
+        fanout_module._load_protected_publication_config_sha256()
+
+
+def test_protected_publication_config_rejects_rotation_during_read(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        fanout_module,
+        "_load_protected_publication_config_sha256",
+        _PROTECTED_CONFIG_LOADER,
+    )
+    payload = (
+        json.dumps(
+            {
+                "publication_config_sha256": _CONFIG.sha256,
+                "revision": "phase4-v2-publication-config-pin-v1",
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+        + b"\n"
+    )
+    directory_metadata = SimpleNamespace(
+        st_dev=1,
+        st_ino=10,
+        st_mode=stat.S_IFDIR | 0o755,
+        st_nlink=2,
+        st_uid=0,
+        st_gid=0,
+        st_size=4096,
+        st_mtime_ns=1,
+        st_ctime_ns=1,
+    )
+    file_metadata = SimpleNamespace(
+        st_dev=1,
+        st_ino=11,
+        st_mode=stat.S_IFREG | 0o600,
+        st_nlink=1,
+        st_uid=0,
+        st_gid=0,
+        st_size=len(payload),
+        st_mtime_ns=1,
+        st_ctime_ns=1,
+    )
+    rotated_metadata = SimpleNamespace(**vars(file_metadata))
+    rotated_metadata.st_ino = 12
+    fstat_calls = 0
+    read_calls = 0
+
+    def fake_open(path: str, _flags: int, *, dir_fd: int | None = None) -> int:
+        if path == "/etc/ha-adjustable-bed" and dir_fd is None:
+            return 10
+        if path == "phase4-v2-publication-config.pin.json" and dir_fd == 10:
+            return 11
+        raise AssertionError(f"unexpected protected-config open: {path!r}")
+
+    def fake_fstat(descriptor: int) -> object:
+        nonlocal fstat_calls
+        if descriptor == 10:
+            return directory_metadata
+        if descriptor == 11:
+            fstat_calls += 1
+            return file_metadata if fstat_calls == 1 else rotated_metadata
+        raise AssertionError(f"unexpected protected-config descriptor: {descriptor}")
+
+    def fake_read(descriptor: int, _count: int) -> bytes:
+        nonlocal read_calls
+        assert descriptor == 11
+        read_calls += 1
+        return payload if read_calls == 1 else b""
+
+    monkeypatch.setattr(fanout_module.os, "open", fake_open)
+    monkeypatch.setattr(fanout_module.os, "fstat", fake_fstat)
+    monkeypatch.setattr(fanout_module.os, "read", fake_read)
+    monkeypatch.setattr(fanout_module.os, "close", lambda _descriptor: None)
+
+    with pytest.raises(PublisherConflictError, match="changed while reading"):
+        fanout_module._load_protected_publication_config_sha256()
 
 
 def test_document_set_duplicate_path_with_different_presence_fails_closed() -> None:

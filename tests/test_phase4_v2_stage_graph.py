@@ -13,6 +13,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 import tools.phase4_v2.orchestration.completion as stage_completion
+import tools.phase4_v2.queue.fanout as fanout_module
 from tests.phase4_v2_orchestration_acceptance import (
     SyntheticAcceptanceConfig,
     complete_synthetic_package_inputs,
@@ -59,6 +60,7 @@ from tools.phase4_v2.orchestration import (
 from tools.phase4_v2.queue import (
     CapabilityPin,
     FanoutPublishReceipt,
+    GitHubTreeGateway,
     Lease,
     Queue,
     QueueConflictError,
@@ -354,7 +356,9 @@ def _claim(queue: Queue, stage: WorkStage, owner: str) -> Lease:
     return lease
 
 
-def test_graph_and_authenticated_receipts_follow_real_stage_adapters(queue: Queue) -> None:
+def test_graph_and_authenticated_receipts_follow_real_stage_adapters(
+    queue: Queue, monkeypatch: pytest.MonkeyPatch
+) -> None:
     graph = _graph(queue, "cluster-011", ("alpha", "beta"))
     authorities = _GRAPH_AUTHORITIES[graph.cluster_id]
     first = materialize_cluster_graph(queue, graph)
@@ -511,7 +515,28 @@ def test_graph_and_authenticated_receipts_follow_real_stage_adapters(queue: Queu
             fanout_receipt=invented_fanout,
             receipt=invented_publication,
         )
-    fanout = publish_tracker_fanout(queue, publication_lease, _Gateway(), _PUBLICATION_CONFIG)
+    gateway = _Gateway()
+    monkeypatch.setattr(
+        fanout_module,
+        "_load_protected_publication_config_sha256",
+        lambda: _PUBLICATION_CONFIG.sha256,
+    )
+    monkeypatch.setattr(
+        GitHubTreeGateway,
+        "read",
+        lambda _self, paths: gateway.read(paths),
+    )
+    monkeypatch.setattr(
+        GitHubTreeGateway,
+        "compare_and_replace",
+        lambda _self, **values: gateway.compare_and_replace(**values),
+    )
+    sealed_gateway = GitHubTreeGateway(
+        _PUBLICATION_CONFIG.repository, _PUBLICATION_CONFIG.branch
+    )
+    fanout = publish_tracker_fanout(
+        queue, publication_lease, sealed_gateway, _PUBLICATION_CONFIG
+    )
     publication = load_publication_receipt(
         _signed(
             "publication",

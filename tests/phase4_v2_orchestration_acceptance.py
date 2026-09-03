@@ -18,6 +18,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 import tools.phase4_v2.orchestration.completion as completion_module
+import tools.phase4_v2.queue.fanout as fanout_module
 from tests.phase4_v2_orchestration_testing import (
     IncompleteSyntheticPackage,
     SyntheticTrust,
@@ -93,6 +94,7 @@ from tools.phase4_v2.orchestration.graph import (
 from tools.phase4_v2.orchestration.model import WorkStage
 from tools.phase4_v2.preflight import PreparationReceipt
 from tools.phase4_v2.queue import (
+    GitHubTreeGateway,
     Lease,
     Queue,
     StaleLeaseError,
@@ -237,11 +239,45 @@ def run_synthetic_acceptance(
 
     if root.exists():
         raise ValueError("synthetic acceptance root must not already exist")
+    gateway_backend = _Gateway()
+    targets = (
+        TrackerTarget("issues/436.md", TrackerFormat.MARKDOWN),
+        TrackerTarget("public/queue.html", TrackerFormat.HTML),
+    )
+    publication_config = TrackerPublicationConfig(
+        gateway_backend.repository, gateway_backend.branch, targets
+    )
+    gateway = GitHubTreeGateway(
+        publication_config.repository, publication_config.branch
+    )
     with (
         _protected_stage_authorities() as (keys, authorities),
         protected_fixture_trust(root / "fixture-trust") as trust,
+        patch.object(
+            fanout_module,
+            "_load_protected_publication_config_sha256",
+            return_value=publication_config.sha256,
+        ),
+        patch.object(
+            GitHubTreeGateway,
+            "read",
+            lambda _self, paths: gateway_backend.read(paths),
+        ),
+        patch.object(
+            GitHubTreeGateway,
+            "compare_and_replace",
+            lambda _self, **values: gateway_backend.compare_and_replace(**values),
+        ),
     ):
-        return _run_synthetic_acceptance(root, config, keys, authorities, trust)
+        return _run_synthetic_acceptance(
+            root,
+            config,
+            keys,
+            authorities,
+            trust,
+            gateway,
+            publication_config,
+        )
 
 
 def _run_synthetic_acceptance(
@@ -250,6 +286,8 @@ def _run_synthetic_acceptance(
     keys: dict[str, Ed25519PrivateKey],
     authorities: dict[str, ActivatedStageAuthority],
     trust: SyntheticTrust,
+    gateway: GitHubTreeGateway,
+    publication_config: TrackerPublicationConfig,
 ) -> SyntheticAcceptanceReport:
     database = root / "state" / "queue.sqlite3"
     attempts_root = root / "attempts"
@@ -262,12 +300,6 @@ def _run_synthetic_acceptance(
     generator = random.Random(config.seed)
     attempts = crashes = recovered = fenced = rounds = 0
     max_debt = 0
-    gateway = _Gateway()
-    targets = (
-        TrackerTarget("issues/436.md", TrackerFormat.MARKDOWN),
-        TrackerTarget("public/queue.html", TrackerFormat.HTML),
-    )
-    publication_config = TrackerPublicationConfig(gateway.repository, gateway.branch, targets)
     while True:
         for state in states.values():
             materialize_cluster_graph(queue, state.graph)
@@ -376,7 +408,7 @@ def _finish_stage(
     state: _ClusterState,
     keys: dict[str, Ed25519PrivateKey],
     authorities: dict[str, ActivatedStageAuthority],
-    gateway: _Gateway,
+    gateway: GitHubTreeGateway,
     publication_config: TrackerPublicationConfig,
 ) -> None:
     graph = state.graph

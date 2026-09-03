@@ -6,11 +6,12 @@ import hashlib
 import json
 import os
 import re
+import stat
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .publication_config import TrackerPublicationConfig
@@ -24,6 +25,8 @@ _PATH = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,4095}$")
 _MAX_TARGETS = 32
 _MAX_DOCUMENT_BYTES = 900 * 1024
 _MAX_DOCUMENT_SET_BYTES = 4 * 1024 * 1024
+_MAX_PROTECTED_CONFIG_BYTES = 4 * 1024
+_PROTECTED_CONFIG_REVISION = "phase4-v2-publication-config-pin-v1"
 
 
 class TrackerFormat(StrEnum):
@@ -85,18 +88,6 @@ class TrackerDocumentSet:
             raise ValueError("tracker document set exceeds its byte limit")
 
 
-class AtomicDocumentSetGateway(Protocol):
-    def read(self, paths: tuple[str, ...]) -> TrackerDocumentSet: ...
-
-    def compare_and_replace(
-        self,
-        *,
-        expected_revision: str,
-        expected_documents_sha256: str,
-        documents: tuple[TrackerDocument, ...],
-    ) -> bool: ...
-
-
 @dataclass(frozen=True, slots=True, init=False)
 class FanoutPublishReceipt:
     queue_generation: str
@@ -114,20 +105,22 @@ class FanoutPublishReceipt:
 def publish_tracker_fanout(
     queue: Queue,
     lease: Lease,
-    gateway: AtomicDocumentSetGateway,
+    gateway: object,
     config: TrackerPublicationConfig,
 ) -> FanoutPublishReceipt:
     """Atomically publish every tracker view from one immutable snapshot."""
 
+    from .github_tree import GitHubTreeGateway
     from .publication_config import TrackerPublicationConfig
 
     if type(config) is not TrackerPublicationConfig:
         raise ValueError("fanout requires an exact tracker publication config")
+    if type(gateway) is not GitHubTreeGateway:
+        raise PublisherConflictError("fanout requires the sealed GitHub tree gateway")
+    if config.sha256 != _load_protected_publication_config_sha256():
+        raise PublisherConflictError("publication config does not match protected deployment pin")
     canonical_targets = _targets(config.targets)
-    endpoint = (
-        getattr(gateway, "repository", getattr(gateway, "_repository", None)),
-        getattr(gateway, "branch", getattr(gateway, "_branch", None)),
-    )
+    endpoint = (gateway.repository, gateway.branch)
     if endpoint != (config.repository, config.branch):
         raise PublisherConflictError("tracker gateway endpoint does not match publication config")
     paths = tuple(item.path for item in canonical_targets)
@@ -307,3 +300,106 @@ def _publication_guard(queue: Queue) -> Iterator[None]:
         yield
     finally:
         os.close(descriptor)
+
+
+def _load_protected_publication_config_sha256() -> str:
+    """Read the sole deployment-approved publication config digest."""
+
+    directory_flags = (
+        os.O_RDONLY
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_DIRECTORY", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    try:
+        directory = os.open("/etc/ha-adjustable-bed", directory_flags)
+    except OSError as error:
+        raise PublisherConflictError("protected publication config is unavailable") from error
+    try:
+        directory_stat = os.fstat(directory)
+        if (
+            not stat.S_ISDIR(directory_stat.st_mode)
+            or directory_stat.st_uid != 0
+            or directory_stat.st_mode & 0o022
+        ):
+            raise PublisherConflictError("protected publication config parent is unsafe")
+        flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+        try:
+            descriptor = os.open(
+                "phase4-v2-publication-config.pin.json",
+                flags,
+                dir_fd=directory,
+            )
+        except OSError as error:
+            raise PublisherConflictError("protected publication config is unavailable") from error
+        try:
+            before = os.fstat(descriptor)
+            if (
+                not stat.S_ISREG(before.st_mode)
+                or before.st_uid != 0
+                or before.st_mode & 0o022
+                or before.st_nlink != 1
+                or before.st_size > _MAX_PROTECTED_CONFIG_BYTES
+            ):
+                raise PublisherConflictError("protected publication config is unsafe")
+            chunks: list[bytes] = []
+            remaining = _MAX_PROTECTED_CONFIG_BYTES + 1
+            while remaining:
+                chunk = os.read(descriptor, min(4096, remaining))
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                remaining -= len(chunk)
+            after = os.fstat(descriptor)
+            raw = b"".join(chunks)
+            if (
+                _stat_identity(after) != _stat_identity(before)
+                or len(raw) != before.st_size
+                or len(raw) > _MAX_PROTECTED_CONFIG_BYTES
+            ):
+                raise PublisherConflictError("protected publication config changed while reading")
+        finally:
+            os.close(descriptor)
+    finally:
+        os.close(directory)
+    try:
+        value = json.loads(raw, object_pairs_hook=_unique_object)
+    except (UnicodeError, ValueError, RecursionError) as error:
+        raise PublisherConflictError("protected publication config is invalid") from error
+    if type(value) is not dict or set(value) != {
+        "publication_config_sha256",
+        "revision",
+    }:
+        raise PublisherConflictError("protected publication config has unexpected fields")
+    if value["revision"] != _PROTECTED_CONFIG_REVISION:
+        raise PublisherConflictError("protected publication config revision is unsupported")
+    digest = value["publication_config_sha256"]
+    if type(digest) is not str or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+        raise PublisherConflictError("protected publication config digest is invalid")
+    canonical = json.dumps(value, sort_keys=True, separators=(",", ":")).encode() + b"\n"
+    if raw != canonical:
+        raise PublisherConflictError("protected publication config must be canonical JSON")
+    return digest
+
+
+def _unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    value: dict[str, object] = {}
+    for key, item in pairs:
+        if key in value:
+            raise ValueError("duplicate JSON object key")
+        value[key] = item
+    return value
+
+
+def _stat_identity(metadata: os.stat_result) -> tuple[int, ...]:
+    return (
+        metadata.st_dev,
+        metadata.st_ino,
+        metadata.st_mode,
+        metadata.st_nlink,
+        metadata.st_uid,
+        metadata.st_gid,
+        metadata.st_size,
+        metadata.st_mtime_ns,
+        metadata.st_ctime_ns,
+    )

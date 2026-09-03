@@ -11,6 +11,8 @@ from pathlib import Path
 import pytest
 
 import tools.phase4_v2.queue.cli as queue_cli
+import tools.phase4_v2.queue.fanout as fanout_module
+import tools.phase4_v2.queue.github_tree as github_tree
 from tools.phase4_v2.queue import (
     CommandResult,
     ExecutionMode,
@@ -508,15 +510,22 @@ def test_cli_publishes_complete_target_set_and_emits_canonical_receipt(
 ) -> None:
     lease_file, config_file = _publication_inputs(queue, tmp_path)
     gateway = _MemoryPublicationGateway()
-    constructed: list[tuple[str, str]] = []
-
-    def gateway_factory(repository: str, branch: str) -> _MemoryPublicationGateway:
-        constructed.append((repository, branch))
-        gateway.repository = repository
-        gateway.branch = branch
-        return gateway
-
-    monkeypatch.setattr(queue_cli, "GitHubTreeGateway", gateway_factory)
+    config = parse_publication_config(json.loads(config_file.read_text(encoding="utf-8")))
+    monkeypatch.setattr(
+        fanout_module,
+        "_load_protected_publication_config_sha256",
+        lambda: config.sha256,
+    )
+    monkeypatch.setattr(
+        GitHubTreeGateway,
+        "read",
+        lambda _self, paths: gateway.read(paths),
+    )
+    monkeypatch.setattr(
+        GitHubTreeGateway,
+        "compare_and_replace",
+        lambda _self, **values: gateway.compare_and_replace(**values),
+    )
 
     assert (
         main(
@@ -535,7 +544,6 @@ def test_cli_publishes_complete_target_set_and_emits_canonical_receipt(
     output = capsys.readouterr().out
     receipt = json.loads(output)
     assert output == json.dumps(receipt, sort_keys=True, separators=(",", ":")) + "\n"
-    assert constructed == [("owner/repo", "phase4/trackers")]
     assert receipt["changed"] is True
     assert receipt["before_revision"] == "a" * 40
     assert receipt["after_revision"] == "b" * 40
@@ -571,10 +579,13 @@ def test_cli_fails_closed_when_tracker_branch_is_missing(
         calls.append((arguments, payload))
         return CommandResult(1, b"", b"gh: Not Found (HTTP 404)")
 
-    def gateway_factory(repository: str, branch: str) -> GitHubTreeGateway:
-        return GitHubTreeGateway(repository, branch, runner=runner)
-
-    monkeypatch.setattr(queue_cli, "GitHubTreeGateway", gateway_factory)
+    config = parse_publication_config(json.loads(config_file.read_text(encoding="utf-8")))
+    monkeypatch.setattr(
+        fanout_module,
+        "_load_protected_publication_config_sha256",
+        lambda: config.sha256,
+    )
+    monkeypatch.setattr(github_tree, "_run_gh", runner)
 
     assert (
         main(

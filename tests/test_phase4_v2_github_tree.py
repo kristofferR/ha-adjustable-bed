@@ -6,6 +6,7 @@ import json
 
 import pytest
 
+import tools.phase4_v2.queue.github_tree as github_tree
 from tools.phase4_v2.queue import (
     CommandResult,
     GitHubContentsError,
@@ -95,13 +96,31 @@ class _GitDataRunner:
         return CommandResult(0, json.dumps(value).encode(), b"")
 
 
-def _gateway(runner: _GitDataRunner) -> GitHubTreeGateway:
-    return GitHubTreeGateway("owner/repo", "phase4/trackers", runner=runner)
+def _gateway(
+    monkeypatch: pytest.MonkeyPatch, runner: _GitDataRunner
+) -> GitHubTreeGateway:
+    monkeypatch.setattr(github_tree, "_run_gh", runner)
+    return GitHubTreeGateway("owner/repo", "phase4/trackers")
 
 
-def test_tree_gateway_publishes_all_documents_in_one_ref_update() -> None:
+def test_tree_gateway_has_no_caller_supplied_transport() -> None:
+    with pytest.raises(TypeError, match="runner"):
+        GitHubTreeGateway(
+            "owner/repo",
+            "phase4/trackers",
+            runner=_GitDataRunner(),  # type: ignore[call-arg]
+        )
+
+    gateway = GitHubTreeGateway("owner/repo", "phase4/trackers")
+    with pytest.raises(AttributeError):
+        gateway._runner = _GitDataRunner()  # type: ignore[attr-defined]
+
+
+def test_tree_gateway_publishes_all_documents_in_one_ref_update(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     runner = _GitDataRunner()
-    gateway = _gateway(runner)
+    gateway = _gateway(monkeypatch, runner)
     paths = ("issues/436.md", "public/queue.html")
     before = gateway.read(paths)
     desired = (
@@ -126,10 +145,12 @@ def test_tree_gateway_publishes_all_documents_in_one_ref_update() -> None:
     assert commit_payload["parents"] == [_REF]
 
 
-def test_tree_gateway_detects_ref_race_without_partial_visibility() -> None:
+def test_tree_gateway_detects_ref_race_without_partial_visibility(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     runner = _GitDataRunner()
     runner.conflict = True
-    gateway = _gateway(runner)
+    gateway = _gateway(monkeypatch, runner)
     before = gateway.read(("issues/436.md",))
 
     assert not gateway.compare_and_replace(
@@ -140,9 +161,11 @@ def test_tree_gateway_detects_ref_race_without_partial_visibility() -> None:
     assert runner.documents["issues/436.md"] == b"old\n"
 
 
-def test_tree_gateway_rejects_stale_document_preimage_before_writes() -> None:
+def test_tree_gateway_rejects_stale_document_preimage_before_writes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     runner = _GitDataRunner()
-    gateway = _gateway(runner)
+    gateway = _gateway(monkeypatch, runner)
 
     assert not gateway.compare_and_replace(
         expected_revision=_REF,
@@ -152,9 +175,11 @@ def test_tree_gateway_rejects_stale_document_preimage_before_writes() -> None:
     assert not any(arguments[3] == "POST" for arguments, _payload in runner.calls)
 
 
-def test_tree_gateway_reads_missing_files_from_a_pinned_ref() -> None:
+def test_tree_gateway_reads_missing_files_from_a_pinned_ref(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     runner = _GitDataRunner()
-    gateway = _gateway(runner)
+    gateway = _gateway(monkeypatch, runner)
 
     result = gateway.read(("issues/443.md",))
 
@@ -163,7 +188,9 @@ def test_tree_gateway_reads_missing_files_from_a_pinned_ref() -> None:
     assert f"ref={_REF}" in content_read
 
 
-def test_tree_gateway_rejects_invalid_or_ambiguous_api_receipts() -> None:
+def test_tree_gateway_rejects_invalid_or_ambiguous_api_receipts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     class InvalidRunner:
         def __call__(
             self, _arguments: tuple[str, ...], _payload: bytes | None, _timeout: int
@@ -175,16 +202,19 @@ def test_tree_gateway_rejects_invalid_or_ambiguous_api_receipts() -> None:
                 b"",
             )
 
-    gateway = GitHubTreeGateway("owner/repo", "trackers", runner=InvalidRunner())
+    monkeypatch.setattr(github_tree, "_run_gh", InvalidRunner())
+    gateway = GitHubTreeGateway("owner/repo", "trackers")
 
     with pytest.raises(GitHubContentsError, match="invalid JSON"):
         gateway.read(("queue.md",))
 
 
-def test_tree_gateway_reconciles_success_after_uncertain_ref_transport() -> None:
+def test_tree_gateway_reconciles_success_after_uncertain_ref_transport(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     runner = _GitDataRunner()
     runner.uncertain_apply = True
-    gateway = _gateway(runner)
+    gateway = _gateway(monkeypatch, runner)
     before = gateway.read(("issues/436.md",))
     desired = (TrackerDocument("issues/436.md", b"new\n"),)
 
@@ -195,10 +225,12 @@ def test_tree_gateway_reconciles_success_after_uncertain_ref_transport() -> None
     )
 
 
-def test_tree_gateway_refuses_unprotected_force_pushes() -> None:
+def test_tree_gateway_refuses_unprotected_force_pushes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     runner = _GitDataRunner()
     runner.allow_force_pushes = True
-    gateway = _gateway(runner)
+    gateway = _gateway(monkeypatch, runner)
     before = gateway.read(("issues/436.md",))
 
     with pytest.raises(GitHubContentsError, match="forbid force pushes"):
@@ -210,16 +242,20 @@ def test_tree_gateway_refuses_unprotected_force_pushes() -> None:
     assert not runner.blobs
 
 
-def test_tree_gateway_bounds_total_decoded_readback() -> None:
+def test_tree_gateway_bounds_total_decoded_readback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     runner = _GitDataRunner()
     paths = tuple(f"issues/{index:03d}.md" for index in range(5))
     runner.documents = dict.fromkeys(paths, b"x" * (900 * 1024))
 
     with pytest.raises(GitHubContentsError, match="document set exceeds"):
-        _gateway(runner).read(paths)
+        _gateway(monkeypatch, runner).read(paths)
 
 
-def test_tree_gateway_reports_unresolved_uncertain_write() -> None:
+def test_tree_gateway_reports_unresolved_uncertain_write(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     class UnknownRunner(_GitDataRunner):
         patch_attempted = False
 
@@ -234,7 +270,7 @@ def test_tree_gateway_reports_unresolved_uncertain_write() -> None:
             return super().__call__(arguments, payload, timeout)
 
     runner = UnknownRunner()
-    gateway = _gateway(runner)
+    gateway = _gateway(monkeypatch, runner)
     before = gateway.read(("issues/436.md",))
 
     with pytest.raises(GitHubTreePostWriteUnknownError, match="unknown"):

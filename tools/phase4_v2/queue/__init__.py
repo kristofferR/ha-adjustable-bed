@@ -30,7 +30,6 @@ from .core import (
     WorkUnitStatus,
 )
 from .fanout import (
-    AtomicDocumentSetGateway,
     FanoutPublishReceipt,
     TrackerDocument,
     TrackerDocumentSet,
@@ -47,7 +46,7 @@ from .github_contents import (
     GitHubContentsPostWriteUnknownError,
     GitHubContentsTarget,
 )
-from .github_tree import GitHubTreeGateway, GitHubTreePostWriteUnknownError, TreeCommandRunner
+from .github_tree import GitHubTreeGateway, GitHubTreePostWriteUnknownError
 from .heartbeat import run_heartbeat
 from .publisher import (
     AtomicIssueGateway,
@@ -68,7 +67,6 @@ from .tracker import (
 
 __all__ = [
     "AtomicIssueGateway",
-    "AtomicDocumentSetGateway",
     "CapabilityPin",
     "CommandResult",
     "CompletionConflictError",
@@ -111,7 +109,6 @@ __all__ = [
     "TrackerDocumentSet",
     "TrackerFormat",
     "TrackerTarget",
-    "TreeCommandRunner",
     "WorkUnitStatus",
     "WorkUnitSnapshot",
     "managed_block_generation",

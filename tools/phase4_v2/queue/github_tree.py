@@ -8,7 +8,6 @@ import json
 import os
 import re
 import subprocess
-from collections.abc import Callable
 from urllib.parse import quote
 
 from .fanout import TrackerDocument, TrackerDocumentSet, document_set_sha256
@@ -23,9 +22,6 @@ _MAX_JSON_DEPTH = 32
 _MAX_JSON_NODES = 10_000
 _TIMEOUT_SECONDS = 60
 
-type TreeCommandRunner = Callable[[tuple[str, ...], bytes | None, int], CommandResult]
-
-
 class GitHubTreePostWriteUnknownError(GitHubContentsError):
     """A failed ref transport may have made the commit visible."""
 
@@ -33,17 +29,20 @@ class GitHubTreePostWriteUnknownError(GitHubContentsError):
 class GitHubTreeGateway:
     """Compare-and-swap a complete tracker set at one Git branch ref."""
 
-    def __init__(
-        self,
-        repository: str,
-        branch: str,
-        *,
-        runner: TreeCommandRunner | None = None,
-    ) -> None:
+    __slots__ = ("_branch", "_repository")
+
+    def __init__(self, repository: str, branch: str) -> None:
         validated = GitHubContentsTarget(repository, branch, "tracker")
         self._repository = validated.repository
         self._branch = validated.branch
-        self._runner = runner or _run_gh
+
+    @property
+    def repository(self) -> str:
+        return self._repository
+
+    @property
+    def branch(self) -> str:
+        return self._branch
 
     def read(self, paths: tuple[str, ...]) -> TrackerDocumentSet:
         """Read all requested files from one immutable commit revision."""
@@ -259,7 +258,7 @@ class GitHubTreeGateway:
         return self._call(("gh", "api", "--method", method, endpoint, "--input", "-"), body)
 
     def _call(self, arguments: tuple[str, ...], payload: bytes | None = None) -> CommandResult:
-        result = self._runner(arguments, payload, _TIMEOUT_SECONDS)
+        result = _run_gh(arguments, payload, _TIMEOUT_SECONDS)
         if type(result) is not CommandResult:
             raise GitHubContentsError("GitHub tree command runner returned an invalid result")
         return result
