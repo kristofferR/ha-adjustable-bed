@@ -21,6 +21,7 @@ from .execution import (
     CANDIDATE_CONTRACT_SHA256,
     CANDIDATE_INDEX_SCHEMA,
     CANDIDATE_SIGNAL_IDS,
+    EXECUTION_ATTESTATION_REVISION,
     EXECUTION_CACHE_SCHEMA,
     EXECUTION_PROFILE_REVISION,
     EXECUTION_SCHEMA,
@@ -33,6 +34,7 @@ from .execution import (
     PreparationCache,
     PreparationCacheError,
     PreparationError,
+    PreparationExecutionSigner,
     PreparationResult,
     StreamDigest,
     ToolRecord,
@@ -40,9 +42,11 @@ from .execution import (
     WarningRecord,
     build_execution_profile,
     execute_preparation,
+    load_protected_preparation_signer,
     qualify_tool,
 )
 from .registry import (
+    PREPARATION_AUTHORITY_PIN_SCHEMA,
     PREPARATION_AUTHORITY_SCHEMA,
     PREPARATION_RECEIPT_REVISION,
     REQUIRED_PREPARATION_ROUTES,
@@ -57,6 +61,7 @@ from .registry import (
     load_activated_preparation_authority,
     load_preparation_receipt,
     preparation_authority_payload,
+    preparation_authority_pin_payload,
 )
 
 __all__ = [
@@ -72,6 +77,7 @@ __all__ = [
     "CandidateRecord",
     "DeliveryFile",
     "EXECUTION_CACHE_SCHEMA",
+    "EXECUTION_ATTESTATION_REVISION",
     "EXECUTION_PROFILE_REVISION",
     "EXECUTION_SCHEMA",
     "ExecutionLimits",
@@ -82,11 +88,13 @@ __all__ = [
     "OutputSufficiencyContract",
     "PREPARATION_ROUTES",
     "PREPARATION_AUTHORITY_SCHEMA",
+    "PREPARATION_AUTHORITY_PIN_SCHEMA",
     "PREPARATION_RECEIPT_REVISION",
     "PackageIdentity",
     "PreparationCache",
     "PreparationCacheError",
     "PreparationError",
+    "PreparationExecutionSigner",
     "PreparationResult",
     "PreparationReceipt",
     "PreflightError",
@@ -110,6 +118,8 @@ __all__ = [
     "execute_registered_preparation",
     "load_activated_preparation_authority",
     "load_preparation_receipt",
+    "load_protected_preparation_signer",
     "preparation_authority_payload",
+    "preparation_authority_pin_payload",
     "preflight_delivery",
 ]

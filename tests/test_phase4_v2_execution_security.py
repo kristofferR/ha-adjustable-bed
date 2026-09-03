@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import shutil
+import time
 import zipfile
 from pathlib import Path
 
@@ -11,6 +12,7 @@ import pytest
 
 import tools.phase4_v2.preflight.core as preflight_core
 import tools.phase4_v2.preflight.execution as execution
+from tests.phase4_v2_static_tool import build_static_tool
 from tools.phase4_v2.preflight.execution import (
     ExecutionLimits,
     PreparationCacheError,
@@ -39,21 +41,33 @@ def _preflight(monkeypatch: pytest.MonkeyPatch, root: Path):
 
 
 def _tool(root: Path, body: str) -> Path:
-    tool_root = root / "tool"
-    tool_root.mkdir()
-    tool = tool_root / "fixture-tool"
-    tool.write_text(
-        "#!/usr/bin/env python3\n"
-        "import os, pathlib, socket, sys\n"
-        "if sys.argv[1:] == ['--version']:\n"
-        "    print('fixture-secure 1')\n"
-        "    raise SystemExit(0)\n"
-        "route, input_name, output_name = sys.argv[-3:]\n"
-        f"{body}\n",
-        encoding="utf-8",
+    if "with_name('helper.txt')" in body:
+        return build_static_tool(
+            root,
+            outputs={},
+            extra_source=(
+                'char payload[256] = {0}; int fd=open("/helper.txt",O_RDONLY); '
+                "int n=read(fd,payload,255); close(fd); if(n<0)return 93; payload[n]=0; "
+                'write_member(output, strcmp(route,"apktool")==0 ? "App.smali" : "App.java", payload);'
+            ),
+        )
+    if "socket.create_connection" in body:
+        return build_static_tool(
+            root,
+            outputs={},
+            extra_source=(
+                'int fd=open("/etc/hostname",O_RDONLY); '
+                'write_member(output, strcmp(route,"apktool")==0 ? "App.smali" : "App.java", '
+                'fd < 0 ? "read,network,process,write" : "HOST_READ_ESCAPE"); if(fd>=0)close(fd);'
+            ),
+        )
+    return build_static_tool(
+        root,
+        outputs={
+            "apktool": {"App.smali": "android.bluetooth.BluetoothGatt"},
+            "jadx": {"App.java": "android.bluetooth.BluetoothGatt"},
+        },
     )
-    tool.chmod(0o700)
-    return tool
 
 
 def _specs(tool: Path) -> dict[str, ToolSpec]:
@@ -62,6 +76,8 @@ def _specs(tool: Path) -> dict[str, ToolSpec]:
             str(tool),
             ("--version",),
             (route, "{input}", "{output}"),
+            (),
+            str(tool.parent),
         )
         for route in ("apktool", "jadx")
     }
@@ -126,7 +142,15 @@ def test_profile_is_canonical_bounded_and_manifest_bound(
             hostile.validate()
 
     with pytest.raises(PreparationError, match="Unicode"):
-        ToolSpec("tool", ("--version",), ("{input}", "\ud800", "{output}")).validate()
+        ToolSpec(
+            "tool",
+            ("--version",),
+            ("{input}", "\ud800", "{output}"),
+            (),
+            "/opt/phase4-runtime",
+        ).validate()
+    with pytest.raises(PreparationError, match="non-host-root"):
+        ToolSpec("tool", ("--version",), ("{input}", "{output}"), (), "/").validate()
 
 
 def test_missing_sandbox_support_fails_closed(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -158,13 +182,13 @@ def test_execution_uses_sealed_launcher_and_adjacent_helper(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     preflight = _preflight(monkeypatch, tmp_path)
-    helper = tmp_path / "tool" / "helper.txt"
     tool = _tool(
         tmp_path,
         "value = pathlib.Path(pathlib.Path(__file__).with_name('helper.txt')).read_text()\n"
         "suffix = 'smali' if route == 'apktool' else 'java'\n"
         "pathlib.Path(output_name, f'App.{suffix}').write_text(value)",
     )
+    helper = tool.parent / "helper.txt"
     helper.write_text("android.bluetooth.BluetoothGatt", encoding="utf-8")
     original_runner = execution._run_sandboxed
     calls = 0
@@ -211,7 +235,7 @@ def test_sandbox_denies_host_write_network_and_host_process_access(
     assert not outside.exists()
     cache_root = tmp_path / "cache-sandbox" / "objects" / execution.EXECUTION_CACHE_SCHEMA
     payloads = [path.read_text() for path in cache_root.glob("*/outputs/*")]
-    assert payloads == ["network,process,write", "network,process,write"]
+    assert payloads == ["read,network,process,write", "read,network,process,write"]
 
 
 def test_workspace_and_cache_symlink_swaps_fail_closed(tmp_path: Path) -> None:
@@ -224,7 +248,13 @@ def test_workspace_and_cache_symlink_swaps_fail_closed(tmp_path: Path) -> None:
 
     tool = _tool(tmp_path, _OUTPUT_BODY)
     profile = build_execution_profile()
-    sealed = execution._seal_executable(tool, profile.limits)
+    runtime_link = tmp_path / "runtime-link"
+    runtime_link.symlink_to(tool.parent, target_is_directory=True)
+    with pytest.raises(PreparationError, match="runtime root contains a symlink ancestor"):
+        execution._seal_executable(tool, str(runtime_link), profile.limits)
+    runtime_link.unlink()
+
+    sealed = execution._seal_executable(tool, str(tool.parent), profile.limits)
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     for name in ("home", "tmp", "output"):
@@ -242,3 +272,39 @@ def test_workspace_and_cache_symlink_swaps_fail_closed(tmp_path: Path) -> None:
             )
     finally:
         sealed.close()
+
+
+def test_live_aggregate_quota_stops_writer_before_tool_timeout(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    preflight = _preflight(monkeypatch, tmp_path)
+    tool = build_static_tool(
+        tmp_path,
+        outputs={},
+        extra_source=(
+            "char bytes[800]; memset(bytes, 1, sizeof(bytes)); char path[128]; "
+            'for(int i=0;i<2;i++){snprintf(path,sizeof(path),"%s/chunk-%d",output,i); '
+            "int fd=open(path,O_WRONLY|O_CREAT|O_TRUNC,0600); write(fd,bytes,sizeof(bytes)); close(fd);} "
+            "sleep(2);"
+        ),
+    )
+    limits = ExecutionLimits(
+        tool_timeout_seconds=3,
+        max_output_file_bytes=1_024,
+        max_output_bytes=1_024,
+    )
+    started = time.monotonic()
+    result = execute_preparation(
+        preflight,
+        tool_specs=_specs(tool),
+        cache_directory=tmp_path / "quota-cache",
+        output_directory=tmp_path / "quota-result",
+        pipeline_revision="pipeline-security-v1",
+        execution_profile=build_execution_profile(limits),
+    )
+
+    assert time.monotonic() - started < 1.5
+    assert result.status == "BLOCKED"
+    assert all("OUTPUT_AGGREGATE_BYTE_LIMIT" in item.failures for item in result.invocations), [
+        item.failures for item in result.invocations
+    ]

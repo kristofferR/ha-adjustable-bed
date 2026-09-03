@@ -8,6 +8,8 @@ from pathlib import Path
 import pytest
 
 import tools.phase4_v2.preflight.core as preflight_core
+import tools.phase4_v2.preflight.registry as registry_module
+from tests.phase4_v2_static_tool import build_static_tool
 from tools.phase4_v2.preflight import (
     CANDIDATE_INDEX_SCHEMA,
     EXECUTION_CACHE_SCHEMA,
@@ -19,6 +21,7 @@ from tools.phase4_v2.preflight import (
     OutputSufficiencyContract,
     PreparationCacheError,
     PreparationError,
+    PreparationExecutionSigner,
     ToolQualification,
     ToolSpec,
     execute_preparation,
@@ -29,6 +32,18 @@ from tools.phase4_v2.preflight import (
     preparation_authority_payload,
 )
 from tools.phase4_v2.preflight.execution import build_execution_profile, qualify_tool
+
+_SIGNER = PreparationExecutionSigner._from_private_bytes(b"p" * 32)
+_TEST_ACTIVATION_DIGEST = "0" * 64
+
+
+@pytest.fixture(autouse=True)
+def _protected_activation(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        registry_module,
+        "_read_protected_activation_digest",
+        lambda: _TEST_ACTIVATION_DIGEST,
+    )
 
 
 def _ready_preflight(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
@@ -57,9 +72,10 @@ def _tool(
     counter: Path | None = None,
     version_mode: str = "normal",
 ) -> Path:
-    tool = tmp_path / "fixture-tool"
-    configuration = {
-        "outputs": outputs
+    del counter
+    return build_static_tool(
+        tmp_path,
+        outputs=outputs
         or {
             "apktool": {"smali/App.smali": "Landroid/bluetooth/BluetoothGatt;"},
             "jadx": {
@@ -68,54 +84,10 @@ def _tool(
                 )
             },
         },
-        "modes": modes or {},
-        "diagnostics": diagnostics or {},
-        "counter": str(counter) if counter is not None else None,
-        "version_mode": version_mode,
-    }
-    tool.write_text(
-        "#!/usr/bin/env python3\n"
-        "import json, os, pathlib, sys, time\n"
-        f"config = json.loads({json.dumps(json.dumps(configuration))})\n"
-        "if sys.argv[1:] == ['--version']:\n"
-        "    if config['version_mode'] == 'non-utf8':\n"
-        "        os.write(1, b'\\xff')\n"
-        "        raise SystemExit(0)\n"
-        "    if config['version_mode'] == 'empty':\n"
-        "        raise SystemExit(0)\n"
-        "    print('fixture-tool 1.2.3')\n"
-        "    raise SystemExit(0)\n"
-        "route, input_name, output_name = sys.argv[-3:]\n"
-        "counter = config['counter']\n"
-        "if counter:\n"
-        "    with open(counter, 'a', encoding='utf-8') as stream:\n"
-        "        stream.write(route + '\\n')\n"
-        "diagnostic = config['diagnostics'].get(route)\n"
-        "if diagnostic:\n"
-        "    print(diagnostic, file=sys.stderr)\n"
-        "mode = config['modes'].get(route)\n"
-        "if mode == 'crash':\n"
-        "    raise SystemExit(17)\n"
-        "if mode == 'noisy':\n"
-        "    os.write(1, b'x' * 4096)\n"
-        "if mode == 'timeout':\n"
-        "    time.sleep(2)\n"
-        "if mode == 'mutate-input':\n"
-        "    os.chmod(input_name, 0o600)\n"
-        "    pathlib.Path(input_name).write_bytes(b'mutated')\n"
-        "if mode == 'symlink':\n"
-        "    pathlib.Path(output_name, 'unsafe').symlink_to('/etc/passwd')\n"
-        "    raise SystemExit(0)\n"
-        "if mode == 'partial':\n"
-        "    raise SystemExit(0)\n"
-        "for relative, content in config['outputs'].get(route, {}).items():\n"
-        "    target = pathlib.Path(output_name, relative)\n"
-        "    target.parent.mkdir(parents=True, exist_ok=True)\n"
-        "    target.write_text(content, encoding='utf-8')\n",
-        encoding="utf-8",
+        modes=modes,
+        diagnostics=diagnostics,
+        version_mode=version_mode,
     )
-    tool.chmod(0o700)
-    return tool
 
 
 def _specs(tool: Path, *, extra_flag: str | None = None) -> dict[str, ToolSpec]:
@@ -126,6 +98,7 @@ def _specs(tool: Path, *, extra_flag: str | None = None) -> dict[str, ToolSpec]:
             ("--version",),
             (*flags, route, "{input}", "{output}"),
             flags,
+            str(tool.parent),
         )
         for route in ("apktool", "jadx")
     }
@@ -143,6 +116,7 @@ def _registry(
         ("--version",),
         (*flags, "apktool", "{input}", "{output}"),
         flags,
+        str(tool.parent),
     )
     record = qualify_tool(spec, build_execution_profile())
     assert record.binary_sha256 is not None
@@ -166,6 +140,7 @@ def _registry(
                     ("--version",),
                     (*flags, route, "{input}", "{output}"),
                     flags,
+                    str(tool.parent),
                 ),
                 (qualification,),
                 OutputSufficiencyContract(
@@ -180,11 +155,11 @@ def _registry(
 
 
 def _activated(registry: ApprovedToolRegistry):
+    global _TEST_ACTIVATION_DIGEST
     profile = build_execution_profile()
-    payload = preparation_authority_payload(registry, profile)
-    authority = load_activated_preparation_authority(
-        payload, expected_activation_sha256=hashlib.sha256(payload).hexdigest()
-    )
+    payload = preparation_authority_payload(registry, profile, _SIGNER.public_key)
+    _TEST_ACTIVATION_DIGEST = hashlib.sha256(payload).hexdigest()
+    authority = load_activated_preparation_authority(payload)
     return profile, authority
 
 
@@ -216,6 +191,7 @@ def test_registered_preparation_binds_the_complete_approved_contract(
         registry=registry,
         authority=authority,
         execution_profile=profile,
+        execution_signer=_SIGNER,
         cache_directory=tmp_path / "cache",
         output_directory=tmp_path / "result",
     )
@@ -236,10 +212,52 @@ def test_registered_preparation_binds_the_complete_approved_contract(
         authority=authority,
         execution_profile=profile,
         cache_directory=tmp_path / "cache",
-        expected_manifest_sha256=receipt.manifest_sha256,
-        expected_candidate_index_sha256=receipt.candidate_index_sha256,
     )
     assert reloaded.content_id == receipt.content_id
+    assert receipt.executor_public_key == _SIGNER.public_key
+    assert len(receipt.execution_signature) == 128
+
+
+def test_authenticated_cache_survives_process_trust_reset(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    preflight = _ready_preflight(monkeypatch, tmp_path)
+    tool = _tool(tmp_path)
+    registry = _registry(tool)
+    profile, authority = _activated(registry)
+    cache = tmp_path / "cache"
+    first = execute_registered_preparation(
+        preflight,
+        registry=registry,
+        authority=authority,
+        execution_profile=profile,
+        execution_signer=_SIGNER,
+        cache_directory=cache,
+        output_directory=tmp_path / "first",
+    )
+    objects = tuple((cache / "objects" / EXECUTION_CACHE_SCHEMA).iterdir())
+    identities = tuple((item.name, item.stat().st_ino) for item in objects)
+    import tools.phase4_v2.preflight.execution as execution_module
+
+    execution_module._TRUSTED_CACHE_OBJECTS.clear()
+    second = execute_registered_preparation(
+        preflight,
+        registry=registry,
+        authority=authority,
+        execution_profile=profile,
+        execution_signer=_SIGNER,
+        cache_directory=cache,
+        output_directory=tmp_path / "second",
+    )
+
+    assert second.manifest_sha256 == first.manifest_sha256
+    assert (
+        tuple(
+            (item.name, item.stat().st_ino)
+            for item in (cache / "objects" / EXECUTION_CACHE_SCHEMA).iterdir()
+        )
+        == identities
+    )
 
 
 def test_registered_preparation_rejects_untrusted_registry_and_tool_build(
@@ -257,6 +275,7 @@ def test_registered_preparation_rejects_untrusted_registry_and_tool_build(
             registry=changed,
             authority=authority,
             execution_profile=profile,
+            execution_signer=_SIGNER,
             cache_directory=tmp_path / "cache-a",
             output_directory=tmp_path / "result-a",
         )
@@ -270,6 +289,7 @@ def test_registered_preparation_rejects_untrusted_registry_and_tool_build(
             registry=unqualified,
             authority=unqualified_authority,
             execution_profile=unqualified_profile,
+            execution_signer=_SIGNER,
             cache_directory=tmp_path / "cache-b",
             output_directory=tmp_path / "result-b",
         )
@@ -284,11 +304,12 @@ def test_frozen_preparation_requires_external_payload_pins(
     tool = _tool(tmp_path)
     registry = _registry(tool)
     profile, authority = _activated(registry)
-    receipt = execute_registered_preparation(
+    execute_registered_preparation(
         preflight,
         registry=registry,
         authority=authority,
         execution_profile=profile,
+        execution_signer=_SIGNER,
         cache_directory=tmp_path / "cache",
         output_directory=tmp_path / "result",
     )
@@ -303,8 +324,6 @@ def test_frozen_preparation_requires_external_payload_pins(
             authority=authority,
             execution_profile=profile,
             cache_directory=tmp_path / "cache",
-            expected_manifest_sha256=receipt.manifest_sha256,
-            expected_candidate_index_sha256=receipt.candidate_index_sha256,
         )
 
 
@@ -327,6 +346,7 @@ def test_registered_preparation_accepts_only_authoritative_jadx_fallback(
         registry=registry,
         authority=authority,
         execution_profile=profile,
+        execution_signer=_SIGNER,
         cache_directory=tmp_path / "cache",
         output_directory=tmp_path / "result",
     )

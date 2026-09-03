@@ -21,6 +21,13 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path, PurePosixPath
 from typing import Literal
 
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+    Ed25519PrivateKey,
+    Ed25519PublicKey,
+)
+
 from .core import (
     PREFLIGHT_SCHEMA,
     ArtifactMember,
@@ -30,10 +37,11 @@ from .core import (
     _rename_noreplace_at,
 )
 
-EXECUTION_SCHEMA = "phase4-v2-preparation-execution-v1"
-EXECUTION_CACHE_SCHEMA = "phase4-v2-preparation-cache-v1"
-EXECUTION_PROFILE_REVISION = "phase4-v2-execution-profile-v1"
-SANDBOX_REVISION = "phase4-v2-bwrap-sandbox-v1"
+EXECUTION_SCHEMA = "phase4-v2-preparation-execution-v2"
+EXECUTION_CACHE_SCHEMA = "phase4-v2-preparation-cache-v2"
+EXECUTION_PROFILE_REVISION = "phase4-v2-execution-profile-v2"
+SANDBOX_REVISION = "phase4-v2-bwrap-sandbox-v2"
+EXECUTION_ATTESTATION_REVISION = "phase4-v2-execution-attestation-v1"
 CANDIDATE_INDEX_SCHEMA = "phase4-v2-ble-candidate-index-v1"
 CANDIDATE_CONTRACT_REVISION = "phase4-v2-ble-candidate-contract-v2"
 
@@ -49,6 +57,8 @@ _MAX_CACHE_MANIFEST_BYTES = 128 * 1024**2
 _CHUNK = 1024 * 1024
 _BWRAP_NAMES = ("bwrap", "bubblewrap")
 _TRUSTED_CACHE_OBJECTS: dict[str, tuple[int, int, str]] = {}
+_ED25519_PUBLIC_KEY = re.compile(r"^[0-9a-f]{64}$")
+_ED25519_SIGNATURE = re.compile(r"^[0-9a-f]{128}$")
 _CANDIDATE_SIGNALS: tuple[tuple[str, bytes], ...] = (
     ("android.bluetooth.descriptor", b"Landroid/bluetooth/"),
     ("android.bluetooth.namespace", b"android.bluetooth"),
@@ -104,6 +114,141 @@ class PreparationCacheError(PreparationError):
     """Raised when a preparation cache object fails verification."""
 
 
+class PreparationExecutionSigner:
+    """Executor credential whose public key is pinned by protected authority."""
+
+    __slots__ = ("_key", "public_key")
+
+    def __init__(self) -> None:
+        raise PreparationError("execution signers must be loaded from protected credentials")
+
+    @classmethod
+    def _from_private_bytes(cls, payload: bytes) -> PreparationExecutionSigner:
+        if type(payload) is not bytes or len(payload) != 32:
+            raise PreparationError("execution signing key must contain exactly 32 bytes")
+        signer = object.__new__(cls)
+        key = Ed25519PrivateKey.from_private_bytes(payload)
+        public_key = (
+            key.public_key()
+            .public_bytes(
+                serialization.Encoding.Raw,
+                serialization.PublicFormat.Raw,
+            )
+            .hex()
+        )
+        object.__setattr__(signer, "_key", key)
+        object.__setattr__(signer, "public_key", public_key)
+        return signer
+
+    def sign(self, payload: bytes) -> str:
+        return self._key.sign(payload).hex()
+
+
+def load_protected_preparation_signer() -> PreparationExecutionSigner:
+    """Load a root-owned, non-writable raw Ed25519 executor credential."""
+
+    try:
+        directory_descriptor = os.open(
+            "/etc/ha-adjustable-bed",
+            os.O_RDONLY
+            | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_DIRECTORY", 0),
+        )
+    except OSError as error:
+        raise PreparationError("protected executor directory is unavailable") from error
+    try:
+        directory = os.fstat(directory_descriptor)
+        if (
+            not stat.S_ISDIR(directory.st_mode)
+            or directory.st_uid != 0
+            or stat.S_IMODE(directory.st_mode) & 0o022
+        ):
+            raise PreparationError("protected executor directory is not root-owned and immutable")
+        try:
+            descriptor = os.open(
+                "phase4-v2-preparation-executor.ed25519",
+                os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0),
+                dir_fd=directory_descriptor,
+            )
+        except OSError as error:
+            raise PreparationError("protected executor credential is unavailable") from error
+        try:
+            before = os.fstat(descriptor)
+            if (
+                not stat.S_ISREG(before.st_mode)
+                or before.st_uid != 0
+                or stat.S_IMODE(before.st_mode) & 0o077
+                or before.st_size != 32
+            ):
+                raise PreparationError(
+                    "execution signing key must be a root-owned mode-0600-or-stricter regular file"
+                )
+            payload = os.read(descriptor, 33)
+            after = os.fstat(descriptor)
+        finally:
+            os.close(descriptor)
+        current_directory = os.fstat(directory_descriptor)
+        if (directory.st_dev, directory.st_ino) != (
+            current_directory.st_dev,
+            current_directory.st_ino,
+        ):
+            raise PreparationError("protected executor directory changed while reading credential")
+    finally:
+        os.close(directory_descriptor)
+    if len(payload) != 32 or (
+        before.st_dev,
+        before.st_ino,
+        before.st_size,
+        before.st_mtime_ns,
+    ) != (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns):
+        raise PreparationError("execution signing key changed while reading")
+    return PreparationExecutionSigner._from_private_bytes(payload)
+
+
+def _execution_attestation_bytes(
+    *,
+    authority_sha256: str,
+    artifact_digest: str,
+    preflight_manifest_sha256: str,
+    registry_sha256: str,
+    execution_profile_sha256: str,
+    pipeline_revision: str,
+    manifest_sha256: str,
+    candidate_index_sha256: str,
+) -> bytes:
+    return b"phase4-v2:execution-attestation\0" + _canonical_json(
+        {
+            "artifact_digest": artifact_digest,
+            "authority_sha256": authority_sha256,
+            "candidate_index_sha256": candidate_index_sha256,
+            "execution_profile_sha256": execution_profile_sha256,
+            "manifest_sha256": manifest_sha256,
+            "pipeline_revision": pipeline_revision,
+            "preflight_manifest_sha256": preflight_manifest_sha256,
+            "registry_sha256": registry_sha256,
+            "revision": EXECUTION_ATTESTATION_REVISION,
+        }
+    )
+
+
+def _verify_ed25519(public_key: str, signature: str, payload: bytes) -> bool:
+    if (
+        type(public_key) is not str
+        or _ED25519_PUBLIC_KEY.fullmatch(public_key) is None
+        or type(signature) is not str
+        or _ED25519_SIGNATURE.fullmatch(signature) is None
+    ):
+        return False
+    try:
+        Ed25519PublicKey.from_public_bytes(bytes.fromhex(public_key)).verify(
+            bytes.fromhex(signature), payload
+        )
+    except InvalidSignature, ValueError:
+        return False
+    return True
+
+
 class _OutputValidationError(PreparationError):
     def __init__(self, code: str) -> None:
         self.code = code
@@ -125,6 +270,9 @@ class ExecutionLimits:
     max_tool_stream_bytes: int = 16 * 1024**2
     max_version_stream_bytes: int = 1024**2
     max_tool_binary_bytes: int = 2 * 1024**3
+    max_runtime_files: int = 1_000_000
+    max_runtime_file_bytes: int = 2 * 1024**3
+    max_runtime_bytes: int = 16 * 1024**3
     max_invocations: int = 4_096
     max_output_files: int = 250_000
     max_total_output_files: int = 1_000_000
@@ -245,6 +393,7 @@ class ToolSpec:
     version_arguments: tuple[str, ...]
     arguments: tuple[str, ...]
     flags: tuple[str, ...] = ()
+    runtime_root: str | None = None
 
     def validate(self) -> None:
         if (
@@ -254,12 +403,22 @@ class ToolSpec:
             or type(self.version_arguments) is not tuple
             or type(self.arguments) is not tuple
             or type(self.flags) is not tuple
+            or type(self.runtime_root) is not str
             or any(
                 type(value) is not str
                 for value in (*self.version_arguments, *self.arguments, *self.flags)
             )
         ):
             raise PreparationError("tool executable must be a non-empty path or command")
+        runtime_root = Path(self.runtime_root)
+        if (
+            not runtime_root.is_absolute()
+            or runtime_root == Path("/")
+            or os.path.normpath(self.runtime_root) != self.runtime_root
+        ):
+            raise PreparationError(
+                "tool runtime root must be an absolute canonical non-host-root path"
+            )
         if not self.version_arguments:
             raise PreparationError("tool version arguments must not be empty")
         if len(self.version_arguments) > 128 or len(self.arguments) > 4_096:
@@ -428,6 +587,9 @@ class PreparationResult:
     failures: tuple[str, ...]
     manifest_sha256: str
     candidate_index_sha256: str
+    authority_sha256: str | None = None
+    executor_public_key: str | None = None
+    execution_signature: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -453,6 +615,7 @@ class _SealedExecutable:
     runtime_root: Path
     runtime_sha256: str
     runtime_files: int
+    sandbox_path: str
     snapshot_directory: Path | None = None
     runtime_descriptor: int | None = None
 
@@ -656,6 +819,38 @@ def _stop_process(process: subprocess.Popen[bytes]) -> None:
         process.wait()
 
 
+def _live_output_limit_failure(root_descriptor: int, limits: ExecutionLimits) -> str | None:
+    """Cheap live quota check; the final inventory remains authoritative."""
+
+    nodes = files = total = 0
+    stack = [Path(f"/proc/self/fd/{root_descriptor}")]
+    try:
+        while stack:
+            directory = stack.pop()
+            with os.scandir(directory) as entries:
+                for child in entries:
+                    nodes += 1
+                    if nodes > limits.max_output_nodes:
+                        return "OUTPUT_NODE_LIMIT"
+                    node = child.stat(follow_symlinks=False)
+                    if stat.S_ISDIR(node.st_mode):
+                        stack.append(Path(child.path))
+                    elif stat.S_ISREG(node.st_mode):
+                        files += 1
+                        total += node.st_size
+                        if files > limits.max_output_files:
+                            return "OUTPUT_FILE_LIMIT"
+                        if node.st_size > limits.max_output_file_bytes:
+                            return "OUTPUT_MEMBER_BYTE_LIMIT"
+                        if total > limits.max_output_bytes:
+                            return "OUTPUT_AGGREGATE_BYTE_LIMIT"
+                    else:
+                        return "OUTPUT_UNSAFE_NODE"
+    except FileNotFoundError:
+        return "OUTPUT_DIRECTORY_INVALID"
+    return None
+
+
 def _run_bounded(
     arguments: Sequence[str],
     *,
@@ -665,6 +860,7 @@ def _run_bounded(
     stream_limit: int,
     pass_fds: tuple[int, ...] = (),
     limits: ExecutionLimits | None = None,
+    monitored_output_descriptor: int | None = None,
 ) -> _RunResult:
     process: subprocess.Popen[bytes] | None = None
     stdout = bytearray()
@@ -711,8 +907,13 @@ def _run_bounded(
                 selector.register(descriptor, selectors.EVENT_READ)
             while selector.get_map():
                 remaining = deadline - time.monotonic()
-                events = selector.select(max(0.0, remaining)) if remaining > 0 else []
-                if not events:
+                events = selector.select(min(0.05, max(0.0, remaining))) if remaining > 0 else []
+                if monitored_output_descriptor is not None and limits is not None:
+                    output_failure = _live_output_limit_failure(monitored_output_descriptor, limits)
+                    if output_failure is not None:
+                        _stop_process(process)
+                        return _RunResult(None, bytes(stdout), bytes(stderr), output_failure)
+                if not events and remaining <= 0:
                     _stop_process(process)
                     return _RunResult(None, bytes(stdout), bytes(stderr), "TOOL_TIMEOUT")
                 for key, _mask in events:
@@ -825,19 +1026,12 @@ def _run_sandboxed(
     timeout: float,
     stream_limit: int,
     workspace_identity: tuple[int, int] | None = None,
+    monitor_output: bool = False,
 ) -> _RunResult:
-    empty_directory = Path(tempfile.mkdtemp(prefix="phase4-empty.", dir="/var/tmp"))
-    empty_descriptor = -1
     workspace_descriptor = -1
+    output_descriptor = -1
     executor_descriptor = -1
     try:
-        empty_descriptor = os.open(
-            empty_directory,
-            os.O_RDONLY
-            | getattr(os, "O_CLOEXEC", 0)
-            | getattr(os, "O_NOFOLLOW", 0)
-            | getattr(os, "O_DIRECTORY", 0),
-        )
         workspace_descriptor = os.open(
             workspace,
             os.O_RDONLY
@@ -845,6 +1039,14 @@ def _run_sandboxed(
             | getattr(os, "O_NOFOLLOW", 0)
             | getattr(os, "O_DIRECTORY", 0),
         )
+        if monitor_output:
+            output_descriptor = os.open(
+                workspace / "output",
+                os.O_RDONLY
+                | getattr(os, "O_CLOEXEC", 0)
+                | getattr(os, "O_NOFOLLOW", 0)
+                | getattr(os, "O_DIRECTORY", 0),
+            )
         executor_descriptor = _open_profile_executor(profile)
         workspace_node = os.fstat(workspace_descriptor)
         if (
@@ -857,7 +1059,7 @@ def _run_sandboxed(
         ):
             raise PreparationError("execution workspace identity changed before sandbox entry")
         environment = _controlled_environment(Path("/run"))
-        sandbox_executable = f"/mnt/{executable.path.name}"
+        sandbox_executable = executable.sandbox_path
         command = [
             f"/proc/self/fd/{executor_descriptor}",
             "--unshare-user",
@@ -867,18 +1069,9 @@ def _run_sandboxed(
             "--new-session",
             "--cap-drop",
             "ALL",
-            "--ro-bind",
-            "/",
-            "/",
             "--ro-bind-fd",
-            str(empty_descriptor),
-            "/tmp",
-            "--ro-bind",
-            "/tmp",
-            "/home",
-            "--ro-bind",
-            "/tmp",
-            "/var/tmp",
+            str(executable.runtime_descriptor),
+            "/",
             "--proc",
             "/proc",
             "--dev",
@@ -887,24 +1080,8 @@ def _run_sandboxed(
             str(workspace_descriptor),
             "/run",
         ]
-        if executable.runtime_descriptor is not None:
-            command.extend(
-                (
-                    "--ro-bind-fd",
-                    str(executable.runtime_descriptor),
-                    "/mnt",
-                )
-            )
-        else:
-            command.extend(
-                (
-                    "--perms",
-                    "0555",
-                    "--ro-bind-data",
-                    str(executable.descriptor),
-                    sandbox_executable,
-                )
-            )
+        if executable.runtime_descriptor is None:
+            raise PreparationError("sealed runtime root is missing")
         command.extend(("--clearenv",))
         for name, value in sorted(environment.items()):
             command.extend(("--setenv", name, value))
@@ -922,23 +1099,28 @@ def _run_sandboxed(
                     workspace_descriptor,
                     executable.descriptor,
                     executable.runtime_descriptor,
-                    empty_descriptor,
                 )
                 if descriptor is not None
             ),
             limits=profile.limits,
+            monitored_output_descriptor=output_descriptor if monitor_output else None,
         )
     finally:
-        for descriptor in (executor_descriptor, workspace_descriptor, empty_descriptor):
+        for descriptor in (executor_descriptor, workspace_descriptor, output_descriptor):
             if descriptor >= 0:
                 os.close(descriptor)
-        shutil.rmtree(empty_directory, ignore_errors=True)
 
 
-def _copy_runtime_file(source: Path, destination: Path, limit: int) -> tuple[str, int]:
+def _copy_runtime_file_at(
+    source_directory_descriptor: int,
+    name: str,
+    destination: Path,
+    limit: int,
+) -> tuple[str, int]:
     source_descriptor = os.open(
-        source,
+        name,
         os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0),
+        dir_fd=source_directory_descriptor,
     )
     destination_descriptor = -1
     try:
@@ -979,20 +1161,21 @@ def _copy_runtime_file(source: Path, destination: Path, limit: int) -> tuple[str
         os.close(source_descriptor)
 
 
-def _seal_executable(path: Path, limits: ExecutionLimits) -> _SealedExecutable:
+def _seal_executable(path: Path, runtime_root: str, limits: ExecutionLimits) -> _SealedExecutable:
     original_descriptor, binary_sha256, binary_bytes = _open_executable(
         path, limits.max_tool_binary_bytes
     )
-    if not os.access(path.parent, os.W_OK):
-        return _SealedExecutable(
-            path,
-            original_descriptor,
-            binary_sha256,
-            binary_bytes,
-            path,
-            binary_sha256,
-            1,
-        )
+    requested_root = Path(runtime_root)
+    _reject_symlink_ancestry(requested_root, "tool runtime root")
+    source_root = requested_root.resolve(strict=True)
+    if not source_root.is_dir() or source_root.is_symlink():
+        os.close(original_descriptor)
+        raise PreparationError("tool runtime root must be a regular directory")
+    try:
+        executable_relative = path.relative_to(source_root).as_posix()
+    except ValueError as error:
+        os.close(original_descriptor)
+        raise PreparationError("tool executable must be contained by its runtime root") from error
     os.close(original_descriptor)
     snapshot_directory = Path(tempfile.mkdtemp(prefix="phase4-runtime.", dir="/var/tmp"))
     snapshot_root = snapshot_directory / "root"
@@ -1001,42 +1184,88 @@ def _seal_executable(path: Path, limits: ExecutionLimits) -> _SealedExecutable:
     total = 0
     nodes = 0
     try:
-        stack = [(path.parent, snapshot_root)]
-        while stack:
-            source_directory, target_directory = stack.pop()
-            with os.scandir(source_directory) as entries:
-                children = sorted(entries, key=lambda item: item.name)
-            for child in children:
-                nodes += 1
-                if nodes > limits.max_output_nodes:
-                    raise PreparationError("runtime closure node limit exceeded")
-                node = child.stat(follow_symlinks=False)
-                source = Path(child.path)
-                relative = source.relative_to(path.parent).as_posix()
-                target = target_directory / child.name
-                if stat.S_ISDIR(node.st_mode):
-                    # Nested trees are hidden in the sandbox. A launcher that depends on
-                    # one therefore fails closed instead of consuming an unsealed helper.
-                    continue
-                if not stat.S_ISREG(node.st_mode):
-                    raise PreparationError("runtime closure contains a symlink or special node")
-                digest, size = _copy_runtime_file(
-                    source, target, min(limits.max_tool_binary_bytes, limits.max_output_file_bytes)
-                )
-                total += size
-                if total > limits.max_output_bytes:
-                    raise PreparationError("runtime closure aggregate byte limit exceeded")
-                inventory.append(
-                    {
-                        "bytes": size,
-                        "mode": stat.S_IMODE(node.st_mode),
-                        "path": relative,
-                        "sha256": digest,
-                    }
-                )
+        source_descriptor = os.open(
+            source_root,
+            os.O_RDONLY
+            | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_DIRECTORY", 0),
+        )
+        stack = [(source_descriptor, snapshot_root, PurePosixPath())]
+        try:
+            while stack:
+                source_directory_descriptor, target_directory, relative_parent = stack.pop()
+                try:
+                    with os.scandir(source_directory_descriptor) as entries:
+                        children = sorted(entries, key=lambda item: item.name)
+                    for child in children:
+                        nodes += 1
+                        if nodes > limits.max_runtime_files:
+                            raise PreparationError("runtime closure node limit exceeded")
+                        node = child.stat(follow_symlinks=False)
+                        relative = (relative_parent / child.name).as_posix()
+                        target = target_directory / child.name
+                        if stat.S_ISDIR(node.st_mode):
+                            child_descriptor = os.open(
+                                child.name,
+                                os.O_RDONLY
+                                | getattr(os, "O_CLOEXEC", 0)
+                                | getattr(os, "O_NOFOLLOW", 0)
+                                | getattr(os, "O_DIRECTORY", 0),
+                                dir_fd=source_directory_descriptor,
+                            )
+                            opened = os.fstat(child_descriptor)
+                            if (node.st_dev, node.st_ino) != (opened.st_dev, opened.st_ino):
+                                os.close(child_descriptor)
+                                raise PreparationError("runtime closure changed while sealing")
+                            target.mkdir(mode=stat.S_IMODE(node.st_mode) & 0o777)
+                            inventory.append(
+                                {
+                                    "bytes": 0,
+                                    "mode": stat.S_IMODE(node.st_mode),
+                                    "path": relative,
+                                    "sha256": None,
+                                }
+                            )
+                            stack.append(
+                                (
+                                    child_descriptor,
+                                    target,
+                                    relative_parent / child.name,
+                                )
+                            )
+                            continue
+                        if not stat.S_ISREG(node.st_mode):
+                            raise PreparationError(
+                                "runtime closure contains a symlink or special node"
+                            )
+                        digest, size = _copy_runtime_file_at(
+                            source_directory_descriptor,
+                            child.name,
+                            target,
+                            limits.max_runtime_file_bytes,
+                        )
+                        total += size
+                        if total > limits.max_runtime_bytes:
+                            raise PreparationError("runtime closure aggregate byte limit exceeded")
+                        inventory.append(
+                            {
+                                "bytes": size,
+                                "mode": stat.S_IMODE(node.st_mode),
+                                "path": relative,
+                                "sha256": digest,
+                            }
+                        )
+                finally:
+                    os.close(source_directory_descriptor)
+        finally:
+            for descriptor, _target, _relative in stack:
+                os.close(descriptor)
         inventory.sort(key=lambda item: str(item["path"]))
         runtime_sha256 = hashlib.sha256(_canonical_json(inventory)).hexdigest()
-        sealed_path = snapshot_root / path.name
+        for relative in ("run", "tmp", "home", "var", "var/tmp", "proc", "dev"):
+            (snapshot_root / relative).mkdir(mode=0o700, parents=True, exist_ok=True)
+        sealed_path = snapshot_root / executable_relative
         sealed_descriptor, sealed_sha256, sealed_bytes = _open_executable(
             sealed_path, limits.max_tool_binary_bytes
         )
@@ -1057,7 +1286,8 @@ def _seal_executable(path: Path, limits: ExecutionLimits) -> _SealedExecutable:
             binary_bytes,
             snapshot_root,
             runtime_sha256,
-            len(inventory),
+            sum(item["sha256"] is not None for item in inventory),
+            "/" + executable_relative,
             snapshot_directory,
             runtime_descriptor,
         )
@@ -1093,7 +1323,8 @@ def _tool_record(
         )
     try:
         binary = Path(executable).resolve(strict=True)
-        sealed = _seal_executable(binary, limits)
+        assert spec.runtime_root is not None
+        sealed = _seal_executable(binary, spec.runtime_root, limits)
     except OSError, PreparationError:
         return (
             ToolRecord(
@@ -1314,7 +1545,24 @@ def _normalized_arguments(spec: ToolSpec) -> tuple[str, ...]:
 class PreparationCache:
     """Content-addressed cache of complete package-local tool invocations."""
 
-    def __init__(self, root: Path | str) -> None:
+    def __init__(
+        self,
+        root: Path | str,
+        *,
+        signer: PreparationExecutionSigner | None = None,
+        verification_public_key: str | None = None,
+    ) -> None:
+        if signer is not None and type(signer) is not PreparationExecutionSigner:
+            raise PreparationError("cache signer must be an exact executor credential")
+        if signer is not None:
+            verification_public_key = signer.public_key
+        if verification_public_key is not None and (
+            type(verification_public_key) is not str
+            or _ED25519_PUBLIC_KEY.fullmatch(verification_public_key) is None
+        ):
+            raise PreparationError("cache verification key is invalid")
+        self.signer = signer
+        self.verification_public_key = verification_public_key
         self.root = Path(os.path.abspath(os.fspath(root)))
         _reject_symlink_ancestry(self.root, "preparation cache root")
         self.objects = self.root / "objects" / EXECUTION_CACHE_SCHEMA
@@ -1336,7 +1584,7 @@ class PreparationCache:
     ) -> _PreparedInvocation | None:
         target = self._object(key)
         trusted = _TRUSTED_CACHE_OBJECTS.get(os.fspath(target))
-        if trusted is None:
+        if trusted is None and self.verification_public_key is None:
             return None
         try:
             target_stat = target.lstat()
@@ -1344,18 +1592,35 @@ class PreparationCache:
             return None
         if not stat.S_ISDIR(target_stat.st_mode) or stat.S_ISLNK(target_stat.st_mode):
             raise PreparationCacheError("cache object is not a regular directory")
-        if (target_stat.st_dev, target_stat.st_ino) != trusted[:2]:
+        if trusted is not None and (target_stat.st_dev, target_stat.st_ino) != trusted[:2]:
             raise PreparationCacheError("trusted cache object identity changed")
         try:
             names = {entry.name for entry in os.scandir(target)}
-            if names != {"OBJECT.COMPLETE", "manifest.json", "outputs", "stderr.bin", "stdout.bin"}:
+            expected_names = {
+                "OBJECT.COMPLETE",
+                "manifest.json",
+                "outputs",
+                "stderr.bin",
+                "stdout.bin",
+            }
+            if self.verification_public_key is not None:
+                expected_names.add("OBJECT.SIGNATURE")
+            if names != expected_names:
                 raise PreparationCacheError("cache object contains unexpected payloads")
             manifest_payload = _read_bounded(target / "manifest.json", _MAX_CACHE_MANIFEST_BYTES)
             marker = _read_bounded(target / "OBJECT.COMPLETE", 256).decode("ascii").strip().split()
             if marker != [hashlib.sha256(manifest_payload).hexdigest(), "manifest.json"]:
                 raise PreparationCacheError("cache manifest seal mismatch")
-            if hashlib.sha256(manifest_payload).hexdigest() != trusted[2]:
-                raise PreparationCacheError("trusted cache manifest changed")
+            manifest_digest = hashlib.sha256(manifest_payload).hexdigest()
+            if self.verification_public_key is not None:
+                signature = _read_bounded(target / "OBJECT.SIGNATURE", 256).decode("ascii").strip()
+                signed = b"phase4-v2:cache-object\0" + manifest_digest.encode("ascii")
+                if not _verify_ed25519(self.verification_public_key, signature, signed):
+                    raise PreparationCacheError("cache object signature is invalid")
+            else:
+                assert trusted is not None
+                if manifest_digest != trusted[2]:
+                    raise PreparationCacheError("trusted cache manifest changed")
             raw = json.loads(manifest_payload, object_pairs_hook=_reject_duplicate_keys)
             if (
                 not isinstance(raw, dict)
@@ -1466,6 +1731,7 @@ def _execute_one(
             timeout=limits.tool_timeout_seconds,
             stream_limit=limits.max_tool_stream_bytes,
             workspace_identity=(workspace.stat().st_dev, workspace.stat().st_ino),
+            monitor_output=True,
         )
         failures: list[str] = []
         if run.failure is not None:
@@ -1540,6 +1806,15 @@ def _publish_cache_object(
             {"schema": EXECUTION_CACHE_SCHEMA, "invocation": record.to_data()}
         )
         _write_new_file(temporary / "manifest.json", manifest)
+        if cache.signer is not None:
+            manifest_digest = hashlib.sha256(manifest).hexdigest()
+            _write_new_file(
+                temporary / "OBJECT.SIGNATURE",
+                (
+                    cache.signer.sign(b"phase4-v2:cache-object\0" + manifest_digest.encode("ascii"))
+                    + "\n"
+                ).encode("ascii"),
+            )
         _write_new_file(
             temporary / "OBJECT.COMPLETE",
             f"{hashlib.sha256(manifest).hexdigest()} manifest.json\n".encode("ascii"),
@@ -1564,6 +1839,10 @@ def _publish_cache_object(
                 node = target.lstat()
                 if (node.st_dev, node.st_ino) == trusted[:2]:
                     return target
+            if cache.verification_public_key is not None:
+                # A concurrently or previously published object is accepted only
+                # after load() verifies its executor signature and full contents.
+                return target
             raise PreparationCacheError(
                 "untrusted cache object already occupies cache key"
             ) from err
@@ -1706,6 +1985,7 @@ def _publish_result(
     manifest: bytes,
     candidate_index: bytes,
     status: Literal["COMPLETE", "BLOCKED"],
+    execution_signature: str | None = None,
 ) -> None:
     parent = destination.parent
     if not parent.is_dir() or parent.is_symlink():
@@ -1727,6 +2007,11 @@ def _publish_result(
     try:
         _write_new_file(temporary / "manifest.json", manifest)
         _write_new_file(temporary / "candidate-index.json", candidate_index)
+        if execution_signature is not None:
+            _write_new_file(
+                temporary / "PREPARATION.SIGNATURE",
+                (execution_signature + "\n").encode("ascii"),
+            )
         marker = "PREPARATION.COMPLETE" if status == "COMPLETE" else "PREPARATION.BLOCKED"
         _write_new_file(
             temporary / marker,
@@ -1776,6 +2061,8 @@ def execute_preparation(
     approved_tool_builds: Mapping[str, frozenset[tuple[str, str, str, int]]] | None = None,
     limits: ExecutionLimits | None = None,
     execution_profile: ExecutionProfile | None = None,
+    execution_signer: PreparationExecutionSigner | None = None,
+    authority_sha256: str | None = None,
 ) -> PreparationResult:
     """Execute every routed tool and publish a deterministic package-local manifest."""
 
@@ -1795,6 +2082,14 @@ def execute_preparation(
         raise PreparationError("tool registry digest must be a lowercase SHA-256")
     if approved_tool_builds is not None and tool_registry_sha256 is None:
         raise PreparationError("approved tool builds require a bound tool registry digest")
+    if (execution_signer is None) != (authority_sha256 is None):
+        raise PreparationError("executor authentication requires signer and authority together")
+    if execution_signer is not None and type(execution_signer) is not PreparationExecutionSigner:
+        raise PreparationError("execution signer must be an exact protected credential")
+    if authority_sha256 is not None and (
+        type(authority_sha256) is not str or re.fullmatch(r"[0-9a-f]{64}", authority_sha256) is None
+    ):
+        raise PreparationError("execution authority digest is invalid")
     if approved_tool_builds is not None:
         if len(approved_tool_builds) > 256:
             raise PreparationError("approved tool build registry exceeds the route limit")
@@ -1896,7 +2191,7 @@ def execute_preparation(
     finally:
         shutil.rmtree(probe_workspace, ignore_errors=True)
 
-    cache = PreparationCache(cache_directory)
+    cache = PreparationCache(cache_directory, signer=execution_signer)
     member_by_name = {member.name: member for member in preflight.artifact_members}
     prepared: list[_PreparedInvocation] = []
     total_output_files = 0
@@ -1984,8 +2279,23 @@ def execute_preparation(
     if len(manifest_bytes) > selected_limits.max_result_manifest_bytes:
         raise PreparationError("preparation result manifest byte limit exceeded")
     manifest_sha256 = hashlib.sha256(manifest_bytes).hexdigest()
+    execution_signature = None
+    if execution_signer is not None:
+        assert authority_sha256 is not None and tool_registry_sha256 is not None
+        execution_signature = execution_signer.sign(
+            _execution_attestation_bytes(
+                authority_sha256=authority_sha256,
+                artifact_digest=preflight.artifact_digest,
+                preflight_manifest_sha256=preflight_manifest_sha256,
+                registry_sha256=tool_registry_sha256,
+                execution_profile_sha256=selected_profile.sha256,
+                pipeline_revision=pipeline_revision,
+                manifest_sha256=manifest_sha256,
+                candidate_index_sha256=candidate_sha256,
+            )
+        )
     destination = Path(os.path.abspath(os.fspath(output_directory)))
-    _publish_result(destination, manifest_bytes, candidate_bytes, status)
+    _publish_result(destination, manifest_bytes, candidate_bytes, status, execution_signature)
     return PreparationResult(
         destination,
         preflight.artifact_digest,
@@ -1997,4 +2307,7 @@ def execute_preparation(
         tuple(aggregate_failures),
         manifest_sha256,
         candidate_sha256,
+        authority_sha256,
+        None if execution_signer is None else execution_signer.public_key,
+        execution_signature,
     )

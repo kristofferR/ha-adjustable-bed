@@ -27,16 +27,20 @@ from .execution import (
     InvocationRecord,
     OutputMember,
     PreparationError,
+    PreparationExecutionSigner,
     StreamDigest,
     ToolRecord,
     ToolSpec,
     WarningRecord,
+    _execution_attestation_bytes,
+    _verify_ed25519,
     execute_preparation,
 )
 
-TOOL_REGISTRY_SCHEMA = "phase4-v2-approved-tool-registry-v1"
-PREPARATION_RECEIPT_REVISION = "phase4-v2-preparation-receipt-v1"
-PREPARATION_AUTHORITY_SCHEMA = "phase4-v2-preparation-authority-v1"
+TOOL_REGISTRY_SCHEMA = "phase4-v2-approved-tool-registry-v2"
+PREPARATION_RECEIPT_REVISION = "phase4-v2-preparation-receipt-v2"
+PREPARATION_AUTHORITY_SCHEMA = "phase4-v2-preparation-authority-v2"
+PREPARATION_AUTHORITY_PIN_SCHEMA = "phase4-v2-protected-authority-pin-v1"
 REQUIRED_PREPARATION_ROUTES = PREPARATION_ROUTES
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -304,6 +308,7 @@ class ApprovedRoute:
                 "arguments": list(self.tool.arguments),
                 "executable": self.tool.executable,
                 "flags": list(self.tool.flags),
+                "runtime_root": self.tool.runtime_root,
                 "version_arguments": list(self.tool.version_arguments),
             },
         }
@@ -361,6 +366,7 @@ class ActivatedPreparationAuthority:
     execution_profile_revision: str
     execution_profile_sha256: str
     candidate_contract_sha256: str
+    executor_public_key: str
     activation_sha256: str
 
     def __init__(self) -> None:
@@ -371,6 +377,7 @@ class ActivatedPreparationAuthority:
             "candidate_contract_sha256": self.candidate_contract_sha256,
             "execution_profile_revision": self.execution_profile_revision,
             "execution_profile_sha256": self.execution_profile_sha256,
+            "executor_public_key": self.executor_public_key,
             "pipeline_revision": self.pipeline_revision,
             "registry_revision": self.registry_revision,
             "registry_sha256": self.registry_sha256,
@@ -378,16 +385,82 @@ class ActivatedPreparationAuthority:
         }
 
 
-def load_activated_preparation_authority(
-    payload: bytes,
-    *,
-    expected_activation_sha256: str,
-) -> ActivatedPreparationAuthority:
-    """Load authority bytes whose digest was activated outside this module."""
+def _read_protected_activation_digest() -> str:
+    """Read the one fixed root-owned activation pin through a protected dirfd."""
+
+    try:
+        directory_descriptor = os.open(
+            "/etc/ha-adjustable-bed",
+            os.O_RDONLY
+            | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_DIRECTORY", 0),
+        )
+    except OSError as error:
+        raise PreparationError("protected authority directory is unavailable") from error
+    try:
+        directory = os.fstat(directory_descriptor)
+        if (
+            not stat.S_ISDIR(directory.st_mode)
+            or directory.st_uid != 0
+            or stat.S_IMODE(directory.st_mode) & 0o022
+        ):
+            _fail("protected authority directory is not root-owned and immutable")
+        try:
+            descriptor = os.open(
+                "phase4-v2-preparation-authority.pin.json",
+                os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0),
+                dir_fd=directory_descriptor,
+            )
+        except OSError as error:
+            raise PreparationError("protected authority pin is unavailable") from error
+        try:
+            node = os.fstat(descriptor)
+            if (
+                not stat.S_ISREG(node.st_mode)
+                or node.st_uid != 0
+                or stat.S_IMODE(node.st_mode) & 0o222
+                or node.st_size > 4_096
+            ):
+                _fail("authority pin is not a root-owned immutable regular file")
+            payload = bytearray()
+            while chunk := os.read(descriptor, 4_097 - len(payload)):
+                payload.extend(chunk)
+                if len(payload) > 4_096:
+                    _fail("authority pin exceeds its byte limit")
+            after = os.fstat(descriptor)
+            if (node.st_dev, node.st_ino, node.st_size, node.st_mtime_ns) != (
+                after.st_dev,
+                after.st_ino,
+                after.st_size,
+                after.st_mtime_ns,
+            ):
+                _fail("authority pin changed while reading")
+        finally:
+            os.close(descriptor)
+        current_directory = os.fstat(directory_descriptor)
+        if (directory.st_dev, directory.st_ino) != (
+            current_directory.st_dev,
+            current_directory.st_ino,
+        ):
+            _fail("protected authority directory changed while reading")
+    finally:
+        os.close(directory_descriptor)
+    raw = _load_bounded_json(bytes(payload), "authority pin")
+    if bytes(payload) != _canonical_json(raw) + b"\n":
+        _fail("authority pin is not canonical JSON")
+    item = _expect_object(raw, {"activation_sha256", "schema"}, "authority pin")
+    if item["schema"] != PREPARATION_AUTHORITY_PIN_SCHEMA:
+        _fail("authority pin schema is unsupported")
+    return _sha(item["activation_sha256"], "activation digest")
+
+
+def load_activated_preparation_authority(payload: bytes) -> ActivatedPreparationAuthority:
+    """Load authority bytes against the fixed OS-protected precommit."""
 
     if type(payload) is not bytes or len(payload) > 64 * 1024:
         _fail("preparation authority must be bounded canonical bytes")
-    expected = _sha(expected_activation_sha256, "expected activation digest")
+    expected = _read_protected_activation_digest()
     if hashlib.sha256(payload).hexdigest() != expected:
         _fail("preparation authority does not match its externally activated digest")
     raw = _load_bounded_json(payload, "preparation authority")
@@ -399,6 +472,7 @@ def load_activated_preparation_authority(
             "candidate_contract_sha256",
             "execution_profile_revision",
             "execution_profile_sha256",
+            "executor_public_key",
             "pipeline_revision",
             "registry_revision",
             "registry_sha256",
@@ -418,6 +492,7 @@ def load_activated_preparation_authority(
         "execution_profile_sha256": _sha(
             item["execution_profile_sha256"], "authority execution profile digest"
         ),
+        "executor_public_key": _token(item["executor_public_key"], "executor public key"),
         "pipeline_revision": _token(item["pipeline_revision"], "authority pipeline revision"),
         "registry_revision": _token(item["registry_revision"], "authority registry revision"),
         "registry_sha256": _sha(item["registry_sha256"], "authority registry digest"),
@@ -426,6 +501,8 @@ def load_activated_preparation_authority(
         _fail("preparation authority uses an unsupported candidate contract")
     if values["execution_profile_revision"] != EXECUTION_PROFILE_REVISION:
         _fail("preparation authority uses an unsupported execution profile")
+    if re.fullmatch(r"[0-9a-f]{64}", values["executor_public_key"]) is None:
+        _fail("preparation authority executor public key is invalid")
     authority = object.__new__(ActivatedPreparationAuthority)
     for name, value in (*values.items(), ("activation_sha256", expected)):
         object.__setattr__(authority, name, value)
@@ -435,21 +512,44 @@ def load_activated_preparation_authority(
 def preparation_authority_payload(
     registry: ApprovedToolRegistry,
     execution_profile: ExecutionProfile,
+    executor_public_key: str,
 ) -> bytes:
     """Render bytes for an external authority publisher; this does not activate them."""
 
     registry.__post_init__()
     execution_profile.__post_init__()
+    if (
+        type(executor_public_key) is not str
+        or re.fullmatch(r"[0-9a-f]{64}", executor_public_key) is None
+    ):
+        _fail("executor public key is invalid")
     return (
         _canonical_json(
             {
                 "candidate_contract_sha256": CANDIDATE_CONTRACT_SHA256,
                 "execution_profile_revision": execution_profile.revision,
                 "execution_profile_sha256": execution_profile.sha256,
+                "executor_public_key": executor_public_key,
                 "pipeline_revision": registry.pipeline_revision,
                 "registry_revision": registry.revision,
                 "registry_sha256": registry.sha256,
                 "schema": PREPARATION_AUTHORITY_SCHEMA,
+            }
+        )
+        + b"\n"
+    )
+
+
+def preparation_authority_pin_payload(authority_payload: bytes) -> bytes:
+    """Render the tiny pin file an administrator installs outside analyst control."""
+
+    if type(authority_payload) is not bytes or not authority_payload:
+        _fail("authority payload must be non-empty bytes")
+    return (
+        _canonical_json(
+            {
+                "activation_sha256": hashlib.sha256(authority_payload).hexdigest(),
+                "schema": PREPARATION_AUTHORITY_PIN_SCHEMA,
             }
         )
         + b"\n"
@@ -470,6 +570,7 @@ def _validate_authority(
         "candidate_contract_sha256": CANDIDATE_CONTRACT_SHA256,
         "execution_profile_revision": execution_profile.revision,
         "execution_profile_sha256": execution_profile.sha256,
+        "executor_public_key": authority.executor_public_key,
         "pipeline_revision": registry.pipeline_revision,
         "registry_revision": registry.revision,
         "registry_sha256": registry.sha256,
@@ -481,6 +582,7 @@ def _validate_authority(
         not _SHA256.fullmatch(activation_sha256)
         or hashlib.sha256(_canonical_json(authority.to_data()) + b"\n").hexdigest()
         != activation_sha256
+        or _read_protected_activation_digest() != activation_sha256
     ):
         _fail("preparation authority activation is invalid")
 
@@ -502,6 +604,8 @@ class PreparationReceipt:
     pipeline_revision: str
     execution_profile_revision: str
     execution_profile_sha256: str
+    executor_public_key: str
+    execution_signature: str
     invocations: tuple[InvocationRecord, ...]
     candidates: tuple[CandidateRecord, ...]
     revision: str
@@ -522,6 +626,8 @@ class PreparationReceipt:
             "pipeline_revision": self.pipeline_revision,
             "execution_profile_revision": self.execution_profile_revision,
             "execution_profile_sha256": self.execution_profile_sha256,
+            "execution_signature": self.execution_signature,
+            "executor_public_key": self.executor_public_key,
             "preflight_manifest_sha256": self.preflight_manifest_sha256,
             "revision": self.revision,
             "tool_registry_sha256": self.tool_registry_sha256,
@@ -902,17 +1008,11 @@ def load_preparation_receipt(
     authority: ActivatedPreparationAuthority,
     execution_profile: ExecutionProfile,
     cache_directory: Path | str,
-    expected_manifest_sha256: str,
-    expected_candidate_index_sha256: str,
 ) -> PreparationReceipt:
     """Validate frozen preparation output against externally trusted inputs."""
 
     registry.__post_init__()
     _validate_authority(authority, registry, execution_profile)
-    expected_manifest_sha256 = _sha(expected_manifest_sha256, "expected manifest digest")
-    expected_candidate_index_sha256 = _sha(
-        expected_candidate_index_sha256, "expected candidate-index digest"
-    )
     if preflight.decision.status != "READY" or preflight.package_identity is None:
         _fail("receipt validation requires a READY preflight result")
     root = Path(os.path.abspath(os.fspath(directory)))
@@ -920,8 +1020,18 @@ def load_preparation_receipt(
         _fail("preparation output must be a regular directory")
     names = {entry.name for entry in os.scandir(root)}
     if names not in (
-        {"PREPARATION.COMPLETE", "candidate-index.json", "manifest.json"},
-        {"PREPARATION.BLOCKED", "candidate-index.json", "manifest.json"},
+        {
+            "PREPARATION.COMPLETE",
+            "PREPARATION.SIGNATURE",
+            "candidate-index.json",
+            "manifest.json",
+        },
+        {
+            "PREPARATION.BLOCKED",
+            "PREPARATION.SIGNATURE",
+            "candidate-index.json",
+            "manifest.json",
+        },
     ):
         _fail("preparation output contains an unexpected member set")
     manifest_bytes = _bounded_regular_file(
@@ -939,10 +1049,6 @@ def load_preparation_receipt(
         _fail("preparation output JSON is not canonical")
     manifest_sha256 = hashlib.sha256(manifest_bytes).hexdigest()
     candidate_sha256 = hashlib.sha256(candidate_bytes).hexdigest()
-    if manifest_sha256 != expected_manifest_sha256:
-        _fail("preparation manifest does not match its externally trusted digest")
-    if candidate_sha256 != expected_candidate_index_sha256:
-        _fail("candidate index does not match its externally trusted digest")
     marker_name = (
         "PREPARATION.COMPLETE"
         if isinstance(manifest, dict) and manifest.get("status") == "COMPLETE"
@@ -1007,6 +1113,21 @@ def load_preparation_receipt(
     )
     if preflight_pin != {"manifest_sha256": preflight_manifest_sha256, "schema": PREFLIGHT_SCHEMA}:
         _fail("preparation preflight binding does not match the trusted result")
+    execution_signature = (
+        _bounded_regular_file(root / "PREPARATION.SIGNATURE", 256).decode("ascii").strip()
+    )
+    attestation = _execution_attestation_bytes(
+        authority_sha256=authority.activation_sha256,
+        artifact_digest=preflight.artifact_digest,
+        preflight_manifest_sha256=preflight_manifest_sha256,
+        registry_sha256=authority.registry_sha256,
+        execution_profile_sha256=authority.execution_profile_sha256,
+        pipeline_revision=registry.pipeline_revision,
+        manifest_sha256=manifest_sha256,
+        candidate_index_sha256=candidate_sha256,
+    )
+    if not _verify_ed25519(authority.executor_public_key, execution_signature, attestation):
+        _fail("preparation execution attestation is invalid")
     candidate_pin = _expect_object(
         manifest["candidate_index"], {"candidates", "member", "sha256"}, "manifest.candidate_index"
     )
@@ -1204,6 +1325,8 @@ def load_preparation_receipt(
         ("pipeline_revision", registry.pipeline_revision),
         ("execution_profile_revision", authority.execution_profile_revision),
         ("execution_profile_sha256", authority.execution_profile_sha256),
+        ("executor_public_key", authority.executor_public_key),
+        ("execution_signature", execution_signature),
         ("invocations", invocations),
         ("candidates", candidates),
         ("revision", PREPARATION_RECEIPT_REVISION),
@@ -1218,6 +1341,7 @@ def execute_registered_preparation(
     registry: ApprovedToolRegistry,
     authority: ActivatedPreparationAuthority,
     execution_profile: ExecutionProfile,
+    execution_signer: PreparationExecutionSigner,
     cache_directory: Path | str,
     output_directory: Path | str,
 ) -> PreparationReceipt:
@@ -1225,6 +1349,11 @@ def execute_registered_preparation(
 
     registry.__post_init__()
     _validate_authority(authority, registry, execution_profile)
+    if (
+        type(execution_signer) is not PreparationExecutionSigner
+        or execution_signer.public_key != authority.executor_public_key
+    ):
+        _fail("execution signer does not match the protected authority")
     result = execute_preparation(
         preflight,
         tool_specs=registry.tool_specs,
@@ -1245,6 +1374,8 @@ def execute_registered_preparation(
             for route in registry.routes
         },
         execution_profile=execution_profile,
+        execution_signer=execution_signer,
+        authority_sha256=authority.activation_sha256,
     )
     if any(item.tool.failure == "TOOL_BUILD_UNAPPROVED" for item in result.invocations):
         _fail("preparation tool build is not approved by the trusted registry")
@@ -1255,6 +1386,4 @@ def execute_registered_preparation(
         authority=authority,
         execution_profile=execution_profile,
         cache_directory=cache_directory,
-        expected_manifest_sha256=result.manifest_sha256,
-        expected_candidate_index_sha256=result.candidate_index_sha256,
     )
