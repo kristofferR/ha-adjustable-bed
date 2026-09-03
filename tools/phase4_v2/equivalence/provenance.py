@@ -41,7 +41,6 @@ from .plan import (
 SOURCE_REPORT_ROOT_COMPLETION_REVISION = "phase4-v2-package-validation-receipt-v1"
 EXACT_REUSE_PROVENANCE_SCHEMA = "phase4-v2-authenticated-exact-reuse-provenance-v1"
 _MAX_SOURCE_REPORTS = 4_096
-_MAX_ROOTS = 250_000
 
 
 class ProvenanceAuthenticationError(ValueError):
@@ -183,12 +182,15 @@ def bind_authenticated_plan_root_provenance(
         (item.package_ref, item.envelope) for item in registry.entries
     )
     raw = json.loads(plan.canonical_bytes)
-    receipts = tuple(
-        validate_authenticated_exact_reuse_provenance(item, registry)
-        for item in exact_reuse_receipts
+    expected_reuse_count = sum(
+        item["route"] == Route.EXACT_REUSE.value for item in raw["root_plans"]
     )
-    if len(receipts) > _MAX_ROOTS:
-        _fail("exact-reuse provenance receipt set exceeds its limit")
+    receipt_items: list[AuthenticatedExactReuseProvenance] = []
+    for item in exact_reuse_receipts:
+        if len(receipt_items) >= expected_reuse_count:
+            _fail("exact-reuse provenance receipt set exceeds the planned root count")
+        receipt_items.append(validate_authenticated_exact_reuse_provenance(item, registry))
+    receipts = tuple(receipt_items)
     if len({item.canonical_bytes for item in receipts}) != len(receipts):
         _fail("exact-reuse provenance receipt set contains duplicates")
     consumed_receipts: set[bytes] = set()
