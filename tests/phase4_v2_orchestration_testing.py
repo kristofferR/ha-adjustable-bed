@@ -71,6 +71,7 @@ from tools.phase4_v2.equivalence.plan import (
     TargetRootOccurrence,
     build_package_execution_plan,
     freeze_package_execution_plan,
+    preparation_evidence_producer_capabilities,
 )
 from tools.phase4_v2.equivalence.prerequisite import (
     ActivatedExactReuseAuthority,
@@ -419,6 +420,9 @@ def build_synthetic_package_inputs(
                 PACKAGE_PIPELINE_CAPABILITY,
                 PACKAGE_EXECUTION_PLAN_REVISION,
                 _digest("synthetic-package-pipeline"),
+            ),
+            preparation_evidence_producer_capabilities(
+                receipt, trust.preparation_authority
             ),
         )
         inventory = TargetRootInventory(
