@@ -49,7 +49,7 @@ from tools.phase4_v2.preflight import (
     InvocationRecord,
     PreparationReceipt,
 )
-from tools.phase4_v2.queue import Queue
+from tools.phase4_v2.queue import Queue, QueueConflictError
 from tools.phase4_v2.reconciliation import (
     ClosureStatus,
     ComparisonDecision,
@@ -115,7 +115,15 @@ class _Findings:
     def guard(self, code: str, path: str, operation: Callable[[], object]) -> object | None:
         try:
             return operation()
-        except AttributeError, TypeError, ValueError, UnicodeError, RecursionError, OverflowError:
+        except (
+            AttributeError,
+            TypeError,
+            ValueError,
+            UnicodeError,
+            RecursionError,
+            OverflowError,
+            QueueConflictError,
+        ):
             self.add(code, path)
             return None
 
