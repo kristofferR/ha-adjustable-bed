@@ -22,10 +22,10 @@ from dataclasses import dataclass
 from enum import StrEnum
 from itertools import islice
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
-    from tools.phase4_v2.equivalence.core import FrozenPackageRef
+    from tools.phase4_v2.equivalence.core import AuthenticatedValidatorEnvelope, FrozenPackageRef
     from tools.phase4_v2.equivalence.plan import (
         PackageExecutionPlan,
         PackageLocalPlan,
@@ -75,6 +75,8 @@ _INTERNAL_EVENT_TYPES = frozenset(
         "BLOCKER_REQUEUED",
         "REPAIR_REQUEUED",
         "TRACKER_ALREADY_CURRENT",
+        "TRACKER_DOCUMENT_ALREADY_CURRENT",
+        "TRACKER_DOCUMENT_PUBLISHED",
         "TRACKER_PUBLISHED",
         "WORKSPACE_ALLOCATION_FAILED",
     }
@@ -103,6 +105,20 @@ class CompletionConflictError(QueueError):
 
 class InputDigestMismatchError(QueueError):
     """The accepted output was built from different immutable input."""
+
+
+class _AuthenticatedStageReceipt(Protocol):
+    @property
+    def cluster_id(self) -> str: ...
+
+    @property
+    def stage_input_sha256(self) -> str: ...
+
+    @property
+    def receipt_sha256(self) -> str: ...
+
+    @property
+    def authority_sha256(self) -> str: ...
 
 
 def _unsupported_schema_revision(revision: object) -> QueueError:
@@ -567,12 +583,7 @@ _RESERVED_UNIT_KINDS = {
 
 @dataclass(frozen=True, slots=True)
 class _PackageReceiptPublication:
-    package_ref: FrozenPackageRef
-    receipt_payload: str | bytes
-    trusted_validator_revision: str
-    trusted_contract_revision: str
-    trusted_dependency_digests: Mapping[str, str]
-    trusted_receipt_sha256: str
+    envelope: AuthenticatedValidatorEnvelope
 
 
 @dataclass(frozen=True, slots=True)
@@ -589,7 +600,28 @@ class _ValidatedPackageOutputPublication:
 
 
 @dataclass(frozen=True, slots=True)
-class _OrchestrationStagePublication:
+class _AuthenticatedOrchestrationStagePublication:
+    kind: str
+    cluster_id: str
+    authority: object
+    canonical_receipt: bytes
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class _TrackerPublicationCheckpointGrant:
+    """Opaque proof issued by the atomic fanout publisher after readback."""
+
+    lease_id: str
+    attempt_id: str
+    event_type: str
+    queue_generation: str
+    publication_config_sha256: str
+    paths: tuple[str, ...]
+    document_set_sha256: str | None
+    revision: str | None
+
+    def __init__(self) -> None:
+        raise ValueError("tracker checkpoints are issued only by the atomic fanout publisher")
     kind: str
     cluster_id: str
 
@@ -1545,10 +1577,60 @@ class Queue:
     ) -> None:
         if event_type not in _INTERNAL_EVENT_TYPES:
             raise ValueError(f"event type is not reserved for queue internals: {event_type}")
+        if event_type in {"TRACKER_PUBLISHED", "TRACKER_ALREADY_CURRENT"}:
+            raise QueueConflictError(
+                "tracker publication checkpoints require an atomic publisher grant"
+            )
         encoded = _encode_event_payload(payload)
         with self._immediate() as connection:
             self._require_live_lease(connection, lease)
             self._append_encoded_event(connection, lease.attempt_id, event_type, encoded)
+
+    def _checkpoint_tracker_publication(
+        self,
+        lease: Lease,
+        grant: _TrackerPublicationCheckpointGrant,
+    ) -> None:
+        """Record the exact result attested by the atomic publisher's opaque grant."""
+
+        if type(grant) is not _TrackerPublicationCheckpointGrant:
+            raise QueueConflictError("tracker checkpoint requires an exact publisher grant")
+        if (
+            grant.lease_id != lease.lease_id
+            or grant.attempt_id != lease.attempt_id
+            or grant.event_type not in {"TRACKER_PUBLISHED", "TRACKER_ALREADY_CURRENT"}
+        ):
+            raise QueueConflictError("tracker publisher grant belongs to another attempt")
+        _validate_digest(grant.queue_generation, "queue generation")
+        _validate_digest(grant.publication_config_sha256, "publication config")
+        if (
+            type(grant.paths) is not tuple
+            or not grant.paths
+            or any(type(path) is not str for path in grant.paths)
+        ):
+            raise QueueConflictError("tracker publisher grant has invalid target paths")
+        payload: dict[str, object] = {
+            "generation": grant.queue_generation,
+            "publication_config_sha256": grant.publication_config_sha256,
+            "targets": list(grant.paths),
+        }
+        if grant.event_type == "TRACKER_PUBLISHED":
+            if grant.document_set_sha256 is None or grant.revision is None:
+                raise QueueConflictError("published tracker grant is incomplete")
+            _validate_digest(grant.document_set_sha256, "document set")
+            _validate_revision(grant.revision)
+            payload.update(
+                {
+                    "document_set_sha256": grant.document_set_sha256,
+                    "revision": grant.revision,
+                }
+            )
+        elif grant.document_set_sha256 is not None or grant.revision is not None:
+            raise QueueConflictError("already-current tracker grant has unexpected output")
+        encoded = _encode_event_payload(payload)
+        with self._immediate() as connection:
+            self._require_live_lease(connection, lease)
+            self._append_encoded_event(connection, lease.attempt_id, grant.event_type, encoded)
 
     def finish(
         self,
@@ -1629,23 +1711,24 @@ class Queue:
             finish_result=result,
         )
 
-    def _finish_trusted_orchestration_stage(
+    def finish_authenticated_orchestration_stage(
         self,
         lease: Lease,
         *,
-        kind: str,
-        cluster_id: str,
-        expected_input_digest: str,
-        output_digest: str,
-        completion_revision: str,
+        authority: object,
+        canonical_receipt: bytes,
     ) -> InputCheckedFinishResult:
-        """Publish one typed orchestration receipt through a stage adapter."""
-        if kind not in _TRUSTED_ORCHESTRATION_STAGE_KINDS:
-            raise QueueConflictError("kind has no trusted orchestration-stage adapter")
-        _validate_identifier(cluster_id, "cluster_id")
-        _validate_digest(expected_input_digest, "expected_input_digest")
-        _validate_digest(output_digest, "output_digest")
-        _validate_revision(completion_revision)
+        """Verify a signed stage receipt itself before publishing its exact digest."""
+        if type(canonical_receipt) is not bytes:
+            raise QueueConflictError("orchestration receipt must be exact canonical bytes")
+        kind, cluster_id = self._leased_orchestration_identity(lease)
+        receipt, completion_revision = _load_authenticated_orchestration_receipt(
+            kind,
+            canonical_receipt,
+            authority,
+        )
+        if receipt.cluster_id != cluster_id or receipt.stage_input_sha256 != lease.input_digest:
+            raise QueueConflictError("signed orchestration receipt belongs to another lease input")
         self.verify_schema()
         guard = self._try_acquire_publication_guard(wait=True)
         if guard is None:
@@ -1654,11 +1737,16 @@ class Queue:
             result = self._finish_with_publication_guard(
                 lease,
                 TerminalOutcome.ACCEPTED,
-                output_digest=output_digest,
+                output_digest=receipt.receipt_sha256,
                 completion_revision=completion_revision,
-                expected_input_digest=expected_input_digest,
+                expected_input_digest=receipt.stage_input_sha256,
                 terminalize_input_mismatch=True,
-                trusted_publication=_OrchestrationStagePublication(kind, cluster_id),
+                trusted_publication=_AuthenticatedOrchestrationStagePublication(
+                    kind=kind,
+                    cluster_id=cluster_id,
+                    authority=authority,
+                    canonical_receipt=canonical_receipt,
+                ),
             )
         finally:
             os.close(guard)
@@ -1670,6 +1758,21 @@ class Queue:
             ),
             finish_result=result,
         )
+
+    def _leased_orchestration_identity(self, lease: Lease) -> tuple[str, str]:
+        with self._connect() as connection:
+            self._require_live_lease(connection, lease)
+            row = connection.execute(
+                "SELECT kind, cluster_id FROM work_units WHERE unit_id = ?",
+                (lease.unit_id,),
+            ).fetchone()
+        if (
+            row is None
+            or str(row["kind"]) not in _TRUSTED_ORCHESTRATION_STAGE_KINDS
+            or row["cluster_id"] is None
+        ):
+            raise QueueConflictError("lease is not an authenticated orchestration stage")
+        return str(row["kind"]), str(row["cluster_id"])
 
     def finish_input_mismatch_if_input_changed(
         self,
@@ -1691,19 +1794,20 @@ class Queue:
         self,
         lease: Lease,
         *,
-        package_ref: FrozenPackageRef,
-        receipt_payload: str | bytes,
-        trusted_validator_revision: str,
-        trusted_contract_revision: str,
-        trusted_dependency_digests: Mapping[str, str],
-        trusted_receipt_sha256: str,
+        envelope: AuthenticatedValidatorEnvelope,
     ) -> FinishResult:
-        """Validate and publish one reserved package receipt as a single operation."""
+        """Publish one protected, signed validator envelope as a single operation."""
+        from tools.phase4_v2.equivalence.core import (
+            frozen_package_ref_from_validator_envelope,
+            validate_authenticated_validator_envelope,
+        )
         from tools.phase4_v2.equivalence.plan import (
             PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
             package_validation_receipt_completion,
         )
 
+        envelope = validate_authenticated_validator_envelope(envelope)
+        package_ref = frozen_package_ref_from_validator_envelope(envelope)
         completion = package_validation_receipt_completion(package_ref)
         self.verify_schema()
         guard = self._try_acquire_publication_guard(wait=True)
@@ -1717,14 +1821,7 @@ class Queue:
                 completion_revision=PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
                 expected_input_digest=completion.digest,
                 terminalize_input_mismatch=False,
-                trusted_publication=_PackageReceiptPublication(
-                    package_ref=package_ref,
-                    receipt_payload=receipt_payload,
-                    trusted_validator_revision=trusted_validator_revision,
-                    trusted_contract_revision=trusted_contract_revision,
-                    trusted_dependency_digests=trusted_dependency_digests,
-                    trusted_receipt_sha256=trusted_receipt_sha256,
-                ),
+                trusted_publication=_PackageReceiptPublication(envelope),
             )
         finally:
             os.close(guard)
@@ -1977,7 +2074,7 @@ class Queue:
             _PackageReceiptPublication
             | _PreparationReceiptPublication
             | _ValidatedPackageOutputPublication
-            | _OrchestrationStagePublication
+            | _AuthenticatedOrchestrationStagePublication
             | None
         ),
     ) -> FinishResult:
@@ -2006,9 +2103,18 @@ class Queue:
                 completion_revision=completion_revision,
                 expected_input_digest=expected_input_digest,
             )
-        elif isinstance(trusted_publication, _OrchestrationStagePublication):
+        elif isinstance(trusted_publication, _AuthenticatedOrchestrationStagePublication):
+            restored, restored_revision = _load_authenticated_orchestration_receipt(
+                trusted_publication.kind,
+                trusted_publication.canonical_receipt,
+                trusted_publication.authority,
+            )
             if (
                 trusted_publication.kind not in _TRUSTED_ORCHESTRATION_STAGE_KINDS
+                or restored.cluster_id != trusted_publication.cluster_id
+                or restored.stage_input_sha256 != expected_input_digest
+                or restored.receipt_sha256 != output_digest
+                or restored_revision != completion_revision
                 or expected_input_digest != lease.input_digest
             ):
                 raise QueueConflictError("orchestration publication does not bind the lease")
@@ -2026,7 +2132,7 @@ class Queue:
                 raise QueueConflictError(
                     "reserved completion must use its trusted publication adapter"
                 )
-            if isinstance(trusted_publication, _OrchestrationStagePublication) and (
+            if isinstance(trusted_publication, _AuthenticatedOrchestrationStagePublication) and (
                 str(unit["kind"]) != trusted_publication.kind
                 or unit["cluster_id"] != trusted_publication.cluster_id
             ):
@@ -2108,6 +2214,18 @@ class Queue:
                 event_payload["trusted_dependency_digests"] = dict(
                     sorted(trusted_receipt_dependencies.items())
                 )
+                if isinstance(trusted_publication, _PackageReceiptPublication):
+                    event_payload.update(
+                        {
+                            "validator_authority_sha256": (
+                                trusted_publication.envelope.authority_sha256
+                            ),
+                            "validator_contract_revision": (
+                                trusted_publication.envelope.contract_revision
+                            ),
+                            "validator_revision": trusted_publication.envelope.validator_revision,
+                        }
+                    )
             self._append_event(connection, lease.attempt_id, "FINISHED", event_payload)
 
             disposition = FinishDisposition.TERMINAL_ONLY
@@ -2214,13 +2332,16 @@ class Queue:
         completion_revision: str | None,
         expected_input_digest: str | None,
     ) -> dict[str, str]:
+        from tools.phase4_v2.equivalence.core import (
+            frozen_package_ref_from_validator_envelope,
+            validate_authenticated_validator_envelope,
+        )
         from tools.phase4_v2.equivalence.plan import (
             PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
             package_validation_receipt_completion,
         )
-        from tools.phase4_v2.ir import bind_validator_receipt
-
-        package_ref = publication.package_ref
+        envelope = validate_authenticated_validator_envelope(publication.envelope)
+        package_ref = frozen_package_ref_from_validator_envelope(envelope)
         completion = package_validation_receipt_completion(package_ref)
         if (
             lease.unit_id != completion.parent_unit_id
@@ -2231,13 +2352,7 @@ class Queue:
             raise QueueConflictError(
                 "publication does not belong to the package validation receipt"
             )
-        report = bind_validator_receipt(
-            publication.receipt_payload,
-            trusted_validator_revision=publication.trusted_validator_revision,
-            trusted_contract_revision=publication.trusted_contract_revision,
-            trusted_dependency_digests=publication.trusted_dependency_digests,
-            trusted_receipt_sha256=publication.trusted_receipt_sha256,
-        )
+        report = envelope.report
         identity = report.validated_artifact_identity
         dependencies = dict(report.dependency_digests)
         if (
@@ -2457,7 +2572,9 @@ class Queue:
                 SELECT COALESCE(MAX(event_id), 0) AS watermark
                 FROM events
                 WHERE event_type NOT IN (
-                    'RENEWED', 'TRACKER_PUBLISHED', 'TRACKER_ALREADY_CURRENT'
+                    'RENEWED',
+                    'TRACKER_PUBLISHED', 'TRACKER_ALREADY_CURRENT',
+                    'TRACKER_DOCUMENT_PUBLISHED', 'TRACKER_DOCUMENT_ALREADY_CURRENT'
                 )
                 """
             ).fetchone()
@@ -3209,6 +3326,47 @@ def _requires_trusted_completion_adapter(unit_id: str, kind: str) -> bool:
         or kind.startswith(_TRUSTED_COMPLETION_KIND_PREFIX)
         or any(unit_id.startswith(prefix) for prefix in _reserved_unit_kinds())
     )
+
+
+def _load_authenticated_orchestration_receipt(
+    kind: str,
+    canonical_receipt: bytes,
+    authority: object,
+) -> tuple[_AuthenticatedStageReceipt, str]:
+    """Reauthenticate the signed receipt selected by the queue-owned stage kind."""
+
+    from tools.phase4_v2.orchestration.completion import (
+        CLUSTER_IMPLEMENTATION_COMPLETION_REVISION,
+        CLUSTER_RECONCILIATION_COMPLETION_REVISION,
+        PACKAGE_AUDIT_COMPLETION_REVISION,
+        TRACKER_PUBLICATION_COMPLETION_REVISION,
+        ActivatedStageAuthority,
+        load_implementation_receipt,
+        load_package_audit_receipt,
+        load_publication_receipt,
+        load_reconciliation_receipt,
+    )
+
+    if type(authority) is not ActivatedStageAuthority:
+        raise QueueConflictError("orchestration completion requires an activated authority")
+    if kind == ORCHESTRATION_PACKAGE_AUDIT_KIND:
+        return load_package_audit_receipt(canonical_receipt, authority), PACKAGE_AUDIT_COMPLETION_REVISION
+    if kind == ORCHESTRATION_CLUSTER_RECONCILIATION_KIND:
+        return (
+            load_reconciliation_receipt(canonical_receipt, authority),
+            CLUSTER_RECONCILIATION_COMPLETION_REVISION,
+        )
+    if kind == ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND:
+        return (
+            load_implementation_receipt(canonical_receipt, authority),
+            CLUSTER_IMPLEMENTATION_COMPLETION_REVISION,
+        )
+    if kind == ORCHESTRATION_TRACKER_PUBLICATION_KIND:
+        return (
+            load_publication_receipt(canonical_receipt, authority),
+            TRACKER_PUBLICATION_COMPLETION_REVISION,
+        )
+    raise QueueConflictError("queue kind has no authenticated orchestration receipt")
 
 
 def _validate_digest(value: str, label: str) -> None:

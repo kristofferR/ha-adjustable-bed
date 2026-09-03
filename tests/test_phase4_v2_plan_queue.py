@@ -7,20 +7,32 @@ import json
 import sqlite3
 from dataclasses import replace
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 import tools.phase4_v2.equivalence.plan as plan_module
+import tools.phase4_v2.preflight.registry as registry_module
 import tools.phase4_v2.validator as validator_module
 from tools.phase4_v2.equivalence.core import (
     EQUIVALENCE_SCHEMA_REVISION,
     LEDGER_DECISION_REVISION,
     ApplicationRoot,
+    AuthenticatedValidatorEnvelope,
     EquivalenceError,
     ExtractorCapability,
     LedgerDecision,
     Route,
     RoutingPins,
+    authenticated_validator_envelope_payload,
+    frozen_package_ref_from_validator_envelope,
+    load_activated_validator_authority,
+    load_authenticated_validator_envelope,
+    validator_authority_payload,
+    validator_authority_pin_payload,
+    validator_envelope_signing_bytes,
 )
 from tools.phase4_v2.equivalence.plan import (
     EXACT_REUSE_PIPELINE_CAPABILITY,
@@ -69,6 +81,7 @@ from tools.phase4_v2.preflight.execution import (
 from tools.phase4_v2.preflight.registry import (
     PREPARATION_AUTHORITY_SCHEMA,
     PREPARATION_RECEIPT_REVISION,
+    TOOL_REGISTRY_SCHEMA,
     PreparationReceipt,
     load_activated_preparation_authority,
 )
@@ -174,22 +187,59 @@ TARGET_PACKAGE_REF = FrozenPackageRef(
 )
 TARGET_PACKAGE_REF_ID = TARGET_PACKAGE_REF.content_id
 
+_VALIDATOR_KEY = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(SHA_B))
+
+
+def _validator_envelope() -> AuthenticatedValidatorEnvelope:
+    public_key = _VALIDATOR_KEY.public_key().public_bytes(
+        serialization.Encoding.Raw,
+        serialization.PublicFormat.Raw,
+    )
+    authority_payload = validator_authority_payload(
+        authority_id="phase4-validator",
+        public_key=public_key.hex(),
+        validator_revision=VALIDATOR_REVISION,
+        contract_revision=CONTRACT_REVISION,
+    )
+    pin_payload = json.loads(validator_authority_pin_payload(authority_payload))
+    with patch(
+        "tools.phase4_v2.equivalence.core._read_protected_validator_pin",
+        return_value=pin_payload["activation_sha256"],
+    ):
+        authority = load_activated_validator_authority(authority_payload)
+    receipt_payload = SOURCE_RECEIPT.to_json().encode()
+    signature = _VALIDATOR_KEY.sign(
+        validator_envelope_signing_bytes(receipt_payload, authority)
+    ).hex()
+    envelope_payload = authenticated_validator_envelope_payload(
+        receipt_payload,
+        authority,
+        signature=signature,
+    )
+    return load_authenticated_validator_envelope(envelope_payload, authority=authority)
+
 _AUTHORITY_DATA = {
     "candidate_contract_sha256": CANDIDATE_CONTRACT_SHA256,
     "execution_profile_revision": EXECUTION_PROFILE_REVISION,
     "execution_profile_sha256": SHA_E,
+    "executor_public_key": Ed25519PrivateKey.from_private_bytes(bytes.fromhex(SHA_A))
+    .public_key()
+    .public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+    .hex(),
     "pipeline_revision": "phase4-v2-preparation-pipeline-v1",
-    "registry_revision": "phase4-v2-approved-tool-registry-v1",
+    "registry_revision": TOOL_REGISTRY_SCHEMA,
     "registry_sha256": SHA_D,
     "schema": PREPARATION_AUTHORITY_SCHEMA,
 }
 _AUTHORITY_PAYLOAD = (
     json.dumps(_AUTHORITY_DATA, sort_keys=True, separators=(",", ":")).encode() + b"\n"
 )
-PREPARATION_AUTHORITY = load_activated_preparation_authority(
-    _AUTHORITY_PAYLOAD,
-    expected_activation_sha256=hashlib.sha256(_AUTHORITY_PAYLOAD).hexdigest(),
-)
+with patch.object(
+    registry_module,
+    "_read_protected_activation_digest",
+    return_value=hashlib.sha256(_AUTHORITY_PAYLOAD).hexdigest(),
+):
+    PREPARATION_AUTHORITY = load_activated_preparation_authority(_AUTHORITY_PAYLOAD)
 PREPARATION_RECEIPT = object.__new__(PreparationReceipt)
 for _name, _value in {
     "artifact_digest": SHA_B,
@@ -205,6 +255,8 @@ for _name, _value in {
     "pipeline_revision": PREPARATION_AUTHORITY.pipeline_revision,
     "execution_profile_revision": PREPARATION_AUTHORITY.execution_profile_revision,
     "execution_profile_sha256": PREPARATION_AUTHORITY.execution_profile_sha256,
+    "executor_public_key": PREPARATION_AUTHORITY.executor_public_key,
+    "execution_signature": "0" * 128,
     "invocations": (),
     "candidates": (),
     "revision": PREPARATION_RECEIPT_REVISION,
@@ -465,6 +517,61 @@ def queue(tmp_path: Path) -> Queue:
     return instance
 
 
+def test_validator_envelope_is_factory_locked_and_protected(queue: Queue) -> None:
+    with pytest.raises(EquivalenceError, match="signature verification"):
+        AuthenticatedValidatorEnvelope()
+
+    envelope = _validator_envelope()
+    assert frozen_package_ref_from_validator_envelope(envelope) == TARGET_PACKAGE_REF
+    with (
+        patch(
+            "tools.phase4_v2.equivalence.core._read_protected_validator_pin",
+            return_value=SHA_F,
+        ),
+        pytest.raises(EquivalenceError, match="protected activation"),
+    ):
+        load_activated_validator_authority(envelope.authority.canonical_bytes)
+
+
+def test_validator_envelope_rejects_signed_payload_tampering(queue: Queue) -> None:
+    envelope = _validator_envelope()
+    tampered = json.loads(envelope.canonical_bytes)
+    tampered["receipt"]["bundle_sha256"] = SHA_A
+    tampered_payload = json.dumps(
+        tampered,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+
+    with pytest.raises(EquivalenceError, match="signature is invalid"):
+        load_authenticated_validator_envelope(
+            tampered_payload,
+            authority=envelope.authority,
+        )
+
+
+def test_validator_envelope_cannot_complete_a_transplanted_package(queue: Queue) -> None:
+    envelope = _validator_envelope()
+    transplanted = FrozenPackageRef(
+        package_name=TARGET_PACKAGE_REF.package_name,
+        version_code=TARGET_PACKAGE_REF.version_code,
+        artifact_digest=TARGET_PACKAGE_REF.artifact_digest,
+        preflight_sha256=TARGET_PACKAGE_REF.preflight_sha256,
+        validation_receipt_sha256=SHA_F,
+    )
+    completion = package_validation_receipt_completion(transplanted)
+    queue.materialize_work_unit(
+        completion.parent_unit_id,
+        kind="trusted-package-validation-receipt",
+        input_digest=completion.digest,
+    )
+    lease = queue.claim("forged-validator-importer")
+    assert lease is not None
+
+    with pytest.raises(QueueConflictError, match="does not belong"):
+        finish_package_validation_receipt(queue, lease, envelope=envelope)
+
+
 def _activate_preparation_capabilities(queue: Queue) -> None:
     for pin in plan_module.preparation_capability_pins(PREPARATION_AUTHORITY):
         queue.register_capability(pin.name, pin.revision, pin.digest)
@@ -696,18 +803,15 @@ def _publish_prerequisites(queue: Queue, plan: PackageExecutionPlan) -> None:
             assert finished.binding == plan.preparation
             continue
         if pin.parent_unit_id == receipt_completion.parent_unit_id:
-            materialize_package_validation_receipt(queue, TARGET_PACKAGE_REF)
+            envelope = _validator_envelope()
+            assert frozen_package_ref_from_validator_envelope(envelope) == TARGET_PACKAGE_REF
+            materialize_package_validation_receipt(queue, envelope)
             lease = queue.claim("trusted-receipt-importer")
             assert lease is not None and lease.unit_id == pin.parent_unit_id
             finish_package_validation_receipt(
                 queue,
                 lease,
-                package_ref=TARGET_PACKAGE_REF,
-                receipt_payload=SOURCE_RECEIPT.to_json(),
-                trusted_validator_revision=VALIDATOR_REVISION,
-                trusted_contract_revision=CONTRACT_REVISION,
-                trusted_dependency_digests=SOURCE_RECEIPT_DEPENDENCIES,
-                trusted_receipt_sha256=SOURCE_RECEIPT.validation_receipt_sha256,
+                envelope=envelope,
             )
             continue
         queue.enqueue(pin.parent_unit_id, kind="prerequisite", input_digest=pin.digest)
@@ -746,19 +850,15 @@ def _materialize_prerequisite(queue: Queue, pin: CompletionPin) -> None:
         pin.parent_unit_id
         == package_validation_receipt_completion(TARGET_PACKAGE_REF).parent_unit_id
     ):
-        work = materialize_package_validation_receipt(queue, TARGET_PACKAGE_REF)
+        envelope = _validator_envelope()
+        work = materialize_package_validation_receipt(queue, envelope)
         assert work.unit_id == pin.parent_unit_id
         lease = queue.claim("trusted-receipt-importer")
         assert lease is not None and lease.unit_id == pin.parent_unit_id
         finish_package_validation_receipt(
             queue,
             lease,
-            package_ref=TARGET_PACKAGE_REF,
-            receipt_payload=SOURCE_RECEIPT.to_json(),
-            trusted_validator_revision=VALIDATOR_REVISION,
-            trusted_contract_revision=CONTRACT_REVISION,
-            trusted_dependency_digests=SOURCE_RECEIPT_DEPENDENCIES,
-            trusted_receipt_sha256=SOURCE_RECEIPT.validation_receipt_sha256,
+            envelope=envelope,
         )
         return
     queue.enqueue(pin.parent_unit_id, kind="prerequisite", input_digest=pin.digest)
@@ -874,7 +974,8 @@ def test_materialization_waits_for_the_frozen_package_validation_receipt(
             kind="trusted-package-validation-receipt",
             input_digest=receipt_completion.digest,
         )
-    materialize_package_validation_receipt(queue, TARGET_PACKAGE_REF)
+    envelope = _validator_envelope()
+    materialize_package_validation_receipt(queue, envelope)
     materialized = materialize_package_execution_plan(queue, plan)
     assert materialized is not None
     lease = queue.claim("receipt-publisher")
@@ -889,12 +990,7 @@ def test_materialization_waits_for_the_frozen_package_validation_receipt(
     finish_package_validation_receipt(
         queue,
         lease,
-        package_ref=TARGET_PACKAGE_REF,
-        receipt_payload=SOURCE_RECEIPT.to_json(),
-        trusted_validator_revision=VALIDATOR_REVISION,
-        trusted_contract_revision=CONTRACT_REVISION,
-        trusted_dependency_digests=SOURCE_RECEIPT_DEPENDENCIES,
-        trusted_receipt_sha256=SOURCE_RECEIPT.validation_receipt_sha256,
+        envelope=envelope,
     )
 
     lease = queue.claim("package-worker")

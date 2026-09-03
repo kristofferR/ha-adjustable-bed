@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Protocol
 
-from .core import Lease, Queue
+from .core import Lease, Queue, _TrackerPublicationCheckpointGrant
 from .publisher import PublisherConflictError, PublisherPostWriteConflictError
 from .tracker import render_html, render_markdown
 
@@ -94,14 +94,18 @@ class AtomicDocumentSetGateway(Protocol):
     ) -> bool: ...
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, init=False)
 class FanoutPublishReceipt:
     queue_generation: str
     before_revision: str
     after_revision: str
     document_set_sha256: str
+    publication_config_sha256: str
     paths: tuple[str, ...]
     changed: bool
+
+    def __init__(self) -> None:
+        raise ValueError("fanout receipts are issued only by the atomic publisher")
 
 
 def publish_tracker_fanout(
@@ -114,6 +118,7 @@ def publish_tracker_fanout(
 
     canonical_targets = _targets(targets)
     paths = tuple(item.path for item in canonical_targets)
+    config_sha256 = publication_config_sha256(canonical_targets)
     with _publication_guard(queue):
         queue.renew(lease, ttl_seconds=300)
         snapshot = queue.snapshot()
@@ -135,20 +140,35 @@ def publish_tracker_fanout(
         desired_digest = document_set_sha256(desired)
         _require_current(queue, lease, snapshot.generation_id, post_write=False)
         if before.documents == desired:
-            queue._checkpoint_internal(
+            grant = object.__new__(_TrackerPublicationCheckpointGrant)
+            for name, value in (
+                ("lease_id", lease.lease_id),
+                ("attempt_id", lease.attempt_id),
+                ("event_type", "TRACKER_ALREADY_CURRENT"),
+                ("queue_generation", snapshot.generation_id),
+                ("publication_config_sha256", config_sha256),
+                ("paths", paths),
+                ("document_set_sha256", None),
+                ("revision", None),
+            ):
+                object.__setattr__(grant, name, value)
+            queue._checkpoint_tracker_publication(
                 lease,
-                "TRACKER_ALREADY_CURRENT",
-                {"generation": snapshot.generation_id, "targets": list(paths)},
+                grant,
             )
             _require_current(queue, lease, snapshot.generation_id, post_write=False)
-            return FanoutPublishReceipt(
-                snapshot.generation_id,
-                before.revision,
-                before.revision,
-                desired_digest,
-                paths,
-                False,
-            )
+            receipt = object.__new__(FanoutPublishReceipt)
+            for name, value in (
+                ("queue_generation", snapshot.generation_id),
+                ("before_revision", before.revision),
+                ("after_revision", before.revision),
+                ("document_set_sha256", desired_digest),
+                ("publication_config_sha256", config_sha256),
+                ("paths", paths),
+                ("changed", False),
+            ):
+                object.__setattr__(receipt, name, value)
+            return receipt
         if not gateway.compare_and_replace(
             expected_revision=before.revision,
             expected_documents_sha256=before_digest,
@@ -162,29 +182,51 @@ def publish_tracker_fanout(
             )
         _require_current(queue, lease, snapshot.generation_id, post_write=True)
         try:
-            queue._checkpoint_internal(
+            grant = object.__new__(_TrackerPublicationCheckpointGrant)
+            for name, value in (
+                ("lease_id", lease.lease_id),
+                ("attempt_id", lease.attempt_id),
+                ("event_type", "TRACKER_PUBLISHED"),
+                ("queue_generation", snapshot.generation_id),
+                ("publication_config_sha256", config_sha256),
+                ("paths", paths),
+                ("document_set_sha256", desired_digest),
+                ("revision", after.revision),
+            ):
+                object.__setattr__(grant, name, value)
+            queue._checkpoint_tracker_publication(
                 lease,
-                "TRACKER_PUBLISHED",
-                {
-                    "document_set_sha256": desired_digest,
-                    "generation": snapshot.generation_id,
-                    "revision": after.revision,
-                    "targets": list(paths),
-                },
+                grant,
             )
         except Exception as error:
             raise PublisherPostWriteConflictError(
                 "tracker set was written but its event could not be recorded"
             ) from error
         _require_current(queue, lease, snapshot.generation_id, post_write=True)
-        return FanoutPublishReceipt(
-            snapshot.generation_id,
-            before.revision,
-            after.revision,
-            desired_digest,
-            paths,
-            True,
-        )
+        receipt = object.__new__(FanoutPublishReceipt)
+        for name, value in (
+            ("queue_generation", snapshot.generation_id),
+            ("before_revision", before.revision),
+            ("after_revision", after.revision),
+            ("document_set_sha256", desired_digest),
+            ("publication_config_sha256", config_sha256),
+            ("paths", paths),
+            ("changed", True),
+        ):
+            object.__setattr__(receipt, name, value)
+        return receipt
+
+
+def publication_config_sha256(targets: tuple[TrackerTarget, ...]) -> str:
+    """Hash the exact canonical path and renderer-format configuration."""
+
+    canonical = _targets(targets)
+    payload = json.dumps(
+        [[target.path, target.format.value] for target in canonical],
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+    return hashlib.sha256(b"phase4-v2:tracker-publication-config\0" + payload).hexdigest()
 
 
 def document_set_sha256(documents: tuple[TrackerDocument, ...]) -> str:

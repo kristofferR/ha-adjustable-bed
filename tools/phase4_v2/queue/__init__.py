@@ -37,6 +37,7 @@ from .fanout import (
     TrackerFormat,
     TrackerTarget,
     document_set_sha256,
+    publication_config_sha256,
     publish_tracker_fanout,
 )
 from .github_contents import (
@@ -117,6 +118,7 @@ __all__ = [
     "managed_block_sha256",
     "publish_tracker",
     "publish_tracker_fanout",
+    "publication_config_sha256",
     "document_set_sha256",
     "render_html",
     "render_markdown",

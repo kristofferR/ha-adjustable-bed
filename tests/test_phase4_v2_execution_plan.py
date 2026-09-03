@@ -59,6 +59,11 @@ from tools.phase4_v2.equivalence.plan import (
     TARGET_ROOT_INVENTORY_REVISION,
     package_validation_receipt_completion,
 )
+from tools.phase4_v2.preflight.execution import (
+    CANDIDATE_CONTRACT_REVISION,
+    EXECUTION_PROFILE_REVISION,
+)
+from tools.phase4_v2.preflight.registry import TOOL_REGISTRY_SCHEMA
 from tools.phase4_v2.validator import (
     PACKAGE_BOUND_VALIDATION_PROFILE,
     PACKAGE_CONTRACT_REVISION,
@@ -119,17 +124,17 @@ def preparation_binding(local: PackageLocalPlan | None = None) -> PreparationPla
                 ),
                 CapabilityPin(
                     plan_module.PREPARATION_CANDIDATE_CAPABILITY,
-                    "phase4-v2-ble-candidate-contract-v2",
+                    CANDIDATE_CONTRACT_REVISION,
                     SHA_B,
                 ),
                 CapabilityPin(
                     plan_module.PREPARATION_EXECUTION_CAPABILITY,
-                    "phase4-v2-execution-profile-v1",
+                    EXECUTION_PROFILE_REVISION,
                     SHA_C,
                 ),
                 CapabilityPin(
                     plan_module.PREPARATION_REGISTRY_CAPABILITY,
-                    "phase4-v2-approved-tool-registry-v1",
+                    TOOL_REGISTRY_SCHEMA,
                     SHA_D,
                 ),
                 CapabilityPin(

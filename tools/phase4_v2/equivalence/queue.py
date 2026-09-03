@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -26,7 +25,12 @@ from tools.phase4_v2.queue import (
 )
 from tools.phase4_v2.validator import DependencyPins
 
-from .core import FrozenPackageRef
+from .core import (
+    AuthenticatedValidatorEnvelope,
+    FrozenPackageRef,
+    frozen_package_ref_from_validator_envelope,
+    validate_authenticated_validator_envelope,
+)
 from .plan import (
     PACKAGE_QUEUE_UNIT_KIND,
     PREPARATION_QUEUE_UNIT_KIND,
@@ -105,11 +109,13 @@ class PackagePlanInputMismatchError(InputDigestMismatchError):
 
 def materialize_package_validation_receipt(
     queue: Queue,
-    package_ref: FrozenPackageRef,
+    envelope: AuthenticatedValidatorEnvelope,
     *,
     priority: int = 0,
 ) -> MaterializedPackageReceiptWork:
     """Materialize the reserved import unit for one frozen package receipt."""
+    envelope = validate_authenticated_validator_envelope(envelope)
+    package_ref = frozen_package_ref_from_validator_envelope(envelope)
     completion = package_validation_receipt_completion(package_ref)
     queue.materialize_work_unit(
         completion.parent_unit_id,
@@ -124,22 +130,12 @@ def finish_package_validation_receipt(
     queue: Queue,
     lease: Lease,
     *,
-    package_ref: FrozenPackageRef,
-    receipt_payload: str | bytes,
-    trusted_validator_revision: str,
-    trusted_contract_revision: str,
-    trusted_dependency_digests: Mapping[str, str],
-    trusted_receipt_sha256: str,
+    envelope: AuthenticatedValidatorEnvelope,
 ) -> FinishResult:
     """Verify and publish a canonical package-local validator receipt."""
     return queue.finish_package_validation_receipt(
         lease,
-        package_ref=package_ref,
-        receipt_payload=receipt_payload,
-        trusted_validator_revision=trusted_validator_revision,
-        trusted_contract_revision=trusted_contract_revision,
-        trusted_dependency_digests=trusted_dependency_digests,
-        trusted_receipt_sha256=trusted_receipt_sha256,
+        envelope=envelope,
     )
 
 

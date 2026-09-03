@@ -5,15 +5,18 @@ from pathlib import Path
 import pytest
 
 from tools.phase4_v2.queue import (
+    FanoutPublishReceipt,
     Lease,
     PublisherConflictError,
     PublisherPostWriteConflictError,
     Queue,
+    QueueConflictError,
     TrackerDocument,
     TrackerDocumentSet,
     TrackerFormat,
     TrackerTarget,
     document_set_sha256,
+    publication_config_sha256,
     publish_tracker_fanout,
 )
 
@@ -90,6 +93,7 @@ def test_fanout_publishes_markdown_and_html_from_one_snapshot(
 
     assert receipt.changed
     assert receipt.paths == tuple(item.path for item in _TARGETS)
+    assert receipt.publication_config_sha256 == publication_config_sha256(_TARGETS)
     markdown = gateway.documents["issues/436.md"]
     assert markdown == gateway.documents["issues/443.md"]
     assert receipt.queue_generation.encode() in markdown
@@ -157,11 +161,41 @@ def test_document_set_digest_binds_missing_vs_empty() -> None:
     assert document_set_sha256(missing) != document_set_sha256(empty)
 
 
+def test_publication_config_binds_renderer_format() -> None:
+    markdown = (TrackerTarget("queue/output", TrackerFormat.MARKDOWN),)
+    html = (TrackerTarget("queue/output", TrackerFormat.HTML),)
+
+    assert publication_config_sha256(markdown) != publication_config_sha256(html)
+
+
 def test_document_set_duplicate_path_with_different_presence_fails_closed() -> None:
     with pytest.raises(ValueError, match="unique"):
         TrackerDocumentSet(
             _REVISION,
             (TrackerDocument("queue.md", None), TrackerDocument("queue.md", b"")),
+        )
+
+
+def test_fanout_receipt_cannot_be_constructed_from_caller_values() -> None:
+    with pytest.raises(ValueError, match="atomic publisher"):
+        FanoutPublishReceipt()
+
+
+def test_generic_internal_checkpoint_cannot_forge_publication(
+    publisher: tuple[Queue, Lease],
+) -> None:
+    queue, lease = publisher
+
+    with pytest.raises(QueueConflictError, match="atomic publisher grant"):
+        queue._checkpoint_internal(
+            lease,
+            "TRACKER_PUBLISHED",
+            {
+                "document_set_sha256": "d" * 64,
+                "generation": "e" * 64,
+                "revision": _NEXT_REVISION,
+                "targets": ["issues/436.md"],
+            },
         )
 
 
