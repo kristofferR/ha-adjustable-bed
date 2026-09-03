@@ -777,6 +777,14 @@ def test_signed_authority_rejects_substituted_corpus_manifest() -> None:
         )
 
 
+def test_caller_config_cannot_mint_or_finalize_a_trusted_authority() -> None:
+    assert not hasattr(benchmark_model, "_AUTHORITY_SEAL")
+    assert not hasattr(benchmark_model, "_load_trusted_benchmark_authority_with_config")
+    assert not hasattr(benchmark_model, "_finalize_benchmark_with_config")
+    with pytest.raises(ValueError, match="protected configuration"):
+        TrustedBenchmarkAuthority()
+
+
 def test_every_case_and_mutation_must_prove_exact_corpus_membership() -> None:
     authority, plan, oracle, run, audits, timings = _artifacts()
     changed_case = replace(plan.cases[0], corpus_member_id=plan.mutations[0].corpus_member_id)

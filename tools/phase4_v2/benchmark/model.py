@@ -31,7 +31,6 @@ _MAX_AUTHORITY_BYTES = 64 * 1024
 _MAX_JSON_DEPTH = 12
 _MAX_JSON_NODES = 512
 _MAX_JSON_STRING_LENGTH = 4_096
-_AUTHORITY_SEAL = object()
 
 
 class MutationKind(StrEnum):
@@ -282,21 +281,10 @@ class _ProtectedAuthorityConfig:
 class TrustedBenchmarkAuthority:
     """Authority admitted only through the protected canonical loader."""
 
-    __slots__ = ("_authority_content_id", "_canonical_bytes", "_config", "_seal")
+    __slots__ = ("_authority_content_id", "_canonical_bytes", "_config")
 
-    def __init__(
-        self,
-        canonical_bytes: bytes,
-        config: _ProtectedAuthorityConfig,
-        authority_content_id: str,
-        seal: object,
-    ) -> None:
-        if seal is not _AUTHORITY_SEAL:
-            raise ValueError("benchmark authority must be loaded from protected configuration")
-        object.__setattr__(self, "_canonical_bytes", canonical_bytes)
-        object.__setattr__(self, "_config", config)
-        object.__setattr__(self, "_authority_content_id", authority_content_id)
-        object.__setattr__(self, "_seal", seal)
+    def __init__(self) -> None:
+        raise ValueError("benchmark authority must be loaded from protected configuration")
 
     def __setattr__(self, name: str, value: object) -> None:
         raise AttributeError("trusted benchmark authority is immutable")
@@ -1084,15 +1072,13 @@ def load_trusted_benchmark_authority(raw: bytes) -> TrustedBenchmarkAuthority:
     """Load the exact authority pinned by deployment-owned protected config."""
 
     config = _load_protected_authority_config()
-    return _load_trusted_benchmark_authority_with_config(raw, config)
-
-
-def _load_trusted_benchmark_authority_with_config(
-    raw: bytes, config: _ProtectedAuthorityConfig
-) -> TrustedBenchmarkAuthority:
     authority = _parse_authority_document(raw)
     _verify_authority_against_config(raw, authority, config)
-    return TrustedBenchmarkAuthority(raw, config, authority.content_id, _AUTHORITY_SEAL)
+    trusted = object.__new__(TrustedBenchmarkAuthority)
+    object.__setattr__(trusted, "_canonical_bytes", raw)
+    object.__setattr__(trusted, "_config", config)
+    object.__setattr__(trusted, "_authority_content_id", authority.content_id)
+    return trusted
 
 
 def _parse_authority_document(raw: bytes) -> BenchmarkAuthority:
@@ -1294,10 +1280,7 @@ def _reverify_trusted_authority(
     trusted_authority: TrustedBenchmarkAuthority,
     current_config: _ProtectedAuthorityConfig,
 ) -> BenchmarkAuthority:
-    if (
-        type(trusted_authority) is not TrustedBenchmarkAuthority
-        or trusted_authority._seal is not _AUTHORITY_SEAL
-    ):
+    if type(trusted_authority) is not TrustedBenchmarkAuthority:
         raise ValueError("finalization requires a protected benchmark authority")
     if current_config != trusted_authority._config:
         raise ValueError("protected authority config rotated after authority load")
@@ -1322,27 +1305,7 @@ def finalize_benchmark(
 ) -> BenchmarkReport:
     """Reveal committed inputs and deterministically decide rollout."""
 
-    return _finalize_benchmark_with_config(
-        trusted_authority,
-        plan,
-        oracle,
-        run,
-        audits,
-        timings,
-        _load_protected_authority_config(),
-    )
-
-
-def _finalize_benchmark_with_config(
-    trusted_authority: TrustedBenchmarkAuthority,
-    plan: BenchmarkPlan,
-    oracle: OracleSuite,
-    run: BenchmarkRun,
-    audits: IndependentAuditSuite,
-    timings: TimingSuite,
-    current_config: _ProtectedAuthorityConfig,
-) -> BenchmarkReport:
-    authority = _reverify_trusted_authority(trusted_authority, current_config)
+    authority = _reverify_trusted_authority(trusted_authority, _load_protected_authority_config())
     diagnostics: list[BenchmarkDiagnostic] = []
     if plan.authority_sha256 != authority.content_id:
         diagnostics.append(_diag("authority_commitment_mismatch", "$.plan.authority_sha256"))
