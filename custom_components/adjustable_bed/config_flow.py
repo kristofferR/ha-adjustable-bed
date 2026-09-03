@@ -3001,6 +3001,29 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 user_input[CONF_PROTOCOL_VARIANT] = requested_variant
             else:
                 user_input.pop(CONF_PROTOCOL_VARIANT, None)
+            requested_motor_options = _motor_count_options(
+                bed_type,
+                requested_variant,
+            )
+            requested_motor_count = user_input.get(
+                CONF_MOTOR_COUNT,
+                form_motor_count,
+            )
+            if requested_motor_count not in requested_motor_options:
+                if requested_variant != form_variant:
+                    # A variant change can alter the fixed actuator count.
+                    # Rebuild with its count instead of rejecting the value
+                    # rendered for the previous variant.
+                    self._pending_data = {**self._pending_data, **user_input}
+                    if discovery_disabled_input is not None:
+                        self._pending_data[CONF_DISABLE_DISCOVERY] = discovery_disabled_input
+                    self._pending_data[CONF_MOTOR_COUNT] = requested_motor_options[0]
+                    return await self.async_step_init()
+                return self.async_show_form(
+                    step_id="init",
+                    data_schema=vol.Schema(schema_dict),
+                    errors={CONF_MOTOR_COUNT: "invalid_motor_count_for_bed_type"},
+                )
             if has_position_feedback != bed_type_has_position_feedback(
                 bed_type,
                 requested_variant,
@@ -3016,20 +3039,6 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                     requested_variant,
                 )
                 return await self.async_step_init()
-            requested_motor_count = user_input.get(
-                CONF_MOTOR_COUNT,
-                form_motor_count,
-            )
-            if not _is_valid_motor_count(
-                bed_type,
-                requested_variant,
-                requested_motor_count,
-            ):
-                return self.async_show_form(
-                    step_id="init",
-                    data_schema=vol.Schema(schema_dict),
-                    errors={CONF_MOTOR_COUNT: "invalid_motor_count_for_bed_type"},
-                )
             if bed_type == BED_TYPE_OCTO and CONF_OCTO_PIN in user_input:
                 octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
                 if not is_valid_octo_pin(octo_pin):

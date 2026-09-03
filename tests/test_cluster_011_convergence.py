@@ -24,6 +24,7 @@ from custom_components.adjustable_bed.const import (
     OKIN_CST_VARIANT_RESIDENT,
     OKIN_CST_VARIANT_SANCTUARY,
     OKIN_CST_VARIANT_SUPPORT,
+    VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.switch import SWITCH_DESCRIPTIONS
@@ -315,6 +316,14 @@ def test_fixed_product_profiles_expose_exact_reachable_entity_surface(
         or getattr(controller, description.required_capability, False)
     }
     assert switch_keys == ({"under_bed_lights"} if expected.lights else set())
+
+
+def test_auto_profile_preserves_legacy_massage_opt_in() -> None:
+    """An unresolved CST entry must not gain massage entities on upgrade."""
+    controller = OkinCstController(MagicMock(), variant=VARIANT_AUTO)
+
+    assert controller.supports_massage is True
+    assert controller.auto_enable_massage is False
 
 
 @pytest.mark.parametrize(

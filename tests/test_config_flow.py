@@ -2320,6 +2320,51 @@ class TestUserFlow:
 class TestOptionsFlow:
     """Test options flow."""
 
+    @pytest.mark.parametrize(
+        ("initial_variant", "initial_count", "requested_variant", "expected_count"),
+        [
+            (VARIANT_AUTO, 3, OKIN_CST_VARIANT_CAREFREE, 2),
+            (OKIN_CST_VARIANT_CAREFREE, 2, OKIN_CST_VARIANT_MF900, 3),
+        ],
+    )
+    async def test_okin_cst_profile_change_rebuilds_fixed_motor_count(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+        initial_variant: str,
+        initial_count: int,
+        requested_variant: str,
+        expected_count: int,
+    ) -> None:
+        """Changing CST profiles should replace the prior profile's motor count."""
+        del enable_custom_integrations
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Okin CST Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:94",
+                CONF_NAME: "Okin CST Bed",
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_MOTOR_COUNT: initial_count,
+                CONF_PROTOCOL_VARIANT: initial_variant,
+            },
+            unique_id="AA:BB:CC:DD:EE:94",
+        )
+        entry.add_to_hass(hass)
+        await async_setup_component(hass, DOMAIN, {})
+        await hass.async_block_till_done()
+
+        initial = await hass.config_entries.options.async_init(entry.entry_id)
+        rebuilt = await hass.config_entries.options.async_configure(
+            initial["flow_id"],
+            user_input={CONF_PROTOCOL_VARIANT: requested_variant},
+        )
+
+        assert rebuilt["type"] == FlowResultType.FORM
+        markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
+        assert markers[CONF_PROTOCOL_VARIANT].default() == requested_variant
+        assert markers[CONF_MOTOR_COUNT].default() == expected_count
+
     async def test_richmat_options_can_replace_detected_qrrm_with_lp_profile(
         self,
         hass: HomeAssistant,

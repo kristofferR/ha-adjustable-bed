@@ -286,6 +286,7 @@ class OkinCstController(BedController):
         super().__init__(coordinator)
         self._motor_state: dict[str, int] = {}
         self._massage_wave_index: int | None = None
+        self._has_explicit_profile = variant in _CST_PROFILES
         profile_key = OKIN_CST_VARIANT_MF900 if variant == VARIANT_AUTO else variant
         self._profile = _CST_PROFILES.get(
             profile_key, _CST_PROFILES[OKIN_CST_VARIANT_MF900]
@@ -350,7 +351,7 @@ class OkinCstController(BedController):
 
     @property
     def auto_enable_massage(self) -> bool:
-        return self.supports_massage
+        return self._has_explicit_profile and self.supports_massage
 
     @property
     def supports_massage_off_control(self) -> bool:
