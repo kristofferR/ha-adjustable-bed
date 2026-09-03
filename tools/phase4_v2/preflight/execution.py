@@ -1298,6 +1298,7 @@ def _run_sandboxed(
     output_descriptor = -1
     executor_descriptor = -1
     seccomp_descriptor = -1
+    quota_subdirectory_descriptors: list[int] = []
     try:
         workspace_descriptor = os.open(
             workspace,
@@ -1329,6 +1330,17 @@ def _run_sandboxed(
             raise PreparationError("execution workspace identity changed before sandbox entry")
         environment = _controlled_environment(Path("/run"))
         sandbox_executable = executable.sandbox_path
+        assert quota_output_descriptor is not None
+        for name in ("home", "tmp", "output"):
+            descriptor = os.open(
+                name,
+                os.O_RDONLY
+                | getattr(os, "O_CLOEXEC", 0)
+                | getattr(os, "O_NOFOLLOW", 0)
+                | getattr(os, "O_DIRECTORY", 0),
+                dir_fd=quota_output_descriptor,
+            )
+            quota_subdirectory_descriptors.append(descriptor)
         command = [
             f"/proc/self/fd/{executor_descriptor}",
             "--unshare-user",
@@ -1350,11 +1362,17 @@ def _run_sandboxed(
                 "/proc",
                 "--dev",
                 "/dev",
-                "--bind-fd",
+                "--ro-bind-fd",
                 str(quota_output_descriptor),
                 "/run",
             )
         )
+        for name, descriptor in zip(
+            ("home", "tmp", "output"),
+            quota_subdirectory_descriptors,
+            strict=True,
+        ):
+            command.extend(("--bind-fd", str(descriptor), f"/run/{name}"))
         if input_descriptor is not None:
             command.extend(("--ro-bind-fd", str(input_descriptor), "/run/input.apk"))
         if executable.runtime_descriptor is None:
@@ -1380,6 +1398,7 @@ def _run_sandboxed(
                     quota_setup_userns_descriptor,
                     quota_mountns_descriptor,
                     input_descriptor,
+                    *quota_subdirectory_descriptors,
                 )
                 if descriptor is not None
             ),
@@ -1394,6 +1413,7 @@ def _run_sandboxed(
             seccomp_descriptor,
             workspace_descriptor,
             output_descriptor,
+            *quota_subdirectory_descriptors,
         ):
             if descriptor >= 0:
                 os.close(descriptor)

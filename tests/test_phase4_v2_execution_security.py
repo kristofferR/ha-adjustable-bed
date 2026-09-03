@@ -471,7 +471,7 @@ def test_kernel_quota_covers_all_private_workspace_paths(
     assert all("OUTPUT_EMPTY" in item.failures for item in result.invocations)
 
 
-def test_run_root_denies_writes_outside_private_subdirectories(
+def test_run_root_stays_read_only_after_hostile_chmod(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     preflight = _preflight(monkeypatch, tmp_path)
@@ -482,8 +482,10 @@ def test_run_root_denies_writes_outside_private_subdirectories(
             "jadx": {"App.java": "android.bluetooth.BluetoothGatt"},
         },
         extra_source=(
+            'if(chmod("/run",0777)==0)return 16; '
             'int fd=open("/run/escape",O_WRONLY|O_CREAT,0600); '
-            'if(fd>=0){write(fd,"x",1);close(fd);return 17;}'
+            'if(fd>=0){write(fd,"x",1);close(fd);return 17;} '
+            'if(unlink("/run/input.apk")==0)return 18;'
         ),
     )
     result = _execute(preflight, tool, tmp_path, "run-escape")
