@@ -5,11 +5,15 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import sqlite3
 from dataclasses import dataclass, field
 
 from tools.phase4_v2.equivalence.plan import (
     VALIDATED_PACKAGE_OUTPUT_REVISION,
+    FrozenPackageExecutionPlan,
+    PackagePlanStatus,
     package_queue_unit_id,
+    validate_frozen_package_execution_plan,
 )
 from tools.phase4_v2.queue import (
     ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
@@ -37,7 +41,7 @@ _MAX_PACKAGES = 250
 _MAX_PINS = 4_096
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, init=False)
 class PackageAnalysisUnit:
     """One pre-existing package plan projected into the cluster graph."""
 
@@ -46,9 +50,30 @@ class PackageAnalysisUnit:
     input_sha256: str
     capability_pins: tuple[CapabilityPin, ...]
     dependency_pins: tuple[CompletionDependencyPin, ...]
+    _source_plan: FrozenPackageExecutionPlan = field(repr=False, compare=False)
     priority: int = 0
 
-    def __post_init__(self) -> None:
+    def __init__(self) -> None:
+        raise ValueError("package analysis units must be built from frozen execution plans")
+
+    def _validate(self) -> None:
+        source = validate_frozen_package_execution_plan(self._source_plan)
+        expected_capabilities = tuple(
+            CapabilityPin(pin.name, pin.revision, pin.digest)
+            for pin in source.required_capabilities
+        )
+        expected_dependencies = tuple(
+            CompletionDependencyPin(pin.parent_unit_id, pin.revision, pin.digest)
+            for pin in source.required_completions
+        )
+        if (
+            self.package_ref_id != source.target_package_ref_id
+            or self.unit_id != package_queue_unit_id(source.target_package_ref_id)
+            or self.input_sha256 != source.digest
+            or self.capability_pins != expected_capabilities
+            or self.dependency_pins != expected_dependencies
+        ):
+            raise ValueError("analysis unit no longer matches its frozen execution plan")
         _digest(self.package_ref_id, "package_ref_id")
         if self.unit_id != package_queue_unit_id(self.package_ref_id):
             raise ValueError("analysis unit does not match its package reference")
@@ -69,7 +94,7 @@ class PackageAnalysisUnit:
         }
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, init=False)
 class ClusterGraphPlan:
     """The complete immutable topology and capability pins for one cluster."""
 
@@ -82,7 +107,10 @@ class ClusterGraphPlan:
     revision: str = CLUSTER_GRAPH_REVISION
     _content_id: str = field(init=False, repr=False, compare=False)
 
-    def __post_init__(self) -> None:
+    def __init__(self) -> None:
+        raise ValueError("cluster graphs must be built from frozen execution plans")
+
+    def _validate(self) -> None:
         _token(self.cluster_id, "cluster_id")
         if self.revision != CLUSTER_GRAPH_REVISION:
             raise ValueError("cluster graph revision is unsupported")
@@ -93,7 +121,7 @@ class ClusterGraphPlan:
         ):
             raise ValueError("cluster packages must be a bounded exact tuple")
         for package in self.packages:
-            package.__post_init__()
+            package._validate()
         if self.packages != tuple(sorted(self.packages, key=lambda item: item.package_ref_id)):
             raise ValueError("cluster packages must be sorted by package reference")
         if len({item.package_ref_id for item in self.packages}) != len(self.packages):
@@ -105,11 +133,10 @@ class ClusterGraphPlan:
             "publication_capability_pins",
         ):
             _capabilities(getattr(self, name), name)
-        object.__setattr__(
-            self,
-            "_content_id",
-            _content_id("phase4-v2:cluster-stage-graph", self.to_data()),
-        )
+        content_id = _content_id("phase4-v2:cluster-stage-graph", self.to_data())
+        if hasattr(self, "_content_id") and self._content_id != content_id:
+            raise ValueError("cluster graph no longer matches its factory-built preimage")
+        object.__setattr__(self, "_content_id", content_id)
 
     def to_data(self) -> dict[str, object]:
         return {
@@ -140,6 +167,135 @@ class ClusterGraphPlan:
     @property
     def content_id(self) -> str:
         return self._content_id
+
+
+def build_cluster_graph(
+    queue: Queue,
+    plans: tuple[FrozenPackageExecutionPlan, ...],
+    *,
+    audit_capability_pins: tuple[CapabilityPin, ...],
+    reconciliation_capability_pins: tuple[CapabilityPin, ...],
+    implementation_capability_pins: tuple[CapabilityPin, ...],
+    publication_capability_pins: tuple[CapabilityPin, ...],
+    priorities: tuple[int, ...] | None = None,
+) -> ClusterGraphPlan:
+    """Build one graph only from canonical plans and currently activated pins."""
+
+    if type(queue) is not Queue:
+        raise ValueError("cluster graph construction requires an exact queue")
+    if (
+        type(plans) is not tuple
+        or not 1 <= len(plans) <= _MAX_PACKAGES
+        or any(type(item) is not FrozenPackageExecutionPlan for item in plans)
+    ):
+        raise ValueError("cluster graph plans must be a bounded exact tuple")
+    frozen = tuple(validate_frozen_package_execution_plan(item) for item in plans)
+    if any(item.status is not PackagePlanStatus.EXECUTABLE for item in frozen):
+        raise ValueError("cluster graph plans must all be executable")
+    if len({item.target_package_ref_id for item in frozen}) != len(frozen):
+        raise ValueError("cluster graph plans contain duplicate package references")
+    cluster_ids = {item.cluster_id for item in frozen}
+    if len(cluster_ids) != 1:
+        raise ValueError("cluster graph plans must belong to one cluster")
+    if priorities is None:
+        priorities = (0,) * len(frozen)
+    if (
+        type(priorities) is not tuple
+        or len(priorities) != len(frozen)
+        or any(type(item) is not int or not -(2**31) <= item < 2**31 for item in priorities)
+    ):
+        raise ValueError("cluster graph priorities must match the frozen plans")
+    stage_pins = (
+        audit_capability_pins,
+        reconciliation_capability_pins,
+        implementation_capability_pins,
+        publication_capability_pins,
+    )
+    for name, pins in zip(
+        ("audit", "reconciliation", "implementation", "publication"),
+        stage_pins,
+        strict=True,
+    ):
+        _capabilities(pins, f"{name} capabilities")
+    package_pins = tuple(
+        CapabilityPin(pin.name, pin.revision, pin.digest)
+        for plan in frozen
+        for pin in plan.required_capabilities
+    )
+    _require_activated(queue, (*package_pins, *(pin for pins in stage_pins for pin in pins)))
+    packages: list[PackageAnalysisUnit] = []
+    for plan, priority in zip(frozen, priorities, strict=True):
+        unit = object.__new__(PackageAnalysisUnit)
+        object.__setattr__(unit, "package_ref_id", plan.target_package_ref_id)
+        object.__setattr__(unit, "unit_id", package_queue_unit_id(plan.target_package_ref_id))
+        object.__setattr__(unit, "input_sha256", plan.digest)
+        object.__setattr__(
+            unit,
+            "capability_pins",
+            tuple(
+                CapabilityPin(pin.name, pin.revision, pin.digest)
+                for pin in plan.required_capabilities
+            ),
+        )
+        object.__setattr__(
+            unit,
+            "dependency_pins",
+            tuple(
+                CompletionDependencyPin(pin.parent_unit_id, pin.revision, pin.digest)
+                for pin in plan.required_completions
+            ),
+        )
+        object.__setattr__(unit, "priority", priority)
+        object.__setattr__(unit, "_source_plan", plan)
+        unit._validate()
+        packages.append(unit)
+    graph = object.__new__(ClusterGraphPlan)
+    object.__setattr__(graph, "cluster_id", next(iter(cluster_ids)))
+    object.__setattr__(
+        graph, "packages", tuple(sorted(packages, key=lambda item: item.package_ref_id))
+    )
+    object.__setattr__(graph, "audit_capability_pins", audit_capability_pins)
+    object.__setattr__(graph, "reconciliation_capability_pins", reconciliation_capability_pins)
+    object.__setattr__(graph, "implementation_capability_pins", implementation_capability_pins)
+    object.__setattr__(graph, "publication_capability_pins", publication_capability_pins)
+    object.__setattr__(graph, "revision", CLUSTER_GRAPH_REVISION)
+    graph._validate()
+    return graph
+
+
+def validate_cluster_graph(graph: ClusterGraphPlan) -> ClusterGraphPlan:
+    """Reconstruct a graph so mutated factory products fail at every consumer."""
+
+    if type(graph) is not ClusterGraphPlan:
+        raise ValueError("expected an exact cluster graph")
+    graph._validate()
+    return graph
+
+
+def _require_activated(queue: Queue, pins: tuple[CapabilityPin, ...]) -> None:
+    """Read exact queue heads without exposing a forgeable activation DTO."""
+
+    queue.verify_schema()
+    expected = {(pin.capability, pin.revision, pin.digest) for pin in pins}
+    connection = sqlite3.connect(f"file:{queue.database}?mode=ro", uri=True)
+    try:
+        rows = connection.execute(
+            """
+            SELECT current.capability, current.revision, current.digest
+            FROM pipeline_capability_activations AS current
+            JOIN (
+                SELECT capability, MAX(activation_id) AS activation_id
+                FROM pipeline_capability_activations GROUP BY capability
+            ) AS heads ON heads.activation_id = current.activation_id
+            """
+        ).fetchall()
+    finally:
+        connection.close()
+    active = {tuple(row) for row in rows}
+    missing = expected - active
+    if missing:
+        names = ", ".join(sorted(item[0] for item in missing))
+        raise QueueConflictError(f"cluster graph capability is not the active queue head: {names}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -202,6 +358,21 @@ def materialize_cluster_graph(queue: Queue, graph: ClusterGraphPlan) -> ClusterG
 
     if type(queue) is not Queue or type(graph) is not ClusterGraphPlan:
         raise ValueError("cluster graph materialization requires exact queue and graph types")
+    validate_cluster_graph(graph)
+    _require_activated(
+        queue,
+        tuple(
+            pin
+            for pins in (
+                *(item.capability_pins for item in graph.packages),
+                graph.audit_capability_pins,
+                graph.reconciliation_capability_pins,
+                graph.implementation_capability_pins,
+                graph.publication_capability_pins,
+            )
+            for pin in pins
+        ),
+    )
     analysis_ids = tuple(item.unit_id for item in graph.packages)
     audit_ids = tuple(package_audit_unit_id(graph, item.package_ref_id) for item in graph.packages)
     reconciliation_id = cluster_reconciliation_unit_id(graph)
@@ -256,8 +427,7 @@ def materialize_cluster_graph(queue: Queue, graph: ClusterGraphPlan) -> ClusterG
         )
     )
     if any(
-        completion.revision != PACKAGE_AUDIT_COMPLETION_REVISION
-        for completion in audit_completions
+        completion.revision != PACKAGE_AUDIT_COMPLETION_REVISION for completion in audit_completions
     ):
         raise QueueConflictError("package audit completion revision is unsupported")
     if len(audit_completions) == len(graph.packages):

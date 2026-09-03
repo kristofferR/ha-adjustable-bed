@@ -1,13 +1,16 @@
-"""Trusted, content-bound completion adapters for semantic cluster stages."""
+"""Authenticated, content-bound completion adapters for semantic cluster stages."""
 
 from __future__ import annotations
 
 import hashlib
 import json
 import re
-from collections.abc import Mapping
+import sqlite3
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Protocol
+
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from tools.phase4_v2.equivalence.plan import VALIDATED_PACKAGE_OUTPUT_REVISION
 from tools.phase4_v2.queue import (
@@ -16,6 +19,7 @@ from tools.phase4_v2.queue import (
     ORCHESTRATION_PACKAGE_AUDIT_KIND,
     ORCHESTRATION_TRACKER_PUBLICATION_KIND,
     CompletionDependencyPin,
+    FanoutPublishReceipt,
     InputCheckedFinishResult,
     Lease,
     Queue,
@@ -35,18 +39,67 @@ from .graph import (
     package_audit_unit_id,
     stage_input_sha256,
     tracker_publication_unit_id,
+    validate_cluster_graph,
 )
 
+STAGE_AUTHORITY_REVISION = "phase4-v2-stage-authority-v1"
+
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
+_SIGNATURE = re.compile(r"^[0-9a-f]{128}$")
 _TOKEN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}$")
+_STAGES = frozenset({"audit", "reconciliation", "implementation", "publication"})
+_MAX_DOCUMENT_BYTES = 1024 * 1024
 _MAX_DIAGNOSTICS = 4_096
 _MAX_PACKAGES = 250
 
 
-class TrustedPackageAuditReceipt(Protocol):
-    """Externally validated semantic-audit decision consumed by the queue."""
+@dataclass(frozen=True, slots=True, init=False)
+class ActivatedStageAuthority:
+    """One stage verifier admitted only through an externally pinned activation."""
 
+    stage: str
+    authority_id: str
+    public_key: str
+    canonical_bytes: bytes
+    authority_sha256: str
+
+    def __init__(self) -> None:
+        raise ValueError("stage authorities must be loaded from a pinned activation")
+
+
+def load_stage_authority(
+    canonical_bytes: bytes,
+    *,
+    expected_sha256: str,
+    expected_stage: str,
+) -> ActivatedStageAuthority:
+    """Activate exact canonical public-key bytes under an out-of-band digest pin."""
+
+    raw = _canonical_document(canonical_bytes, "stage authority")
+    if _authority_sha256(canonical_bytes) != _digest(expected_sha256, "authority pin"):
+        raise QueueConflictError("stage authority does not match its external activation pin")
+    _keys(raw, {"authority_id", "public_key", "revision", "stage"}, "stage authority")
+    stage = _stage(raw["stage"])
+    if stage != _stage(expected_stage):
+        raise QueueConflictError("stage authority was activated for another stage")
+    if raw["revision"] != STAGE_AUTHORITY_REVISION:
+        raise QueueConflictError("stage authority revision is unsupported")
+    authority_id = _token(raw["authority_id"], "authority id")
+    public_key = _digest(raw["public_key"], "authority public key")
+    Ed25519PublicKey.from_public_bytes(bytes.fromhex(public_key))
+    result = object.__new__(ActivatedStageAuthority)
+    object.__setattr__(result, "stage", stage)
+    object.__setattr__(result, "authority_id", authority_id)
+    object.__setattr__(result, "public_key", public_key)
+    object.__setattr__(result, "canonical_bytes", canonical_bytes)
+    object.__setattr__(result, "authority_sha256", expected_sha256)
+    return result
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class TrustedPackageAuditReceipt:
     revision: str
+    authority_sha256: str
     graph_sha256: str
     cluster_id: str
     package_ref_id: str
@@ -55,12 +108,17 @@ class TrustedPackageAuditReceipt(Protocol):
     analysis_completion_sha256: str
     accepted: bool
     diagnostics: tuple[str, ...]
+    canonical_bytes: bytes
+    receipt_sha256: str
+
+    def __init__(self) -> None:
+        raise ValueError("audit receipts must be loaded from signed canonical bytes")
 
 
-class TrustedReconciliationReceipt(Protocol):
-    """Externally validated complete reconciliation and completeness decision."""
-
+@dataclass(frozen=True, slots=True, init=False)
+class TrustedReconciliationReceipt:
     revision: str
+    authority_sha256: str
     graph_sha256: str
     cluster_id: str
     stage_input_sha256: str
@@ -70,12 +128,17 @@ class TrustedReconciliationReceipt(Protocol):
     disposition_ledger_sha256: str
     accepted: bool
     diagnostics: tuple[str, ...]
+    canonical_bytes: bytes
+    receipt_sha256: str
+
+    def __init__(self) -> None:
+        raise ValueError("reconciliation receipts must be loaded from signed canonical bytes")
 
 
-class TrustedImplementationReceipt(Protocol):
-    """Implementation result bound to one accepted disposition ledger."""
-
+@dataclass(frozen=True, slots=True, init=False)
+class TrustedImplementationReceipt:
     revision: str
+    authority_sha256: str
     graph_sha256: str
     cluster_id: str
     stage_input_sha256: str
@@ -84,12 +147,17 @@ class TrustedImplementationReceipt(Protocol):
     implementation_output_sha256: str
     accepted: bool
     diagnostics: tuple[str, ...]
+    canonical_bytes: bytes
+    receipt_sha256: str
+
+    def __init__(self) -> None:
+        raise ValueError("implementation receipts must be loaded from signed canonical bytes")
 
 
-class TrustedPublicationReceipt(Protocol):
-    """Tracker publication result bound to the implemented cluster."""
-
+@dataclass(frozen=True, slots=True, init=False)
+class TrustedPublicationReceipt:
     revision: str
+    authority_sha256: str
     graph_sha256: str
     cluster_id: str
     stage_input_sha256: str
@@ -97,16 +165,150 @@ class TrustedPublicationReceipt(Protocol):
     queue_generation_sha256: str
     document_set_sha256: str
     publication_config_sha256: str
+    before_revision: str
+    after_revision: str
+    paths: tuple[str, ...]
+    changed: bool
     accepted: bool
     diagnostics: tuple[str, ...]
+    canonical_bytes: bytes
+    receipt_sha256: str
+
+    def __init__(self) -> None:
+        raise ValueError("publication receipts must be loaded from signed canonical bytes")
 
 
 @dataclass(frozen=True, slots=True)
 class StageCompletion:
-    """Canonical receipt identity and its atomic queue result."""
-
     receipt_sha256: str
     queue_result: InputCheckedFinishResult
+
+
+def load_package_audit_receipt(
+    canonical_bytes: bytes, authority: ActivatedStageAuthority
+) -> TrustedPackageAuditReceipt:
+    payload, receipt_sha256 = _load_signed(canonical_bytes, authority, "audit")
+    _keys(payload, _AUDIT_FIELDS, "audit receipt")
+    return _new_receipt(
+        TrustedPackageAuditReceipt,
+        canonical_bytes,
+        receipt_sha256,
+        revision=_exact_revision(payload["revision"], PACKAGE_AUDIT_COMPLETION_REVISION, "audit"),
+        authority_sha256=_digest(payload["authority_sha256"], "audit authority"),
+        graph_sha256=_digest(payload["graph_sha256"], "audit graph"),
+        cluster_id=_token(payload["cluster_id"], "audit cluster"),
+        package_ref_id=_digest(payload["package_ref_id"], "audit package"),
+        stage_input_sha256=_digest(payload["stage_input_sha256"], "audit input"),
+        analysis_completion_revision=_revision(
+            payload["analysis_completion_revision"], "analysis completion revision"
+        ),
+        analysis_completion_sha256=_digest(
+            payload["analysis_completion_sha256"], "analysis completion"
+        ),
+        accepted=_accepted(payload["accepted"], payload["diagnostics"], "audit"),
+        diagnostics=_diagnostics(payload["diagnostics"], "audit diagnostics"),
+    )
+
+
+def load_reconciliation_receipt(
+    canonical_bytes: bytes, authority: ActivatedStageAuthority
+) -> TrustedReconciliationReceipt:
+    payload, receipt_sha256 = _load_signed(canonical_bytes, authority, "reconciliation")
+    _keys(payload, _RECONCILIATION_FIELDS, "reconciliation receipt")
+    return _new_receipt(
+        TrustedReconciliationReceipt,
+        canonical_bytes,
+        receipt_sha256,
+        revision=_exact_revision(
+            payload["revision"], CLUSTER_RECONCILIATION_COMPLETION_REVISION, "reconciliation"
+        ),
+        authority_sha256=_digest(payload["authority_sha256"], "reconciliation authority"),
+        graph_sha256=_digest(payload["graph_sha256"], "reconciliation graph"),
+        cluster_id=_token(payload["cluster_id"], "reconciliation cluster"),
+        stage_input_sha256=_digest(payload["stage_input_sha256"], "reconciliation input"),
+        package_audit_receipts=_pairs(
+            payload["package_audit_receipts"], "reconciliation package audit receipts"
+        ),
+        reconciliation_result_sha256=_digest(
+            payload["reconciliation_result_sha256"], "reconciliation result"
+        ),
+        completeness_receipt_sha256=_digest(
+            payload["completeness_receipt_sha256"], "completeness receipt"
+        ),
+        disposition_ledger_sha256=_digest(
+            payload["disposition_ledger_sha256"], "disposition ledger"
+        ),
+        accepted=_accepted(payload["accepted"], payload["diagnostics"], "reconciliation"),
+        diagnostics=_diagnostics(payload["diagnostics"], "reconciliation diagnostics"),
+    )
+
+
+def load_implementation_receipt(
+    canonical_bytes: bytes, authority: ActivatedStageAuthority
+) -> TrustedImplementationReceipt:
+    payload, receipt_sha256 = _load_signed(canonical_bytes, authority, "implementation")
+    _keys(payload, _IMPLEMENTATION_FIELDS, "implementation receipt")
+    return _new_receipt(
+        TrustedImplementationReceipt,
+        canonical_bytes,
+        receipt_sha256,
+        revision=_exact_revision(
+            payload["revision"], CLUSTER_IMPLEMENTATION_COMPLETION_REVISION, "implementation"
+        ),
+        authority_sha256=_digest(payload["authority_sha256"], "implementation authority"),
+        graph_sha256=_digest(payload["graph_sha256"], "implementation graph"),
+        cluster_id=_token(payload["cluster_id"], "implementation cluster"),
+        stage_input_sha256=_digest(payload["stage_input_sha256"], "implementation input"),
+        reconciliation_receipt_sha256=_digest(
+            payload["reconciliation_receipt_sha256"], "implementation reconciliation receipt"
+        ),
+        disposition_ledger_sha256=_digest(
+            payload["disposition_ledger_sha256"], "implementation ledger"
+        ),
+        implementation_output_sha256=_digest(
+            payload["implementation_output_sha256"], "implementation output"
+        ),
+        accepted=_accepted(payload["accepted"], payload["diagnostics"], "implementation"),
+        diagnostics=_diagnostics(payload["diagnostics"], "implementation diagnostics"),
+    )
+
+
+def load_publication_receipt(
+    canonical_bytes: bytes, authority: ActivatedStageAuthority
+) -> TrustedPublicationReceipt:
+    payload, receipt_sha256 = _load_signed(canonical_bytes, authority, "publication")
+    _keys(payload, _PUBLICATION_FIELDS, "publication receipt")
+    changed = payload["changed"]
+    if type(changed) is not bool:
+        raise ValueError("publication changed must be a boolean")
+    return _new_receipt(
+        TrustedPublicationReceipt,
+        canonical_bytes,
+        receipt_sha256,
+        revision=_exact_revision(
+            payload["revision"], TRACKER_PUBLICATION_COMPLETION_REVISION, "publication"
+        ),
+        authority_sha256=_digest(payload["authority_sha256"], "publication authority"),
+        graph_sha256=_digest(payload["graph_sha256"], "publication graph"),
+        cluster_id=_token(payload["cluster_id"], "publication cluster"),
+        stage_input_sha256=_digest(payload["stage_input_sha256"], "publication input"),
+        implementation_receipt_sha256=_digest(
+            payload["implementation_receipt_sha256"], "publication implementation receipt"
+        ),
+        queue_generation_sha256=_digest(
+            payload["queue_generation_sha256"], "published queue generation"
+        ),
+        document_set_sha256=_digest(payload["document_set_sha256"], "document set"),
+        publication_config_sha256=_digest(
+            payload["publication_config_sha256"], "publication config"
+        ),
+        before_revision=_revision(payload["before_revision"], "before revision"),
+        after_revision=_revision(payload["after_revision"], "after revision"),
+        paths=_paths(payload["paths"]),
+        changed=changed,
+        accepted=_accepted(payload["accepted"], payload["diagnostics"], "publication"),
+        diagnostics=_diagnostics(payload["diagnostics"], "publication diagnostics"),
+    )
 
 
 def finish_package_audit(
@@ -114,51 +316,33 @@ def finish_package_audit(
     lease: Lease,
     *,
     graph: ClusterGraphPlan,
+    authority: ActivatedStageAuthority,
     receipt: TrustedPackageAuditReceipt,
 ) -> StageCompletion:
-    """Accept one package audit only against its exact analysis completion."""
-
-    package_ref_id = _text(receipt.package_ref_id, "package audit package", digest=True)
-    packages = {item.package_ref_id: item for item in graph.packages}
-    package = packages.get(package_ref_id)
+    graph = validate_cluster_graph(graph)
+    receipt = _reauthenticate(
+        receipt, TrustedPackageAuditReceipt, authority, load_package_audit_receipt
+    )
+    package = {item.package_ref_id: item for item in graph.packages}.get(receipt.package_ref_id)
     if package is None:
         raise QueueConflictError("package audit receipt belongs to another cluster")
     analysis = completion_pin(queue.snapshot(), package.unit_id)
     if analysis is None or analysis.revision != VALIDATED_PACKAGE_OUTPUT_REVISION:
         raise QueueConflictError("package audit requires accepted package analysis")
-    dependencies = (analysis,)
     expected_input = stage_input_sha256(
         graph,
         stage="audit",
-        subject=package_ref_id,
+        subject=receipt.package_ref_id,
         capability_pins=graph.audit_capability_pins,
-        dependency_pins=dependencies,
+        dependency_pins=(analysis,),
     )
-    diagnostics = _diagnostics(receipt.diagnostics, "package audit diagnostics")
-    payload = {
-        "accepted": _accepted(receipt.accepted, diagnostics, "package audit"),
-        "analysis_completion_revision": _revision(
-            receipt.analysis_completion_revision, "analysis completion revision"
-        ),
-        "analysis_completion_sha256": _text(
-            receipt.analysis_completion_sha256, "analysis completion", digest=True
-        ),
-        "cluster_id": _token(receipt.cluster_id, "package audit cluster"),
-        "diagnostics": list(diagnostics),
-        "graph_sha256": _text(receipt.graph_sha256, "package audit graph", digest=True),
-        "package_ref_id": package_ref_id,
-        "revision": _exact_revision(
-            receipt.revision, PACKAGE_AUDIT_COMPLETION_REVISION, "package audit"
-        ),
-        "stage_input_sha256": _text(receipt.stage_input_sha256, "package audit input", digest=True),
-    }
     if (
-        payload["graph_sha256"] != graph.content_id
-        or payload["cluster_id"] != graph.cluster_id
-        or payload["stage_input_sha256"] != expected_input
-        or payload["analysis_completion_revision"] != analysis.revision
-        or payload["analysis_completion_sha256"] != analysis.digest
-        or lease.unit_id != package_audit_unit_id(graph, package_ref_id)
+        receipt.graph_sha256 != graph.content_id
+        or receipt.cluster_id != graph.cluster_id
+        or receipt.stage_input_sha256 != expected_input
+        or receipt.analysis_completion_revision != analysis.revision
+        or receipt.analysis_completion_sha256 != analysis.digest
+        or lease.unit_id != package_audit_unit_id(graph, receipt.package_ref_id)
     ):
         raise QueueConflictError("package audit receipt does not bind its stage input")
     return _finish(
@@ -168,8 +352,7 @@ def finish_package_audit(
         ORCHESTRATION_PACKAGE_AUDIT_KIND,
         expected_input,
         PACKAGE_AUDIT_COMPLETION_REVISION,
-        "phase4-v2:package-audit-receipt",
-        payload,
+        receipt.receipt_sha256,
     )
 
 
@@ -178,11 +361,14 @@ def finish_cluster_reconciliation(
     lease: Lease,
     *,
     graph: ClusterGraphPlan,
+    authority: ActivatedStageAuthority,
     receipt: TrustedReconciliationReceipt,
 ) -> StageCompletion:
-    """Accept reconciliation only after every exact package audit is accepted."""
-
-    payload, expected_input = _reconciliation_payload(queue, graph, receipt)
+    graph = validate_cluster_graph(graph)
+    receipt = _reauthenticate(
+        receipt, TrustedReconciliationReceipt, authority, load_reconciliation_receipt
+    )
+    expected_input = _validate_reconciliation(queue, graph, receipt)
     if lease.unit_id != cluster_reconciliation_unit_id(graph):
         raise QueueConflictError("reconciliation receipt belongs to another stage")
     return _finish(
@@ -192,8 +378,7 @@ def finish_cluster_reconciliation(
         ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
         expected_input,
         CLUSTER_RECONCILIATION_COMPLETION_REVISION,
-        "phase4-v2:cluster-reconciliation-receipt",
-        payload,
+        receipt.receipt_sha256,
     )
 
 
@@ -202,17 +387,22 @@ def finish_cluster_implementation(
     lease: Lease,
     *,
     graph: ClusterGraphPlan,
+    reconciliation_authority: ActivatedStageAuthority,
     reconciliation_receipt: TrustedReconciliationReceipt,
+    authority: ActivatedStageAuthority,
     receipt: TrustedImplementationReceipt,
 ) -> StageCompletion:
-    """Accept implementation only for the exact reconciled disposition ledger."""
-
-    payload, expected_input = _implementation_payload(
-        queue,
-        graph,
+    graph = validate_cluster_graph(graph)
+    reconciliation_receipt = _reauthenticate(
         reconciliation_receipt,
-        receipt,
+        TrustedReconciliationReceipt,
+        reconciliation_authority,
+        load_reconciliation_receipt,
     )
+    receipt = _reauthenticate(
+        receipt, TrustedImplementationReceipt, authority, load_implementation_receipt
+    )
+    expected_input = _validate_implementation(queue, graph, reconciliation_receipt, receipt)
     if lease.unit_id != cluster_implementation_unit_id(graph):
         raise QueueConflictError("implementation receipt belongs to another stage")
     return _finish(
@@ -222,8 +412,7 @@ def finish_cluster_implementation(
         ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
         expected_input,
         CLUSTER_IMPLEMENTATION_COMPLETION_REVISION,
-        "phase4-v2:cluster-implementation-receipt",
-        payload,
+        receipt.receipt_sha256,
     )
 
 
@@ -232,74 +421,74 @@ def finish_tracker_publication(
     lease: Lease,
     *,
     graph: ClusterGraphPlan,
-    implementation_receipt: TrustedImplementationReceipt,
+    reconciliation_authority: ActivatedStageAuthority,
     reconciliation_receipt: TrustedReconciliationReceipt,
+    implementation_authority: ActivatedStageAuthority,
+    implementation_receipt: TrustedImplementationReceipt,
+    authority: ActivatedStageAuthority,
+    fanout_receipt: FanoutPublishReceipt,
     receipt: TrustedPublicationReceipt,
 ) -> StageCompletion:
-    """Accept publication only for the exact implemented cluster receipt."""
+    """Finish only after the real atomic fanout result is signed and bound."""
 
-    completions = completion_pins(queue.snapshot())
-    implementation = _required_completion(
-        completions, cluster_implementation_unit_id(graph), "tracker publication"
-    )
-    implementation_payload, _ = _implementation_payload(
-        queue,
-        graph,
+    graph = validate_cluster_graph(graph)
+    reconciliation_receipt = _reauthenticate(
         reconciliation_receipt,
+        TrustedReconciliationReceipt,
+        reconciliation_authority,
+        load_reconciliation_receipt,
+    )
+    implementation_receipt = _reauthenticate(
         implementation_receipt,
-        completions=completions,
+        TrustedImplementationReceipt,
+        implementation_authority,
+        load_implementation_receipt,
     )
-    implementation_sha256 = _content_id(
-        "phase4-v2:cluster-implementation-receipt", implementation_payload
+    receipt = _reauthenticate(
+        receipt, TrustedPublicationReceipt, authority, load_publication_receipt
     )
-    if (
-        implementation.revision != CLUSTER_IMPLEMENTATION_COMPLETION_REVISION
-        or implementation.digest != implementation_sha256
-    ):
-        raise QueueConflictError("publication received a different implementation receipt")
-    dependencies = (implementation,)
+    if type(fanout_receipt) is not FanoutPublishReceipt:
+        raise QueueConflictError("publication requires the exact production fanout receipt")
+    _validate_fanout_event(queue, lease, fanout_receipt)
+    _validate_implementation(queue, graph, reconciliation_receipt, implementation_receipt)
+    implementation = _required_completion(
+        completion_pins(queue.snapshot()),
+        cluster_implementation_unit_id(graph),
+        "tracker publication",
+    )
     expected_input = stage_input_sha256(
         graph,
         stage="publication",
         subject=graph.cluster_id,
         capability_pins=graph.publication_capability_pins,
-        dependency_pins=dependencies,
+        dependency_pins=(implementation,),
     )
-    diagnostics = _diagnostics(receipt.diagnostics, "publication diagnostics")
-    payload = {
-        "accepted": _accepted(receipt.accepted, diagnostics, "publication"),
-        "cluster_id": _token(receipt.cluster_id, "publication cluster"),
-        "diagnostics": list(diagnostics),
-        "document_set_sha256": _text(
-            receipt.document_set_sha256, "published document set", digest=True
-        ),
-        "graph_sha256": _text(receipt.graph_sha256, "publication graph", digest=True),
-        "implementation_receipt_sha256": _text(
-            receipt.implementation_receipt_sha256,
-            "publication implementation receipt",
-            digest=True,
-        ),
-        "publication_config_sha256": _text(
-            receipt.publication_config_sha256, "publication config", digest=True
-        ),
-        "queue_generation_sha256": _text(
-            receipt.queue_generation_sha256, "published queue generation", digest=True
-        ),
-        "revision": _exact_revision(
-            receipt.revision,
-            TRACKER_PUBLICATION_COMPLETION_REVISION,
-            "publication",
-        ),
-        "stage_input_sha256": _text(receipt.stage_input_sha256, "publication input", digest=True),
-    }
+    fanout_values = (
+        fanout_receipt.queue_generation,
+        fanout_receipt.document_set_sha256,
+        fanout_receipt.before_revision,
+        fanout_receipt.after_revision,
+        fanout_receipt.paths,
+        fanout_receipt.changed,
+    )
+    receipt_values = (
+        receipt.queue_generation_sha256,
+        receipt.document_set_sha256,
+        receipt.before_revision,
+        receipt.after_revision,
+        receipt.paths,
+        receipt.changed,
+    )
     if (
-        payload["graph_sha256"] != graph.content_id
-        or payload["cluster_id"] != graph.cluster_id
-        or payload["stage_input_sha256"] != expected_input
-        or payload["implementation_receipt_sha256"] != implementation_sha256
+        implementation.digest != implementation_receipt.receipt_sha256
+        or receipt.graph_sha256 != graph.content_id
+        or receipt.cluster_id != graph.cluster_id
+        or receipt.stage_input_sha256 != expected_input
+        or receipt.implementation_receipt_sha256 != implementation_receipt.receipt_sha256
+        or receipt_values != fanout_values
         or lease.unit_id != tracker_publication_unit_id(graph)
     ):
-        raise QueueConflictError("publication receipt does not bind the implemented cluster")
+        raise QueueConflictError("publication receipt does not bind the production fanout result")
     return _finish(
         queue,
         lease,
@@ -307,173 +496,124 @@ def finish_tracker_publication(
         ORCHESTRATION_TRACKER_PUBLICATION_KIND,
         expected_input,
         TRACKER_PUBLICATION_COMPLETION_REVISION,
-        "phase4-v2:tracker-publication-receipt",
-        payload,
+        receipt.receipt_sha256,
     )
 
 
-def _reconciliation_payload(
-    queue: Queue,
-    graph: ClusterGraphPlan,
-    receipt: TrustedReconciliationReceipt,
-    *,
-    completions: Mapping[str, CompletionDependencyPin] | None = None,
-) -> tuple[dict[str, object], str]:
-    if completions is None:
-        completions = completion_pins(queue.snapshot())
-    audits = _all_audit_completions(completions, graph)
+def _validate_reconciliation(
+    queue: Queue, graph: ClusterGraphPlan, receipt: TrustedReconciliationReceipt
+) -> str:
+    audits = _all_audit_completions(completion_pins(queue.snapshot()), graph)
+    dependencies = tuple(sorted(audits, key=lambda item: item.parent_unit_id))
     expected_input = stage_input_sha256(
         graph,
         stage="reconciliation",
         subject=graph.cluster_id,
         capability_pins=graph.reconciliation_capability_pins,
-        dependency_pins=_sorted_dependencies(audits),
+        dependency_pins=dependencies,
     )
-    pairs = _pairs(receipt.package_audit_receipts, "reconciliation package audit receipts")
     expected_pairs = tuple(
         sorted(
             (package.package_ref_id, audits[index].digest)
             for index, package in enumerate(graph.packages)
         )
     )
-    diagnostics = _diagnostics(receipt.diagnostics, "reconciliation diagnostics")
-    payload = {
-        "accepted": _accepted(receipt.accepted, diagnostics, "reconciliation"),
-        "cluster_id": _token(receipt.cluster_id, "reconciliation cluster"),
-        "completeness_receipt_sha256": _text(
-            receipt.completeness_receipt_sha256, "completeness receipt", digest=True
-        ),
-        "diagnostics": list(diagnostics),
-        "disposition_ledger_sha256": _text(
-            receipt.disposition_ledger_sha256, "disposition ledger", digest=True
-        ),
-        "graph_sha256": _text(receipt.graph_sha256, "reconciliation graph", digest=True),
-        "package_audit_receipts": [list(item) for item in pairs],
-        "reconciliation_result_sha256": _text(
-            receipt.reconciliation_result_sha256, "reconciliation result", digest=True
-        ),
-        "revision": _exact_revision(
-            receipt.revision,
-            CLUSTER_RECONCILIATION_COMPLETION_REVISION,
-            "reconciliation",
-        ),
-        "stage_input_sha256": _text(
-            receipt.stage_input_sha256, "reconciliation input", digest=True
-        ),
-    }
     if (
-        payload["graph_sha256"] != graph.content_id
-        or payload["cluster_id"] != graph.cluster_id
-        or payload["stage_input_sha256"] != expected_input
-        or pairs != expected_pairs
+        receipt.graph_sha256 != graph.content_id
+        or receipt.cluster_id != graph.cluster_id
+        or receipt.stage_input_sha256 != expected_input
+        or receipt.package_audit_receipts != expected_pairs
     ):
         raise QueueConflictError("reconciliation receipt does not bind all package audits")
-    return payload, expected_input
+    return expected_input
 
 
-def _implementation_payload(
+def _validate_implementation(
     queue: Queue,
     graph: ClusterGraphPlan,
     reconciliation_receipt: TrustedReconciliationReceipt,
     receipt: TrustedImplementationReceipt,
-    *,
-    completions: Mapping[str, CompletionDependencyPin] | None = None,
-) -> tuple[dict[str, object], str]:
-    if completions is None:
-        completions = completion_pins(queue.snapshot())
+) -> str:
     reconciliation = _required_completion(
-        completions, cluster_reconciliation_unit_id(graph), "implementation receipt"
+        completion_pins(queue.snapshot()),
+        cluster_reconciliation_unit_id(graph),
+        "implementation receipt",
     )
-    reconciliation_payload, _ = _reconciliation_payload(
-        queue,
-        graph,
-        reconciliation_receipt,
-        completions=completions,
-    )
-    reconciliation_sha256 = _content_id(
-        "phase4-v2:cluster-reconciliation-receipt", reconciliation_payload
-    )
-    if (
-        reconciliation.revision != CLUSTER_RECONCILIATION_COMPLETION_REVISION
-        or reconciliation.digest != reconciliation_sha256
-    ):
+    if reconciliation.digest != reconciliation_receipt.receipt_sha256:
         raise QueueConflictError("implementation receipt has a different reconciliation")
-    dependencies = (reconciliation,)
+    _validate_reconciliation(queue, graph, reconciliation_receipt)
     expected_input = stage_input_sha256(
         graph,
         stage="implementation",
         subject=graph.cluster_id,
         capability_pins=graph.implementation_capability_pins,
-        dependency_pins=dependencies,
+        dependency_pins=(reconciliation,),
     )
-    diagnostics = _diagnostics(receipt.diagnostics, "implementation diagnostics")
-    payload = {
-        "accepted": _accepted(receipt.accepted, diagnostics, "implementation"),
-        "cluster_id": _token(receipt.cluster_id, "implementation cluster"),
-        "diagnostics": list(diagnostics),
-        "disposition_ledger_sha256": _text(
-            receipt.disposition_ledger_sha256, "implemented disposition ledger", digest=True
-        ),
-        "graph_sha256": _text(receipt.graph_sha256, "implementation graph", digest=True),
-        "implementation_output_sha256": _text(
-            receipt.implementation_output_sha256, "implementation output", digest=True
-        ),
-        "reconciliation_receipt_sha256": _text(
-            receipt.reconciliation_receipt_sha256,
-            "implementation reconciliation receipt",
-            digest=True,
-        ),
-        "revision": _exact_revision(
-            receipt.revision,
-            CLUSTER_IMPLEMENTATION_COMPLETION_REVISION,
-            "implementation",
-        ),
-        "stage_input_sha256": _text(
-            receipt.stage_input_sha256, "implementation input", digest=True
-        ),
-    }
     if (
-        payload["graph_sha256"] != graph.content_id
-        or payload["cluster_id"] != graph.cluster_id
-        or payload["stage_input_sha256"] != expected_input
-        or payload["reconciliation_receipt_sha256"] != reconciliation_sha256
-        or payload["disposition_ledger_sha256"]
-        != reconciliation_payload["disposition_ledger_sha256"]
+        receipt.graph_sha256 != graph.content_id
+        or receipt.cluster_id != graph.cluster_id
+        or receipt.stage_input_sha256 != expected_input
+        or receipt.reconciliation_receipt_sha256 != reconciliation_receipt.receipt_sha256
+        or receipt.disposition_ledger_sha256 != reconciliation_receipt.disposition_ledger_sha256
     ):
         raise QueueConflictError("implementation receipt does not bind the accepted ledger")
-    return payload, expected_input
+    return expected_input
 
 
 def _all_audit_completions(
-    completions_by_unit: Mapping[str, CompletionDependencyPin],
-    graph: ClusterGraphPlan,
+    completions: Mapping[str, CompletionDependencyPin], graph: ClusterGraphPlan
 ) -> tuple[CompletionDependencyPin, ...]:
-    completions: list[CompletionDependencyPin] = []
+    result: list[CompletionDependencyPin] = []
     for package in graph.packages:
-        completion = completions_by_unit.get(
-            package_audit_unit_id(graph, package.package_ref_id)
-        )
+        completion = completions.get(package_audit_unit_id(graph, package.package_ref_id))
         if completion is None or completion.revision != PACKAGE_AUDIT_COMPLETION_REVISION:
             raise QueueConflictError("reconciliation requires every accepted package audit")
-        completions.append(completion)
-    return tuple(completions)
-
-
-def _sorted_dependencies(
-    completions: tuple[CompletionDependencyPin, ...],
-) -> tuple[CompletionDependencyPin, ...]:
-    return tuple(sorted(completions, key=lambda item: item.parent_unit_id))
+        result.append(completion)
+    return tuple(result)
 
 
 def _required_completion(
-    completions: Mapping[str, CompletionDependencyPin],
-    unit_id: str,
-    stage: str,
+    completions: Mapping[str, CompletionDependencyPin], unit_id: str, stage: str
 ) -> CompletionDependencyPin:
     completion = completions.get(unit_id)
     if completion is None:
         raise QueueConflictError(f"{stage} requires its accepted parent")
     return completion
+
+
+def _validate_fanout_event(queue: Queue, lease: Lease, receipt: FanoutPublishReceipt) -> None:
+    """Prove the receipt came from the publisher's immutable internal checkpoint."""
+
+    with sqlite3.connect(queue.database) as connection:
+        row = connection.execute(
+            """
+            SELECT event_type, payload_json FROM events
+            WHERE attempt_id = ? AND event_type IN (
+                'TRACKER_PUBLISHED', 'TRACKER_ALREADY_CURRENT'
+            ) ORDER BY event_id DESC LIMIT 1
+            """,
+            (lease.attempt_id,),
+        ).fetchone()
+    if row is None:
+        raise QueueConflictError("publication has no production fanout checkpoint")
+    event_type, encoded = row
+    payload = json.loads(encoded, object_pairs_hook=_unique_object)
+    expected = {
+        "generation": receipt.queue_generation,
+        "targets": list(receipt.paths),
+    }
+    if receipt.changed:
+        expected.update(
+            {
+                "document_set_sha256": receipt.document_set_sha256,
+                "revision": receipt.after_revision,
+            }
+        )
+        expected_type = "TRACKER_PUBLISHED"
+    else:
+        expected_type = "TRACKER_ALREADY_CURRENT"
+    if event_type != expected_type or payload != expected:
+        raise QueueConflictError("publication fanout receipt does not match its queue checkpoint")
 
 
 def _finish(
@@ -483,10 +623,8 @@ def _finish(
     kind: str,
     expected_input: str,
     completion_revision: str,
-    domain: str,
-    payload: dict[str, object],
+    receipt_sha256: str,
 ) -> StageCompletion:
-    receipt_sha256 = _content_id(domain, payload)
     result = queue._finish_trusted_orchestration_stage(
         lease,
         kind=kind,
@@ -498,9 +636,129 @@ def _finish(
     return StageCompletion(receipt_sha256, result)
 
 
+def _reauthenticate[
+    Receipt: (
+        TrustedPackageAuditReceipt,
+        TrustedReconciliationReceipt,
+        TrustedImplementationReceipt,
+        TrustedPublicationReceipt,
+    )
+](
+    receipt: Receipt,
+    expected_type: type[Receipt],
+    authority: ActivatedStageAuthority,
+    loader: Callable[[bytes, ActivatedStageAuthority], Receipt],
+) -> Receipt:
+    if type(receipt) is not expected_type or type(authority) is not ActivatedStageAuthority:
+        raise QueueConflictError("stage completion requires exact authenticated types")
+    restored = loader(receipt.canonical_bytes, authority)
+    if restored != receipt:
+        raise QueueConflictError(
+            "stage receipt fields do not match their signed canonical preimage"
+        )
+    return restored
+
+
+def _load_signed(
+    canonical_bytes: bytes, authority: ActivatedStageAuthority, stage: str
+) -> tuple[dict[str, object], str]:
+    if type(authority) is not ActivatedStageAuthority:
+        raise QueueConflictError("stage receipt requires an exact activated authority")
+    restored = load_stage_authority(
+        authority.canonical_bytes,
+        expected_sha256=authority.authority_sha256,
+        expected_stage=stage,
+    )
+    if restored != authority:
+        raise QueueConflictError("stage authority fields do not match their activation preimage")
+    document = _canonical_document(canonical_bytes, f"{stage} receipt")
+    _keys(document, {"payload", "signature"}, f"{stage} receipt envelope")
+    payload = document["payload"]
+    if type(payload) is not dict:
+        raise ValueError(f"{stage} receipt payload must be an object")
+    if payload.get("stage") != stage:
+        raise QueueConflictError("signed receipt belongs to another stage")
+    if payload.get("authority_sha256") != authority.authority_sha256:
+        raise QueueConflictError("signed receipt belongs to another authority")
+    signature = document["signature"]
+    if type(signature) is not str or _SIGNATURE.fullmatch(signature) is None:
+        raise ValueError("stage receipt signature must be a lowercase Ed25519 signature")
+    try:
+        Ed25519PublicKey.from_public_bytes(bytes.fromhex(authority.public_key)).verify(
+            bytes.fromhex(signature), _signing_bytes(stage, payload)
+        )
+    except InvalidSignature as error:
+        raise QueueConflictError("stage receipt signature is invalid") from error
+    return payload, _receipt_sha256(stage, canonical_bytes)
+
+
+def _new_receipt[
+    Receipt: (
+        TrustedPackageAuditReceipt,
+        TrustedReconciliationReceipt,
+        TrustedImplementationReceipt,
+        TrustedPublicationReceipt,
+    )
+](
+    receipt_type: type[Receipt], canonical_bytes: bytes, receipt_sha256: str, **values: object
+) -> Receipt:
+    result = object.__new__(receipt_type)
+    for field, value in (
+        *values.items(),
+        ("canonical_bytes", canonical_bytes),
+        ("receipt_sha256", receipt_sha256),
+    ):
+        object.__setattr__(result, field, value)
+    return result
+
+
+def _canonical_document(value: object, label: str) -> dict[str, object]:
+    if type(value) is not bytes or not value or len(value) > _MAX_DOCUMENT_BYTES:
+        raise ValueError(f"{label} must be bounded exact bytes")
+    try:
+        decoded = json.loads(value, object_pairs_hook=_unique_object)
+    except (UnicodeError, ValueError, RecursionError) as error:
+        raise ValueError(f"{label} is not valid canonical JSON") from error
+    if type(decoded) is not dict or _canonical_bytes(decoded) != value:
+        raise ValueError(f"{label} is not an exact canonical preimage")
+    return decoded
+
+
+def _unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def _canonical_bytes(value: object) -> bytes:
+    return json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
+    ).encode()
+
+
+def _keys(value: dict[str, object], expected: frozenset[str] | set[str], label: str) -> None:
+    if set(value) != expected:
+        raise ValueError(f"{label} fields are not exact")
+
+
+def _signing_bytes(stage: str, payload: object) -> bytes:
+    return f"phase4-v2:signed-stage-receipt:{stage}".encode() + b"\0" + _canonical_bytes(payload)
+
+
+def _authority_sha256(canonical_bytes: bytes) -> str:
+    return hashlib.sha256(b"phase4-v2:stage-authority\0" + canonical_bytes).hexdigest()
+
+
+def _receipt_sha256(stage: str, canonical_bytes: bytes) -> str:
+    return hashlib.sha256(
+        f"phase4-v2:signed-stage-receipt:{stage}".encode() + b"\0" + canonical_bytes
+    ).hexdigest()
+
+
 def _accepted(value: object, diagnostics: object, label: str) -> bool:
-    if type(value) is not bool:
-        raise ValueError(f"{label} acceptance must be a boolean")
     items = _diagnostics(diagnostics, f"{label} diagnostics")
     if value is not True or items:
         raise QueueConflictError(f"{label} receipt is not an accepted zero-diagnostic result")
@@ -509,12 +767,12 @@ def _accepted(value: object, diagnostics: object, label: str) -> bool:
 
 def _diagnostics(value: object, label: str) -> tuple[str, ...]:
     if (
-        type(value) is not tuple
+        type(value) is not list
         or len(value) > _MAX_DIAGNOSTICS
         or any(type(item) is not str for item in value)
     ):
-        raise ValueError(f"{label} must be an exact tuple")
-    items = value
+        raise ValueError(f"{label} must be a JSON array")
+    items = tuple(value)
     for item in items:
         _token(item, label)
     if items != tuple(sorted(set(items))):
@@ -523,23 +781,34 @@ def _diagnostics(value: object, label: str) -> tuple[str, ...]:
 
 
 def _pairs(value: object, label: str) -> tuple[tuple[str, str], ...]:
-    if type(value) is not tuple or len(value) > _MAX_PACKAGES or any(
-        type(item) is not tuple
-        or len(item) != 2
-        or type(item[0]) is not str
-        or type(item[1]) is not str
-        for item in value
+    if (
+        type(value) is not list
+        or len(value) > _MAX_PACKAGES
+        or any(
+            type(item) is not list
+            or len(item) != 2
+            or type(item[0]) is not str
+            or type(item[1]) is not str
+            for item in value
+        )
     ):
-        raise ValueError(f"{label} must be an exact pair tuple")
-    pairs = value
+        raise ValueError(f"{label} must be an exact JSON pair array")
+    pairs = tuple((item[0], item[1]) for item in value)
     for package_ref_id, digest in pairs:
-        _text(package_ref_id, label, digest=True)
-        _text(digest, label, digest=True)
-    if pairs != tuple(sorted(set(pairs))):
+        _digest(package_ref_id, label)
+        _digest(digest, label)
+    if pairs != tuple(sorted(set(pairs))) or len({item[0] for item in pairs}) != len(pairs):
         raise ValueError(f"{label} must be sorted and unique")
-    if len({item[0] for item in pairs}) != len(pairs):
-        raise ValueError(f"{label} contain duplicate package references")
     return pairs
+
+
+def _paths(value: object) -> tuple[str, ...]:
+    if type(value) is not list or not value or any(type(item) is not str for item in value):
+        raise ValueError("publication paths must be a non-empty JSON array")
+    paths = tuple(value)
+    if paths != tuple(sorted(set(paths))):
+        raise ValueError("publication paths must be sorted and unique")
+    return paths
 
 
 def _exact_revision(value: object, expected: str, label: str) -> str:
@@ -548,16 +817,21 @@ def _exact_revision(value: object, expected: str, label: str) -> str:
     return expected
 
 
+def _stage(value: object) -> str:
+    if type(value) is not str or value not in _STAGES:
+        raise ValueError("stage must name one supported semantic stage")
+    return value
+
+
 def _revision(value: object, label: str) -> str:
     if type(value) is not str or not value or len(value) > 200 or "\0" in value:
         raise ValueError(f"{label} must be a bounded revision")
     return value
 
 
-def _text(value: object, label: str, *, digest: bool = False) -> str:
-    if type(value) is not str or (digest and _DIGEST.fullmatch(value) is None):
-        suffix = " a lowercase SHA-256 digest" if digest else " text"
-        raise ValueError(f"{label} must be{suffix}")
+def _digest(value: object, label: str) -> str:
+    if type(value) is not str or _DIGEST.fullmatch(value) is None:
+        raise ValueError(f"{label} must be a lowercase SHA-256 digest")
     return value
 
 
@@ -567,15 +841,69 @@ def _token(value: object, label: str) -> str:
     return value
 
 
-def _content_id(domain: str, payload: object) -> str:
-    return hashlib.sha256(
-        domain.encode("ascii")
-        + b"\0"
-        + json.dumps(
-            payload,
-            sort_keys=True,
-            separators=(",", ":"),
-            ensure_ascii=False,
-            allow_nan=False,
-        ).encode()
-    ).hexdigest()
+_AUDIT_FIELDS = frozenset(
+    {
+        "accepted",
+        "analysis_completion_revision",
+        "analysis_completion_sha256",
+        "authority_sha256",
+        "cluster_id",
+        "diagnostics",
+        "graph_sha256",
+        "package_ref_id",
+        "revision",
+        "stage",
+        "stage_input_sha256",
+    }
+)
+_RECONCILIATION_FIELDS = frozenset(
+    {
+        "accepted",
+        "authority_sha256",
+        "cluster_id",
+        "completeness_receipt_sha256",
+        "diagnostics",
+        "disposition_ledger_sha256",
+        "graph_sha256",
+        "package_audit_receipts",
+        "reconciliation_result_sha256",
+        "revision",
+        "stage",
+        "stage_input_sha256",
+    }
+)
+_IMPLEMENTATION_FIELDS = frozenset(
+    {
+        "accepted",
+        "authority_sha256",
+        "cluster_id",
+        "diagnostics",
+        "disposition_ledger_sha256",
+        "graph_sha256",
+        "implementation_output_sha256",
+        "reconciliation_receipt_sha256",
+        "revision",
+        "stage",
+        "stage_input_sha256",
+    }
+)
+_PUBLICATION_FIELDS = frozenset(
+    {
+        "accepted",
+        "after_revision",
+        "authority_sha256",
+        "before_revision",
+        "changed",
+        "cluster_id",
+        "diagnostics",
+        "document_set_sha256",
+        "graph_sha256",
+        "implementation_receipt_sha256",
+        "paths",
+        "publication_config_sha256",
+        "queue_generation_sha256",
+        "revision",
+        "stage",
+        "stage_input_sha256",
+    }
+)

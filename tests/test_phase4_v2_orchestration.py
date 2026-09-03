@@ -486,10 +486,11 @@ def test_seeded_synthetic_crash_harness_converges_and_fences(tmp_path: Path) -> 
         ),
     )
 
-    assert report.unit_count == 18
+    assert report.unit_count == 45
     assert report.attempt_count >= report.unit_count
     assert report.injected_crashes > 0
     assert report.recovered_attempts == report.injected_crashes
     assert report.stale_writers_fenced == report.injected_crashes
     assert report.max_implementation_debt_clusters == 1
+    assert report.published_clusters == 3
     assert len(report.final_generation) == 64

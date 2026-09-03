@@ -6,6 +6,8 @@ from .acceptance import (
     run_synthetic_acceptance,
 )
 from .completion import (
+    STAGE_AUTHORITY_REVISION,
+    ActivatedStageAuthority,
     StageCompletion,
     TrustedImplementationReceipt,
     TrustedPackageAuditReceipt,
@@ -15,6 +17,11 @@ from .completion import (
     finish_cluster_reconciliation,
     finish_package_audit,
     finish_tracker_publication,
+    load_implementation_receipt,
+    load_package_audit_receipt,
+    load_publication_receipt,
+    load_reconciliation_receipt,
+    load_stage_authority,
 )
 from .graph import (
     CLUSTER_GRAPH_REVISION,
@@ -25,12 +32,14 @@ from .graph import (
     ClusterGraphMaterialization,
     ClusterGraphPlan,
     PackageAnalysisUnit,
+    build_cluster_graph,
     cluster_implementation_unit_id,
     cluster_reconciliation_unit_id,
     materialize_cluster_graph,
     package_audit_unit_id,
     stage_input_sha256,
     tracker_publication_unit_id,
+    validate_cluster_graph,
 )
 from .launcher import (
     ContextExit,
@@ -45,6 +54,7 @@ from .model import FollowUp, FollowUpAction, WorkStage, route_follow_up
 
 __all__ = [
     "ContextExit",
+    "ActivatedStageAuthority",
     "CLUSTER_GRAPH_REVISION",
     "CLUSTER_IMPLEMENTATION_COMPLETION_REVISION",
     "CLUSTER_RECONCILIATION_COMPLETION_REVISION",
@@ -60,6 +70,7 @@ __all__ = [
     "PACKAGE_AUDIT_COMPLETION_REVISION",
     "PackageAnalysisUnit",
     "StageCompletion",
+    "STAGE_AUTHORITY_REVISION",
     "SyntheticAcceptanceConfig",
     "SyntheticAcceptanceReport",
     "TRACKER_PUBLICATION_COMPLETION_REVISION",
@@ -70,15 +81,22 @@ __all__ = [
     "WorkStage",
     "cluster_implementation_unit_id",
     "cluster_reconciliation_unit_id",
+    "build_cluster_graph",
     "finish_cluster_implementation",
     "finish_cluster_reconciliation",
     "finish_package_audit",
     "finish_tracker_publication",
     "launch_one",
     "materialize_cluster_graph",
+    "load_implementation_receipt",
+    "load_package_audit_receipt",
+    "load_publication_receipt",
+    "load_reconciliation_receipt",
+    "load_stage_authority",
     "package_audit_unit_id",
     "route_follow_up",
     "run_synthetic_acceptance",
     "stage_input_sha256",
     "tracker_publication_unit_id",
+    "validate_cluster_graph",
 ]
