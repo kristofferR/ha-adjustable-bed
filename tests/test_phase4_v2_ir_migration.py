@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from typing import cast
 
 import pytest
 
 from tools.phase4_v2.ir import (
     SOURCE_SCHEMA_REVISION,
+    TARGET_SCHEMA_REVISION,
     IRValidationError,
     MigrationDomain,
     MigrationStatus,
@@ -57,8 +59,12 @@ def test_complete_migration_requires_every_leaf_without_rewriting_source() -> No
     plan = plan_v112_migration(payload, mappings)
 
     assert plan.status is MigrationStatus.COMPLETE
+    assert plan.target_schema_revision == TARGET_SCHEMA_REVISION
     require_complete_migration(plan)
     assert payload == _payload()
+
+    with pytest.raises(ValueError, match="target schema revision"):
+        replace(plan, target_schema_revision="phase4-protocol-ir-v1.1.0-2026-09-03")
 
 
 def test_incomplete_migration_fails_at_first_unmodeled_path() -> None:
