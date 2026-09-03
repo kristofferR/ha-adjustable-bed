@@ -14,6 +14,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 import tools.phase4_v2.equivalence.core as equivalence_core_module
+import tools.phase4_v2.equivalence.inventory as inventory_module
 import tools.phase4_v2.equivalence.plan as plan_module
 import tools.phase4_v2.preflight.registry as registry_module
 import tools.phase4_v2.validator as validator_module
@@ -35,6 +36,19 @@ from tools.phase4_v2.equivalence.core import (
     validator_authority_payload,
     validator_authority_pin_payload,
     validator_envelope_signing_bytes,
+)
+from tools.phase4_v2.equivalence.inventory import (
+    ActivatedInventoryAuthority,
+    AuthenticatedTargetInventoryEnvelope,
+    InventoryAuthenticationError,
+    accept_target_inventory,
+    inventory_authority_payload,
+    inventory_authority_pin_payload,
+    load_activated_inventory_authority,
+    load_authenticated_target_inventory_envelope,
+    target_inventory_envelope_payload,
+    target_inventory_signing_bytes,
+    validate_target_inventory_envelope,
 )
 from tools.phase4_v2.equivalence.plan import (
     EXACT_REUSE_PIPELINE_CAPABILITY,
@@ -70,9 +84,11 @@ from tools.phase4_v2.equivalence.queue import (
     finish_package_execution_plan,
     finish_package_preparation,
     finish_package_validation_receipt,
+    finish_target_inventory,
     materialize_package_execution_plan,
     materialize_package_preparation,
     materialize_package_validation_receipt,
+    materialize_target_inventory,
     package_queue_unit_id,
 )
 from tools.phase4_v2.preflight.execution import (
@@ -191,6 +207,17 @@ _VALIDATOR_AUTHORITY_PAYLOAD = validator_authority_payload(
 _VALIDATOR_ACTIVATION_SHA256 = json.loads(
     validator_authority_pin_payload(_VALIDATOR_AUTHORITY_PAYLOAD)
 )["activation_sha256"]
+_INVENTORY_KEY = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(SHA_A))
+_INVENTORY_AUTHORITY_PAYLOAD = inventory_authority_payload(
+    authority_id="phase4-inventory",
+    public_key=_INVENTORY_KEY.public_key()
+    .public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+    .hex(),
+    generation=1,
+)
+_INVENTORY_ACTIVATION_SHA256 = json.loads(
+    inventory_authority_pin_payload(_INVENTORY_AUTHORITY_PAYLOAD)
+)["activation_sha256"]
 
 
 def _validator_envelope() -> AuthenticatedValidatorEnvelope:
@@ -214,6 +241,7 @@ with patch.object(
 ):
     TARGET_PACKAGE_REF = frozen_package_ref_from_validator_envelope(_validator_envelope())
 TARGET_PACKAGE_REF_ID = TARGET_PACKAGE_REF.content_id
+_INVENTORIES: dict[str, AcceptedTargetRootInventory] = {}
 
 
 @pytest.fixture(autouse=True)
@@ -222,6 +250,11 @@ def _activate_test_validator(monkeypatch: pytest.MonkeyPatch) -> None:
         equivalence_core_module,
         "_read_protected_validator_pin",
         lambda: _VALIDATOR_ACTIVATION_SHA256,
+    )
+    monkeypatch.setattr(
+        inventory_module,
+        "_read_protected_inventory_pin",
+        lambda: _INVENTORY_ACTIVATION_SHA256,
     )
 
 _AUTHORITY_DATA = {
@@ -314,14 +347,98 @@ def _accepted_inventory(
             )
         ),
     )
-    return AcceptedTargetRootInventory(
-        inventory,
-        CompletionPin(
-            "inventory:target",
-            TARGET_ROOT_INVENTORY_REVISION,
-            inventory.content_id,
-        ),
+    authority = load_activated_inventory_authority(_INVENTORY_AUTHORITY_PAYLOAD)
+    extractor = ExtractorCapability("inventory", SHA_A, SHA_B, "inventory-v1")
+    unsigned = target_inventory_envelope_payload(
+        package_ref=TARGET_PACKAGE_REF,
+        inventory=inventory,
+        extractor=extractor,
+        authority=authority,
+        signature="0" * 128,
     )
+    payload = json.loads(unsigned)["payload"]
+    canonical = target_inventory_envelope_payload(
+        package_ref=TARGET_PACKAGE_REF,
+        inventory=inventory,
+        extractor=extractor,
+        authority=authority,
+        signature=_INVENTORY_KEY.sign(target_inventory_signing_bytes(payload)).hex(),
+    )
+    accepted = accept_target_inventory(
+        load_authenticated_target_inventory_envelope(
+            canonical, authority=authority, package_ref=TARGET_PACKAGE_REF
+        )
+    )
+    _INVENTORIES[accepted.completion.parent_unit_id] = accepted
+    return accepted
+
+
+def _publish_inventory(queue: Queue, accepted: AcceptedTargetRootInventory) -> None:
+    envelope = load_authenticated_target_inventory_envelope(
+        accepted.canonical_envelope,
+        authority=accepted.authority,
+        package_ref=accepted.package_ref,
+    )
+    for pin in (
+        inventory_module.inventory_authority_capability(envelope.authority),
+        inventory_module.inventory_extractor_capability(envelope.extractor),
+    ):
+        queue.register_capability(pin.name, pin.revision, pin.digest)
+        queue.activate_capability_from_absent(pin.name, pin.revision, pin.digest)
+    materialize_target_inventory(queue, envelope)
+    lease = queue.claim("inventory-publisher")
+    assert lease is not None and lease.unit_id == accepted.completion.parent_unit_id
+    published, _ = finish_target_inventory(queue, lease, envelope=envelope)
+    assert published == accepted
+
+
+def test_target_inventory_boundary_rejects_forgery_rotation_and_generic_finish(
+    queue: Queue, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    with pytest.raises(InventoryAuthenticationError):
+        ActivatedInventoryAuthority()
+    with pytest.raises(InventoryAuthenticationError):
+        AuthenticatedTargetInventoryEnvelope()
+    accepted = _accepted_inventory((SHA_C, SHA_D))
+    envelope = load_authenticated_target_inventory_envelope(
+        accepted.canonical_envelope,
+        authority=accepted.authority,
+        package_ref=accepted.package_ref,
+    )
+    for pin in (
+        inventory_module.inventory_authority_capability(envelope.authority),
+        inventory_module.inventory_extractor_capability(envelope.extractor),
+    ):
+        queue.register_capability(pin.name, pin.revision, pin.digest)
+        queue.activate_capability_from_absent(pin.name, pin.revision, pin.digest)
+    work = materialize_target_inventory(queue, envelope)
+    lease = queue.claim("inventory-attacker")
+    assert lease is not None
+    with pytest.raises(QueueConflictError, match="trusted publication adapter"):
+        queue.finish(
+            lease,
+            TerminalOutcome.ACCEPTED,
+            output_digest=accepted.inventory.content_id,
+            completion_revision=TARGET_ROOT_INVENTORY_REVISION,
+        )
+    monkeypatch.setattr(
+        inventory_module, "_read_protected_inventory_pin", lambda: SHA_F
+    )
+    with pytest.raises(InventoryAuthenticationError, match="protected activation"):
+        validate_target_inventory_envelope(envelope)
+    assert work.unit_id == accepted.completion.parent_unit_id
+
+
+def test_target_inventory_envelope_rejects_transplanted_package() -> None:
+    accepted = _accepted_inventory((SHA_C, SHA_D))
+    transplanted = frozen_package_ref_from_validator_envelope(_validator_envelope())
+    object.__setattr__(transplanted, "artifact_digest", SHA_F)
+    with pytest.raises(EquivalenceError, match="authenticated provenance"):
+        load_authenticated_target_inventory_envelope(
+            accepted.canonical_envelope,
+            authority=accepted.authority,
+            package_ref=transplanted,
+        )
 
 
 def _full_plan(*, reason: str = "no_exact_identity") -> PackageExecutionPlan:
@@ -426,7 +543,14 @@ def _reuse_plan() -> PackageExecutionPlan:
     )
 
 
-def _receipt(plan: PackageExecutionPlan, *, bundle_sha256: str = SHA_D) -> ValidationReceipt:
+def _receipt(
+    plan: PackageExecutionPlan,
+    *,
+    bundle_sha256: str = SHA_D,
+    corpus_sha256: str = SHA_A,
+    ir_sha256: str = SHA_B,
+    lineage_sha256: str = SHA_0,
+) -> ValidationReceipt:
     initial = ValidationReceipt(
         validator_revision=VALIDATOR_REVISION,
         accepted=True,
@@ -437,10 +561,10 @@ def _receipt(plan: PackageExecutionPlan, *, bundle_sha256: str = SHA_D) -> Valid
         declared_members=4,
         diagnostics=(),
         dependency_digests=(
-            ("corpus", SHA_A),
-            ("evidence_lineage", SHA_0),
-            ("execution_plan", freeze_package_execution_plan(plan).digest),
-            ("ir", SHA_B),
+            ("corpus", corpus_sha256),
+            ("evidence_lineage", lineage_sha256),
+            ("execution_plan", freeze_package_execution_plan(plan).canonical_sha256),
+            ("ir", ir_sha256),
             ("preflight", SHA_C),
             ("report_schema", PACKAGE_REPORT_SCHEMA_SHA256),
             ("schema", FINAL_IR_SCHEMA_SHA256),
@@ -467,12 +591,6 @@ def _receipt(plan: PackageExecutionPlan, *, bundle_sha256: str = SHA_D) -> Valid
     )
 
 
-TRUSTED_DEPENDENCIES = DependencyPins(
-    preflight_sha256=SHA_C,
-    ir_sha256=SHA_B,
-    schema_sha256=FINAL_IR_SCHEMA_SHA256,
-    corpus_sha256=SHA_A,
-)
 TRUSTED_EVIDENCE_LINEAGE = EvidenceLineageTrust(
     payload=b"{}",
     expected_manifest_sha256=SHA_0,
@@ -487,7 +605,21 @@ def _stub_valid_report(
 ) -> tuple[Path, ValidationReceipt]:
     report_root = tmp_path / "report"
     report_root.mkdir(exist_ok=True)
-    receipt = _receipt(plan)
+    inputs = report_root / "inputs"
+    inputs.mkdir(exist_ok=True)
+    ir_bytes = b"canonical target IR"
+    corpus_bytes = b"canonical target corpus"
+    (inputs / "ir.json").write_bytes(ir_bytes)
+    (inputs / "corpus.json").write_bytes(corpus_bytes)
+    ir_sha256 = hashlib.sha256(ir_bytes).hexdigest()
+    corpus_sha256 = hashlib.sha256(corpus_bytes).hexdigest()
+    lineage_sha256 = hashlib.sha256(TRUSTED_EVIDENCE_LINEAGE.payload).hexdigest()
+    receipt = _receipt(
+        plan,
+        ir_sha256=ir_sha256,
+        corpus_sha256=corpus_sha256,
+        lineage_sha256=lineage_sha256,
+    )
 
     def validate(
         received_root: Path,
@@ -499,15 +631,15 @@ def _stub_valid_report(
         assert received_root == report_root
         assert expected_dependencies == PackageDependencyPins(
             preflight_sha256=SHA_C,
-            ir_sha256=SHA_B,
+            ir_sha256=ir_sha256,
             schema_sha256=FINAL_IR_SCHEMA_SHA256,
-            corpus_sha256=SHA_A,
-            execution_plan_sha256=freeze_package_execution_plan(plan).digest,
+            corpus_sha256=corpus_sha256,
+            execution_plan_sha256=freeze_package_execution_plan(plan).canonical_sha256,
             report_schema_sha256=PACKAGE_REPORT_SCHEMA_SHA256,
         )
         assert expected_evidence_lineage is not None
         assert expected_evidence_lineage.payload == TRUSTED_EVIDENCE_LINEAGE.payload
-        assert expected_evidence_lineage.expected_manifest_sha256 == SHA_0
+        assert expected_evidence_lineage.expected_manifest_sha256 == lineage_sha256
         assert expected_evidence_lineage.trusted_producers
         assert allow_unbound is False
         return receipt
@@ -802,6 +934,9 @@ def _publish_prerequisites(queue: Queue, plan: PackageExecutionPlan) -> None:
         queue.register_capability(pin.name, pin.revision, pin.digest)
         queue.activate_capability_from_absent(pin.name, pin.revision, pin.digest)
     for pin in frozen.required_completions:
+        if pin.parent_unit_id in _INVENTORIES:
+            _publish_inventory(queue, _INVENTORIES[pin.parent_unit_id])
+            continue
         if pin.parent_unit_id == plan_module.preparation_queue_unit_id(TARGET_PACKAGE_REF_ID):
             materialize_package_preparation(
                 queue,
@@ -845,6 +980,9 @@ def _publish_prerequisites(queue: Queue, plan: PackageExecutionPlan) -> None:
 
 
 def _materialize_prerequisite(queue: Queue, pin: CompletionPin) -> None:
+    if pin.parent_unit_id in _INVENTORIES:
+        _publish_inventory(queue, _INVENTORIES[pin.parent_unit_id])
+        return
     if pin.parent_unit_id == plan_module.preparation_queue_unit_id(TARGET_PACKAGE_REF_ID):
         _activate_preparation_capabilities(queue)
         work = materialize_package_preparation(
@@ -951,6 +1089,9 @@ def test_materialization_waits_for_the_frozen_package_validation_receipt(
         queue.activate_capability_from_absent(pin.name, pin.revision, pin.digest)
     for pin in frozen.required_completions:
         if pin.parent_unit_id != receipt_completion.parent_unit_id:
+            if pin.parent_unit_id in _INVENTORIES:
+                _publish_inventory(queue, _INVENTORIES[pin.parent_unit_id])
+                continue
             if pin.parent_unit_id == plan_module.preparation_queue_unit_id(TARGET_PACKAGE_REF_ID):
                 materialize_package_preparation(
                     queue,
@@ -1059,7 +1200,6 @@ def test_finish_builds_bound_output_and_publishes_its_exact_identity(
         lease,
         execution_plan=plan,
         report_root=report_root,
-        trusted_dependencies=TRUSTED_DEPENDENCIES,
         evidence_lineage_payload=TRUSTED_EVIDENCE_LINEAGE.payload,
     )
 
@@ -1099,13 +1239,12 @@ def test_finish_rejects_missing_report_before_publication(
     lease = queue.claim("package-worker")
     assert lease is not None and lease.unit_id == materialized.unit_id
 
-    with pytest.raises(EquivalenceError, match="validated artifact identity"):
+    with pytest.raises(QueueConflictError, match="report input is unavailable"):
         finish_package_execution_plan(
             queue,
             lease,
             execution_plan=plan,
             report_root=tmp_path / "missing-report",
-            trusted_dependencies=TRUSTED_DEPENDENCIES,
             evidence_lineage_payload=TRUSTED_EVIDENCE_LINEAGE.payload,
         )
 
@@ -1141,7 +1280,6 @@ def test_finish_rejects_plan_drift_without_an_accepted_completion(
             lease,
             execution_plan=changed,
             report_root=report_root,
-            trusted_dependencies=TRUSTED_DEPENDENCIES,
             evidence_lineage_payload=TRUSTED_EVIDENCE_LINEAGE.payload,
         )
 
@@ -1206,7 +1344,6 @@ def test_finish_fences_plan_mutation_while_output_is_built(
             lease,
             execution_plan=plan,
             report_root=report_root,
-            trusted_dependencies=TRUSTED_DEPENDENCIES,
             evidence_lineage_payload=TRUSTED_EVIDENCE_LINEAGE.payload,
         )
 
@@ -1317,7 +1454,6 @@ def test_finish_rejects_lease_for_a_different_package_plan(queue: Queue) -> None
             lease,
             execution_plan=plan,
             report_root=Path("unused"),
-            trusted_dependencies=TRUSTED_DEPENDENCIES,
             evidence_lineage_payload=TRUSTED_EVIDENCE_LINEAGE.payload,
         )
 
@@ -1342,7 +1478,6 @@ def test_wrong_lease_is_untouched_before_report_validation(
             lease,
             execution_plan=plan,
             report_root=Path("unused"),
-            trusted_dependencies=TRUSTED_DEPENDENCIES,
             evidence_lineage_payload=TRUSTED_EVIDENCE_LINEAGE.payload,
         )
 

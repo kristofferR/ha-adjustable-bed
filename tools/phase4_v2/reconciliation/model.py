@@ -13,7 +13,7 @@ from typing import Never, cast
 
 from jsonschema.validators import Draft202012Validator
 
-from tools.phase4_v2.equivalence import FrozenPackageRef, Route
+from tools.phase4_v2.equivalence import FrozenPackageRef, Route, validate_frozen_package_ref
 
 from .schema import COMPARISON_AREAS, INPUT_SCHEMA_REVISION, schema_document
 
@@ -558,16 +558,7 @@ class PackageSurface:
     areas: tuple[AreaSurface, ...]
 
     def __post_init__(self) -> None:
-        if type(self.package_ref) is not FrozenPackageRef:
-            _fail("package_ref must use the public FrozenPackageRef type")
-        FrozenPackageRef(
-            package_name=self.package_ref.package_name,
-            version_code=self.package_ref.version_code,
-            artifact_digest=self.package_ref.artifact_digest,
-            preflight_sha256=self.package_ref.preflight_sha256,
-            validation_receipt_sha256=self.package_ref.validation_receipt_sha256,
-            revision=self.package_ref.revision,
-        )
+        validate_frozen_package_ref(self.package_ref)
         _sha256(self.report_sha256, "package.report_sha256")
         _token(self.report_revision, "package.report_revision")
         if (
@@ -623,7 +614,7 @@ class PackageSurface:
     def to_data(self) -> dict[str, object]:
         return {
             "areas": [item.to_data() for item in self.areas],
-            "package_ref": self.package_ref.to_data(),
+            "package_ref_id": self.package_ref.content_id,
             "report_revision": self.report_revision,
             "report_sha256": self.report_sha256,
             "roots": [item.to_data() for item in self.roots],
@@ -692,7 +683,11 @@ def dumps_input(value: ReconciliationInput) -> bytes:
     return encoded
 
 
-def loads_input(payload: str | bytes) -> ReconciliationInput:
+def loads_input(
+    payload: str | bytes,
+    *,
+    package_refs: Mapping[str, FrozenPackageRef],
+) -> ReconciliationInput:
     """Load strict JSON through the closed schema and immutable typed model."""
     raw = _decode_json(payload)
     errors = sorted(
@@ -703,12 +698,20 @@ def loads_input(payload: str | bytes) -> ReconciliationInput:
         first = errors[0]
         location = "/".join(str(item) for item in first.absolute_path) or "$"
         _fail(f"schema validation failed at {location}: {first.message}")
-    return _parse_input(cast(dict[str, object], raw))
+    trusted_refs = {
+        package_ref_id: validate_frozen_package_ref(package_ref)
+        for package_ref_id, package_ref in package_refs.items()
+    }
+    if any(key != value.content_id for key, value in trusted_refs.items()):
+        _fail("trusted package reference mapping contains a transplanted key")
+    return _parse_input(cast(dict[str, object], raw), trusted_refs)
 
 
-def _parse_input(raw: dict[str, object]) -> ReconciliationInput:
+def _parse_input(
+    raw: dict[str, object], package_refs: Mapping[str, FrozenPackageRef]
+) -> ReconciliationInput:
     packages = tuple(
-        _parse_package(cast(dict[str, object], item))
+        _parse_package(cast(dict[str, object], item), package_refs)
         for item in cast(list[object], raw["packages"])
     )
     return ReconciliationInput(
@@ -718,16 +721,14 @@ def _parse_input(raw: dict[str, object]) -> ReconciliationInput:
     )
 
 
-def _parse_package(raw: dict[str, object]) -> PackageSurface:
-    package = cast(dict[str, object], raw["package_ref"])
-    package_ref = FrozenPackageRef(
-        package_name=cast(str, package["package_name"]),
-        version_code=cast(str, package["version_code"]),
-        artifact_digest=cast(str, package["artifact_digest"]),
-        preflight_sha256=cast(str, package["preflight_sha256"]),
-        validation_receipt_sha256=cast(str, package["validation_receipt_sha256"]),
-        revision=cast(str, package["revision"]),
-    )
+def _parse_package(
+    raw: dict[str, object], package_refs: Mapping[str, FrozenPackageRef]
+) -> PackageSurface:
+    package_ref_id = cast(str, raw["package_ref_id"])
+    try:
+        package_ref = package_refs[package_ref_id]
+    except KeyError:
+        _fail(f"missing trusted package reference {package_ref_id!r}")
     roots = tuple(
         _parse_root(cast(dict[str, object], item)) for item in cast(list[object], raw["roots"])
     )

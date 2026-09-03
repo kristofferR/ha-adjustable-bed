@@ -36,7 +36,6 @@ if TYPE_CHECKING:
         ActivatedPreparationAuthority,
         PreparationReceipt,
     )
-    from tools.phase4_v2.validator import DependencyPins
 
 SCHEMA_REVISION = 3
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$")
@@ -595,6 +594,11 @@ class _PreparationReceiptPublication:
     package_local: PackageLocalPlan
     receipt: PreparationReceipt
     authority: ActivatedPreparationAuthority
+
+
+@dataclass(frozen=True, slots=True)
+class _TargetInventoryPublication:
+    envelope: object
 
 
 @dataclass(frozen=True, slots=True)
@@ -1768,6 +1772,44 @@ class Queue:
             finish_result=result,
         )
 
+    def finish_target_inventory_envelope(
+        self, lease: Lease, *, envelope: object
+    ) -> InputCheckedFinishResult:
+        """Publish a currently authorized signed target inventory."""
+        from tools.phase4_v2.equivalence.inventory import (
+            AuthenticatedTargetInventoryEnvelope,
+            accept_target_inventory,
+            validate_target_inventory_envelope,
+        )
+
+        if type(envelope) is not AuthenticatedTargetInventoryEnvelope:
+            raise QueueConflictError("exact authenticated target inventory is required")
+        envelope = validate_target_inventory_envelope(envelope)
+        accepted = accept_target_inventory(envelope)
+        guard = self._try_acquire_publication_guard(wait=True)
+        if guard is None:
+            raise QueueConflictError("tracker publication prevented attempt completion")
+        try:
+            result = self._finish_with_publication_guard(
+                lease,
+                TerminalOutcome.ACCEPTED,
+                output_digest=accepted.inventory.content_id,
+                completion_revision=accepted.completion.revision,
+                expected_input_digest=lease.input_digest,
+                terminalize_input_mismatch=True,
+                trusted_publication=_TargetInventoryPublication(envelope),
+            )
+        finally:
+            os.close(guard)
+        return InputCheckedFinishResult(
+            disposition=(
+                InputCheckedFinishDisposition.INPUT_MISMATCH
+                if result.disposition is FinishDisposition.TERMINAL_ONLY
+                else InputCheckedFinishDisposition.ACCEPTED
+            ),
+            finish_result=result,
+        )
+
     def _leased_orchestration_identity(self, lease: Lease) -> tuple[str, str]:
         with self._connect() as connection:
             self._require_live_lease(connection, lease)
@@ -1885,26 +1927,23 @@ class Queue:
         *,
         execution_plan: PackageExecutionPlan,
         report_root: Path,
-        trusted_dependencies: DependencyPins,
         evidence_lineage_payload: bytes,
     ) -> tuple[ValidatedPackageOutput, InputCheckedFinishResult]:
         """Validate report bytes, then publish one reserved package output."""
         from tools.phase4_v2.equivalence.plan import (
+            FINAL_IR_SCHEMA_SHA256,
             PACKAGE_REPORT_SCHEMA_SHA256,
             VALIDATED_PACKAGE_OUTPUT_REVISION,
             build_validated_package_output,
             freeze_package_execution_plan,
         )
         from tools.phase4_v2.validator import (
-            DependencyPins,
             EvidenceLineageTrust,
             PackageDependencyPins,
             TrustedProducer,
             validate_report_bundle,
         )
 
-        if type(trusted_dependencies) is not DependencyPins:
-            raise QueueConflictError("package validation requires exact trusted dependencies")
         frozen = freeze_package_execution_plan(execution_plan)
         plan_input_mismatch = frozen.digest != lease.input_digest
         if plan_input_mismatch:
@@ -1915,31 +1954,11 @@ class Queue:
         target_preflight_sha256 = execution_plan.target_package_ref.preflight_sha256
         if type(evidence_lineage_payload) is not bytes:
             raise QueueConflictError("evidence lineage payload must be exact immutable bytes")
-        try:
-            receipt_dependencies = {
-                name: self._trusted_receipt_dependency(
-                    lease,
-                    lease.input_digest,
-                    execution_plan.target_package_ref.validation_receipt_sha256,
-                    name,
-                )
-                for name in ("corpus", "evidence_lineage", "ir", "preflight", "schema")
-            }
-        except DependencyNotSatisfiedError, InputDigestMismatchError:
-            if not plan_input_mismatch:
-                raise
-            self.finish_input_mismatch_if_input_changed(
-                lease,
-                expected_input_digest=frozen.digest,
-            )
-            raise InputDigestMismatchError(
-                f"package plan does not match the leased queue input: {lease.unit_id}"
-            ) from None
-        if receipt_dependencies["preflight"] != target_preflight_sha256:
-            raise QueueConflictError(
-                "trusted receipt preflight does not match the package execution plan"
-            )
-        lineage_digest = receipt_dependencies["evidence_lineage"]
+        lineage_digest = hashlib.sha256(evidence_lineage_payload).hexdigest()
+        target_ir_sha256 = _bounded_regular_file_sha256(report_root / "inputs" / "ir.json")
+        target_corpus_sha256 = _bounded_regular_file_sha256(
+            report_root / "inputs" / "corpus.json"
+        )
         producer_pins = {
             (capability.revision, capability.name, capability.digest)
             for capability in frozen.required_capabilities
@@ -1956,10 +1975,10 @@ class Queue:
             report_root,
             expected_dependencies=PackageDependencyPins(
                 preflight_sha256=target_preflight_sha256,
-                ir_sha256=receipt_dependencies["ir"],
-                schema_sha256=receipt_dependencies["schema"],
-                corpus_sha256=receipt_dependencies["corpus"],
-                execution_plan_sha256=frozen.digest,
+                ir_sha256=target_ir_sha256,
+                schema_sha256=FINAL_IR_SCHEMA_SHA256,
+                corpus_sha256=target_corpus_sha256,
+                execution_plan_sha256=frozen.canonical_sha256,
                 report_schema_sha256=PACKAGE_REPORT_SCHEMA_SHA256,
             ),
             expected_evidence_lineage=trusted_evidence_lineage,
@@ -2082,6 +2101,7 @@ class Queue:
         trusted_publication: (
             _PackageReceiptPublication
             | _PreparationReceiptPublication
+            | _TargetInventoryPublication
             | _ValidatedPackageOutputPublication
             | _AuthenticatedOrchestrationStagePublication
             | None
@@ -2098,6 +2118,14 @@ class Queue:
             )
         elif isinstance(trusted_publication, _PreparationReceiptPublication):
             self._validate_preparation_receipt_publication(
+                lease,
+                trusted_publication,
+                output_digest=output_digest,
+                completion_revision=completion_revision,
+                expected_input_digest=expected_input_digest,
+            )
+        elif isinstance(trusted_publication, _TargetInventoryPublication):
+            self._validate_target_inventory_publication(
                 lease,
                 trusted_publication,
                 output_digest=output_digest,
@@ -2169,6 +2197,25 @@ class Queue:
                     connection,
                     lease.unit_id,
                     trusted_publication.authority,
+                )
+            elif isinstance(trusted_publication, _TargetInventoryPublication):
+                from tools.phase4_v2.equivalence.inventory import (
+                    AuthenticatedTargetInventoryEnvelope,
+                    inventory_authority_capability,
+                    inventory_extractor_capability,
+                    validate_target_inventory_envelope,
+                )
+
+                if type(trusted_publication.envelope) is not AuthenticatedTargetInventoryEnvelope:
+                    raise QueueConflictError("target inventory publication changed type")
+                envelope = validate_target_inventory_envelope(trusted_publication.envelope)
+                _require_exact_active_capabilities(
+                    connection,
+                    lease.unit_id,
+                    (
+                        inventory_authority_capability(envelope.authority),
+                        inventory_extractor_capability(envelope.extractor),
+                    ),
                 )
             terminal = connection.execute(
                 """
@@ -2447,6 +2494,35 @@ class Queue:
             raise QueueConflictError(
                 "preparation unit does not pin its exact activated capabilities"
             )
+
+    @staticmethod
+    def _validate_target_inventory_publication(
+        lease: Lease,
+        publication: _TargetInventoryPublication,
+        *,
+        output_digest: str | None,
+        completion_revision: str | None,
+        expected_input_digest: str | None,
+    ) -> None:
+        from tools.phase4_v2.equivalence.inventory import (
+            AuthenticatedTargetInventoryEnvelope,
+            accept_target_inventory,
+            target_inventory_queue_unit_id,
+            validate_target_inventory_envelope,
+        )
+
+        if type(publication.envelope) is not AuthenticatedTargetInventoryEnvelope:
+            raise QueueConflictError("target inventory publication changed type")
+        envelope = validate_target_inventory_envelope(publication.envelope)
+        accepted = accept_target_inventory(envelope)
+        if (
+            lease.unit_id != target_inventory_queue_unit_id(envelope.package_ref.content_id)
+            or output_digest != accepted.inventory.content_id
+            or completion_revision != accepted.completion.revision
+            or expected_input_digest != lease.input_digest
+            or expected_input_digest != envelope.receipt_sha256
+        ):
+            raise QueueConflictError("publication does not belong to the target inventory")
 
     @staticmethod
     def _validate_package_output_publication(
@@ -3342,6 +3418,10 @@ def _validate_reserved_unit_kind(unit_id: str, kind: str) -> None:
 
 
 def _reserved_unit_kinds() -> dict[str, str]:
+    from tools.phase4_v2.equivalence.inventory import (
+        INVENTORY_QUEUE_UNIT_KIND,
+        INVENTORY_QUEUE_UNIT_PREFIX,
+    )
     from tools.phase4_v2.equivalence.plan import (
         PACKAGE_QUEUE_UNIT_KIND,
         PACKAGE_QUEUE_UNIT_PREFIX,
@@ -3349,6 +3429,7 @@ def _reserved_unit_kinds() -> dict[str, str]:
 
     return {
         **_RESERVED_UNIT_KINDS,
+        f"{INVENTORY_QUEUE_UNIT_PREFIX}:": INVENTORY_QUEUE_UNIT_KIND,
         f"{PACKAGE_QUEUE_UNIT_PREFIX}:": PACKAGE_QUEUE_UNIT_KIND,
     }
 
@@ -3453,9 +3534,83 @@ def _require_exact_active_stage_authority(
         raise QueueConflictError("orchestration signing authority is not the active head")
 
 
+def _require_exact_active_capabilities(
+    connection: sqlite3.Connection,
+    unit_id: str,
+    pins: tuple[object, ...],
+) -> None:
+    expected = tuple(
+        sorted(
+            (
+                getattr(pin, "name", None),
+                getattr(pin, "revision", None),
+                getattr(pin, "digest", None),
+            )
+            for pin in pins
+        )
+    )
+    requirements = tuple(
+        tuple(row)
+        for row in connection.execute(
+            """
+            SELECT capability, required_revision, required_digest
+            FROM capability_requirements WHERE unit_id = ? ORDER BY capability
+            """,
+            (unit_id,),
+        ).fetchall()
+    )
+    if requirements != expected:
+        raise QueueConflictError("unit does not require exactly its authenticated capabilities")
+    for name, revision, digest in expected:
+        head = connection.execute(
+            """
+            SELECT revision, digest FROM pipeline_capability_activations
+            WHERE capability = ? ORDER BY activation_id DESC LIMIT 1
+            """,
+            (name,),
+        ).fetchone()
+        if head is None or tuple(head) != (revision, digest):
+            raise QueueConflictError("authenticated capability is not the active head")
+
+
 def _validate_digest(value: str, label: str) -> None:
     if not isinstance(value, str) or _DIGEST.fullmatch(value) is None:
         raise ValueError(f"{label} must be a lowercase SHA-256 digest")
+
+
+def _bounded_regular_file_sha256(path: Path) -> str:
+    descriptor: int | None = None
+    try:
+        descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > 64 * 1024 * 1024:
+            raise QueueConflictError("package report input is not a bounded regular file")
+        digest = hashlib.sha256()
+        while chunk := os.read(descriptor, 1024 * 1024):
+            digest.update(chunk)
+        after = os.fstat(descriptor)
+        if (
+            after.st_dev,
+            after.st_ino,
+            after.st_mode,
+            after.st_size,
+            after.st_mtime_ns,
+            after.st_ctime_ns,
+        ) != (
+            metadata.st_dev,
+            metadata.st_ino,
+            metadata.st_mode,
+            metadata.st_size,
+            metadata.st_mtime_ns,
+            metadata.st_ctime_ns,
+        ):
+            raise QueueConflictError("package report input changed while hashing")
+        return digest.hexdigest()
+    except OSError as error:
+        raise QueueConflictError("package report input is unavailable") from error
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
 
 
 def _validate_revision(value: str) -> None:

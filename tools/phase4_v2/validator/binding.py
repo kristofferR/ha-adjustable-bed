@@ -259,10 +259,15 @@ def validate_binding_contract(
     expected_contract_revision, dependency_names = _dependency_contract(
         expected_dependencies
     )
-    pins = expected_dependencies.as_pairs() + (
-        (("evidence_lineage", expected_evidence_lineage.expected_manifest_sha256),)
-        if expected_evidence_lineage is not None
-        else ()
+    pins = tuple(
+        sorted(
+            expected_dependencies.as_pairs()
+            + (
+                (("evidence_lineage", expected_evidence_lineage.expected_manifest_sha256),)
+                if expected_evidence_lineage is not None
+                else ()
+            )
+        )
     )
     diagnostics: list[BindingDiagnostic] = []
     for name, digest in pins:

@@ -743,10 +743,18 @@ def _inventory(value: TargetRootInventory) -> TargetRootInventory:
     )
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, init=False)
 class AcceptedTargetRootInventory:
     inventory: TargetRootInventory
     completion: CompletionPin
+    authority_sha256: str
+    canonical_envelope: bytes
+    authority: object
+    package_ref: FrozenPackageRef
+    extractor: ExtractorCapability
+
+    def __init__(self) -> None:
+        _fail("accepted inventories derive only from an authenticated inventory envelope")
 
     def __post_init__(self) -> None:
         inventory = _inventory(self.inventory)
@@ -754,17 +762,25 @@ class AcceptedTargetRootInventory:
         _revision(completion.revision, TARGET_ROOT_INVENTORY_REVISION, "inventory completion")
         if completion.digest != inventory.content_id:
             _fail("target inventory completion does not accept this exact inventory")
+        _sha(self.authority_sha256, "target inventory authority")
+        if type(self.canonical_envelope) is not bytes:
+            _fail("accepted target inventory requires exact authenticated envelope bytes")
         object.__setattr__(self, "inventory", inventory)
         object.__setattr__(self, "completion", completion)
 
     def to_data(self) -> dict[str, object]:
-        return {"completion": self.completion.to_data(), "inventory": self.inventory.to_data()}
+        return {
+            "authority_sha256": self.authority_sha256,
+            "completion": self.completion.to_data(),
+            "envelope_sha256": hashlib.sha256(self.canonical_envelope).hexdigest(),
+            "inventory": self.inventory.to_data(),
+        }
 
 
 def _accepted_inventory(value: AcceptedTargetRootInventory) -> AcceptedTargetRootInventory:
-    if type(value) is not AcceptedTargetRootInventory:
-        _fail("plan requires an exact AcceptedTargetRootInventory")
-    return AcceptedTargetRootInventory(value.inventory, value.completion)
+    from .inventory import validate_accepted_target_inventory
+
+    return validate_accepted_target_inventory(value)
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -1446,8 +1462,15 @@ class PackageExecutionPlan:
     @property
     def required_capabilities(self) -> tuple[CapabilityPin, ...]:
         def values() -> Iterable[CapabilityPin]:
+            from .inventory import (
+                inventory_authority_capability,
+                inventory_extractor_capability,
+            )
+
             yield self.package_local.pipeline_capability
             yield from self.preparation.capabilities
+            yield inventory_authority_capability(self.accepted_target_inventory.authority)
+            yield inventory_extractor_capability(self.accepted_target_inventory.extractor)
             for item in self.root_plans:
                 if type(item) is ExactReuseRootPlan:
                     yield item.reuse.extractor_capability
@@ -1594,6 +1617,11 @@ class FrozenPackageExecutionPlan:
 
     def __init__(self) -> None:
         _fail("FrozenPackageExecutionPlan must be created by its canonical factory")
+
+    @property
+    def canonical_sha256(self) -> str:
+        """Plain file digest of the canonical execution-plan JSON bytes."""
+        return hashlib.sha256(self.canonical_bytes).hexdigest()
 
 
 def _new_frozen_package_execution_plan(
@@ -2168,7 +2196,7 @@ def build_validated_package_output(
     ):
         _fail("validator receipt is not an accepted unchanged zero-diagnostic result")
     dependencies = dict(frozen_receipt.dependency_digests)
-    if dependencies.get("execution_plan") != plan.digest:
+    if dependencies.get("execution_plan") != plan.canonical_sha256:
         _fail("validator receipt does not bind the frozen execution plan")
     if dependencies.get("report_schema") != PACKAGE_REPORT_SCHEMA_SHA256:
         _fail("validator receipt does not bind the current package-report schema")

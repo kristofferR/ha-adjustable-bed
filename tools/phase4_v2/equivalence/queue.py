@@ -23,7 +23,6 @@ from tools.phase4_v2.queue import (
     Queue,
     QueueConflictError,
 )
-from tools.phase4_v2.validator import DependencyPins
 
 from .core import (
     AuthenticatedValidatorEnvelope,
@@ -32,9 +31,19 @@ from .core import (
     validate_authenticated_validator_envelope,
     validate_frozen_package_ref,
 )
+from .inventory import (
+    INVENTORY_QUEUE_UNIT_KIND,
+    AuthenticatedTargetInventoryEnvelope,
+    accept_target_inventory,
+    inventory_authority_capability,
+    inventory_extractor_capability,
+    target_inventory_queue_unit_id,
+    validate_target_inventory_envelope,
+)
 from .plan import (
     PACKAGE_QUEUE_UNIT_KIND,
     PREPARATION_QUEUE_UNIT_KIND,
+    AcceptedTargetRootInventory,
     PackageExecutionPlan,
     PackageLocalPlan,
     PackagePlanStatus,
@@ -80,6 +89,14 @@ class MaterializedPackageReceiptWork:
 @dataclass(frozen=True, slots=True)
 class MaterializedPreparationWork:
     """Identity of one externally authorized package-preparation unit."""
+
+    unit_id: str
+    input_digest: str
+
+
+@dataclass(frozen=True, slots=True)
+class MaterializedTargetInventoryWork:
+    """Identity of one authenticated target-inventory import."""
 
     unit_id: str
     input_digest: str
@@ -138,6 +155,44 @@ def finish_package_validation_receipt(
         lease,
         envelope=envelope,
     )
+
+
+def materialize_target_inventory(
+    queue: Queue,
+    envelope: AuthenticatedTargetInventoryEnvelope,
+    *,
+    priority: int = 0,
+) -> MaterializedTargetInventoryWork:
+    """Materialize the one reserved unit bound to a signed inventory."""
+
+    envelope = validate_target_inventory_envelope(envelope)
+    pin = inventory_authority_capability(envelope.authority)
+    extractor_pin = inventory_extractor_capability(envelope.extractor)
+    unit_id = target_inventory_queue_unit_id(envelope.package_ref.content_id)
+    input_digest = queue.materialize_work_unit(
+        unit_id,
+        kind=INVENTORY_QUEUE_UNIT_KIND,
+        capability_pins=tuple(
+            QueueCapabilityPin(item.name, item.revision, item.digest)
+            for item in (pin, extractor_pin)
+        ),
+        input_digest=envelope.receipt_sha256,
+        priority=priority,
+    )
+    return MaterializedTargetInventoryWork(unit_id, input_digest)
+
+
+def finish_target_inventory(
+    queue: Queue,
+    lease: Lease,
+    *,
+    envelope: AuthenticatedTargetInventoryEnvelope,
+) -> tuple[AcceptedTargetRootInventory, FinishResult]:
+    """Authenticate and accept the exact leased inventory."""
+
+    accepted = accept_target_inventory(validate_target_inventory_envelope(envelope))
+    result = queue.finish_target_inventory_envelope(lease, envelope=envelope)
+    return accepted, result.finish_result
 
 
 def materialize_package_preparation(
@@ -261,7 +316,6 @@ def finish_package_execution_plan(
     *,
     execution_plan: PackageExecutionPlan,
     report_root: Path,
-    trusted_dependencies: DependencyPins,
     evidence_lineage_payload: bytes,
 ) -> FinishedPackageWork:
     """Validate and publish a package report from live trusted inputs."""
@@ -275,7 +329,6 @@ def finish_package_execution_plan(
             lease,
             execution_plan=execution_plan,
             report_root=report_root,
-            trusted_dependencies=trusted_dependencies,
             evidence_lineage_payload=evidence_lineage_payload,
         )
     except InputDigestMismatchError as error:

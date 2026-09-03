@@ -10,7 +10,13 @@ from typing import cast
 
 import pytest
 
+import tools.phase4_v2.equivalence.core as equivalence_core_module
+import tools.phase4_v2.equivalence.inventory as inventory_module
 import tools.phase4_v2.equivalence.plan as plan_module
+from tests.phase4_v2_authenticated_fixtures import (
+    authenticated_inventory,
+    authenticated_package_ref,
+)
 from tools.phase4_v2.equivalence import (
     EQUIVALENCE_SCHEMA_REVISION,
     EXACT_REUSE_PIPELINE_CAPABILITY,
@@ -27,7 +33,6 @@ from tools.phase4_v2.equivalence import (
     EquivalenceError,
     ExactReusePins,
     ExactReuseRootPlan,
-    FrozenPackageRef,
     FullAnalysisRootPlan,
     PackageExecutionPlan,
     PackageLocalPlan,
@@ -53,6 +58,7 @@ from tools.phase4_v2.equivalence.core import (
     LedgerDecision,
     RoutingPins,
 )
+from tools.phase4_v2.equivalence.inventory import InventoryAuthenticationError
 from tools.phase4_v2.equivalence.plan import (
     PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
     SEMANTIC_ROOT_COMPLETION_REVISION,
@@ -88,14 +94,28 @@ SHA_1 = "1" * 64
 SHA_2 = "2" * 64
 CLUSTER_ID = "cluster-synthetic"
 
-TARGET_PACKAGE_REF = FrozenPackageRef(
+TARGET_PACKAGE_REF, _VALIDATOR_ACTIVATION = authenticated_package_ref(
     package_name="org.example.target",
     version_code="17",
     artifact_digest=SHA_B,
     preflight_sha256=SHA_C,
-    validation_receipt_sha256=SHA_D,
 )
 TARGET_PACKAGE_REF_ID = TARGET_PACKAGE_REF.content_id
+_INVENTORY_ACTIVATION = ""
+
+
+@pytest.fixture(autouse=True)
+def _activate_test_authorities(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        equivalence_core_module,
+        "_read_protected_validator_pin",
+        lambda: _VALIDATOR_ACTIVATION,
+    )
+    monkeypatch.setattr(
+        inventory_module,
+        "_read_protected_inventory_pin",
+        lambda: _INVENTORY_ACTIVATION,
+    )
 
 
 def local_plan() -> PackageLocalPlan:
@@ -179,10 +199,11 @@ def accepted_inventory(
             )
         ),
     )
-    return AcceptedTargetRootInventory(
-        inventory,
-        CompletionPin(unit_id, TARGET_ROOT_INVENTORY_REVISION, inventory.content_id),
-    )
+    del unit_id
+    accepted, activation = authenticated_inventory(TARGET_PACKAGE_REF, inventory)
+    global _INVENTORY_ACTIVATION
+    _INVENTORY_ACTIVATION = activation
+    return accepted
 
 
 def semantic_audit(
@@ -318,7 +339,7 @@ def receipt(*, bundle: str = SHA_D, plan: PackageExecutionPlan | None = None) ->
         dependency_digests=(
             ("corpus", SHA_A),
             ("evidence_lineage", SHA_F),
-            ("execution_plan", frozen_plan.digest),
+            ("execution_plan", frozen_plan.canonical_sha256),
             ("ir", SHA_B),
             ("preflight", SHA_C),
             ("report_schema", PACKAGE_REPORT_SCHEMA_SHA256),
@@ -390,11 +411,8 @@ def test_inventory_is_authoritative_content_addressed_and_queue_accepted() -> No
     assert len(inventory.occurrence_root_set_sha256) == 64
     assert accepted.completion.digest == inventory.content_id
 
-    with pytest.raises(EquivalenceError, match="does not accept"):
-        AcceptedTargetRootInventory(
-            inventory,
-            CompletionPin("inventory:target", TARGET_ROOT_INVENTORY_REVISION, SHA_A),
-        )
+    with pytest.raises(EquivalenceError, match="authenticated inventory envelope"):
+        AcceptedTargetRootInventory()
 
 
 def test_exact_route_binds_every_queue_dependency_unambiguously() -> None:
@@ -518,11 +536,13 @@ def test_full_route_has_no_reuse_pins_and_mixed_plan_is_allowed() -> None:
         EXACT_REUSE_PIPELINE_CAPABILITY,
         "extractor:dex",
         "analyzer:full",
+        "phase4-v2-target-inventory-authority",
+        "test-inventory",
     }
     assert {item.parent_unit_id for item in plan.required_completions} == {
         plan_module.preparation_queue_unit_id(TARGET_PACKAGE_REF_ID),
         f"package-validation-receipt:{TARGET_PACKAGE_REF_ID}",
-        "inventory:target",
+        plan.accepted_target_inventory.completion.parent_unit_id,
         "ledger:target",
         "audit:source",
         "semantic-root:source",
@@ -592,17 +612,13 @@ def test_omitted_extra_or_transplanted_roots_are_rejected() -> None:
         )
 
     other = accepted_inventory((SHA_C, SHA_D), (SHA_E, SHA_F), unit_id="inventory:other")
-    transplanted = exact_root(other)
-    with pytest.raises(EquivalenceError, match="transplanted"):
-        build_package_execution_plan(
-            cluster_id=CLUSTER_ID,
-            target_package_ref_id=TARGET_PACKAGE_REF_ID,
-            target_package_ref=TARGET_PACKAGE_REF,
-            package_local=local_plan(),
-            preparation=preparation_binding(),
-            accepted_target_inventory=accepted,
-            root_plans=(transplanted, full),
-        )
+    object.__setattr__(
+        other,
+        "completion",
+        CompletionPin("inventory:other", TARGET_ROOT_INVENTORY_REVISION, other.inventory.content_id),
+    )
+    with pytest.raises(InventoryAuthenticationError, match="authenticated provenance"):
+        exact_root(other)
 
 
 def test_any_blocked_root_blocks_package_and_output() -> None:
@@ -697,7 +713,12 @@ def test_package_plan_requires_the_exact_frozen_package_identity() -> None:
             root_plans=roots,
         )
 
-    other_artifact = replace(TARGET_PACKAGE_REF, artifact_digest=SHA_E)
+    other_artifact, _ = authenticated_package_ref(
+        package_name="org.example.target",
+        version_code="17",
+        artifact_digest=SHA_E,
+        preflight_sha256=SHA_C,
+    )
     with pytest.raises(EquivalenceError, match="frozen package artifact identity"):
         build_package_execution_plan(
             cluster_id=CLUSTER_ID,
@@ -898,7 +919,7 @@ def test_hostile_lists_are_not_normalized_into_trusted_tuples() -> None:
     inventory = accepted.inventory
     object.__setattr__(inventory, "occurrences", list(inventory.occurrences))
     with pytest.raises(EquivalenceError, match="must contain"):
-        AcceptedTargetRootInventory(inventory, accepted.completion)
+        inventory.__post_init__()
 
     blocked = BlockedRootPlan(SHA_C, SHA_D, ("blocked",))
     object.__setattr__(blocked, "blockers", ["blocked"])

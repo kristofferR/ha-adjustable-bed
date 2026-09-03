@@ -580,8 +580,11 @@ def test_pinned_dependencies_and_evidence_anchors_are_reproduced(tmp_path: Path)
     second = _validate_bound(report, pins)
 
     assert first.accepted is True
-    assert first.dependency_digests == pins.as_pairs() + (
-        ("evidence_lineage", _trusted_lineage(pins).expected_manifest_sha256),
+    assert first.dependency_digests == tuple(
+        sorted(
+            pins.as_pairs()
+            + (("evidence_lineage", _trusted_lineage(pins).expected_manifest_sha256),)
+        )
     )
     assert first.evidence_anchors_checked == 2
     assert first.validation_profile == BOUND_VALIDATION_PROFILE
@@ -669,8 +672,11 @@ def test_package_output_profile_attests_exact_six_pin_contract(tmp_path: Path) -
     assert first.validator_revision == validator_bundle.VALIDATOR_REVISION
     assert first.validation_profile == PACKAGE_BOUND_VALIDATION_PROFILE
     assert first.contract_revision == PACKAGE_CONTRACT_REVISION
-    assert first.dependency_digests == pins.as_pairs() + (
-        ("evidence_lineage", _trusted_lineage(pins).expected_manifest_sha256),
+    assert first.dependency_digests == tuple(
+        sorted(
+            pins.as_pairs()
+            + (("evidence_lineage", _trusted_lineage(pins).expected_manifest_sha256),)
+        )
     )
     assert dict(first.dependency_digests)["execution_plan"] == pins.execution_plan_sha256
     assert dict(first.dependency_digests)["report_schema"] == pins.report_schema_sha256

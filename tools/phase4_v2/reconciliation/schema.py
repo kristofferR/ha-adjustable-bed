@@ -6,7 +6,7 @@ import copy
 import hashlib
 import json
 
-INPUT_SCHEMA_REVISION = "phase4-v2-reconciliation-input-v1"
+INPUT_SCHEMA_REVISION = "phase4-v2-reconciliation-input-v2"
 COMPARISON_AREAS = (
     "actions",
     "authentication",
@@ -131,30 +131,6 @@ _SCHEMA: dict[str, object] = {
             ],
             "type": "object",
         },
-        "frozen_package_ref": {
-            "additionalProperties": False,
-            "properties": {
-                "artifact_digest": _SHA256,
-                "package_name": {
-                    "maxLength": 512,
-                    "pattern": "^[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)+$",
-                    "type": "string",
-                },
-                "preflight_sha256": _SHA256,
-                "revision": {"const": "phase4-v2-frozen-package-ref-v1"},
-                "validation_receipt_sha256": _SHA256,
-                "version_code": {"maxLength": 256, "minLength": 1, "type": "string"},
-            },
-            "required": [
-                "artifact_digest",
-                "package_name",
-                "preflight_sha256",
-                "revision",
-                "validation_receipt_sha256",
-                "version_code",
-            ],
-            "type": "object",
-        },
         "leaf_provenance": {
             "additionalProperties": False,
             "properties": {
@@ -176,7 +152,7 @@ _SCHEMA: dict[str, object] = {
                     "maxItems": 11,
                     "type": "array",
                 },
-                "package_ref": {"$ref": "#/$defs/frozen_package_ref"},
+                "package_ref_id": _SHA256,
                 "report_revision": _TOKEN,
                 "report_sha256": _SHA256,
                 "roots": {
@@ -186,7 +162,7 @@ _SCHEMA: dict[str, object] = {
                     "type": "array",
                 },
             },
-            "required": ["areas", "package_ref", "report_revision", "report_sha256", "roots"],
+            "required": ["areas", "package_ref_id", "report_revision", "report_sha256", "roots"],
             "type": "object",
         },
         "root_provenance": {

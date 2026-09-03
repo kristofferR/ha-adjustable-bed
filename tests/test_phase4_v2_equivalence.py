@@ -7,6 +7,8 @@ from dataclasses import replace
 
 import pytest
 
+import tools.phase4_v2.equivalence.core as equivalence_core_module
+from tests.phase4_v2_authenticated_fixtures import authenticated_package_ref
 from tools.phase4_v2.equivalence import (
     LOCAL_ONLY_DOMAINS,
     AppendOnlyLedger,
@@ -30,16 +32,28 @@ SHA_C = "c" * 64
 SHA_D = "d" * 64
 SHA_E = "e" * 64
 SHA_F = "f" * 64
+_VALIDATOR_ACTIVATION = ""
+
+
+@pytest.fixture(autouse=True)
+def _activate_validator(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        equivalence_core_module,
+        "_read_protected_validator_pin",
+        lambda: _VALIDATOR_ACTIVATION,
+    )
 
 
 def package(name: str = "org.example.one", artifact: str = SHA_A) -> FrozenPackageRef:
-    return FrozenPackageRef(
+    package_ref, activation = authenticated_package_ref(
         package_name=name,
         version_code="17",
         artifact_digest=artifact,
         preflight_sha256=SHA_B,
-        validation_receipt_sha256=SHA_C,
     )
+    global _VALIDATOR_ACTIVATION
+    _VALIDATOR_ACTIVATION = activation
+    return package_ref
 
 
 def capability(*, implementation: str = SHA_D) -> ExtractorCapability:
@@ -132,7 +146,7 @@ def test_records_are_content_addressed_and_package_refs_are_audit_only() -> None
     assert left.content_id != right.content_id
     assert left.executable_identity == right.executable_identity
     assert len(extractor.content_id) == 64
-    assert replace(first).content_id == first.content_id
+    assert package().content_id == first.content_id
 
 
 def test_identical_occurrences_in_one_package_remain_distinct() -> None:
@@ -547,7 +561,7 @@ def test_hostile_post_construction_revision_mutation_fails_closed() -> None:
 @pytest.mark.parametrize(
     ("record_name", "field", "value", "message"),
     [
-        ("package", "artifact_digest", "not-a-digest", "artifact_digest"),
+        ("package", "artifact_digest", "not-a-digest", "authenticated provenance"),
         ("capability", "implementation_sha256", "not-a-digest", "implementation_sha256"),
         ("root", "inventory_complete", "yes", "inventory_complete"),
         ("proof", "content_root_sha256", "not-a-digest", "content_root_sha256"),
