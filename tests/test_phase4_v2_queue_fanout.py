@@ -124,10 +124,9 @@ def test_fanout_publishes_markdown_and_html_from_one_snapshot(
 ) -> None:
     queue, lease = publisher
     gateway = _MemorySetGateway()
+    sealed = _sealed_gateway(monkeypatch, gateway)
 
-    receipt = publish_tracker_fanout(
-        queue, lease, _sealed_gateway(monkeypatch, gateway), _CONFIG
-    )
+    receipt = publish_tracker_fanout(queue, lease, sealed, _CONFIG)
 
     assert receipt.changed
     assert receipt.paths == tuple(item.path for item in _TARGETS)
@@ -139,6 +138,72 @@ def test_fanout_publishes_markdown_and_html_from_one_snapshot(
     assert receipt.document_set_sha256 == document_set_sha256(
         tuple(TrackerDocument(path, body) for path, body in sorted(gateway.documents.items()))
     )
+    assert fanout_module._authenticate_tracker_fanout_receipt(
+        queue, sealed, _CONFIG, receipt
+    ) == receipt
+
+
+def test_fanout_receipt_is_reauthenticated_against_remote_state(
+    publisher: tuple[Queue, Lease],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    queue, lease = publisher
+    backend = _MemorySetGateway()
+    sealed = _sealed_gateway(monkeypatch, backend)
+    receipt = publish_tracker_fanout(queue, lease, sealed, _CONFIG)
+    forged = object.__new__(FanoutPublishReceipt)
+    for name in (
+        "queue_generation",
+        "before_revision",
+        "after_revision",
+        "publication_config_sha256",
+        "paths",
+        "changed",
+    ):
+        object.__setattr__(forged, name, getattr(receipt, name))
+    object.__setattr__(forged, "document_set_sha256", "f" * 64)
+
+    with pytest.raises(PublisherConflictError, match="current tracker documents"):
+        fanout_module._authenticate_tracker_fanout_receipt(queue, sealed, _CONFIG, forged)
+
+    backend.documents[_TARGETS[0].path] = b"hostile remote replacement"
+    with pytest.raises(PublisherConflictError, match="remote tracker tree"):
+        fanout_module._authenticate_tracker_fanout_receipt(queue, sealed, _CONFIG, receipt)
+
+
+def test_fanout_receipt_reauthentication_rejects_fake_gateway_and_rotated_config(
+    publisher: tuple[Queue, Lease],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    queue, lease = publisher
+    backend = _MemorySetGateway()
+    sealed = _sealed_gateway(monkeypatch, backend)
+    receipt = publish_tracker_fanout(queue, lease, sealed, _CONFIG)
+
+    with pytest.raises(PublisherConflictError, match="sealed GitHub tree gateway"):
+        fanout_module._authenticate_tracker_fanout_receipt(queue, backend, _CONFIG, receipt)
+
+    monkeypatch.setattr(
+        fanout_module,
+        "_load_protected_publication_config_sha256",
+        lambda: "f" * 64,
+    )
+    with pytest.raises(PublisherConflictError, match="protected deployment pin"):
+        fanout_module._authenticate_tracker_fanout_receipt(queue, sealed, _CONFIG, receipt)
+
+
+def test_fanout_receipt_reauthentication_rejects_stale_queue_generation(
+    publisher: tuple[Queue, Lease],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    queue, lease = publisher
+    backend = _MemorySetGateway()
+    sealed = _sealed_gateway(monkeypatch, backend)
+    receipt = publish_tracker_fanout(queue, lease, sealed, _CONFIG)
+    queue.enqueue("late-work", kind="analysis", input_digest="d" * 64)
+
+    with pytest.raises(PublisherConflictError, match="another queue generation"):
+        fanout_module._authenticate_tracker_fanout_receipt(queue, sealed, _CONFIG, receipt)
 
 
 def test_fanout_is_idempotent_without_a_second_commit(

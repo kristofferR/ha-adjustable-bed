@@ -16,7 +16,13 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .publication_config import TrackerPublicationConfig
 
-from .core import Lease, Queue, _TrackerPublicationCheckpointGrant
+from .core import (
+    ORCHESTRATION_TRACKER_PUBLICATION_KIND,
+    Lease,
+    Queue,
+    QueueSnapshot,
+    _TrackerPublicationCheckpointGrant,
+)
 from .publisher import PublisherConflictError, PublisherPostWriteConflictError
 from .tracker import render_html, render_markdown
 
@@ -127,7 +133,7 @@ def publish_tracker_fanout(
     config_sha256 = config.sha256
     with _publication_guard(queue):
         queue.renew(lease, ttl_seconds=300)
-        snapshot = queue.snapshot()
+        snapshot = _tracker_projection(queue.snapshot())
         desired = tuple(
             TrackerDocument(
                 target.path,
@@ -223,6 +229,99 @@ def publish_tracker_fanout(
         return receipt
 
 
+def _authenticate_tracker_fanout_receipt(
+    queue: Queue,
+    gateway: object,
+    config: TrackerPublicationConfig,
+    receipt: FanoutPublishReceipt,
+) -> FanoutPublishReceipt:
+    """Reauthenticate remote state while the caller holds the publication guard."""
+
+    from .github_tree import GitHubTreeGateway
+    from .publication_config import TrackerPublicationConfig
+
+    if type(receipt) is not FanoutPublishReceipt:
+        raise PublisherConflictError("publication requires an exact fanout receipt")
+    if type(config) is not TrackerPublicationConfig:
+        raise PublisherConflictError("publication requires an exact tracker config")
+    if type(gateway) is not GitHubTreeGateway:
+        raise PublisherConflictError("publication requires the sealed GitHub tree gateway")
+    if config.sha256 != _load_protected_publication_config_sha256():
+        raise PublisherConflictError("publication config does not match protected deployment pin")
+    if (gateway.repository, gateway.branch) != (config.repository, config.branch):
+        raise PublisherConflictError("tracker gateway endpoint does not match publication config")
+    targets = _targets(config.targets)
+    paths = tuple(item.path for item in targets)
+    if (
+        type(receipt.changed) is not bool
+        or receipt.publication_config_sha256 != config.sha256
+        or receipt.paths != paths
+        or type(receipt.queue_generation) is not str
+        or re.fullmatch(r"[0-9a-f]{64}", receipt.queue_generation) is None
+        or type(receipt.document_set_sha256) is not str
+        or re.fullmatch(r"[0-9a-f]{64}", receipt.document_set_sha256) is None
+        or type(receipt.before_revision) is not str
+        or _REVISION.fullmatch(receipt.before_revision) is None
+        or type(receipt.after_revision) is not str
+        or _REVISION.fullmatch(receipt.after_revision) is None
+        or (receipt.changed and receipt.before_revision == receipt.after_revision)
+        or (not receipt.changed and receipt.before_revision != receipt.after_revision)
+    ):
+        raise PublisherConflictError("fanout receipt does not match publication configuration")
+    snapshot = _tracker_projection(queue.snapshot())
+    if snapshot.generation_id != receipt.queue_generation:
+        raise PublisherConflictError("fanout receipt belongs to another queue generation")
+    desired = tuple(
+        TrackerDocument(
+            target.path,
+            (
+                render_markdown(snapshot).encode()
+                if target.format is TrackerFormat.MARKDOWN
+                else render_html(snapshot).encode()
+            ),
+        )
+        for target in targets
+    )
+    if document_set_sha256(desired) != receipt.document_set_sha256:
+        raise PublisherConflictError("fanout receipt does not bind the current tracker documents")
+    remote = gateway.read(paths)
+    if remote.revision != receipt.after_revision or remote.documents != desired:
+        raise PublisherConflictError("remote tracker tree does not match the fanout receipt")
+    if _tracker_projection(queue.snapshot()).generation_id != snapshot.generation_id:
+        raise PublisherConflictError("queue changed while reauthenticating tracker publication")
+    return receipt
+
+
+def _tracker_projection(snapshot: QueueSnapshot) -> QueueSnapshot:
+    """Remove self-referential publication stages from the published queue state."""
+
+    if type(snapshot) is not QueueSnapshot:
+        raise PublisherConflictError("tracker publication requires an exact queue snapshot")
+    units = tuple(
+        item
+        for item in snapshot.units
+        if item.kind != ORCHESTRATION_TRACKER_PUBLICATION_KIND
+    )
+    payload = {
+        "schema_revision": snapshot.schema_revision,
+        # Publication-stage CLAIMED/FINISHED events are self-referential. Unit
+        # state and scheduler pins retain every externally meaningful change.
+        "event_watermark": 0,
+        "scheduler_state_digest": snapshot.scheduler_state_digest,
+        "units": [item.as_dict() for item in units],
+    }
+    generation = hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    return QueueSnapshot(
+        schema_revision=snapshot.schema_revision,
+        event_watermark=0,
+        scheduler_state_digest=snapshot.scheduler_state_digest,
+        generation_id=generation,
+        units=units,
+    )
+
+
 def publication_config_sha256(config: TrackerPublicationConfig) -> str:
     """Return the full repository, branch, path, and format commitment."""
 
@@ -280,7 +379,7 @@ def _require_current(queue: Queue, lease: Lease, generation: str, *, post_write:
         if post_write:
             raise PublisherPostWriteConflictError(message) from error
         raise PublisherConflictError("publisher lease is stale") from error
-    if queue.snapshot().generation_id != generation:
+    if _tracker_projection(queue.snapshot()).generation_id != generation:
         if post_write:
             raise PublisherPostWriteConflictError(
                 "tracker set was written but queue changed during publication"

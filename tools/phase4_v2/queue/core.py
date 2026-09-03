@@ -623,6 +623,18 @@ class _AuthenticatedOrchestrationStagePublication:
     graph: object
 
 
+@dataclass(frozen=True, slots=True)
+class _AuthenticatedTrackerPublication:
+    kind: str
+    cluster_id: str
+    authority: object
+    canonical_receipt: bytes
+    graph: object
+    gateway: object
+    config: object
+    fanout_receipt: object
+
+
 @dataclass(frozen=True, slots=True, init=False)
 class _TrackerPublicationCheckpointGrant:
     """Opaque proof issued by the atomic fanout publisher after readback."""
@@ -1957,6 +1969,10 @@ class Queue:
             canonical_receipt,
             authority,
         )
+        if kind == ORCHESTRATION_TRACKER_PUBLICATION_KIND:
+            raise QueueConflictError(
+                "tracker publication requires remote fanout authentication"
+            )
         graph_content_id = _validated_cluster_graph_content_id(graph)
         if receipt.cluster_id != cluster_id or receipt.stage_input_sha256 != lease.input_digest:
             raise QueueConflictError("signed orchestration receipt belongs to another lease input")
@@ -1980,6 +1996,68 @@ class Queue:
                     authority=authority,
                     canonical_receipt=canonical_receipt,
                     graph=graph,
+                ),
+            )
+        finally:
+            os.close(guard)
+        return InputCheckedFinishResult(
+            disposition=(
+                InputCheckedFinishDisposition.INPUT_MISMATCH
+                if result.disposition is FinishDisposition.TERMINAL_ONLY
+                else InputCheckedFinishDisposition.ACCEPTED
+            ),
+            finish_result=result,
+        )
+
+    def finish_authenticated_tracker_publication_stage(
+        self,
+        lease: Lease,
+        *,
+        authority: object,
+        canonical_receipt: bytes,
+        graph: object,
+        gateway: object,
+        config: object,
+        fanout_receipt: object,
+    ) -> InputCheckedFinishResult:
+        """Publish a tracker completion only after in-transaction remote reauthentication."""
+
+        if type(canonical_receipt) is not bytes:
+            raise QueueConflictError("orchestration receipt must be exact canonical bytes")
+        kind, cluster_id = self._leased_orchestration_identity(lease)
+        if kind != ORCHESTRATION_TRACKER_PUBLICATION_KIND:
+            raise QueueConflictError("remote tracker authentication belongs to another stage")
+        receipt, completion_revision = _load_authenticated_orchestration_receipt(
+            kind, canonical_receipt, authority
+        )
+        graph_content_id = _validated_cluster_graph_content_id(graph)
+        if (
+            receipt.cluster_id != cluster_id
+            or receipt.stage_input_sha256 != lease.input_digest
+            or receipt.graph_sha256 != graph_content_id
+        ):
+            raise QueueConflictError("signed tracker receipt belongs to another stage input")
+        self.verify_schema()
+        guard = self._try_acquire_publication_guard(wait=True)
+        if guard is None:
+            raise QueueConflictError("tracker publication prevented attempt completion")
+        try:
+            result = self._finish_with_publication_guard(
+                lease,
+                TerminalOutcome.ACCEPTED,
+                output_digest=receipt.receipt_sha256,
+                completion_revision=completion_revision,
+                expected_input_digest=receipt.stage_input_sha256,
+                terminalize_input_mismatch=True,
+                trusted_publication=_AuthenticatedTrackerPublication(
+                    kind=kind,
+                    cluster_id=cluster_id,
+                    authority=authority,
+                    canonical_receipt=canonical_receipt,
+                    graph=graph,
+                    gateway=gateway,
+                    config=config,
+                    fanout_receipt=fanout_receipt,
                 ),
             )
         finally:
@@ -2391,6 +2469,7 @@ class Queue:
             | _ExactReusePrerequisitePublication
             | _ValidatedPackageOutputPublication
             | _AuthenticatedOrchestrationStagePublication
+            | _AuthenticatedTrackerPublication
             | None
         ),
     ) -> FinishResult:
@@ -2435,7 +2514,10 @@ class Queue:
                 completion_revision=completion_revision,
                 expected_input_digest=expected_input_digest,
             )
-        elif isinstance(trusted_publication, _AuthenticatedOrchestrationStagePublication):
+        elif isinstance(
+            trusted_publication,
+            (_AuthenticatedOrchestrationStagePublication, _AuthenticatedTrackerPublication),
+        ):
             restored, restored_revision = _load_authenticated_orchestration_receipt(
                 trusted_publication.kind,
                 trusted_publication.canonical_receipt,
@@ -2466,12 +2548,18 @@ class Queue:
                 raise QueueConflictError(
                     "reserved completion must use its trusted publication adapter"
                 )
-            if isinstance(trusted_publication, _AuthenticatedOrchestrationStagePublication) and (
+            if isinstance(
+                trusted_publication,
+                (_AuthenticatedOrchestrationStagePublication, _AuthenticatedTrackerPublication),
+            ) and (
                 str(unit["kind"]) != trusted_publication.kind
                 or unit["cluster_id"] != trusted_publication.cluster_id
             ):
                 raise QueueConflictError("orchestration receipt belongs to another stage")
-            if isinstance(trusted_publication, _AuthenticatedOrchestrationStagePublication):
+            if isinstance(
+                trusted_publication,
+                (_AuthenticatedOrchestrationStagePublication, _AuthenticatedTrackerPublication),
+            ):
                 restored, restored_revision = _load_authenticated_orchestration_receipt(
                     trusted_publication.kind,
                     trusted_publication.canonical_receipt,
@@ -2710,6 +2798,64 @@ class Queue:
                 validate_authenticated_exact_reuse_prerequisite(
                     trusted_publication.receipt
                 )
+            elif isinstance(trusted_publication, _AuthenticatedTrackerPublication):
+                from tools.phase4_v2.queue.fanout import (
+                    FanoutPublishReceipt,
+                    _authenticate_tracker_fanout_receipt,
+                )
+                from tools.phase4_v2.queue.publication_config import (
+                    TrackerPublicationConfig,
+                )
+                from tools.phase4_v2.queue.publisher import PublisherConflictError
+
+                if (
+                    type(trusted_publication.fanout_receipt) is not FanoutPublishReceipt
+                    or type(trusted_publication.config) is not TrackerPublicationConfig
+                ):
+                    raise QueueConflictError("tracker publication inputs changed type")
+                from tools.phase4_v2.orchestration.completion import (
+                    ActivatedStageAuthority,
+                    load_publication_receipt,
+                )
+
+                if type(trusted_publication.authority) is not ActivatedStageAuthority:
+                    raise QueueConflictError("tracker publication authority changed type")
+                restored = load_publication_receipt(
+                    trusted_publication.canonical_receipt,
+                    trusted_publication.authority,
+                )
+                fanout = trusted_publication.fanout_receipt
+                if (
+                    restored.queue_generation_sha256,
+                    restored.document_set_sha256,
+                    restored.publication_config_sha256,
+                    restored.before_revision,
+                    restored.after_revision,
+                    restored.paths,
+                    restored.changed,
+                ) != (
+                    fanout.queue_generation,
+                    fanout.document_set_sha256,
+                    fanout.publication_config_sha256,
+                    fanout.before_revision,
+                    fanout.after_revision,
+                    fanout.paths,
+                    fanout.changed,
+                ):
+                    raise QueueConflictError(
+                        "signed tracker receipt differs from the remote fanout result"
+                    )
+                try:
+                    _authenticate_tracker_fanout_receipt(
+                        self,
+                        trusted_publication.gateway,
+                        trusted_publication.config,
+                        fanout,
+                    )
+                except (PublisherConflictError, ValueError) as error:
+                    raise QueueConflictError(
+                        "remote tracker publication authentication failed"
+                    ) from error
             return FinishResult(
                 disposition=disposition,
                 unit_id=lease.unit_id,

@@ -24,7 +24,10 @@ from tests.phase4_v2_orchestration_testing import (
     protected_fixture_trust,
 )
 from tools.phase4_v2.equivalence.plan import (
+    LOCAL_ONLY_DOMAINS,
     PACKAGE_EXECUTION_PLAN_REVISION,
+    PACKAGE_LOCAL_PLAN_REVISION,
+    PACKAGE_PIPELINE_CAPABILITY,
     PREPARATION_RECEIPT_REVISION,
     VALIDATED_PACKAGE_OUTPUT_REVISION,
     FrozenCapabilityPin,
@@ -73,6 +76,7 @@ from tools.phase4_v2.queue import (
     publish_tracker_fanout,
 )
 from tools.phase4_v2.queue.cli import main as queue_main
+from tools.phase4_v2.queue.core import _TrackerPublicationCheckpointGrant
 from tools.phase4_v2.queue.publication_config import TrackerPublicationConfig
 
 _TARGETS = (
@@ -176,6 +180,11 @@ def _frozen_plan(cluster: str, name: str) -> FrozenPackageExecutionPlan:
     capability = FrozenCapabilityPin(
         f"analysis:{cluster}:{name}", "synthetic-analysis-v1", _digest(f"cap:{cluster}:{name}")
     )
+    pipeline_capability = FrozenCapabilityPin(
+        PACKAGE_PIPELINE_CAPABILITY,
+        PACKAGE_EXECUTION_PLAN_REVISION,
+        _digest(f"pipeline:{cluster}:{name}"),
+    )
     preparation_capabilities = tuple(
         FrozenCapabilityPin(
             f"preparation-{kind}:{cluster}:{name}",
@@ -199,17 +208,36 @@ def _frozen_plan(cluster: str, name: str) -> FrozenPackageExecutionPlan:
         preparation_completion.digest,
         preparation_completion,
         preparation_capabilities,
+        (capability,),
     )
     required_capabilities = tuple(
-        sorted((*preparation_capabilities, capability), key=lambda item: item.name)
+        sorted(
+            (*preparation_capabilities, capability, pipeline_capability),
+            key=lambda item: item.name,
+        )
     )
     data = {
         "authoritative_root_count": 1,
         "cluster_id": cluster,
         "package_local": {
+            "evidence_producer_capabilities": [
+                {
+                    "digest": capability.digest,
+                    "name": capability.name,
+                    "revision": capability.revision,
+                }
+            ],
+            "mandatory_domains": list(LOCAL_ONLY_DOMAINS),
             "package_name": f"org.example.{name}",
+            "pipeline_capability": {
+                "digest": pipeline_capability.digest,
+                "name": pipeline_capability.name,
+                "revision": pipeline_capability.revision,
+            },
             "requirements_sha256": _digest(f"preflight:{cluster}:{name}"),
+            "revision": PACKAGE_LOCAL_PLAN_REVISION,
             "target_artifact_digest": _digest(f"artifact:{cluster}:{name}"),
+            "target_package_ref_id": package_ref,
             "version_code": "1",
             "version_name": "1.0",
         },
@@ -473,7 +501,7 @@ def test_graph_and_authenticated_receipts_follow_real_stage_adapters(
         "before_revision": "a" * 40,
         "after_revision": "b" * 40,
         "document_set_sha256": _digest("invented-documents"),
-        "publication_config_sha256": _digest("invented-config"),
+        "publication_config_sha256": _PUBLICATION_CONFIG.sha256,
         "paths": tuple(item.path for item in _TARGETS),
         "changed": True,
     }.items():
@@ -502,6 +530,13 @@ def test_graph_and_authenticated_receipts_follow_real_stage_adapters(
         ),
         publication_authority,
     )
+    with pytest.raises(QueueConflictError, match="remote fanout authentication"):
+        queue.finish_authenticated_orchestration_stage(
+            publication_lease,
+            graph=graph,
+            authority=publication_authority,
+            canonical_receipt=invented_publication.canonical_bytes,
+        )
     with pytest.raises(QueueConflictError, match="production fanout checkpoint"):
         finish_tracker_publication(
             queue,
@@ -512,6 +547,10 @@ def test_graph_and_authenticated_receipts_follow_real_stage_adapters(
             implementation_authority=implementation_authority,
             implementation_receipt=implementation,
             authority=publication_authority,
+            gateway=GitHubTreeGateway(
+                _PUBLICATION_CONFIG.repository, _PUBLICATION_CONFIG.branch
+            ),
+            publication_config=_PUBLICATION_CONFIG,
             fanout_receipt=invented_fanout,
             receipt=invented_publication,
         )
@@ -534,6 +573,34 @@ def test_graph_and_authenticated_receipts_follow_real_stage_adapters(
     sealed_gateway = GitHubTreeGateway(
         _PUBLICATION_CONFIG.repository, _PUBLICATION_CONFIG.branch
     )
+    forged_grant = object.__new__(_TrackerPublicationCheckpointGrant)
+    for name, value in {
+        "lease_id": publication_lease.lease_id,
+        "attempt_id": publication_lease.attempt_id,
+        "event_type": "TRACKER_PUBLISHED",
+        "queue_generation": invented_fanout.queue_generation,
+        "publication_config_sha256": invented_fanout.publication_config_sha256,
+        "paths": invented_fanout.paths,
+        "document_set_sha256": invented_fanout.document_set_sha256,
+        "revision": invented_fanout.after_revision,
+    }.items():
+        object.__setattr__(forged_grant, name, value)
+    queue._checkpoint_tracker_publication(publication_lease, forged_grant)
+    with pytest.raises(QueueConflictError, match="remote tracker publication authentication"):
+        finish_tracker_publication(
+            queue,
+            publication_lease,
+            graph=graph,
+            reconciliation_authority=reconciliation_authority,
+            reconciliation_receipt=reconciliation,
+            implementation_authority=implementation_authority,
+            implementation_receipt=implementation,
+            authority=publication_authority,
+            gateway=sealed_gateway,
+            publication_config=_PUBLICATION_CONFIG,
+            fanout_receipt=invented_fanout,
+            receipt=invented_publication,
+        )
     fanout = publish_tracker_fanout(
         queue, publication_lease, sealed_gateway, _PUBLICATION_CONFIG
     )
@@ -570,8 +637,16 @@ def test_graph_and_authenticated_receipts_follow_real_stage_adapters(
         implementation_authority=implementation_authority,
         implementation_receipt=implementation,
         authority=publication_authority,
+        gateway=sealed_gateway,
+        publication_config=_PUBLICATION_CONFIG,
         fanout_receipt=fanout,
         receipt=publication,
+    )
+    assert (
+        fanout_module._authenticate_tracker_fanout_receipt(
+            queue, sealed_gateway, _PUBLICATION_CONFIG, fanout
+        )
+        == fanout
     )
     assert all(item.status is WorkUnitStatus.COMPLETED for item in queue.snapshot().units)
 

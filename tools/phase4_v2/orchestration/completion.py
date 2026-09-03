@@ -19,15 +19,16 @@ from tools.phase4_v2.queue import (
     ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
     ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
     ORCHESTRATION_PACKAGE_AUDIT_KIND,
-    ORCHESTRATION_TRACKER_PUBLICATION_KIND,
     CapabilityPin,
     CompletionDependencyPin,
     FanoutPublishReceipt,
+    GitHubTreeGateway,
     InputCheckedFinishResult,
     Lease,
     Queue,
     QueueConflictError,
 )
+from tools.phase4_v2.queue.publication_config import TrackerPublicationConfig
 from tools.phase4_v2.reconciliation import PackageSurface, ReconciliationInput
 
 from .graph import (
@@ -558,6 +559,8 @@ def finish_tracker_publication(
     implementation_authority: ActivatedStageAuthority,
     implementation_receipt: TrustedImplementationReceipt,
     authority: ActivatedStageAuthority,
+    gateway: GitHubTreeGateway,
+    publication_config: TrackerPublicationConfig,
     fanout_receipt: FanoutPublishReceipt,
     receipt: TrustedPublicationReceipt,
 ) -> StageCompletion:
@@ -624,16 +627,17 @@ def finish_tracker_publication(
         or lease.unit_id != tracker_publication_unit_id(graph)
     ):
         raise QueueConflictError("publication receipt does not bind the production fanout result")
-    return _finish(
-        queue,
+    result = queue.finish_authenticated_tracker_publication_stage(
         lease,
-        graph,
-        ORCHESTRATION_TRACKER_PUBLICATION_KIND,
-        expected_input,
-        TRACKER_PUBLICATION_COMPLETION_REVISION,
-        authority,
-        receipt.canonical_bytes,
+        graph=graph,
+        authority=authority,
+        canonical_receipt=receipt.canonical_bytes,
+        gateway=gateway,
+        config=publication_config,
+        fanout_receipt=fanout_receipt,
     )
+    restored = _load_signed(receipt.canonical_bytes, authority, authority.stage)
+    return StageCompletion(restored[1], result)
 
 
 def _validate_reconciliation(

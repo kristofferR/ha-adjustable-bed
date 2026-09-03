@@ -620,6 +620,8 @@ def _finish_stage(
         implementation_authority=authorities["implementation"],
         implementation_receipt=implementation,
         authority=authorities["publication"],
+        gateway=gateway,
+        publication_config=publication_config,
         fanout_receipt=fanout,
         receipt=receipt,
     )
