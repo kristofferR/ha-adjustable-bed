@@ -12,8 +12,15 @@ from tools.phase4_v2.equivalence import (
     PACKAGE_REPORT_SCHEMA_REVISION,
     PACKAGE_REPORT_SCHEMA_SHA256,
     PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
+    PREPARATION_AUTHORITY_CAPABILITY,
+    PREPARATION_CANDIDATE_CAPABILITY,
+    PREPARATION_EXECUTION_CAPABILITY,
+    PREPARATION_PIPELINE_CAPABILITY,
+    PREPARATION_REGISTRY_CAPABILITY,
     VALIDATED_PACKAGE_OUTPUT_REVISION,
+    FrozenCapabilityPin,
     FrozenPackageExecutionPlan,
+    FrozenPreparationPlanBinding,
     PackagePlanStatus,
     ValidatedPackageOutput,
     validate_frozen_package_execution_plan,
@@ -23,7 +30,19 @@ from tools.phase4_v2.ir import (
     FinalProtocolIRDocument,
     final_schema_document,
 )
-from tools.phase4_v2.preflight import CandidateRecord, InvocationRecord, PreparationResult
+from tools.phase4_v2.preflight import (
+    CANDIDATE_CONTRACT_REVISION,
+    CANDIDATE_CONTRACT_SHA256,
+    CANDIDATE_INDEX_SCHEMA,
+    CANDIDATE_SIGNAL_IDS,
+    EXECUTION_PROFILE_REVISION,
+    PREPARATION_AUTHORITY_SCHEMA,
+    PREPARATION_RECEIPT_REVISION,
+    TOOL_REGISTRY_SCHEMA,
+    CandidateRecord,
+    InvocationRecord,
+    PreparationReceipt,
+)
 from tools.phase4_v2.reconciliation import (
     ClosureStatus,
     ComparisonDecision,
@@ -141,16 +160,19 @@ def _validate_plan(plan: FrozenPackageExecutionPlan, findings: _Findings) -> Non
         local.get("version_code"),
         local.get("version_name"),
         local.get("target_artifact_digest"),
+        local.get("requirements_sha256"),
     ) != (
         plan.package_name,
         plan.version_code,
         plan.version_name,
         plan.target_artifact_digest,
+        plan.preflight_sha256,
     ):
         findings.add("PLAN_IDENTITY_MISMATCH", "/execution_plan/package_local")
     if (
         not _is_digest(plan.target_package_ref_id)
         or not _is_digest(plan.target_artifact_digest)
+        or not _is_digest(plan.preflight_sha256)
         or not _bounded_text(plan.package_name, 256)
         or not _bounded_text(plan.version_code, 256)
         or not _bounded_text(plan.version_name, 256)
@@ -209,23 +231,28 @@ def _candidate_sort_key(item: CandidateRecord) -> tuple[object, ...]:
 
 
 def _validate_preparation(
-    preparation: PreparationResult, findings: _Findings
+    preparation: PreparationReceipt, findings: _Findings
 ) -> tuple[set[str], set[str]]:
     candidates: set[str] = set()
     warnings: set[str] = set()
-    if type(preparation) is not PreparationResult:
+    if type(preparation) is not PreparationReceipt:
         findings.add("PREPARATION_TYPE_INVALID", "/preparation")
         return candidates, warnings
-    if preparation.status != "COMPLETE" or preparation.failures:
-        findings.add("PREPARATION_INCOMPLETE", "/preparation/status")
     if (
         not _is_digest(preparation.artifact_digest)
+        or not _is_digest(preparation.preflight_manifest_sha256)
         or not _is_digest(preparation.manifest_sha256)
         or not _is_digest(preparation.candidate_index_sha256)
+        or preparation.candidate_contract_sha256 != CANDIDATE_CONTRACT_SHA256
+        or not _is_digest(preparation.authority_sha256)
+        or not _is_digest(preparation.tool_registry_sha256)
         or not _bounded_text(preparation.pipeline_revision, 200)
-        or type(preparation.failures) is not tuple
-        or len(preparation.failures) > _MAX_INVOCATIONS
-        or any(not _bounded_text(item) for item in preparation.failures)
+        or preparation.execution_profile_revision != EXECUTION_PROFILE_REVISION
+        or not _is_digest(preparation.execution_profile_sha256)
+        or not _bounded_text(preparation.package_name, 256)
+        or not _bounded_text(preparation.version_code, 256)
+        or not _bounded_text(preparation.version_name, 256)
+        or preparation.revision != PREPARATION_RECEIPT_REVISION
     ):
         findings.add("PREPARATION_FIELDS_INVALID", "/preparation")
     if (
@@ -286,6 +313,8 @@ def _validate_preparation(
             lambda candidate=candidate: candidate_occurrence_id(candidate),
         )
         if type(identity) is str:
+            if candidate.signal not in CANDIDATE_SIGNAL_IDS:
+                findings.add("CANDIDATE_SIGNAL_INVALID", f"/preparation/candidates/{index}/signal")
             if identity in candidates:
                 findings.add("CANDIDATE_OCCURRENCE_DUPLICATE", f"/preparation/candidates/{index}")
             candidates.add(identity)
@@ -295,8 +324,9 @@ def _validate_preparation(
     else:
         candidate_data = {
             "artifact_digest": preparation.artifact_digest,
+            "candidate_contract_sha256": CANDIDATE_CONTRACT_SHA256,
             "candidates": [item.to_data() for item in preparation.candidates],
-            "schema": "phase4-v2-ble-candidate-index-v1",
+            "schema": CANDIDATE_INDEX_SCHEMA,
         }
         try:
             encoded = (
@@ -314,6 +344,78 @@ def _validate_preparation(
                     "/preparation/candidate_index_sha256",
                 )
     return candidates, warnings
+
+
+def _validate_preparation_plan_binding(
+    preparation: PreparationReceipt,
+    plan: FrozenPackageExecutionPlan,
+    findings: _Findings,
+) -> None:
+    """Require the receipt to be the exact accepted preparation frozen into the plan."""
+
+    if type(preparation) is not PreparationReceipt or type(plan) is not FrozenPackageExecutionPlan:
+        return
+    binding = getattr(plan, "preparation", None)
+    if type(binding) is not FrozenPreparationPlanBinding:
+        findings.add("PREPARATION_PLAN_BINDING_INVALID", "/execution_plan/preparation")
+        return
+    receipt_id = findings.guard(
+        "PREPARATION_RECEIPT_INVALID",
+        "/preparation",
+        lambda: preparation.content_id,
+    )
+    if (
+        binding.package_ref_id,
+        binding.package_name,
+        binding.version_code,
+        binding.version_name,
+        binding.artifact_digest,
+        binding.preflight_sha256,
+        binding.receipt_sha256,
+    ) != (
+        plan.target_package_ref_id,
+        preparation.package_name,
+        preparation.version_code,
+        preparation.version_name,
+        preparation.artifact_digest,
+        preparation.preflight_manifest_sha256,
+        receipt_id,
+    ):
+        findings.add("PREPARATION_PLAN_BINDING_MISMATCH", "/execution_plan/preparation")
+    expected_capabilities = tuple(
+        sorted(
+            (
+                FrozenCapabilityPin(
+                    PREPARATION_AUTHORITY_CAPABILITY,
+                    PREPARATION_AUTHORITY_SCHEMA,
+                    preparation.authority_sha256,
+                ),
+                FrozenCapabilityPin(
+                    PREPARATION_CANDIDATE_CAPABILITY,
+                    CANDIDATE_CONTRACT_REVISION,
+                    preparation.candidate_contract_sha256,
+                ),
+                FrozenCapabilityPin(
+                    PREPARATION_EXECUTION_CAPABILITY,
+                    EXECUTION_PROFILE_REVISION,
+                    preparation.execution_profile_sha256,
+                ),
+                FrozenCapabilityPin(
+                    PREPARATION_PIPELINE_CAPABILITY,
+                    preparation.pipeline_revision,
+                    preparation.tool_registry_sha256,
+                ),
+                FrozenCapabilityPin(
+                    PREPARATION_REGISTRY_CAPABILITY,
+                    TOOL_REGISTRY_SCHEMA,
+                    preparation.tool_registry_sha256,
+                ),
+            ),
+            key=lambda item: item.name,
+        )
+    )
+    if binding.capabilities != expected_capabilities:
+        findings.add("PREPARATION_CAPABILITY_MISMATCH", "/execution_plan/preparation/capabilities")
 
 
 def _reconciliation_ledgers(
@@ -364,7 +466,7 @@ def _reconciliation_ledgers(
 
 def _validate_completion(
     *,
-    preparation: PreparationResult,
+    preparation: PreparationReceipt,
     execution_plan: FrozenPackageExecutionPlan,
     validated_output: ValidatedPackageOutput,
     reconciliation_input: ReconciliationInput,
@@ -559,6 +661,21 @@ def _validate_completion(
         execution_plan, "target_artifact_digest", None
     ):
         findings.add("ARTIFACT_DIGEST_MISMATCH", "/execution_plan/target_artifact_digest")
+    if (
+        getattr(preparation, "package_name", None),
+        getattr(preparation, "version_code", None),
+        getattr(preparation, "version_name", None),
+    ) != (
+        getattr(execution_plan, "package_name", None),
+        getattr(execution_plan, "version_code", None),
+        getattr(execution_plan, "version_name", None),
+    ):
+        findings.add("PREPARATION_IDENTITY_MISMATCH", "/preparation/package_identity")
+    if getattr(preparation, "preflight_manifest_sha256", None) != getattr(
+        execution_plan, "preflight_sha256", None
+    ):
+        findings.add("PREPARATION_PREFLIGHT_MISMATCH", "/preparation/preflight_manifest_sha256")
+    _validate_preparation_plan_binding(preparation, execution_plan, findings)
     if getattr(adapter, "target_package_ref_id", None) != target:
         findings.add("ADAPTER_TARGET_MISMATCH", "/adapter/target_package_ref_id")
 
@@ -602,8 +719,16 @@ def _validate_completion(
             findings.add("RENDER_RESULT_MISMATCH", "/render")
 
     actual_pins: dict[str, object] = {
+        "preparation_receipt_sha256": (
+            preparation.content_id if type(preparation) is PreparationReceipt else None
+        ),
+        "preflight_manifest_sha256": getattr(preparation, "preflight_manifest_sha256", None),
         "preparation_manifest_sha256": getattr(preparation, "manifest_sha256", None),
         "candidate_index_sha256": getattr(preparation, "candidate_index_sha256", None),
+        "candidate_contract_sha256": getattr(preparation, "candidate_contract_sha256", None),
+        "preparation_authority_sha256": getattr(preparation, "authority_sha256", None),
+        "tool_registry_sha256": getattr(preparation, "tool_registry_sha256", None),
+        "execution_profile_sha256": getattr(preparation, "execution_profile_sha256", None),
         "execution_plan_sha256": getattr(execution_plan, "digest", None),
         "validated_package_output_sha256": output_id,
         "reconciliation_input_sha256": (
@@ -653,7 +778,7 @@ def _validate_completion(
 
 def validate_completion(
     *,
-    preparation: PreparationResult,
+    preparation: PreparationReceipt,
     execution_plan: FrozenPackageExecutionPlan,
     validated_output: ValidatedPackageOutput,
     reconciliation_input: ReconciliationInput,

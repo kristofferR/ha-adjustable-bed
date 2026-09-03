@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass, replace
-from pathlib import Path
 from typing import cast
 
 import pytest
@@ -20,9 +19,15 @@ from tools.phase4_v2.equivalence import (
     PACKAGE_REPORT_SCHEMA_REVISION,
     PACKAGE_REPORT_SCHEMA_SHA256,
     PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
+    PREPARATION_AUTHORITY_CAPABILITY,
+    PREPARATION_CANDIDATE_CAPABILITY,
+    PREPARATION_EXECUTION_CAPABILITY,
+    PREPARATION_PIPELINE_CAPABILITY,
+    PREPARATION_REGISTRY_CAPABILITY,
     VALIDATED_PACKAGE_OUTPUT_REVISION,
     FrozenPackageExecutionPlan,
     FrozenPackageRef,
+    FrozenPreparationPlanBinding,
     PackagePlanStatus,
     Route,
     ValidatedPackageOutput,
@@ -37,9 +42,16 @@ from tools.phase4_v2.ir import (
     render_final_ir_markdown,
 )
 from tools.phase4_v2.preflight import (
+    CANDIDATE_CONTRACT_REVISION,
+    CANDIDATE_CONTRACT_SHA256,
+    CANDIDATE_INDEX_SCHEMA,
+    EXECUTION_PROFILE_REVISION,
+    PREPARATION_AUTHORITY_SCHEMA,
+    PREPARATION_RECEIPT_REVISION,
+    TOOL_REGISTRY_SCHEMA,
     CandidateRecord,
     InvocationRecord,
-    PreparationResult,
+    PreparationReceipt,
     StreamDigest,
     ToolRecord,
     WarningRecord,
@@ -87,8 +99,9 @@ def candidate_index_sha(artifact: str, candidates: tuple[CandidateRecord, ...]) 
         json.dumps(
             {
                 "artifact_digest": artifact,
+                "candidate_contract_sha256": CANDIDATE_CONTRACT_SHA256,
                 "candidates": [item.to_data() for item in candidates],
-                "schema": "phase4-v2-ble-candidate-index-v1",
+                "schema": CANDIDATE_INDEX_SCHEMA,
             },
             sort_keys=True,
             separators=(",", ":"),
@@ -99,11 +112,22 @@ def candidate_index_sha(artifact: str, candidates: tuple[CandidateRecord, ...]) 
     return sha(payload)
 
 
-def preparation() -> PreparationResult:
+def preparation() -> PreparationReceipt:
     artifact = sha("artifact")
     warning = WarningRecord("stderr", 7, "warning: synthetic", sha("warning raw"))
     empty = StreamDigest(0, sha(b""))
-    tool = ToolRecord("synthetic", 1, sha("tool"), ("--version",), "1", empty, empty, None)
+    tool = ToolRecord(
+        "synthetic",
+        1,
+        sha("tool"),
+        1,
+        sha("runtime"),
+        ("--version",),
+        "1",
+        empty,
+        empty,
+        None,
+    )
     invocation = InvocationRecord(
         member="base.apk",
         input_sha256=sha("member"),
@@ -132,17 +156,35 @@ def preparation() -> PreparationResult:
             signal="bluetooth.gatt",
         ),
     )
-    return PreparationResult(
-        output_directory=Path("/synthetic/not-read"),
-        artifact_digest=artifact,
-        pipeline_revision="synthetic-v1",
-        status="COMPLETE",
-        invocations=(invocation,),
-        candidates=candidates,
-        failures=(),
-        manifest_sha256=sha("manifest"),
-        candidate_index_sha256=candidate_index_sha(artifact, candidates),
-    )
+    result = object.__new__(PreparationReceipt)
+    values = {
+        "artifact_digest": artifact,
+        "package_name": "org.example.target",
+        "version_code": "17",
+        "version_name": "1.7",
+        "preflight_manifest_sha256": sha("preflight"),
+        "manifest_sha256": sha("manifest"),
+        "candidate_index_sha256": candidate_index_sha(artifact, candidates),
+        "candidate_contract_sha256": CANDIDATE_CONTRACT_SHA256,
+        "authority_sha256": sha("authority"),
+        "tool_registry_sha256": sha("registry"),
+        "pipeline_revision": "synthetic-v1",
+        "execution_profile_revision": "phase4-v2-execution-profile-v1",
+        "execution_profile_sha256": sha("execution-profile"),
+        "invocations": (invocation,),
+        "candidates": candidates,
+        "revision": PREPARATION_RECEIPT_REVISION,
+    }
+    for name, value in values.items():
+        object.__setattr__(result, name, value)
+    return result
+
+
+def replace_preparation(value: PreparationReceipt, **changes: object) -> PreparationReceipt:
+    result = object.__new__(PreparationReceipt)
+    for name in value.__dataclass_fields__:
+        object.__setattr__(result, name, changes.get(name, getattr(value, name)))
+    return result
 
 
 def package_ref(name: str, artifact: str) -> FrozenPackageRef:
@@ -229,28 +271,104 @@ def package_surface(
     return PackageSurface(package, report_sha, "synthetic-report-v1", (root,), tuple(areas))
 
 
-def frozen_plan(target: FrozenPackageRef) -> FrozenPackageExecutionPlan:
+def frozen_plan(
+    target: FrozenPackageRef, prepared: PreparationReceipt
+) -> FrozenPackageExecutionPlan:
     receipt_digest = sha("receipt")
     receipt_unit = f"package-validation-receipt:{target.content_id}"
+    preparation_capabilities = tuple(
+        sorted(
+            (
+                FrozenCapabilityPin(
+                    PREPARATION_AUTHORITY_CAPABILITY,
+                    PREPARATION_AUTHORITY_SCHEMA,
+                    prepared.authority_sha256,
+                ),
+                FrozenCapabilityPin(
+                    PREPARATION_CANDIDATE_CAPABILITY,
+                    CANDIDATE_CONTRACT_REVISION,
+                    prepared.candidate_contract_sha256,
+                ),
+                FrozenCapabilityPin(
+                    PREPARATION_EXECUTION_CAPABILITY,
+                    EXECUTION_PROFILE_REVISION,
+                    prepared.execution_profile_sha256,
+                ),
+                FrozenCapabilityPin(
+                    PREPARATION_PIPELINE_CAPABILITY,
+                    prepared.pipeline_revision,
+                    prepared.tool_registry_sha256,
+                ),
+                FrozenCapabilityPin(
+                    PREPARATION_REGISTRY_CAPABILITY,
+                    TOOL_REGISTRY_SCHEMA,
+                    prepared.tool_registry_sha256,
+                ),
+            ),
+            key=lambda item: item.name,
+        )
+    )
+    preparation_completion = FrozenCompletionPin(
+        f"package-preparation:{target.content_id}",
+        PREPARATION_RECEIPT_REVISION,
+        prepared.content_id,
+    )
+    preparation_binding = FrozenPreparationPlanBinding(
+        package_ref_id=target.content_id,
+        package_name=target.package_name,
+        version_code=target.version_code,
+        version_name="1.7",
+        artifact_digest=target.artifact_digest,
+        preflight_sha256=prepared.preflight_manifest_sha256,
+        receipt_sha256=prepared.content_id,
+        completion=preparation_completion,
+        capabilities=preparation_capabilities,
+    )
+    required_capabilities = tuple(
+        sorted(
+            (
+                *preparation_capabilities,
+                FrozenCapabilityPin("pipeline", "v1", sha("capability")),
+            ),
+            key=lambda item: item.name,
+        )
+    )
+    required_completions = tuple(
+        sorted(
+            (
+                preparation_completion,
+                FrozenCompletionPin(
+                    receipt_unit,
+                    PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
+                    receipt_digest,
+                ),
+            ),
+            key=lambda item: item.parent_unit_id,
+        )
+    )
     canonical = json.dumps(
         {
             "authoritative_root_count": 1,
             "cluster_id": "cluster-synthetic",
             "package_local": {
                 "package_name": target.package_name,
+                "requirements_sha256": sha("preflight"),
                 "target_artifact_digest": target.artifact_digest,
                 "version_code": target.version_code,
                 "version_name": "1.7",
             },
+            "preparation": preparation_binding.to_data(),
             "required_capabilities": [
-                {"digest": sha("capability"), "name": "pipeline", "revision": "v1"}
+                {"digest": item.digest, "name": item.name, "revision": item.revision}
+                for item in required_capabilities
             ],
             "required_completions": [
                 {
-                    "digest": receipt_digest,
-                    "parent_unit_id": receipt_unit,
-                    "revision": PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
+                    "digest": item.digest,
+                    "parent_unit_id": item.parent_unit_id,
+                    "revision": item.revision,
                 }
+                for item in required_completions
             ],
             "revision": PACKAGE_EXECUTION_PLAN_REVISION,
             "status": "EXECUTABLE",
@@ -271,16 +389,12 @@ def frozen_plan(target: FrozenPackageRef) -> FrozenPackageExecutionPlan:
         "version_code": target.version_code,
         "version_name": "1.7",
         "target_artifact_digest": target.artifact_digest,
+        "preflight_sha256": sha("preflight"),
+        "preparation": preparation_binding,
         "inherited_semantic_roots": (),
         "semantic_audit_completion_digests": (),
-        "required_capabilities": (FrozenCapabilityPin("pipeline", "v1", sha("capability")),),
-        "required_completions": (
-            FrozenCompletionPin(
-                receipt_unit,
-                PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
-                receipt_digest,
-            ),
-        ),
+        "required_capabilities": required_capabilities,
+        "required_completions": required_completions,
     }
     for name, value in values.items():
         object.__setattr__(result, name, value)
@@ -311,7 +425,7 @@ def validated_output(
 
 @dataclass(frozen=True)
 class Case:
-    preparation: PreparationResult
+    preparation: PreparationReceipt
     execution_plan: FrozenPackageExecutionPlan
     validated_output: ValidatedPackageOutput
     reconciliation_input: ReconciliationInput
@@ -404,7 +518,7 @@ def valid_case(
     result = reconcile(reconciliation_input)
     json_payload = render_json(result)
     markdown = render_markdown(result)
-    plan = frozen_plan(target)
+    plan = frozen_plan(target, prepared)
     output = validated_output(plan, report_sha, sha(final_json))
     warning_id = warning_occurrence_id(prepared.invocations[0], prepared.invocations[0].warnings[0])
     adapter = CompletionAdapter(
@@ -422,8 +536,14 @@ def valid_case(
         ),
     )
     pins = ValidationPins(
+        preparation_receipt_sha256=prepared.content_id,
+        preflight_manifest_sha256=prepared.preflight_manifest_sha256,
         preparation_manifest_sha256=prepared.manifest_sha256,
         candidate_index_sha256=prepared.candidate_index_sha256,
+        candidate_contract_sha256=prepared.candidate_contract_sha256,
+        preparation_authority_sha256=prepared.authority_sha256,
+        tool_registry_sha256=prepared.tool_registry_sha256,
+        execution_profile_sha256=prepared.execution_profile_sha256,
         execution_plan_sha256=plan.digest,
         validated_package_output_sha256=output.content_id,
         reconciliation_input_sha256=result.input_id,
@@ -561,7 +681,7 @@ def test_valid_incomplete_results_expose_each_terminal_reconciliation_gate() -> 
 @pytest.mark.parametrize(
     ("mutation", "expected"),
     [
-        ("preparation_blocked", "PREPARATION_INCOMPLETE"),
+        ("preparation_invalid", "PREPARATION_FIELDS_INVALID"),
         ("invocation_blocked", "INVOCATION_INCOMPLETE"),
         ("candidate_removed", "CANDIDATE_SOURCE_SET_MISMATCH"),
         ("candidate_unknown", "CANDIDATE_SOURCE_SET_MISMATCH"),
@@ -590,11 +710,17 @@ def test_valid_incomplete_results_expose_each_terminal_reconciliation_gate() -> 
 )
 def test_hostile_mutation_matrix_fails_closed(mutation: str, expected: str) -> None:
     case = valid_case()
-    if mutation == "preparation_blocked":
-        case = replace(case, preparation=replace(case.preparation, status="BLOCKED"))
+    if mutation == "preparation_invalid":
+        case = replace(
+            case,
+            preparation=replace_preparation(case.preparation, revision="unsupported"),
+        )
     elif mutation == "invocation_blocked":
         invocation = replace(case.preparation.invocations[0], status="BLOCKED")
-        case = replace(case, preparation=replace(case.preparation, invocations=(invocation,)))
+        case = replace(
+            case,
+            preparation=replace_preparation(case.preparation, invocations=(invocation,)),
+        )
     elif mutation == "candidate_removed":
         case = replace(case, adapter=replace(case.adapter, candidate_links=()))
     elif mutation == "candidate_unknown":
@@ -750,6 +876,66 @@ def test_pin_type_and_duplicate_adapter_records_are_rejected_at_construction() -
             case.adapter,
             candidate_links=(case.adapter.candidate_links[0], case.adapter.candidate_links[0]),
         )
+
+
+def test_preparation_type_identity_and_preflight_transplants_are_rejected() -> None:
+    case = valid_case()
+
+    wrong_type = replace(case, preparation=cast(PreparationReceipt, object()))
+    assert "PREPARATION_TYPE_INVALID" in codes(wrong_type)
+
+    transplanted_identity = replace_preparation(
+        case.preparation,
+        package_name="org.example.other",
+    )
+    identity_pins = replace(
+        case.pins,
+        preparation_receipt_sha256=transplanted_identity.content_id,
+    )
+    assert "PREPARATION_IDENTITY_MISMATCH" in codes(
+        replace(case, preparation=transplanted_identity, pins=identity_pins)
+    )
+
+    transplanted_preflight = replace_preparation(
+        case.preparation,
+        preflight_manifest_sha256=sha("other-preflight"),
+    )
+    preflight_pins = replace(
+        case.pins,
+        preparation_receipt_sha256=transplanted_preflight.content_id,
+        preflight_manifest_sha256=transplanted_preflight.preflight_manifest_sha256,
+    )
+    assert "PREPARATION_PREFLIGHT_MISMATCH" in codes(
+        replace(case, preparation=transplanted_preflight, pins=preflight_pins)
+    )
+
+
+def test_preparation_cannot_be_reissued_by_repinning_completion_inputs() -> None:
+    case = valid_case()
+    forged = replace_preparation(case.preparation, manifest_sha256=sha("forged-manifest"))
+    forged_pins = replace(
+        case.pins,
+        preparation_receipt_sha256=forged.content_id,
+        preparation_manifest_sha256=forged.manifest_sha256,
+    )
+
+    assert "PREPARATION_PLAN_BINDING_MISMATCH" in codes(
+        replace(case, preparation=forged, pins=forged_pins)
+    )
+
+
+def test_preparation_capabilities_are_bound_to_the_frozen_plan() -> None:
+    case = valid_case()
+    forged = replace_preparation(case.preparation, authority_sha256=sha("forged-authority"))
+    forged_pins = replace(
+        case.pins,
+        preparation_receipt_sha256=forged.content_id,
+        preparation_authority_sha256=forged.authority_sha256,
+    )
+
+    result = codes(replace(case, preparation=forged, pins=forged_pins))
+    assert "PREPARATION_PLAN_BINDING_MISMATCH" in result
+    assert "PREPARATION_CAPABILITY_MISMATCH" in result
 
 
 def test_occurrence_identities_reject_hostile_runtime_strings_deterministically() -> None:

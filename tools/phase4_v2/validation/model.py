@@ -237,8 +237,14 @@ class CompletionAdapter:
 class ValidationPins:
     """Externally trusted digests for every consumed input and rendered output."""
 
+    preparation_receipt_sha256: str
+    preflight_manifest_sha256: str
     preparation_manifest_sha256: str
     candidate_index_sha256: str
+    candidate_contract_sha256: str
+    preparation_authority_sha256: str
+    tool_registry_sha256: str
+    execution_profile_sha256: str
     execution_plan_sha256: str
     validated_package_output_sha256: str
     reconciliation_input_sha256: str
