@@ -50,6 +50,7 @@ from tools.phase4_v2.equivalence import (
     target_inventory_envelope_payload,
     target_inventory_signing_bytes,
 )
+from tools.phase4_v2.preflight import PreparationReceipt
 from tools.phase4_v2.queue import (
     Lease,
     Queue,
@@ -177,6 +178,7 @@ class AuthenticatedSyntheticPackage:
     package_ref: FrozenPackageRef
     report_bytes: bytes
     report_manifest_bytes: bytes
+    preparation_receipt: PreparationReceipt
 
 
 class _Gateway:
@@ -378,6 +380,7 @@ def _finish_stage(
                     "accepted": True,
                     "analysis_completion_revision": analysis.completion_revision,
                     "analysis_completion_sha256": analysis.output_digest,
+                    "package_surface_sha256": _digest(f"surface:{package.package_ref_id}"),
                     "cluster_id": graph.cluster_id,
                     "diagnostics": [],
                     "graph_sha256": graph.content_id,
@@ -705,6 +708,7 @@ def complete_authenticated_synthetic_package_inputs(
         inputs.package_ref,
         (inputs.report_root / "analysis.json").read_bytes(),
         (inputs.report_root / "REPORT.SHA256").read_bytes(),
+        inputs.preparation_receipt,
     )
 
 

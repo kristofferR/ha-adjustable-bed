@@ -191,6 +191,7 @@ def _accept(queue: Queue, lease: Lease, marker: str) -> None:
             **common,
             "analysis_completion_revision": analysis.completion_revision,
             "analysis_completion_sha256": analysis.output_digest,
+            "package_surface_sha256": _digest(f"surface:{package.package_ref_id}"),
             "package_ref_id": package.package_ref_id,
             "revision": stage_completion.PACKAGE_AUDIT_COMPLETION_REVISION,
         }

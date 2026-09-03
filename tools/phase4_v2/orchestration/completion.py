@@ -129,6 +129,7 @@ class TrustedPackageAuditReceipt:
     stage_input_sha256: str
     analysis_completion_revision: str
     analysis_completion_sha256: str
+    package_surface_sha256: str
     accepted: bool
     diagnostics: tuple[str, ...]
     canonical_bytes: bytes
@@ -228,6 +229,7 @@ def load_package_audit_receipt(
         analysis_completion_sha256=_digest(
             payload["analysis_completion_sha256"], "analysis completion"
         ),
+        package_surface_sha256=_digest(payload["package_surface_sha256"], "package surface"),
         accepted=_accepted(payload["accepted"], payload["diagnostics"], "audit"),
         diagnostics=_diagnostics(payload["diagnostics"], "audit diagnostics"),
     )
@@ -955,6 +957,7 @@ _AUDIT_FIELDS = frozenset(
         "diagnostics",
         "graph_sha256",
         "package_ref_id",
+        "package_surface_sha256",
         "revision",
         "stage",
         "stage_input_sha256",
