@@ -16,6 +16,7 @@ from tools.phase4_v2.preflight.execution import (
     CANDIDATE_CONTRACT_SHA256,
     CandidateRecord,
     InvocationRecord,
+    PreparationError,
 )
 from tools.phase4_v2.preflight.registry import (
     PREPARATION_AUTHORITY_SCHEMA,
@@ -23,6 +24,7 @@ from tools.phase4_v2.preflight.registry import (
     ActivatedPreparationAuthority,
     PreparationReceipt,
     load_activated_preparation_authority,
+    validate_preparation_receipt_authority,
 )
 from tools.phase4_v2.validator import (
     PACKAGE_BOUND_VALIDATION_PROFILE,
@@ -54,12 +56,12 @@ from .core import (
     validate_frozen_package_ref,
 )
 
-PACKAGE_LOCAL_PLAN_REVISION = "phase4-v2-package-local-plan-v2"
+PACKAGE_LOCAL_PLAN_REVISION = "phase4-v2-package-local-plan-v3"
 TARGET_ROOT_INVENTORY_REVISION = "phase4-v2-target-root-inventory-v1"
 EXACT_REUSE_PINS_REVISION = "phase4-v2-exact-reuse-pins-v3"
 ROOT_EXECUTION_PLAN_REVISION = "phase4-v2-root-execution-plan-v2"
-PACKAGE_EXECUTION_PLAN_REVISION = "phase4-v2-package-execution-plan-v3"
-VALIDATED_PACKAGE_OUTPUT_REVISION = "phase4-v2-validated-package-output-v4"
+PACKAGE_EXECUTION_PLAN_REVISION = "phase4-v2-package-execution-plan-v4"
+VALIDATED_PACKAGE_OUTPUT_REVISION = "phase4-v2-validated-package-output-v5"
 PACKAGE_QUEUE_UNIT_KIND = "validated-package-output"
 PACKAGE_QUEUE_UNIT_PREFIX = "package-output"
 PREPARATION_QUEUE_UNIT_KIND = "prepared-package-input"
@@ -368,6 +370,7 @@ class PackageLocalPlan:
     target_artifact_digest: str
     requirements_sha256: str
     pipeline_capability: CapabilityPin
+    evidence_producer_capabilities: tuple[CapabilityPin, ...]
     mandatory_domains: tuple[str, ...] = LOCAL_ONLY_DOMAINS
     revision: str = PACKAGE_LOCAL_PLAN_REVISION
 
@@ -390,6 +393,12 @@ class PackageLocalPlan:
             _fail("package pipeline capability has the wrong name")
         _revision(pipeline.revision, PACKAGE_EXECUTION_PLAN_REVISION, "package pipeline")
         object.__setattr__(self, "pipeline_capability", pipeline)
+        producers = _capability_tuple(
+            self.evidence_producer_capabilities,
+            "package-local evidence producers",
+            nonempty=True,
+        )
+        object.__setattr__(self, "evidence_producer_capabilities", producers)
         _revision(self.revision, PACKAGE_LOCAL_PLAN_REVISION, "package-local plan revision")
 
     def to_data(self) -> dict[str, object]:
@@ -397,6 +406,9 @@ class PackageLocalPlan:
             "mandatory_domains": list(self.mandatory_domains),
             "package_name": self.package_name,
             "pipeline_capability": self.pipeline_capability.to_data(),
+            "evidence_producer_capabilities": [
+                item.to_data() for item in self.evidence_producer_capabilities
+            ],
             "requirements_sha256": self.requirements_sha256,
             "revision": self.revision,
             "target_artifact_digest": self.target_artifact_digest,
@@ -421,6 +433,7 @@ def _local(value: PackageLocalPlan) -> PackageLocalPlan:
         value.target_artifact_digest,
         value.requirements_sha256,
         value.pipeline_capability,
+        value.evidence_producer_capabilities,
         value.mandatory_domains,
         value.revision,
     )
@@ -439,6 +452,7 @@ class PreparationPlanBinding:
     receipt_sha256: str
     completion: CompletionPin
     capabilities: tuple[CapabilityPin, ...]
+    evidence_producer_capabilities: tuple[CapabilityPin, ...]
 
     def __init__(self) -> None:
         _fail("PreparationPlanBinding must be created from a trusted preparation receipt")
@@ -447,6 +461,9 @@ class PreparationPlanBinding:
         return {
             "artifact_digest": self.artifact_digest,
             "capabilities": [item.to_data() for item in self.capabilities],
+            "evidence_producer_capabilities": [
+                item.to_data() for item in self.evidence_producer_capabilities
+            ],
             "completion": self.completion.to_data(),
             "package_name": self.package_name,
             "package_ref_id": self.package_ref_id,
@@ -576,6 +593,43 @@ def _validated_preparation_receipt(
     return receipt_sha256, capabilities
 
 
+def _preparation_evidence_producers(
+    receipt: PreparationReceipt,
+) -> tuple[CapabilityPin, ...]:
+    producers: dict[str, CapabilityPin] = {}
+    for invocation in receipt.invocations:
+        if invocation.status != "COMPLETE":
+            continue
+        if not invocation.outputs or invocation.tool.binary_sha256 is None:
+            _fail("complete preparation producer has no output or binary digest")
+        producer = CapabilityPin(
+            invocation.route,
+            receipt.pipeline_revision,
+            invocation.tool.binary_sha256,
+        )
+        previous = producers.setdefault(producer.name, producer)
+        if previous != producer:
+            _fail("preparation route has ambiguous evidence producers")
+    return _capability_tuple(
+        tuple(sorted(producers.values(), key=lambda item: item.name)),
+        "preparation evidence producers",
+        nonempty=True,
+    )
+
+
+def preparation_evidence_producer_capabilities(
+    receipt: PreparationReceipt,
+    authority: ActivatedPreparationAuthority,
+) -> tuple[CapabilityPin, ...]:
+    """Derive exact report-lineage producer pins from an authenticated preparation."""
+
+    try:
+        restored = validate_preparation_receipt_authority(receipt, authority)
+    except PreparationError as error:
+        raise EquivalenceError("preparation producer authentication failed") from error
+    return _preparation_evidence_producers(restored)
+
+
 def _new_accepted_preparation_plan_binding(
     *,
     package_ref: FrozenPackageRef,
@@ -588,6 +642,7 @@ def _new_accepted_preparation_plan_binding(
     package_ref = validate_frozen_package_ref(package_ref)
     local = _local(package_local)
     receipt_sha256, capabilities = _validated_preparation_receipt(receipt, authority)
+    evidence_producers = preparation_evidence_producer_capabilities(receipt, authority)
     package_ref_id = package_ref.content_id
     if local.target_package_ref_id != package_ref_id or (
         receipt.package_name,
@@ -619,6 +674,7 @@ def _new_accepted_preparation_plan_binding(
         "receipt_sha256": receipt_sha256,
         "completion": completion,
         "capabilities": capabilities,
+        "evidence_producer_capabilities": evidence_producers,
     }
     for name, value in values.items():
         object.__setattr__(result, name, value)
@@ -632,6 +688,11 @@ def _preparation(value: PreparationPlanBinding) -> PreparationPlanBinding:
     capabilities = _capability_tuple(
         value.capabilities,
         "preparation capabilities",
+        nonempty=True,
+    )
+    evidence_producers = _capability_tuple(
+        value.evidence_producer_capabilities,
+        "preparation evidence producers",
         nonempty=True,
     )
     if completion.parent_unit_id != preparation_queue_unit_id(value.package_ref_id):
@@ -664,6 +725,7 @@ def _preparation(value: PreparationPlanBinding) -> PreparationPlanBinding:
         object.__setattr__(result, name, getattr(value, name))
     object.__setattr__(result, "completion", completion)
     object.__setattr__(result, "capabilities", capabilities)
+    object.__setattr__(result, "evidence_producer_capabilities", evidence_producers)
     return result
 
 
@@ -1422,6 +1484,11 @@ class PackageExecutionPlan:
             local.requirements_sha256,
         ):
             _fail("preparation binding targets a different package plan")
+        if (
+            local.evidence_producer_capabilities
+            != preparation.evidence_producer_capabilities
+        ):
+            _fail("package-local evidence producers differ from accepted preparation routes")
         if accepted.inventory.target_package_ref_id != self.target_package_ref_id:
             _fail("target-root inventory targets a different package")
         if type(self.root_plans) is not tuple or not self.root_plans:
@@ -1482,6 +1549,7 @@ class PackageExecutionPlan:
             )
 
             yield self.package_local.pipeline_capability
+            yield from self.package_local.evidence_producer_capabilities
             yield from self.preparation.capabilities
             yield inventory_authority_capability(self.accepted_target_inventory.authority)
             yield inventory_extractor_capability(self.accepted_target_inventory.extractor)
@@ -1561,6 +1629,7 @@ class FrozenPreparationPlanBinding(NamedTuple):
     receipt_sha256: str
     completion: FrozenCompletionPin
     capabilities: tuple[FrozenCapabilityPin, ...]
+    evidence_producer_capabilities: tuple[FrozenCapabilityPin, ...]
 
     def to_data(self) -> dict[str, object]:
         return {
@@ -1568,6 +1637,10 @@ class FrozenPreparationPlanBinding(NamedTuple):
             "capabilities": [
                 {"digest": item.digest, "name": item.name, "revision": item.revision}
                 for item in self.capabilities
+            ],
+            "evidence_producer_capabilities": [
+                {"digest": item.digest, "name": item.name, "revision": item.revision}
+                for item in self.evidence_producer_capabilities
             ],
             "completion": {
                 "digest": self.completion.digest,
@@ -1605,6 +1678,9 @@ def _frozen_preparation(value: PreparationPlanBinding) -> FrozenPreparationPlanB
         receipt_sha256=copied.receipt_sha256,
         completion=_frozen_completion(copied.completion),
         capabilities=tuple(_frozen_capability(item) for item in copied.capabilities),
+        evidence_producer_capabilities=tuple(
+            _frozen_capability(item) for item in copied.evidence_producer_capabilities
+        ),
     )
 
 
@@ -1730,7 +1806,22 @@ def _new_frozen_package_execution_plan(
     if semantic_audit_completion_digests != tuple(sorted(derived_audit_digests)):
         _fail("snapshot audit completions do not derive from canonical root plans")
     local = decoded.get("package_local")
-    if not isinstance(local, dict) or (
+    if (
+        not isinstance(local, dict)
+        or set(local)
+        != {
+            "evidence_producer_capabilities",
+            "mandatory_domains",
+            "package_name",
+            "pipeline_capability",
+            "requirements_sha256",
+            "revision",
+            "target_artifact_digest",
+            "target_package_ref_id",
+            "version_code",
+            "version_name",
+        }
+        or (
         local.get("package_name"),
         local.get("version_code"),
         local.get("version_name"),
@@ -1742,6 +1833,7 @@ def _new_frozen_package_execution_plan(
         version_name,
         target_artifact_digest,
         preflight_sha256,
+        )
     ):
         _fail("snapshot package identity does not match its canonical preimage")
     if type(required_capabilities) is not tuple or not required_capabilities:
@@ -1788,6 +1880,26 @@ def _new_frozen_package_execution_plan(
         _fail("snapshot completions do not match its canonical preimage")
     if any(item not in required_capabilities for item in preparation.capabilities):
         _fail("snapshot capabilities omit an accepted preparation pin")
+    evidence_producer_data = [
+        {"digest": item.digest, "name": item.name, "revision": item.revision}
+        for item in preparation.evidence_producer_capabilities
+    ]
+    if local.get("evidence_producer_capabilities") != evidence_producer_data:
+        _fail("snapshot package-local evidence producers differ from preparation")
+    if any(
+        item not in required_capabilities
+        for item in preparation.evidence_producer_capabilities
+    ):
+        _fail("snapshot capabilities omit a package-local evidence producer")
+    pipeline_data = local.get("pipeline_capability")
+    if (
+        not isinstance(pipeline_data, dict)
+        or set(pipeline_data) != {"digest", "name", "revision"}
+        or pipeline_data.get("name") != PACKAGE_PIPELINE_CAPABILITY
+        or pipeline_data.get("revision") != PACKAGE_EXECUTION_PLAN_REVISION
+        or pipeline_data not in expected_capability_data
+    ):
+        _fail("snapshot capabilities omit the package analysis pipeline")
     if preparation.completion not in required_completions:
         _fail("snapshot completions omit the accepted preparation receipt")
     if type(package_name) is not str or _PACKAGE.fullmatch(package_name) is None:
@@ -1867,6 +1979,7 @@ def validate_preparation_receipt_for_plan(
     """Verify a receipt is the exact preparation completion frozen into a plan."""
 
     frozen = _validate_frozen_package_execution_plan(plan)
+    evidence_producers = preparation_evidence_producer_capabilities(receipt, authority)
     receipt_sha256, capabilities = _validated_preparation_receipt(receipt, authority)
     binding = frozen.preparation
     if (
@@ -1887,6 +2000,11 @@ def validate_preparation_receipt_for_plan(
         _fail("preparation receipt is not the completion frozen into this plan")
     if tuple(_frozen_capability(item) for item in capabilities) != binding.capabilities:
         _fail("preparation authority is not the capability set frozen into this plan")
+    if (
+        tuple(_frozen_capability(item) for item in evidence_producers)
+        != binding.evidence_producer_capabilities
+    ):
+        _fail("preparation evidence producers are not frozen into this plan")
     if binding.completion != FrozenCompletionPin(
         preparation_queue_unit_id(binding.package_ref_id),
         PREPARATION_RECEIPT_REVISION,

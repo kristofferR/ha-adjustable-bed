@@ -103,6 +103,10 @@ from tools.phase4_v2.equivalence.queue import (
 from tools.phase4_v2.preflight.execution import (
     CANDIDATE_CONTRACT_SHA256,
     EXECUTION_PROFILE_REVISION,
+    InvocationRecord,
+    OutputMember,
+    StreamDigest,
+    ToolRecord,
 )
 from tools.phase4_v2.preflight.registry import (
     PREPARATION_AUTHORITY_SCHEMA,
@@ -289,6 +293,11 @@ def _activate_test_validator(monkeypatch: pytest.MonkeyPatch) -> None:
         "_read_protected_activation_digest",
         lambda: hashlib.sha256(_AUTHORITY_PAYLOAD).hexdigest(),
     )
+    monkeypatch.setattr(
+        plan_module,
+        "validate_preparation_receipt_authority",
+        lambda receipt, _authority: receipt,
+    )
 
 
 _AUTHORITY_DATA = {
@@ -314,6 +323,38 @@ with patch.object(
 ):
     PREPARATION_AUTHORITY = load_activated_preparation_authority(_AUTHORITY_PAYLOAD)
 PREPARATION_RECEIPT = object.__new__(PreparationReceipt)
+_PREPARATION_PRODUCER = CapabilityPin(
+    "apktool",
+    PREPARATION_AUTHORITY.pipeline_revision,
+    SHA_E,
+)
+_PREPARATION_INVOCATION = InvocationRecord(
+    member="base.apk",
+    input_sha256=SHA_B,
+    route=_PREPARATION_PRODUCER.name,
+    cache_key=SHA_A,
+    tool=ToolRecord(
+        executable="apktool",
+        binary_bytes=1,
+        binary_sha256=_PREPARATION_PRODUCER.digest,
+        runtime_files=None,
+        runtime_sha256=None,
+        version_arguments=(),
+        version="fixture",
+        version_stdout=StreamDigest(0, SHA_0),
+        version_stderr=StreamDigest(0, SHA_0),
+        failure=None,
+    ),
+    arguments=(),
+    flags=(),
+    status="COMPLETE",
+    exit_code=0,
+    stdout=StreamDigest(0, SHA_0),
+    stderr=StreamDigest(0, SHA_0),
+    warnings=(),
+    failures=(),
+    outputs=(OutputMember("decoded/AndroidManifest.xml", 1, SHA_C),),
+)
 for _name, _value in {
     "artifact_digest": SHA_B,
     "package_name": "org.example.target",
@@ -330,7 +371,7 @@ for _name, _value in {
     "execution_profile_sha256": PREPARATION_AUTHORITY.execution_profile_sha256,
     "executor_public_key": PREPARATION_AUTHORITY.executor_public_key,
     "execution_signature": "0" * 128,
-    "invocations": (),
+    "invocations": (_PREPARATION_INVOCATION,),
     "candidates": (),
     "manifest_bytes": b"",
     "candidate_index_bytes": b"",
@@ -358,6 +399,7 @@ def _local_plan(*, version_name: str = "1.7") -> PackageLocalPlan:
             PACKAGE_EXECUTION_PLAN_REVISION,
             SHA_F,
         ),
+        evidence_producer_capabilities=(_PREPARATION_PRODUCER,),
     )
 
 
@@ -1030,6 +1072,25 @@ def test_plan_materialization_requires_exact_accepted_preparation(queue: Queue) 
         validate_preparation_receipt_for_plan(
             frozen,
             _copy_preparation_receipt(manifest_sha256=SHA_F),
+            PREPARATION_AUTHORITY,
+        )
+
+
+def test_plan_receipt_validation_reauthenticates_protected_preparation_authority(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    frozen = freeze_package_execution_plan(_full_plan())
+    monkeypatch.setattr(
+        plan_module,
+        "validate_preparation_receipt_authority",
+        registry_module.validate_preparation_receipt_authority,
+    )
+    monkeypatch.setattr(registry_module, "_read_protected_activation_digest", lambda: SHA_F)
+
+    with pytest.raises(EquivalenceError, match="producer authentication failed"):
+        validate_preparation_receipt_for_plan(
+            frozen,
+            PREPARATION_RECEIPT,
             PREPARATION_AUTHORITY,
         )
 

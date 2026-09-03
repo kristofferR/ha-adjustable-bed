@@ -131,6 +131,9 @@ def local_plan() -> PackageLocalPlan:
         pipeline_capability=CapabilityPin(
             PACKAGE_PIPELINE_CAPABILITY, PACKAGE_EXECUTION_PLAN_REVISION, SHA_F
         ),
+        evidence_producer_capabilities=(
+            CapabilityPin("apktool", "phase4-v2-preparation-pipeline-v1", SHA_E),
+        ),
     )
 
 
@@ -183,6 +186,7 @@ def preparation_binding(local: PackageLocalPlan | None = None) -> PreparationPla
             SHA_2,
         ),
         "capabilities": capabilities,
+        "evidence_producer_capabilities": package.evidence_producer_capabilities,
     }
     for name, value in values.items():
         object.__setattr__(result, name, value)
@@ -561,6 +565,7 @@ def test_full_route_has_no_reuse_pins_and_mixed_plan_is_allowed() -> None:
         plan_module.PREPARATION_EXECUTION_CAPABILITY,
         plan_module.PREPARATION_PIPELINE_CAPABILITY,
         plan_module.PREPARATION_REGISTRY_CAPABILITY,
+        "apktool",
         EXACT_REUSE_PIPELINE_CAPABILITY,
         "extractor:dex",
         "analyzer:full",
@@ -575,6 +580,53 @@ def test_full_route_has_no_reuse_pins_and_mixed_plan_is_allowed() -> None:
         "audit:source",
         "semantic-root:source",
     }
+
+
+def test_all_exact_reuse_retains_package_local_evidence_producer() -> None:
+    accepted = accepted_inventory((SHA_C, SHA_D))
+    plan = build_package_execution_plan(
+        cluster_id=CLUSTER_ID,
+        target_package_ref_id=TARGET_PACKAGE_REF_ID,
+        target_package_ref=TARGET_PACKAGE_REF,
+        package_local=local_plan(),
+        preparation=preparation_binding(),
+        accepted_target_inventory=accepted,
+        root_plans=(exact_root(accepted),),
+    )
+
+    assert plan.package_local.evidence_producer_capabilities == (
+        CapabilityPin("apktool", "phase4-v2-preparation-pipeline-v1", SHA_E),
+    )
+    assert plan.package_local.evidence_producer_capabilities[0] in (
+        plan.required_capabilities
+    )
+
+
+def test_package_local_evidence_producers_are_exact_and_preparation_bound() -> None:
+    producer = CapabilityPin("apktool", "phase4-v2-preparation-pipeline-v1", SHA_E)
+    with pytest.raises(EquivalenceError, match="non-empty"):
+        replace(local_plan(), evidence_producer_capabilities=())
+
+    hostile = local_plan()
+    object.__setattr__(hostile, "evidence_producer_capabilities", [producer])
+    with pytest.raises(EquivalenceError, match="bounded non-empty tuple"):
+        hostile.__post_init__()
+
+    transplanted = replace(
+        local_plan(),
+        evidence_producer_capabilities=(replace(producer, digest=SHA_F),),
+    )
+    accepted = accepted_inventory((SHA_C, SHA_D))
+    with pytest.raises(EquivalenceError, match="accepted preparation routes"):
+        build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
+            target_package_ref_id=TARGET_PACKAGE_REF_ID,
+            target_package_ref=TARGET_PACKAGE_REF,
+            package_local=transplanted,
+            preparation=preparation_binding(),
+            accepted_target_inventory=accepted,
+            root_plans=(exact_root(accepted),),
+        )
 
 
 def test_aggregate_queue_requirements_reject_conflicting_pins() -> None:
@@ -793,6 +845,43 @@ def test_frozen_snapshot_is_factory_only_and_pins_are_structurally_immutable() -
     object.__setattr__(clean, "cluster_id", "cluster-transplanted")
     with pytest.raises(EquivalenceError, match="cluster does not match"):
         plan_module._validate_frozen_package_execution_plan(clean)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    (
+        ("missing", "package identity"),
+        ("extra", "package identity"),
+        ("wrong-type", "differ from preparation"),
+        ("wrong-route", "differ from preparation"),
+    ),
+)
+def test_frozen_package_local_evidence_producer_schema_is_exact(
+    mutation: str,
+    message: str,
+) -> None:
+    frozen = freeze_package_execution_plan(mixed_plan())
+    payload = json.loads(frozen.canonical_bytes)
+    local = payload["package_local"]
+    producers = local["evidence_producer_capabilities"]
+    if mutation == "missing":
+        del local["evidence_producer_capabilities"]
+    elif mutation == "extra":
+        local["unexpected_evidence_producer"] = producers[0]
+    elif mutation == "wrong-type":
+        local["evidence_producer_capabilities"] = producers[0]
+    else:
+        producers[0]["name"] = "transplanted-route"
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    object.__setattr__(frozen, "canonical_bytes", canonical)
+    object.__setattr__(
+        frozen,
+        "digest",
+        hashlib.sha256(b"phase4-v2:package-execution-plan\0" + canonical).hexdigest(),
+    )
+
+    with pytest.raises(EquivalenceError, match=message):
+        plan_module.validate_frozen_package_execution_plan(frozen)
 
 
 def test_queue_identifier_and_global_requirement_boundaries_are_exact() -> None:
