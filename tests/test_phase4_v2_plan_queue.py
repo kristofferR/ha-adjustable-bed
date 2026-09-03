@@ -332,6 +332,8 @@ for _name, _value in {
     "execution_signature": "0" * 128,
     "invocations": (),
     "candidates": (),
+    "manifest_bytes": b"",
+    "candidate_index_bytes": b"",
     "revision": PREPARATION_RECEIPT_REVISION,
 }.items():
     object.__setattr__(PREPARATION_RECEIPT, _name, _value)

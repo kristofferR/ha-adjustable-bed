@@ -608,6 +608,8 @@ class PreparationReceipt:
     execution_signature: str
     invocations: tuple[InvocationRecord, ...]
     candidates: tuple[CandidateRecord, ...]
+    manifest_bytes: bytes
+    candidate_index_bytes: bytes
     revision: str
 
     def __init__(self) -> None:
@@ -640,6 +642,138 @@ class PreparationReceipt:
         return hashlib.sha256(
             b"phase4-v2:preparation-receipt\0" + _canonical_json(self.to_data())
         ).hexdigest()
+
+
+def validate_preparation_receipt_authority(
+    receipt: PreparationReceipt,
+    authority: ActivatedPreparationAuthority,
+) -> PreparationReceipt:
+    """Reauthenticate a retained preparation receipt against protected activation."""
+
+    if type(receipt) is not PreparationReceipt or type(authority) is not ActivatedPreparationAuthority:
+        _fail("preparation receipt authentication requires exact trusted records")
+    authority_payload = _canonical_json(authority.to_data()) + b"\n"
+    restored_authority = load_activated_preparation_authority(authority_payload)
+    if restored_authority != authority:
+        _fail("preparation authority changed after activation")
+    if (
+        receipt.revision != PREPARATION_RECEIPT_REVISION
+        or receipt.authority_sha256 != authority.activation_sha256
+        or receipt.tool_registry_sha256 != authority.registry_sha256
+        or receipt.pipeline_revision != authority.pipeline_revision
+        or receipt.execution_profile_revision != authority.execution_profile_revision
+        or receipt.execution_profile_sha256 != authority.execution_profile_sha256
+        or receipt.candidate_contract_sha256 != authority.candidate_contract_sha256
+        or receipt.executor_public_key != authority.executor_public_key
+        or type(receipt.invocations) is not tuple
+        or type(receipt.candidates) is not tuple
+        or any(type(item) is not InvocationRecord for item in receipt.invocations)
+        or any(type(item) is not CandidateRecord for item in receipt.candidates)
+        or type(receipt.manifest_bytes) is not bytes
+        or type(receipt.candidate_index_bytes) is not bytes
+    ):
+        _fail("preparation receipt differs from its activated authority")
+    for value, field in (
+        (receipt.artifact_digest, "receipt.artifact_digest"),
+        (receipt.preflight_manifest_sha256, "receipt.preflight_manifest_sha256"),
+        (receipt.manifest_sha256, "receipt.manifest_sha256"),
+        (receipt.candidate_index_sha256, "receipt.candidate_index_sha256"),
+    ):
+        _sha(value, field)
+    if (
+        hashlib.sha256(receipt.manifest_bytes).hexdigest() != receipt.manifest_sha256
+        or hashlib.sha256(receipt.candidate_index_bytes).hexdigest()
+        != receipt.candidate_index_sha256
+    ):
+        _fail("preparation receipt retained documents differ from their signed digests")
+    manifest = _load_bounded_json(receipt.manifest_bytes, "retained preparation manifest")
+    candidate_index = _load_bounded_json(
+        receipt.candidate_index_bytes, "retained preparation candidate index"
+    )
+    if (
+        receipt.manifest_bytes != _canonical_json(manifest) + b"\n"
+        or receipt.candidate_index_bytes != _canonical_json(candidate_index) + b"\n"
+    ):
+        _fail("preparation receipt retained documents are not canonical")
+    manifest_item = _expect_object(
+        manifest,
+        {
+            "artifact_digest",
+            "candidate_contract",
+            "candidate_index",
+            "failures",
+            "execution_profile",
+            "invocations",
+            "package_identity",
+            "pipeline_revision",
+            "preflight",
+            "schema",
+            "status",
+            "tool_registry_sha256",
+        },
+        "retained preparation manifest",
+    )
+    candidate_item = _expect_object(
+        candidate_index,
+        {"artifact_digest", "candidate_contract_sha256", "candidates", "schema"},
+        "retained candidate index",
+    )
+    reconstructed_invocations = tuple(
+        _invocation(value, "retained preparation manifest.invocations")
+        for value in _expect_list(
+            manifest_item["invocations"], "retained preparation manifest.invocations"
+        )
+    )
+    reconstructed_candidates = tuple(
+        _candidate(value, "retained candidate index.candidates")
+        for value in _expect_list(
+            candidate_item["candidates"], "retained candidate index.candidates"
+        )
+    )
+    identity = manifest_item["package_identity"]
+    preflight_pin = manifest_item["preflight"]
+    candidate_pin = manifest_item["candidate_index"]
+    if (
+        reconstructed_invocations != receipt.invocations
+        or reconstructed_candidates != receipt.candidates
+        or type(identity) is not dict
+        or (
+            identity.get("package_name"),
+            identity.get("version_code"),
+            identity.get("version_name"),
+        )
+        != (receipt.package_name, receipt.version_code, receipt.version_name)
+        or manifest_item["artifact_digest"] != receipt.artifact_digest
+        or type(preflight_pin) is not dict
+        or preflight_pin.get("manifest_sha256") != receipt.preflight_manifest_sha256
+        or type(candidate_pin) is not dict
+        or candidate_pin.get("sha256") != receipt.candidate_index_sha256
+        or candidate_item["artifact_digest"] != receipt.artifact_digest
+        or candidate_item["candidate_contract_sha256"]
+        != receipt.candidate_contract_sha256
+    ):
+        _fail("preparation receipt differs from its retained signed documents")
+    attestation = _execution_attestation_bytes(
+        authority_sha256=receipt.authority_sha256,
+        artifact_digest=receipt.artifact_digest,
+        preflight_manifest_sha256=receipt.preflight_manifest_sha256,
+        registry_sha256=receipt.tool_registry_sha256,
+        execution_profile_sha256=receipt.execution_profile_sha256,
+        pipeline_revision=receipt.pipeline_revision,
+        manifest_sha256=receipt.manifest_sha256,
+        candidate_index_sha256=receipt.candidate_index_sha256,
+    )
+    if not _verify_ed25519(
+        receipt.executor_public_key,
+        receipt.execution_signature,
+        attestation,
+    ):
+        _fail("preparation receipt execution signature is invalid")
+    try:
+        _canonical_json(receipt.to_data())
+    except (AttributeError, TypeError, ValueError) as error:
+        raise PreparationError("preparation receipt is invalid") from error
+    return receipt
 
 
 def _expect_object(value: object, keys: set[str], field: str) -> dict[str, object]:
@@ -1329,6 +1463,8 @@ def load_preparation_receipt(
         ("execution_signature", execution_signature),
         ("invocations", invocations),
         ("candidates", candidates),
+        ("manifest_bytes", manifest_bytes),
+        ("candidate_index_bytes", candidate_bytes),
         ("revision", PREPARATION_RECEIPT_REVISION),
     ):
         object.__setattr__(receipt, name, value)

@@ -62,6 +62,7 @@ from .registry import (
     load_preparation_receipt,
     preparation_authority_payload,
     preparation_authority_pin_payload,
+    validate_preparation_receipt_authority,
 )
 
 __all__ = [
@@ -121,5 +122,6 @@ __all__ = [
     "load_protected_preparation_signer",
     "preparation_authority_payload",
     "preparation_authority_pin_payload",
+    "validate_preparation_receipt_authority",
     "preflight_delivery",
 ]
