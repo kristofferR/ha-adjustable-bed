@@ -11,6 +11,18 @@ from enum import StrEnum
 from typing import Literal, NamedTuple, Never, overload
 
 from tools.phase4_v2.ir import FINAL_SCHEMA_REVISION, final_schema_document
+from tools.phase4_v2.preflight.execution import (
+    CANDIDATE_CONTRACT_REVISION,
+    CANDIDATE_CONTRACT_SHA256,
+    CandidateRecord,
+    InvocationRecord,
+)
+from tools.phase4_v2.preflight.registry import (
+    PREPARATION_AUTHORITY_SCHEMA,
+    PREPARATION_RECEIPT_REVISION,
+    ActivatedPreparationAuthority,
+    PreparationReceipt,
+)
 from tools.phase4_v2.validator import (
     PACKAGE_BOUND_VALIDATION_PROFILE,
     PACKAGE_CONTRACT_REVISION,
@@ -46,6 +58,13 @@ PACKAGE_EXECUTION_PLAN_REVISION = "phase4-v2-package-execution-plan-v3"
 VALIDATED_PACKAGE_OUTPUT_REVISION = "phase4-v2-validated-package-output-v3"
 PACKAGE_QUEUE_UNIT_KIND = "validated-package-output"
 PACKAGE_QUEUE_UNIT_PREFIX = "package-output"
+PREPARATION_QUEUE_UNIT_KIND = "prepared-package-input"
+PREPARATION_QUEUE_UNIT_PREFIX = "package-preparation"
+PREPARATION_AUTHORITY_CAPABILITY = "phase4-v2-preparation-authority"
+PREPARATION_REGISTRY_CAPABILITY = "phase4-v2-preparation-registry"
+PREPARATION_EXECUTION_CAPABILITY = "phase4-v2-preparation-execution"
+PREPARATION_CANDIDATE_CAPABILITY = "phase4-v2-preparation-candidate-contract"
+PREPARATION_PIPELINE_CAPABILITY = "phase4-v2-preparation-pipeline"
 SEMANTIC_ROOT_COMPLETION_REVISION = "phase4-v2-semantic-root-completion-v1"
 PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION = "phase4-v2-package-validation-receipt-v1"
 EXACT_REUSE_PIPELINE_CAPABILITY = "phase4-v2-exact-reuse"
@@ -112,6 +131,12 @@ def package_queue_unit_id(target_package_ref_id: str) -> str:
     """Return the reserved queue unit ID for one immutable package reference."""
     _sha(target_package_ref_id, "target_package_ref_id")
     return f"{PACKAGE_QUEUE_UNIT_PREFIX}:{target_package_ref_id}"
+
+
+def preparation_queue_unit_id(target_package_ref_id: str) -> str:
+    """Return the reserved preparation unit for one frozen package identity."""
+    _sha(target_package_ref_id, "target_package_ref_id")
+    return f"{PREPARATION_QUEUE_UNIT_PREFIX}:{target_package_ref_id}"
 
 
 def _token(value: str, field: str) -> None:
@@ -404,6 +429,244 @@ def _local(value: PackageLocalPlan) -> PackageLocalPlan:
         value.mandatory_domains,
         value.revision,
     )
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class PreparationPlanBinding:
+    """Exact accepted preparation and activated capabilities required by a plan."""
+
+    package_ref_id: str
+    package_name: str
+    version_code: str
+    version_name: str
+    artifact_digest: str
+    preflight_sha256: str
+    receipt_sha256: str
+    completion: CompletionPin
+    capabilities: tuple[CapabilityPin, ...]
+
+    def __init__(self) -> None:
+        _fail("PreparationPlanBinding must be created from a trusted preparation receipt")
+
+    def to_data(self) -> dict[str, object]:
+        return {
+            "artifact_digest": self.artifact_digest,
+            "capabilities": [item.to_data() for item in self.capabilities],
+            "completion": self.completion.to_data(),
+            "package_name": self.package_name,
+            "package_ref_id": self.package_ref_id,
+            "preflight_sha256": self.preflight_sha256,
+            "receipt_sha256": self.receipt_sha256,
+            "version_code": self.version_code,
+            "version_name": self.version_name,
+        }
+
+
+def preparation_capability_pins(
+    authority: ActivatedPreparationAuthority,
+) -> tuple[CapabilityPin, ...]:
+    """Reconstruct the exact externally activated preparation capability set."""
+
+    if type(authority) is not ActivatedPreparationAuthority:
+        _fail("preparation requires an activated preparation authority")
+    try:
+        authority_bytes = _canonical_bytes(authority.to_data()) + b"\n"
+    except (AttributeError, TypeError, ValueError) as error:
+        raise EquivalenceError("preparation authority is invalid") from error
+    if hashlib.sha256(authority_bytes).hexdigest() != authority.activation_sha256:
+        _fail("preparation authority does not reproduce its external activation")
+    if authority.candidate_contract_sha256 != CANDIDATE_CONTRACT_SHA256:
+        _fail("preparation authority uses an unsupported candidate contract")
+    for value, field in (
+        (authority.registry_revision, "authority.registry_revision"),
+        (authority.pipeline_revision, "authority.pipeline_revision"),
+        (authority.execution_profile_revision, "authority.execution_profile_revision"),
+    ):
+        _token(value, field)
+    for value, field in (
+        (authority.activation_sha256, "authority.activation_sha256"),
+        (authority.registry_sha256, "authority.registry_sha256"),
+        (authority.execution_profile_sha256, "authority.execution_profile_sha256"),
+        (authority.candidate_contract_sha256, "authority.candidate_contract_sha256"),
+    ):
+        _sha(value, field)
+    return tuple(
+        sorted(
+            (
+                CapabilityPin(
+                    PREPARATION_AUTHORITY_CAPABILITY,
+                    PREPARATION_AUTHORITY_SCHEMA,
+                    authority.activation_sha256,
+                ),
+                CapabilityPin(
+                    PREPARATION_CANDIDATE_CAPABILITY,
+                    CANDIDATE_CONTRACT_REVISION,
+                    authority.candidate_contract_sha256,
+                ),
+                CapabilityPin(
+                    PREPARATION_EXECUTION_CAPABILITY,
+                    authority.execution_profile_revision,
+                    authority.execution_profile_sha256,
+                ),
+                CapabilityPin(
+                    PREPARATION_PIPELINE_CAPABILITY,
+                    authority.pipeline_revision,
+                    authority.registry_sha256,
+                ),
+                CapabilityPin(
+                    PREPARATION_REGISTRY_CAPABILITY,
+                    authority.registry_revision,
+                    authority.registry_sha256,
+                ),
+            ),
+            key=lambda item: item.name,
+        )
+    )
+
+
+def _validated_preparation_receipt(
+    receipt: PreparationReceipt,
+    authority: ActivatedPreparationAuthority,
+) -> tuple[str, tuple[CapabilityPin, ...]]:
+    if type(receipt) is not PreparationReceipt:
+        _fail("preparation binding requires an exact PreparationReceipt")
+    capabilities = preparation_capability_pins(authority)
+    if receipt.revision != PREPARATION_RECEIPT_REVISION:
+        _fail("preparation receipt revision is unsupported")
+    if (
+        receipt.authority_sha256,
+        receipt.tool_registry_sha256,
+        receipt.pipeline_revision,
+        receipt.execution_profile_revision,
+        receipt.execution_profile_sha256,
+        receipt.candidate_contract_sha256,
+    ) != (
+        authority.activation_sha256,
+        authority.registry_sha256,
+        authority.pipeline_revision,
+        authority.execution_profile_revision,
+        authority.execution_profile_sha256,
+        authority.candidate_contract_sha256,
+    ):
+        _fail("preparation receipt does not match its activated authority")
+    if type(receipt.invocations) is not tuple or any(
+        type(item) is not InvocationRecord for item in receipt.invocations
+    ):
+        _fail("preparation receipt contains invalid invocation records")
+    if type(receipt.candidates) is not tuple or any(
+        type(item) is not CandidateRecord for item in receipt.candidates
+    ):
+        _fail("preparation receipt contains invalid candidate records")
+    for value, field in (
+        (receipt.artifact_digest, "receipt.artifact_digest"),
+        (receipt.preflight_manifest_sha256, "receipt.preflight_manifest_sha256"),
+        (receipt.manifest_sha256, "receipt.manifest_sha256"),
+        (receipt.candidate_index_sha256, "receipt.candidate_index_sha256"),
+    ):
+        _sha(value, field)
+    if type(receipt.package_name) is not str or _PACKAGE.fullmatch(receipt.package_name) is None:
+        _fail("preparation receipt package name is invalid")
+    _text(receipt.version_code, "receipt.version_code", 256)
+    _text(receipt.version_name, "receipt.version_name", 256)
+    try:
+        receipt_sha256 = receipt.content_id
+        _ = _canonical_bytes(receipt.to_data())
+    except (AttributeError, TypeError, ValueError) as error:
+        raise EquivalenceError("preparation receipt is invalid") from error
+    _sha(receipt_sha256, "receipt.content_id")
+    return receipt_sha256, capabilities
+
+
+def _new_accepted_preparation_plan_binding(
+    *,
+    package_ref: FrozenPackageRef,
+    package_local: PackageLocalPlan,
+    receipt: PreparationReceipt,
+    authority: ActivatedPreparationAuthority,
+) -> PreparationPlanBinding:
+    """Bind one validated receipt to the package plan and external activation."""
+
+    if type(package_ref) is not FrozenPackageRef:
+        _fail("preparation binding requires an exact FrozenPackageRef")
+    local = _local(package_local)
+    receipt_sha256, capabilities = _validated_preparation_receipt(receipt, authority)
+    package_ref_id = package_ref.content_id
+    if local.target_package_ref_id != package_ref_id or (
+        receipt.package_name,
+        receipt.version_code,
+        receipt.version_name,
+        receipt.artifact_digest,
+        receipt.preflight_manifest_sha256,
+    ) != (
+        local.package_name,
+        local.version_code,
+        local.version_name,
+        local.target_artifact_digest,
+        local.requirements_sha256,
+    ):
+        _fail("preparation receipt does not match the frozen package plan identity")
+    completion = CompletionPin(
+        preparation_queue_unit_id(package_ref_id),
+        PREPARATION_RECEIPT_REVISION,
+        receipt_sha256,
+    )
+    result = object.__new__(PreparationPlanBinding)
+    values: dict[str, object] = {
+        "package_ref_id": package_ref_id,
+        "package_name": local.package_name,
+        "version_code": local.version_code,
+        "version_name": local.version_name,
+        "artifact_digest": local.target_artifact_digest,
+        "preflight_sha256": local.requirements_sha256,
+        "receipt_sha256": receipt_sha256,
+        "completion": completion,
+        "capabilities": capabilities,
+    }
+    for name, value in values.items():
+        object.__setattr__(result, name, value)
+    return result
+
+
+def _preparation(value: PreparationPlanBinding) -> PreparationPlanBinding:
+    if type(value) is not PreparationPlanBinding:
+        _fail("plan requires an exact PreparationPlanBinding")
+    completion = _completion(value.completion, "preparation completion")
+    capabilities = _capability_tuple(
+        value.capabilities,
+        "preparation capabilities",
+        nonempty=True,
+    )
+    if completion.parent_unit_id != preparation_queue_unit_id(value.package_ref_id):
+        _fail("preparation completion belongs to another package")
+    _revision(completion.revision, PREPARATION_RECEIPT_REVISION, "preparation completion")
+    if completion.digest != value.receipt_sha256:
+        _fail("preparation completion does not bind its receipt")
+    expected_names = {
+        PREPARATION_AUTHORITY_CAPABILITY,
+        PREPARATION_CANDIDATE_CAPABILITY,
+        PREPARATION_EXECUTION_CAPABILITY,
+        PREPARATION_PIPELINE_CAPABILITY,
+        PREPARATION_REGISTRY_CAPABILITY,
+    }
+    if {item.name for item in capabilities} != expected_names:
+        _fail("preparation capabilities are incomplete")
+    for name, field in (
+        (value.package_ref_id, "preparation.package_ref_id"),
+        (value.artifact_digest, "preparation.artifact_digest"),
+        (value.preflight_sha256, "preparation.preflight_sha256"),
+        (value.receipt_sha256, "preparation.receipt_sha256"),
+    ):
+        _sha(name, field)
+    if type(value.package_name) is not str or _PACKAGE.fullmatch(value.package_name) is None:
+        _fail("preparation package name is invalid")
+    _text(value.version_code, "preparation.version_code", 256)
+    _text(value.version_name, "preparation.version_name", 256)
+    result = object.__new__(PreparationPlanBinding)
+    for name in value.__dataclass_fields__:
+        object.__setattr__(result, name, getattr(value, name))
+    object.__setattr__(result, "completion", completion)
+    object.__setattr__(result, "capabilities", capabilities)
+    return result
 
 
 @dataclass(frozen=True, slots=True)
@@ -1094,6 +1357,7 @@ class PackageExecutionPlan:
     target_package_ref: FrozenPackageRef
     cluster_id: str
     package_local: PackageLocalPlan
+    preparation: PreparationPlanBinding
     accepted_target_inventory: AcceptedTargetRootInventory
     root_plans: tuple[RootExecutionPlan, ...]
     revision: str = PACKAGE_EXECUTION_PLAN_REVISION
@@ -1112,6 +1376,7 @@ class PackageExecutionPlan:
             self.target_package_ref.revision,
         )
         local = _local(self.package_local)
+        preparation = _preparation(self.preparation)
         accepted = _accepted_inventory(self.accepted_target_inventory)
         if target_package_ref.content_id != self.target_package_ref_id:
             _fail("frozen package reference does not reproduce the target package ID")
@@ -1129,6 +1394,22 @@ class PackageExecutionPlan:
             _fail("package-local requirements do not match the frozen package preflight")
         if local.target_package_ref_id != self.target_package_ref_id:
             _fail("package-local plan targets a different package")
+        if (
+            preparation.package_ref_id,
+            preparation.package_name,
+            preparation.version_code,
+            preparation.version_name,
+            preparation.artifact_digest,
+            preparation.preflight_sha256,
+        ) != (
+            self.target_package_ref_id,
+            local.package_name,
+            local.version_code,
+            local.version_name,
+            local.target_artifact_digest,
+            local.requirements_sha256,
+        ):
+            _fail("preparation binding targets a different package plan")
         if accepted.inventory.target_package_ref_id != self.target_package_ref_id:
             _fail("target-root inventory targets a different package")
         if type(self.root_plans) is not tuple or not self.root_plans:
@@ -1151,6 +1432,7 @@ class PackageExecutionPlan:
                 _fail("exact reuse pins a transplanted target inventory completion")
         object.__setattr__(self, "target_package_ref", target_package_ref)
         object.__setattr__(self, "package_local", local)
+        object.__setattr__(self, "preparation", preparation)
         object.__setattr__(self, "accepted_target_inventory", accepted)
         object.__setattr__(self, "root_plans", roots)
         _ = self.required_capabilities
@@ -1183,6 +1465,7 @@ class PackageExecutionPlan:
     def required_capabilities(self) -> tuple[CapabilityPin, ...]:
         def values() -> Iterable[CapabilityPin]:
             yield self.package_local.pipeline_capability
+            yield from self.preparation.capabilities
             for item in self.root_plans:
                 if type(item) is ExactReuseRootPlan:
                     yield item.reuse.extractor_capability
@@ -1195,6 +1478,7 @@ class PackageExecutionPlan:
     @property
     def required_completions(self) -> tuple[CompletionPin, ...]:
         def values() -> Iterable[CompletionPin]:
+            yield self.preparation.completion
             yield package_validation_receipt_completion(self.target_package_ref)
             yield self.accepted_target_inventory.completion
             for item in self.root_plans:
@@ -1216,6 +1500,7 @@ class PackageExecutionPlan:
             "authoritative_root_count": inventory.root_count,
             "cluster_id": self.cluster_id,
             "package_local": self.package_local.to_data(),
+            "preparation": self.preparation.to_data(),
             "required_capabilities": [item.to_data() for item in self.required_capabilities],
             "required_completions": [item.to_data() for item in self.required_completions],
             "revision": self.revision,
@@ -1245,6 +1530,40 @@ class FrozenCompletionPin(NamedTuple):
     digest: str
 
 
+class FrozenPreparationPlanBinding(NamedTuple):
+    """Tuple-backed accepted preparation identity carried across trust boundaries."""
+
+    package_ref_id: str
+    package_name: str
+    version_code: str
+    version_name: str
+    artifact_digest: str
+    preflight_sha256: str
+    receipt_sha256: str
+    completion: FrozenCompletionPin
+    capabilities: tuple[FrozenCapabilityPin, ...]
+
+    def to_data(self) -> dict[str, object]:
+        return {
+            "artifact_digest": self.artifact_digest,
+            "capabilities": [
+                {"digest": item.digest, "name": item.name, "revision": item.revision}
+                for item in self.capabilities
+            ],
+            "completion": {
+                "digest": self.completion.digest,
+                "parent_unit_id": self.completion.parent_unit_id,
+                "revision": self.completion.revision,
+            },
+            "package_name": self.package_name,
+            "package_ref_id": self.package_ref_id,
+            "preflight_sha256": self.preflight_sha256,
+            "receipt_sha256": self.receipt_sha256,
+            "version_code": self.version_code,
+            "version_name": self.version_name,
+        }
+
+
 def _frozen_capability(value: CapabilityPin) -> FrozenCapabilityPin:
     copied = _capability(value, "frozen capability")
     return FrozenCapabilityPin(copied.name, copied.revision, copied.digest)
@@ -1253,6 +1572,21 @@ def _frozen_capability(value: CapabilityPin) -> FrozenCapabilityPin:
 def _frozen_completion(value: CompletionPin) -> FrozenCompletionPin:
     copied = _completion(value, "frozen completion")
     return FrozenCompletionPin(copied.parent_unit_id, copied.revision, copied.digest)
+
+
+def _frozen_preparation(value: PreparationPlanBinding) -> FrozenPreparationPlanBinding:
+    copied = _preparation(value)
+    return FrozenPreparationPlanBinding(
+        package_ref_id=copied.package_ref_id,
+        package_name=copied.package_name,
+        version_code=copied.version_code,
+        version_name=copied.version_name,
+        artifact_digest=copied.artifact_digest,
+        preflight_sha256=copied.preflight_sha256,
+        receipt_sha256=copied.receipt_sha256,
+        completion=_frozen_completion(copied.completion),
+        capabilities=tuple(_frozen_capability(item) for item in copied.capabilities),
+    )
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -1269,6 +1603,8 @@ class FrozenPackageExecutionPlan:
     version_code: str
     version_name: str
     target_artifact_digest: str
+    preflight_sha256: str
+    preparation: FrozenPreparationPlanBinding
     inherited_semantic_roots: tuple[str, ...]
     semantic_audit_completion_digests: tuple[str, ...]
     required_capabilities: tuple[FrozenCapabilityPin, ...]
@@ -1290,6 +1626,8 @@ def _new_frozen_package_execution_plan(
     version_code: str,
     version_name: str,
     target_artifact_digest: str,
+    preflight_sha256: str,
+    preparation: FrozenPreparationPlanBinding,
     inherited_semantic_roots: tuple[str, ...],
     semantic_audit_completion_digests: tuple[str, ...],
     required_capabilities: tuple[FrozenCapabilityPin, ...],
@@ -1306,6 +1644,8 @@ def _new_frozen_package_execution_plan(
         "version_code": version_code,
         "version_name": version_name,
         "target_artifact_digest": target_artifact_digest,
+        "preflight_sha256": preflight_sha256,
+        "preparation": preparation,
         "inherited_semantic_roots": inherited_semantic_roots,
         "semantic_audit_completion_digests": semantic_audit_completion_digests,
         "required_capabilities": required_capabilities,
@@ -1347,12 +1687,37 @@ def _new_frozen_package_execution_plan(
         local.get("version_code"),
         local.get("version_name"),
         local.get("target_artifact_digest"),
-    ) != (package_name, version_code, version_name, target_artifact_digest):
+        local.get("requirements_sha256"),
+    ) != (
+        package_name,
+        version_code,
+        version_name,
+        target_artifact_digest,
+        preflight_sha256,
+    ):
         _fail("snapshot package identity does not match its canonical preimage")
     if type(required_capabilities) is not tuple or not required_capabilities:
         _fail("snapshot capabilities must be a non-empty tuple")
     if any(type(item) is not FrozenCapabilityPin for item in required_capabilities):
         _fail("snapshot capabilities must use exact immutable pins")
+    if type(preparation) is not FrozenPreparationPlanBinding:
+        _fail("snapshot preparation must use an exact immutable binding")
+    if decoded.get("preparation") != preparation.to_data():
+        _fail("snapshot preparation does not match its canonical preimage")
+    if preparation.package_ref_id != target_package_ref_id or (
+        preparation.package_name,
+        preparation.version_code,
+        preparation.version_name,
+        preparation.artifact_digest,
+        preparation.preflight_sha256,
+    ) != (
+        package_name,
+        version_code,
+        version_name,
+        target_artifact_digest,
+        preflight_sha256,
+    ):
+        _fail("snapshot preparation targets a different package identity")
     if type(required_completions) is not tuple or any(
         type(item) is not FrozenCompletionPin for item in required_completions
     ):
@@ -1373,11 +1738,16 @@ def _new_frozen_package_execution_plan(
         _fail("snapshot capabilities do not match its canonical preimage")
     if decoded.get("required_completions") != expected_completion_data:
         _fail("snapshot completions do not match its canonical preimage")
+    if any(item not in required_capabilities for item in preparation.capabilities):
+        _fail("snapshot capabilities omit an accepted preparation pin")
+    if preparation.completion not in required_completions:
+        _fail("snapshot completions omit the accepted preparation receipt")
     if type(package_name) is not str or _PACKAGE.fullmatch(package_name) is None:
         _fail("snapshot package name is invalid")
     _text(version_code, "snapshot.version_code", 256)
     _text(version_name, "snapshot.version_name", 256)
     _sha(target_artifact_digest, "snapshot.target_artifact_digest")
+    _sha(preflight_sha256, "snapshot.preflight_sha256")
     for field, items in (
         ("inherited_semantic_roots", inherited_semantic_roots),
         ("semantic_audit_completion_digests", semantic_audit_completion_digests),
@@ -1424,6 +1794,8 @@ def _validate_frozen_package_execution_plan(
         version_code=value.version_code,
         version_name=value.version_name,
         target_artifact_digest=value.target_artifact_digest,
+        preflight_sha256=value.preflight_sha256,
+        preparation=value.preparation,
         inherited_semantic_roots=value.inherited_semantic_roots,
         semantic_audit_completion_digests=value.semantic_audit_completion_digests,
         required_capabilities=value.required_capabilities,
@@ -1439,6 +1811,43 @@ def validate_frozen_package_execution_plan(
     return _validate_frozen_package_execution_plan(value)
 
 
+def validate_preparation_receipt_for_plan(
+    plan: FrozenPackageExecutionPlan,
+    receipt: PreparationReceipt,
+    authority: ActivatedPreparationAuthority,
+) -> FrozenPreparationPlanBinding:
+    """Verify a receipt is the exact preparation completion frozen into a plan."""
+
+    frozen = _validate_frozen_package_execution_plan(plan)
+    receipt_sha256, capabilities = _validated_preparation_receipt(receipt, authority)
+    binding = frozen.preparation
+    if (
+        receipt.package_name,
+        receipt.version_code,
+        receipt.version_name,
+        receipt.artifact_digest,
+        receipt.preflight_manifest_sha256,
+        receipt_sha256,
+    ) != (
+        binding.package_name,
+        binding.version_code,
+        binding.version_name,
+        binding.artifact_digest,
+        binding.preflight_sha256,
+        binding.receipt_sha256,
+    ):
+        _fail("preparation receipt is not the completion frozen into this plan")
+    if tuple(_frozen_capability(item) for item in capabilities) != binding.capabilities:
+        _fail("preparation authority is not the capability set frozen into this plan")
+    if binding.completion != FrozenCompletionPin(
+        preparation_queue_unit_id(binding.package_ref_id),
+        PREPARATION_RECEIPT_REVISION,
+        receipt_sha256,
+    ):
+        _fail("preparation completion is not frozen into this plan")
+    return binding
+
+
 def freeze_package_execution_plan(value: PackageExecutionPlan) -> FrozenPackageExecutionPlan:
     if type(value) is not PackageExecutionPlan:
         _fail("plan snapshot requires an exact PackageExecutionPlan")
@@ -1447,6 +1856,7 @@ def freeze_package_execution_plan(value: PackageExecutionPlan) -> FrozenPackageE
         target_package_ref=value.target_package_ref,
         cluster_id=value.cluster_id,
         package_local=value.package_local,
+        preparation=value.preparation,
         accepted_target_inventory=value.accepted_target_inventory,
         root_plans=value.root_plans,
         revision=value.revision,
@@ -1464,6 +1874,8 @@ def freeze_package_execution_plan(value: PackageExecutionPlan) -> FrozenPackageE
         version_code=frozen.package_local.version_code,
         version_name=frozen.package_local.version_name,
         target_artifact_digest=frozen.package_local.target_artifact_digest,
+        preflight_sha256=frozen.package_local.requirements_sha256,
+        preparation=_frozen_preparation(frozen.preparation),
         inherited_semantic_roots=frozen.inherited_semantic_roots,
         semantic_audit_completion_digests=tuple(
             sorted(
@@ -1489,6 +1901,7 @@ def build_package_execution_plan(
     target_package_ref: FrozenPackageRef,
     cluster_id: str,
     package_local: PackageLocalPlan,
+    preparation: PreparationPlanBinding,
     accepted_target_inventory: AcceptedTargetRootInventory,
     root_plans: Iterable[RootExecutionPlan],
 ) -> PackageExecutionPlan:
@@ -1502,6 +1915,7 @@ def build_package_execution_plan(
         target_package_ref=target_package_ref,
         cluster_id=cluster_id,
         package_local=package_local,
+        preparation=preparation,
         accepted_target_inventory=accepted_target_inventory,
         root_plans=tuple(sorted(roots, key=_root_key)),
     )
