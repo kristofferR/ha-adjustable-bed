@@ -12,7 +12,8 @@ from enum import StrEnum
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-BENCHMARK_REVISION = "phase4-v2-benchmark-v2"
+BENCHMARK_REVISION = "phase4-v2-benchmark-v3"
+TRIAL_POLICY_REVISION = "phase4-v2-paired-monotonic-token-v1"
 REQUIRED_CONTRACT_ISSUES = (544, 545, 546, 547, 548, 549)
 _ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -23,6 +24,12 @@ _MAX_CASES = 12
 _MAX_FINDINGS_PER_CASE = 100_000
 _MAX_CANDIDATES_PER_CASE = 250_000
 _MAX_TIMING_SAMPLES = 100_000
+_MAX_TRIALS = 1_000
+_MAX_AUTHORITY_BYTES = 64 * 1024
+_MAX_JSON_DEPTH = 12
+_MAX_JSON_NODES = 512
+_MAX_JSON_STRING_LENGTH = 4_096
+_AUTHORITY_SEAL = object()
 
 
 class MutationKind(StrEnum):
@@ -94,6 +101,28 @@ class ContractPin:
 
 
 @dataclass(frozen=True, slots=True)
+class PinnedAuthorityKeys:
+    """Public keys supplied by the protected rollout configuration."""
+
+    analyst_public_key: str
+    mutation_runner_public_key: str
+    auditor_public_key: str
+    telemetry_collector_public_key: str
+
+    def __post_init__(self) -> None:
+        keys = (
+            self.analyst_public_key,
+            self.mutation_runner_public_key,
+            self.auditor_public_key,
+            self.telemetry_collector_public_key,
+        )
+        for key in keys:
+            _public_key(key, "pinned authority")
+        if len(set(keys)) != len(keys):
+            raise ValueError("pinned authority public keys must be unique")
+
+
+@dataclass(frozen=True, slots=True)
 class BenchmarkAuthority:
     """Immutable identities approved outside benchmark execution."""
 
@@ -102,8 +131,11 @@ class BenchmarkAuthority:
     run_identity_sha256: str
     toolchain_sha256: str
     harness_sha256: str
+    execution_nonce_sha256: str
     analyst_identity_sha256: str
+    analyst_public_key: str
     mutation_runner_identity_sha256: str
+    mutation_runner_public_key: str
     auditor_identity_sha256: str
     auditor_public_key: str
     telemetry_collector_identity_sha256: str
@@ -121,6 +153,7 @@ class BenchmarkAuthority:
             ("run identity", self.run_identity_sha256),
             ("toolchain", self.toolchain_sha256),
             ("harness", self.harness_sha256),
+            ("execution nonce", self.execution_nonce_sha256),
             ("analyst identity", self.analyst_identity_sha256),
             ("mutation runner identity", self.mutation_runner_identity_sha256),
             ("auditor identity", self.auditor_identity_sha256),
@@ -137,6 +170,12 @@ class BenchmarkAuthority:
         if len(set(actors)) != len(actors):
             raise ValueError("benchmark actor identities must be independent")
         for label, public_key, identity in (
+            ("analyst", self.analyst_public_key, self.analyst_identity_sha256),
+            (
+                "mutation runner",
+                self.mutation_runner_public_key,
+                self.mutation_runner_identity_sha256,
+            ),
             ("auditor", self.auditor_public_key, self.auditor_identity_sha256),
             (
                 "telemetry collector",
@@ -144,10 +183,17 @@ class BenchmarkAuthority:
                 self.telemetry_collector_identity_sha256,
             ),
         ):
-            if type(public_key) is not str or _ED25519_PUBLIC_KEY.fullmatch(public_key) is None:
-                raise ValueError(f"{label} public key must be a lowercase Ed25519 key")
+            _public_key(public_key, label)
             if _content_digest(bytes.fromhex(public_key)) != identity:
                 raise ValueError(f"{label} identity must bind its Ed25519 public key")
+        public_keys = (
+            self.analyst_public_key,
+            self.mutation_runner_public_key,
+            self.auditor_public_key,
+            self.telemetry_collector_public_key,
+        )
+        if len(set(public_keys)) != len(public_keys):
+            raise ValueError("benchmark actor public keys must be independent")
 
     @property
     def content_id(self) -> str:
@@ -156,17 +202,74 @@ class BenchmarkAuthority:
     def to_data(self) -> dict[str, object]:
         return {
             "analyst_identity_sha256": self.analyst_identity_sha256,
+            "analyst_public_key": self.analyst_public_key,
             "auditor_identity_sha256": self.auditor_identity_sha256,
             "auditor_public_key": self.auditor_public_key,
             "contracts": [item.to_data() for item in self.contracts],
             "corpus_sha256": self.corpus_sha256,
+            "execution_nonce_sha256": self.execution_nonce_sha256,
             "harness_sha256": self.harness_sha256,
             "mutation_runner_identity_sha256": self.mutation_runner_identity_sha256,
+            "mutation_runner_public_key": self.mutation_runner_public_key,
             "revision": self.revision,
             "run_identity_sha256": self.run_identity_sha256,
             "telemetry_collector_identity_sha256": self.telemetry_collector_identity_sha256,
             "telemetry_collector_public_key": self.telemetry_collector_public_key,
             "toolchain_sha256": self.toolchain_sha256,
+        }
+
+
+class TrustedBenchmarkAuthority:
+    """Authority admitted only through the protected canonical loader."""
+
+    __slots__ = ("_authority", "_seal")
+
+    def __init__(self, authority: BenchmarkAuthority, seal: object) -> None:
+        if seal is not _AUTHORITY_SEAL:
+            raise ValueError("benchmark authority must be loaded from protected configuration")
+        object.__setattr__(self, "_authority", authority)
+        object.__setattr__(self, "_seal", seal)
+
+    def __setattr__(self, name: str, value: object) -> None:
+        raise AttributeError("trusted benchmark authority is immutable")
+
+    def __delattr__(self, name: str) -> None:
+        raise AttributeError("trusted benchmark authority is immutable")
+
+    @property
+    def authority(self) -> BenchmarkAuthority:
+        return self._authority
+
+    @property
+    def content_id(self) -> str:
+        return self._authority.content_id
+
+    def __getattr__(self, name: str) -> object:
+        return getattr(self._authority, name)
+
+
+@dataclass(frozen=True, slots=True)
+class TrialSchedule:
+    """Exact, precommitted benchmark trial order and collection policy."""
+
+    trial_ids: tuple[str, ...]
+    policy_revision: str = TRIAL_POLICY_REVISION
+
+    def __post_init__(self) -> None:
+        if self.policy_revision != TRIAL_POLICY_REVISION:
+            raise ValueError(f"unsupported trial policy revision: {self.policy_revision!r}")
+        if not 1 <= len(self.trial_ids) <= _MAX_TRIALS:
+            raise ValueError(f"trial schedule must contain 1 to {_MAX_TRIALS} trials")
+        _tuple_of(self.trial_ids, str, "trial ids")
+        for trial_id in self.trial_ids:
+            _identifier(trial_id, "trial id")
+        _unique(self.trial_ids, label="trial ids")
+
+    def to_data(self) -> dict[str, object]:
+        return {
+            "policy_revision": self.policy_revision,
+            "trial_count": len(self.trial_ids),
+            "trial_ids": list(self.trial_ids),
         }
 
 
@@ -249,6 +352,7 @@ class MutationDeclaration:
 class BenchmarkPlan:
     cases: tuple[BenchmarkCase, ...]
     mutations: tuple[MutationDeclaration, ...]
+    trial_schedule: TrialSchedule
     oracle_sha256: str
     authority_sha256: str
     minimum_throughput_ratio: int = 3
@@ -273,6 +377,8 @@ class BenchmarkPlan:
                 + ", ".join(sorted(missing_tags))
             )
         _tuple_of(self.mutations, MutationDeclaration, "mutation declarations")
+        if type(self.trial_schedule) is not TrialSchedule:
+            raise ValueError("trial schedule must be a TrialSchedule")
         required = tuple(sorted(REQUIRED_MUTATIONS, key=lambda item: item.value))
         if tuple(item.kind for item in self.mutations) != required:
             raise ValueError("mutation declarations must contain the exact required set")
@@ -298,6 +404,7 @@ class BenchmarkPlan:
             "mutations": [item.to_data() for item in self.mutations],
             "oracle_sha256": self.oracle_sha256,
             "revision": self.revision,
+            "trial_schedule": self.trial_schedule.to_data(),
         }
 
 
@@ -479,24 +586,31 @@ class MutationResult:
 @dataclass(frozen=True, slots=True)
 class BenchmarkRun:
     plan_sha256: str
+    oracle_sha256: str
     authority_sha256: str
     corpus_sha256: str
     run_identity_sha256: str
     toolchain_sha256: str
     harness_sha256: str
+    execution_nonce_sha256: str
     analyst_identity_sha256: str
     mutation_runner_identity_sha256: str
     cases: tuple[CaseResult, ...]
     mutations: tuple[MutationResult, ...]
+    analyst_signature: str
+    mutation_runner_signature: str
+    revision: str = BENCHMARK_REVISION
 
     def __post_init__(self) -> None:
         values = (
             ("plan", self.plan_sha256),
+            ("oracle", self.oracle_sha256),
             ("authority", self.authority_sha256),
             ("corpus", self.corpus_sha256),
             ("run identity", self.run_identity_sha256),
             ("toolchain", self.toolchain_sha256),
             ("harness", self.harness_sha256),
+            ("execution nonce", self.execution_nonce_sha256),
             ("analyst identity", self.analyst_identity_sha256),
             ("mutation runner identity", self.mutation_runner_identity_sha256),
         )
@@ -510,6 +624,22 @@ class BenchmarkRun:
         _unique((item.kind for item in self.mutations), label="mutation kinds")
         if tuple(sorted(self.mutations, key=lambda item: item.kind.value)) != self.mutations:
             raise ValueError("mutation results must be sorted by kind")
+        for label, signature in (
+            ("analyst", self.analyst_signature),
+            ("mutation runner", self.mutation_runner_signature),
+        ):
+            if type(signature) is not str or _ED25519_SIGNATURE.fullmatch(signature) is None:
+                raise ValueError(f"{label} signature must be a lowercase Ed25519 signature")
+        if self.revision != BENCHMARK_REVISION:
+            raise ValueError(f"unsupported benchmark revision: {self.revision!r}")
+
+    @property
+    def analyst_signing_bytes(self) -> bytes:
+        return _signing_bytes("analyst-run", self._analyst_unsigned_data())
+
+    @property
+    def mutation_runner_signing_bytes(self) -> bytes:
+        return _signing_bytes("mutation-run", self._mutation_unsigned_data())
 
     @property
     def content_id(self) -> str:
@@ -518,15 +648,47 @@ class BenchmarkRun:
     def to_data(self) -> dict[str, object]:
         return {
             "analyst_identity_sha256": self.analyst_identity_sha256,
+            "analyst_signature": self.analyst_signature,
             "authority_sha256": self.authority_sha256,
             "cases": [item.to_data() for item in self.cases],
             "corpus_sha256": self.corpus_sha256,
             "harness_sha256": self.harness_sha256,
+            "execution_nonce_sha256": self.execution_nonce_sha256,
             "mutation_runner_identity_sha256": self.mutation_runner_identity_sha256,
+            "mutation_runner_signature": self.mutation_runner_signature,
             "mutations": [item.to_data() for item in self.mutations],
+            "oracle_sha256": self.oracle_sha256,
             "plan_sha256": self.plan_sha256,
+            "revision": self.revision,
             "run_identity_sha256": self.run_identity_sha256,
             "toolchain_sha256": self.toolchain_sha256,
+        }
+
+    def _shared_unsigned_data(self) -> dict[str, object]:
+        return {
+            "authority_sha256": self.authority_sha256,
+            "corpus_sha256": self.corpus_sha256,
+            "execution_nonce_sha256": self.execution_nonce_sha256,
+            "harness_sha256": self.harness_sha256,
+            "oracle_sha256": self.oracle_sha256,
+            "plan_sha256": self.plan_sha256,
+            "revision": self.revision,
+            "run_identity_sha256": self.run_identity_sha256,
+            "toolchain_sha256": self.toolchain_sha256,
+        }
+
+    def _analyst_unsigned_data(self) -> dict[str, object]:
+        return {
+            **self._shared_unsigned_data(),
+            "analyst_identity_sha256": self.analyst_identity_sha256,
+            "cases": [item.to_data() for item in self.cases],
+        }
+
+    def _mutation_unsigned_data(self) -> dict[str, object]:
+        return {
+            **self._shared_unsigned_data(),
+            "mutation_runner_identity_sha256": self.mutation_runner_identity_sha256,
+            "mutations": [item.to_data() for item in self.mutations],
         }
 
 
@@ -563,12 +725,21 @@ class AuditReceipt:
 @dataclass(frozen=True, slots=True)
 class IndependentAuditSuite:
     authority_sha256: str
+    plan_sha256: str
+    oracle_sha256: str
+    run_sha256: str
+    execution_nonce_sha256: str
     auditor_identity_sha256: str
     receipts: tuple[AuditReceipt, ...]
     signature: str
+    revision: str = BENCHMARK_REVISION
 
     def __post_init__(self) -> None:
         _digest(self.authority_sha256, "audit authority digest")
+        _digest(self.plan_sha256, "audit plan digest")
+        _digest(self.oracle_sha256, "audit oracle digest")
+        _digest(self.run_sha256, "audit run digest")
+        _digest(self.execution_nonce_sha256, "audit execution nonce")
         _digest(self.auditor_identity_sha256, "auditor identity")
         _tuple_of(self.receipts, AuditReceipt, "audit receipts")
         if tuple(sorted(self.receipts)) != self.receipts:
@@ -579,10 +750,12 @@ class IndependentAuditSuite:
         )
         if type(self.signature) is not str or _ED25519_SIGNATURE.fullmatch(self.signature) is None:
             raise ValueError("audit suite signature must be a lowercase Ed25519 signature")
+        if self.revision != BENCHMARK_REVISION:
+            raise ValueError(f"unsupported benchmark revision: {self.revision!r}")
 
     @property
     def signing_bytes(self) -> bytes:
-        return _canonical(self.unsigned_data())
+        return _signing_bytes("independent-audit", self.unsigned_data())
 
     @property
     def content_id(self) -> str:
@@ -595,7 +768,12 @@ class IndependentAuditSuite:
         return {
             "auditor_identity_sha256": self.auditor_identity_sha256,
             "authority_sha256": self.authority_sha256,
+            "execution_nonce_sha256": self.execution_nonce_sha256,
+            "oracle_sha256": self.oracle_sha256,
+            "plan_sha256": self.plan_sha256,
             "receipts": [item.to_data() for item in self.receipts],
+            "revision": self.revision,
+            "run_sha256": self.run_sha256,
         }
 
 
@@ -675,6 +853,10 @@ class TokenSample:
 @dataclass(frozen=True, slots=True)
 class TimingSuite:
     authority_sha256: str
+    plan_sha256: str
+    oracle_sha256: str
+    run_sha256: str
+    execution_nonce_sha256: str
     corpus_sha256: str
     run_identity_sha256: str
     collector_identity_sha256: str
@@ -682,10 +864,15 @@ class TimingSuite:
     samples: tuple[TimingSample, ...]
     token_samples: tuple[TokenSample, ...]
     signature: str
+    revision: str = BENCHMARK_REVISION
 
     def __post_init__(self) -> None:
         for label, value in (
             ("timing authority", self.authority_sha256),
+            ("timing plan", self.plan_sha256),
+            ("timing oracle", self.oracle_sha256),
+            ("timing run", self.run_sha256),
+            ("timing execution nonce", self.execution_nonce_sha256),
             ("timing corpus", self.corpus_sha256),
             ("timing run identity", self.run_identity_sha256),
             ("timing collector identity", self.collector_identity_sha256),
@@ -712,10 +899,12 @@ class TimingSuite:
         )
         if type(self.signature) is not str or _ED25519_SIGNATURE.fullmatch(self.signature) is None:
             raise ValueError("timing suite signature must be a lowercase Ed25519 signature")
+        if self.revision != BENCHMARK_REVISION:
+            raise ValueError(f"unsupported benchmark revision: {self.revision!r}")
 
     @property
     def signing_bytes(self) -> bytes:
-        return _canonical(self.unsigned_data())
+        return _signing_bytes("timing-suite", self.unsigned_data())
 
     @property
     def content_id(self) -> str:
@@ -729,7 +918,12 @@ class TimingSuite:
             "authority_sha256": self.authority_sha256,
             "collector_identity_sha256": self.collector_identity_sha256,
             "corpus_sha256": self.corpus_sha256,
+            "execution_nonce_sha256": self.execution_nonce_sha256,
             "host_identity_sha256": self.host_identity_sha256,
+            "oracle_sha256": self.oracle_sha256,
+            "plan_sha256": self.plan_sha256,
+            "revision": self.revision,
+            "run_sha256": self.run_sha256,
             "run_identity_sha256": self.run_identity_sha256,
             "samples": [item.to_data() for item in self.samples],
             "token_samples": [item.to_data() for item in self.token_samples],
@@ -801,8 +995,103 @@ class BenchmarkReport:
         }
 
 
+def load_trusted_benchmark_authority(
+    raw: bytes,
+    *,
+    expected_sha256: str,
+    pinned_keys: PinnedAuthorityKeys,
+) -> TrustedBenchmarkAuthority:
+    """Load the exact canonical authority protected by external trust roots."""
+
+    if type(raw) is not bytes or not raw or len(raw) > _MAX_AUTHORITY_BYTES:
+        raise ValueError("authority document must be non-empty bytes within the size limit")
+    _digest(expected_sha256, "expected authority digest")
+    if type(pinned_keys) is not PinnedAuthorityKeys:
+        raise ValueError("authority keys must be externally pinned")
+    try:
+        decoded = raw.decode("utf-8")
+        data = json.loads(
+            decoded,
+            object_pairs_hook=_reject_duplicate_pairs,
+            parse_constant=_reject_json_constant,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError, RecursionError) as error:
+        raise ValueError("authority document is not strict JSON") from error
+    _validate_json_bounds(data)
+    root = _exact_object(
+        data,
+        {
+            "analyst_identity_sha256",
+            "analyst_public_key",
+            "auditor_identity_sha256",
+            "auditor_public_key",
+            "contracts",
+            "corpus_sha256",
+            "execution_nonce_sha256",
+            "harness_sha256",
+            "mutation_runner_identity_sha256",
+            "mutation_runner_public_key",
+            "revision",
+            "run_identity_sha256",
+            "telemetry_collector_identity_sha256",
+            "telemetry_collector_public_key",
+            "toolchain_sha256",
+        },
+        "authority",
+    )
+    contracts_data = _exact_list(root["contracts"], "authority contracts")
+    contracts: list[ContractPin] = []
+    for index, value in enumerate(contracts_data):
+        item = _exact_object(value, {"issue", "revision", "sha256"}, f"contract {index}")
+        contracts.append(
+            ContractPin(
+                _exact_int(item["issue"], f"contract {index} issue"),
+                _exact_str(item["revision"], f"contract {index} revision"),
+                _exact_str(item["sha256"], f"contract {index} digest"),
+            )
+        )
+    authority = BenchmarkAuthority(
+        contracts=tuple(contracts),
+        corpus_sha256=_exact_str(root["corpus_sha256"], "corpus digest"),
+        run_identity_sha256=_exact_str(root["run_identity_sha256"], "run identity"),
+        toolchain_sha256=_exact_str(root["toolchain_sha256"], "toolchain digest"),
+        harness_sha256=_exact_str(root["harness_sha256"], "harness digest"),
+        execution_nonce_sha256=_exact_str(root["execution_nonce_sha256"], "execution nonce"),
+        analyst_identity_sha256=_exact_str(root["analyst_identity_sha256"], "analyst identity"),
+        analyst_public_key=_exact_str(root["analyst_public_key"], "analyst public key"),
+        mutation_runner_identity_sha256=_exact_str(
+            root["mutation_runner_identity_sha256"], "mutation runner identity"
+        ),
+        mutation_runner_public_key=_exact_str(
+            root["mutation_runner_public_key"], "mutation runner public key"
+        ),
+        auditor_identity_sha256=_exact_str(root["auditor_identity_sha256"], "auditor identity"),
+        auditor_public_key=_exact_str(root["auditor_public_key"], "auditor public key"),
+        telemetry_collector_identity_sha256=_exact_str(
+            root["telemetry_collector_identity_sha256"], "telemetry collector identity"
+        ),
+        telemetry_collector_public_key=_exact_str(
+            root["telemetry_collector_public_key"], "telemetry collector public key"
+        ),
+        revision=_exact_str(root["revision"], "benchmark revision"),
+    )
+    if raw != benchmark_json(authority):
+        raise ValueError("authority document must use exact canonical JSON encoding")
+    if authority.content_id != expected_sha256:
+        raise ValueError("authority digest does not match protected configuration")
+    actual_keys = PinnedAuthorityKeys(
+        authority.analyst_public_key,
+        authority.mutation_runner_public_key,
+        authority.auditor_public_key,
+        authority.telemetry_collector_public_key,
+    )
+    if actual_keys != pinned_keys:
+        raise ValueError("authority public keys do not match protected configuration")
+    return TrustedBenchmarkAuthority(authority, _AUTHORITY_SEAL)
+
+
 def finalize_benchmark(
-    authority: BenchmarkAuthority,
+    trusted_authority: TrustedBenchmarkAuthority,
     plan: BenchmarkPlan,
     oracle: OracleSuite,
     run: BenchmarkRun,
@@ -811,6 +1100,11 @@ def finalize_benchmark(
 ) -> BenchmarkReport:
     """Reveal committed inputs and deterministically decide rollout."""
 
+    if type(trusted_authority) is not TrustedBenchmarkAuthority:
+        raise ValueError("finalization requires a protected benchmark authority")
+    if trusted_authority._seal is not _AUTHORITY_SEAL:
+        raise ValueError("finalization requires a protected benchmark authority")
+    authority = trusted_authority.authority
     diagnostics: list[BenchmarkDiagnostic] = []
     if plan.authority_sha256 != authority.content_id:
         diagnostics.append(_diag("authority_commitment_mismatch", "$.plan.authority_sha256"))
@@ -818,11 +1112,13 @@ def finalize_benchmark(
         diagnostics.append(_diag("oracle_commitment_mismatch", "$.plan.oracle_sha256"))
     if run.plan_sha256 != plan.content_id:
         diagnostics.append(_diag("plan_commitment_mismatch", "$.run.plan_sha256"))
+    if run.oracle_sha256 != oracle.content_id:
+        diagnostics.append(_diag("run_oracle_mismatch", "$.run.oracle_sha256"))
     _check_run_authority(authority, run, diagnostics)
     _check_cases(plan, oracle, run, diagnostics)
     _check_mutations(plan, run, diagnostics)
-    _check_audits(authority, run, audits, diagnostics)
-    _check_timings(authority, plan, timings, diagnostics)
+    _check_audits(authority, plan, oracle, run, audits, diagnostics)
+    _check_timings(authority, plan, oracle, run, timings, diagnostics)
     diagnostics.sort()
     return BenchmarkReport(
         authority.content_id,
@@ -847,12 +1143,31 @@ def _check_run_authority(
         "run_identity_sha256": authority.run_identity_sha256,
         "toolchain_sha256": authority.toolchain_sha256,
         "harness_sha256": authority.harness_sha256,
+        "execution_nonce_sha256": authority.execution_nonce_sha256,
         "analyst_identity_sha256": authority.analyst_identity_sha256,
         "mutation_runner_identity_sha256": authority.mutation_runner_identity_sha256,
     }
     for field, value in expected.items():
         if getattr(run, field) != value:
             diagnostics.append(_diag("run_authority_mismatch", f"$.run.{field}"))
+    for label, public_key, signature, payload, path in (
+        (
+            "analyst",
+            authority.analyst_public_key,
+            run.analyst_signature,
+            run.analyst_signing_bytes,
+            "$.run.analyst_signature",
+        ),
+        (
+            "mutation_runner",
+            authority.mutation_runner_public_key,
+            run.mutation_runner_signature,
+            run.mutation_runner_signing_bytes,
+            "$.run.mutation_runner_signature",
+        ),
+    ):
+        if not _verify_signature(public_key, signature, payload):
+            diagnostics.append(_diag(f"{label}_signature_invalid", path))
 
 
 def _check_cases(
@@ -932,12 +1247,23 @@ def _check_mutations(
 
 def _check_audits(
     authority: BenchmarkAuthority,
+    plan: BenchmarkPlan,
+    oracle: OracleSuite,
     run: BenchmarkRun,
     audits: IndependentAuditSuite,
     diagnostics: list[BenchmarkDiagnostic],
 ) -> None:
-    if audits.authority_sha256 != authority.content_id:
-        diagnostics.append(_diag("audit_authority_mismatch", "$.audits.authority_sha256"))
+    expected_headers = {
+        "authority_sha256": authority.content_id,
+        "plan_sha256": plan.content_id,
+        "oracle_sha256": oracle.content_id,
+        "run_sha256": run.content_id,
+        "execution_nonce_sha256": authority.execution_nonce_sha256,
+        "revision": BENCHMARK_REVISION,
+    }
+    for field, value in expected_headers.items():
+        if getattr(audits, field) != value:
+            diagnostics.append(_diag("audit_context_mismatch", f"$.audits.{field}"))
     if audits.auditor_identity_sha256 != authority.auditor_identity_sha256:
         diagnostics.append(_diag("audit_identity_mismatch", "$.audits.auditor_identity_sha256"))
     if not _verify_signature(
@@ -969,11 +1295,18 @@ def _check_audits(
 def _check_timings(
     authority: BenchmarkAuthority,
     plan: BenchmarkPlan,
+    oracle: OracleSuite,
+    run: BenchmarkRun,
     timings: TimingSuite,
     diagnostics: list[BenchmarkDiagnostic],
 ) -> None:
     expected_headers = {
         "authority_sha256": authority.content_id,
+        "plan_sha256": plan.content_id,
+        "oracle_sha256": oracle.content_id,
+        "run_sha256": run.content_id,
+        "execution_nonce_sha256": authority.execution_nonce_sha256,
+        "revision": BENCHMARK_REVISION,
         "corpus_sha256": authority.corpus_sha256,
         "run_identity_sha256": authority.run_identity_sha256,
         "collector_identity_sha256": authority.telemetry_collector_identity_sha256,
@@ -988,6 +1321,15 @@ def _check_timings(
     ):
         diagnostics.append(_diag("timing_signature_invalid", "$.timings.signature"))
     cases = {item.case_id for item in plan.cases}
+    expected_sample_keys = {
+        (trial_id, case.case_id, phase)
+        for trial_id in plan.trial_schedule.trial_ids
+        for case in plan.cases
+        for phase in TimingPhase
+    }
+    actual_sample_keys = {(item.trial_id, item.case_id, item.phase) for item in timings.samples}
+    if actual_sample_keys != expected_sample_keys:
+        diagnostics.append(_diag("timing_schedule_mismatch", "$.timings.samples"))
     pairs: dict[tuple[str, str], dict[TimingPhase, TimingSample]] = {}
     for sample in timings.samples:
         path = f"$.timings.{sample.trial_id}.{sample.case_id}.{sample.phase.value}"
@@ -1021,6 +1363,11 @@ def _check_timings(
         if sample.collector_identity_sha256 != timings.collector_identity_sha256:
             diagnostics.append(_diag("token_collector_mismatch", path))
         token_pairs.setdefault((sample.trial_id, sample.case_id), {})[sample.phase] = sample
+    actual_token_keys = {
+        (item.trial_id, item.case_id, item.phase) for item in timings.token_samples
+    }
+    if actual_token_keys != expected_sample_keys:
+        diagnostics.append(_diag("token_schedule_mismatch", "$.timings.token_samples"))
     if set(token_pairs) != set(pairs) or any(
         set(pair) != set(TimingPhase) for pair in token_pairs.values()
     ):
@@ -1066,6 +1413,10 @@ def _canonical(value: object) -> bytes:
     ).encode()
 
 
+def _signing_bytes(domain: str, value: object) -> bytes:
+    return f"phase4-v2:{domain}\0".encode() + _canonical(value)
+
+
 def _content_id(value: object) -> str:
     return hashlib.sha256(_canonical(value)).hexdigest()
 
@@ -1082,6 +1433,71 @@ def _verify_signature(public_key: str, signature: str, payload: bytes) -> bool:
     except InvalidSignature, ValueError:
         return False
     return True
+
+
+def _public_key(value: str, label: str) -> None:
+    if type(value) is not str or _ED25519_PUBLIC_KEY.fullmatch(value) is None:
+        raise ValueError(f"{label} public key must be a lowercase Ed25519 key")
+    try:
+        Ed25519PublicKey.from_public_bytes(bytes.fromhex(value))
+    except ValueError as error:
+        raise ValueError(f"{label} public key is not a valid Ed25519 key") from error
+
+
+def _reject_duplicate_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def _reject_json_constant(value: str) -> None:
+    raise ValueError(f"non-finite JSON constant: {value}")
+
+
+def _validate_json_bounds(value: object) -> None:
+    stack = [(value, 1)]
+    nodes = 0
+    while stack:
+        item, depth = stack.pop()
+        nodes += 1
+        if nodes > _MAX_JSON_NODES:
+            raise ValueError("authority JSON node limit exceeded")
+        if depth > _MAX_JSON_DEPTH:
+            raise ValueError("authority JSON depth limit exceeded")
+        if type(item) is str and len(item) > _MAX_JSON_STRING_LENGTH:
+            raise ValueError("authority JSON string limit exceeded")
+        if type(item) is dict:
+            stack.extend((key, depth + 1) for key in item)
+            stack.extend((child, depth + 1) for child in item.values())
+        elif type(item) is list:
+            stack.extend((child, depth + 1) for child in item)
+
+
+def _exact_object(value: object, keys: set[str], label: str) -> dict[str, object]:
+    if type(value) is not dict or set(value) != keys:
+        raise ValueError(f"{label} must contain the exact canonical fields")
+    return value
+
+
+def _exact_list(value: object, label: str) -> list[object]:
+    if type(value) is not list:
+        raise ValueError(f"{label} must be a JSON array")
+    return value
+
+
+def _exact_str(value: object, label: str) -> str:
+    if type(value) is not str:
+        raise ValueError(f"{label} must be a string")
+    return value
+
+
+def _exact_int(value: object, label: str) -> int:
+    if type(value) is not int:
+        raise ValueError(f"{label} must be an integer")
+    return value
 
 
 def _identifier(value: str, label: str) -> None:
