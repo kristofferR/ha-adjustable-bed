@@ -329,6 +329,29 @@ class TestLinakController:
             )
         )
 
+    async def test_seek_to_flat_does_not_release_early(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ) -> None:
+        """A 0° target cannot overshoot its end stop, so coast lead must not apply."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        coordinator._controller_state["linak_legs_raw_speed"] = -44
+        policy = coordinator.controller.position_seek_policy
+
+        assert not policy.accepts_position(
+            SeekSample(
+                position_key="legs",
+                target=0.0,
+                current=1.4,
+                previous=1.8,
+                moving_up=False,
+                elapsed=2.0,
+            )
+        )
+
     async def test_upward_seek_does_not_apply_downward_coast_lead(
         self,
         hass: HomeAssistant,
@@ -1007,9 +1030,7 @@ class TestLinakCorpusProfiles:
             assert _written_commands(mock_bleak_client) == []
 
             await coordinator.async_execute_controller_command(
-                lambda live_controller: live_controller.write_command(
-                    LinakCommands.MOVE_HEAD_UP
-                )
+                lambda live_controller: live_controller.write_command(LinakCommands.MOVE_HEAD_UP)
             )
 
         assert timer_attempts == 2
@@ -1575,6 +1596,28 @@ class TestLinakPositionData:
         assert coordinator.controller_state["linak_back_reported_speed"] == 0
         assert coordinator.controller_state["linak_back_status_flags"] == 0
         assert coordinator.controller_state["linak_position_feedback_fault"] is False
+
+    async def test_extension_just_below_zero_decodes_as_flat(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ) -> None:
+        """Live beds report 0xFFFE/0xFFFF when resting below the learned zero."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        callback = MagicMock()
+        controller._notify_callback = callback
+
+        controller._handle_position_data("back", bytearray.fromhex("FE FF 00 00"), 820, 68.0)
+        callback.assert_called_once_with("back", 0.0)
+
+        # A large negative is still garbage, not a resting position.
+        callback.reset_mock()
+        controller._handle_position_data("back", bytearray.fromhex("00 80 00 00"), 820, 68.0)
+        callback.assert_not_called()
 
     async def test_reference_notification_publishes_speed_and_every_status_flag(
         self,
