@@ -1612,11 +1612,13 @@ class TestLinakPositionData:
         controller._notify_callback = callback
 
         controller._handle_position_data("back", bytearray.fromhex("FE FF 00 00"), 820, 68.0)
-        callback.assert_called_once_with("back", 0.0)
+        controller._handle_position_data("back", bytearray.fromhex("FF FF 00 00"), 820, 68.0)
+        assert callback.call_args_list == [call("back", 0.0), call("back", 0.0)]
 
-        # A large negative is still garbage, not a resting position.
+        # Values outside the observed -1/-2 range are still garbage, not a
+        # resting position.
         callback.reset_mock()
-        controller._handle_position_data("back", bytearray.fromhex("00 80 00 00"), 820, 68.0)
+        controller._handle_position_data("back", bytearray.fromhex("FD FF 00 00"), 820, 68.0)
         callback.assert_not_called()
 
     async def test_reference_notification_publishes_speed_and_every_status_flag(
