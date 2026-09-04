@@ -140,6 +140,23 @@ Motors 5-7 are only present on select models (e.g., some table/lift actuators).
 | Head Up + Feet Down | `0x21` | Inverse: head up while feet down |
 | Head Down + Feet Up | `0x22` | Inverse: head down while feet up |
 
+`0x29`/`0x2A` are exposed as the `head_feet` cover, but only for remotes listed
+in `RICHMAT_COMBINED_HEAD_FEET_REMOTE_CODES`. Confirmed on hardware (#552): on
+two `twrm` beds (`WLT` / `WLT825X_H35_S`) the command raises head and feet at
+the same time, which two sequential cover commands cannot do because each
+Richmat motor command ends with its own STOP frame.
+
+Not every Richmat remote surface has this button, and the head and feet motor
+flags do not say which ones do, so the entity stays opt-in per remote code. Add
+a code to the set when a bed on that profile is confirmed. `auto` is excluded
+on purpose: it is the fallback whenever detection cannot name the remote.
+
+> [!NOTE]
+> The BedTech app calls the same byte pair `bothHeads` (see
+> [bedtech.md](bedtech.md)), which would mean two head sections rather than
+> head plus feet. The naming across apps is not settled here; the per-remote
+> allow list is what keeps the control off unconfirmed beds.
+
 #### Presets
 
 | Command | Byte | Description |

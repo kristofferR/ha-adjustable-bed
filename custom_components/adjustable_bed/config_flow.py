@@ -163,6 +163,7 @@ from .const import (
     MALOUF_MEMORY_SLOTS_AUTO,
     OCTO_VARIANT_STAR2,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
+    OKIN_CST_THREE_MOTOR_VARIANTS,
     PAIR_MODE_SEPARATE_ADDRESS,
     PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SIDES,
@@ -521,7 +522,7 @@ def _motor_count_options(
     if bed_type == BED_TYPE_OCTO and protocol_variant != OCTO_VARIANT_STAR2:
         return [1, 2, 3, 4]
     if bed_type == BED_TYPE_OKIN_CST:
-        return [3]
+        return [3] if protocol_variant in OKIN_CST_THREE_MOTOR_VARIANTS else [2]
     return [2, 3, 4]
 
 
@@ -546,6 +547,16 @@ def _is_valid_motor_count(
 ) -> bool:
     """Return whether a motor count is valid for the selected protocol."""
     return motor_count in _motor_count_options(bed_type, protocol_variant)
+
+
+def _normalize_fixed_motor_count(
+    bed_type: str | None,
+    protocol_variant: str,
+    motor_count: int,
+) -> int:
+    """Replace a stale form value when the profile fixes the motor count."""
+    options = _motor_count_options(bed_type, protocol_variant)
+    return options[0] if len(options) == 1 else motor_count
 
 
 def _default_motor_count(
@@ -1554,7 +1565,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
 
-            motor_count = user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+            motor_count = _normalize_fixed_motor_count(
+                selected_bed_type,
+                protocol_variant,
+                user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
+            )
+            user_input[CONF_MOTOR_COUNT] = motor_count
             if selected_bed_type and not _is_valid_motor_count(
                 selected_bed_type, protocol_variant, motor_count
             ):
@@ -2443,7 +2459,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, str(discovery_source))
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
 
-            motor_count = user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+            motor_count = _normalize_fixed_motor_count(
+                bed_type,
+                protocol_variant,
+                user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
+            )
+            user_input[CONF_MOTOR_COUNT] = motor_count
             if bed_type != BED_TYPE_AUTO_DETECT and not _is_valid_motor_count(
                 bed_type, protocol_variant, motor_count
             ):
@@ -2697,7 +2718,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
                 protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
 
-                motor_count = user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+                motor_count = _normalize_fixed_motor_count(
+                    bed_type,
+                    protocol_variant,
+                    user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
+                )
+                user_input[CONF_MOTOR_COUNT] = motor_count
                 if not _is_valid_motor_count(bed_type, protocol_variant, motor_count):
                     errors[CONF_MOTOR_COUNT] = "invalid_motor_count_for_bed_type"
 
@@ -5075,6 +5101,31 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 user_input[CONF_PROTOCOL_VARIANT] = requested_variant
             else:
                 user_input.pop(CONF_PROTOCOL_VARIANT, None)
+            requested_motor_options = _motor_count_options(
+                bed_type,
+                requested_variant,
+            )
+            requested_motor_count = user_input.get(
+                CONF_MOTOR_COUNT,
+                form_motor_count,
+            )
+            if requested_motor_count not in requested_motor_options:
+                if requested_variant != form_variant:
+                    # A variant change can alter the fixed actuator count.
+                    # Rebuild with its count instead of rejecting the value
+                    # rendered for the previous variant.
+                    self._pending_data = {**self._pending_data, **user_input}
+                    if discovery_disabled_input is not None:
+                        self._pending_data[CONF_DISABLE_DISCOVERY] = discovery_disabled_input
+                    self._remember_pending_changes(schema_dict, user_input)
+                    self._pending_data[CONF_MOTOR_COUNT] = requested_motor_options[0]
+                    self._pending_changed_data[CONF_MOTOR_COUNT] = requested_motor_options[0]
+                    return await self._async_options_form(None, step_id=step_id)
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={CONF_MOTOR_COUNT: "invalid_motor_count_for_bed_type"},
+                )
             if has_position_feedback != bed_type_has_position_feedback(
                 bed_type,
                 requested_variant,
@@ -5093,20 +5144,6 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 self._pending_data[CONF_DISABLE_ANGLE_SENSING] = disable_angle_sensing
                 self._pending_changed_data[CONF_DISABLE_ANGLE_SENSING] = disable_angle_sensing
                 return await self._async_options_form(None, step_id=step_id)
-            requested_motor_count = user_input.get(
-                CONF_MOTOR_COUNT,
-                form_motor_count,
-            )
-            if not _is_valid_motor_count(
-                bed_type,
-                requested_variant,
-                requested_motor_count,
-            ):
-                return self.async_show_form(
-                    step_id=step_id,
-                    data_schema=vol.Schema(schema_dict),
-                    errors={CONF_MOTOR_COUNT: "invalid_motor_count_for_bed_type"},
-                )
             if bed_type == BED_TYPE_OCTO and CONF_OCTO_PIN in user_input:
                 octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
                 if not is_valid_octo_pin(octo_pin):

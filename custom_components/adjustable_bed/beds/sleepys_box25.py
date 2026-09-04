@@ -260,10 +260,11 @@ class SleepysBox25Controller(BedController):
 
     @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
-        """Expose head/feet as percentage sliders; BOX25 reports percent, not angles."""
+        """Expose head/feet/lumbar as percentage sliders; BOX25 reports percent, not angles."""
         return (
             build_position_number_spec("head", max_value=100.0, unit=POSITION_UNIT_PERCENT),
             build_position_number_spec("feet", max_value=100.0, unit=POSITION_UNIT_PERCENT),
+            build_position_number_spec("lumbar", max_value=100.0, unit=POSITION_UNIT_PERCENT),
         )
 
     @property

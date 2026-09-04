@@ -665,7 +665,7 @@ async def _set_position_plan(
 
         # Define motor configurations.
         # For Keeson/Ergomotion: only head and feet are valid, they map to back/legs keys.
-        # For BOX25: only head and feet are valid, using direct percentage positions.
+        # For BOX25: head, feet, and lumbar are valid, using direct percentage positions.
         # For Kaidi: direct position writes expose back/legs percentage targets.
         # For standard beds: based on motor_count (2=back/legs, 3=+head, 4=+feet).
         uses_percentage_positions = bed_type in (
@@ -712,7 +712,7 @@ async def _set_position_plan(
                 },
             }
         elif bed_type == BED_TYPE_SLEEPYS_BOX25:
-            valid_motors = {"head", "feet"}
+            valid_motors = {"head", "feet", "lumbar"}
             motor_configs = {
                 "head": {
                     "position_key": "head",
@@ -726,6 +726,13 @@ async def _set_position_plan(
                     "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
                     "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
                     "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
+                    "max_value": 100.0,
+                },
+                "lumbar": {
+                    "position_key": "lumbar",
+                    "move_up_fn": lambda ctrl: ctrl.move_lumbar_up(),
+                    "move_down_fn": lambda ctrl: ctrl.move_lumbar_down(),
+                    "move_stop_fn": lambda ctrl: ctrl.move_lumbar_stop(),
                     "max_value": 100.0,
                 },
             }
@@ -1649,7 +1656,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): cv.ensure_list,
-                vol.Required(ATTR_MOTOR): vol.In(["back", "legs", "head", "feet"]),
+                vol.Required(ATTR_MOTOR): vol.In(["back", "legs", "head", "feet", "lumbar"]),
                 # No max cap here - per-motor validation handles bed-specific limits
                 vol.Required(ATTR_POSITION): vol.All(vol.Coerce(float), vol.Range(min=0)),
                 **SIDE_FIELD,
@@ -1666,7 +1673,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 vol.Required(ATTR_POSITIONS): vol.All(
                     [
                         {
-                            vol.Required(ATTR_MOTOR): vol.In(["back", "legs", "head", "feet"]),
+                            vol.Required(ATTR_MOTOR): vol.In(["back", "legs", "head", "feet", "lumbar"]),
                             vol.Required(ATTR_POSITION): vol.All(
                                 vol.Coerce(float), vol.Range(min=0)
                             ),

@@ -296,6 +296,41 @@ class TestRichmatMovement:
         expected = coordinator.controller._build_command(RichmatCommands.MOTOR_FEET_UP)
         assert first_command == expected
 
+    async def test_move_head_feet_up_sends_combined_command(
+        self,
+        hass: HomeAssistant,
+        mock_richmat_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Head+feet must send the single combined command, not two motor commands."""
+        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.move_head_feet_up()
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        expected = coordinator.controller._build_command(RichmatCommands.MOTOR_HEAD_FEET_UP)
+        assert calls[0][0][1] == expected
+        assert calls[-1][0][1] == coordinator.controller._build_command(RichmatCommands.END)
+
+    async def test_move_head_feet_down_sends_combined_command(
+        self,
+        hass: HomeAssistant,
+        mock_richmat_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Head+feet down uses the paired combined command byte."""
+        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.move_head_feet_down()
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        expected = coordinator.controller._build_command(RichmatCommands.MOTOR_HEAD_FEET_DOWN)
+        assert calls[0][0][1] == expected
+
     async def test_stop_all(
         self,
         hass: HomeAssistant,
@@ -576,13 +611,49 @@ class TestRichmatFeatureDetection:
         controller = coordinator.controller
 
         assert coordinator.motor_count == 2
+        # The BT6500 remote surface has no combined head+feet button, so the
+        # combined step must not appear even though both motors are present.
         assert [spec.key for spec in controller.motor_control_specs] == [
             "head",
             "feet",
             "pillow",
             "lumbar",
         ]
-        assert controller.stale_motor_entity_keys == {"back", "legs", "pillow", "lumbar"}
+        assert controller.stale_motor_entity_keys == {
+            "back",
+            "legs",
+            "pillow",
+            "lumbar",
+            "head_feet",
+        }
+
+    def test_head_only_remote_omits_combined_head_feet_control(self):
+        """The combined step needs both axes, so a head-only remote must not get it."""
+        coordinator = MagicMock()
+        controller = RichmatController(coordinator, is_wilinke=True, remote_code="aarn")
+
+        assert "head_feet" not in [spec.key for spec in controller.motor_control_specs]
+
+    def test_remote_with_combined_button_exposes_head_feet_control(self):
+        """twrm binds a button to 0x29/0x2A, so it gets the combined cover."""
+        coordinator = MagicMock()
+        controller = RichmatController(coordinator, is_wilinke=True, remote_code="twrm")
+
+        assert "head_feet" in [spec.key for spec in controller.motor_control_specs]
+
+    def test_remote_without_combined_button_omits_head_feet_control(self):
+        """virm has both motors but no combined button on its remote surface."""
+        coordinator = MagicMock()
+        controller = RichmatController(coordinator, is_wilinke=True, remote_code="virm")
+
+        assert "head_feet" not in [spec.key for spec in controller.motor_control_specs]
+
+    def test_auto_remote_omits_head_feet_control(self):
+        """Auto is the fallback for unidentified beds, so it does not get the combined step."""
+        coordinator = MagicMock()
+        controller = RichmatController(coordinator, is_wilinke=True, remote_code="auto")
+
+        assert "head_feet" not in [spec.key for spec in controller.motor_control_specs]
 
     def test_qrrm_wilinke_supports_rgb_light_and_timer(self):
         """QRRM WiLinke remotes should expose RGB light and timer controls."""

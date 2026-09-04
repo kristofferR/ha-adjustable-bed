@@ -644,13 +644,13 @@ class TestNumberEntities:
             is None
         )
 
-    async def test_box25_number_entities_only_include_head_and_feet_position(
+    async def test_box25_number_entities_include_head_feet_and_lumbar_position(
         self,
         hass: HomeAssistant,
         mock_coordinator_connected,
         enable_custom_integrations,
     ):
-        """BOX25 should only create head_position and feet_position number entities."""
+        """BOX25 should create head/feet/lumbar position sliders, but not back/legs."""
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Sleepy's BOX25 Numbers",
@@ -680,6 +680,10 @@ class TestNumberEntities:
         )
         assert (
             registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:27_feet_position")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:27_lumbar_position")
             is not None
         )
         assert (
@@ -1734,7 +1738,7 @@ class TestButtonEntities:
         button_entities = [
             state.entity_id
             for state in hass.states.async_all()
-            if state.entity_id.startswith("button.") and "memory_1" in state.entity_id
+            if state.entity_id.startswith("button.") and state.entity_id.endswith("_flat")
         ]
         assert len(button_entities) > 0
 
@@ -1768,7 +1772,7 @@ class TestButtonEntities:
         button_entities = [
             state.entity_id
             for state in hass.states.async_all()
-            if state.entity_id.startswith("button.") and "memory_1" in state.entity_id
+            if state.entity_id.startswith("button.") and state.entity_id.endswith("_flat")
         ]
         entity_id = button_entities[0]
 

@@ -501,7 +501,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_ORE: "Okin ORE (Dynasty, INNOVA)",
     BED_TYPE_OKIN_64BIT: "Okin 64-Bit (10-byte commands)",
     BED_TYPE_OKIN_CB35: "Okin CB35 (Sealy Posturematic, DewertOkin Star)",
-    BED_TYPE_OKIN_CST: "Okin CST (Rize MF900, 14-byte dual-field)",
+    BED_TYPE_OKIN_CST: "Okin CST (Rize product profiles, 14-byte dual-field)",
     BED_TYPE_OKIN_RF_ECO_BT: "OKIN Smart Remote / RF ECO BT single actuator",
     # Protocol-based types (Leggett & Platt family)
     BED_TYPE_LEGGETT_GEN2: "Leggett & Platt Gen2",

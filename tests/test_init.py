@@ -1889,13 +1889,13 @@ class TestServices:
                 blocking=True,
             )
 
-    async def test_set_position_service_accepts_box25_head_and_feet(
+    async def test_set_position_service_accepts_box25_head_feet_and_lumbar(
         self,
         hass: HomeAssistant,
         mock_coordinator_connected,
         enable_custom_integrations,
     ):
-        """BOX25 set_position should accept head and feet only."""
+        """BOX25 set_position should accept head, feet, and lumbar."""
         from homeassistant.exceptions import ServiceValidationError
 
         entry = MockConfigEntry(
@@ -1953,6 +1953,16 @@ class TestServices:
             },
             blocking=True,
         )
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_SET_POSITION,
+            {
+                "device_id": [device_id],
+                "motor": "lumbar",
+                "position": 30,
+            },
+            blocking=True,
+        )
 
         await hass.services.async_call(
             DOMAIN,
@@ -1962,12 +1972,13 @@ class TestServices:
                 "positions": [
                     {"motor": "head", "position": 25},
                     {"motor": "feet", "position": 15},
+                    {"motor": "lumbar", "position": 30},
                 ],
             },
             blocking=True,
         )
 
-        assert coordinator.async_seek_position.await_count == 4
+        assert coordinator.async_seek_position.await_count == 6
         position_records = coordinator._command_scheduler.recent_records[-3:]
         assert [record.kind.value for record in position_records] == [
             "group",
@@ -1975,7 +1986,7 @@ class TestServices:
             "group",
         ]
         assert all(record.group_id is not None for record in position_records)
-        assert position_records[-1].resources == ("motor:feet", "motor:head")
+        assert position_records[-1].resources == ("motor:feet", "motor:head", "motor:lumbar")
 
         coordinator.async_seek_position.reset_mock()
         with pytest.raises(ServiceValidationError, match="out of range"):
@@ -2033,7 +2044,7 @@ class TestServices:
         assert len(devices) == 1
         device_id = devices[0].id
 
-        with pytest.raises(ServiceValidationError, match="Valid motors: feet, head"):
+        with pytest.raises(ServiceValidationError, match="Valid motors: feet, head, lumbar"):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_SET_POSITION,

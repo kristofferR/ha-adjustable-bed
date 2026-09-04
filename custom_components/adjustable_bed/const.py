@@ -1172,6 +1172,41 @@ LINAK_VARIANTS: Final = {
     LINAK_VARIANT_PERFORMANCE: "Performance Series (legacy, 300 ms hold cadence)",
 }
 
+# Okin CST product profiles. The shared service and ``OKIN-*`` local-name
+# prefix do not identify which fixed app capability set the receiver uses, so
+# auto preserves the established MF900 behavior and the other profiles remain
+# explicit user selections.
+OKIN_CST_VARIANT_SANCTUARY: Final = "cst_sanctuary"
+OKIN_CST_VARIANT_RESIDENT: Final = "cst_resident"
+OKIN_CST_VARIANT_AVIADA: Final = "cst_aviada"
+OKIN_CST_VARIANT_BOB: Final = "cst_bob"
+OKIN_CST_VARIANT_CONTEMPO: Final = "cst_contempo"
+OKIN_CST_VARIANT_CAREFREE: Final = "cst_carefree"
+OKIN_CST_VARIANT_CLARITY: Final = "cst_clarity"
+OKIN_CST_VARIANT_MF900: Final = "cst_mf900"
+OKIN_CST_VARIANT_SUPPORT: Final = "cst_support"
+OKIN_CST_VARIANTS: Final = {
+    VARIANT_AUTO: "Auto (MF900 profile)",
+    OKIN_CST_VARIANT_SANCTUARY: "Rize Sanctuary",
+    OKIN_CST_VARIANT_RESIDENT: "Rize Resident",
+    OKIN_CST_VARIANT_AVIADA: "Rize Aviada",
+    OKIN_CST_VARIANT_BOB: "Rize Bob",
+    OKIN_CST_VARIANT_CONTEMPO: "Rize Contempo",
+    OKIN_CST_VARIANT_CAREFREE: "Rize II Carefree",
+    OKIN_CST_VARIANT_CLARITY: "Rize II Clarity",
+    OKIN_CST_VARIANT_MF900: "Rize MF900 / Mattress Firm 900-O",
+    OKIN_CST_VARIANT_SUPPORT: "Support",
+}
+OKIN_CST_THREE_MOTOR_VARIANTS: Final = frozenset(
+    {
+        VARIANT_AUTO,
+        OKIN_CST_VARIANT_AVIADA,
+        OKIN_CST_VARIANT_CONTEMPO,
+        OKIN_CST_VARIANT_MF900,
+        OKIN_CST_VARIANT_SUPPORT,
+    }
+)
+
 # STAR25 controllers select their packet dialect from Device Information 0x2A29.
 # StarCode is selected when the manufacturer text contains "star"; missing,
 # unreadable, empty, or other values select the legacy CB25 packet family.
@@ -1382,6 +1417,12 @@ RICHMAT_REMOTE_LP_QRRM: Final = "LP-QRRM"
 # Most Richmat remotes use END=0x6E, but some devices require 0x5E to stop
 # movement: QRRM remotes and BedTech BT6500 beds (issue #194).
 RICHMAT_WILINKE_STOP_COMPAT_REMOTE_CODES: Final[frozenset[str]] = frozenset({"qrrm", "bt6500"})
+
+# Richmat remotes confirmed to move head and feet as one combined step
+# (0x29/0x2A). Confirmed on two WLT / WLT825X_H35_S beds running the TWRM
+# profile (PR #552). Other remote surfaces are not assumed to have this
+# button, so add codes here as they are confirmed.
+RICHMAT_COMBINED_HEAD_FEET_REMOTE_CODES: Final[frozenset[str]] = frozenset({"twrm"})
 
 # Display names for remote selection
 RICHMAT_REMOTES: Final = {
@@ -1729,6 +1770,22 @@ def get_richmat_features(remote_code: str) -> RichmatFeatures:
     return RICHMAT_REMOTE_FEATURES[RICHMAT_REMOTE_AUTO]
 
 
+def richmat_remote_has_combined_head_feet(remote_code: str) -> bool:
+    """Return True when this remote is known to drive head and feet as one step.
+
+    The combined command pair (0x29/0x2A) is not on every Richmat remote, and
+    the head and feet motor flags do not tell us whether a given surface has
+    it, so remotes are listed only once confirmed. Unlike other Richmat
+    capabilities, "auto" does not enable this one: it is the default whenever
+    detection cannot name the remote, so it would put the control on beds that
+    may not move both axes at all.
+
+    Args:
+        remote_code: The remote code (e.g., "twrm", "qrrm"), case-insensitive.
+    """
+    return (remote_code or "").lower() in RICHMAT_COMBINED_HEAD_FEET_REMOTE_CODES
+
+
 def get_richmat_motor_count(features: RichmatFeatures) -> int:
     """Get motor count from Richmat feature flags.
 
@@ -2048,6 +2105,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     OKIN_64BIT_VARIANT_CUSTOM,
     LINAK_VARIANT_BED_CONTROL,
     LINAK_VARIANT_PERFORMANCE,
+    *(_variant for _variant in OKIN_CST_VARIANTS if _variant != VARIANT_AUTO),
     SLEEPYS_BOX25_VARIANT_STAR,
     SLEEPYS_BOX25_VARIANT_LEGACY,
     # SBI/Q-Plus variants

@@ -132,6 +132,8 @@ from custom_components.adjustable_bed.const import (
     MALOUF_LAYOUT_HILO,
     OCTO_VARIANT_STANDARD,
     OCTO_VARIANT_STAR2,
+    OKIN_CST_VARIANT_CAREFREE,
+    OKIN_CST_VARIANT_MF900,
     PAIR_MODE_SEPARATE_ADDRESS,
     RICHMAT_REMOTE_LP_QRRM,
     RICHMAT_WILINKE_SERVICE_UUIDS,
@@ -366,6 +368,13 @@ class TestPairingInstructions:
         assert not _is_valid_motor_count(BED_TYPE_OKIN_CST, "auto", 4)
         assert BED_TYPE_OKIN_CST not in BEDS_WITH_POSITION_FEEDBACK
         assert BED_TYPE_OKIN_CST in BEDS_WITHOUT_ANGLE_FEEDBACK
+
+    async def test_okin_cst_product_profiles_constrain_motor_count(self) -> None:
+        """CST profile selection must not expose absent lumbar controls."""
+        assert _is_valid_motor_count(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_MF900, 3)
+        assert not _is_valid_motor_count(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_MF900, 2)
+        assert _is_valid_motor_count(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_CAREFREE, 2)
+        assert not _is_valid_motor_count(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_CAREFREE, 3)
 
 
 class TestPairingPersistence:
@@ -2337,6 +2346,32 @@ class TestBluetoothDiscoveryFlow:
         assert result["step_id"] == "bluetooth_confirm"
         assert result["errors"] == {"base": "auto_detect_failed"}
 
+    async def test_bluetooth_confirm_normalizes_cst_profile_motor_count(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info: MagicMock,
+    ) -> None:
+        """A two-motor CST profile must replace the detected three-motor default."""
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        flow._discovery_info = mock_bluetooth_service_info
+
+        result = await flow.async_step_bluetooth_confirm(
+            user_input={
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_CAREFREE,
+                CONF_NAME: "Carefree Bed",
+                CONF_MOTOR_COUNT: 3,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        assert result["step_id"] == "bluetooth_pairing"
+        assert flow._manual_data is not None
+        assert flow._manual_data[CONF_MOTOR_COUNT] == 2
+
     async def test_manual_config_auto_detect_failure_reprompts(
         self,
         hass: HomeAssistant,
@@ -2364,6 +2399,32 @@ class TestBluetoothDiscoveryFlow:
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "manual_config"
         assert result["errors"] == {"base": "auto_detect_failed"}
+
+    async def test_manual_config_normalizes_cst_profile_motor_count(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info: MagicMock,
+    ) -> None:
+        """A three-motor CST profile must replace the generic two-motor default."""
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        flow._discovery_info = mock_bluetooth_service_info
+
+        result = await flow.async_step_manual_config(
+            user_input={
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_MF900,
+                CONF_NAME: "MF900 Bed",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        assert result["step_id"] == "manual_pairing"
+        assert flow._manual_data is not None
+        assert flow._manual_data[CONF_MOTOR_COUNT] == 3
 
     async def test_manual_config_auto_detect_resolves(
         self,
@@ -2645,6 +2706,43 @@ class TestManualFlow:
         assert result["data"][CONF_MOTOR_COUNT] == 3
         # The follow-up displayed Linak's recommendation and kept it enabled.
         assert result["data"][CONF_DISCONNECT_AFTER_COMMAND] is True
+
+    async def test_manual_entry_normalizes_cst_profile_motor_count(
+        self, hass: HomeAssistant, enable_custom_integrations
+    ) -> None:
+        """A CST profile must not require changing the generic motor-count field."""
+        del enable_custom_integrations
+        with patch(
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+            return_value=[],
+        ):
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_USER},
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_ADDRESS: "manual"},
+            )
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_ADDRESS: "11:22:33:44:55:66",
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_MF900,
+                CONF_NAME: "MF900 Bed",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        assert result["step_id"] == "manual_pairing"
+        result = await _complete_setup_pairing(hass, result)
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_MOTOR_COUNT] == 3
 
     async def test_manual_entry_malouf_collects_layout(
         self, hass: HomeAssistant, enable_custom_integrations
@@ -3120,6 +3218,51 @@ class TestUserFlow:
 class TestOptionsFlow:
     """Test options flow."""
 
+    @pytest.mark.parametrize(
+        ("initial_variant", "initial_count", "requested_variant", "expected_count"),
+        [
+            (VARIANT_AUTO, 3, OKIN_CST_VARIANT_CAREFREE, 2),
+            (OKIN_CST_VARIANT_CAREFREE, 2, OKIN_CST_VARIANT_MF900, 3),
+        ],
+    )
+    async def test_okin_cst_profile_change_rebuilds_fixed_motor_count(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+        initial_variant: str,
+        initial_count: int,
+        requested_variant: str,
+        expected_count: int,
+    ) -> None:
+        """Changing CST profiles should replace the prior profile's motor count."""
+        del enable_custom_integrations
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Okin CST Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:94",
+                CONF_NAME: "Okin CST Bed",
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_MOTOR_COUNT: initial_count,
+                CONF_PROTOCOL_VARIANT: initial_variant,
+            },
+            unique_id="AA:BB:CC:DD:EE:94",
+        )
+        entry.add_to_hass(hass)
+        await async_setup_component(hass, DOMAIN, {})
+        await hass.async_block_till_done()
+
+        initial = await _open_options_form(hass, entry.entry_id)
+        rebuilt = await hass.config_entries.options.async_configure(
+            initial["flow_id"],
+            user_input={CONF_PROTOCOL_VARIANT: requested_variant},
+        )
+
+        assert rebuilt["type"] == FlowResultType.FORM
+        markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
+        assert markers[CONF_PROTOCOL_VARIANT].default() == requested_variant
+        assert markers[CONF_MOTOR_COUNT].default() == expected_count
+
     async def test_richmat_options_can_replace_detected_qrrm_with_lp_profile(
         self,
         hass: HomeAssistant,
@@ -3541,9 +3684,22 @@ class TestOptionsFlow:
         assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_ERGOMOTION
         assert await async_is_discovery_disabled(hass) is True
 
+    @pytest.mark.parametrize(
+        ("bed_type", "initial_variant", "requested_variant", "initial_count", "expected_count"),
+        [
+            (BED_TYPE_KEESON, VARIANT_AUTO, KEESON_VARIANT_ERGOMOTION, 2, 2),
+            (BED_TYPE_OKIN_CST, VARIANT_AUTO, OKIN_CST_VARIANT_CAREFREE, 3, 2),
+            (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_CAREFREE, OKIN_CST_VARIANT_MF900, 2, 3),
+        ],
+    )
     async def test_paired_options_preserve_variant_change_across_rebuild(
         self,
         hass: HomeAssistant,
+        bed_type: str,
+        initial_variant: str,
+        requested_variant: str,
+        initial_count: int,
+        expected_count: int,
     ) -> None:
         """A rebuild must not lose a variant edit before paired children are saved."""
         entry = MockConfigEntry(
@@ -3551,9 +3707,9 @@ class TestOptionsFlow:
             title="Paired Keeson Bed",
             data={
                 CONF_NAME: "Paired Keeson Bed",
-                CONF_BED_TYPE: BED_TYPE_KEESON,
-                CONF_MOTOR_COUNT: 2,
-                CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
+                CONF_BED_TYPE: bed_type,
+                CONF_MOTOR_COUNT: initial_count,
+                CONF_PROTOCOL_VARIANT: initial_variant,
                 CONF_PAIR_ID: "pair_keeson_variant",
                 CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
                 CONF_PAIR_MEMBER_ADDRESSES: [
@@ -3565,17 +3721,17 @@ class TestOptionsFlow:
                         CONF_SIDE: SIDE_LEFT,
                         CONF_ADDRESS: "AA:BB:CC:DD:EE:95",
                         CONF_NAME: "Left Keeson",
-                        CONF_BED_TYPE: BED_TYPE_KEESON,
-                        CONF_MOTOR_COUNT: 2,
-                        CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
+                        CONF_BED_TYPE: bed_type,
+                        CONF_MOTOR_COUNT: initial_count,
+                        CONF_PROTOCOL_VARIANT: initial_variant,
                     },
                     {
                         CONF_SIDE: SIDE_RIGHT,
                         CONF_ADDRESS: "AA:BB:CC:DD:EE:96",
                         CONF_NAME: "Right Keeson",
-                        CONF_BED_TYPE: BED_TYPE_KEESON,
-                        CONF_MOTOR_COUNT: 2,
-                        CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
+                        CONF_BED_TYPE: bed_type,
+                        CONF_MOTOR_COUNT: initial_count,
+                        CONF_PROTOCOL_VARIANT: initial_variant,
                     },
                 ],
             },
@@ -3590,17 +3746,19 @@ class TestOptionsFlow:
         initial = await flow._async_options_form(None, step_id="settings")
         rebuilt = await flow._async_options_form(
             {
-                CONF_BED_TYPE: BED_TYPE_KEESON,
-                CONF_MOTOR_COUNT: 2,
-                CONF_PROTOCOL_VARIANT: KEESON_VARIANT_ERGOMOTION,
+                CONF_BED_TYPE: bed_type,
+                CONF_MOTOR_COUNT: initial_count,
+                CONF_PROTOCOL_VARIANT: requested_variant,
             },
             step_id="settings",
         )
+        markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
+        assert markers[CONF_MOTOR_COUNT].default() == expected_count
         saved = await flow._async_options_form(
             {
-                CONF_BED_TYPE: BED_TYPE_KEESON,
-                CONF_MOTOR_COUNT: 2,
-                CONF_PROTOCOL_VARIANT: KEESON_VARIANT_ERGOMOTION,
+                CONF_BED_TYPE: bed_type,
+                CONF_MOTOR_COUNT: expected_count,
+                CONF_PROTOCOL_VARIANT: requested_variant,
             },
             step_id="settings",
         )
@@ -3609,8 +3767,10 @@ class TestOptionsFlow:
         assert rebuilt["type"] == FlowResultType.FORM
         assert saved["type"] == FlowResultType.CREATE_ENTRY
         for child in entry.data[CONF_PAIR_CHILDREN]:
-            assert child[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_ERGOMOTION
-            assert child[CONF_DISABLE_ANGLE_SENSING] is False
+            assert child[CONF_PROTOCOL_VARIANT] == requested_variant
+            assert child[CONF_MOTOR_COUNT] == expected_count
+            if bed_type == BED_TYPE_KEESON:
+                assert child[CONF_DISABLE_ANGLE_SENSING] is False
 
     async def test_paired_bed_type_change_uses_new_protocol_defaults(
         self,
