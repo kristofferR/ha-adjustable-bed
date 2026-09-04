@@ -1161,6 +1161,12 @@ class SingleAddressSideCoordinator:
         for callback_fn in list(self._single_position_callbacks):
             callback_fn(dict(self._single_position_data))
 
+    def _set_position_state(self, position_key: str, target_angle: float) -> None:
+        """Publish a successful direct-position target to this logical side."""
+        self._single_position_data[position_key] = target_angle
+        for callback_fn in list(self._single_position_callbacks):
+            callback_fn(dict(self._single_position_data))
+
     def _unregister_inner_position_callback(self) -> None:
         """Release the shared-position relay registered by CB24 views."""
         unregister = getattr(self, "_single_unregister_position_callback", None)
@@ -1304,9 +1310,7 @@ class SingleAddressSideCoordinator:
                     resource=f"motor:{position_key}"
                 ),
             )
-            self._single_position_data[position_key] = target_angle
-            for callback_fn in list(self._single_position_callbacks):
-                callback_fn(dict(self._single_position_data))
+            self._set_position_state(position_key, target_angle)
             return
 
         def bind(fn: CommandFn) -> CommandFn:
@@ -1411,6 +1415,36 @@ class SingleAddressPairedCoordinator(PairedBedCoordinator):
                 (SIDE_RIGHT, self._single_both),
             ]  # type: ignore[list-item]
         return super()._targets_for(side)
+
+    async def async_seek_position(
+        self,
+        position_key: str,
+        target_angle: float,
+        move_up_fn: CommandFn,
+        move_down_fn: CommandFn,
+        move_stop_fn: CommandFn,
+        *,
+        side: str = SIDE_BOTH,
+    ) -> None:
+        """Seek a logical side and mirror native-both direct targets to both views."""
+        await super().async_seek_position(
+            position_key,
+            target_angle,
+            move_up_fn,
+            move_down_fn,
+            move_stop_fn,
+            side=side,
+        )
+        controller = self._single_both.capability_controller
+        if (
+            side == SIDE_BOTH
+            and self._single_native_both
+            and controller is not None
+            and controller.supports_direct_position_control
+        ):
+            for child in self._children.values():
+                if isinstance(child, SingleAddressSideCoordinator):
+                    child._set_position_state(position_key, target_angle)
 
     async def _run_both_concurrent(
         self,

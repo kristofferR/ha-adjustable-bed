@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable, Coroutine
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.components.number import (
@@ -491,13 +491,29 @@ def _combined_position_entities_for(
     if not children or any(child.capability_controller is None for child in children):
         return []
     specs_per_side = [_position_number_specs(child) for child in children]
-    common = set.intersection(*({spec.key for spec in specs} for specs in specs_per_side))
-    # All sides share a bed type, so the first side's specs describe the axes.
-    return [
-        PairedBedCombinedPositionNumber(coordinator, _build_position_description(spec))
-        for spec in specs_per_side[0]
-        if spec.key in common
-    ]
+    specs_by_side = [{spec.key: spec for spec in specs} for specs in specs_per_side]
+    common = set.intersection(*(set(specs) for specs in specs_by_side))
+    entities: list[NumberEntity] = []
+    for spec in specs_per_side[0]:
+        if spec.key not in common:
+            continue
+        matching_specs = [side_specs[spec.key] for side_specs in specs_by_side]
+        if any(
+            candidate.position_key != spec.position_key
+            or candidate.native_unit_of_measurement != spec.native_unit_of_measurement
+            for candidate in matching_specs[1:]
+        ):
+            continue
+        reconciled = replace(
+            spec,
+            native_max_value=min(candidate.native_max_value for candidate in matching_specs),
+        )
+        entities.append(
+            PairedBedCombinedPositionNumber(
+                coordinator, _build_position_description(reconciled)
+            )
+        )
+    return entities
 
 
 def _async_remove_stale_combined_number_entities(
@@ -514,11 +530,25 @@ def _async_remove_stale_combined_number_entities(
         for entity in entities
         if (unique_id := entity.unique_id) is not None and unique_id.endswith("_both")
     }
+    candidate_keys = {description.key for description in NUMBER_DESCRIPTIONS}
+    candidate_keys.update(
+        spec.key for child in children for spec in _position_number_specs(child)
+    )
+    candidate_unique_ids = {
+        coordinator.entity_unique_id(f"{key}_both") for key in candidate_keys
+    }
     registry = er.async_get(hass)
     for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
+        translation_key = (row.translation_key or "").removesuffix("_both")
         if (
             row.domain == "number"
-            and row.unique_id.endswith("_both")
+            and (
+                row.unique_id in candidate_unique_ids
+                or (
+                    row.unique_id.endswith("_both")
+                    and translation_key.endswith("_position")
+                )
+            )
             and row.unique_id not in desired_unique_ids
         ):
             registry.async_remove(row.entity_id)

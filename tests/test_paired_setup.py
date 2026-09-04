@@ -2519,6 +2519,7 @@ class TestCombinedPositionSliders:
         )
 
         back = build_position_number_spec("back", max_value=68, unit="°")
+        right_back = build_position_number_spec("back", max_value=55, unit="°")
         legs = build_position_number_spec("legs", max_value=45, unit="°")
         head = build_position_number_spec("head", max_value=68, unit="°")
         coord = MagicMock(spec=PairedBedCoordinator)
@@ -2526,7 +2527,7 @@ class TestCombinedPositionSliders:
         coord.device_info = {}
 
         left = self._side((back, legs, head))
-        right = self._side((back, legs))
+        right = self._side((right_back, legs))
         entities = _combined_position_entities_for(coord, [left, right])
         assert [entity.unique_id for entity in entities] == [
             "pair_x_back_position_both",
@@ -2535,6 +2536,14 @@ class TestCombinedPositionSliders:
         # Separate-address pairs reuse the plain translation key; the parent
         # device name keeps the entity distinct from the per-side sliders.
         assert entities[0].translation_key == "back_position"
+        assert entities[0].native_max_value == 55
+
+        incompatible_back = build_position_number_spec(
+            "back", max_value=100, unit="%"
+        )
+        assert _combined_position_entities_for(
+            coord, [left, self._side((incompatible_back,))]
+        ) == []
 
         # An unknown side could have a different layout: build nothing yet.
         assert (
@@ -2549,6 +2558,7 @@ class TestCombinedPositionSliders:
         )
 
     async def test_slider_reports_mean_and_seeks_both_sides(self):
+        from types import SimpleNamespace
         from unittest.mock import AsyncMock, MagicMock
 
         from custom_components.adjustable_bed.beds.base import build_position_number_spec
@@ -2582,6 +2592,76 @@ class TestCombinedPositionSliders:
         assert kwargs["target_angle"] == 40
         assert kwargs["move_up_fn"] is back.open_fn
         assert kwargs["move_stop_fn"] is back.stop_fn
+
+        single = SingleAddressPairedCoordinator.__new__(SingleAddressPairedCoordinator)
+        single._single_inner = SimpleNamespace(
+            address="AA:BB:CC:DD:EE:50", device_info={}
+        )
+        single_entity = PairedBedCombinedPositionNumber(
+            single, _build_position_description(back)
+        )
+        assert single_entity.translation_key == "back_position_both"
+        assert single_entity.extra_state_attributes == {"bed_side": SIDE_BOTH}
+
+    async def test_stale_cleanup_only_removes_combined_position_numbers(
+        self, hass: HomeAssistant
+    ):
+        from unittest.mock import MagicMock
+
+        from custom_components.adjustable_bed.beds.base import build_position_number_spec
+        from custom_components.adjustable_bed.number import (
+            _async_remove_stale_combined_number_entities,
+            _combined_position_entities_for,
+        )
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Master Bed",
+            data=_paired_entry_data(),
+            unique_id=PAIR_ID,
+            entry_id="combined_position_cleanup",
+            version=4,
+        )
+        entry.add_to_hass(hass)
+        coordinator = MagicMock(spec=PairedBedCoordinator)
+        coordinator.entry = entry
+        coordinator.entity_unique_id.side_effect = lambda key: f"{PAIR_ID}_{key}"
+        coordinator.device_info = {}
+
+        back = build_position_number_spec("back", max_value=68, unit="°")
+        children = [self._side((back,)), self._side((back,))]
+        entities = _combined_position_entities_for(coordinator, children)
+
+        registry = er.async_get(hass)
+        stale_position = registry.async_get_or_create(
+            "number",
+            DOMAIN,
+            f"{PAIR_ID}_lumbar_position_both",
+            config_entry=entry,
+            translation_key="lumbar_position",
+        )
+        unrelated = registry.async_get_or_create(
+            "number",
+            DOMAIN,
+            f"{PAIR_ID}_sleep_number_setting_both",
+            config_entry=entry,
+            translation_key="sleep_number_setting_both",
+        )
+        child_position = registry.async_get_or_create(
+            "number",
+            DOMAIN,
+            f"{LEFT_ADDR}_lumbar_position",
+            config_entry=entry,
+            translation_key="lumbar_position",
+        )
+
+        _async_remove_stale_combined_number_entities(
+            hass, coordinator, children, entities
+        )
+
+        assert registry.async_get(stale_position.entity_id) is None
+        assert registry.async_get(unrelated.entity_id) is not None
+        assert registry.async_get(child_position.entity_id) is not None
 
     async def test_parent_device_gets_position_sliders_when_sides_report_angles(
         self,

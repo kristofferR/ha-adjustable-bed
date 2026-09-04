@@ -369,7 +369,7 @@ var Xe=Object.defineProperty;var Qe=Object.getOwnPropertyDescriptor;var _=(o,s,e
       <div class="graphic">
         ${Ie(i,t)}
       </div>
-    `:l}_graphicState(e){let t=e.motors.filter(a=>{let g=a.angle??a.position;return g!==void 0&&this._state(g)?.attributes.unit_of_measurement==="\xB0"});if(t.length===0||t.some(a=>this._angle(a)===void 0))return;let i=ye(t);if(!i)return;let{upper:n,lower:r}=i,c=e.motors.some(a=>{let g=a.cover?this._state(a.cover)?.state:void 0;return g==="opening"||g==="closing"});return{upperMotor:n,lowerMotor:r,upper:{label:this._motorName(n),angle:this._angle(n)},lower:{label:this._motorName(r),angle:this._angle(r)},moving:c}}_motors(e){let t=e.motors.filter(r=>r.cover||r.up||r.down),i=e.motors.filter(r=>!r.cover&&!r.up&&!r.down&&r.position);if(t.length===0&&i.length===0&&!e.synchro&&!e.stop)return l;let n=t.length>0||i.length>0||!!e.synchro;return d`
+    `:l}_graphicState(e){let t=e.motors.filter(a=>{let g=a.angle??a.position;return g!==void 0&&this._state(g)?.attributes.unit_of_measurement==="\xB0"});if(t.length===0||t.some(a=>this._angle(a)===void 0))return;let i=ye(t);if(!i)return;let{upper:n,lower:r}=i,c=e.motors.some(a=>{let g=a.cover?this._state(a.cover)?.state:void 0;return g==="opening"||g==="closing"});return{upperMotor:n,lowerMotor:r,upper:{label:this._motorName(n),angle:this._angle(n)},lower:{label:this._motorName(r),angle:this._angle(r)},moving:c}}_motors(e){let t=e.motors.filter(r=>r.cover||r.up||r.down),i=e.motors.filter(r=>r.position);if(t.length===0&&i.length===0&&!e.synchro&&!e.stop)return l;let n=t.length>0||i.length>0||!!e.synchro;return d`
       ${n?this._heading("section.position"):l}
       ${e.synchro?this._toggleRow(e.synchro):l}
       ${t.length?d`<div class="rows">
