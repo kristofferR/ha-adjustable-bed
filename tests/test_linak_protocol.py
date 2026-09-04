@@ -39,6 +39,22 @@ def test_reference_vector_decodes_extension_flags_and_speed() -> None:
     assert state.position_lost is False
 
 
+@pytest.mark.parametrize(
+    ("payload", "raw_extension", "extension"),
+    [("FE FF 00 00", 0xFFFE, -0.02), ("FF FF 00 00", 0xFFFF, -0.01)],
+)
+def test_reference_extension_is_signed(
+    payload: str,
+    raw_extension: int,
+    extension: float,
+) -> None:
+    """Keep the raw word while publishing sub-zero extension counts as signed."""
+    state = decode_reference(bytes.fromhex(payload))
+
+    assert state.raw_extension == raw_extension
+    assert state.extension == pytest.approx(extension)
+
+
 def test_reference_speed_is_sign_extended_but_reported_as_magnitude() -> None:
     """The high twelve bits are signed; the app publishes their magnitude."""
     word = 1234 | (0x0A << 16) | (0xFF6 << 20)

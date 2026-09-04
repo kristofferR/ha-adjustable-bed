@@ -141,12 +141,13 @@ def decode_reference(data: bytes | bytearray) -> LinakReferenceState:
         raise ValueError(f"Linak reference data must be exactly 4 bytes, got {len(data)}")
     word = int.from_bytes(data, "little")
     raw_extension = word & 0xFFFF
+    signed_extension = int.from_bytes(data[:2], "little", signed=True)
     status_flags = (word >> 16) & 0x0F
     raw_speed = (word >> 20) & 0x0FFF
     if raw_speed & 0x0800:
         raw_speed -= 0x1000
     return LinakReferenceState(
-        extension=raw_extension / 100,
+        extension=signed_extension / 100,
         raw_extension=raw_extension,
         status_flags=status_flags,
         raw_speed=raw_speed,
