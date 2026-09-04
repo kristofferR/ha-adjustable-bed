@@ -1161,6 +1161,12 @@ class SingleAddressSideCoordinator:
         for callback_fn in list(self._single_position_callbacks):
             callback_fn(dict(self._single_position_data))
 
+    def _set_position_state(self, position_key: str, target_angle: float) -> None:
+        """Publish a successful direct-position target to this logical side."""
+        self._single_position_data[position_key] = target_angle
+        for callback_fn in list(self._single_position_callbacks):
+            callback_fn(dict(self._single_position_data))
+
     def _unregister_inner_position_callback(self) -> None:
         """Release the shared-position relay registered by CB24 views."""
         unregister = getattr(self, "_single_unregister_position_callback", None)
@@ -1297,6 +1303,11 @@ class SingleAddressSideCoordinator:
                 bound = live_controller.bind_side(self._single_side)
                 native = bound.angle_to_native_position(position_key, target_angle)
                 await bound.set_motor_position(position_key, native)
+                self._set_position_state(position_key, target_angle)
+                if self._single_side == SIDE_BOTH:
+                    self._single_hydration_owner._set_native_both_position_state(
+                        position_key, target_angle
+                    )
 
             await self._single_inner.async_execute_controller_command(
                 set_direct,
@@ -1304,9 +1315,6 @@ class SingleAddressSideCoordinator:
                     resource=f"motor:{position_key}"
                 ),
             )
-            self._single_position_data[position_key] = target_angle
-            for callback_fn in list(self._single_position_callbacks):
-                callback_fn(dict(self._single_position_data))
             return
 
         def bind(fn: CommandFn) -> CommandFn:
@@ -1411,6 +1419,14 @@ class SingleAddressPairedCoordinator(PairedBedCoordinator):
                 (SIDE_RIGHT, self._single_both),
             ]  # type: ignore[list-item]
         return super()._targets_for(side)
+
+    def _set_native_both_position_state(
+        self, position_key: str, target_angle: float
+    ) -> None:
+        """Publish an executed native-both direct target to both side views."""
+        for child in self._children.values():
+            if isinstance(child, SingleAddressSideCoordinator):
+                child._set_position_state(position_key, target_angle)
 
     async def _run_both_concurrent(
         self,

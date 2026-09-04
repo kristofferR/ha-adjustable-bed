@@ -223,11 +223,16 @@ directly; an explicit GATT read remains the fallback when that notification
 stream is stale. This keeps the motor moving continuously while retaining safe
 behavior on variants with missing feedback.
 
-Live testing found one lower physical endpoint where the back actuator stopped
-at a reported 1.0° to 1.1° when 0° was requested. A back seek to exactly 0°
-therefore completes after two consecutive stalled checks at or below 1.1°, with
-at most one retry after the first confirmed stall. Mid-range stalls continue to
+Live testing found lower physical endpoints where an actuator stopped at a
+reported 0.2° to 1.1° when 0° was requested. A seek to exactly 0° therefore
+skips the downward coast compensation (the frame cannot overshoot its end stop)
+and completes after two consecutive stalled checks at or below 1.1°, with at
+most one retry after the first confirmed stall. Mid-range stalls continue to
 retry normally.
+
+An actuator resting just below its learned zero reports a signed extension of
+-1 or -2 (`0xFFFF`/`0xFFFE`). Small negatives decode as 0°; larger negatives
+are still discarded as invalid.
 
 Upper endpoints retain the normal tolerance. No upper-endpoint exception is
 enabled without supporting evidence.

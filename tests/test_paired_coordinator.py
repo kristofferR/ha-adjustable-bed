@@ -31,6 +31,7 @@ from custom_components.adjustable_bed.command_scheduler import (
     current_command_context,
 )
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_KAIDI,
     BED_TYPE_LINAK,
     BED_TYPE_OCTO,
     BED_TYPE_OKIN_CB24,
@@ -1126,11 +1127,41 @@ class RecordingLogicalController:
         return BoundController()
 
 
+class DirectPositionController:
+    """Minimal side-bindable direct-position controller."""
+
+    supports_direct_position_control = True
+
+    def __init__(self, _coordinator) -> None:
+        self.targets: list[tuple[str, str, int]] = []
+        self.stop_sides: list[str] = []
+
+    def bind_side(self, side: str):
+        owner = self
+
+        class BoundController:
+            supports_direct_position_control = True
+
+            @staticmethod
+            def angle_to_native_position(_motor: str, angle: float) -> int:
+                return round(angle)
+
+            @staticmethod
+            async def set_motor_position(motor: str, position: int) -> None:
+                owner.targets.append((side, motor, position))
+
+            @staticmethod
+            async def stop_all() -> None:
+                owner.stop_sides.append(side)
+
+        return BoundController()
+
+
 class ScheduledSingleAddressInner(SingleAddressInner):
     """Single physical coordinator double backed by the production scheduler."""
 
-    def __init__(self) -> None:
-        super().__init__(RecordingLogicalController)
+    def __init__(self, controller_type=RecordingLogicalController) -> None:
+        super().__init__(controller_type)
         self.scheduler = DeviceCommandScheduler("single-address")
         self.cancel_requests = 0
 
@@ -1227,20 +1258,24 @@ class TestSingleAddressCoordinator:
         inner.bed_type = bed_type
         return SingleAddressPairedCoordinator(None, entry, inner)
 
-    def _scheduled_coordinator(self):
+    def _scheduled_coordinator(
+        self,
+        bed_type=BED_TYPE_SLEEP_NUMBER,
+        controller_type=RecordingLogicalController,
+    ):
         entry = SimpleNamespace(
             data={
                 CONF_PAIR_ID: "pair_single_scheduled",
                 "name": "Single",
-                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER,
+                CONF_BED_TYPE: bed_type,
             },
             entry_id="single_address_scheduled",
             async_create_background_task=lambda _hass, coro, **_kwargs: asyncio.create_task(
                 coro
             ),
         )
-        inner = ScheduledSingleAddressInner()
-        inner.bed_type = BED_TYPE_SLEEP_NUMBER
+        inner = ScheduledSingleAddressInner(controller_type)
+        inner.bed_type = bed_type
         return SingleAddressPairedCoordinator(None, entry, inner), inner
 
     async def test_sbi_uses_native_side_and_both_packets(self):
@@ -1268,6 +1303,81 @@ class TestSingleAddressCoordinator:
         await coordinator.async_execute_controller_command(record, side=SIDE_BOTH)
 
         assert sides == [SIDE_LEFT, SIDE_RIGHT]
+
+    async def test_native_both_direct_seek_updates_both_child_position_views(self):
+        coordinator = self._coordinator(BED_TYPE_KAIDI, DirectPositionController)
+        left = coordinator.children[SIDE_LEFT]
+        right = coordinator.children[SIDE_RIGHT]
+        left_updates = []
+        right_updates = []
+        left.register_position_callback(left_updates.append)
+        right.register_position_callback(right_updates.append)
+
+        move = AsyncMock()
+        await coordinator.async_seek_position(
+            "back", 42, move, move, move, side=SIDE_BOTH
+        )
+
+        assert coordinator._single_inner.controller.targets == [
+            (SIDE_BOTH, "back", 42)
+        ]
+        assert left.position_data == {"back": 42}
+        assert right.position_data == {"back": 42}
+        assert left_updates == [{"back": 42}]
+        assert right_updates == [{"back": 42}]
+
+    async def test_invalidated_native_both_direct_seek_does_not_publish_target(self):
+        coordinator, inner = self._scheduled_coordinator(
+            BED_TYPE_KAIDI, DirectPositionController
+        )
+        left = coordinator.children[SIDE_LEFT]
+        right = coordinator.children[SIDE_RIGHT]
+        left_updates = []
+        right_updates = []
+        left.register_position_callback(left_updates.append)
+        right.register_position_callback(right_updates.append)
+        blocker_started = asyncio.Event()
+        release_blocker = asyncio.Event()
+
+        async def block(_controller) -> None:
+            blocker_started.set()
+            await release_blocker.wait()
+
+        blocker = asyncio.create_task(
+            inner.async_execute_controller_command(
+                block, cancel_running=False, resource="massage"
+            )
+        )
+        await blocker_started.wait()
+        move = AsyncMock()
+        stale_seek = asyncio.create_task(
+            coordinator.async_seek_position(
+                "back", 41, move, move, move, side=SIDE_BOTH
+            )
+        )
+        while not inner.scheduler.has_pending:
+            await asyncio.sleep(0)
+
+        latest_seek = asyncio.create_task(
+            coordinator.async_seek_position(
+                "back", 42, move, move, move, side=SIDE_BOTH
+            )
+        )
+        await stale_seek
+
+        assert left.position_data == {}
+        assert right.position_data == {}
+        assert left_updates == []
+        assert right_updates == []
+
+        release_blocker.set()
+        await asyncio.gather(blocker, latest_seek)
+
+        assert inner.controller.targets == [(SIDE_BOTH, "back", 42)]
+        assert left.position_data == {"back": 42}
+        assert right.position_data == {"back": 42}
+        assert left_updates == [{"back": 42}]
+        assert right_updates == [{"back": 42}]
 
     async def test_shared_scheduler_keeps_same_axis_sides_independent(self):
         coordinator, _inner = self._scheduled_coordinator()

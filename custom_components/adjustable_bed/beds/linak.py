@@ -80,19 +80,15 @@ LINAK_DOWNWARD_STOP_LEAD_TIME_S = 0.4
 LINAK_MAX_DOWNWARD_STOP_LEAD_DEGREES = 1.5
 LINAK_LOWER_ENDPOINT_MAX_ANGLE_DEGREES = 1.1
 LINAK_LOWER_ENDPOINT_STALL_CONFIRMATIONS = 2
+LINAK_MIN_OBSERVED_EXTENSION_COUNT = -2
 LINAK_CONTROLLER_STATE_SENSOR_ENTITY_KEYS = frozenset(
     {
         "linak_protocol_error",
         "linak_alarm_status",
-        *(
-            f"linak_{axis}_reported_speed"
-            for axis in ("base", "feet", "head", "legs", "back")
-        ),
+        *(f"linak_{axis}_reported_speed" for axis in ("base", "feet", "head", "legs", "back")),
     }
 )
-LINAK_CONTROLLER_STATE_BINARY_SENSOR_ENTITY_KEYS = frozenset(
-    {"linak_position_feedback_fault"}
-)
+LINAK_CONTROLLER_STATE_BINARY_SENSOR_ENTITY_KEYS = frozenset({"linak_position_feedback_fault"})
 LINAK_MEMORY_RECALL_DURATION_S = 30
 LINAK_PERFORMANCE_HOLD_INTERVAL_MS = 300
 LINAK_BED_CONTROL_HOLD_INTERVAL_MS = 100
@@ -130,10 +126,9 @@ class LinakPositionSeekPolicy(PositionSeekPolicy):
 
     @staticmethod
     def _is_observed_lower_endpoint(sample: SeekSample) -> bool:
-        """Return whether a sample is inside the evidence-backed endpoint scope."""
+        """Return whether a sample sits on the lower travel limit of a 0° seek."""
         return (
-            sample.position_key == "back"
-            and sample.target == 0.0
+            sample.target == 0.0
             and not sample.moving_up
             and 0.0 <= sample.current <= LINAK_LOWER_ENDPOINT_MAX_ANGLE_DEGREES
         )
@@ -155,6 +150,10 @@ class LinakPositionSeekPolicy(PositionSeekPolicy):
             return True
 
         if sample.moving_up or sample.current <= sample.target:
+            return False
+        # A 0° seek cannot overshoot: the frame bottoms out on its end stop, so
+        # releasing early only leaves it sitting a degree above flat.
+        if sample.target <= 0.0:
             return False
         controller = self._controller
         if not isinstance(controller, LinakController):
@@ -1437,6 +1436,28 @@ class LinakController(BedController):
 
         self._publish_reference_state(source_name, reference)
         raw_position = reference.raw_extension
+
+        # The extension is a signed 16-bit count. An actuator resting a count or
+        # two below its learned zero reports 0xFFFE/0xFFFF; discarding those left
+        # the axis with no current-session sample, so every seek on it failed.
+        # Only the observed -1/-2 sentinels are known to mean fully down.
+        if raw_position >= 0x8000:
+            signed_position = raw_position - 0x10000
+            if signed_position < LINAK_MIN_OBSERVED_EXTENSION_COUNT:
+                _LOGGER.debug(
+                    "Ignoring invalid position data for %s: raw=%d is %d below zero",
+                    source_name,
+                    raw_position,
+                    -signed_position,
+                )
+                return None
+            _LOGGER.debug(
+                "Position update [%s]: raw=%d (%d below zero), angle=0.0°",
+                source_name,
+                raw_position,
+                -signed_position,
+            )
+            return 0.0
 
         if raw_position > max_position * 1.1:
             _LOGGER.debug(

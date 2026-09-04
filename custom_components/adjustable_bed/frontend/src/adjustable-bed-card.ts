@@ -739,10 +739,8 @@ export class AdjustableBedCard extends LitElement {
 
   private _motors(bed: BedEntities): typeof nothing | TemplateResult {
     const motors = bed.motors.filter((m) => m.cover || m.up || m.down);
-    // Beds with direct target numbers (and no cover) get a settable row instead.
-    const positionRows = bed.motors.filter(
-      (m) => !m.cover && !m.up && !m.down && m.position,
-    );
+    // Keep target numbers settable even when the same motor has movement controls.
+    const positionRows = bed.motors.filter((m) => m.position);
     if (
       motors.length === 0 &&
       positionRows.length === 0 &&

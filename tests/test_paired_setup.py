@@ -2486,6 +2486,247 @@ class TestSideServiceRouting:
         assert _combined_motor_buttons_for(coord, [left, unknown]) == []
 
 
+class TestCombinedPositionSliders:
+    """The paired parent device gets 'both sides' position sliders."""
+
+    @staticmethod
+    def _side(specs, *, capability=True, disable_angle_sensing=False, position=None):
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
+
+        controller = (
+            SimpleNamespace(
+                position_number_specs=specs,
+                supports_direct_position_control=False,
+            )
+            if capability
+            else None
+        )
+        return SimpleNamespace(
+            capability_controller=controller,
+            disable_angle_sensing=disable_angle_sensing,
+            entry=SimpleNamespace(data={CONF_BED_TYPE: BED_TYPE_LINAK}),
+            position_data={} if position is None else {"back": position},
+            register_position_callback=MagicMock(return_value=MagicMock()),
+        )
+
+    def test_builder_intersects_side_specs_and_needs_both_capability_sources(self):
+        from unittest.mock import MagicMock
+
+        from custom_components.adjustable_bed.beds.base import build_position_number_spec
+        from custom_components.adjustable_bed.number import (
+            _combined_position_entities_for,
+        )
+
+        back = build_position_number_spec("back", max_value=68, unit="°")
+        right_back = build_position_number_spec("back", max_value=55, unit="°")
+        legs = build_position_number_spec("legs", max_value=45, unit="°")
+        head = build_position_number_spec("head", max_value=68, unit="°")
+        coord = MagicMock(spec=PairedBedCoordinator)
+        coord.entity_unique_id.side_effect = lambda key: f"pair_x_{key}"
+        coord.device_info = {}
+
+        left = self._side((back, legs, head))
+        right = self._side((right_back, legs))
+        entities = _combined_position_entities_for(coord, [left, right])
+        assert [entity.unique_id for entity in entities] == [
+            "pair_x_back_position_both",
+            "pair_x_legs_position_both",
+        ]
+        # Separate-address pairs reuse the plain translation key; the parent
+        # device name keeps the entity distinct from the per-side sliders.
+        assert entities[0].translation_key == "back_position"
+        assert entities[0].native_max_value == 55
+
+        incompatible_back = build_position_number_spec(
+            "back", max_value=100, unit="%"
+        )
+        assert _combined_position_entities_for(
+            coord, [left, self._side((incompatible_back,))]
+        ) == []
+
+        # An unknown side could have a different layout: build nothing yet.
+        assert (
+            _combined_position_entities_for(coord, [left, self._side((), capability=False)]) == []
+        )
+        # A side with angle sensing disabled cannot seek, so nothing is common.
+        assert (
+            _combined_position_entities_for(
+                coord, [left, self._side((back,), disable_angle_sensing=True)]
+            )
+            == []
+        )
+
+    async def test_slider_reports_mean_and_seeks_both_sides(self):
+        from types import SimpleNamespace
+        from unittest.mock import AsyncMock, MagicMock
+
+        from custom_components.adjustable_bed.beds.base import build_position_number_spec
+        from custom_components.adjustable_bed.number import (
+            PairedBedCombinedPositionNumber,
+            _build_position_description,
+        )
+
+        back = build_position_number_spec("back", max_value=68, unit="°")
+        left = self._side((back,), position=20.0)
+        right = self._side((back,), position=30.0)
+        coord = MagicMock(spec=PairedBedCoordinator)
+        coord.entity_unique_id.side_effect = lambda key: f"pair_x_{key}"
+        coord.device_info = {}
+        coord.name = "Master Bed"
+        coord.children = {SIDE_LEFT: left, SIDE_RIGHT: right}
+        coord.async_seek_position = AsyncMock()
+
+        entity = PairedBedCombinedPositionNumber(coord, _build_position_description(back))
+        assert entity.native_value == 25.0
+        right.position_data.clear()
+        assert entity.native_value == 20.0
+        left.position_data.clear()
+        assert entity.native_value is None
+
+        await entity.async_set_native_value(40)
+        coord.async_seek_position.assert_awaited_once()
+        kwargs = coord.async_seek_position.await_args.kwargs
+        assert kwargs["side"] == SIDE_BOTH
+        assert kwargs["position_key"] == "back"
+        assert kwargs["target_angle"] == 40
+        assert kwargs["move_up_fn"] is back.open_fn
+        assert kwargs["move_stop_fn"] is back.stop_fn
+
+        single = SingleAddressPairedCoordinator.__new__(SingleAddressPairedCoordinator)
+        single._single_inner = SimpleNamespace(
+            address="AA:BB:CC:DD:EE:50", device_info={}
+        )
+        single_entity = PairedBedCombinedPositionNumber(
+            single, _build_position_description(back)
+        )
+        assert single_entity.translation_key == "back_position_both"
+        assert single_entity.extra_state_attributes == {"bed_side": SIDE_BOTH}
+
+    async def test_stale_cleanup_only_removes_combined_position_numbers(
+        self, hass: HomeAssistant
+    ):
+        from unittest.mock import MagicMock
+
+        from custom_components.adjustable_bed.beds.base import build_position_number_spec
+        from custom_components.adjustable_bed.number import (
+            _async_remove_stale_combined_number_entities,
+            _combined_position_entities_for,
+        )
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Master Bed",
+            data=_paired_entry_data(),
+            unique_id=PAIR_ID,
+            entry_id="combined_position_cleanup",
+            version=4,
+        )
+        entry.add_to_hass(hass)
+        coordinator = MagicMock(spec=PairedBedCoordinator)
+        coordinator.entry = entry
+        coordinator.entity_unique_id.side_effect = lambda key: f"{PAIR_ID}_{key}"
+        coordinator.device_info = {}
+
+        back = build_position_number_spec("back", max_value=68, unit="°")
+        children = [self._side((back,)), self._side((back,))]
+        entities = _combined_position_entities_for(coordinator, children)
+
+        registry = er.async_get(hass)
+        stale_position = registry.async_get_or_create(
+            "number",
+            DOMAIN,
+            f"{PAIR_ID}_lumbar_position_both",
+            config_entry=entry,
+            translation_key="lumbar_position",
+        )
+        unrelated = registry.async_get_or_create(
+            "number",
+            DOMAIN,
+            f"{PAIR_ID}_sleep_number_setting_both",
+            config_entry=entry,
+            translation_key="sleep_number_setting_both",
+        )
+        child_position = registry.async_get_or_create(
+            "number",
+            DOMAIN,
+            f"{LEFT_ADDR}_lumbar_position",
+            config_entry=entry,
+            translation_key="lumbar_position",
+        )
+
+        _async_remove_stale_combined_number_entities(
+            hass, coordinator, children, entities
+        )
+
+        assert registry.async_get(stale_position.entity_id) is None
+        assert registry.async_get(unrelated.entity_id) is not None
+        assert registry.async_get(child_position.entity_id) is not None
+
+    async def test_parent_device_gets_position_sliders_when_sides_report_angles(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        from unittest.mock import PropertyMock
+
+        from custom_components.adjustable_bed.beds.base import build_position_number_spec
+        from custom_components.adjustable_bed.beds.linak import LinakController
+
+        data = _paired_entry_data()
+        for child in data[CONF_PAIR_CHILDREN]:
+            child[CONF_DISABLE_ANGLE_SENSING] = False
+        entry = MockConfigEntry(
+            domain=DOMAIN, title="Master Bed", data=data, unique_id=PAIR_ID, version=4
+        )
+        entry.add_to_hass(hass)
+        # The mocked link discovers no Linak actuator mask, so declare the axes a
+        # real advanced frame would report.
+        specs = (
+            build_position_number_spec("back", max_value=68, unit="°"),
+            build_position_number_spec("legs", max_value=45, unit="°"),
+        )
+        with patch.object(
+            LinakController, "position_number_specs", new_callable=PropertyMock, return_value=specs
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        registry = er.async_get(hass)
+        parent = _device_for_entry_and_identifier(
+            dr.async_get(hass), entry.entry_id, (DOMAIN, PAIR_ID)
+        )
+        assert parent is not None
+        both_numbers = {
+            row.unique_id: row
+            for row in er.async_entries_for_config_entry(registry, entry.entry_id)
+            if row.domain == "number" and row.unique_id.endswith("_both")
+        }
+        assert set(both_numbers) == {
+            f"{PAIR_ID}_back_position_both",
+            f"{PAIR_ID}_legs_position_both",
+        }
+        assert all(row.device_id == parent.id for row in both_numbers.values())
+        state = hass.states.get(both_numbers[f"{PAIR_ID}_back_position_both"].entity_id)
+        assert state is not None
+        assert state.name == "Master Bed Back Position"
+        # The per-side sliders still live on the children.
+        assert registry.async_get_entity_id("number", DOMAIN, f"{LEFT_ADDR}_back_position")
+
+    async def test_no_combined_sliders_without_angle_sensing(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        entry = _paired_entry(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        rows = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
+        assert not any(row.domain == "number" and row.unique_id.endswith("_both") for row in rows)
+
+
 class TestOfflineSideEntities:
     """Phase 2.1: a side offline at setup still gets its per-side entities,
     built from a client-free 'capability' controller minted from config, so a
@@ -2731,9 +2972,7 @@ class TestOfflineSafeBedTypes:
         await left.async_prime_offline_controller()
         assert left.capability_controller is not None, bed_type
 
-    async def test_solace_offline_profile_uses_observed_ble_name(
-        self, hass: HomeAssistant
-    ) -> None:
+    async def test_solace_offline_profile_uses_observed_ble_name(self, hass: HomeAssistant) -> None:
         data = _paired_entry_data()
         data[CONF_BED_TYPE] = BED_TYPE_SOLACE
         for child in data[CONF_PAIR_CHILDREN]:
@@ -2836,9 +3075,7 @@ class TestOfflineSafeBedTypes:
                 assert await left.async_connect() is False
                 assert await left.async_pair_now() is False
                 client.is_connected = True
-                client.disconnect.side_effect = lambda: setattr(
-                    client, "is_connected", False
-                )
+                client.disconnect.side_effect = lambda: setattr(client, "is_connected", False)
                 async with right.async_command_operation_guard():
                     await left.async_disconnect()
                     await asyncio.sleep(0)

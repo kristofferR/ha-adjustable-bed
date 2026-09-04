@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable, Coroutine
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.components.number import (
@@ -27,11 +27,16 @@ from .const import (
     CONF_HAS_MASSAGE,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
+    SIDE_BOTH,
     bed_type_has_position_feedback,
 )
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
-from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
+from .paired_coordinator import (
+    PairedBedCoordinator,
+    PairedSideProxy,
+    SingleAddressPairedCoordinator,
+)
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -269,6 +274,7 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id]
     if isinstance(coordinator, PairedBedCoordinator):
         paired_entities: list[NumberEntity] = []
+        children = list(coordinator.children.values())
         for side, child in coordinator.children.items():
             paired_entities.extend(
                 _number_entities_for(
@@ -279,6 +285,10 @@ async def async_setup_entry(
                     ),
                 )
             )
+        # Combined sliders on the parent device drive both sides to one target.
+        # They read the raw children's positions and seek via the parent (side=both).
+        paired_entities.extend(_combined_position_entities_for(coordinator, children))
+        _async_remove_stale_combined_number_entities(hass, coordinator, children, paired_entities)
         if paired_entities:
             async_add_entities(paired_entities)
         return
@@ -325,18 +335,11 @@ def _number_entities_for(
 
     # Set up position number entities (only for beds with position feedback)
     if not coordinator.disable_angle_sensing:
-        protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
-        has_position_feedback = bed_type_has_position_feedback(bed_type, protocol_variant)
-
-        if controller is not None and (
-            has_position_feedback or controller.supports_direct_position_control
-        ):
-            # The controller owns the layout: which axes exist, whether they are
-            # scaled in degrees or percent, and which position_data key each one
-            # reads. See BedController.position_number_specs.
+        specs = _position_number_specs(coordinator)
+        if specs:
             entities.extend(
                 AdjustableBedPositionNumber(coordinator, _build_position_description(spec))
-                for spec in controller.position_number_specs
+                for spec in specs
             )
         elif controller is None:
             # The layout comes from the controller, so a bed that is disconnected
@@ -351,7 +354,7 @@ def _number_entities_for(
             _LOGGER.debug(
                 "Bed type %s (variant=%s) does not support position feedback, skipping position number entities",
                 bed_type,
-                protocol_variant,
+                entry.data.get(CONF_PROTOCOL_VARIANT),
             )
 
     # Set up massage intensity number entities (only for beds with massage and direct intensity control)
@@ -452,6 +455,103 @@ def _number_entities_for(
         )
 
     return entities
+
+
+def _position_number_specs(
+    coordinator: AdjustableBedCoordinator,
+) -> tuple[PositionNumberSpec, ...]:
+    """Return the position sliders one bed (or paired side) can seek, else ().
+
+    The controller owns the layout: which axes exist, whether they are scaled in
+    degrees or percent, and which position_data key each one reads. See
+    BedController.position_number_specs.
+    """
+    controller = coordinator.capability_controller
+    if coordinator.disable_angle_sensing or controller is None:
+        return ()
+    entry = coordinator.entry
+    has_position_feedback = bed_type_has_position_feedback(
+        entry.data.get(CONF_BED_TYPE), entry.data.get(CONF_PROTOCOL_VARIANT)
+    )
+    if not (has_position_feedback or controller.supports_direct_position_control):
+        return ()
+    return tuple(controller.position_number_specs)
+
+
+def _combined_position_entities_for(
+    coordinator: PairedBedCoordinator,
+    children: list[AdjustableBedCoordinator],
+) -> list[NumberEntity]:
+    """Build the parent device's 'both sides' position sliders.
+
+    Only axes EVERY side can seek are exposed. A side without a capability
+    source is unknown, not absent, so no combined slider is built until both
+    sides are known (same rule as the combined buttons).
+    """
+    if not children or any(child.capability_controller is None for child in children):
+        return []
+    specs_per_side = [_position_number_specs(child) for child in children]
+    specs_by_side = [{spec.key: spec for spec in specs} for specs in specs_per_side]
+    common = set.intersection(*(set(specs) for specs in specs_by_side))
+    entities: list[NumberEntity] = []
+    for spec in specs_per_side[0]:
+        if spec.key not in common:
+            continue
+        matching_specs = [side_specs[spec.key] for side_specs in specs_by_side]
+        if any(
+            candidate.position_key != spec.position_key
+            or candidate.native_unit_of_measurement != spec.native_unit_of_measurement
+            for candidate in matching_specs[1:]
+        ):
+            continue
+        reconciled = replace(
+            spec,
+            native_max_value=min(candidate.native_max_value for candidate in matching_specs),
+        )
+        entities.append(
+            PairedBedCombinedPositionNumber(
+                coordinator, _build_position_description(reconciled)
+            )
+        )
+    return entities
+
+
+def _async_remove_stale_combined_number_entities(
+    hass: HomeAssistant,
+    coordinator: PairedBedCoordinator,
+    children: list[AdjustableBedCoordinator],
+    entities: list[NumberEntity],
+) -> None:
+    """Remove pair-level sliders no longer supported by both known sides."""
+    if any(child.capability_controller is None for child in children):
+        return
+    desired_unique_ids = {
+        unique_id
+        for entity in entities
+        if (unique_id := entity.unique_id) is not None and unique_id.endswith("_both")
+    }
+    candidate_keys = {description.key for description in NUMBER_DESCRIPTIONS}
+    candidate_keys.update(
+        spec.key for child in children for spec in _position_number_specs(child)
+    )
+    candidate_unique_ids = {
+        coordinator.entity_unique_id(f"{key}_both") for key in candidate_keys
+    }
+    registry = er.async_get(hass)
+    for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
+        translation_key = (row.translation_key or "").removesuffix("_both")
+        if (
+            row.domain == "number"
+            and (
+                row.unique_id in candidate_unique_ids
+                or (
+                    row.unique_id.endswith("_both")
+                    and translation_key.endswith("_position")
+                )
+            )
+            and row.unique_id not in desired_unique_ids
+        ):
+            registry.async_remove(row.entity_id)
 
 
 def _async_remove_stale_sleep_number_entity(
@@ -572,6 +672,94 @@ class AdjustableBedPositionNumber(AdjustableBedEntity, NumberEntity):
             move_up_fn=self.entity_description.move_up_fn,
             move_down_fn=self.entity_description.move_down_fn,
             move_stop_fn=self.entity_description.move_stop_fn,
+        )
+
+
+class PairedBedCombinedPositionNumber(NumberEntity):
+    """A 'both sides' position slider on the paired parent device.
+
+    Reports the mean of the sides' positions, so the slider sits between them
+    while they differ. Setting it seeks both sides to the same target through
+    the parent (side=both), which takes the pair command lock.
+    """
+
+    _attr_has_entity_name = True
+    entity_description: AdjustableBedNumberEntityDescription
+
+    def __init__(
+        self,
+        coordinator: PairedBedCoordinator,
+        description: AdjustableBedNumberEntityDescription,
+    ) -> None:
+        """Initialize the combined position slider."""
+        self._coordinator = coordinator
+        self.entity_description = description
+        self._attr_unique_id = coordinator.entity_unique_id(f"{description.key}_both")
+        self._attr_device_info = coordinator.device_info
+        translation_key = description.translation_key or description.key
+        if isinstance(coordinator, SingleAddressPairedCoordinator):
+            self._attr_translation_key = f"{translation_key}_both"
+            self._attr_extra_state_attributes = {"bed_side": SIDE_BOTH}
+        else:
+            self._attr_translation_key = translation_key
+        self._unregister_callbacks: list[Callable[[], None]] = []
+
+    @property
+    def available(self) -> bool:
+        """Always available (the bed reconnects on demand)."""
+        return True
+
+    async def async_added_to_hass(self) -> None:
+        """Follow position updates from every side."""
+        await super().async_added_to_hass()
+        self._unregister_callbacks = [
+            child.register_position_callback(self._handle_position_update)
+            for child in self._coordinator.children.values()
+        ]
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Stop following position updates."""
+        for unregister in self._unregister_callbacks:
+            unregister()
+        self._unregister_callbacks = []
+        await super().async_will_remove_from_hass()
+
+    @callback
+    def _handle_position_update(self, _position_data: dict[str, float]) -> None:
+        """Handle a position update from either side."""
+        self.async_write_ha_state()
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the mean position of the sides that report one."""
+        max_angle = self.entity_description.max_angle
+        position_key = self.entity_description.position_key
+        positions = [
+            min(max_angle, max(0.0, float(position)))
+            for child in self._coordinator.children.values()
+            if (position := child.position_data.get(position_key)) is not None
+        ]
+        if not positions:
+            return None
+        return sum(positions) / len(positions)
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Seek both sides to the target position."""
+        description = self.entity_description
+        _LOGGER.info(
+            "Combined position set requested: %s to %.1f%s (paired bed: %s)",
+            description.key,
+            value,
+            description.native_unit_of_measurement or "°",
+            self._coordinator.name,
+        )
+        await self._coordinator.async_seek_position(
+            position_key=description.position_key,
+            target_angle=value,
+            move_up_fn=description.move_up_fn,
+            move_down_fn=description.move_down_fn,
+            move_stop_fn=description.move_stop_fn,
+            side=SIDE_BOTH,
         )
 
 
