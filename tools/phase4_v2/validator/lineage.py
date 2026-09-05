@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pathlib import PurePosixPath
 from typing import Literal, Never, cast
 
-LINEAGE_SCHEMA_REVISION = "phase4-v2-evidence-lineage-v4"
+LINEAGE_SCHEMA_REVISION = "phase4-v2-evidence-lineage-v5"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _REVISION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}$")
 _ROUTE = re.compile(r"^[a-z0-9][a-z0-9_.-]{0,99}$")
@@ -105,9 +105,11 @@ class AuthoritativeRootAnalysisAttestation:
     target_root_id: str
     target_occurrence_identity_sha256: str
     semantic_root_sha256: str
+    evidence_anchor_ids: tuple[str, ...]
 
-    def to_data(self) -> dict[str, str]:
+    def to_data(self) -> dict[str, object]:
         return {
+            "evidence_anchor_ids": list(self.evidence_anchor_ids),
             "semantic_root_sha256": self.semantic_root_sha256,
             "target_occurrence_identity_sha256": self.target_occurrence_identity_sha256,
             "target_root_id": self.target_root_id,
@@ -418,6 +420,7 @@ def _parse_authoritative_root_analyses(
             value,
             path=location,
             required={
+                "evidence_anchor_ids",
                 "semantic_root_sha256",
                 "target_occurrence_identity_sha256",
                 "target_root_id",
@@ -434,6 +437,9 @@ def _parse_authoritative_root_analyses(
                 ),
                 semantic_root_sha256=_expect_sha256(
                     value["semantic_root_sha256"], f"{location}.semantic_root_sha256"
+                ),
+                evidence_anchor_ids=_parse_anchor_ids(
+                    value["evidence_anchor_ids"], f"{location}.evidence_anchor_ids"
                 ),
             )
         )
@@ -454,13 +460,27 @@ def _parse_authoritative_root_analyses(
     return tuple(attestations)
 
 
+def _parse_anchor_ids(raw: object, path: str) -> tuple[str, ...]:
+    values = _expect_array(raw, path)
+    if not values or len(values) > _MAX_ROOT_ANALYSES_PER_MEMBER:
+        _fail("authoritative_root_anchor_set_invalid", path, "anchor set is empty or too large")
+    anchors = tuple(
+        _expect_string(value, f"{path}[{index}]", maximum=256) for index, value in enumerate(values)
+    )
+    if anchors != tuple(sorted(set(anchors))):
+        _fail(
+            "authoritative_root_anchor_set_not_canonical",
+            path,
+            "anchor IDs must be sorted and unique",
+        )
+    return anchors
+
+
 def _parse_package_local_domains(raw: object, path: str) -> tuple[str, ...]:
     values = _expect_array(raw, path)
     if len(values) > 256:
         _fail("package_local_domain_limit_exceeded", path, "domain count exceeds 256")
-    domains = tuple(
-        _expect_revision(item, f"{path}[{index}]") for index, item in enumerate(values)
-    )
+    domains = tuple(_expect_revision(item, f"{path}[{index}]") for index, item in enumerate(values))
     if len(set(domains)) != len(domains):
         _fail("duplicate_package_local_domain", path, "domains must be unique")
     if list(domains) != sorted(domains, key=lambda item: item.encode("utf-8")):
@@ -642,7 +662,7 @@ def _expect_route(raw: object, path: str) -> str:
 
 
 def _expect_success(raw: object, path: str) -> Literal["SUCCEEDED"]:
-    if raw != "SUCCEEDED":
+    if type(raw) is not str or raw != "SUCCEEDED":
         _fail("producer_not_successful", path, "producer outcome must be 'SUCCEEDED'")
     return raw
 

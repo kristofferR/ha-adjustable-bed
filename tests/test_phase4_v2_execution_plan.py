@@ -7,30 +7,40 @@ import json
 from collections.abc import Iterable
 from dataclasses import replace
 from typing import cast
+from unittest.mock import patch
 
 import pytest
 
+import tools.phase4_v2.equivalence.core as equivalence_core_module
+import tools.phase4_v2.equivalence.inventory as inventory_module
 import tools.phase4_v2.equivalence.plan as plan_module
+from tests.phase4_v2_authenticated_fixtures import (
+    authenticated_inventory,
+    authenticated_package_ref,
+)
 from tools.phase4_v2.equivalence import (
     EQUIVALENCE_SCHEMA_REVISION,
     EXACT_REUSE_PIPELINE_CAPABILITY,
+    FINAL_IR_SCHEMA_SHA256,
     LOCAL_ONLY_DOMAINS,
     PACKAGE_EXECUTION_PLAN_REVISION,
     PACKAGE_PIPELINE_CAPABILITY,
     PACKAGE_REPORT_REVISION,
     PACKAGE_REPORT_SCHEMA_SHA256,
     AcceptedTargetRootInventory,
+    AuthenticatedValidatorEnvelope,
     BlockedRootPlan,
     CapabilityPin,
     CompletionPin,
     EquivalenceError,
     ExactReusePins,
     ExactReuseRootPlan,
-    FrozenPackageRef,
     FullAnalysisRootPlan,
     PackageExecutionPlan,
+    PackageLocalEvidenceBinding,
     PackageLocalPlan,
     PackagePlanStatus,
+    PreparationPlanBinding,
     Route,
     SemanticRootAudit,
     TargetRootInventory,
@@ -51,11 +61,21 @@ from tools.phase4_v2.equivalence.core import (
     LedgerDecision,
     RoutingPins,
 )
+from tools.phase4_v2.equivalence.inventory import InventoryAuthenticationError
 from tools.phase4_v2.equivalence.plan import (
     PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
     SEMANTIC_ROOT_COMPLETION_REVISION,
     TARGET_ROOT_INVENTORY_REVISION,
     package_validation_receipt_completion,
+)
+from tools.phase4_v2.preflight.execution import (
+    CANDIDATE_CONTRACT_REVISION,
+    EXECUTION_PROFILE_REVISION,
+)
+from tools.phase4_v2.preflight.registry import TOOL_REGISTRY_SCHEMA
+from tools.phase4_v2.raw_source import (
+    AuthenticatedPackageLocalEvidence,
+    PackageLocalEvidenceReauthenticationInput,
 )
 from tools.phase4_v2.validator import (
     PACKAGE_BOUND_VALIDATION_PROFILE,
@@ -68,6 +88,8 @@ from tools.phase4_v2.validator.binding import (
     ArtifactIdentityAttestation,
     EvidenceAnchorAttestation,
     EvidenceMemberAttestation,
+    ValidatedRootEvidenceAttestation,
+    ValidatedRootEvidenceMember,
 )
 
 SHA_A = "a" * 64
@@ -79,18 +101,86 @@ SHA_F = "f" * 64
 SHA_0 = "0" * 64
 SHA_1 = "1" * 64
 SHA_2 = "2" * 64
+CLUSTER_ID = "cluster-synthetic"
 
-TARGET_PACKAGE_REF = FrozenPackageRef(
+TARGET_PACKAGE_REF, _VALIDATOR_ACTIVATION = authenticated_package_ref(
     package_name="org.example.target",
     version_code="17",
     artifact_digest=SHA_B,
     preflight_sha256=SHA_C,
-    validation_receipt_sha256=SHA_D,
 )
 TARGET_PACKAGE_REF_ID = TARGET_PACKAGE_REF.content_id
+_INVENTORY_ACTIVATION = ""
 
 
-def local_plan() -> PackageLocalPlan:
+@pytest.fixture(autouse=True)
+def _activate_test_authorities(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        equivalence_core_module,
+        "_read_protected_validator_pin",
+        lambda: _VALIDATOR_ACTIVATION,
+    )
+    monkeypatch.setattr(
+        inventory_module,
+        "_read_protected_inventory_pin",
+        lambda: _INVENTORY_ACTIVATION,
+    )
+
+
+def _local_attestations() -> tuple[
+    tuple[EvidenceMemberAttestation, ...], tuple[EvidenceAnchorAttestation, ...]
+]:
+    member = EvidenceMemberAttestation("evidence/local.txt", SHA_B, SHA_D)
+    anchors = tuple(
+        EvidenceAnchorAttestation(
+            f"local-{domain}",
+            SHA_B,
+            member.member,
+            member.sha256,
+            index,
+            index + 1,
+            f"/local/{domain}",
+            "utf8",
+            SHA_A,
+        )
+        for index, domain in enumerate(sorted(LOCAL_ONLY_DOMAINS))
+    )
+    return (member,), anchors
+
+
+def local_plan(
+    accepted: AcceptedTargetRootInventory | None = None,
+) -> PackageLocalPlan:
+    members, anchors = _local_attestations()
+    validator_evidence_sha256 = hashlib.sha256(
+        json.dumps(
+            {
+                "anchors": [item.to_dict() for item in anchors],
+                "members": [item.to_dict() for item in members],
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+    ).hexdigest()
+    producer = CapabilityPin("apktool", "phase4-v2-preparation-pipeline-v1", SHA_E)
+    evidence = PackageLocalEvidenceBinding(
+        package_ref_id=TARGET_PACKAGE_REF_ID,
+        raw_receipt_sha256=SHA_A,
+        raw_authority_sha256=SHA_B,
+        validation_receipt_sha256=SHA_C,
+        source_package_id=f"pkg:{SHA_D}",
+        validator_evidence_sha256=validator_evidence_sha256,
+        preparation_receipt_sha256=SHA_2,
+        target_inventory_receipt_sha256=(
+            hashlib.sha256(accepted.canonical_envelope).hexdigest()
+            if accepted is not None
+            else SHA_1
+        ),
+        mandatory_domains=tuple(sorted(LOCAL_ONLY_DOMAINS)),
+        evidence_member_ids=("local-member",),
+        evidence_anchor_ids=tuple(sorted(item.id for item in anchors)),
+        producer_capabilities=(producer,),
+    )
     return PackageLocalPlan(
         target_package_ref_id=TARGET_PACKAGE_REF_ID,
         package_name="org.example.target",
@@ -101,7 +191,65 @@ def local_plan() -> PackageLocalPlan:
         pipeline_capability=CapabilityPin(
             PACKAGE_PIPELINE_CAPABILITY, PACKAGE_EXECUTION_PLAN_REVISION, SHA_F
         ),
+        evidence_producer_capabilities=(producer,),
+        evidence=evidence,
     )
+
+
+def preparation_binding(local: PackageLocalPlan | None = None) -> PreparationPlanBinding:
+    package = local or local_plan()
+    capabilities = tuple(
+        sorted(
+            (
+                CapabilityPin(
+                    plan_module.PREPARATION_AUTHORITY_CAPABILITY,
+                    "phase4-v2-preparation-authority-v1",
+                    SHA_A,
+                ),
+                CapabilityPin(
+                    plan_module.PREPARATION_CANDIDATE_CAPABILITY,
+                    CANDIDATE_CONTRACT_REVISION,
+                    SHA_B,
+                ),
+                CapabilityPin(
+                    plan_module.PREPARATION_EXECUTION_CAPABILITY,
+                    EXECUTION_PROFILE_REVISION,
+                    SHA_C,
+                ),
+                CapabilityPin(
+                    plan_module.PREPARATION_REGISTRY_CAPABILITY,
+                    TOOL_REGISTRY_SCHEMA,
+                    SHA_D,
+                ),
+                CapabilityPin(
+                    plan_module.PREPARATION_PIPELINE_CAPABILITY,
+                    "phase4-v2-preparation-pipeline-v1",
+                    SHA_D,
+                ),
+            ),
+            key=lambda item: item.name,
+        )
+    )
+    result = object.__new__(PreparationPlanBinding)
+    values = {
+        "package_ref_id": package.target_package_ref_id,
+        "package_name": package.package_name,
+        "version_code": package.version_code,
+        "version_name": package.version_name,
+        "artifact_digest": package.target_artifact_digest,
+        "preflight_sha256": package.requirements_sha256,
+        "receipt_sha256": SHA_2,
+        "completion": CompletionPin(
+            plan_module.preparation_queue_unit_id(package.target_package_ref_id),
+            plan_module.PREPARATION_RECEIPT_REVISION,
+            SHA_2,
+        ),
+        "capabilities": capabilities,
+        "evidence_producer_capabilities": package.evidence_producer_capabilities,
+    }
+    for name, value in values.items():
+        object.__setattr__(result, name, value)
+    return result
 
 
 def accepted_inventory(
@@ -116,10 +264,11 @@ def accepted_inventory(
             )
         ),
     )
-    return AcceptedTargetRootInventory(
-        inventory,
-        CompletionPin(unit_id, TARGET_ROOT_INVENTORY_REVISION, inventory.content_id),
-    )
+    del unit_id
+    accepted, activation = authenticated_inventory(TARGET_PACKAGE_REF, inventory)
+    global _INVENTORY_ACTIVATION
+    _INVENTORY_ACTIVATION = activation
+    return accepted
 
 
 def semantic_audit(
@@ -129,12 +278,32 @@ def semantic_audit(
     semantic_root: str = SHA_0,
     unit_suffix: str | None = None,
     bind_unrelated_source: bool = False,
+    use_arbitrary_completion_ids: bool = False,
 ) -> SemanticRootAudit:
+    prerequisite_receipt = hashlib.sha256(
+        f"prerequisite:{unit_suffix or root_id}".encode()
+    ).hexdigest()
     extractor = ExtractorCapability(
         name="dex-root-inventory",
         implementation_sha256=SHA_A,
         configuration_sha256=SHA_B,
         capability_revision="dex-implementation-2026.08",
+    )
+    prerequisite_capabilities = tuple(
+        sorted(
+            (
+                CapabilityPin("phase4-v2-exact-reuse-authority", "authority-v1", SHA_B),
+                CapabilityPin(
+                    EXACT_REUSE_PIPELINE_CAPABILITY,
+                    EQUIVALENCE_SCHEMA_REVISION,
+                    SHA_F,
+                ),
+                CapabilityPin(
+                    "extractor:dex", "dex-implementation-2026.08", extractor.content_id
+                ),
+            ),
+            key=lambda item: item.name,
+        )
     )
     source = ApplicationRoot(
         package_ref_id=SHA_A,
@@ -159,9 +328,22 @@ def semantic_audit(
         pins=RoutingPins(),
     )
     completion_source = (
-        replace(source, occurrence_identity_sha256=SHA_D)
-        if bind_unrelated_source
-        else source
+        replace(source, occurrence_identity_sha256=SHA_D) if bind_unrelated_source else source
+    )
+    semantic_unit = (
+        "ordinary:semantic"
+        if use_arbitrary_completion_ids
+        else f"{plan_module.EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX}:{prerequisite_receipt}"
+    )
+    ledger_unit = (
+        "ordinary:ledger"
+        if use_arbitrary_completion_ids
+        else f"{plan_module.EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX}:{prerequisite_receipt}"
+    )
+    audit_unit = (
+        "ordinary:audit"
+        if use_arbitrary_completion_ids
+        else f"{plan_module.EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX}:{prerequisite_receipt}"
     )
     audit = build_semantic_root_audit(
         source_root=source,
@@ -172,14 +354,18 @@ def semantic_audit(
         inherited_semantic_root_completion=build_semantic_root_completion(
             source_root=completion_source,
             inherited_semantic_root_sha256=semantic_root,
-            parent_unit_id="semantic-root:source",
+            parent_unit_id=semantic_unit,
         ),
         target_inventory_completion=accepted.completion,
         ledger_decision_completion=CompletionPin(
-            f"ledger:{unit_suffix or 'target'}", LEDGER_DECISION_REVISION, decision.content_id
+            ledger_unit,
+            LEDGER_DECISION_REVISION,
+            decision.content_id,
         ),
         direct_semantic_audit_completion=CompletionPin(
-            f"audit:{unit_suffix or 'source'}", SEMANTIC_ROOT_COMPLETION_REVISION, SHA_1
+            audit_unit,
+            SEMANTIC_ROOT_COMPLETION_REVISION,
+            SHA_1,
         ),
         extractor_capability=CapabilityPin(
             "extractor:dex", "dex-implementation-2026.08", extractor.content_id
@@ -189,6 +375,8 @@ def semantic_audit(
             EQUIVALENCE_SCHEMA_REVISION,
             SHA_F,
         ),
+        exact_reuse_prerequisite_receipt_sha256=prerequisite_receipt,
+        exact_reuse_prerequisite_capabilities=prerequisite_capabilities,
     )
     return audit
 
@@ -229,10 +417,13 @@ def full_root(
 
 def mixed_plan() -> PackageExecutionPlan:
     accepted = accepted_inventory((SHA_C, SHA_D), (SHA_E, SHA_F))
+    local = local_plan(accepted)
     return build_package_execution_plan(
+        cluster_id=CLUSTER_ID,
         target_package_ref_id=TARGET_PACKAGE_REF_ID,
         target_package_ref=TARGET_PACKAGE_REF,
-        package_local=local_plan(),
+        package_local=local,
+        preparation=preparation_binding(local),
         accepted_target_inventory=accepted,
         root_plans=(
             exact_root(accepted),
@@ -243,6 +434,18 @@ def mixed_plan() -> PackageExecutionPlan:
 
 def receipt(*, bundle: str = SHA_D, plan: PackageExecutionPlan | None = None) -> ValidationReceipt:
     frozen_plan = freeze_package_execution_plan(plan or mixed_plan())
+    plan_data = json.loads(frozen_plan.canonical_bytes)
+    root_evidence = tuple(
+        ValidatedRootEvidenceAttestation(
+            item["target_root_id"],
+            item["target_occurrence_identity_sha256"],
+            SHA_0,
+            (ValidatedRootEvidenceMember("evidence/root.txt", SHA_D, ("root",)),),
+        )
+        for item in plan_data["root_plans"]
+        if item["route"] == "FULL_ANALYSIS"
+    )
+    local_members, local_anchors = _local_attestations()
     initial = ValidationReceipt(
         validator_revision=VALIDATOR_REVISION,
         accepted=True,
@@ -255,11 +458,11 @@ def receipt(*, bundle: str = SHA_D, plan: PackageExecutionPlan | None = None) ->
         dependency_digests=(
             ("corpus", SHA_A),
             ("evidence_lineage", SHA_F),
-            ("execution_plan", frozen_plan.digest),
+            ("execution_plan", frozen_plan.canonical_sha256),
             ("ir", SHA_B),
             ("preflight", SHA_C),
             ("report_schema", PACKAGE_REPORT_SCHEMA_SHA256),
-            ("schema", SHA_E),
+            ("schema", FINAL_IR_SCHEMA_SHA256),
         ),
         validation_profile=PACKAGE_BOUND_VALIDATION_PROFILE,
         contract_revision=PACKAGE_CONTRACT_REVISION,
@@ -269,6 +472,18 @@ def receipt(*, bundle: str = SHA_D, plan: PackageExecutionPlan | None = None) ->
             version_name="1.7",
             artifact_digest=SHA_B,
         ),
+        evidence_anchors_checked=1 + len(local_anchors),
+        validated_evidence_members=(
+            EvidenceMemberAttestation("evidence/root.txt", SHA_B, SHA_D),
+            *local_members,
+        ),
+        validated_evidence_anchors=(
+            EvidenceAnchorAttestation(
+                "root", SHA_B, "evidence/root.txt", SHA_D, 0, 1, "/root", "utf8", SHA_A
+            ),
+            *local_anchors,
+        ),
+        validated_root_evidence=root_evidence,
     )
     payload = json.dumps(
         initial.identity_payload(),
@@ -290,6 +505,31 @@ def identify_receipt(value: ValidationReceipt) -> ValidationReceipt:
         allow_nan=False,
     ).encode()
     return replace(unsigned, validation_receipt_sha256=hashlib.sha256(payload).hexdigest())
+
+
+def _build_validated_output(
+    *,
+    execution_plan: PackageExecutionPlan,
+    receipt: ValidationReceipt,
+    trusted_validation_receipt_sha256: str,
+) -> ValidatedPackageOutput:
+    """Exercise receipt logic with local authentication isolated to its own focused tests."""
+
+    with patch.object(
+        plan_module,
+        "bind_package_local_evidence",
+        return_value=execution_plan.package_local.evidence,
+    ):
+        return build_validated_package_output(
+            execution_plan=execution_plan,
+            receipt=receipt,
+            trusted_validation_receipt_sha256=trusted_validation_receipt_sha256,
+            package_local_evidence=cast(AuthenticatedPackageLocalEvidence, object()),
+            package_local_evidence_inputs=cast(
+                PackageLocalEvidenceReauthenticationInput, object()
+            ),
+            package_local_validator_envelope=cast(AuthenticatedValidatorEnvelope, object()),
+        )
 
 
 def test_queue_pins_have_exact_queue_shapes() -> None:
@@ -327,11 +567,8 @@ def test_inventory_is_authoritative_content_addressed_and_queue_accepted() -> No
     assert len(inventory.occurrence_root_set_sha256) == 64
     assert accepted.completion.digest == inventory.content_id
 
-    with pytest.raises(EquivalenceError, match="does not accept"):
-        AcceptedTargetRootInventory(
-            inventory,
-            CompletionPin("inventory:target", TARGET_ROOT_INVENTORY_REVISION, SHA_A),
-        )
+    with pytest.raises(EquivalenceError, match="authenticated inventory envelope"):
+        AcceptedTargetRootInventory()
 
 
 def test_exact_route_binds_every_queue_dependency_unambiguously() -> None:
@@ -340,19 +577,29 @@ def test_exact_route_binds_every_queue_dependency_unambiguously() -> None:
     data = root.reuse.to_data()
 
     assert root.route is Route.EXACT_REUSE
+    prerequisite_receipt = root.reuse.exact_reuse_prerequisite_receipt_sha256
     assert data["target_inventory_completion"] == accepted.completion.to_data()
     assert data["ledger_decision_completion"] == {
-        "parent_unit_id": "ledger:target",
+        "parent_unit_id": (
+            f"{plan_module.EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX}:"
+            f"{prerequisite_receipt}"
+        ),
         "revision": LEDGER_DECISION_REVISION,
         "digest": root.reuse.ledger_decision_completion.digest,
     }
     assert data["direct_semantic_audit_completion"] == {
-        "parent_unit_id": "audit:source",
+        "parent_unit_id": (
+            f"{plan_module.EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX}:"
+            f"{prerequisite_receipt}"
+        ),
         "revision": SEMANTIC_ROOT_COMPLETION_REVISION,
         "digest": SHA_1,
     }
     assert data["inherited_semantic_root_completion"] == {
-        "parent_unit_id": "semantic-root:source",
+        "parent_unit_id": (
+            f"{plan_module.EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX}:"
+            f"{prerequisite_receipt}"
+        ),
         "revision": SEMANTIC_ROOT_COMPLETION_REVISION,
         "digest": root.reuse.inherited_semantic_root_completion.digest,
     }
@@ -411,6 +658,14 @@ def test_semantic_root_requires_its_own_typed_completion() -> None:
         build_exact_reuse_root_plan(audit)
 
 
+def test_semantic_audit_rejects_arbitrary_generic_completion_units() -> None:
+    with pytest.raises(EquivalenceError, match="one signed prerequisite"):
+        semantic_audit(
+            accepted_inventory((SHA_C, SHA_D)),
+            use_arbitrary_completion_ids=True,
+        )
+
+
 def test_semantic_root_completion_binds_the_audited_source_root() -> None:
     accepted = accepted_inventory((SHA_C, SHA_D))
 
@@ -421,9 +676,11 @@ def test_semantic_root_completion_binds_the_audited_source_root() -> None:
 def test_freeze_deduplicates_shared_inherited_semantic_roots() -> None:
     accepted = accepted_inventory((SHA_C, SHA_D), (SHA_E, SHA_F))
     plan = build_package_execution_plan(
+        cluster_id=CLUSTER_ID,
         target_package_ref_id=TARGET_PACKAGE_REF_ID,
         target_package_ref=TARGET_PACKAGE_REF,
-        package_local=local_plan(),
+        package_local=local_plan(accepted),
+        preparation=preparation_binding(local_plan(accepted)),
         accepted_target_inventory=accepted,
         root_plans=(
             exact_root(accepted, unit_suffix="first"),
@@ -435,6 +692,13 @@ def test_freeze_deduplicates_shared_inherited_semantic_roots() -> None:
 
     assert frozen.inherited_semantic_roots == (SHA_0,)
 
+    forged = object.__new__(type(frozen))
+    for name in type(frozen).__dataclass_fields__:
+        object.__setattr__(forged, name, getattr(frozen, name))
+    object.__setattr__(forged, "inherited_semantic_roots", (SHA_A,))
+    with pytest.raises(EquivalenceError, match="derive from canonical root plans"):
+        plan_module.validate_frozen_package_execution_plan(forged)
+
 
 def test_full_route_has_no_reuse_pins_and_mixed_plan_is_allowed() -> None:
     plan = mixed_plan()
@@ -445,17 +709,67 @@ def test_full_route_has_no_reuse_pins_and_mixed_plan_is_allowed() -> None:
     assert plan.to_data()["authoritative_root_count"] == 2
     assert {item.name for item in plan.required_capabilities} == {
         PACKAGE_PIPELINE_CAPABILITY,
+        plan_module.PREPARATION_AUTHORITY_CAPABILITY,
+        plan_module.PREPARATION_CANDIDATE_CAPABILITY,
+        plan_module.PREPARATION_EXECUTION_CAPABILITY,
+        plan_module.PREPARATION_PIPELINE_CAPABILITY,
+        plan_module.PREPARATION_REGISTRY_CAPABILITY,
+        "apktool",
         EXACT_REUSE_PIPELINE_CAPABILITY,
         "extractor:dex",
         "analyzer:full",
+        "phase4-v2-target-inventory-authority",
+        "phase4-v2-exact-reuse-authority",
+        "test-inventory",
     }
     assert {item.parent_unit_id for item in plan.required_completions} == {
+        plan_module.preparation_queue_unit_id(TARGET_PACKAGE_REF_ID),
         f"package-validation-receipt:{TARGET_PACKAGE_REF_ID}",
-        "inventory:target",
-        "ledger:target",
-        "audit:source",
-        "semantic-root:source",
+        plan.accepted_target_inventory.completion.parent_unit_id,
+        f"{plan_module.EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX}:"
+        f"{next(item for item in plan.root_plans if type(item) is ExactReuseRootPlan).reuse.exact_reuse_prerequisite_receipt_sha256}",
+        f"{plan_module.EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX}:"
+        f"{next(item for item in plan.root_plans if type(item) is ExactReuseRootPlan).reuse.exact_reuse_prerequisite_receipt_sha256}",
+        f"{plan_module.EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX}:"
+        f"{next(item for item in plan.root_plans if type(item) is ExactReuseRootPlan).reuse.exact_reuse_prerequisite_receipt_sha256}",
     }
+
+
+def test_all_exact_reuse_retains_package_local_evidence_producer() -> None:
+    accepted = accepted_inventory((SHA_C, SHA_D))
+    plan = build_package_execution_plan(
+        cluster_id=CLUSTER_ID,
+        target_package_ref_id=TARGET_PACKAGE_REF_ID,
+        target_package_ref=TARGET_PACKAGE_REF,
+        package_local=local_plan(accepted),
+        preparation=preparation_binding(local_plan(accepted)),
+        accepted_target_inventory=accepted,
+        root_plans=(exact_root(accepted),),
+    )
+
+    assert plan.package_local.evidence_producer_capabilities == (
+        CapabilityPin("apktool", "phase4-v2-preparation-pipeline-v1", SHA_E),
+    )
+    assert plan.package_local.evidence_producer_capabilities[0] in (
+        plan.required_capabilities
+    )
+
+
+def test_package_local_evidence_producers_are_exact_and_preparation_bound() -> None:
+    producer = CapabilityPin("apktool", "phase4-v2-preparation-pipeline-v1", SHA_E)
+    with pytest.raises(EquivalenceError, match="non-empty"):
+        replace(local_plan(), evidence_producer_capabilities=())
+
+    hostile = local_plan()
+    object.__setattr__(hostile, "evidence_producer_capabilities", [producer])
+    with pytest.raises(EquivalenceError, match="bounded non-empty tuple"):
+        hostile.__post_init__()
+
+    with pytest.raises(EquivalenceError, match="plan identity or producers"):
+        replace(
+            local_plan(),
+            evidence_producer_capabilities=(replace(producer, digest=SHA_F),),
+        )
 
 
 def test_aggregate_queue_requirements_reject_conflicting_pins() -> None:
@@ -463,9 +777,11 @@ def test_aggregate_queue_requirements_reject_conflicting_pins() -> None:
     exact = exact_root(accepted)
     with pytest.raises(EquivalenceError, match="conflicting capability"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
-            package_local=local_plan(),
+            package_local=local_plan(accepted),
+            preparation=preparation_binding(local_plan(accepted)),
             accepted_target_inventory=accepted,
             root_plans=(
                 exact,
@@ -477,14 +793,22 @@ def test_aggregate_queue_requirements_reject_conflicting_pins() -> None:
         )
     with pytest.raises(EquivalenceError, match="conflicting completion"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
-            package_local=local_plan(),
+            package_local=local_plan(accepted),
+            preparation=preparation_binding(local_plan(accepted)),
             accepted_target_inventory=accepted,
             root_plans=(
                 exact,
                 full_root(
-                    dependencies=(CompletionPin("ledger:target", LEDGER_DECISION_REVISION, SHA_B),)
+                    dependencies=(
+                        CompletionPin(
+                            exact.reuse.ledger_decision_completion.parent_unit_id,
+                            LEDGER_DECISION_REVISION,
+                            SHA_B,
+                        ),
+                    )
                 ),
             ),
         )
@@ -497,46 +821,52 @@ def test_omitted_extra_or_transplanted_roots_are_rejected() -> None:
 
     with pytest.raises(EquivalenceError, match="authoritative occurrence/root set"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
-            package_local=local_plan(),
+            package_local=local_plan(accepted),
+            preparation=preparation_binding(local_plan(accepted)),
             accepted_target_inventory=accepted,
             root_plans=(exact,),
         )
     with pytest.raises(EquivalenceError, match="authoritative occurrence/root set"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
-            package_local=local_plan(),
+            package_local=local_plan(accepted),
+            preparation=preparation_binding(local_plan(accepted)),
             accepted_target_inventory=accepted,
             root_plans=(exact, full, full_root(SHA_2, SHA_B)),
         )
 
     other = accepted_inventory((SHA_C, SHA_D), (SHA_E, SHA_F), unit_id="inventory:other")
-    transplanted = exact_root(other)
-    with pytest.raises(EquivalenceError, match="transplanted"):
-        build_package_execution_plan(
-            target_package_ref_id=TARGET_PACKAGE_REF_ID,
-            target_package_ref=TARGET_PACKAGE_REF,
-            package_local=local_plan(),
-            accepted_target_inventory=accepted,
-            root_plans=(transplanted, full),
-        )
+    object.__setattr__(
+        other,
+        "completion",
+        CompletionPin(
+            "inventory:other", TARGET_ROOT_INVENTORY_REVISION, other.inventory.content_id
+        ),
+    )
+    with pytest.raises(InventoryAuthenticationError, match="authenticated provenance"):
+        exact_root(other)
 
 
 def test_any_blocked_root_blocks_package_and_output() -> None:
     accepted = accepted_inventory((SHA_C, SHA_D))
     plan = build_package_execution_plan(
+        cluster_id=CLUSTER_ID,
         target_package_ref_id=TARGET_PACKAGE_REF_ID,
         target_package_ref=TARGET_PACKAGE_REF,
-        package_local=local_plan(),
+        package_local=local_plan(accepted),
+        preparation=preparation_binding(local_plan(accepted)),
         accepted_target_inventory=accepted,
         root_plans=(BlockedRootPlan(SHA_C, SHA_D, ("missing_tool",)),),
     )
     assert not plan.executable
     assert plan.status is PackagePlanStatus.BLOCKED
     with pytest.raises(EquivalenceError, match="blocked package"):
-        build_validated_package_output(
+        _build_validated_output(
             execution_plan=plan,
             receipt=receipt(plan=plan),
             trusted_validation_receipt_sha256=cast(
@@ -550,9 +880,11 @@ def test_builder_canonicalizes_order_and_rejects_unbounded_iterable(
 ) -> None:
     plan = mixed_plan()
     reverse = build_package_execution_plan(
+        cluster_id=CLUSTER_ID,
         target_package_ref_id=TARGET_PACKAGE_REF_ID,
         target_package_ref=TARGET_PACKAGE_REF,
-        package_local=local_plan(),
+        package_local=local_plan(plan.accepted_target_inventory),
+        preparation=preparation_binding(local_plan(plan.accepted_target_inventory)),
         accepted_target_inventory=plan.accepted_target_inventory,
         root_plans=reversed(plan.root_plans),
     )
@@ -561,9 +893,11 @@ def test_builder_canonicalizes_order_and_rejects_unbounded_iterable(
     monkeypatch.setattr(plan_module, "_MAX_ROOTS", 2)
     with pytest.raises(EquivalenceError, match="exceeds 2 roots"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
-            package_local=local_plan(),
+            package_local=local_plan(plan.accepted_target_inventory),
+            preparation=preparation_binding(local_plan(plan.accepted_target_inventory)),
             accepted_target_inventory=plan.accepted_target_inventory,
             root_plans=(item for item in (*plan.root_plans, plan.root_plans[0])),
         )
@@ -574,20 +908,22 @@ def test_frozen_snapshot_is_stable_but_fresh_snapshot_observes_mutation() -> Non
     frozen = freeze_package_execution_plan(plan)
     assert frozen.canonical_bytes
     assert frozen.digest == plan.content_id
+    assert frozen.cluster_id == CLUSTER_ID
+    assert json.loads(frozen.canonical_bytes)["cluster_id"] == CLUSTER_ID
     assert frozen.root_count == 2
     assert frozen.required_capabilities == tuple(
         (item.name, item.revision, item.digest) for item in plan.required_capabilities
     )
     assert frozen.required_completions == tuple(
-        (item.parent_unit_id, item.revision, item.digest)
-        for item in plan.required_completions
+        (item.parent_unit_id, item.revision, item.digest) for item in plan.required_completions
     )
 
     object.__setattr__(plan.package_local, "version_name", "1.8")
-    fresh = freeze_package_execution_plan(plan)
-    assert frozen.digest != fresh.digest
+    with pytest.raises(EquivalenceError, match="preparation binding targets"):
+        freeze_package_execution_plan(plan)
     assert frozen.target_artifact_digest == SHA_B
 
+    object.__setattr__(plan.package_local, "version_name", "1.7")
     object.__setattr__(plan, "root_plans", list(plan.root_plans))
     with pytest.raises(EquivalenceError, match="exact supported concrete|requires at least"):
         freeze_package_execution_plan(plan)
@@ -599,28 +935,39 @@ def test_package_plan_requires_the_exact_frozen_package_identity() -> None:
 
     with pytest.raises(EquivalenceError, match="reproduce the target package ID"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=SHA_A,
             target_package_ref=TARGET_PACKAGE_REF,
-            package_local=local_plan(),
+            package_local=local_plan(accepted),
+            preparation=preparation_binding(local_plan(accepted)),
             accepted_target_inventory=accepted,
             root_plans=roots,
         )
 
-    other_artifact = replace(TARGET_PACKAGE_REF, artifact_digest=SHA_E)
+    other_artifact, _ = authenticated_package_ref(
+        package_name="org.example.target",
+        version_code="17",
+        artifact_digest=SHA_E,
+        preflight_sha256=SHA_C,
+    )
     with pytest.raises(EquivalenceError, match="frozen package artifact identity"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=other_artifact.content_id,
             target_package_ref=other_artifact,
-            package_local=local_plan(),
+            package_local=local_plan(accepted),
+            preparation=preparation_binding(local_plan(accepted)),
             accepted_target_inventory=accepted,
             root_plans=roots,
         )
 
     with pytest.raises(EquivalenceError, match="frozen package preflight"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
             package_local=replace(local_plan(), requirements_sha256=SHA_E),
+            preparation=preparation_binding(),
             accepted_target_inventory=accepted,
             root_plans=roots,
         )
@@ -643,6 +990,48 @@ def test_frozen_snapshot_is_factory_only_and_pins_are_structurally_immutable() -
     with pytest.raises(EquivalenceError, match="digest does not bind"):
         plan_module._validate_frozen_package_execution_plan(frozen)
 
+    clean = freeze_package_execution_plan(mixed_plan())
+    object.__setattr__(clean, "cluster_id", "cluster-transplanted")
+    with pytest.raises(EquivalenceError, match="cluster does not match"):
+        plan_module._validate_frozen_package_execution_plan(clean)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    (
+        ("missing", "package identity"),
+        ("extra", "package identity"),
+        ("wrong-type", "differ from preparation"),
+        ("wrong-route", "differ from preparation"),
+    ),
+)
+def test_frozen_package_local_evidence_producer_schema_is_exact(
+    mutation: str,
+    message: str,
+) -> None:
+    frozen = freeze_package_execution_plan(mixed_plan())
+    payload = json.loads(frozen.canonical_bytes)
+    local = payload["package_local"]
+    producers = local["evidence_producer_capabilities"]
+    if mutation == "missing":
+        del local["evidence_producer_capabilities"]
+    elif mutation == "extra":
+        local["unexpected_evidence_producer"] = producers[0]
+    elif mutation == "wrong-type":
+        local["evidence_producer_capabilities"] = producers[0]
+    else:
+        producers[0]["name"] = "transplanted-route"
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    object.__setattr__(frozen, "canonical_bytes", canonical)
+    object.__setattr__(
+        frozen,
+        "digest",
+        hashlib.sha256(b"phase4-v2:package-execution-plan\0" + canonical).hexdigest(),
+    )
+
+    with pytest.raises(EquivalenceError, match=message):
+        plan_module.validate_frozen_package_execution_plan(frozen)
+
 
 def test_queue_identifier_and_global_requirement_boundaries_are_exact() -> None:
     CapabilityPin("x" * 200, "v1", SHA_A)
@@ -661,12 +1050,12 @@ def test_queue_identifier_and_global_requirement_boundaries_are_exact() -> None:
             dependencies = tuple(
                 sorted(
                     (
-                    CompletionPin(
-                        f"dependency:{root_index}:{index}",
-                        "report-v1",
-                        hashlib.sha256(f"dependency:{root_index}:{index}".encode()).hexdigest(),
-                    )
-                    for index in range(count)
+                        CompletionPin(
+                            f"dependency:{root_index}:{index}",
+                            "report-v1",
+                            hashlib.sha256(f"dependency:{root_index}:{index}".encode()).hexdigest(),
+                        )
+                        for index in range(count)
                     ),
                     key=lambda item: item.parent_unit_id,
                 )
@@ -677,17 +1066,19 @@ def test_queue_identifier_and_global_requirement_boundaries_are_exact() -> None:
             root_index += 1
         accepted = accepted_inventory(*inventory_pairs)
         return build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
-            package_local=local_plan(),
+            package_local=local_plan(accepted),
+            preparation=preparation_binding(local_plan(accepted)),
             accepted_target_inventory=accepted,
             root_plans=roots,
         )
 
-    at_limit = large_plan(254)
+    at_limit = large_plan(253)
     assert len(freeze_package_execution_plan(at_limit).required_completions) == 256
     with pytest.raises(EquivalenceError, match="global completion requirement count"):
-        freeze_package_execution_plan(large_plan(255))
+        freeze_package_execution_plan(large_plan(254))
 
 
 def test_package_validation_receipt_is_an_external_queue_dependency() -> None:
@@ -752,14 +1143,16 @@ def test_global_requirement_limit_stops_consuming_new_pins(
 
 
 def test_nested_inputs_are_copied_and_content_id_survives_caller_mutation() -> None:
-    local = local_plan()
     accepted = accepted_inventory((SHA_C, SHA_D))
+    local = local_plan(accepted)
     root = exact_root(accepted)
     extractor_digest = root.reuse.extractor_capability.digest
     plan = build_package_execution_plan(
+        cluster_id=CLUSTER_ID,
         target_package_ref_id=TARGET_PACKAGE_REF_ID,
         target_package_ref=TARGET_PACKAGE_REF,
         package_local=local,
+        preparation=preparation_binding(local),
         accepted_target_inventory=accepted,
         root_plans=(root,),
     )
@@ -782,9 +1175,11 @@ def test_hostile_lists_are_not_normalized_into_trusted_tuples() -> None:
     accepted = accepted_inventory((SHA_C, SHA_D))
     with pytest.raises(EquivalenceError, match="exact mandatory tuple"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
             package_local=local,
+            preparation=preparation_binding(local),
             accepted_target_inventory=accepted,
             root_plans=(exact_root(accepted),),
         )
@@ -792,15 +1187,17 @@ def test_hostile_lists_are_not_normalized_into_trusted_tuples() -> None:
     inventory = accepted.inventory
     object.__setattr__(inventory, "occurrences", list(inventory.occurrences))
     with pytest.raises(EquivalenceError, match="must contain"):
-        AcceptedTargetRootInventory(inventory, accepted.completion)
+        inventory.__post_init__()
 
     blocked = BlockedRootPlan(SHA_C, SHA_D, ("blocked",))
     object.__setattr__(blocked, "blockers", ["blocked"])
     with pytest.raises(EquivalenceError, match="at least one blocker"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
-            package_local=local_plan(),
+            package_local=local_plan(accepted),
+            preparation=preparation_binding(local_plan(accepted)),
             accepted_target_inventory=accepted_inventory((SHA_C, SHA_D)),
             root_plans=(blocked,),
         )
@@ -825,9 +1222,11 @@ def test_subclasses_are_rejected_at_every_trust_boundary() -> None:
 
     with pytest.raises(EquivalenceError, match="exact supported concrete type"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
-            package_local=local_plan(),
+            package_local=local_plan(accepted),
+            preparation=preparation_binding(local_plan(accepted)),
             accepted_target_inventory=accepted,
             root_plans=(
                 RootSubclass(
@@ -842,7 +1241,7 @@ def test_subclasses_are_rejected_at_every_trust_boundary() -> None:
 
 def test_validated_output_can_only_come_from_current_clean_bound_receipt() -> None:
     plan = mixed_plan()
-    output = build_validated_package_output(
+    output = _build_validated_output(
         execution_plan=plan,
         receipt=receipt(plan=plan),
         trusted_validation_receipt_sha256=cast(str, receipt(plan=plan).validation_receipt_sha256),
@@ -852,6 +1251,8 @@ def test_validated_output_can_only_come_from_current_clean_bound_receipt() -> No
     assert output.target_report_sha256 == SHA_D
     assert output.target_report_revision == PACKAGE_REPORT_REVISION
     assert output.target_report_schema_sha256 == PACKAGE_REPORT_SCHEMA_SHA256
+    assert output.target_final_ir_json_sha256 == SHA_B
+    assert output.target_final_ir_schema_sha256 == FINAL_IR_SCHEMA_SHA256
     assert output.validation_receipt_sha256 == receipt(plan=plan).validation_receipt_sha256
     with pytest.raises(EquivalenceError, match="trusted receipt factory"):
         ValidatedPackageOutput()
@@ -880,7 +1281,7 @@ def test_validator_factory_fails_closed(change: str, value: object, message: str
     ).encode()
     changed = replace(changed, validation_receipt_sha256=hashlib.sha256(payload).hexdigest())
     with pytest.raises(EquivalenceError, match=message):
-        build_validated_package_output(
+        _build_validated_output(
             execution_plan=mixed_plan(),
             receipt=changed,
             trusted_validation_receipt_sha256=cast(str, changed.validation_receipt_sha256),
@@ -933,18 +1334,16 @@ def test_validator_receipt_deep_snapshot_rejects_scalar_subclasses() -> None:
     for hostile in hostile_receipts:
         signed = identify_receipt(hostile)
         with pytest.raises(EquivalenceError, match="exact bounded|string|integer"):
-            build_validated_package_output(
+            _build_validated_output(
                 execution_plan=mixed_plan(),
                 receipt=signed,
-                trusted_validation_receipt_sha256=cast(
-                    str, signed.validation_receipt_sha256
-                ),
+                trusted_validation_receipt_sha256=cast(str, signed.validation_receipt_sha256),
             )
 
 
 def test_validator_receipt_identity_and_artifact_substitution_are_rejected() -> None:
     with pytest.raises(EquivalenceError, match="external trust pin"):
-        build_validated_package_output(
+        _build_validated_output(
             execution_plan=mixed_plan(),
             receipt=replace(receipt(), validation_receipt_sha256=SHA_A),
             trusted_validation_receipt_sha256=SHA_A,
@@ -961,7 +1360,7 @@ def test_validator_receipt_must_bind_plan_and_current_report_schema(dependency: 
     )
     changed = identify_receipt(replace(original, dependency_digests=changed_dependencies))
     with pytest.raises(EquivalenceError, match="execution plan|package-report schema"):
-        build_validated_package_output(
+        _build_validated_output(
             execution_plan=plan,
             receipt=changed,
             trusted_validation_receipt_sha256=cast(str, changed.validation_receipt_sha256),
@@ -970,7 +1369,7 @@ def test_validator_receipt_must_bind_plan_and_current_report_schema(dependency: 
 
 def test_external_receipt_pin_and_artifact_substitution_are_rejected() -> None:
     with pytest.raises(EquivalenceError, match="external trust pin"):
-        build_validated_package_output(
+        _build_validated_output(
             execution_plan=mixed_plan(),
             receipt=receipt(),
             trusted_validation_receipt_sha256=SHA_A,
@@ -988,7 +1387,7 @@ def test_external_receipt_pin_and_artifact_substitution_are_rejected() -> None:
     ).encode()
     wrong = replace(wrong, validation_receipt_sha256=hashlib.sha256(payload).hexdigest())
     with pytest.raises(EquivalenceError, match="different artifact identity"):
-        build_validated_package_output(
+        _build_validated_output(
             execution_plan=mixed_plan(),
             receipt=wrong,
             trusted_validation_receipt_sha256=cast(str, wrong.validation_receipt_sha256),
@@ -998,7 +1397,7 @@ def test_external_receipt_pin_and_artifact_substitution_are_rejected() -> None:
 @pytest.mark.parametrize("bundle", [SHA_0, SHA_1])
 def test_semantic_root_or_audit_completion_cannot_be_target_report(bundle: str) -> None:
     with pytest.raises(EquivalenceError, match="cannot serve"):
-        build_validated_package_output(
+        _build_validated_output(
             execution_plan=mixed_plan(),
             receipt=receipt(bundle=bundle),
             trusted_validation_receipt_sha256=cast(

@@ -22,15 +22,25 @@ from dataclasses import dataclass
 from enum import StrEnum
 from itertools import islice
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
-    from tools.phase4_v2.equivalence.core import FrozenPackageRef
+    from tools.phase4_v2.equivalence.core import AuthenticatedValidatorEnvelope, FrozenPackageRef
     from tools.phase4_v2.equivalence.plan import (
         PackageExecutionPlan,
+        PackageLocalPlan,
+        PreparationPlanBinding,
         ValidatedPackageOutput,
     )
-    from tools.phase4_v2.validator import DependencyPins
+    from tools.phase4_v2.equivalence.prerequisite import AuthenticatedExactReusePrerequisite
+    from tools.phase4_v2.preflight.registry import (
+        ActivatedPreparationAuthority,
+        PreparationReceipt,
+    )
+    from tools.phase4_v2.raw_source import (
+        AuthenticatedPackageLocalEvidence,
+        PackageLocalEvidenceReauthenticationInput,
+    )
 
 SCHEMA_REVISION = 3
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$")
@@ -43,6 +53,23 @@ _MAX_EVENT_PAYLOAD_NODES = 100_000
 _MIN_PRIORITY = -(2**31)
 _MAX_PRIORITY = 2**31 - 1
 _MAX_TTL_SECONDS = 2**31 - 1
+MAX_ACTIVE_ORCHESTRATION_CLUSTERS = 4
+MAX_ACTIVE_ORCHESTRATION_LEASES_PER_CLUSTER = 8
+ORCHESTRATION_PACKAGE_ANALYSIS_KIND = "validated-package-output"
+ORCHESTRATION_PACKAGE_AUDIT_KIND = "phase4-v2-package-audit"
+ORCHESTRATION_CLUSTER_RECONCILIATION_KIND = "phase4-v2-cluster-reconciliation"
+ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND = "phase4-v2-cluster-implementation"
+ORCHESTRATION_TRACKER_PUBLICATION_KIND = "phase4-v2-tracker-publication"
+ORCHESTRATION_KINDS = frozenset(
+    {
+        ORCHESTRATION_PACKAGE_ANALYSIS_KIND,
+        ORCHESTRATION_PACKAGE_AUDIT_KIND,
+        ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
+        ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
+        ORCHESTRATION_TRACKER_PUBLICATION_KIND,
+    }
+)
+_TRUSTED_ORCHESTRATION_STAGE_KINDS = ORCHESTRATION_KINDS - {ORCHESTRATION_PACKAGE_ANALYSIS_KIND}
 _INTERNAL_EVENT_TYPES = frozenset(
     {
         "CLAIMED",
@@ -52,6 +79,8 @@ _INTERNAL_EVENT_TYPES = frozenset(
         "BLOCKER_REQUEUED",
         "REPAIR_REQUEUED",
         "TRACKER_ALREADY_CURRENT",
+        "TRACKER_DOCUMENT_ALREADY_CURRENT",
+        "TRACKER_DOCUMENT_PUBLISHED",
         "TRACKER_PUBLISHED",
         "WORKSPACE_ALLOCATION_FAILED",
     }
@@ -80,6 +109,23 @@ class CompletionConflictError(QueueError):
 
 class InputDigestMismatchError(QueueError):
     """The accepted output was built from different immutable input."""
+
+
+class _AuthenticatedStageReceipt(Protocol):
+    @property
+    def cluster_id(self) -> str: ...
+
+    @property
+    def stage_input_sha256(self) -> str: ...
+
+    @property
+    def receipt_sha256(self) -> str: ...
+
+    @property
+    def authority_sha256(self) -> str: ...
+
+    @property
+    def graph_sha256(self) -> str: ...
 
 
 def _unsupported_schema_revision(revision: object) -> QueueError:
@@ -533,23 +579,87 @@ def _required_schema_objects() -> frozenset[tuple[str, str, str]]:
 _REQUIRED_SCHEMA_OBJECTS = _required_schema_objects()
 _TRUSTED_COMPLETION_KIND_PREFIX = "trusted-"
 _RESERVED_UNIT_KINDS = {
+    "package-preparation:": "prepared-package-input",
     "package-validation-receipt:": "trusted-package-validation-receipt",
+    "phase4-v2-audit:": ORCHESTRATION_PACKAGE_AUDIT_KIND,
+    "phase4-v2-implementation:": ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
+    "phase4-v2-publication:": ORCHESTRATION_TRACKER_PUBLICATION_KIND,
+    "phase4-v2-reconciliation:": ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
 }
 
 
 @dataclass(frozen=True, slots=True)
 class _PackageReceiptPublication:
+    envelope: AuthenticatedValidatorEnvelope
+
+
+@dataclass(frozen=True, slots=True)
+class _PreparationReceiptPublication:
     package_ref: FrozenPackageRef
-    receipt_payload: str | bytes
-    trusted_validator_revision: str
-    trusted_contract_revision: str
-    trusted_dependency_digests: Mapping[str, str]
-    trusted_receipt_sha256: str
+    package_local: PackageLocalPlan
+    receipt: PreparationReceipt
+    authority: ActivatedPreparationAuthority
+
+
+@dataclass(frozen=True, slots=True)
+class _TargetInventoryPublication:
+    envelope: object
+
+
+@dataclass(frozen=True, slots=True)
+class _ExactReusePrerequisitePublication:
+    receipt: AuthenticatedExactReusePrerequisite
 
 
 @dataclass(frozen=True, slots=True)
 class _ValidatedPackageOutputPublication:
     output: object
+    execution_plan: object
+    execution_envelope: object
+    package_local_evidence: AuthenticatedPackageLocalEvidence
+    package_local_evidence_inputs: PackageLocalEvidenceReauthenticationInput
+    package_local_validator_envelope: AuthenticatedValidatorEnvelope
+
+
+@dataclass(frozen=True, slots=True)
+class _AuthenticatedOrchestrationStagePublication:
+    kind: str
+    cluster_id: str
+    authority: object
+    canonical_receipt: bytes
+    graph: object
+
+
+@dataclass(frozen=True, slots=True)
+class _AuthenticatedTrackerPublication:
+    kind: str
+    cluster_id: str
+    authority: object
+    canonical_receipt: bytes
+    graph: object
+    gateway: object
+    config: object
+    fanout_receipt: object
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class _TrackerPublicationCheckpointGrant:
+    """Opaque proof issued by the atomic fanout publisher after readback."""
+
+    lease_id: str
+    attempt_id: str
+    event_type: str
+    queue_generation: str
+    publication_config_sha256: str
+    paths: tuple[str, ...]
+    document_set_sha256: str | None
+    revision: str | None
+
+    def __init__(self) -> None:
+        raise ValueError("tracker checkpoints are issued only by the atomic fanout publisher")
+
+    kind: str
+    cluster_id: str
 
 
 class Queue:
@@ -667,11 +777,16 @@ class Queue:
         execution_mode: ExecutionMode = ExecutionMode.NORMAL,
     ) -> None:
         """Add an immutable work definition, idempotently when identical."""
+        if _requires_exact_reuse_batch_materializer(unit_id, kind):
+            raise QueueConflictError(
+                "exact-reuse prerequisites require the atomic typed materializer"
+            )
         _validate_identifier(unit_id, "unit_id")
         _validate_identifier(kind, "kind")
         _validate_reserved_unit_kind(unit_id, kind)
         if cluster_id is not None:
             _validate_identifier(cluster_id, "cluster_id")
+        _validate_orchestration_definition(kind, cluster_id)
         _validate_digest(input_digest, "input_digest")
         if type(priority) is not int or not _MIN_PRIORITY <= priority <= _MAX_PRIORITY:
             raise ValueError("priority must be a bounded integer")
@@ -735,11 +850,218 @@ class Queue:
         execution_mode: ExecutionMode = ExecutionMode.NORMAL,
     ) -> str:
         """Atomically publish one immutable work unit and its complete pin sets."""
+        if _requires_trusted_completion_adapter(unit_id, kind):
+            raise QueueConflictError(
+                "reserved work units require an authenticated typed materializer"
+            )
+        return self._materialize_authenticated_row(
+            unit_id,
+            kind=kind,
+            capability_pins=capability_pins,
+            dependency_pins=dependency_pins,
+            input_digest=input_digest,
+            cluster_id=cluster_id,
+            priority=priority,
+            execution_mode=execution_mode,
+        )
+
+    def _materialize_exact_reuse_prerequisite_rows(
+        self,
+        receipt: AuthenticatedExactReusePrerequisite,
+        *,
+        priority: int,
+    ) -> tuple[str, str, str]:
+        """Atomically insert all three rows authorized by one signed receipt."""
+        from tools.phase4_v2.equivalence.prerequisite import (
+            EXACT_REUSE_DIRECT_AUDIT_QUEUE_KIND,
+            EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND,
+            EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND,
+            exact_reuse_prerequisite_capabilities,
+            exact_reuse_prerequisite_completions,
+            exact_reuse_prerequisite_dependencies,
+            validate_authenticated_exact_reuse_prerequisite,
+        )
+
+        receipt = validate_authenticated_exact_reuse_prerequisite(receipt)
+        capabilities = tuple(
+            CapabilityPin(pin.name, pin.revision, pin.digest)
+            for pin in exact_reuse_prerequisite_capabilities(receipt)
+        )
+        dependencies = tuple(
+            CompletionDependencyPin(pin.parent_unit_id, pin.revision, pin.digest)
+            for pin in exact_reuse_prerequisite_dependencies(receipt)
+        )
+        completions = exact_reuse_prerequisite_completions(receipt)
+        kinds = (
+            EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND,
+            EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND,
+            EXACT_REUSE_DIRECT_AUDIT_QUEUE_KIND,
+        )
+        if type(priority) is not int or not _MIN_PRIORITY <= priority <= _MAX_PRIORITY:
+            raise ValueError("priority must be a bounded integer")
+        capabilities = tuple(sorted(capabilities, key=lambda pin: pin.capability))
+        dependencies = tuple(sorted(dependencies, key=lambda pin: pin.parent_unit_id))
+        expected_capabilities = tuple(
+            (pin.capability, pin.revision, pin.digest) for pin in capabilities
+        )
+        expected_dependencies = tuple(
+            (pin.parent_unit_id, pin.revision, pin.digest) for pin in dependencies
+        )
+        definitions: list[tuple[str, str, int, str, str]] = []
+        for completion, kind in zip(completions, kinds, strict=True):
+            _validate_identifier(completion.parent_unit_id, "unit_id")
+            _validate_identifier(kind, "kind")
+            _validate_reserved_unit_kind(completion.parent_unit_id, kind)
+            _validate_reserved_materialization_source(
+                receipt,
+                unit_id=completion.parent_unit_id,
+                kind=kind,
+                cluster_id=None,
+                input_digest=receipt.receipt_sha256,
+                capability_pins=capabilities,
+                dependency_pins=dependencies,
+            )
+            definitions.append(
+                (
+                    completion.parent_unit_id,
+                    kind,
+                    priority,
+                    ExecutionMode.NORMAL.value,
+                    receipt.receipt_sha256,
+                )
+            )
+        with self._immediate() as connection:
+            for unit_id, kind, row_priority, execution_mode, input_digest in definitions:
+                definition = (kind, None, row_priority, execution_mode, input_digest)
+                existing = connection.execute(
+                    """
+                    SELECT kind, cluster_id, priority, execution_mode, input_digest
+                    FROM work_units WHERE unit_id = ?
+                    """,
+                    (unit_id,),
+                ).fetchone()
+                if existing is not None:
+                    observed_capabilities = tuple(
+                        tuple(row)
+                        for row in connection.execute(
+                            """
+                            SELECT capability, required_revision, required_digest
+                            FROM capability_requirements
+                            WHERE unit_id = ? ORDER BY capability
+                            """,
+                            (unit_id,),
+                        ).fetchall()
+                    )
+                    observed_dependencies = tuple(
+                        tuple(row)
+                        for row in connection.execute(
+                            """
+                            SELECT parent_unit_id, required_revision, required_digest
+                            FROM dependencies
+                            WHERE unit_id = ? ORDER BY parent_unit_id
+                            """,
+                            (unit_id,),
+                        ).fetchall()
+                    )
+                    if (
+                        tuple(existing) != definition
+                        or observed_capabilities != expected_capabilities
+                        or observed_dependencies != expected_dependencies
+                    ):
+                        raise QueueConflictError(f"materialized work unit changed: {unit_id}")
+                    continue
+                ordinal_row = connection.execute(
+                    "SELECT COALESCE(MAX(ordinal), 0) + 1 AS ordinal FROM work_units"
+                ).fetchone()
+                try:
+                    connection.execute(
+                        """
+                        INSERT INTO work_units(
+                            unit_id, kind, cluster_id, priority, ordinal,
+                            execution_mode, status, input_digest
+                        ) VALUES (?, ?, NULL, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            unit_id,
+                            kind,
+                            row_priority,
+                            int(ordinal_row["ordinal"]),
+                            execution_mode,
+                            WorkUnitStatus.READY.value,
+                            input_digest,
+                        ),
+                    )
+                    connection.executemany(
+                        """
+                        INSERT INTO capability_requirements(
+                            unit_id, capability, required_revision, required_digest
+                        ) VALUES (?, ?, ?, ?)
+                        """,
+                        ((unit_id, *pin) for pin in expected_capabilities),
+                    )
+                    connection.executemany(
+                        """
+                        INSERT INTO dependencies(
+                            unit_id, parent_unit_id, required_revision, required_digest
+                        ) VALUES (?, ?, ?, ?)
+                        """,
+                        ((unit_id, *pin) for pin in expected_dependencies),
+                    )
+                except sqlite3.IntegrityError as error:
+                    raise QueueConflictError(
+                        f"could not materialize work unit: {unit_id}"
+                    ) from error
+            # Re-read every protected authority after the writes but before
+            # commit so a concurrent rotation rolls the whole batch back.
+            validate_authenticated_exact_reuse_prerequisite(receipt)
+        return (
+            receipt.receipt_sha256,
+            receipt.receipt_sha256,
+            receipt.receipt_sha256,
+        )
+
+    def _materialize_authenticated_row(
+        self,
+        unit_id: str,
+        *,
+        authentication: object | None = None,
+        kind: str,
+        capability_pins: Iterable[CapabilityPin] = (),
+        dependency_pins: Iterable[CompletionDependencyPin] = (),
+        input_digest: str | None = None,
+        cluster_id: str | None = None,
+        priority: int = 0,
+        execution_mode: ExecutionMode = ExecutionMode.NORMAL,
+    ) -> str:
+        """Insert a row already derived by one of this class's typed adapters."""
+        from tools.phase4_v2.equivalence.prerequisite import (
+            AuthenticatedExactReusePrerequisite,
+        )
+
+        if type(authentication) is AuthenticatedExactReusePrerequisite:
+            raise QueueConflictError(
+                "exact-reuse prerequisites require the atomic typed materializer"
+            )
         _validate_identifier(unit_id, "unit_id")
         _validate_identifier(kind, "kind")
+        capability_pins = tuple(capability_pins)
+        dependency_pins = tuple(dependency_pins)
+        if _requires_trusted_completion_adapter(unit_id, kind):
+            _validate_reserved_materialization_source(
+                authentication,
+                unit_id=unit_id,
+                kind=kind,
+                cluster_id=cluster_id,
+                input_digest=input_digest,
+                capability_pins=capability_pins,
+                dependency_pins=dependency_pins,
+            )
+        elif authentication is not None:
+            raise QueueConflictError("ordinary materialization cannot carry trusted authority")
         _validate_reserved_unit_kind(unit_id, kind)
         if cluster_id is not None:
             _validate_identifier(cluster_id, "cluster_id")
+        _validate_orchestration_definition(kind, cluster_id)
         if type(priority) is not int or not _MIN_PRIORITY <= priority <= _MAX_PRIORITY:
             raise ValueError("priority must be a bounded integer")
         if not isinstance(execution_mode, ExecutionMode):
@@ -886,9 +1208,7 @@ class Queue:
                     ((unit_id, *pin) for pin in expected_dependencies),
                 )
             except sqlite3.IntegrityError as error:
-                raise QueueConflictError(
-                    f"could not materialize work unit: {unit_id}"
-                ) from error
+                raise QueueConflictError(f"could not materialize work unit: {unit_id}") from error
         return input_digest
 
     def register_capability(self, capability: str, revision: str, digest: str) -> None:
@@ -989,9 +1309,7 @@ class Queue:
                 return
             expected_observed = expected_head if expected_head is not None else (None, None)
             if observed_head != expected_observed:
-                raise QueueConflictError(
-                    f"capability head changed before activation: {capability}"
-                )
+                raise QueueConflictError(f"capability head changed before activation: {capability}")
             previously_activated = connection.execute(
                 """
                 SELECT 1 FROM pipeline_capability_activations
@@ -1001,8 +1319,7 @@ class Queue:
             ).fetchone()
             if previously_activated is not None:
                 raise QueueConflictError(
-                    f"stale capability revision cannot be reactivated: "
-                    f"{capability}/{revision}"
+                    f"stale capability revision cannot be reactivated: {capability}/{revision}"
                 )
             self._insert_capability_activation(connection, capability, revision, digest)
 
@@ -1043,6 +1360,58 @@ class Queue:
                     raise QueueConflictError(
                         f"capability requirement changed: {unit_id}/{capability}"
                     ) from error
+
+    def require_formal_completion(
+        self,
+        unit_id: str,
+        *,
+        revision: str,
+        digest: str,
+        capability_pins: Iterable[CapabilityPin],
+    ) -> None:
+        """Require an accepted completion from one exact capability-bound unit."""
+
+        _validate_identifier(unit_id, "unit_id")
+        _validate_revision(revision)
+        _validate_digest(digest, "digest")
+        capabilities = _bounded_materialization_values(
+            capability_pins,
+            CapabilityPin,
+            "capability_pins",
+        )
+        capabilities = tuple(sorted(capabilities, key=lambda pin: pin.capability))
+        _reject_duplicate_pin_keys(
+            (pin.capability for pin in capabilities),
+            "capability",
+        )
+        for pin in capabilities:
+            _validate_identifier(pin.capability, "capability")
+            _validate_revision(pin.revision)
+            _validate_digest(pin.digest, "capability digest")
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT 1 FROM formal_completions
+                WHERE unit_id = ? AND completion_revision = ? AND output_digest = ?
+                """,
+                (unit_id, revision, digest),
+            ).fetchone()
+            observed_capabilities = tuple(
+                tuple(item)
+                for item in connection.execute(
+                    """
+                    SELECT capability, required_revision, required_digest
+                    FROM capability_requirements
+                    WHERE unit_id = ? ORDER BY capability
+                    """,
+                    (unit_id,),
+                ).fetchall()
+            )
+        expected_capabilities = tuple(
+            (pin.capability, pin.revision, pin.digest) for pin in capabilities
+        )
+        if row is None or observed_capabilities != expected_capabilities:
+            raise DependencyNotSatisfiedError(f"required completion is not accepted: {unit_id}")
 
     def add_dependency(
         self,
@@ -1098,28 +1467,85 @@ class Queue:
                         f"dependency changed: {unit_id}/{parent_unit_id}"
                     ) from error
 
-    def claim(self, owner: str, *, ttl_seconds: int = 1_800) -> Lease | None:
+    def claim(
+        self,
+        owner: str,
+        *,
+        ttl_seconds: int = 1_800,
+        allowed_kinds: Iterable[str] | None = None,
+    ) -> Lease | None:
         """Atomically claim the first eligible work unit."""
         _validate_owner(owner)
         _validate_ttl(ttl_seconds)
+        kinds = _validate_allowed_kinds(allowed_kinds)
         self.verify_schema()
         guard = self._try_acquire_publication_guard(wait=True)
         if guard is None:
             return None
         try:
-            return self._claim_with_publication_guard(owner, ttl_seconds)
+            return self._claim_with_publication_guard(owner, ttl_seconds, kinds)
         finally:
             os.close(guard)
 
-    def _claim_with_publication_guard(self, owner: str, ttl_seconds: int) -> Lease | None:
+    def _claim_with_publication_guard(
+        self,
+        owner: str,
+        ttl_seconds: int,
+        allowed_kinds: tuple[str, ...] | None,
+    ) -> Lease | None:
         with self._immediate() as connection:
             self._recover_expired(connection)
+            kind_filter = ""
+            parameters: dict[str, object] = {
+                "implementation_kind": ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
+                "max_active_clusters": MAX_ACTIVE_ORCHESTRATION_CLUSTERS,
+                "max_leases_per_cluster": MAX_ACTIVE_ORCHESTRATION_LEASES_PER_CLUSTER,
+                "publication_kind": ORCHESTRATION_TRACKER_PUBLICATION_KIND,
+                "reconciliation_kind": ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
+            }
+            if allowed_kinds is not None:
+                allowed_names = tuple(
+                    f"allowed_kind_{index}" for index in range(len(allowed_kinds))
+                )
+                placeholders = ",".join(f":{name}" for name in allowed_names)
+                kind_filter = f" AND unit.kind IN ({placeholders})"
+                parameters.update(zip(allowed_names, allowed_kinds, strict=True))
+            orchestration_kinds = tuple(sorted(ORCHESTRATION_KINDS))
+            orchestration_names = tuple(
+                f"orchestration_kind_{index}" for index in range(len(orchestration_kinds))
+            )
+            orchestration_values = ",".join(f"(:{name})" for name in orchestration_names)
+            parameters.update(zip(orchestration_names, orchestration_kinds, strict=True))
             row = connection.execute(
-                """
+                f"""
+                WITH orchestration_kinds(kind) AS (VALUES {orchestration_values}),
+                unfinished_clusters AS (
+                    SELECT clustered.cluster_id, MIN(clustered.ordinal) AS ordinal
+                    FROM work_units AS clustered
+                    WHERE clustered.cluster_id IS NOT NULL
+                      AND clustered.kind IN (SELECT kind FROM orchestration_kinds)
+                      AND NOT EXISTS (
+                          SELECT 1 FROM work_units AS publication
+                          JOIN formal_completions AS completed
+                            ON completed.unit_id = publication.unit_id
+                          WHERE publication.cluster_id = clustered.cluster_id
+                            AND publication.kind = :publication_kind
+                      )
+                    GROUP BY clustered.cluster_id
+                )
                 SELECT unit_id, input_digest, fencing_generation
                 FROM work_units AS unit
                 WHERE unit.status = 'READY'
                   AND unit.execution_mode = 'NORMAL'
+                  AND (
+                      unit.cluster_id IS NULL
+                      OR NOT EXISTS (SELECT 1 FROM unfinished_clusters)
+                      OR unit.cluster_id = (
+                          SELECT cluster_id FROM unfinished_clusters
+                          ORDER BY ordinal, cluster_id LIMIT 1
+                      )
+                  )
+                  {kind_filter}
                   AND NOT EXISTS (
                       SELECT 1 FROM leases WHERE leases.unit_id = unit.unit_id
                   )
@@ -1150,9 +1576,93 @@ class Queue:
                       WHERE requirement.unit_id = unit.unit_id
                         AND activation.capability IS NULL
                   )
+                  AND (
+                      unit.cluster_id IS NULL
+                      OR unit.kind NOT IN (SELECT kind FROM orchestration_kinds)
+                      OR (
+                          (
+                              EXISTS (
+                                  SELECT 1
+                                  FROM leases AS active
+                                  JOIN work_units AS active_unit
+                                    ON active_unit.unit_id = active.unit_id
+                                  WHERE active_unit.cluster_id = unit.cluster_id
+                                    AND active_unit.kind IN (SELECT kind FROM orchestration_kinds)
+                              )
+                              OR (
+                                  SELECT COUNT(DISTINCT active_unit.cluster_id)
+                                  FROM leases AS active
+                                  JOIN work_units AS active_unit
+                                    ON active_unit.unit_id = active.unit_id
+                                  WHERE active_unit.cluster_id IS NOT NULL
+                                    AND active_unit.kind IN (SELECT kind FROM orchestration_kinds)
+                              ) < :max_active_clusters
+                          )
+                          AND (
+                              SELECT COUNT(*)
+                              FROM leases AS active
+                              JOIN work_units AS active_unit
+                                ON active_unit.unit_id = active.unit_id
+                              WHERE active_unit.cluster_id = unit.cluster_id
+                                AND active_unit.kind IN (SELECT kind FROM orchestration_kinds)
+                          ) < :max_leases_per_cluster
+                      )
+                  )
+                  AND (
+                      unit.kind <> :reconciliation_kind
+                      OR (
+                          NOT EXISTS (
+                              SELECT 1
+                              FROM leases AS active_reconciliation
+                              JOIN work_units AS reconciliation
+                                ON reconciliation.unit_id = active_reconciliation.unit_id
+                              WHERE reconciliation.kind = :reconciliation_kind
+                                AND reconciliation.cluster_id <> unit.cluster_id
+                          )
+                          AND NOT EXISTS (
+                              SELECT 1
+                              FROM formal_completions AS completed_reconciliation
+                              JOIN work_units AS reconciliation
+                                ON reconciliation.unit_id = completed_reconciliation.unit_id
+                              WHERE reconciliation.kind = :reconciliation_kind
+                                AND reconciliation.cluster_id <> unit.cluster_id
+                                AND NOT EXISTS (
+                                    SELECT 1
+                                    FROM work_units AS implementation
+                                    JOIN formal_completions AS completed_implementation
+                                      ON completed_implementation.unit_id = implementation.unit_id
+                                    WHERE implementation.kind = :implementation_kind
+                                      AND implementation.cluster_id = reconciliation.cluster_id
+                                )
+                            )
+                      )
+                  )
+                  AND (
+                      unit.kind <> :implementation_kind
+                      OR EXISTS (
+                          SELECT 1
+                          FROM work_units AS reconciliation
+                          JOIN formal_completions AS completed_reconciliation
+                            ON completed_reconciliation.unit_id = reconciliation.unit_id
+                          WHERE reconciliation.kind = :reconciliation_kind
+                            AND reconciliation.cluster_id = unit.cluster_id
+                      )
+                  )
+                  AND (
+                      unit.kind <> :publication_kind
+                      OR EXISTS (
+                          SELECT 1
+                          FROM work_units AS implementation
+                          JOIN formal_completions AS completed_implementation
+                            ON completed_implementation.unit_id = implementation.unit_id
+                          WHERE implementation.kind = :implementation_kind
+                            AND implementation.cluster_id = unit.cluster_id
+                      )
+                  )
                 ORDER BY unit.priority DESC, unit.ordinal, unit.unit_id
                 LIMIT 1
-                """
+                """,
+                parameters,
             ).fetchone()
             if row is None:
                 return None
@@ -1335,10 +1845,60 @@ class Queue:
     ) -> None:
         if event_type not in _INTERNAL_EVENT_TYPES:
             raise ValueError(f"event type is not reserved for queue internals: {event_type}")
+        if event_type in {"TRACKER_PUBLISHED", "TRACKER_ALREADY_CURRENT"}:
+            raise QueueConflictError(
+                "tracker publication checkpoints require an atomic publisher grant"
+            )
         encoded = _encode_event_payload(payload)
         with self._immediate() as connection:
             self._require_live_lease(connection, lease)
             self._append_encoded_event(connection, lease.attempt_id, event_type, encoded)
+
+    def _checkpoint_tracker_publication(
+        self,
+        lease: Lease,
+        grant: _TrackerPublicationCheckpointGrant,
+    ) -> None:
+        """Record the exact result attested by the atomic publisher's opaque grant."""
+
+        if type(grant) is not _TrackerPublicationCheckpointGrant:
+            raise QueueConflictError("tracker checkpoint requires an exact publisher grant")
+        if (
+            grant.lease_id != lease.lease_id
+            or grant.attempt_id != lease.attempt_id
+            or grant.event_type not in {"TRACKER_PUBLISHED", "TRACKER_ALREADY_CURRENT"}
+        ):
+            raise QueueConflictError("tracker publisher grant belongs to another attempt")
+        _validate_digest(grant.queue_generation, "queue generation")
+        _validate_digest(grant.publication_config_sha256, "publication config")
+        if (
+            type(grant.paths) is not tuple
+            or not grant.paths
+            or any(type(path) is not str for path in grant.paths)
+        ):
+            raise QueueConflictError("tracker publisher grant has invalid target paths")
+        payload: dict[str, object] = {
+            "generation": grant.queue_generation,
+            "publication_config_sha256": grant.publication_config_sha256,
+            "targets": list(grant.paths),
+        }
+        if grant.event_type == "TRACKER_PUBLISHED":
+            if grant.document_set_sha256 is None or grant.revision is None:
+                raise QueueConflictError("published tracker grant is incomplete")
+            _validate_digest(grant.document_set_sha256, "document set")
+            _validate_revision(grant.revision)
+            payload.update(
+                {
+                    "document_set_sha256": grant.document_set_sha256,
+                    "revision": grant.revision,
+                }
+            )
+        elif grant.document_set_sha256 is not None or grant.revision is not None:
+            raise QueueConflictError("already-current tracker grant has unexpected output")
+        encoded = _encode_event_payload(payload)
+        with self._immediate() as connection:
+            self._require_live_lease(connection, lease)
+            self._append_encoded_event(connection, lease.attempt_id, grant.event_type, encoded)
 
     def finish(
         self,
@@ -1419,6 +1979,220 @@ class Queue:
             finish_result=result,
         )
 
+    def finish_authenticated_orchestration_stage(
+        self,
+        lease: Lease,
+        *,
+        authority: object,
+        canonical_receipt: bytes,
+        graph: object,
+    ) -> InputCheckedFinishResult:
+        """Verify a signed stage receipt itself before publishing its exact digest."""
+        if type(canonical_receipt) is not bytes:
+            raise QueueConflictError("orchestration receipt must be exact canonical bytes")
+        kind, cluster_id = self._leased_orchestration_identity(lease)
+        receipt, completion_revision = _load_authenticated_orchestration_receipt(
+            kind,
+            canonical_receipt,
+            authority,
+        )
+        if kind == ORCHESTRATION_TRACKER_PUBLICATION_KIND:
+            raise QueueConflictError("tracker publication requires remote fanout authentication")
+        graph_content_id = _validated_cluster_graph_content_id(graph)
+        if receipt.cluster_id != cluster_id or receipt.stage_input_sha256 != lease.input_digest:
+            raise QueueConflictError("signed orchestration receipt belongs to another lease input")
+        if receipt.graph_sha256 != graph_content_id:
+            raise QueueConflictError("signed orchestration receipt belongs to another graph")
+        self.verify_schema()
+        guard = self._try_acquire_publication_guard(wait=True)
+        if guard is None:
+            raise QueueConflictError("tracker publication prevented attempt completion")
+        try:
+            result = self._finish_with_publication_guard(
+                lease,
+                TerminalOutcome.ACCEPTED,
+                output_digest=receipt.receipt_sha256,
+                completion_revision=completion_revision,
+                expected_input_digest=receipt.stage_input_sha256,
+                terminalize_input_mismatch=True,
+                trusted_publication=_AuthenticatedOrchestrationStagePublication(
+                    kind=kind,
+                    cluster_id=cluster_id,
+                    authority=authority,
+                    canonical_receipt=canonical_receipt,
+                    graph=graph,
+                ),
+            )
+        finally:
+            os.close(guard)
+        return InputCheckedFinishResult(
+            disposition=(
+                InputCheckedFinishDisposition.INPUT_MISMATCH
+                if result.disposition is FinishDisposition.TERMINAL_ONLY
+                else InputCheckedFinishDisposition.ACCEPTED
+            ),
+            finish_result=result,
+        )
+
+    def finish_authenticated_tracker_publication_stage(
+        self,
+        lease: Lease,
+        *,
+        authority: object,
+        canonical_receipt: bytes,
+        graph: object,
+        gateway: object,
+        config: object,
+        fanout_receipt: object,
+    ) -> InputCheckedFinishResult:
+        """Publish a tracker completion only after in-transaction remote reauthentication."""
+
+        if type(canonical_receipt) is not bytes:
+            raise QueueConflictError("orchestration receipt must be exact canonical bytes")
+        kind, cluster_id = self._leased_orchestration_identity(lease)
+        if kind != ORCHESTRATION_TRACKER_PUBLICATION_KIND:
+            raise QueueConflictError("remote tracker authentication belongs to another stage")
+        receipt, completion_revision = _load_authenticated_orchestration_receipt(
+            kind, canonical_receipt, authority
+        )
+        graph_content_id = _validated_cluster_graph_content_id(graph)
+        if (
+            receipt.cluster_id != cluster_id
+            or receipt.stage_input_sha256 != lease.input_digest
+            or receipt.graph_sha256 != graph_content_id
+        ):
+            raise QueueConflictError("signed tracker receipt belongs to another stage input")
+        self.verify_schema()
+        guard = self._try_acquire_publication_guard(wait=True)
+        if guard is None:
+            raise QueueConflictError("tracker publication prevented attempt completion")
+        try:
+            result = self._finish_with_publication_guard(
+                lease,
+                TerminalOutcome.ACCEPTED,
+                output_digest=receipt.receipt_sha256,
+                completion_revision=completion_revision,
+                expected_input_digest=receipt.stage_input_sha256,
+                terminalize_input_mismatch=True,
+                trusted_publication=_AuthenticatedTrackerPublication(
+                    kind=kind,
+                    cluster_id=cluster_id,
+                    authority=authority,
+                    canonical_receipt=canonical_receipt,
+                    graph=graph,
+                    gateway=gateway,
+                    config=config,
+                    fanout_receipt=fanout_receipt,
+                ),
+            )
+        finally:
+            os.close(guard)
+        return InputCheckedFinishResult(
+            disposition=(
+                InputCheckedFinishDisposition.INPUT_MISMATCH
+                if result.disposition is FinishDisposition.TERMINAL_ONLY
+                else InputCheckedFinishDisposition.ACCEPTED
+            ),
+            finish_result=result,
+        )
+
+    def finish_target_inventory_envelope(
+        self, lease: Lease, *, envelope: object
+    ) -> InputCheckedFinishResult:
+        """Publish a currently authorized signed target inventory."""
+        from tools.phase4_v2.equivalence.inventory import (
+            AuthenticatedTargetInventoryEnvelope,
+            accept_target_inventory,
+            validate_target_inventory_envelope,
+        )
+
+        if type(envelope) is not AuthenticatedTargetInventoryEnvelope:
+            raise QueueConflictError("exact authenticated target inventory is required")
+        envelope = validate_target_inventory_envelope(envelope)
+        accepted = accept_target_inventory(envelope)
+        guard = self._try_acquire_publication_guard(wait=True)
+        if guard is None:
+            raise QueueConflictError("tracker publication prevented attempt completion")
+        try:
+            result = self._finish_with_publication_guard(
+                lease,
+                TerminalOutcome.ACCEPTED,
+                output_digest=accepted.inventory.content_id,
+                completion_revision=accepted.completion.revision,
+                expected_input_digest=lease.input_digest,
+                terminalize_input_mismatch=True,
+                trusted_publication=_TargetInventoryPublication(envelope),
+            )
+        finally:
+            os.close(guard)
+        return InputCheckedFinishResult(
+            disposition=(
+                InputCheckedFinishDisposition.INPUT_MISMATCH
+                if result.disposition is FinishDisposition.TERMINAL_ONLY
+                else InputCheckedFinishDisposition.ACCEPTED
+            ),
+            finish_result=result,
+        )
+
+    def finish_exact_reuse_prerequisite(
+        self, lease: Lease, *, receipt: AuthenticatedExactReusePrerequisite
+    ) -> InputCheckedFinishResult:
+        """Reauthenticate and publish one exact signed pre-plan prerequisite."""
+        from tools.phase4_v2.equivalence.prerequisite import (
+            exact_reuse_prerequisite_completions,
+            validate_authenticated_exact_reuse_prerequisite,
+        )
+
+        receipt = validate_authenticated_exact_reuse_prerequisite(receipt)
+        completion = next(
+            (
+                item
+                for item in exact_reuse_prerequisite_completions(receipt)
+                if item.parent_unit_id == lease.unit_id
+            ),
+            None,
+        )
+        if completion is None:
+            raise QueueConflictError("lease is not a prerequisite authorized by this receipt")
+        guard = self._try_acquire_publication_guard(wait=True)
+        if guard is None:
+            raise QueueConflictError("tracker publication prevented attempt completion")
+        try:
+            result = self._finish_with_publication_guard(
+                lease,
+                TerminalOutcome.ACCEPTED,
+                output_digest=completion.digest,
+                completion_revision=completion.revision,
+                expected_input_digest=receipt.receipt_sha256,
+                terminalize_input_mismatch=True,
+                trusted_publication=_ExactReusePrerequisitePublication(receipt),
+            )
+        finally:
+            os.close(guard)
+        return InputCheckedFinishResult(
+            disposition=(
+                InputCheckedFinishDisposition.INPUT_MISMATCH
+                if result.disposition is FinishDisposition.TERMINAL_ONLY
+                else InputCheckedFinishDisposition.ACCEPTED
+            ),
+            finish_result=result,
+        )
+
+    def _leased_orchestration_identity(self, lease: Lease) -> tuple[str, str]:
+        with self._connect() as connection:
+            self._require_live_lease(connection, lease)
+            row = connection.execute(
+                "SELECT kind, cluster_id FROM work_units WHERE unit_id = ?",
+                (lease.unit_id,),
+            ).fetchone()
+        if (
+            row is None
+            or str(row["kind"]) not in _TRUSTED_ORCHESTRATION_STAGE_KINDS
+            or row["cluster_id"] is None
+        ):
+            raise QueueConflictError("lease is not an authenticated orchestration stage")
+        return str(row["kind"]), str(row["cluster_id"])
+
     def finish_input_mismatch_if_input_changed(
         self,
         lease: Lease,
@@ -1439,19 +2213,20 @@ class Queue:
         self,
         lease: Lease,
         *,
-        package_ref: FrozenPackageRef,
-        receipt_payload: str | bytes,
-        trusted_validator_revision: str,
-        trusted_contract_revision: str,
-        trusted_dependency_digests: Mapping[str, str],
-        trusted_receipt_sha256: str,
+        envelope: AuthenticatedValidatorEnvelope,
     ) -> FinishResult:
-        """Validate and publish one reserved package receipt as a single operation."""
+        """Publish one protected, signed validator envelope as a single operation."""
+        from tools.phase4_v2.equivalence.core import (
+            frozen_package_ref_from_validator_envelope,
+            validate_authenticated_validator_envelope,
+        )
         from tools.phase4_v2.equivalence.plan import (
             PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
             package_validation_receipt_completion,
         )
 
+        envelope = validate_authenticated_validator_envelope(envelope)
+        package_ref = frozen_package_ref_from_validator_envelope(envelope)
         completion = package_validation_receipt_completion(package_ref)
         self.verify_schema()
         guard = self._try_acquire_publication_guard(wait=True)
@@ -1465,17 +2240,54 @@ class Queue:
                 completion_revision=PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
                 expected_input_digest=completion.digest,
                 terminalize_input_mismatch=False,
-                trusted_publication=_PackageReceiptPublication(
+                trusted_publication=_PackageReceiptPublication(envelope),
+            )
+        finally:
+            os.close(guard)
+
+    def finish_preparation_receipt(
+        self,
+        lease: Lease,
+        *,
+        package_ref: FrozenPackageRef,
+        package_local: PackageLocalPlan,
+        receipt: PreparationReceipt,
+        authority: ActivatedPreparationAuthority,
+    ) -> tuple[PreparationPlanBinding, FinishResult]:
+        """Validate and publish one externally authorized preparation receipt."""
+        from tools.phase4_v2.equivalence.plan import (
+            PREPARATION_RECEIPT_REVISION,
+            _new_accepted_preparation_plan_binding,
+        )
+
+        binding = _new_accepted_preparation_plan_binding(
+            package_ref=package_ref,
+            package_local=package_local,
+            receipt=receipt,
+            authority=authority,
+        )
+        self.verify_schema()
+        guard = self._try_acquire_publication_guard(wait=True)
+        if guard is None:
+            raise QueueConflictError("tracker publication prevented attempt completion")
+        try:
+            result = self._finish_with_publication_guard(
+                lease,
+                TerminalOutcome.ACCEPTED,
+                output_digest=binding.receipt_sha256,
+                completion_revision=PREPARATION_RECEIPT_REVISION,
+                expected_input_digest=lease.input_digest,
+                terminalize_input_mismatch=False,
+                trusted_publication=_PreparationReceiptPublication(
                     package_ref=package_ref,
-                    receipt_payload=receipt_payload,
-                    trusted_validator_revision=trusted_validator_revision,
-                    trusted_contract_revision=trusted_contract_revision,
-                    trusted_dependency_digests=trusted_dependency_digests,
-                    trusted_receipt_sha256=trusted_receipt_sha256,
+                    package_local=package_local,
+                    receipt=receipt,
+                    authority=authority,
                 ),
             )
         finally:
             os.close(guard)
+        return binding, result
 
     def finish_validated_package_output(
         self,
@@ -1483,63 +2295,47 @@ class Queue:
         *,
         execution_plan: PackageExecutionPlan,
         report_root: Path,
-        trusted_dependencies: DependencyPins,
         evidence_lineage_payload: bytes,
+        execution_envelope: object,
+        package_local_evidence: AuthenticatedPackageLocalEvidence,
+        package_local_evidence_inputs: PackageLocalEvidenceReauthenticationInput,
+        package_local_validator_envelope: AuthenticatedValidatorEnvelope,
     ) -> tuple[ValidatedPackageOutput, InputCheckedFinishResult]:
         """Validate report bytes, then publish one reserved package output."""
+        from tools.phase4_v2.equivalence.execution import (
+            AuthenticatedPackageExecutionEnvelope,
+            validate_package_execution_envelope,
+        )
         from tools.phase4_v2.equivalence.plan import (
+            FINAL_IR_SCHEMA_SHA256,
             PACKAGE_REPORT_SCHEMA_SHA256,
             VALIDATED_PACKAGE_OUTPUT_REVISION,
             build_validated_package_output,
             freeze_package_execution_plan,
         )
         from tools.phase4_v2.validator import (
-            DependencyPins,
             EvidenceLineageTrust,
             PackageDependencyPins,
             TrustedProducer,
             validate_report_bundle,
         )
 
-        if type(trusted_dependencies) is not DependencyPins:
-            raise QueueConflictError("package validation requires exact trusted dependencies")
         frozen = freeze_package_execution_plan(execution_plan)
         plan_input_mismatch = frozen.digest != lease.input_digest
         if plan_input_mismatch:
             with self._connect() as connection:
                 self._require_live_lease(connection, lease)
                 if self._input_digests_match(connection, lease, frozen.digest):
-                    raise QueueConflictError(
-                        f"lease input digest is inconsistent: {lease.unit_id}"
-                    )
+                    raise QueueConflictError(f"lease input digest is inconsistent: {lease.unit_id}")
         target_preflight_sha256 = execution_plan.target_package_ref.preflight_sha256
         if type(evidence_lineage_payload) is not bytes:
             raise QueueConflictError("evidence lineage payload must be exact immutable bytes")
-        try:
-            receipt_dependencies = {
-                name: self._trusted_receipt_dependency(
-                    lease,
-                    lease.input_digest,
-                    execution_plan.target_package_ref.validation_receipt_sha256,
-                    name,
-                )
-                for name in ("corpus", "evidence_lineage", "ir", "preflight", "schema")
-            }
-        except (DependencyNotSatisfiedError, InputDigestMismatchError):
-            if not plan_input_mismatch:
-                raise
-            self.finish_input_mismatch_if_input_changed(
-                lease,
-                expected_input_digest=frozen.digest,
-            )
-            raise InputDigestMismatchError(
-                f"package plan does not match the leased queue input: {lease.unit_id}"
-            ) from None
-        if receipt_dependencies["preflight"] != target_preflight_sha256:
-            raise QueueConflictError(
-                "trusted receipt preflight does not match the package execution plan"
-            )
-        lineage_digest = receipt_dependencies["evidence_lineage"]
+        lineage_digest = hashlib.sha256(evidence_lineage_payload).hexdigest()
+        target_ir_sha256 = _bounded_regular_file_sha256(report_root / "inputs" / "ir.json")
+        target_corpus_sha256 = _bounded_regular_file_sha256(report_root / "inputs" / "corpus.json")
+        if type(execution_envelope) is not AuthenticatedPackageExecutionEnvelope:
+            raise QueueConflictError("package output requires a signed execution envelope")
+        execution_envelope = validate_package_execution_envelope(execution_envelope)
         producer_pins = {
             (capability.revision, capability.name, capability.digest)
             for capability in frozen.required_capabilities
@@ -1556,10 +2352,10 @@ class Queue:
             report_root,
             expected_dependencies=PackageDependencyPins(
                 preflight_sha256=target_preflight_sha256,
-                ir_sha256=receipt_dependencies["ir"],
-                schema_sha256=receipt_dependencies["schema"],
-                corpus_sha256=receipt_dependencies["corpus"],
-                execution_plan_sha256=frozen.digest,
+                ir_sha256=target_ir_sha256,
+                schema_sha256=FINAL_IR_SCHEMA_SHA256,
+                corpus_sha256=target_corpus_sha256,
+                execution_plan_sha256=frozen.canonical_sha256,
                 report_schema_sha256=PACKAGE_REPORT_SCHEMA_SHA256,
             ),
             expected_evidence_lineage=trusted_evidence_lineage,
@@ -1571,10 +2367,30 @@ class Queue:
             execution_plan=execution_plan,
             receipt=receipt,
             trusted_validation_receipt_sha256=receipt_sha256,
+            package_local_evidence=package_local_evidence,
+            package_local_evidence_inputs=package_local_evidence_inputs,
+            package_local_validator_envelope=package_local_validator_envelope,
         )
-        if plan_input_mismatch or output.execution_plan_id != freeze_package_execution_plan(
-            execution_plan
-        ).digest:
+        if (
+            execution_envelope.receipt_bytes != receipt.to_json().encode()
+            or execution_envelope.receipt_sha256 != receipt_sha256
+            or execution_envelope.package_ref_id != frozen.target_package_ref_id
+            or execution_envelope.execution_plan_sha256 != frozen.canonical_sha256
+            or execution_envelope.execution_plan_id != frozen.digest
+            or execution_envelope.output_content_id != output.content_id
+            or execution_envelope.report_bundle_sha256 != receipt.bundle_sha256
+            or execution_envelope.corpus_sha256 != target_corpus_sha256
+            or execution_envelope.evidence_lineage_sha256 != lineage_digest
+            or execution_envelope.ir_sha256 != target_ir_sha256
+        ):
+            raise QueueConflictError("signed execution envelope does not bind validated output")
+        from tools.phase4_v2.equivalence.core import EquivalenceError
+
+        try:
+            current_plan_digest = freeze_package_execution_plan(execution_plan).digest
+        except EquivalenceError:
+            current_plan_digest = None
+        if plan_input_mismatch or output.execution_plan_id != current_plan_digest:
             result = self.finish(
                 lease,
                 TerminalOutcome.INPUT_MISMATCH,
@@ -1596,7 +2412,14 @@ class Queue:
                 completion_revision=VALIDATED_PACKAGE_OUTPUT_REVISION,
                 expected_input_digest=frozen.digest,
                 terminalize_input_mismatch=True,
-                trusted_publication=_ValidatedPackageOutputPublication(output),
+                trusted_publication=_ValidatedPackageOutputPublication(
+                    output,
+                    execution_plan,
+                    execution_envelope,
+                    package_local_evidence,
+                    package_local_evidence_inputs,
+                    package_local_validator_envelope,
+                ),
             )
         finally:
             os.close(guard)
@@ -1676,12 +2499,43 @@ class Queue:
         expected_input_digest: str | None,
         terminalize_input_mismatch: bool,
         trusted_publication: (
-            _PackageReceiptPublication | _ValidatedPackageOutputPublication | None
+            _PackageReceiptPublication
+            | _PreparationReceiptPublication
+            | _TargetInventoryPublication
+            | _ExactReusePrerequisitePublication
+            | _ValidatedPackageOutputPublication
+            | _AuthenticatedOrchestrationStagePublication
+            | _AuthenticatedTrackerPublication
+            | None
         ),
     ) -> FinishResult:
         trusted_receipt_dependencies: dict[str, str] | None = None
         if isinstance(trusted_publication, _PackageReceiptPublication):
             trusted_receipt_dependencies = self._validate_package_receipt_publication(
+                lease,
+                trusted_publication,
+                output_digest=output_digest,
+                completion_revision=completion_revision,
+                expected_input_digest=expected_input_digest,
+            )
+        elif isinstance(trusted_publication, _PreparationReceiptPublication):
+            self._validate_preparation_receipt_publication(
+                lease,
+                trusted_publication,
+                output_digest=output_digest,
+                completion_revision=completion_revision,
+                expected_input_digest=expected_input_digest,
+            )
+        elif isinstance(trusted_publication, _TargetInventoryPublication):
+            self._validate_target_inventory_publication(
+                lease,
+                trusted_publication,
+                output_digest=output_digest,
+                completion_revision=completion_revision,
+                expected_input_digest=expected_input_digest,
+            )
+        elif isinstance(trusted_publication, _ExactReusePrerequisitePublication):
+            self._validate_exact_reuse_prerequisite_publication(
                 lease,
                 trusted_publication,
                 output_digest=output_digest,
@@ -1696,22 +2550,145 @@ class Queue:
                 completion_revision=completion_revision,
                 expected_input_digest=expected_input_digest,
             )
+        elif isinstance(
+            trusted_publication,
+            (_AuthenticatedOrchestrationStagePublication, _AuthenticatedTrackerPublication),
+        ):
+            restored, restored_revision = _load_authenticated_orchestration_receipt(
+                trusted_publication.kind,
+                trusted_publication.canonical_receipt,
+                trusted_publication.authority,
+            )
+            graph_content_id = _validated_cluster_graph_content_id(trusted_publication.graph)
+            if (
+                trusted_publication.kind not in _TRUSTED_ORCHESTRATION_STAGE_KINDS
+                or restored.cluster_id != trusted_publication.cluster_id
+                or restored.stage_input_sha256 != expected_input_digest
+                or restored.receipt_sha256 != output_digest
+                or restored.graph_sha256 != graph_content_id
+                or restored_revision != completion_revision
+                or expected_input_digest != lease.input_digest
+            ):
+                raise QueueConflictError("orchestration publication does not bind the lease")
         with self._immediate() as connection:
             unit = connection.execute(
-                "SELECT kind FROM work_units WHERE unit_id = ?",
+                "SELECT kind, cluster_id FROM work_units WHERE unit_id = ?",
                 (lease.unit_id,),
             ).fetchone()
             if unit is None:
                 raise QueueError(f"unknown work unit: {lease.unit_id}")
-            reserved = _requires_trusted_completion_adapter(
-                lease.unit_id, str(unit["kind"])
-            )
+            reserved = _requires_trusted_completion_adapter(lease.unit_id, str(unit["kind"]))
             if outcome is TerminalOutcome.ACCEPTED and reserved != (
                 trusted_publication is not None
             ):
                 raise QueueConflictError(
                     "reserved completion must use its trusted publication adapter"
                 )
+            if isinstance(
+                trusted_publication,
+                (_AuthenticatedOrchestrationStagePublication, _AuthenticatedTrackerPublication),
+            ) and (
+                str(unit["kind"]) != trusted_publication.kind
+                or unit["cluster_id"] != trusted_publication.cluster_id
+            ):
+                raise QueueConflictError("orchestration receipt belongs to another stage")
+            if isinstance(
+                trusted_publication,
+                (_AuthenticatedOrchestrationStagePublication, _AuthenticatedTrackerPublication),
+            ):
+                restored, restored_revision = _load_authenticated_orchestration_receipt(
+                    trusted_publication.kind,
+                    trusted_publication.canonical_receipt,
+                    trusted_publication.authority,
+                )
+                graph_content_id = _validated_cluster_graph_content_id(trusted_publication.graph)
+                if (
+                    restored.graph_sha256 != graph_content_id
+                    or restored.receipt_sha256 != output_digest
+                    or restored_revision != completion_revision
+                ):
+                    raise QueueConflictError(
+                        "orchestration receipt changed before transactional publication"
+                    )
+                _require_exact_active_stage_authority(
+                    connection,
+                    lease.unit_id,
+                    trusted_publication.authority,
+                )
+            elif isinstance(trusted_publication, _TargetInventoryPublication):
+                from tools.phase4_v2.equivalence.inventory import (
+                    AuthenticatedTargetInventoryEnvelope,
+                    inventory_authority_capability,
+                    inventory_extractor_capability,
+                    validate_target_inventory_envelope,
+                )
+
+                if type(trusted_publication.envelope) is not AuthenticatedTargetInventoryEnvelope:
+                    raise QueueConflictError("target inventory publication changed type")
+                envelope = validate_target_inventory_envelope(trusted_publication.envelope)
+                _require_exact_active_capabilities(
+                    connection,
+                    lease.unit_id,
+                    (
+                        inventory_authority_capability(envelope.authority),
+                        inventory_extractor_capability(envelope.extractor),
+                    ),
+                )
+            elif isinstance(trusted_publication, _ExactReusePrerequisitePublication):
+                from tools.phase4_v2.equivalence.prerequisite import (
+                    exact_reuse_prerequisite_capabilities,
+                    validate_authenticated_exact_reuse_prerequisite,
+                )
+
+                receipt = validate_authenticated_exact_reuse_prerequisite(
+                    trusted_publication.receipt
+                )
+                self._validate_exact_reuse_prerequisite_publication(
+                    lease,
+                    trusted_publication,
+                    output_digest=output_digest,
+                    completion_revision=completion_revision,
+                    expected_input_digest=expected_input_digest,
+                )
+                _require_exact_active_capabilities(
+                    connection,
+                    lease.unit_id,
+                    exact_reuse_prerequisite_capabilities(receipt),
+                )
+            elif isinstance(trusted_publication, _PreparationReceiptPublication):
+                # Rebuild the binding after the write transaction starts so a
+                # protected-authority rotation cannot race publication.
+                self._validate_preparation_receipt_publication(
+                    lease,
+                    trusted_publication,
+                    output_digest=output_digest,
+                    completion_revision=completion_revision,
+                    expected_input_digest=expected_input_digest,
+                )
+                from tools.phase4_v2.equivalence.plan import preparation_capability_pins
+
+                _require_exact_active_capabilities(
+                    connection,
+                    lease.unit_id,
+                    preparation_capability_pins(trusted_publication.authority),
+                )
+            elif isinstance(trusted_publication, _ValidatedPackageOutputPublication):
+                self._validate_package_output_publication(
+                    lease,
+                    trusted_publication,
+                    output_digest=output_digest,
+                    completion_revision=completion_revision,
+                    expected_input_digest=expected_input_digest,
+                )
+                from tools.phase4_v2.equivalence.plan import (
+                    PackageExecutionPlan,
+                    freeze_package_execution_plan,
+                )
+
+                if type(trusted_publication.execution_plan) is not PackageExecutionPlan:
+                    raise QueueConflictError("package execution plan changed type")
+                frozen_plan = freeze_package_execution_plan(trusted_publication.execution_plan)
+                _require_exact_plan_requirements(connection, lease.unit_id, frozen_plan)
             terminal = connection.execute(
                 """
                 SELECT outcome, output_digest, completion_revision
@@ -1745,9 +2722,7 @@ class Queue:
 
             self._require_live_lease(connection, lease)
             if outcome is TerminalOutcome.ACCEPTED and expected_input_digest is not None:
-                if not self._input_digests_match(
-                    connection, lease, expected_input_digest
-                ):
+                if not self._input_digests_match(connection, lease, expected_input_digest):
                     if not terminalize_input_mismatch:
                         raise InputDigestMismatchError(
                             f"accepted output input changed: {lease.unit_id}"
@@ -1760,6 +2735,18 @@ class Queue:
                 raise DependencyNotSatisfiedError(
                     f"dependencies changed before completion: {lease.unit_id}"
                 )
+            if (
+                outcome is TerminalOutcome.ACCEPTED
+                and str(unit["kind"]) == ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND
+                and not self._cluster_has_accepted_reconciliation(connection, lease.unit_id)
+            ):
+                raise QueueConflictError("cluster implementation requires accepted reconciliation")
+            if (
+                outcome is TerminalOutcome.ACCEPTED
+                and str(unit["kind"]) == ORCHESTRATION_TRACKER_PUBLICATION_KIND
+                and not self._cluster_has_accepted_implementation(connection, lease.unit_id)
+            ):
+                raise QueueConflictError("tracker publication requires accepted implementation")
 
             connection.execute(
                 """
@@ -1775,13 +2762,22 @@ class Queue:
                 ),
             )
             event_payload: dict[str, object] = {"outcome": outcome}
-            if (
-                outcome is TerminalOutcome.ACCEPTED
-                and trusted_receipt_dependencies is not None
-            ):
+            if outcome is TerminalOutcome.ACCEPTED and trusted_receipt_dependencies is not None:
                 event_payload["trusted_dependency_digests"] = dict(
                     sorted(trusted_receipt_dependencies.items())
                 )
+                if isinstance(trusted_publication, _PackageReceiptPublication):
+                    event_payload.update(
+                        {
+                            "validator_authority_sha256": (
+                                trusted_publication.envelope.authority_sha256
+                            ),
+                            "validator_contract_revision": (
+                                trusted_publication.envelope.contract_revision
+                            ),
+                            "validator_revision": trusted_publication.envelope.validator_revision,
+                        }
+                    )
             self._append_event(connection, lease.attempt_id, "FINISHED", event_payload)
 
             disposition = FinishDisposition.TERMINAL_ONLY
@@ -1828,12 +2824,188 @@ class Queue:
                 "UPDATE work_units SET status = ? WHERE unit_id = ?",
                 (next_status.value, lease.unit_id),
             )
+            if outcome is TerminalOutcome.ACCEPTED and isinstance(
+                trusted_publication, _PackageReceiptPublication
+            ):
+                self._validate_package_receipt_publication(
+                    lease,
+                    trusted_publication,
+                    output_digest=output_digest,
+                    completion_revision=completion_revision,
+                    expected_input_digest=expected_input_digest,
+                )
+            elif outcome is TerminalOutcome.ACCEPTED and isinstance(
+                trusted_publication, _PreparationReceiptPublication
+            ):
+                self._validate_preparation_receipt_publication(
+                    lease,
+                    trusted_publication,
+                    output_digest=output_digest,
+                    completion_revision=completion_revision,
+                    expected_input_digest=expected_input_digest,
+                )
+            elif outcome is TerminalOutcome.ACCEPTED and isinstance(
+                trusted_publication, _TargetInventoryPublication
+            ):
+                self._validate_target_inventory_publication(
+                    lease,
+                    trusted_publication,
+                    output_digest=output_digest,
+                    completion_revision=completion_revision,
+                    expected_input_digest=expected_input_digest,
+                )
+            elif outcome is TerminalOutcome.ACCEPTED and isinstance(
+                trusted_publication, _AuthenticatedOrchestrationStagePublication
+            ):
+                restored, restored_revision = _load_authenticated_orchestration_receipt(
+                    trusted_publication.kind,
+                    trusted_publication.canonical_receipt,
+                    trusted_publication.authority,
+                )
+                if (
+                    restored.receipt_sha256 != output_digest
+                    or restored_revision != completion_revision
+                    or restored.graph_sha256
+                    != _validated_cluster_graph_content_id(trusted_publication.graph)
+                ):
+                    raise QueueConflictError("stage receipt changed before commit")
+            elif outcome is TerminalOutcome.ACCEPTED and isinstance(
+                trusted_publication, _ExactReusePrerequisitePublication
+            ):
+                from tools.phase4_v2.equivalence.prerequisite import (
+                    validate_authenticated_exact_reuse_prerequisite,
+                )
+
+                # The re-read occurs after publication writes and before the
+                # SQLite commit. Rotation during publication therefore aborts.
+                validate_authenticated_exact_reuse_prerequisite(trusted_publication.receipt)
+            elif outcome is TerminalOutcome.ACCEPTED and isinstance(
+                trusted_publication, _ValidatedPackageOutputPublication
+            ):
+                # Reauthenticate the retained local evidence after all queue
+                # writes and before commit so authority rotation rolls back.
+                self._validate_package_output_publication(
+                    lease,
+                    trusted_publication,
+                    output_digest=output_digest,
+                    completion_revision=completion_revision,
+                    expected_input_digest=expected_input_digest,
+                )
+            elif outcome is TerminalOutcome.ACCEPTED and isinstance(
+                trusted_publication, _AuthenticatedTrackerPublication
+            ):
+                from tools.phase4_v2.queue.fanout import (
+                    FanoutPublishReceipt,
+                    _authenticate_tracker_fanout_receipt,
+                )
+                from tools.phase4_v2.queue.publication_config import (
+                    TrackerPublicationConfig,
+                )
+                from tools.phase4_v2.queue.publisher import PublisherConflictError
+
+                if (
+                    type(trusted_publication.fanout_receipt) is not FanoutPublishReceipt
+                    or type(trusted_publication.config) is not TrackerPublicationConfig
+                ):
+                    raise QueueConflictError("tracker publication inputs changed type")
+                from tools.phase4_v2.orchestration.completion import (
+                    ActivatedStageAuthority,
+                    load_publication_receipt,
+                )
+
+                if type(trusted_publication.authority) is not ActivatedStageAuthority:
+                    raise QueueConflictError("tracker publication authority changed type")
+                restored = load_publication_receipt(
+                    trusted_publication.canonical_receipt,
+                    trusted_publication.authority,
+                )
+                fanout = trusted_publication.fanout_receipt
+                if (
+                    restored.queue_generation_sha256,
+                    restored.document_set_sha256,
+                    restored.publication_config_sha256,
+                    restored.before_revision,
+                    restored.after_revision,
+                    restored.paths,
+                    restored.changed,
+                ) != (
+                    fanout.queue_generation,
+                    fanout.document_set_sha256,
+                    fanout.publication_config_sha256,
+                    fanout.before_revision,
+                    fanout.after_revision,
+                    fanout.paths,
+                    fanout.changed,
+                ):
+                    raise QueueConflictError(
+                        "signed tracker receipt differs from the remote fanout result"
+                    )
+                try:
+                    _authenticate_tracker_fanout_receipt(
+                        self,
+                        trusted_publication.gateway,
+                        trusted_publication.config,
+                        fanout,
+                    )
+                except (PublisherConflictError, ValueError) as error:
+                    raise QueueConflictError(
+                        "remote tracker publication authentication failed"
+                    ) from error
+                # Network readback may outlive an authority activation.
+                load_publication_receipt(
+                    trusted_publication.canonical_receipt,
+                    trusted_publication.authority,
+                )
             return FinishResult(
                 disposition=disposition,
                 unit_id=lease.unit_id,
                 attempt_id=lease.attempt_id,
                 output_digest=output_digest,
             )
+
+    @staticmethod
+    def _cluster_has_accepted_reconciliation(
+        connection: sqlite3.Connection,
+        unit_id: str,
+    ) -> bool:
+        row = connection.execute(
+            """
+            SELECT 1
+            FROM work_units AS implementation
+            JOIN work_units AS reconciliation
+              ON reconciliation.kind = ?
+             AND reconciliation.cluster_id = implementation.cluster_id
+            JOIN formal_completions AS completed_reconciliation
+              ON completed_reconciliation.unit_id = reconciliation.unit_id
+            WHERE implementation.unit_id = ?
+              AND implementation.cluster_id IS NOT NULL
+            LIMIT 1
+            """,
+            (ORCHESTRATION_CLUSTER_RECONCILIATION_KIND, unit_id),
+        ).fetchone()
+        return row is not None
+
+    @staticmethod
+    def _cluster_has_accepted_implementation(
+        connection: sqlite3.Connection,
+        unit_id: str,
+    ) -> bool:
+        row = connection.execute(
+            """
+            SELECT 1
+            FROM work_units AS publication
+            JOIN work_units AS implementation
+              ON implementation.kind = ?
+             AND implementation.cluster_id = publication.cluster_id
+            JOIN formal_completions AS completed_implementation
+              ON completed_implementation.unit_id = implementation.unit_id
+            WHERE publication.unit_id = ?
+              AND publication.cluster_id IS NOT NULL
+            LIMIT 1
+            """,
+            (ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND, unit_id),
+        ).fetchone()
+        return row is not None
 
     @staticmethod
     def _validate_package_receipt_publication(
@@ -1844,13 +3016,17 @@ class Queue:
         completion_revision: str | None,
         expected_input_digest: str | None,
     ) -> dict[str, str]:
+        from tools.phase4_v2.equivalence.core import (
+            frozen_package_ref_from_validator_envelope,
+            validate_authenticated_validator_envelope,
+        )
         from tools.phase4_v2.equivalence.plan import (
             PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
             package_validation_receipt_completion,
         )
-        from tools.phase4_v2.ir import bind_validator_receipt
 
-        package_ref = publication.package_ref
+        envelope = validate_authenticated_validator_envelope(publication.envelope)
+        package_ref = frozen_package_ref_from_validator_envelope(envelope)
         completion = package_validation_receipt_completion(package_ref)
         if (
             lease.unit_id != completion.parent_unit_id
@@ -1861,13 +3037,7 @@ class Queue:
             raise QueueConflictError(
                 "publication does not belong to the package validation receipt"
             )
-        report = bind_validator_receipt(
-            publication.receipt_payload,
-            trusted_validator_revision=publication.trusted_validator_revision,
-            trusted_contract_revision=publication.trusted_contract_revision,
-            trusted_dependency_digests=publication.trusted_dependency_digests,
-            trusted_receipt_sha256=publication.trusted_receipt_sha256,
-        )
+        report = envelope.report
         identity = report.validated_artifact_identity
         dependencies = dict(report.dependency_digests)
         if (
@@ -1880,6 +3050,120 @@ class Queue:
             raise QueueConflictError("validated receipt does not bind the frozen package reference")
         return dependencies
 
+    def _validate_preparation_receipt_publication(
+        self,
+        lease: Lease,
+        publication: _PreparationReceiptPublication,
+        *,
+        output_digest: str | None,
+        completion_revision: str | None,
+        expected_input_digest: str | None,
+    ) -> None:
+        from tools.phase4_v2.equivalence.plan import (
+            PREPARATION_RECEIPT_REVISION,
+            _new_accepted_preparation_plan_binding,
+            preparation_queue_unit_id,
+        )
+
+        binding = _new_accepted_preparation_plan_binding(
+            package_ref=publication.package_ref,
+            package_local=publication.package_local,
+            receipt=publication.receipt,
+            authority=publication.authority,
+        )
+        if (
+            lease.unit_id != preparation_queue_unit_id(binding.package_ref_id)
+            or output_digest != binding.receipt_sha256
+            or completion_revision != PREPARATION_RECEIPT_REVISION
+            or expected_input_digest != lease.input_digest
+        ):
+            raise QueueConflictError(
+                "publication does not belong to the package preparation receipt"
+            )
+        expected_capabilities = tuple(
+            (item.name, item.revision, item.digest) for item in binding.capabilities
+        )
+        with self._connect() as connection:
+            observed_capabilities = tuple(
+                tuple(row)
+                for row in connection.execute(
+                    """
+                    SELECT capability, required_revision, required_digest
+                    FROM capability_requirements
+                    WHERE unit_id = ? ORDER BY capability
+                    """,
+                    (lease.unit_id,),
+                ).fetchall()
+            )
+        if observed_capabilities != expected_capabilities:
+            raise QueueConflictError(
+                "preparation unit does not pin its exact activated capabilities"
+            )
+
+    @staticmethod
+    def _validate_target_inventory_publication(
+        lease: Lease,
+        publication: _TargetInventoryPublication,
+        *,
+        output_digest: str | None,
+        completion_revision: str | None,
+        expected_input_digest: str | None,
+    ) -> None:
+        from tools.phase4_v2.equivalence.inventory import (
+            AuthenticatedTargetInventoryEnvelope,
+            accept_target_inventory,
+            target_inventory_queue_unit_id,
+            validate_target_inventory_envelope,
+        )
+
+        if type(publication.envelope) is not AuthenticatedTargetInventoryEnvelope:
+            raise QueueConflictError("target inventory publication changed type")
+        envelope = validate_target_inventory_envelope(publication.envelope)
+        accepted = accept_target_inventory(envelope)
+        if (
+            lease.unit_id != target_inventory_queue_unit_id(envelope.package_ref.content_id)
+            or output_digest != accepted.inventory.content_id
+            or completion_revision != accepted.completion.revision
+            or expected_input_digest != lease.input_digest
+            or expected_input_digest != envelope.receipt_sha256
+        ):
+            raise QueueConflictError("publication does not belong to the target inventory")
+
+    @staticmethod
+    def _validate_exact_reuse_prerequisite_publication(
+        lease: Lease,
+        publication: _ExactReusePrerequisitePublication,
+        *,
+        output_digest: str | None,
+        completion_revision: str | None,
+        expected_input_digest: str | None,
+    ) -> None:
+        from tools.phase4_v2.equivalence.prerequisite import (
+            AuthenticatedExactReusePrerequisite,
+            exact_reuse_prerequisite_completions,
+            validate_authenticated_exact_reuse_prerequisite,
+        )
+
+        if type(publication.receipt) is not AuthenticatedExactReusePrerequisite:
+            raise QueueConflictError("exact-reuse publication changed type")
+        receipt = validate_authenticated_exact_reuse_prerequisite(publication.receipt)
+        completion = next(
+            (
+                item
+                for item in exact_reuse_prerequisite_completions(receipt)
+                if item.parent_unit_id == lease.unit_id
+            ),
+            None,
+        )
+        if (
+            completion is None
+            or output_digest != completion.digest
+            or completion_revision != completion.revision
+            or expected_input_digest != receipt.receipt_sha256
+            or lease.input_digest != receipt.receipt_sha256
+        ):
+            raise QueueConflictError("publication does not belong to the exact-reuse prerequisite")
+
     @staticmethod
     def _validate_package_output_publication(
         lease: Lease,
@@ -1889,22 +3173,62 @@ class Queue:
         completion_revision: str | None,
         expected_input_digest: str | None,
     ) -> None:
+        from tools.phase4_v2.equivalence.execution import (
+            AuthenticatedPackageExecutionEnvelope,
+            validate_package_execution_envelope,
+        )
         from tools.phase4_v2.equivalence.plan import (
             VALIDATED_PACKAGE_OUTPUT_REVISION,
+            PackageExecutionPlan,
             ValidatedPackageOutput,
+            bind_package_local_evidence,
+            freeze_package_execution_plan,
             package_queue_unit_id,
+        )
+        from tools.phase4_v2.raw_source import (
+            AuthenticatedPackageLocalEvidence,
+            reauthenticate_package_local_evidence,
         )
 
         output = publication.output
-        if type(output) is not ValidatedPackageOutput or (
+        if type(publication.execution_envelope) is not AuthenticatedPackageExecutionEnvelope:
+            raise QueueConflictError("package publication lost its execution envelope")
+        envelope = validate_package_execution_envelope(publication.execution_envelope)
+        if (
+            type(output) is not ValidatedPackageOutput
+            or type(publication.execution_plan) is not PackageExecutionPlan
+            or type(publication.package_local_evidence) is not AuthenticatedPackageLocalEvidence
+        ):
+            raise QueueConflictError("package publication inputs changed type")
+        try:
+            local = reauthenticate_package_local_evidence(
+                publication.package_local_evidence,
+                inputs=publication.package_local_evidence_inputs,
+            )
+            local_binding = bind_package_local_evidence(
+                package_ref=publication.execution_plan.target_package_ref,
+                evidence=local,
+                evidence_inputs=publication.package_local_evidence_inputs,
+                enriched_validator_envelope=(publication.package_local_validator_envelope),
+            )
+            frozen_plan = freeze_package_execution_plan(publication.execution_plan)
+        except (AttributeError, TypeError, ValueError) as error:
+            raise QueueConflictError(
+                "package-local evidence authentication failed during publication"
+            ) from error
+        if (
             lease.unit_id != package_queue_unit_id(output.target_package_ref_id)
             or output_digest != output.content_id
             or completion_revision != VALIDATED_PACKAGE_OUTPUT_REVISION
             or expected_input_digest != output.execution_plan_id
+            or envelope.output_content_id != output.content_id
+            or envelope.execution_plan_id != output.execution_plan_id
+            or envelope.package_ref_id != output.target_package_ref_id
+            or local_binding.to_data() != frozen_plan.package_local_evidence.to_data()
+            or output.package_local_raw_receipt_sha256 != local.receipt_sha256
+            or output.package_local_raw_authority_sha256 != local.authority.activation_sha256
         ):
-            raise QueueConflictError(
-                "publication does not belong to the validated package output"
-            )
+            raise QueueConflictError("publication does not belong to the validated package output")
 
     def status(self, unit_id: str) -> WorkUnitStatus:
         """Return the materialized status of one unit."""
@@ -1919,6 +3243,19 @@ class Queue:
         if row is None:
             raise QueueError(f"unknown work unit: {unit_id}")
         return WorkUnitStatus(row["status"])
+
+    def attempt_outcome(self, attempt_id: str) -> TerminalOutcome | None:
+        """Read the immutable terminal for one exact attempt, if it has one."""
+        _validate_identifier(attempt_id, "attempt_id")
+        connection = self._connect()
+        try:
+            row = connection.execute(
+                "SELECT outcome FROM attempt_terminals WHERE attempt_id = ?",
+                (attempt_id,),
+            ).fetchone()
+        finally:
+            connection.close()
+        return TerminalOutcome(row["outcome"]) if row is not None else None
 
     def retry_repaired(self, unit_id: str) -> None:
         """Return an explicitly repaired failed unit to the ready queue."""
@@ -2026,7 +3363,9 @@ class Queue:
                 SELECT COALESCE(MAX(event_id), 0) AS watermark
                 FROM events
                 WHERE event_type NOT IN (
-                    'RENEWED', 'TRACKER_PUBLISHED', 'TRACKER_ALREADY_CURRENT'
+                    'RENEWED',
+                    'TRACKER_PUBLISHED', 'TRACKER_ALREADY_CURRENT',
+                    'TRACKER_DOCUMENT_PUBLISHED', 'TRACKER_DOCUMENT_ALREADY_CURRENT'
                 )
                 """
             ).fetchone()
@@ -2225,9 +3564,7 @@ class Queue:
         expected_input_digest: str,
     ) -> None:
         if not Queue._input_digests_match(connection, lease, expected_input_digest):
-            raise InputDigestMismatchError(
-                f"accepted output input changed: {lease.unit_id}"
-            )
+            raise InputDigestMismatchError(f"accepted output input changed: {lease.unit_id}")
 
     @staticmethod
     def _input_digests_match(
@@ -2668,9 +4005,7 @@ class Queue:
                 if type(item) is list and len(item) == 3
             ]
             if len(parsed) != len(parents) or any(
-                type(path) is not str
-                or type(device) is not int
-                or type(inode) is not int
+                type(path) is not str or type(device) is not int or type(inode) is not int
                 for path, device, inode in parsed
             ):
                 raise ValueError
@@ -2765,26 +4100,561 @@ def _validate_reserved_unit_kind(unit_id: str, kind: str) -> None:
 
 
 def _reserved_unit_kinds() -> dict[str, str]:
+    from tools.phase4_v2.equivalence.inventory import (
+        INVENTORY_QUEUE_UNIT_KIND,
+        INVENTORY_QUEUE_UNIT_PREFIX,
+    )
     from tools.phase4_v2.equivalence.plan import (
         PACKAGE_QUEUE_UNIT_KIND,
         PACKAGE_QUEUE_UNIT_PREFIX,
     )
+    from tools.phase4_v2.equivalence.prerequisite import (
+        EXACT_REUSE_DIRECT_AUDIT_QUEUE_KIND,
+        EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX,
+        EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND,
+        EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX,
+        EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND,
+        EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX,
+    )
 
     return {
         **_RESERVED_UNIT_KINDS,
+        f"{INVENTORY_QUEUE_UNIT_PREFIX}:": INVENTORY_QUEUE_UNIT_KIND,
         f"{PACKAGE_QUEUE_UNIT_PREFIX}:": PACKAGE_QUEUE_UNIT_KIND,
+        f"{EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX}:": EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND,
+        f"{EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX}:": EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND,
+        f"{EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX}:": EXACT_REUSE_DIRECT_AUDIT_QUEUE_KIND,
     }
 
 
 def _requires_trusted_completion_adapter(unit_id: str, kind: str) -> bool:
-    return kind.startswith(_TRUSTED_COMPLETION_KIND_PREFIX) or any(
-        unit_id.startswith(prefix) for prefix in _reserved_unit_kinds()
+    return (
+        kind in ORCHESTRATION_KINDS
+        or kind.startswith(_TRUSTED_COMPLETION_KIND_PREFIX)
+        or any(unit_id.startswith(prefix) for prefix in _reserved_unit_kinds())
     )
+
+
+def _requires_exact_reuse_batch_materializer(unit_id: str, kind: str) -> bool:
+    from tools.phase4_v2.equivalence.prerequisite import (
+        EXACT_REUSE_DIRECT_AUDIT_QUEUE_KIND,
+        EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX,
+        EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND,
+        EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX,
+        EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND,
+        EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX,
+    )
+
+    kinds = {
+        EXACT_REUSE_DIRECT_AUDIT_QUEUE_KIND,
+        EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND,
+        EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND,
+    }
+    prefixes = (
+        f"{EXACT_REUSE_DIRECT_AUDIT_UNIT_PREFIX}:",
+        f"{EXACT_REUSE_LEDGER_DECISION_UNIT_PREFIX}:",
+        f"{EXACT_REUSE_SEMANTIC_ROOT_UNIT_PREFIX}:",
+    )
+    return kind in kinds or unit_id.startswith(prefixes)
+
+
+def _validate_reserved_materialization_source(
+    authentication: object | None,
+    *,
+    unit_id: str,
+    kind: str,
+    cluster_id: str | None,
+    input_digest: str | None,
+    capability_pins: tuple[CapabilityPin, ...],
+    dependency_pins: tuple[CompletionDependencyPin, ...],
+) -> None:
+    from tools.phase4_v2.equivalence.core import (
+        AuthenticatedValidatorEnvelope,
+        frozen_package_ref_from_validator_envelope,
+        validate_authenticated_validator_envelope,
+    )
+    from tools.phase4_v2.equivalence.inventory import (
+        INVENTORY_QUEUE_UNIT_KIND,
+        AuthenticatedTargetInventoryEnvelope,
+        inventory_authority_capability,
+        inventory_extractor_capability,
+        target_inventory_queue_unit_id,
+        validate_target_inventory_envelope,
+    )
+    from tools.phase4_v2.equivalence.plan import (
+        PACKAGE_QUEUE_UNIT_KIND,
+        PREPARATION_QUEUE_UNIT_KIND,
+        VALIDATED_PACKAGE_OUTPUT_REVISION,
+        PackageExecutionPlan,
+        PackageLocalPlan,
+        freeze_package_execution_plan,
+        package_queue_unit_id,
+        package_validation_receipt_completion,
+        preparation_capability_pins,
+        preparation_queue_unit_id,
+    )
+    from tools.phase4_v2.equivalence.prerequisite import (
+        EXACT_REUSE_DIRECT_AUDIT_QUEUE_KIND,
+        EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND,
+        EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND,
+        AuthenticatedExactReusePrerequisite,
+        exact_reuse_prerequisite_capabilities,
+        exact_reuse_prerequisite_completions,
+        exact_reuse_prerequisite_dependencies,
+        validate_authenticated_exact_reuse_prerequisite,
+    )
+    from tools.phase4_v2.preflight.registry import ActivatedPreparationAuthority
+
+    if type(authentication) is AuthenticatedExactReusePrerequisite:
+        receipt = validate_authenticated_exact_reuse_prerequisite(authentication)
+        completion_kinds = dict(
+            zip(
+                exact_reuse_prerequisite_completions(receipt),
+                (
+                    EXACT_REUSE_SEMANTIC_ROOT_QUEUE_KIND,
+                    EXACT_REUSE_LEDGER_DECISION_QUEUE_KIND,
+                    EXACT_REUSE_DIRECT_AUDIT_QUEUE_KIND,
+                ),
+                strict=True,
+            )
+        )
+        completion = next(
+            (item for item in completion_kinds if item.parent_unit_id == unit_id), None
+        )
+        expected_capabilities = tuple(
+            CapabilityPin(item.name, item.revision, item.digest)
+            for item in exact_reuse_prerequisite_capabilities(receipt)
+        )
+        expected_dependencies = tuple(
+            CompletionDependencyPin(item.parent_unit_id, item.revision, item.digest)
+            for item in exact_reuse_prerequisite_dependencies(receipt)
+        )
+        if (
+            completion is None
+            or kind != completion_kinds[completion]
+            or input_digest != receipt.receipt_sha256
+            or tuple(sorted(capability_pins, key=lambda item: item.capability))
+            != tuple(sorted(expected_capabilities, key=lambda item: item.capability))
+            or tuple(sorted(dependency_pins, key=lambda item: item.parent_unit_id))
+            != tuple(sorted(expected_dependencies, key=lambda item: item.parent_unit_id))
+            or cluster_id is not None
+        ):
+            raise QueueConflictError("exact-reuse row differs from its signed prerequisite")
+        return
+
+    if type(authentication) is AuthenticatedValidatorEnvelope:
+        envelope = validate_authenticated_validator_envelope(authentication)
+        completion = package_validation_receipt_completion(
+            frozen_package_ref_from_validator_envelope(envelope)
+        )
+        if (
+            kind != "trusted-package-validation-receipt"
+            or unit_id != completion.parent_unit_id
+            or input_digest != completion.digest
+            or capability_pins
+            or dependency_pins
+            or cluster_id is not None
+        ):
+            raise QueueConflictError("package receipt row differs from its signed envelope")
+        return
+    if type(authentication) is AuthenticatedTargetInventoryEnvelope:
+        envelope = validate_target_inventory_envelope(authentication)
+        expected_capabilities = tuple(
+            CapabilityPin(item.name, item.revision, item.digest)
+            for item in (
+                inventory_authority_capability(envelope.authority),
+                inventory_extractor_capability(envelope.extractor),
+            )
+        )
+        if (
+            kind != INVENTORY_QUEUE_UNIT_KIND
+            or unit_id != target_inventory_queue_unit_id(envelope.package_ref.content_id)
+            or input_digest != envelope.receipt_sha256
+            or tuple(sorted(capability_pins, key=lambda item: item.capability))
+            != tuple(sorted(expected_capabilities, key=lambda item: item.capability))
+            or dependency_pins
+            or cluster_id is not None
+        ):
+            raise QueueConflictError("inventory row differs from its signed envelope")
+        return
+    if type(authentication) is PackageExecutionPlan:
+        frozen = freeze_package_execution_plan(authentication)
+        expected_capabilities = tuple(
+            CapabilityPin(item.name, item.revision, item.digest)
+            for item in frozen.required_capabilities
+        )
+        expected_dependencies = tuple(
+            CompletionDependencyPin(item.parent_unit_id, item.revision, item.digest)
+            for item in frozen.required_completions
+        )
+        if (
+            kind != PACKAGE_QUEUE_UNIT_KIND
+            or unit_id != package_queue_unit_id(frozen.target_package_ref_id)
+            or input_digest != frozen.digest
+            or cluster_id != frozen.cluster_id
+            or capability_pins != expected_capabilities
+            or dependency_pins != expected_dependencies
+        ):
+            raise QueueConflictError("package row differs from its exact frozen plan")
+        return
+    if type(authentication) is tuple and len(authentication) == 3:
+        package_ref, package_local, authority = authentication
+        if (
+            type(package_local) is not PackageLocalPlan
+            or type(authority) is not ActivatedPreparationAuthority
+        ):
+            raise QueueConflictError("preparation materialization authority is invalid")
+        from tools.phase4_v2.equivalence.core import validate_frozen_package_ref
+
+        package_ref = validate_frozen_package_ref(package_ref)
+        expected_capabilities = tuple(
+            CapabilityPin(item.name, item.revision, item.digest)
+            for item in preparation_capability_pins(authority)
+        )
+        if (
+            kind != PREPARATION_QUEUE_UNIT_KIND
+            or unit_id != preparation_queue_unit_id(package_ref.content_id)
+            or package_local.target_package_ref_id != package_ref.content_id
+            or capability_pins != expected_capabilities
+            or dependency_pins
+            or cluster_id is not None
+        ):
+            raise QueueConflictError("preparation row differs from authenticated inputs")
+        return
+    from tools.phase4_v2.orchestration.completion import (
+        CLUSTER_IMPLEMENTATION_COMPLETION_REVISION,
+        CLUSTER_RECONCILIATION_COMPLETION_REVISION,
+        PACKAGE_AUDIT_COMPLETION_REVISION,
+    )
+    from tools.phase4_v2.orchestration.graph import (
+        ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
+        ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
+        ORCHESTRATION_PACKAGE_ANALYSIS_KIND,
+        ORCHESTRATION_PACKAGE_AUDIT_KIND,
+        ORCHESTRATION_TRACKER_PUBLICATION_KIND,
+        ClusterGraphPlan,
+        cluster_implementation_unit_id,
+        cluster_reconciliation_unit_id,
+        package_audit_unit_id,
+        stage_input_sha256,
+        tracker_publication_unit_id,
+        validate_cluster_graph,
+    )
+
+    if type(authentication) is ClusterGraphPlan:
+        graph = validate_cluster_graph(authentication)
+        if cluster_id != graph.cluster_id:
+            raise QueueConflictError("orchestration row differs from its exact cluster graph")
+        package = next((item for item in graph.packages if item.unit_id == unit_id), None)
+        if package is not None:
+            exact = (
+                kind == ORCHESTRATION_PACKAGE_ANALYSIS_KIND
+                and input_digest == package.input_sha256
+                and capability_pins == package.capability_pins
+                and dependency_pins == package.dependency_pins
+            )
+        else:
+            audit_package = next(
+                (
+                    item
+                    for item in graph.packages
+                    if package_audit_unit_id(graph, item.package_ref_id) == unit_id
+                ),
+                None,
+            )
+            if audit_package is not None:
+                exact = (
+                    kind == ORCHESTRATION_PACKAGE_AUDIT_KIND
+                    and capability_pins == graph.audit_capability_pins
+                    and len(dependency_pins) == 1
+                    and dependency_pins[0].parent_unit_id == audit_package.unit_id
+                    and dependency_pins[0].revision == VALIDATED_PACKAGE_OUTPUT_REVISION
+                    and input_digest
+                    == stage_input_sha256(
+                        graph,
+                        stage="audit",
+                        subject=audit_package.package_ref_id,
+                        capability_pins=capability_pins,
+                        dependency_pins=dependency_pins,
+                    )
+                )
+            else:
+                stage_rows = (
+                    (
+                        cluster_reconciliation_unit_id(graph),
+                        ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
+                        "reconciliation",
+                        graph.reconciliation_capability_pins,
+                        graph.cluster_id,
+                        {
+                            package_audit_unit_id(graph, item.package_ref_id)
+                            for item in graph.packages
+                        },
+                        PACKAGE_AUDIT_COMPLETION_REVISION,
+                    ),
+                    (
+                        cluster_implementation_unit_id(graph),
+                        ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
+                        "implementation",
+                        graph.implementation_capability_pins,
+                        graph.cluster_id,
+                        {cluster_reconciliation_unit_id(graph)},
+                        CLUSTER_RECONCILIATION_COMPLETION_REVISION,
+                    ),
+                    (
+                        tracker_publication_unit_id(graph),
+                        ORCHESTRATION_TRACKER_PUBLICATION_KIND,
+                        "publication",
+                        graph.publication_capability_pins,
+                        graph.cluster_id,
+                        {cluster_implementation_unit_id(graph)},
+                        CLUSTER_IMPLEMENTATION_COMPLETION_REVISION,
+                    ),
+                )
+                selected = next((row for row in stage_rows if row[0] == unit_id), None)
+                exact = False
+                if selected is not None:
+                    (
+                        _,
+                        expected_kind,
+                        stage,
+                        expected_caps,
+                        subject,
+                        expected_parents,
+                        expected_revision,
+                    ) = selected
+                    exact = (
+                        kind == expected_kind
+                        and capability_pins == expected_caps
+                        and {item.parent_unit_id for item in dependency_pins} == expected_parents
+                        and len(dependency_pins) == len(expected_parents)
+                        and all(item.revision == expected_revision for item in dependency_pins)
+                        and input_digest
+                        == stage_input_sha256(
+                            graph,
+                            stage=stage,
+                            subject=subject,
+                            capability_pins=capability_pins,
+                            dependency_pins=dependency_pins,
+                        )
+                    )
+        if not exact:
+            raise QueueConflictError("orchestration row differs from its exact cluster graph")
+        return
+    raise QueueConflictError("reserved row has no authenticated materialization source")
+
+
+def _load_authenticated_orchestration_receipt(
+    kind: str,
+    canonical_receipt: bytes,
+    authority: object,
+) -> tuple[_AuthenticatedStageReceipt, str]:
+    """Reauthenticate the signed receipt selected by the queue-owned stage kind."""
+
+    from tools.phase4_v2.orchestration.completion import (
+        CLUSTER_IMPLEMENTATION_COMPLETION_REVISION,
+        CLUSTER_RECONCILIATION_COMPLETION_REVISION,
+        PACKAGE_AUDIT_COMPLETION_REVISION,
+        TRACKER_PUBLICATION_COMPLETION_REVISION,
+        ActivatedStageAuthority,
+        load_implementation_receipt,
+        load_package_audit_receipt,
+        load_publication_receipt,
+        load_reconciliation_receipt,
+    )
+
+    if type(authority) is not ActivatedStageAuthority:
+        raise QueueConflictError("orchestration completion requires an activated authority")
+    if kind == ORCHESTRATION_PACKAGE_AUDIT_KIND:
+        return load_package_audit_receipt(
+            canonical_receipt, authority
+        ), PACKAGE_AUDIT_COMPLETION_REVISION
+    if kind == ORCHESTRATION_CLUSTER_RECONCILIATION_KIND:
+        return (
+            load_reconciliation_receipt(canonical_receipt, authority),
+            CLUSTER_RECONCILIATION_COMPLETION_REVISION,
+        )
+    if kind == ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND:
+        return (
+            load_implementation_receipt(canonical_receipt, authority),
+            CLUSTER_IMPLEMENTATION_COMPLETION_REVISION,
+        )
+    if kind == ORCHESTRATION_TRACKER_PUBLICATION_KIND:
+        return (
+            load_publication_receipt(canonical_receipt, authority),
+            TRACKER_PUBLICATION_COMPLETION_REVISION,
+        )
+    raise QueueConflictError("queue kind has no authenticated orchestration receipt")
+
+
+def _validated_cluster_graph_content_id(graph: object) -> str:
+    from tools.phase4_v2.orchestration.graph import (
+        ClusterGraphPlan,
+        validate_cluster_graph,
+    )
+
+    if type(graph) is not ClusterGraphPlan:
+        raise QueueConflictError("orchestration completion requires the exact cluster graph")
+    return validate_cluster_graph(graph).content_id
+
+
+def _require_exact_active_stage_authority(
+    connection: sqlite3.Connection,
+    unit_id: str,
+    authority: object,
+) -> None:
+    from tools.phase4_v2.orchestration.completion import (
+        ActivatedStageAuthority,
+        stage_authority_capability,
+    )
+
+    if type(authority) is not ActivatedStageAuthority:
+        raise QueueConflictError("orchestration completion requires an activated authority")
+    pin = stage_authority_capability(authority)
+    requirements = tuple(
+        tuple(row)
+        for row in connection.execute(
+            """
+            SELECT capability, required_revision, required_digest
+            FROM capability_requirements
+            WHERE unit_id = ? ORDER BY capability
+            """,
+            (unit_id,),
+        ).fetchall()
+    )
+    expected = ((pin.capability, pin.revision, pin.digest),)
+    if requirements != expected:
+        raise QueueConflictError(
+            "orchestration unit does not require exactly its signing authority"
+        )
+    head = connection.execute(
+        """
+        SELECT revision, digest FROM pipeline_capability_activations
+        WHERE capability = ? ORDER BY activation_id DESC LIMIT 1
+        """,
+        (pin.capability,),
+    ).fetchone()
+    if head is None or tuple(head) != (pin.revision, pin.digest):
+        raise QueueConflictError("orchestration signing authority is not the active head")
+
+
+def _require_exact_active_capabilities(
+    connection: sqlite3.Connection,
+    unit_id: str,
+    pins: tuple[object, ...],
+) -> None:
+    expected = tuple(
+        sorted(
+            (
+                getattr(pin, "name", None),
+                getattr(pin, "revision", None),
+                getattr(pin, "digest", None),
+            )
+            for pin in pins
+        )
+    )
+    requirements = tuple(
+        tuple(row)
+        for row in connection.execute(
+            """
+            SELECT capability, required_revision, required_digest
+            FROM capability_requirements WHERE unit_id = ? ORDER BY capability
+            """,
+            (unit_id,),
+        ).fetchall()
+    )
+    if requirements != expected:
+        raise QueueConflictError("unit does not require exactly its authenticated capabilities")
+    for name, revision, digest in expected:
+        head = connection.execute(
+            """
+            SELECT revision, digest FROM pipeline_capability_activations
+            WHERE capability = ? ORDER BY activation_id DESC LIMIT 1
+            """,
+            (name,),
+        ).fetchone()
+        if head is None or tuple(head) != (revision, digest):
+            raise QueueConflictError("authenticated capability is not the active head")
+
+
+def _require_exact_plan_requirements(
+    connection: sqlite3.Connection,
+    unit_id: str,
+    frozen_plan: object,
+) -> None:
+    capabilities = getattr(frozen_plan, "required_capabilities", None)
+    completions = getattr(frozen_plan, "required_completions", None)
+    if type(capabilities) is not tuple or type(completions) is not tuple:
+        raise QueueConflictError("package execution plan requirements are unavailable")
+    expected_capabilities = tuple((item.name, item.revision, item.digest) for item in capabilities)
+    observed_capabilities = tuple(
+        tuple(row)
+        for row in connection.execute(
+            """
+            SELECT capability, required_revision, required_digest
+            FROM capability_requirements WHERE unit_id = ? ORDER BY capability
+            """,
+            (unit_id,),
+        ).fetchall()
+    )
+    expected_completions = tuple(
+        (item.parent_unit_id, item.revision, item.digest) for item in completions
+    )
+    observed_completions = tuple(
+        tuple(row)
+        for row in connection.execute(
+            """
+            SELECT parent_unit_id, required_revision, required_digest
+            FROM dependencies WHERE unit_id = ? ORDER BY parent_unit_id
+            """,
+            (unit_id,),
+        ).fetchall()
+    )
+    if (
+        observed_capabilities != expected_capabilities
+        or observed_completions != expected_completions
+    ):
+        raise QueueConflictError("package unit rows differ from its exact frozen plan")
 
 
 def _validate_digest(value: str, label: str) -> None:
     if not isinstance(value, str) or _DIGEST.fullmatch(value) is None:
         raise ValueError(f"{label} must be a lowercase SHA-256 digest")
+
+
+def _bounded_regular_file_sha256(path: Path) -> str:
+    descriptor: int | None = None
+    try:
+        descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > 64 * 1024 * 1024:
+            raise QueueConflictError("package report input is not a bounded regular file")
+        digest = hashlib.sha256()
+        while chunk := os.read(descriptor, 1024 * 1024):
+            digest.update(chunk)
+        after = os.fstat(descriptor)
+        if (
+            after.st_dev,
+            after.st_ino,
+            after.st_mode,
+            after.st_size,
+            after.st_mtime_ns,
+            after.st_ctime_ns,
+        ) != (
+            metadata.st_dev,
+            metadata.st_ino,
+            metadata.st_mode,
+            metadata.st_size,
+            metadata.st_mtime_ns,
+            metadata.st_ctime_ns,
+        ):
+            raise QueueConflictError("package report input changed while hashing")
+        return digest.hexdigest()
+    except OSError as error:
+        raise QueueConflictError("package report input is unavailable") from error
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
 
 
 def _validate_revision(value: str) -> None:
@@ -2800,6 +4670,26 @@ def _validate_owner(owner: str) -> None:
 def _validate_ttl(ttl_seconds: int) -> None:
     if type(ttl_seconds) is not int or not 1 <= ttl_seconds <= _MAX_TTL_SECONDS:
         raise ValueError("ttl_seconds must be a bounded positive integer")
+
+
+def _validate_allowed_kinds(allowed_kinds: Iterable[str] | None) -> tuple[str, ...] | None:
+    if allowed_kinds is None:
+        return None
+    if isinstance(allowed_kinds, (str, bytes)):
+        raise ValueError("allowed_kinds must be a collection of identifiers")
+    kinds = tuple(islice(allowed_kinds, _MAX_MATERIALIZED_PINS + 1))
+    if not kinds or len(kinds) > _MAX_MATERIALIZED_PINS:
+        raise ValueError("allowed_kinds must be a non-empty bounded collection")
+    for kind in kinds:
+        _validate_identifier(kind, "allowed kind")
+    if len(set(kinds)) != len(kinds):
+        raise ValueError("allowed_kinds contains duplicates")
+    return tuple(sorted(kinds))
+
+
+def _validate_orchestration_definition(kind: str, cluster_id: str | None) -> None:
+    if kind in ORCHESTRATION_KINDS - {ORCHESTRATION_PACKAGE_ANALYSIS_KIND} and cluster_id is None:
+        raise ValueError("orchestration stage requires a cluster_id")
 
 
 def _bounded_materialization_values[PinT: (CapabilityPin, CompletionDependencyPin)](
@@ -2837,13 +4727,9 @@ def _derive_materialized_input_digest(
     dependencies: tuple[CompletionDependencyPin, ...],
 ) -> str:
     payload = {
-        "capability_pins": [
-            [pin.capability, pin.revision, pin.digest] for pin in capabilities
-        ],
+        "capability_pins": [[pin.capability, pin.revision, pin.digest] for pin in capabilities],
         "cluster_id": cluster_id,
-        "dependency_pins": [
-            [pin.parent_unit_id, pin.revision, pin.digest] for pin in dependencies
-        ],
+        "dependency_pins": [[pin.parent_unit_id, pin.revision, pin.digest] for pin in dependencies],
         "execution_mode": execution_mode.value,
         "kind": kind,
         "priority": priority,

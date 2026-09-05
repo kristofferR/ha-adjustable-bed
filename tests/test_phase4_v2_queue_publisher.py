@@ -88,6 +88,18 @@ def test_publisher_preserves_manual_text_and_exactly_reads_back(
     assert gateway.body.count("<!-- phase4-v2-tracker:start") == 1
     assert first.queue_generation == generation_after_publish
     assert second.queue_generation == generation_after_publish
+    with closing(sqlite3.connect(queue.database)) as connection, connection:
+        event_types = tuple(
+            row[0]
+            for row in connection.execute(
+                "SELECT event_type FROM events WHERE event_type LIKE 'TRACKER_DOCUMENT_%' "
+                "ORDER BY event_id"
+            )
+        )
+    assert event_types == (
+        "TRACKER_DOCUMENT_PUBLISHED",
+        "TRACKER_DOCUMENT_ALREADY_CURRENT",
+    )
 
 
 def test_publisher_replaces_an_existing_block_without_reserving_a_separator(
@@ -209,7 +221,13 @@ def test_public_checkpoint_cannot_hide_internal_event_names(
 ) -> None:
     queue, lease = publisher_queue
 
-    for event_type in ("RENEWED", "TRACKER_PUBLISHED", "TRACKER_ALREADY_CURRENT"):
+    for event_type in (
+        "RENEWED",
+        "TRACKER_PUBLISHED",
+        "TRACKER_ALREADY_CURRENT",
+        "TRACKER_DOCUMENT_PUBLISHED",
+        "TRACKER_DOCUMENT_ALREADY_CURRENT",
+    ):
         with pytest.raises(ValueError, match="reserved"):
             queue.checkpoint(lease, event_type)
 

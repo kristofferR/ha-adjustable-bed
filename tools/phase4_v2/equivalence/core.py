@@ -9,14 +9,25 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
+import stat
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Never
+from typing import TYPE_CHECKING, Never
+
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+if TYPE_CHECKING:
+    from tools.phase4_v2.ir import ValidatedReport
 
 EQUIVALENCE_SCHEMA_REVISION = "phase4-v2-exact-equivalence-v1"
 PACKAGE_REF_REVISION = "phase4-v2-frozen-package-ref-v1"
+VALIDATOR_AUTHORITY_SCHEMA = "phase4-v2-validator-authority-v1"
+VALIDATOR_AUTHORITY_PIN_SCHEMA = "phase4-v2-validator-authority-pin-v1"
+VALIDATOR_ENVELOPE_SCHEMA = "phase4-v2-authenticated-validator-envelope-v1"
 EXTRACTOR_CAPABILITY_REVISION = "phase4-v2-extractor-capability-v1"
 APPLICATION_ROOT_REVISION = "phase4-v2-application-root-v1"
 BYTE_IDENTITY_PROOF_REVISION = "phase4-v2-byte-identity-proof-v1"
@@ -46,6 +57,8 @@ _MAX_RISKS_PER_ROOT = 4_096
 _MAX_CANDIDATES = 250_000
 _MAX_LEDGER_RECORDS = 1_000_000
 _MAX_TRUSTED_SOURCE_ROOTS = 250_000
+_MAX_VALIDATOR_AUTHORITY_BYTES = 64 * 1024
+_MAX_VALIDATOR_ENVELOPE_BYTES = 64 * 1024**2
 
 
 class EquivalenceError(ValueError):
@@ -99,14 +112,155 @@ def _ordered_unique(
 
 
 def _canonical_content_id(domain: str, data: Mapping[str, object]) -> str:
-    encoded = json.dumps(
-        data,
-        ensure_ascii=False,
-        allow_nan=False,
-        separators=(",", ":"),
-        sort_keys=True,
-    ).encode("utf-8")
+    encoded = _canonical_json_bytes(data)
     return hashlib.sha256(domain.encode("ascii") + b"\0" + encoded).hexdigest()
+
+
+def _canonical_json_bytes(value: object, *, trailing_newline: bool = False) -> bytes:
+    try:
+        encoded = json.dumps(
+            value,
+            ensure_ascii=False,
+            allow_nan=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+    except (TypeError, ValueError, UnicodeError) as error:
+        raise EquivalenceError("canonical content contains an unsupported value") from error
+    return encoded + (b"\n" if trailing_newline else b"")
+
+
+def _unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            _fail(f"canonical JSON contains duplicate key {key!r}")
+        result[key] = value
+    return result
+
+
+def _canonical_json_document(
+    payload: object,
+    label: str,
+    *,
+    trailing_newline: bool,
+    maximum_bytes: int = _MAX_VALIDATOR_ENVELOPE_BYTES,
+) -> dict[str, object]:
+    if type(payload) is not bytes or not 0 < len(payload) <= maximum_bytes:
+        _fail(f"{label} must be bounded exact bytes")
+    try:
+        value = json.loads(payload, object_pairs_hook=_unique_json_object)
+    except (UnicodeError, ValueError, RecursionError) as error:
+        raise EquivalenceError(f"{label} is not valid JSON") from error
+    pending = [(value, 0)]
+    nodes = 0
+    while pending:
+        item, depth = pending.pop()
+        nodes += 1
+        if depth > 64 or nodes > 250_000:
+            _fail(f"{label} exceeds JSON structural bounds")
+        if type(item) is dict:
+            pending.extend((child, depth + 1) for child in item.values())
+        elif type(item) is list:
+            pending.extend((child, depth + 1) for child in item)
+    if type(value) is not dict or _canonical_json_bytes(
+        value, trailing_newline=trailing_newline
+    ) != payload:
+        _fail(f"{label} is not canonical JSON")
+    return value
+
+
+def _token_value(value: object, field: str) -> str:
+    if type(value) is not str:
+        _fail(f"{field} must be a string")
+    return _token(value, field)
+
+
+def _sha_value(value: object, field: str) -> str:
+    if type(value) is not str:
+        _fail(f"{field} must be a string")
+    return _sha256(value, field)
+
+
+def _security_stat(metadata: os.stat_result) -> tuple[int, ...]:
+    return (
+        metadata.st_uid, metadata.st_gid, metadata.st_mode, metadata.st_nlink,
+        metadata.st_dev, metadata.st_ino, metadata.st_size,
+        metadata.st_mtime_ns, metadata.st_ctime_ns,
+    )
+
+
+def _read_protected_validator_pin() -> str:
+    """Read the fixed root-owned validator activation through a protected dirfd."""
+
+    descriptor: int | None = None
+    try:
+        directory_descriptor = os.open(
+            "/etc/ha-adjustable-bed",
+            os.O_RDONLY
+            | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_DIRECTORY", 0),
+        )
+    except OSError as error:
+        raise EquivalenceError("protected validator authority directory is unavailable") from error
+    try:
+        directory = os.fstat(directory_descriptor)
+        if (
+            not stat.S_ISDIR(directory.st_mode)
+            or directory.st_uid != 0
+            or stat.S_IMODE(directory.st_mode) & 0o022
+        ):
+            _fail("protected validator authority directory is not root-owned and immutable")
+        descriptor = os.open(
+            "phase4-v2-validator-authority.pin.json",
+            os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0),
+            dir_fd=directory_descriptor,
+        )
+        before = os.fstat(descriptor)
+        if (
+            not stat.S_ISREG(before.st_mode)
+            or before.st_uid != 0
+            or stat.S_IMODE(before.st_mode) & 0o222
+            or before.st_nlink != 1
+            or not 0 < before.st_size <= _MAX_VALIDATOR_AUTHORITY_BYTES
+        ):
+            _fail("validator authority pin is not a root-owned immutable regular file")
+        payload = bytearray()
+        while chunk := os.read(
+            descriptor,
+            min(64 * 1024, _MAX_VALIDATOR_AUTHORITY_BYTES + 1 - len(payload)),
+        ):
+            payload.extend(chunk)
+            if len(payload) > _MAX_VALIDATOR_AUTHORITY_BYTES:
+                _fail("validator authority pin exceeds its byte limit")
+        after = os.fstat(descriptor)
+        if len(payload) != before.st_size or _security_stat(before) != _security_stat(after):
+            _fail("validator authority pin changed while reading")
+        current_directory = os.fstat(directory_descriptor)
+        if _security_stat(directory) != _security_stat(current_directory):
+            _fail("protected validator authority directory changed while reading")
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+        os.close(directory_descriptor)
+    raw = _canonical_json_document(bytes(payload), "validator authority pin", trailing_newline=True)
+    if set(raw) != {"activation_sha256", "schema"}:
+        _fail("validator authority pin has an unexpected field set")
+    if raw["schema"] != VALIDATOR_AUTHORITY_PIN_SCHEMA:
+        _fail("validator authority pin schema is unsupported")
+    return _sha_value(raw["activation_sha256"], "validator activation digest")
+
+
+def _validate_validator_authority(
+    authority: ActivatedValidatorAuthority,
+) -> ActivatedValidatorAuthority:
+    if type(authority) is not ActivatedValidatorAuthority:
+        _fail("exact activated validator authority is required")
+    restored = load_activated_validator_authority(authority.canonical_bytes)
+    if restored != authority:
+        _fail("validator authority fields changed after activation")
+    return restored
 
 
 def _validate_pins(pins: RoutingPins) -> None:
@@ -164,7 +318,7 @@ class RoutingPins:
         }
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, init=False)
 class FrozenPackageRef:
     """Frozen package identity and its trusted package-local validation roots."""
 
@@ -173,7 +327,14 @@ class FrozenPackageRef:
     artifact_digest: str
     preflight_sha256: str
     validation_receipt_sha256: str
+    validator_authority: ActivatedValidatorAuthority
+    validator_envelope_bytes: bytes
     revision: str = PACKAGE_REF_REVISION
+
+    def __init__(self) -> None:
+        raise ValueError(
+            "frozen package references derive only from an authenticated validator envelope"
+        )
 
     def __post_init__(self) -> None:
         if (
@@ -186,6 +347,10 @@ class FrozenPackageRef:
         _sha256(self.artifact_digest, "artifact_digest")
         _sha256(self.preflight_sha256, "preflight_sha256")
         _sha256(self.validation_receipt_sha256, "validation_receipt_sha256")
+        if type(self.validator_authority) is not ActivatedValidatorAuthority:
+            _fail("frozen package reference requires its exact validator authority")
+        if type(self.validator_envelope_bytes) is not bytes:
+            _fail("frozen package reference requires exact validator envelope bytes")
         if self.revision != PACKAGE_REF_REVISION:
             _fail("unsupported frozen package reference revision")
 
@@ -196,12 +361,321 @@ class FrozenPackageRef:
             "preflight_sha256": self.preflight_sha256,
             "revision": self.revision,
             "validation_receipt_sha256": self.validation_receipt_sha256,
+            "validator_authority_sha256": self.validator_authority.activation_sha256,
+            "validator_envelope_sha256": hashlib.sha256(
+                self.validator_envelope_bytes
+            ).hexdigest(),
             "version_code": self.version_code,
         }
 
     @property
     def content_id(self) -> str:
         return _canonical_content_id("phase4-v2:frozen-package-ref", self.to_data())
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class ActivatedValidatorAuthority:
+    """Validator signing authority admitted by an OS-protected digest pin."""
+
+    authority_id: str
+    public_key: str
+    validator_revision: str
+    contract_revision: str
+    canonical_bytes: bytes
+    activation_sha256: str
+
+    def __init__(self) -> None:
+        _fail("validator authority must be loaded from a protected activation")
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class AuthenticatedValidatorEnvelope:
+    """A signed canonical validator receipt and its derived trusted report."""
+
+    authority_sha256: str
+    authority: ActivatedValidatorAuthority
+    canonical_bytes: bytes
+    receipt_payload: bytes
+    receipt_sha256: str
+    dependency_digests: tuple[tuple[str, str], ...]
+    validator_revision: str
+    contract_revision: str
+    report: ValidatedReport
+
+    def __init__(self) -> None:
+        _fail("validator envelopes must be loaded through signature verification")
+
+
+def validator_authority_payload(
+    *,
+    authority_id: str,
+    public_key: str,
+    validator_revision: str,
+    contract_revision: str,
+) -> bytes:
+    """Render canonical bytes for an external validator-authority publisher."""
+
+    _token(authority_id, "validator authority id")
+    _sha256(public_key, "validator authority public key")
+    _token(validator_revision, "validator revision")
+    _token(contract_revision, "validator contract revision")
+    return _canonical_json_bytes(
+        {
+            "authority_id": authority_id,
+            "contract_revision": contract_revision,
+            "public_key": public_key,
+            "schema": VALIDATOR_AUTHORITY_SCHEMA,
+            "validator_revision": validator_revision,
+        },
+        trailing_newline=True,
+    )
+
+
+def validator_authority_pin_payload(authority_payload: bytes) -> bytes:
+    """Render the digest document that an operator installs as a protected pin."""
+
+    if type(authority_payload) is not bytes or not authority_payload:
+        _fail("validator authority payload must be exact bytes")
+    return _canonical_json_bytes(
+        {
+            "activation_sha256": hashlib.sha256(authority_payload).hexdigest(),
+            "schema": VALIDATOR_AUTHORITY_PIN_SCHEMA,
+        },
+        trailing_newline=True,
+    )
+
+
+def load_activated_validator_authority(
+    payload: bytes,
+) -> ActivatedValidatorAuthority:
+    """Load one authority only when exact bytes match an OS-protected pin."""
+
+    expected = _read_protected_validator_pin()
+    if type(payload) is not bytes or not payload or len(payload) > _MAX_VALIDATOR_AUTHORITY_BYTES:
+        _fail("validator authority must be bounded exact bytes")
+    if hashlib.sha256(payload).hexdigest() != expected:
+        _fail("validator authority does not match its protected activation")
+    raw = _canonical_json_document(payload, "validator authority", trailing_newline=True)
+    if set(raw) != {
+        "authority_id",
+        "contract_revision",
+        "public_key",
+        "schema",
+        "validator_revision",
+    }:
+        _fail("validator authority has an unexpected field set")
+    if raw["schema"] != VALIDATOR_AUTHORITY_SCHEMA:
+        _fail("validator authority schema is unsupported")
+    from tools.phase4_v2.ir import SUPPORTED_CONTRACT_REVISION, SUPPORTED_VALIDATOR_REVISION
+
+    authority_id = _token_value(raw["authority_id"], "validator authority id")
+    public_key = _sha_value(raw["public_key"], "validator authority public key")
+    validator_revision = _token_value(raw["validator_revision"], "validator revision")
+    contract_revision = _token_value(raw["contract_revision"], "validator contract revision")
+    if validator_revision != SUPPORTED_VALIDATOR_REVISION:
+        _fail("validator authority revision is unsupported")
+    if contract_revision != SUPPORTED_CONTRACT_REVISION:
+        _fail("validator authority contract is unsupported")
+    try:
+        Ed25519PublicKey.from_public_bytes(bytes.fromhex(public_key))
+    except ValueError as error:
+        raise EquivalenceError("validator authority public key is invalid") from error
+    result = object.__new__(ActivatedValidatorAuthority)
+    for name, value in (
+        ("authority_id", authority_id),
+        ("public_key", public_key),
+        ("validator_revision", validator_revision),
+        ("contract_revision", contract_revision),
+        ("canonical_bytes", payload),
+        ("activation_sha256", expected),
+    ):
+        object.__setattr__(result, name, value)
+    return result
+
+
+def validator_envelope_signing_bytes(
+    receipt_payload: bytes,
+    authority: ActivatedValidatorAuthority,
+) -> bytes:
+    """Return the exact domain-separated bytes signed by a validator producer."""
+
+    authority = _validate_validator_authority(authority)
+    receipt = _canonical_json_document(
+        receipt_payload, "validator receipt", trailing_newline=False
+    )
+    signed = {
+        "authority_sha256": authority.activation_sha256,
+        "receipt": receipt,
+        "schema": VALIDATOR_ENVELOPE_SCHEMA,
+    }
+    return b"phase4-v2:authenticated-validator-envelope\0" + _canonical_json_bytes(signed)
+
+
+def authenticated_validator_envelope_payload(
+    receipt_payload: bytes,
+    authority: ActivatedValidatorAuthority,
+    *,
+    signature: str,
+) -> bytes:
+    """Assemble a canonical envelope from an externally produced signature."""
+
+    authority = _validate_validator_authority(authority)
+    receipt = _canonical_json_document(
+        receipt_payload, "validator receipt", trailing_newline=False
+    )
+    if type(signature) is not str or re.fullmatch(r"[0-9a-f]{128}", signature) is None:
+        _fail("validator envelope signature is invalid")
+    return _canonical_json_bytes(
+        {
+            "authority_sha256": authority.activation_sha256,
+            "receipt": receipt,
+            "schema": VALIDATOR_ENVELOPE_SCHEMA,
+            "signature": signature,
+        }
+    )
+
+
+def load_authenticated_validator_envelope(
+    payload: bytes,
+    *,
+    authority: ActivatedValidatorAuthority,
+) -> AuthenticatedValidatorEnvelope:
+    """Verify a signed validator receipt and derive every trusted input from it."""
+
+    authority = _validate_validator_authority(authority)
+    if type(payload) is not bytes or not payload or len(payload) > _MAX_VALIDATOR_ENVELOPE_BYTES:
+        _fail("validator envelope must be bounded exact bytes")
+    raw = _canonical_json_document(payload, "validator envelope", trailing_newline=False)
+    if set(raw) != {"authority_sha256", "receipt", "schema", "signature"}:
+        _fail("validator envelope has an unexpected field set")
+    if raw["schema"] != VALIDATOR_ENVELOPE_SCHEMA:
+        _fail("validator envelope schema is unsupported")
+    if raw["authority_sha256"] != authority.activation_sha256:
+        _fail("validator envelope belongs to another authority")
+    signature = raw["signature"]
+    if type(signature) is not str or re.fullmatch(r"[0-9a-f]{128}", signature) is None:
+        _fail("validator envelope signature is invalid")
+    receipt = raw["receipt"]
+    if type(receipt) is not dict:
+        _fail("validator envelope receipt must be an object")
+    receipt_payload = _canonical_json_bytes(receipt)
+    signed = {
+        "authority_sha256": authority.activation_sha256,
+        "receipt": receipt,
+        "schema": VALIDATOR_ENVELOPE_SCHEMA,
+    }
+    try:
+        Ed25519PublicKey.from_public_bytes(bytes.fromhex(authority.public_key)).verify(
+            bytes.fromhex(signature),
+            b"phase4-v2:authenticated-validator-envelope\0" + _canonical_json_bytes(signed),
+        )
+    except InvalidSignature as error:
+        raise EquivalenceError("validator envelope signature is invalid") from error
+    dependencies_raw = receipt.get("dependency_digests")
+    if type(dependencies_raw) is not dict:
+        _fail("validator receipt dependency pins are unavailable")
+    dependencies = {
+        _token_value(name, "validator dependency name"): _sha_value(
+            digest, "validator dependency digest"
+        )
+        for name, digest in dependencies_raw.items()
+    }
+    embedded_digest = _sha_value(
+        receipt.get("validation_receipt_sha256"), "validator receipt digest"
+    )
+    from tools.phase4_v2.ir import bind_validator_receipt
+
+    report = bind_validator_receipt(
+        receipt_payload,
+        trusted_validator_revision=authority.validator_revision,
+        trusted_contract_revision=authority.contract_revision,
+        trusted_dependency_digests=dependencies,
+        trusted_receipt_sha256=embedded_digest,
+    )
+    result = object.__new__(AuthenticatedValidatorEnvelope)
+    for name, value in (
+        ("authority_sha256", authority.activation_sha256),
+        ("authority", authority),
+        ("canonical_bytes", payload),
+        ("receipt_payload", receipt_payload),
+        ("receipt_sha256", report.validation_receipt_sha256),
+        ("dependency_digests", tuple(sorted(report.dependency_digests))),
+        ("validator_revision", report.validator_revision),
+        ("contract_revision", report.contract_revision),
+        ("report", report),
+    ):
+        object.__setattr__(result, name, value)
+    _validate_validator_authority(authority)
+    return result
+
+
+def frozen_package_ref_from_validator_envelope(
+    envelope: AuthenticatedValidatorEnvelope,
+) -> FrozenPackageRef:
+    """Derive the only package reference admitted to the execution pipeline."""
+
+    envelope = validate_authenticated_validator_envelope(envelope)
+    identity = envelope.report.validated_artifact_identity
+    dependencies = dict(envelope.dependency_digests)
+    preflight_sha256 = dependencies.get("preflight")
+    if preflight_sha256 is None:
+        _fail("authenticated validator envelope has no preflight dependency")
+    result = object.__new__(FrozenPackageRef)
+    for name, value in (
+        ("package_name", identity.package_name),
+        ("version_code", identity.version_code),
+        ("artifact_digest", identity.artifact_digest),
+        ("preflight_sha256", preflight_sha256),
+        ("validation_receipt_sha256", envelope.receipt_sha256),
+        ("validator_authority", envelope.authority),
+        ("validator_envelope_bytes", envelope.canonical_bytes),
+        ("revision", PACKAGE_REF_REVISION),
+    ):
+        object.__setattr__(result, name, value)
+    result.__post_init__()
+    return result
+
+
+def validate_frozen_package_ref(package_ref: FrozenPackageRef) -> FrozenPackageRef:
+    """Reauthenticate a package reference from its retained signed provenance."""
+
+    if type(package_ref) is not FrozenPackageRef:
+        _fail("exact frozen package reference is required")
+    envelope = load_authenticated_validator_envelope(
+        package_ref.validator_envelope_bytes,
+        authority=package_ref.validator_authority,
+    )
+    identity = envelope.report.validated_artifact_identity
+    expected = {
+        "package_name": identity.package_name,
+        "version_code": identity.version_code,
+        "artifact_digest": identity.artifact_digest,
+        "preflight_sha256": dict(envelope.dependency_digests).get("preflight"),
+        "validation_receipt_sha256": envelope.receipt_sha256,
+        "validator_authority": envelope.authority,
+        "validator_envelope_bytes": envelope.canonical_bytes,
+        "revision": PACKAGE_REF_REVISION,
+    }
+    if any(getattr(package_ref, name) != value for name, value in expected.items()):
+        _fail("frozen package reference differs from its authenticated provenance")
+    package_ref.__post_init__()
+    return package_ref
+
+
+def validate_authenticated_validator_envelope(
+    envelope: AuthenticatedValidatorEnvelope,
+) -> AuthenticatedValidatorEnvelope:
+    """Reauthenticate an envelope at each production trust boundary."""
+
+    if type(envelope) is not AuthenticatedValidatorEnvelope:
+        _fail("exact authenticated validator envelope is required")
+    restored = load_authenticated_validator_envelope(
+        envelope.canonical_bytes,
+        authority=envelope.authority,
+    )
+    if restored != envelope:
+        _fail("validator envelope fields changed after authentication")
+    return restored
 
 
 @dataclass(frozen=True, slots=True)
@@ -949,16 +1423,7 @@ def _copy_pins(item: RoutingPins) -> RoutingPins:
 
 
 def _copy_package(item: FrozenPackageRef) -> FrozenPackageRef:
-    if not isinstance(item, FrozenPackageRef):
-        _fail("packages must use the immutable FrozenPackageRef type")
-    return FrozenPackageRef(
-        package_name=item.package_name,
-        version_code=item.version_code,
-        artifact_digest=item.artifact_digest,
-        preflight_sha256=item.preflight_sha256,
-        validation_receipt_sha256=item.validation_receipt_sha256,
-        revision=item.revision,
-    )
+    return validate_frozen_package_ref(item)
 
 
 def _copy_capability(item: ExtractorCapability) -> ExtractorCapability:
