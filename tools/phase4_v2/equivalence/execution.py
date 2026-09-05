@@ -13,6 +13,8 @@ from pathlib import Path
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
+from .core import EquivalenceError, _canonical_json_document, _security_stat
+
 EXECUTION_AUTHORITY_SCHEMA = "phase4-v2-validator-execution-authority-v1"
 EXECUTION_AUTHORITY_PIN_SCHEMA = "phase4-v2-validator-execution-authority-pin-v1"
 EXECUTION_ENVELOPE_SCHEMA = "phase4-v2-authenticated-validator-execution-v1"
@@ -23,6 +25,18 @@ _SHA = re.compile(r"^[0-9a-f]{64}$")
 
 class ExecutionAuthenticationError(ValueError):
     """Validator execution authentication failed closed."""
+
+
+def _document(
+    payload: bytes, *, trailing_newline: bool = False, maximum_bytes: int = 16 * 1024 * 1024
+) -> dict[str, object]:
+    try:
+        return _canonical_json_document(
+            payload, "execution JSON", trailing_newline=trailing_newline,
+            maximum_bytes=maximum_bytes,
+        )
+    except EquivalenceError as error:
+        raise ExecutionAuthenticationError(str(error)) from error
 
 
 def _canonical(value: object) -> bytes:
@@ -97,13 +111,19 @@ def _read_protected_execution_pin() -> str:
         metadata = os.fstat(descriptor)
         if (
             metadata.st_uid != 0
-            or metadata.st_mode & 0o022
+            or metadata.st_mode & 0o222
             or metadata.st_nlink != 1
             or not stat.S_ISREG(metadata.st_mode)
-            or metadata.st_size > 4096
+            or not 0 < metadata.st_size <= 4096
         ):
             raise ExecutionAuthenticationError("execution authority pin is not protected")
         payload = os.read(descriptor, 4097)
+        if (
+            len(payload) != metadata.st_size
+            or _security_stat(metadata) != _security_stat(os.fstat(descriptor))
+            or _security_stat(directory) != _security_stat(os.fstat(directory_descriptor))
+        ):
+            raise ExecutionAuthenticationError("execution authority pin changed while reading")
     except OSError as error:
         raise ExecutionAuthenticationError(
             "protected execution authority pin is unavailable"
@@ -114,7 +134,7 @@ def _read_protected_execution_pin() -> str:
         if directory_descriptor is not None:
             os.close(directory_descriptor)
     try:
-        raw = json.loads(payload)
+        raw = _document(payload, trailing_newline=True, maximum_bytes=4096)
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise ExecutionAuthenticationError("execution authority pin is invalid") from error
     if type(raw) is not dict or set(raw) != {"activation_sha256", "schema"}:
@@ -128,7 +148,7 @@ def load_activated_execution_authority(payload: bytes) -> ActivatedExecutionAuth
     if type(payload) is not bytes or not payload.endswith(b"\n"):
         raise ExecutionAuthenticationError("execution authority must be canonical newline JSON")
     try:
-        raw = json.loads(payload)
+        raw = _document(payload, trailing_newline=True, maximum_bytes=4096)
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise ExecutionAuthenticationError("execution authority is invalid") from error
     if (
@@ -223,7 +243,7 @@ def execution_envelope_payload(
 ) -> bytes:
     authority = _reauthorize(authority)
     try:
-        receipt = json.loads(receipt_bytes)
+        receipt = _document(receipt_bytes)
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise ExecutionAuthenticationError("execution receipt is invalid") from error
     if _canonical(receipt) != receipt_bytes:
@@ -251,7 +271,7 @@ def load_authenticated_package_execution_envelope(
 ) -> AuthenticatedPackageExecutionEnvelope:
     authority = _reauthorize(authority)
     try:
-        document = json.loads(canonical_bytes)
+        document = _document(canonical_bytes)
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise ExecutionAuthenticationError("execution envelope is invalid") from error
     if (
@@ -309,6 +329,7 @@ def load_authenticated_package_execution_envelope(
     }
     for name, value in values.items():
         object.__setattr__(result, name, value)
+    _reauthorize(authority)
     return result
 
 
@@ -345,4 +366,5 @@ def validate_authenticated_package_output(
         or output.target_final_ir_json_sha256 != envelope.ir_sha256
     ):
         raise ExecutionAuthenticationError("package output differs from its signed envelope")
+    _reauthorize(envelope.authority)
     return output

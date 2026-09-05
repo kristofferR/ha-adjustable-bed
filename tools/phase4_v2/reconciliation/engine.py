@@ -9,6 +9,7 @@ from enum import StrEnum
 from itertools import combinations
 
 from tools.phase4_v2.equivalence import Route
+from tools.phase4_v2.limits import MAX_CLUSTER_PACKAGES
 
 from .model import (
     AreaSurface,
@@ -265,7 +266,7 @@ class ReconciliationResult:
         _require_digest(self.input_id, "result.input_id")
         if type(self.status) is not ClosureStatus:
             raise ReconciliationError("result status must use ClosureStatus")
-        if type(self.packages) is not tuple or not 2 <= len(self.packages) <= 32:
+        if type(self.packages) is not tuple or not 1 <= len(self.packages) <= MAX_CLUSTER_PACKAGES:
             raise ReconciliationError("result packages are invalid")
         if any(type(item) is not PackageResultReference for item in self.packages):
             raise ReconciliationError("result packages must use PackageResultReference")
@@ -326,9 +327,9 @@ class ReconciliationResult:
             type(item) is not SemanticAtom for item in self.atoms
         ):
             raise ReconciliationError("result atoms must use SemanticAtom")
-        if self.atoms != tuple(sorted(self.atoms, key=lambda item: item.content_id)):
-            raise ReconciliationError("result atoms must be sorted")
         atom_ids = tuple(item.content_id for item in self.atoms)
+        if atom_ids != tuple(sorted(atom_ids)):
+            raise ReconciliationError("result atoms must be sorted")
         if len(set(atom_ids)) != len(atom_ids):
             raise ReconciliationError("result contains duplicate atoms")
         for atom in self.atoms:
@@ -362,12 +363,12 @@ class ReconciliationResult:
             ):
                 raise ReconciliationError("result atom references an unknown root")
         atom_packages = {
-            atom.content_id: {source.package_ref_id for source in atom.sources}
-            for atom in self.atoms
+            atom_id: {source.package_ref_id for source in atom.sources}
+            for atom_id, atom in zip(atom_ids, self.atoms, strict=True)
         }
-        atoms_by_id = {atom.content_id: atom for atom in self.atoms}
+        atoms_by_id = dict(zip(atom_ids, self.atoms, strict=True))
         atoms_by_area = {
-            area: {atom.content_id for atom in self.atoms if atom.area is area}
+            area: {atom_id for atom_id, atom in atoms_by_id.items() if atom.area is area}
             for area in ComparisonArea
         }
 
@@ -558,6 +559,17 @@ class ReconciliationResult:
                 )
 
         aggregates = {item.area: item for item in self.area_aggregates}
+        if len(package_ids) == 1:
+            # A standalone package has no peer pairs. Its area closure still
+            # requires repair or promotion before the work unit can complete.
+            package_id = package_ids[0]
+            for area, aggregate in aggregates.items():
+                if aggregate.incomplete_package_ref_ids:
+                    incomplete_packages[area].add(package_id)
+                    incomplete_codes[(package_id, area)].add("AREA_DECLARED_INCOMPLETE")
+            for contradiction in self.contradictions:
+                incomplete_packages[contradiction.area].add(package_id)
+                incomplete_codes[(package_id, contradiction.area)].add("CONTRADICTORY_AREA")
         for area, package_set in incomplete_packages.items():
             aggregate = aggregates[area]
             if set(aggregate.incomplete_package_ref_ids) != package_set:
@@ -693,6 +705,19 @@ def reconcile(value: ReconciliationInput) -> ReconciliationResult:
     promotions: set[FullPromotion] = set()
     repairs: set[RepairRequirement] = set()
     atom_references = 0
+    if len(packages) == 1:
+        package_id, package = next(iter(packages.items()))
+        for area in ComparisonArea:
+            view = views[(package_id, area)]
+            if view.incomplete_reasons or view.contradictions:
+                _route_incomplete_package(
+                    package,
+                    area,
+                    ("AREA_DECLARED_INCOMPLETE",),
+                    bool(view.contradictions),
+                    promotions,
+                    repairs,
+                )
     for left_id, right_id in combinations(packages, 2):
         for area in ComparisonArea:
             left = views[(left_id, area)]

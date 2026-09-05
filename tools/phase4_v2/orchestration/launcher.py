@@ -172,6 +172,7 @@ def launch_one(
                 try:
                     lease = queue.renew(lease, ttl_seconds=ttl_seconds)
                 except StaleLeaseError:
+                    handle.terminate()
                     unit = _leased_unit(queue, lease)
                     if unit.status is WorkUnitStatus.LEASED:
                         raise

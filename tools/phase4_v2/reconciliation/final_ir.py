@@ -126,6 +126,21 @@ def derive_authenticated_final_ir_package_surface(
 ) -> FinalIRSurfaceDerivation:
     """Derive a surface only from an accepted, signed package publication."""
 
+    documents = (report_bytes, report_manifest_bytes, canonical_json)
+    if (
+        any(type(item) is not bytes or len(item) > 16 * 1024**2 for item in documents)
+        or type(markdown) is not str
+        or len(markdown) > 16 * 1024**2
+    ):
+        raise ReconciliationError("final report documents exceed their byte limits")
+    try:
+        markdown_bytes = markdown.encode("utf-8")
+    except UnicodeEncodeError as error:
+        raise ReconciliationError("final Markdown is not valid UTF-8") from error
+    if len(markdown_bytes) > 16 * 1024**2:
+        raise ReconciliationError("final report documents exceed their byte limits")
+    if sum(len(item) for item in documents) + len(markdown_bytes) > 32 * 1024**2:
+        raise ReconciliationError("final report documents exceed their aggregate byte limit")
     package_ref = validate_frozen_package_ref(package_ref)
     try:
         local_evidence = reauthenticate_package_local_evidence(
@@ -176,7 +191,7 @@ def derive_authenticated_final_ir_package_surface(
         raise ReconciliationError("report must be exact immutable bytes")
     try:
         report = json.loads(report_bytes)
-    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+    except (UnicodeDecodeError, ValueError, RecursionError) as error:
         raise ReconciliationError("package report is invalid JSON") from error
     canonical_report = json.dumps(
         report, sort_keys=True, separators=(",", ":"), ensure_ascii=False
@@ -456,6 +471,8 @@ def derive_authenticated_final_ir_package_surface(
         raise ReconciliationError(
             "target package-local authority changed during final reconciliation"
         ) from error
+    if validate_authenticated_package_output(validated_output, execution_envelope) != authenticated:
+        raise ReconciliationError("package execution authority changed during reconciliation")
     return derived
 
 
@@ -481,7 +498,7 @@ def _derive_final_ir_package_surface(
         raise ReconciliationError("final IR JSON is not the exact canonical document")
     try:
         raw = json.loads(canonical_json)
-        reproduced = final_ir_model._parse_final_ir_structure(raw)
+        reproduced = final_ir_model.parse_final_ir_structure(raw)
     except (TypeError, ValueError, UnicodeError, RecursionError) as error:
         raise ReconciliationError("final IR JSON cannot be independently reproduced") from error
     if reproduced != document:
@@ -499,11 +516,11 @@ def _derive_final_ir_package_surface(
         if root.package_ref_id != package_ref.content_id or root.blockers:
             raise ReconciliationError("final IR roots are not complete for the target package")
 
-    semantic = ir_core._semantic_data(cast(ir_core.ProtocolIRDocument, reproduced))
+    semantic = ir_core.semantic_data(cast(ir_core.ProtocolIRDocument, reproduced))
     leaf_pointers = tuple(
         sorted(
             pointer
-            for pointer in ir_core._semantic_leaf_pointers(semantic)
+            for pointer in ir_core.semantic_leaf_pointers(semantic)
             if not pointer.startswith("/domain_closure/")
             and not pointer.endswith("/@key")
         )
@@ -520,7 +537,7 @@ def _derive_final_ir_package_surface(
             NormalizedClaim(
                 pointer,
                 ClaimPolarity.AFFIRMED,
-                CanonicalValue.from_data(ir_core._resolve_semantic_pointer(semantic, pointer)),
+                CanonicalValue.from_data(ir_core.resolve_semantic_pointer(semantic, pointer)),
                 provenance_by_pointer[pointer],
             )
         )
@@ -717,7 +734,7 @@ def _candidate_universe(
                         "candidate",
                         {
                             "collection": collection,
-                            "definition": cast(ir_core._DataDefinition, definition).to_data(),
+                            "definition": cast(ir_core.DataDefinition, definition).to_data(),
                             "identifier": identifier,
                         },
                     ),

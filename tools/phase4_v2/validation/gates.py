@@ -432,7 +432,8 @@ def _validate_preparation_plan_binding(
         ),
     }
     if (
-        len(capabilities) != 5
+        len(binding.capabilities) != 5
+        or len(capabilities) != 5
         or set(capabilities) != {*expected, PREPARATION_REGISTRY_CAPABILITY}
         or any(
             (capabilities[name].revision, capabilities[name].digest) != identity

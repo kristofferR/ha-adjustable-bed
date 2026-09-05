@@ -1,18 +1,23 @@
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
 import os
 import shutil
+import socket
 import threading
 import time
 import zipfile
 from pathlib import Path
+from types import SimpleNamespace
+from typing import cast
 
 import pytest
 
 import tools.phase4_v2.preflight.core as preflight_core
 import tools.phase4_v2.preflight.execution as execution
+import tools.phase4_v2.preflight.registry as registry
 from tests.phase4_v2_static_tool import build_static_tool
 from tools.phase4_v2.preflight.execution import (
     ExecutionLimits,
@@ -41,8 +46,8 @@ def _preflight(monkeypatch: pytest.MonkeyPatch, root: Path):
     return preflight_core.preflight_delivery([artifact], sealing_directory=seal)
 
 
-def _tool(root: Path, body: str) -> Path:
-    if "with_name('helper.txt')" in body:
+def _tool(root: Path, *, adjacent_helper: bool = False) -> Path:
+    if adjacent_helper:
         return build_static_tool(
             root,
             outputs={},
@@ -50,16 +55,6 @@ def _tool(root: Path, body: str) -> Path:
                 'char payload[256] = {0}; int fd=open("/helper.txt",O_RDONLY); '
                 "int n=read(fd,payload,255); close(fd); if(n<0)return 93; payload[n]=0; "
                 'write_member(output, strcmp(route,"apktool")==0 ? "App.smali" : "App.java", payload);'
-            ),
-        )
-    if "socket.create_connection" in body:
-        return build_static_tool(
-            root,
-            outputs={},
-            extra_source=(
-                'int fd=open("/etc/hostname",O_RDONLY); '
-                'write_member(output, strcmp(route,"apktool")==0 ? "App.smali" : "App.java", '
-                'fd < 0 ? "read,network,process,write" : "HOST_READ_ESCAPE"); if(fd>=0)close(fd);'
             ),
         )
     return build_static_tool(
@@ -101,18 +96,11 @@ def _execute(
     )
 
 
-_OUTPUT_BODY = (
-    "suffix = 'smali' if route == 'apktool' else 'java'\n"
-    "target = pathlib.Path(output_name, f'App.{suffix}')\n"
-    "target.write_text('android.bluetooth.BluetoothGatt', encoding='utf-8')"
-)
-
-
 def test_profile_is_canonical_bounded_and_manifest_bound(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     preflight = _preflight(monkeypatch, tmp_path)
-    tool = _tool(tmp_path, _OUTPUT_BODY)
+    tool = _tool(tmp_path)
     profile = build_execution_profile(ExecutionLimits(tool_timeout_seconds=1.25))
 
     result = execute_preparation(
@@ -166,6 +154,56 @@ def test_missing_sandbox_support_fails_closed(monkeypatch: pytest.MonkeyPatch) -
         build_execution_profile()
 
 
+@pytest.mark.parametrize("credential", ["key", "pin"])
+@pytest.mark.parametrize("target", ["directory", "file"])
+@pytest.mark.parametrize("field", ["st_uid", "st_gid", "st_mode", "st_ctime_ns", "st_nlink"])
+def test_protected_preparation_reads_reject_metadata_changes(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    credential: str,
+    target: str,
+    field: str,
+) -> None:
+    name = (
+        "phase4-v2-preparation-executor.ed25519"
+        if credential == "key"
+        else "phase4-v2-preparation-authority.pin.json"
+    )
+    path = tmp_path / name
+    path.write_bytes(b"k" * 32)
+    path.chmod(0o400)
+    target_inode = (tmp_path if target == "directory" else path).stat().st_ino
+    real_open, real_fstat = os.open, os.fstat
+    reads = 0
+
+    def redirected_open(path: str, flags: int, *args: object, **kwargs: object) -> int:
+        return real_open(
+            str(tmp_path) if path == "/etc/ha-adjustable-bed" else path,
+            flags,
+            *args,  # type: ignore[arg-type]
+            **kwargs,  # type: ignore[arg-type]
+        )
+
+    def changed_fstat(descriptor: int) -> os.stat_result:
+        nonlocal reads
+        node = real_fstat(descriptor)
+        values = {name: getattr(node, name) for name in dir(node) if name.startswith("st_")}
+        values["st_uid"] = 0
+        if node.st_ino == target_inode:
+            reads += 1
+            if reads == 2:
+                values[field] += 1
+        return cast(os.stat_result, SimpleNamespace(**values))
+
+    monkeypatch.setattr(os, "open", redirected_open)
+    monkeypatch.setattr(os, "fstat", changed_fstat)
+    with pytest.raises(PreparationError, match="changed while reading"):
+        if credential == "key":
+            execution.load_protected_preparation_signer()
+        else:
+            registry._read_protected_activation_digest()
+
+
 def test_seccomp_policy_fails_closed_on_unsupported_architecture(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -184,7 +222,7 @@ def test_self_consistent_caller_preseed_is_never_trusted(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     preflight = _preflight(monkeypatch, tmp_path)
-    tool = _tool(tmp_path, _OUTPUT_BODY)
+    tool = _tool(tmp_path)
     trusted_cache = tmp_path / "trusted-cache"
     _execute(preflight, tool, tmp_path, "first", cache=trusted_cache)
     object_root = trusted_cache / "objects" / execution.EXECUTION_CACHE_SCHEMA
@@ -203,12 +241,7 @@ def test_execution_uses_sealed_launcher_and_adjacent_helper(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     preflight = _preflight(monkeypatch, tmp_path)
-    tool = _tool(
-        tmp_path,
-        "value = pathlib.Path(pathlib.Path(__file__).with_name('helper.txt')).read_text()\n"
-        "suffix = 'smali' if route == 'apktool' else 'java'\n"
-        "pathlib.Path(output_name, f'App.{suffix}').write_text(value)",
-    )
+    tool = _tool(tmp_path, adjacent_helper=True)
     helper = tool.parent / "helper.txt"
     helper.write_text("android.bluetooth.BluetoothGatt", encoding="utf-8")
     original_runner = execution._run_sandboxed
@@ -231,24 +264,41 @@ def test_execution_uses_sealed_launcher_and_adjacent_helper(
     assert {output.sha256 for item in result.invocations for output in item.outputs} == {expected}
 
 
+@pytest.mark.usefixtures("socket_enabled")
 def test_sandbox_denies_host_write_network_and_host_process_access(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, request: pytest.FixtureRequest
 ) -> None:
     preflight = _preflight(monkeypatch, tmp_path)
     outside = tmp_path / "outside"
     host_pid = os.getpid()
-    body = (
-        "denied = []\n"
-        f"\ntry:\n    pathlib.Path({str(outside)!r}).write_text('escaped')\n"
-        "except OSError:\n    denied.append('write')\n"
-        "try:\n    socket.create_connection(('127.0.0.1', 9), timeout=0.1)\n"
-        "except OSError:\n    denied.append('network')\n"
-        f"try:\n    os.kill({host_pid}, 0)\n"
-        "except OSError:\n    denied.append('process')\n"
-        "suffix = 'smali' if route == 'apktool' else 'java'\n"
-        "pathlib.Path(output_name, f'App.{suffix}').write_text(','.join(sorted(denied)))"
+    listener = socket.create_server(("127.0.0.1", 0))
+    request.addfinalizer(listener.close)
+    host_port = listener.getsockname()[1]
+    # The endpoint is reachable on the host, so connection refusal inside the
+    # sandbox demonstrates network isolation instead of merely a closed port.
+    with socket.create_connection(("127.0.0.1", host_port), timeout=1):
+        pass
+    tool = build_static_tool(
+        tmp_path,
+        outputs={},
+        extra_source=(
+            'char observed[256]; int fd=open("/etc/hostname",O_RDONLY); '
+            "int read_errno=fd<0 ? errno : 0; if(fd>=0)close(fd); "
+            f"int write_fd=open({json.dumps(str(outside))},O_WRONLY|O_CREAT,0600); "
+            "int write_errno=write_fd<0 ? errno : 0; if(write_fd>=0)close(write_fd); "
+            "int sock=socket(AF_INET,SOCK_STREAM,0); int network_errno=0; "
+            "if(sock<0)network_errno=errno; else { "
+            f"struct sockaddr_in addr={{.sin_family=AF_INET,.sin_port=htons({host_port})}}; "
+            'inet_pton(AF_INET,"127.0.0.1",&addr.sin_addr); '
+            "if(connect(sock,(struct sockaddr*)&addr,sizeof(addr))<0)network_errno=errno; "
+            "close(sock); } "
+            f"int process_result=kill({host_pid},0); "
+            "int process_errno=process_result<0 ? errno : 0; "
+            'snprintf(observed,sizeof(observed),"%d,%d,%d,%d",'
+            "read_errno,network_errno,process_errno,write_errno); "
+            'write_member(output,strcmp(route,"apktool")==0 ? "App.smali" : "App.java",observed);'
+        ),
     )
-    tool = _tool(tmp_path, body)
 
     result = _execute(preflight, tool, tmp_path, "sandbox")
 
@@ -256,7 +306,8 @@ def test_sandbox_denies_host_write_network_and_host_process_access(
     assert not outside.exists()
     cache_root = tmp_path / "cache-sandbox" / "objects" / execution.EXECUTION_CACHE_SCHEMA
     payloads = [path.read_text() for path in cache_root.glob("*/outputs/*")]
-    assert payloads == ["read,network,process,write", "read,network,process,write"]
+    expected = f"{errno.ENOENT},{errno.ECONNREFUSED},{errno.ESRCH},{errno.ENOENT}"
+    assert payloads == [expected, expected]
 
 
 def test_workspace_and_cache_symlink_swaps_fail_closed(tmp_path: Path) -> None:
@@ -267,7 +318,7 @@ def test_workspace_and_cache_symlink_swaps_fail_closed(tmp_path: Path) -> None:
     with pytest.raises(PreparationError, match="symlink ancestor"):
         execution.PreparationCache(cache_link)
 
-    tool = _tool(tmp_path, _OUTPUT_BODY)
+    tool = _tool(tmp_path)
     profile = build_execution_profile()
     runtime_link = tmp_path / "runtime-link"
     runtime_link.symlink_to(tool.parent, target_is_directory=True)
@@ -407,7 +458,7 @@ def test_runtime_seal_rejects_nested_directory_mutation(
     tmp_path: Path,
     mutation: str,
 ) -> None:
-    tool = _tool(tmp_path, _OUTPUT_BODY)
+    tool = _tool(tmp_path)
     nested = tool.parent / "nested"
     nested.mkdir()
     victim = nested / "aa-victim"
@@ -529,7 +580,7 @@ def test_seccomp_denies_multiprocess_and_unlinked_fd_xattrs(
 def test_second_runtime_walk_rejects_earlier_file_content_mutation(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    tool = _tool(tmp_path, _OUTPUT_BODY)
+    tool = _tool(tmp_path)
     earlier = tool.parent / "aa-earlier"
     earlier.write_text("original", encoding="utf-8")
     later = tool.parent / "zz-later"

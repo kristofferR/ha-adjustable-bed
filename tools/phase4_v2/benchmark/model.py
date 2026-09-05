@@ -299,7 +299,7 @@ class TrustedBenchmarkAuthority:
 
 @dataclass(frozen=True, slots=True)
 class TrialSchedule:
-    """Exact, precommitted benchmark trial order and collection policy."""
+    """Serial trials in the given order, sorted cases, then LEGACY before V2."""
 
     trial_ids: tuple[str, ...]
     policy_revision: str = TRIAL_POLICY_REVISION
@@ -1179,6 +1179,14 @@ def _parse_authority_document(raw: bytes) -> BenchmarkAuthority:
     return authority
 
 
+def _security_stat(metadata: os.stat_result) -> tuple[int, ...]:
+    return (
+        metadata.st_uid, metadata.st_gid, metadata.st_mode, metadata.st_nlink,
+        metadata.st_dev, metadata.st_ino, metadata.st_size,
+        metadata.st_mtime_ns, metadata.st_ctime_ns,
+    )
+
+
 def _load_protected_authority_config() -> _ProtectedAuthorityConfig:
     directory_flags = (
         os.O_RDONLY
@@ -1191,7 +1199,8 @@ def _load_protected_authority_config() -> _ProtectedAuthorityConfig:
     except OSError as error:
         raise ValueError("protected authority config is unavailable") from error
     try:
-        _validate_protected_directory(os.fstat(directory))
+        directory_before = os.fstat(directory)
+        _validate_protected_directory(directory_before)
         file_flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
         try:
             descriptor = os.open(
@@ -1202,7 +1211,8 @@ def _load_protected_authority_config() -> _ProtectedAuthorityConfig:
         except OSError as error:
             raise ValueError("protected authority config is unavailable") from error
         try:
-            _validate_protected_file(os.fstat(descriptor))
+            before = os.fstat(descriptor)
+            _validate_protected_file(before)
             chunks: list[bytes] = []
             remaining = 8 * 1024 + 1
             while remaining:
@@ -1212,6 +1222,12 @@ def _load_protected_authority_config() -> _ProtectedAuthorityConfig:
                 chunks.append(chunk)
                 remaining -= len(chunk)
             raw = b"".join(chunks)
+            if (
+                len(raw) != before.st_size
+                or _security_stat(before) != _security_stat(os.fstat(descriptor))
+                or _security_stat(directory_before) != _security_stat(os.fstat(directory))
+            ):
+                raise ValueError("protected authority config changed while reading")
         finally:
             os.close(descriptor)
     finally:
@@ -1229,8 +1245,10 @@ def _validate_protected_directory(metadata: os.stat_result) -> None:
 def _validate_protected_file(metadata: os.stat_result) -> None:
     if not stat.S_ISREG(metadata.st_mode):
         raise ValueError("protected authority config must be a regular file")
-    if metadata.st_uid != 0 or metadata.st_mode & 0o022:
+    if metadata.st_uid != 0 or metadata.st_mode & 0o222:
         raise ValueError("protected authority config ownership or mode is unsafe")
+    if metadata.st_nlink != 1 or not 0 < metadata.st_size <= 8 * 1024:
+        raise ValueError("protected authority config link count or size is unsafe")
 
 
 def _parse_protected_authority_config(raw: bytes) -> _ProtectedAuthorityConfig:
@@ -1242,8 +1260,9 @@ def _parse_protected_authority_config(raw: bytes) -> _ProtectedAuthorityConfig:
             object_pairs_hook=_reject_duplicate_pairs,
             parse_constant=_reject_json_constant,
         )
-    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as error:
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError, RecursionError) as error:
         raise ValueError("protected authority config is not strict JSON") from error
+    _validate_json_bounds(data)
     root = _exact_object(
         data,
         {"authority_sha256", "generation", "signing_public_key"},
@@ -1330,6 +1349,7 @@ def finalize_benchmark(
     _check_audits(authority, plan, oracle, run, audits, diagnostics)
     _check_timings(authority, plan, oracle, run, timings, diagnostics)
     diagnostics.sort()
+    _reverify_trusted_authority(trusted_authority, _load_protected_authority_config())
     return BenchmarkReport(
         authority.content_id,
         plan.content_id,
@@ -1569,6 +1589,20 @@ def _check_timings(
     actual_sample_keys = {(item.trial_id, item.case_id, item.phase) for item in timings.samples}
     if actual_sample_keys != expected_sample_keys:
         diagnostics.append(_diag("timing_schedule_mismatch", "$.timings.samples"))
+    else:
+        samples_by_key = {
+            (item.trial_id, item.case_id, item.phase): item for item in timings.samples
+        }
+        previous_finish = -1
+        for trial_id in plan.trial_schedule.trial_ids:
+            for case in plan.cases:
+                for phase in TimingPhase:
+                    sample = samples_by_key[(trial_id, case.case_id, phase)]
+                    if sample.started_monotonic_ns < previous_finish:
+                        diagnostics.append(
+                            _diag("timing_chronology_mismatch", "$.timings.samples")
+                        )
+                    previous_finish = sample.finished_monotonic_ns
     pairs: dict[tuple[str, str], dict[TimingPhase, TimingSample]] = {}
     for sample in timings.samples:
         path = f"$.timings.{sample.trial_id}.{sample.case_id}.{sample.phase.value}"

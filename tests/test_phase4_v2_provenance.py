@@ -167,7 +167,7 @@ def test_legacy_exact_reuse_without_raw_source_is_rejected(
         exact_reuse_provenance_payload(**kwargs, signature="0" * 128)  # type: ignore[arg-type]
 
 
-def test_exact_reuse_rejects_an_unrelated_byte_identity_proof(
+def test_legacy_source_is_rejected_before_unrelated_proof_validation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _key, authority, registry = _source(monkeypatch)

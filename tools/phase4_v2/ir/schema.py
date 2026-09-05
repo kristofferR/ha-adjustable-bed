@@ -123,7 +123,6 @@ _SCHEMA: dict[str, object] = {
                 },
                 "validated_root_evidence": {
                     "type": "array",
-                    "minItems": 1,
                     "maxItems": 4096,
                     "items": {"$ref": "#/$defs/attested_root_evidence"},
                 },
@@ -135,7 +134,10 @@ _SCHEMA: dict[str, object] = {
                     "items": {"$ref": "#/$defs/sha256"},
                 },
                 "raw_source_binding_revision": {
-                    "const": "phase4-v2-raw-source-validator-binding-v1"
+                    "enum": [
+                        "phase4-v2-raw-source-validator-binding-v1",
+                        "phase4-v2-package-local-validator-binding-v1",
+                    ]
                 },
             },
             "additionalProperties": False,

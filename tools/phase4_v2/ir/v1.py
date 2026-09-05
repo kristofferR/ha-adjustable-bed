@@ -583,6 +583,10 @@ def _parse_final_ir_structure(raw: object) -> FinalProtocolIRDocument:
     return _parse_final_ir(raw, trusted_receipts=None, authorize=False)
 
 
+# Structure parsing does not authorize evidence; callers must separately validate provenance.
+parse_final_ir_structure = _parse_final_ir_structure
+
+
 def _parse_final_ir(
     raw: object,
     *,
@@ -898,10 +902,21 @@ def _parse_discovery_matcher(raw: object, path: str) -> DiscoveryMatcher:
     )
 
 
+def _gatt_uuid(raw: object, path: str) -> str:
+    value = core._expect_nonempty_string(raw, path, max_length=36)
+    if re.fullmatch(
+        r"(?:[0-9a-fA-F]{4}|[0-9a-fA-F]{8}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-"
+        r"[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})",
+        value,
+    ) is None:
+        core._fail("invalid_gatt_uuid", path, "expected a 16, 32, or canonical 128-bit UUID")
+    return value.lower()
+
+
 def _parse_gatt_service(raw: object, path: str) -> GattService:
     value = _object(raw, path, {"uuid", "role"})
     return GattService(
-        core._expect_nonempty_string(value["uuid"], f"{path}.uuid", max_length=256).lower(),
+        _gatt_uuid(value["uuid"], f"{path}.uuid"),
         _enum(GattServiceRole, value["role"], f"{path}.role"),
     )
 
@@ -926,7 +941,7 @@ def _parse_gatt_characteristic(raw: object, path: str) -> GattCharacteristic:
         )
     return GattCharacteristic(
         core._expect_reference(value["service"], f"{path}.service"),
-        core._expect_nonempty_string(value["uuid"], f"{path}.uuid", max_length=256).lower(),
+        _gatt_uuid(value["uuid"], f"{path}.uuid"),
         tuple(sorted(roles)),
         tuple(sorted(modes)),
     )
@@ -1011,9 +1026,12 @@ def _parse_packet_field(raw: object, path: str) -> PacketField:
             path,
             "field source requires exactly its matching payload",
         )
+    width = core._expect_integer(value["width"], f"{path}.width", minimum=1)
+    if constant is not None and len(bytes.fromhex(constant)) != width:
+        core._fail("invalid_packet_field_width", path, "constant byte length must equal width")
     return PacketField(
         core._expect_integer(value["offset"], f"{path}.offset", minimum=0),
-        core._expect_integer(value["width"], f"{path}.width", minimum=1),
+        width,
         source,
         source_ref,
         constant,

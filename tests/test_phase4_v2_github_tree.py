@@ -3,6 +3,10 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import subprocess
+import sys
+from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -21,6 +25,55 @@ _OTHER_REF = "b" * 40
 _BASE_TREE = "c" * 40
 _NEW_TREE = "d" * 40
 _NEW_COMMIT = "e" * 40
+
+
+@pytest.mark.parametrize("branch", ["/tracker", "@", ".hidden", "tracker/.hidden", "tracker.lock"])
+def test_tracker_rejects_invalid_git_branch_forms(branch: str) -> None:
+    with pytest.raises(ValueError, match="branch"):
+        GitHubTreeGateway("owner/repository", branch)
+
+
+def test_transport_ignores_host_config_and_path_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in ("GH_HOST", "GH_CONFIG_DIR", "HOME", "XDG_CONFIG_HOME", "PATH", "HTTPS_PROXY"):
+        monkeypatch.setenv(name, "untrusted-override")
+    monkeypatch.setenv("GH_TOKEN", "synthetic-token")
+    real_popen = subprocess.Popen
+    calls = []
+
+    def launch(arguments, **kwargs):
+        calls.append((arguments, kwargs))
+        # Exercise the real pipe collector without making a network request.
+        return real_popen((sys.executable, "-c", "print('ok')"), **kwargs)
+
+    with patch.object(github_tree.subprocess, "Popen", side_effect=launch):
+        result = github_tree._run_gh(("gh", "api", "--method", "GET", "user"), None, 5)
+    arguments, kwargs = calls[0]
+    assert arguments[0].startswith("/proc/self/fd/")
+    assert arguments[1:4] == ("api", "--hostname", "github.com")
+    assert set(kwargs["env"]) == {"GH_TOKEN", "GH_PROMPT_DISABLED", "GH_CONFIG_DIR"}
+    assert kwargs["env"]["GH_CONFIG_DIR"] != "untrusted-override"
+    assert not Path(kwargs["env"]["GH_CONFIG_DIR"]).exists()
+    assert result.stdout == b"ok\n"
+
+
+def test_transport_stops_oversized_stream(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(github_tree, "_MAX_RESPONSE_BYTES", 128)
+    with subprocess.Popen(
+        (sys.executable, "-c", "import os,time; os.write(1,b'x'*4096); time.sleep(30)"),
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+    ) as process:
+        try:
+            with pytest.raises(GitHubContentsError, match="exceeds"):
+                github_tree._read_bounded_process(process, 5)
+        finally:
+            process.kill()
+            process.wait()
+
+
+def test_transport_requires_explicit_deployment_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("GH_TOKEN", raising=False)
+    with pytest.raises(GitHubContentsError, match="deployment GH_TOKEN"):
+        github_tree._run_gh(("gh", "api", "--method", "GET", "user"), None, 5)
 
 
 class _GitDataRunner:

@@ -43,6 +43,9 @@ def build_static_tool(
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/xattr.h>
@@ -77,7 +80,7 @@ int main(int argc, char **argv) {{
     if (strcmp(mode, "crash") == 0) return 17;
     if (strcmp(mode, "noisy") == 0) {{ char b[4096]; memset(b,'x',sizeof(b)); write(1,b,sizeof(b)); }}
     if (strcmp(mode, "timeout") == 0) sleep(2);
-    if (strcmp(mode, "mutate-input") == 0) {{ chmod(input,0600); int fd=open(input,O_WRONLY|O_TRUNC); write(fd,"mutated",7); close(fd); }}
+    if (strcmp(mode, "mutate-input") == 0) {{ chmod(input,0600); int fd=open(input,O_WRONLY|O_TRUNC); if(fd<0)return 93; if(write(fd,"mutated",7)!=7)return 94; close(fd); }}
     if (strcmp(mode, "symlink") == 0) {{ char p[8192]; snprintf(p,sizeof(p),"%s/unsafe",output); symlink("/etc/passwd",p); return 0; }}
     if (strcmp(mode, "partial") == 0) return 0;
     {extra_source}

@@ -72,13 +72,17 @@ def test_surface_rejects_report_plan_output_and_envelope_transplants(tmp_path: P
             "exact_reuse_receipts": first.exact_reuse_receipts,
         }
         assert derive_authenticated_final_ir_package_surface(**common).package_surface.package_ref == first.package_ref
-        for field, transplanted in (
-            ("execution_plan", second.frozen_plan),
-            ("validated_output", second.output),
-            ("execution_envelope", second.execution_envelope),
-            ("report_bytes", second.report_bytes),
+        for field, transplanted, reason in (
+            ("execution_plan", second.frozen_plan, "target package-local evidence differs"),
+            ("validated_output", second.output, "package output differs from its signed envelope"),
+            ("execution_envelope", second.execution_envelope, "package output differs from its signed envelope"),
+            ("report_bytes", second.report_bytes, "analysis report is absent from the signed report manifest"),
         ):
-            with pytest.raises((ReconciliationError, ValueError)):
+            with pytest.raises((ReconciliationError, ValueError), match=reason):
                 derive_authenticated_final_ir_package_surface(
                     **{**common, field: transplanted}
                 )
+        with pytest.raises(ReconciliationError, match="byte limits"):
+            derive_authenticated_final_ir_package_surface(
+                **{**common, "report_bytes": b"x" * (16 * 1024**2 + 1)}
+            )

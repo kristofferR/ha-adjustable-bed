@@ -533,6 +533,11 @@ def test_authority_rejects_constructor_and_noncanonical_pin(
         lambda: activation,
     )
     assert load_activated_exact_reuse_authority(payload).activation_sha256 == activation
+    monkeypatch.setattr(
+        prerequisite_module, "_read_protected_exact_reuse_authority_pin", lambda: "0" * 64
+    )
+    with pytest.raises(ExactReuseAuthenticationError, match="protected activation"):
+        load_activated_exact_reuse_authority(payload)
 
 
 def test_mixed_inventory_authorities_fail_even_across_pin_rotation(
@@ -581,7 +586,7 @@ def test_mixed_inventory_authorities_fail_even_across_pin_rotation(
     monkeypatch.setattr(
         inventory_module, "_read_protected_inventory_pin", lambda: next(activations)
     )
-    with pytest.raises(ExactReuseAuthenticationError, match="different protected authorities"):
+    with pytest.raises(inventory_module.InventoryAuthenticationError, match="protected activation"):
         exact_reuse_prerequisite_payload(
             source=fixture.source,
             source_raw=fixture.raw_source,

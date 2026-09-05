@@ -11,6 +11,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import StrEnum
+from threading import Event, Thread
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -33,6 +34,7 @@ _MAX_DOCUMENT_BYTES = 900 * 1024
 _MAX_DOCUMENT_SET_BYTES = 4 * 1024 * 1024
 _MAX_PROTECTED_CONFIG_BYTES = 4 * 1024
 _PROTECTED_CONFIG_REVISION = "phase4-v2-publication-config-pin-v1"
+_HEARTBEAT_INTERVAL_SECONDS = 60
 
 
 class TrackerFormat(StrEnum):
@@ -131,7 +133,7 @@ def publish_tracker_fanout(
         raise PublisherConflictError("tracker gateway endpoint does not match publication config")
     paths = tuple(item.path for item in canonical_targets)
     config_sha256 = config.sha256
-    with _publication_guard(queue):
+    with _publication_guard(queue), _publication_heartbeat(queue, lease):
         queue.renew(lease, ttl_seconds=300)
         snapshot = _tracker_projection(queue.snapshot())
         desired = tuple(
@@ -229,6 +231,64 @@ def publish_tracker_fanout(
         return receipt
 
 
+def load_fanout_publish_receipt(
+    raw: bytes,
+    *,
+    queue: Queue,
+    lease: Lease,
+    gateway: object,
+    config: TrackerPublicationConfig,
+) -> FanoutPublishReceipt:
+    """Recover CLI output by checking its durable checkpoint and current remote tree."""
+    from ..orchestration.completion import _validate_fanout_event
+
+    if type(raw) is not bytes or len(raw) > 64 * 1024:
+        raise PublisherConflictError("fanout receipt must be bounded JSON bytes")
+    try:
+        data = json.loads(raw)
+        if json.dumps(data, sort_keys=True, separators=(",", ":")).encode() + b"\n" != raw:
+            raise ValueError("noncanonical receipt")
+        fields = tuple(FanoutPublishReceipt.__dataclass_fields__)
+        if type(data) is not dict or set(data) != {*fields, "publication_config"}:
+            raise ValueError("unexpected receipt fields")
+        if data["publication_config"] != config.to_data() or type(data["paths"]) is not list:
+            raise ValueError("receipt configuration mismatch")
+        receipt = object.__new__(FanoutPublishReceipt)
+        for name in fields:
+            object.__setattr__(receipt, name, tuple(data[name]) if name == "paths" else data[name])
+    except (ValueError, TypeError, RecursionError) as error:
+        raise PublisherConflictError("invalid serialized fanout receipt") from error
+    with _publication_guard(queue), _publication_heartbeat(queue, lease):
+        queue.renew(lease, ttl_seconds=300)
+        _validate_fanout_event(queue, lease, receipt)
+        return _authenticate_tracker_fanout_receipt(queue, gateway, config, receipt)
+
+
+@contextmanager
+def _publication_heartbeat(queue: Queue, lease: Lease) -> Iterator[None]:
+    """Keep the lease alive across a bounded series of remote requests."""
+    stop = Event()
+    errors: list[Exception] = []
+
+    def renew() -> None:
+        while not stop.wait(_HEARTBEAT_INTERVAL_SECONDS):
+            try:
+                queue.renew(lease, ttl_seconds=300)
+            except Exception as error:
+                errors.append(error)
+                return
+
+    thread = Thread(target=renew, daemon=True)
+    thread.start()
+    try:
+        yield
+    finally:
+        stop.set()
+        thread.join()
+    if errors:
+        raise PublisherConflictError("publisher lease renewal failed") from errors[0]
+
+
 def _authenticate_tracker_fanout_receipt(
     queue: Queue,
     gateway: object,
@@ -298,9 +358,7 @@ def _tracker_projection(snapshot: QueueSnapshot) -> QueueSnapshot:
     if type(snapshot) is not QueueSnapshot:
         raise PublisherConflictError("tracker publication requires an exact queue snapshot")
     units = tuple(
-        item
-        for item in snapshot.units
-        if item.kind != ORCHESTRATION_TRACKER_PUBLICATION_KIND
+        item for item in snapshot.units if item.kind != ORCHESTRATION_TRACKER_PUBLICATION_KIND
     )
     payload = {
         "schema_revision": snapshot.schema_revision,

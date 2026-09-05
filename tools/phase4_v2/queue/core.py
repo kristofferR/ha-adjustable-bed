@@ -1208,9 +1208,7 @@ class Queue:
                     ((unit_id, *pin) for pin in expected_dependencies),
                 )
             except sqlite3.IntegrityError as error:
-                raise QueueConflictError(
-                    f"could not materialize work unit: {unit_id}"
-                ) from error
+                raise QueueConflictError(f"could not materialize work unit: {unit_id}") from error
         return input_digest
 
     def register_capability(self, capability: str, revision: str, digest: str) -> None:
@@ -1520,11 +1518,33 @@ class Queue:
             parameters.update(zip(orchestration_names, orchestration_kinds, strict=True))
             row = connection.execute(
                 f"""
-                WITH orchestration_kinds(kind) AS (VALUES {orchestration_values})
+                WITH orchestration_kinds(kind) AS (VALUES {orchestration_values}),
+                unfinished_clusters AS (
+                    SELECT clustered.cluster_id, MIN(clustered.ordinal) AS ordinal
+                    FROM work_units AS clustered
+                    WHERE clustered.cluster_id IS NOT NULL
+                      AND clustered.kind IN (SELECT kind FROM orchestration_kinds)
+                      AND NOT EXISTS (
+                          SELECT 1 FROM work_units AS publication
+                          JOIN formal_completions AS completed
+                            ON completed.unit_id = publication.unit_id
+                          WHERE publication.cluster_id = clustered.cluster_id
+                            AND publication.kind = :publication_kind
+                      )
+                    GROUP BY clustered.cluster_id
+                )
                 SELECT unit_id, input_digest, fencing_generation
                 FROM work_units AS unit
                 WHERE unit.status = 'READY'
                   AND unit.execution_mode = 'NORMAL'
+                  AND (
+                      unit.cluster_id IS NULL
+                      OR NOT EXISTS (SELECT 1 FROM unfinished_clusters)
+                      OR unit.cluster_id = (
+                          SELECT cluster_id FROM unfinished_clusters
+                          ORDER BY ordinal, cluster_id LIMIT 1
+                      )
+                  )
                   {kind_filter}
                   AND NOT EXISTS (
                       SELECT 1 FROM leases WHERE leases.unit_id = unit.unit_id
@@ -1977,9 +1997,7 @@ class Queue:
             authority,
         )
         if kind == ORCHESTRATION_TRACKER_PUBLICATION_KIND:
-            raise QueueConflictError(
-                "tracker publication requires remote fanout authentication"
-            )
+            raise QueueConflictError("tracker publication requires remote fanout authentication")
         graph_content_id = _validated_cluster_graph_content_id(graph)
         if receipt.cluster_id != cluster_id or receipt.stage_input_sha256 != lease.input_digest:
             raise QueueConflictError("signed orchestration receipt belongs to another lease input")
@@ -2806,17 +2824,64 @@ class Queue:
                 "UPDATE work_units SET status = ? WHERE unit_id = ?",
                 (next_status.value, lease.unit_id),
             )
-            if isinstance(trusted_publication, _ExactReusePrerequisitePublication):
+            if outcome is TerminalOutcome.ACCEPTED and isinstance(
+                trusted_publication, _PackageReceiptPublication
+            ):
+                self._validate_package_receipt_publication(
+                    lease,
+                    trusted_publication,
+                    output_digest=output_digest,
+                    completion_revision=completion_revision,
+                    expected_input_digest=expected_input_digest,
+                )
+            elif outcome is TerminalOutcome.ACCEPTED and isinstance(
+                trusted_publication, _PreparationReceiptPublication
+            ):
+                self._validate_preparation_receipt_publication(
+                    lease,
+                    trusted_publication,
+                    output_digest=output_digest,
+                    completion_revision=completion_revision,
+                    expected_input_digest=expected_input_digest,
+                )
+            elif outcome is TerminalOutcome.ACCEPTED and isinstance(
+                trusted_publication, _TargetInventoryPublication
+            ):
+                self._validate_target_inventory_publication(
+                    lease,
+                    trusted_publication,
+                    output_digest=output_digest,
+                    completion_revision=completion_revision,
+                    expected_input_digest=expected_input_digest,
+                )
+            elif outcome is TerminalOutcome.ACCEPTED and isinstance(
+                trusted_publication, _AuthenticatedOrchestrationStagePublication
+            ):
+                restored, restored_revision = _load_authenticated_orchestration_receipt(
+                    trusted_publication.kind,
+                    trusted_publication.canonical_receipt,
+                    trusted_publication.authority,
+                )
+                if (
+                    restored.receipt_sha256 != output_digest
+                    or restored_revision != completion_revision
+                    or restored.graph_sha256
+                    != _validated_cluster_graph_content_id(trusted_publication.graph)
+                ):
+                    raise QueueConflictError("stage receipt changed before commit")
+            elif outcome is TerminalOutcome.ACCEPTED and isinstance(
+                trusted_publication, _ExactReusePrerequisitePublication
+            ):
                 from tools.phase4_v2.equivalence.prerequisite import (
                     validate_authenticated_exact_reuse_prerequisite,
                 )
 
                 # The re-read occurs after publication writes and before the
                 # SQLite commit. Rotation during publication therefore aborts.
-                validate_authenticated_exact_reuse_prerequisite(
-                    trusted_publication.receipt
-                )
-            elif isinstance(trusted_publication, _ValidatedPackageOutputPublication):
+                validate_authenticated_exact_reuse_prerequisite(trusted_publication.receipt)
+            elif outcome is TerminalOutcome.ACCEPTED and isinstance(
+                trusted_publication, _ValidatedPackageOutputPublication
+            ):
                 # Reauthenticate the retained local evidence after all queue
                 # writes and before commit so authority rotation rolls back.
                 self._validate_package_output_publication(
@@ -2826,7 +2891,9 @@ class Queue:
                     completion_revision=completion_revision,
                     expected_input_digest=expected_input_digest,
                 )
-            elif isinstance(trusted_publication, _AuthenticatedTrackerPublication):
+            elif outcome is TerminalOutcome.ACCEPTED and isinstance(
+                trusted_publication, _AuthenticatedTrackerPublication
+            ):
                 from tools.phase4_v2.queue.fanout import (
                     FanoutPublishReceipt,
                     _authenticate_tracker_fanout_receipt,
@@ -2884,6 +2951,11 @@ class Queue:
                     raise QueueConflictError(
                         "remote tracker publication authentication failed"
                     ) from error
+                # Network readback may outlive an authority activation.
+                load_publication_receipt(
+                    trusted_publication.canonical_receipt,
+                    trusted_publication.authority,
+                )
             return FinishResult(
                 disposition=disposition,
                 unit_id=lease.unit_id,
@@ -3125,8 +3197,7 @@ class Queue:
         if (
             type(output) is not ValidatedPackageOutput
             or type(publication.execution_plan) is not PackageExecutionPlan
-            or type(publication.package_local_evidence)
-            is not AuthenticatedPackageLocalEvidence
+            or type(publication.package_local_evidence) is not AuthenticatedPackageLocalEvidence
         ):
             raise QueueConflictError("package publication inputs changed type")
         try:
@@ -3138,9 +3209,7 @@ class Queue:
                 package_ref=publication.execution_plan.target_package_ref,
                 evidence=local,
                 evidence_inputs=publication.package_local_evidence_inputs,
-                enriched_validator_envelope=(
-                    publication.package_local_validator_envelope
-                ),
+                enriched_validator_envelope=(publication.package_local_validator_envelope),
             )
             frozen_plan = freeze_package_execution_plan(publication.execution_plan)
         except (AttributeError, TypeError, ValueError) as error:
@@ -3157,8 +3226,7 @@ class Queue:
             or envelope.package_ref_id != output.target_package_ref_id
             or local_binding.to_data() != frozen_plan.package_local_evidence.to_data()
             or output.package_local_raw_receipt_sha256 != local.receipt_sha256
-            or output.package_local_raw_authority_sha256
-            != local.authority.activation_sha256
+            or output.package_local_raw_authority_sha256 != local.authority.activation_sha256
         ):
             raise QueueConflictError("publication does not belong to the validated package output")
 

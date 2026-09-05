@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import tempfile
 from dataclasses import asdict
 from pathlib import Path
 
@@ -22,6 +21,18 @@ from tests.phase4_v2_orchestration_acceptance import (
 from tests.phase4_v2_orchestration_testing import (
     build_synthetic_package_inputs,
     protected_fixture_trust,
+)
+from tests.phase4_v2_stage_testing import (
+    SyntheticTrackerGateway as _Gateway,
+)
+from tests.phase4_v2_stage_testing import (
+    canonical as _canonical,
+)
+from tests.phase4_v2_stage_testing import (
+    digest as _digest,
+)
+from tests.phase4_v2_stage_testing import (
+    sign_stage as _signed,
 )
 from tools.phase4_v2.equivalence.plan import (
     LOCAL_ONLY_DOMAINS,
@@ -69,12 +80,9 @@ from tools.phase4_v2.queue import (
     Lease,
     Queue,
     QueueConflictError,
-    TrackerDocument,
-    TrackerDocumentSet,
     TrackerFormat,
     TrackerTarget,
     WorkUnitStatus,
-    document_set_sha256,
     publish_tracker_fanout,
 )
 from tools.phase4_v2.queue.cli import main as queue_main
@@ -124,37 +132,6 @@ def _protected_stage_config(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(stage_completion, "_load_stage_authority_config", load_config)
 
 
-class _Gateway:
-    def __init__(self) -> None:
-        self.repository = _PUBLICATION_CONFIG.repository
-        self.branch = _PUBLICATION_CONFIG.branch
-        self.revision = "a" * 40
-        self.documents: dict[str, bytes] = {}
-
-    def read(self, paths: tuple[str, ...]) -> TrackerDocumentSet:
-        return TrackerDocumentSet(
-            self.revision,
-            tuple(TrackerDocument(path, self.documents.get(path)) for path in paths),
-        )
-
-    def compare_and_replace(
-        self,
-        *,
-        expected_revision: str,
-        expected_documents_sha256: str,
-        documents: tuple[TrackerDocument, ...],
-    ) -> bool:
-        current = tuple(
-            TrackerDocument(item.path, self.documents.get(item.path)) for item in documents
-        )
-        if expected_revision != self.revision or expected_documents_sha256 != document_set_sha256(
-            current
-        ):
-            return False
-        self.documents = {item.path: item.body or b"" for item in documents}
-        self.revision = "b" * 40
-        return True
-
 
 @pytest.fixture
 def queue(tmp_path: Path) -> Queue:
@@ -162,15 +139,6 @@ def queue(tmp_path: Path) -> Queue:
     result.initialize()
     return result
 
-
-def _canonical(value: object) -> bytes:
-    return json.dumps(
-        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
-    ).encode()
-
-
-def _digest(value: str) -> str:
-    return hashlib.sha256(value.encode()).hexdigest()
 
 
 def _pin(name: str) -> CapabilityPin:
@@ -326,8 +294,8 @@ def _activate(queue: Queue, pins: tuple[CapabilityPin, ...]) -> None:
         queue.activate_capability_from_absent(pin.capability, pin.revision, pin.digest)
 
 
-def _graph(queue: Queue, cluster: str, names: tuple[str, ...]) -> ClusterGraphPlan:
-    fixture_root = Path(tempfile.mkdtemp(prefix="phase4-stage-graph-"))
+def _graph(queue: Queue, cluster: str, names: tuple[str, ...], fixture_root: Path) -> ClusterGraphPlan:
+    fixture_root.mkdir(parents=True, exist_ok=True)
     with protected_fixture_trust(fixture_root / "trust") as trust:
         active_capabilities: set[tuple[str, str, str]] = set()
         plans = tuple(
@@ -380,22 +348,6 @@ def _authority(stage: str) -> tuple[Ed25519PrivateKey, ActivatedStageAuthority]:
     return key, load_stage_authority(canonical)
 
 
-def _signed(
-    stage: str,
-    payload: dict[str, object],
-    key: Ed25519PrivateKey,
-    authority: ActivatedStageAuthority,
-) -> bytes:
-    document = {
-        "payload": {**payload, "authority_sha256": authority.authority_sha256, "stage": stage},
-        "signature": "",
-    }
-    signing = (
-        f"phase4-v2:signed-stage-receipt:{stage}".encode() + b"\0" + _canonical(document["payload"])
-    )
-    document["signature"] = key.sign(signing).hex()
-    return _canonical(document)
-
 
 def _claim(queue: Queue, stage: WorkStage, owner: str) -> Lease:
     lease = queue.claim(owner, allowed_kinds=(stage.value,))
@@ -404,9 +356,9 @@ def _claim(queue: Queue, stage: WorkStage, owner: str) -> Lease:
 
 
 def test_graph_and_authenticated_receipts_follow_real_stage_adapters(
-    queue: Queue, monkeypatch: pytest.MonkeyPatch
+    queue: Queue, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    graph = _graph(queue, "cluster-011", ("alpha", "beta"))
+    graph = _graph(queue, "cluster-011", ("alpha", "beta"), tmp_path / "graph")
     authorities = _GRAPH_AUTHORITIES[graph.cluster_id]
     first = materialize_cluster_graph(queue, graph)
     assert set(first.materialized_units) == {*first.analysis_units, *first.audit_units}
@@ -573,7 +525,7 @@ def test_graph_and_authenticated_receipts_follow_real_stage_adapters(
             fanout_receipt=invented_fanout,
             receipt=invented_publication,
         )
-    gateway = _Gateway()
+    gateway = _Gateway(_PUBLICATION_CONFIG.repository, _PUBLICATION_CONFIG.branch)
     monkeypatch.setattr(
         fanout_module,
         "_load_protected_publication_config_sha256",
@@ -670,18 +622,16 @@ def test_graph_and_authenticated_receipts_follow_real_stage_adapters(
     assert all(item.status is WorkUnitStatus.COMPLETED for item in queue.snapshot().units)
 
 
-def test_graph_constructors_and_inactive_capabilities_fail_closed(queue: Queue) -> None:
+def test_graph_constructors_and_inactive_capabilities_fail_closed(queue: Queue, tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="frozen execution plans"):
         PackageAnalysisUnit()
     with pytest.raises(ValueError, match="frozen execution plans"):
         ClusterGraphPlan()
     plan = _frozen_plan("cluster", "alpha")
-    authorities = {stage: _authority(stage)[1] for stage in _PROTECTED_CONFIG or ()}
-    if not authorities:
-        authorities = {
-            stage: _authority(stage)[1]
-            for stage in ("audit", "reconciliation", "implementation", "publication")
-        }
+    authorities = {
+        stage: _authority(stage)[1]
+        for stage in ("audit", "reconciliation", "implementation", "publication")
+    }
     with pytest.raises(QueueConflictError, match="active queue head"):
         build_cluster_graph(
             queue,
@@ -691,7 +641,7 @@ def test_graph_constructors_and_inactive_capabilities_fail_closed(queue: Queue) 
             implementation_authority=authorities["implementation"],
             publication_authority=authorities["publication"],
         )
-    graph = _graph(queue, "cluster-sealed", ("alpha",))
+    graph = _graph(queue, "cluster-sealed", ("alpha",), tmp_path / "graph")
     object.__setattr__(graph, "cluster_id", "cluster-transplanted")
     with pytest.raises(ValueError, match="factory-built preimage"):
         materialize_cluster_graph(queue, graph)
@@ -729,7 +679,7 @@ def test_authority_and_receipt_forgery_wrong_key_and_mutation_fail_closed() -> N
 def test_generic_cli_cannot_accept_reserved_semantic_stage(
     queue: Queue, tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    graph = _graph(queue, "cluster-cli", ("alpha",))
+    graph = _graph(queue, "cluster-cli", ("alpha",), tmp_path / "graph")
     materialize_cluster_graph(queue, graph)
     lease = _claim(queue, WorkStage.PACKAGE_AUDIT, "audit")
     lease_file = tmp_path / "lease.json"

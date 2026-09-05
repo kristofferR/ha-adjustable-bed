@@ -36,6 +36,7 @@ from .fanout import (
     TrackerFormat,
     TrackerTarget,
     document_set_sha256,
+    load_fanout_publish_receipt,
     publication_config_sha256,
     publish_tracker_fanout,
 )
@@ -66,6 +67,7 @@ from .tracker import (
 )
 
 __all__ = [
+    "load_fanout_publish_receipt",
     "AtomicIssueGateway",
     "CapabilityPin",
     "CommandResult",

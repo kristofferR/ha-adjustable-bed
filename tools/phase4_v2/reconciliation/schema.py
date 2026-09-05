@@ -6,6 +6,8 @@ import copy
 import hashlib
 import json
 
+from tools.phase4_v2.limits import MAX_CLUSTER_PACKAGES
+
 INPUT_SCHEMA_REVISION = "phase4-v2-reconciliation-input-v5"
 COMPARISON_AREAS = (
     "actions",
@@ -60,8 +62,8 @@ _SCHEMA: dict[str, object] = {
         "cluster_id": _TOKEN,
         "packages": {
             "items": {"$ref": "#/$defs/package_surface"},
-            "maxItems": 32,
-            "minItems": 2,
+            "maxItems": MAX_CLUSTER_PACKAGES,
+            "minItems": 1,
             "type": "array",
         },
         "revision": {"const": INPUT_SCHEMA_REVISION},

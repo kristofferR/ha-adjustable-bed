@@ -252,6 +252,32 @@ def test_schema_has_closed_eleven_area_surface_and_is_defensive() -> None:
     Draft202012Validator.check_schema(second)
 
 
+@pytest.mark.parametrize("route", [Route.FULL_ANALYSIS, Route.EXACT_REUSE])
+@pytest.mark.parametrize("incomplete", [False, True])
+def test_single_package_work_unit_preserves_closure(route: Route, incomplete: bool) -> None:
+    package = package_surface(
+        "org.example.single",
+        route=route,
+        incomplete=frozenset({ComparisonArea.ACTIONS}) if incomplete else frozenset(),
+    )
+    result = reconcile(cluster(package))
+    assert result.pair_decisions == ()
+    assert result.status is (ClosureStatus.INCOMPLETE if incomplete else ClosureStatus.COMPLETE)
+    assert bool(result.required_full_promotions) is (incomplete and route is Route.EXACT_REUSE)
+    assert bool(result.repairs_required) is (incomplete and route is Route.FULL_ANALYSIS)
+    assert verify_render_agreement(render_json(result), render_markdown(result)) == result.content_id
+
+
+def test_single_package_missing_area_and_blocked_root_require_repair() -> None:
+    for package in (
+        package_surface("org.example.single", missing=frozenset({ComparisonArea.PARSING})),
+        package_surface("org.example.single", route=Route.BLOCKED),
+    ):
+        result = reconcile(cluster(package))
+        assert result.status is ClosureStatus.INCOMPLETE
+        assert result.repairs_required
+
+
 def test_identical_semantics_ignore_package_local_provenance() -> None:
     result = reconcile(
         cluster(package_surface("org.example.one"), package_surface("org.example.two"))
@@ -591,6 +617,22 @@ def test_loader_rejects_duplicate_keys_nonfinite_values_and_extra_fields() -> No
         loads_input(json.dumps(raw), trusted_input=value)
 
 
+@pytest.mark.parametrize(
+    ("payload", "message"),
+    [
+        (b'{"x":1,"x":2}', "duplicate JSON key"),
+        (b'NaN', "not permitted"),
+        (b'1e999', "finite"),
+        (b'9' * 5000, "64-bit range"),
+        (b'[' * 2000 + b'0' + b']' * 2000, "strict UTF-8 JSON|exceeds depth"),
+    ],
+    ids=["duplicate-key", "nonfinite", "float-overflow", "integer-limit", "depth-limit"],
+)
+def test_canonical_values_exercise_json_decoder_rejections(payload: bytes, message: str) -> None:
+    with pytest.raises(ReconciliationError, match=message):
+        CanonicalValue(payload)
+
+
 def test_loader_and_values_enforce_resource_and_unicode_bounds(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -654,8 +696,9 @@ def test_json_and_markdown_are_deterministic_and_exactly_agree() -> None:
     assert verify_render_agreement(json_payload, markdown) == result.content_id
 
 
-def test_render_markers_inside_payload_strings_do_not_shadow_marker_lines() -> None:
-    marker_text = "payload <!-- phase4-v2-reconciliation-json:START --> text"
+@pytest.mark.parametrize("separator", [" ", "\u2028", "\u2029", "\u0085"])
+def test_render_markers_inside_payload_strings_do_not_shadow_marker_lines(separator: str) -> None:
+    marker_text = f"payload{separator}<!-- phase4-v2-reconciliation-json:START -->{separator}text"
     result = reconcile(
         cluster(
             package_surface(

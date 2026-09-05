@@ -73,13 +73,19 @@ reserved completions through the generic finish API.
 Synthetic tests cover FULL, mixed FULL/EXACT_REUSE, and all-EXACT_REUSE execution. They do not establish
 real-corpus quality or throughput. Issue #550 still requires the blinded benchmark before adoption.
 
-The pre-bulk implementation also has outstanding deployment-hardening review items: consistent
-authority-rotation and document-size checks, protection of the queue database, isolation of the
-preparation signing API, and pinning the GitHub CLI executable, host, environment, and streaming
-output limits. Formal cluster cardinality must also be aligned across orchestration and
-reconciliation before admitting unsupported cluster sizes. These items are not certified by a green
-synthetic test run. Treat this tooling as a development implementation until they are dispositioned
-and the rollout gates pass.
+Review fixes add authority-rotation and document-size checks, singleton reconciliation, canonical
+cluster order, and a bounded GitHub transport using root-owned `/usr/bin/gh`, explicit `github.com`,
+and an isolated configuration directory. Publication requires a deployment-provided `GH_TOKEN`.
+`load_fanout_publish_receipt` restores CLI output only after rechecking the queue checkpoint,
+protected configuration, and remote contents.
+
+Operational rollout still requires a separately owned preparation/queue service and a concrete
+`FreshContextAdapter`. The repository currently provides the adapter interface and synthetic test
+implementations. `assert_queue_service_deployment` checks a protected queue identity and filesystem
+ownership; it does not authenticate caller-constructed snapshots or implement that service.
+Private Python constructors do not isolate signing keys from code running in the same process.
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the remaining activation gates. A green synthetic test run
+does not certify deployment or authorize bulk work.
 
 ## Legacy preservation inventory
 

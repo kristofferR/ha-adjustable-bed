@@ -16,6 +16,7 @@ from tools.phase4_v2.equivalence.plan import (
     package_queue_unit_id,
     validate_frozen_package_execution_plan,
 )
+from tools.phase4_v2.limits import MAX_CLUSTER_PACKAGES
 from tools.phase4_v2.queue import (
     ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
     ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
@@ -38,7 +39,7 @@ TRACKER_PUBLICATION_COMPLETION_REVISION = "phase4-v2-tracker-publication-receipt
 
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
 _TOKEN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}$")
-_MAX_PACKAGES = 250
+_MAX_PACKAGES = MAX_CLUSTER_PACKAGES
 _MAX_PINS = 4_096
 
 

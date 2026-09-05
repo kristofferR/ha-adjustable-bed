@@ -2761,3 +2761,10 @@ def _reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict[str, object]
             raise _DuplicateKeyError(key)
         result[key] = value
     return result
+
+
+# Public structural helpers for reconciliation; evidence authorization remains separate.
+DataDefinition = _DataDefinition
+semantic_data = _semantic_data
+semantic_leaf_pointers = _semantic_leaf_pointers
+resolve_semantic_pointer = _resolve_semantic_pointer

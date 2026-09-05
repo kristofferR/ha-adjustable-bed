@@ -557,9 +557,10 @@ def test_cli_publishes_complete_target_set_and_emits_canonical_receipt(
             {"path": "public/queue.html", "format": "HTML"},
         ],
     }
-    assert receipt["publication_config_sha256"] == parse_publication_config(
-        receipt["publication_config"]
-    ).sha256
+    assert (
+        receipt["publication_config_sha256"]
+        == parse_publication_config(receipt["publication_config"]).sha256
+    )
     assert gateway.writes == 1
     generation = receipt["queue_generation"].encode()
     assert generation in gateway.documents["issues/436.md"]
@@ -716,6 +717,34 @@ def test_cli_rejects_hostile_or_incomplete_publication_config(
     captured = capsys.readouterr()
     assert captured.out == ""
     assert message in captured.err
+
+
+def test_cli_rejects_publication_config_that_differs_from_deployment_pin(
+    queue: Queue,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lease_file, config_file = _publication_inputs(queue, tmp_path)
+    monkeypatch.setattr(
+        fanout_module, "_load_protected_publication_config_sha256", lambda: "0" * 64
+    )
+
+    def forbidden_read(_self: GitHubTreeGateway, _paths: tuple[str, ...]) -> TrackerDocumentSet:
+        pytest.fail("mismatched publication config reached GitHub")
+
+    monkeypatch.setattr(GitHubTreeGateway, "read", forbidden_read)
+    assert (
+        main(
+            _args(
+                queue, "publish", "--lease-file", str(lease_file), "--config-file", str(config_file)
+            )
+        )
+        == 2
+    )
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "protected deployment pin" in captured.err
 
 
 def test_cli_rejects_missing_or_unsafe_publication_config_before_github(

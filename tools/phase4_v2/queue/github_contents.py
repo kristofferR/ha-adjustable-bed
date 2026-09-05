@@ -49,13 +49,15 @@ class GitHubContentsTarget:
             type(self.branch) is not str
             or not self.branch
             or len(self.branch) > 255
-            or self.branch.startswith("-")
+            or self.branch.startswith(("-", "/"))
+            or self.branch == "@"
             or self.branch.endswith((".", "/"))
             or ".." in self.branch
             or "//" in self.branch
             or "@{" in self.branch
             or any(character in " ~^:?*[\\" for character in self.branch)
             or any(part.endswith(".lock") for part in self.branch.split("/"))
+            or any(part.startswith(".") for part in self.branch.split("/"))
             or any(ord(character) < 32 or ord(character) == 127 for character in self.branch)
         ):
             raise ValueError("tracker branch is invalid")

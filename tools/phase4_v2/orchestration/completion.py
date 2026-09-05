@@ -9,6 +9,7 @@ import re
 import sqlite3
 import stat
 from collections.abc import Callable, Mapping
+from contextlib import closing
 from dataclasses import dataclass
 
 from cryptography.exceptions import InvalidSignature
@@ -16,9 +17,6 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from tools.phase4_v2.equivalence.plan import VALIDATED_PACKAGE_OUTPUT_REVISION
 from tools.phase4_v2.queue import (
-    ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
-    ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
-    ORCHESTRATION_PACKAGE_AUDIT_KIND,
     CapabilityPin,
     CompletionDependencyPin,
     FanoutPublishReceipt,
@@ -390,9 +388,6 @@ def finish_package_audit(
         queue,
         lease,
         graph,
-        ORCHESTRATION_PACKAGE_AUDIT_KIND,
-        expected_input,
-        PACKAGE_AUDIT_COMPLETION_REVISION,
         authority,
         receipt.canonical_bytes,
     )
@@ -450,7 +445,9 @@ def build_authenticated_reconciliation_input(
             or audit.revision != PACKAGE_AUDIT_COMPLETION_REVISION
             or audit.digest != receipt.receipt_sha256
         ):
-            raise QueueConflictError("package surface lacks its exact completed authenticated audit")
+            raise QueueConflictError(
+                "package surface lacks its exact completed authenticated audit"
+            )
         receipts[receipt.package_ref_id] = receipt
     if set(receipts) != set(graph_packages):
         raise QueueConflictError("reconciliation audit receipts differ from the graph package set")
@@ -498,16 +495,13 @@ def finish_cluster_reconciliation(
         receipt, TrustedReconciliationReceipt, authority, load_reconciliation_receipt
     )
     _require_graph_authority(graph.reconciliation_capability_pins, authority)
-    expected_input = _validate_reconciliation(queue, graph, receipt)
+    _validate_reconciliation(queue, graph, receipt)
     if lease.unit_id != cluster_reconciliation_unit_id(graph):
         raise QueueConflictError("reconciliation receipt belongs to another stage")
     return _finish(
         queue,
         lease,
         graph,
-        ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
-        expected_input,
-        CLUSTER_RECONCILIATION_COMPLETION_REVISION,
         authority,
         receipt.canonical_bytes,
     )
@@ -534,16 +528,13 @@ def finish_cluster_implementation(
         receipt, TrustedImplementationReceipt, authority, load_implementation_receipt
     )
     _require_graph_authority(graph.implementation_capability_pins, authority)
-    expected_input = _validate_implementation(queue, graph, reconciliation_receipt, receipt)
+    _validate_implementation(queue, graph, reconciliation_receipt, receipt)
     if lease.unit_id != cluster_implementation_unit_id(graph):
         raise QueueConflictError("implementation receipt belongs to another stage")
     return _finish(
         queue,
         lease,
         graph,
-        ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
-        expected_input,
-        CLUSTER_IMPLEMENTATION_COMPLETION_REVISION,
         authority,
         receipt.canonical_bytes,
     )
@@ -724,7 +715,7 @@ def _required_completion(
 def _validate_fanout_event(queue: Queue, lease: Lease, receipt: FanoutPublishReceipt) -> None:
     """Prove the receipt came from the publisher's immutable internal checkpoint."""
 
-    with sqlite3.connect(queue.database) as connection:
+    with closing(sqlite3.connect(queue.database)) as connection:
         row = connection.execute(
             """
             SELECT event_type, payload_json FROM events
@@ -761,13 +752,9 @@ def _finish(
     queue: Queue,
     lease: Lease,
     graph: ClusterGraphPlan,
-    kind: str,
-    expected_input: str,
-    completion_revision: str,
     authority: ActivatedStageAuthority,
     canonical_receipt: bytes,
 ) -> StageCompletion:
-    del kind, expected_input, completion_revision
     result = queue.finish_authenticated_orchestration_stage(
         lease,
         graph=graph,
@@ -857,14 +844,23 @@ def _load_stage_authority_config() -> dict[str, tuple[str, int]]:
     except OSError as error:
         raise QueueConflictError("protected stage authority config is unavailable") from error
     try:
-        _validate_protected_directory(os.fstat(directory))
-        flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+        directory_before = os.fstat(directory)
+        _validate_protected_directory(directory_before)
+        flags = (
+            os.O_RDONLY
+            | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_NONBLOCK", 0)
+        )
         try:
             descriptor = os.open("phase4-v2-stage-authorities.json", flags, dir_fd=directory)
         except OSError as error:
             raise QueueConflictError("protected stage authority config is unavailable") from error
         try:
-            _validate_protected_file(os.fstat(descriptor))
+            before = os.fstat(descriptor)
+            _validate_protected_file(before)
+            if not 0 < before.st_size <= 16 * 1024:
+                raise QueueConflictError("protected stage authority config exceeds its byte limit")
             chunks: list[bytes] = []
             remaining = 16 * 1024 + 1
             while remaining:
@@ -873,6 +869,16 @@ def _load_stage_authority_config() -> dict[str, tuple[str, int]]:
                     break
                 chunks.append(chunk)
                 remaining -= len(chunk)
+            after = os.fstat(descriptor)
+            _validate_protected_file(after)
+            directory_after = os.fstat(directory)
+            _validate_protected_directory(directory_after)
+            if (
+                _security_stat(before) != _security_stat(after)
+                or _security_stat(directory_before) != _security_stat(directory_after)
+                or sum(map(len, chunks)) != before.st_size
+            ):
+                raise QueueConflictError("protected stage authority config changed while reading")
         finally:
             os.close(descriptor)
     finally:
@@ -899,8 +905,27 @@ def _validate_protected_directory(metadata: os.stat_result) -> None:
 
 
 def _validate_protected_file(metadata: os.stat_result) -> None:
-    if not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != 0 or metadata.st_mode & 0o022:
+    if (
+        not stat.S_ISREG(metadata.st_mode)
+        or metadata.st_uid != 0
+        or metadata.st_mode & 0o022
+        or metadata.st_nlink != 1
+    ):
         raise QueueConflictError("protected stage authority config is unsafe")
+
+
+def _security_stat(metadata: os.stat_result) -> tuple[int, ...]:
+    return (
+        metadata.st_dev,
+        metadata.st_ino,
+        metadata.st_mode,
+        metadata.st_uid,
+        metadata.st_gid,
+        metadata.st_nlink,
+        metadata.st_size,
+        metadata.st_mtime_ns,
+        metadata.st_ctime_ns,
+    )
 
 
 def _new_receipt[

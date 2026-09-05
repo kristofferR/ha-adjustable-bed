@@ -75,5 +75,13 @@ jobs:
           enable-cache: true
       - name: Install dependencies
         run: uv sync --extra dev
+      - name: Install preparation sandbox dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bubblewrap build-essential
+          # The ephemeral runner must allow the unprivileged sandbox used by preparation tests.
+          if [ -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
       - name: Run tests (shard ${{ matrix.group }}/3)
         run: uv run pytest -q --splits 3 --group ${{ matrix.group }}

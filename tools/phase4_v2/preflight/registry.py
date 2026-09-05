@@ -33,6 +33,8 @@ from .execution import (
     ToolSpec,
     WarningRecord,
     _execution_attestation_bytes,
+    _jadx_fallback_reason,
+    _protected_metadata,
     _verify_ed25519,
     execute_preparation,
 )
@@ -429,20 +431,12 @@ def _read_protected_activation_digest() -> str:
                 if len(payload) > 4_096:
                     _fail("authority pin exceeds its byte limit")
             after = os.fstat(descriptor)
-            if (node.st_dev, node.st_ino, node.st_size, node.st_mtime_ns) != (
-                after.st_dev,
-                after.st_ino,
-                after.st_size,
-                after.st_mtime_ns,
-            ):
+            if _protected_metadata(node) != _protected_metadata(after):
                 _fail("authority pin changed while reading")
         finally:
             os.close(descriptor)
         current_directory = os.fstat(directory_descriptor)
-        if (directory.st_dev, directory.st_ino) != (
-            current_directory.st_dev,
-            current_directory.st_ino,
-        ):
+        if _protected_metadata(directory) != _protected_metadata(current_directory):
             _fail("protected authority directory changed while reading")
     finally:
         os.close(directory_descriptor)
@@ -650,7 +644,10 @@ def validate_preparation_receipt_authority(
 ) -> PreparationReceipt:
     """Reauthenticate a retained preparation receipt against protected activation."""
 
-    if type(receipt) is not PreparationReceipt or type(authority) is not ActivatedPreparationAuthority:
+    if (
+        type(receipt) is not PreparationReceipt
+        or type(authority) is not ActivatedPreparationAuthority
+    ):
         _fail("preparation receipt authentication requires exact trusted records")
     authority_payload = _canonical_json(authority.to_data()) + b"\n"
     restored_authority = load_activated_preparation_authority(authority_payload)
@@ -749,8 +746,7 @@ def validate_preparation_receipt_authority(
         or type(candidate_pin) is not dict
         or candidate_pin.get("sha256") != receipt.candidate_index_sha256
         or candidate_item["artifact_digest"] != receipt.artifact_digest
-        or candidate_item["candidate_contract_sha256"]
-        != receipt.candidate_contract_sha256
+        or candidate_item["candidate_contract_sha256"] != receipt.candidate_contract_sha256
     ):
         _fail("preparation receipt differs from its retained signed documents")
     attestation = _execution_attestation_bytes(
@@ -1063,6 +1059,10 @@ def _scan_frozen_candidates(
     max_signal = max(len(needle) for _name, needle in _CANDIDATE_SIGNALS)
     for invocation in invocations:
         assert invocation.cache_key is not None
+        if invocation.status == "FALLBACK" and invocation.failures:
+            # Failed decoder output is discarded, only the successful smali
+            # invocation contributes frozen evidence and candidates.
+            continue
         root = _output_inventory_root(cache_directory, invocation.cache_key)
         paths = _inventory_paths(root, limits)
         if paths != tuple(output.path for output in invocation.outputs):
@@ -1327,9 +1327,15 @@ def load_preparation_receipt(
             for item in route.qualifications
         }:
             _fail(f"route {invocation.route!r} tool build is not approved")
-        if invocation.tool.failure is not None or invocation.failures or invocation.exit_code != 0:
+        fallback_reason = _jadx_fallback_reason(invocation)
+        failed_fallback = (
+            invocation.status == "FALLBACK" and fallback_reason == "JADX_DECOMPILATION_FAILED"
+        )
+        if invocation.tool.failure is not None or (
+            not failed_fallback and (invocation.failures or invocation.exit_code != 0)
+        ):
             _fail(f"route {invocation.route!r} contains an execution failure")
-        if invocation.warnings:
+        if invocation.warnings and not failed_fallback:
             _fail(f"route {invocation.route!r} contains a blocking diagnostic")
         if (
             invocation.tool.binary_bytes is None
@@ -1352,11 +1358,9 @@ def load_preparation_receipt(
         elif (
             invocation.route != "jadx"
             or invocation.fallback_route != "apktool"
-            or invocation.fallback_reason != "JADX_OUTPUT_SUSPICIOUS"
-            or any(
-                output.bytes > 0 and PurePosixPath(output.path).suffix.lower() in {".java", ".kt"}
-                for output in invocation.outputs
-            )
+            or fallback_reason is None
+            or invocation.fallback_reason != fallback_reason
+            or (failed_fallback and invocation.outputs)
         ):
             _fail("only the exact authoritative jadx-to-apktool fallback is acceptable")
         for output in invocation.outputs:
