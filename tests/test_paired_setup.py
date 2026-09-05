@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from copy import copy
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
@@ -155,6 +156,77 @@ def _paired_entry(hass: HomeAssistant) -> MockConfigEntry:
 
 
 class TestPairedSetup:
+    async def test_pair_setup_clears_pending_member_discoveries(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ) -> None:
+        """Existing discovery cards disappear when their addresses join a pair."""
+        flows = {}
+        for address in (LEFT_ADDR, RIGHT_ADDR, "AA:BB:CC:DD:EE:03"):
+            info = copy(mock_bluetooth_service_info)
+            info.address = address.lower()
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN, context={"source": config_entries.SOURCE_BLUETOOTH}, data=info
+            )
+            assert result["type"] == FlowResultType.FORM
+            flows[address] = result["flow_id"]
+
+        entry = _paired_entry(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        assert entry.state == ConfigEntryState.LOADED
+        remaining = {
+            flow["flow_id"]
+            for flow in hass.config_entries.flow.async_progress_by_handler(DOMAIN)
+        }
+        assert remaining == {flows["AA:BB:CC:DD:EE:03"]}
+
+    @pytest.mark.parametrize("address", [LEFT_ADDR, RIGHT_ADDR])
+    async def test_pending_discovery_rechecks_pair_membership(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info,
+        enable_custom_integrations,
+        address: str,
+    ) -> None:
+        """A discovery opened before pairing must not offer a duplicate afterward."""
+        info = copy(mock_bluetooth_service_info)
+        info.address = address.lower()
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_BLUETOOTH}, data=info
+        )
+        assert result["type"] == FlowResultType.FORM
+        _paired_entry(hass)
+
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+
+        assert result["type"] == FlowResultType.ABORT
+        assert result["reason"] == "already_configured"
+
+    @pytest.mark.parametrize("address", [LEFT_ADDR, RIGHT_ADDR])
+    async def test_new_discovery_rejects_pair_members(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info,
+        enable_custom_integrations,
+        address: str,
+    ) -> None:
+        """Both sides stay suppressed on fresh Bluetooth discovery."""
+        _paired_entry(hass)
+        info = copy(mock_bluetooth_service_info)
+        info.address = address.lower()
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_BLUETOOTH}, data=info
+        )
+
+        assert result["type"] == FlowResultType.ABORT
+        assert result["reason"] == "already_configured"
+
     @pytest.mark.parametrize(
         ("resolved_variant", "offers_pairing"),
         [
