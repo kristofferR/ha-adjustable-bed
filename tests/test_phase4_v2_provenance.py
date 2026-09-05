@@ -130,8 +130,10 @@ def test_legacy_exact_reuse_without_raw_source_is_rejected(
     key, authority, registry = _source(monkeypatch)
     source = registry.entries[0]
     root = source.report.validated_root_evidence[0]
+    root_ids = sorted((root.target_root_id, SHA[13]))
     proof = ByteIdentityProof(
-        *sorted((root.target_root_id, SHA[13])),
+        root_ids[0],
+        root_ids[1],
         "DEX",
         SHA[0],
         SHA[1],
@@ -171,8 +173,9 @@ def test_exact_reuse_rejects_an_unrelated_byte_identity_proof(
     _key, authority, registry = _source(monkeypatch)
     source = registry.entries[0]
     root = source.report.validated_root_evidence[0]
+    root_ids = sorted((SHA[0], SHA[1]))
     proof = ByteIdentityProof(
-        *sorted((SHA[0], SHA[1])), "DEX", SHA[2], SHA[3], SHA[4], SHA[5], SHA[6]
+        root_ids[0], root_ids[1], "DEX", SHA[2], SHA[3], SHA[4], SHA[5], SHA[6]
     )
     decision = LedgerDecision(
         SHA[13],
