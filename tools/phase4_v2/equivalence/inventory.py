@@ -13,7 +13,13 @@ from pathlib import Path
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-from .core import FrozenPackageRef, validate_frozen_package_ref
+from .core import (
+    EquivalenceError,
+    FrozenPackageRef,
+    _canonical_json_document,
+    _security_stat,
+    validate_frozen_package_ref,
+)
 from .plan import (
     TARGET_ROOT_INVENTORY_REVISION,
     AcceptedTargetRootInventory,
@@ -36,6 +42,18 @@ _SHA = re.compile(r"^[0-9a-f]{64}$")
 
 class InventoryAuthenticationError(ValueError):
     """Target inventory authentication failed closed."""
+
+
+def _document(
+    payload: bytes, *, trailing_newline: bool = False, maximum_bytes: int = 16 * 1024 * 1024
+) -> dict[str, object]:
+    try:
+        return _canonical_json_document(
+            payload, "inventory JSON", trailing_newline=trailing_newline,
+            maximum_bytes=maximum_bytes,
+        )
+    except EquivalenceError as error:
+        raise InventoryAuthenticationError(str(error)) from error
 
 
 def _canonical(value: object) -> bytes:
@@ -108,13 +126,19 @@ def _read_protected_inventory_pin() -> str:
         metadata = os.fstat(descriptor)
         if (
             metadata.st_uid != 0
-            or metadata.st_mode & 0o022
+            or metadata.st_mode & 0o222
             or metadata.st_nlink != 1
             or not stat.S_ISREG(metadata.st_mode)
-            or metadata.st_size > 4096
+            or not 0 < metadata.st_size <= 4096
         ):
             raise InventoryAuthenticationError("inventory authority pin is not root protected")
         payload = os.read(descriptor, 4097)
+        if (
+            len(payload) != metadata.st_size
+            or _security_stat(metadata) != _security_stat(os.fstat(descriptor))
+            or _security_stat(directory) != _security_stat(os.fstat(directory_descriptor))
+        ):
+            raise InventoryAuthenticationError("inventory authority pin changed while reading")
     except OSError as error:
         raise InventoryAuthenticationError("protected inventory authority pin is unavailable") from error
     finally:
@@ -125,7 +149,7 @@ def _read_protected_inventory_pin() -> str:
     if len(payload) > 4096:
         raise InventoryAuthenticationError("inventory authority pin exceeds its size limit")
     try:
-        raw = json.loads(payload)
+        raw = _document(payload, trailing_newline=True, maximum_bytes=4096)
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise InventoryAuthenticationError("inventory authority pin is invalid") from error
     if type(raw) is not dict or set(raw) != {"activation_sha256", "schema"}:
@@ -139,7 +163,7 @@ def load_activated_inventory_authority(payload: bytes) -> ActivatedInventoryAuth
     if type(payload) is not bytes or not payload.endswith(b"\n"):
         raise InventoryAuthenticationError("inventory authority must be canonical newline JSON")
     try:
-        raw = json.loads(payload)
+        raw = _document(payload, trailing_newline=True, maximum_bytes=4096)
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise InventoryAuthenticationError("inventory authority is invalid") from error
     if type(raw) is not dict or set(raw) != {
@@ -252,7 +276,7 @@ def load_authenticated_target_inventory_envelope(
     authority = _reauthorize(authority)
     package_ref = validate_frozen_package_ref(package_ref)
     try:
-        document = json.loads(canonical_bytes)
+        document = _document(canonical_bytes)
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise InventoryAuthenticationError("inventory envelope is invalid") from error
     if type(document) is not dict or set(document) != {"payload", "signature"} or _canonical(document) != canonical_bytes:
@@ -325,6 +349,8 @@ def load_authenticated_target_inventory_envelope(
         ("receipt_sha256", hashlib.sha256(canonical_bytes).hexdigest()),
     ):
         object.__setattr__(result, name, value)
+    _reauthorize(authority)
+    validate_frozen_package_ref(package_ref)
     return result
 
 

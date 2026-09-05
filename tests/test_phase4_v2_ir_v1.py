@@ -82,11 +82,11 @@ def _document() -> dict[str, object]:
                 ],
             }
         },
-        "gatt_services": {"service": {"uuid": "service", "role": "CONTROL"}},
+        "gatt_services": {"service": {"uuid": "1234", "role": "CONTROL"}},
         "gatt_characteristics": {
             "write": {
                 "service": "service",
-                "uuid": "write",
+                "uuid": "5678",
                 "roles": ["WRITE"],
                 "write_modes": ["WITHOUT_RESPONSE"],
             }
@@ -396,11 +396,44 @@ def test_every_final_semantic_leaf_requires_exact_evidence() -> None:
 
 def test_final_document_authorizes_exact_once_evidence_for_every_domain() -> None:
     data, trusted = _authorized_document()
+    Draft202012Validator(final_schema_document()).validate(data)
 
     document = parse_final_ir(json.loads(json.dumps(data)), trusted_receipts=trusted)
 
     assert document.schema_revision == FINAL_SCHEMA_REVISION
     assert validate_final_universe(document).is_valid
+
+
+@pytest.mark.parametrize("value", ["ABCD", "1234ABCD", "12345678-1234-ABCD-5678-123456789ABC"])
+def test_gatt_uuid_accepts_supported_representations(value: str) -> None:
+    service = v1._parse_gatt_service({"uuid": value, "role": "CONTROL"}, "$.service")
+    assert service.uuid == value.lower()
+    characteristic = v1._parse_gatt_characteristic(
+        {"service": "service", "uuid": value, "roles": ["WRITE"], "write_modes": []},
+        "$.characteristic",
+    )
+    assert characteristic.uuid == value.lower()
+
+
+@pytest.mark.parametrize("value", ["not-a-uuid", "abc", "0x1234", "123456789", "1234\n"])
+def test_gatt_uuid_rejects_invalid_endpoint(value: str) -> None:
+    with pytest.raises(IRValidationError, match="invalid_gatt_uuid"):
+        v1._parse_gatt_service({"uuid": value, "role": "CONTROL"}, "$.service")
+    with pytest.raises(IRValidationError, match="invalid_gatt_uuid"):
+        v1._parse_gatt_characteristic(
+            {"service": "service", "uuid": value, "roles": ["WRITE"], "write_modes": []},
+            "$.characteristic",
+        )
+
+
+@pytest.mark.parametrize("constant", ["ff", "ffffff"])
+def test_packet_constant_must_match_declared_width(constant: str) -> None:
+    with pytest.raises(IRValidationError, match="invalid_packet_field_width"):
+        v1._parse_packet_field(
+            {"offset": 0, "width": 2, "source": "CONSTANT", "constant_hex": constant,
+             "transforms": []},
+            "$.field",
+        )
 
 
 def test_final_markdown_is_deterministic_and_rejects_drift() -> None:

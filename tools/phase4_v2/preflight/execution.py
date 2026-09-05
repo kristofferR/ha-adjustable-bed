@@ -286,21 +286,28 @@ def load_protected_preparation_signer() -> PreparationExecutionSigner:
         finally:
             os.close(descriptor)
         current_directory = os.fstat(directory_descriptor)
-        if (directory.st_dev, directory.st_ino) != (
-            current_directory.st_dev,
-            current_directory.st_ino,
-        ):
+        if _protected_metadata(directory) != _protected_metadata(current_directory):
             raise PreparationError("protected executor directory changed while reading credential")
     finally:
         os.close(directory_descriptor)
-    if len(payload) != 32 or (
-        before.st_dev,
-        before.st_ino,
-        before.st_size,
-        before.st_mtime_ns,
-    ) != (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns):
+    if len(payload) != 32 or _protected_metadata(before) != _protected_metadata(after):
         raise PreparationError("execution signing key changed while reading")
     return PreparationExecutionSigner._from_private_bytes(payload)
+
+
+def _protected_metadata(node: os.stat_result) -> tuple[int, ...]:
+    """Include ownership and permission changes, excluding read-driven atime."""
+    return (
+        node.st_dev,
+        node.st_ino,
+        node.st_uid,
+        node.st_gid,
+        node.st_mode,
+        node.st_nlink,
+        node.st_size,
+        node.st_mtime_ns,
+        node.st_ctime_ns,
+    )
 
 
 def _execution_attestation_bytes(
@@ -2445,6 +2452,39 @@ def _candidate_records(
     return tuple(records)
 
 
+def _jadx_fallback_reason(record: InvocationRecord) -> str | None:
+    if record.route != "jadx" or record.tool.failure is not None:
+        return None
+    if record.failures:
+        # Decoder failures may be replaced by smali; integrity and resource
+        # failures must still block the entire preparation.
+        if not set(record.failures) <= {
+            "TOOL_EXIT_NONZERO",
+            "TOOL_DIAGNOSTIC",
+            "OUTPUT_EMPTY",
+            "TOOL_TIMEOUT",
+        }:
+            return None
+        if "TOOL_TIMEOUT" in record.failures:
+            if record.exit_code is not None or "TOOL_EXIT_NONZERO" in record.failures:
+                return None
+        elif record.exit_code is None or (record.exit_code != 0) != (
+            "TOOL_EXIT_NONZERO" in record.failures
+        ):
+            return None
+        if bool(record.warnings) != ("TOOL_DIAGNOSTIC" in record.failures):
+            return None
+        return "JADX_DECOMPILATION_FAILED"
+    if record.exit_code != 0 or record.warnings:
+        return None
+    if not any(
+        output.bytes > 0 and PurePosixPath(output.path).suffix.lower() in _SOURCE_SUFFIXES
+        for output in record.outputs
+    ):
+        return "JADX_OUTPUT_SUSPICIOUS"
+    return None
+
+
 def _apply_jadx_fallbacks(
     invocations: Sequence[_PreparedInvocation],
 ) -> tuple[_PreparedInvocation, ...]:
@@ -2452,13 +2492,8 @@ def _apply_jadx_fallbacks(
     adjusted: list[_PreparedInvocation] = []
     for prepared in invocations:
         record = prepared.record
-        if record.route != "jadx" or record.status != "COMPLETE":
-            adjusted.append(prepared)
-            continue
-        if any(
-            output.bytes > 0 and PurePosixPath(output.path).suffix.lower() in _SOURCE_SUFFIXES
-            for output in record.outputs
-        ):
+        reason = _jadx_fallback_reason(record)
+        if reason is None:
             adjusted.append(prepared)
             continue
         fallback = by_member_route.get((record.member, "apktool"))
@@ -2477,8 +2512,9 @@ def _apply_jadx_fallbacks(
                     record=replace(
                         record,
                         status="FALLBACK",
-                        fallback_reason="JADX_OUTPUT_SUSPICIOUS",
+                        fallback_reason=reason,
                         fallback_route="apktool",
+                        outputs=() if record.failures else record.outputs,
                     ),
                 )
             )
@@ -2489,7 +2525,7 @@ def _apply_jadx_fallbacks(
                     record=replace(
                         record,
                         status="BLOCKED",
-                        failures=("JADX_OUTPUT_SUSPICIOUS", "AUTHORITATIVE_SMALI_FALLBACK_MISSING"),
+                        failures=(*record.failures, reason, "AUTHORITATIVE_SMALI_FALLBACK_MISSING"),
                     ),
                 )
             )

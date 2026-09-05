@@ -32,27 +32,30 @@ SHA_C = "c" * 64
 SHA_D = "d" * 64
 SHA_E = "e" * 64
 SHA_F = "f" * 64
-_VALIDATOR_ACTIVATION = ""
 
 
 @pytest.fixture(autouse=True)
 def _activate_validator(monkeypatch: pytest.MonkeyPatch) -> None:
+    _, activation = authenticated_package_ref(
+        package_name="org.example.one",
+        version_code="17",
+        artifact_digest=SHA_A,
+        preflight_sha256=SHA_B,
+    )
     monkeypatch.setattr(
         equivalence_core_module,
         "_read_protected_validator_pin",
-        lambda: _VALIDATOR_ACTIVATION,
+        lambda: activation,
     )
 
 
 def package(name: str = "org.example.one", artifact: str = SHA_A) -> FrozenPackageRef:
-    package_ref, activation = authenticated_package_ref(
+    package_ref, _activation = authenticated_package_ref(
         package_name=name,
         version_code="17",
         artifact_digest=artifact,
         preflight_sha256=SHA_B,
     )
-    global _VALIDATOR_ACTIVATION
-    _VALIDATOR_ACTIVATION = activation
     return package_ref
 
 
@@ -133,9 +136,7 @@ def route(
         candidates,
         pins=RoutingPins(),
         trusted_direct_audits=trusted,
-        trusted_inventory_receipts={
-            item.content_id: SHA_E for item in (target, *candidates)
-        },
+        trusted_inventory_receipts={item.content_id: SHA_E for item in (target, *candidates)},
     )
 
 
@@ -242,9 +243,7 @@ def test_every_executable_identity_dimension_must_match(change: str, value: str)
         ("unresolved_slices", ("native-bridge",), Route.FULL_ANALYSIS),
     ],
 )
-def test_tainted_target_never_reuses(
-    change: str, value: object, expected: Route
-) -> None:
+def test_tainted_target_never_reuses(change: str, value: object, expected: Route) -> None:
     _, _, _, target, candidate = exact_pair()
 
     decision, proof = route(replace(target, **{change: value}), [candidate])
@@ -653,9 +652,7 @@ def test_defensive_copy_rejects_hostile_tuple_subclass_without_invoking_it() -> 
         ("inherited_root_id", SHA_A, "cannot inherit"),
     ],
 )
-def test_ledger_revalidates_mutated_decision_state(
-    field: str, value: object, message: str
-) -> None:
+def test_ledger_revalidates_mutated_decision_state(field: str, value: object, message: str) -> None:
     package_ref = package()
     extractor = capability()
     target = root(package_ref, extractor, content=SHA_B)
@@ -674,6 +671,7 @@ def test_ledger_revalidates_mutated_decision_state(
 
     with pytest.raises(EquivalenceError, match=message):
         ledger.append(decision, expected_head_id=None)
+
 
 def test_root_risk_sets_must_be_bounded_sorted_and_unique() -> None:
     _, _, _, left, _ = exact_pair()
@@ -736,10 +734,7 @@ def test_ledger_replay_preserves_historical_exact_reuse_source() -> None:
     package_ref = package()
     extractor = capability()
     new_source, old_source, target = sorted(
-        (
-            root(package_ref, extractor, occurrence=f"{index:064x}")
-            for index in range(3)
-        ),
+        (root(package_ref, extractor, occurrence=f"{index:064x}") for index in range(3)),
         key=lambda item: item.content_id,
     )
     receipts = {
@@ -834,9 +829,7 @@ def test_ledger_validates_trust_maps_once_not_per_proof_or_decision(
         calls["audits"] += 1
         return original_audits(value)
 
-    def count_inventories(
-        value: Mapping[str, str], *, field: str
-    ) -> dict[str, str]:
+    def count_inventories(value: Mapping[str, str], *, field: str) -> dict[str, str]:
         calls["inventories"] += 1
         return original_inventories(value, field=field)
 
@@ -1101,9 +1094,7 @@ def test_ledger_replay_uses_preindexed_exact_reuse_sources(
 ) -> None:
     package_ref = package()
     extractor = capability()
-    roots = [
-        root(package_ref, extractor, occurrence=f"{index:064x}") for index in range(16)
-    ]
+    roots = [root(package_ref, extractor, occurrence=f"{index:064x}") for index in range(16)]
     audits = {item.content_id: SHA_D for item in roots}
     receipts = {item.content_id: SHA_E for item in roots}
     entries: list[LedgerEntry] = []

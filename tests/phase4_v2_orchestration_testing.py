@@ -207,7 +207,7 @@ _LOCAL_SEMANTIC_VALUES = {
     "lifecycle": "CONNECT",
     "negative_closure": "Stop",
     "reachability": "raise",
-    "resources": "service",
+    "resources": "1234",
     "selectors": "side",
 }
 
@@ -1361,11 +1361,11 @@ def _synthetic_terminal_semantics() -> dict[str, object]:
                 ],
             }
         },
-        "gatt_services": {"service": {"uuid": "service", "role": "CONTROL"}},
+        "gatt_services": {"service": {"uuid": "1234", "role": "CONTROL"}},
         "gatt_characteristics": {
             "write": {
                 "service": "service",
-                "uuid": "write",
+                "uuid": "5678",
                 "roles": ["WRITE"],
                 "write_modes": ["WITHOUT_RESPONSE"],
             }
@@ -1877,7 +1877,7 @@ int main(int argc,char **argv) {
 
 def _synthetic_local_output() -> bytes:
     return (
-        b"BluetoothGatt|variants|CONNECT|Stop|raise|service|side|"
+        b"BluetoothGatt|variants|CONNECT|Stop|raise|1234|side|"
         + b"x" * 16_384
     )
 

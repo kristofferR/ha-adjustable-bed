@@ -126,6 +126,19 @@ def derive_authenticated_final_ir_package_surface(
 ) -> FinalIRSurfaceDerivation:
     """Derive a surface only from an accepted, signed package publication."""
 
+    documents = (report_bytes, report_manifest_bytes, canonical_json)
+    if (
+        any(type(item) is not bytes or len(item) > 16 * 1024**2 for item in documents)
+        or type(markdown) is not str
+        or len(markdown) > 16 * 1024**2
+    ):
+        raise ReconciliationError("final report documents exceed their byte limits")
+    try:
+        aggregate_bytes = sum(len(item) for item in documents) + len(markdown.encode("utf-8"))
+    except UnicodeEncodeError as error:
+        raise ReconciliationError("final Markdown is not valid UTF-8") from error
+    if aggregate_bytes > 32 * 1024**2:
+        raise ReconciliationError("final report documents exceed their aggregate byte limit")
     package_ref = validate_frozen_package_ref(package_ref)
     try:
         local_evidence = reauthenticate_package_local_evidence(
@@ -176,7 +189,7 @@ def derive_authenticated_final_ir_package_surface(
         raise ReconciliationError("report must be exact immutable bytes")
     try:
         report = json.loads(report_bytes)
-    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+    except (UnicodeDecodeError, ValueError, RecursionError) as error:
         raise ReconciliationError("package report is invalid JSON") from error
     canonical_report = json.dumps(
         report, sort_keys=True, separators=(",", ":"), ensure_ascii=False
@@ -456,6 +469,8 @@ def derive_authenticated_final_ir_package_surface(
         raise ReconciliationError(
             "target package-local authority changed during final reconciliation"
         ) from error
+    if validate_authenticated_package_output(validated_output, execution_envelope) != authenticated:
+        raise ReconciliationError("package execution authority changed during reconciliation")
     return derived
 
 

@@ -27,6 +27,14 @@ from .v1 import (
 
 _REF = {"$ref": "#/$defs/identifier"}
 _HEX = {"type": "string", "maxLength": 8192, "pattern": "^(?:[0-9a-f]{2})*$"}
+_UUID = {
+    "type": "string",
+    "maxLength": 36,
+    "pattern": (
+        "^(?:[0-9a-fA-F]{4}|[0-9a-fA-F]{8}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-"
+        "[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$"
+    ),
+}
 _REFS = {
     "type": "array",
     "maxItems": 4096,
@@ -136,7 +144,7 @@ _FINAL_DEFINITIONS: dict[str, object] = {
     "gatt_service": _record(
         ("uuid", "role"),
         {
-            "uuid": {"type": "string", "minLength": 1, "maxLength": 256},
+            "uuid": _UUID,
             "role": _enum(GattServiceRole),
         },
     ),
@@ -145,7 +153,7 @@ _FINAL_DEFINITIONS: dict[str, object] = {
         ("service", "uuid", "roles", "write_modes"),
         {
             "service": _REF,
-            "uuid": {"type": "string", "minLength": 1, "maxLength": 256},
+            "uuid": _UUID,
             "roles": {
                 "type": "array",
                 "minItems": 1,

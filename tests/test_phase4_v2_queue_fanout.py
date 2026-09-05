@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import stat
+from dataclasses import asdict
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -21,6 +22,7 @@ from tools.phase4_v2.queue import (
     TrackerFormat,
     TrackerTarget,
     document_set_sha256,
+    load_fanout_publish_receipt,
     publication_config_sha256,
     publish_tracker_fanout,
 )
@@ -138,9 +140,72 @@ def test_fanout_publishes_markdown_and_html_from_one_snapshot(
     assert receipt.document_set_sha256 == document_set_sha256(
         tuple(TrackerDocument(path, body) for path, body in sorted(gateway.documents.items()))
     )
-    assert fanout_module._authenticate_tracker_fanout_receipt(
-        queue, sealed, _CONFIG, receipt
-    ) == receipt
+    assert (
+        fanout_module._authenticate_tracker_fanout_receipt(queue, sealed, _CONFIG, receipt)
+        == receipt
+    )
+
+
+@pytest.mark.parametrize("already_current", [False, True])
+def test_cli_receipt_reloads_after_queue_reopen(
+    publisher: tuple[Queue, Lease], monkeypatch: pytest.MonkeyPatch, already_current: bool
+) -> None:
+    queue, lease = publisher
+    backend = _MemorySetGateway()
+    gateway = _sealed_gateway(monkeypatch, backend)
+    receipt = publish_tracker_fanout(queue, lease, gateway, _CONFIG)
+    if already_current:
+        receipt = publish_tracker_fanout(queue, lease, gateway, _CONFIG)
+    encoded = (
+        json.dumps(
+            {"publication_config": _CONFIG.to_data(), **asdict(receipt)},
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+        + b"\n"
+    )
+    reopened = Queue(queue.database, queue.attempts_root)
+    assert (
+        load_fanout_publish_receipt(
+            encoded, queue=reopened, lease=lease, gateway=gateway, config=_CONFIG
+        )
+        == receipt
+    )
+    backend.documents[_TARGETS[0].path] = b"changed remotely"
+    with pytest.raises(PublisherConflictError, match="remote tracker"):
+        load_fanout_publish_receipt(
+            encoded, queue=reopened, lease=lease, gateway=gateway, config=_CONFIG
+        )
+
+
+def test_publication_heartbeat_renews_during_network_wait(
+    publisher: tuple[Queue, Lease], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from threading import Event
+
+    queue, lease = publisher
+    gateway = _sealed_gateway(monkeypatch, _MemorySetGateway())
+    renewed = Event()
+    original_renew = queue.renew
+    original_read = gateway.read
+    calls = 0
+
+    def renew(current: Lease, *, ttl_seconds: int = 1800) -> Lease:
+        nonlocal calls
+        calls += 1
+        result = original_renew(current, ttl_seconds=ttl_seconds)
+        if calls > 1:
+            renewed.set()
+        return result
+
+    def slow_read(_self: GitHubTreeGateway, paths: tuple[str, ...]) -> TrackerDocumentSet:
+        assert renewed.wait(2), "lease was not renewed during the remote call"
+        return original_read(paths)
+
+    monkeypatch.setattr(queue, "renew", renew)
+    monkeypatch.setattr(fanout_module, "_HEARTBEAT_INTERVAL_SECONDS", 0.01)
+    monkeypatch.setattr(GitHubTreeGateway, "read", slow_read)
+    publish_tracker_fanout(queue, lease, gateway, _CONFIG)
 
 
 def test_fanout_receipt_is_reauthenticated_against_remote_state(
@@ -231,9 +296,7 @@ def test_fanout_rejects_atomic_compare_and_swap_conflict(
     gateway.reject = True
 
     with pytest.raises(PublisherConflictError, match="document set changed"):
-        publish_tracker_fanout(
-            queue, lease, _sealed_gateway(monkeypatch, gateway), _CONFIG
-        )
+        publish_tracker_fanout(queue, lease, _sealed_gateway(monkeypatch, gateway), _CONFIG)
     assert gateway.writes == 0
 
 
@@ -246,9 +309,7 @@ def test_fanout_fails_closed_on_inexact_readback(
     gateway.corrupt_readback = True
 
     with pytest.raises(PublisherPostWriteConflictError, match="exact readback"):
-        publish_tracker_fanout(
-            queue, lease, _sealed_gateway(monkeypatch, gateway), _CONFIG
-        )
+        publish_tracker_fanout(queue, lease, _sealed_gateway(monkeypatch, gateway), _CONFIG)
 
 
 def test_fanout_rejects_unsorted_duplicate_or_unsafe_targets(
@@ -307,9 +368,7 @@ def test_fanout_rejects_gateway_bound_to_another_endpoint(
         publish_tracker_fanout(
             queue,
             lease,
-            _sealed_gateway(
-                monkeypatch, _MemorySetGateway("attacker/repository", "tracker")
-            ),
+            _sealed_gateway(monkeypatch, _MemorySetGateway("attacker/repository", "tracker")),
             _CONFIG,
         )
 

@@ -61,7 +61,7 @@ _SCHEMA: dict[str, object] = {
         "packages": {
             "items": {"$ref": "#/$defs/package_surface"},
             "maxItems": 32,
-            "minItems": 2,
+            "minItems": 1,
             "type": "array",
         },
         "revision": {"const": INPUT_SCHEMA_REVISION},

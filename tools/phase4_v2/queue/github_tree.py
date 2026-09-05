@@ -7,7 +7,11 @@ import binascii
 import json
 import os
 import re
+import selectors
+import stat
 import subprocess
+import tempfile
+import time
 from urllib.parse import quote
 
 from .fanout import TrackerDocument, TrackerDocumentSet, document_set_sha256
@@ -267,35 +271,92 @@ class GitHubTreeGateway:
 def _run_gh(
     arguments: tuple[str, ...], payload: bytes | None, timeout_seconds: int
 ) -> CommandResult:
-    environment = {
-        key: value
-        for key, value in os.environ.items()
-        if key
-        in {
-            "GH_CONFIG_DIR",
-            "GH_ENTERPRISE_TOKEN",
-            "GH_HOST",
-            "GH_TOKEN",
-            "HOME",
-            "NO_COLOR",
-            "PATH",
-            "XDG_CONFIG_HOME",
-        }
-    }
+    if arguments[:2] != ("gh", "api"):
+        raise GitHubContentsError("tracker transport permits only GitHub API operations")
+    # Pin the deployment-installed executable, never resolve an analyst's PATH.
+    executable_fd = -1
     try:
-        completed = subprocess.run(
-            arguments,
-            check=False,
-            capture_output=True,
-            env=environment,
-            input=payload,
-            timeout=timeout_seconds,
-        )
+        executable_fd = os.open("/usr/bin/gh", os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+        metadata = os.fstat(executable_fd)
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_uid != 0
+            or metadata.st_mode & 0o022
+            or not metadata.st_mode & 0o111
+            or metadata.st_nlink != 1
+        ):
+            raise GitHubContentsError("GitHub CLI must be a root-owned protected executable")
+        for directory in ("/", "/usr", "/usr/bin"):
+            entry = os.stat(directory, follow_symlinks=False)
+            if not stat.S_ISDIR(entry.st_mode) or entry.st_uid != 0 or entry.st_mode & 0o022:
+                raise GitHubContentsError("GitHub CLI directory is not protected")
+        # Config discovery, proxies, alternate hosts, and executable lookup are not inherited.
+        # A deployment token is used only for the fixed github.com endpoint.
+        environment = {"GH_TOKEN": os.environ.get("GH_TOKEN", ""), "GH_PROMPT_DISABLED": "1"}
+        if not environment["GH_TOKEN"]:
+            raise GitHubContentsError("tracker publication requires a deployment GH_TOKEN")
+        with tempfile.TemporaryDirectory(prefix="phase4-gh-") as config_directory:
+            environment["GH_CONFIG_DIR"] = config_directory
+            command = (
+                f"/proc/self/fd/{executable_fd}", "api", "--hostname", "github.com",
+                *arguments[2:],
+            )
+            with tempfile.TemporaryFile() as input_file:
+                input_file.write(payload or b"")
+                input_file.seek(0)
+                with subprocess.Popen(
+                    command, stdin=input_file, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    env=environment, cwd=config_directory, pass_fds=(executable_fd,),
+                ) as process:
+                    try:
+                        result = _read_bounded_process(process, timeout_seconds)
+                    except BaseException:
+                        process.kill()
+                        process.wait()
+                        raise
+        after = os.fstat(executable_fd)
+        if (
+            metadata.st_dev, metadata.st_ino, metadata.st_size, metadata.st_mode,
+            metadata.st_uid, metadata.st_gid, metadata.st_nlink, metadata.st_mtime_ns,
+            metadata.st_ctime_ns,
+        ) != (
+            after.st_dev, after.st_ino, after.st_size, after.st_mode,
+            after.st_uid, after.st_gid, after.st_nlink, after.st_mtime_ns, after.st_ctime_ns,
+        ):
+            raise GitHubContentsError("GitHub CLI changed during publication")
+        return result
     except (OSError, subprocess.TimeoutExpired) as error:
         raise GitHubContentsError("GitHub CLI could not complete the tracker operation") from error
-    if len(completed.stdout) > _MAX_RESPONSE_BYTES or len(completed.stderr) > _MAX_RESPONSE_BYTES:
-        raise GitHubContentsError("GitHub CLI response exceeds the configured limit")
-    return CommandResult(completed.returncode, completed.stdout, completed.stderr)
+    finally:
+        if executable_fd >= 0:
+            os.close(executable_fd)
+
+
+def _read_bounded_process(process: subprocess.Popen[bytes], timeout_seconds: int) -> CommandResult:
+    """Drain both pipes concurrently and stop before retaining an oversized response."""
+    assert process.stdout is not None and process.stderr is not None
+    streams = {process.stdout: bytearray(), process.stderr: bytearray()}
+    deadline = time.monotonic() + timeout_seconds
+    total = 0
+    with selectors.DefaultSelector() as selector:
+        for stream in streams:
+            selector.register(stream, selectors.EVENT_READ)
+        while selector.get_map():
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise subprocess.TimeoutExpired(process.args, timeout_seconds)
+            for key, _events in selector.select(remaining):
+                chunk = os.read(key.fd, min(65536, _MAX_RESPONSE_BYTES - total + 1))
+                if not chunk:
+                    selector.unregister(key.fileobj)
+                    continue
+                total += len(chunk)
+                if total > _MAX_RESPONSE_BYTES:
+                    raise GitHubContentsError("GitHub CLI response exceeds the configured limit")
+                stream = process.stdout if key.fd == process.stdout.fileno() else process.stderr
+                streams[stream].extend(chunk)
+    code = process.wait(timeout=max(0, deadline - time.monotonic()))
+    return CommandResult(code, bytes(streams[process.stdout]), bytes(streams[process.stderr]))
 
 
 def _paths(paths: tuple[str, ...]) -> tuple[str, ...]:

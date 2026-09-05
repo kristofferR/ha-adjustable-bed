@@ -188,6 +188,8 @@ def _reject_duplicate_keys(pairs: list[tuple[str, JsonValue]]) -> dict[str, Json
 
 
 def _parse_integer(value: str) -> int:
+    if len(value.lstrip("-")) > 19:
+        raise ReconciliationError("JSON integer exceeds signed 64-bit range")
     parsed = int(value)
     if abs(parsed) > _MAX_INTEGER:
         raise ReconciliationError("JSON integer exceeds signed 64-bit range")
@@ -227,7 +229,7 @@ def _decode_json(payload: str | bytes, *, maximum_bytes: int | None = None) -> J
             parse_float=_parse_float,
             parse_int=_parse_integer,
         )
-    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as error:
         raise ReconciliationError("input is not strict UTF-8 JSON") from error
     _validate_json_shape(value)
     return cast(JsonValue, value)
@@ -850,8 +852,8 @@ class ReconciliationInput:
         _token(self.cluster_id, "cluster_id")
         if self.revision != INPUT_SCHEMA_REVISION:
             _fail(f"unsupported reconciliation input revision {self.revision!r}")
-        if type(self.packages) is not tuple or not 2 <= len(self.packages) <= _MAX_PACKAGES:
-            _fail(f"packages must contain between 2 and {_MAX_PACKAGES} entries")
+        if type(self.packages) is not tuple or not 1 <= len(self.packages) <= _MAX_PACKAGES:
+            _fail(f"packages must contain between 1 and {_MAX_PACKAGES} entries")
         for package in self.packages:
             if type(package) is not PackageSurface:
                 _fail("packages contains an invalid package surface")

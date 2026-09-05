@@ -656,6 +656,19 @@ def test_production_config_source_ignores_injected_global(
     assert opened == ["/etc/ha-adjustable-bed"]
 
 
+def test_finalize_rejects_authority_rotation_during_evaluation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    trusted, plan, oracle, run, audits, timings = _artifacts()
+    if _TEST_DEPLOYMENT is None:
+        raise AssertionError("protected config test seam was not installed")
+    original = benchmark_model._parse_protected_authority_config(_TEST_DEPLOYMENT.protected_config)
+    configs = iter((original, replace(original, generation=original.generation + 1)))
+    monkeypatch.setattr(benchmark_model, "_load_protected_authority_config", lambda: next(configs))
+    with pytest.raises(ValueError, match="rotated after authority load"):
+        production_finalize_benchmark(trusted, plan, oracle, run, audits, timings)
+
+
 def test_protected_config_rejects_non_root_owner_and_unsafe_parent() -> None:
     non_root_file = os.stat_result((stat.S_IFREG | 0o600, 0, 0, 1, 1_000, 0, 0, 0, 0, 0))
     unsafe_parent = os.stat_result((stat.S_IFDIR | 0o722, 0, 0, 1, 0, 0, 0, 0, 0, 0))
@@ -888,6 +901,38 @@ def test_trial_schedule_rejects_duplicates_and_unbounded_counts() -> None:
         TrialSchedule(("trial-a", "trial-a"))
     with pytest.raises(ValueError, match="1 to 1000"):
         TrialSchedule(tuple(f"trial-{index}" for index in range(1_001)))
+
+
+@pytest.mark.parametrize("mutation", ["overlap", "phase_order", "trial_order"])
+def test_signed_timings_must_follow_committed_chronology(mutation: str) -> None:
+    authority, plan, oracle, run, audits, timings = _artifacts()
+    samples = list(timings.samples)
+    if mutation == "trial_order":
+        first, second = plan.trial_schedule.trial_ids[:2]
+        samples = [
+            replace(item, trial_id=second if item.trial_id == first else first)
+            for item in samples
+        ]
+    else:
+        legacy = next(item for item in samples if item.phase is TimingPhase.LEGACY)
+        target = next(
+            item for item in samples
+            if item.trial_id == legacy.trial_id
+            and item.case_id == legacy.case_id
+            and item.phase is TimingPhase.V2
+        )
+        start = legacy.started_monotonic_ns if mutation == "overlap" else 0
+        changed = replace(
+            target, started_monotonic_ns=start, finished_monotonic_ns=start + target.duration_ns
+        )
+        if mutation == "phase_order":
+            samples[samples.index(legacy)] = replace(
+                legacy, started_monotonic_ns=2_000, finished_monotonic_ns=5_000
+            )
+        samples[samples.index(target)] = changed
+    changed_timings = _signed_timing_suite(replace(timings, samples=tuple(sorted(samples))))
+    report = finalize_benchmark(authority, plan, oracle, run, audits, changed_timings)
+    assert "timing_chronology_mismatch" in {item.code for item in report.diagnostics}
 
 
 def test_blind_plan_contains_no_oracle_findings_or_aggregate_timings() -> None:

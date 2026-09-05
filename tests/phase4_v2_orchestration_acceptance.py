@@ -31,6 +31,18 @@ from tests.phase4_v2_orchestration_testing import (
     merge_raw_backed_source_registries,
     protected_fixture_trust,
 )
+from tests.phase4_v2_stage_testing import (
+    SyntheticTrackerGateway as _Gateway,
+)
+from tests.phase4_v2_stage_testing import (
+    canonical as _canonical,
+)
+from tests.phase4_v2_stage_testing import (
+    digest as _digest,
+)
+from tests.phase4_v2_stage_testing import (
+    sign_stage as _signed,
+)
 from tools.phase4_v2.equivalence import (
     EQUIVALENCE_SCHEMA_REVISION,
     EXACT_REUSE_DIRECT_AUDIT_QUEUE_KIND,
@@ -127,12 +139,9 @@ from tools.phase4_v2.queue import (
     Queue,
     StaleLeaseError,
     TerminalOutcome,
-    TrackerDocument,
-    TrackerDocumentSet,
     TrackerFormat,
     TrackerTarget,
     WorkUnitStatus,
-    document_set_sha256,
     publish_tracker_fanout,
 )
 from tools.phase4_v2.queue.publication_config import TrackerPublicationConfig
@@ -237,39 +246,6 @@ class AuthenticatedSyntheticPackage:
     exact_reuse_receipts: tuple[AuthenticatedExactReuseProvenance, ...]
 
 
-class _Gateway:
-    def __init__(self) -> None:
-        self.repository = "synthetic/repository"
-        self.branch = "tracker"
-        self.revision = "a" * 40
-        self.documents: dict[str, bytes] = {}
-
-    def read(self, paths: tuple[str, ...]) -> TrackerDocumentSet:
-        return TrackerDocumentSet(
-            self.revision,
-            tuple(TrackerDocument(path, self.documents.get(path)) for path in paths),
-        )
-
-    def compare_and_replace(
-        self,
-        *,
-        expected_revision: str,
-        expected_documents_sha256: str,
-        documents: tuple[TrackerDocument, ...],
-    ) -> bool:
-        current = tuple(
-            TrackerDocument(item.path, self.documents.get(item.path)) for item in documents
-        )
-        if expected_revision != self.revision or expected_documents_sha256 != document_set_sha256(
-            current
-        ):
-            return False
-        self.documents = {item.path: item.body or b"" for item in documents}
-        self.revision = hashlib.sha1(
-            (self.revision + expected_documents_sha256).encode(), usedforsecurity=False
-        ).hexdigest()
-        return True
-
 
 def run_synthetic_acceptance(
     root: Path, config: SyntheticAcceptanceConfig
@@ -278,7 +254,7 @@ def run_synthetic_acceptance(
 
     if root.exists():
         raise ValueError("synthetic acceptance root must not already exist")
-    gateway_backend = _Gateway()
+    gateway_backend = _Gateway("synthetic/repository")
     targets = (
         TrackerTarget("issues/436.md", TrackerFormat.MARKDOWN),
         TrackerTarget("public/queue.html", TrackerFormat.HTML),
@@ -286,9 +262,7 @@ def run_synthetic_acceptance(
     publication_config = TrackerPublicationConfig(
         gateway_backend.repository, gateway_backend.branch, targets
     )
-    gateway = GitHubTreeGateway(
-        publication_config.repository, publication_config.branch
-    )
+    gateway = GitHubTreeGateway(publication_config.repository, publication_config.branch)
     with (
         _protected_stage_authorities() as (keys, authorities),
         protected_fixture_trust(root / "fixture-trust") as trust,
@@ -332,7 +306,7 @@ def _run_synthetic_acceptance(
     attempts_root = root / "attempts"
     queue = Queue(database, attempts_root)
     queue.initialize()
-    states = _build_graphs(queue, config, authorities, trust, root / "fixtures")
+    states = _build_graphs(queue, config, authorities, trust, root / "fixtures", cluster_index=0)
     for state in states.values():
         materialize_cluster_graph(queue, state.graph)
 
@@ -344,7 +318,14 @@ def _run_synthetic_acceptance(
             materialize_cluster_graph(queue, state.graph)
         snapshot = queue.snapshot()
         if all(unit.status is WorkUnitStatus.COMPLETED for unit in snapshot.units):
-            break
+            if len(states) == config.clusters:
+                break
+            states.update(
+                _build_graphs(
+                    queue, config, authorities, trust, root / "fixtures", cluster_index=len(states)
+                )
+            )
+            continue
         rounds += 1
         if rounds > config.max_rounds:
             raise RuntimeError("synthetic acceptance did not converge within max_rounds")
@@ -482,9 +463,7 @@ def _finish_stage(
             markdown=render_final_ir_markdown(final_document),
             source_registry=authenticated_package.source_registry,
             package_local_evidence=authenticated_package.package_local_evidence,
-            package_local_evidence_inputs=(
-                authenticated_package.package_local_evidence_inputs
-            ),
+            package_local_evidence_inputs=(authenticated_package.package_local_evidence_inputs),
             package_local_validator_envelope=(
                 authenticated_package.package_local_validator_envelope
             ),
@@ -648,6 +627,8 @@ def _build_graphs(
     authorities: dict[str, ActivatedStageAuthority],
     trust: SyntheticTrust,
     fixtures_root: Path,
+    *,
+    cluster_index: int,
 ) -> dict[str, _ClusterState]:
     result: dict[str, _ClusterState] = {}
     active_capabilities: set[tuple[str, str, str]] = set()
@@ -660,36 +641,35 @@ def _build_graphs(
         )
     for pin in preparation_capability_pins(trust.preparation_authority):
         activate_synthetic_capability(queue, pin, active_capabilities)
-    for cluster_index in range(config.clusters):
-        cluster = f"synthetic-cluster:{cluster_index:04d}"
-        completed_packages = tuple(
-            complete_authenticated_synthetic_package_inputs(
-                queue,
-                build_synthetic_package_inputs(
-                    fixtures_root / cluster,
-                    cluster_id=cluster,
-                    package_index=package_index,
-                    trust=trust,
-                ),
-                trust,
-                active_capabilities,
-            )
-            for package_index in range(config.units_per_cluster)
-        )
-        graph = build_cluster_graph(
+    cluster = f"synthetic-cluster:{cluster_index:04d}"
+    completed_packages = tuple(
+        complete_authenticated_synthetic_package_inputs(
             queue,
-            tuple(item.frozen_plan for item in completed_packages),
-            audit_authority=authorities["audit"],
-            reconciliation_authority=authorities["reconciliation"],
-            implementation_authority=authorities["implementation"],
-            publication_authority=authorities["publication"],
+            build_synthetic_package_inputs(
+                fixtures_root / cluster,
+                cluster_id=cluster,
+                package_index=package_index,
+                trust=trust,
+            ),
+            trust,
+            active_capabilities,
         )
-        result[cluster] = _ClusterState(
-            graph,
-            {item.package_ref.content_id: item for item in completed_packages},
-            {},
-            {},
-        )
+        for package_index in range(config.units_per_cluster)
+    )
+    graph = build_cluster_graph(
+        queue,
+        tuple(item.frozen_plan for item in completed_packages),
+        audit_authority=authorities["audit"],
+        reconciliation_authority=authorities["reconciliation"],
+        implementation_authority=authorities["implementation"],
+        publication_authority=authorities["publication"],
+    )
+    result[cluster] = _ClusterState(
+        graph,
+        {item.package_ref.content_id: item for item in completed_packages},
+        {},
+        {},
+    )
     return result
 
 
@@ -860,12 +840,11 @@ def complete_authenticated_exact_reuse_synthetic_package_inputs(
     )
     frozen = freeze_package_execution_plan(inputs.execution_plan)
     exact_root_data = next(
-        item for item in json.loads(frozen.canonical_bytes)["root_plans"]
+        item
+        for item in json.loads(frozen.canonical_bytes)["root_plans"]
         if item["route"] == "EXACT_REUSE"
     )
-    root_plan_sha256 = hashlib.sha256(
-        json.dumps(exact_root_data, sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
+    root_plan_sha256 = hashlib.sha256(_canonical(exact_root_data)).hexdigest()
     source_attestation = source.report.validated_root_evidence[0]
     unsigned_provenance = exact_reuse_provenance_payload(
         authority=trust.validator_authority,
@@ -1122,28 +1101,6 @@ def _protected_stage_authorities() -> Iterator[
             authorities[stage] = load_stage_authority(documents[stage])
         yield keys, authorities
 
-
-def _signed(
-    stage: str,
-    payload: dict[str, object],
-    key: Ed25519PrivateKey,
-    authority: ActivatedStageAuthority,
-) -> bytes:
-    payload = {**payload, "authority_sha256": authority.authority_sha256, "stage": stage}
-    signature = key.sign(
-        f"phase4-v2:signed-stage-receipt:{stage}".encode() + b"\0" + _canonical(payload)
-    ).hex()
-    return _canonical({"payload": payload, "signature": signature})
-
-
-def _canonical(value: object) -> bytes:
-    return json.dumps(
-        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
-    ).encode()
-
-
-def _digest(value: str) -> str:
-    return hashlib.sha256(value.encode()).hexdigest()
 
 
 _STAGE_NAMES = ("audit", "reconciliation", "implementation", "publication")

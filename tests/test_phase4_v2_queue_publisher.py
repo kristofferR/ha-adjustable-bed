@@ -88,7 +88,7 @@ def test_publisher_preserves_manual_text_and_exactly_reads_back(
     assert gateway.body.count("<!-- phase4-v2-tracker:start") == 1
     assert first.queue_generation == generation_after_publish
     assert second.queue_generation == generation_after_publish
-    with sqlite3.connect(queue.database) as connection:
+    with closing(sqlite3.connect(queue.database)) as connection, connection:
         event_types = tuple(
             row[0]
             for row in connection.execute(

@@ -35,6 +35,7 @@ from .core import (
     validate_authenticated_validator_envelope,
     validate_frozen_package_ref,
 )
+from .execution import AuthenticatedPackageExecutionEnvelope
 from .inventory import (
     INVENTORY_QUEUE_UNIT_KIND,
     AuthenticatedTargetInventoryEnvelope,
@@ -385,7 +386,7 @@ def finish_package_execution_plan(
     execution_plan: PackageExecutionPlan,
     report_root: Path,
     evidence_lineage_payload: bytes,
-    execution_envelope: object,
+    execution_envelope: AuthenticatedPackageExecutionEnvelope,
     package_local_evidence: AuthenticatedPackageLocalEvidence,
     package_local_evidence_inputs: PackageLocalEvidenceReauthenticationInput,
     package_local_validator_envelope: AuthenticatedValidatorEnvelope,

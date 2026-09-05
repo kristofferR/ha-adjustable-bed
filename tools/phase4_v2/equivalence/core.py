@@ -144,13 +144,25 @@ def _canonical_json_document(
     label: str,
     *,
     trailing_newline: bool,
+    maximum_bytes: int = _MAX_VALIDATOR_ENVELOPE_BYTES,
 ) -> dict[str, object]:
-    if type(payload) is not bytes:
-        _fail(f"{label} must be exact bytes")
+    if type(payload) is not bytes or not 0 < len(payload) <= maximum_bytes:
+        _fail(f"{label} must be bounded exact bytes")
     try:
         value = json.loads(payload, object_pairs_hook=_unique_json_object)
     except (UnicodeError, ValueError, RecursionError) as error:
         raise EquivalenceError(f"{label} is not valid JSON") from error
+    pending = [(value, 0)]
+    nodes = 0
+    while pending:
+        item, depth = pending.pop()
+        nodes += 1
+        if depth > 64 or nodes > 250_000:
+            _fail(f"{label} exceeds JSON structural bounds")
+        if type(item) is dict:
+            pending.extend((child, depth + 1) for child in item.values())
+        elif type(item) is list:
+            pending.extend((child, depth + 1) for child in item)
     if type(value) is not dict or _canonical_json_bytes(
         value, trailing_newline=trailing_newline
     ) != payload:
@@ -168,6 +180,14 @@ def _sha_value(value: object, field: str) -> str:
     if type(value) is not str:
         _fail(f"{field} must be a string")
     return _sha256(value, field)
+
+
+def _security_stat(metadata: os.stat_result) -> tuple[int, ...]:
+    return (
+        metadata.st_uid, metadata.st_gid, metadata.st_mode, metadata.st_nlink,
+        metadata.st_dev, metadata.st_ino, metadata.st_size,
+        metadata.st_mtime_ns, metadata.st_ctime_ns,
+    )
 
 
 def _read_protected_validator_pin() -> str:
@@ -215,23 +235,10 @@ def _read_protected_validator_pin() -> str:
             if len(payload) > _MAX_VALIDATOR_AUTHORITY_BYTES:
                 _fail("validator authority pin exceeds its byte limit")
         after = os.fstat(descriptor)
-        if len(payload) != before.st_size or (
-            before.st_dev,
-            before.st_ino,
-            before.st_size,
-            before.st_mtime_ns,
-        ) != (
-            after.st_dev,
-            after.st_ino,
-            after.st_size,
-            after.st_mtime_ns,
-        ):
+        if len(payload) != before.st_size or _security_stat(before) != _security_stat(after):
             _fail("validator authority pin changed while reading")
         current_directory = os.fstat(directory_descriptor)
-        if (directory.st_dev, directory.st_ino) != (
-            current_directory.st_dev,
-            current_directory.st_ino,
-        ):
+        if _security_stat(directory) != _security_stat(current_directory):
             _fail("protected validator authority directory changed while reading")
     finally:
         if descriptor is not None:
@@ -598,6 +605,7 @@ def load_authenticated_validator_envelope(
         ("report", report),
     ):
         object.__setattr__(result, name, value)
+    _validate_validator_authority(authority)
     return result
 
 

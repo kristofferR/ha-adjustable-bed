@@ -46,6 +46,7 @@ from tools.phase4_v2.queue import (
     FinishResult,
     Lease,
     Queue,
+    QueueConflictError,
     TerminalOutcome,
     WorkUnitStatus,
 )
@@ -186,9 +187,7 @@ def _accept(queue: Queue, lease: Lease, marker: str) -> None:
             for item in graph.packages
             if package_audit_unit_id(graph, item.package_ref_id) == lease.unit_id
         )
-        analysis = next(
-            item for item in queue.snapshot().units if item.unit_id == package.unit_id
-        )
+        analysis = next(item for item in queue.snapshot().units if item.unit_id == package.unit_id)
         payload = {
             **common,
             "analysis_completion_revision": analysis.completion_revision,
@@ -339,7 +338,7 @@ def test_orchestration_stage_requires_cluster_identity(queue: Queue) -> None:
         )
 
 
-def test_database_bounds_simultaneously_leased_clusters(queue: Queue) -> None:
+def test_claim_stays_on_earliest_cluster_after_lease_failure(queue: Queue) -> None:
     for index in range(MAX_ACTIVE_ORCHESTRATION_CLUSTERS + 1):
         _enqueue_stage(
             queue,
@@ -348,15 +347,11 @@ def test_database_bounds_simultaneously_leased_clusters(queue: Queue) -> None:
             f"cluster-{index}",
         )
 
-    leases = [queue.claim(f"worker-{index}") for index in range(MAX_ACTIVE_ORCHESTRATION_CLUSTERS)]
-    assert all(lease is not None for lease in leases)
+    first = queue.claim("first")
+    assert first is not None and first.unit_id == "audit-0"
     assert queue.claim("one-too-many") is None
-
-    assert leases[0] is not None
-    queue.finish(leases[0], TerminalOutcome.FAILED)
-    replacement = queue.claim("replacement")
-    assert replacement is not None
-    assert replacement.unit_id == f"audit-{MAX_ACTIVE_ORCHESTRATION_CLUSTERS}"
+    queue.finish(first, TerminalOutcome.FAILED)
+    assert queue.claim("replacement") is None
 
 
 def test_database_bounds_leases_inside_one_cluster(queue: Queue) -> None:
@@ -380,11 +375,8 @@ def test_reconciliation_waits_for_existing_implementation_debt(
         "synthetic-cluster:001",
         advance_to_reconciliation=True,
     )
-    second_graph = _materialize_real_graph(
-        queue,
-        tmp_path / "second",
-        "synthetic-cluster:002",
-        advance_to_reconciliation=True,
+    _enqueue_stage(
+        queue, "later-audit", WorkStage.PACKAGE_AUDIT, "synthetic-cluster:002", priority=100
     )
 
     assert (
@@ -410,22 +402,23 @@ def test_reconciliation_waits_for_existing_implementation_debt(
         "second-reconciler",
         allowed_kinds=(WorkStage.CLUSTER_RECONCILIATION.value,),
     )
-    assert second is not None
-    assert second.unit_id == cluster_reconciliation_unit_id(second_graph)
+    assert second is None
+    assert queue.claim("later-analysis", allowed_kinds=(WorkStage.PACKAGE_AUDIT.value,)) is None
+    publication = queue.claim("publisher", allowed_kinds=(WorkStage.TRACKER_PUBLICATION.value,))
+    assert publication is not None
     assert first.unit_id == cluster_reconciliation_unit_id(first_graph)
 
 
-def test_reconciliation_leases_are_serialized_across_clusters(
-    queue: Queue, tmp_path: Path
-) -> None:
-    graphs = tuple(
-        _materialize_real_graph(
-            queue,
-            tmp_path / f"cluster-{index}",
-            f"synthetic-cluster:{index:03d}",
-            advance_to_reconciliation=True,
-        )
-        for index in range(2)
+def test_reconciliation_leases_are_serialized_across_clusters(queue: Queue, tmp_path: Path) -> None:
+    _materialize_real_graph(
+        queue, tmp_path / "first", "synthetic-cluster:000", advance_to_reconciliation=True
+    )
+    _enqueue_stage(
+        queue,
+        "later-reconciliation",
+        WorkStage.CLUSTER_RECONCILIATION,
+        "synthetic-cluster:001",
+        priority=100,
     )
     first = queue.claim("reconciler-1")
     second = queue.claim("reconciler-2")
@@ -447,8 +440,7 @@ def test_reconciliation_leases_are_serialized_across_clusters(
         "reconciler-2",
         allowed_kinds=(WorkStage.CLUSTER_RECONCILIATION.value,),
     )
-    assert second is not None
-    assert second.unit_id == cluster_reconciliation_unit_id(graphs[1])
+    assert second is None
 
 
 def test_reconciliation_can_create_bounded_implementation_debt(
@@ -465,11 +457,8 @@ def test_reconciliation_can_create_bounded_implementation_debt(
     assert lease is not None
     assert lease.unit_id == cluster_reconciliation_unit_id(graph)
     _accept(queue, lease, "reconciliation")
-    _materialize_real_graph(
-        queue,
-        tmp_path / "second",
-        "synthetic-cluster:002",
-        advance_to_reconciliation=True,
+    _enqueue_stage(
+        queue, "later-reconciliation", WorkStage.CLUSTER_RECONCILIATION, "synthetic-cluster:002"
     )
     assert (
         queue.claim(
@@ -515,9 +504,7 @@ class _CompletingAdapter:
         return _CompletingHandle(self.queue, request)
 
 
-def test_launcher_hands_off_only_a_bounded_fresh_context(
-    queue: Queue, tmp_path: Path
-) -> None:
+def test_launcher_hands_off_only_a_bounded_fresh_context(queue: Queue, tmp_path: Path) -> None:
     _materialize_real_graph(
         queue,
         tmp_path / "launcher",
@@ -546,6 +533,30 @@ def test_launcher_hands_off_only_a_bounded_fresh_context(
 
     with pytest.raises(ValueError, match="must not inherit"):
         replace(adapter.request, inherit_conversation=True)  # type: ignore[arg-type]
+
+
+def test_stage_authority_rotation_during_final_write_rolls_back(
+    queue: Queue, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _materialize_real_graph(
+        queue, tmp_path / "rotation", "synthetic-cluster:001", advance_to_reconciliation=False
+    )
+    lease = queue.claim("auditor", allowed_kinds=(WorkStage.PACKAGE_AUDIT.value,))
+    assert lease is not None
+    original = queue._append_event
+
+    def append_event(
+        connection: sqlite3.Connection, attempt_id: str, event_type: str, payload: dict[str, object]
+    ) -> None:
+        original(connection, attempt_id, event_type, payload)
+        if event_type == "FINISHED":
+            monkeypatch.setattr(stage_completion, "_load_stage_authority_config", lambda: {})
+
+    monkeypatch.setattr(queue, "_append_event", append_event)
+    with pytest.raises(QueueConflictError, match="protected activation"):
+        _accept(queue, lease, "rotated")
+    assert queue.attempt_outcome(lease.attempt_id) is None
+    assert queue.status(lease.unit_id) is WorkUnitStatus.LEASED
 
 
 class _UnfinishedHandle:
@@ -580,6 +591,38 @@ def test_launcher_routes_exit_without_terminal_to_repair(queue: Queue) -> None:
     assert receipt.context_exit is ContextExit.FAILED
     assert receipt.queue_status is WorkUnitStatus.REPAIR_REQUIRED
     assert receipt.follow_up.action is FollowUpAction.RETRY_REPAIR
+
+
+def test_launcher_terminates_running_context_when_lease_is_lost(queue: Queue) -> None:
+    _enqueue_stage(queue, "audit", WorkStage.PACKAGE_AUDIT, "cluster-001")
+
+    class LostLeaseAdapter:
+        request: LaunchRequest
+        terminated = False
+
+        def start(self, request: LaunchRequest) -> LostLeaseAdapter:
+            self.request = request
+            return self
+
+        def wait(self, timeout_seconds: float) -> ContextExit | None:
+            queue.finish(self.request.lease, TerminalOutcome.BLOCKED)
+            return None
+
+        def terminate(self) -> None:
+            self.terminated = True
+
+    adapter = LostLeaseAdapter()
+    receipt = launch_one(
+        queue,
+        owner="launcher",
+        adapter=adapter,
+        prompt_factory=lambda _lease, _unit: "synthetic task",
+        heartbeat_seconds=1,
+        ttl_seconds=5,
+        max_runtime_seconds=10,
+    )
+    assert adapter.terminated
+    assert receipt is not None and receipt.context_exit is ContextExit.FAILED
 
 
 class _FencingHandle:

@@ -34,16 +34,6 @@ from tools.phase4_v2.preflight import (
 from tools.phase4_v2.preflight.execution import build_execution_profile, qualify_tool
 
 _SIGNER = PreparationExecutionSigner._from_private_bytes(b"p" * 32)
-_TEST_ACTIVATION_DIGEST = "0" * 64
-
-
-@pytest.fixture(autouse=True)
-def _protected_activation(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        registry_module,
-        "_read_protected_activation_digest",
-        lambda: _TEST_ACTIVATION_DIGEST,
-    )
 
 
 def _ready_preflight(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
@@ -154,11 +144,11 @@ def _registry(
     )
 
 
-def _activated(registry: ApprovedToolRegistry):
-    global _TEST_ACTIVATION_DIGEST
+def _activated(registry: ApprovedToolRegistry, monkeypatch: pytest.MonkeyPatch):
     profile = build_execution_profile()
     payload = preparation_authority_payload(registry, profile, _SIGNER.public_key)
-    _TEST_ACTIVATION_DIGEST = hashlib.sha256(payload).hexdigest()
+    digest = hashlib.sha256(payload).hexdigest()
+    monkeypatch.setattr(registry_module, "_read_protected_activation_digest", lambda: digest)
     authority = load_activated_preparation_authority(payload)
     return profile, authority
 
@@ -184,7 +174,7 @@ def test_registered_preparation_binds_the_complete_approved_contract(
         },
     )
     registry = _registry(tool)
-    profile, authority = _activated(registry)
+    profile, authority = _activated(registry, monkeypatch)
 
     receipt = execute_registered_preparation(
         preflight,
@@ -224,7 +214,7 @@ def test_authenticated_cache_survives_process_trust_reset(
     preflight = _ready_preflight(monkeypatch, tmp_path)
     tool = _tool(tmp_path)
     registry = _registry(tool)
-    profile, authority = _activated(registry)
+    profile, authority = _activated(registry, monkeypatch)
     cache = tmp_path / "cache"
     first = execute_registered_preparation(
         preflight,
@@ -267,7 +257,7 @@ def test_registered_preparation_rejects_untrusted_registry_and_tool_build(
     tool = _tool(tmp_path)
     registry = _registry(tool)
     changed = _registry(tool, extra_flag="--changed")
-    profile, authority = _activated(registry)
+    profile, authority = _activated(registry, monkeypatch)
 
     with pytest.raises(PreparationError, match="activated authority"):
         execute_registered_preparation(
@@ -282,7 +272,7 @@ def test_registered_preparation_rejects_untrusted_registry_and_tool_build(
     assert not (tmp_path / "result-a").exists()
 
     unqualified = _registry(tool, qualification_sha256="f" * 64)
-    unqualified_profile, unqualified_authority = _activated(unqualified)
+    unqualified_profile, unqualified_authority = _activated(unqualified, monkeypatch)
     with pytest.raises(PreparationError, match="tool build is not approved"):
         execute_registered_preparation(
             preflight,
@@ -303,7 +293,7 @@ def test_frozen_preparation_requires_external_payload_pins(
     preflight = _ready_preflight(monkeypatch, tmp_path)
     tool = _tool(tmp_path)
     registry = _registry(tool)
-    profile, authority = _activated(registry)
+    profile, authority = _activated(registry, monkeypatch)
     execute_registered_preparation(
         preflight,
         registry=registry,
@@ -339,7 +329,7 @@ def test_registered_preparation_accepts_only_authoritative_jadx_fallback(
         },
     )
     registry = _registry(tool)
-    profile, authority = _activated(registry)
+    profile, authority = _activated(registry, monkeypatch)
 
     receipt = execute_registered_preparation(
         preflight,
@@ -465,7 +455,67 @@ def test_approved_registry_digest_invalidates_preparation_cache(
     assert len(list(objects.iterdir())) == 4
 
 
-def test_warning_is_exactly_recorded_and_fails_closed(
+@pytest.mark.parametrize("mode", ["crash", "partial", "warning"])
+def test_registered_failed_jadx_uses_only_successful_smali(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, mode: str
+) -> None:
+    preflight = _ready_preflight(monkeypatch, tmp_path)
+    tool = _tool(
+        tmp_path,
+        modes={"jadx": mode},
+        diagnostics={"jadx": "WARNING: incomplete decompilation"} if mode == "warning" else {},
+    )
+    registry = _registry(tool)
+    profile, authority = _activated(registry, monkeypatch)
+    receipt = execute_registered_preparation(
+        preflight,
+        registry=registry,
+        authority=authority,
+        execution_profile=profile,
+        execution_signer=_SIGNER,
+        cache_directory=tmp_path / "cache",
+        output_directory=tmp_path / "result",
+    )
+    jadx = next(item for item in receipt.invocations if item.route == "jadx")
+    assert jadx.status == "FALLBACK"
+    assert jadx.fallback_reason == "JADX_DECOMPILATION_FAILED"
+    assert jadx.failures
+    assert jadx.outputs == ()
+    assert {item.route for item in receipt.candidates} == {"apktool"}
+
+
+@pytest.mark.parametrize("mode", ["crash", "partial", "timeout"])
+def test_failed_jadx_requires_successful_nonempty_smali(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, mode: str
+) -> None:
+    preflight = _ready_preflight(monkeypatch, tmp_path)
+    for name, smali in (("accepted", True), ("rejected", False)):
+        tool = _tool(
+            tmp_path,
+            modes={"jadx": mode},
+            outputs={
+                "apktool": {"App.smali" if smali else "resource.xml": "content"},
+                "jadx": {"App.java": "content"},
+            },
+        )
+        result = execute_preparation(
+            preflight,
+            tool_specs=_specs(tool),
+            cache_directory=tmp_path / f"cache-{name}",
+            output_directory=tmp_path / name,
+            pipeline_revision="pipeline-v1",
+            limits=ExecutionLimits(tool_timeout_seconds=0.1),
+        )
+        assert result.status == ("COMPLETE" if smali else "BLOCKED")
+        jadx = next(item for item in result.invocations if item.route == "jadx")
+        if smali:
+            assert jadx.status == "FALLBACK"
+            assert jadx.fallback_reason == "JADX_DECOMPILATION_FAILED"
+        else:
+            assert "AUTHORITATIVE_SMALI_FALLBACK_MISSING" in jadx.failures
+
+
+def test_warning_is_exactly_recorded_with_authoritative_fallback(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     preflight = _ready_preflight(monkeypatch, tmp_path)
@@ -479,11 +529,13 @@ def test_warning_is_exactly_recorded_and_fails_closed(
         pipeline_revision="pipeline-v1",
     )
 
-    assert result.status == "BLOCKED"
+    assert result.status == "COMPLETE"
     jadx = next(item for item in result.invocations if item.route == "jadx")
+    assert jadx.status == "FALLBACK"
+    assert jadx.outputs == ()
     assert jadx.failures == ("TOOL_DIAGNOSTIC",)
     assert [warning.text for warning in jadx.warnings] == ["WARNING: incomplete decompilation"]
-    assert (tmp_path / "result" / "PREPARATION.BLOCKED").is_file()
+    assert (tmp_path / "result" / "PREPARATION.COMPLETE").is_file()
     assert len(list((tmp_path / "cache" / "objects" / EXECUTION_CACHE_SCHEMA).iterdir())) == 1
 
 
@@ -516,8 +568,6 @@ def test_invalid_tool_versions_retain_the_exact_failure(
 @pytest.mark.parametrize(
     ("mode", "failure"),
     [
-        ("crash", "TOOL_EXIT_NONZERO"),
-        ("partial", "OUTPUT_EMPTY"),
         ("symlink", "OUTPUT_UNSAFE_NODE"),
     ],
 )
@@ -543,10 +593,9 @@ def test_crash_partial_and_unsafe_outputs_fail_closed(
     ("mode", "limits", "failure"),
     [
         ("noisy", ExecutionLimits(max_tool_stream_bytes=128), "TOOL_OUTPUT_LIMIT"),
-        ("timeout", ExecutionLimits(tool_timeout_seconds=0.05), "TOOL_TIMEOUT"),
     ],
 )
-def test_stream_and_timeout_limits_fail_closed(
+def test_stream_limits_fail_closed(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     mode: str,
@@ -585,7 +634,9 @@ def test_sandbox_input_is_read_only(
         pipeline_revision="pipeline-v1",
     )
 
-    assert result.status == "COMPLETE"
+    jadx = next(item for item in result.invocations if item.route == "jadx")
+    assert jadx.exit_code == 93
+    assert jadx.status == "FALLBACK"
     assert hashlib.sha256((tmp_path / "base.apk").read_bytes()).hexdigest() == artifact_digest
 
 

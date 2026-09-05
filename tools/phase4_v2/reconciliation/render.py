@@ -151,7 +151,7 @@ def verify_render_agreement(json_payload: bytes, markdown: str) -> str:
 
     prefix = f"{_START}\n```json\n"
     suffix = f"\n```\n{_END}"
-    lines = markdown.splitlines()
+    lines = markdown.split("\n")
     if lines.count(_START) != 1 or lines.count(_END) != 1:
         raise ReconciliationError("Markdown must contain one canonical payload block")
     start = markdown.find(prefix)
