@@ -3,7 +3,25 @@
 The tooling library and synthetic acceptance harness are implemented. This is not yet a turnkey
 bulk runner. Do not replace the #443 workflow or start untouched APKs until every gate below passes.
 
-## Worker boundary
+## Selected execution path: T3-managed agents
+
+The maintainer selected the existing T3-managed workflow, not a new standalone worker service.
+Prepare the accepted-artifact benchmark through fresh analyst contexts using the unchanged #443
+prompt and schema. Keep prior reports and the frozen benchmark oracle outside analyst inputs.
+The coordinator owns package assignments, persistent attempt directories, validation, independent
+audit handoffs, and milestone tracker updates. No untouched bulk artifacts may start.
+
+Before trials, freeze the exact 8–12 accepted artifact sets, oracle, trial order, tool versions,
+and timing/token collection method. Record the actual execution mode in every result. Checkpoint
+assignments and frozen output hashes so a resumed chat can recover without repeating accepted work.
+Do not claim a process or filesystem isolation guarantee from a fresh conversation alone.
+
+This workflow does not impersonate the signed-service APIs below. Do not install fixture keys,
+bypass production guards, or describe manually checked reports as authenticated queue completions.
+T3 benchmark results can establish only the quality and performance of the workflow actually run;
+they do not certify the undeployed signed-service pipeline. Its adoption remains separately gated.
+
+## Optional signed-service deployment: worker boundary
 
 Implement the host adapter for `orchestration.launcher.FreshContextAdapter`. It must start each
 analyst in a fresh context with access only to its frozen inputs, protocol-neutral instructions,
@@ -17,10 +35,11 @@ Python evaluation, shell execution, signing, or caller-supplied completion snaps
 process must reconstruct completion facts itself. Neither private Python classes nor a
 caller-selected SQLite file provides this separation.
 
-The adapter and trusted service are outstanding implementation work. Do not install a nominal
+For this deployment mode, the adapter and trusted service are outstanding implementation work.
+They are not prerequisites for preparing the T3-managed benchmark. Do not install a nominal
 service that simply runs analyst-controlled Python with the signing credentials.
 
-## Operator installation
+## Optional signed-service deployment: operator installation
 
 Installation requires root on the execution host. Install bubblewrap, GCC with static libc,
 the real decompiler runtimes, and the root-owned GitHub CLI at `/usr/bin/gh`. Verify user namespaces
@@ -48,9 +67,11 @@ a password. No production authority was installed or emulated by this session.
 
 ## Acceptance before bulk
 
-1. Exercise the real adapter and service with synthetic inputs, including process restart, stale
+1. Exercise the selected T3 handoff and recovery procedure with synthetic inputs before real trials.
+   If adopting the signed-service mode, also exercise its real adapter and service, including stale
    leases, a failed decompiler with authoritative fallback, and persisted publication receipt reload.
-   Demonstrate that the analyst UID cannot access credentials or change queue state directly.
+   Demonstrate its analyst UID cannot access credentials or change queue state directly. Do not
+   credit these service-specific guarantees to a T3-only trial.
 2. Reconcile the 30 permission-opaque legacy inventory paths read-only into a new generation, or
    obtain explicit acceptance of the named coverage limitation. Never chmod or rewrite old evidence.
 3. Select 8 to 12 already accepted artifacts for #550. Freeze the oracle separately before fresh

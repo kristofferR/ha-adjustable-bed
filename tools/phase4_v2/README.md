@@ -79,7 +79,12 @@ and an isolated configuration directory. Publication requires a deployment-provi
 `load_fanout_publish_receipt` restores CLI output only after rechecking the queue checkpoint,
 protected configuration, and remote contents.
 
-Operational rollout still requires a separately owned preparation/queue service and a concrete
+The selected operational path is T3-managed agents, with the existing #443 evidence gates and a
+small accepted-artifact benchmark before any untouched bulk work. This does not require building
+a new standalone service. Benchmark results must identify the actual workflow measured and cannot
+certify signed-service execution when that service was not used.
+
+Deploying the signed-service APIs still requires a separately owned preparation/queue service and a concrete
 `FreshContextAdapter`. The repository currently provides the adapter interface and synthetic test
 implementations. `assert_queue_service_deployment` checks a protected queue identity and filesystem
 ownership; it does not authenticate caller-constructed snapshots or implement that service.

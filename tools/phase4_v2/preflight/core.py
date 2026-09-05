@@ -34,6 +34,7 @@ _APK_SUFFIX = ".apk"
 _HERMES_BYTECODE_MAGIC = bytes.fromhex("c61fbc03c103191f")
 _COPY_CHUNK = 1024 * 1024
 _MAX_CACHE_MANIFEST_BYTES = 16 * 1024**2
+_MAX_DELIVERY_METADATA_BYTES = 1024 * 1024
 _MAX_ZIP_COMMENT_BYTES = 65_535
 _ZIP_EOCD_BYTES = 22
 _ZIP_EOCD_SIGNATURE = b"PK\x05\x06"
@@ -1054,6 +1055,60 @@ def _seal_archive_member(
     return digest.hexdigest(), copied
 
 
+def _delivery_metadata_blockers(
+    archive: zipfile.ZipFile,
+    entries: Sequence[_ArchiveEntry],
+    delivery: Path,
+) -> tuple[str, ...]:
+    """Check the declared APK set independently of Android uses-split edges."""
+    by_name = {entry.name: entry for entry in entries}
+    suffix = delivery.suffix.lower()
+    if suffix == ".apks" or "toc.pb" in by_name:
+        reason = "missing" if "toc.pb" not in by_name else "decoder_required"
+        # Bundletool's protobuf schema is not installed/pinned here. Do not
+        # approximate its declarations by scanning protobuf bytes for filenames.
+        return (f"apks_toc_{reason}:{delivery.name}",)
+    if suffix != ".xapk" and "manifest.json" not in by_name:
+        return ()
+    manifest = by_name.get("manifest.json")
+    if manifest is None:
+        return (f"xapk_manifest_missing:{delivery.name}",)
+    if manifest.info.file_size > _MAX_DELIVERY_METADATA_BYTES:
+        return (f"xapk_manifest_byte_limit:{delivery.name}",)
+    try:
+        with archive.open(manifest.info) as stream:
+            payload = stream.read(_MAX_DELIVERY_METADATA_BYTES + 1)
+        if len(payload) != manifest.info.file_size:
+            raise ValueError("manifest size mismatch")
+        value = json.loads(
+            payload,
+            object_pairs_hook=_cache_object,
+            parse_constant=_reject_cache_constant,
+        )
+        if type(value) is not dict:
+            raise ValueError("manifest must be an object")
+        members = value.get("split_apks")
+        if type(members) is not list or not members:
+            return (f"xapk_manifest_explicit_apk_members_required:{delivery.name}",)
+        declared: set[str] = set()
+        for member in members:
+            if type(member) is not dict or type(member.get("file")) is not str:
+                raise ValueError("APK declaration must contain a filename")
+            name = _safe_member_name(member["file"])
+            if not name.lower().endswith(_APK_SUFFIX) or name in declared:
+                raise ValueError("APK declaration is duplicated or not an APK")
+            declared.add(name)
+        if len({name.casefold() for name in declared}) != len(declared):
+            raise ValueError("APK declarations are case-ambiguous")
+    except ValueError, UnicodeError, RecursionError, SafetyError, zipfile.BadZipFile:
+        return (f"xapk_manifest_invalid:{delivery.name}",)
+    actual = {entry.name for entry in entries if entry.name.lower().endswith(_APK_SUFFIX)}
+    return tuple(
+        [f"declared_apk_missing:{delivery.name}:{name}" for name in sorted(declared - actual)]
+        + [f"undeclared_apk_member:{delivery.name}:{name}" for name in sorted(actual - declared)]
+    )
+
+
 def preflight_delivery(
     paths: Sequence[Path | str],
     *,
@@ -1074,6 +1129,7 @@ def preflight_delivery(
     deliveries: list[DeliveryFile] = []
     artifacts: list[ArtifactMember] = []
     observations: list[_ApkObservation] = []
+    metadata_blockers: list[str] = []
     delivery_bytes = 0
     artifact_bytes = 0
     artifact_expanded_bytes = 0
@@ -1121,6 +1177,7 @@ def preflight_delivery(
                     sealed_delivery_fd, source.name, active_limits
                 ) as archive:
                     entries = _archive_entries(archive, active_limits)
+                    metadata_blockers.extend(_delivery_metadata_blockers(archive, entries, source))
                     apk_entries = [
                         entry for entry in entries if entry.name.lower().endswith(_APK_SUFFIX)
                     ]
@@ -1173,7 +1230,7 @@ def preflight_delivery(
             _decision(
                 observations,
                 identity_verified=package_identity is not None,
-                extra_blockers=(*extra_blockers, *identity_blockers),
+                extra_blockers=(*extra_blockers, *identity_blockers, *metadata_blockers),
             ),
             owner,
         )

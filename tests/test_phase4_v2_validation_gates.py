@@ -422,8 +422,8 @@ def test_genuine_authenticated_full_chain_is_accepted(case: _Case) -> None:
 
     assert first.accepted
     assert first.content_id == second.content_id
-    assert first.candidate_count == 23
-    assert first.action_count == 1
+    assert first.candidate_count == 29
+    assert first.action_count == 2
     assert first.variant_count == 1
     assert first.warning_count == 0
     assert all(
@@ -447,7 +447,7 @@ def test_genuine_authenticated_reuse_route_sets_are_accepted(
         receipt = validate_completion(**route_case.arguments())
 
         assert receipt.accepted
-        assert receipt.action_count == 1
+        assert receipt.action_count == 2
         assert receipt.variant_count == 1
         assert {
             root.route.value for root in route_case.target.surface.roots

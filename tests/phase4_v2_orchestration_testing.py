@@ -1366,7 +1366,7 @@ def _synthetic_terminal_semantics() -> dict[str, object]:
             "write": {
                 "service": "service",
                 "uuid": "5678",
-                "roles": ["WRITE"],
+                "roles": ["NOTIFY", "WRITE"],
                 "write_modes": ["WITHOUT_RESPONSE"],
             }
         },
@@ -1444,6 +1444,17 @@ def _synthetic_terminal_semantics() -> dict[str, object]:
             "unmodeled_paths": [],
         },
     }
+    for collection, key, value in (
+        ("expected_action_rules", "expect_stop", {"protocol": "primary", "action": "stop", "when": {"op": "always"}}),
+        ("timings", "stop_timing", {"repeat_count": 1, "repeat_interval_ms": 0, "cancellation": "AFTER_FRAME", "release": "NONE"}),
+        ("packet_fields", "stop_field", {"offset": 0, "width": 1, "source": "CONSTANT", "constant_hex": "00", "transforms": ["identity"]}),
+        ("packet_builders", "stop_builder", {"fields": ["stop_field"], "framing": "frame"}),
+        ("transports", "stop_transport", {"characteristic": "write", "write_mode": "WITHOUT_RESPONSE", "packet_builder": "stop_builder", "timing": "stop_timing", "lifecycle": "command"}),
+        ("action_mappings", "stop_mapping", {"protocol": "primary", "action": "stop", "transport": "stop_transport", "when": {"op": "always"}}),
+    ):
+        target = data[collection]
+        assert isinstance(target, dict)
+        target[key] = value
     return data
 
 

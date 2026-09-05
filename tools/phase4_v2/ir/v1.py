@@ -762,7 +762,21 @@ def validate_final_universe(document: FinalProtocolIRDocument) -> FinalUniverseV
                     )
                     actual_sources.setdefault(key, []).append(mapping_id)
     actual = set(actual_sources)
+    mappings = dict(document.action_mappings)
+    transports = dict(document.transports)
+    timings = dict(document.timings)
+    cleanup_targets: dict[tuple[str, str, tuple[tuple[str, core.JsonScalar], ...]], list[FinalUniverseKey]] = {}
+    for key in actual:
+        cleanup_targets.setdefault((key.protocol, key.action, key.selectors), []).append(key)
     issues = [FinalUniverseIssue("missing_action_mapping", key, ()) for key in expected - actual]
+    for key, mapping_ids in actual_sources.items():
+        for mapping_id in mapping_ids:
+            timing = timings[transports[mappings[mapping_id].transport].timing]
+            if timing.release_action is None:
+                continue
+            targets = cleanup_targets.get((key.protocol, timing.release_action, key.selectors), [])
+            if len(targets) != 1 or len(actual_sources[targets[0]]) != 1:
+                issues.append(FinalUniverseIssue("unresolved_release_action", key, (mapping_id,)))
     issues.extend(
         FinalUniverseIssue("extra_action_mapping", key, tuple(sorted(actual_sources[key])))
         for key in actual - expected
@@ -1320,6 +1334,12 @@ def _validate_final_references(document: FinalProtocolIRDocument) -> None:
             reference("selectors", field.source_ref, f"$.packet_fields.{field_id}.source_ref")
         if field.source is PacketFieldSource.CHECKSUM:
             reference("checksums", field.source_ref, f"$.packet_fields.{field_id}.source_ref")
+            checksum = collections["checksums"].get(field.source_ref or "")
+            if isinstance(checksum, Checksum) and field.width != checksum.output_width:
+                diagnostics.append(core.IRDiagnostic(
+                    "checksum_field_width_mismatch", f"$.packet_fields.{field_id}.width",
+                    "checksum field width must equal the referenced checksum output width",
+                ))
         if field.source is PacketFieldSource.AUTHENTICATION:
             reference("authentications", field.source_ref, f"$.packet_fields.{field_id}.source_ref")
     for framing_id, framing in document.framings:
@@ -1329,6 +1349,16 @@ def _validate_final_references(document: FinalProtocolIRDocument) -> None:
             reference("packet_fields", field, f"$.packet_builders.{builder_id}.fields[{index}]")
         reference("framings", builder.framing, f"$.packet_builders.{builder_id}.framing")
         reference("checksums", builder.checksum, f"$.packet_builders.{builder_id}.checksum")
+        fields = sorted(
+            (field.offset, field.offset + field.width)
+            for field_id in builder.fields
+            if isinstance(field := collections["packet_fields"].get(field_id), PacketField)
+        )
+        if any(right[0] < left[1] for left, right in zip(fields, fields[1:], strict=False)):
+            diagnostics.append(core.IRDiagnostic(
+                "overlapping_packet_fields", f"$.packet_builders.{builder_id}.fields",
+                "packet builder fields must occupy disjoint byte ranges",
+            ))
     for auth_id, auth in document.authentications:
         for index, selector in enumerate(auth.selectors):
             reference("selectors", selector, f"$.authentications.{auth_id}.selectors[{index}]")
@@ -1348,6 +1378,17 @@ def _validate_final_references(document: FinalProtocolIRDocument) -> None:
         reference("bufferings", parser.buffering, f"$.notification_parsers.{parser_id}.buffering")
         for index, field in enumerate(parser.fields):
             reference("parser_fields", field, f"$.notification_parsers.{parser_id}.fields[{index}]")
+            buffering = collections["bufferings"].get(parser.buffering)
+            parsed_field = collections["parser_fields"].get(field)
+            if (
+                isinstance(buffering, Buffering) and buffering.mode is BufferingMode.FIXED_LENGTH
+                and buffering.size is not None and isinstance(parsed_field, ParserField)
+                and parsed_field.offset + parsed_field.width > buffering.size
+            ):
+                diagnostics.append(core.IRDiagnostic(
+                    "parser_field_out_of_bounds", f"$.notification_parsers.{parser_id}.fields[{index}]",
+                    "parser field extends beyond its fixed-length buffer",
+                ))
     for timing_id, timing in document.timings:
         reference("actions", timing.release_action, f"$.timings.{timing_id}.release_action")
     for transport_id, transport in document.transports:
@@ -1374,6 +1415,14 @@ def _validate_final_references(document: FinalProtocolIRDocument) -> None:
         reference("timings", transport.timing, f"$.transports.{transport_id}.timing")
         reference("lifecycles", transport.lifecycle, f"$.transports.{transport_id}.lifecycle")
         char = collections["gatt_characteristics"].get(transport.characteristic)
+        if (
+            isinstance(char, GattCharacteristic) and transport.notification_parser is not None
+            and not {GattCharacteristicRole.NOTIFY, GattCharacteristicRole.INDICATE}.intersection(char.roles)
+        ):
+            diagnostics.append(core.IRDiagnostic(
+                "notification_role_missing", f"$.transports.{transport_id}.notification_parser",
+                "notification parsing requires a NOTIFY or INDICATE characteristic",
+            ))
         if isinstance(char, GattCharacteristic) and transport.write_mode not in char.write_modes:
             diagnostics.append(
                 core.IRDiagnostic(

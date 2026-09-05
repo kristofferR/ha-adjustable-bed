@@ -439,6 +439,92 @@ def test_delivery_digest_changes_across_packaging_but_artifact_digest_does_not(
     assert container_result.artifact_members[0].name == "base.apk"
 
 
+@pytest.mark.parametrize("members", [("base.apk",), ("base.apk", "config.apk")])
+def test_xapk_declared_config_split_is_required_without_uses_split(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, members: tuple[str, ...]
+) -> None:
+    base, config = tmp_path / "base.apk", tmp_path / "config.apk"
+    _native_apk(base)
+    _apk(config, "AndroidManifest.xml", "res/config.xml")
+    signer = "a" * 64
+    _mock_identity_tools(
+        monkeypatch,
+        {
+            "base.apk": ("org.example.bed", "42", "4.2", None, (), signer),
+            "config.apk": ("org.example.bed", "42", "4.2", "config.arm64", (), signer),
+        },
+    )
+    delivery = tmp_path / "delivery.xapk"
+    with zipfile.ZipFile(delivery, "w") as archive:
+        archive.writestr(
+            "manifest.json",
+            json.dumps({"split_apks": [{"file": "base.apk"}, {"file": "config.apk"}]}),
+        )
+        for name in members:
+            archive.writestr(name, (tmp_path / name).read_bytes())
+    result = preflight_delivery([delivery])
+    assert result.package_identity is not None
+    if "config.apk" in members:
+        assert result.decision.status == "READY"
+    else:
+        assert result.decision.status == "BLOCKED"
+        assert "declared_apk_missing:delivery.xapk:config.apk" in result.decision.blockers
+
+
+@pytest.mark.parametrize(
+    ("manifest", "blocker"),
+    [
+        (None, "xapk_manifest_missing"),
+        (b"{}", "xapk_manifest_explicit_apk_members_required"),
+        (b'{"split_apks":[{"file":"other.apk"}]}', "undeclared_apk_member"),
+        (b'{"split_apks":[{"file":"base.apk"},{"file":"base.apk"}]}', "xapk_manifest_invalid"),
+        (b'{"split_apks":[],"split_apks":[{"file":"base.apk"}]}', "xapk_manifest_invalid"),
+        (b'{"split_apks":[{"file":"../base.apk"}]}', "xapk_manifest_invalid"),
+        (b'{"split_apks":[{"file":"BASE.apk"},{"file":"base.apk"}]}', "xapk_manifest_invalid"),
+        (b"[" * 2000, "xapk_manifest_invalid"),
+        (b" " * (1024 * 1024 + 1), "xapk_manifest_byte_limit"),
+    ],
+)
+def test_xapk_metadata_must_prove_the_exact_member_set(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, manifest: bytes | None, blocker: str
+) -> None:
+    base = tmp_path / "base.apk"
+    _native_apk(base)
+    _mock_identity_tools(
+        monkeypatch,
+        {"base.apk": ("org.example.bed", "42", "4.2", None, (), "a" * 64)},
+    )
+    delivery = tmp_path / "delivery.xapk"
+    with zipfile.ZipFile(delivery, "w") as archive:
+        archive.writestr("base.apk", base.read_bytes())
+        if manifest is not None:
+            archive.writestr("manifest.json", manifest)
+    result = preflight_delivery([delivery])
+    assert result.decision.status == "BLOCKED"
+    assert any(item.startswith(f"{blocker}:delivery.xapk") for item in result.decision.blockers)
+
+
+@pytest.mark.parametrize("toc", [None, b"synthetic-protobuf"])
+def test_apks_requires_a_verified_table_of_contents(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, toc: bytes | None
+) -> None:
+    base = tmp_path / "base.apk"
+    _native_apk(base)
+    _mock_identity_tools(
+        monkeypatch,
+        {"base.apk": ("org.example.bed", "42", "4.2", None, (), "a" * 64)},
+    )
+    delivery = tmp_path / "delivery.apks"
+    with zipfile.ZipFile(delivery, "w") as archive:
+        archive.writestr("base.apk", base.read_bytes())
+        if toc is not None:
+            archive.writestr("toc.pb", toc)
+    result = preflight_delivery([delivery])
+    assert result.decision.status == "BLOCKED"
+    reason = "missing" if toc is None else "decoder_required"
+    assert f"apks_toc_{reason}:delivery.apks" in result.decision.blockers
+
+
 def test_explicit_sealing_directory_and_result_cleanup(tmp_path: Path) -> None:
     artifact = tmp_path / "base.apk"
     _native_apk(artifact)

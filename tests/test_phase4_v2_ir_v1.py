@@ -43,7 +43,7 @@ def _document() -> dict[str, object]:
         "configuration": "CONFIGURATION",
         "user_state": "USER_STATE",
     }
-    return {
+    data: dict[str, object] = {
         "schema_revision": FINAL_SCHEMA_REVISION,
         "source_packages": {},
         "evidence_files": {},
@@ -87,7 +87,7 @@ def _document() -> dict[str, object]:
             "write": {
                 "service": "service",
                 "uuid": "5678",
-                "roles": ["WRITE"],
+                "roles": ["NOTIFY", "WRITE"],
                 "write_modes": ["WITHOUT_RESPONSE"],
             }
         },
@@ -171,6 +171,22 @@ def _document() -> dict[str, object]:
             "unmodeled_paths": [],
         },
     }
+    _add_stop_mapping(data, "protocol")
+    return data
+
+
+def _add_stop_mapping(data: dict[str, object], protocol: str) -> None:
+    for collection, key, value in (
+        ("expected_action_rules", "expect_stop", {"protocol": protocol, "action": "stop", "when": {"op": "always"}}),
+        ("timings", "stop_timing", {"repeat_count": 1, "repeat_interval_ms": 0, "cancellation": "AFTER_FRAME", "release": "NONE"}),
+        ("packet_fields", "stop_field", {"offset": 0, "width": 1, "source": "CONSTANT", "constant_hex": "00", "transforms": []}),
+        ("packet_builders", "stop_builder", {"fields": ["stop_field"], "framing": "frame"}),
+        ("transports", "stop_transport", {"characteristic": "write", "write_mode": "WITHOUT_RESPONSE", "packet_builder": "stop_builder", "timing": "stop_timing", "lifecycle": "command"}),
+        ("action_mappings", "stop_mapping", {"protocol": protocol, "action": "stop", "transport": "stop_transport", "when": {"op": "always"}}),
+    ):
+        target = data[collection]
+        assert isinstance(target, dict)
+        target[key] = value
 
 
 def _load(data: dict[str, object] | None = None) -> v1.FinalProtocolIRDocument:
@@ -348,7 +364,7 @@ def test_final_universe_expands_selectors_and_action_parameters_exactly_once() -
     result = validate_final_universe(document)
 
     assert result.is_valid
-    assert len(result.expected) == 4
+    assert len(result.expected) == 6
     assert result.expected == result.actual
 
 
@@ -436,6 +452,53 @@ def test_packet_constant_must_match_declared_width(constant: str) -> None:
         )
 
 
+def test_fixed_length_parser_rejects_field_beyond_buffer() -> None:
+    data = _document()
+    data["bufferings"] = {"datagram": {"mode": "FIXED_LENGTH", "size": 1}}
+    fields = data["parser_fields"]
+    assert isinstance(fields, dict)
+    fields["state"]["offset"] = 1
+    with pytest.raises(IRValidationError, match="parser_field_out_of_bounds"):
+        _load(data)
+    fields["state"]["offset"] = 0
+    _load(data)
+
+
+@pytest.mark.parametrize("mutation", ["missing", "other_protocol", "profile", "parameters"])
+def test_release_requires_unique_mapping_for_same_protocol_and_profile(mutation: str) -> None:
+    data = _document()
+    mappings = data["action_mappings"]
+    rules = data["expected_action_rules"]
+    assert isinstance(mappings, dict) and isinstance(rules, dict)
+    if mutation == "missing":
+        del mappings["stop_mapping"]
+        del rules["expect_stop"]
+    elif mutation == "other_protocol":
+        protocols = data["protocols"]
+        assert isinstance(protocols, dict)
+        protocols["other"] = {"variant_space": "variants"}
+        mappings["stop_mapping"]["protocol"] = "other"
+        rules["expect_stop"]["protocol"] = "other"
+    elif mutation == "profile":
+        predicate = {"op": "eq", "dimension": "model", "value": "alpha"}
+        mappings["stop_mapping"]["when"] = predicate
+        rules["expect_stop"]["when"] = predicate
+    else:
+        parameters = data["action_parameters"]
+        assert isinstance(parameters, dict)
+        parameters["stop_mode"] = {"action": "stop", "values": [1, 2]}
+    with pytest.raises(IRValidationError, match="unresolved_release_action"):
+        _load(data)
+
+
+def test_notification_parser_accepts_indicate_role() -> None:
+    data = _document()
+    characteristics = data["gatt_characteristics"]
+    assert isinstance(characteristics, dict)
+    characteristics["write"]["roles"] = ["WRITE", "INDICATE"]
+    _load(data)
+
+
 def test_final_markdown_is_deterministic_and_rejects_drift() -> None:
     document = _load()
     rendered = render_final_ir_markdown(document)
@@ -451,6 +514,9 @@ def test_final_markdown_is_deterministic_and_rejects_drift() -> None:
 @pytest.mark.parametrize(
     ("path", "mutation", "code"),
     [
+        (("packet_fields", "checksum_field", "width"), 2, "checksum_field_width_mismatch"),
+        (("packet_fields", "checksum_field", "offset"), 0, "overlapping_packet_fields"),
+        (("gatt_characteristics", "write", "roles"), ["WRITE"], "notification_role_missing"),
         (
             ("packet_fields", "strength_field"),
             {"offset": 0, "width": 1, "source": "CONSTANT", "transforms": []},
