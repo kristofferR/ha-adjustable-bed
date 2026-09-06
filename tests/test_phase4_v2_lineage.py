@@ -119,6 +119,7 @@ def test_manifest_binds_authoritative_root_analysis_to_its_exact_identity() -> N
     assert isinstance(member, dict)
     member["authoritative_root_analyses"] = [
         {
+            "evidence_anchor_ids": ["anchor"],
             "semantic_root_sha256": "1" * 64,
             "target_occurrence_identity_sha256": "2" * 64,
             "target_root_id": "3" * 64,
@@ -130,6 +131,28 @@ def test_manifest_binds_authoritative_root_analysis_to_its_exact_identity() -> N
     assert attestation.semantic_root_sha256 == "1" * 64
     assert attestation.target_occurrence_identity_sha256 == "2" * 64
     assert attestation.target_root_id == "3" * 64
+    assert attestation.evidence_anchor_ids == ("anchor",)
+
+
+def test_manifest_rejects_duplicate_root_anchor_ids() -> None:
+    value = _manifest()
+    members = value["members"]
+    assert isinstance(members, list)
+    member = members[0]
+    assert isinstance(member, dict)
+    member["authoritative_root_analyses"] = [
+        {
+            "evidence_anchor_ids": ["anchor", "anchor"],
+            "semantic_root_sha256": "1" * 64,
+            "target_occurrence_identity_sha256": "2" * 64,
+            "target_root_id": "3" * 64,
+        }
+    ]
+
+    with pytest.raises(LineageValidationError) as caught:
+        _bind(value)
+
+    assert _code(caught) == "authoritative_root_anchor_set_not_canonical"
 
 
 def test_manifest_rejects_conflicting_root_analyses_across_members() -> None:
@@ -141,6 +164,7 @@ def test_manifest_rejects_conflicting_root_analyses_across_members() -> None:
     second = copy.deepcopy(first)
     first["authoritative_root_analyses"] = [
         {
+            "evidence_anchor_ids": ["anchor"],
             "semantic_root_sha256": "1" * 64,
             "target_occurrence_identity_sha256": "2" * 64,
             "target_root_id": "3" * 64,
@@ -148,6 +172,7 @@ def test_manifest_rejects_conflicting_root_analyses_across_members() -> None:
     ]
     second["authoritative_root_analyses"] = [
         {
+            "evidence_anchor_ids": ["anchor"],
             "semantic_root_sha256": "4" * 64,
             "target_occurrence_identity_sha256": "2" * 64,
             "target_root_id": "3" * 64,
@@ -356,8 +381,7 @@ class _LyingSourceMapping(Mapping[str, str]):
 
     def __iter__(self) -> Iterator[str]:
         return iter(
-            f"split-{index:04d}.apk"
-            for index in range(lineage_module._MAX_ARTIFACT_MEMBERS + 1)
+            f"split-{index:04d}.apk" for index in range(lineage_module._MAX_ARTIFACT_MEMBERS + 1)
         )
 
     def __len__(self) -> int:

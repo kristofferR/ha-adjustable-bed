@@ -2,16 +2,20 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
+from tools.phase4_v2.preflight.registry import (
+    ActivatedPreparationAuthority,
+    PreparationReceipt,
+)
 from tools.phase4_v2.queue import (
     CapabilityPin as QueueCapabilityPin,
 )
 from tools.phase4_v2.queue import (
     CompletionDependencyPin,
     ExecutionMode,
+    FinishDisposition,
     FinishResult,
     InputCheckedFinishDisposition,
     InputDigestMismatchError,
@@ -19,20 +23,52 @@ from tools.phase4_v2.queue import (
     Queue,
     QueueConflictError,
 )
-from tools.phase4_v2.validator import DependencyPins
+from tools.phase4_v2.raw_source import (
+    AuthenticatedPackageLocalEvidence,
+    PackageLocalEvidenceReauthenticationInput,
+)
 
-from .core import FrozenPackageRef
+from .core import (
+    AuthenticatedValidatorEnvelope,
+    FrozenPackageRef,
+    frozen_package_ref_from_validator_envelope,
+    validate_authenticated_validator_envelope,
+    validate_frozen_package_ref,
+)
+from .execution import AuthenticatedPackageExecutionEnvelope
+from .inventory import (
+    INVENTORY_QUEUE_UNIT_KIND,
+    AuthenticatedTargetInventoryEnvelope,
+    accept_target_inventory,
+    inventory_authority_capability,
+    inventory_extractor_capability,
+    target_inventory_queue_unit_id,
+    validate_target_inventory_envelope,
+)
 from .plan import (
     PACKAGE_QUEUE_UNIT_KIND,
+    PREPARATION_QUEUE_UNIT_KIND,
+    AcceptedTargetRootInventory,
+    CompletionPin,
+    ExactReuseRootPlan,
     PackageExecutionPlan,
+    PackageLocalPlan,
     PackagePlanStatus,
+    PreparationPlanBinding,
     ValidatedPackageOutput,
     freeze_package_execution_plan,
     package_queue_unit_id,
     package_validation_receipt_completion,
+    preparation_capability_pins,
+    preparation_queue_unit_id,
 )
 from .plan import (
     PACKAGE_QUEUE_UNIT_PREFIX as PACKAGE_QUEUE_UNIT_PREFIX,
+)
+from .prerequisite import (
+    AuthenticatedExactReusePrerequisite,
+    exact_reuse_prerequisite_completions,
+    validate_authenticated_exact_reuse_prerequisite,
 )
 
 PACKAGE_VALIDATION_RECEIPT_QUEUE_UNIT_KIND = "trusted-package-validation-receipt"
@@ -62,6 +98,38 @@ class MaterializedPackageReceiptWork:
     input_digest: str
 
 
+@dataclass(frozen=True, slots=True)
+class MaterializedPreparationWork:
+    """Identity of one externally authorized package-preparation unit."""
+
+    unit_id: str
+    input_digest: str
+
+
+@dataclass(frozen=True, slots=True)
+class MaterializedTargetInventoryWork:
+    """Identity of one authenticated target-inventory import."""
+
+    unit_id: str
+    input_digest: str
+
+
+@dataclass(frozen=True, slots=True)
+class FinishedPreparationWork:
+    """Accepted preparation binding and its formal queue completion."""
+
+    binding: PreparationPlanBinding
+    queue_result: FinishResult
+
+
+@dataclass(frozen=True, slots=True)
+class MaterializedExactReusePrerequisites:
+    """All exact completion identities authorized by one pre-plan receipt."""
+
+    completions: tuple[CompletionPin, CompletionPin, CompletionPin]
+    input_digest: str
+
+
 class PackagePlanInputMismatchError(InputDigestMismatchError):
     """A produced output was preserved but not accepted for changed input."""
 
@@ -79,14 +147,17 @@ class PackagePlanInputMismatchError(InputDigestMismatchError):
 
 def materialize_package_validation_receipt(
     queue: Queue,
-    package_ref: FrozenPackageRef,
+    envelope: AuthenticatedValidatorEnvelope,
     *,
     priority: int = 0,
 ) -> MaterializedPackageReceiptWork:
     """Materialize the reserved import unit for one frozen package receipt."""
+    envelope = validate_authenticated_validator_envelope(envelope)
+    package_ref = frozen_package_ref_from_validator_envelope(envelope)
     completion = package_validation_receipt_completion(package_ref)
-    queue.materialize_work_unit(
+    queue._materialize_authenticated_row(
         completion.parent_unit_id,
+        authentication=envelope,
         kind=PACKAGE_VALIDATION_RECEIPT_QUEUE_UNIT_KIND,
         input_digest=completion.digest,
         priority=priority,
@@ -98,23 +169,147 @@ def finish_package_validation_receipt(
     queue: Queue,
     lease: Lease,
     *,
-    package_ref: FrozenPackageRef,
-    receipt_payload: str | bytes,
-    trusted_validator_revision: str,
-    trusted_contract_revision: str,
-    trusted_dependency_digests: Mapping[str, str],
-    trusted_receipt_sha256: str,
+    envelope: AuthenticatedValidatorEnvelope,
 ) -> FinishResult:
     """Verify and publish a canonical package-local validator receipt."""
     return queue.finish_package_validation_receipt(
         lease,
-        package_ref=package_ref,
-        receipt_payload=receipt_payload,
-        trusted_validator_revision=trusted_validator_revision,
-        trusted_contract_revision=trusted_contract_revision,
-        trusted_dependency_digests=trusted_dependency_digests,
-        trusted_receipt_sha256=trusted_receipt_sha256,
+        envelope=envelope,
     )
+
+
+def materialize_target_inventory(
+    queue: Queue,
+    envelope: AuthenticatedTargetInventoryEnvelope,
+    *,
+    priority: int = 0,
+) -> MaterializedTargetInventoryWork:
+    """Materialize the one reserved unit bound to a signed inventory."""
+
+    envelope = validate_target_inventory_envelope(envelope)
+    pin = inventory_authority_capability(envelope.authority)
+    extractor_pin = inventory_extractor_capability(envelope.extractor)
+    unit_id = target_inventory_queue_unit_id(envelope.package_ref.content_id)
+    input_digest = queue._materialize_authenticated_row(
+        unit_id,
+        authentication=envelope,
+        kind=INVENTORY_QUEUE_UNIT_KIND,
+        capability_pins=tuple(
+            QueueCapabilityPin(item.name, item.revision, item.digest)
+            for item in (pin, extractor_pin)
+        ),
+        input_digest=envelope.receipt_sha256,
+        priority=priority,
+    )
+    return MaterializedTargetInventoryWork(unit_id, input_digest)
+
+
+def finish_target_inventory(
+    queue: Queue,
+    lease: Lease,
+    *,
+    envelope: AuthenticatedTargetInventoryEnvelope,
+) -> tuple[AcceptedTargetRootInventory, FinishResult]:
+    """Authenticate and accept the exact leased inventory."""
+
+    accepted = accept_target_inventory(validate_target_inventory_envelope(envelope))
+    result = queue.finish_target_inventory_envelope(lease, envelope=envelope)
+    return accepted, result.finish_result
+
+
+def materialize_exact_reuse_prerequisites(
+    queue: Queue,
+    receipt: AuthenticatedExactReusePrerequisite,
+    *,
+    priority: int = 0,
+) -> MaterializedExactReusePrerequisites:
+    """Atomically publish the semantic, decision, and audit prerequisite rows."""
+
+    receipt = validate_authenticated_exact_reuse_prerequisite(receipt)
+    queue._materialize_exact_reuse_prerequisite_rows(receipt, priority=priority)
+    return MaterializedExactReusePrerequisites(
+        exact_reuse_prerequisite_completions(receipt), receipt.receipt_sha256
+    )
+
+
+def finish_exact_reuse_prerequisite(
+    queue: Queue,
+    lease: Lease,
+    *,
+    receipt: AuthenticatedExactReusePrerequisite,
+) -> FinishResult:
+    """Finish one of the exact three rows authorized by the signed receipt."""
+
+    receipt = validate_authenticated_exact_reuse_prerequisite(receipt)
+    return queue.finish_exact_reuse_prerequisite(lease, receipt=receipt).finish_result
+
+
+def materialize_package_preparation(
+    queue: Queue,
+    *,
+    package_ref: FrozenPackageRef,
+    package_local: PackageLocalPlan,
+    authority: ActivatedPreparationAuthority,
+    priority: int = 0,
+) -> MaterializedPreparationWork:
+    """Materialize one package preparation against independently active pins."""
+
+    try:
+        package_ref = validate_frozen_package_ref(package_ref)
+    except ValueError as error:
+        raise QueueConflictError(
+            "preparation requires an authenticated frozen package reference"
+        ) from error
+    if type(package_local) is not PackageLocalPlan:
+        raise QueueConflictError("preparation requires an exact package-local plan")
+    package_ref_id = package_ref.content_id
+    if (
+        package_local.target_package_ref_id,
+        package_local.package_name,
+        package_local.version_code,
+        package_local.target_artifact_digest,
+        package_local.requirements_sha256,
+    ) != (
+        package_ref_id,
+        package_ref.package_name,
+        package_ref.version_code,
+        package_ref.artifact_digest,
+        package_ref.preflight_sha256,
+    ):
+        raise QueueConflictError("preparation package identity does not match its frozen reference")
+    capabilities = preparation_capability_pins(authority)
+    unit_id = preparation_queue_unit_id(package_ref_id)
+    input_digest = queue._materialize_authenticated_row(
+        unit_id,
+        authentication=(package_ref, package_local, authority),
+        kind=PREPARATION_QUEUE_UNIT_KIND,
+        capability_pins=tuple(
+            QueueCapabilityPin(pin.name, pin.revision, pin.digest) for pin in capabilities
+        ),
+        priority=priority,
+    )
+    return MaterializedPreparationWork(unit_id, input_digest)
+
+
+def finish_package_preparation(
+    queue: Queue,
+    lease: Lease,
+    *,
+    package_ref: FrozenPackageRef,
+    package_local: PackageLocalPlan,
+    receipt: PreparationReceipt,
+    authority: ActivatedPreparationAuthority,
+) -> FinishedPreparationWork:
+    """Publish one trusted preparation receipt and return its plan-only binding."""
+
+    binding, result = queue.finish_preparation_receipt(
+        lease,
+        package_ref=package_ref,
+        package_local=package_local,
+        receipt=receipt,
+        authority=authority,
+    )
+    return FinishedPreparationWork(binding, result)
 
 
 def materialize_package_execution_plan(
@@ -132,9 +327,39 @@ def materialize_package_execution_plan(
     if frozen.status is PackagePlanStatus.BLOCKED:
         return None
 
+    preparation = frozen.preparation.completion
+    queue.require_formal_completion(
+        preparation.parent_unit_id,
+        revision=preparation.revision,
+        digest=preparation.digest,
+        capability_pins=tuple(
+            QueueCapabilityPin(pin.name, pin.revision, pin.digest)
+            for pin in frozen.preparation.capabilities
+        ),
+    )
+    for root in execution_plan.root_plans:
+        if type(root) is not ExactReuseRootPlan:
+            continue
+        capabilities = tuple(
+            QueueCapabilityPin(pin.name, pin.revision, pin.digest)
+            for pin in root.reuse.exact_reuse_prerequisite_capabilities
+        )
+        for completion in (
+            root.reuse.inherited_semantic_root_completion,
+            root.reuse.ledger_decision_completion,
+            root.reuse.direct_semantic_audit_completion,
+        ):
+            queue.require_formal_completion(
+                completion.parent_unit_id,
+                revision=completion.revision,
+                digest=completion.digest,
+                capability_pins=capabilities,
+            )
+
     unit_id = package_queue_unit_id(frozen.target_package_ref_id)
-    input_digest = queue.materialize_work_unit(
+    input_digest = queue._materialize_authenticated_row(
         unit_id,
+        authentication=execution_plan,
         kind=PACKAGE_QUEUE_UNIT_KIND,
         capability_pins=tuple(
             QueueCapabilityPin(pin.name, pin.revision, pin.digest)
@@ -147,6 +372,7 @@ def materialize_package_execution_plan(
         input_digest=frozen.digest,
         priority=priority,
         execution_mode=ExecutionMode.NORMAL,
+        cluster_id=frozen.cluster_id,
     )
     if input_digest != frozen.digest:
         raise QueueConflictError("queue did not preserve the frozen package plan digest")
@@ -159,8 +385,11 @@ def finish_package_execution_plan(
     *,
     execution_plan: PackageExecutionPlan,
     report_root: Path,
-    trusted_dependencies: DependencyPins,
     evidence_lineage_payload: bytes,
+    execution_envelope: AuthenticatedPackageExecutionEnvelope,
+    package_local_evidence: AuthenticatedPackageLocalEvidence,
+    package_local_evidence_inputs: PackageLocalEvidenceReauthenticationInput,
+    package_local_validator_envelope: AuthenticatedValidatorEnvelope,
 ) -> FinishedPackageWork:
     """Validate and publish a package report from live trusted inputs."""
     frozen = freeze_package_execution_plan(execution_plan)
@@ -173,15 +402,18 @@ def finish_package_execution_plan(
             lease,
             execution_plan=execution_plan,
             report_root=report_root,
-            trusted_dependencies=trusted_dependencies,
             evidence_lineage_payload=evidence_lineage_payload,
+            execution_envelope=execution_envelope,
+            package_local_evidence=package_local_evidence,
+            package_local_evidence_inputs=package_local_evidence_inputs,
+            package_local_validator_envelope=package_local_validator_envelope,
         )
     except InputDigestMismatchError as error:
         raise PackagePlanInputMismatchError(
             str(error),
             output=None,
             queue_result=FinishResult(
-                disposition=InputCheckedFinishDisposition.INPUT_MISMATCH,
+                disposition=FinishDisposition.TERMINAL_ONLY,
                 unit_id=lease.unit_id,
                 attempt_id=lease.attempt_id,
                 output_digest=None,

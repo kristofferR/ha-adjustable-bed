@@ -34,6 +34,7 @@ _APK_SUFFIX = ".apk"
 _HERMES_BYTECODE_MAGIC = bytes.fromhex("c61fbc03c103191f")
 _COPY_CHUNK = 1024 * 1024
 _MAX_CACHE_MANIFEST_BYTES = 16 * 1024**2
+_MAX_DELIVERY_METADATA_BYTES = 1024 * 1024
 _MAX_ZIP_COMMENT_BYTES = 65_535
 _ZIP_EOCD_BYTES = 22
 _ZIP_EOCD_SIGNATURE = b"PK\x05\x06"
@@ -63,17 +64,20 @@ _SHIPPED_CODE_SUFFIXES = (
     ".wasm",
 )
 _EMBEDDED_ARCHIVE_SUFFIXES = (".aar", ".apk", ".apks", ".jar", ".xapk", ".zip")
-_STACK_ROUTES: Mapping[str, tuple[str, ...]] = MappingProxyType({
-    "air": ("ffdec",),
-    "android": ("apktool",),
-    "android_dex": ("jadx",),
-    "embedded_archive": ("embedded-archive-inventory",),
-    "flutter": ("blutter",),
-    "hermes": ("hermes-bundle",),
-    "native": ("native-library-inventory",),
-    "react_native": ("react-native-bundle",),
-    "shipped_bundle": ("shipped-bundle",),
-})
+_STACK_ROUTES: Mapping[str, tuple[str, ...]] = MappingProxyType(
+    {
+        "air": ("ffdec",),
+        "android": ("apktool",),
+        "android_dex": ("jadx",),
+        "embedded_archive": ("embedded-archive-inventory",),
+        "flutter": ("blutter",),
+        "hermes": ("hermes-bundle",),
+        "native": ("native-library-inventory",),
+        "react_native": ("react-native-bundle",),
+        "shipped_bundle": ("shipped-bundle",),
+    }
+)
+PREPARATION_ROUTES = tuple(sorted({route for routes in _STACK_ROUTES.values() for route in routes}))
 _AT_FDCWD = -100
 _RENAME_NOREPLACE = 1
 _O_NOATIME = getattr(os, "O_NOATIME", 0)
@@ -152,12 +156,8 @@ class _SealedOwner:
         parent_path = Path(os.path.abspath(os.fspath(supplied)))
         try:
             self._parent_fd = _open_directory_path_pinned(parent_path)
-            self._name = _make_private_directory_at(
-                self._parent_fd, "phase4-v2-preflight-"
-            )
-            self._directory_fd = os.open(
-                self._name, _DIRECTORY_FLAGS, dir_fd=self._parent_fd
-            )
+            self._name = _make_private_directory_at(self._parent_fd, "phase4-v2-preflight-")
+            self._directory_fd = os.open(self._name, _DIRECTORY_FLAGS, dir_fd=self._parent_fd)
         except OSError as err:
             if self._name and self._parent_fd >= 0:
                 try:
@@ -606,7 +606,9 @@ def _preflight_zip_directory(stream: IO[bytes], limits: PreflightLimits) -> None
             ) = struct.unpack("<4s6H3L5H2L", header)
             if signature != _ZIP_CENTRAL_DIRECTORY_SIGNATURE:
                 raise SafetyError("archive central-directory structure is invalid")
-            record_size = _ZIP_CENTRAL_DIRECTORY_HEADER_BYTES + name_size + extra_size + comment_size
+            record_size = (
+                _ZIP_CENTRAL_DIRECTORY_HEADER_BYTES + name_size + extra_size + comment_size
+            )
             if record_size > remaining:
                 raise SafetyError("archive central-directory structure is invalid")
             stream.seek(record_size - _ZIP_CENTRAL_DIRECTORY_HEADER_BYTES, os.SEEK_CUR)
@@ -712,9 +714,7 @@ def _classify_apk(descriptor: int, label: str, limits: PreflightLimits) -> _ApkO
     bundle_is_hermes = bool(hermes_bundle_names)
     if bundle_is_hermes:
         stacks.add("react_native")
-    if bundle_is_hermes or any(
-        name.endswith(".hermes") or name.endswith(".hbc") for name in names
-    ):
+    if bundle_is_hermes or any(name.endswith(".hermes") or name.endswith(".hbc") for name in names):
         stacks.add("hermes")
     if "assets/meta-inf/air/application.xml" in names or any(
         name.endswith(".swf") for name in names
@@ -781,15 +781,24 @@ def _run_identity_tool(
                     break
                 output.extend(chunk)
                 if len(output) > output_limit:
-                    _terminate_identity_tool(process)
+                    try:
+                        _terminate_identity_tool(process)
+                    except OSError:
+                        pass
                     return None, f"identity_tool_output_limit:{arguments[0]}:{label}"
-    except (OSError, subprocess.TimeoutExpired):
+    except OSError, subprocess.TimeoutExpired:
         if process is not None:
-            _terminate_identity_tool(process)
+            try:
+                _terminate_identity_tool(process)
+            except OSError:
+                pass
+        if len(output) >= output_limit:
+            return None, f"identity_tool_output_limit:{arguments[0]}:{label}"
         return None, f"identity_tool_failed:{arguments[0]}:{label}"
     finally:
         if process is not None and process.stdout is not None:
             process.stdout.close()
+    assert process is not None
     if process.returncode != 0:
         return None, f"identity_verification_failed:{arguments[0]}:{label}"
     try:
@@ -801,11 +810,17 @@ def _run_identity_tool(
 def _terminate_identity_tool(process: subprocess.Popen[bytes]) -> None:
     if process.poll() is not None:
         return
-    process.terminate()
+    try:
+        process.terminate()
+    except ProcessLookupError:
+        return
     try:
         process.wait(timeout=1)
     except subprocess.TimeoutExpired:
-        process.kill()
+        try:
+            process.kill()
+        except ProcessLookupError:
+            pass
         process.wait()
 
 
@@ -928,14 +943,12 @@ def _derive_package_identity(
     missing = sorted(required_splits - present_splits)
     blockers.extend(f"required_split_missing:{name}" for name in missing)
     config_targets = {
-        item.config_for_split
+        target
         for item in inspected
-        if item.config_for_split not in {None, "base"}
+        if (target := item.config_for_split) is not None and target != "base"
     }
     missing_config_targets = sorted(config_targets - present_splits)
-    blockers.extend(
-        f"config_for_split_missing:{name}" for name in missing_config_targets
-    )
+    blockers.extend(f"config_for_split_missing:{name}" for name in missing_config_targets)
     if blockers:
         return None, tuple(sorted(set(blockers)))
     package_name = next(iter(packages))
@@ -1042,6 +1055,60 @@ def _seal_archive_member(
     return digest.hexdigest(), copied
 
 
+def _delivery_metadata_blockers(
+    archive: zipfile.ZipFile,
+    entries: Sequence[_ArchiveEntry],
+    delivery: Path,
+) -> tuple[str, ...]:
+    """Check the declared APK set independently of Android uses-split edges."""
+    by_name = {entry.name: entry for entry in entries}
+    suffix = delivery.suffix.lower()
+    if suffix == ".apks" or "toc.pb" in by_name:
+        reason = "missing" if "toc.pb" not in by_name else "decoder_required"
+        # Bundletool's protobuf schema is not installed/pinned here. Do not
+        # approximate its declarations by scanning protobuf bytes for filenames.
+        return (f"apks_toc_{reason}:{delivery.name}",)
+    if suffix != ".xapk" and "manifest.json" not in by_name:
+        return ()
+    manifest = by_name.get("manifest.json")
+    if manifest is None:
+        return (f"xapk_manifest_missing:{delivery.name}",)
+    if manifest.info.file_size > _MAX_DELIVERY_METADATA_BYTES:
+        return (f"xapk_manifest_byte_limit:{delivery.name}",)
+    try:
+        with archive.open(manifest.info) as stream:
+            payload = stream.read(_MAX_DELIVERY_METADATA_BYTES + 1)
+        if len(payload) != manifest.info.file_size:
+            raise ValueError("manifest size mismatch")
+        value = json.loads(
+            payload,
+            object_pairs_hook=_cache_object,
+            parse_constant=_reject_cache_constant,
+        )
+        if type(value) is not dict:
+            raise ValueError("manifest must be an object")
+        members = value.get("split_apks")
+        if type(members) is not list or not members:
+            return (f"xapk_manifest_explicit_apk_members_required:{delivery.name}",)
+        declared: set[str] = set()
+        for member in members:
+            if type(member) is not dict or type(member.get("file")) is not str:
+                raise ValueError("APK declaration must contain a filename")
+            name = _safe_member_name(member["file"])
+            if not name.lower().endswith(_APK_SUFFIX) or name in declared:
+                raise ValueError("APK declaration is duplicated or not an APK")
+            declared.add(name)
+        if len({name.casefold() for name in declared}) != len(declared):
+            raise ValueError("APK declarations are case-ambiguous")
+    except ValueError, UnicodeError, RecursionError, SafetyError, zipfile.BadZipFile:
+        return (f"xapk_manifest_invalid:{delivery.name}",)
+    actual = {entry.name for entry in entries if entry.name.lower().endswith(_APK_SUFFIX)}
+    return tuple(
+        [f"declared_apk_missing:{delivery.name}:{name}" for name in sorted(declared - actual)]
+        + [f"undeclared_apk_member:{delivery.name}:{name}" for name in sorted(actual - declared)]
+    )
+
+
 def preflight_delivery(
     paths: Sequence[Path | str],
     *,
@@ -1062,6 +1129,7 @@ def preflight_delivery(
     deliveries: list[DeliveryFile] = []
     artifacts: list[ArtifactMember] = []
     observations: list[_ApkObservation] = []
+    metadata_blockers: list[str] = []
     delivery_bytes = 0
     artifact_bytes = 0
     artifact_expanded_bytes = 0
@@ -1109,21 +1177,17 @@ def preflight_delivery(
                     sealed_delivery_fd, source.name, active_limits
                 ) as archive:
                     entries = _archive_entries(archive, active_limits)
+                    metadata_blockers.extend(_delivery_metadata_blockers(archive, entries, source))
                     apk_entries = [
                         entry for entry in entries if entry.name.lower().endswith(_APK_SUFFIX)
                     ]
                     for member_index, entry in enumerate(apk_entries):
                         if len(artifacts) >= active_limits.max_archive_members:
                             raise SafetyError("delivery artifact member-count limit exceeded")
-                        if (
-                            artifact_bytes + entry.info.file_size
-                            > active_limits.max_archive_bytes
-                        ):
+                        if artifact_bytes + entry.info.file_size > active_limits.max_archive_bytes:
                             raise SafetyError("delivery artifact byte-size limit exceeded")
                         logical = _logical_apk_name(entry.name)
-                        sealed_member_name = (
-                            f"artifact-{delivery_index:04d}-{member_index:04d}"
-                        )
+                        sealed_member_name = f"artifact-{delivery_index:04d}-{member_index:04d}"
                         sealed_member_path = owner.path / sealed_member_name
                         digest, size = _seal_archive_member(
                             archive,
@@ -1132,9 +1196,7 @@ def preflight_delivery(
                             owner.directory_fd,
                         )
                         sealed_member_fd = owner.open_member(sealed_member_name)
-                        observation = _classify_apk(
-                            sealed_member_fd, logical, active_limits
-                        )
+                        observation = _classify_apk(sealed_member_fd, logical, active_limits)
                         artifact_bytes += size
                         artifact_expanded_bytes += observation.expanded_bytes
                         if artifact_expanded_bytes > active_limits.max_archive_bytes:
@@ -1168,7 +1230,7 @@ def preflight_delivery(
             _decision(
                 observations,
                 identity_verified=package_identity is not None,
-                extra_blockers=(*extra_blockers, *identity_blockers),
+                extra_blockers=(*extra_blockers, *identity_blockers, *metadata_blockers),
             ),
             owner,
         )
@@ -1424,9 +1486,7 @@ class ArtifactCache:
             temporary_name = _make_private_directory_at(
                 schema_objects_fd, f".{result.artifact_digest}.tmp-"
             )
-            temporary_fd = os.open(
-                temporary_name, _DIRECTORY_FLAGS, dir_fd=schema_objects_fd
-            )
+            temporary_fd = os.open(temporary_name, _DIRECTORY_FLAGS, dir_fd=schema_objects_fd)
             try:
                 os.mkdir("members", mode=0o700, dir_fd=temporary_fd)
                 members_fd = os.open("members", _DIRECTORY_FLAGS, dir_fd=temporary_fd)
@@ -1438,10 +1498,7 @@ class ArtifactCache:
                         try:
                             target_fd = os.open(
                                 stored_name,
-                                os.O_WRONLY
-                                | os.O_CREAT
-                                | os.O_EXCL
-                                | getattr(os, "O_CLOEXEC", 0),
+                                os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_CLOEXEC", 0),
                                 0o600,
                                 dir_fd=members_fd,
                             )
@@ -1511,9 +1568,7 @@ class ArtifactCache:
                 if not _directory_descriptor_matches_path(schema_objects_fd, schema_objects):
                     raise SafetyError("cache object directory changed during store") from None
                 return destination
-            object_fd = os.open(
-                result.artifact_digest, _DIRECTORY_FLAGS, dir_fd=schema_objects_fd
-            )
+            object_fd = os.open(result.artifact_digest, _DIRECTORY_FLAGS, dir_fd=schema_objects_fd)
             try:
                 self._verify_object_fd(result.artifact_digest, object_fd)
             finally:
@@ -1626,9 +1681,8 @@ class ArtifactCache:
                     raise CacheIntegrityError("cache member directory changed while verifying")
             finally:
                 os.close(members_fd)
-            if (
-                _identity(os.fstat(object_fd)) != object_identity
-                or not _directory_names_match(object_fd, expected_object_names)
+            if _identity(os.fstat(object_fd)) != object_identity or not _directory_names_match(
+                object_fd, expected_object_names
             ):
                 raise CacheIntegrityError("cache object changed while verifying")
             return cast(CacheManifest, raw)
@@ -1750,9 +1804,7 @@ class ArtifactCache:
         members_fd = -1
         destination_fd = -1
         try:
-            temporary_name = _make_private_directory_at(
-                parent_fd, f".{target.name}.tmp-"
-            )
+            temporary_name = _make_private_directory_at(parent_fd, f".{target.name}.tmp-")
             object_fd = os.open(self._object(artifact_digest), _DIRECTORY_FLAGS)
             members_fd = os.open("members", _DIRECTORY_FLAGS, dir_fd=object_fd)
             destination_fd = os.open(temporary_name, _DIRECTORY_FLAGS, dir_fd=parent_fd)

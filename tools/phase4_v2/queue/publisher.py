@@ -110,7 +110,7 @@ def publish_tracker(
             _require_current(queue, lease, snapshot.generation_id, post_write=False)
             queue._checkpoint_internal(
                 lease,
-                "TRACKER_ALREADY_CURRENT",
+                "TRACKER_DOCUMENT_ALREADY_CURRENT",
                 {"generation": snapshot.generation_id, "issue": issue_number},
             )
             _require_current(queue, lease, snapshot.generation_id, post_write=False)
@@ -137,7 +137,7 @@ def publish_tracker(
         try:
             queue._checkpoint_internal(
                 lease,
-                "TRACKER_PUBLISHED",
+                "TRACKER_DOCUMENT_PUBLISHED",
                 {
                     "after_body_sha256": after_digest,
                     "before_body_sha256": before_digest,

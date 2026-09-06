@@ -27,11 +27,12 @@ from .binding import (
     EvidenceAnchorAttestation,
     EvidenceMemberAttestation,
     PackageDependencyPins,
+    ValidatedRootEvidenceAttestation,
     validate_binding_contract,
 )
 from .lineage import EvidenceLineageTrust
 
-VALIDATOR_REVISION = "phase4-v2-bundle-validator-v4"
+VALIDATOR_REVISION = "phase4-v2-bundle-validator-v5"
 BOUND_VALIDATION_PROFILE = "BOUND_V4"
 PACKAGE_BOUND_VALIDATION_PROFILE = "BOUND_V5"
 REPORT_MANIFEST = "REPORT.SHA256"
@@ -110,11 +111,14 @@ class ValidationReceipt:
     validated_artifact_identity: ArtifactIdentityAttestation | None = None
     validated_evidence_members: tuple[EvidenceMemberAttestation, ...] = ()
     validated_evidence_anchors: tuple[EvidenceAnchorAttestation, ...] = ()
+    validated_root_evidence: tuple[ValidatedRootEvidenceAttestation, ...] = ()
+    raw_source_binding_revision: str | None = None
+    raw_source_receipt_sha256s: tuple[str, ...] = ()
     validation_receipt_sha256: str | None = None
 
     def to_dict(self) -> dict[str, object]:
         """Return a canonical JSON-compatible representation."""
-        return {
+        result: dict[str, object] = {
             "accepted": self.accepted,
             "bundle_sha256": self.bundle_sha256,
             "contract_revision": self.contract_revision,
@@ -138,8 +142,13 @@ class ValidationReceipt:
             "validated_evidence_members": [
                 item.to_dict() for item in self.validated_evidence_members
             ],
+            "validated_root_evidence": [item.to_dict() for item in self.validated_root_evidence],
             "validator_revision": self.validator_revision,
         }
+        if self.raw_source_receipt_sha256s:
+            result["raw_source_binding_revision"] = self.raw_source_binding_revision
+            result["raw_source_receipt_sha256s"] = list(self.raw_source_receipt_sha256s)
+        return result
 
     def to_json(self) -> str:
         """Return the deterministic single-line receipt."""
@@ -773,6 +782,8 @@ def _compact_receipt(receipt: ValidationReceipt) -> ValidationReceipt:
         evidence_anchors_checked=0,
         validated_evidence_members=(),
         validated_evidence_anchors=(),
+        validated_root_evidence=(),
+        raw_source_receipt_sha256s=(),
         validation_receipt_sha256=None,
     )
     compact_payload = _canonical_receipt_bytes(compact.identity_payload())
@@ -965,6 +976,7 @@ def validate_report_bundle(
     validated_artifact_identity: ArtifactIdentityAttestation | None = None
     validated_evidence_members: tuple[EvidenceMemberAttestation, ...] = ()
     validated_evidence_anchors: tuple[EvidenceAnchorAttestation, ...] = ()
+    validated_root_evidence: tuple[ValidatedRootEvidenceAttestation, ...] = ()
     if expected_dependencies is None:
         if not allow_unbound or VALIDATION_INPUT in nodes:
             diagnostics.append(Diagnostic("DEPENDENCY_PINS_REQUIRED", VALIDATION_INPUT))
@@ -995,6 +1007,7 @@ def validate_report_bundle(
         validated_artifact_identity = binding.validated_artifact_identity
         validated_evidence_members = binding.validated_evidence_members
         validated_evidence_anchors = binding.validated_evidence_anchors
+        validated_root_evidence = binding.validated_root_evidence
 
     try:
         after = capture_tree_snapshot(report_root)
@@ -1024,6 +1037,7 @@ def validate_report_bundle(
             validated_artifact_identity=validated_artifact_identity,
             validated_evidence_members=validated_evidence_members,
             validated_evidence_anchors=validated_evidence_anchors,
+            validated_root_evidence=validated_root_evidence,
         )
     )
 

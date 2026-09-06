@@ -13,11 +13,15 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Never, Protocol, cast
 
-SCHEMA_REVISION = "phase4-protocol-ir-core-v0.5.0-2026-08-31"
+SCHEMA_REVISION = "phase4-protocol-ir-core-v0.6.0-2026-09-03"
 PROVENANCE_IDENTITY_REVISION = "phase4-provenance-identity-v4"
-SUPPORTED_VALIDATOR_REVISION = "phase4-v2-bundle-validator-v4"
-SUPPORTED_CONTRACT_REVISION = "phase4-v2-validation-input-v3"
+SUPPORTED_VALIDATOR_REVISION = "phase4-v2-bundle-validator-v5"
+SUPPORTED_CONTRACT_REVISION = "phase4-v2-validation-input-v4"
 BOUND_VALIDATION_PROFILE = "BOUND_V4"
+RAW_SOURCE_VALIDATION_BINDING_REVISION = "phase4-v2-raw-source-validator-binding-v1"
+PACKAGE_LOCAL_VALIDATION_BINDING_REVISION = (
+    "phase4-v2-package-local-validator-binding-v1"
+)
 _DEPENDENCY_NAMES = ("corpus", "evidence_lineage", "ir", "preflight", "schema")
 _ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]*$")
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
@@ -144,6 +148,36 @@ class AttestedEvidenceAnchor:
 
 
 @dataclass(frozen=True, slots=True)
+class AttestedRootEvidenceMember:
+    member: str
+    member_sha256: str
+    evidence_anchor_ids: tuple[str, ...]
+
+    def to_data(self) -> dict[str, object]:
+        return {
+            "evidence_anchor_ids": list(self.evidence_anchor_ids),
+            "member": self.member,
+            "member_sha256": self.member_sha256,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class AttestedRootEvidence:
+    target_root_id: str
+    target_occurrence_identity_sha256: str
+    semantic_root_sha256: str
+    evidence_members: tuple[AttestedRootEvidenceMember, ...]
+
+    def to_data(self) -> dict[str, object]:
+        return {
+            "evidence_members": [item.to_data() for item in self.evidence_members],
+            "semantic_root_sha256": self.semantic_root_sha256,
+            "target_occurrence_identity_sha256": self.target_occurrence_identity_sha256,
+            "target_root_id": self.target_root_id,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class ValidatedReport:
     """Exact accepted BOUND_V4 receipt and all provenance attestations."""
 
@@ -160,9 +194,12 @@ class ValidatedReport:
     dependency_digests: tuple[tuple[str, str], ...]
     validated_evidence_members: tuple[AttestedEvidenceMember, ...]
     validated_evidence_anchors: tuple[AttestedEvidenceAnchor, ...]
+    validated_root_evidence: tuple[AttestedRootEvidence, ...]
+    raw_source_binding_revision: str | None = None
+    raw_source_receipt_sha256s: tuple[str, ...] = ()
 
     def to_data(self) -> dict[str, object]:
-        return {
+        result: dict[str, object] = {
             "bundle_sha256": self.bundle_sha256,
             "contract_revision": self.contract_revision,
             "declared_members": self.declared_members,
@@ -177,10 +214,17 @@ class ValidatedReport:
             "validated_evidence_members": [
                 member.to_data() for member in self.validated_evidence_members
             ],
+            "validated_root_evidence": [item.to_data() for item in self.validated_root_evidence],
             "validation_profile": self.validation_profile,
             "validation_receipt_sha256": self.validation_receipt_sha256,
             "validator_revision": self.validator_revision,
         }
+        if self.raw_source_receipt_sha256s:
+            result["raw_source_binding_revision"] = self.raw_source_binding_revision
+            result["raw_source_receipt_sha256s"] = list(
+                self.raw_source_receipt_sha256s
+            )
+        return result
 
 
 @dataclass(frozen=True, slots=True)
@@ -319,8 +363,7 @@ class VariantSpace:
                 _fail(
                     "variant_space_too_large",
                     "$.variant_spaces",
-                    "variant space exceeds "
-                    f"{_MAX_VARIANT_PROFILE_CANDIDATES} candidate profiles",
+                    f"variant space exceeds {_MAX_VARIANT_PROFILE_CANDIDATES} candidate profiles",
                 )
             profile = tuple(zip(names, combination, strict=True))
             profile_map = dict(profile)
@@ -827,9 +870,7 @@ def validate_universe(document: ProtocolIRDocument) -> UniverseValidation:
     """Compare expected action coverage with the command-binding multiset."""
 
     spaces = dict(document.variant_spaces)
-    referenced_space_ids = {
-        protocol.variant_space for _protocol_id, protocol in document.protocols
-    }
+    referenced_space_ids = {protocol.variant_space for _protocol_id, protocol in document.protocols}
     profiles_by_space: dict[str, tuple[Profile, ...]] = {}
     materialized_profiles = 0
     for space_id in sorted(referenced_space_ids):
@@ -1100,11 +1141,25 @@ def _bind_receipt_data(
         "validated_artifact_identity",
         "validated_evidence_anchors",
         "validated_evidence_members",
+        "validated_root_evidence",
         "validation_profile",
         "validation_receipt_sha256",
         "validator_revision",
     }
-    _expect_keys(receipt, path="$.receipt", required=required)
+    _expect_keys(
+        receipt,
+        path="$.receipt",
+        required=required,
+        optional={"raw_source_binding_revision", "raw_source_receipt_sha256s"},
+    )
+    if ("raw_source_binding_revision" in receipt) != (
+        "raw_source_receipt_sha256s" in receipt
+    ):
+        _fail(
+            "incomplete_raw_source_binding",
+            "$.receipt",
+            "raw-source binding revision and receipt set must appear together",
+        )
     if not _expect_bool(receipt["accepted"], "$.receipt.accepted"):
         _fail("validator_rejected", "$.receipt.accepted", "validator receipt was not accepted")
     if not _expect_bool(receipt["source_unchanged"], "$.receipt.source_unchanged"):
@@ -1187,8 +1242,7 @@ def _bind_receipt_data(
             "receipt identity does not match caller trust",
         )
 
-    report = _parse_validated_report(
-        {
+    report_data: dict[str, object] = {
             "bundle_sha256": receipt["bundle_sha256"],
             "contract_revision": contract_revision,
             "declared_members": declared,
@@ -1199,10 +1253,20 @@ def _bind_receipt_data(
             "validated_artifact_identity": receipt["validated_artifact_identity"],
             "validated_evidence_anchors": receipt["validated_evidence_anchors"],
             "validated_evidence_members": receipt["validated_evidence_members"],
+            "validated_root_evidence": receipt["validated_root_evidence"],
             "validation_profile": profile,
             "validation_receipt_sha256": embedded_receipt_sha256,
             "validator_revision": validator_revision,
-        },
+        }
+    if "raw_source_receipt_sha256s" in receipt:
+        report_data["raw_source_binding_revision"] = receipt[
+            "raw_source_binding_revision"
+        ]
+        report_data["raw_source_receipt_sha256s"] = receipt[
+            "raw_source_receipt_sha256s"
+        ]
+    report = _parse_validated_report(
+        report_data,
         "$.receipt",
     )
     checked = _expect_integer(
@@ -1267,11 +1331,11 @@ def _parse_attested_anchor(raw: object, path: str) -> AttestedEvidenceAnchor:
     pointer = _expect_string(value["ir_pointer"], f"{path}.ir_pointer")
     _validate_json_pointer(pointer, f"{path}.ir_pointer", allow_root=False)
     representation = _expect_string(value["representation"], f"{path}.representation")
-    if representation not in {"hex", "utf8"}:
+    if representation not in {"hex", "json-scalar", "utf8"}:
         _fail(
             "unknown_evidence_representation",
             f"{path}.representation",
-            "representation must be 'hex' or 'utf8'",
+            "representation must be 'hex', 'json-scalar', or 'utf8'",
         )
     return AttestedEvidenceAnchor(
         id=_expect_nonempty_string(value["id"], f"{path}.id", max_length=256),
@@ -1316,6 +1380,87 @@ def _parse_attested_anchors(raw: object, path: str) -> tuple[AttestedEvidenceAnc
     return anchors
 
 
+def _parse_attested_root_evidence(raw: object, path: str) -> tuple[AttestedRootEvidence, ...]:
+    values = _expect_array(raw, path)
+    if len(values) > _MAX_PROVENANCE_REFERENCES:
+        _fail("root_evidence_limit_exceeded", path, "root evidence exceeds its item limit")
+    roots: list[AttestedRootEvidence] = []
+    for index, raw_root in enumerate(values):
+        root_path = f"{path}[{index}]"
+        root = _expect_object(raw_root, root_path)
+        _expect_keys(
+            root,
+            path=root_path,
+            required={
+                "evidence_members",
+                "semantic_root_sha256",
+                "target_occurrence_identity_sha256",
+                "target_root_id",
+            },
+        )
+        evidence_members: list[AttestedRootEvidenceMember] = []
+        raw_members = _expect_array(root["evidence_members"], f"{root_path}.evidence_members")
+        if not raw_members or len(raw_members) > _MAX_PROVENANCE_REFERENCES:
+            _fail(
+                "invalid_root_evidence_members",
+                root_path,
+                "evidence members must be nonempty and bounded",
+            )
+        for member_index, raw_member in enumerate(raw_members):
+            member_path = f"{root_path}.evidence_members[{member_index}]"
+            member = _expect_object(raw_member, member_path)
+            _expect_keys(
+                member,
+                path=member_path,
+                required={"evidence_anchor_ids", "member", "member_sha256"},
+            )
+            anchor_ids = tuple(
+                _expect_nonempty_string(item, f"{member_path}.evidence_anchor_ids", max_length=256)
+                for item in _expect_array(
+                    member["evidence_anchor_ids"], f"{member_path}.evidence_anchor_ids"
+                )
+            )
+            if not anchor_ids or anchor_ids != tuple(sorted(set(anchor_ids))):
+                _fail(
+                    "invalid_root_evidence_anchors",
+                    member_path,
+                    "anchor IDs must be nonempty, sorted, and unique",
+                )
+            evidence_members.append(
+                AttestedRootEvidenceMember(
+                    _expect_nonempty_string(
+                        member["member"],
+                        f"{member_path}.member",
+                        max_length=_MAX_REPORT_PATH_LENGTH,
+                    ),
+                    _expect_sha256(member["member_sha256"], f"{member_path}.member_sha256"),
+                    anchor_ids,
+                )
+            )
+        if len({item.member for item in evidence_members}) != len(evidence_members):
+            _fail("duplicate_root_evidence_member", root_path, "evidence members must be unique")
+        if evidence_members != sorted(evidence_members, key=lambda item: item.member.encode()):
+            _fail(
+                "noncanonical_root_evidence_members", root_path, "evidence members must be sorted"
+            )
+        roots.append(
+            AttestedRootEvidence(
+                _expect_sha256(root["target_root_id"], f"{root_path}.target_root_id"),
+                _expect_sha256(
+                    root["target_occurrence_identity_sha256"],
+                    f"{root_path}.target_occurrence_identity_sha256",
+                ),
+                _expect_sha256(root["semantic_root_sha256"], f"{root_path}.semantic_root_sha256"),
+                tuple(evidence_members),
+            )
+        )
+    result = tuple(roots)
+    keys = tuple(_canonical_json(item.to_data()) for item in result)
+    if keys != tuple(sorted(set(keys))):
+        _fail("noncanonical_root_evidence", path, "root evidence must be canonically sorted")
+    return result
+
+
 def _parse_validated_report(raw: object, path: str) -> ValidatedReport:
     value = _expect_object(raw, path)
     _expect_keys(
@@ -1335,7 +1480,9 @@ def _parse_validated_report(raw: object, path: str) -> ValidatedReport:
             "dependency_digests",
             "validated_evidence_members",
             "validated_evidence_anchors",
+            "validated_root_evidence",
         },
+        optional={"raw_source_binding_revision", "raw_source_receipt_sha256s"},
     )
     report = ValidatedReport(
         validator_revision=_expect_nonempty_string(
@@ -1375,7 +1522,44 @@ def _parse_validated_report(raw: object, path: str) -> ValidatedReport:
         validated_evidence_anchors=_parse_attested_anchors(
             value["validated_evidence_anchors"], f"{path}.validated_evidence_anchors"
         ),
+        validated_root_evidence=_parse_attested_root_evidence(
+            value["validated_root_evidence"], f"{path}.validated_root_evidence"
+        ),
+        raw_source_binding_revision=(
+            _expect_nonempty_string(
+                value["raw_source_binding_revision"],
+                f"{path}.raw_source_binding_revision",
+                max_length=256,
+            )
+            if "raw_source_binding_revision" in value
+            else None
+        ),
+        raw_source_receipt_sha256s=_parse_raw_source_receipt_digests(
+            value.get("raw_source_receipt_sha256s", []),
+            f"{path}.raw_source_receipt_sha256s",
+        ),
     )
+    if (report.raw_source_binding_revision is None) != (
+        not report.raw_source_receipt_sha256s
+    ):
+        _fail(
+            "incomplete_raw_source_binding",
+            path,
+            "raw-source binding revision and receipt set must appear together",
+        )
+    if (
+        report.raw_source_binding_revision is not None
+        and report.raw_source_binding_revision
+        not in {
+            RAW_SOURCE_VALIDATION_BINDING_REVISION,
+            PACKAGE_LOCAL_VALIDATION_BINDING_REVISION,
+        }
+    ):
+        _fail(
+            "unsupported_raw_source_binding_revision",
+            f"{path}.raw_source_binding_revision",
+            "raw-source binding revision is unsupported",
+        )
     _validate_report_attestations(report, path)
     return report
 
@@ -1440,6 +1624,31 @@ def _validate_report_attestations(report: ValidatedReport, path: str) -> None:
                 f"{path}.validated_evidence_anchors[{index}].member_sha256",
                 "attested anchor member digest does not match its attested member",
             )
+    anchors = {item.id: item for item in report.validated_evidence_anchors}
+    for root_index, root in enumerate(report.validated_root_evidence):
+        for member_index, root_member in enumerate(root.evidence_members):
+            member = members.get(root_member.member)
+            member_path = (
+                f"{path}.validated_root_evidence[{root_index}].evidence_members[{member_index}]"
+            )
+            if member is None or member.sha256 != root_member.member_sha256:
+                _fail(
+                    "invalid_root_evidence_member",
+                    member_path,
+                    "root evidence member is not retained",
+                )
+            for anchor_id in root_member.evidence_anchor_ids:
+                anchor = anchors.get(anchor_id)
+                if (
+                    anchor is None
+                    or anchor.member != root_member.member
+                    or anchor.member_sha256 != root_member.member_sha256
+                ):
+                    _fail(
+                        "invalid_root_evidence_anchor",
+                        member_path,
+                        "root evidence anchor is not retained for its member",
+                    )
     reproduced_identity = hashlib.sha256(
         _canonical_json(_validated_report_identity_input(report))
     ).hexdigest()
@@ -1452,7 +1661,7 @@ def _validate_report_attestations(report: ValidatedReport, path: str) -> None:
 
 
 def _validated_report_identity_input(report: ValidatedReport) -> dict[str, object]:
-    return {
+    result: dict[str, object] = {
         "accepted": True,
         "bundle_sha256": report.bundle_sha256,
         "contract_revision": report.contract_revision,
@@ -1470,9 +1679,37 @@ def _validated_report_identity_input(report: ValidatedReport) -> dict[str, objec
         "validated_evidence_members": [
             member.to_data() for member in report.validated_evidence_members
         ],
+        "validated_root_evidence": [item.to_data() for item in report.validated_root_evidence],
         "validation_profile": report.validation_profile,
         "validator_revision": report.validator_revision,
     }
+    if report.raw_source_receipt_sha256s:
+        result["raw_source_binding_revision"] = report.raw_source_binding_revision
+        result["raw_source_receipt_sha256s"] = list(
+            report.raw_source_receipt_sha256s
+        )
+    return result
+
+
+def _parse_raw_source_receipt_digests(raw: object, path: str) -> tuple[str, ...]:
+    values = _expect_array(raw, path)
+    if len(values) > _MAX_PROVENANCE_REFERENCES:
+        _fail(
+            "raw_source_receipt_set_too_large",
+            path,
+            "raw-source receipt set exceeds its bounded limit",
+        )
+    result = tuple(
+        _expect_sha256(item, f"{path}[{index}]")
+        for index, item in enumerate(values)
+    )
+    if result != tuple(sorted(set(result))):
+        _fail(
+            "noncanonical_raw_source_receipts",
+            path,
+            "raw-source receipts must be sorted and unique",
+        )
+    return result
 
 
 def _parse_source_package(raw: object, path: str) -> SourcePackage:
@@ -1529,11 +1766,11 @@ def _parse_evidence_anchor(raw: object, path: str) -> EvidenceAnchor:
     pointer = _expect_string(value["ir_pointer"], f"{path}.ir_pointer")
     _validate_json_pointer(pointer, f"{path}.ir_pointer", allow_root=False)
     representation = _expect_string(value["representation"], f"{path}.representation")
-    if representation not in {"hex", "utf8"}:
+    if representation not in {"hex", "json-scalar", "utf8"}:
         _fail(
             "unknown_evidence_representation",
             f"{path}.representation",
-            "representation must be 'hex' or 'utf8'",
+            "representation must be 'hex', 'json-scalar', or 'utf8'",
         )
     return EvidenceAnchor(
         id=_expect_nonempty_string(value["id"], f"{path}.id", max_length=256),
@@ -1924,16 +2161,9 @@ def _validate_provenance(document: ProtocolIRDocument) -> None:
                     )
                 )
                 continue
-            for anchor_id in source_set.anchors:
-                anchor = anchors.get(anchor_id)
-                if anchor is not None and anchor.ir_pointer != binding.target:
-                    diagnostics.append(
-                        IRDiagnostic(
-                            "evidence_target_attestation_mismatch",
-                            f"{base_path}.target",
-                            f"anchor {anchor_id!r} attests {anchor.ir_pointer!r}",
-                        )
-                    )
+            # A source receipt attests where a value appeared in its own IR. The
+            # binding names the corresponding terminal-IR leaf; exact canonical
+            # value equality above authenticates that explicit remapping.
 
     if edge_count > _MAX_PROVENANCE_EDGES:
         diagnostics.append(
@@ -1949,13 +2179,10 @@ def _validate_provenance(document: ProtocolIRDocument) -> None:
 
 def _validate_provenance_expansion_bounds(document: ProtocolIRDocument) -> None:
     source_set_sizes = {
-        source_set_id: len(source_set.anchors)
-        for source_set_id, source_set in document.source_sets
+        source_set_id: len(source_set.anchors) for source_set_id, source_set in document.source_sets
     }
     direct_edges = sum(len(source_set.anchors) for _, source_set in document.source_sets)
-    direct_edges += sum(
-        len(binding.source_sets) for _, binding in document.evidence_bindings
-    )
+    direct_edges += sum(len(binding.source_sets) for _, binding in document.evidence_bindings)
     if direct_edges > _MAX_PROVENANCE_EDGES:
         _fail(
             "provenance_graph_too_large",
@@ -1970,8 +2197,7 @@ def _validate_provenance_expansion_bounds(document: ProtocolIRDocument) -> None:
                 _fail(
                     "provenance_expansion_too_large",
                     "$.evidence_bindings",
-                    "binding-to-anchor expansion exceeds "
-                    f"{_MAX_PROVENANCE_EXPANSIONS} references",
+                    f"binding-to-anchor expansion exceeds {_MAX_PROVENANCE_EXPANSIONS} references",
                 )
 
 
@@ -1995,8 +2221,18 @@ def _validate_trusted_receipts(
 
 
 def _validate_exact_evidence_coverage(document: ProtocolIRDocument) -> None:
-    expected = set(_semantic_leaf_pointers(_semantic_data(document)))
-    actual = {binding.target for _, binding in document.evidence_bindings}
+    expected = {
+        pointer
+        for pointer in _semantic_leaf_pointers(_semantic_data(document))
+        if not pointer.startswith("/domain_closure/")
+        and not pointer.endswith("/@key")
+    }
+    actual = {
+        binding.target
+        for _, binding in document.evidence_bindings
+        if not binding.target.startswith("/domain_closure/")
+        and not binding.target.endswith("/@key")
+    }
     diagnostics = _BoundedDiagnostics()
     diagnostics.extend(
         IRDiagnostic("missing_evidence_binding", pointer, "semantic leaf has no evidence binding")
@@ -2037,6 +2273,25 @@ _SEMANTIC_COLLECTION_POINTERS = frozenset(
         "/actions",
         "/expected_action_rules",
         "/command_bindings",
+        "/selectors",
+        "/selection_rules",
+        "/discovery_rules",
+        "/gatt_services",
+        "/gatt_characteristics",
+        "/transforms",
+        "/checksums",
+        "/framings",
+        "/packet_fields",
+        "/packet_builders",
+        "/authentications",
+        "/bufferings",
+        "/parser_fields",
+        "/notification_parsers",
+        "/timings",
+        "/lifecycles",
+        "/transports",
+        "/action_parameters",
+        "/action_mappings",
     }
 )
 
@@ -2407,16 +2662,18 @@ def _resolve_semantic_pointer(root: object, pointer: str) -> object:
 
 def _semantic_data(document: ProtocolIRDocument) -> dict[str, object]:
     data = document.to_data()
-    return {
-        key: cast(object, data[key])
-        for key in (
+    collection_names = getattr(
+        document,
+        "semantic_collection_names",
+        (
             "variant_spaces",
             "protocols",
             "actions",
             "expected_action_rules",
             "command_bindings",
-        )
-    }
+        ),
+    )
+    return {key: cast(object, data[key]) for key in collection_names}
 
 
 def _content_id(prefix: str, data: Mapping[str, object]) -> str:
@@ -2504,3 +2761,10 @@ def _reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict[str, object]
             raise _DuplicateKeyError(key)
         result[key] = value
     return result
+
+
+# Public structural helpers for reconciliation; evidence authorization remains separate.
+DataDefinition = _DataDefinition
+semantic_data = _semantic_data
+semantic_leaf_pointers = _semantic_leaf_pointers
+resolve_semantic_pointer = _resolve_semantic_pointer

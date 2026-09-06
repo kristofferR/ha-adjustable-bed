@@ -6,6 +6,8 @@ from .binding import (
     VALIDATION_INPUT,
     DependencyPins,
     PackageDependencyPins,
+    ValidatedRootEvidenceAttestation,
+    ValidatedRootEvidenceMember,
 )
 from .bundle import (
     BOUND_VALIDATION_PROFILE,
@@ -25,12 +27,22 @@ from .lineage import (
     TrustedProducer,
     bind_evidence_lineage,
 )
+from .raw_source import (
+    PACKAGE_LOCAL_VALIDATION_BINDING_REVISION,
+    RAW_SOURCE_VALIDATION_BINDING_REVISION,
+    RawSourceValidationError,
+    derive_package_local_validator_receipt,
+    derive_raw_source_validator_receipt,
+    validate_package_local_validator_envelope,
+)
 
 __all__ = [
     "VALIDATOR_REVISION",
     "Diagnostic",
     "DependencyPins",
     "PackageDependencyPins",
+    "ValidatedRootEvidenceAttestation",
+    "ValidatedRootEvidenceMember",
     "CONTRACT_REVISION",
     "PACKAGE_CONTRACT_REVISION",
     "BOUND_VALIDATION_PROFILE",
@@ -40,6 +52,12 @@ __all__ = [
     "VALIDATION_INPUT",
     "load_json_strict",
     "validate_report_bundle",
+    "RawSourceValidationError",
+    "PACKAGE_LOCAL_VALIDATION_BINDING_REVISION",
+    "RAW_SOURCE_VALIDATION_BINDING_REVISION",
+    "derive_raw_source_validator_receipt",
+    "derive_package_local_validator_receipt",
+    "validate_package_local_validator_envelope",
     "LINEAGE_SCHEMA_REVISION",
     "EvidenceLineageManifest",
     "EvidenceLineageTrust",
