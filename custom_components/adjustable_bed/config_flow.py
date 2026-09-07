@@ -9,6 +9,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Final, cast
+from uuid import UUID
 
 import voluptuous as vol
 from homeassistant.components.bluetooth import (
@@ -90,6 +91,7 @@ from .const import (
     BED_TYPE_JENSEN,
     BED_TYPE_KAIDI,
     BED_TYPE_LEGGETT_GEN2,
+    BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_MALOUF_LEGACY_OKIN,
@@ -124,6 +126,10 @@ from .const import (
     CONF_JENSEN_PIN,
     CONF_KAIDI_RESOLVED_VARIANT,
     CONF_LEGS_MAX_ANGLE,
+    CONF_LP_LEGACY_MODE,
+    CONF_LP_LEGACY_MODEL,
+    CONF_LP_LEGACY_READ_UUID,
+    CONF_LP_LEGACY_WRITE_UUID,
     CONF_MALOUF_LAYOUT,
     CONF_MALOUF_MEMORY_SLOTS,
     CONF_MOTOR_COUNT,
@@ -200,6 +206,7 @@ from .discovery_settings import (
     async_set_discovery_disabled,
 )
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
+from .lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
 from .pairing import (
     KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS,
     build_pair_entry_data,
@@ -617,6 +624,44 @@ def _add_cb24_side_schema_field(schema: dict[vol.Marker, Any]) -> None:
             CB24_BED_SELECTION_B: "Side B / Right",
         }
     )
+
+
+def _lp_legacy_schema(current: dict[str, Any]) -> dict[vol.Marker, Any]:
+    """Collect explicit app profile and transport choices without guessing."""
+    fields: dict[vol.Marker, Any] = {}
+    for key, validator in (
+        (CONF_LP_LEGACY_MODEL, vol.In(LP_LEGACY_PROFILE_CODES)),
+        (CONF_LP_LEGACY_MODE, vol.In({"legacy": "Legacy", "framed": "Framed"})),
+        (CONF_LP_LEGACY_WRITE_UUID, str),
+    ):
+        marker = vol.Required(key, default=current[key]) if current.get(key) else vol.Required(key)
+        fields[marker] = validator
+    fields[
+        vol.Optional(CONF_LP_LEGACY_READ_UUID, default=current.get(CONF_LP_LEGACY_READ_UUID, ""))
+    ] = str
+    return fields
+
+
+def _validate_lp_legacy_settings(data: dict[str, Any]) -> dict[str, str]:
+    """Normalize explicit selections and reject incomplete protocol settings."""
+    errors: dict[str, str] = {}
+    model = str(data.get(CONF_LP_LEGACY_MODEL, "")).strip().upper()
+    if model not in LP_LEGACY_PROFILE_CODES:
+        errors[CONF_LP_LEGACY_MODEL] = "invalid_lp_legacy_model"
+    else:
+        data[CONF_LP_LEGACY_MODEL] = model
+    if data.get(CONF_LP_LEGACY_MODE) not in {"legacy", "framed"}:
+        errors[CONF_LP_LEGACY_MODE] = "invalid_lp_legacy_mode"
+    for key in (CONF_LP_LEGACY_WRITE_UUID, CONF_LP_LEGACY_READ_UUID):
+        raw = str(data.get(key, "")).strip()
+        if key == CONF_LP_LEGACY_READ_UUID and not raw:
+            data[key] = ""
+            continue
+        try:
+            data[key] = str(UUID(raw))
+        except ValueError:
+            errors[key] = "invalid_characteristic_uuid"
+    return errors
 
 
 def _add_malouf_entry_data(
@@ -1666,6 +1711,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     entry_data[CONF_BLE_DEVICE_NAME] = self._discovery_info.name
                 _add_malouf_entry_data(entry_data, user_input, selected_bed_type)
                 _add_cb24_entry_data(entry_data, user_input, selected_bed_type)
+                if selected_bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
+                    self._manual_data = entry_data
+                    return await self.async_step_lp_legacy()
                 # Malouf layout/memory fields weren't shown inline (user overrode the
                 # detected type to Malouf), so collect them in a follow-up step.
                 if self._needs_malouf_step(selected_bed_type, user_input):
@@ -2543,6 +2591,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 }
                 _add_malouf_entry_data(entry_data, user_input, bed_type)
                 _add_cb24_entry_data(entry_data, user_input, bed_type)
+                if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
+                    self._manual_data = entry_data
+                    return await self.async_step_lp_legacy()
                 # Malouf layout/memory fields weren't shown inline (bed type was
                 # chosen from the dropdown), so collect them in a follow-up step.
                 if self._needs_malouf_step(bed_type, user_input):
@@ -2813,6 +2864,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     }
                     _add_malouf_entry_data(entry_data, user_input, bed_type)
                     _add_cb24_entry_data(entry_data, user_input, bed_type)
+                    if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
+                        self._manual_data = entry_data
+                        return await self.async_step_lp_legacy()
                     # Malouf layout/memory fields weren't shown inline (bed type was
                     # chosen from the dropdown), so collect them in a follow-up step.
                     if self._needs_malouf_step(bed_type, user_input):
@@ -2936,6 +2990,24 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     else ""
                 ),
             },
+        )
+
+    async def async_step_lp_legacy(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect the legacy L&P app's explicit profile and GATT endpoint."""
+        assert self._manual_data is not None
+        errors = _validate_lp_legacy_settings(user_input) if user_input is not None else {}
+        if user_input is not None and not errors:
+            self._manual_data.update(user_input)
+            return await self._finish_with_verify(
+                self._manual_data,
+                self._manual_data.get(CONF_NAME, "Adjustable Bed"),
+            )
+        return self.async_show_form(
+            step_id="lp_legacy",
+            data_schema=vol.Schema(_lp_legacy_schema(user_input or {})),
+            errors=errors,
         )
 
     async def async_step_manual_octo(
@@ -4557,6 +4629,14 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             data.pop(CONF_JENSEN_PIN, None)
         if bed_type != BED_TYPE_RICHMAT:
             data.pop(CONF_RICHMAT_REMOTE, None)
+        if bed_type != BED_TYPE_LEGGETT_LP_LEGACY:
+            for key in (
+                CONF_LP_LEGACY_MODEL,
+                CONF_LP_LEGACY_MODE,
+                CONF_LP_LEGACY_WRITE_UUID,
+                CONF_LP_LEGACY_READ_UUID,
+            ):
+                data.pop(key, None)
         if bed_type not in MALOUF_BED_TYPES:
             data.pop(CONF_MALOUF_LAYOUT, None)
             data.pop(CONF_MALOUF_MEMORY_SLOTS, None)
@@ -4847,7 +4927,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         )
 
         # Build schema
-        schema_dict = {
+        schema_dict: dict[vol.Marker, Any] = {
             vol.Optional(CONF_BED_TYPE, default=bed_type): SelectSelector(
                 SelectSelectorConfig(
                     options=bed_type_options,
@@ -4940,6 +5020,9 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     default=form_variant,
                 )
             ] = vol.In(variants)
+
+        if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
+            schema_dict.update(_lp_legacy_schema(current_data))
 
         # Add PIN field for Octo beds
         if bed_type == BED_TYPE_OCTO:
@@ -5144,6 +5227,22 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 self._pending_data[CONF_DISABLE_ANGLE_SENSING] = disable_angle_sensing
                 self._pending_changed_data[CONF_DISABLE_ANGLE_SENSING] = disable_angle_sensing
                 return await self._async_options_form(None, step_id=step_id)
+            if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
+                legacy_data = {**current_data, **user_input}
+                legacy_errors = _validate_lp_legacy_settings(legacy_data)
+                if legacy_errors:
+                    return self.async_show_form(
+                        step_id=step_id,
+                        data_schema=vol.Schema(schema_dict),
+                        errors=legacy_errors,
+                    )
+                for key in (
+                    CONF_LP_LEGACY_MODEL,
+                    CONF_LP_LEGACY_MODE,
+                    CONF_LP_LEGACY_WRITE_UUID,
+                    CONF_LP_LEGACY_READ_UUID,
+                ):
+                    user_input[key] = legacy_data[key]
             if bed_type == BED_TYPE_OCTO and CONF_OCTO_PIN in user_input:
                 octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
                 if not is_valid_octo_pin(octo_pin):
