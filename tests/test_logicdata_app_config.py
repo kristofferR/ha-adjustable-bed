@@ -31,7 +31,6 @@ from custom_components.adjustable_bed.const import (
     CONF_PAIR_CHILDREN,
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
-    OFFLINE_CAPABILITY_SAFE_BED_TYPES,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.pairing import build_pair_entry_data
@@ -180,7 +179,6 @@ async def test_factory_passes_explicit_settings_without_affecting_legacy():
         has_light=False,
         has_massage=False,
     )
-    assert BED_TYPE_LOGICDATA_APP in OFFLINE_CAPABILITY_SAFE_BED_TYPES
     assert BED_TYPE_LOGICDATA_APP in BEDS_WITHOUT_ANGLE_FEEDBACK
 
 

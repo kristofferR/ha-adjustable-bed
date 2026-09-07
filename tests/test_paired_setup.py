@@ -50,6 +50,7 @@ from custom_components.adjustable_bed.const import (
     CONF_LOGICDATA_APP_FAMILY,
     CONF_LOGICDATA_APP_LAYOUT,
     CONF_LOGICDATA_APP_PROFILE,
+    CONF_LOGICDATA_APP_TRANSPORT,
     CONF_MOTOR_COUNT,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
@@ -2962,14 +2963,6 @@ class TestOfflineSafeBedTypes:
             child[CONF_BED_TYPE] = bed_type
             if bed_type == BED_TYPE_SOLACE:
                 child[CONF_BLE_DEVICE_NAME] = "SealyMF Base"
-            if bed_type == BED_TYPE_LOGICDATA_APP:
-                child.update(
-                    {
-                        CONF_LOGICDATA_APP_PROFILE: "phone",
-                        CONF_LOGICDATA_APP_FAMILY: "p1",
-                        CONF_LOGICDATA_APP_LAYOUT: "standard_2",
-                    }
-                )
         entry = MockConfigEntry(
             domain=DOMAIN,
             title=bed_type,
@@ -2983,6 +2976,64 @@ class TestOfflineSafeBedTypes:
 
         await left.async_prime_offline_controller()
         assert left.capability_controller is not None, bed_type
+
+    async def test_logicdata_auto_transport_caches_discovered_rename_capability(
+        self, hass: HomeAssistant
+    ):
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
+
+        from custom_components.adjustable_bed.beds.logicdata_app import LogicdataAppController
+        from custom_components.adjustable_bed.logicdata_app_protocol import TRANSPORTS
+        from custom_components.adjustable_bed.services import _validation_controller
+
+        data = _paired_entry_data()
+        data[CONF_BED_TYPE] = BED_TYPE_LOGICDATA_APP
+        for child in data[CONF_PAIR_CHILDREN]:
+            child.update(
+                {
+                    CONF_BED_TYPE: BED_TYPE_LOGICDATA_APP,
+                    CONF_LOGICDATA_APP_PROFILE: "phone",
+                    CONF_LOGICDATA_APP_FAMILY: "p1",
+                    CONF_LOGICDATA_APP_LAYOUT: "standard_2",
+                    CONF_LOGICDATA_APP_TRANSPORT: "auto",
+                }
+            )
+        entry = MockConfigEntry(domain=DOMAIN, data=data, version=4)
+        entry.add_to_hass(hass)
+        left = _build_paired_children(hass, entry)[SIDE_LEFT]
+        await left.async_prime_offline_controller()
+        assert left.capability_controller is None
+
+        transport = TRANSPORTS["t1"]
+        chars = [
+            SimpleNamespace(uuid=uuid)
+            for uuid in (transport.write_uuid, transport.notify_uuid, transport.rename_uuid)
+        ]
+        service = SimpleNamespace(characteristics=chars)
+        client = MagicMock(is_connected=True)
+        client.services.get_service.side_effect = lambda uuid: (
+            service if uuid == transport.service_uuid else None
+        )
+        left._client = client
+        bed = LogicdataAppController(
+            left,
+            profile="phone",
+            command_family="p1",
+            layout="standard_2",
+            transport="auto",
+            has_light=True,
+            has_massage=False,
+        )
+        await bed.async_discover_capabilities()
+        left._controller = bed
+        left.cache_capability_controller()
+        left._controller = None
+        left._client = None
+        with patch.object(left, "async_ensure_connected", new_callable=AsyncMock) as connect:
+            validation = await _validation_controller(left, left, [])
+        assert validation.supports_device_rename
+        connect.assert_not_awaited()
 
     async def test_solace_offline_profile_uses_observed_ble_name(self, hass: HomeAssistant) -> None:
         data = _paired_entry_data()

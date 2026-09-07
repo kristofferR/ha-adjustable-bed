@@ -438,7 +438,6 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_SUTA,
         BED_TYPE_TIMOTION_AHF,
         BED_TYPE_LOGICDATA,
-        BED_TYPE_LOGICDATA_APP,
     }
 )
 

@@ -1,5 +1,6 @@
 """Real Home Assistant entity setup for the accepted Logicdata app profiles."""
 
+import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, call, patch
 
@@ -15,6 +16,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LOGICDATA_APP,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_LOGICDATA_APP_FAMILY,
     CONF_LOGICDATA_APP_HAS_LIGHT,
@@ -221,3 +223,51 @@ async def test_p1_normal_entities_follow_explicit_light_and_massage_options(
     assert massage_keys == (
         {"massage_head_intensity", "massage_foot_intensity"} if enabled else set()
     )
+
+
+async def test_phone_clock_reply_keeps_scheduler_out_of_its_disconnect_path(
+    hass, mock_coordinator_connected, app_ble, enable_custom_integrations
+):
+    entry = _entry(hass)
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_DISCONNECT_AFTER_COMMAND: True}
+    )
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    bed = coordinator.controller
+    app_ble.disconnect.reset_mock()
+    bed._notification_handler(SimpleNamespace(uuid=NOTIFY_UUID), bytearray.fromhex("f2f250000000"))
+    await asyncio.wait_for(bed._clock_task, timeout=1)
+    assert bed._clock_task.done()
+    app_ble.disconnect.assert_not_awaited()
+
+
+async def test_timed_move_uses_fixed_app_cadence_despite_user_pulse_setting(
+    hass, mock_coordinator_connected, app_ble, enable_custom_integrations
+):
+    from custom_components.adjustable_bed.services import _timed_move_plan
+
+    entry = _entry(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator._motor_pulse_delay_ms = 500
+    _, count, delay, _ = await _timed_move_plan(coordinator, coordinator, [], "back", "up", 1000)
+    assert (count, delay) == (11, 100)
+
+
+async def test_new_dynamic_entities_have_localized_names(
+    hass, mock_coordinator_connected, app_ble, enable_custom_integrations
+):
+    entry = _entry(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    registry = er.async_get(hass)
+    for domain, key, name in (
+        ("cover", "both", "Back and legs"),
+        ("sensor", "logicdata_app_family_match", "Command family matches"),
+        ("sensor", "logicdata_app_alarm", "Bed alarm"),
+    ):
+        entity = registry.async_get(_entity_id(hass, domain, key))
+        assert entity.original_name == name

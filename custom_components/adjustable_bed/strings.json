@@ -1675,6 +1675,9 @@
       },
       "both_backs": {
         "name": "Both backs"
+      },
+      "both": {
+        "name": "Back and legs"
       }
     },
     "sensor": {
@@ -1785,6 +1788,12 @@
       },
       "massage_timer_mode_both": {
         "name": "Both sides: Massage: Timer Mode"
+      },
+      "logicdata_app_family_match": {
+        "name": "Command family matches"
+      },
+      "logicdata_app_alarm": {
+        "name": "Bed alarm"
       }
     },
     "light": {

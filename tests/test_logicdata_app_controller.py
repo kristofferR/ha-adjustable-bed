@@ -258,7 +258,8 @@ async def test_clock_response_uses_coordinator_and_tablet_has_no_writer(coordina
     coordinator.async_execute_controller_command.assert_awaited_once()
     callback = coordinator.async_execute_controller_command.call_args.args[0]
     assert coordinator.async_execute_controller_command.call_args.kwargs == {
-        "cancel_running": False
+        "cancel_running": False,
+        "skip_disconnect": True,
     }
     await callback(bed)
     assert packets(coordinator)[0][:4] == bytes.fromhex("f1f15007")

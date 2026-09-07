@@ -79,6 +79,10 @@ class LogicdataAppController(BedController):
     def requires_notification_channel(self) -> bool:
         return True
 
+    def motor_pulse_settings(self) -> tuple[int, int]:
+        """Report the app cadence to generic timed-movement planning."""
+        return self._coordinator.motor_pulse_count, protocol.MOVEMENT_REPEAT_MS
+
     @property
     def memory_slot_count(self) -> int:
         return 2
@@ -538,7 +542,9 @@ class LogicdataAppController(BedController):
                 await controller._sync_clock()
 
         try:
-            await self._coordinator.async_execute_controller_command(send, cancel_running=False)
+            await self._coordinator.async_execute_controller_command(
+                send, cancel_running=False, skip_disconnect=True
+            )
         except ConnectionError, ValueError:
             _LOGGER.debug("Unable to answer MOTIONrelax clock request", exc_info=True)
 
