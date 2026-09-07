@@ -88,6 +88,7 @@ from .const import (
     ALL_PROTOCOL_VARIANTS,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_JENSEN,
+    BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
@@ -122,6 +123,10 @@ from .const import (
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
     CONF_JENSEN_PIN,
+    CONF_JIECANG_APP_HAS_LIGHT,
+    CONF_JIECANG_APP_LAYOUT,
+    CONF_JIECANG_APP_PROFILE,
+    CONF_JIECANG_APP_TRANSPORT,
     CONF_KAIDI_RESOLVED_VARIANT,
     CONF_LEGS_MAX_ANGLE,
     CONF_MALOUF_LAYOUT,
@@ -156,6 +161,9 @@ from .const import (
     DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
+    JIECANG_APP_LAYOUTS,
+    JIECANG_APP_PROFILES,
+    JIECANG_APP_TRANSPORTS,
     LEGGETT_VARIANT_GEN2,
     MALOUF_LAYOUT_AUTO,
     MALOUF_LAYOUTS,
@@ -606,6 +614,41 @@ def _add_malouf_schema_fields(schema: dict[vol.Marker, Any]) -> None:
     )
 
 
+def _add_jiecang_app_schema_fields(
+    schema: dict[vol.Marker, Any], current_data: dict[str, Any] | None = None
+) -> None:
+    """Require the app and physical layout, neither is identified by shared UUIDs."""
+    current_data = current_data or {}
+    for key, choices in (
+        (CONF_JIECANG_APP_PROFILE, JIECANG_APP_PROFILES),
+        (CONF_JIECANG_APP_LAYOUT, JIECANG_APP_LAYOUTS),
+    ):
+        default = current_data.get(key, vol.UNDEFINED)
+        schema[vol.Required(key, default=default)] = vol.In(choices)
+    schema[
+        vol.Optional(
+            CONF_JIECANG_APP_TRANSPORT,
+            default=current_data.get(CONF_JIECANG_APP_TRANSPORT, "auto"),
+        )
+    ] = vol.In(JIECANG_APP_TRANSPORTS)
+    schema[
+        vol.Optional(
+            CONF_JIECANG_APP_HAS_LIGHT,
+            default=current_data.get(CONF_JIECANG_APP_HAS_LIGHT, True),
+        )
+    ] = bool
+
+
+def _jiecang_app_errors(data: dict[str, Any]) -> dict[str, str]:
+    """Require explicit app and layout selection without inferring hardware."""
+    errors = {}
+    if data.get(CONF_JIECANG_APP_PROFILE) not in JIECANG_APP_PROFILES:
+        errors[CONF_JIECANG_APP_PROFILE] = "jiecang_app_required"
+    if data.get(CONF_JIECANG_APP_LAYOUT) not in JIECANG_APP_LAYOUTS:
+        errors[CONF_JIECANG_APP_LAYOUT] = "jiecang_app_required"
+    return errors
+
+
 def _add_cb24_side_schema_field(schema: dict[vol.Marker, Any]) -> None:
     """Expose the legacy CB24 native A/B selector when the type is known."""
     schema[
@@ -858,6 +901,24 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return self.async_show_form(
             step_id=step_id,
             data_schema=vol.Schema(schema_dict),
+        )
+
+    async def async_step_jiecang_app(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect the explicit app profile and physical controls for any setup path."""
+        assert self._manual_data is not None
+        errors = _jiecang_app_errors(user_input) if user_input is not None else {}
+        if user_input is not None and not errors:
+            self._manual_data.update(user_input)
+            self._manual_data[CONF_DISABLE_ANGLE_SENSING] = True
+            return await self._finish_with_verify(
+                self._manual_data, self._manual_data.get(CONF_NAME, "Adjustable Bed")
+            )
+        schema: dict[vol.Marker, Any] = {}
+        _add_jiecang_app_schema_fields(schema, user_input)
+        return self.async_show_form(
+            step_id="jiecang_app", data_schema=vol.Schema(schema), errors=errors
         )
 
     @staticmethod
@@ -1664,6 +1725,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 }
                 if selected_bed_type == BED_TYPE_SOLACE and self._discovery_info.name:
                     entry_data[CONF_BLE_DEVICE_NAME] = self._discovery_info.name
+                if selected_bed_type == BED_TYPE_JIECANG_APP:
+                    self._manual_data = entry_data
+                    return await self.async_step_jiecang_app()
                 _add_malouf_entry_data(entry_data, user_input, selected_bed_type)
                 _add_cb24_entry_data(entry_data, user_input, selected_bed_type)
                 # Malouf layout/memory fields weren't shown inline (user overrode the
@@ -2541,6 +2605,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
                     ),
                 }
+                if bed_type == BED_TYPE_JIECANG_APP:
+                    self._manual_data = entry_data
+                    return await self.async_step_jiecang_app()
                 _add_malouf_entry_data(entry_data, user_input, bed_type)
                 _add_cb24_entry_data(entry_data, user_input, bed_type)
                 # Malouf layout/memory fields weren't shown inline (bed type was
@@ -2811,6 +2878,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
                         ),
                     }
+                    if bed_type == BED_TYPE_JIECANG_APP:
+                        self._manual_data = entry_data
+                        return await self.async_step_jiecang_app()
                     _add_malouf_entry_data(entry_data, user_input, bed_type)
                     _add_cb24_entry_data(entry_data, user_input, bed_type)
                     # Malouf layout/memory fields weren't shown inline (bed type was
@@ -4557,6 +4627,14 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             data.pop(CONF_JENSEN_PIN, None)
         if bed_type != BED_TYPE_RICHMAT:
             data.pop(CONF_RICHMAT_REMOTE, None)
+        if bed_type != BED_TYPE_JIECANG_APP:
+            for key in (
+                CONF_JIECANG_APP_PROFILE,
+                CONF_JIECANG_APP_LAYOUT,
+                CONF_JIECANG_APP_TRANSPORT,
+                CONF_JIECANG_APP_HAS_LIGHT,
+            ):
+                data.pop(key, None)
         if bed_type not in MALOUF_BED_TYPES:
             data.pop(CONF_MALOUF_LAYOUT, None)
             data.pop(CONF_MALOUF_MEMORY_SLOTS, None)
@@ -4847,7 +4925,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         )
 
         # Build schema
-        schema_dict = {
+        schema_dict: dict[vol.Marker, Any] = {
             vol.Optional(CONF_BED_TYPE, default=bed_type): SelectSelector(
                 SelectSelectorConfig(
                     options=bed_type_options,
@@ -4971,6 +5049,9 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     default=current_remote,
                 )
             ] = vol.In(remote_options)
+
+        if bed_type == BED_TYPE_JIECANG_APP:
+            _add_jiecang_app_schema_fields(schema_dict, current_data)
 
         if bed_type in MALOUF_BED_TYPES:
             schema_dict[
@@ -5144,6 +5225,13 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 self._pending_data[CONF_DISABLE_ANGLE_SENSING] = disable_angle_sensing
                 self._pending_changed_data[CONF_DISABLE_ANGLE_SENSING] = disable_angle_sensing
                 return await self._async_options_form(None, step_id=step_id)
+            if bed_type == BED_TYPE_JIECANG_APP:
+                app_errors = _jiecang_app_errors({**current_data, **user_input})
+                if app_errors:
+                    return self.async_show_form(
+                        step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
+                    )
+                user_input[CONF_DISABLE_ANGLE_SENSING] = True
             if bed_type == BED_TYPE_OCTO and CONF_OCTO_PIN in user_input:
                 octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
                 if not is_valid_octo_pin(octo_pin):

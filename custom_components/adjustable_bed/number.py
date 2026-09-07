@@ -180,6 +180,16 @@ MASSAGE_NUMBER_DESCRIPTIONS: tuple[AdjustableBedMassageNumberEntityDescription, 
         massage_zone="foot",
     ),
     AdjustableBedMassageNumberEntityDescription(
+        key="massage_right_intensity",
+        translation_key="massage_right_intensity",
+        icon="mdi:vibrate",
+        native_min_value=0,
+        native_max_value=10,
+        native_step=1,
+        mode=NumberMode.SLIDER,
+        massage_zone="right",
+    ),
+    AdjustableBedMassageNumberEntityDescription(
         key="massage_wave_intensity",
         translation_key="massage_wave_intensity",
         icon="mdi:vibrate",
@@ -795,6 +805,7 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
             "all": "intensity",
             "head": "head_intensity",
             "foot": "foot_intensity",
+            "right": "right_intensity",
             "wave": "wave_intensity",
         }
         state_key = key_map.get(zone)

@@ -471,6 +471,152 @@ solace_set_alarm:
         select:
           options: [both, left, right]
 
+jiecang_set_alarm:
+  name: Set Jiecang clock alarm
+  description: Configure the controller's recurring alarm with a preset and massage levels.
+  fields:
+    device_id:
+      name: Device
+      description: A Jiecang app controller that supports clock alarms.
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    enabled:
+      name: Enabled
+      required: true
+      selector:
+        boolean:
+    time:
+      name: Time
+      description: Alarm time on the controller's local clock, to the nearest minute.
+      selector:
+        time:
+    weekdays:
+      name: Weekdays
+      selector:
+        select:
+          multiple: true
+          options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+    preset:
+      name: Bed preset
+      default: flat
+      selector:
+        select:
+          options: [flat, zero_g, anti_snore, memory_1, memory_2, yoga]
+    head_level:
+      name: Head massage level
+      description: Alarm massage intensity, with 0 for off and 1 to 3 for increasing intensity.
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 3
+          step: 1
+          mode: box
+    foot_level:
+      name: Foot massage level
+      description: Alarm massage intensity, with 0 for off and 1 to 3 for increasing intensity.
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 3
+          step: 1
+          mode: box
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
+
+jiecang_wake:
+  name: Start Jiecang wake routine
+  description: Move to a preset and start the selected wake massage levels immediately.
+  fields:
+    device_id:
+      name: Device
+      description: A Jiecang app controller that supports wake routines.
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    preset:
+      name: Bed preset
+      default: flat
+      selector:
+        select:
+          options: [flat, zero_g, anti_snore, memory_1, memory_2]
+    head_level:
+      name: Head massage level
+      description: Wake massage intensity, with 0 for off and 1 to 3 for increasing intensity.
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 3
+          step: 1
+          mode: box
+    foot_level:
+      name: Foot massage level
+      description: Wake massage intensity, with 0 for off and 1 to 3 for increasing intensity.
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 3
+          step: 1
+          mode: box
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
+
+jiecang_stop_wake:
+  name: Stop Jiecang wake massage
+  description: Stop active wake massage without disabling the stored weekly clock alarm.
+  fields:
+    device_id:
+      name: Device
+      description: A Jiecang app controller that supports wake routines.
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
+
+jiecang_rename:
+  name: Rename Jiecang controller
+  description: Change the Bluetooth name of a compatible Jiecang app controller.
+  fields:
+    device_id:
+      name: Device
+      description: A Jiecang app controller that supports device renaming.
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    name:
+      name: Name
+      description: New Bluetooth name, using 1 to 20 ASCII letters or digits.
+      required: true
+      selector:
+        text:
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
+
 generate_support_bundle:
   name: Generate Support Bundle
   description: Capture the full adjustable-bed support bundle. This combines BLE diagnostics, pairing evidence, adapter and ESPHome proxy health, GATT details, scanner state, up to 30 ranked nearby Bluetooth devices, command trace, and recent integration logs into one JSON file. Nearby device names and addresses are included.
