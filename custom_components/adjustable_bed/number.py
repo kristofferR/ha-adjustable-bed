@@ -19,6 +19,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .beds.base import PositionNumberSpec
 from .const import (
+    BED_TYPE_JIECANG_APP,
     BED_TYPE_LINAK,
     BED_TYPE_SLEEPSTAR,
     BED_TYPE_SOLACE,
@@ -394,6 +395,14 @@ def _number_entities_for(
                     )
                     entities.append(AdjustableBedMassageNumber(coordinator, massage_adjusted))
 
+    if bed_type == BED_TYPE_JIECANG_APP and controller is not None:
+        active_zones = (
+            set(controller.massage_intensity_zones)
+            if has_massage and controller.supports_massage_intensity_control
+            else set()
+        )
+        _async_remove_stale_massage_entities(hass, coordinator, active_zones)
+
     # Set up light level number entity (only for beds that support it)
     if controller is not None and controller.supports_light_level_control:
         max_level = controller.light_level_max
@@ -413,7 +422,7 @@ def _number_entities_for(
             mode=NumberMode.SLIDER,
         )
         entities.append(AdjustableBedLightLevelNumber(coordinator, light_adjusted))
-    elif bed_type == BED_TYPE_SOLACE and controller is not None:
+    elif bed_type in (BED_TYPE_SOLACE, BED_TYPE_JIECANG_APP) and controller is not None:
         _async_remove_stale_light_level_entity(hass, coordinator)
 
     sleep_number_sides = controller.sleep_number_setting_sides if controller else ()
@@ -583,7 +592,7 @@ def _async_remove_stale_light_level_entity(
     hass: HomeAssistant,
     coordinator: AdjustableBedCoordinator,
 ) -> None:
-    """Remove the broad legacy Solace brightness number from narrowed profiles."""
+    """Remove brightness when the current profile no longer exposes it."""
     registry = er.async_get(hass)
     entity_id = registry.async_get_entity_id(
         "number",
@@ -592,6 +601,23 @@ def _async_remove_stale_light_level_entity(
     )
     if entity_id is not None:
         registry.async_remove(entity_id)
+
+
+def _async_remove_stale_massage_entities(
+    hass: HomeAssistant,
+    coordinator: AdjustableBedCoordinator,
+    active_zones: set[str],
+) -> None:
+    """Remove intensity numbers for zones dropped by the selected app layout."""
+    registry = er.async_get(hass)
+    for description in MASSAGE_NUMBER_DESCRIPTIONS:
+        if description.massage_zone in active_zones:
+            continue
+        entity_id = registry.async_get_entity_id(
+            "number", DOMAIN, coordinator.entity_unique_id(description.key)
+        )
+        if entity_id is not None:
+            registry.async_remove(entity_id)
 
 
 def _async_remove_stale_position_entities(

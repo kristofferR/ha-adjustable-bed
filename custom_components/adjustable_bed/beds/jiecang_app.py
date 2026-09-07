@@ -349,6 +349,12 @@ class JiecangAppController(BedController):
 
         return tuple(spec(axis) for axis in protocol.layout_axes(self.layout))
 
+    @property
+    def stale_motor_entity_keys(self) -> frozenset[str]:
+        return frozenset(
+            axis for layout in protocol.LAYOUTS for axis in protocol.layout_axes(layout)
+        )
+
     @staticmethod
     async def _dispatch_axis(controller: BedController, axis: protocol.Axis, up: bool) -> None:
         """A retained entity spec must operate on the newly connected controller."""

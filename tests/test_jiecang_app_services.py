@@ -32,6 +32,7 @@ async def service_target(hass: HomeAssistant):
     await async_register_services(hass)
     controller = SimpleNamespace(
         supports_clock_alarm=True,
+        supports_preset_yoga=True,
         supports_wake_routine=True,
         supports_device_rename=True,
         configure_clock_alarm=AsyncMock(),
@@ -104,6 +105,29 @@ async def test_alarm_can_be_disabled_with_default_fields(hass: HomeAssistant, se
         head_level=0,
         foot_level=0,
     )
+
+
+async def test_yoga_alarm_validates_every_target_before_writing(
+    hass: HomeAssistant, service_target
+):
+    coordinator, controller, resolve = service_target
+    unsupported = MagicMock(spec=AdjustableBedCoordinator)
+    unsupported.name = "Controller without Yoga"
+    unsupported.bed_type = BED_TYPE_JIECANG_APP
+    unsupported.capability_controller = SimpleNamespace(
+        supports_clock_alarm=True, supports_preset_yoga=False
+    )
+    resolve.return_value = ([(coordinator, SIDE_BOTH), (unsupported, SIDE_BOTH)], [])
+    with pytest.raises(ServiceValidationError, match="does not support Yoga alarms"):
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_JIECANG_SET_ALARM,
+            {"device_id": ["bed", "other"], "enabled": True, "preset": "yoga"},
+            blocking=True,
+        )
+    controller.configure_clock_alarm.assert_not_awaited()
+    coordinator.async_execute_controller_command.assert_not_awaited()
+    unsupported.async_execute_controller_command.assert_not_called()
 
 
 async def test_wake_uses_coordinator_cancellation(hass: HomeAssistant, service_target):

@@ -275,3 +275,107 @@ async def test_split_series_right_massage_slider_dispatches_and_reads_its_own_zo
     assert float(hass.states.get(head_id).state) == 0
     assert float(hass.states.get(foot_id).state) == 0
     assert coordinator.controller.get_massage_state()["right_intensity"] == 2
+
+
+@pytest.mark.parametrize(
+    ("old_layout", "new_layout", "removed_covers", "removed_numbers", "retained_numbers"),
+    [
+        (
+            "standard_4_bilateral",
+            "standard_2",
+            {"right_back", "right_legs", "both_backs", "both_legs"},
+            {"massage_right_intensity"},
+            {"massage_head_intensity", "massage_foot_intensity"},
+        ),
+        (
+            "split_series",
+            "standard_4_bilateral",
+            set(),
+            {"massage_foot_intensity", "light_level"},
+            {"massage_head_intensity", "massage_right_intensity"},
+        ),
+        (
+            "standard_2",
+            "standard_3_neck",
+            {"both"},
+            set(),
+            {"massage_head_intensity", "massage_foot_intensity", "light_level"},
+        ),
+    ],
+)
+async def test_reload_removes_entities_dropped_by_layout_change(
+    hass,
+    mock_coordinator_connected,
+    app_ble,
+    enable_custom_integrations,
+    old_layout,
+    new_layout,
+    removed_covers,
+    removed_numbers,
+    retained_numbers,
+):
+    entry = _entry(hass, old_layout)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    registry = er.async_get(hass)
+    for domain, keys in (("cover", removed_covers), ("number", removed_numbers)):
+        for key in keys:
+            _entity_id(hass, domain, key)
+    retained_ids = {
+        key: _entity_id(hass, "number", key)
+        for key in retained_numbers
+        if registry.async_get_entity_id("number", DOMAIN, f"{ADDRESS}_{key}")
+    }
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_JIECANG_APP_LAYOUT: new_layout}
+    )
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    for domain, keys in (("cover", removed_covers), ("number", removed_numbers)):
+        for key in keys:
+            assert registry.async_get_entity_id(domain, DOMAIN, f"{ADDRESS}_{key}") is None
+    for key in retained_numbers:
+        actual = _entity_id(hass, "number", key)
+        if key in retained_ids:
+            assert actual == retained_ids[key]
+        assert hass.states.get(actual).state != "unavailable"
+
+
+@pytest.mark.parametrize(
+    ("option", "removed_keys", "retained_keys"),
+    [
+        (
+            CONF_JIECANG_APP_HAS_LIGHT,
+            {"light_level"},
+            {"massage_head_intensity", "massage_foot_intensity"},
+        ),
+        (CONF_HAS_MASSAGE, {"massage_head_intensity", "massage_foot_intensity"}, {"light_level"}),
+    ],
+)
+async def test_reload_removes_numbers_for_disabled_optional_features(
+    hass,
+    mock_coordinator_connected,
+    app_ble,
+    enable_custom_integrations,
+    option,
+    removed_keys,
+    retained_keys,
+):
+    entry = _entry(hass, "standard_2")
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    for key in removed_keys | retained_keys:
+        _entity_id(hass, "number", key)
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    hass.config_entries.async_update_entry(entry, data={**entry.data, option: False})
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    registry = er.async_get(hass)
+    for key in removed_keys:
+        assert registry.async_get_entity_id("number", DOMAIN, f"{ADDRESS}_{key}") is None
+    for key in retained_keys:
+        assert hass.states.get(_entity_id(hass, "number", key)).state != "unavailable"

@@ -1406,6 +1406,10 @@ async def handle_jiecang_set_alarm(call: ServiceCall) -> None:
         )
 
     try:
+        if call.data[ATTR_PRESET] == "yoga":
+            preflighted.extend(
+                await _preflight_capability(targets, "supports_preset_yoga", "Yoga alarms")
+            )
         for coordinator, side in targets:
             await _execute_sided(
                 coordinator, side, program, cancel_running=False, resource="configuration"
