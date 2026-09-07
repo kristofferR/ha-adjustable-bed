@@ -27,6 +27,8 @@ prefix nor a remote code proves the packet mode.
 
 Choosing a different layout changes the available controls. I0RM has no proven
 bed commands in this app and therefore exposes no remote action buttons.
+For paired beds with separate addresses, each side's stored profile provides its
+remote buttons even when that side is unavailable during startup.
 Changing the layout or packet mode creates distinct action entities. Update
 automations to use those new entities; old actions remain unavailable instead
 of being silently reassigned to different commands.
