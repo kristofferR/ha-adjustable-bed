@@ -14,6 +14,7 @@ import asyncio
 import contextlib
 import logging
 from collections.abc import AsyncIterator, Callable, Collection, Coroutine
+from decimal import Decimal, InvalidOperation
 from typing import TYPE_CHECKING, Any, cast
 
 import voluptuous as vol
@@ -29,6 +30,7 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
+    BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LINAK,
     BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
@@ -40,6 +42,7 @@ from .const import (
     SIDE_LEFT,
     SIDE_RIGHT,
     bed_type_has_position_feedback,
+    resolve_explicit_bed_type,
 )
 from .coordinator import AdjustableBedCoordinator
 from .paired_coordinator import PairedBedCoordinator, SingleAddressPairedCoordinator
@@ -70,6 +73,9 @@ SERVICE_LINAK_RENAME = "linak_rename"
 SERVICE_LINAK_SET_ALARM = "linak_set_alarm"
 SERVICE_SOLACE_AUDIO = "solace_audio"
 SERVICE_SOLACE_SET_ALARM = "solace_set_alarm"
+SERVICE_LEGGETT_SLEEP_TIMER = "leggett_sleep_timer"
+SERVICE_LEGGETT_ALARM_TIMER = "leggett_alarm_timer"
+SERVICE_LEGGETT_HOLD_CONTROL = "leggett_hold_control"
 
 # Service call attributes
 ATTR_PRESET = "preset"
@@ -102,6 +108,9 @@ ATTR_MASSAGE = "massage"
 ATTR_SOUND = "sound"
 ATTR_TRACK = "track"
 ATTR_VOLUME = "volume"
+ATTR_MINUTES = "minutes"
+ATTR_DURATION = "duration"
+ATTR_CONTROL = "control"
 
 LINAK_MOTOR_OPTIONS = ("base", "feet", "head", "legs", "back")
 LINAK_DIRECTION_OPTIONS = ("up", "down")
@@ -145,6 +154,20 @@ TIMED_MOVE_MOTOR_OPTIONS = (
     "lumbar",
     "bed_height",
     "stair",
+)
+LEGGETT_HELD_CONTROLS = (
+    "flat",
+    "snore",
+    "lights_toggle",
+    "massage_toggle",
+    "massage_wave",
+    "massage_head_up",
+    "massage_head_down",
+    "massage_foot_up",
+    "massage_foot_down",
+    "memory_1",
+    "memory_2",
+    "store",
 )
 
 # Default capture duration for diagnostics (seconds)
@@ -1359,6 +1382,137 @@ async def handle_solace_set_alarm(call: ServiceCall) -> None:
         raise
 
 
+async def _preflight_leggett(
+    targets: list[tuple[BedTarget, str]], capability: str, label: str
+) -> PreflightedSides:
+    """Check exact protocol and capability before commanding any physical side."""
+    for coordinator, side in targets:
+        for target in _command_targets(coordinator, side):
+            bed_type = resolve_explicit_bed_type(
+                target.bed_type, target.entry.data.get(CONF_PROTOCOL_VARIANT)
+            )
+            if bed_type != BED_TYPE_LEGGETT_OKIN:
+                raise ServiceValidationError(
+                    f"Device '{target.name}' is not a Leggett Okin controller"
+                )
+    return await _preflight_capability(targets, capability, label)
+
+
+def _leggett_integer(value: object) -> int:
+    """Reject fractional or Boolean values before timer parameters are sent."""
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise vol.Invalid("Value must be a whole number")
+    return value
+
+
+def _leggett_hold_seconds(value: object) -> Decimal:
+    """Accept bounded seconds that convert exactly to whole milliseconds."""
+    try:
+        duration = Decimal(str(value))
+    except InvalidOperation as err:
+        raise vol.Invalid("Duration must be a number of seconds") from err
+    if not duration.is_finite() or not Decimal("0.1") <= duration <= 60:
+        raise vol.Invalid("Duration must be between 0.1 and 60 seconds")
+    milliseconds = int(duration * 1000)
+    if duration != Decimal(milliseconds) / 1000:
+        raise vol.Invalid("Duration must resolve to whole milliseconds")
+    return duration
+
+
+async def _handle_leggett_timer(call: ServiceCall, *, alarm: bool) -> None:
+    """Validate all timer targets, then program or cancel each through its queue."""
+    start = call.data[ATTR_ACTION] == "start"
+    minutes = call.data.get(ATTR_MINUTES)
+    if start and minutes is None:
+        raise ServiceValidationError("Starting a timer requires minutes")
+    memory_num = call.data.get(ATTR_PRESET, 1)
+    targets, missing = _resolve_sided_targets(
+        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    preflighted = await _preflight_leggett(
+        targets,
+        "supports_alarm_timer" if alarm else "supports_sleep_timer",
+        "Leggett alarm timers" if alarm else "Leggett sleep timers",
+    )
+    try:
+        if start and not alarm:
+            for coordinator, side in targets:
+                for target in _command_targets(coordinator, side):
+                    controller = await _validation_controller(coordinator, target, preflighted)
+                    if memory_num not in controller.sleep_timer_memory_options:
+                        raise ServiceValidationError(
+                            f"Device '{target.name}' does not support sleep action {memory_num}"
+                        )
+                    options = controller.sleep_timer_duration_options
+                    if options and minutes not in options:
+                        raise ServiceValidationError(
+                            f"Device '{target.name}' requires a sleep duration from {options} minutes"
+                        )
+
+        async def timer(controller: BedController) -> None:
+            if start:
+                assert minutes is not None
+                if alarm:
+                    await controller.set_alarm_timer(minutes)
+                else:
+                    await controller.set_sleep_timer(minutes, memory_num)
+            elif alarm:
+                await controller.cancel_alarm_timer()
+            else:
+                await controller.cancel_sleep_timer()
+
+        for coordinator, side in targets:
+            await _execute_sided(
+                coordinator, side, timer, cancel_running=False, resource="configuration"
+            )
+    except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
+async def handle_leggett_sleep_timer(call: ServiceCall) -> None:
+    """Start or cancel the profile's delayed-preset timer."""
+    await _handle_leggett_timer(call, alarm=False)
+
+
+async def handle_leggett_alarm_timer(call: ServiceCall) -> None:
+    """Start or cancel the profile's alarm delay."""
+    await _handle_leggett_timer(call, alarm=True)
+
+
+async def handle_leggett_hold_control(call: ServiceCall) -> None:
+    """Run one supported held control, including its release cleanup."""
+    control = call.data[ATTR_CONTROL]
+    duration_ms = int(call.data[ATTR_DURATION] * 1000)
+    targets, missing = _resolve_sided_targets(
+        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    preflighted = await _preflight_leggett(
+        targets, "supports_held_control", "Leggett held controls"
+    )
+    try:
+        for coordinator, side in targets:
+            for target in _command_targets(coordinator, side):
+                controller = await _validation_controller(coordinator, target, preflighted)
+                if control not in controller.held_control_options:
+                    raise ServiceValidationError(
+                        f"Device '{target.name}' does not support held control '{control}'"
+                    )
+
+        async def hold(controller: BedController) -> None:
+            await controller.hold_control(control, duration_ms)
+
+        for coordinator, side in targets:
+            await _execute_sided(coordinator, side, hold, cancel_running=True)
+    except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
 async def handle_generate_support_bundle(call: ServiceCall) -> None:
     """Handle generate_support_bundle service call."""
     hass = call.hass
@@ -1793,6 +1947,52 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 vol.Optional(ATTR_MODE, default="no_action"): vol.In(SOLACE_ALARM_MODES),
                 vol.Optional(ATTR_MASSAGE, default=False): cv.boolean,
                 vol.Optional(ATTR_SOUND, default="alarm"): vol.In(SOLACE_ALARM_SOUNDS),
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_LEGGETT_SLEEP_TIMER,
+        handle_leggett_sleep_timer,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_ACTION): vol.In(("start", "cancel")),
+                vol.Optional(ATTR_MINUTES): vol.All(
+                    _leggett_integer, vol.Range(min=1, max=1439)
+                ),
+                vol.Optional(ATTR_PRESET, default=1): vol.All(
+                    _leggett_integer, vol.Range(min=0, max=4)
+                ),
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_LEGGETT_ALARM_TIMER,
+        handle_leggett_alarm_timer,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_ACTION): vol.In(("start", "cancel")),
+                vol.Optional(ATTR_MINUTES): vol.All(
+                    _leggett_integer, vol.Range(min=1, max=1440)
+                ),
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_LEGGETT_HOLD_CONTROL,
+        handle_leggett_hold_control,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_CONTROL): vol.In(LEGGETT_HELD_CONTROLS),
+                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
                 **SIDE_FIELD,
             }
         ),

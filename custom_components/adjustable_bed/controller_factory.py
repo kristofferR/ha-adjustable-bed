@@ -72,6 +72,7 @@ from .const import (
     CB1322_MANUFACTURER_MARKERS,
     CONF_KAIDI_PRODUCT_ID,
     CONF_KAIDI_SOFA_ACU_NO,
+    CONF_LEGGETT_APP_PROFILE,
     DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
     DEWERTOKIN_RF_GATEWAY_MODEL,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
@@ -90,6 +91,7 @@ from .const import (
     KEESON_VARIANT_SERTA,
     KEESON_VARIANT_SINO,
     KEESON_VARIANT_SLEEP_HARMONY,
+    LEGGETT_APP_DEFAULT_PROFILE,
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
     LINAK_VARIANT_PERFORMANCE,
@@ -271,7 +273,6 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_OKIN_ORE: _ControllerSpec("okin_ore", "OkinOreController"),
     BED_TYPE_MALOUF_NEW_OKIN: _ControllerSpec("malouf", "MaloufNewOkinController"),
     BED_TYPE_MALOUF_LEGACY_OKIN: _ControllerSpec("malouf", "MaloufLegacyOkinController"),
-    BED_TYPE_LEGGETT_OKIN: _ControllerSpec("leggett_okin", "LeggettOkinController"),
     BED_TYPE_LEGGETT_WILINKE: _ControllerSpec("leggett_wilinke", "LeggettWilinkeController"),
     # OKIN FFE uses the Keeson protocol with an 0xE6 prefix.
     BED_TYPE_OKIN_FFE: _ControllerSpec(
@@ -430,6 +431,15 @@ async def create_controller(
         # Pass the configured variant (remote code) to the controller
         _LOGGER.debug("Using Okin UUID variant: %s", variant)
         return OkinUuidController(coordinator, variant=variant)
+
+    if bed_type == BED_TYPE_LEGGETT_OKIN:
+        from .beds.leggett_okin import LeggettOkinController
+
+        entry_data = getattr(getattr(coordinator, "entry", None), "data", {})
+        return LeggettOkinController(
+            coordinator,
+            app_profile=entry_data.get(CONF_LEGGETT_APP_PROFILE, LEGGETT_APP_DEFAULT_PROFILE),
+        )
 
     if bed_type == BED_TYPE_KAIDI:
         from .beds.kaidi import KaidiController
@@ -736,7 +746,11 @@ async def create_controller(
             from .beds.leggett_okin import LeggettOkinController
 
             _LOGGER.debug("Using Okin Leggett & Platt variant (configured)")
-            return LeggettOkinController(coordinator)
+            entry_data = getattr(getattr(coordinator, "entry", None), "data", {})
+            return LeggettOkinController(
+                coordinator,
+                app_profile=entry_data.get(CONF_LEGGETT_APP_PROFILE, LEGGETT_APP_DEFAULT_PROFILE),
+            )
         elif protocol_variant in (None, "", "auto"):
             # Auto-detect: check if WiLinke service UUID is available (indicates MlRM)
             if client is None:

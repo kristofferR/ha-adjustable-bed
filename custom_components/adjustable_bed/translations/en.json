@@ -399,6 +399,16 @@
           "pair_selection": "Left and Right sides",
           "name": "Name for the combined bed"
         }
+      },
+      "leggett_app": {
+        "title": "Leggett app profile",
+        "description": "Choose the app that matches this bed before continuing Bluetooth pairing.",
+        "data": {
+          "leggett_app_profile": "Leggett app profile"
+        },
+        "data_description": {
+          "leggett_app_profile": "Choose the app used with this bed. The app determines the actuator layout and supported controls. Prodigy 4 preserves the existing default; Bluetooth pairing requirements remain unchanged."
+        }
       }
     },
     "progress": {
@@ -445,7 +455,8 @@
       "auto_detect_failed": "Couldn't identify this bed automatically. Pick a protocol from the list, or choose \"Diagnostic (unknown bed)\" to capture data for support.",
       "not_advertising": "This bed is not currently advertising, so no connection was attempted. Wake it, put it into pairing mode, or move it closer to a Bluetooth adapter or proxy, then try again.",
       "bond_verification_failed": "The bed connected but the link is still unauthenticated, so the bond did not form. Put the bed back into pairing mode and try again.",
-      "bond_removal_failed": "The existing Bluetooth bond could not be removed, so pairing was not attempted."
+      "bond_removal_failed": "The existing Bluetooth bond could not be removed, so pairing was not attempted.",
+      "leggett_app_invalid_profile": "Choose a supported Leggett app profile."
     }
   },
   "options": {
@@ -486,7 +497,8 @@
           "octo_pin": "Octo PIN",
           "jensen_pin": "Jensen PIN",
           "back_max_angle": "Maximum back angle (degrees)",
-          "legs_max_angle": "Maximum legs angle (degrees)"
+          "legs_max_angle": "Maximum legs angle (degrees)",
+          "leggett_app_profile": "Leggett app profile"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -509,7 +521,8 @@
           "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection. Leave empty if your bed doesn't require a PIN.",
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
           "back_max_angle": "Maximum angle for back/head motors. Adjust if position readings don't match your bed's actual range.",
-          "legs_max_angle": "Maximum angle for legs/feet motors. Adjust if position readings don't match your bed's actual range."
+          "legs_max_angle": "Maximum angle for legs/feet motors. Adjust if position readings don't match your bed's actual range.",
+          "leggett_app_profile": "Choose the app used with this bed. The app determines the actuator layout and supported controls. Prodigy 4 preserves the existing default; Bluetooth pairing requirements remain unchanged."
         }
       },
       "remove_bond": {
@@ -563,7 +576,9 @@
       "invalid_motor_count_for_bed_type": "One motor is supported only for Standard OCTO TV lift controllers.",
       "invalid_angle": "Angle must be a positive number between 0 and 180 degrees.",
       "octo_tv_lift_pairing_unsupported": "One-motor OCTO TV/bed lifts must remain standalone and cannot be paired as bed sides.",
-      "single_address_pairing_unsupported": "This CBNew protocol has no A/B side selector and cannot safely expose paired-side controls."
+      "single_address_pairing_unsupported": "This CBNew protocol has no A/B side selector and cannot safely expose paired-side controls.",
+      "leggett_app_invalid_profile": "Choose a supported Leggett app profile.",
+      "leggett_app_unpair_first": "Unpair the beds and configure each side separately before choosing a Leggett app profile."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -1746,6 +1761,12 @@
       },
       "massage_timer_mode_both": {
         "name": "Both sides: Massage: Timer Mode"
+      },
+      "leggett_led_mask": {
+        "name": "LED mask"
+      },
+      "leggett_status": {
+        "name": "Status byte"
       }
     },
     "light": {
@@ -1830,6 +1851,12 @@
       },
       "bed_presence_both": {
         "name": "Both sides: Bed Presence"
+      },
+      "leggett_alarm_indicator": {
+        "name": "Alarm indicator"
+      },
+      "leggett_sleep_timer_indicator": {
+        "name": "Sleep timer indicator"
       }
     },
     "number": {
@@ -2121,6 +2148,71 @@
         "duration_ms": {
           "name": "Duration (ms)",
           "description": "How long to move the motor in milliseconds."
+        }
+      }
+    },
+    "leggett_sleep_timer": {
+      "name": "Set Leggett sleep timer",
+      "description": "Start a delayed preset or cancel the stored sleep timer.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A timer-capable Leggett Okin controller with its matching app profile."
+        },
+        "action": {
+          "name": "Action"
+        },
+        "minutes": {
+          "name": "Delay",
+          "description": "Required to start. Prodigy accepts 1 to 1439 minutes; U Series accepts 15, 30, 45, 60, 75, or 90 minutes."
+        },
+        "preset": {
+          "name": "Sleep action",
+          "description": "Prodigy uses memory slots 1 to 4. U Series uses 0 for flat or 1 to 3 for memory; its third memory is available only through this timer."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "leggett_alarm_timer": {
+      "name": "Set Leggett alarm timer",
+      "description": "Start an alarm delay or cancel the stored alarm using the selected app profile.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A timer-capable Leggett Okin controller with its matching app profile."
+        },
+        "action": {
+          "name": "Action"
+        },
+        "minutes": {
+          "name": "Delay",
+          "description": "Required to start. Alarm delay in whole minutes, from 1 to 1440."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "leggett_hold_control": {
+      "name": "Hold Leggett control",
+      "description": "Hold a supported control for a bounded duration, then send its release sequence.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A Leggett Okin controller with its matching app profile."
+        },
+        "control": {
+          "name": "Control",
+          "description": "Memory 1, memory 2, and store are U Series controls. Other choices are available on all app profiles."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold for 0.1 to 60 seconds, in whole milliseconds. These are service interface bounds, not firmware limits."
+        },
+        "side": {
+          "name": "Side"
         }
       }
     }

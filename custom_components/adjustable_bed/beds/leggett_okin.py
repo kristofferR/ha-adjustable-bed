@@ -25,7 +25,7 @@ import contextlib
 import logging
 from collections.abc import Callable
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from bleak.exc import BleakError
 
@@ -38,7 +38,20 @@ from ..const import (
     OKIN_SMART_REMOTE_CSS_NOTIFY_CHAR_UUID,
     OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
 )
-from .base import BedController, MotorControlSpec
+from ..leggett_app_protocol import (
+    LEGGETT_APP_PROFILES,
+    SLEEP_CANCEL_KEY,
+    USERIES_SLEEP_MINUTES,
+    AppProfile,
+    build_alarm,
+    build_sleep_timer,
+)
+from .base import (
+    BedController,
+    ControllerStateBinarySensorSpec,
+    ControllerStateSensorSpec,
+    MotorControlSpec,
+)
 from .okin_protocol import build_okin_command
 
 if TYPE_CHECKING:
@@ -110,8 +123,9 @@ RELEASE_FRAME_DELAY_MS = 100
 RECALL_FRAME_COUNT = 10
 RECALL_FRAME_DELAY_MS = 100
 
-# Programming a slot is a two-stage hold, not an opcode: arm with MEMORY_STORE
-# for ~5s, release, then hold the slot keycode for ~2s.
+# Programming a Prodigy favorite is a two-stage hold: arm for ~5s, switch
+# directly to the slot for ~2s, then release. The app's reset+slot callback does
+# not establish an intermediate zero-frame count.
 MEMORY_STORE_HOLD_S = 5.0
 MEMORY_SLOT_HOLD_S = 2.0
 MEMORY_PROGRAM_FRAME_DELAY_MS = 100
@@ -168,11 +182,9 @@ def parse_leggett_okin_feedback(data: bytes) -> tuple[int, int] | None:
     elif opcode == 11:
         half = size >> 1
         offset = 3 + (size & 1)
-        led_mask = (
-            read_unsigned(offset + half, half)
-            & read_unsigned(offset, half)
-            & ~0x200
-        ) | (led_mask & 0x200)
+        led_mask = (read_unsigned(offset + half, half) & read_unsigned(offset, half) & ~0x200) | (
+            led_mask & 0x200
+        )
 
     return led_mask & 0xFFFFFFFF, status
 
@@ -197,9 +209,17 @@ class LeggettOkinController(BedController):
     # motion watchdog on ESPHome proxies.
     _write_with_response = False
 
-    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
+    def __init__(
+        self, coordinator: AdjustableBedCoordinator, app_profile: str = "prodigy4"
+    ) -> None:
         """Initialize the Leggett & Platt Okin controller."""
         super().__init__(coordinator)
+        if app_profile not in LEGGETT_APP_PROFILES:
+            raise ValueError(f"Unknown Leggett app profile: {app_profile}")
+        self._app_profile = cast(AppProfile, app_profile)
+        self._profile = LEGGETT_APP_PROFILES[self._app_profile]
+        self._device_information: dict[str, str] = {}
+        self._device_information_read: set[str] = set()
         self._motor_state: dict[str, MotorDirection] = {}
         self._protocol_revision = self._detect_protocol_revision()
         self._notification_led_mask: int | None = None
@@ -239,22 +259,169 @@ class LeggettOkinController(BedController):
 
     @property
     def memory_slot_count(self) -> int:
-        """Return 4 - Okin beds support memory slots 1-4."""
-        return 4
+        """Return only the memories directly reachable in the selected app."""
+        return self._profile.memory_slots
 
     @property
     def supports_memory_programming(self) -> bool:
-        """Return True - slots are programmed by the two-stage store hold."""
-        return True
+        """Only the Prodigy apps prove the automated two-stage store sequence."""
+        return self._app_profile != "useries"
 
     @property
     def memory_slot_names(self) -> tuple[str | None, ...]:
         """Return the three editable favorites and fixed Snore entry."""
+        if self._app_profile == "useries":
+            return ("Memory 1", "Memory 2")
         return ("Favorite 1", "Favorite 2", "Snore", "Favorite 3")
 
     def is_memory_slot_programmable(self, memory_num: int) -> bool:
         """Return False for the APK's fixed Snore entry in slot 3."""
-        return memory_num in (1, 2, 4)
+        return self.supports_memory_programming and memory_num in (1, 2, 4)
+
+    @property
+    def app_profile(self) -> str:
+        """Return the explicitly selected app generation."""
+        return self._app_profile
+
+    @property
+    def supports_massage(self) -> bool:
+        return True
+
+    @property
+    def supports_control_mode_configuration(self) -> bool:
+        return self._profile.settings
+
+    @property
+    def supports_sleep_timer(self) -> bool:
+        return True
+
+    @property
+    def supports_alarm_timer(self) -> bool:
+        return True
+
+    @property
+    def sleep_timer_memory_options(self) -> tuple[int, ...]:
+        # U-Series has a timer-only third memory and a separate Flat action.
+        return (0, 1, 2, 3) if self._app_profile == "useries" else (1, 2, 3, 4)
+
+    @property
+    def sleep_timer_duration_options(self) -> tuple[int, ...]:
+        return USERIES_SLEEP_MINUTES if self._app_profile == "useries" else ()
+
+    @property
+    def supports_held_control(self) -> bool:
+        return True
+
+    _HELD_CONTROLS = {
+        "flat": LeggettOkinCommands.PRESET_FLAT,
+        "snore": LeggettOkinCommands.PRESET_ANTI_SNORE,
+        "lights_toggle": LeggettOkinCommands.TOGGLE_LIGHTS,
+        "massage_toggle": LeggettOkinCommands.MASSAGE_STEP,
+        "massage_wave": LeggettOkinCommands.MASSAGE_WAVE_STEP,
+        "massage_head_up": LeggettOkinCommands.MASSAGE_HEAD_UP,
+        "massage_head_down": LeggettOkinCommands.MASSAGE_HEAD_DOWN,
+        "massage_foot_up": LeggettOkinCommands.MASSAGE_FOOT_UP,
+        "massage_foot_down": LeggettOkinCommands.MASSAGE_FOOT_DOWN,
+    }
+    _USERIES_HELD_CONTROLS = {
+        "memory_1": LeggettOkinCommands.PRESET_MEMORY_1,
+        "memory_2": LeggettOkinCommands.PRESET_MEMORY_2,
+        "store": LeggettOkinCommands.MEMORY_STORE,
+    }
+
+    @property
+    def held_control_options(self) -> tuple[str, ...]:
+        options = tuple(self._HELD_CONTROLS)
+        if self._app_profile == "useries":
+            options += tuple(self._USERIES_HELD_CONTROLS)
+        return options
+
+    async def hold_control(self, control: str, duration_ms: int) -> None:
+        """Reproduce a bounded app button hold with its ordinary zero release."""
+        if control not in self.held_control_options:
+            raise ValueError(f"Unsupported held control for {self._app_profile}: {control}")
+        if (
+            isinstance(duration_ms, bool)
+            or not isinstance(duration_ms, int)
+            or not 100 <= duration_ms <= 60000
+        ):
+            raise ValueError("Held duration must be an integer from 100 to 60000 ms")
+        command = self._HELD_CONTROLS.get(control)
+        if command is None:
+            command = self._USERIES_HELD_CONTROLS[control]
+        completed = False
+        deadline = asyncio.get_running_loop().time() + duration_ms / 1000
+        try:
+            await self.write_command(
+                self._build_command(command),
+                repeat_count=(duration_ms + 99) // 100,
+                repeat_delay_ms=100,
+                deadline=deadline,
+            )
+            await self._wait_hold_deadline(deadline)
+            completed = True
+        finally:
+            await self._send_release_frames(control, raise_on_error=completed)
+
+    async def set_sleep_timer(self, minutes: int, memory_num: int = 1) -> None:
+        """Schedule the profile's proven sleep action; successful timers have no zero tail."""
+        command = build_sleep_timer(self._app_profile, minutes, memory_num)
+        await self._send_special(
+            self._build_command(command) if isinstance(command, int) else command
+        )
+
+    async def cancel_sleep_timer(self) -> None:
+        await self._recall(SLEEP_CANCEL_KEY)
+
+    async def set_alarm_timer(self, minutes: int) -> None:
+        await self._recall(build_alarm(self._app_profile, minutes))
+
+    async def cancel_alarm_timer(self) -> None:
+        await self._recall(build_alarm(self._app_profile, None))
+
+    @property
+    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
+        """Publish opaque feedback without assigning unsupported hardware semantics."""
+        return (
+            ControllerStateSensorSpec(
+                key="leggett_led_mask",
+                translation_key="leggett_led_mask",
+                state_key="leggett_led_mask",
+                icon="mdi:led-outline",
+            ),
+            ControllerStateSensorSpec(
+                key="leggett_status",
+                translation_key="leggett_status",
+                state_key="leggett_status",
+                icon="mdi:information-outline",
+            ),
+        )
+
+    @property
+    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
+        """Expose the app's alarm/timer indicators, not reconstructed timer settings."""
+        return (
+            ControllerStateBinarySensorSpec(
+                key="leggett_alarm_indicator",
+                translation_key="leggett_alarm_indicator",
+                state_key="leggett_alarm_indicator",
+                icon="mdi:alarm",
+            ),
+            ControllerStateBinarySensorSpec(
+                key="leggett_sleep_timer_indicator",
+                translation_key="leggett_sleep_timer_indicator",
+                state_key="leggett_sleep_timer_indicator",
+                icon="mdi:timer-outline",
+            ),
+        )
+
+    @property
+    def _display_led_mask(self) -> int | None:
+        mask = self._notification_led_mask
+        # U-Series deliberately hides every indicator when any low byte bit is set.
+        if self._app_profile == "useries" and mask is not None and mask & 0xFF:
+            return 0
+        return mask
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -265,15 +432,18 @@ class LeggettOkinController(BedController):
     def protocol_diagnostics(self) -> dict[str, Any]:
         """Report resolved framing and the APK-parsed opaque status mask."""
         led_mask = self._notification_led_mask
+        display_mask = self._display_led_mask
         return {
+            "app_profile": self._app_profile,
+            "device_information": dict(self._device_information),
             "protocol_revision": self._protocol_revision,
             "revision_selector_present": (
                 self._protocol_revision == 1 if self._protocol_revision is not None else None
             ),
             "notification_led_mask": f"0x{led_mask:08x}" if led_mask is not None else None,
             "notification_status": self._notification_status,
-            "alarm_armed": bool(led_mask & 0x4000) if led_mask is not None else None,
-            "sleep_timer_armed": bool(led_mask & 0x8000) if led_mask is not None else None,
+            "alarm_armed": bool(display_mask & 0x4000) if display_mask is not None else None,
+            "sleep_timer_armed": bool(display_mask & 0x8000) if display_mask is not None else None,
             "notification_characteristics": sorted(self._notify_started),
             "settings_initialized": self._settings_initialized,
         }
@@ -281,17 +451,17 @@ class LeggettOkinController(BedController):
     @property
     def has_pillow_support(self) -> bool:
         """Return True - the third actuator moves the pillow platform."""
-        return True
+        return self._profile.pillow
 
     @property
     def has_lumbar_support(self) -> bool:
         """Return True - Okin beds have lumbar motor control."""
-        return True
+        return self._profile.lumbar
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
-        """Expose the CU170's four physical actuators without aliases."""
-        return (
+        """Expose only the actuators present in the selected app surface."""
+        specs = (
             MotorControlSpec(
                 key="head",
                 translation_key="head",
@@ -321,11 +491,17 @@ class LeggettOkinController(BedController):
                 stop_fn=lambda ctrl: ctrl.move_feet_stop(),
             ),
         )
+        return tuple(
+            spec
+            for spec in specs
+            if (spec.key != "pillow" or self.has_pillow_support)
+            and (spec.key != "lumbar" or self.has_lumbar_support)
+        )
 
     @property
     def stale_motor_entity_keys(self) -> frozenset[str]:
         """Remove duplicate aliases and the former tilt label."""
-        return frozenset({"back", "legs", "tilt"})
+        return frozenset({"back", "legs", "tilt", "pillow", "lumbar"})
 
     def _available_characteristic_uuids(self) -> frozenset[str] | None:
         """Return discovered characteristic UUIDs, or None before discovery."""
@@ -377,6 +553,8 @@ class LeggettOkinController(BedController):
         """Build the runtime-selected revision-0 or revision-1 command."""
         if self._protocol_revision is None:
             self._protocol_revision = self._detect_protocol_revision()
+        if self._protocol_revision is None:
+            raise ConnectionError("Leggett key characteristic is not resolved")
         if self._protocol_revision == 0:
             return _build_revision_0_command(command_value)
         return build_okin_command(command_value)
@@ -387,8 +565,25 @@ class LeggettOkinController(BedController):
         repeat_count: int = 1,
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
+        *,
+        deadline: float | None = None,
     ) -> None:
-        """Write an unconfirmed stream paced from each write's start time."""
+        """Write an unconfirmed stream; duration-bound holds stop starting late writes."""
+        if deadline is not None:
+            loop = asyncio.get_running_loop()
+            cancel = cancel_event or self._coordinator.cancel_command
+            for _ in range(repeat_count):
+                started = loop.time()
+                if started >= deadline or cancel.is_set():
+                    break
+                await self._write_gatt_with_retry(
+                    self.control_characteristic_uuid,
+                    command,
+                    cancel_event=cancel,
+                    response=False,
+                )
+                await self._wait_hold_deadline(min(started + repeat_delay_ms / 1000, deadline))
+            return
         await self._write_gatt_with_retry(
             self.control_characteristic_uuid,
             command,
@@ -399,9 +594,7 @@ class LeggettOkinController(BedController):
             wall_clock_pacing=True,
         )
 
-    async def start_notify(
-        self, callback: Callable[[str, float], None] | None = None
-    ) -> None:
+    async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """Subscribe to the status channels recovered from Prodigy CE."""
         self._notify_callback = callback
         client = self.client
@@ -409,11 +602,11 @@ class LeggettOkinController(BedController):
             _LOGGER.warning("Cannot start Leggett Okin notifications: not connected")
             return
 
+        self._protocol_revision = self._detect_protocol_revision()
         characteristic_uuids = self._available_characteristic_uuids() or frozenset()
-        candidates = (
-            LEGGETT_OKIN_NOTIFY_CHAR_UUID,
-            OKIN_SMART_REMOTE_CSS_NOTIFY_CHAR_UUID,
-        )
+        candidates = (LEGGETT_OKIN_NOTIFY_CHAR_UUID,)
+        if self._profile.settings:
+            candidates += (OKIN_SMART_REMOTE_CSS_NOTIFY_CHAR_UUID,)
         settings_started_now = False
         for characteristic_uuid in candidates:
             normalized_uuid = characteristic_uuid.lower()
@@ -437,8 +630,12 @@ class LeggettOkinController(BedController):
                 )
 
         if (
-            (settings_started_now or OKIN_SMART_REMOTE_CSS_NOTIFY_CHAR_UUID.lower() in self._notify_started)
+            (
+                settings_started_now
+                or OKIN_SMART_REMOTE_CSS_NOTIFY_CHAR_UUID.lower() in self._notify_started
+            )
             and not self._settings_initialized
+            and not self._coordinator.cancel_command.is_set()
             and OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID.lower() in characteristic_uuids
         ):
             try:
@@ -448,9 +645,40 @@ class LeggettOkinController(BedController):
                     response=True,
                     log_errors=False,
                 )
-                self._settings_initialized = True
+                self._settings_initialized = not self._coordinator.cancel_command.is_set()
             except (BleakError, ConnectionError) as err:
                 _LOGGER.debug("Could not initialize Leggett Okin settings: %s", err)
+
+        await self._read_device_information(characteristic_uuids)
+
+    async def _read_device_information(self, available: frozenset[str]) -> None:
+        """Read the six standard fields serially; values never select capabilities."""
+        fields = {
+            "2a29": "manufacturer",
+            "2a24": "model",
+            "2a25": "serial",
+            "2a27": "hardware",
+            "2a26": "firmware",
+            "2a28": "software",
+        }
+        client = self.client
+        if client is None:
+            return
+        for short_uuid, name in fields.items():
+            if self._coordinator.cancel_command.is_set():
+                break
+            uuid = f"0000{short_uuid}-0000-1000-8000-00805f9b34fb"
+            if uuid not in available or uuid in self._device_information_read:
+                continue
+            try:
+                async with self._ble_lock:
+                    value = await client.read_gatt_char(uuid)
+                self._device_information[name] = (
+                    bytes(value).decode("utf-8", errors="replace").rstrip("\0")
+                )
+                self._device_information_read.add(uuid)
+            except (BleakError, ConnectionError) as err:
+                _LOGGER.debug("Could not read Leggett %s information: %s", name, err)
 
     def _handle_notification(self, sender: object, data: bytearray) -> None:
         """Forward raw data and retain the APK's opaque LED/status result."""
@@ -461,10 +689,21 @@ class LeggettOkinController(BedController):
         if parsed is None:
             return
         self._notification_led_mask, self._notification_status = parsed
+        display_mask = self._display_led_mask or 0
+        self.forward_controller_state_updates(
+            {
+                "leggett_led_mask": parsed[0],
+                "leggett_status": parsed[1],
+                "leggett_alarm_indicator": bool(display_mask & 0x4000),
+                "leggett_sleep_timer_indicator": bool(display_mask & 0x8000),
+            }
+        )
 
     async def stop_notify(self) -> None:
         """Stop every active Prodigy CE status subscription."""
         self._notify_callback = None
+        self._device_information_read.clear()
+        self._protocol_revision = None
         client = self.client
         if client is None or not client.is_connected:
             self._notify_started.clear()
@@ -513,6 +752,10 @@ class LeggettOkinController(BedController):
 
     async def _move_motor(self, motor: str, direction: MotorDirection) -> None:
         """Move a motor in a direction or stop it."""
+        if motor == "pillow" and not self.has_pillow_support:
+            raise NotImplementedError("This Leggett app profile has no pillow control")
+        if motor == "lumbar" and not self.has_lumbar_support:
+            raise NotImplementedError("This Leggett app profile has no lumbar control")
         if direction == MotorDirection.STOP:
             self._motor_state.pop(motor, None)
         else:
@@ -574,7 +817,7 @@ class LeggettOkinController(BedController):
                 with contextlib.suppress(asyncio.CancelledError, BleakError, ConnectionError):
                     await asyncio.shield(release)
             raise
-        except (BleakError, ConnectionError):
+        except BleakError, ConnectionError:
             # The release burst is this protocol's only stop, so a failure can
             # leave the bed still moving. That is worth surfacing, not hiding.
             _LOGGER.warning(
@@ -659,11 +902,21 @@ class LeggettOkinController(BedController):
         app deliberately leaves unterminated, so no release frames follow -
         they could cancel the motion the recall just started.
         """
-        await self.write_command(
-            self._build_command(command),
-            repeat_count=RECALL_FRAME_COUNT,
-            repeat_delay_ms=RECALL_FRAME_DELAY_MS,
-        )
+        await self._send_special(self._build_command(command))
+
+    async def _send_special(self, packet: bytes) -> None:
+        """Leave successful special bursts unterminated; cancel partial bursts safely."""
+        completed = False
+        try:
+            await self.write_command(
+                packet,
+                repeat_count=RECALL_FRAME_COUNT,
+                repeat_delay_ms=RECALL_FRAME_DELAY_MS,
+            )
+            completed = not self._coordinator.cancel_command.is_set()
+        finally:
+            if not completed:
+                await self._send_release_frames("interrupted special command")
 
     async def preset_flat(self) -> None:
         """Go to flat position.
@@ -695,18 +948,21 @@ class LeggettOkinController(BedController):
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
         command = self._MEMORY_SLOTS.get(memory_num)
-        if command is None:
+        if command is None or not 1 <= memory_num <= self.memory_slot_count:
             _LOGGER.warning("Invalid memory slot for recall: %d", memory_num)
             return
-        await self._recall(command)
+        if self._app_profile == "useries":
+            await self.hold_control(f"memory_{memory_num}", 1000)
+        else:
+            await self._recall(command)
 
     async def program_memory(self, memory_num: int) -> None:
         """Store the current position into a memory slot.
 
         There is no program opcode. The box is armed by holding MEMORY_STORE
         for ~5s, then records whichever slot keycode is held for the following
-        ~2s. Both stages are ordinary held keycodes, so each ends with the
-        normal release burst.
+        ~2s. The final reset produces the normal release burst; the intermediate
+        reset and slot assignment are consecutive app calls.
         """
         if not self.is_memory_slot_programmable(memory_num):
             _LOGGER.warning("Memory slot %d is fixed and cannot be programmed", memory_num)
@@ -721,10 +977,10 @@ class LeggettOkinController(BedController):
         completed = False
         try:
             await self._hold_keycode(LeggettOkinCommands.MEMORY_STORE, MEMORY_STORE_HOLD_S)
-            # This release is a stage boundary, not cleanup: without the zero
-            # frames the box never leaves the arm stage, so continuing to the
-            # slot hold would run an invalid sequence and still report success.
-            await self._send_release_frames("memory store arm", raise_on_error=True)
+            if self._coordinator.cancel_command.is_set():
+                return
+            # The app resets and selects the slot in the same callback. Any
+            # intervening zero is a scheduling race, not a required pause.
             await self._hold_keycode(command, MEMORY_SLOT_HOLD_S)
             completed = True
         finally:
@@ -736,26 +992,48 @@ class LeggettOkinController(BedController):
 
     async def _hold_keycode(self, command: int, hold_seconds: float) -> None:
         """Stream a keycode for a fixed duration, as a held button would."""
+        deadline = asyncio.get_running_loop().time() + hold_seconds
         repeat_count = max(1, round(hold_seconds * 1000 / MEMORY_PROGRAM_FRAME_DELAY_MS))
         await self.write_command(
             self._build_command(command),
             repeat_count=repeat_count,
             repeat_delay_ms=MEMORY_PROGRAM_FRAME_DELAY_MS,
+            deadline=deadline,
         )
+        await self._wait_hold_deadline(deadline)
+
+    async def _wait_hold_deadline(self, deadline: float) -> None:
+        """Release at the requested time, including the interval after the last frame."""
+        remaining = deadline - asyncio.get_running_loop().time()
+        if remaining <= 0:
+            return
+        with contextlib.suppress(TimeoutError):
+            async with asyncio.timeout(remaining):
+                await self._coordinator.cancel_command.wait()
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position (memory slot 3 on this protocol)."""
-        await self._recall(LeggettOkinCommands.PRESET_ANTI_SNORE)
+        if self._app_profile == "useries":
+            await self.hold_control("snore", 1000)
+        else:
+            await self._recall(LeggettOkinCommands.PRESET_ANTI_SNORE)
 
     async def _set_control_mode(self, command: int, context: str) -> None:
         """Send one of the APK's persistent handset-control mode commands."""
+        if not self.supports_control_mode_configuration:
+            raise NotImplementedError("Control-mode settings are absent from this app profile")
         completed = False
+        deadline = (
+            asyncio.get_running_loop().time()
+            + CONTROL_MODE_FRAME_COUNT * CONTROL_MODE_FRAME_DELAY_MS / 1000
+        )
         try:
             await self.write_command(
                 self._build_command(command),
                 repeat_count=CONTROL_MODE_FRAME_COUNT,
                 repeat_delay_ms=CONTROL_MODE_FRAME_DELAY_MS,
             )
+            await self._wait_hold_deadline(deadline)
             completed = True
         finally:
             await self._send_release_frames(

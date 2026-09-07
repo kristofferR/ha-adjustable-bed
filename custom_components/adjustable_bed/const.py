@@ -51,6 +51,16 @@ class ConnectionProfileSettings:
 CONF_BED_TYPE: Final = "bed_type"
 CONF_PROTOCOL_VARIANT: Final = "protocol_variant"
 CONF_MOTOR_COUNT: Final = "motor_count"
+CONF_LEGGETT_APP_PROFILE: Final = "leggett_app_profile"
+LEGGETT_APP_DEFAULT_PROFILE: Final = "prodigy4"
+LEGGETT_APP_PROFILES: Final = {
+    "prodigy2l": "Prodigy 2L (back, feet, lumbar)",
+    "prodigy2": "Prodigy 2 (back, feet, pillow)",
+    "prodigy4": "Prodigy 4 (back, feet, pillow, lumbar)",
+    "useries": "U Series (back, feet, pillow)",
+}
+LEGGETT_APP_MOTOR_COUNTS: Final = {"prodigy2l": 3, "prodigy2": 3, "prodigy4": 4, "useries": 3}
+
 CONF_MALOUF_LAYOUT: Final = "malouf_layout"
 CONF_MALOUF_MEMORY_SLOTS: Final = "malouf_memory_slots"
 CONF_HAS_MASSAGE: Final = "has_massage"
