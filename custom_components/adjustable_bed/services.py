@@ -1614,6 +1614,10 @@ async def async_register_services(hass: HomeAssistant) -> None:
     if hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET):
         return  # Services already registered
 
+    from .rmcontrol_services import async_register_rmcontrol_services
+
+    async_register_rmcontrol_services(hass)
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_GOTO_PRESET,

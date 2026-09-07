@@ -27,7 +27,7 @@ from .paired_coordinator import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, MotorControlSpec
+    from .beds.base import BedController, ControllerButtonSpec, MotorControlSpec
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -727,6 +727,20 @@ def _button_entities_for(
             continue
         entities.append(AdjustableBedButton(coordinator, description))
 
+    if controller is not None:
+        specs = controller.controller_button_specs
+        desired = {coordinator.entity_unique_id(f"product_action_{spec.key}") for spec in specs}
+        prefix = coordinator.entity_unique_id("product_action_")
+        registry = er.async_get(hass)
+        for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
+            if (
+                row.domain == "button"
+                and row.unique_id.startswith(prefix)
+                and row.unique_id not in desired
+            ):
+                registry.async_remove(row.entity_id)
+        entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
+
     return entities
 
 
@@ -982,6 +996,25 @@ def _discovered_memory_slot_name(
     if not name:
         return None
     return f"Save {name}" if description.is_program_button else name
+
+
+class AdjustableBedProductButton(AdjustableBedEntity, ButtonEntity):
+    """An extra action from the exact selected product's command catalog."""
+
+    def __init__(self, coordinator: AdjustableBedCoordinator, spec: ControllerButtonSpec) -> None:
+        super().__init__(coordinator)
+        self._spec = spec
+        self._attr_unique_id = coordinator.entity_unique_id(f"product_action_{spec.key}")
+        self._attr_translation_key = coordinator.entity_translation_key("product_action")
+        self._attr_translation_placeholders = {"action": spec.name}
+        self._attr_icon = spec.icon
+        self._attr_entity_registry_enabled_default = spec.entity_registry_enabled_default
+
+    async def async_press(self) -> None:
+        """Use the current connection's controller and ordinary command locking."""
+        await self._coordinator.async_execute_controller_command(
+            self._spec.press_fn, cancel_running=True
+        )
 
 
 class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):

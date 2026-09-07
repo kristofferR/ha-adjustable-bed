@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
+from functools import partial
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.sensor import (
@@ -33,6 +34,7 @@ from .const import (
 )
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
+from .entity_discovery import async_setup_dynamic_entities
 from .paired_coordinator import PairedBedCoordinator
 
 if TYPE_CHECKING:
@@ -138,13 +140,17 @@ async def async_setup_entry(
     """Set up Adjustable Bed sensor entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     if isinstance(coordinator, PairedBedCoordinator):
-        paired_entities: list[SensorEntity] = []
         for child in coordinator.children.values():
-            paired_entities.extend(_sensor_entities_for(hass, child))
-        if paired_entities:
-            async_add_entities(paired_entities)
+            async_setup_dynamic_entities(
+                entry,
+                child,
+                async_add_entities,
+                partial(_sensor_entities_for, hass, child),
+            )
         return
-    async_add_entities(_sensor_entities_for(hass, coordinator))
+    async_setup_dynamic_entities(
+        entry, coordinator, async_add_entities, lambda: _sensor_entities_for(hass, coordinator)
+    )
 
 
 def _sensor_entities_for(

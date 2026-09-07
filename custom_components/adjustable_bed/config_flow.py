@@ -139,6 +139,8 @@ from .const import (
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
+    CONF_RMCONTROL_PRODUCT,
+    CONF_RMCONTROL_SIDE,
     CONNECTION_PROFILE_BALANCED,
     CONNECTION_PROFILE_RELIABLE,
     CONNECTION_PROFILES,
@@ -257,6 +259,26 @@ BED_TYPE_AUTO_DETECT = "auto_detect"
 # such as OKIN receivers) — we keep "Auto-detect" selected and ask the user to
 # choose, rather than silently configuring a guessed protocol.
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
+
+
+def _rmcontrol_schema_fields(data: dict[str, Any] | None = None) -> dict[vol.Optional, Any]:
+    """Offer an explicit app profile without changing established remote behavior."""
+    from .richmat_profiles import RICHMAT_PRODUCT_CODES
+
+    current = data or {}
+    return {
+        vol.Optional(
+            CONF_RMCONTROL_PRODUCT, default=current.get(CONF_RMCONTROL_PRODUCT, "")
+        ): vol.In(
+            {
+                "": "Legacy remote profile (default)",
+                **{code: code for code in RICHMAT_PRODUCT_CODES},
+            }
+        ),
+        vol.Optional(CONF_RMCONTROL_SIDE, default=current.get(CONF_RMCONTROL_SIDE, "left")): vol.In(
+            {"left": "Left", "right": "Right", "both": "Both"}
+        ),
+    }
 
 
 def _classify_connection_failure(err: BaseException) -> OperationOutcome:
@@ -1688,6 +1710,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     entry_data[CONF_JENSEN_PIN] = user_input.get(CONF_JENSEN_PIN, "")
                 # Add Richmat remote code if configured (when detected as Richmat, field was shown inline)
                 if selected_bed_type == BED_TYPE_RICHMAT:
+                    entry_data[CONF_RMCONTROL_PRODUCT] = user_input.get(CONF_RMCONTROL_PRODUCT, "")
+                    entry_data[CONF_RMCONTROL_SIDE] = user_input.get(CONF_RMCONTROL_SIDE, "left")
                     user_selected_remote = user_input.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
                     # If user selected "auto", try to use auto-detected code instead
                     if user_selected_remote == RICHMAT_REMOTE_AUTO:
@@ -1860,6 +1884,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             schema_dict[vol.Optional(CONF_RICHMAT_REMOTE, default=default_remote)] = vol.In(
                 remotes_options
             )
+            schema_dict.update(_rmcontrol_schema_fields(user_input).items())
 
         # Build description placeholders with optional ambiguity warning
         description_placeholders = {
@@ -2976,6 +3001,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         assert self._manual_data is not None
 
         if user_input is not None:
+            self._manual_data[CONF_RMCONTROL_PRODUCT] = user_input.get(CONF_RMCONTROL_PRODUCT, "")
+            self._manual_data[CONF_RMCONTROL_SIDE] = user_input.get(CONF_RMCONTROL_SIDE, "left")
             self._manual_data[CONF_RICHMAT_REMOTE] = user_input.get(
                 CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO
             )
@@ -2988,6 +3015,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             step_id="manual_richmat",
             data_schema=vol.Schema(
                 {
+                    **_rmcontrol_schema_fields(),
                     vol.Optional(CONF_RICHMAT_REMOTE, default=RICHMAT_REMOTE_AUTO): vol.In(
                         RICHMAT_REMOTES
                     ),
@@ -3039,6 +3067,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         assert self._manual_data is not None
 
         if user_input is not None:
+            self._manual_data[CONF_RMCONTROL_PRODUCT] = user_input.get(CONF_RMCONTROL_PRODUCT, "")
+            self._manual_data[CONF_RMCONTROL_SIDE] = user_input.get(CONF_RMCONTROL_SIDE, "left")
             self._manual_data[CONF_RICHMAT_REMOTE] = user_input.get(
                 CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO
             )
@@ -3051,6 +3081,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             step_id="bluetooth_richmat",
             data_schema=vol.Schema(
                 {
+                    **_rmcontrol_schema_fields(),
                     vol.Optional(CONF_RICHMAT_REMOTE, default=RICHMAT_REMOTE_AUTO): vol.In(
                         RICHMAT_REMOTES
                     ),
@@ -4557,6 +4588,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             data.pop(CONF_JENSEN_PIN, None)
         if bed_type != BED_TYPE_RICHMAT:
             data.pop(CONF_RICHMAT_REMOTE, None)
+            data.pop(CONF_RMCONTROL_PRODUCT, None)
+            data.pop(CONF_RMCONTROL_SIDE, None)
         if bed_type not in MALOUF_BED_TYPES:
             data.pop(CONF_MALOUF_LAYOUT, None)
             data.pop(CONF_MALOUF_MEMORY_SLOTS, None)
@@ -4961,6 +4994,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
 
         # Add remote selection for Richmat beds
         if bed_type == BED_TYPE_RICHMAT:
+            schema_dict.update(_rmcontrol_schema_fields(current_data).items())
             current_remote = current_data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
             remote_options = dict(RICHMAT_REMOTES)
             if current_remote not in remote_options:

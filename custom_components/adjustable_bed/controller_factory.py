@@ -352,6 +352,8 @@ async def create_controller(
     ble_model: str | None = None,
     manufacturer_data: dict[int, bytes] | None = None,
     capability_snapshot: Mapping[str, Any] | None = None,
+    rmcontrol_product: str = "",
+    rmcontrol_side: str = "left",
 ) -> BedController:
     """Create the appropriate bed controller.
 
@@ -366,6 +368,8 @@ async def create_controller(
         device_name: Raw BLE device name from discovery/connection (if available)
         octo_pin: PIN for Octo beds (default: empty string)
         richmat_remote: Remote code for Richmat beds (default: "auto")
+        rmcontrol_product: Exact RMControl app product, empty retains legacy profiles.
+        rmcontrol_side: Side selected in the RMControl app profile.
         jensen_pin: PIN for Jensen beds (default: empty string, uses "3060")
         cb24_bed_selection: Bed selection for CB24 split beds (0x00=default, 0xAA=A, 0xBB=B)
         ble_manufacturer: Manufacturer name from BLE Device Information Service (0x2A29)
@@ -524,6 +528,34 @@ async def create_controller(
             "configured_name": getattr(coordinator, "name", None),
             "device_name": device_name,
         }
+
+        if rmcontrol_product:
+            from .beds.rmcontrol import RmcontrolController, detect_rmcontrol_transport
+
+            if protocol_variant in {RICHMAT_VARIANT_PREFIX55, RICHMAT_VARIANT_PREFIXAA}:
+                raise ValueError("RMControl app profiles require Nordic or WiLinke transport")
+            if client is None or not client.is_connected:
+                raise ConnectionError("Cannot select RMControl transport: client not connected")
+            rmcontrol_framed, rmcontrol_char, rmcontrol_response = await detect_rmcontrol_transport(
+                client
+            )
+            if (
+                protocol_variant == RICHMAT_VARIANT_NORDIC
+                and rmcontrol_framed
+                or protocol_variant == RICHMAT_VARIANT_WILINKE
+                and not rmcontrol_framed
+            ):
+                raise ValueError("Configured RMControl transport disagrees with the GATT service")
+            return RmcontrolController(
+                coordinator,
+                rmcontrol_product=rmcontrol_product,
+                rmcontrol_side=rmcontrol_side,
+                is_wilinke=rmcontrol_framed,
+                char_uuid=rmcontrol_char,
+                remote_code=richmat_remote,
+                write_with_response=rmcontrol_response,
+                **richmat_kwargs,
+            )
 
         # Use configured variant or auto-detect
         if protocol_variant == RICHMAT_VARIANT_NORDIC:
