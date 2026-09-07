@@ -4865,9 +4865,10 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         """Show and save the normal options form."""
         # Get current values from config entry
         current_data: dict[str, Any] = dict(self.config_entry.data)
-        if is_paired(current_data) and current_data.get(CONF_PAIR_MODE) != (
+        separate_address_pair = is_paired(current_data) and current_data.get(CONF_PAIR_MODE) != (
             PAIR_MODE_SINGLE_ADDRESS
-        ):
+        )
+        if separate_address_pair:
             # Per-side settings (motor count, massage, adapter, angle limits)
             # live in the child descriptors, not parent data. Show the first
             # side's real values so the form isn't generic defaults; on save,
@@ -5050,7 +5051,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 )
             ] = vol.In(remote_options)
 
-        if bed_type == BED_TYPE_JIECANG_APP:
+        if bed_type == BED_TYPE_JIECANG_APP and not separate_address_pair:
             _add_jiecang_app_schema_fields(schema_dict, current_data)
 
         if bed_type in MALOUF_BED_TYPES:
@@ -5106,6 +5107,12 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
 
         if user_input is not None:
             requested_bed_type = user_input.get(CONF_BED_TYPE, bed_type)
+            if separate_address_pair and requested_bed_type == BED_TYPE_JIECANG_APP and requested_bed_type != bed_type:
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={"base": "jiecang_app_pair_settings"},
+                )
             if requested_bed_type != bed_type:
                 # Re-render once using the selected protocol so its variant,
                 # authentication, layout, remote, and position fields are
@@ -5225,7 +5232,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 self._pending_data[CONF_DISABLE_ANGLE_SENSING] = disable_angle_sensing
                 self._pending_changed_data[CONF_DISABLE_ANGLE_SENSING] = disable_angle_sensing
                 return await self._async_options_form(None, step_id=step_id)
-            if bed_type == BED_TYPE_JIECANG_APP:
+            if bed_type == BED_TYPE_JIECANG_APP and not separate_address_pair:
                 app_errors = _jiecang_app_errors({**current_data, **user_input})
                 if app_errors:
                     return self.async_show_form(

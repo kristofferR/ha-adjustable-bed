@@ -6,6 +6,11 @@ through explicit app-profile and actuator-layout selections. The existing
 `jiecang` controller remains separate: shared service UUIDs alone do not identify
 an app profile or establish that a legacy configuration should be migrated.
 
+For a combined bed with separate Bluetooth addresses, each side retains its own
+app profile, actuator layout, transport and lighting choice. Shared options do
+not edit those values. To change them or switch a combined bed to this protocol,
+restore the standalone beds, configure each side, then combine them again.
+
 **Hardware status:** artifact-proven, physical operation unverified. The reports
 are COMPLETE; hardware validation is deferred to users after beta or release.
 

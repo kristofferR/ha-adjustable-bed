@@ -26,11 +26,14 @@ from custom_components.adjustable_bed.const import (
     CONF_JIECANG_APP_PROFILE,
     CONF_JIECANG_APP_TRANSPORT,
     CONF_MOTOR_COUNT,
+    CONF_MOTOR_PULSE_COUNT,
+    CONF_PAIR_CHILDREN,
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
+from custom_components.adjustable_bed.pairing import build_pair_entry_data
 
 
 @pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
@@ -171,3 +174,58 @@ async def test_factory_passes_explicit_settings_without_affecting_legacy():
     )
     assert BED_TYPE_JIECANG_APP not in OFFLINE_CAPABILITY_SAFE_BED_TYPES
     assert BED_TYPE_JIECANG_APP in BEDS_WITHOUT_ANGLE_FEEDBACK
+
+
+async def test_paired_options_preserve_each_sides_app_profile(hass):
+    app_fields = (
+        CONF_JIECANG_APP_PROFILE,
+        CONF_JIECANG_APP_LAYOUT,
+        CONF_JIECANG_APP_TRANSPORT,
+        CONF_JIECANG_APP_HAS_LIGHT,
+    )
+    left = {
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:01",
+        CONF_BED_TYPE: BED_TYPE_JIECANG_APP,
+        CONF_JIECANG_APP_PROFILE: "dreamask",
+        CONF_JIECANG_APP_LAYOUT: "standard_3_neck",
+        CONF_JIECANG_APP_TRANSPORT: "g1",
+        CONF_JIECANG_APP_HAS_LIGHT: True,
+    }
+    right = {
+        **left,
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:02",
+        CONF_JIECANG_APP_PROFILE: "dreamotion",
+        CONF_JIECANG_APP_LAYOUT: "standard_4_bilateral",
+        CONF_JIECANG_APP_TRANSPORT: "g3",
+        CONF_JIECANG_APP_HAS_LIGHT: False,
+    }
+    entry = MockConfigEntry(domain=DOMAIN, data=build_pair_entry_data(left, right, name="Pair"))
+    entry.add_to_hass(hass)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.handler = entry.entry_id
+    flow.hass = hass
+    result = await flow.async_step_settings()
+    shown = {marker.schema for marker in result["data_schema"].schema}
+    assert shown.isdisjoint(app_fields)
+    result = await flow.async_step_settings({CONF_MOTOR_PULSE_COUNT: "20", **right})
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    for child, original in zip(entry.data[CONF_PAIR_CHILDREN], (left, right), strict=True):
+        assert {key: child[key] for key in app_fields} == {key: original[key] for key in app_fields}
+        assert child[CONF_MOTOR_PULSE_COUNT] == 20
+    assert set(entry.data).isdisjoint(app_fields)
+
+
+async def test_paired_options_cannot_create_unconfigured_app_sides(hass):
+    data = build_pair_entry_data(
+        {CONF_ADDRESS: "AA:BB:CC:DD:EE:01", CONF_BED_TYPE: BED_TYPE_JIECANG},
+        {CONF_ADDRESS: "AA:BB:CC:DD:EE:02", CONF_BED_TYPE: BED_TYPE_JIECANG},
+        name="Pair",
+    )
+    entry = MockConfigEntry(domain=DOMAIN, data=data)
+    entry.add_to_hass(hass)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.handler = entry.entry_id
+    flow.hass = hass
+    result = await flow.async_step_settings({CONF_BED_TYPE: BED_TYPE_JIECANG_APP})
+    assert result["errors"] == {"base": "jiecang_app_pair_settings"}
+    assert entry.data == data
