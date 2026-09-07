@@ -74,7 +74,7 @@ async def test_event_cancel_still_releases(coordinator):
     code, control = find_control(1, 2)
     controller = make_controller(coordinator, code)
 
-    async def cancel_on_hold(_ticks):
+    async def cancel_on_hold(_ticks, **_kwargs):
         coordinator.cancel_command.set()
         return False
 
@@ -88,7 +88,7 @@ async def test_task_cancel_still_releases(coordinator):
     controller = make_controller(coordinator, code)
     holding = asyncio.Event()
 
-    async def hold(_ticks):
+    async def hold(_ticks, **_kwargs):
         holding.set()
         await asyncio.Event().wait()
 
@@ -99,6 +99,26 @@ async def test_task_cancel_still_releases(coordinator):
         with pytest.raises(asyncio.CancelledError):
             await task
     assert written(coordinator) == [control.press.legacy, control.release.legacy]
+
+
+async def test_hold_cadence_absorbs_write_latency_and_never_waits_negative(coordinator):
+    controller = make_controller(coordinator)
+    control = get_lp_legacy_profile("6BRM").controls[0]
+    # Simulate one 60 ms write and one write that exceeds the 100 ms tick.
+    coordinator.cancel_command.wait = AsyncMock(side_effect=TimeoutError)
+    with (
+        patch(
+            "custom_components.adjustable_bed.beds.leggett_lp_legacy.monotonic",
+            side_effect=[100.0, 100.06, 200.0, 200.14],
+        ),
+        patch(
+            "custom_components.adjustable_bed.beds.leggett_lp_legacy.asyncio.timeout",
+            wraps=asyncio.timeout,
+        ) as timeout,
+    ):
+        await controller.execute_control(control.key)
+    assert [call.args[0] for call in timeout.call_args_list] == pytest.approx([0.04, 0.0])
+    assert written(coordinator) == [control.press.legacy] * 2 + [control.release.legacy]
 
 
 @pytest.mark.parametrize(("gesture", "ticks"), [("press", None), ("long_press", 31)])

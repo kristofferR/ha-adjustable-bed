@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 from collections import Counter
 from collections.abc import Callable
+from time import monotonic
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -163,11 +164,14 @@ class LeggettLpLegacyController(BedController):
             response="write" in properties,
         )
 
-    async def _wait_ticks(self, ticks: int) -> bool:
+    async def _wait_ticks(self, ticks: int, *, started_at: float | None = None) -> bool:
         """Return whether the requested app time elapsed without cancellation."""
         cancel = self._coordinator.cancel_command
+        delay = ticks * _TICK_SECONDS
+        if started_at is not None:
+            delay = max(0.0, delay - (monotonic() - started_at))
         try:
-            async with asyncio.timeout(ticks * _TICK_SECONDS):
+            async with asyncio.timeout(delay):
                 await cancel.wait()
         except TimeoutError:
             return True
@@ -192,9 +196,10 @@ class LeggettLpLegacyController(BedController):
                 for _ in range(self._coordinator.motor_pulse_count):
                     if cancel.is_set():
                         return
+                    started_at = monotonic()
                     await self.write_command(packet)
                     ticks += 1
-                    if not await self._wait_ticks(1):
+                    if not await self._wait_ticks(1, started_at=started_at):
                         return
                 completed = True
             elif control.press.state == 3:

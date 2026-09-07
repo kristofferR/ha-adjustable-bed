@@ -593,7 +593,8 @@
       "single_address_pairing_unsupported": "This CBNew protocol has no A/B side selector and cannot safely expose paired-side controls.",
       "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
       "invalid_lp_legacy_mode": "Select Legacy or Framed explicitly.",
-      "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID."
+      "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID.",
+      "lp_legacy_pair_settings": "Unpair the beds and configure the legacy L&P profile, packet mode and Bluetooth characteristics on each bed before pairing them again."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",

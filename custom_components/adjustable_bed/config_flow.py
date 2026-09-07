@@ -4867,9 +4867,11 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         """Show and save the normal options form."""
         # Get current values from config entry
         current_data: dict[str, Any] = dict(self.config_entry.data)
-        if is_paired(current_data) and current_data.get(CONF_PAIR_MODE) != (
-            PAIR_MODE_SINGLE_ADDRESS
-        ):
+        separate_address_pair = (
+            is_paired(current_data)
+            and current_data.get(CONF_PAIR_MODE) != PAIR_MODE_SINGLE_ADDRESS
+        )
+        if separate_address_pair:
             # Per-side settings (motor count, massage, adapter, angle limits)
             # live in the child descriptors, not parent data. Show the first
             # side's real values so the form isn't generic defaults; on save,
@@ -5021,7 +5023,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 )
             ] = vol.In(variants)
 
-        if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
+        if bed_type == BED_TYPE_LEGGETT_LP_LEGACY and not separate_address_pair:
+            # A pair's shared form must never overwrite device-specific profiles or GATT UUIDs.
             schema_dict.update(_lp_legacy_schema(current_data))
 
         # Add PIN field for Octo beds
@@ -5108,6 +5111,16 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
 
         if user_input is not None:
             requested_bed_type = user_input.get(CONF_BED_TYPE, bed_type)
+            if (
+                separate_address_pair
+                and requested_bed_type == BED_TYPE_LEGGETT_LP_LEGACY
+                and requested_bed_type != bed_type
+            ):
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={"base": "lp_legacy_pair_settings"},
+                )
             if requested_bed_type != bed_type:
                 # Re-render once using the selected protocol so its variant,
                 # authentication, layout, remote, and position fields are
@@ -5227,7 +5240,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 self._pending_data[CONF_DISABLE_ANGLE_SENSING] = disable_angle_sensing
                 self._pending_changed_data[CONF_DISABLE_ANGLE_SENSING] = disable_angle_sensing
                 return await self._async_options_form(None, step_id=step_id)
-            if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
+            if bed_type == BED_TYPE_LEGGETT_LP_LEGACY and not separate_address_pair:
                 legacy_data = {**current_data, **user_input}
                 legacy_errors = _validate_lp_legacy_settings(legacy_data)
                 if legacy_errors:

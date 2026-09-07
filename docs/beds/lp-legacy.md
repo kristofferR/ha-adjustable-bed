@@ -29,6 +29,9 @@ Choosing a different layout changes the available controls. I0RM has no proven
 bed commands in this app and therefore exposes no remote action buttons.
 For paired beds with separate addresses, each side's stored profile provides its
 remote buttons even when that side is unavailable during startup.
+Profile, packet mode and GATT UUIDs stay specific to each side and are not shown
+in the pair's shared settings. To change them, unpair the beds, update the
+individual entries, then pair them again.
 Changing the layout or packet mode creates distinct action entities. Update
 automations to use those new entities; old actions remain unavailable instead
 of being silently reassigned to different commands.
@@ -41,7 +44,8 @@ adjustable bed card's utility section. Automations can call the ordinary
 `button.press` action on these entities.
 
 Held controls repeat at the app's proven 100 ms cadence. The configured motor
-pulse count determines how long a button invocation holds the control. The
+pulse count determines how long a button invocation holds the control. The wait
+between writes accounts for time spent awaiting the Bluetooth write. The
 integration preserves each control's own release behavior and sends its release
 even when a running action is cancelled. One-shot controls do not inherit a
 movement repeat loop. The Stop button cancels the active action and performs its
