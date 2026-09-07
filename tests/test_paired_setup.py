@@ -37,6 +37,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LINAK,
+    BED_TYPE_LOGICDATA_APP,
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
     BED_TYPE_SBI,
@@ -46,6 +47,9 @@ from custom_components.adjustable_bed.const import (
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_RESOLVED_VARIANT,
+    CONF_LOGICDATA_APP_FAMILY,
+    CONF_LOGICDATA_APP_LAYOUT,
+    CONF_LOGICDATA_APP_PROFILE,
     CONF_MOTOR_COUNT,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
@@ -2958,6 +2962,14 @@ class TestOfflineSafeBedTypes:
             child[CONF_BED_TYPE] = bed_type
             if bed_type == BED_TYPE_SOLACE:
                 child[CONF_BLE_DEVICE_NAME] = "SealyMF Base"
+            if bed_type == BED_TYPE_LOGICDATA_APP:
+                child.update(
+                    {
+                        CONF_LOGICDATA_APP_PROFILE: "phone",
+                        CONF_LOGICDATA_APP_FAMILY: "p1",
+                        CONF_LOGICDATA_APP_LAYOUT: "standard_2",
+                    }
+                )
         entry = MockConfigEntry(
             domain=DOMAIN,
             title=bed_type,

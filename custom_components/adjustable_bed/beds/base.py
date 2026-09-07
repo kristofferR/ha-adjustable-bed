@@ -1245,6 +1245,16 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_clock_alarm(self) -> bool:
+        """Return whether a weekly clock alarm can be configured."""
+        return False
+
+    @property
+    def supports_preset_hold(self) -> bool:
+        """Return whether a preset can be held for a bounded duration."""
+        return False
+
+    @property
     def supports_simultaneous_movement(self) -> bool:
         """Return True if two sections can be driven by one protocol command."""
         return False
@@ -1916,6 +1926,24 @@ class BedController(ABC):
     async def rename_device(self, name: str) -> None:
         """Write a protocol-supported BLE device name."""
         raise NotImplementedError("Device rename not supported on this bed")
+
+    async def configure_clock_alarm(
+        self,
+        *,
+        enabled: bool,
+        weekdays: Sequence[int],
+        hour: int,
+        minute: int,
+        preset: str,
+        head_level: int = 0,
+        foot_level: int = 0,
+    ) -> None:
+        """Configure a weekly alarm with Monday numbered zero."""
+        raise NotImplementedError("Clock alarm not supported on this bed")
+
+    async def hold_preset(self, preset: str, duration_ms: int) -> None:
+        """Hold a preset using the protocol's refresh and release lifecycle."""
+        raise NotImplementedError("Held preset not supported on this bed")
 
     async def program_alarm(
         self,

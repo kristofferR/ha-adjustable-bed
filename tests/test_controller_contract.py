@@ -89,6 +89,12 @@ class _FactoryCoordinator(SimpleNamespace):
         super().__init__(
             hass=SimpleNamespace(async_add_import_executor_job=_RecordingImportExecutor()),
             client=None,
+            entry=SimpleNamespace(data={
+                const.CONF_LOGICDATA_APP_PROFILE: "phone",
+                const.CONF_LOGICDATA_APP_FAMILY: "p1",
+                const.CONF_LOGICDATA_APP_LAYOUT: "standard_2",
+                const.CONF_LOGICDATA_APP_TRANSPORT: "t1",
+            }),
             cancel_command=asyncio.Event(),
             motor_pulse_count=10,
             motor_pulse_delay_ms=100,

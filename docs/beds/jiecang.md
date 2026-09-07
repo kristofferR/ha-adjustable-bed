@@ -1,5 +1,9 @@
 # Jiecang
 
+The accepted MOTIONrelax phone and tablet app protocols are available through
+the separate [LOGICDATA app profiles](logicdata-app.md). Existing working Jiecang
+configurations keep this legacy controller.
+
 **Status:** ❓ Needs testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
