@@ -411,3 +411,21 @@ class TestDiagnosticsOutput:
         assert result["advertisement"]["kaidi"]["product_id"] == 136
         assert result["advertisement"]["kaidi"]["seat_1_bars"] == 4
         assert result["advertisement"]["source"] == "proxy_kaidi"
+
+
+def test_nested_device_serial_is_redacted():
+    from custom_components.adjustable_bed.redaction import redact_data
+
+    diagnostics = {
+        "protocol_diagnostics": {
+            "device_information": {"serial": "unique-bed-serial", "model": "model"}
+        }
+    }
+    result = redact_data(diagnostics)
+    assert result["protocol_diagnostics"]["device_information"] == {
+        "serial": "**REDACTED**",
+        "model": "model",
+    }
+    assert (
+        diagnostics["protocol_diagnostics"]["device_information"]["serial"] == "unique-bed-serial"
+    )

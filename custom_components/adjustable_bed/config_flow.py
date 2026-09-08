@@ -131,6 +131,7 @@ from .const import (
     CONF_JIECANG_APP_PROFILE,
     CONF_JIECANG_APP_TRANSPORT,
     CONF_KAIDI_RESOLVED_VARIANT,
+    CONF_LEGGETT_APP_PROFILE,
     CONF_LEGS_MAX_ANGLE,
     CONF_LOGICDATA_APP_FAMILY,
     CONF_LOGICDATA_APP_HAS_LIGHT,
@@ -176,6 +177,9 @@ from .const import (
     JIECANG_APP_LAYOUTS,
     JIECANG_APP_PROFILES,
     JIECANG_APP_TRANSPORTS,
+    LEGGETT_APP_DEFAULT_PROFILE,
+    LEGGETT_APP_MOTOR_COUNTS,
+    LEGGETT_APP_PROFILES,
     LEGGETT_VARIANT_GEN2,
     LOGICDATA_APP_FAMILIES,
     LOGICDATA_APP_LAYOUTS,
@@ -631,6 +635,21 @@ def _add_malouf_schema_fields(schema: dict[vol.Marker, Any]) -> None:
     )
 
 
+def _is_leggett_app_type(bed_type: str | None, variant: str | None = None) -> bool:
+    """Resolve only the explicit Okin route of the legacy umbrella type."""
+    return resolve_explicit_bed_type(bed_type, variant) == BED_TYPE_LEGGETT_OKIN
+
+
+def _add_leggett_app_schema_field(
+    schema: dict[vol.Marker, Any], current_data: dict[str, Any] | None = None
+) -> None:
+    current_data = current_data or {}
+    schema[vol.Optional(
+        CONF_LEGGETT_APP_PROFILE,
+        default=current_data.get(CONF_LEGGETT_APP_PROFILE, LEGGETT_APP_DEFAULT_PROFILE),
+    )] = vol.In(LEGGETT_APP_PROFILES)
+
+
 def _add_logicdata_app_schema_fields(
     schema: dict[vol.Marker, Any], current_data: dict[str, Any] | None = None
 ) -> None:
@@ -1000,6 +1019,26 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             data_schema=vol.Schema(schema_dict),
         )
 
+    async def async_step_leggett_app(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Choose the app's actuator/capability profile before normal BLE pairing."""
+        assert self._manual_data is not None
+        errors = {}
+        if user_input is not None:
+            profile = user_input.get(CONF_LEGGETT_APP_PROFILE, LEGGETT_APP_DEFAULT_PROFILE)
+            if profile not in LEGGETT_APP_PROFILES:
+                errors[CONF_LEGGETT_APP_PROFILE] = "leggett_app_invalid_profile"
+            else:
+                self._manual_data[CONF_LEGGETT_APP_PROFILE] = profile
+                self._manual_data[CONF_MOTOR_COUNT] = LEGGETT_APP_MOTOR_COUNTS[profile]
+                return await getattr(self, f"async_step_{self._leggett_app_pairing_step}")()
+        schema: dict[vol.Marker, Any] = {}
+        _add_leggett_app_schema_field(schema, user_input)
+        return self.async_show_form(
+            step_id="leggett_app", data_schema=vol.Schema(schema), errors=errors
+        )
+
     async def async_step_logicdata_app(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -1047,6 +1086,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._discovered_devices: dict[str, BluetoothServiceInfoBleak] = {}
         self._all_ble_devices: dict[str, BluetoothServiceInfoBleak] = {}
         self._manual_data: dict[str, Any] | None = None
+        self._leggett_app_pairing_step = "manual_pairing"
         # For two-tier actuator selection
         self._selected_actuator: str | None = None
         self._selected_bed_type: str | None = None
@@ -1847,6 +1887,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 }
                 if selected_bed_type == BED_TYPE_SOLACE and self._discovery_info.name:
                     entry_data[CONF_BLE_DEVICE_NAME] = self._discovery_info.name
+                if _is_leggett_app_type(selected_bed_type, protocol_variant):
+                    self._manual_data = entry_data
+                    self._leggett_app_pairing_step = "bluetooth_pairing"
+                    return await self.async_step_leggett_app()
                 if selected_bed_type == BED_TYPE_LOGICDATA_APP:
                     self._manual_data = entry_data
                     return await self.async_step_logicdata_app()
@@ -2733,6 +2777,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
                     ),
                 }
+                if _is_leggett_app_type(bed_type, protocol_variant):
+                    self._manual_data = entry_data
+                    self._leggett_app_pairing_step = "manual_pairing"
+                    return await self.async_step_leggett_app()
                 if bed_type == BED_TYPE_LOGICDATA_APP:
                     self._manual_data = entry_data
                     return await self.async_step_logicdata_app()
@@ -3012,6 +3060,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
                         ),
                     }
+                    if _is_leggett_app_type(bed_type, protocol_variant):
+                        self._manual_data = entry_data
+                        self._leggett_app_pairing_step = "manual_pairing"
+                        return await self.async_step_leggett_app()
                     if bed_type == BED_TYPE_LOGICDATA_APP:
                         self._manual_data = entry_data
                         return await self.async_step_logicdata_app()
@@ -4785,6 +4837,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             data.pop(CONF_JENSEN_PIN, None)
         if bed_type != BED_TYPE_RICHMAT:
             data.pop(CONF_RICHMAT_REMOTE, None)
+        if not _is_leggett_app_type(bed_type, data.get(CONF_PROTOCOL_VARIANT)):
+            data.pop(CONF_LEGGETT_APP_PROFILE, None)
         if bed_type != BED_TYPE_LOGICDATA_APP:
             for key in (
                 CONF_LOGICDATA_APP_PROFILE, CONF_LOGICDATA_APP_FAMILY,
@@ -5036,6 +5090,9 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         step_id: str,
     ) -> ConfigFlowResult:
         """Show and save the normal options form."""
+        separate_address_pair = (
+            self.config_entry.data.get(CONF_PAIR_MODE) == PAIR_MODE_SEPARATE_ADDRESS
+        )
         # Get current values from config entry
         current_data: dict[str, Any] = dict(self.config_entry.data)
         separate_address_pair = (
@@ -5229,6 +5286,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 )
             ] = vol.In(remote_options)
 
+        if _is_leggett_app_type(bed_type, form_variant) and not separate_address_pair:
+            _add_leggett_app_schema_field(schema_dict, current_data)
         if bed_type == BED_TYPE_LOGICDATA_APP and not separate_address_pair:
             _add_logicdata_app_schema_fields(schema_dict, current_data)
         if bed_type == BED_TYPE_JIECANG_APP and not separate_address_pair:
@@ -5287,6 +5346,16 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
 
         if user_input is not None:
             requested_bed_type = user_input.get(CONF_BED_TYPE, bed_type)
+            requested_route = user_input.get(CONF_PROTOCOL_VARIANT, form_variant)
+            if (
+                separate_address_pair
+                and _is_leggett_app_type(requested_bed_type, requested_route)
+                and not _is_leggett_app_type(bed_type, form_variant)
+            ):
+                return self.async_show_form(
+                    step_id=step_id, data_schema=vol.Schema(schema_dict),
+                    errors={CONF_BED_TYPE: "leggett_app_unpair_first"},
+                )
             if (
                 separate_address_pair
                 and requested_bed_type == BED_TYPE_LOGICDATA_APP
@@ -5385,6 +5454,13 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 bed_type,
                 {**current_data, **user_input},
             )
+            if (
+                _is_leggett_app_type(bed_type, requested_variant)
+                and not _is_leggett_app_type(bed_type, form_variant)
+            ):
+                self._remember_pending_changes(schema_dict, user_input)
+                self._pending_data = {**self._pending_data, **user_input}
+                return await self._async_options_form(None, step_id=step_id)
             if variants:
                 user_input[CONF_PROTOCOL_VARIANT] = requested_variant
             else:
@@ -5432,6 +5508,17 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 self._pending_data[CONF_DISABLE_ANGLE_SENSING] = disable_angle_sensing
                 self._pending_changed_data[CONF_DISABLE_ANGLE_SENSING] = disable_angle_sensing
                 return await self._async_options_form(None, step_id=step_id)
+            if _is_leggett_app_type(bed_type, requested_variant) and not separate_address_pair:
+                profile = user_input.get(
+                    CONF_LEGGETT_APP_PROFILE, current_data.get(CONF_LEGGETT_APP_PROFILE)
+                )
+                if profile is not None:
+                    if profile not in LEGGETT_APP_PROFILES:
+                        return self.async_show_form(
+                            step_id=step_id, data_schema=vol.Schema(schema_dict),
+                            errors={CONF_LEGGETT_APP_PROFILE: "leggett_app_invalid_profile"},
+                        )
+                    user_input[CONF_MOTOR_COUNT] = LEGGETT_APP_MOTOR_COUNTS[profile]
             if bed_type == BED_TYPE_LOGICDATA_APP and not separate_address_pair:
                 app_errors = _logicdata_app_errors({**current_data, **user_input})
                 if app_errors:

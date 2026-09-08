@@ -473,6 +473,120 @@ solace_set_alarm:
         select:
           options: [both, left, right]
 
+leggett_sleep_timer:
+  name: Set Leggett sleep timer
+  description: Start a delayed preset or cancel the stored sleep timer.
+  fields:
+    device_id:
+      name: Device
+      description: A timer-capable Leggett Okin controller with its matching app profile.
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    action:
+      name: Action
+      required: true
+      selector:
+        select:
+          options: [start, cancel]
+    minutes:
+      name: Delay
+      description: Required to start. Prodigy accepts 1 to 1439 minutes; U Series accepts 15, 30, 45, 60, 75, or 90 minutes.
+      selector:
+        number:
+          min: 1
+          max: 1439
+          step: 1
+          unit_of_measurement: minutes
+          mode: box
+    preset:
+      name: Sleep action
+      description: Prodigy uses memory slots 1 to 4. U Series uses 0 for flat or 1 to 3 for memory; its third memory is available only through this timer.
+      default: 1
+      selector:
+        number:
+          min: 0
+          max: 4
+          step: 1
+          mode: box
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
+
+leggett_alarm_timer:
+  name: Set Leggett alarm timer
+  description: Start an alarm delay or cancel the stored alarm using the selected app profile.
+  fields:
+    device_id:
+      name: Device
+      description: A timer-capable Leggett Okin controller with its matching app profile.
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    action:
+      name: Action
+      required: true
+      selector:
+        select:
+          options: [start, cancel]
+    minutes:
+      name: Delay
+      description: Required to start. Alarm delay in whole minutes, from 1 to 1440.
+      selector:
+        number:
+          min: 1
+          max: 1440
+          step: 1
+          unit_of_measurement: minutes
+          mode: box
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
+
+leggett_hold_control:
+  name: Hold Leggett control
+  description: Hold a supported control for a bounded duration, then send its release sequence.
+  fields:
+    device_id:
+      name: Device
+      description: A Leggett Okin controller with its matching app profile.
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    control:
+      name: Control
+      description: Memory 1, memory 2, and store are U Series controls. Other choices are available on all app profiles.
+      required: true
+      selector:
+        select:
+          options: [flat, snore, lights_toggle, massage_toggle, massage_wave, massage_head_up, massage_head_down, massage_foot_up, massage_foot_down, memory_1, memory_2, store]
+    duration:
+      name: Duration
+      description: Hold for 0.1 to 60 seconds, in whole milliseconds. These are service interface bounds, not firmware limits.
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.001
+          unit_of_measurement: seconds
+          mode: box
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
+
 logicdata_set_alarm:
   name: Set Logicdata clock alarm
   description: Configure the controller's recurring alarm with a preset and massage levels.

@@ -10,7 +10,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from .const import CONF_JENSEN_PIN, CONF_OCTO_PIN
 
 # Keys to fully redact
-KEYS_TO_REDACT = {CONF_NAME, CONF_JENSEN_PIN, CONF_OCTO_PIN, "title"}
+KEYS_TO_REDACT = {CONF_NAME, CONF_JENSEN_PIN, CONF_OCTO_PIN, "title", "serial"}
 
 # Keys containing MAC addresses (partial redaction - keep OUI)
 MAC_ADDRESS_KEYS = {CONF_ADDRESS, "address"}
@@ -60,7 +60,7 @@ def redact_string(text: str) -> str:
 def redact_data(data: Any, depth: int = 0) -> Any:
     """Recursively redact sensitive data from a dictionary.
 
-    - Fully redacts name, title, PIN fields
+    - Fully redacts name, title, PIN and serial fields
     - Partially redacts MAC addresses (keeps OUI for debugging)
 
     Args:

@@ -1265,6 +1265,36 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_sleep_timer(self) -> bool:
+        """Return True if a delayed preset can be programmed and cancelled."""
+        return False
+
+    @property
+    def sleep_timer_memory_options(self) -> tuple[int, ...]:
+        """Return selectable sleep actions, with zero representing flat."""
+        return ()
+
+    @property
+    def sleep_timer_duration_options(self) -> tuple[int, ...]:
+        """Return discrete minute choices, or empty for a continuous minute range."""
+        return ()
+
+    @property
+    def supports_alarm_timer(self) -> bool:
+        """Return True if an alarm delay can be programmed and cancelled."""
+        return False
+
+    @property
+    def held_control_options(self) -> tuple[str, ...]:
+        """Return controls with a protocol-defined held-command lifecycle."""
+        return ()
+
+    @property
+    def supports_held_control(self) -> bool:
+        """Return True when held controls are available."""
+        return bool(self.held_control_options)
+
+    @property
     def supports_clock_alarm(self) -> bool:
         """Return whether a weekly clock alarm can be configured."""
         return False
@@ -2002,6 +2032,26 @@ class BedController(ABC):
     ) -> None:
         """Program a protocol-supported wake alarm."""
         raise NotImplementedError("Alarm programming not supported on this bed")
+
+    async def set_sleep_timer(self, minutes: int, memory_num: int = 1) -> None:
+        """Schedule a delayed preset using a supported sleep action."""
+        raise NotImplementedError("Sleep timer not supported on this bed")
+
+    async def cancel_sleep_timer(self) -> None:
+        """Cancel the stored sleep timer."""
+        raise NotImplementedError("Sleep timer not supported on this bed")
+
+    async def set_alarm_timer(self, minutes: int) -> None:
+        """Schedule an alarm after the given number of minutes."""
+        raise NotImplementedError("Alarm timer not supported on this bed")
+
+    async def cancel_alarm_timer(self) -> None:
+        """Cancel the stored alarm timer."""
+        raise NotImplementedError("Alarm timer not supported on this bed")
+
+    async def hold_control(self, control: str, duration_ms: int) -> None:
+        """Hold a supported control for a bounded duration, then release it."""
+        raise NotImplementedError("Held controls not supported on this bed")
 
     async def move_simultaneously(
         self,
