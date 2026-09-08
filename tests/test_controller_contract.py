@@ -98,6 +98,10 @@ class _FactoryCoordinator(SimpleNamespace):
             client=None,
             entry=SimpleNamespace(
                 data={
+                    const.CONF_LOGICDATA_APP_PROFILE: "phone",
+                    const.CONF_LOGICDATA_APP_FAMILY: "p1",
+                    const.CONF_LOGICDATA_APP_LAYOUT: "standard_2",
+                    const.CONF_LOGICDATA_APP_TRANSPORT: "t1",
                     const.CONF_JIECANG_APP_PROFILE: "dreamask",
                     const.CONF_JIECANG_APP_LAYOUT: "standard_2",
                     const.CONF_JIECANG_APP_TRANSPORT: "g1",

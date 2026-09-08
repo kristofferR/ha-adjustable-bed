@@ -200,6 +200,8 @@ timed_move:
               value: tv_lift
             - label: Back
               value: back
+            - label: Right Back
+              value: right_back
             - label: Legs
               value: legs
             - label: Head
@@ -467,6 +469,125 @@ solace_set_alarm:
     side:
       name: Side
       required: false
+      selector:
+        select:
+          options: [both, left, right]
+
+logicdata_set_alarm:
+  name: Set Logicdata clock alarm
+  description: Configure the controller's recurring alarm with a preset and massage levels.
+  fields:
+    device_id:
+      name: Device
+      description: A Logicdata phone app controller using the standard protocol. Tablet and middle-motor controllers do not support clock alarms.
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    enabled:
+      name: Enabled
+      required: true
+      selector:
+        boolean:
+    time:
+      name: Time
+      description: Alarm time on the controller's local clock, to the nearest minute.
+      selector:
+        time:
+    weekdays:
+      name: Weekdays
+      selector:
+        select:
+          multiple: true
+          options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+    preset:
+      name: Bed preset
+      default: flat
+      selector:
+        select:
+          options: [flat, zero_g, anti_snore, memory_1, memory_2]
+    head_level:
+      name: Head massage level
+      description: Alarm massage intensity, with 0 for off and 1 to 3 for increasing intensity.
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 3
+          step: 1
+          mode: box
+    foot_level:
+      name: Foot massage level
+      description: Alarm massage intensity, with 0 for off and 1 to 3 for increasing intensity.
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 3
+          step: 1
+          mode: box
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
+
+logicdata_rename:
+  name: Rename Logicdata controller
+  description: Change the Bluetooth name of a compatible Logicdata app controller.
+  fields:
+    device_id:
+      name: Device
+      description: A Logicdata app controller that supports device renaming.
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    name:
+      name: Name
+      description: This service accepts 1 to 255 printable ASCII characters as a safe common input range for phone and tablet controllers.
+      required: true
+      selector:
+        text:
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
+
+logicdata_hold_preset:
+  name: Hold Logicdata preset recall
+  description: Recall a middle-motor flat or memory position with repeated commands for a specified duration, then release.
+  fields:
+    device_id:
+      name: Device
+      description: A Logicdata app controller using the middle-motor protocol. Standard controllers do not support held preset recall.
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    preset:
+      name: Preset
+      required: true
+      selector:
+        select:
+          options: [flat, memory_1, memory_2]
+    duration:
+      name: Duration
+      description: Hold for 0.2 to 60 seconds, in whole milliseconds. These are service interface bounds, not firmware limits.
+      required: true
+      selector:
+        number:
+          min: 0.2
+          max: 60
+          step: 0.001
+          unit_of_measurement: seconds
+          mode: box
+    side:
+      name: Side
       selector:
         select:
           options: [both, left, right]

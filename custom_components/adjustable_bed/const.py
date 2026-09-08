@@ -51,6 +51,28 @@ class ConnectionProfileSettings:
 CONF_BED_TYPE: Final = "bed_type"
 CONF_PROTOCOL_VARIANT: Final = "protocol_variant"
 CONF_MOTOR_COUNT: Final = "motor_count"
+CONF_LOGICDATA_APP_PROFILE: Final = "logicdata_app_profile"
+CONF_LOGICDATA_APP_FAMILY: Final = "logicdata_app_family"
+CONF_LOGICDATA_APP_LAYOUT: Final = "logicdata_app_layout"
+CONF_LOGICDATA_APP_TRANSPORT: Final = "logicdata_app_transport"
+CONF_LOGICDATA_APP_HAS_LIGHT: Final = "logicdata_app_has_light"
+LOGICDATA_APP_PROFILES: Final = {"phone": "Phone app", "tablet": "Tablet app"}
+LOGICDATA_APP_FAMILIES: Final = {"p1": "P1 (standard)", "p2": "P2 (middle)"}
+LOGICDATA_APP_LAYOUTS: Final = {
+    "standard_2": "Back and legs (2 motors)",
+    "standard_3_neck": "Back, legs and neck",
+    "standard_3_lumbar": "Back, legs and lumbar",
+    "standard_3_hi_low": "Back, legs and height",
+    "standard_3_split_upper": "Split upper (3 motors)",
+    "standard_4": "Back, legs, neck and lumbar",
+    "split_series": "Split series",
+    "middle": "Middle layout",
+}
+LOGICDATA_APP_TRANSPORTS: Final = {
+    "auto": "Auto (one compatible GATT endpoint)",
+    "t1": "T1", "t2": "T2", "t3": "T3",
+}
+
 CONF_JIECANG_APP_PROFILE: Final = "jiecang_app_profile"
 CONF_JIECANG_APP_LAYOUT: Final = "jiecang_app_layout"
 CONF_JIECANG_APP_TRANSPORT: Final = "jiecang_app_transport"
@@ -304,6 +326,7 @@ BED_TYPE_SBI: Final = "sbi"  # SBI/Q-Plus (Costco) with position feedback
 BED_TYPE_SUTA: Final = "suta"  # SUTA Smart Home AT protocol (ASCII + CRLF)
 BED_TYPE_TIMOTION_AHF: Final = "timotion_ahf"  # TiMOTION AHF 11-byte bitmask protocol
 BED_TYPE_KAIDI: Final = "kaidi"  # Kaidi custom mesh-over-GATT protocol (Rize/Floyd/ISleep)
+BED_TYPE_LOGICDATA_APP: Final = "logicdata_app"
 BED_TYPE_LOGICDATA: Final = "logicdata"  # Logicdata SimplicityFrame (XXTEA+CRC16+SLIP)
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 
@@ -396,6 +419,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_KAIDI,
     # Logicdata SimplicityFrame (SILVERmotion)
     BED_TYPE_LOGICDATA,
+    BED_TYPE_LOGICDATA_APP,
 ]
 
 
@@ -2322,6 +2346,7 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
 # not remain "unknown" forever (#322, #344, #501).
 BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
     {
+        BED_TYPE_LOGICDATA_APP,
         BED_TYPE_JIECANG_APP,
         BED_TYPE_LEGGETT_LP_LEGACY,
         BED_TYPE_OKIN_CST,
@@ -2396,6 +2421,7 @@ BEDS_WITH_DISCONNECT_AFTER_COMMAND_DEFAULT_DISABLED: Final = (
             BED_TYPE_KAIDI,
             BED_TYPE_LEGGETT_WILINKE,
             BED_TYPE_LIMOSS,
+            BED_TYPE_LOGICDATA_APP,
             BED_TYPE_OCTO,
             BED_TYPE_OKIMAT,
             BED_TYPE_OKIN_CB24,

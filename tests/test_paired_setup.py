@@ -39,6 +39,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LINAK,
+    BED_TYPE_LOGICDATA_APP,
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
     BED_TYPE_SBI,
@@ -48,6 +49,10 @@ from custom_components.adjustable_bed.const import (
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_RESOLVED_VARIANT,
+    CONF_LOGICDATA_APP_FAMILY,
+    CONF_LOGICDATA_APP_LAYOUT,
+    CONF_LOGICDATA_APP_PROFILE,
+    CONF_LOGICDATA_APP_TRANSPORT,
     CONF_LP_LEGACY_MODE,
     CONF_LP_LEGACY_MODEL,
     CONF_LP_LEGACY_WRITE_UUID,
@@ -2488,7 +2493,8 @@ class TestSideServiceRouting:
             )
         coordinator.async_run_child_operation.assert_not_awaited()
 
-    async def test_combined_motor_buttons_use_side_spec_functions(self):
+    @pytest.mark.parametrize("scheduler_resource", [None, "motor:*"])
+    async def test_combined_motor_buttons_use_side_spec_functions(self, scheduler_resource):
         """The combined both-sides motor buttons carry each side's OWN
         MotorControlSpec functions, so a 3/4-motor Octo's head/feet buttons drive
         the mapped extra motors (_move_motor3/4), not the generic move_head/feet
@@ -2510,6 +2516,7 @@ class TestSideServiceRouting:
             close_fn=MagicMock(),
             stop_fn=MagicMock(),
             position_key="back",
+            scheduler_resource=scheduler_resource,
         )
         back_spec = MotorControlSpec(
             key="back",
@@ -2531,7 +2538,12 @@ class TestSideServiceRouting:
         coord = MagicMock(pair_id="pair_x", device_info={})
         btn = PairedBedCombinedMotorButton(coord, head_spec, "up")
         assert btn._move_fn is motor3_up
-        assert btn._resource == "motor:back"
+        coord.async_execute_controller_command = AsyncMock()
+        await btn.async_press()
+        coord.async_execute_controller_command.assert_awaited_once_with(
+            motor3_up, side="both", cancel_running=True,
+            resource=scheduler_resource or "motor:back",
+        )
         assert btn._attr_unique_id == "pair_x_head_up_both"
 
         # The builder intersects each side's specs and builds from THEM, not from
@@ -3055,6 +3067,64 @@ class TestOfflineSafeBedTypes:
 
         await left.async_prime_offline_controller()
         assert left.capability_controller is not None, bed_type
+
+    async def test_logicdata_auto_transport_caches_discovered_rename_capability(
+        self, hass: HomeAssistant
+    ):
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
+
+        from custom_components.adjustable_bed.beds.logicdata_app import LogicdataAppController
+        from custom_components.adjustable_bed.logicdata_app_protocol import TRANSPORTS
+        from custom_components.adjustable_bed.services import _validation_controller
+
+        data = _paired_entry_data()
+        data[CONF_BED_TYPE] = BED_TYPE_LOGICDATA_APP
+        for child in data[CONF_PAIR_CHILDREN]:
+            child.update(
+                {
+                    CONF_BED_TYPE: BED_TYPE_LOGICDATA_APP,
+                    CONF_LOGICDATA_APP_PROFILE: "phone",
+                    CONF_LOGICDATA_APP_FAMILY: "p1",
+                    CONF_LOGICDATA_APP_LAYOUT: "standard_2",
+                    CONF_LOGICDATA_APP_TRANSPORT: "auto",
+                }
+            )
+        entry = MockConfigEntry(domain=DOMAIN, data=data, version=4)
+        entry.add_to_hass(hass)
+        left = _build_paired_children(hass, entry)[SIDE_LEFT]
+        await left.async_prime_offline_controller()
+        assert left.capability_controller is None
+
+        transport = TRANSPORTS["t1"]
+        chars = [
+            SimpleNamespace(uuid=uuid)
+            for uuid in (transport.write_uuid, transport.notify_uuid, transport.rename_uuid)
+        ]
+        service = SimpleNamespace(characteristics=chars)
+        client = MagicMock(is_connected=True)
+        client.services.get_service.side_effect = lambda uuid: (
+            service if uuid == transport.service_uuid else None
+        )
+        left._client = client
+        bed = LogicdataAppController(
+            left,
+            profile="phone",
+            command_family="p1",
+            layout="standard_2",
+            transport="auto",
+            has_light=True,
+            has_massage=False,
+        )
+        await bed.async_discover_capabilities()
+        left._controller = bed
+        left.cache_capability_controller()
+        left._controller = None
+        left._client = None
+        with patch.object(left, "async_ensure_connected", new_callable=AsyncMock) as connect:
+            validation = await _validation_controller(left, left, [])
+        assert validation.supports_device_rename
+        connect.assert_not_awaited()
 
     async def test_lp_legacy_offline_side_keeps_configured_remote_buttons(
         self, hass: HomeAssistant

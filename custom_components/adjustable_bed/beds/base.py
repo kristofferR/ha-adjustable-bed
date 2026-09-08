@@ -105,6 +105,7 @@ class MotorControlSpec:
     stop_fn: MotorCommandCallable
     position_key: str | None = None
     max_angle: float = 68
+    scheduler_resource: str | None = None
 
 
 # Units a position slider can be scaled in.
@@ -743,6 +744,10 @@ class BedController(ABC):
             self._coordinator.motor_pulse_delay_ms,
         )
 
+    def timed_move_repeat_count(self, duration_ms: int, pulse_delay_ms: int) -> int:
+        """Plan repeats including the immediate first write."""
+        return max(2, (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms + 1)
+
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command with guaranteed STOP at end.
 
@@ -1262,6 +1267,11 @@ class BedController(ABC):
     @property
     def supports_clock_alarm(self) -> bool:
         """Return whether a weekly clock alarm can be configured."""
+        return False
+
+    @property
+    def supports_preset_hold(self) -> bool:
+        """Return whether a preset can be held for a bounded duration."""
         return False
 
     @property
@@ -1978,6 +1988,10 @@ class BedController(ABC):
     async def stop_wake_routine(self) -> None:
         """Stop active wake massage without changing the stored alarm schedule."""
         raise NotImplementedError("Wake routine not supported on this bed")
+
+    async def hold_preset(self, preset: str, duration_ms: int) -> None:
+        """Hold a preset using the protocol's refresh and release lifecycle."""
+        raise NotImplementedError("Held preset not supported on this bed")
 
     async def program_alarm(
         self,

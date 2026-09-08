@@ -24,6 +24,7 @@ from .const import (
 )
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
+from .logicdata_app_protocol import LAYOUTS, layout_axes
 from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
 
 if TYPE_CHECKING:
@@ -44,6 +45,7 @@ class AdjustableBedCoverEntityDescription(CoverEntityDescription):
     position_key: str | None = None
     # Maximum angle for percentage calculation (default 68 degrees)
     max_angle: float = 68
+    scheduler_resource: str | None = None
 
 
 # Note: For Linak beds:
@@ -224,6 +226,8 @@ def _cover_entities_for(
         _LOGGER.warning("Skipping motor covers for %s - controller not available", coordinator.name)
         return []
 
+    _async_remove_stale_cover_entities(hass, coordinator, controller)
+
     # Skip motor cover entities if bed doesn't support motor control. Still run
     # stale cleanup first, so covers left over from an older config (e.g. a Gen2
     # entry that resolved to a no-actuator profile) are removed rather than left
@@ -233,7 +237,6 @@ def _cover_entities_for(
             "Skipping motor covers for %s - bed only supports presets",
             coordinator.name,
         )
-        _async_remove_stale_cover_entities(hass, coordinator, controller)
         return []
 
     # Skip motor cover entities if bed uses discrete motor control (buttons instead)
@@ -243,8 +246,6 @@ def _cover_entities_for(
             coordinator.name,
         )
         return []
-
-    _async_remove_stale_cover_entities(hass, coordinator, controller)
 
     return [
         AdjustableBedCover(coordinator, _build_cover_description(spec))
@@ -273,6 +274,7 @@ def _build_cover_description(
         stop_fn=spec.stop_fn,
         position_key=spec.position_key,
         max_angle=spec.max_angle,
+        scheduler_resource=spec.scheduler_resource,
     )
 
 
@@ -282,17 +284,16 @@ def _async_remove_stale_cover_entities(
     controller: BedController,
 ) -> None:
     """Remove stale cover entities that should no longer be exposed."""
-    # These app-specific controls can also remain after switching protocols.
-    stale_keys = controller.stale_motor_entity_keys | {
-        "both",
-        "right_back",
-        "right_legs",
-        "both_backs",
-        "both_legs",
-    }
-
     registry = er.async_get(hass)
-    active_keys = {spec.key for spec in controller.motor_control_specs}
+    active_keys = (
+        {spec.key for spec in controller.motor_control_specs}
+        if controller.supports_motor_control and not controller.has_discrete_motor_control
+        else set()
+    )
+    # MOTIONrelax covers must also retire when a different protocol replaces it.
+    stale_keys = controller.stale_motor_entity_keys | {
+        axis for layout in LAYOUTS for axis in layout_axes(layout)
+    } | {"both", "right_back", "right_legs", "both_backs", "both_legs"}
 
     for key in stale_keys:
         if key in active_keys:
@@ -335,7 +336,7 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
     @property
     def _motor_resource(self) -> str:
         """Return the scheduler resource for this physical position axis."""
-        return f"motor:{self._position_key}"
+        return self.entity_description.scheduler_resource or f"motor:{self._position_key}"
 
     @property
     def is_closed(self) -> bool | None:

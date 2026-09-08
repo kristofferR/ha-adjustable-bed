@@ -22,6 +22,8 @@ from .const import (
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LIMOSS,
     BED_TYPE_LINAK,
+    BED_TYPE_LOGICDATA,
+    BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MOTOSLEEP,
@@ -200,6 +202,24 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "label": "Legacy (FFE5)",
                 "description": "Older Malouf bases",
                 "hint": "Try 'New' first, use this if it doesn't work",
+            },
+        ],
+    },
+    "logicdata": {
+        "display": "Logicdata",
+        "description": "SimplicityFrame and MotionRelax beds",
+        "variants": [
+            {
+                "type": BED_TYPE_LOGICDATA,
+                "label": "SimplicityFrame (SILVERmotion)",
+                "description": "Existing encrypted SimplicityFrame protocol",
+                "hint": "Keep this choice for an existing working SimplicityFrame bed.",
+            },
+            {
+                "type": BED_TYPE_LOGICDATA_APP,
+                "label": "MotionRelax phone / tablet apps",
+                "description": "Explicit app, command family and physical layout",
+                "hint": "Choose the app and its configuration in the next step.",
             },
         ],
     },

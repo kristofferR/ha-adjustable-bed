@@ -1,5 +1,9 @@
 # Jiecang
 
+The accepted MOTIONrelax phone and tablet app protocols are available through
+the separate [LOGICDATA app profiles](logicdata-app.md). Existing working Jiecang
+configurations keep this legacy controller.
+
 This page describes the existing legacy Jiecang controller. For the accepted
 ERGOBALANCE 1.0.8 and Dream Motion 1.0.5 protocols, select the separate
 [Jiecang app profiles](jiecang-app.md). Their layouts, two memory slots,

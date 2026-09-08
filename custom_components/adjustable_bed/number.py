@@ -21,6 +21,7 @@ from .beds.base import PositionNumberSpec
 from .const import (
     BED_TYPE_JIECANG_APP,
     BED_TYPE_LINAK,
+    BED_TYPE_LOGICDATA_APP,
     BED_TYPE_SLEEPSTAR,
     BED_TYPE_SOLACE,
     BEDS_WITHOUT_ANGLE_FEEDBACK,
@@ -367,6 +368,25 @@ def _number_entities_for(
                 bed_type,
                 entry.data.get(CONF_PROTOCOL_VARIANT),
             )
+
+    if controller is not None:
+        supported_zones = (
+            controller.massage_intensity_zones
+            if has_massage and controller.supports_massage_intensity_control
+            else []
+        )
+        registry = er.async_get(hass)
+        for description in MASSAGE_NUMBER_DESCRIPTIONS:
+            # The right-side control can remain after switching away from MOTIONrelax.
+            if bed_type != BED_TYPE_LOGICDATA_APP and description.key != "massage_right_intensity":
+                continue
+            if description.massage_zone in supported_zones:
+                continue
+            entity_id = registry.async_get_entity_id(
+                "number", DOMAIN, coordinator.entity_unique_id(description.key)
+            )
+            if entity_id is not None:
+                registry.async_remove(entity_id)
 
     # Set up massage intensity number entities (only for beds with massage and direct intensity control)
     if has_massage and controller is not None:

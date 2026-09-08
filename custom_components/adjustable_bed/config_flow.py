@@ -95,6 +95,7 @@ from .const import (
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_OCTO,
@@ -131,6 +132,11 @@ from .const import (
     CONF_JIECANG_APP_TRANSPORT,
     CONF_KAIDI_RESOLVED_VARIANT,
     CONF_LEGS_MAX_ANGLE,
+    CONF_LOGICDATA_APP_FAMILY,
+    CONF_LOGICDATA_APP_HAS_LIGHT,
+    CONF_LOGICDATA_APP_LAYOUT,
+    CONF_LOGICDATA_APP_PROFILE,
+    CONF_LOGICDATA_APP_TRANSPORT,
     CONF_LP_LEGACY_MODE,
     CONF_LP_LEGACY_MODEL,
     CONF_LP_LEGACY_READ_UUID,
@@ -171,6 +177,10 @@ from .const import (
     JIECANG_APP_PROFILES,
     JIECANG_APP_TRANSPORTS,
     LEGGETT_VARIANT_GEN2,
+    LOGICDATA_APP_FAMILIES,
+    LOGICDATA_APP_LAYOUTS,
+    LOGICDATA_APP_PROFILES,
+    LOGICDATA_APP_TRANSPORTS,
     MALOUF_LAYOUT_AUTO,
     MALOUF_LAYOUTS,
     MALOUF_MEMORY_SLOT_OPTIONS,
@@ -621,6 +631,48 @@ def _add_malouf_schema_fields(schema: dict[vol.Marker, Any]) -> None:
     )
 
 
+def _add_logicdata_app_schema_fields(
+    schema: dict[vol.Marker, Any], current_data: dict[str, Any] | None = None
+) -> None:
+    """Require the app and physical layout, neither is identified by shared UUIDs."""
+    current_data = current_data or {}
+    for key, choices in (
+        (CONF_LOGICDATA_APP_PROFILE, LOGICDATA_APP_PROFILES),
+        (CONF_LOGICDATA_APP_FAMILY, LOGICDATA_APP_FAMILIES),
+        (CONF_LOGICDATA_APP_LAYOUT, LOGICDATA_APP_LAYOUTS),
+    ):
+        default = current_data.get(key, vol.UNDEFINED)
+        schema[vol.Required(key, default=default)] = vol.In(choices)
+    schema[
+        vol.Optional(
+            CONF_LOGICDATA_APP_TRANSPORT,
+            default=current_data.get(CONF_LOGICDATA_APP_TRANSPORT, "auto"),
+        )
+    ] = vol.In(LOGICDATA_APP_TRANSPORTS)
+    schema[
+        vol.Optional(
+            CONF_LOGICDATA_APP_HAS_LIGHT,
+            default=current_data.get(CONF_LOGICDATA_APP_HAS_LIGHT, True),
+        )
+    ] = bool
+
+
+def _logicdata_app_errors(data: dict[str, Any]) -> dict[str, str]:
+    """Require explicit app and layout selection without inferring hardware."""
+    errors = {}
+    if data.get(CONF_LOGICDATA_APP_PROFILE) not in LOGICDATA_APP_PROFILES:
+        errors[CONF_LOGICDATA_APP_PROFILE] = "logicdata_app_required"
+    if data.get(CONF_LOGICDATA_APP_FAMILY) not in LOGICDATA_APP_FAMILIES:
+        errors[CONF_LOGICDATA_APP_FAMILY] = "logicdata_app_required"
+    if data.get(CONF_LOGICDATA_APP_LAYOUT) not in LOGICDATA_APP_LAYOUTS:
+        errors[CONF_LOGICDATA_APP_LAYOUT] = "logicdata_app_required"
+    elif (data.get(CONF_LOGICDATA_APP_FAMILY) == "p2") != (
+        data.get(CONF_LOGICDATA_APP_LAYOUT) == "middle"
+    ):
+        errors[CONF_LOGICDATA_APP_LAYOUT] = "logicdata_app_family_layout"
+    return errors
+
+
 def _add_jiecang_app_schema_fields(
     schema: dict[vol.Marker, Any], current_data: dict[str, Any] | None = None
 ) -> None:
@@ -946,6 +998,24 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return self.async_show_form(
             step_id=step_id,
             data_schema=vol.Schema(schema_dict),
+        )
+
+    async def async_step_logicdata_app(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect the explicit app profile and physical controls for any setup path."""
+        assert self._manual_data is not None
+        errors = _logicdata_app_errors(user_input) if user_input is not None else {}
+        if user_input is not None and not errors:
+            self._manual_data.update(user_input)
+            self._manual_data[CONF_DISABLE_ANGLE_SENSING] = True
+            return await self._finish_with_verify(
+                self._manual_data, self._manual_data.get(CONF_NAME, "Adjustable Bed")
+            )
+        schema: dict[vol.Marker, Any] = {}
+        _add_logicdata_app_schema_fields(schema, user_input)
+        return self.async_show_form(
+            step_id="logicdata_app", data_schema=vol.Schema(schema), errors=errors
         )
 
     async def async_step_jiecang_app(
@@ -1777,6 +1847,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 }
                 if selected_bed_type == BED_TYPE_SOLACE and self._discovery_info.name:
                     entry_data[CONF_BLE_DEVICE_NAME] = self._discovery_info.name
+                if selected_bed_type == BED_TYPE_LOGICDATA_APP:
+                    self._manual_data = entry_data
+                    return await self.async_step_logicdata_app()
                 if selected_bed_type == BED_TYPE_JIECANG_APP:
                     self._manual_data = entry_data
                     return await self.async_step_jiecang_app()
@@ -2660,6 +2733,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
                     ),
                 }
+                if bed_type == BED_TYPE_LOGICDATA_APP:
+                    self._manual_data = entry_data
+                    return await self.async_step_logicdata_app()
                 if bed_type == BED_TYPE_JIECANG_APP:
                     self._manual_data = entry_data
                     return await self.async_step_jiecang_app()
@@ -2936,6 +3012,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
                         ),
                     }
+                    if bed_type == BED_TYPE_LOGICDATA_APP:
+                        self._manual_data = entry_data
+                        return await self.async_step_logicdata_app()
                     if bed_type == BED_TYPE_JIECANG_APP:
                         self._manual_data = entry_data
                         return await self.async_step_jiecang_app()
@@ -4706,6 +4785,13 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             data.pop(CONF_JENSEN_PIN, None)
         if bed_type != BED_TYPE_RICHMAT:
             data.pop(CONF_RICHMAT_REMOTE, None)
+        if bed_type != BED_TYPE_LOGICDATA_APP:
+            for key in (
+                CONF_LOGICDATA_APP_PROFILE, CONF_LOGICDATA_APP_FAMILY,
+                CONF_LOGICDATA_APP_LAYOUT, CONF_LOGICDATA_APP_TRANSPORT,
+                CONF_LOGICDATA_APP_HAS_LIGHT,
+            ):
+                data.pop(key, None)
         if bed_type != BED_TYPE_JIECANG_APP:
             for key in (
                 CONF_JIECANG_APP_PROFILE,
@@ -5143,6 +5229,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 )
             ] = vol.In(remote_options)
 
+        if bed_type == BED_TYPE_LOGICDATA_APP and not separate_address_pair:
+            _add_logicdata_app_schema_fields(schema_dict, current_data)
         if bed_type == BED_TYPE_JIECANG_APP and not separate_address_pair:
             _add_jiecang_app_schema_fields(schema_dict, current_data)
 
@@ -5199,6 +5287,16 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
 
         if user_input is not None:
             requested_bed_type = user_input.get(CONF_BED_TYPE, bed_type)
+            if (
+                separate_address_pair
+                and requested_bed_type == BED_TYPE_LOGICDATA_APP
+                and requested_bed_type != bed_type
+            ):
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={CONF_BED_TYPE: "logicdata_app_unpair_first"},
+                )
             if separate_address_pair and requested_bed_type == BED_TYPE_JIECANG_APP and requested_bed_type != bed_type:
                 return self.async_show_form(
                     step_id=step_id,
@@ -5334,6 +5432,13 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 self._pending_data[CONF_DISABLE_ANGLE_SENSING] = disable_angle_sensing
                 self._pending_changed_data[CONF_DISABLE_ANGLE_SENSING] = disable_angle_sensing
                 return await self._async_options_form(None, step_id=step_id)
+            if bed_type == BED_TYPE_LOGICDATA_APP and not separate_address_pair:
+                app_errors = _logicdata_app_errors({**current_data, **user_input})
+                if app_errors:
+                    return self.async_show_form(
+                        step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
+                    )
+                user_input[CONF_DISABLE_ANGLE_SENSING] = True
             if bed_type == BED_TYPE_JIECANG_APP and not separate_address_pair:
                 app_errors = _jiecang_app_errors({**current_data, **user_input})
                 if app_errors:

@@ -202,6 +202,7 @@ export function bedEntitiesForDevice(
 
       case "binary_sensor":
         if (key === "ble_connection") bed.connectivity = id;
+        else if (key === "under_bed_lights") bed.lights.state = id;
         else if (key.startsWith("bed_presence")) bed.presence.push(id);
         break;
 
@@ -312,6 +313,7 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     !bed.connectivity &&
     !l.light &&
     !l.switch &&
+    !l.state &&
     !l.level &&
     !l.toggle &&
     !l.cycle &&
