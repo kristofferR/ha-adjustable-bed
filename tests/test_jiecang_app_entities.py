@@ -12,7 +12,9 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.jiecang_app import JiecangAppController
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
+    BED_TYPE_LINAK,
     COMFORT_MOTION_LIERDA3_READ_CHAR_UUID,
     COMFORT_MOTION_LIERDA3_SERVICE_UUID,
     COMFORT_MOTION_LIERDA3_WRITE_CHAR_UUID,
@@ -342,6 +344,46 @@ async def test_reload_removes_entities_dropped_by_layout_change(
         if key in retained_ids:
             assert actual == retained_ids[key]
         assert hass.states.get(actual).state != "unavailable"
+
+
+@pytest.mark.parametrize("bed_type", [BED_TYPE_JIECANG, BED_TYPE_LINAK])
+@pytest.mark.parametrize("layout", ["standard_4_bilateral", "standard_2"])
+async def test_reload_removes_app_controls_after_protocol_change(
+    hass,
+    mock_coordinator_connected,
+    app_ble,
+    enable_custom_integrations,
+    bed_type,
+    layout,
+):
+    entry = _entry(hass, layout)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    removed = (
+        {
+            "cover": {"right_back", "right_legs", "both_backs", "both_legs"},
+            "number": {"massage_right_intensity"},
+        }
+        if layout == "standard_4_bilateral"
+        else {"cover": {"both"}}
+    )
+    for domain, keys in removed.items():
+        for key in keys:
+            _entity_id(hass, domain, key)
+    retained = {key: _entity_id(hass, "cover", key) for key in ("back", "legs")}
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_BED_TYPE: bed_type})
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    registry = er.async_get(hass)
+    for domain, keys in removed.items():
+        for key in keys:
+            assert registry.async_get_entity_id(domain, DOMAIN, f"{ADDRESS}_{key}") is None
+    for key, entity_id in retained.items():
+        assert _entity_id(hass, "cover", key) == entity_id
+        assert hass.states.get(entity_id).state != "unavailable"
 
 
 @pytest.mark.parametrize(

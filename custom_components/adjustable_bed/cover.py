@@ -282,13 +282,19 @@ def _async_remove_stale_cover_entities(
     controller: BedController,
 ) -> None:
     """Remove stale cover entities that should no longer be exposed."""
-    if not controller.stale_motor_entity_keys:
-        return
+    # These app-specific controls can also remain after switching protocols.
+    stale_keys = controller.stale_motor_entity_keys | {
+        "both",
+        "right_back",
+        "right_legs",
+        "both_backs",
+        "both_legs",
+    }
 
     registry = er.async_get(hass)
     active_keys = {spec.key for spec in controller.motor_control_specs}
 
-    for key in controller.stale_motor_entity_keys:
+    for key in stale_keys:
         if key in active_keys:
             continue
 

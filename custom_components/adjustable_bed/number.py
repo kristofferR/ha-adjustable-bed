@@ -395,7 +395,7 @@ def _number_entities_for(
                     )
                     entities.append(AdjustableBedMassageNumber(coordinator, massage_adjusted))
 
-    if bed_type == BED_TYPE_JIECANG_APP and controller is not None:
+    if controller is not None:
         active_zones = (
             set(controller.massage_intensity_zones)
             if has_massage and controller.supports_massage_intensity_control
@@ -608,7 +608,7 @@ def _async_remove_stale_massage_entities(
     coordinator: AdjustableBedCoordinator,
     active_zones: set[str],
 ) -> None:
-    """Remove intensity numbers for zones dropped by the selected app layout."""
+    """Remove intensity numbers no longer supported by the selected controller."""
     registry = er.async_get(hass)
     for description in MASSAGE_NUMBER_DESCRIPTIONS:
         if description.massage_zone in active_zones:
