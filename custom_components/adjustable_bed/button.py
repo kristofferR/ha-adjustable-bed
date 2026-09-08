@@ -730,12 +730,14 @@ def _button_entities_for(
     if controller is not None:
         specs = controller.controller_button_specs
         desired = {coordinator.entity_unique_id(f"product_action_{spec.key}") for spec in specs}
-        prefix = coordinator.entity_unique_id("product_action_")
+        prefix, suffix = coordinator.entity_unique_id("product_action_").split("product_action_", 1)
+        prefix += "product_action_"
         registry = er.async_get(hass)
         for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
             if (
                 row.domain == "button"
                 and row.unique_id.startswith(prefix)
+                and row.unique_id.endswith(suffix)
                 and row.unique_id not in desired
             ):
                 registry.async_remove(row.entity_id)

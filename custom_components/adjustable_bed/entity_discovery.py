@@ -51,13 +51,15 @@ def async_remove_retired_rmcontrol_telemetry(
         else controller.controller_state_binary_sensor_specs
     )
     active_ids = {coordinator.entity_unique_id(spec.key) for spec in specs}
-    prefix = coordinator.entity_unique_id("rmcontrol_")
+    prefix, suffix = coordinator.entity_unique_id("rmcontrol_").split("rmcontrol_", 1)
+    prefix += "rmcontrol_"
     registry = er.async_get(hass)
     for row in er.async_entries_for_config_entry(registry, entry.entry_id):
         if (
             row.domain == domain
             and row.platform == DOMAIN
             and row.unique_id.startswith(prefix)
+            and row.unique_id.endswith(suffix)
             and row.unique_id not in active_ids
         ):
             registry.async_remove(row.entity_id)

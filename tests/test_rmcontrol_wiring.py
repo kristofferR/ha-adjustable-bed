@@ -382,39 +382,71 @@ async def test_initial_product_followup_validates_transport(
         flow._finish_with_verify.assert_awaited_once()
 
 
-@pytest.mark.parametrize("domain", ["sensor", "binary_sensor"])
-async def test_retired_telemetry_cleanup_is_scoped_to_current_bed(
-    hass: HomeAssistant, domain: str
+@pytest.mark.parametrize("domain", ["sensor", "binary_sensor", "button"])
+@pytest.mark.parametrize("side", [None, "left", "right"])
+async def test_retired_rmcontrol_cleanup_is_scoped_to_current_bed_and_side(
+    hass: HomeAssistant, domain: str, side: str | None
 ) -> None:
     from homeassistant.helpers import entity_registry as er
     from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+    from custom_components.adjustable_bed.button import _button_entities_for
     from custom_components.adjustable_bed.entity_discovery import (
         async_remove_retired_rmcontrol_telemetry,
     )
+    from custom_components.adjustable_bed.paired_coordinator import SingleAddressSideCoordinator
 
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
     registry = er.async_get(hass)
+    inner = MagicMock()
+    inner.address = "bed"
+    inner.entry = entry
+    inner.entity_unique_id.side_effect = lambda key: "bed_" + key
+    ctrl = inner.capability_controller
+    ctrl.bind_side.return_value = ctrl
+    ctrl.memory_slot_count = 0
+    coordinator = SingleAddressSideCoordinator(inner, side, MagicMock()) if side else inner
+    key_prefix = "product_action_" if domain == "button" else "rmcontrol_"
+    retired_id = coordinator.entity_unique_id(key_prefix + "old")
+    active_id = coordinator.entity_unique_id(key_prefix + "current")
+    preserved_ids = ["other_" + key_prefix + "old", coordinator.entity_unique_id("other")]
+    if side:
+        other_side = "right" if side == "left" else "left"
+        preserved_ids.extend([
+            f"bed_{key_prefix}old_{other_side}",
+            f"bed_{key_prefix}current_{other_side}",
+            f"bed_{key_prefix}old",
+        ])
     rows = {
         key: registry.async_get_or_create(domain, DOMAIN, key, config_entry=entry)
-        for key in ("bed_rmcontrol_old", "bed_rmcontrol_current", "other_rmcontrol_old", "bed_other")
+        for key in (retired_id, active_id, *preserved_ids)
     }
-    coordinator = MagicMock()
-    coordinator.entity_unique_id.side_effect = lambda key: "bed_" + key
-    ctrl = coordinator.capability_controller
     ctrl.has_dynamic_controller_entities = False
     spec = MagicMock(key="rmcontrol_current")
     ctrl.controller_state_sensor_specs = (spec,)
     ctrl.controller_state_binary_sensor_specs = (spec,)
-    async_remove_retired_rmcontrol_telemetry(hass, entry, coordinator, domain)
-    assert registry.async_get(rows["bed_rmcontrol_old"].entity_id) is None
-    for key in ("bed_rmcontrol_current", "other_rmcontrol_old", "bed_other"):
+    ctrl.controller_button_specs = (
+        ControllerButtonSpec(key="current", name="Current", press_fn=AsyncMock()),
+    )
+
+    def cleanup() -> None:
+        if domain == "button":
+            _button_entities_for(hass, coordinator)
+        else:
+            async_remove_retired_rmcontrol_telemetry(hass, entry, coordinator, domain)
+
+    cleanup()
+    assert registry.async_get(rows[retired_id].entity_id) is None
+    for key in (active_id, *preserved_ids):
         assert registry.async_get(rows[key].entity_id) is not None
     ctrl.controller_state_sensor_specs = ()
     ctrl.controller_state_binary_sensor_specs = ()
-    async_remove_retired_rmcontrol_telemetry(hass, entry, coordinator, domain)
-    assert registry.async_get(rows["bed_rmcontrol_current"].entity_id) is None
+    ctrl.controller_button_specs = ()
+    cleanup()
+    assert registry.async_get(rows[active_id].entity_id) is None
+    for key in preserved_ids:
+        assert registry.async_get(rows[key].entity_id) is not None
 
 
 @pytest.mark.parametrize("variant", ["prefix55", "prefixaa"])
