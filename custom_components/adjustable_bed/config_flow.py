@@ -1446,6 +1446,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         assert self._discovery_info is not None
         assert self._disambiguation_types is not None
 
+        if self._is_absorbed_pair_member(self._discovery_info.address):
+            return self.async_abort(reason="already_configured")
+
         if user_input is not None:
             selected = user_input.get("bed_type_choice")
             if selected == "show_all":
@@ -1497,6 +1500,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     ) -> ConfigFlowResult:
         """Confirm discovery."""
         assert self._discovery_info is not None
+
+        # The bed may have joined a pair while this discovery was awaiting input.
+        if self._is_absorbed_pair_member(self._discovery_info.address):
+            return self.async_abort(reason="already_configured")
 
         # Use detailed detection to get confidence and ambiguity info
         detection_result = detect_bed_type_detailed(self._discovery_info)
