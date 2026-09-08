@@ -1125,6 +1125,11 @@ class BedController(ABC):
         return False
 
     @property
+    def light_color_control_pending(self) -> bool:
+        """Return whether color support still awaits device discovery."""
+        return False
+
+    @property
     def supported_color_mode(self) -> str | None:
         """Return the color mode supported by the light.
 
@@ -2496,6 +2501,11 @@ class BedController(ABC):
     @property
     def supports_light_timer(self) -> bool:
         """Return True if bed supports setting light auto-off timer."""
+        return False
+
+    @property
+    def light_timer_pending(self) -> bool:
+        """Return whether light timer support still awaits device discovery."""
         return False
 
     @property
