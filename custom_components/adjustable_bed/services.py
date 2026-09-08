@@ -28,10 +28,12 @@ from homeassistant.helpers import device_registry as dr
 from .beds.linak_protocol import LinakAlarmAction, LinakAlarmStep
 from .const import (
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LINAK,
+    BED_TYPE_LOGICDATA_APP,
     BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
     CONF_MOTOR_COUNT,
@@ -76,6 +78,13 @@ SERVICE_SOLACE_SET_ALARM = "solace_set_alarm"
 SERVICE_LEGGETT_SLEEP_TIMER = "leggett_sleep_timer"
 SERVICE_LEGGETT_ALARM_TIMER = "leggett_alarm_timer"
 SERVICE_LEGGETT_HOLD_CONTROL = "leggett_hold_control"
+SERVICE_LOGICDATA_SET_ALARM = "logicdata_set_alarm"
+SERVICE_LOGICDATA_RENAME = "logicdata_rename"
+SERVICE_LOGICDATA_HOLD_PRESET = "logicdata_hold_preset"
+SERVICE_JIECANG_SET_ALARM = "jiecang_set_alarm"
+SERVICE_JIECANG_WAKE = "jiecang_wake"
+SERVICE_JIECANG_STOP_WAKE = "jiecang_stop_wake"
+SERVICE_JIECANG_RENAME = "jiecang_rename"
 
 # Service call attributes
 ATTR_PRESET = "preset"
@@ -87,6 +96,7 @@ ATTR_CAPTURE_DURATION = "capture_duration"
 ATTR_INCLUDE_LOGS = "include_logs"
 ATTR_DIRECTION = "direction"
 ATTR_DURATION_MS = "duration_ms"
+ATTR_DURATION = "duration"
 ATTR_SIDE = "side"
 ATTR_FIRST_MOTOR = "first_motor"
 ATTR_FIRST_DIRECTION = "first_direction"
@@ -109,8 +119,9 @@ ATTR_SOUND = "sound"
 ATTR_TRACK = "track"
 ATTR_VOLUME = "volume"
 ATTR_MINUTES = "minutes"
-ATTR_DURATION = "duration"
 ATTR_CONTROL = "control"
+ATTR_HEAD_LEVEL = "head_level"
+ATTR_FOOT_LEVEL = "foot_level"
 
 LINAK_MOTOR_OPTIONS = ("base", "feet", "head", "legs", "back")
 LINAK_DIRECTION_OPTIONS = ("up", "down")
@@ -142,10 +153,15 @@ SOLACE_ALARM_SOUNDS = (
     "music_4",
     "music_5",
 )
+JIECANG_WAKE_PRESETS = ("flat", "zero_g", "anti_snore", "memory_1", "memory_2")
+JIECANG_ALARM_PRESETS = (*JIECANG_WAKE_PRESETS, "yoga")
+
+LOGICDATA_ALARM_PRESETS = ("flat", "zero_g", "anti_snore", "memory_1", "memory_2")
 
 TIMED_MOVE_MOTOR_OPTIONS = (
     "tv_lift",
     "back",
+    "right_back",
     "legs",
     "head",
     "feet",
@@ -1011,11 +1027,8 @@ async def _timed_move_plan(
                 coordinator.name,
             )
             pulse_delay_ms = 100  # DEFAULT_MOTOR_PULSE_DELAY_MS
-        # The first write is immediate, so one additional repeat is needed
-        # after the requested number of delay intervals.
-        calculated_repeat_count = max(
-            2,
-            (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms + 1,
+        calculated_repeat_count = controller.timed_move_repeat_count(
+            duration_ms, pulse_delay_ms
         )
 
         _LOGGER.debug(
@@ -1043,7 +1056,7 @@ async def _timed_move_plan(
             timed_movement,
             calculated_repeat_count,
             pulse_delay_ms,
-            spec.position_key or spec.key,
+            spec.scheduler_resource or f"motor:{spec.position_key or spec.key}",
         )
 
 
@@ -1083,10 +1096,10 @@ async def handle_timed_move(call: ServiceCall) -> None:
         raise
 
     async def move(target: AdjustableBedCoordinator) -> None:
-        command, pulse_count, pulse_delay_ms, position_key = plans[_plan_key(target)]
+        command, pulse_count, pulse_delay_ms, resource = plans[_plan_key(target)]
         await target.async_execute_controller_command(
             command,
-            resource=f"motor:{position_key}",
+            resource=resource,
             pulse_count=pulse_count,
             pulse_delay_ms=pulse_delay_ms,
         )
@@ -1095,7 +1108,7 @@ async def handle_timed_move(call: ServiceCall) -> None:
         for coordinator, side in targets:
             if isinstance(coordinator, PairedBedCoordinator):
                 resources = {
-                    f"motor:{plans[_plan_key(target)][3]}"
+                    plans[_plan_key(target)][3]
                     for target in _command_targets(coordinator, side)
                 }
                 await coordinator.async_run_child_operation(
@@ -1508,6 +1521,247 @@ async def handle_leggett_hold_control(call: ServiceCall) -> None:
 
         for coordinator, side in targets:
             await _execute_sided(coordinator, side, hold, cancel_running=True)
+    except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
+async def _preflight_logicdata(
+    targets: list[tuple[BedTarget, str]], capability: str, label: str
+) -> PreflightedSides:
+    """Restrict app-specific services before connecting or commanding any side."""
+    for coordinator, side in targets:
+        for target in _command_targets(coordinator, side):
+            if target.bed_type != BED_TYPE_LOGICDATA_APP:
+                raise ServiceValidationError(
+                    f"Device '{target.name}' is not a Logicdata app controller"
+                )
+    return await _preflight_capability(targets, capability, label)
+
+
+async def handle_logicdata_set_alarm(call: ServiceCall) -> None:
+    """Configure the Logicdata app controller's recurring clock alarm."""
+    alarm_time = call.data[ATTR_TIME]
+    weekdays = tuple(SOLACE_WEEKDAY_OPTIONS.index(day) for day in call.data[ATTR_WEEKDAYS])
+    targets, missing = _resolve_sided_targets(
+        call.hass,
+        call.data[CONF_DEVICE_ID],
+        call.data.get(ATTR_SIDE),
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    preflighted = await _preflight_logicdata(targets, "supports_clock_alarm", "Logicdata clock alarms")
+
+    async def program(controller: BedController) -> None:
+        await controller.configure_clock_alarm(
+            enabled=call.data[ATTR_ENABLED],
+            weekdays=weekdays,
+            hour=alarm_time.hour,
+            minute=alarm_time.minute,
+            preset=call.data[ATTR_PRESET],
+            head_level=call.data[ATTR_HEAD_LEVEL],
+            foot_level=call.data[ATTR_FOOT_LEVEL],
+        )
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(
+                coordinator, side, program, cancel_running=False, resource="configuration"
+            )
+    except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
+async def handle_logicdata_rename(call: ServiceCall) -> None:
+    """Rename a compatible Logicdata app controller through its command queue."""
+    targets, missing = _resolve_sided_targets(
+        call.hass,
+        call.data[CONF_DEVICE_ID],
+        call.data.get(ATTR_SIDE),
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    preflighted = await _preflight_logicdata(
+        targets, "supports_device_rename", "Logicdata device rename"
+    )
+
+    async def rename(controller: BedController) -> None:
+        await controller.rename_device(call.data[ATTR_NAME])
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(
+                coordinator, side, rename, cancel_running=False, resource="configuration"
+            )
+    except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
+def _preset_hold_duration_seconds(value: object) -> Decimal:
+    """Accept bounded seconds that convert exactly to whole milliseconds."""
+    try:
+        duration = Decimal(str(value))
+    except InvalidOperation as err:
+        raise vol.Invalid("Duration must be a number of seconds") from err
+    if not duration.is_finite() or not Decimal("0.2") <= duration <= 60:
+        raise vol.Invalid("Duration must be between 0.2 and 60 seconds")
+    milliseconds = int(duration * 1000)
+    if duration != Decimal(milliseconds) / 1000:
+        raise vol.Invalid("Duration must resolve to whole milliseconds")
+    return duration
+
+
+async def handle_logicdata_hold_preset(call: ServiceCall) -> None:
+    """Hold a middle-motor preset recall through the cancellable command queue."""
+    duration_ms = int(call.data[ATTR_DURATION] * 1000)
+    targets, missing = _resolve_sided_targets(
+        call.hass,
+        call.data[CONF_DEVICE_ID],
+        call.data.get(ATTR_SIDE),
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    preflighted = await _preflight_logicdata(
+        targets, "supports_preset_hold", "Logicdata held preset recall"
+    )
+
+    async def hold(controller: BedController) -> None:
+        await controller.hold_preset(call.data[ATTR_PRESET], duration_ms)
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(coordinator, side, hold, cancel_running=True)
+    except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
+async def _preflight_jiecang(
+    targets: list[tuple[BedTarget, str]], capability: str, label: str
+) -> PreflightedSides:
+    """Restrict app-specific services before connecting or commanding any side."""
+    for coordinator, side in targets:
+        for target in _command_targets(coordinator, side):
+            if target.bed_type != BED_TYPE_JIECANG_APP:
+                raise ServiceValidationError(
+                    f"Device '{target.name}' is not a Jiecang app controller"
+                )
+    return await _preflight_capability(targets, capability, label)
+
+
+async def handle_jiecang_set_alarm(call: ServiceCall) -> None:
+    """Configure the Jiecang app controller's recurring clock alarm."""
+    alarm_time = call.data[ATTR_TIME]
+    weekdays = tuple(SOLACE_WEEKDAY_OPTIONS.index(day) for day in call.data[ATTR_WEEKDAYS])
+    targets, missing = _resolve_sided_targets(
+        call.hass,
+        call.data[CONF_DEVICE_ID],
+        call.data.get(ATTR_SIDE),
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    preflighted = await _preflight_jiecang(targets, "supports_clock_alarm", "Jiecang clock alarms")
+
+    async def program(controller: BedController) -> None:
+        await controller.configure_clock_alarm(
+            enabled=call.data[ATTR_ENABLED],
+            weekdays=weekdays,
+            hour=alarm_time.hour,
+            minute=alarm_time.minute,
+            preset=call.data[ATTR_PRESET],
+            head_level=call.data[ATTR_HEAD_LEVEL],
+            foot_level=call.data[ATTR_FOOT_LEVEL],
+        )
+
+    try:
+        if call.data[ATTR_PRESET] == "yoga":
+            preflighted.extend(
+                await _preflight_capability(targets, "supports_preset_yoga", "Yoga alarms")
+            )
+        for coordinator, side in targets:
+            await _execute_sided(
+                coordinator, side, program, cancel_running=False, resource="configuration"
+            )
+    except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
+async def handle_jiecang_wake(call: ServiceCall) -> None:
+    """Start the app's wake routine with its preset and massage levels."""
+    targets, missing = _resolve_sided_targets(
+        call.hass,
+        call.data[CONF_DEVICE_ID],
+        call.data.get(ATTR_SIDE),
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    preflighted = await _preflight_jiecang(
+        targets, "supports_wake_routine", "Jiecang wake routines"
+    )
+
+    async def wake(controller: BedController) -> None:
+        await controller.execute_wake_routine(
+            preset=call.data[ATTR_PRESET],
+            head_level=call.data[ATTR_HEAD_LEVEL],
+            foot_level=call.data[ATTR_FOOT_LEVEL],
+        )
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(coordinator, side, wake, cancel_running=True)
+    except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
+async def handle_jiecang_stop_wake(call: ServiceCall) -> None:
+    """Stop active wake massage without changing the stored clock alarm."""
+    targets, missing = _resolve_sided_targets(
+        call.hass,
+        call.data[CONF_DEVICE_ID],
+        call.data.get(ATTR_SIDE),
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    preflighted = await _preflight_jiecang(
+        targets, "supports_wake_routine", "Jiecang wake routines"
+    )
+
+    async def stop(controller: BedController) -> None:
+        await controller.stop_wake_routine()
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(coordinator, side, stop, cancel_running=True)
+    except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
+async def handle_jiecang_rename(call: ServiceCall) -> None:
+    """Rename a compatible Jiecang app controller through its command queue."""
+    targets, missing = _resolve_sided_targets(
+        call.hass,
+        call.data[CONF_DEVICE_ID],
+        call.data.get(ATTR_SIDE),
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    preflighted = await _preflight_jiecang(
+        targets, "supports_device_rename", "Jiecang device rename"
+    )
+
+    async def rename(controller: BedController) -> None:
+        await controller.rename_device(call.data[ATTR_NAME])
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(
+                coordinator, side, rename, cancel_running=False, resource="configuration"
+            )
     except Exception:
         await _release_preflighted(preflighted)
         raise
@@ -1993,6 +2247,118 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
                 vol.Required(ATTR_CONTROL): vol.In(LEGGETT_HELD_CONTROLS),
                 vol.Required(ATTR_DURATION): _leggett_hold_seconds,
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_LOGICDATA_SET_ALARM,
+        handle_logicdata_set_alarm,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_ENABLED): cv.boolean,
+                vol.Optional(ATTR_TIME, default="00:00:00"): cv.time,
+                vol.Optional(ATTR_WEEKDAYS, default=[]): vol.All(
+                    cv.ensure_list, [vol.In(SOLACE_WEEKDAY_OPTIONS)]
+                ),
+                vol.Optional(ATTR_PRESET, default="flat"): vol.In(LOGICDATA_ALARM_PRESETS),
+                vol.Optional(ATTR_HEAD_LEVEL, default=0): vol.All(
+                    vol.Coerce(int), vol.Range(min=0, max=3)
+                ),
+                vol.Optional(ATTR_FOOT_LEVEL, default=0): vol.All(
+                    vol.Coerce(int), vol.Range(min=0, max=3)
+                ),
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_LOGICDATA_RENAME,
+        handle_logicdata_rename,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_NAME): vol.All(cv.string, vol.Match(r"\A[\x20-\x7e]{1,255}\Z")),
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_LOGICDATA_HOLD_PRESET,
+        handle_logicdata_hold_preset,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_PRESET): vol.In(("flat", "memory_1", "memory_2")),
+                vol.Required(ATTR_DURATION): _preset_hold_duration_seconds,
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_JIECANG_SET_ALARM,
+        handle_jiecang_set_alarm,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_ENABLED): cv.boolean,
+                vol.Optional(ATTR_TIME, default="00:00:00"): cv.time,
+                vol.Optional(ATTR_WEEKDAYS, default=[]): vol.All(
+                    cv.ensure_list, [vol.In(SOLACE_WEEKDAY_OPTIONS)]
+                ),
+                vol.Optional(ATTR_PRESET, default="flat"): vol.In(JIECANG_ALARM_PRESETS),
+                vol.Optional(ATTR_HEAD_LEVEL, default=0): vol.All(
+                    vol.Coerce(int), vol.Range(min=0, max=3)
+                ),
+                vol.Optional(ATTR_FOOT_LEVEL, default=0): vol.All(
+                    vol.Coerce(int), vol.Range(min=0, max=3)
+                ),
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_JIECANG_WAKE,
+        handle_jiecang_wake,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Optional(ATTR_PRESET, default="flat"): vol.In(JIECANG_WAKE_PRESETS),
+                vol.Optional(ATTR_HEAD_LEVEL, default=0): vol.All(
+                    vol.Coerce(int), vol.Range(min=0, max=3)
+                ),
+                vol.Optional(ATTR_FOOT_LEVEL, default=0): vol.All(
+                    vol.Coerce(int), vol.Range(min=0, max=3)
+                ),
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_JIECANG_STOP_WAKE,
+        handle_jiecang_stop_wake,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_JIECANG_RENAME,
+        handle_jiecang_rename,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_NAME): vol.All(cv.string, vol.Match(r"\A[A-Za-z0-9]{1,20}\Z")),
                 **SIDE_FIELD,
             }
         ),

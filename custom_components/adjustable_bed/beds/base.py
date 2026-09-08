@@ -85,6 +85,16 @@ class SideBoundController:
 
 
 @dataclass(frozen=True, slots=True)
+class ControllerButtonSpec:
+    """An app-labelled action whose physical semantics need no inferred axis."""
+
+    key: str
+    name: str
+    press_fn: MotorCommandCallable
+    icon: str = "mdi:gesture-tap"
+
+
+@dataclass(frozen=True, slots=True)
 class MotorControlSpec:
     """Describes a motor control surface exposed by a controller."""
 
@@ -95,6 +105,7 @@ class MotorControlSpec:
     stop_fn: MotorCommandCallable
     position_key: str | None = None
     max_angle: float = 68
+    scheduler_resource: str | None = None
 
 
 # Units a position slider can be scaled in.
@@ -733,6 +744,10 @@ class BedController(ABC):
             self._coordinator.motor_pulse_delay_ms,
         )
 
+    def timed_move_repeat_count(self, duration_ms: int, pulse_delay_ms: int) -> int:
+        """Plan repeats including the immediate first write."""
+        return max(2, (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms + 1)
+
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command with guaranteed STOP at end.
 
@@ -1179,6 +1194,11 @@ class BedController(ABC):
         return {}
 
     @property
+    def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        """Return named protocol actions outside the standard bed controls."""
+        return ()
+
+    @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         """Return controller-state diagnostic sensors exposed by this protocol."""
         return ()
@@ -1273,6 +1293,26 @@ class BedController(ABC):
     def supports_held_control(self) -> bool:
         """Return True when held controls are available."""
         return bool(self.held_control_options)
+
+    @property
+    def supports_clock_alarm(self) -> bool:
+        """Return whether a weekly clock alarm can be configured."""
+        return False
+
+    @property
+    def supports_preset_hold(self) -> bool:
+        """Return whether a preset can be held for a bounded duration."""
+        return False
+
+    @property
+    def supports_wake_routine(self) -> bool:
+        """Return whether an app-defined wake command sequence is available."""
+        return False
+
+    @property
+    def supports_automatic_light(self) -> bool:
+        """Return whether motion-triggered under-bed lighting can be selected."""
+        return False
 
     @property
     def supports_simultaneous_movement(self) -> bool:
@@ -1946,6 +1986,42 @@ class BedController(ABC):
     async def rename_device(self, name: str) -> None:
         """Write a protocol-supported BLE device name."""
         raise NotImplementedError("Device rename not supported on this bed")
+
+    async def set_automatic_light(self, enabled: bool) -> None:
+        """Enable or disable automatic under-bed lighting."""
+        raise NotImplementedError("Automatic lighting not supported on this bed")
+
+    async def configure_clock_alarm(
+        self,
+        *,
+        enabled: bool,
+        weekdays: Sequence[int],
+        hour: int,
+        minute: int,
+        preset: str,
+        head_level: int = 0,
+        foot_level: int = 0,
+    ) -> None:
+        """Configure a weekly alarm with Monday numbered zero."""
+        raise NotImplementedError("Clock alarm not supported on this bed")
+
+    async def execute_wake_routine(
+        self,
+        *,
+        preset: str,
+        head_level: int = 0,
+        foot_level: int = 0,
+    ) -> None:
+        """Execute a proven wake sequence without scheduling a local alarm."""
+        raise NotImplementedError("Wake routine not supported on this bed")
+
+    async def stop_wake_routine(self) -> None:
+        """Stop active wake massage without changing the stored alarm schedule."""
+        raise NotImplementedError("Wake routine not supported on this bed")
+
+    async def hold_preset(self, preset: str, duration_ms: int) -> None:
+        """Hold a preset using the protocol's refresh and release lifecycle."""
+        raise NotImplementedError("Held preset not supported on this bed")
 
     async def program_alarm(
         self,

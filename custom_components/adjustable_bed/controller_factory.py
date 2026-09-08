@@ -20,15 +20,18 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
+    BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
+    BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LIMOSS,
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA,
+    BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MATTRESSFIRM,
@@ -70,9 +73,23 @@ from .const import (
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
     CB1322_MANUFACTURER_MARKERS,
+    CONF_HAS_MASSAGE,
+    CONF_JIECANG_APP_HAS_LIGHT,
+    CONF_JIECANG_APP_LAYOUT,
+    CONF_JIECANG_APP_PROFILE,
+    CONF_JIECANG_APP_TRANSPORT,
     CONF_KAIDI_PRODUCT_ID,
     CONF_KAIDI_SOFA_ACU_NO,
     CONF_LEGGETT_APP_PROFILE,
+    CONF_LOGICDATA_APP_FAMILY,
+    CONF_LOGICDATA_APP_HAS_LIGHT,
+    CONF_LOGICDATA_APP_LAYOUT,
+    CONF_LOGICDATA_APP_PROFILE,
+    CONF_LOGICDATA_APP_TRANSPORT,
+    CONF_LP_LEGACY_MODE,
+    CONF_LP_LEGACY_MODEL,
+    CONF_LP_LEGACY_READ_UUID,
+    CONF_LP_LEGACY_WRITE_UUID,
     DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
     DEWERTOKIN_RF_GATEWAY_MODEL,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
@@ -441,6 +458,32 @@ async def create_controller(
             app_profile=entry_data.get(CONF_LEGGETT_APP_PROFILE, LEGGETT_APP_DEFAULT_PROFILE),
         )
 
+    if bed_type == BED_TYPE_LOGICDATA_APP:
+        from .beds.logicdata_app import LogicdataAppController
+
+        entry_data = coordinator.entry.data
+        return LogicdataAppController(
+            coordinator,
+            profile=entry_data[CONF_LOGICDATA_APP_PROFILE],
+            command_family=entry_data[CONF_LOGICDATA_APP_FAMILY],
+            layout=entry_data[CONF_LOGICDATA_APP_LAYOUT],
+            transport=entry_data.get(CONF_LOGICDATA_APP_TRANSPORT, "auto"),
+            has_light=entry_data.get(CONF_LOGICDATA_APP_HAS_LIGHT, True),
+            has_massage=entry_data.get(CONF_HAS_MASSAGE, False),
+        )
+
+    if bed_type == BED_TYPE_JIECANG_APP:
+        from .beds.jiecang_app import JiecangAppController
+
+        entry_data = coordinator.entry.data
+        return JiecangAppController(
+            coordinator,
+            profile=entry_data[CONF_JIECANG_APP_PROFILE],
+            layout=entry_data[CONF_JIECANG_APP_LAYOUT],
+            transport=entry_data.get(CONF_JIECANG_APP_TRANSPORT, "auto"),
+            has_light=entry_data.get(CONF_JIECANG_APP_HAS_LIGHT, True),
+        )
+
     if bed_type == BED_TYPE_KAIDI:
         from .beds.kaidi import KaidiController
 
@@ -502,6 +545,23 @@ async def create_controller(
             coordinator,
             bed_selection=cb24_bed_selection,
             protocol_variant=profile_variant,
+        )
+
+    if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
+        from .beds.leggett_lp_legacy import LeggettLpLegacyController
+        from .lp_legacy_profiles import get_lp_legacy_profile
+
+        entry_data = getattr(getattr(coordinator, "entry", None), "data", {})
+        # The immutable app catalog is loaded once from disk, outside HA's loop.
+        await coordinator.hass.async_add_executor_job(
+            get_lp_legacy_profile, entry_data.get(CONF_LP_LEGACY_MODEL, "")
+        )
+        return LeggettLpLegacyController(
+            coordinator,
+            model=entry_data.get(CONF_LP_LEGACY_MODEL, ""),
+            mode=entry_data.get(CONF_LP_LEGACY_MODE, ""),
+            write_uuid=entry_data.get(CONF_LP_LEGACY_WRITE_UUID, ""),
+            read_uuid=entry_data.get(CONF_LP_LEGACY_READ_UUID) or None,
         )
 
     if bed_type == BED_TYPE_LEGGETT_GEN2:

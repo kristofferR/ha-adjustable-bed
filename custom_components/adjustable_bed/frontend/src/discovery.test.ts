@@ -66,6 +66,16 @@ test("2-motor bed with light switch and no massage/climate", () => {
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
+test("read-only light state is visible independently of light controls", () => {
+  const hass = hassWith([
+    entry("binary_sensor.bed_light", "under_bed_lights"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.lights.state).toBe("binary_sensor.bed_light");
+  expect(bed.lights.switch).toBeUndefined();
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
 test("paired parent's stop_both maps to the stop slot", () => {
   const hass = hassWith([entry("button.master_bed_stop_both", "stop_both")]);
   const bed = bedEntitiesForDevice(hass, "dev1");

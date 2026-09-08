@@ -60,6 +60,50 @@ LEGGETT_APP_PROFILES: Final = {
     "useries": "U Series (back, feet, pillow)",
 }
 LEGGETT_APP_MOTOR_COUNTS: Final = {"prodigy2l": 3, "prodigy2": 3, "prodigy4": 4, "useries": 3}
+CONF_LOGICDATA_APP_PROFILE: Final = "logicdata_app_profile"
+CONF_LOGICDATA_APP_FAMILY: Final = "logicdata_app_family"
+CONF_LOGICDATA_APP_LAYOUT: Final = "logicdata_app_layout"
+CONF_LOGICDATA_APP_TRANSPORT: Final = "logicdata_app_transport"
+CONF_LOGICDATA_APP_HAS_LIGHT: Final = "logicdata_app_has_light"
+LOGICDATA_APP_PROFILES: Final = {"phone": "Phone app", "tablet": "Tablet app"}
+LOGICDATA_APP_FAMILIES: Final = {"p1": "P1 (standard)", "p2": "P2 (middle)"}
+LOGICDATA_APP_LAYOUTS: Final = {
+    "standard_2": "Back and legs (2 motors)",
+    "standard_3_neck": "Back, legs and neck",
+    "standard_3_lumbar": "Back, legs and lumbar",
+    "standard_3_hi_low": "Back, legs and height",
+    "standard_3_split_upper": "Split upper (3 motors)",
+    "standard_4": "Back, legs, neck and lumbar",
+    "split_series": "Split series",
+    "middle": "Middle layout",
+}
+LOGICDATA_APP_TRANSPORTS: Final = {
+    "auto": "Auto (one compatible GATT endpoint)",
+    "t1": "T1", "t2": "T2", "t3": "T3",
+}
+
+CONF_JIECANG_APP_PROFILE: Final = "jiecang_app_profile"
+CONF_JIECANG_APP_LAYOUT: Final = "jiecang_app_layout"
+CONF_JIECANG_APP_TRANSPORT: Final = "jiecang_app_transport"
+CONF_JIECANG_APP_HAS_LIGHT: Final = "jiecang_app_has_light"
+JIECANG_APP_PROFILES: Final = {"dreamask": "ERGOBALANCE (Dreamask)", "dreamotion": "Dream Motion"}
+JIECANG_APP_LAYOUTS: Final = {
+    "standard_2": "Back and legs (2 motors)",
+    "standard_3_neck": "Back, legs and neck",
+    "standard_3_lumbar": "Back, legs and lumbar",
+    "standard_3_hi_low": "Back, legs and height",
+    "standard_3_split_upper": "Split upper (3 motors)",
+    "standard_4_legacy": "Back, legs, neck and lumbar (legacy)",
+    "standard_4_bilateral": "Bilateral (4 motors)",
+    "split_series": "Split series",
+    "split_after_bilateral": "Split after bilateral",
+}
+JIECANG_APP_TRANSPORTS: Final = {
+    "auto": "Auto (GATT endpoints)",
+    "g1": "G1",
+    "g2": "G2",
+    "g3": "G3",
+}
 
 CONF_MALOUF_LAYOUT: Final = "malouf_layout"
 CONF_MALOUF_MEMORY_SLOTS: Final = "malouf_memory_slots"
@@ -80,6 +124,10 @@ CONF_DISABLE_DISCOVERY: Final = "disable_discovery"
 CONF_BLE_DEVICE_NAME: Final = "ble_device_name"
 CONF_OCTO_PIN: Final = "octo_pin"
 CONF_RICHMAT_REMOTE: Final = "richmat_remote"
+CONF_LP_LEGACY_MODEL: Final = "lp_legacy_model"
+CONF_LP_LEGACY_MODE: Final = "lp_legacy_mode"
+CONF_LP_LEGACY_WRITE_UUID: Final = "lp_legacy_write_uuid"
+CONF_LP_LEGACY_READ_UUID: Final = "lp_legacy_read_uuid"
 CONF_JENSEN_PIN: Final = "jensen_pin"
 CONF_CB24_BED_SELECTION: Final = "cb24_bed_selection"
 CONF_BLE_BOND_ESTABLISHED: Final = "ble_bond_established"
@@ -219,6 +267,7 @@ BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniM
 BED_TYPE_OKIN_ORE: Final = "okin_ore"  # OREBedBleProtocol (A5 5A format, 00001000 service)
 BED_TYPE_OKIN_CST: Final = "okin_cst"  # OKIN CSTProtocol (14-byte dual-field commands)
 BED_TYPE_OKIN_RF_ECO_BT: Final = "okin_rf_eco_bt"  # OKIN Smart Remote single-actuator
+BED_TYPE_LEGGETT_LP_LEGACY: Final = "leggett_lp_legacy"
 BED_TYPE_LEGGETT_GEN2: Final = "leggett_gen2"  # Leggett Gen2 ASCII protocol
 BED_TYPE_LEGGETT_OKIN: Final = "leggett_okin"  # Leggett Okin binary protocol
 BED_TYPE_LEGGETT_WILINKE: Final = "leggett_wilinke"  # Leggett WiLinke 5-byte
@@ -249,6 +298,7 @@ BED_TYPE_OKIMAT: Final = "okimat"  # -> okin_uuid
 BED_TYPE_KEESON: Final = "keeson"
 BED_TYPE_ERGOMOTION: Final = "ergomotion"
 BED_TYPE_JIECANG: Final = "jiecang"
+BED_TYPE_JIECANG_APP: Final = "jiecang_app"
 BED_TYPE_DEWERTOKIN: Final = "dewertokin"  # -> okin_handle
 BED_TYPE_OCTO: Final = "octo"
 BED_TYPE_MATTRESSFIRM: Final = "mattressfirm"  # -> okin_nordic
@@ -285,6 +335,7 @@ BED_TYPE_SBI: Final = "sbi"  # SBI/Q-Plus (Costco) with position feedback
 BED_TYPE_SUTA: Final = "suta"  # SUTA Smart Home AT protocol (ASCII + CRLF)
 BED_TYPE_TIMOTION_AHF: Final = "timotion_ahf"  # TiMOTION AHF 11-byte bitmask protocol
 BED_TYPE_KAIDI: Final = "kaidi"  # Kaidi custom mesh-over-GATT protocol (Rize/Floyd/ISleep)
+BED_TYPE_LOGICDATA_APP: Final = "logicdata_app"
 BED_TYPE_LOGICDATA: Final = "logicdata"  # Logicdata SimplicityFrame (XXTEA+CRC16+SLIP)
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 
@@ -300,6 +351,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
+    BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_WILINKE,
@@ -312,6 +364,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_KEESON,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JIECANG,
+    BED_TYPE_JIECANG_APP,
     BED_TYPE_OCTO,
     # Legacy aliases (for backwards compatibility with existing configs)
     BED_TYPE_LEGGETT_PLATT,
@@ -375,6 +428,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_KAIDI,
     # Logicdata SimplicityFrame (SILVERmotion)
     BED_TYPE_LOGICDATA,
+    BED_TYPE_LOGICDATA_APP,
 ]
 
 
@@ -402,6 +456,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_DEWERTOKIN,
         BED_TYPE_OKIN_ORE,
         BED_TYPE_LEGGETT_GEN2,
+        BED_TYPE_LEGGETT_LP_LEGACY,
         BED_TYPE_LEGGETT_WILINKE,
         BED_TYPE_SOLACE,
         BED_TYPE_MOTOSLEEP,
@@ -2295,11 +2350,18 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
 
 # Bed types that may have angle sensing enabled in an existing entry but report no
 # degree-angle data. Sleep Number MCR/BAM reports only sleep-number values and bed
-# presence, while CST and RF ECO BT expose no reliable position feedback. Skip
+# presence, while CST, RF ECO BT and the Jiecang apps expose no reliable position feedback. Skip
 # their entity creation and remove stale sensors from earlier profiles so they do
 # not remain "unknown" forever (#322, #344, #501).
 BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
-    {BED_TYPE_OKIN_CST, BED_TYPE_OKIN_RF_ECO_BT, BED_TYPE_SLEEP_NUMBER_MCR}
+    {
+        BED_TYPE_LOGICDATA_APP,
+        BED_TYPE_JIECANG_APP,
+        BED_TYPE_LEGGETT_LP_LEGACY,
+        BED_TYPE_OKIN_CST,
+        BED_TYPE_OKIN_RF_ECO_BT,
+        BED_TYPE_SLEEP_NUMBER_MCR,
+    }
 )
 
 # Bed types that report positions as 0-100 percentages (not angle degrees)
@@ -2364,9 +2426,11 @@ BEDS_WITH_DISCONNECT_AFTER_COMMAND_DEFAULT_DISABLED: Final = (
             BED_TYPE_ERGOMOTION,
             BED_TYPE_JENSEN,
             BED_TYPE_JIECANG,
+            BED_TYPE_JIECANG_APP,
             BED_TYPE_KAIDI,
             BED_TYPE_LEGGETT_WILINKE,
             BED_TYPE_LIMOSS,
+            BED_TYPE_LOGICDATA_APP,
             BED_TYPE_OCTO,
             BED_TYPE_OKIMAT,
             BED_TYPE_OKIN_CB24,

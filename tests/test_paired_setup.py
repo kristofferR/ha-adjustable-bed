@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from copy import copy
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
@@ -33,10 +34,12 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
+    BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LINAK,
+    BED_TYPE_LOGICDATA_APP,
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
     BED_TYPE_SBI,
@@ -46,6 +49,13 @@ from custom_components.adjustable_bed.const import (
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_RESOLVED_VARIANT,
+    CONF_LOGICDATA_APP_FAMILY,
+    CONF_LOGICDATA_APP_LAYOUT,
+    CONF_LOGICDATA_APP_PROFILE,
+    CONF_LOGICDATA_APP_TRANSPORT,
+    CONF_LP_LEGACY_MODE,
+    CONF_LP_LEGACY_MODEL,
+    CONF_LP_LEGACY_WRITE_UUID,
     CONF_MOTOR_COUNT,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
@@ -155,6 +165,77 @@ def _paired_entry(hass: HomeAssistant) -> MockConfigEntry:
 
 
 class TestPairedSetup:
+    async def test_pair_setup_clears_pending_member_discoveries(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ) -> None:
+        """Existing discovery cards disappear when their addresses join a pair."""
+        flows = {}
+        for address in (LEFT_ADDR, RIGHT_ADDR, "AA:BB:CC:DD:EE:03"):
+            info = copy(mock_bluetooth_service_info)
+            info.address = address.lower()
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN, context={"source": config_entries.SOURCE_BLUETOOTH}, data=info
+            )
+            assert result["type"] == FlowResultType.FORM
+            flows[address] = result["flow_id"]
+
+        entry = _paired_entry(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        assert entry.state == ConfigEntryState.LOADED
+        remaining = {
+            flow["flow_id"]
+            for flow in hass.config_entries.flow.async_progress_by_handler(DOMAIN)
+        }
+        assert remaining == {flows["AA:BB:CC:DD:EE:03"]}
+
+    @pytest.mark.parametrize("address", [LEFT_ADDR, RIGHT_ADDR])
+    async def test_pending_discovery_rechecks_pair_membership(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info,
+        enable_custom_integrations,
+        address: str,
+    ) -> None:
+        """A discovery opened before pairing must not offer a duplicate afterward."""
+        info = copy(mock_bluetooth_service_info)
+        info.address = address.lower()
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_BLUETOOTH}, data=info
+        )
+        assert result["type"] == FlowResultType.FORM
+        _paired_entry(hass)
+
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+
+        assert result["type"] == FlowResultType.ABORT
+        assert result["reason"] == "already_configured"
+
+    @pytest.mark.parametrize("address", [LEFT_ADDR, RIGHT_ADDR])
+    async def test_new_discovery_rejects_pair_members(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info,
+        enable_custom_integrations,
+        address: str,
+    ) -> None:
+        """Both sides stay suppressed on fresh Bluetooth discovery."""
+        _paired_entry(hass)
+        info = copy(mock_bluetooth_service_info)
+        info.address = address.lower()
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_BLUETOOTH}, data=info
+        )
+
+        assert result["type"] == FlowResultType.ABORT
+        assert result["reason"] == "already_configured"
+
     @pytest.mark.parametrize(
         ("resolved_variant", "offers_pairing"),
         [
@@ -2412,7 +2493,8 @@ class TestSideServiceRouting:
             )
         coordinator.async_run_child_operation.assert_not_awaited()
 
-    async def test_combined_motor_buttons_use_side_spec_functions(self):
+    @pytest.mark.parametrize("scheduler_resource", [None, "motor:*"])
+    async def test_combined_motor_buttons_use_side_spec_functions(self, scheduler_resource):
         """The combined both-sides motor buttons carry each side's OWN
         MotorControlSpec functions, so a 3/4-motor Octo's head/feet buttons drive
         the mapped extra motors (_move_motor3/4), not the generic move_head/feet
@@ -2434,6 +2516,7 @@ class TestSideServiceRouting:
             close_fn=MagicMock(),
             stop_fn=MagicMock(),
             position_key="back",
+            scheduler_resource=scheduler_resource,
         )
         back_spec = MotorControlSpec(
             key="back",
@@ -2455,7 +2538,12 @@ class TestSideServiceRouting:
         coord = MagicMock(pair_id="pair_x", device_info={})
         btn = PairedBedCombinedMotorButton(coord, head_spec, "up")
         assert btn._move_fn is motor3_up
-        assert btn._resource == "motor:back"
+        coord.async_execute_controller_command = AsyncMock()
+        await btn.async_press()
+        coord.async_execute_controller_command.assert_awaited_once_with(
+            motor3_up, side="both", cancel_running=True,
+            resource=scheduler_resource or "motor:back",
+        )
         assert btn._attr_unique_id == "pair_x_head_up_both"
 
         # The builder intersects each side's specs and builds from THEM, not from
@@ -2958,6 +3046,14 @@ class TestOfflineSafeBedTypes:
             child[CONF_BED_TYPE] = bed_type
             if bed_type == BED_TYPE_SOLACE:
                 child[CONF_BLE_DEVICE_NAME] = "SealyMF Base"
+            elif bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
+                child.update(
+                    {
+                        CONF_LP_LEGACY_MODEL: "6BRM",
+                        CONF_LP_LEGACY_MODE: "framed",
+                        CONF_LP_LEGACY_WRITE_UUID: "11111111-2222-3333-4444-555555555555",
+                    }
+                )
         entry = MockConfigEntry(
             domain=DOMAIN,
             title=bed_type,
@@ -2971,6 +3067,106 @@ class TestOfflineSafeBedTypes:
 
         await left.async_prime_offline_controller()
         assert left.capability_controller is not None, bed_type
+
+    async def test_logicdata_auto_transport_caches_discovered_rename_capability(
+        self, hass: HomeAssistant
+    ):
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
+
+        from custom_components.adjustable_bed.beds.logicdata_app import LogicdataAppController
+        from custom_components.adjustable_bed.logicdata_app_protocol import TRANSPORTS
+        from custom_components.adjustable_bed.services import _validation_controller
+
+        data = _paired_entry_data()
+        data[CONF_BED_TYPE] = BED_TYPE_LOGICDATA_APP
+        for child in data[CONF_PAIR_CHILDREN]:
+            child.update(
+                {
+                    CONF_BED_TYPE: BED_TYPE_LOGICDATA_APP,
+                    CONF_LOGICDATA_APP_PROFILE: "phone",
+                    CONF_LOGICDATA_APP_FAMILY: "p1",
+                    CONF_LOGICDATA_APP_LAYOUT: "standard_2",
+                    CONF_LOGICDATA_APP_TRANSPORT: "auto",
+                }
+            )
+        entry = MockConfigEntry(domain=DOMAIN, data=data, version=4)
+        entry.add_to_hass(hass)
+        left = _build_paired_children(hass, entry)[SIDE_LEFT]
+        await left.async_prime_offline_controller()
+        assert left.capability_controller is None
+
+        transport = TRANSPORTS["t1"]
+        chars = [
+            SimpleNamespace(uuid=uuid)
+            for uuid in (transport.write_uuid, transport.notify_uuid, transport.rename_uuid)
+        ]
+        service = SimpleNamespace(characteristics=chars)
+        client = MagicMock(is_connected=True)
+        client.services.get_service.side_effect = lambda uuid: (
+            service if uuid == transport.service_uuid else None
+        )
+        left._client = client
+        bed = LogicdataAppController(
+            left,
+            profile="phone",
+            command_family="p1",
+            layout="standard_2",
+            transport="auto",
+            has_light=True,
+            has_massage=False,
+        )
+        await bed.async_discover_capabilities()
+        left._controller = bed
+        left.cache_capability_controller()
+        left._controller = None
+        left._client = None
+        with patch.object(left, "async_ensure_connected", new_callable=AsyncMock) as connect:
+            validation = await _validation_controller(left, left, [])
+        assert validation.supports_device_rename
+        connect.assert_not_awaited()
+
+    async def test_lp_legacy_offline_side_keeps_configured_remote_buttons(
+        self, hass: HomeAssistant
+    ) -> None:
+        from custom_components.adjustable_bed.beds.leggett_lp_legacy import (
+            LeggettLpLegacyController,
+        )
+        from custom_components.adjustable_bed.button import (
+            ControllerActionButton,
+            _button_entities_for,
+        )
+
+        data = _paired_entry_data()
+        for child, mode in zip(data[CONF_PAIR_CHILDREN], ("legacy", "framed"), strict=True):
+            child.update(
+                {
+                    CONF_BED_TYPE: BED_TYPE_LEGGETT_LP_LEGACY,
+                    CONF_LP_LEGACY_MODEL: "6BRM",
+                    CONF_LP_LEGACY_MODE: mode,
+                    CONF_LP_LEGACY_WRITE_UUID: "11111111-2222-3333-4444-555555555555",
+                }
+            )
+        entry = MockConfigEntry(domain=DOMAIN, data=data, unique_id=PAIR_ID, version=4)
+        entry.add_to_hass(hass)
+        children = _build_paired_children(hass, entry)
+
+        for side, mode in ((SIDE_LEFT, "legacy"), (SIDE_RIGHT, "framed")):
+            coordinator = children[side]
+            await coordinator.async_prime_offline_controller()
+
+            assert coordinator.client is None
+            assert coordinator.controller is None
+            assert isinstance(coordinator.capability_controller, LeggettLpLegacyController)
+            buttons = [
+                entity
+                for entity in _button_entities_for(hass, coordinator)
+                if isinstance(entity, ControllerActionButton)
+            ]
+            assert {button.unique_id for button in buttons} == {
+                coordinator.entity_unique_id(f"lp_legacy_6brm_{mode}_btn{index}_press")
+                for index in range(1, 7)
+            }
 
     async def test_solace_offline_profile_uses_observed_ble_name(self, hass: HomeAssistant) -> None:
         data = _paired_entry_data()

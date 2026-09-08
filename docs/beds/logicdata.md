@@ -2,6 +2,9 @@
 
 ## Overview
 
+For the MOTIONrelax phone and tablet Android apps, use the separate
+[LOGICDATA app profiles](logicdata-app.md).
+
 Logicdata beds use a proprietary "LogicLink" BLE protocol with XXTEA encryption, CRC-CCITT integrity checks, and SLIP framing. This is a completely separate protocol family from all other supported beds.
 
 **Status:** Needs testing

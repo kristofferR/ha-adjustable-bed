@@ -10,7 +10,12 @@ from types import MappingProxyType
 from typing import Any, cast
 
 from homeassistant.components import bluetooth
-from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry, ConfigEntryDisabler
+from homeassistant.config_entries import (
+    SOURCE_BLUETOOTH,
+    SOURCE_IMPORT,
+    ConfigEntry,
+    ConfigEntryDisabler,
+)
 from homeassistant.const import CONF_ADDRESS, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
@@ -73,6 +78,7 @@ from .pairing import (
     inheritable_child_fields,
     is_paired,
     iter_children,
+    pair_member_addresses,
     single_data_from_child,
     single_options_from_child,
     with_updated_child,
@@ -965,6 +971,19 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
 
 async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up a paired (Dual Bed 4.0) entry as one logical device."""
+    # HA only clears pending flows matching the new entry's unique_id. A pair's
+    # synthetic ID does not match its members' existing Bluetooth discovery cards.
+    members = set(pair_member_addresses(entry.data))
+    for flow in hass.config_entries.flow.async_progress_by_handler(DOMAIN):
+        context = flow.get("context", {})
+        address = context.get("unique_id")
+        if (
+            context.get("source") == SOURCE_BLUETOOTH
+            and isinstance(address, str)
+            and address.upper() in members
+        ):
+            hass.config_entries.flow.async_abort(flow["flow_id"])
+
     _LOGGER.info(
         "Setting up paired bed %s (pair_id=%s, mode=%s, sides=%s)",
         entry.title,
