@@ -5161,7 +5161,27 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 bed_type,
                 {**current_data, **user_input},
             )
-            if (
+            # Shared edits must be compatible with every separate-address side,
+            # including a product that is absent from the representative side.
+            shown = _shown_option_values(schema_dict)
+            paired_changes = {
+                **self._pending_changed_data,
+                **{
+                    key: value
+                    for key, value in user_input.items()
+                    if key in shown and shown[key] != value
+                },
+            }
+            incompatible_child = any(
+                child.get(CONF_BED_TYPE) == BED_TYPE_RICHMAT
+                and not _is_valid_rmcontrol_variant(
+                    child.get(CONF_RMCONTROL_PRODUCT),
+                    self._variant_for_bed_type(BED_TYPE_RICHMAT, child),
+                )
+                for original_child in iter_children(self.config_entry.data)
+                for child in [{**original_child, **paired_changes}]
+            )
+            if incompatible_child or (
                 bed_type == BED_TYPE_RICHMAT
                 and not _is_valid_rmcontrol_variant(
                     user_input.get(CONF_RMCONTROL_PRODUCT, current_data.get(CONF_RMCONTROL_PRODUCT)),

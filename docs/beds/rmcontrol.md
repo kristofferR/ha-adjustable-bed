@@ -126,3 +126,9 @@ tracks the remaining gates. The
 preserves the original report, corrected runtime inventory, independently verified
 packet order and subsequent source interpretation corrections. Original APKs and
 analysis outputs remain machine-local and unchanged.
+
+
+Head and foot massage strength actions appear as intensity up/down controls
+when the selected product provides both directions. A product with only a
+strength-increase action retains its named product button; it does not expose
+that action as a zone on/off toggle.

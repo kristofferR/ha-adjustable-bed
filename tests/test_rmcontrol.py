@@ -555,3 +555,28 @@ async def test_replacement_controller_clears_coordinator_session_state() -> None
     assert state["rmcontrol_lock_locked"] is None
     assert state["rmcontrol_massage_head_strength"] is None
     assert state["unrelated"] == 42
+
+
+@pytest.mark.parametrize("code, paired", [("A0RM", False), ("ACRM", True)])
+async def test_zone_strength_actions_use_intensity_controls(code: str, paired: bool) -> None:
+    ctrl = controller(code)
+    assert not ctrl.supports_head_massage_toggle_control
+    assert not ctrl.supports_foot_massage_toggle_control
+    assert ctrl.supports_head_massage_intensity_step_control is paired
+    assert ctrl.supports_foot_massage_intensity_step_control is paired
+    if paired:
+        with patch.object(ctrl, "_execute", new_callable=AsyncMock) as execute:
+            await ctrl.massage_head_up()
+            await ctrl.massage_head_down()
+            await ctrl.massage_foot_up()
+            await ctrl.massage_foot_down()
+        assert [call.args[0] for call in execute.call_args_list] == [
+            "MassageHeadInstensityStrengthen",
+            "MassageHeadInstensityWeaken",
+            "MassageFootInstensityStrengthen",
+            "MassageFootInstensityWeaken",
+        ]
+    else:
+        names = [spec.name for spec in ctrl.controller_button_specs]
+        assert any("Massage Head Instensity Strengthen" in name for name in names)
+        assert any("Massage Foot Instensity Strengthen" in name for name in names)

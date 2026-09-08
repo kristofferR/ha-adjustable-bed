@@ -385,6 +385,7 @@ async def test_retired_telemetry_cleanup_is_scoped_to_current_bed(
     coordinator = MagicMock()
     coordinator.entity_unique_id.side_effect = lambda key: "bed_" + key
     ctrl = coordinator.capability_controller
+    ctrl.has_dynamic_controller_entities = False
     spec = MagicMock(key="rmcontrol_current")
     ctrl.controller_state_sensor_specs = (spec,)
     ctrl.controller_state_binary_sensor_specs = (spec,)
@@ -476,3 +477,59 @@ async def test_alarm_validates_every_product_before_writing(hass, operation, pai
     ):
         await handle_rmcontrol_alarm(ServiceCall(hass, DOMAIN, "rmcontrol_alarm", data))
     execute.assert_not_awaited()
+
+
+@pytest.mark.parametrize("variant", ["prefix55", "prefixaa", "wilinke"])
+async def test_paired_options_validate_second_child_product(
+    hass: HomeAssistant, variant: str
+) -> None:
+    from homeassistant.const import CONF_ADDRESS
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.const import (
+        CONF_BED_TYPE,
+        CONF_MOTOR_COUNT,
+        CONF_PAIR_CHILDREN,
+        CONF_PAIR_ID,
+        CONF_PAIR_MODE,
+        CONF_PROTOCOL_VARIANT,
+        CONF_SIDE,
+        PAIR_MODE_SEPARATE_ADDRESS,
+        SIDE_LEFT,
+        SIDE_RIGHT,
+    )
+
+    entry = MockConfigEntry(domain=DOMAIN, data={
+        CONF_PAIR_ID: "rmcontrol_pair",
+        CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
+        CONF_BED_TYPE: BED_TYPE_RICHMAT,
+        CONF_PAIR_CHILDREN: [
+            {
+                CONF_SIDE: side,
+                CONF_ADDRESS: address,
+                CONF_BED_TYPE: BED_TYPE_RICHMAT,
+                CONF_MOTOR_COUNT: 2,
+                CONF_PROTOCOL_VARIANT: "auto",
+                CONF_RMCONTROL_PRODUCT: product,
+            }
+            for side, address, product in (
+                (SIDE_LEFT, "AA:BB:CC:DD:EE:01", ""),
+                (SIDE_RIGHT, "AA:BB:CC:DD:EE:02", "A0RM"),
+            )
+        ],
+    })
+    entry.add_to_hass(hass)
+    original = dict(entry.data)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass = hass
+    flow.handler = entry.entry_id
+    result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: variant})
+    if variant.startswith("prefix"):
+        assert result["errors"] == {CONF_PROTOCOL_VARIANT: "invalid_variant_for_bed_type"}
+        assert dict(entry.data) == original
+    else:
+        assert result["type"] == "create_entry"
+        assert all(
+            child[CONF_PROTOCOL_VARIANT] == variant
+            for child in entry.data[CONF_PAIR_CHILDREN]
+        )

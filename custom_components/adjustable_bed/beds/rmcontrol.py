@@ -478,11 +478,23 @@ class RmcontrolController(RichmatController):
 
     @property
     def supports_head_massage_toggle_control(self) -> bool:
-        return self._has("MassageHeadInstensityStrengthen")
+        return False
+
+    @property
+    def supports_head_massage_intensity_step_control(self) -> bool:
+        return self._has("MassageHeadInstensityStrengthen") and self._has(
+            "MassageHeadInstensityWeaken"
+        )
 
     @property
     def supports_foot_massage_toggle_control(self) -> bool:
-        return self._has("MassageFootInstensityStrengthen")
+        return False
+
+    @property
+    def supports_foot_massage_intensity_step_control(self) -> bool:
+        return self._has("MassageFootInstensityStrengthen") and self._has(
+            "MassageFootInstensityWeaken"
+        )
 
     @property
     def supports_massage_mode_step_control(self) -> bool:
@@ -567,11 +579,17 @@ class RmcontrolController(RichmatController):
     async def massage_off(self) -> None:
         await self._execute("MassageModeAllOff")
 
-    async def massage_head_toggle(self) -> None:
+    async def massage_head_up(self) -> None:
         await self._execute("MassageHeadInstensityStrengthen")
 
-    async def massage_foot_toggle(self) -> None:
+    async def massage_head_down(self) -> None:
+        await self._execute("MassageHeadInstensityWeaken")
+
+    async def massage_foot_up(self) -> None:
         await self._execute("MassageFootInstensityStrengthen")
+
+    async def massage_foot_down(self) -> None:
+        await self._execute("MassageFootInstensityWeaken")
 
     async def massage_mode_step(self) -> None:
         await self._execute("MassageModeChange")
