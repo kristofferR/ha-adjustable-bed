@@ -324,13 +324,15 @@ async def test_profile_reload_removes_obsolete_entities(
 
 
 @pytest.mark.parametrize("old_layout", ["standard_2", "standard_3_split_upper", "standard_4"])
-async def test_switching_protocol_removes_obsolete_covers(
+async def test_switching_protocol_removes_obsolete_covers_and_light_sensor(
     hass, mock_coordinator_connected, app_ble, enable_custom_integrations, old_layout
 ):
     entry = _entry(hass, layout=old_layout)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     back_id = _entity_id(hass, "cover", "back")
+    light_id = _entity_id(hass, "binary_sensor", "under_bed_lights")
+    assert er.async_get(hass).async_get(light_id) is not None
     assert await hass.config_entries.async_unload(entry.entry_id)
     hass.config_entries.async_update_entry(
         entry,
@@ -340,6 +342,7 @@ async def test_switching_protocol_removes_obsolete_covers(
     await hass.async_block_till_done()
     assert _keys(hass, entry, "cover") == {"back", "legs"}
     assert _entity_id(hass, "cover", "back") == back_id
+    assert er.async_get(hass).async_get(light_id) is None
 
 
 @pytest.mark.parametrize(

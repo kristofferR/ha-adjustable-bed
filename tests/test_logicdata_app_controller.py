@@ -91,6 +91,37 @@ async def test_motion_cancel_stops_refresh_and_releases(coordinator, task_cancel
     assert packets(coordinator) == [bytes.fromhex("f1f1010101037e"), protocol.P1_RELEASE]
 
 
+@pytest.mark.parametrize("action", ["movement", "hold", "repeat"])
+async def test_slow_write_cancellation_stops_overdue_repeats(coordinator, action):
+    bed = controller(coordinator, command_family="p2", layout="middle")
+
+    async def slow_write(*args, **kwargs):
+        await asyncio.sleep(0.12)
+        coordinator.cancel_command.set()
+
+    coordinator.client.write_gatt_char.side_effect = slow_write
+    if action == "movement":
+        await bed.move_back_up()
+        assert packets(coordinator)[1:] == [protocol.P1_RELEASE]
+    elif action == "hold":
+        await bed.hold_preset("flat", 1000)
+        assert packets(coordinator)[1:] == [protocol.P1_RELEASE]
+    else:
+        await bed.write_command(b"test", repeat_count=5)
+        assert packets(coordinator) == [b"test"]
+
+
+@pytest.mark.parametrize("seconds", [0, -0.1])
+async def test_overdue_pause_honors_explicit_cleanup_event(coordinator, seconds):
+    bed = controller(coordinator)
+    coordinator.cancel_command.set()
+    assert not await bed._pause(seconds)
+    cleanup = asyncio.Event()
+    assert await bed._pause(seconds, cleanup)
+    cleanup.set()
+    assert not await bed._pause(seconds, cleanup)
+
+
 async def test_p2_flat_failure_still_releases(coordinator):
     bed = controller(coordinator, command_family="p2", layout="middle")
     coordinator.client.write_gatt_char.side_effect = [ConnectionError("failed motion"), None]

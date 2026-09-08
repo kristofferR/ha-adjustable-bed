@@ -274,9 +274,9 @@ class LogicdataAppController(BedController):
         self._discovered = True
 
     async def _pause(self, seconds: float, cancel_event: asyncio.Event | None = None) -> bool:
-        if seconds <= 0:
-            return True
         cancel = cancel_event or self._coordinator.cancel_command
+        if seconds <= 0:
+            return not cancel.is_set()
         try:
             async with asyncio.timeout(seconds):
                 await cancel.wait()

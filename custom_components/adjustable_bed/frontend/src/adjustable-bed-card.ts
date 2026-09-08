@@ -944,10 +944,11 @@ export class AdjustableBedCard extends LitElement {
   private _lighting(bed: BedEntities): typeof nothing | TemplateResult {
     const l = bed.lights;
     const main = l.light ?? l.switch;
-    if (!main && !l.level && !l.timer && !l.toggle && !l.cycle) return nothing;
+    if (!main && !l.state && !l.level && !l.timer && !l.toggle && !l.cycle) return nothing;
     return html`
       ${this._heading("section.lighting")}
       ${main ? this._toggleRow(main) : nothing}
+      ${l.state ? this._moreInfoRow(l.state) : nothing}
       ${l.level ? this._moreInfoRow(l.level) : nothing}
       ${l.timer ? this._moreInfoRow(l.timer) : nothing}
       ${
