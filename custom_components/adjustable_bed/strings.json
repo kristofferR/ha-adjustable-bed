@@ -415,6 +415,22 @@
           "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion also supports standalone G2.",
           "jiecang_app_has_light": "Expose light controls when this bed has under-bed lighting."
         }
+      },
+      "lp_legacy": {
+        "title": "L&P Adjustable Base (legacy app)",
+        "description": "Configure the exact legacy app profile and confirmed Bluetooth characteristics. Do not use UUIDs from another bed protocol.",
+        "data": {
+          "lp_legacy_model": "Legacy app model code",
+          "lp_legacy_mode": "Legacy app protocol mode",
+          "lp_legacy_write_uuid": "Write characteristic UUID",
+          "lp_legacy_read_uuid": "Notification characteristic UUID"
+        },
+        "data_description": {
+          "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
+          "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
+          "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
+          "lp_legacy_read_uuid": "Optional full UUID of the notification characteristic confirmed for this bed. Leave empty to disable app response notifications."
+        }
       }
     },
     "progress": {
@@ -462,7 +478,10 @@
       "not_advertising": "This bed is not currently advertising, so no connection was attempted. Wake it, put it into pairing mode, or move it closer to a Bluetooth adapter or proxy, then try again.",
       "bond_verification_failed": "The bed connected but the link is still unauthenticated, so the bond did not form. Put the bed back into pairing mode and try again.",
       "bond_removal_failed": "The existing Bluetooth bond could not be removed, so pairing was not attempted.",
-      "jiecang_app_required": "Choose the bed app and physical actuator layout."
+      "jiecang_app_required": "Choose the bed app and physical actuator layout.",
+      "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
+      "invalid_lp_legacy_mode": "Select Legacy or Framed explicitly.",
+      "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID."
     }
   },
   "options": {
@@ -507,7 +526,11 @@
           "jiecang_app_profile": "Bed app",
           "jiecang_app_layout": "Physical actuator layout",
           "jiecang_app_transport": "BLE transport",
-          "jiecang_app_has_light": "Enable light controls"
+          "jiecang_app_has_light": "Enable light controls",
+          "lp_legacy_model": "Legacy app model code",
+          "lp_legacy_mode": "Legacy app protocol mode",
+          "lp_legacy_write_uuid": "Write characteristic UUID",
+          "lp_legacy_read_uuid": "Notification characteristic UUID"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -534,7 +557,11 @@
           "jiecang_app_profile": "Select the app used to control this bed. Bluetooth UUIDs cannot identify the app profile.",
           "jiecang_app_layout": "Select the layout configured in the app. The integration does not infer it from the device name or motor count.",
           "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion also supports standalone G2.",
-          "jiecang_app_has_light": "Expose light controls when this bed has under-bed lighting."
+          "jiecang_app_has_light": "Expose light controls when this bed has under-bed lighting.",
+          "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
+          "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
+          "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
+          "lp_legacy_read_uuid": "Optional full UUID of the notification characteristic confirmed for this bed. Leave empty to disable app response notifications."
         }
       },
       "remove_bond": {
@@ -590,7 +617,11 @@
       "octo_tv_lift_pairing_unsupported": "One-motor OCTO TV/bed lifts must remain standalone and cannot be paired as bed sides.",
       "single_address_pairing_unsupported": "This CBNew protocol has no A/B side selector and cannot safely expose paired-side controls.",
       "jiecang_app_required": "Choose the bed app and physical actuator layout.",
-      "jiecang_app_pair_settings": "Restore the standalone beds, configure each side's app profile and actuator layout, then combine them again."
+      "jiecang_app_pair_settings": "Restore the standalone beds, configure each side's app profile and actuator layout, then combine them again.",
+      "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
+      "invalid_lp_legacy_mode": "Select Legacy or Framed explicitly.",
+      "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID.",
+      "lp_legacy_pair_settings": "Unpair the beds and configure the legacy L&P profile, packet mode and Bluetooth characteristics on each bed before pairing them again."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -1442,6 +1473,9 @@
       },
       "lumbar_down_both": {
         "name": "Both sides: Lumbar Down"
+      },
+      "remote_action": {
+        "name": "Remote action"
       }
     },
     "cover": {
@@ -1785,6 +1819,9 @@
       },
       "massage_timer_mode_both": {
         "name": "Both sides: Massage: Timer Mode"
+      },
+      "lp_legacy_notification": {
+        "name": "App response"
       }
     },
     "light": {

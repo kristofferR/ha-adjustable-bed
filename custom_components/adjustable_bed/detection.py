@@ -32,6 +32,7 @@ from .const import (
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
+    BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
@@ -506,6 +507,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_RF_ECO_BT: "OKIN Smart Remote / RF ECO BT single actuator",
     # Protocol-based types (Leggett & Platt family)
     BED_TYPE_LEGGETT_GEN2: "Leggett & Platt Gen2",
+    BED_TYPE_LEGGETT_LP_LEGACY: "L&P Adjustable Base (legacy app)",
     BED_TYPE_LEGGETT_OKIN: "Leggett & Platt Okin (requires pairing)",
     BED_TYPE_LEGGETT_WILINKE: "Leggett & Platt WiLinke (MlRM)",
     # Brand-specific types

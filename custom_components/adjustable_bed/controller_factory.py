@@ -24,6 +24,7 @@ from .const import (
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
+    BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
@@ -77,6 +78,10 @@ from .const import (
     CONF_JIECANG_APP_TRANSPORT,
     CONF_KAIDI_PRODUCT_ID,
     CONF_KAIDI_SOFA_ACU_NO,
+    CONF_LP_LEGACY_MODE,
+    CONF_LP_LEGACY_MODEL,
+    CONF_LP_LEGACY_READ_UUID,
+    CONF_LP_LEGACY_WRITE_UUID,
     DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
     DEWERTOKIN_RF_GATEWAY_MODEL,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
@@ -509,6 +514,23 @@ async def create_controller(
             coordinator,
             bed_selection=cb24_bed_selection,
             protocol_variant=profile_variant,
+        )
+
+    if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
+        from .beds.leggett_lp_legacy import LeggettLpLegacyController
+        from .lp_legacy_profiles import get_lp_legacy_profile
+
+        entry_data = getattr(getattr(coordinator, "entry", None), "data", {})
+        # The immutable app catalog is loaded once from disk, outside HA's loop.
+        await coordinator.hass.async_add_executor_job(
+            get_lp_legacy_profile, entry_data.get(CONF_LP_LEGACY_MODEL, "")
+        )
+        return LeggettLpLegacyController(
+            coordinator,
+            model=entry_data.get(CONF_LP_LEGACY_MODEL, ""),
+            mode=entry_data.get(CONF_LP_LEGACY_MODE, ""),
+            write_uuid=entry_data.get(CONF_LP_LEGACY_WRITE_UUID, ""),
+            read_uuid=entry_data.get(CONF_LP_LEGACY_READ_UUID) or None,
         )
 
     if bed_type == BED_TYPE_LEGGETT_GEN2:

@@ -85,6 +85,16 @@ class SideBoundController:
 
 
 @dataclass(frozen=True, slots=True)
+class ControllerButtonSpec:
+    """An app-labelled action whose physical semantics need no inferred axis."""
+
+    key: str
+    name: str
+    press_fn: MotorCommandCallable
+    icon: str = "mdi:gesture-tap"
+
+
+@dataclass(frozen=True, slots=True)
 class MotorControlSpec:
     """Describes a motor control surface exposed by a controller."""
 
@@ -1177,6 +1187,11 @@ class BedController(ABC):
         report whether one is configured, not its value.
         """
         return {}
+
+    @property
+    def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        """Return named protocol actions outside the standard bed controls."""
+        return ()
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:

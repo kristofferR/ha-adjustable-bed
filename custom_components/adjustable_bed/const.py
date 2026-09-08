@@ -93,6 +93,10 @@ CONF_DISABLE_DISCOVERY: Final = "disable_discovery"
 CONF_BLE_DEVICE_NAME: Final = "ble_device_name"
 CONF_OCTO_PIN: Final = "octo_pin"
 CONF_RICHMAT_REMOTE: Final = "richmat_remote"
+CONF_LP_LEGACY_MODEL: Final = "lp_legacy_model"
+CONF_LP_LEGACY_MODE: Final = "lp_legacy_mode"
+CONF_LP_LEGACY_WRITE_UUID: Final = "lp_legacy_write_uuid"
+CONF_LP_LEGACY_READ_UUID: Final = "lp_legacy_read_uuid"
 CONF_JENSEN_PIN: Final = "jensen_pin"
 CONF_CB24_BED_SELECTION: Final = "cb24_bed_selection"
 CONF_BLE_BOND_ESTABLISHED: Final = "ble_bond_established"
@@ -232,6 +236,7 @@ BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniM
 BED_TYPE_OKIN_ORE: Final = "okin_ore"  # OREBedBleProtocol (A5 5A format, 00001000 service)
 BED_TYPE_OKIN_CST: Final = "okin_cst"  # OKIN CSTProtocol (14-byte dual-field commands)
 BED_TYPE_OKIN_RF_ECO_BT: Final = "okin_rf_eco_bt"  # OKIN Smart Remote single-actuator
+BED_TYPE_LEGGETT_LP_LEGACY: Final = "leggett_lp_legacy"
 BED_TYPE_LEGGETT_GEN2: Final = "leggett_gen2"  # Leggett Gen2 ASCII protocol
 BED_TYPE_LEGGETT_OKIN: Final = "leggett_okin"  # Leggett Okin binary protocol
 BED_TYPE_LEGGETT_WILINKE: Final = "leggett_wilinke"  # Leggett WiLinke 5-byte
@@ -314,6 +319,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
+    BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_WILINKE,
@@ -417,6 +423,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_DEWERTOKIN,
         BED_TYPE_OKIN_ORE,
         BED_TYPE_LEGGETT_GEN2,
+        BED_TYPE_LEGGETT_LP_LEGACY,
         BED_TYPE_LEGGETT_WILINKE,
         BED_TYPE_SOLACE,
         BED_TYPE_MOTOSLEEP,
@@ -2314,7 +2321,13 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
 # their entity creation and remove stale sensors from earlier profiles so they do
 # not remain "unknown" forever (#322, #344, #501).
 BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
-    {BED_TYPE_OKIN_CST, BED_TYPE_OKIN_RF_ECO_BT, BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_JIECANG_APP}
+    {
+        BED_TYPE_JIECANG_APP,
+        BED_TYPE_LEGGETT_LP_LEGACY,
+        BED_TYPE_OKIN_CST,
+        BED_TYPE_OKIN_RF_ECO_BT,
+        BED_TYPE_SLEEP_NUMBER_MCR,
+    }
 )
 
 # Bed types that report positions as 0-100 percentages (not angle degrees)

@@ -22,10 +22,14 @@ from custom_components.adjustable_bed.beds.base import (
 from custom_components.adjustable_bed.const import (
     BED_TYPE_COOLBASE,
     BED_TYPE_KEESON,
+    BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
     BED_TYPE_SBI,
+    CONF_LP_LEGACY_MODE,
+    CONF_LP_LEGACY_MODEL,
+    CONF_LP_LEGACY_WRITE_UUID,
     KEESON_JSON_SERVICE_UUID,
     KEESON_VARIANT_JSON,
     KEESON_VARIANT_OKIN,
@@ -87,7 +91,10 @@ class _FactoryCoordinator(SimpleNamespace):
 
     def __init__(self) -> None:
         super().__init__(
-            hass=SimpleNamespace(async_add_import_executor_job=_RecordingImportExecutor()),
+            hass=SimpleNamespace(
+                async_add_import_executor_job=_RecordingImportExecutor(),
+                async_add_executor_job=_RecordingImportExecutor(),
+            ),
             client=None,
             entry=SimpleNamespace(
                 data={
@@ -157,6 +164,17 @@ async def _create_controller_for_bed_type(bed_type: str) -> BedController:
             client,
             device_name="Casper QRRM Bed",
             richmat_remote="qrrm",
+        )
+
+    if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
+        from custom_components.adjustable_bed.lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
+
+        coordinator.entry = SimpleNamespace(
+            data={
+                CONF_LP_LEGACY_MODEL: LP_LEGACY_PROFILE_CODES[0],
+                CONF_LP_LEGACY_MODE: "legacy",
+                CONF_LP_LEGACY_WRITE_UUID: "11111111-2222-3333-4444-555555555555",
+            }
         )
 
     variant = _protocol_variant_for_bed_type(bed_type)
