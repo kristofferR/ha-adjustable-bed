@@ -1199,6 +1199,7 @@ export class AdjustableBedCard extends LitElement {
       bed.connectivity,
       bed.lights.light,
       bed.lights.switch,
+      bed.lights.state,
       bed.lights.level,
       bed.lights.toggle,
       bed.lights.cycle,

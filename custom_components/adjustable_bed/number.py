@@ -368,7 +368,7 @@ def _number_entities_for(
                 entry.data.get(CONF_PROTOCOL_VARIANT),
             )
 
-    if bed_type == BED_TYPE_LOGICDATA_APP and controller is not None:
+    if controller is not None:
         supported_zones = (
             controller.massage_intensity_zones
             if has_massage and controller.supports_massage_intensity_control
@@ -376,6 +376,9 @@ def _number_entities_for(
         )
         registry = er.async_get(hass)
         for description in MASSAGE_NUMBER_DESCRIPTIONS:
+            # The right-side control can remain after switching away from MOTIONrelax.
+            if bed_type != BED_TYPE_LOGICDATA_APP and description.key != "massage_right_intensity":
+                continue
             if description.massage_zone in supported_zones:
                 continue
             entity_id = registry.async_get_entity_id(
