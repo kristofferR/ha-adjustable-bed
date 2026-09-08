@@ -376,6 +376,10 @@ invocation (jadx, apktool, blutter, ffdec) and the required per-stack coverage. 
 by construction and states no UUID, byte value, or device-name pattern, so it is safe to hand to a
 clean-room analyst.
 
+Coordinators follow [the Phase 4 operational workflow](docs/apk-analysis/phase4-coordinator-workflow.md)
+for ownership, affected-scope audit repairs, preserved accepted work, and the bounded pilot.
+It does not replace the analyst prompt, report schema, or completion gates.
+
 The canonical #443 analyst prompt and pinned `analysis.json` schema are
 [`docs/apk-analysis/phase4-analyst-prompt.md`](docs/apk-analysis/phase4-analyst-prompt.md) and
 [`docs/apk-analysis/analysis.schema.json`](docs/apk-analysis/analysis.schema.json). Copy both into

@@ -14,6 +14,7 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
+    BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
@@ -97,8 +98,21 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
     },
     "jiecang": {
         "display": "Jiecang",
-        "description": "Glideaway, Dream Motion beds",
-        "variants": None,  # Single protocol
+        "description": "Glideaway, ERGOBALANCE and Dream Motion beds",
+        "variants": [
+            {
+                "type": BED_TYPE_JIECANG,
+                "label": "Legacy Glide / Comfort Motion",
+                "description": "Existing Jiecang controls",
+                "hint": "Keep this choice for an existing working legacy bed.",
+            },
+            {
+                "type": BED_TYPE_JIECANG_APP,
+                "label": "ERGOBALANCE / Dream Motion apps",
+                "description": "App-specific controls with an explicit physical layout",
+                "hint": "Choose the app and its layout in the next step.",
+            },
+        ],
     },
     "kaidi": {
         "display": "Kaidi",
@@ -342,7 +356,6 @@ SINGLE_TYPE_GROUPS: Final[dict[str, str]] = {
     "comfort_motion": BED_TYPE_COMFORT_MOTION,
     "ergomotion": BED_TYPE_ERGOMOTION,
     "jensen": BED_TYPE_JENSEN,
-    "jiecang": BED_TYPE_JIECANG,
     "kaidi": BED_TYPE_KAIDI,
     "linak": BED_TYPE_LINAK,
     "limoss": BED_TYPE_LIMOSS,

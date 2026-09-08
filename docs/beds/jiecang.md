@@ -4,6 +4,11 @@ The accepted MOTIONrelax phone and tablet app protocols are available through
 the separate [LOGICDATA app profiles](logicdata-app.md). Existing working Jiecang
 configurations keep this legacy controller.
 
+This page describes the existing legacy Jiecang controller. For the accepted
+ERGOBALANCE 1.0.8 and Dream Motion 1.0.5 protocols, select the separate
+[Jiecang app profiles](jiecang-app.md). Their layouts, two memory slots,
+lighting, massage levels and release timing differ from this legacy path.
+
 **Status:** ❓ Needs testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
@@ -47,7 +52,7 @@ Brands using Jiecang actuators:
 - Lierda1 / Comfort Motion: Service `0000ff12-0000-1000-8000-00805f9b34fb`, write `0000ff01-0000-1000-8000-00805f9b34fb`
 - Lierda3 / LOGICDATA: Service `0000fe60-0000-1000-8000-00805f9b34fb`, write `0000fe61-0000-1000-8000-00805f9b34fb`
 
-**Format:** 7-byte fixed packets
+**Format:** Variable-length packets; common single-byte commands occupy 7 bytes.
 
 **Command format:** `F1 F1` + data bytes + checksum + `7E`
 **Checksum:** Sum of data bytes (single byte)

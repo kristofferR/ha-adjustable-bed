@@ -27,7 +27,7 @@ from .paired_coordinator import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, MotorControlSpec
+    from .beds.base import BedController, ControllerButtonSpec, MotorControlSpec
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -727,6 +727,12 @@ def _button_entities_for(
             continue
         entities.append(AdjustableBedButton(coordinator, description))
 
+    if controller is not None:
+        entities.extend(
+            ControllerActionButton(coordinator, spec)
+            for spec in controller.controller_button_specs
+        )
+
     return entities
 
 
@@ -1066,6 +1072,27 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
                 self.entity_description.key,
             )
             raise
+
+
+class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
+    """Expose a controller's named action through the serialized command path."""
+
+    _attr_translation_key = "remote_action"
+
+    def __init__(
+        self, coordinator: AdjustableBedCoordinator, spec: ControllerButtonSpec
+    ) -> None:
+        super().__init__(coordinator)
+        self._spec = spec
+        self._attr_unique_id = coordinator.entity_unique_id(spec.key)
+        self._attr_name = spec.name
+        self._attr_icon = spec.icon
+
+    async def async_press(self) -> None:
+        """Cancel the previous action and execute against the current controller."""
+        await self._coordinator.async_execute_controller_command(
+            self._spec.press_fn, cancel_running=True
+        )
 
 
 def _paired_entity_unique_id(coordinator: PairedBedCoordinator, key: str) -> str:

@@ -293,7 +293,7 @@ def _async_remove_stale_cover_entities(
     # MOTIONrelax covers must also retire when a different protocol replaces it.
     stale_keys = controller.stale_motor_entity_keys | {
         axis for layout in LAYOUTS for axis in layout_axes(layout)
-    }
+    } | {"both", "right_back", "right_legs", "both_backs", "both_legs"}
 
     for key in stale_keys:
         if key in active_keys:

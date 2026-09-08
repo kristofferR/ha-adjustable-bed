@@ -417,6 +417,38 @@
           "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
           "logicdata_app_has_light": "Expose under-bed light controls when the selected standard layout has lighting."
         }
+      },
+      "jiecang_app": {
+        "title": "Jiecang app and layout",
+        "description": "Choose the app and physical controls that match this bed. Existing legacy Jiecang entries keep their original protocol.",
+        "data": {
+          "jiecang_app_profile": "Bed app",
+          "jiecang_app_layout": "Physical actuator layout",
+          "jiecang_app_transport": "BLE transport",
+          "jiecang_app_has_light": "Enable light controls"
+        },
+        "data_description": {
+          "jiecang_app_profile": "Select the app used to control this bed. Bluetooth UUIDs cannot identify the app profile.",
+          "jiecang_app_layout": "Select the layout configured in the app. The integration does not infer it from the device name or motor count.",
+          "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion also supports standalone G2.",
+          "jiecang_app_has_light": "Expose light controls when this bed has under-bed lighting."
+        }
+      },
+      "lp_legacy": {
+        "title": "L&P Adjustable Base (legacy app)",
+        "description": "Configure the exact legacy app profile and confirmed Bluetooth characteristics. Do not use UUIDs from another bed protocol.",
+        "data": {
+          "lp_legacy_model": "Legacy app model code",
+          "lp_legacy_mode": "Legacy app protocol mode",
+          "lp_legacy_write_uuid": "Write characteristic UUID",
+          "lp_legacy_read_uuid": "Notification characteristic UUID"
+        },
+        "data_description": {
+          "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
+          "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
+          "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
+          "lp_legacy_read_uuid": "Optional full UUID of the notification characteristic confirmed for this bed. Leave empty to disable app response notifications."
+        }
       }
     },
     "progress": {
@@ -465,7 +497,11 @@
       "bond_verification_failed": "The bed connected but the link is still unauthenticated, so the bond did not form. Put the bed back into pairing mode and try again.",
       "bond_removal_failed": "The existing Bluetooth bond could not be removed, so pairing was not attempted.",
       "logicdata_app_required": "Choose the bed app, command family and physical actuator layout.",
-      "logicdata_app_family_layout": "P2 requires the middle layout. All other layouts use P1."
+      "logicdata_app_family_layout": "P2 requires the middle layout. All other layouts use P1.",
+      "jiecang_app_required": "Choose the bed app and physical actuator layout.",
+      "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
+      "invalid_lp_legacy_mode": "Select Legacy or Framed explicitly.",
+      "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID."
     }
   },
   "options": {
@@ -511,7 +547,15 @@
           "logicdata_app_family": "Command family",
           "logicdata_app_layout": "Physical actuator layout",
           "logicdata_app_transport": "BLE transport",
-          "logicdata_app_has_light": "Enable light controls"
+          "logicdata_app_has_light": "Enable light controls",
+          "jiecang_app_profile": "Bed app",
+          "jiecang_app_layout": "Physical actuator layout",
+          "jiecang_app_transport": "BLE transport",
+          "jiecang_app_has_light": "Enable light controls",
+          "lp_legacy_model": "Legacy app model code",
+          "lp_legacy_mode": "Legacy app protocol mode",
+          "lp_legacy_write_uuid": "Write characteristic UUID",
+          "lp_legacy_read_uuid": "Notification characteristic UUID"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -539,7 +583,15 @@
           "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family.",
           "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout.",
           "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
-          "logicdata_app_has_light": "Expose under-bed light controls when the selected standard layout has lighting."
+          "logicdata_app_has_light": "Expose under-bed light controls when the selected standard layout has lighting.",
+          "jiecang_app_profile": "Select the app used to control this bed. Bluetooth UUIDs cannot identify the app profile.",
+          "jiecang_app_layout": "Select the layout configured in the app. The integration does not infer it from the device name or motor count.",
+          "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion also supports standalone G2.",
+          "jiecang_app_has_light": "Expose light controls when this bed has under-bed lighting.",
+          "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
+          "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
+          "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
+          "lp_legacy_read_uuid": "Optional full UUID of the notification characteristic confirmed for this bed. Leave empty to disable app response notifications."
         }
       },
       "remove_bond": {
@@ -596,7 +648,13 @@
       "single_address_pairing_unsupported": "This CBNew protocol has no A/B side selector and cannot safely expose paired-side controls.",
       "logicdata_app_required": "Choose the bed app, command family and physical actuator layout.",
       "logicdata_app_family_layout": "P2 requires the middle layout. All other layouts use P1.",
-      "logicdata_app_unpair_first": "Unpair the beds and configure each side separately before choosing MotionRelax apps."
+      "logicdata_app_unpair_first": "Unpair the beds and configure each side separately before choosing MotionRelax apps.",
+      "jiecang_app_required": "Choose the bed app and physical actuator layout.",
+      "jiecang_app_pair_settings": "Restore the standalone beds, configure each side's app profile and actuator layout, then combine them again.",
+      "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
+      "invalid_lp_legacy_mode": "Select Legacy or Framed explicitly.",
+      "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID.",
+      "lp_legacy_pair_settings": "Unpair the beds and configure the legacy L&P profile, packet mode and Bluetooth characteristics on each bed before pairing them again."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -1448,6 +1506,9 @@
       },
       "lumbar_down_both": {
         "name": "Both sides: Lumbar Down"
+      },
+      "remote_action": {
+        "name": "Remote action"
       }
     },
     "cover": {
@@ -1678,6 +1739,12 @@
       },
       "both": {
         "name": "Back and legs"
+      },
+      "right_legs": {
+        "name": "Right legs"
+      },
+      "both_legs": {
+        "name": "Both legs"
       }
     },
     "sensor": {
@@ -1794,6 +1861,9 @@
       },
       "logicdata_app_alarm": {
         "name": "Bed alarm"
+      },
+      "lp_legacy_notification": {
+        "name": "App response"
       }
     },
     "light": {
@@ -1846,6 +1916,9 @@
       },
       "linak_automatic_drive_both": {
         "name": "Both sides: Automatic Drive"
+      },
+      "automatic_light": {
+        "name": "Automatic under-bed light"
       }
     },
     "binary_sensor": {
@@ -2243,6 +2316,94 @@
         "duration": {
           "name": "Duration",
           "description": "Hold for 0.2 to 60 seconds, in whole milliseconds. These are service interface bounds, not firmware limits."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "jiecang_set_alarm": {
+      "name": "Set Jiecang clock alarm",
+      "description": "Configure the controller's recurring alarm with a preset and massage levels.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A Jiecang app controller that supports clock alarms."
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Time",
+          "description": "Alarm time on the controller's local clock, to the nearest minute."
+        },
+        "weekdays": {
+          "name": "Weekdays"
+        },
+        "preset": {
+          "name": "Bed preset"
+        },
+        "head_level": {
+          "name": "Head massage level",
+          "description": "Alarm massage intensity, with 0 for off and 1 to 3 for increasing intensity."
+        },
+        "foot_level": {
+          "name": "Foot massage level",
+          "description": "Alarm massage intensity, with 0 for off and 1 to 3 for increasing intensity."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "jiecang_wake": {
+      "name": "Start Jiecang wake routine",
+      "description": "Move to a preset and start the selected wake massage levels immediately.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A Jiecang app controller that supports wake routines."
+        },
+        "preset": {
+          "name": "Bed preset"
+        },
+        "head_level": {
+          "name": "Head massage level",
+          "description": "Wake massage intensity, with 0 for off and 1 to 3 for increasing intensity."
+        },
+        "foot_level": {
+          "name": "Foot massage level",
+          "description": "Wake massage intensity, with 0 for off and 1 to 3 for increasing intensity."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "jiecang_rename": {
+      "name": "Rename Jiecang controller",
+      "description": "Change the Bluetooth name of a compatible Jiecang app controller.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A Jiecang app controller that supports device renaming."
+        },
+        "name": {
+          "name": "Name",
+          "description": "New Bluetooth name, using 1 to 20 ASCII letters or digits."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "jiecang_stop_wake": {
+      "name": "Stop Jiecang wake massage",
+      "description": "Stop active wake massage without disabling the stored weekly clock alarm.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A Jiecang app controller that supports wake routines."
         },
         "side": {
           "name": "Side"
