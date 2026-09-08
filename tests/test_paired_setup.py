@@ -34,6 +34,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
+    BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
@@ -47,6 +48,9 @@ from custom_components.adjustable_bed.const import (
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_RESOLVED_VARIANT,
+    CONF_LP_LEGACY_MODE,
+    CONF_LP_LEGACY_MODEL,
+    CONF_LP_LEGACY_WRITE_UUID,
     CONF_MOTOR_COUNT,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
@@ -3030,6 +3034,14 @@ class TestOfflineSafeBedTypes:
             child[CONF_BED_TYPE] = bed_type
             if bed_type == BED_TYPE_SOLACE:
                 child[CONF_BLE_DEVICE_NAME] = "SealyMF Base"
+            elif bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
+                child.update(
+                    {
+                        CONF_LP_LEGACY_MODEL: "6BRM",
+                        CONF_LP_LEGACY_MODE: "framed",
+                        CONF_LP_LEGACY_WRITE_UUID: "11111111-2222-3333-4444-555555555555",
+                    }
+                )
         entry = MockConfigEntry(
             domain=DOMAIN,
             title=bed_type,
@@ -3043,6 +3055,48 @@ class TestOfflineSafeBedTypes:
 
         await left.async_prime_offline_controller()
         assert left.capability_controller is not None, bed_type
+
+    async def test_lp_legacy_offline_side_keeps_configured_remote_buttons(
+        self, hass: HomeAssistant
+    ) -> None:
+        from custom_components.adjustable_bed.beds.leggett_lp_legacy import (
+            LeggettLpLegacyController,
+        )
+        from custom_components.adjustable_bed.button import (
+            ControllerActionButton,
+            _button_entities_for,
+        )
+
+        data = _paired_entry_data()
+        for child, mode in zip(data[CONF_PAIR_CHILDREN], ("legacy", "framed"), strict=True):
+            child.update(
+                {
+                    CONF_BED_TYPE: BED_TYPE_LEGGETT_LP_LEGACY,
+                    CONF_LP_LEGACY_MODEL: "6BRM",
+                    CONF_LP_LEGACY_MODE: mode,
+                    CONF_LP_LEGACY_WRITE_UUID: "11111111-2222-3333-4444-555555555555",
+                }
+            )
+        entry = MockConfigEntry(domain=DOMAIN, data=data, unique_id=PAIR_ID, version=4)
+        entry.add_to_hass(hass)
+        children = _build_paired_children(hass, entry)
+
+        for side, mode in ((SIDE_LEFT, "legacy"), (SIDE_RIGHT, "framed")):
+            coordinator = children[side]
+            await coordinator.async_prime_offline_controller()
+
+            assert coordinator.client is None
+            assert coordinator.controller is None
+            assert isinstance(coordinator.capability_controller, LeggettLpLegacyController)
+            buttons = [
+                entity
+                for entity in _button_entities_for(hass, coordinator)
+                if isinstance(entity, ControllerActionButton)
+            ]
+            assert {button.unique_id for button in buttons} == {
+                coordinator.entity_unique_id(f"lp_legacy_6brm_{mode}_btn{index}_press")
+                for index in range(1, 7)
+            }
 
     async def test_solace_offline_profile_uses_observed_ble_name(self, hass: HomeAssistant) -> None:
         data = _paired_entry_data()

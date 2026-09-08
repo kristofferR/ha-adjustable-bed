@@ -399,6 +399,22 @@
           "pair_selection": "Left and Right sides",
           "name": "Name for the combined bed"
         }
+      },
+      "lp_legacy": {
+        "title": "L&P Adjustable Base (legacy app)",
+        "description": "Configure the exact legacy app profile and confirmed Bluetooth characteristics. Do not use UUIDs from another bed protocol.",
+        "data": {
+          "lp_legacy_model": "Legacy app model code",
+          "lp_legacy_mode": "Legacy app protocol mode",
+          "lp_legacy_write_uuid": "Write characteristic UUID",
+          "lp_legacy_read_uuid": "Notification characteristic UUID"
+        },
+        "data_description": {
+          "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
+          "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
+          "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
+          "lp_legacy_read_uuid": "Optional full UUID of the notification characteristic confirmed for this bed. Leave empty to disable app response notifications."
+        }
       }
     },
     "progress": {
@@ -445,7 +461,10 @@
       "auto_detect_failed": "Couldn't identify this bed automatically. Pick a protocol from the list, or choose \"Diagnostic (unknown bed)\" to capture data for support.",
       "not_advertising": "This bed is not currently advertising, so no connection was attempted. Wake it, put it into pairing mode, or move it closer to a Bluetooth adapter or proxy, then try again.",
       "bond_verification_failed": "The bed connected but the link is still unauthenticated, so the bond did not form. Put the bed back into pairing mode and try again.",
-      "bond_removal_failed": "The existing Bluetooth bond could not be removed, so pairing was not attempted."
+      "bond_removal_failed": "The existing Bluetooth bond could not be removed, so pairing was not attempted.",
+      "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
+      "invalid_lp_legacy_mode": "Select Legacy or Framed explicitly.",
+      "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID."
     }
   },
   "options": {
@@ -486,7 +505,11 @@
           "octo_pin": "Octo PIN",
           "jensen_pin": "Jensen PIN",
           "back_max_angle": "Maximum back angle (degrees)",
-          "legs_max_angle": "Maximum legs angle (degrees)"
+          "legs_max_angle": "Maximum legs angle (degrees)",
+          "lp_legacy_model": "Legacy app model code",
+          "lp_legacy_mode": "Legacy app protocol mode",
+          "lp_legacy_write_uuid": "Write characteristic UUID",
+          "lp_legacy_read_uuid": "Notification characteristic UUID"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -509,7 +532,11 @@
           "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection. Leave empty if your bed doesn't require a PIN.",
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
           "back_max_angle": "Maximum angle for back/head motors. Adjust if position readings don't match your bed's actual range.",
-          "legs_max_angle": "Maximum angle for legs/feet motors. Adjust if position readings don't match your bed's actual range."
+          "legs_max_angle": "Maximum angle for legs/feet motors. Adjust if position readings don't match your bed's actual range.",
+          "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
+          "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
+          "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
+          "lp_legacy_read_uuid": "Optional full UUID of the notification characteristic confirmed for this bed. Leave empty to disable app response notifications."
         }
       },
       "remove_bond": {
@@ -563,7 +590,11 @@
       "invalid_motor_count_for_bed_type": "One motor is supported only for Standard OCTO TV lift controllers.",
       "invalid_angle": "Angle must be a positive number between 0 and 180 degrees.",
       "octo_tv_lift_pairing_unsupported": "One-motor OCTO TV/bed lifts must remain standalone and cannot be paired as bed sides.",
-      "single_address_pairing_unsupported": "This CBNew protocol has no A/B side selector and cannot safely expose paired-side controls."
+      "single_address_pairing_unsupported": "This CBNew protocol has no A/B side selector and cannot safely expose paired-side controls.",
+      "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
+      "invalid_lp_legacy_mode": "Select Legacy or Framed explicitly.",
+      "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID.",
+      "lp_legacy_pair_settings": "Unpair the beds and configure the legacy L&P profile, packet mode and Bluetooth characteristics on each bed before pairing them again."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -1415,6 +1446,9 @@
       },
       "lumbar_down_both": {
         "name": "Both sides: Lumbar Down"
+      },
+      "remote_action": {
+        "name": "Remote action"
       }
     },
     "cover": {
@@ -1746,6 +1780,9 @@
       },
       "massage_timer_mode_both": {
         "name": "Both sides: Massage: Timer Mode"
+      },
+      "lp_legacy_notification": {
+        "name": "App response"
       }
     },
     "light": {
