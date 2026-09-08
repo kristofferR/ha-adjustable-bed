@@ -312,7 +312,11 @@ async def test_dynamic_light_select_survives_reconnect_discovery(hass: HomeAssis
 
 
 @pytest.mark.parametrize("explicit_on", [True, False])
-async def test_light_without_reported_color_uses_power_only(explicit_on: bool) -> None:
+@pytest.mark.parametrize("toggle", [True, False])
+@pytest.mark.parametrize("is_on", [True, False])
+async def test_light_without_reported_color_uses_power_only(
+    explicit_on: bool, toggle: bool, is_on: bool
+) -> None:
     from custom_components.adjustable_bed.light import LIGHT_DESCRIPTION, AdjustableBedLight
 
     coordinator = MagicMock()
@@ -320,7 +324,9 @@ async def test_light_without_reported_color_uses_power_only(explicit_on: bool) -
     ctrl.default_light_rgb_color = None
     ctrl.supported_color_mode = "rgb"
     ctrl.supports_explicit_light_on_control = explicit_on
+    ctrl.supports_light_toggle_control = toggle
     ctrl.lights_on = AsyncMock()
+    ctrl.lights_toggle = AsyncMock()
     ctrl.set_light_color = AsyncMock()
     coordinator.capability_controller = ctrl
 
@@ -329,16 +335,28 @@ async def test_light_without_reported_color_uses_power_only(explicit_on: bool) -
 
     coordinator.async_execute_controller_command = execute
     light = AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)
+    light._attr_is_on = is_on
     light.async_write_ha_state = MagicMock()
     if explicit_on:
         await light.async_turn_on()
         ctrl.lights_on.assert_awaited_once()
         assert light.is_on
         assert light.rgb_color is None
+        ctrl.lights_toggle.assert_not_awaited()
+    elif toggle:
+        await light.async_turn_on()
+        ctrl.lights_on.assert_not_awaited()
+        if is_on:
+            ctrl.lights_toggle.assert_not_awaited()
+        else:
+            ctrl.lights_toggle.assert_awaited_once()
+        assert light.is_on
+        assert light.rgb_color is None
     else:
         with pytest.raises(ValueError, match="No RGB color"):
             await light.async_turn_on()
         ctrl.lights_on.assert_not_awaited()
+        ctrl.lights_toggle.assert_not_awaited()
     ctrl.set_light_color.assert_not_awaited()
 
 

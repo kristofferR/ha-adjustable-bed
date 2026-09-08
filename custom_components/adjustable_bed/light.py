@@ -272,7 +272,11 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             if getattr(ctrl, "supports_explicit_light_on_control", False):
                 await ctrl.lights_on()
             elif target_rgb is None:
-                raise ValueError("No RGB color available for this light")
+                if ctrl.supports_light_toggle_control:
+                    if not self._attr_is_on:
+                        await ctrl.lights_toggle()
+                else:
+                    raise ValueError("No RGB color available for this light")
             if target_rgb is not None:
                 await ctrl.set_light_color(target_rgb)
 
