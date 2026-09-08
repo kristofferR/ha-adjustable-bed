@@ -1183,7 +1183,7 @@ class PairedBedCombinedMotorButton(ButtonEntity):
         self._coordinator = coordinator
         self._direction = direction
         self._move_fn = spec.open_fn if direction == "up" else spec.close_fn
-        self._resource = f"motor:{spec.position_key or spec.key}"
+        self._resource = spec.scheduler_resource or f"motor:{spec.position_key or spec.key}"
         # Translation key from spec.translation_key (preserves controller-specific
         # label overrides); unique_id stays on the stable spec.key.
         base_translation_key = f"{spec.translation_key}_{direction}"

@@ -1849,6 +1849,9 @@
       }
     },
     "binary_sensor": {
+      "under_bed_lights": {
+        "name": "Under Bed Lights"
+      },
       "ble_connection": {
         "name": "BLE Connection"
       },

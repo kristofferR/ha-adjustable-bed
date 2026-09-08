@@ -45,6 +45,10 @@ buttons remain available.
 
 Standard massage controls expose Off and levels 1–3, including the separate right
 zone on split layouts. Under-bed lighting is a toggle with notification readback.
+
+When lighting is enabled, the Under Bed Lights binary sensor exposes the latest
+notification state to Home Assistant and automations. The light button remains
+toggle-only; pressing it does not optimistically replace the reported state.
 Neither app reports motor positions, brightness or RGB color, so the integration
 does not create those controls.
 

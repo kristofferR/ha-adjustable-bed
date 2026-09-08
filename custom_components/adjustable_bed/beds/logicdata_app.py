@@ -11,7 +11,13 @@ from typing import TYPE_CHECKING, cast
 from homeassistant.util import dt as dt_util
 
 from .. import logicdata_app_protocol as protocol
-from .base import BedController, ControllerStateSensorSpec, MotorCommandCallable, MotorControlSpec
+from .base import (
+    BedController,
+    ControllerStateBinarySensorSpec,
+    ControllerStateSensorSpec,
+    MotorCommandCallable,
+    MotorControlSpec,
+)
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -190,6 +196,23 @@ class LogicdataAppController(BedController):
     @property
     def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
         return frozenset() if self.supports_clock_alarm else frozenset({"logicdata_app_alarm"})
+
+    @property
+    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
+        if not self.supports_lights:
+            return ()
+        return (
+            ControllerStateBinarySensorSpec(
+                key="under_bed_lights",
+                translation_key="under_bed_lights",
+                state_key="under_bed_lights_on",
+                icon="mdi:lightbulb",
+            ),
+        )
+
+    @property
+    def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
+        return frozenset() if self.supports_lights else frozenset({"under_bed_lights"})
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:

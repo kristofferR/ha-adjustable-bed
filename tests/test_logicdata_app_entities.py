@@ -219,6 +219,7 @@ async def test_p1_normal_entities_follow_explicit_light_and_massage_options(
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     assert ("toggle_light" in _keys(hass, entry, "button")) is enabled
+    assert ("under_bed_lights" in _keys(hass, entry, "binary_sensor")) is enabled
     massage_keys = {key for key in _keys(hass, entry, "number") if key.startswith("massage_")}
     assert massage_keys == (
         {"massage_head_intensity", "massage_foot_intensity"} if enabled else set()
@@ -266,6 +267,7 @@ async def test_new_dynamic_entities_have_localized_names(
     registry = er.async_get(hass)
     for domain, key, name in (
         ("cover", "both", "Back and legs"),
+        ("binary_sensor", "under_bed_lights", "Under Bed Lights"),
         ("sensor", "logicdata_app_family_match", "Command family matches"),
         ("sensor", "logicdata_app_alarm", "Bed alarm"),
     ):
@@ -376,6 +378,64 @@ async def test_constituent_cover_preempts_combined_movement(
                 ),
                 timeout=1,
             )
+            assert cancelled.is_set()
+        finally:
+            coordinator.cancel_command.set()
+            await movement
+
+
+async def test_light_notification_state_is_visible_without_optimistic_toggle(
+    hass, mock_coordinator_connected, app_ble, enable_custom_integrations
+):
+    entry = _entry(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    light_id = _entity_id(hass, "binary_sensor", "under_bed_lights")
+    assert hass.states.get(light_id).state == "on"
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    await hass.services.async_call(
+        "button", "press",
+        {"entity_id": _entity_id(hass, "button", "toggle_light")},
+        blocking=True,
+    )
+    assert hass.states.get(light_id).state == "on"
+    coordinator.controller._notification_handler(
+        SimpleNamespace(uuid=NOTIFY_UUID), bytearray.fromhex("aaaa06000200000000")
+    )
+    assert hass.states.get(light_id).state == "off"
+
+
+async def test_timed_move_preempts_a_different_motor(
+    hass, mock_coordinator_connected, app_ble, enable_custom_integrations
+):
+    entry = _entry(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    device_id = er.async_get(hass).async_get(_entity_id(hass, "cover", "back")).device_id
+    started = asyncio.Event()
+    cancelled = asyncio.Event()
+
+    async def move_axis(axis, up):
+        if axis == "back":
+            started.set()
+            await coordinator.cancel_command.wait()
+            cancelled.set()
+        else:
+            assert cancelled.is_set()
+
+    async def timed_move(axis):
+        await hass.services.async_call(
+            DOMAIN, "timed_move",
+            {"device_id": [device_id], "motor": axis, "direction": "up", "duration_ms": 1000},
+            blocking=True,
+        )
+
+    with patch.object(coordinator.controller, "move_axis", side_effect=move_axis):
+        movement = asyncio.create_task(timed_move("back"))
+        try:
+            await asyncio.wait_for(started.wait(), timeout=1)
+            await asyncio.wait_for(timed_move("legs"), timeout=1)
             assert cancelled.is_set()
         finally:
             coordinator.cancel_command.set()

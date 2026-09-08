@@ -1028,7 +1028,7 @@ async def _timed_move_plan(
             timed_movement,
             calculated_repeat_count,
             pulse_delay_ms,
-            spec.position_key or spec.key,
+            spec.scheduler_resource or f"motor:{spec.position_key or spec.key}",
         )
 
 
@@ -1068,10 +1068,10 @@ async def handle_timed_move(call: ServiceCall) -> None:
         raise
 
     async def move(target: AdjustableBedCoordinator) -> None:
-        command, pulse_count, pulse_delay_ms, position_key = plans[_plan_key(target)]
+        command, pulse_count, pulse_delay_ms, resource = plans[_plan_key(target)]
         await target.async_execute_controller_command(
             command,
-            resource=f"motor:{position_key}",
+            resource=resource,
             pulse_count=pulse_count,
             pulse_delay_ms=pulse_delay_ms,
         )
@@ -1080,7 +1080,7 @@ async def handle_timed_move(call: ServiceCall) -> None:
         for coordinator, side in targets:
             if isinstance(coordinator, PairedBedCoordinator):
                 resources = {
-                    f"motor:{plans[_plan_key(target)][3]}"
+                    plans[_plan_key(target)][3]
                     for target in _command_targets(coordinator, side)
                 }
                 await coordinator.async_run_child_operation(

@@ -2417,7 +2417,8 @@ class TestSideServiceRouting:
             )
         coordinator.async_run_child_operation.assert_not_awaited()
 
-    async def test_combined_motor_buttons_use_side_spec_functions(self):
+    @pytest.mark.parametrize("scheduler_resource", [None, "motor:*"])
+    async def test_combined_motor_buttons_use_side_spec_functions(self, scheduler_resource):
         """The combined both-sides motor buttons carry each side's OWN
         MotorControlSpec functions, so a 3/4-motor Octo's head/feet buttons drive
         the mapped extra motors (_move_motor3/4), not the generic move_head/feet
@@ -2439,6 +2440,7 @@ class TestSideServiceRouting:
             close_fn=MagicMock(),
             stop_fn=MagicMock(),
             position_key="back",
+            scheduler_resource=scheduler_resource,
         )
         back_spec = MotorControlSpec(
             key="back",
@@ -2460,7 +2462,12 @@ class TestSideServiceRouting:
         coord = MagicMock(pair_id="pair_x", device_info={})
         btn = PairedBedCombinedMotorButton(coord, head_spec, "up")
         assert btn._move_fn is motor3_up
-        assert btn._resource == "motor:back"
+        coord.async_execute_controller_command = AsyncMock()
+        await btn.async_press()
+        coord.async_execute_controller_command.assert_awaited_once_with(
+            motor3_up, side="both", cancel_running=True,
+            resource=scheduler_resource or "motor:back",
+        )
         assert btn._attr_unique_id == "pair_x_head_up_both"
 
         # The builder intersects each side's specs and builds from THEM, not from

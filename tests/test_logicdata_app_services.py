@@ -348,6 +348,6 @@ async def test_timed_move_dispatches_right_back(
     move.assert_awaited_once_with("right_back", direction == "up")
     stop.assert_awaited_once()
     kwargs = coordinator.async_execute_controller_command.await_args.kwargs
-    assert kwargs["resource"] == "motor:right_back"
+    assert kwargs["resource"] == "motor:*"
     assert kwargs["pulse_delay_ms"] == 100
     assert kwargs["pulse_count"] == pulse_count
