@@ -533,3 +533,66 @@ async def test_paired_options_validate_second_child_product(
             child[CONF_PROTOCOL_VARIANT] == variant
             for child in entry.data[CONF_PAIR_CHILDREN]
         )
+
+
+@pytest.mark.parametrize("pair_mode", [None, "single_address", "separate_address"])
+async def test_product_options_are_not_shared_between_physical_controllers(
+    hass: HomeAssistant, pair_mode: str | None
+) -> None:
+    from homeassistant.const import CONF_ADDRESS
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.const import (
+        CONF_BED_TYPE,
+        CONF_MOTOR_COUNT,
+        CONF_PAIR_CHILDREN,
+        CONF_PAIR_ID,
+        CONF_PAIR_MODE,
+        CONF_PROTOCOL_VARIANT,
+        CONF_SIDE,
+    )
+
+    data = {
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:01",
+        CONF_BED_TYPE: BED_TYPE_RICHMAT,
+        CONF_MOTOR_COUNT: 2,
+        CONF_PROTOCOL_VARIANT: "auto",
+        CONF_RMCONTROL_PRODUCT: "A0RM",
+        CONF_RMCONTROL_SIDE: "left",
+    }
+    if pair_mode is not None:
+        data.update({CONF_PAIR_ID: "rmcontrol_pair", CONF_PAIR_MODE: pair_mode})
+    if pair_mode == "separate_address":
+        data[CONF_PAIR_CHILDREN] = [
+            {**data, CONF_SIDE: "left"},
+            {
+                **data,
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:02",
+                CONF_SIDE: "right",
+                CONF_RMCONTROL_PRODUCT: "A3RM",
+                CONF_RMCONTROL_SIDE: "right",
+            },
+        ]
+    entry = MockConfigEntry(domain=DOMAIN, data=data)
+    entry.add_to_hass(hass)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass = hass
+    flow.handler = entry.entry_id
+    form = await flow.async_step_settings(None)
+    fields = {marker.schema for marker in form["data_schema"].schema}
+    shared = pair_mode == "separate_address"
+    assert (CONF_RMCONTROL_PRODUCT in fields) is not shared
+    assert (CONF_RMCONTROL_SIDE in fields) is not shared
+    if not shared:
+        return
+    schema = form["data_schema"]
+    assert isinstance(schema, vol.Schema)
+    submission = schema({})
+    assert isinstance(submission, dict)
+    submission[CONF_PROTOCOL_VARIANT] = "wilinke"
+    result = await flow.async_step_settings(submission)
+    assert result["type"] == "create_entry"
+    children = entry.data[CONF_PAIR_CHILDREN]
+    assert [child[CONF_RMCONTROL_PRODUCT] for child in children] == ["A0RM", "A3RM"]
+    assert [child[CONF_RMCONTROL_SIDE] for child in children] == ["left", "right"]
+    assert all(child[CONF_PROTOCOL_VARIANT] == "wilinke" for child in children)

@@ -5024,7 +5024,12 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
 
         # Add remote selection for Richmat beds
         if bed_type == BED_TYPE_RICHMAT:
-            schema_dict.update(_rmcontrol_schema_fields(current_data).items())
+            # Exact product and side belong to each physical controller. A
+            # separate-address pair must not propagate the first child's values.
+            if not is_paired(self.config_entry.data) or self.config_entry.data.get(
+                CONF_PAIR_MODE
+            ) == PAIR_MODE_SINGLE_ADDRESS:
+                schema_dict.update(_rmcontrol_schema_fields(current_data).items())
             current_remote = current_data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
             remote_options = dict(RICHMAT_REMOTES)
             if current_remote not in remote_options:
