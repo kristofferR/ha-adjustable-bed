@@ -267,13 +267,14 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         """Turn on with RGB color mode."""
         requested_rgb = _normalize_rgb_color(kwargs.get(ATTR_RGB_COLOR))
         target_rgb = requested_rgb or self._attr_rgb_color or self._default_rgb_color
-        if target_rgb is None:
-            raise ValueError("No RGB color available for this light")
 
         async def _turn_on(ctrl: BedController) -> None:
             if getattr(ctrl, "supports_explicit_light_on_control", False):
                 await ctrl.lights_on()
-            await ctrl.set_light_color(target_rgb)
+            elif target_rgb is None:
+                raise ValueError("No RGB color available for this light")
+            if target_rgb is not None:
+                await ctrl.set_light_color(target_rgb)
 
         await self._coordinator.async_execute_controller_command(_turn_on, cancel_running=False)
         self._attr_is_on = True

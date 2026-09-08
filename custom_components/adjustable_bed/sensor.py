@@ -34,7 +34,10 @@ from .const import (
 )
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
-from .entity_discovery import async_setup_dynamic_entities
+from .entity_discovery import (
+    async_remove_retired_rmcontrol_telemetry,
+    async_setup_dynamic_entities,
+)
 from .paired_coordinator import PairedBedCoordinator
 
 if TYPE_CHECKING:
@@ -141,6 +144,7 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id]
     if isinstance(coordinator, PairedBedCoordinator):
         for child in coordinator.children.values():
+            async_remove_retired_rmcontrol_telemetry(hass, entry, child, "sensor")
             async_setup_dynamic_entities(
                 entry,
                 child,
@@ -148,6 +152,7 @@ async def async_setup_entry(
                 partial(_sensor_entities_for, hass, child),
             )
         return
+    async_remove_retired_rmcontrol_telemetry(hass, entry, coordinator, "sensor")
     async_setup_dynamic_entities(
         entry, coordinator, async_add_entities, lambda: _sensor_entities_for(hass, coordinator)
     )

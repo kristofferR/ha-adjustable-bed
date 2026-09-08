@@ -263,6 +263,13 @@ BED_TYPE_AUTO_DETECT = "auto_detect"
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 
 
+def _is_valid_rmcontrol_variant(product: object, variant: str) -> bool:
+    """Validate the opt-in against the transports supported by its controller."""
+    return not product or variant in (
+        VARIANT_AUTO, RICHMAT_VARIANT_NORDIC, RICHMAT_VARIANT_WILINKE
+    )
+
+
 def _rmcontrol_schema_fields(data: dict[str, Any] | None = None) -> dict[vol.Optional, Any]:
     """Offer an explicit app profile without changing established remote behavior."""
     from .richmat_profiles import RICHMAT_PRODUCT_CODES
@@ -1603,6 +1610,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             # Validate protocol variant is valid for selected bed type
             if selected_bed_type and not is_valid_variant_for_bed_type(
                 selected_bed_type, protocol_variant
+            ):
+                errors[CONF_PROTOCOL_VARIANT] = "invalid_variant_for_bed_type"
+
+            if selected_bed_type == BED_TYPE_RICHMAT and not _is_valid_rmcontrol_variant(
+                user_input.get(CONF_RMCONTROL_PRODUCT), protocol_variant
             ):
                 errors[CONF_PROTOCOL_VARIANT] = "invalid_variant_for_bed_type"
 
@@ -3002,7 +3014,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Handle Richmat-specific configuration (remote code)."""
         assert self._manual_data is not None
 
-        if user_input is not None:
+        errors: dict[str, str] = {}
+        if user_input is not None and not _is_valid_rmcontrol_variant(
+            user_input.get(CONF_RMCONTROL_PRODUCT),
+            self._manual_data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
+        ):
+            errors["base"] = "invalid_variant_for_bed_type"
+
+        if user_input is not None and not errors:
             self._manual_data[CONF_RMCONTROL_PRODUCT] = user_input.get(CONF_RMCONTROL_PRODUCT, "")
             self._manual_data[CONF_RMCONTROL_SIDE] = user_input.get(CONF_RMCONTROL_SIDE, "left")
             self._manual_data[CONF_RICHMAT_REMOTE] = user_input.get(
@@ -3015,9 +3034,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         return self.async_show_form(
             step_id="manual_richmat",
+            errors=errors,
             data_schema=vol.Schema(
                 {
-                    **_rmcontrol_schema_fields(),
+                    **_rmcontrol_schema_fields(user_input),
                     vol.Optional(CONF_RICHMAT_REMOTE, default=RICHMAT_REMOTE_AUTO): vol.In(
                         RICHMAT_REMOTES
                     ),
@@ -3068,7 +3088,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Handle Richmat-specific configuration (remote code) after Bluetooth discovery type override."""
         assert self._manual_data is not None
 
-        if user_input is not None:
+        errors: dict[str, str] = {}
+        if user_input is not None and not _is_valid_rmcontrol_variant(
+            user_input.get(CONF_RMCONTROL_PRODUCT),
+            self._manual_data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
+        ):
+            errors["base"] = "invalid_variant_for_bed_type"
+
+        if user_input is not None and not errors:
             self._manual_data[CONF_RMCONTROL_PRODUCT] = user_input.get(CONF_RMCONTROL_PRODUCT, "")
             self._manual_data[CONF_RMCONTROL_SIDE] = user_input.get(CONF_RMCONTROL_SIDE, "left")
             self._manual_data[CONF_RICHMAT_REMOTE] = user_input.get(
@@ -3081,9 +3108,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         return self.async_show_form(
             step_id="bluetooth_richmat",
+            errors=errors,
             data_schema=vol.Schema(
                 {
-                    **_rmcontrol_schema_fields(),
+                    **_rmcontrol_schema_fields(user_input),
                     vol.Optional(CONF_RICHMAT_REMOTE, default=RICHMAT_REMOTE_AUTO): vol.In(
                         RICHMAT_REMOTES
                     ),
@@ -5135,9 +5163,9 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             )
             if (
                 bed_type == BED_TYPE_RICHMAT
-                and user_input.get(CONF_RMCONTROL_PRODUCT, current_data.get(CONF_RMCONTROL_PRODUCT))
-                and requested_variant not in (
-                    VARIANT_AUTO, RICHMAT_VARIANT_NORDIC, RICHMAT_VARIANT_WILINKE
+                and not _is_valid_rmcontrol_variant(
+                    user_input.get(CONF_RMCONTROL_PRODUCT, current_data.get(CONF_RMCONTROL_PRODUCT)),
+                    requested_variant,
                 )
             ):
                 return self.async_show_form(

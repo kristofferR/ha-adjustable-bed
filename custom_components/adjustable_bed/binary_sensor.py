@@ -24,7 +24,10 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
-from .entity_discovery import async_setup_dynamic_entities
+from .entity_discovery import (
+    async_remove_retired_rmcontrol_telemetry,
+    async_setup_dynamic_entities,
+)
 from .paired_coordinator import PairedBedCoordinator
 
 if TYPE_CHECKING:
@@ -70,6 +73,7 @@ async def async_setup_entry(
     # presence sensors) built against each child coordinator.
     if isinstance(coordinator, PairedBedCoordinator):
         for child in coordinator.children.values():
+            async_remove_retired_rmcontrol_telemetry(hass, entry, child, "binary_sensor")
             async_setup_dynamic_entities(
                 entry,
                 child,
@@ -78,6 +82,7 @@ async def async_setup_entry(
             )
         return
 
+    async_remove_retired_rmcontrol_telemetry(hass, entry, coordinator, "binary_sensor")
     async_setup_dynamic_entities(
         entry,
         coordinator,

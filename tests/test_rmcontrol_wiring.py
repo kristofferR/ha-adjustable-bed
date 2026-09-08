@@ -308,3 +308,110 @@ async def test_dynamic_light_select_survives_reconnect_discovery(hass: HomeAssis
     callback({})
     assert registry.async_get(row.entity_id) is not None
     assert add.call_count == 1
+
+
+@pytest.mark.parametrize("explicit_on", [True, False])
+async def test_light_without_reported_color_uses_power_only(explicit_on: bool) -> None:
+    from custom_components.adjustable_bed.light import LIGHT_DESCRIPTION, AdjustableBedLight
+
+    coordinator = MagicMock()
+    ctrl = MagicMock(spec=BedController)
+    ctrl.default_light_rgb_color = None
+    ctrl.supported_color_mode = "rgb"
+    ctrl.supports_explicit_light_on_control = explicit_on
+    ctrl.lights_on = AsyncMock()
+    ctrl.set_light_color = AsyncMock()
+    coordinator.capability_controller = ctrl
+
+    async def execute(command, **kwargs):
+        await command(ctrl)
+
+    coordinator.async_execute_controller_command = execute
+    light = AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)
+    light.async_write_ha_state = MagicMock()
+    if explicit_on:
+        await light.async_turn_on()
+        ctrl.lights_on.assert_awaited_once()
+        assert light.is_on
+        assert light.rgb_color is None
+    else:
+        with pytest.raises(ValueError, match="No RGB color"):
+            await light.async_turn_on()
+        ctrl.lights_on.assert_not_awaited()
+    ctrl.set_light_color.assert_not_awaited()
+
+
+@pytest.mark.parametrize("step", ["manual_richmat", "bluetooth_richmat"])
+@pytest.mark.parametrize("variant", ["prefix55", "prefixaa", "auto", "nordic", "wilinke"])
+async def test_initial_product_followup_validates_transport(
+    hass: HomeAssistant, step: str, variant: str
+) -> None:
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+    from custom_components.adjustable_bed.const import CONF_PROTOCOL_VARIANT
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass = hass
+    flow._manual_data = {CONF_PROTOCOL_VARIANT: variant}
+    original = dict(flow._manual_data)
+    flow._finish_with_verify = AsyncMock(return_value={"type": "create_entry"})
+    result = await getattr(flow, "async_step_" + step)({CONF_RMCONTROL_PRODUCT: "A0RM"})
+    if variant.startswith("prefix"):
+        assert result["errors"] == {"base": "invalid_variant_for_bed_type"}
+        assert flow._manual_data == original
+        flow._finish_with_verify.assert_not_awaited()
+    else:
+        flow._finish_with_verify.assert_awaited_once()
+
+
+@pytest.mark.parametrize("domain", ["sensor", "binary_sensor"])
+async def test_retired_telemetry_cleanup_is_scoped_to_current_bed(
+    hass: HomeAssistant, domain: str
+) -> None:
+    from homeassistant.helpers import entity_registry as er
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.entity_discovery import (
+        async_remove_retired_rmcontrol_telemetry,
+    )
+
+    entry = MockConfigEntry(domain=DOMAIN)
+    entry.add_to_hass(hass)
+    registry = er.async_get(hass)
+    rows = {
+        key: registry.async_get_or_create(domain, DOMAIN, key, config_entry=entry)
+        for key in ("bed_rmcontrol_old", "bed_rmcontrol_current", "other_rmcontrol_old", "bed_other")
+    }
+    coordinator = MagicMock()
+    coordinator.entity_unique_id.side_effect = lambda key: "bed_" + key
+    ctrl = coordinator.capability_controller
+    spec = MagicMock(key="rmcontrol_current")
+    ctrl.controller_state_sensor_specs = (spec,)
+    ctrl.controller_state_binary_sensor_specs = (spec,)
+    async_remove_retired_rmcontrol_telemetry(hass, entry, coordinator, domain)
+    assert registry.async_get(rows["bed_rmcontrol_old"].entity_id) is None
+    for key in ("bed_rmcontrol_current", "other_rmcontrol_old", "bed_other"):
+        assert registry.async_get(rows[key].entity_id) is not None
+    ctrl.controller_state_sensor_specs = ()
+    ctrl.controller_state_binary_sensor_specs = ()
+    async_remove_retired_rmcontrol_telemetry(hass, entry, coordinator, domain)
+    assert registry.async_get(rows["bed_rmcontrol_current"].entity_id) is None
+
+
+@pytest.mark.parametrize("variant", ["prefix55", "prefixaa"])
+async def test_bluetooth_confirmation_rejects_incompatible_product(
+    hass: HomeAssistant, mock_bluetooth_service_info, variant: str
+) -> None:
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+    from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_PROTOCOL_VARIANT
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass = hass
+    flow._discovery_info = mock_bluetooth_service_info
+    flow._finish_with_verify = AsyncMock()
+    result = await flow.async_step_bluetooth_confirm({
+        CONF_BED_TYPE: BED_TYPE_RICHMAT,
+        CONF_PROTOCOL_VARIANT: variant,
+        CONF_RMCONTROL_PRODUCT: "A0RM",
+    })
+    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "invalid_variant_for_bed_type"}
+    flow._finish_with_verify.assert_not_awaited()
