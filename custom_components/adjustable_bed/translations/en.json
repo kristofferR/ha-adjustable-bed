@@ -411,6 +411,66 @@
           "pair_selection": "Left and Right sides",
           "name": "Name for the combined bed"
         }
+      },
+      "leggett_app": {
+        "title": "Leggett app profile",
+        "description": "Choose the app that matches this bed before continuing Bluetooth pairing.",
+        "data": {
+          "leggett_app_profile": "Leggett app profile"
+        },
+        "data_description": {
+          "leggett_app_profile": "Choose the app used with this bed. The app determines the actuator layout and supported controls. Prodigy 4 preserves the existing default; Bluetooth pairing requirements remain unchanged."
+        }
+      },
+      "logicdata_app": {
+        "title": "MotionRelax app and layout",
+        "description": "Choose the app, command family and physical controls that match this bed. SimplicityFrame entries keep their existing protocol.",
+        "data": {
+          "logicdata_app_profile": "Bed app",
+          "logicdata_app_family": "Command family",
+          "logicdata_app_layout": "Physical actuator layout",
+          "logicdata_app_transport": "BLE transport",
+          "logicdata_app_has_light": "Enable light controls"
+        },
+        "data_description": {
+          "logicdata_app_profile": "Choose the MotionRelax phone or tablet app used for this bed. Shared Bluetooth services do not identify the app.",
+          "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family.",
+          "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout.",
+          "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
+          "logicdata_app_has_light": "Expose under-bed light controls when the selected standard layout has lighting."
+        }
+      },
+      "jiecang_app": {
+        "title": "Jiecang app and layout",
+        "description": "Choose the app and physical controls that match this bed. Existing legacy Jiecang entries keep their original protocol.",
+        "data": {
+          "jiecang_app_profile": "Bed app",
+          "jiecang_app_layout": "Physical actuator layout",
+          "jiecang_app_transport": "BLE transport",
+          "jiecang_app_has_light": "Enable light controls"
+        },
+        "data_description": {
+          "jiecang_app_profile": "Select the app used to control this bed. Bluetooth UUIDs cannot identify the app profile.",
+          "jiecang_app_layout": "Select the layout configured in the app. The integration does not infer it from the device name or motor count.",
+          "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion also supports standalone G2.",
+          "jiecang_app_has_light": "Expose light controls when this bed has under-bed lighting."
+        }
+      },
+      "lp_legacy": {
+        "title": "L&P Adjustable Base (legacy app)",
+        "description": "Configure the exact legacy app profile and confirmed Bluetooth characteristics. Do not use UUIDs from another bed protocol.",
+        "data": {
+          "lp_legacy_model": "Legacy app model code",
+          "lp_legacy_mode": "Legacy app protocol mode",
+          "lp_legacy_write_uuid": "Write characteristic UUID",
+          "lp_legacy_read_uuid": "Notification characteristic UUID"
+        },
+        "data_description": {
+          "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
+          "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
+          "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
+          "lp_legacy_read_uuid": "Optional full UUID of the notification characteristic confirmed for this bed. Leave empty to disable app response notifications."
+        }
       }
     },
     "progress": {
@@ -457,7 +517,14 @@
       "auto_detect_failed": "Couldn't identify this bed automatically. Pick a protocol from the list, or choose \"Diagnostic (unknown bed)\" to capture data for support.",
       "not_advertising": "This bed is not currently advertising, so no connection was attempted. Wake it, put it into pairing mode, or move it closer to a Bluetooth adapter or proxy, then try again.",
       "bond_verification_failed": "The bed connected but the link is still unauthenticated, so the bond did not form. Put the bed back into pairing mode and try again.",
-      "bond_removal_failed": "The existing Bluetooth bond could not be removed, so pairing was not attempted."
+      "bond_removal_failed": "The existing Bluetooth bond could not be removed, so pairing was not attempted.",
+      "leggett_app_invalid_profile": "Choose a supported Leggett app profile.",
+      "logicdata_app_required": "Choose the bed app, command family and physical actuator layout.",
+      "logicdata_app_family_layout": "P2 requires the middle layout. All other layouts use P1.",
+      "jiecang_app_required": "Choose the bed app and physical actuator layout.",
+      "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
+      "invalid_lp_legacy_mode": "Select Legacy or Framed explicitly.",
+      "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID."
     }
   },
   "options": {
@@ -500,7 +567,21 @@
           "octo_pin": "Octo PIN",
           "jensen_pin": "Jensen PIN",
           "back_max_angle": "Maximum back angle (degrees)",
-          "legs_max_angle": "Maximum legs angle (degrees)"
+          "legs_max_angle": "Maximum legs angle (degrees)",
+          "leggett_app_profile": "Leggett app profile",
+          "logicdata_app_profile": "Bed app",
+          "logicdata_app_family": "Command family",
+          "logicdata_app_layout": "Physical actuator layout",
+          "logicdata_app_transport": "BLE transport",
+          "logicdata_app_has_light": "Enable light controls",
+          "jiecang_app_profile": "Bed app",
+          "jiecang_app_layout": "Physical actuator layout",
+          "jiecang_app_transport": "BLE transport",
+          "jiecang_app_has_light": "Enable light controls",
+          "lp_legacy_model": "Legacy app model code",
+          "lp_legacy_mode": "Legacy app protocol mode",
+          "lp_legacy_write_uuid": "Write characteristic UUID",
+          "lp_legacy_read_uuid": "Notification characteristic UUID"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -525,7 +606,21 @@
           "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection. Leave empty if your bed doesn't require a PIN.",
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
           "back_max_angle": "Maximum angle for back/head motors. Adjust if position readings don't match your bed's actual range.",
-          "legs_max_angle": "Maximum angle for legs/feet motors. Adjust if position readings don't match your bed's actual range."
+          "legs_max_angle": "Maximum angle for legs/feet motors. Adjust if position readings don't match your bed's actual range.",
+          "leggett_app_profile": "Choose the app used with this bed. The app determines the actuator layout and supported controls. Prodigy 4 preserves the existing default; Bluetooth pairing requirements remain unchanged.",
+          "logicdata_app_profile": "Choose the MotionRelax phone or tablet app used for this bed. Shared Bluetooth services do not identify the app.",
+          "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family.",
+          "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout.",
+          "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
+          "logicdata_app_has_light": "Expose under-bed light controls when the selected standard layout has lighting.",
+          "jiecang_app_profile": "Select the app used to control this bed. Bluetooth UUIDs cannot identify the app profile.",
+          "jiecang_app_layout": "Select the layout configured in the app. The integration does not infer it from the device name or motor count.",
+          "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion also supports standalone G2.",
+          "jiecang_app_has_light": "Expose light controls when this bed has under-bed lighting.",
+          "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
+          "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
+          "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
+          "lp_legacy_read_uuid": "Optional full UUID of the notification characteristic confirmed for this bed. Leave empty to disable app response notifications."
         }
       },
       "remove_bond": {
@@ -579,7 +674,18 @@
       "invalid_motor_count_for_bed_type": "One motor is supported only for Standard OCTO TV lift controllers.",
       "invalid_angle": "Angle must be a positive number between 0 and 180 degrees.",
       "octo_tv_lift_pairing_unsupported": "One-motor OCTO TV/bed lifts must remain standalone and cannot be paired as bed sides.",
-      "single_address_pairing_unsupported": "This CBNew protocol has no A/B side selector and cannot safely expose paired-side controls."
+      "single_address_pairing_unsupported": "This CBNew protocol has no A/B side selector and cannot safely expose paired-side controls.",
+      "leggett_app_invalid_profile": "Choose a supported Leggett app profile.",
+      "leggett_app_unpair_first": "Unpair the beds and configure each side separately before choosing a Leggett app profile.",
+      "logicdata_app_required": "Choose the bed app, command family and physical actuator layout.",
+      "logicdata_app_family_layout": "P2 requires the middle layout. All other layouts use P1.",
+      "logicdata_app_unpair_first": "Unpair the beds and configure each side separately before choosing MotionRelax apps.",
+      "jiecang_app_required": "Choose the bed app and physical actuator layout.",
+      "jiecang_app_pair_settings": "Restore the standalone beds, configure each side's app profile and actuator layout, then combine them again.",
+      "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
+      "invalid_lp_legacy_mode": "Select Legacy or Framed explicitly.",
+      "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID.",
+      "lp_legacy_pair_settings": "Unpair the beds and configure the legacy L&P profile, packet mode and Bluetooth characteristics on each bed before pairing them again."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -1440,6 +1546,9 @@
       },
       "lumbar_down_both": {
         "name": "Both sides: Lumbar Down"
+      },
+      "remote_action": {
+        "name": "Remote action"
       }
     },
     "cover": {
@@ -1661,6 +1770,21 @@
       },
       "keeson_legs_both": {
         "name": "Both sides: Legs"
+      },
+      "right_back": {
+        "name": "Right back"
+      },
+      "both_backs": {
+        "name": "Both backs"
+      },
+      "both": {
+        "name": "Back and legs"
+      },
+      "right_legs": {
+        "name": "Right legs"
+      },
+      "both_legs": {
+        "name": "Both legs"
       }
     },
     "sensor": {
@@ -1813,6 +1937,21 @@
       },
       "massage_timer_mode_both": {
         "name": "Both sides: Massage: Timer Mode"
+      },
+      "leggett_led_mask": {
+        "name": "LED mask"
+      },
+      "leggett_status": {
+        "name": "Status byte"
+      },
+      "logicdata_app_family_match": {
+        "name": "Command family matches"
+      },
+      "logicdata_app_alarm": {
+        "name": "Bed alarm"
+      },
+      "lp_legacy_notification": {
+        "name": "App response"
       }
     },
     "light": {
@@ -1865,6 +2004,9 @@
       },
       "linak_automatic_drive_both": {
         "name": "Both sides: Automatic Drive"
+      },
+      "automatic_light": {
+        "name": "Automatic under-bed light"
       }
     },
     "binary_sensor": {
@@ -1909,6 +2051,15 @@
       },
       "bed_presence_both": {
         "name": "Both sides: Bed Presence"
+      },
+      "leggett_alarm_indicator": {
+        "name": "Alarm indicator"
+      },
+      "leggett_sleep_timer_indicator": {
+        "name": "Sleep timer indicator"
+      },
+      "under_bed_lights": {
+        "name": "Under Bed Lights"
       }
     },
     "number": {
@@ -2031,6 +2182,9 @@
       },
       "sleep_number_setting_both": {
         "name": "Both sides: Sleep Number Setting"
+      },
+      "massage_right_intensity": {
+        "name": "Right massage intensity"
       }
     },
     "select": {
@@ -2226,6 +2380,230 @@
         "duration_ms": {
           "name": "Duration (ms)",
           "description": "How long to move the motor in milliseconds."
+        }
+      }
+    },
+    "leggett_sleep_timer": {
+      "name": "Set Leggett sleep timer",
+      "description": "Start a delayed preset or cancel the stored sleep timer.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A timer-capable Leggett Okin controller with its matching app profile."
+        },
+        "action": {
+          "name": "Action"
+        },
+        "minutes": {
+          "name": "Delay",
+          "description": "Required to start. Prodigy accepts 1 to 1439 minutes; U Series accepts 15, 30, 45, 60, 75, or 90 minutes."
+        },
+        "preset": {
+          "name": "Sleep action",
+          "description": "Prodigy uses memory slots 1 to 4. U Series uses 0 for flat or 1 to 3 for memory; its third memory is available only through this timer."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "leggett_alarm_timer": {
+      "name": "Set Leggett alarm timer",
+      "description": "Start an alarm delay or cancel the stored alarm using the selected app profile.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A timer-capable Leggett Okin controller with its matching app profile."
+        },
+        "action": {
+          "name": "Action"
+        },
+        "minutes": {
+          "name": "Delay",
+          "description": "Required to start. Alarm delay in whole minutes, from 1 to 1440."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "leggett_hold_control": {
+      "name": "Hold Leggett control",
+      "description": "Hold a supported control for a bounded duration, then send its release sequence.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A Leggett Okin controller with its matching app profile."
+        },
+        "control": {
+          "name": "Control",
+          "description": "Memory 1, memory 2, and store are U Series controls. Other choices are available on all app profiles."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold for 0.1 to 60 seconds, in whole milliseconds. These are service interface bounds, not firmware limits."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "logicdata_set_alarm": {
+      "name": "Set Logicdata clock alarm",
+      "description": "Configure the controller's recurring alarm with a preset and massage levels.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A Logicdata phone app controller using the standard protocol. Tablet and middle-motor controllers do not support clock alarms."
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Time",
+          "description": "Alarm time on the controller's local clock, to the nearest minute."
+        },
+        "weekdays": {
+          "name": "Weekdays"
+        },
+        "preset": {
+          "name": "Bed preset"
+        },
+        "head_level": {
+          "name": "Head massage level",
+          "description": "Alarm massage intensity, with 0 for off and 1 to 3 for increasing intensity."
+        },
+        "foot_level": {
+          "name": "Foot massage level",
+          "description": "Alarm massage intensity, with 0 for off and 1 to 3 for increasing intensity."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "logicdata_rename": {
+      "name": "Rename Logicdata controller",
+      "description": "Change the Bluetooth name of a compatible Logicdata app controller.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A Logicdata app controller that supports device renaming."
+        },
+        "name": {
+          "name": "Name",
+          "description": "This service accepts 1 to 255 printable ASCII characters as a safe common input range for phone and tablet controllers."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "logicdata_hold_preset": {
+      "name": "Hold Logicdata preset recall",
+      "description": "Recall a middle-motor flat or memory position with repeated commands for a specified duration, then release.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A Logicdata app controller using the middle-motor protocol. Standard controllers do not support held preset recall."
+        },
+        "preset": {
+          "name": "Preset"
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold for 0.2 to 60 seconds, in whole milliseconds. These are service interface bounds, not firmware limits."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "jiecang_set_alarm": {
+      "name": "Set Jiecang clock alarm",
+      "description": "Configure the controller's recurring alarm with a preset and massage levels.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A Jiecang app controller that supports clock alarms."
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Time",
+          "description": "Alarm time on the controller's local clock, to the nearest minute."
+        },
+        "weekdays": {
+          "name": "Weekdays"
+        },
+        "preset": {
+          "name": "Bed preset"
+        },
+        "head_level": {
+          "name": "Head massage level",
+          "description": "Alarm massage intensity, with 0 for off and 1 to 3 for increasing intensity."
+        },
+        "foot_level": {
+          "name": "Foot massage level",
+          "description": "Alarm massage intensity, with 0 for off and 1 to 3 for increasing intensity."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "jiecang_wake": {
+      "name": "Start Jiecang wake routine",
+      "description": "Move to a preset and start the selected wake massage levels immediately.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A Jiecang app controller that supports wake routines."
+        },
+        "preset": {
+          "name": "Bed preset"
+        },
+        "head_level": {
+          "name": "Head massage level",
+          "description": "Wake massage intensity, with 0 for off and 1 to 3 for increasing intensity."
+        },
+        "foot_level": {
+          "name": "Foot massage level",
+          "description": "Wake massage intensity, with 0 for off and 1 to 3 for increasing intensity."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "jiecang_rename": {
+      "name": "Rename Jiecang controller",
+      "description": "Change the Bluetooth name of a compatible Jiecang app controller.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A Jiecang app controller that supports device renaming."
+        },
+        "name": {
+          "name": "Name",
+          "description": "New Bluetooth name, using 1 to 20 ASCII letters or digits."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "jiecang_stop_wake": {
+      "name": "Stop Jiecang wake massage",
+      "description": "Stop active wake massage without disabling the stored weekly clock alarm.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A Jiecang app controller that supports wake routines."
+        },
+        "side": {
+          "name": "Side"
         }
       }
     }

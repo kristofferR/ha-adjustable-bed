@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity import Entity
 
-from custom_components.adjustable_bed.beds.base import BedController, ControllerButtonSpec
+from custom_components.adjustable_bed.beds.base import BedController, ProductButtonSpec
 from custom_components.adjustable_bed.button import AdjustableBedProductButton
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedOptionsFlow,
@@ -61,7 +61,7 @@ async def test_extra_product_button_uses_current_controller_and_lock() -> None:
     coordinator.async_execute_controller_command = AsyncMock()
     action = AsyncMock()
     button = AdjustableBedProductButton(
-        coordinator, ControllerButtonSpec(key="heating_low", name="Heating low", press_fn=action)
+        coordinator, ProductButtonSpec(key="heating_low", name="Heating low", press_fn=action)
     )
     await button.async_press()
     assert button.unique_id == "bed_product_action_heating_low"
@@ -427,7 +427,7 @@ async def test_retired_rmcontrol_cleanup_is_scoped_to_current_bed_and_side(
     ctrl.controller_state_sensor_specs = (spec,)
     ctrl.controller_state_binary_sensor_specs = (spec,)
     ctrl.controller_button_specs = (
-        ControllerButtonSpec(key="current", name="Current", press_fn=AsyncMock()),
+        ProductButtonSpec(key="current", name="Current", press_fn=AsyncMock()),
     )
 
     def cleanup() -> None:

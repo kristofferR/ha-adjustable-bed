@@ -14,6 +14,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .beds.base import ProductButtonSpec
 from .const import (
     DOMAIN,
     SIDE_BOTH,
@@ -728,7 +729,10 @@ def _button_entities_for(
         entities.append(AdjustableBedButton(coordinator, description))
 
     if controller is not None:
-        specs = controller.controller_button_specs
+        specs = tuple(
+            spec for spec in controller.controller_button_specs
+            if isinstance(spec, ProductButtonSpec)
+        )
         desired = {coordinator.entity_unique_id(f"product_action_{spec.key}") for spec in specs}
         prefix, suffix = coordinator.entity_unique_id("product_action_").split("product_action_", 1)
         prefix += "product_action_"
@@ -742,6 +746,11 @@ def _button_entities_for(
             ):
                 registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
+        entities.extend(
+            ControllerActionButton(coordinator, spec)
+            for spec in controller.controller_button_specs
+            if not isinstance(spec, ProductButtonSpec)
+        )
 
     return entities
 
@@ -1003,7 +1012,7 @@ def _discovered_memory_slot_name(
 class AdjustableBedProductButton(AdjustableBedEntity, ButtonEntity):
     """An extra action from the exact selected product's command catalog."""
 
-    def __init__(self, coordinator: AdjustableBedCoordinator, spec: ControllerButtonSpec) -> None:
+    def __init__(self, coordinator: AdjustableBedCoordinator, spec: ProductButtonSpec) -> None:
         super().__init__(coordinator)
         self._spec = spec
         self._attr_unique_id = coordinator.entity_unique_id(f"product_action_{spec.key}")
@@ -1101,6 +1110,27 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
                 self.entity_description.key,
             )
             raise
+
+
+class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
+    """Expose a controller's named action through the serialized command path."""
+
+    _attr_translation_key = "remote_action"
+
+    def __init__(
+        self, coordinator: AdjustableBedCoordinator, spec: ControllerButtonSpec
+    ) -> None:
+        super().__init__(coordinator)
+        self._spec = spec
+        self._attr_unique_id = coordinator.entity_unique_id(spec.key)
+        self._attr_name = spec.name
+        self._attr_icon = spec.icon
+
+    async def async_press(self) -> None:
+        """Cancel the previous action and execute against the current controller."""
+        await self._coordinator.async_execute_controller_command(
+            self._spec.press_fn, cancel_running=True
+        )
 
 
 def _paired_entity_unique_id(coordinator: PairedBedCoordinator, key: str) -> str:
@@ -1218,7 +1248,7 @@ class PairedBedCombinedMotorButton(ButtonEntity):
         self._coordinator = coordinator
         self._direction = direction
         self._move_fn = spec.open_fn if direction == "up" else spec.close_fn
-        self._resource = f"motor:{spec.position_key or spec.key}"
+        self._resource = spec.scheduler_resource or f"motor:{spec.position_key or spec.key}"
         # Translation key from spec.translation_key (preserves controller-specific
         # label overrides); unique_id stays on the stable spec.key.
         base_translation_key = f"{spec.translation_key}_{direction}"

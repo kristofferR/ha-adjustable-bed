@@ -127,14 +127,19 @@ def _binary_sensor_entities_for(
         entities.append(AdjustableBedConnectionSensor(coordinator, description))
 
     if controller is not None:
+        specs = controller.controller_state_binary_sensor_specs
+        active_keys = {spec.key for spec in specs}
+        stale_keys = controller.stale_controller_state_binary_sensor_entity_keys | (
+            {"leggett_alarm_indicator", "leggett_sleep_timer_indicator", "under_bed_lights"} - active_keys
+        )
         _async_remove_stale_controller_state_binary_sensor_entities(
             hass,
             coordinator,
-            keys=controller.stale_controller_state_binary_sensor_entity_keys,
+            keys=frozenset(stale_keys),
         )
         entities.extend(
             AdjustableBedControllerStateBinarySensor(coordinator, spec)
-            for spec in controller.controller_state_binary_sensor_specs
+            for spec in specs
         )
 
     return entities

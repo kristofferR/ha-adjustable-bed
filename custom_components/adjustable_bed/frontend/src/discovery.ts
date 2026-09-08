@@ -174,6 +174,7 @@ export function bedEntitiesForDevice(
           key === "sync_positions" ||
           key === "child_lock_toggle" ||
           key === "auxiliary_action" ||
+          key === "remote_action" ||
           key === "solace_music_toggle" ||
           key === "solace_music_off" ||
           key === "wake_controller" ||
@@ -191,7 +192,8 @@ export function bedEntitiesForDevice(
       case "switch":
         if (key === "under_bed_lights") bed.lights.switch = id;
         else if (key === "synchro_mode") bed.synchro = id;
-        else if (key === "linak_automatic_drive") bed.utility.push(id);
+        else if (key === "linak_automatic_drive" || key === "automatic_light")
+          bed.utility.push(id);
         break;
 
       case "light":
@@ -200,6 +202,7 @@ export function bedEntitiesForDevice(
 
       case "binary_sensor":
         if (key === "ble_connection") bed.connectivity = id;
+        else if (key === "under_bed_lights") bed.lights.state = id;
         else if (key.startsWith("bed_presence")) bed.presence.push(id);
         break;
 
@@ -310,6 +313,7 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     !bed.connectivity &&
     !l.light &&
     !l.switch &&
+    !l.state &&
     !l.level &&
     !l.toggle &&
     !l.cycle &&

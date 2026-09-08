@@ -40,10 +40,10 @@ from ..rmcontrol_protocol import (
 )
 from .base import (
     BedController,
-    ControllerButtonSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
+    ProductButtonSpec,
 )
 from .richmat import RichmatController
 
@@ -311,9 +311,9 @@ class RmcontrolController(RichmatController):
                 _LOGGER.warning("Failed to release RMControl held action", exc_info=True)
 
     @property
-    def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+    def controller_button_specs(self) -> tuple[ProductButtonSpec, ...]:
         """Every concrete transport control, retaining ambiguous UI contexts."""
-        specs: list[ControllerButtonSpec] = []
+        specs: list[ProductButtonSpec] = []
         seen: set[tuple[str, str, tuple[int, int, int, str, str]]] = set()
         for action in self.product_profile.actions:
             if not _is_transport_action(action):
@@ -347,7 +347,7 @@ class RmcontrolController(RichmatController):
                     )
 
                 specs.append(
-                    ControllerButtonSpec(
+                    ProductButtonSpec(
                         key=f"rmcontrol_{getter_key}_{action_key}_{action.occurrence}_{'long' if long_press else 'short'}".lower(),
                         name=f"{label}{' (long press)' if long_press else ''} ({getter_key}, {action.occurrence + 1})",
                         press_fn=press,

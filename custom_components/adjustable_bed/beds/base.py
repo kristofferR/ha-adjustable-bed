@@ -88,11 +88,18 @@ class SideBoundController:
 
 @dataclass(frozen=True, slots=True)
 class ControllerButtonSpec:
-    """A product-specific action not covered by the standard control surface."""
+    """An app-labelled action whose physical semantics need no inferred axis."""
 
     key: str
     name: str
     press_fn: MotorCommandCallable
+    icon: str = "mdi:gesture-tap"
+
+
+@dataclass(frozen=True, slots=True)
+class ProductButtonSpec(ControllerButtonSpec):
+    """An optional product action with its own entity namespace."""
+
     icon: str = "mdi:gesture-tap-button"
     entity_registry_enabled_default: bool = False
 
@@ -108,6 +115,7 @@ class MotorControlSpec:
     stop_fn: MotorCommandCallable
     position_key: str | None = None
     max_angle: float = 68
+    scheduler_resource: str | None = None
 
 
 # Units a position slider can be scaled in.
@@ -746,6 +754,10 @@ class BedController(ABC):
             self._coordinator.motor_pulse_delay_ms,
         )
 
+    def timed_move_repeat_count(self, duration_ms: int, pulse_delay_ms: int) -> int:
+        """Plan repeats including the immediate first write."""
+        return max(2, (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms + 1)
+
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command with guaranteed STOP at end.
 
@@ -1320,6 +1332,56 @@ class BedController(ABC):
     @property
     def supports_alarm(self) -> bool:
         """Return True if the controller exposes the BLE timer/alarm service."""
+        return False
+
+    @property
+    def supports_sleep_timer(self) -> bool:
+        """Return True if a delayed preset can be programmed and cancelled."""
+        return False
+
+    @property
+    def sleep_timer_memory_options(self) -> tuple[int, ...]:
+        """Return selectable sleep actions, with zero representing flat."""
+        return ()
+
+    @property
+    def sleep_timer_duration_options(self) -> tuple[int, ...]:
+        """Return discrete minute choices, or empty for a continuous minute range."""
+        return ()
+
+    @property
+    def supports_alarm_timer(self) -> bool:
+        """Return True if an alarm delay can be programmed and cancelled."""
+        return False
+
+    @property
+    def held_control_options(self) -> tuple[str, ...]:
+        """Return controls with a protocol-defined held-command lifecycle."""
+        return ()
+
+    @property
+    def supports_held_control(self) -> bool:
+        """Return True when held controls are available."""
+        return bool(self.held_control_options)
+
+    @property
+    def supports_clock_alarm(self) -> bool:
+        """Return whether a weekly clock alarm can be configured."""
+        return False
+
+    @property
+    def supports_preset_hold(self) -> bool:
+        """Return whether a preset can be held for a bounded duration."""
+        return False
+
+    @property
+    def supports_wake_routine(self) -> bool:
+        """Return whether an app-defined wake command sequence is available."""
+        return False
+
+    @property
+    def supports_automatic_light(self) -> bool:
+        """Return whether motion-triggered under-bed lighting can be selected."""
         return False
 
     @property
@@ -1995,6 +2057,42 @@ class BedController(ABC):
         """Write a protocol-supported BLE device name."""
         raise NotImplementedError("Device rename not supported on this bed")
 
+    async def set_automatic_light(self, enabled: bool) -> None:
+        """Enable or disable automatic under-bed lighting."""
+        raise NotImplementedError("Automatic lighting not supported on this bed")
+
+    async def configure_clock_alarm(
+        self,
+        *,
+        enabled: bool,
+        weekdays: Sequence[int],
+        hour: int,
+        minute: int,
+        preset: str,
+        head_level: int = 0,
+        foot_level: int = 0,
+    ) -> None:
+        """Configure a weekly alarm with Monday numbered zero."""
+        raise NotImplementedError("Clock alarm not supported on this bed")
+
+    async def execute_wake_routine(
+        self,
+        *,
+        preset: str,
+        head_level: int = 0,
+        foot_level: int = 0,
+    ) -> None:
+        """Execute a proven wake sequence without scheduling a local alarm."""
+        raise NotImplementedError("Wake routine not supported on this bed")
+
+    async def stop_wake_routine(self) -> None:
+        """Stop active wake massage without changing the stored alarm schedule."""
+        raise NotImplementedError("Wake routine not supported on this bed")
+
+    async def hold_preset(self, preset: str, duration_ms: int) -> None:
+        """Hold a preset using the protocol's refresh and release lifecycle."""
+        raise NotImplementedError("Held preset not supported on this bed")
+
     async def program_alarm(
         self,
         seconds: int,
@@ -2004,6 +2102,26 @@ class BedController(ABC):
     ) -> None:
         """Program a protocol-supported wake alarm."""
         raise NotImplementedError("Alarm programming not supported on this bed")
+
+    async def set_sleep_timer(self, minutes: int, memory_num: int = 1) -> None:
+        """Schedule a delayed preset using a supported sleep action."""
+        raise NotImplementedError("Sleep timer not supported on this bed")
+
+    async def cancel_sleep_timer(self) -> None:
+        """Cancel the stored sleep timer."""
+        raise NotImplementedError("Sleep timer not supported on this bed")
+
+    async def set_alarm_timer(self, minutes: int) -> None:
+        """Schedule an alarm after the given number of minutes."""
+        raise NotImplementedError("Alarm timer not supported on this bed")
+
+    async def cancel_alarm_timer(self) -> None:
+        """Cancel the stored alarm timer."""
+        raise NotImplementedError("Alarm timer not supported on this bed")
+
+    async def hold_control(self, control: str, duration_ms: int) -> None:
+        """Hold a supported control for a bounded duration, then release it."""
+        raise NotImplementedError("Held controls not supported on this bed")
 
     async def move_simultaneously(
         self,

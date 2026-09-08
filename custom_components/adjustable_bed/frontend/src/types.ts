@@ -106,6 +106,7 @@ export interface MemorySlot {
 export interface LightEntities {
   light?: string; // light.* under_bed_lights (color)
   switch?: string; // switch.* under_bed_lights
+  state?: string; // binary_sensor.* under_bed_lights (read-only)
   level?: string; // number.* light_level (brightness)
   toggle?: string; // button.* toggle_light
   cycle?: string; // button.* light_cycle

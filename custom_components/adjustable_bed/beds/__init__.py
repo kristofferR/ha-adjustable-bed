@@ -33,14 +33,17 @@ from .jensen import JensenController
 
 # Brand-specific controllers (unchanged)
 from .jiecang import JiecangController
+from .jiecang_app import JiecangAppController
 from .kaidi import KaidiController
 from .keeson import KeesonController
 from .leggett_gen2 import LeggettGen2Controller
+from .leggett_lp_legacy import LeggettLpLegacyController
 from .leggett_okin import LeggettOkinController
 from .leggett_wilinke import LeggettWilinkeController
 from .limoss import LimossController
 from .linak import LinakController
 from .logicdata import LogicdataController
+from .logicdata_app import LogicdataAppController
 from .motosleep import MotoSleepController
 from .octo import OctoController
 from .okin_7byte import Okin7ByteController
@@ -90,17 +93,20 @@ __all__ = [
     "Okin7ByteController",
     "OkinNordicController",
     "LeggettGen2Controller",
+    "LeggettLpLegacyController",
     "LeggettOkinController",
     "LeggettWilinkeController",
     # Brand-specific controllers
     "CoolBaseController",
     "JiecangController",
+    "JiecangAppController",
     "JensenController",
     "KaidiController",
     "KeesonController",
     "LimossController",
     "LinakController",
     "LogicdataController",
+    "LogicdataAppController",
     "MotoSleepController",
     "OctoController",
     "RemacroController",

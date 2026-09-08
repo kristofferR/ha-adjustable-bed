@@ -3,10 +3,27 @@
 Control boxes sold as Leggett & Platt Prodigy Comfort Elite and similar, marked
 `LP BED CONTROL` in BLE advertisements. Confirmed hardware: DewertOkin CU170.
 
-Two vendor apps drive this hardware: **LP Control** (`com.leggett.android.universal`)
-and the older, delisted **Prodigy CE** (`com.leggett.prodigy4`). Where they
-disagree, this document follows the clean-room analysis of Prodigy CE 1.2.0 and
-says so.
+Select the app profile matching the bed's remote application. The default remains
+**Prodigy CE / Prodigy 4**, preserving existing configurations. The accepted
+Phase 4 cluster-005 reports establish these distinct BLE control surfaces:
+
+| Profile | Accepted package/version | Movement axes | Direct memories |
+|---|---|---|---|
+| Prodigy 2L | `com.leggett.prodigy2L` 1.2 (15) | Head, foot, lumbar | Four favorites, including fixed Snore |
+| Prodigy 2 | `com.leggett.prodigy2` 2.2.0 (44) | Head, foot, pillow | Four favorites, including fixed Snore |
+| Prodigy CE / Prodigy 4 | `com.leggett.prodigy4` 1.2.0 (18) | Head, foot, pillow, lumbar | Four favorites, including fixed Snore |
+| U / Ultra Series | `com.leggett.useries` 2.1 (16) | Head, foot, pillow | Two held memory controls and separate held SET |
+
+App profile and wire revision are independent. Device names and shared service
+UUIDs cannot establish the correct physical actuator layout. Configure each side
+before combining two separately addressed beds; shared paired options preserve
+each side's app profile. Unpair temporarily to change that setting.
+
+The new profiles are statically verified and hardware unverified. The CU170
+pairing and unconfirmed-write policies below come from existing hardware testing,
+not from APK calls that explicitly select bonding or ATT write mode. This
+integration supports BLE; Classic RFCOMM paths found in Prodigy 2 and U Series
+remain outside its transport support.
 
 ## Transport
 
@@ -32,13 +49,13 @@ The revision-0 checksum is `~sum(bytes[0..6])` truncated to 8 bits, giving the
 invariant that all eight bytes sum to `0xFF`.
 
 The integration applies this same characteristic check after service discovery
-and records the selected revision in protocol diagnostics. If service discovery
-is unavailable it preserves the established revision-1 default rather than
-guessing that a connected device is revision 0.
+and records the selected revision in protocol diagnostics. Writes require a
+resolved revision from the current connection's GATT service; unavailable service
+discovery does not justify guessing either encoding.
 
 ## Keycodes
 
-Everything is a 32-bit keycode. The app keeps a bitmask of currently-held
+Ordinary controls use a 32-bit keycode. The app keeps a bitmask of currently-held
 buttons, so multiple simultaneous actions are one frame with several bits set.
 
 > **Do not trust the `FBP_KEYCODE_*` constant names in decompiled output.**
@@ -68,10 +85,15 @@ buttons, so multiple simultaneous actions are one frame with several bits set.
 | Flat | `0x08000000` | **held button**, not a recall |
 | Memory store (arm) | `0x00010000` | **not a recall** |
 
-Prodigy CE initializes Favorite 1, Favorite 2 and Favorite 3 as editable entries.
+The three Prodigy profiles initialize Favorite 1, Favorite 2 and Favorite 3 as editable entries.
 It initializes the third wire slot as the fixed Snore entry. The integration
 therefore exposes no separate Zero-G action, and never offers or accepts a save
 operation for the Snore slot.
+
+U Series instead exposes two held memory keys, a held Snore control and a held
+SET key. It does not inherit the newer apps' composite favorite-programming
+sequence or their four direct favorite entries. Its sleep timer independently
+offers a third memory action.
 
 `0x00010000` arms the box to overwrite a slot. It must never appear in the
 recall ladder. Earlier releases of this integration used a ladder shifted one
@@ -116,20 +138,34 @@ WiFi Bluetooth proxy and makes the motor stop and restart.
 **One-shot recalls** (the memory slots) are a burst of **exactly 10 frames at
 ~100 ms**, with **no terminator at all**. The control box drives the move to
 completion by itself. Appending a release frame here risks cancelling the motion
-the recall just started, so the integration deliberately does not.
+the recall just started, so successful Prodigy recalls keep that behavior.
+Cancellation or write failure uses the proven zero cleanup. U Series memory
+controls follow the ordinary held-key lifecycle instead. Memory 1, Memory 2 and
+Snore therefore have no one-shot preset buttons in this profile. Use
+`adjustable_bed.leggett_hold_control` with an explicit duration for these controls.
 
 LP Control 2.9.0 uses a 200 ms cadence for held commands where Prodigy CE uses
-100 ms. The integration defaults to 100 ms: a shorter refresh cannot fall
-outside a keep-alive window that a longer one satisfies, and users on 200 ms
-reported stuttering movement.
+100 ms. The integration uses the accepted Prodigy/U Series 100 ms cadence and
+retains the recorded CU170 hardware policy.
+
+`adjustable_bed.leggett_hold_control` exposes bounded holds for flat, Snore,
+lighting and massage buttons. U Series also permits memory 1, memory 2 and SET.
+The existing movement services cover motor holds. These actions preserve the
+held-button behavior separately from the Prodigy fixed-count favorite recalls.
 
 ## Memory programming
 
 There is no program opcode. Storing a position is two ordinary held keycodes in
 sequence:
 
-1. hold `0x00010000` for ~5 s, then release
-2. hold the slot keycode for ~2 s, then release
+1. hold `0x00010000` for approximately 5 seconds
+2. switch directly to the selected slot for approximately 2 seconds
+3. finish with the ordinary four zero frames
+
+The app's reset and slot assignment are consecutive calls in one callback.
+An intermediate zero can occur through scheduling, but the integration does not
+insert a guaranteed four-zero gap between the two stages. U Series has only the
+standalone held SET path, available through `leggett_hold_control`.
 
 The shipped user guide corroborates this: "Touch Save… the massage motors will
 buzz once. Within 5 seconds, touch the Favorite Position being edited."
@@ -149,15 +185,35 @@ captures do not include a paired light-off/light-on notification. The exact
 mask and polarity therefore still require that capture. Until then the
 integration keeps the light as a blind toggle rather than guessing.
 
-The integration subscribes to the main status characteristic and, when present,
-the optional Smart Remote CSS status characteristic. It runs the app's exact
+The integration subscribes to the main status characteristic and, for the
+Prodigy profiles when present, the optional Smart Remote CSS status characteristic.
+It runs the app's exact
 operations 6/7/8/9/11 parser and records the resulting opaque LED mask, signed
 status byte, and the two app-labelled alarm/sleep bits in protocol diagnostics.
-It does not promote an unlabeled bit to a Home Assistant entity.
+Raw LED-mask and signed-status sensors expose the parsed values. Available
+standard Device Information strings are read for diagnostics. No unlabeled bit
+is assigned a new physical meaning.
+Alarm and sleep-timer indicator binary sensors use the independently proven app
+masks. U Series applies its app's low-byte suppression to those indicators while
+preserving the raw mask unchanged.
+
+## Sleep and alarm timers
+
+`adjustable_bed.leggett_sleep_timer` and `adjustable_bed.leggett_alarm_timer`
+start or cancel native timers. Prodigy sleep
+selects a favorite and a delay of 1–1439 minutes. Its sleep command is a compact
+six-byte packet under either wire revision. U Series sleep selects flat or
+memory 1–3 and uses 15-minute steps through 90 minutes; its timer key follows the
+selected R0/R1 encoding. All profiles support an alarm delay of 1–1440 minutes.
+U Series has a different alarm-stop key from the Prodigy profiles.
+
+The services validate the selected profile's actions and ranges before writing.
+See their Home Assistant action descriptions for field names and cancellation.
 
 ## Control mode
 
-Prodigy CE exposes two persistent control-box settings:
+The three Prodigy profiles expose two persistent control-box settings. U Series
+does not expose these settings or initialize the optional CSS channel.
 
 | Mode | Keycode | Lifecycle |
 |---|---|---|
@@ -176,7 +232,9 @@ come from the accepted Phase 4 clean-room analysis of `com.leggett.prodigy4`
 1.2.0 (versionCode 18, artifact SHA-256 `45922c518c9e8070…`), traced from layout
 binding to the GATT boundary and independently audited. The report is COMPLETE;
 the missing light-bit meaning is explicitly deferred physical validation, not
-an unresolved APK-analysis path.
+an unresolved APK-analysis path. The [whole-cluster disposition](leggett-app-disposition.md)
+records all four accepted report identities, previously implemented behavior,
+remaining findings, exact app differences and transport exclusions.
 
 Unverified against hardware, and worth a capture if you have the equipment:
 which frame revision real units use, whether preset recall truly ends without a
