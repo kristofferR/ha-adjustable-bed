@@ -251,6 +251,25 @@ async def test_button_callback_uses_current_controller(coordinator):
     active.assert_awaited_once()
 
 
+@pytest.mark.parametrize("side", ["left", "right", "both"])
+async def test_button_callback_preserves_bound_side(coordinator, side):
+    controller = make_controller(coordinator)
+    control = get_lp_legacy_profile("6BRM").controls[0]
+    original_side = controller._command_side.get()
+    observed_sides = []
+
+    async def record_write(*args, **kwargs):
+        observed_sides.append(controller._command_side.get())
+
+    coordinator.client.write_gatt_char.side_effect = record_write
+    with patch.object(controller, "_wait_ticks", new=AsyncMock(return_value=True)):
+        await controller.controller_button_specs[0].press_fn(controller.bind_side(side))
+
+    assert written(coordinator) == [control.press.legacy] * 2 + [control.release.legacy]
+    assert observed_sides == [side] * 3
+    assert controller._command_side.get() == original_side
+
+
 async def test_stop_adds_no_global_packet(coordinator):
     controller = make_controller(coordinator)
     await controller.stop_all()
