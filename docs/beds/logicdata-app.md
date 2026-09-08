@@ -33,7 +33,10 @@ in either app. No PIN or pairing flow is inferred from these artifacts.
 Both families provide two memory recall and save actions. Movement repeats every
 100 ms, with the app's final movement write on normal completion and short release
 after 100 ms. Cancellation sends the proven release without another movement
-write. Memory, lighting and massage keep their own action-specific timing.
+write. Timed moves include the terminal write and release delay in the requested
+duration, rounded up to the next 100 ms interval. A 100 ms request sends one
+movement frame and releases at 100 ms; a 1000 ms request releases at 1000 ms.
+Memory, lighting and massage keep their own action-specific timing.
 
 For the middle family, `adjustable_bed.logicdata_hold_preset` holds flat, memory 1
 or memory 2 for a chosen duration. It refreshes flat every 100 ms or memory every

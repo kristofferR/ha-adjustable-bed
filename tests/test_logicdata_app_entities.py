@@ -254,7 +254,7 @@ async def test_timed_move_uses_fixed_app_cadence_despite_user_pulse_setting(
     coordinator = hass.data[DOMAIN][entry.entry_id]
     coordinator._motor_pulse_delay_ms = 500
     _, count, delay, _ = await _timed_move_plan(coordinator, coordinator, [], "back", "up", 1000)
-    assert (count, delay) == (11, 100)
+    assert (count, delay) == (9, 100)
 
 
 async def test_new_dynamic_entities_have_localized_names(

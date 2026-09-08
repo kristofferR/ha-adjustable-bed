@@ -411,3 +411,42 @@ async def test_early_family_mismatch_keeps_startup_and_sensor_available(coordina
         with pytest.raises(ValueError, match="different packet family"):
             await bed.move_back_up()
         assert packets(coordinator) == [protocol.P1_RELEASE]
+
+
+@pytest.mark.parametrize("profile", ["phone", "tablet"])
+@pytest.mark.parametrize(("family", "layout"), [("p1", "standard_2"), ("p2", "middle")])
+@pytest.mark.parametrize(("duration_ms", "release_ms"), [(100, 100), (1000, 1000), (1050, 1100)])
+async def test_timed_motion_releases_at_planned_endpoint(
+    coordinator, profile, family, layout, duration_ms, release_ms
+):
+    bed = controller(coordinator, profile=profile, command_family=family, layout=layout)
+    coordinator.motor_pulse_count = bed.timed_move_repeat_count(duration_ms, 100)
+    now = 0.0
+    clock = MagicMock()
+    clock.time.side_effect = lambda: now
+    writes = []
+
+    async def write(uuid, packet, **kwargs):
+        writes.append((now, packet))
+
+    async def pause(seconds, cancel_event=None):
+        nonlocal now
+        now += seconds
+        return True
+
+    coordinator.client.write_gatt_char.side_effect = write
+    with (
+        patch(
+            "custom_components.adjustable_bed.beds.logicdata_app.asyncio.get_running_loop",
+            return_value=clock,
+        ),
+        patch.object(bed, "_pause", side_effect=pause),
+    ):
+        await bed.move_back_up()
+    movement = protocol.motion_command(family, layout, "back", True)
+    assert [packet for _, packet in writes] == (
+        [movement] * (release_ms // 100) + [protocol.P1_RELEASE]
+    )
+    assert [when for when, _ in writes] == pytest.approx(
+        [tick / 10 for tick in range(release_ms // 100 + 1)]
+    )

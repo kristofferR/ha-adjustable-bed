@@ -734,6 +734,10 @@ class BedController(ABC):
             self._coordinator.motor_pulse_delay_ms,
         )
 
+    def timed_move_repeat_count(self, duration_ms: int, pulse_delay_ms: int) -> int:
+        """Plan repeats including the immediate first write."""
+        return max(2, (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms + 1)
+
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command with guaranteed STOP at end.
 

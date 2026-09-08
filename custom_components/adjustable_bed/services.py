@@ -999,11 +999,8 @@ async def _timed_move_plan(
                 coordinator.name,
             )
             pulse_delay_ms = 100  # DEFAULT_MOTOR_PULSE_DELAY_MS
-        # The first write is immediate, so one additional repeat is needed
-        # after the requested number of delay intervals.
-        calculated_repeat_count = max(
-            2,
-            (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms + 1,
+        calculated_repeat_count = controller.timed_move_repeat_count(
+            duration_ms, pulse_delay_ms
         )
 
         _LOGGER.debug(

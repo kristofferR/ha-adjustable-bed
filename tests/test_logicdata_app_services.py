@@ -310,8 +310,9 @@ async def test_hold_preset_preserves_paired_dispatch(hass: HomeAssistant, servic
 
 @pytest.mark.parametrize("layout", ["standard_3_split_upper", "split_series"])
 @pytest.mark.parametrize("direction", ["up", "down"])
+@pytest.mark.parametrize(("duration_ms", "pulse_count"), [(100, 0), (1000, 9)])
 async def test_timed_move_dispatches_right_back(
-    hass: HomeAssistant, service_target, layout, direction
+    hass: HomeAssistant, service_target, layout, direction, duration_ms, pulse_count
 ):
     coordinator, _, _ = service_target
     bed = LogicdataAppController(
@@ -340,7 +341,7 @@ async def test_timed_move_dispatches_right_back(
                 "device_id": "bed",
                 "motor": "right_back",
                 "direction": direction,
-                "duration_ms": 1000,
+                "duration_ms": duration_ms,
             },
             blocking=True,
         )
@@ -349,4 +350,4 @@ async def test_timed_move_dispatches_right_back(
     kwargs = coordinator.async_execute_controller_command.await_args.kwargs
     assert kwargs["resource"] == "motor:right_back"
     assert kwargs["pulse_delay_ms"] == 100
-    assert kwargs["pulse_count"] == 11
+    assert kwargs["pulse_count"] == pulse_count

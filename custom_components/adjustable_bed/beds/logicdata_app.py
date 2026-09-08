@@ -79,6 +79,11 @@ class LogicdataAppController(BedController):
     def requires_notification_channel(self) -> bool:
         return True
 
+    def timed_move_repeat_count(self, duration_ms: int, pulse_delay_ms: int) -> int:
+        """Reserve the last cadence interval for terminal movement and release."""
+        cadence = protocol.MOVEMENT_REPEAT_MS
+        return max(0, (duration_ms + cadence - 1) // cadence - 1)
+
     def motor_pulse_settings(self) -> tuple[int, int]:
         """Report the app cadence to generic timed-movement planning."""
         return self._coordinator.motor_pulse_count, protocol.MOVEMENT_REPEAT_MS
