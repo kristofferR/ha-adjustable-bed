@@ -271,3 +271,112 @@ async def test_new_dynamic_entities_have_localized_names(
     ):
         entity = registry.async_get(_entity_id(hass, domain, key))
         assert entity.original_name == name
+
+
+@pytest.mark.parametrize(
+    ("old_layout", "new_layout", "profile", "family", "massage"),
+    [
+        ("standard_4", "standard_2", "phone", "p1", True),
+        ("split_series", "standard_2", "tablet", "p1", True),
+        ("split_series", "split_series", "phone", "p1", False),
+        ("standard_2", "middle", "phone", "p2", False),
+    ],
+)
+async def test_profile_reload_removes_obsolete_entities(
+    hass,
+    mock_coordinator_connected,
+    app_ble,
+    enable_custom_integrations,
+    old_layout,
+    new_layout,
+    profile,
+    family,
+    massage,
+):
+    from custom_components.adjustable_bed.logicdata_app_protocol import layout_axes
+
+    entry = _entry(hass, layout=old_layout)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert "logicdata_app_alarm" in _keys(hass, entry, "sensor")
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    hass.config_entries.async_update_entry(
+        entry,
+        data={
+            **entry.data,
+            CONF_LOGICDATA_APP_LAYOUT: new_layout,
+            CONF_LOGICDATA_APP_PROFILE: profile,
+            CONF_LOGICDATA_APP_FAMILY: family,
+            CONF_HAS_MASSAGE: massage,
+        },
+    )
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert _keys(hass, entry, "cover") == set(layout_axes(new_layout))
+    assert ("logicdata_app_alarm" in _keys(hass, entry, "sensor")) == (
+        profile == "phone" and family == "p1"
+    )
+    assert {key for key in _keys(hass, entry, "number") if key.startswith("massage_")} == (
+        {"massage_head_intensity", "massage_foot_intensity"} if massage else set()
+    )
+
+
+@pytest.mark.parametrize(
+    ("layout", "combined", "axis"),
+    [
+        ("standard_2", "both", "back"),
+        ("standard_2", "both", "legs"),
+        ("standard_3_split_upper", "both_backs", "back"),
+        ("standard_3_split_upper", "both_backs", "right_back"),
+    ],
+)
+@pytest.mark.parametrize("action", ["stop_cover", "close_cover"])
+async def test_constituent_cover_preempts_combined_movement(
+    hass,
+    mock_coordinator_connected,
+    app_ble,
+    enable_custom_integrations,
+    layout,
+    combined,
+    axis,
+    action,
+):
+    entry = _entry(hass, layout=layout)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    started = asyncio.Event()
+    cancelled = asyncio.Event()
+
+    async def move_axis(motor, up):
+        if motor == combined:
+            started.set()
+            await coordinator.cancel_command.wait()
+            cancelled.set()
+        else:
+            assert cancelled.is_set()
+
+    with patch.object(coordinator.controller, "move_axis", side_effect=move_axis):
+        movement = asyncio.create_task(
+            hass.services.async_call(
+                "cover",
+                "open_cover",
+                {"entity_id": _entity_id(hass, "cover", combined)},
+                blocking=True,
+            )
+        )
+        await asyncio.wait_for(started.wait(), timeout=1)
+        try:
+            await asyncio.wait_for(
+                hass.services.async_call(
+                    "cover",
+                    action,
+                    {"entity_id": _entity_id(hass, "cover", axis)},
+                    blocking=True,
+                ),
+                timeout=1,
+            )
+            assert cancelled.is_set()
+        finally:
+            coordinator.cancel_command.set()
+            await movement

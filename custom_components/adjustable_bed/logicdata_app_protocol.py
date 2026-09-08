@@ -151,11 +151,6 @@ def massage_command(zone: MassageZone, level: int) -> bytes:
     return frame(opcode, bytes((8, WIRE_MASSAGE_LEVELS[level])))
 
 
-def release_command(family: Family) -> bytes:
-    """Return a family frame; ordinary motion always uses the P1 release."""
-    return P2_RELEASE if family == "p2" else P1_RELEASE
-
-
 def release_schedule(action: Action, family: Family, app_profile: AppProfile) -> Schedule:
     """Offsets after the action, without Android gesture-only duplicate callbacks."""
     if action == "light":

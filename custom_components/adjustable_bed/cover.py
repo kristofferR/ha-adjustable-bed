@@ -44,6 +44,7 @@ class AdjustableBedCoverEntityDescription(CoverEntityDescription):
     position_key: str | None = None
     # Maximum angle for percentage calculation (default 68 degrees)
     max_angle: float = 68
+    scheduler_resource: str | None = None
 
 
 # Note: For Linak beds:
@@ -273,6 +274,7 @@ def _build_cover_description(
         stop_fn=spec.stop_fn,
         position_key=spec.position_key,
         max_angle=spec.max_angle,
+        scheduler_resource=spec.scheduler_resource,
     )
 
 
@@ -329,7 +331,7 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
     @property
     def _motor_resource(self) -> str:
         """Return the scheduler resource for this physical position axis."""
-        return f"motor:{self._position_key}"
+        return self.entity_description.scheduler_resource or f"motor:{self._position_key}"
 
     @property
     def is_closed(self) -> bool | None:

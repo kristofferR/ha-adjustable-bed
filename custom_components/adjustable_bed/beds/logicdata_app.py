@@ -166,9 +166,25 @@ class LogicdataAppController(BedController):
                 open_fn=_motor_callback(axis, True),
                 close_fn=_motor_callback(axis, False),
                 stop_fn=lambda ctrl: ctrl.stop_all(),
+                # Every axis uses the global release, including combined controls.
+                scheduler_resource="motor:*",
             )
             for axis in protocol.layout_axes(self._layout)
         )
+
+    @property
+    def stale_motor_entity_keys(self) -> frozenset[str]:
+        active = set(protocol.layout_axes(self._layout))
+        return frozenset(
+            axis
+            for layout in protocol.LAYOUTS
+            for axis in protocol.layout_axes(layout)
+            if axis not in active
+        )
+
+    @property
+    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
+        return frozenset() if self.supports_clock_alarm else frozenset({"logicdata_app_alarm"})
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:

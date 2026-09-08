@@ -95,6 +95,7 @@ class MotorControlSpec:
     stop_fn: MotorCommandCallable
     position_key: str | None = None
     max_angle: float = 68
+    scheduler_resource: str | None = None
 
 
 # Units a position slider can be scaled in.
