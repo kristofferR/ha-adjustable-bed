@@ -147,6 +147,7 @@ LOGICDATA_ALARM_PRESETS = ("flat", "zero_g", "anti_snore", "memory_1", "memory_2
 TIMED_MOVE_MOTOR_OPTIONS = (
     "tv_lift",
     "back",
+    "right_back",
     "legs",
     "head",
     "feet",

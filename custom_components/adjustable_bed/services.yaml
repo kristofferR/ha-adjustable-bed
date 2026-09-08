@@ -200,6 +200,8 @@ timed_move:
               value: tv_lift
             - label: Back
               value: back
+            - label: Right Back
+              value: right_back
             - label: Legs
               value: legs
             - label: Head

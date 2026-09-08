@@ -480,7 +480,7 @@ class LogicdataAppController(BedController):
     async def _sync_clock(self) -> None:
         if self._profile != "phone":
             raise NotImplementedError("The tablet app has no clock writer")
-        await self.write_command(protocol.clock_command(dt_util.now()))
+        await self._write_to(self.control_characteristic_uuid, protocol.clock_command(dt_util.now()))
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         self._notify_callback = callback
@@ -498,11 +498,15 @@ class LogicdataAppController(BedController):
                 raise ConnectionError("Not connected to bed")
             await client.start_notify(transport.notify_uuid, self._notification_handler)
             self._subscribed.append(transport.notify_uuid)
+            # Finish initialization even if a query reports a family mismatch.
+            # User controls remain guarded by write_command.
             if self._has_startup_profile:
                 loop = asyncio.get_running_loop()
                 started = loop.time()
                 if not await self._schedule(
-                    protocol.startup_schedule(self._profile, self._family), started=started
+                    protocol.startup_schedule(self._profile, self._family),
+                    uuid=self.control_characteristic_uuid,
+                    started=started,
                 ):
                     raise asyncio.CancelledError
                 late_offsets = (

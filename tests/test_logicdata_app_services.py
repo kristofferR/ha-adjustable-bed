@@ -8,6 +8,7 @@ import voluptuous as vol
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
+from custom_components.adjustable_bed.beds.logicdata_app import LogicdataAppController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA_APP,
@@ -21,6 +22,7 @@ from custom_components.adjustable_bed.services import (
     SERVICE_LOGICDATA_HOLD_PRESET,
     SERVICE_LOGICDATA_RENAME,
     SERVICE_LOGICDATA_SET_ALARM,
+    SERVICE_TIMED_MOVE,
     async_register_services,
 )
 
@@ -304,3 +306,47 @@ async def test_hold_preset_preserves_paired_dispatch(hass: HomeAssistant, servic
     assert kwargs["cancel_running"] is True
     controller.hold_preset.assert_awaited_once_with("flat", 200)
     coordinator.async_execute_controller_command.assert_not_awaited()
+
+
+@pytest.mark.parametrize("layout", ["standard_3_split_upper", "split_series"])
+@pytest.mark.parametrize("direction", ["up", "down"])
+async def test_timed_move_dispatches_right_back(
+    hass: HomeAssistant, service_target, layout, direction
+):
+    coordinator, _, _ = service_target
+    bed = LogicdataAppController(
+        coordinator,
+        profile="phone",
+        command_family="p1",
+        layout=layout,
+        transport="t1",
+        has_light=False,
+        has_massage=False,
+    )
+    coordinator.capability_controller = bed
+
+    async def execute(command, **kwargs):
+        await command(bed)
+
+    coordinator.async_execute_controller_command.side_effect = execute
+    with (
+        patch.object(bed, "move_axis", new=AsyncMock()) as move,
+        patch.object(bed, "stop_all", new=AsyncMock()) as stop,
+    ):
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_TIMED_MOVE,
+            {
+                "device_id": "bed",
+                "motor": "right_back",
+                "direction": direction,
+                "duration_ms": 1000,
+            },
+            blocking=True,
+        )
+    move.assert_awaited_once_with("right_back", direction == "up")
+    stop.assert_awaited_once()
+    kwargs = coordinator.async_execute_controller_command.await_args.kwargs
+    assert kwargs["resource"] == "motor:right_back"
+    assert kwargs["pulse_delay_ms"] == 100
+    assert kwargs["pulse_count"] == 11

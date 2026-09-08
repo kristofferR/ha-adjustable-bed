@@ -387,3 +387,27 @@ async def test_invalid_held_preset_never_writes(coordinator, preset, duration):
     with pytest.raises(ValueError):
         await bed.hold_preset(preset, duration)
     assert packets(coordinator) == []
+
+
+@pytest.mark.parametrize("profile", ["phone", "tablet"])
+async def test_early_family_mismatch_keeps_startup_and_sensor_available(coordinator, profile):
+    bed = controller(coordinator, profile=profile)
+    sender = MagicMock(uuid=protocol.TRANSPORTS["t1"].notify_uuid)
+
+    async def mismatch_on_write(*args, **kwargs):
+        bed._notification_handler(sender, bytearray.fromhex("f2f2110001"))
+
+    coordinator.client.write_gatt_char.side_effect = mismatch_on_write
+    with patch.object(bed, "_pause", new=AsyncMock(return_value=True)):
+        await bed.start_notify()
+        assert bed._initialized
+        assert bed._family_matches is False
+        assert packets(coordinator)[:6] == [
+            packet for _, packet in protocol.startup_schedule(profile, "p1")
+        ]
+        assert len(packets(coordinator)) == (8 if profile == "phone" else 6)
+        coordinator.client.stop_notify.assert_not_awaited()
+        coordinator.client.write_gatt_char.reset_mock()
+        with pytest.raises(ValueError, match="different packet family"):
+            await bed.move_back_up()
+        assert packets(coordinator) == [protocol.P1_RELEASE]
