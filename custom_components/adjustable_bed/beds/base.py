@@ -1260,6 +1260,21 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_clock_alarm(self) -> bool:
+        """Return whether a weekly clock alarm can be configured."""
+        return False
+
+    @property
+    def supports_wake_routine(self) -> bool:
+        """Return whether an app-defined wake command sequence is available."""
+        return False
+
+    @property
+    def supports_automatic_light(self) -> bool:
+        """Return whether motion-triggered under-bed lighting can be selected."""
+        return False
+
+    @property
     def supports_simultaneous_movement(self) -> bool:
         """Return True if two sections can be driven by one protocol command."""
         return False
@@ -1931,6 +1946,38 @@ class BedController(ABC):
     async def rename_device(self, name: str) -> None:
         """Write a protocol-supported BLE device name."""
         raise NotImplementedError("Device rename not supported on this bed")
+
+    async def set_automatic_light(self, enabled: bool) -> None:
+        """Enable or disable automatic under-bed lighting."""
+        raise NotImplementedError("Automatic lighting not supported on this bed")
+
+    async def configure_clock_alarm(
+        self,
+        *,
+        enabled: bool,
+        weekdays: Sequence[int],
+        hour: int,
+        minute: int,
+        preset: str,
+        head_level: int = 0,
+        foot_level: int = 0,
+    ) -> None:
+        """Configure a weekly alarm with Monday numbered zero."""
+        raise NotImplementedError("Clock alarm not supported on this bed")
+
+    async def execute_wake_routine(
+        self,
+        *,
+        preset: str,
+        head_level: int = 0,
+        foot_level: int = 0,
+    ) -> None:
+        """Execute a proven wake sequence without scheduling a local alarm."""
+        raise NotImplementedError("Wake routine not supported on this bed")
+
+    async def stop_wake_routine(self) -> None:
+        """Stop active wake massage without changing the stored alarm schedule."""
+        raise NotImplementedError("Wake routine not supported on this bed")
 
     async def program_alarm(
         self,

@@ -33,6 +33,7 @@ from .jensen import JensenController
 
 # Brand-specific controllers (unchanged)
 from .jiecang import JiecangController
+from .jiecang_app import JiecangAppController
 from .kaidi import KaidiController
 from .keeson import KeesonController
 from .leggett_gen2 import LeggettGen2Controller
@@ -97,6 +98,7 @@ __all__ = [
     # Brand-specific controllers
     "CoolBaseController",
     "JiecangController",
+    "JiecangAppController",
     "JensenController",
     "KaidiController",
     "KeesonController",

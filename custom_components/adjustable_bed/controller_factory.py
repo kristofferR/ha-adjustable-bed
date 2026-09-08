@@ -20,6 +20,7 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
+    BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
@@ -71,6 +72,10 @@ from .const import (
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
     CB1322_MANUFACTURER_MARKERS,
+    CONF_JIECANG_APP_HAS_LIGHT,
+    CONF_JIECANG_APP_LAYOUT,
+    CONF_JIECANG_APP_PROFILE,
+    CONF_JIECANG_APP_TRANSPORT,
     CONF_KAIDI_PRODUCT_ID,
     CONF_KAIDI_SOFA_ACU_NO,
     CONF_LP_LEGACY_MODE,
@@ -435,6 +440,18 @@ async def create_controller(
         # Pass the configured variant (remote code) to the controller
         _LOGGER.debug("Using Okin UUID variant: %s", variant)
         return OkinUuidController(coordinator, variant=variant)
+
+    if bed_type == BED_TYPE_JIECANG_APP:
+        from .beds.jiecang_app import JiecangAppController
+
+        entry_data = coordinator.entry.data
+        return JiecangAppController(
+            coordinator,
+            profile=entry_data[CONF_JIECANG_APP_PROFILE],
+            layout=entry_data[CONF_JIECANG_APP_LAYOUT],
+            transport=entry_data.get(CONF_JIECANG_APP_TRANSPORT, "auto"),
+            has_light=entry_data.get(CONF_JIECANG_APP_HAS_LIGHT, True),
+        )
 
     if bed_type == BED_TYPE_KAIDI:
         from .beds.kaidi import KaidiController

@@ -400,6 +400,22 @@
           "name": "Name for the combined bed"
         }
       },
+      "jiecang_app": {
+        "title": "Jiecang app and layout",
+        "description": "Choose the app and physical controls that match this bed. Existing legacy Jiecang entries keep their original protocol.",
+        "data": {
+          "jiecang_app_profile": "Bed app",
+          "jiecang_app_layout": "Physical actuator layout",
+          "jiecang_app_transport": "BLE transport",
+          "jiecang_app_has_light": "Enable light controls"
+        },
+        "data_description": {
+          "jiecang_app_profile": "Select the app used to control this bed. Bluetooth UUIDs cannot identify the app profile.",
+          "jiecang_app_layout": "Select the layout configured in the app. The integration does not infer it from the device name or motor count.",
+          "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion also supports standalone G2.",
+          "jiecang_app_has_light": "Expose light controls when this bed has under-bed lighting."
+        }
+      },
       "lp_legacy": {
         "title": "L&P Adjustable Base (legacy app)",
         "description": "Configure the exact legacy app profile and confirmed Bluetooth characteristics. Do not use UUIDs from another bed protocol.",
@@ -462,6 +478,7 @@
       "not_advertising": "This bed is not currently advertising, so no connection was attempted. Wake it, put it into pairing mode, or move it closer to a Bluetooth adapter or proxy, then try again.",
       "bond_verification_failed": "The bed connected but the link is still unauthenticated, so the bond did not form. Put the bed back into pairing mode and try again.",
       "bond_removal_failed": "The existing Bluetooth bond could not be removed, so pairing was not attempted.",
+      "jiecang_app_required": "Choose the bed app and physical actuator layout.",
       "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
       "invalid_lp_legacy_mode": "Select Legacy or Framed explicitly.",
       "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID."
@@ -506,6 +523,10 @@
           "jensen_pin": "Jensen PIN",
           "back_max_angle": "Maximum back angle (degrees)",
           "legs_max_angle": "Maximum legs angle (degrees)",
+          "jiecang_app_profile": "Bed app",
+          "jiecang_app_layout": "Physical actuator layout",
+          "jiecang_app_transport": "BLE transport",
+          "jiecang_app_has_light": "Enable light controls",
           "lp_legacy_model": "Legacy app model code",
           "lp_legacy_mode": "Legacy app protocol mode",
           "lp_legacy_write_uuid": "Write characteristic UUID",
@@ -533,6 +554,10 @@
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
           "back_max_angle": "Maximum angle for back/head motors. Adjust if position readings don't match your bed's actual range.",
           "legs_max_angle": "Maximum angle for legs/feet motors. Adjust if position readings don't match your bed's actual range.",
+          "jiecang_app_profile": "Select the app used to control this bed. Bluetooth UUIDs cannot identify the app profile.",
+          "jiecang_app_layout": "Select the layout configured in the app. The integration does not infer it from the device name or motor count.",
+          "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion also supports standalone G2.",
+          "jiecang_app_has_light": "Expose light controls when this bed has under-bed lighting.",
           "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
           "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
           "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
@@ -591,6 +616,8 @@
       "invalid_angle": "Angle must be a positive number between 0 and 180 degrees.",
       "octo_tv_lift_pairing_unsupported": "One-motor OCTO TV/bed lifts must remain standalone and cannot be paired as bed sides.",
       "single_address_pairing_unsupported": "This CBNew protocol has no A/B side selector and cannot safely expose paired-side controls.",
+      "jiecang_app_required": "Choose the bed app and physical actuator layout.",
+      "jiecang_app_pair_settings": "Restore the standalone beds, configure each side's app profile and actuator layout, then combine them again.",
       "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
       "invalid_lp_legacy_mode": "Select Legacy or Framed explicitly.",
       "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID.",
@@ -1670,6 +1697,18 @@
       },
       "keeson_legs_both": {
         "name": "Both sides: Legs"
+      },
+      "right_back": {
+        "name": "Right back"
+      },
+      "both_backs": {
+        "name": "Both backs"
+      },
+      "right_legs": {
+        "name": "Right legs"
+      },
+      "both_legs": {
+        "name": "Both legs"
       }
     },
     "sensor": {
@@ -1835,6 +1874,9 @@
       },
       "linak_automatic_drive_both": {
         "name": "Both sides: Automatic Drive"
+      },
+      "automatic_light": {
+        "name": "Automatic under-bed light"
       }
     },
     "binary_sensor": {
@@ -1989,6 +2031,9 @@
       },
       "sleep_number_setting_both": {
         "name": "Both sides: Sleep Number Setting"
+      },
+      "massage_right_intensity": {
+        "name": "Right massage intensity"
       }
     },
     "select": {
@@ -2158,6 +2203,94 @@
         "duration_ms": {
           "name": "Duration (ms)",
           "description": "How long to move the motor in milliseconds."
+        }
+      }
+    },
+    "jiecang_set_alarm": {
+      "name": "Set Jiecang clock alarm",
+      "description": "Configure the controller's recurring alarm with a preset and massage levels.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A Jiecang app controller that supports clock alarms."
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Time",
+          "description": "Alarm time on the controller's local clock, to the nearest minute."
+        },
+        "weekdays": {
+          "name": "Weekdays"
+        },
+        "preset": {
+          "name": "Bed preset"
+        },
+        "head_level": {
+          "name": "Head massage level",
+          "description": "Alarm massage intensity, with 0 for off and 1 to 3 for increasing intensity."
+        },
+        "foot_level": {
+          "name": "Foot massage level",
+          "description": "Alarm massage intensity, with 0 for off and 1 to 3 for increasing intensity."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "jiecang_wake": {
+      "name": "Start Jiecang wake routine",
+      "description": "Move to a preset and start the selected wake massage levels immediately.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A Jiecang app controller that supports wake routines."
+        },
+        "preset": {
+          "name": "Bed preset"
+        },
+        "head_level": {
+          "name": "Head massage level",
+          "description": "Wake massage intensity, with 0 for off and 1 to 3 for increasing intensity."
+        },
+        "foot_level": {
+          "name": "Foot massage level",
+          "description": "Wake massage intensity, with 0 for off and 1 to 3 for increasing intensity."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "jiecang_rename": {
+      "name": "Rename Jiecang controller",
+      "description": "Change the Bluetooth name of a compatible Jiecang app controller.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A Jiecang app controller that supports device renaming."
+        },
+        "name": {
+          "name": "Name",
+          "description": "New Bluetooth name, using 1 to 20 ASCII letters or digits."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "jiecang_stop_wake": {
+      "name": "Stop Jiecang wake massage",
+      "description": "Stop active wake massage without disabling the stored weekly clock alarm.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A Jiecang app controller that supports wake routines."
+        },
+        "side": {
+          "name": "Side"
         }
       }
     }

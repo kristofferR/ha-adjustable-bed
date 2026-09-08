@@ -51,6 +51,29 @@ class ConnectionProfileSettings:
 CONF_BED_TYPE: Final = "bed_type"
 CONF_PROTOCOL_VARIANT: Final = "protocol_variant"
 CONF_MOTOR_COUNT: Final = "motor_count"
+CONF_JIECANG_APP_PROFILE: Final = "jiecang_app_profile"
+CONF_JIECANG_APP_LAYOUT: Final = "jiecang_app_layout"
+CONF_JIECANG_APP_TRANSPORT: Final = "jiecang_app_transport"
+CONF_JIECANG_APP_HAS_LIGHT: Final = "jiecang_app_has_light"
+JIECANG_APP_PROFILES: Final = {"dreamask": "ERGOBALANCE (Dreamask)", "dreamotion": "Dream Motion"}
+JIECANG_APP_LAYOUTS: Final = {
+    "standard_2": "Back and legs (2 motors)",
+    "standard_3_neck": "Back, legs and neck",
+    "standard_3_lumbar": "Back, legs and lumbar",
+    "standard_3_hi_low": "Back, legs and height",
+    "standard_3_split_upper": "Split upper (3 motors)",
+    "standard_4_legacy": "Back, legs, neck and lumbar (legacy)",
+    "standard_4_bilateral": "Bilateral (4 motors)",
+    "split_series": "Split series",
+    "split_after_bilateral": "Split after bilateral",
+}
+JIECANG_APP_TRANSPORTS: Final = {
+    "auto": "Auto (GATT endpoints)",
+    "g1": "G1",
+    "g2": "G2",
+    "g3": "G3",
+}
+
 CONF_MALOUF_LAYOUT: Final = "malouf_layout"
 CONF_MALOUF_MEMORY_SLOTS: Final = "malouf_memory_slots"
 CONF_HAS_MASSAGE: Final = "has_massage"
@@ -244,6 +267,7 @@ BED_TYPE_OKIMAT: Final = "okimat"  # -> okin_uuid
 BED_TYPE_KEESON: Final = "keeson"
 BED_TYPE_ERGOMOTION: Final = "ergomotion"
 BED_TYPE_JIECANG: Final = "jiecang"
+BED_TYPE_JIECANG_APP: Final = "jiecang_app"
 BED_TYPE_DEWERTOKIN: Final = "dewertokin"  # -> okin_handle
 BED_TYPE_OCTO: Final = "octo"
 BED_TYPE_MATTRESSFIRM: Final = "mattressfirm"  # -> okin_nordic
@@ -308,6 +332,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_KEESON,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JIECANG,
+    BED_TYPE_JIECANG_APP,
     BED_TYPE_OCTO,
     # Legacy aliases (for backwards compatibility with existing configs)
     BED_TYPE_LEGGETT_PLATT,
@@ -2292,11 +2317,12 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
 
 # Bed types that may have angle sensing enabled in an existing entry but report no
 # degree-angle data. Sleep Number MCR/BAM reports only sleep-number values and bed
-# presence, while CST and RF ECO BT expose no reliable position feedback. Skip
+# presence, while CST, RF ECO BT and the Jiecang apps expose no reliable position feedback. Skip
 # their entity creation and remove stale sensors from earlier profiles so they do
 # not remain "unknown" forever (#322, #344, #501).
 BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
     {
+        BED_TYPE_JIECANG_APP,
         BED_TYPE_LEGGETT_LP_LEGACY,
         BED_TYPE_OKIN_CST,
         BED_TYPE_OKIN_RF_ECO_BT,
@@ -2366,6 +2392,7 @@ BEDS_WITH_DISCONNECT_AFTER_COMMAND_DEFAULT_DISABLED: Final = (
             BED_TYPE_ERGOMOTION,
             BED_TYPE_JENSEN,
             BED_TYPE_JIECANG,
+            BED_TYPE_JIECANG_APP,
             BED_TYPE_KAIDI,
             BED_TYPE_LEGGETT_WILINKE,
             BED_TYPE_LIMOSS,

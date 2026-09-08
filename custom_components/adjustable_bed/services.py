@@ -27,6 +27,7 @@ from homeassistant.helpers import device_registry as dr
 from .beds.linak_protocol import LinakAlarmAction, LinakAlarmStep
 from .const import (
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LINAK,
@@ -70,6 +71,10 @@ SERVICE_LINAK_RENAME = "linak_rename"
 SERVICE_LINAK_SET_ALARM = "linak_set_alarm"
 SERVICE_SOLACE_AUDIO = "solace_audio"
 SERVICE_SOLACE_SET_ALARM = "solace_set_alarm"
+SERVICE_JIECANG_SET_ALARM = "jiecang_set_alarm"
+SERVICE_JIECANG_WAKE = "jiecang_wake"
+SERVICE_JIECANG_STOP_WAKE = "jiecang_stop_wake"
+SERVICE_JIECANG_RENAME = "jiecang_rename"
 
 # Service call attributes
 ATTR_PRESET = "preset"
@@ -102,6 +107,8 @@ ATTR_MASSAGE = "massage"
 ATTR_SOUND = "sound"
 ATTR_TRACK = "track"
 ATTR_VOLUME = "volume"
+ATTR_HEAD_LEVEL = "head_level"
+ATTR_FOOT_LEVEL = "foot_level"
 
 LINAK_MOTOR_OPTIONS = ("base", "feet", "head", "legs", "back")
 LINAK_DIRECTION_OPTIONS = ("up", "down")
@@ -133,6 +140,8 @@ SOLACE_ALARM_SOUNDS = (
     "music_4",
     "music_5",
 )
+JIECANG_WAKE_PRESETS = ("flat", "zero_g", "anti_snore", "memory_1", "memory_2")
+JIECANG_ALARM_PRESETS = (*JIECANG_WAKE_PRESETS, "yoga")
 
 TIMED_MOVE_MOTOR_OPTIONS = (
     "tv_lift",
@@ -1359,6 +1368,135 @@ async def handle_solace_set_alarm(call: ServiceCall) -> None:
         raise
 
 
+async def _preflight_jiecang(
+    targets: list[tuple[BedTarget, str]], capability: str, label: str
+) -> PreflightedSides:
+    """Restrict app-specific services before connecting or commanding any side."""
+    for coordinator, side in targets:
+        for target in _command_targets(coordinator, side):
+            if target.bed_type != BED_TYPE_JIECANG_APP:
+                raise ServiceValidationError(
+                    f"Device '{target.name}' is not a Jiecang app controller"
+                )
+    return await _preflight_capability(targets, capability, label)
+
+
+async def handle_jiecang_set_alarm(call: ServiceCall) -> None:
+    """Configure the Jiecang app controller's recurring clock alarm."""
+    alarm_time = call.data[ATTR_TIME]
+    weekdays = tuple(SOLACE_WEEKDAY_OPTIONS.index(day) for day in call.data[ATTR_WEEKDAYS])
+    targets, missing = _resolve_sided_targets(
+        call.hass,
+        call.data[CONF_DEVICE_ID],
+        call.data.get(ATTR_SIDE),
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    preflighted = await _preflight_jiecang(targets, "supports_clock_alarm", "Jiecang clock alarms")
+
+    async def program(controller: BedController) -> None:
+        await controller.configure_clock_alarm(
+            enabled=call.data[ATTR_ENABLED],
+            weekdays=weekdays,
+            hour=alarm_time.hour,
+            minute=alarm_time.minute,
+            preset=call.data[ATTR_PRESET],
+            head_level=call.data[ATTR_HEAD_LEVEL],
+            foot_level=call.data[ATTR_FOOT_LEVEL],
+        )
+
+    try:
+        if call.data[ATTR_PRESET] == "yoga":
+            preflighted.extend(
+                await _preflight_capability(targets, "supports_preset_yoga", "Yoga alarms")
+            )
+        for coordinator, side in targets:
+            await _execute_sided(
+                coordinator, side, program, cancel_running=False, resource="configuration"
+            )
+    except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
+async def handle_jiecang_wake(call: ServiceCall) -> None:
+    """Start the app's wake routine with its preset and massage levels."""
+    targets, missing = _resolve_sided_targets(
+        call.hass,
+        call.data[CONF_DEVICE_ID],
+        call.data.get(ATTR_SIDE),
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    preflighted = await _preflight_jiecang(
+        targets, "supports_wake_routine", "Jiecang wake routines"
+    )
+
+    async def wake(controller: BedController) -> None:
+        await controller.execute_wake_routine(
+            preset=call.data[ATTR_PRESET],
+            head_level=call.data[ATTR_HEAD_LEVEL],
+            foot_level=call.data[ATTR_FOOT_LEVEL],
+        )
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(coordinator, side, wake, cancel_running=True)
+    except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
+async def handle_jiecang_stop_wake(call: ServiceCall) -> None:
+    """Stop active wake massage without changing the stored clock alarm."""
+    targets, missing = _resolve_sided_targets(
+        call.hass,
+        call.data[CONF_DEVICE_ID],
+        call.data.get(ATTR_SIDE),
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    preflighted = await _preflight_jiecang(
+        targets, "supports_wake_routine", "Jiecang wake routines"
+    )
+
+    async def stop(controller: BedController) -> None:
+        await controller.stop_wake_routine()
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(coordinator, side, stop, cancel_running=True)
+    except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
+async def handle_jiecang_rename(call: ServiceCall) -> None:
+    """Rename a compatible Jiecang app controller through its command queue."""
+    targets, missing = _resolve_sided_targets(
+        call.hass,
+        call.data[CONF_DEVICE_ID],
+        call.data.get(ATTR_SIDE),
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    preflighted = await _preflight_jiecang(
+        targets, "supports_device_rename", "Jiecang device rename"
+    )
+
+    async def rename(controller: BedController) -> None:
+        await controller.rename_device(call.data[ATTR_NAME])
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(
+                coordinator, side, rename, cancel_running=False, resource="configuration"
+            )
+    except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
 async def handle_generate_support_bundle(call: ServiceCall) -> None:
     """Handle generate_support_bundle service call."""
     hass = call.hass
@@ -1793,6 +1931,70 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 vol.Optional(ATTR_MODE, default="no_action"): vol.In(SOLACE_ALARM_MODES),
                 vol.Optional(ATTR_MASSAGE, default=False): cv.boolean,
                 vol.Optional(ATTR_SOUND, default="alarm"): vol.In(SOLACE_ALARM_SOUNDS),
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_JIECANG_SET_ALARM,
+        handle_jiecang_set_alarm,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_ENABLED): cv.boolean,
+                vol.Optional(ATTR_TIME, default="00:00:00"): cv.time,
+                vol.Optional(ATTR_WEEKDAYS, default=[]): vol.All(
+                    cv.ensure_list, [vol.In(SOLACE_WEEKDAY_OPTIONS)]
+                ),
+                vol.Optional(ATTR_PRESET, default="flat"): vol.In(JIECANG_ALARM_PRESETS),
+                vol.Optional(ATTR_HEAD_LEVEL, default=0): vol.All(
+                    vol.Coerce(int), vol.Range(min=0, max=3)
+                ),
+                vol.Optional(ATTR_FOOT_LEVEL, default=0): vol.All(
+                    vol.Coerce(int), vol.Range(min=0, max=3)
+                ),
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_JIECANG_WAKE,
+        handle_jiecang_wake,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Optional(ATTR_PRESET, default="flat"): vol.In(JIECANG_WAKE_PRESETS),
+                vol.Optional(ATTR_HEAD_LEVEL, default=0): vol.All(
+                    vol.Coerce(int), vol.Range(min=0, max=3)
+                ),
+                vol.Optional(ATTR_FOOT_LEVEL, default=0): vol.All(
+                    vol.Coerce(int), vol.Range(min=0, max=3)
+                ),
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_JIECANG_STOP_WAKE,
+        handle_jiecang_stop_wake,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_JIECANG_RENAME,
+        handle_jiecang_rename,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_NAME): vol.All(cv.string, vol.Match(r"\A[A-Za-z0-9]{1,20}\Z")),
                 **SIDE_FIELD,
             }
         ),

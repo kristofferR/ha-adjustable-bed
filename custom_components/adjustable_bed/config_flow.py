@@ -89,6 +89,7 @@ from .const import (
     ALL_PROTOCOL_VARIANTS,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_JENSEN,
+    BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_LP_LEGACY,
@@ -124,6 +125,10 @@ from .const import (
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
     CONF_JENSEN_PIN,
+    CONF_JIECANG_APP_HAS_LIGHT,
+    CONF_JIECANG_APP_LAYOUT,
+    CONF_JIECANG_APP_PROFILE,
+    CONF_JIECANG_APP_TRANSPORT,
     CONF_KAIDI_RESOLVED_VARIANT,
     CONF_LEGS_MAX_ANGLE,
     CONF_LP_LEGACY_MODE,
@@ -162,6 +167,9 @@ from .const import (
     DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
+    JIECANG_APP_LAYOUTS,
+    JIECANG_APP_PROFILES,
+    JIECANG_APP_TRANSPORTS,
     LEGGETT_VARIANT_GEN2,
     MALOUF_LAYOUT_AUTO,
     MALOUF_LAYOUTS,
@@ -613,6 +621,41 @@ def _add_malouf_schema_fields(schema: dict[vol.Marker, Any]) -> None:
     )
 
 
+def _add_jiecang_app_schema_fields(
+    schema: dict[vol.Marker, Any], current_data: dict[str, Any] | None = None
+) -> None:
+    """Require the app and physical layout, neither is identified by shared UUIDs."""
+    current_data = current_data or {}
+    for key, choices in (
+        (CONF_JIECANG_APP_PROFILE, JIECANG_APP_PROFILES),
+        (CONF_JIECANG_APP_LAYOUT, JIECANG_APP_LAYOUTS),
+    ):
+        default = current_data.get(key, vol.UNDEFINED)
+        schema[vol.Required(key, default=default)] = vol.In(choices)
+    schema[
+        vol.Optional(
+            CONF_JIECANG_APP_TRANSPORT,
+            default=current_data.get(CONF_JIECANG_APP_TRANSPORT, "auto"),
+        )
+    ] = vol.In(JIECANG_APP_TRANSPORTS)
+    schema[
+        vol.Optional(
+            CONF_JIECANG_APP_HAS_LIGHT,
+            default=current_data.get(CONF_JIECANG_APP_HAS_LIGHT, True),
+        )
+    ] = bool
+
+
+def _jiecang_app_errors(data: dict[str, Any]) -> dict[str, str]:
+    """Require explicit app and layout selection without inferring hardware."""
+    errors = {}
+    if data.get(CONF_JIECANG_APP_PROFILE) not in JIECANG_APP_PROFILES:
+        errors[CONF_JIECANG_APP_PROFILE] = "jiecang_app_required"
+    if data.get(CONF_JIECANG_APP_LAYOUT) not in JIECANG_APP_LAYOUTS:
+        errors[CONF_JIECANG_APP_LAYOUT] = "jiecang_app_required"
+    return errors
+
+
 def _add_cb24_side_schema_field(schema: dict[vol.Marker, Any]) -> None:
     """Expose the legacy CB24 native A/B selector when the type is known."""
     schema[
@@ -903,6 +946,24 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return self.async_show_form(
             step_id=step_id,
             data_schema=vol.Schema(schema_dict),
+        )
+
+    async def async_step_jiecang_app(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect the explicit app profile and physical controls for any setup path."""
+        assert self._manual_data is not None
+        errors = _jiecang_app_errors(user_input) if user_input is not None else {}
+        if user_input is not None and not errors:
+            self._manual_data.update(user_input)
+            self._manual_data[CONF_DISABLE_ANGLE_SENSING] = True
+            return await self._finish_with_verify(
+                self._manual_data, self._manual_data.get(CONF_NAME, "Adjustable Bed")
+            )
+        schema: dict[vol.Marker, Any] = {}
+        _add_jiecang_app_schema_fields(schema, user_input)
+        return self.async_show_form(
+            step_id="jiecang_app", data_schema=vol.Schema(schema), errors=errors
         )
 
     @staticmethod
@@ -1716,6 +1777,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 }
                 if selected_bed_type == BED_TYPE_SOLACE and self._discovery_info.name:
                     entry_data[CONF_BLE_DEVICE_NAME] = self._discovery_info.name
+                if selected_bed_type == BED_TYPE_JIECANG_APP:
+                    self._manual_data = entry_data
+                    return await self.async_step_jiecang_app()
                 _add_malouf_entry_data(entry_data, user_input, selected_bed_type)
                 _add_cb24_entry_data(entry_data, user_input, selected_bed_type)
                 if selected_bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
@@ -2596,6 +2660,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
                     ),
                 }
+                if bed_type == BED_TYPE_JIECANG_APP:
+                    self._manual_data = entry_data
+                    return await self.async_step_jiecang_app()
                 _add_malouf_entry_data(entry_data, user_input, bed_type)
                 _add_cb24_entry_data(entry_data, user_input, bed_type)
                 if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
@@ -2869,6 +2936,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
                         ),
                     }
+                    if bed_type == BED_TYPE_JIECANG_APP:
+                        self._manual_data = entry_data
+                        return await self.async_step_jiecang_app()
                     _add_malouf_entry_data(entry_data, user_input, bed_type)
                     _add_cb24_entry_data(entry_data, user_input, bed_type)
                     if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
@@ -4636,6 +4706,14 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             data.pop(CONF_JENSEN_PIN, None)
         if bed_type != BED_TYPE_RICHMAT:
             data.pop(CONF_RICHMAT_REMOTE, None)
+        if bed_type != BED_TYPE_JIECANG_APP:
+            for key in (
+                CONF_JIECANG_APP_PROFILE,
+                CONF_JIECANG_APP_LAYOUT,
+                CONF_JIECANG_APP_TRANSPORT,
+                CONF_JIECANG_APP_HAS_LIGHT,
+            ):
+                data.pop(key, None)
         if bed_type != BED_TYPE_LEGGETT_LP_LEGACY:
             for key in (
                 CONF_LP_LEGACY_MODEL,
@@ -5065,6 +5143,9 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 )
             ] = vol.In(remote_options)
 
+        if bed_type == BED_TYPE_JIECANG_APP and not separate_address_pair:
+            _add_jiecang_app_schema_fields(schema_dict, current_data)
+
         if bed_type in MALOUF_BED_TYPES:
             schema_dict[
                 vol.Optional(
@@ -5118,6 +5199,12 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
 
         if user_input is not None:
             requested_bed_type = user_input.get(CONF_BED_TYPE, bed_type)
+            if separate_address_pair and requested_bed_type == BED_TYPE_JIECANG_APP and requested_bed_type != bed_type:
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={"base": "jiecang_app_pair_settings"},
+                )
             if (
                 separate_address_pair
                 and requested_bed_type == BED_TYPE_LEGGETT_LP_LEGACY
@@ -5247,6 +5334,13 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 self._pending_data[CONF_DISABLE_ANGLE_SENSING] = disable_angle_sensing
                 self._pending_changed_data[CONF_DISABLE_ANGLE_SENSING] = disable_angle_sensing
                 return await self._async_options_form(None, step_id=step_id)
+            if bed_type == BED_TYPE_JIECANG_APP and not separate_address_pair:
+                app_errors = _jiecang_app_errors({**current_data, **user_input})
+                if app_errors:
+                    return self.async_show_form(
+                        step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
+                    )
+                user_input[CONF_DISABLE_ANGLE_SENSING] = True
             if bed_type == BED_TYPE_LEGGETT_LP_LEGACY and not separate_address_pair:
                 legacy_data = {**current_data, **user_input}
                 legacy_errors = _validate_lp_legacy_settings(legacy_data)

@@ -192,7 +192,8 @@ export function bedEntitiesForDevice(
       case "switch":
         if (key === "under_bed_lights") bed.lights.switch = id;
         else if (key === "synchro_mode") bed.synchro = id;
-        else if (key === "linak_automatic_drive") bed.utility.push(id);
+        else if (key === "linak_automatic_drive" || key === "automatic_light")
+          bed.utility.push(id);
         break;
 
       case "light":

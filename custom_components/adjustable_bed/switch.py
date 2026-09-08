@@ -44,6 +44,16 @@ class AdjustableBedSwitchEntityDescription(SwitchEntityDescription):
 
 SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
     AdjustableBedSwitchEntityDescription(
+        key="automatic_light",
+        translation_key="automatic_light",
+        icon="mdi:lightbulb-auto",
+        turn_on_fn=lambda ctrl: ctrl.set_automatic_light(True),
+        turn_off_fn=lambda ctrl: ctrl.set_automatic_light(False),
+        required_capability="supports_automatic_light",
+        has_discrete_control=True,
+        state_key="automatic_light",
+    ),
+    AdjustableBedSwitchEntityDescription(
         key="under_bed_lights",
         translation_key="under_bed_lights",
         icon="mdi:lightbulb",

@@ -80,6 +80,7 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [Okimat/Okin](docs/beds/okimat.md) | Lucid (including some Smartbed/L600 bases), CVB, Smartbed, RF ECO BT 88802 bed receivers |
 | ✅ [Okin 64-Bit](docs/beds/okin-64bit.md) | NORA_CON / NORACON Mattress Firm controllers |
 | ✅ [Jiecang](docs/beds/jiecang.md) | Glideaway, Dream Motion, LOGICDATA |
+| 🧪 [Jiecang app profiles](docs/beds/jiecang-app.md) | ERGOBALANCE 1.0.8 and Dream Motion 1.0.5, explicit layouts; hardware unverified |
 | ✅ [Kaidi](docs/beds/kaidi.md) | Rize Remedy III / newer Mouselet-based Rize beds, Floyd Home, ISleep |
 | ✅ [Limoss](docs/beds/limoss.md) | Limoss, Stawett |
 | ✅ [Jensen](docs/beds/jensen.md) | Jensen (JMC400, LinON Entry) |
