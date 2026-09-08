@@ -140,7 +140,9 @@ WiFi Bluetooth proxy and makes the motor stop and restart.
 completion by itself. Appending a release frame here risks cancelling the motion
 the recall just started, so successful Prodigy recalls keep that behavior.
 Cancellation or write failure uses the proven zero cleanup. U Series memory
-controls follow the ordinary held-key lifecycle instead.
+controls follow the ordinary held-key lifecycle instead. Memory 1, Memory 2 and
+Snore therefore have no one-shot preset buttons in this profile. Use
+`adjustable_bed.leggett_hold_control` with an explicit duration for these controls.
 
 LP Control 2.9.0 uses a 200 ms cadence for held commands where Prodigy CE uses
 100 ms. The integration uses the accepted Prodigy/U Series 100 ms cadence and

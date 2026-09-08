@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from bleak.exc import BleakError
@@ -110,7 +110,7 @@ async def test_useries_timers_use_live_revision_builder_and_alarm_stop(revision,
 
 async def test_useries_memory_and_store_are_held_not_prodigy_favorite_sequences():
     controller = make_controller("useries")
-    await controller.preset_memory(1)
+    await controller.hold_control("memory_1", 1000)
     press, release = controller.write_command.await_args_list
     assert press.args[0] == bytes.fromhex("040200001000")
     assert {key: value for key, value in press.kwargs.items() if key != "deadline"} == {
@@ -333,3 +333,58 @@ async def test_control_mode_zero_waits_for_the_next_tick_after_55_attempts():
     assert mode.kwargs == {"repeat_count": 55, "repeat_delay_ms": 100}
     assert release.kwargs["repeat_count"] == 1
     assert not release.kwargs["cancel_event"].is_set()
+
+
+@pytest.mark.parametrize("error", [BleakError("movement failed"), asyncio.CancelledError()])
+async def test_disconnect_cleanup_preserves_movement_error(error):
+    controller = make_controller()
+
+    async def disconnect(*args, **kwargs):
+        controller.client.is_connected = False
+        controller.client.services = None
+        await controller.stop_notify()
+        raise error
+
+    controller.write_command.side_effect = disconnect
+    with pytest.raises(type(error)) as raised:
+        await controller.move_head_up()
+    assert raised.value is error
+
+
+async def test_explicit_release_reports_unresolved_revision():
+    controller = make_controller()
+    controller.client.is_connected = False
+    controller.client.services = None
+    await controller.stop_notify()
+    with pytest.raises(ConnectionError):
+        await controller._send_release_frames("stop", raise_on_error=True)
+
+
+async def test_device_information_timeout_continues_to_next_field():
+    controller = make_controller()
+    manufacturer = "00002a29-0000-1000-8000-00805f9b34fb"
+    model = "00002a24-0000-1000-8000-00805f9b34fb"
+
+    async def read(uuid):
+        if uuid == manufacturer:
+            await asyncio.Event().wait()
+        return b"model"
+
+    controller.client.read_gatt_char.side_effect = read
+    with patch(
+        "custom_components.adjustable_bed.beds.leggett_okin.DEVICE_INFO_READ_TIMEOUT",
+        0.01,
+    ):
+        await controller._read_device_information(frozenset({manufacturer, model}))
+    assert controller.protocol_diagnostics["device_information"] == {"model": "model"}
+    assert manufacturer not in controller._device_information_read
+    assert model in controller._device_information_read
+
+
+async def test_useries_one_shot_presets_require_explicit_hold():
+    controller = make_controller("useries")
+    with pytest.raises(NotImplementedError, match="leggett_hold_control"):
+        await controller.preset_memory(1)
+    with pytest.raises(NotImplementedError, match="leggett_hold_control"):
+        await controller.preset_anti_snore()
+    controller.write_command.assert_not_awaited()

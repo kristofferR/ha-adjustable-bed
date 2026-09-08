@@ -225,10 +225,14 @@ def _sensor_entities_for(
                 entities.append(AdjustableBedMassageSensor(coordinator, massage_desc))
 
     if controller is not None:
+        active_keys = {spec.key for spec in controller.controller_state_sensor_specs}
+        stale_keys = controller.stale_controller_state_sensor_entity_keys | (
+            frozenset(("leggett_led_mask", "leggett_status")) - active_keys
+        )
         _async_remove_stale_sensor_entities(
             hass,
             coordinator,
-            keys=tuple(controller.stale_controller_state_sensor_entity_keys),
+            keys=tuple(stale_keys),
         )
         entities.extend(
             AdjustableBedControllerStateSensor(coordinator, spec)

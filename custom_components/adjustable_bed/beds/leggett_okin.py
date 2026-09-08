@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING, Any, cast
 from bleak.exc import BleakError
 
 from ..const import (
+    DEVICE_INFO_READ_TIMEOUT,
     LEGGETT_OKIN_CHAR_UUID,
     LEGGETT_OKIN_NOTIFY_CHAR_UUID,
     LEGGETT_OKIN_PULSE_DEFAULTS,
@@ -239,8 +240,8 @@ class LeggettOkinController(BedController):
     # Capability properties
     @property
     def supports_preset_anti_snore(self) -> bool:
-        """Return True - 0x4000 is bound to the app's dedicated snore button."""
-        return True
+        """Expose one-shot Snore only for profiles with an autonomous recall."""
+        return self._app_profile != "useries"
 
     @property
     def supports_lights(self) -> bool:
@@ -254,8 +255,8 @@ class LeggettOkinController(BedController):
 
     @property
     def supports_memory_presets(self) -> bool:
-        """Return True - Okin beds support memory presets 1-4."""
-        return True
+        """U-Series memories require an explicit held-control duration."""
+        return self._app_profile != "useries"
 
     @property
     def memory_slot_count(self) -> int:
@@ -672,12 +673,14 @@ class LeggettOkinController(BedController):
                 continue
             try:
                 async with self._ble_lock:
-                    value = await client.read_gatt_char(uuid)
+                    value = await asyncio.wait_for(
+                        client.read_gatt_char(uuid), DEVICE_INFO_READ_TIMEOUT
+                    )
                 self._device_information[name] = (
                     bytes(value).decode("utf-8", errors="replace").rstrip("\0")
                 )
                 self._device_information_read.add(uuid)
-            except (BleakError, ConnectionError) as err:
+            except (BleakError, ConnectionError, TimeoutError) as err:
                 _LOGGER.debug("Could not read Leggett %s information: %s", name, err)
 
     def _handle_notification(self, sender: object, data: bytearray) -> None:
@@ -797,14 +800,16 @@ class LeggettOkinController(BedController):
         a failure must reach the user. Cleanup callers leave it False: they are
         already unwinding and have their own error to report.
         """
-        release = asyncio.ensure_future(
-            self.write_command(
+
+        async def send_release() -> None:
+            await self.write_command(
                 self._build_command(0),
                 repeat_count=repeat_count,
                 repeat_delay_ms=RELEASE_FRAME_DELAY_MS,
                 cancel_event=asyncio.Event(),
             )
-        )
+
+        release = asyncio.ensure_future(send_release())
         try:
             await asyncio.shield(release)
         except asyncio.CancelledError:
@@ -952,7 +957,7 @@ class LeggettOkinController(BedController):
             _LOGGER.warning("Invalid memory slot for recall: %d", memory_num)
             return
         if self._app_profile == "useries":
-            await self.hold_control(f"memory_{memory_num}", 1000)
+            raise NotImplementedError("Use leggett_hold_control with an explicit memory duration")
         else:
             await self._recall(command)
 
@@ -1014,7 +1019,7 @@ class LeggettOkinController(BedController):
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position (memory slot 3 on this protocol)."""
         if self._app_profile == "useries":
-            await self.hold_control("snore", 1000)
+            raise NotImplementedError("Use leggett_hold_control with an explicit snore duration")
         else:
             await self._recall(LeggettOkinCommands.PRESET_ANTI_SNORE)
 

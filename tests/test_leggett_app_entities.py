@@ -1,7 +1,7 @@
 """Home Assistant entity surfaces for the accepted Prodigy and U-series apps."""
 
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from homeassistant.components.cover import CoverEntityFeature
@@ -12,6 +12,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_OKIN,
+    BED_TYPE_LINAK,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
@@ -124,9 +125,10 @@ async def test_profile_limits_axes_memories_and_control_modes(
     await hass.async_block_till_done()
     assert _keys(hass, entry, "cover") == axes
     buttons = _keys(hass, entry, "button")
-    assert {key for key in buttons if key.startswith("preset_memory_")} == {
-        f"preset_memory_{slot}" for slot in range(1, 3 if profile == "useries" else 5)
-    }
+    assert {key for key in buttons if key.startswith("preset_memory_")} == (
+        set() if profile == "useries" else {f"preset_memory_{slot}" for slot in range(1, 5)}
+    )
+    assert ("preset_anti_snore" in buttons) is (profile != "useries")
     assert {key for key in buttons if key.startswith("program_memory_")} == (
         set()
         if profile == "useries"
@@ -185,32 +187,46 @@ async def test_raw_status_is_published_without_guessing_light_or_position_state(
     assert int(hass.states.get(status_id).state) == -2
 
 
-async def test_useries_memory_button_dispatches_through_coordinator(
+async def test_protocol_change_removes_leggett_state_entities(
     hass, mock_coordinator_connected, app_ble, enable_custom_integrations
 ):
-    entry = _entry(hass, "useries")
+    entry = _entry(hass, "prodigy4")
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    coordinator = hass.data[DOMAIN][entry.entry_id]
-    app_ble.write_gatt_char.reset_mock()
-    with patch.object(
-        coordinator,
-        "async_execute_controller_command",
-        wraps=coordinator.async_execute_controller_command,
-    ) as execute:
-        await hass.services.async_call(
-            "button",
-            "press",
-            {"entity_id": _entity_id(hass, "button", "preset_memory_1")},
-            blocking=True,
+    stale_ids = [
+        _entity_id(hass, domain, key)
+        for domain, key in (
+            ("sensor", "leggett_led_mask"),
+            ("sensor", "leggett_status"),
+            ("binary_sensor", "leggett_alarm_indicator"),
+            ("binary_sensor", "leggett_sleep_timer_indicator"),
         )
-    execute.assert_awaited_once()
-    writes = app_ble.write_gatt_char.await_args_list
-    assert all(call.args[0] == LEGGETT_OKIN_CHAR_UUID for call in writes)
-    assert [call.args[1] for call in writes] == (
-        [bytes.fromhex("040200001000")] * 10 + [bytes.fromhex("040200000000")] * 4
+    ]
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_BED_TYPE: BED_TYPE_LINAK}
     )
-    assert all(call.kwargs["response"] is False for call in writes)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert all(er.async_get(hass).async_get(entity_id) is None for entity_id in stale_ids)
+
+
+async def test_profile_change_removes_one_shot_useries_presets(
+    hass, mock_coordinator_connected, app_ble, enable_custom_integrations
+):
+    entry = _entry(hass, "prodigy4")
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert "preset_memory_1" in _keys(hass, entry, "button")
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_LEGGETT_APP_PROFILE: "useries"}
+    )
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert not {"preset_memory_1", "preset_memory_2", "preset_anti_snore"} & _keys(
+        hass, entry, "button"
+    )
 
 
 @pytest.mark.parametrize("profile", ["prodigy4", "useries"])
