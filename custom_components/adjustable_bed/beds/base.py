@@ -1226,6 +1226,10 @@ class BedController(ABC):
         """Whether the selected RMControl product supports snore intervention."""
         return False
 
+    def validate_rmcontrol_alarm_action(self, action: str) -> None:
+        """Validate a product-specific alarm action without writing to the bed."""
+        raise NotImplementedError("RMControl alarm actions are not supported")
+
     async def rmcontrol_single_alarm(self, minutes: int, action: str | None) -> None:
         raise NotImplementedError("RMControl single alarms are not supported")
 

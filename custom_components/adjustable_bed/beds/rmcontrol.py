@@ -619,6 +619,7 @@ class RmcontrolController(RichmatController):
         return (
             "light" in self._reported_capabilities
             and self.product_profile.settings.is_have_light_strip
+            and (self.supports_discrete_light_control or self.supports_light_toggle_control)
         )
 
     @property
@@ -648,7 +649,10 @@ class RmcontrolController(RichmatController):
 
     @property
     def supports_light_timer(self) -> bool:
-        return self.supports_light_color_control
+        return (
+            "light" in self._reported_capabilities
+            and self.product_profile.settings.is_have_light_strip
+        )
 
     @property
     def light_timer_options(self) -> list[str]:
@@ -817,10 +821,12 @@ class RmcontrolController(RichmatController):
             self._capabilities_ready.set()
         self._reported_state.clear()
         self._alarm_records.clear()
-        if self._forwarded_state_keys:
-            previous_keys = self._forwarded_state_keys
-            self._forwarded_state_keys = set()
-            self.forward_controller_state_updates(dict.fromkeys(previous_keys))
+        previous_keys = self._forwarded_state_keys | {
+            key for key in self._coordinator.controller_state if key.startswith("rmcontrol_")
+        }
+        previous_keys.update(("under_bed_lights_rgb", "under_bed_lights_on", "light_timer_option"))
+        self._forwarded_state_keys = set()
+        self.forward_controller_state_updates(dict.fromkeys(previous_keys))
         self._notify_callback = callback
 
         def receive(_sender: object, data: bytearray) -> None:
@@ -881,6 +887,10 @@ class RmcontrolController(RichmatController):
         )
         if not supported:
             raise NotImplementedError("This product has not advertised this RMControl alarm type")
+
+    def validate_rmcontrol_alarm_action(self, action: str) -> None:
+        """Reject actions absent or ambiguous in this product before any target writes."""
+        self._alarm_command(action)
 
     def _alarm_command(self, action: str) -> int:
         name = action if action.startswith("deviceFunction") else _PREFIX + action

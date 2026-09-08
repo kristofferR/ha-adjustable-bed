@@ -8,6 +8,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .beds.rmcontrol import RmcontrolController
 from .const import DOMAIN
 from .coordinator import AdjustableBedCoordinator
 
@@ -41,9 +42,9 @@ def async_remove_retired_rmcontrol_telemetry(
     coordinator: AdjustableBedCoordinator,
     domain: str,
 ) -> None:
-    """Clean the initial snapshot only; reconnect discovery must retain live entities."""
+    """Retire RMControl telemetry only after switching away from its controller."""
     controller = coordinator.capability_controller
-    if controller is None:
+    if controller is None or isinstance(controller, RmcontrolController):
         return
     specs = (
         controller.controller_state_sensor_specs

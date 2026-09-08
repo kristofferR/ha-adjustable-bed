@@ -93,7 +93,8 @@ async def test_repeat_alarm_names_are_converted_once(hass: HomeAssistant) -> Non
     controller = MagicMock(spec=BedController)
     controller.rmcontrol_repeat_alarm = AsyncMock()
 
-    async def execute(call, capability, command):
+    async def execute(call, capability, command, validate):
+        validate(controller)
         assert capability == "supports_rmcontrol_repeat_alarm"
         await command(controller)
 
@@ -415,3 +416,63 @@ async def test_bluetooth_confirmation_rejects_incompatible_product(
     })
     assert result["errors"] == {CONF_PROTOCOL_VARIANT: "invalid_variant_for_bed_type"}
     flow._finish_with_verify.assert_not_awaited()
+
+
+@pytest.mark.parametrize("domain", ["sensor", "binary_sensor"])
+async def test_rmcontrol_restart_retains_event_driven_registry_rows(hass, domain) -> None:
+    from homeassistant.helpers import entity_registry as er
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
+    from custom_components.adjustable_bed.entity_discovery import (
+        async_remove_retired_rmcontrol_telemetry,
+    )
+
+    entry = MockConfigEntry(domain=DOMAIN)
+    entry.add_to_hass(hass)
+    registry = er.async_get(hass)
+    row = registry.async_get_or_create(
+        domain, DOMAIN, "bed_rmcontrol_music_playing", config_entry=entry
+    )
+    coordinator = MagicMock()
+    coordinator.entity_unique_id.side_effect = lambda key: "bed_" + key
+    coordinator.capability_controller = RmcontrolController(coordinator, "A0RM")
+    async_remove_retired_rmcontrol_telemetry(hass, entry, coordinator, domain)
+    assert registry.async_get(row.entity_id) is not None
+
+
+@pytest.mark.parametrize("operation", ["single", "repeat"])
+@pytest.mark.parametrize("paired", [False, True])
+async def test_alarm_validates_every_product_before_writing(hass, operation, paired) -> None:
+    from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
+
+    first = MagicMock()
+    second = MagicMock()
+    first_product, second_product = ("A4RN", "CMRM") if operation == "single" else ("MXRN", "N4RN")
+    first.capability_controller = RmcontrolController(first, first_product)
+    second.capability_controller = RmcontrolController(second, second_product)
+    for target in (first, second):
+        target.capability_controller._reported_capabilities.add("alarm")
+        assert getattr(target.capability_controller, "supports_rmcontrol_" + operation + "_alarm")
+    data = ALARM_SCHEMA({
+        "device_id": ["bed"], "operation": operation, "action": "TVPosition",
+        **({"minutes": 5} if operation == "single" else {
+            "alarm_id": 1, "time": "07:00", "weekdays": ["monday"]
+        }),
+    })
+    targets = [(first, "both")] if paired else [(first, "both"), (second, "both")]
+    first.capability_controller.validate_rmcontrol_alarm_action("TVPosition")
+
+    def physical(coordinator, side):
+        return [first, second] if paired else [coordinator]
+
+    with (
+        patch("custom_components.adjustable_bed.rmcontrol_services._resolve_sided_targets",
+              return_value=(targets, [])),
+        patch("custom_components.adjustable_bed.services._command_targets", side_effect=physical),
+        patch("custom_components.adjustable_bed.rmcontrol_services._execute_sided",
+              new_callable=AsyncMock) as execute,
+        pytest.raises(ServiceValidationError, match="absent or ambiguous"),
+    ):
+        await handle_rmcontrol_alarm(ServiceCall(hass, DOMAIN, "rmcontrol_alarm", data))
+    execute.assert_not_awaited()

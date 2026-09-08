@@ -305,7 +305,7 @@ async def test_sleep_query_uses_exact_factory_gate(code: str, expected: bool) ->
 
 
 async def test_light_reply_requires_selected_factory_light_flag() -> None:
-    ctrl = controller()
+    ctrl = controller("6ERM")
     ctrl.write_command = AsyncMock()
     assert not ctrl.supports_light_color_control
     assert not ctrl.supports_light_timer
@@ -517,7 +517,7 @@ async def test_reconnect_waits_for_delayed_menu_capabilities() -> None:
 
 
 async def test_missing_capability_reply_times_out_and_late_reply_still_enables() -> None:
-    ctrl = controller(nordic=True)
+    ctrl = controller("6ERM", nordic=True)
     client = ctrl._coordinator.client
     client.start_notify = AsyncMock()
     client.services.get_characteristic.return_value.properties = ["notify"]
@@ -528,3 +528,30 @@ async def test_missing_capability_reply_times_out_and_late_reply_still_enables()
     assert ctrl._notify_uuid is not None
     ctrl._accept_notification(Notification("capability", {"light": True}))
     assert ctrl.supports_light_color_control
+
+
+def test_strip_acknowledgement_requires_a_power_off_route() -> None:
+    ctrl = controller("A3RN")
+    ctrl._accept_notification(Notification("capability", {"light": True}))
+    assert not ctrl.supports_light_color_control
+    assert ctrl.supports_light_timer  # Timer configuration does not require a power-off route.
+
+
+async def test_replacement_controller_clears_coordinator_session_state() -> None:
+    ctrl = controller(nordic=True)
+    state = {"unrelated": 42}
+    ctrl._coordinator.controller_state = state
+    ctrl._coordinator.handle_controller_state_updates.side_effect = state.update
+    ctrl._accept_notification(Notification("music", {"playing": True}))
+    ctrl._accept_notification(Notification("lock", {"locked": True}))
+    ctrl._accept_notification(Notification("massage", {"head_strength": 3}))
+    replacement = RmcontrolController(ctrl._coordinator, "A0RM", is_wilinke=False)
+    client = ctrl._coordinator.client
+    client.start_notify = AsyncMock()
+    client.services.get_characteristic.return_value.properties = ["notify"]
+    replacement.write_command = AsyncMock()
+    await replacement.start_notify()
+    assert state["rmcontrol_music_playing"] is None
+    assert state["rmcontrol_lock_locked"] is None
+    assert state["rmcontrol_massage_head_strength"] is None
+    assert state["unrelated"] == 42

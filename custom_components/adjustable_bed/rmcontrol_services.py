@@ -48,14 +48,19 @@ ANTI_SNORE_SCHEMA = vol.Schema(_ANTI_SNORE_FIELDS)
 
 
 async def _execute(
-    call: ServiceCall, capability: str, command: Callable[[BedController], Awaitable[None]]
+    call: ServiceCall,
+    capability: str,
+    command: Callable[[BedController], Awaitable[None]],
+    validate: Callable[[BedController], None] | None = None,
 ) -> None:
     targets, missing = _resolve_sided_targets(
         call.hass, call.data[CONF_DEVICE_ID], call.data.get("side")
     )
     if missing:
         raise _missing_device_error(missing[0])
-    preflighted = await _preflight_capability(targets, capability, "RMControl configuration")
+    preflighted = await _preflight_capability(
+        targets, capability, "RMControl configuration", validate
+    )
 
     async def control(controller: BedController) -> None:
         try:
@@ -125,7 +130,12 @@ async def handle_rmcontrol_alarm(call: ServiceCall) -> None:
         capability = "supports_rmcontrol_single_alarm"
     else:
         capability = "supports_rmcontrol_repeat_alarm"
-    await _execute(call, capability, control)
+
+    def validate(controller: BedController) -> None:
+        if operation in ("single", "repeat"):
+            controller.validate_rmcontrol_alarm_action(call.data["action"])
+
+    await _execute(call, capability, control, validate)
 
 
 async def handle_rmcontrol_anti_snore(call: ServiceCall) -> None:

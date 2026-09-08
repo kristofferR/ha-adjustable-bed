@@ -1092,6 +1092,7 @@ async def _preflight_capability(
     targets: list[tuple[BedTarget, str]],
     capability: str,
     label: str,
+    validate: Callable[[BedController], None] | None = None,
 ) -> PreflightedSides:
     """Validate a capability on every physical target before any write."""
     preflighted: PreflightedSides = []
@@ -1107,8 +1108,12 @@ async def _preflight_capability(
                     raise ServiceValidationError(
                         f"Device '{target.name}' does not support {label}",
                     )
-    except ServiceValidationError:
+                if validate is not None:
+                    validate(controller)
+    except (ServiceValidationError, ValueError) as err:
         await _release_preflighted(preflighted)
+        if isinstance(err, ValueError):
+            raise ServiceValidationError(str(err)) from err
         raise
     return preflighted
 
