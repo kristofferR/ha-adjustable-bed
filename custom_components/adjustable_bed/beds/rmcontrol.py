@@ -51,6 +51,8 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+# Integration readiness budget, not an on-wire protocol interval.
+_CAPABILITY_TIMEOUT = 5.0
 _PREFIX = "deviceFunctionItem"
 _LOCAL_ACTIONS = frozenset(
     _PREFIX + name
@@ -166,6 +168,8 @@ class RmcontrolController(RichmatController):
         self._light_protocol_family = None
         self._last_write_at: float | None = None
         self._reported_capabilities: set[str] = set()
+        self._pending_capabilities: set[str] = set()
+        self._capabilities_ready = asyncio.Event()
         self._reported_state: dict[str, StateValue] = {}
         self._alarm_records: dict[int, dict[str, StateValue]] = {}
         self._forwarded_state_keys: set[str] = set()
@@ -671,17 +675,29 @@ class RmcontrolController(RichmatController):
             alarm_id = notification.values.get("alarm_id")
             if isinstance(alarm_id, int) and 1 <= alarm_id <= 7:
                 self._alarm_records[alarm_id] = dict(notification.values)
+        self._pending_capabilities.difference_update(self._reported_capabilities)
+        if not self._pending_capabilities:
+            self._capabilities_ready.set()
         updates = {
             f"rmcontrol_{notification.kind}_{name}": value
             for name, value in notification.values.items()
         }
         self._reported_state.update(updates)
+        forwarded: dict[str, StateValue | None] = dict(updates)
         if notification.kind == "rgb" and "rgb" in notification.values:
-            updates["under_bed_lights_rgb"] = notification.values["rgb"]
+            forwarded["under_bed_lights_rgb"] = notification.values["rgb"]
         if notification.kind in ("rgb", "white_light") and "on" in notification.values:
-            updates["under_bed_lights_on"] = notification.values["on"]
-        self._forwarded_state_keys.update(updates)
-        self.forward_controller_state_updates(updates)
+            forwarded["under_bed_lights_on"] = notification.values["on"]
+        if notification.kind == "light_timer":
+            seconds = notification.values.get("seconds")
+            option = None
+            if seconds in (0, 65535):
+                option = "Always On"
+            elif isinstance(seconds, int) and 60 <= seconds <= 900 and seconds % 60 == 0:
+                option = f"{seconds // 60} min"
+            forwarded["light_timer_option"] = option
+        self._forwarded_state_keys.update(forwarded)
+        self.forward_controller_state_updates(forwarded)
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -789,6 +805,16 @@ class RmcontrolController(RichmatController):
             raise ValueError("RMControl notification characteristic is unavailable")
         self._notification_buffer.clear()
         self._reported_capabilities.clear()
+        self._pending_capabilities = set()
+        if self.product_profile.settings.is_have_light_strip:
+            self._pending_capabilities.add("light")
+        if self._has_alarm_catalog:
+            self._pending_capabilities.add("alarm")
+        if self.product_profile.settings.rmc_sleep_monitoring_type == "deviceSleepMonitoringBle":
+            self._pending_capabilities.add("sleep_advertisement")
+        self._capabilities_ready.clear()
+        if not self._pending_capabilities:
+            self._capabilities_ready.set()
         self._reported_state.clear()
         self._alarm_records.clear()
         if self._forwarded_state_keys:
@@ -825,6 +851,13 @@ class RmcontrolController(RichmatController):
                         1, side=self._side_value, nordic=self._nordic, action=_PREFIX + action
                     )
                 )
+            try:
+                async with asyncio.timeout(_CAPABILITY_TIMEOUT):
+                    await self._capabilities_ready.wait()
+            except TimeoutError:
+                # Some beds omit optional menu replies. Keep basic controls
+                # usable and accept late replies through the same callback.
+                _LOGGER.debug("RMControl capability probes unanswered: %s", self._pending_capabilities)
         except BaseException:
             try:
                 await self.stop_notify()

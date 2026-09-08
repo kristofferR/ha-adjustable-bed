@@ -233,3 +233,78 @@ async def test_factory_rejects_profile_with_unrelated_frame_variant() -> None:
         await create_controller(
             MagicMock(), BED_TYPE_RICHMAT, "prefix55", MagicMock(), rmcontrol_product="A3RM"
         )
+
+
+@pytest.mark.parametrize("code", ["FWRM", "WFRM"])
+def test_desk_products_are_not_selectable(code: str) -> None:
+    with pytest.raises(vol.Invalid):
+        vol.Schema(_rmcontrol_schema_fields())({CONF_RMCONTROL_PRODUCT: code})
+
+
+@pytest.mark.parametrize("variant", ["prefix55", "prefixaa"])
+@pytest.mark.parametrize("existing_product", ["", "A0RM"])
+async def test_options_reject_incompatible_product_transport_before_save(
+    hass: HomeAssistant, variant: str, existing_product: str
+) -> None:
+    from homeassistant.const import CONF_ADDRESS
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.const import (
+        CONF_BED_TYPE,
+        CONF_MOTOR_COUNT,
+        CONF_PROTOCOL_VARIANT,
+    )
+
+    entry = MockConfigEntry(domain=DOMAIN, data={
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_RICHMAT,
+        CONF_MOTOR_COUNT: 2, CONF_PROTOCOL_VARIANT: "auto",
+        CONF_RMCONTROL_PRODUCT: existing_product,
+    })
+    entry.add_to_hass(hass)
+    original = dict(entry.data)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass = hass
+    flow.handler = entry.entry_id
+    submission = {CONF_PROTOCOL_VARIANT: variant}
+    if not existing_product:
+        submission[CONF_RMCONTROL_PRODUCT] = "A0RM"
+    result = await flow.async_step_settings(submission)
+    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "invalid_variant_for_bed_type"}
+    assert dict(entry.data) == original
+
+
+async def test_dynamic_light_select_survives_reconnect_discovery(hass: HomeAssistant) -> None:
+    from homeassistant.helpers import entity_registry as er
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
+    from custom_components.adjustable_bed.rmcontrol_protocol import Notification
+    from custom_components.adjustable_bed.select import _select_entities_for
+
+    coordinator = MagicMock()
+    coordinator.has_massage = False
+    coordinator.entity_unique_id.side_effect = lambda key: f"bed_{key}"
+    ctrl = RmcontrolController(coordinator, "A0RM")
+    coordinator.capability_controller = ctrl
+    entry = MockConfigEntry(domain=DOMAIN)
+    entry.add_to_hass(hass)
+    registry = er.async_get(hass)
+    row = registry.async_get_or_create(
+        "select", DOMAIN, "bed_light_timer", config_entry=entry,
+    )
+    ctrl._accept_notification(Notification("capability", {"light": True}))
+    add = MagicMock()
+    async_setup_dynamic_entities(
+        entry, coordinator, add, lambda: _select_entities_for(hass, coordinator)
+    )
+    assert add.call_count == 1
+    callback = coordinator.register_controller_state_callback.call_args.args[0]
+    coordinator.capability_controller = RmcontrolController(coordinator, "A0RM")
+    callback({})
+    assert registry.async_get(row.entity_id) is not None
+    coordinator.capability_controller._accept_notification(
+        Notification("capability", {"light": True})
+    )
+    callback({})
+    assert registry.async_get(row.entity_id) is not None
+    assert add.call_count == 1

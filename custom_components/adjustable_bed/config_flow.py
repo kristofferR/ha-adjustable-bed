@@ -173,6 +173,8 @@ from .const import (
     POSITION_MODE_SPEED,
     RICHMAT_REMOTE_AUTO,
     RICHMAT_REMOTES,
+    RICHMAT_VARIANT_NORDIC,
+    RICHMAT_VARIANT_WILINKE,
     RUNTIME_BOND_KEYS,
     VARIANT_AUTO,
     DetectionResult,
@@ -272,7 +274,7 @@ def _rmcontrol_schema_fields(data: dict[str, Any] | None = None) -> dict[vol.Opt
         ): vol.In(
             {
                 "": "Legacy remote profile (default)",
-                **{code: code for code in RICHMAT_PRODUCT_CODES},
+                **{code: code for code in RICHMAT_PRODUCT_CODES if code not in {"FWRM", "WFRM"}},
             }
         ),
         vol.Optional(CONF_RMCONTROL_SIDE, default=current.get(CONF_RMCONTROL_SIDE, "left")): vol.In(
@@ -5131,6 +5133,18 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 bed_type,
                 {**current_data, **user_input},
             )
+            if (
+                bed_type == BED_TYPE_RICHMAT
+                and user_input.get(CONF_RMCONTROL_PRODUCT, current_data.get(CONF_RMCONTROL_PRODUCT))
+                and requested_variant not in (
+                    VARIANT_AUTO, RICHMAT_VARIANT_NORDIC, RICHMAT_VARIANT_WILINKE
+                )
+            ):
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={CONF_PROTOCOL_VARIANT: "invalid_variant_for_bed_type"},
+                )
             if variants:
                 user_input[CONF_PROTOCOL_VARIANT] = requested_variant
             else:

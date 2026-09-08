@@ -476,3 +476,55 @@ async def test_parn_enforces_exact_source_eight_color_palette() -> None:
     with pytest.raises(ValueError, match="eight RGB colors"):
         await ctrl.set_light_color((0, 255, 255))
     assert ctrl.write_command.await_count == 8
+
+
+@pytest.mark.parametrize(
+    ("seconds", "option"),
+    [(0, "Always On"), (65535, "Always On"), (60, "1 min"), (900, "15 min"),
+     (61, None), (960, None)],
+)
+def test_timer_report_updates_select_and_diagnostic(seconds: int, option: str | None) -> None:
+    ctrl = controller()
+    ctrl._accept_notification(Notification("light_timer", {"seconds": seconds}))
+    updates = ctrl._coordinator.handle_controller_state_updates.call_args.args[0]
+    assert updates["light_timer_option"] == option
+    assert updates["rmcontrol_light_timer_seconds"] == seconds
+
+
+async def test_reconnect_waits_for_delayed_menu_capabilities() -> None:
+    ctrl = controller("HNRN", nordic=True)
+    client = ctrl._coordinator.client
+    client.start_notify = AsyncMock()
+    client.services.get_characteristic.return_value.properties = ["notify"]
+    ctrl.write_command = AsyncMock()
+    with patch("custom_components.adjustable_bed.beds.rmcontrol._CAPABILITY_TIMEOUT", 1):
+        setup = asyncio.create_task(ctrl.start_notify())
+        await asyncio.sleep(0)
+        assert not setup.done()
+        ctrl._accept_notification(Notification("rgb", {"on": True}))
+        await asyncio.sleep(0)
+        assert not setup.done()
+        ctrl._accept_notification(Notification("capability", {"light": True}))
+        ctrl._accept_notification(Notification("capability", {"alarm": True}))
+        await asyncio.sleep(0)
+        assert not setup.done()
+        ctrl._accept_notification(Notification("anti_snore", {"sleep_advertisement": (83,)}))
+        await setup
+    assert ctrl.supports_light_color_control
+    assert ctrl.supports_rmcontrol_anti_snore
+    await ctrl.set_light_color((20, 30, 40))
+    await ctrl.rmcontrol_anti_snore_switch(True)
+
+
+async def test_missing_capability_reply_times_out_and_late_reply_still_enables() -> None:
+    ctrl = controller(nordic=True)
+    client = ctrl._coordinator.client
+    client.start_notify = AsyncMock()
+    client.services.get_characteristic.return_value.properties = ["notify"]
+    ctrl.write_command = AsyncMock()
+    with patch("custom_components.adjustable_bed.beds.rmcontrol._CAPABILITY_TIMEOUT", 0):
+        await ctrl.start_notify()
+    assert not ctrl.supports_light_color_control
+    assert ctrl._notify_uuid is not None
+    ctrl._accept_notification(Notification("capability", {"light": True}))
+    assert ctrl.supports_light_color_control
