@@ -311,6 +311,39 @@ async def test_dynamic_light_select_survives_reconnect_discovery(hass: HomeAssis
     assert add.call_count == 1
 
 
+@pytest.mark.parametrize("product,keep_light,keep_timer", [
+    ("6ERM", True, True), ("FCRN", False, False), ("A0RM", False, True),
+])
+async def test_light_registry_retains_only_possible_profile_capabilities(
+    hass: HomeAssistant, product: str, keep_light: bool, keep_timer: bool
+) -> None:
+    from homeassistant.helpers import entity_registry as er
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
+    from custom_components.adjustable_bed.light import _light_entities_for
+    from custom_components.adjustable_bed.select import _select_entities_for
+
+    entry = MockConfigEntry(domain=DOMAIN)
+    entry.add_to_hass(hass)
+    coordinator = MagicMock()
+    coordinator.entry = entry
+    coordinator.has_massage = False
+    coordinator.entity_unique_id.side_effect = lambda key: f"bed_{key}"
+    coordinator.capability_controller = RmcontrolController(coordinator, product)
+    registry = er.async_get(hass)
+    light = registry.async_get_or_create(
+        "light", DOMAIN, "bed_under_bed_lights", config_entry=entry,
+    )
+    timer = registry.async_get_or_create(
+        "select", DOMAIN, "bed_light_timer", config_entry=entry,
+    )
+    _light_entities_for(hass, coordinator)
+    _select_entities_for(hass, coordinator)
+    assert (registry.async_get(light.entity_id) is not None) == keep_light
+    assert (registry.async_get(timer.entity_id) is not None) == keep_timer
+
+
 @pytest.mark.parametrize("explicit_on", [True, False])
 @pytest.mark.parametrize("toggle", [True, False])
 @pytest.mark.parametrize("is_on", [True, False])

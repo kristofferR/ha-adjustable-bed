@@ -117,7 +117,7 @@ def _light_entities_for(
         _async_remove_stale_switch_entity(hass, coordinator)
         return [AdjustableBedOnOffLight(coordinator, LIGHT_DESCRIPTION)]
 
-    if not controller.has_dynamic_controller_entities:
+    if not controller.light_color_control_pending:
         _async_remove_stale_light_entity(hass, coordinator)
     return []
 

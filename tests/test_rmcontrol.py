@@ -383,6 +383,27 @@ async def test_alarm_query_invalidates_previous_observations_without_claiming_de
     }
 
 
+@pytest.mark.parametrize("deleted_id", [1, 2])
+async def test_alarm_delete_invalidates_only_the_displayed_slot(deleted_id: int) -> None:
+    ctrl = controller("MXRN")
+    ctrl.write_command = AsyncMock()
+    ctrl._accept_notification(Notification("capability", {"alarm": True}))
+    for alarm_id in (1, 2):
+        ctrl._accept_notification(Notification("repeat_alarm", {"alarm_id": alarm_id, "hour": 7}))
+    ctrl._coordinator.handle_controller_state_updates.reset_mock()
+    await ctrl.rmcontrol_delete_alarm(deleted_id)
+    assert set(ctrl.protocol_diagnostics["last_received_alarm_records"]) == {3 - deleted_id}
+    if deleted_id == 2:
+        assert "rmcontrol_repeat_alarm_alarm_id" not in ctrl._reported_state
+        ctrl._coordinator.handle_controller_state_updates.assert_called_once_with({
+            "rmcontrol_repeat_alarm_alarm_id": None,
+            "rmcontrol_repeat_alarm_hour": None,
+        })
+    else:
+        assert ctrl._reported_state["rmcontrol_repeat_alarm_alarm_id"] == 2
+        ctrl._coordinator.handle_controller_state_updates.assert_not_called()
+
+
 def test_alarm_menu_and_type_are_separate_exact_gates() -> None:
     single, repeating, empty, exception = (
         controller(code) for code in ("A4RN", "MXRN", "HNRN", "PNRN")

@@ -641,6 +641,12 @@ class RmcontrolController(RichmatController):
         )
 
     @property
+    def light_color_control_pending(self) -> bool:
+        return self.light_timer_pending and (
+            self.supports_discrete_light_control or self.supports_light_toggle_control
+        )
+
+    @property
     def _light_palette(self) -> tuple[tuple[int, int, int], ...]:
         if (
             self.product_profile.settings.bed_light_display_type
@@ -669,6 +675,13 @@ class RmcontrolController(RichmatController):
     def supports_light_timer(self) -> bool:
         return (
             "light" in self._reported_capabilities
+            and self.product_profile.settings.is_have_light_strip
+        )
+
+    @property
+    def light_timer_pending(self) -> bool:
+        return (
+            "light" not in self._reported_capabilities
             and self.product_profile.settings.is_have_light_strip
         )
 
@@ -957,6 +970,13 @@ class RmcontrolController(RichmatController):
         frame = delete_repeat_alarm(alarm_id)
         # Invalidate the old observation; this does not assert device deletion.
         self._alarm_records.pop(alarm_id, None)
+        if self._reported_state.get("rmcontrol_repeat_alarm_alarm_id") == alarm_id:
+            previous_keys = {
+                name for name in self._reported_state if name.startswith("rmcontrol_repeat_alarm_")
+            }
+            for key in previous_keys:
+                self._reported_state.pop(key)
+            self.forward_controller_state_updates(dict.fromkeys(previous_keys))
         await self.write_command(frame)
 
     async def rmcontrol_query_alarms(self) -> None:

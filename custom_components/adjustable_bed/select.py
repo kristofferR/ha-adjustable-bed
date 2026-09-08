@@ -204,7 +204,7 @@ def _select_entities_for(
                         timer_options,
                     )
                 )
-        elif not controller.has_dynamic_controller_entities:
+        elif not controller.light_timer_pending:
             # A reclassified entry (e.g. Richmat QRRM corrected to BedTech, #410)
             # can leave behind the old light-timer select; remove it so a dead
             # control doesn't linger in the UI and card.

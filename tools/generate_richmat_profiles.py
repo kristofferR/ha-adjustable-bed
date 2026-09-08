@@ -13,6 +13,7 @@ import argparse
 import csv
 import difflib
 import hashlib
+import io
 import json
 from pathlib import Path
 
@@ -61,9 +62,10 @@ SCALAR_FIELDS = (
 
 def read_verified(path: Path, expected_hash: str) -> list[dict[str, str]]:
     """Read only the exact frozen input referenced by this implementation."""
-    if hashlib.sha256(path.read_bytes()).hexdigest() != expected_hash:
+    data = path.read_bytes()
+    if hashlib.sha256(data).hexdigest() != expected_hash:
         raise ValueError(f"Frozen input hash mismatch: {path}")
-    with path.open(newline="", encoding="utf-8") as stream:
+    with io.StringIO(data.decode("utf-8"), newline="") as stream:
         return list(csv.DictReader(stream, delimiter="\t"))
 
 
