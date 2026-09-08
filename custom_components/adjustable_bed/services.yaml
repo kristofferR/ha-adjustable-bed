@@ -1,3 +1,100 @@
+rmcontrol_alarm:
+  name: RMControl alarm
+  description: Configure a supported RMControl product's countdown or repeating alarm. Query results appear in controller state and diagnostics. Alarm actions use the exact product catalog, not raw command bytes.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    operation:
+      name: Operation
+      required: true
+      selector:
+        select:
+          options: [single, cancel_single, repeat, delete, query, sync]
+    minutes:
+      name: Countdown minutes
+      description: Required for single alarms.
+      selector:
+        number:
+          min: 1
+          max: 65535
+          mode: box
+    action:
+      name: Product action
+      description: Exact alarm action name from the selected product's diagnostics. Required for single and repeating alarms.
+      selector:
+        text:
+    alarm_id:
+      name: Alarm slot
+      description: Required for repeat and delete. Updating a slot replaces that alarm.
+      selector:
+        number:
+          min: 1
+          max: 7
+          mode: box
+    time:
+      name: Local alarm time
+      description: Required for repeating alarms. Minute precision.
+      selector:
+        time:
+    weekdays:
+      name: Repeat on
+      description: Required for repeating alarms.
+      selector:
+        select:
+          multiple: true
+          options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+    side:
+      name: Side
+      description: Target side of a paired bed. A standalone bed uses its configured RMControl side.
+      selector:
+        select:
+          options: [left, right, both]
+
+rmcontrol_anti_snore:
+  name: RMControl snore intervention
+  description: Enable, configure or query supported automatic snore intervention. This is separate from the anti-snore position preset.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    operation:
+      name: Operation
+      required: true
+      selector:
+        select:
+          options: [switch, configure, query]
+    enabled:
+      name: Enabled
+      description: Required for switch.
+      selector:
+        boolean:
+    mode:
+      name: Configuration mode
+      description: Required for configure.
+      selector:
+        select:
+          options: [count, time]
+    value:
+      name: Intervention value
+      description: Required for configure. Uses the selected mode's app value; physical interpretation is hardware unverified.
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    side:
+      name: Side
+      selector:
+        select:
+          options: [left, right, both]
+
 goto_preset:
   name: Go to Preset
   description: Move bed to a saved memory position.

@@ -6,6 +6,7 @@ import asyncio
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
+from functools import partial
 from typing import TYPE_CHECKING, Any
 
 from bleak.exc import BleakError
@@ -23,6 +24,10 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
+from .entity_discovery import (
+    async_remove_retired_rmcontrol_telemetry,
+    async_setup_dynamic_entities,
+)
 from .paired_coordinator import PairedBedCoordinator
 
 if TYPE_CHECKING:
@@ -67,13 +72,23 @@ async def async_setup_entry(
     # Paired beds get a per-side BLE-connectivity sensor (and any per-side
     # presence sensors) built against each child coordinator.
     if isinstance(coordinator, PairedBedCoordinator):
-        entities: list[BinarySensorEntity] = []
         for child in coordinator.children.values():
-            entities.extend(_binary_sensor_entities_for(hass, child))
-        async_add_entities(entities)
+            async_remove_retired_rmcontrol_telemetry(hass, entry, child, "binary_sensor")
+            async_setup_dynamic_entities(
+                entry,
+                child,
+                async_add_entities,
+                partial(_binary_sensor_entities_for, hass, child),
+            )
         return
 
-    async_add_entities(_binary_sensor_entities_for(hass, coordinator))
+    async_remove_retired_rmcontrol_telemetry(hass, entry, coordinator, "binary_sensor")
+    async_setup_dynamic_entities(
+        entry,
+        coordinator,
+        async_add_entities,
+        lambda: _binary_sensor_entities_for(hass, coordinator),
+    )
 
 
 def _binary_sensor_entities_for(

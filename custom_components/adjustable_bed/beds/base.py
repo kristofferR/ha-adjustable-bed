@@ -14,12 +14,14 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Collection, Coroutine, Sequence
 from contextvars import ContextVar
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 from bleak import BleakClient
 from bleak.exc import BleakError
 
 if TYPE_CHECKING:
+    from datetime import datetime
+
     from ..coordinator import AdjustableBedCoordinator
 
 from ..const import (
@@ -92,6 +94,14 @@ class ControllerButtonSpec:
     name: str
     press_fn: MotorCommandCallable
     icon: str = "mdi:gesture-tap"
+
+
+@dataclass(frozen=True, slots=True)
+class ProductButtonSpec(ControllerButtonSpec):
+    """An optional product action with its own entity namespace."""
+
+    icon: str = "mdi:gesture-tap-button"
+    entity_registry_enabled_default: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -1115,6 +1125,11 @@ class BedController(ABC):
         return False
 
     @property
+    def light_color_control_pending(self) -> bool:
+        """Return whether color support still awaits device discovery."""
+        return False
+
+    @property
     def supported_color_mode(self) -> str | None:
         """Return the color mode supported by the light.
 
@@ -1194,9 +1209,69 @@ class BedController(ABC):
         return {}
 
     @property
+    def has_dynamic_controller_entities(self) -> bool:
+        """Whether notifications can reveal additional entities after setup."""
+        return False
+
+    @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        """Return named protocol actions outside the standard bed controls."""
+        """Return additional, product-gated actions for the button platform."""
         return ()
+
+    @property
+    def supports_rmcontrol_alarm(self) -> bool:
+        """Whether the selected RMControl product supports alarm configuration."""
+        return False
+
+    @property
+    def supports_rmcontrol_single_alarm(self) -> bool:
+        """Whether this product exposes the countdown alarm operation."""
+        return False
+
+    @property
+    def supports_rmcontrol_repeat_alarm(self) -> bool:
+        """Whether this product exposes repeating alarm records."""
+        return False
+
+    @property
+    def supports_rmcontrol_alarm_time_sync(self) -> bool:
+        """Whether the selected product requests alarm clock synchronization."""
+        return False
+
+    @property
+    def supports_rmcontrol_anti_snore(self) -> bool:
+        """Whether the selected RMControl product supports snore intervention."""
+        return False
+
+    def validate_rmcontrol_alarm_action(self, action: str) -> None:
+        """Validate a product-specific alarm action without writing to the bed."""
+        raise NotImplementedError("RMControl alarm actions are not supported")
+
+    async def rmcontrol_single_alarm(self, minutes: int, action: str | None) -> None:
+        raise NotImplementedError("RMControl single alarms are not supported")
+
+    async def rmcontrol_repeat_alarm(
+        self, alarm_id: int, hour: int, minute: int, weekdays: tuple[int, ...], action: str
+    ) -> None:
+        raise NotImplementedError("RMControl repeating alarms are not supported")
+
+    async def rmcontrol_delete_alarm(self, alarm_id: int) -> None:
+        raise NotImplementedError("RMControl repeating alarms are not supported")
+
+    async def rmcontrol_query_alarms(self) -> None:
+        raise NotImplementedError("RMControl alarms are not supported")
+
+    async def rmcontrol_sync_alarm_time(self, now: datetime) -> None:
+        raise NotImplementedError("RMControl alarm time synchronization is not supported")
+
+    async def rmcontrol_anti_snore_switch(self, enabled: bool) -> None:
+        raise NotImplementedError("RMControl snore intervention is not supported")
+
+    async def rmcontrol_anti_snore_config(self, mode: Literal["count", "time"], value: int) -> None:
+        raise NotImplementedError("RMControl snore intervention is not supported")
+
+    async def rmcontrol_query_anti_snore(self) -> None:
+        raise NotImplementedError("RMControl snore intervention is not supported")
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
@@ -2426,6 +2501,11 @@ class BedController(ABC):
     @property
     def supports_light_timer(self) -> bool:
         """Return True if bed supports setting light auto-off timer."""
+        return False
+
+    @property
+    def light_timer_pending(self) -> bool:
+        """Return whether light timer support still awaits device discovery."""
         return False
 
     @property

@@ -1128,6 +1128,7 @@ async def _preflight_capability(
     targets: list[tuple[BedTarget, str]],
     capability: str,
     label: str,
+    validate: Callable[[BedController], None] | None = None,
 ) -> PreflightedSides:
     """Validate a capability on every physical target before any write."""
     preflighted: PreflightedSides = []
@@ -1143,8 +1144,12 @@ async def _preflight_capability(
                     raise ServiceValidationError(
                         f"Device '{target.name}' does not support {label}",
                     )
-    except ServiceValidationError:
+                if validate is not None:
+                    validate(controller)
+    except (ServiceValidationError, ValueError) as err:
         await _release_preflighted(preflighted)
+        if isinstance(err, ValueError):
+            raise ServiceValidationError(str(err)) from err
         raise
     return preflighted
 
@@ -2021,6 +2026,10 @@ async def async_register_services(hass: HomeAssistant) -> None:
     """Register the Adjustable Bed services (idempotent)."""
     if hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET):
         return  # Services already registered
+
+    from .rmcontrol_services import async_register_rmcontrol_services
+
+    async_register_rmcontrol_services(hass)
 
     hass.services.async_register(
         DOMAIN,

@@ -6,8 +6,16 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.base import BedController, ControllerButtonSpec
-from custom_components.adjustable_bed.button import ControllerActionButton, _button_entities_for
+from custom_components.adjustable_bed.beds.base import (
+    BedController,
+    ControllerButtonSpec,
+    ProductButtonSpec,
+)
+from custom_components.adjustable_bed.button import (
+    AdjustableBedProductButton,
+    ControllerActionButton,
+    _button_entities_for,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_LP_LEGACY,
     CONF_BED_TYPE,
@@ -32,6 +40,7 @@ async def test_remote_action_dispatches_to_current_controller(hass):
 
     previous.controller_button_specs = (
         ControllerButtonSpec("example_action", "Remote control", action),
+        ProductButtonSpec("example_action", "Product control", action),
     )
     coordinator = MagicMock()
     coordinator.capability_controller = previous
@@ -45,15 +54,21 @@ async def test_remote_action_dispatches_to_current_controller(hass):
         await command(current)
 
     coordinator.async_execute_controller_command = AsyncMock(side_effect=dispatch)
+    entities = _button_entities_for(hass, coordinator)
+    products = [entity for entity in entities if isinstance(entity, AdjustableBedProductButton)]
+    assert len(products) == 1
+    assert products[0].unique_id == "device_product_action_example_action"
+    assert not products[0].entity_registry_enabled_default
     actions = [
         entity
-        for entity in _button_entities_for(hass, coordinator)
+        for entity in entities
         if isinstance(entity, ControllerActionButton)
     ]
     assert len(actions) == 1
     assert actions[0].unique_id == "device_example_action"
     assert actions[0].name == "Remote control"
     assert actions[0].translation_key == "remote_action"
+    assert actions[0].entity_registry_enabled_default
     await actions[0].async_press()
     current.stop_all.assert_awaited_once()
     previous.stop_all.assert_not_awaited()

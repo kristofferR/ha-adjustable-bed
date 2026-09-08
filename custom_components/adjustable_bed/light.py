@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
+from functools import partial
 from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.components.light import (
@@ -23,6 +24,7 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from .const import BED_TYPE_SLEEP_NUMBER_MCR, DOMAIN
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
+from .entity_discovery import async_setup_dynamic_entities
 from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
 
 if TYPE_CHECKING:
@@ -76,20 +78,18 @@ async def async_setup_entry(
     """Set up Adjustable Bed light entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     if isinstance(coordinator, PairedBedCoordinator):
-        entities: list[LightEntity] = []
         for side, child in coordinator.children.items():
-            entities.extend(
-                _light_entities_for(
-                    hass,
-                    cast(
-                        "AdjustableBedCoordinator",
-                        PairedSideProxy(coordinator, child, side),
-                    ),
-                )
+            proxy = cast("AdjustableBedCoordinator", PairedSideProxy(coordinator, child, side))
+            async_setup_dynamic_entities(
+                entry,
+                proxy,
+                async_add_entities,
+                partial(_light_entities_for, hass, proxy),
             )
-        async_add_entities(entities)
         return
-    async_add_entities(_light_entities_for(hass, coordinator))
+    async_setup_dynamic_entities(
+        entry, coordinator, async_add_entities, lambda: _light_entities_for(hass, coordinator)
+    )
 
 
 def _light_entities_for(
@@ -117,7 +117,8 @@ def _light_entities_for(
         _async_remove_stale_switch_entity(hass, coordinator)
         return [AdjustableBedOnOffLight(coordinator, LIGHT_DESCRIPTION)]
 
-    _async_remove_stale_light_entity(hass, coordinator)
+    if not controller.light_color_control_pending:
+        _async_remove_stale_light_entity(hass, coordinator)
     return []
 
 
@@ -266,13 +267,18 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         """Turn on with RGB color mode."""
         requested_rgb = _normalize_rgb_color(kwargs.get(ATTR_RGB_COLOR))
         target_rgb = requested_rgb or self._attr_rgb_color or self._default_rgb_color
-        if target_rgb is None:
-            raise ValueError("No RGB color available for this light")
 
         async def _turn_on(ctrl: BedController) -> None:
             if getattr(ctrl, "supports_explicit_light_on_control", False):
                 await ctrl.lights_on()
-            await ctrl.set_light_color(target_rgb)
+            elif target_rgb is None:
+                if ctrl.supports_light_toggle_control:
+                    if not self._attr_is_on:
+                        await ctrl.lights_toggle()
+                else:
+                    raise ValueError("No RGB color available for this light")
+            if target_rgb is not None:
+                await ctrl.set_light_color(target_rgb)
 
         await self._coordinator.async_execute_controller_command(_turn_on, cancel_running=False)
         self._attr_is_on = True

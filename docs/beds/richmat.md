@@ -42,13 +42,21 @@ Brands using Richmat actuators:
 
 | Analyzed | App | Package ID |
 |----------|-----|------------|
-| ✅ | [RMControl](https://play.google.com/store/apps/details?id=com.richmat.rmcontrol2) 21.3.2 | `com.richmat.rmcontrol2` |
+| ✅ | [RMControl](https://play.google.com/store/apps/details?id=com.richmat.rmcontrol2) 21.3.7 | `com.richmat.rmcontrol2` |
 | ✅ | [BedTech](https://play.google.com/store/apps/details?id=com.bedtech) | `com.bedtech` |
 | ✅ | [SleepFunction Bed Control](https://play.google.com/store/apps/details?id=com.richmat.sleepfunction) | `com.richmat.sleepfunction` |
 | ✅ | [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp2) 2.3.25 | `com.richmat.lp2` |
 | ✅ | L&P Adjustable Base 2.2.1 (legacy) | `com.richmat.lp` |
 | ✅ | [LP Control](https://play.google.com/store/apps/details?id=com.leggett.android.universal) 2.9.0 | `com.leggett.android.universal` |
 | ✅ | [SVEN & SON](https://play.google.com/store/apps/details?id=com.richmat.svenson) | `com.richmat.svenson` |
+
+### RMControl 21.3.7 opt-in profiles
+
+The [RMControl product-profile route](rmcontrol.md) uses the app's exact catalog,
+gesture metadata and notification protocols. Select `rmcontrol_product` explicitly
+to opt in; an empty selection keeps the existing Richmat behavior described below.
+Its source-derived features remain hardware unverified, and its specialized
+capability review is tracked separately from this page's tested legacy support.
 
 ## Features
 

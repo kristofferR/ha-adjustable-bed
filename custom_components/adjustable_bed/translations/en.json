@@ -54,6 +54,8 @@
           "preferred_adapter": "Bluetooth adapter",
           "protocol_variant": "Protocol variant",
           "richmat_remote": "Richmat remote",
+          "rmcontrol_product": "RMControl 21.3.7 product (optional)",
+          "rmcontrol_side": "RMControl side",
           "motor_pulse_count": "Motor pulse count",
           "motor_pulse_delay_ms": "Motor pulse delay (ms)",
           "disconnect_after_command": "Disconnect after each command",
@@ -84,6 +86,8 @@
           "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
           "protocol_variant": "Some beds have multiple protocol variants. Auto-detect usually works, but you can override if needed.",
           "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
+          "rmcontrol_product": "Opt in only for the exact product code used in RMControl. Leave the legacy profile selected to keep existing behavior. Nordic and WiLinke only; hardware unverified.",
+          "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
           "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
           "disconnect_after_command": "Disconnect from the bed immediately after each command to free up the BLE connection for the physical remote. Recommended for beds that only allow one connection at a time.",
@@ -202,10 +206,14 @@
         "title": "Richmat Remote Configuration",
         "description": "Select the remote code for your Richmat bed.",
         "data": {
-          "richmat_remote": "Richmat remote"
+          "richmat_remote": "Richmat remote",
+          "rmcontrol_product": "RMControl 21.3.7 product (optional)",
+          "rmcontrol_side": "RMControl side"
         },
         "data_description": {
-          "richmat_remote": "Use 'auto' unless you know your remote code."
+          "richmat_remote": "Use 'auto' unless you know your remote code.",
+          "rmcontrol_product": "Opt in only for the exact product code used in RMControl. Leave the legacy profile selected to keep existing behavior. Nordic and WiLinke only; hardware unverified.",
+          "rmcontrol_side": "Use the side selected in RMControl."
         }
       },
       "manual_malouf": {
@@ -234,10 +242,14 @@
         "title": "Richmat Remote Configuration",
         "description": "Select the remote code for your Richmat bed.",
         "data": {
-          "richmat_remote": "Richmat remote"
+          "richmat_remote": "Richmat remote",
+          "rmcontrol_product": "RMControl 21.3.7 product (optional)",
+          "rmcontrol_side": "RMControl side"
         },
         "data_description": {
-          "richmat_remote": "Use 'auto' unless you know your remote code."
+          "richmat_remote": "Use 'auto' unless you know your remote code.",
+          "rmcontrol_product": "Opt in only for the exact product code used in RMControl. Leave the legacy profile selected to keep existing behavior. Nordic and WiLinke only; hardware unverified.",
+          "rmcontrol_side": "Use the side selected in RMControl."
         }
       },
       "bluetooth_malouf": {
@@ -546,6 +558,8 @@
           "cb24_bed_selection": "CB24 bed side",
           "protocol_variant": "Protocol variant",
           "richmat_remote": "Richmat remote",
+          "rmcontrol_product": "RMControl 21.3.7 product (optional)",
+          "rmcontrol_side": "RMControl side",
           "motor_pulse_count": "Motor pulse count",
           "motor_pulse_delay_ms": "Motor pulse delay (ms)",
           "disconnect_after_command": "Disconnect after each command",
@@ -583,6 +597,8 @@
           "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
           "protocol_variant": "Change the protocol variant if the bed isn't responding correctly.",
           "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
+          "rmcontrol_product": "Opt in only for the exact product code used in RMControl. Leave the legacy profile selected to keep existing behavior. Nordic and WiLinke only; hardware unverified.",
+          "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
           "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
           "disconnect_after_command": "Disconnect from the bed immediately after each command to free up the BLE connection for the physical remote.",
@@ -685,6 +701,15 @@
   },
   "entity": {
     "button": {
+      "product_action": {
+        "name": "{action}"
+      },
+      "product_action_left": {
+        "name": "{action} (left)"
+      },
+      "product_action_right": {
+        "name": "{action} (right)"
+      },
       "preset_flat": {
         "name": "Flat"
       },
@@ -1763,6 +1788,48 @@
       }
     },
     "sensor": {
+      "rmcontrol_protocol_version": {
+        "name": "RMControl protocol version"
+      },
+      "rmcontrol_bed_mode": {
+        "name": "RMControl bed mode"
+      },
+      "rmcontrol_light_timer": {
+        "name": "Light timer"
+      },
+      "rmcontrol_massage_head_strength": {
+        "name": "Head massage strength"
+      },
+      "rmcontrol_massage_foot_strength": {
+        "name": "Foot massage strength"
+      },
+      "rmcontrol_massage_mode": {
+        "name": "Massage mode"
+      },
+      "rmcontrol_massage_frequency": {
+        "name": "Massage frequency"
+      },
+      "rmcontrol_music_volume": {
+        "name": "Music volume"
+      },
+      "rmcontrol_fan_gear": {
+        "name": "Fan gear"
+      },
+      "rmcontrol_aroma_timer": {
+        "name": "Aromatherapy timer"
+      },
+      "rmcontrol_heating_temperature": {
+        "name": "Heating temperature"
+      },
+      "rmcontrol_anti_snore_count": {
+        "name": "Anti-snore intervention count"
+      },
+      "rmcontrol_anti_snore_time": {
+        "name": "Anti-snore intervention time"
+      },
+      "rmcontrol_alarm_record": {
+        "name": "Alarm record"
+      },
       "head_angle": {
         "name": "Head Angle"
       },
@@ -1943,6 +2010,18 @@
       }
     },
     "binary_sensor": {
+      "rmcontrol_anti_snore_enabled": {
+        "name": "Anti-snore intervention"
+      },
+      "rmcontrol_music_playing": {
+        "name": "Music playing"
+      },
+      "rmcontrol_lock": {
+        "name": "Bed lock"
+      },
+      "rmcontrol_rgb_motion": {
+        "name": "RGB motion"
+      },
       "ble_connection": {
         "name": "BLE Connection"
       },
@@ -2192,6 +2271,32 @@
     }
   },
   "services": {
+    "rmcontrol_alarm": {
+      "name": "RMControl alarm",
+      "description": "Configure a supported product's countdown or repeating alarm using its exact action catalog.",
+      "fields": {
+        "device_id": {"name": "Device"},
+        "operation": {"name": "Operation"},
+        "minutes": {"name": "Countdown minutes", "description": "Required for single alarms."},
+        "action": {"name": "Product action", "description": "Exact alarm action name from the selected product's diagnostics."},
+        "alarm_id": {"name": "Alarm slot", "description": "Required for repeat and delete. Updating a slot replaces that alarm."},
+        "time": {"name": "Local alarm time", "description": "Required for repeating alarms. Minute precision."},
+        "weekdays": {"name": "Repeat on", "description": "Required for repeating alarms."},
+        "side": {"name": "Side", "description": "Target side of a paired bed. A standalone bed uses its configured RMControl side."}
+      }
+    },
+    "rmcontrol_anti_snore": {
+      "name": "RMControl snore intervention",
+      "description": "Enable, configure or query supported automatic snore intervention, separate from the position preset.",
+      "fields": {
+        "device_id": {"name": "Device"},
+        "operation": {"name": "Operation"},
+        "enabled": {"name": "Enabled", "description": "Required for switch."},
+        "mode": {"name": "Configuration mode", "description": "Required for configure."},
+        "value": {"name": "Intervention value", "description": "Required for configure. Uses the selected mode's app value; physical interpretation is hardware unverified."},
+        "side": {"name": "Side"}
+      }
+    },
     "goto_preset": {
       "name": "Go to Preset",
       "description": "Move bed to a saved memory position.",

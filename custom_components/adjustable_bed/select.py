@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
+from functools import partial
 from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
@@ -18,6 +19,7 @@ from .const import (
 )
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
+from .entity_discovery import async_setup_dynamic_entities
 from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
 
 if TYPE_CHECKING:
@@ -144,20 +146,18 @@ async def async_setup_entry(
     """Set up Adjustable Bed select entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     if isinstance(coordinator, PairedBedCoordinator):
-        entities: list[SelectEntity] = []
         for side, child in coordinator.children.items():
-            entities.extend(
-                _select_entities_for(
-                    hass,
-                    cast(
-                        "AdjustableBedCoordinator",
-                        PairedSideProxy(coordinator, child, side),
-                    ),
-                )
+            proxy = cast("AdjustableBedCoordinator", PairedSideProxy(coordinator, child, side))
+            async_setup_dynamic_entities(
+                entry,
+                proxy,
+                async_add_entities,
+                partial(_select_entities_for, hass, proxy),
             )
-        async_add_entities(entities)
         return
-    async_add_entities(_select_entities_for(hass, coordinator))
+    async_setup_dynamic_entities(
+        entry, coordinator, async_add_entities, lambda: _select_entities_for(hass, coordinator)
+    )
 
 
 def _select_entities_for(
@@ -204,7 +204,7 @@ def _select_entities_for(
                         timer_options,
                     )
                 )
-        else:
+        elif not controller.light_timer_pending:
             # A reclassified entry (e.g. Richmat QRRM corrected to BedTech, #410)
             # can leave behind the old light-timer select; remove it so a dead
             # control doesn't linger in the UI and card.
