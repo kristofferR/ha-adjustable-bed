@@ -88,6 +88,7 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [Mattress Firm 900](docs/beds/mattressfirm.md) | iFlex / older Nordic UART bases |
 | ✅ [Nectar](docs/beds/nectar.md) | Nectar |
 | ✅ [Malouf/Lucid](docs/beds/malouf.md) | Malouf, Lucid (including some L600 bases), Structures |
+| 🧪 [Malouf/Lucid app profiles](docs/beds/malouf-app.md) | Malouf Base and Lucid Base, explicit app/model selection across five Bluetooth transports |
 | ✅ [BedTech](docs/beds/bedtech.md) | BedTech |
 | ✅ [Sleep Number](docs/beds/sleep_number.md) | Climate 360, FlexFit, FlexFit Smart, i8 / 360 FlexFit 2 |
 | ✅ [Sleepy's Elite](docs/beds/sleepys.md) | Sleepy's |

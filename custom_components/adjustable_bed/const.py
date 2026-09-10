@@ -51,6 +51,27 @@ class ConnectionProfileSettings:
 CONF_BED_TYPE: Final = "bed_type"
 CONF_PROTOCOL_VARIANT: Final = "protocol_variant"
 CONF_MOTOR_COUNT: Final = "motor_count"
+CONF_MALOUF_APP_PROFILE: Final = "malouf_app_profile"
+CONF_MALOUF_APP_MODEL: Final = "malouf_app_model"
+CONF_MALOUF_APP_TRANSPORT: Final = "malouf_app_transport"
+CONF_MALOUF_APP_SIDE: Final = "malouf_app_side"
+MALOUF_APP_PROFILES: Final = {"malouf": "Malouf Base", "lucid": "Lucid Base"}
+MALOUF_APP_MODELS: Final = {
+    "altitude": "Altitude", "e450": "E450", "e455": "E455", "forte": "Forte",
+    "good_life_base": "Good Life Base", "good_life_premier_base": "Good Life Premier Base",
+    "good_life_pro_base": "Good Life Pro Base", "l300": "L300", "l600": "L600",
+    "m455": "M455", "m550": "M550", "m555": "M555", "premium": "Premium",
+    "s655": "S655", "s750": "S750", "s755": "S755",
+}
+MALOUF_APP_TRANSPORTS: Final = {
+    "command32_legacy": "32-bit legacy (FFE5)",
+    "command32_middle": "32-bit middle (62741523)",
+    "command32_new": "32-bit new (Nordic UART)",
+    "opcode_legacy": "Single opcode (Nordic UART)",
+    "opcode_framed": "Framed opcode (FEE9)",
+}
+MALOUF_APP_SIDES: Final = {"primary": "Primary", "secondary": "Secondary"}
+
 CONF_MALOUF_LAYOUT: Final = "malouf_layout"
 CONF_MALOUF_MEMORY_SLOTS: Final = "malouf_memory_slots"
 CONF_HAS_MASSAGE: Final = "has_massage"
@@ -243,6 +264,7 @@ BED_TYPE_DEWERTOKIN: Final = "dewertokin"  # -> okin_handle
 BED_TYPE_OCTO: Final = "octo"
 BED_TYPE_MATTRESSFIRM: Final = "mattressfirm"  # -> okin_nordic
 BED_TYPE_NECTAR: Final = "nectar"  # -> okin_7byte
+BED_TYPE_MALOUF_APP: Final = "malouf_app"
 BED_TYPE_MALOUF_NEW_OKIN: Final = "malouf_new_okin"
 BED_TYPE_MALOUF_LEGACY_OKIN: Final = "malouf_legacy_okin"
 BED_TYPE_OKIN_FFE: Final = "okin_ffe"  # OKIN 13/15 series via FFE5 service (0xE6 prefix)
@@ -311,6 +333,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_NECTAR,
     # Malouf protocols
     BED_TYPE_MALOUF_NEW_OKIN,
+    BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     # OKIN FFE series
     BED_TYPE_OKIN_FFE,
@@ -414,6 +437,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_SUTA,
         BED_TYPE_TIMOTION_AHF,
         BED_TYPE_LOGICDATA,
+        BED_TYPE_MALOUF_APP,
     }
 )
 
@@ -2289,7 +2313,7 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
 # their entity creation and remove stale sensors from earlier profiles so they do
 # not remain "unknown" forever (#322, #344, #501).
 BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
-    {BED_TYPE_OKIN_CST, BED_TYPE_OKIN_RF_ECO_BT, BED_TYPE_SLEEP_NUMBER_MCR}
+    {BED_TYPE_OKIN_CST, BED_TYPE_OKIN_RF_ECO_BT, BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_MALOUF_APP}
 )
 
 # Bed types that report positions as 0-100 percentages (not angle degrees)

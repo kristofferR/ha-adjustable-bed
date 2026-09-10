@@ -29,6 +29,7 @@ from .const import (
     BED_TYPE_LIMOSS,
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA,
+    BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MATTRESSFIRM,
@@ -72,6 +73,10 @@ from .const import (
     CB1322_MANUFACTURER_MARKERS,
     CONF_KAIDI_PRODUCT_ID,
     CONF_KAIDI_SOFA_ACU_NO,
+    CONF_MALOUF_APP_MODEL,
+    CONF_MALOUF_APP_PROFILE,
+    CONF_MALOUF_APP_SIDE,
+    CONF_MALOUF_APP_TRANSPORT,
     DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
     DEWERTOKIN_RF_GATEWAY_MODEL,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
@@ -430,6 +435,21 @@ async def create_controller(
         # Pass the configured variant (remote code) to the controller
         _LOGGER.debug("Using Okin UUID variant: %s", variant)
         return OkinUuidController(coordinator, variant=variant)
+
+    if bed_type == BED_TYPE_MALOUF_APP:
+        from .beds.malouf_app import MaloufAppController
+
+        entry_data = coordinator.entry.data
+        side = entry_data.get(CONF_MALOUF_APP_SIDE, "primary")
+        if side not in {"primary", "secondary"}:
+            raise ValueError(f"Unknown Malouf app wire selector: {side}")
+        return MaloufAppController(
+            coordinator,
+            app_profile=entry_data[CONF_MALOUF_APP_PROFILE],
+            model=entry_data[CONF_MALOUF_APP_MODEL],
+            transport=entry_data[CONF_MALOUF_APP_TRANSPORT],
+            primary=side == "primary",
+        )
 
     if bed_type == BED_TYPE_KAIDI:
         from .beds.kaidi import KaidiController

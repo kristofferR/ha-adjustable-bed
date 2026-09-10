@@ -2,6 +2,10 @@
 
 **Status:** ✅ Tested
 
+For the complete model-specific controls from Malouf Base 2.4.3 and Lucid
+Base 1.3.3, see the separate [app profile setup](malouf-app.md). The setup
+described here retains its existing configurable layout and memory settings.
+
 > Protocol re-verified 2026-07-10 against a fresh jadx decompile of Lucid Base
 > v1.3.3 (`com.lucid.bedbase`): frame formats, checksum, command values,
 > preset repeat behaviour, and timing all match the shipped controllers.

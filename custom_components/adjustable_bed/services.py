@@ -30,18 +30,22 @@ from .const import (
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LINAK,
+    BED_TYPE_MALOUF_APP,
     BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
+    CONF_MALOUF_APP_PROFILE,
     CONF_MOTOR_COUNT,
     CONF_PROTOCOL_VARIANT,
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
+    MALOUF_APP_PROFILES,
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
     bed_type_has_position_feedback,
 )
 from .coordinator import AdjustableBedCoordinator
+from .malouf_app_protocol import ROUTABLE_ACTIONS, RoutedAction, route_child_action
 from .paired_coordinator import PairedBedCoordinator, SingleAddressPairedCoordinator
 from .pairing import is_paired, pair_member_addresses
 
@@ -70,6 +74,8 @@ SERVICE_LINAK_RENAME = "linak_rename"
 SERVICE_LINAK_SET_ALARM = "linak_set_alarm"
 SERVICE_SOLACE_AUDIO = "solace_audio"
 SERVICE_SOLACE_SET_ALARM = "solace_set_alarm"
+SERVICE_MALOUF_SET_ALARM = "malouf_set_alarm"
+SERVICE_MALOUF_APP_ACTION = "malouf_app_action"
 
 # Service call attributes
 ATTR_PRESET = "preset"
@@ -102,6 +108,9 @@ ATTR_MASSAGE = "massage"
 ATTR_SOUND = "sound"
 ATTR_TRACK = "track"
 ATTR_VOLUME = "volume"
+ATTR_ROUTE = "route"
+ATTR_ACTIVE_SIDE = "active_side"
+ATTR_MOTOR_SWAPPED = "motor_swapped"
 
 LINAK_MOTOR_OPTIONS = ("base", "feet", "head", "legs", "back")
 LINAK_DIRECTION_OPTIONS = ("up", "down")
@@ -132,6 +141,9 @@ SOLACE_ALARM_SOUNDS = (
     "music_3",
     "music_4",
     "music_5",
+)
+MALOUF_ALARM_PRESETS = (
+    "zero_g", "lounge", "tv", "anti_snore", "memory_1", "memory_2", "massage", "flat"
 )
 
 TIMED_MOVE_MOTOR_OPTIONS = (
@@ -1359,6 +1371,155 @@ async def handle_solace_set_alarm(call: ServiceCall) -> None:
         raise
 
 
+async def handle_malouf_set_alarm(call: ServiceCall) -> None:
+    """Replace or clear the selected Malouf/Lucid app controller's clock alarm."""
+    enabled = call.data[ATTR_ENABLED]
+    alarm_time = call.data.get(ATTR_TIME)
+    preset = call.data.get(ATTR_PRESET, "")
+    if enabled and (alarm_time is None or not preset):
+        raise ServiceValidationError("Enabling an alarm requires time and preset")
+    if alarm_time is not None and (alarm_time.second or alarm_time.microsecond):
+        raise ServiceValidationError("Alarm time must use whole minutes")
+    weekdays = tuple(SOLACE_WEEKDAY_OPTIONS.index(day) for day in call.data[ATTR_WEEKDAYS])
+    targets, missing = _resolve_sided_targets(
+        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    for coordinator, side in targets:
+        for target in _command_targets(coordinator, side):
+            if target.bed_type != BED_TYPE_MALOUF_APP:
+                raise ServiceValidationError(
+                    f"Device '{target.name}' is not a Malouf/Lucid app controller"
+                )
+    preflighted = await _preflight_capability(
+        targets, "supports_clock_alarm", "Malouf/Lucid clock alarms"
+    )
+    try:
+        if enabled:
+            for coordinator, side in targets:
+                for target in _command_targets(coordinator, side):
+                    controller = await _validation_controller(coordinator, target, preflighted)
+                    if preset not in controller.clock_alarm_presets:
+                        raise ServiceValidationError(
+                            f"Device '{target.name}' does not support alarm preset '{preset}'"
+                        )
+
+        async def configure(controller: BedController) -> None:
+            await controller.configure_clock_alarm(
+                enabled=enabled,
+                weekdays=weekdays,
+                hour=alarm_time.hour if alarm_time is not None else 0,
+                minute=alarm_time.minute if alarm_time is not None else 0,
+                preset=preset,
+            )
+
+        for coordinator, side in targets:
+            await _execute_sided(
+                coordinator, side, configure, cancel_running=False, resource="configuration"
+            )
+    except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
+async def handle_malouf_app_action(call: ServiceCall) -> None:
+    """Apply explicit app side routing through each existing device command queue."""
+    mode = call.data[ATTR_ROUTE]
+    active_side = call.data[ATTR_ACTIVE_SIDE]
+    motor_swapped = call.data[ATTR_MOTOR_SWAPPED]
+    if motor_swapped and mode != "split_head_native":
+        raise ServiceValidationError("Motor swapping requires native split-head routing")
+    configuration = {
+        "standard": "standard",
+        "split_head_dual": "dual_base",
+        "split_head_native": "split_base",
+    }[mode]
+    targets: list[BedTarget] = []
+    for device_id in call.data[CONF_DEVICE_ID]:
+        resolved = _resolve_sided_target(call.hass, device_id)
+        if resolved is None:
+            raise _missing_device_error(device_id)
+        coordinator, inferred_side = resolved
+        if inferred_side is not None:
+            raise ServiceValidationError("Select the paired parent device for app side routing")
+        if not any(coordinator is existing for existing in targets):
+            targets.append(coordinator)
+
+    plans: list[tuple[BedTarget, str, dict[AdjustableBedCoordinator, RoutedAction]]] = []
+    preflighted: PreflightedSides = []
+    try:
+        for coordinator in targets:
+            paired = isinstance(coordinator, PairedBedCoordinator)
+            if mode == "split_head_dual" and not paired:
+                raise ServiceValidationError("Dual-base routing requires a paired parent device")
+            if isinstance(coordinator, PairedBedCoordinator):
+                children = list(coordinator.children.items())
+            else:
+                children = [("none", coordinator)]
+            apps: set[str] = set()
+            for _, child in children:
+                if child.bed_type != BED_TYPE_MALOUF_APP:
+                    raise ServiceValidationError(
+                        f"Device '{child.name}' is not a Malouf/Lucid app controller"
+                    )
+                app = child.entry.data.get(CONF_MALOUF_APP_PROFILE)
+                if not isinstance(app, str) or app not in MALOUF_APP_PROFILES:
+                    raise ServiceValidationError(f"Device '{child.name}' has no valid app profile")
+                apps.add(app)
+            if len(apps) != 1:
+                raise ServiceValidationError("App routing requires the same app profile on both sides")
+            app = next(iter(apps))
+            actions: dict[AdjustableBedCoordinator, RoutedAction] = {}
+            sides: list[str] = []
+            for child_side, child in children:
+                routed = route_child_action(
+                    app,
+                    call.data[ATTR_ACTION],
+                    bed_type="single_bed" if mode == "standard" else "split_head",
+                    configuration=configuration,
+                    active_side="all" if active_side == SIDE_BOTH else active_side,
+                    child_side=child_side,
+                    motor_swapped=motor_swapped,
+                )
+                if routed is None:
+                    continue
+                controller = await _validation_controller(coordinator, child, preflighted)
+                if routed.action in controller.app_action_noops:
+                    continue
+                if routed.action not in controller.app_action_options:
+                    raise ServiceValidationError(
+                        f"Device '{child.name}' does not support app action '{routed.action}'"
+                    )
+                actions[child] = routed
+                sides.append(child_side)
+            if actions:
+                side = SIDE_BOTH if not paired or len(sides) == 2 else sides[0]
+                plans.append((coordinator, side, actions))
+
+        for coordinator, side, actions in plans:
+            async def operate(
+                child: AdjustableBedCoordinator,
+                child_actions: dict[AdjustableBedCoordinator, RoutedAction] = actions,
+            ) -> None:
+                routed = child_actions[child]
+
+                async def execute(controller: BedController) -> None:
+                    await controller.execute_app_action(routed.action, primary=routed.primary)
+
+                await child.async_execute_controller_command(execute, cancel_running=True)
+
+            if isinstance(coordinator, PairedBedCoordinator):
+                await coordinator.async_run_child_operation(
+                    SERVICE_MALOUF_APP_ACTION, operate, side=side, cancel_running=True
+                )
+            else:
+                await operate(coordinator)
+    except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
 async def handle_generate_support_bundle(call: ServiceCall) -> None:
     """Handle generate_support_bundle service call."""
     hass = call.hass
@@ -1794,6 +1955,41 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 vol.Optional(ATTR_MASSAGE, default=False): cv.boolean,
                 vol.Optional(ATTR_SOUND, default="alarm"): vol.In(SOLACE_ALARM_SOUNDS),
                 **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_MALOUF_SET_ALARM,
+        handle_malouf_set_alarm,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_ENABLED): cv.boolean,
+                vol.Optional(ATTR_TIME): cv.time,
+                vol.Optional(ATTR_WEEKDAYS, default=[]): vol.All(
+                    cv.ensure_list, [vol.In(SOLACE_WEEKDAY_OPTIONS)]
+                ),
+                vol.Optional(ATTR_PRESET): vol.In(MALOUF_ALARM_PRESETS),
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_MALOUF_APP_ACTION,
+        handle_malouf_app_action,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Optional(ATTR_ROUTE, default="standard"): vol.In(
+                    ("standard", "split_head_dual", "split_head_native")
+                ),
+                vol.Optional(ATTR_ACTIVE_SIDE, default=SIDE_BOTH): vol.In(
+                    (SIDE_LEFT, SIDE_RIGHT, SIDE_BOTH, "none")
+                ),
+                vol.Optional(ATTR_MOTOR_SWAPPED, default=False): cv.boolean,
+                vol.Required(ATTR_ACTION): vol.In(ROUTABLE_ACTIONS),
             }
         ),
     )

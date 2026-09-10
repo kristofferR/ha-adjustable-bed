@@ -146,6 +146,14 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         required_capability="supports_preset_tv",
     ),
     AdjustableBedButtonEntityDescription(
+        key="preset_read",
+        translation_key="preset_read",
+        icon="mdi:book-open-variant",
+        press_fn=lambda ctrl: ctrl.preset_read(),
+        cancel_movement=True,
+        required_capability="supports_preset_read",
+    ),
+    AdjustableBedButtonEntityDescription(
         key="preset_lounge",
         translation_key="preset_lounge",
         icon="mdi:seat-recline-normal",
@@ -472,6 +480,15 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_mode_step(),
         required_capability="supports_massage_mode_step_control",
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="massage_timer_cycle",
+        translation_key="massage_timer_step",
+        icon="mdi:timer-outline",
+        requires_massage=True,
+        cancel_movement=True,
+        press_fn=lambda ctrl: ctrl.massage_timer_cycle(),
+        required_capability="supports_massage_timer_cycle_control",
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_wave_next",

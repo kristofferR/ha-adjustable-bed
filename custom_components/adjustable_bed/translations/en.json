@@ -399,6 +399,22 @@
           "pair_selection": "Left and Right sides",
           "name": "Name for the combined bed"
         }
+      },
+      "malouf_app": {
+        "title": "Malouf / Lucid app configuration",
+        "description": "Select the app, model and command transport independently. Existing Malouf protocol entries retain their current settings.",
+        "data": {
+          "malouf_app_profile": "Bed app",
+          "malouf_app_model": "Model profile",
+          "malouf_app_transport": "Command transport",
+          "malouf_app_side": "Wire side selector"
+        },
+        "data_description": {
+          "malouf_app_profile": "Choose the app used with this bed. The two apps differ in some actions.",
+          "malouf_app_model": "Choose the model configured in the app. This controls available actuators, presets, memory and accessories; it does not choose the command transport.",
+          "malouf_app_transport": "Choose the verified command format and GATT endpoint. Nordic UART alone cannot distinguish the 32-bit and single-opcode transports.",
+          "malouf_app_side": "Primary or secondary selector for supported framed-opcode actions. This does not create two independently addressable bed sides."
+        }
       }
     },
     "progress": {
@@ -445,7 +461,9 @@
       "auto_detect_failed": "Couldn't identify this bed automatically. Pick a protocol from the list, or choose \"Diagnostic (unknown bed)\" to capture data for support.",
       "not_advertising": "This bed is not currently advertising, so no connection was attempted. Wake it, put it into pairing mode, or move it closer to a Bluetooth adapter or proxy, then try again.",
       "bond_verification_failed": "The bed connected but the link is still unauthenticated, so the bond did not form. Put the bed back into pairing mode and try again.",
-      "bond_removal_failed": "The existing Bluetooth bond could not be removed, so pairing was not attempted."
+      "bond_removal_failed": "The existing Bluetooth bond could not be removed, so pairing was not attempted.",
+      "malouf_app_required": "Choose a supported app, model and command transport.",
+      "malouf_app_invalid_side": "Choose the primary or secondary wire selector."
     }
   },
   "options": {
@@ -486,7 +504,11 @@
           "octo_pin": "Octo PIN",
           "jensen_pin": "Jensen PIN",
           "back_max_angle": "Maximum back angle (degrees)",
-          "legs_max_angle": "Maximum legs angle (degrees)"
+          "legs_max_angle": "Maximum legs angle (degrees)",
+          "malouf_app_profile": "Bed app",
+          "malouf_app_model": "Model profile",
+          "malouf_app_transport": "Command transport",
+          "malouf_app_side": "Wire side selector"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -509,7 +531,11 @@
           "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection. Leave empty if your bed doesn't require a PIN.",
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
           "back_max_angle": "Maximum angle for back/head motors. Adjust if position readings don't match your bed's actual range.",
-          "legs_max_angle": "Maximum angle for legs/feet motors. Adjust if position readings don't match your bed's actual range."
+          "legs_max_angle": "Maximum angle for legs/feet motors. Adjust if position readings don't match your bed's actual range.",
+          "malouf_app_profile": "Choose the app used with this bed. The two apps differ in some actions.",
+          "malouf_app_model": "Choose the model configured in the app. This controls available actuators, presets, memory and accessories; it does not choose the command transport.",
+          "malouf_app_transport": "Choose the verified command format and GATT endpoint. Nordic UART alone cannot distinguish the 32-bit and single-opcode transports.",
+          "malouf_app_side": "Primary or secondary selector for supported framed-opcode actions. This does not create two independently addressable bed sides."
         }
       },
       "remove_bond": {
@@ -563,7 +589,10 @@
       "invalid_motor_count_for_bed_type": "One motor is supported only for Standard OCTO TV lift controllers.",
       "invalid_angle": "Angle must be a positive number between 0 and 180 degrees.",
       "octo_tv_lift_pairing_unsupported": "One-motor OCTO TV/bed lifts must remain standalone and cannot be paired as bed sides.",
-      "single_address_pairing_unsupported": "This CBNew protocol has no A/B side selector and cannot safely expose paired-side controls."
+      "single_address_pairing_unsupported": "This CBNew protocol has no A/B side selector and cannot safely expose paired-side controls.",
+      "malouf_app_required": "Choose a supported app, model and command transport.",
+      "malouf_app_invalid_side": "Choose the primary or secondary wire selector.",
+      "malouf_app_unpair_first": "Unpair the beds and configure each side separately before choosing the Malouf / Lucid app route."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -1415,6 +1444,18 @@
       },
       "lumbar_down_both": {
         "name": "Both sides: Lumbar Down"
+      },
+      "preset_read": {
+        "name": "Read"
+      },
+      "preset_read_left": {
+        "name": "Left: Read"
+      },
+      "preset_read_right": {
+        "name": "Right: Read"
+      },
+      "preset_read_both": {
+        "name": "Both sides: Read"
       }
     },
     "cover": {
@@ -2121,6 +2162,35 @@
         "duration_ms": {
           "name": "Duration (ms)",
           "description": "How long to move the motor in milliseconds."
+        }
+      }
+    },
+    "malouf_set_alarm": {
+      "name": "Set Malouf/Lucid clock alarm",
+      "description": "Replace the stored alarm and synchronize the controller clock, or clear the alarm when disabled.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A Malouf/Lucid app controller using an alarm-capable Okin transport."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Turn off to clear the stored alarm without supplying time or preset."
+        },
+        "time": {
+          "name": "Time",
+          "description": "Required when enabled. Local alarm time in whole minutes, with seconds set to zero."
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Repeat on selected weekdays. Leave empty for the next occurrence of the selected time."
+        },
+        "preset": {
+          "name": "Alarm preset",
+          "description": "Required when enabled. These native alarm actions include restored app alarms and are independent of the model's ordinary preset and memory buttons."
+        },
+        "side": {
+          "name": "Side"
         }
       }
     }

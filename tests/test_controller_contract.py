@@ -89,6 +89,11 @@ class _FactoryCoordinator(SimpleNamespace):
         super().__init__(
             hass=SimpleNamespace(async_add_import_executor_job=_RecordingImportExecutor()),
             client=None,
+            entry=SimpleNamespace(data={
+                const.CONF_MALOUF_APP_PROFILE: "malouf",
+                const.CONF_MALOUF_APP_MODEL: "l600",
+                const.CONF_MALOUF_APP_TRANSPORT: "command32_new",
+            }),
             cancel_command=asyncio.Event(),
             motor_pulse_count=10,
             motor_pulse_delay_ms=100,

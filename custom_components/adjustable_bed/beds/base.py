@@ -980,6 +980,11 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_preset_read(self) -> bool:
+        """Return True if the app exposes a distinct reading preset."""
+        return False
+
+    @property
     def supports_preset_lounge(self) -> bool:
         """Return True if bed supports lounge preset."""
         return False
@@ -1245,6 +1250,26 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_clock_alarm(self) -> bool:
+        """Return whether a clock alarm can be configured."""
+        return False
+
+    @property
+    def clock_alarm_presets(self) -> tuple[str, ...]:
+        """Return the presets accepted when configuring a clock alarm."""
+        return ()
+
+    @property
+    def app_action_options(self) -> tuple[str, ...]:
+        """Return actions accepted by an app-specific routed command service."""
+        return ()
+
+    @property
+    def app_action_noops(self) -> tuple[str, ...]:
+        """Return proven app actions that have no transport match on this controller."""
+        return ()
+
+    @property
     def supports_simultaneous_movement(self) -> bool:
         """Return True if two sections can be driven by one protocol command."""
         return False
@@ -1328,6 +1353,11 @@ class BedController(ABC):
     def supports_massage_mode_step_control(self) -> bool:
         """Return True if the controller exposes a massage mode-cycle command."""
         return type(self).massage_mode_step is not BedController.massage_mode_step
+
+    @property
+    def supports_massage_timer_cycle_control(self) -> bool:
+        """Return True if massage duration can be cycled independently of its mode."""
+        return type(self).massage_timer_cycle is not BedController.massage_timer_cycle
 
     @property
     def massage_mode_step_is_timer(self) -> bool:
@@ -1829,6 +1859,10 @@ class BedController(ABC):
         """
         raise NotImplementedError("TV preset not supported on this bed")
 
+    async def preset_read(self) -> None:
+        """Move to the app's distinct reading preset."""
+        raise NotImplementedError("Reading preset not supported on this bed")
+
     async def preset_both_up(self) -> None:
         """Move both head and legs up simultaneously.
 
@@ -1926,6 +1960,24 @@ class BedController(ABC):
     ) -> None:
         """Program a protocol-supported wake alarm."""
         raise NotImplementedError("Alarm programming not supported on this bed")
+
+    async def configure_clock_alarm(
+        self,
+        *,
+        enabled: bool,
+        weekdays: Sequence[int],
+        hour: int,
+        minute: int,
+        preset: str,
+        head_level: int = 0,
+        foot_level: int = 0,
+    ) -> None:
+        """Configure a clock alarm with Monday numbered zero."""
+        raise NotImplementedError("Clock alarm not supported on this bed")
+
+    async def execute_app_action(self, action: str, *, primary: bool | None = None) -> None:
+        """Execute an app action with an optional per-command native side selection."""
+        raise NotImplementedError("Routed app actions not supported on this bed")
 
     async def move_simultaneously(
         self,
@@ -2121,6 +2173,10 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't support massage modes
         """
         raise NotImplementedError("Massage modes not supported on this bed")
+
+    async def massage_timer_cycle(self) -> None:
+        """Cycle massage duration independently of its pattern or mode."""
+        raise NotImplementedError("Massage timer cycling not supported on this bed")
 
     async def massage_wave_next(self) -> None:
         """Select the next massage wave pattern."""
