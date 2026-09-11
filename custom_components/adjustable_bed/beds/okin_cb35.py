@@ -17,6 +17,13 @@ Uses the same 7-byte command frame as Okin Nordic:
 Identical motor/preset/light/massage command bytes as Okin Nordic, but:
 - Init sequence is only the wake command (5A 0B 00 A5), no Mattress Firm handshake
 - Write-without-response required (Nordic uses write-with-response)
+- Presets are a tap (key x2 at 300 ms) released with STOP x3 at 300 ms. The
+  generic Okin preset path (key x100 at 300 ms, one STOP) leaves this bed
+  armed for ~20 s before it moves; the triple STOP is what commits the move.
+- A preset in flight ignores STOP entirely. Any motor key interrupts it, the
+  same as pressing a button on the handset, so stop_all taps a motor key
+  first while a preset may still be moving.
+  (Verified on a Sealy Element, 2026-09)
 - Additional motors: neck (0x0A/0x0B), hips (0x08/0x09), head+foot simultaneous (0x0C/0x0D)
 - Additional presets: TV/PC, Read, Inverse, Work, Incline, Extension
 - Light brightness and color control
@@ -134,6 +141,61 @@ class OkinCB35Controller(Okin7ByteController):
             cancel_event=effective_cancel,
             response=self._config.write_with_response,
         )
+
+    # ─── Presets and stop ─────────────────────────────────────────────
+    # The CB35 protocol doc records the app's release as STOP sent three times
+    # at 300 ms. On hardware a preset key only arms the bed; the triple STOP is
+    # what commits it. With the generic single STOP the bed sat armed for ~20 s
+    # before moving (Sealy Element, 2026-09). A preset already driving ignores
+    # STOP but is interrupted by any motor key, as on the handset.
+
+    _PRESET_TAP_REPEATS = 2
+    _PRESET_TAP_DELAY_MS = 300
+    _STOP_REPEATS = 3
+    _STOP_DELAY_MS = 300
+    # Longer than any preset's full travel on the tested bed (~30 s).
+    _PRESET_INTERRUPT_WINDOW_S = 45.0
+
+    _preset_started_at: float = 0.0
+
+    async def _send_stop(self) -> None:
+        """Send STOP x3 with a fresh cancel event so a pending cancel cannot suppress it."""
+        await self.write_command(
+            _cmd(0x0F),
+            repeat_count=self._STOP_REPEATS,
+            repeat_delay_ms=self._STOP_DELAY_MS,
+            cancel_event=asyncio.Event(),
+        )
+
+    async def _preset_with_stop(
+        self, command: bytes, repeat_count: int = 2, repeat_delay_ms: int = 300
+    ) -> None:
+        """Tap the preset key, then release it with STOP x3 to commit the move."""
+        self._preset_started_at = asyncio.get_running_loop().time()
+        try:
+            await self.write_command(
+                command,
+                repeat_count=self._PRESET_TAP_REPEATS,
+                repeat_delay_ms=self._PRESET_TAP_DELAY_MS,
+            )
+        finally:
+            try:
+                await self._send_stop()
+            except (BleakError, ConnectionError):
+                _LOGGER.debug("Failed to send preset release", exc_info=True)
+
+    async def stop_all(self) -> None:
+        """Stop all movement.
+
+        A preset that is still driving ignores STOP, so tap a motor key first
+        while one may be in flight. Outside that window send STOP alone so an
+        idle stop does not nudge the bed.
+        """
+        loop = asyncio.get_running_loop()
+        if loop.time() - self._preset_started_at < self._PRESET_INTERRUPT_WINDOW_S:
+            self._preset_started_at = 0.0
+            await self.write_command(_cmd(0x00), repeat_count=1, cancel_event=asyncio.Event())
+        await self._send_stop()
 
     # ─── Extra capability properties ──────────────────────────────────
 

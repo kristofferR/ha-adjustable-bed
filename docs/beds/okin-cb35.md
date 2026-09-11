@@ -1,6 +1,6 @@
 # DewertOkin CB35 Star
 
-**Status:** Needs testing
+**Status:** Tested (Sealy Element, ESPHome Bluetooth proxy, 2026-09). Motors, Flat, Memory 1, Zero G, Stop and the under-bed light confirmed on hardware.
 **Protocol version:** CB.35.22.01
 **Ref:** [#310](https://github.com/kristofferR/ha-adjustable-bed/issues/310)
 
@@ -120,6 +120,20 @@ Only a wake command is needed:
 ### Timing
 
 Motor commands repeat every 300ms while held. Stop and massage commands send 3 times (initial + 2 repeats at 300ms).
+
+### Presets and Stop (hardware behaviour)
+
+A preset key on its own only *arms* the bed. The STOP x3 release is what commits the move:
+
+| Sent | Result on the bed |
+|------|-------------------|
+| Preset key x100 at 300ms, then one STOP (generic Okin path) | Bed sits armed for ~20s, then moves |
+| Preset key once, no STOP | Bed sits armed until the link drops, then moves |
+| Preset key x2 at 300ms, then STOP x3 at 300ms | Bed starts within a second (implemented) |
+
+A preset that is already driving **ignores STOP** (three STOP x3 bursts during a Flat had no effect). Any motor key interrupts it, the same as pressing a button on the handset, so `stop_all` sends one motor-key packet before STOP while a preset may still be in flight. Motor holds stop with STOP alone.
+
+The bed accepts only one BLE connection. While the Sealy app is open on a phone (including in the background) the bed stops advertising and the integration cannot connect.
 
 ## Relationship to Other Protocols
 

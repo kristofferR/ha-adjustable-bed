@@ -99,3 +99,79 @@ class TestOkinCB35Controller:
         payloads = [call.args[1] for call in mock_cb35_client.write_gatt_char.call_args_list]
         assert _cmd(0x00) not in payloads
         assert payloads[-1] == _cmd(0x0F)
+
+    async def test_preset_is_tap_then_triple_stop(
+        self,
+        hass: HomeAssistant,
+        mock_okin_cb35_config_entry: MockConfigEntry,
+        mock_cb35_client: AsyncMock,
+    ) -> None:
+        """A preset is the key x2 followed by STOP x3; the STOP burst commits the move."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_cb35_config_entry)
+        coordinator._client = mock_cb35_client
+        controller = OkinCB35Controller(coordinator)
+        controller._initialized = True
+
+        with patch("asyncio.sleep", new=AsyncMock()):
+            await controller.preset_flat()
+
+        payloads = [call.args[1] for call in mock_cb35_client.write_gatt_char.call_args_list]
+        assert payloads == [_cmd(0x10)] * 2 + [_cmd(0x0F)] * 3
+
+    async def test_preset_release_survives_cancel(
+        self,
+        hass: HomeAssistant,
+        mock_okin_cb35_config_entry: MockConfigEntry,
+        mock_cb35_client: AsyncMock,
+    ) -> None:
+        """A cancelled preset still sends its STOP x3 release."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_cb35_config_entry)
+        coordinator._client = mock_cb35_client
+        controller = OkinCB35Controller(coordinator)
+        controller._initialized = True
+        coordinator.cancel_command.set()
+
+        with patch("asyncio.sleep", new=AsyncMock()):
+            await controller.preset_memory(1)
+
+        payloads = [call.args[1] for call in mock_cb35_client.write_gatt_char.call_args_list]
+        assert _cmd(0x1A) not in payloads
+        assert payloads == [_cmd(0x0F)] * 3
+
+    async def test_stop_all_interrupts_running_preset_with_motor_tap(
+        self,
+        hass: HomeAssistant,
+        mock_okin_cb35_config_entry: MockConfigEntry,
+        mock_cb35_client: AsyncMock,
+    ) -> None:
+        """While a preset may be driving, stop_all taps a motor key before STOP x3."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_cb35_config_entry)
+        coordinator._client = mock_cb35_client
+        controller = OkinCB35Controller(coordinator)
+        controller._initialized = True
+
+        with patch("asyncio.sleep", new=AsyncMock()):
+            await controller.preset_flat()
+            mock_cb35_client.write_gatt_char.reset_mock()
+            await controller.stop_all()
+
+        payloads = [call.args[1] for call in mock_cb35_client.write_gatt_char.call_args_list]
+        assert payloads == [_cmd(0x00)] + [_cmd(0x0F)] * 3
+
+    async def test_stop_all_is_silent_when_idle(
+        self,
+        hass: HomeAssistant,
+        mock_okin_cb35_config_entry: MockConfigEntry,
+        mock_cb35_client: AsyncMock,
+    ) -> None:
+        """With no recent preset, stop_all sends STOP x3 only, so an idle stop does not nudge the bed."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_cb35_config_entry)
+        coordinator._client = mock_cb35_client
+        controller = OkinCB35Controller(coordinator)
+        controller._initialized = True
+
+        with patch("asyncio.sleep", new=AsyncMock()):
+            await controller.stop_all()
+
+        payloads = [call.args[1] for call in mock_cb35_client.write_gatt_char.call_args_list]
+        assert payloads == [_cmd(0x0F)] * 3
