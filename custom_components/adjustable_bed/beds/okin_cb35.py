@@ -97,6 +97,7 @@ class OkinCB35Controller(Okin7ByteController):
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the CB35 controller."""
         super().__init__(coordinator, config=OKIN_CB35_CONFIG)
+        self._preset_started_at: float | None = None
 
     # ─── Write override: CB35 requires write-without-response ─────────
 
@@ -156,8 +157,6 @@ class OkinCB35Controller(Okin7ByteController):
     # Longer than any preset's full travel on the tested bed (~30 s).
     _PRESET_INTERRUPT_WINDOW_S = 45.0
 
-    _preset_started_at: float = 0.0
-
     async def _send_stop(self) -> None:
         """Send STOP x3 with a fresh cancel event so a pending cancel cannot suppress it."""
         await self.write_command(
@@ -171,18 +170,40 @@ class OkinCB35Controller(Okin7ByteController):
         self, command: bytes, repeat_count: int = 2, repeat_delay_ms: int = 300
     ) -> None:
         """Tap the preset key, then release it with STOP x3 to commit the move."""
-        self._preset_started_at = asyncio.get_running_loop().time()
+        command_failed = False
         try:
+            if self._coordinator.cancel_command.is_set():
+                return
+            self._preset_started_at = asyncio.get_running_loop().time()
             await self.write_command(
                 command,
                 repeat_count=self._PRESET_TAP_REPEATS,
                 repeat_delay_ms=self._PRESET_TAP_DELAY_MS,
             )
+        except BaseException:
+            command_failed = True
+            raise
         finally:
             try:
                 await self._send_stop()
-            except (BleakError, ConnectionError):
+            except BleakError, ConnectionError:
                 _LOGGER.debug("Failed to send preset release", exc_info=True)
+                if not command_failed:
+                    raise
+
+    async def _move_with_stop(self, command: bytes) -> None:
+        """Run a motor command and clear any preset it successfully interrupts."""
+        command_was_cancelled = self._coordinator.cancel_command.is_set()
+        try:
+            pulse_count, pulse_delay = self.motor_pulse_settings()
+            await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
+            if not command_was_cancelled:
+                self._preset_started_at = None
+        finally:
+            try:
+                await self._send_stop()
+            except BleakError, ConnectionError:
+                _LOGGER.debug("Failed to send STOP during cleanup", exc_info=True)
 
     async def stop_all(self) -> None:
         """Stop all movement.
@@ -191,11 +212,28 @@ class OkinCB35Controller(Okin7ByteController):
         while one may be in flight. Outside that window send STOP alone so an
         idle stop does not nudge the bed.
         """
-        loop = asyncio.get_running_loop()
-        if loop.time() - self._preset_started_at < self._PRESET_INTERRUPT_WINDOW_S:
-            self._preset_started_at = 0.0
+        preset_started_at = self._preset_started_at
+        if preset_started_at is None:
+            await self._send_stop()
+            return
+
+        if asyncio.get_running_loop().time() - preset_started_at >= self._PRESET_INTERRUPT_WINDOW_S:
+            self._preset_started_at = None
+            await self._send_stop()
+            return
+
+        interrupt_succeeded = False
+        try:
             await self.write_command(_cmd(0x00), repeat_count=1, cancel_event=asyncio.Event())
-        await self._send_stop()
+            interrupt_succeeded = True
+            self._preset_started_at = None
+        finally:
+            try:
+                await self._send_stop()
+            except BleakError, ConnectionError:
+                _LOGGER.debug("Failed to send STOP after preset interrupt", exc_info=True)
+                if interrupt_succeeded:
+                    raise
 
     # ─── Extra capability properties ──────────────────────────────────
 
@@ -327,9 +365,7 @@ class OkinCB35Controller(Okin7ByteController):
 
     # ─── Notification handling ────────────────────────────────────────
 
-    def _on_notification(
-        self, characteristic: BleakGATTCharacteristic, data: bytearray
-    ) -> None:
+    def _on_notification(self, characteristic: BleakGATTCharacteristic, data: bytearray) -> None:
         """Handle BLE notification data from the bed."""
         raw = bytes(data)
         self.forward_raw_notification(characteristic.uuid, raw)
