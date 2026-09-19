@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
@@ -107,6 +108,8 @@ class OkinCB35Controller(Okin7ByteController):
         repeat_count: int = 1,
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
+        *,
+        on_write: Callable[[], None] | None = None,
     ) -> None:
         """Write a command using write-without-response."""
         if self.client is None or not self.client.is_connected:
@@ -141,6 +144,7 @@ class OkinCB35Controller(Okin7ByteController):
             repeat_delay_ms=repeat_delay_ms,
             cancel_event=effective_cancel,
             response=self._config.write_with_response,
+            on_write=on_write,
         )
 
     # ─── Presets and stop ─────────────────────────────────────────────
@@ -156,6 +160,14 @@ class OkinCB35Controller(Okin7ByteController):
     _STOP_DELAY_MS = 300
     # Longer than any preset's full travel on the tested bed (~30 s).
     _PRESET_INTERRUPT_WINDOW_S = 45.0
+
+    def _record_preset_write(self) -> None:
+        """Remember a transmitted preset, including partially cancelled taps."""
+        self._preset_started_at = asyncio.get_running_loop().time()
+
+    def _record_motor_write(self) -> None:
+        """A transmitted motor key supersedes the previous preset."""
+        self._preset_started_at = None
 
     async def _send_stop(self) -> None:
         """Send STOP x3 with a fresh cancel event so a pending cancel cannot suppress it."""
@@ -174,11 +186,11 @@ class OkinCB35Controller(Okin7ByteController):
         try:
             if self._coordinator.cancel_command.is_set():
                 return
-            self._preset_started_at = asyncio.get_running_loop().time()
             await self.write_command(
                 command,
                 repeat_count=self._PRESET_TAP_REPEATS,
                 repeat_delay_ms=self._PRESET_TAP_DELAY_MS,
+                on_write=self._record_preset_write,
             )
         except BaseException:
             command_failed = True
@@ -193,12 +205,14 @@ class OkinCB35Controller(Okin7ByteController):
 
     async def _move_with_stop(self, command: bytes) -> None:
         """Run a motor command and clear any preset it successfully interrupts."""
-        command_was_cancelled = self._coordinator.cancel_command.is_set()
         try:
             pulse_count, pulse_delay = self.motor_pulse_settings()
-            await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
-            if not command_was_cancelled:
-                self._preset_started_at = None
+            await self.write_command(
+                command,
+                repeat_count=pulse_count,
+                repeat_delay_ms=pulse_delay,
+                on_write=self._record_motor_write,
+            )
         finally:
             try:
                 await self._send_stop()

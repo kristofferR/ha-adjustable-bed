@@ -421,6 +421,7 @@ class BedController(ABC):
         response: bool = True,
         log_errors: bool = True,
         wall_clock_pacing: bool = False,
+        on_write: Callable[[], None] | None = None,
     ) -> None:
         """Write a command to a GATT characteristic with retry support.
 
@@ -446,6 +447,8 @@ class BedController(ABC):
             wall_clock_pacing: Measure the repeat interval from the start of each
                      write, so BLE round-trip time is absorbed into the interval
                      instead of added to it.
+            on_write: Called synchronously after each successful GATT write,
+                     before any repeat delay or cancellation can interrupt it.
 
         Raises:
             ConnectionError: If not connected to the bed
@@ -515,6 +518,8 @@ class BedController(ABC):
                     if wall_clock_pacing:
                         write_started = asyncio.get_running_loop().time()
                     await client.write_gatt_char(char_uuid, command, response=response)
+                    if on_write is not None:
+                        on_write()
             except BleakError:
                 if log_errors:
                     _LOGGER.exception(

@@ -133,6 +133,17 @@ A preset key on its own only *arms* the bed. The STOP x3 release is what commits
 
 A preset that is already driving **ignores STOP** (three STOP x3 bursts during a Flat had no effect). Any motor key interrupts it, the same as pressing a button on the handset, so `stop_all` sends one motor-key packet before STOP while a preset may still be in flight. Motor holds stop with STOP alone.
 
+The interrupt window is 45 seconds after the last successfully transmitted preset
+packet, based on the reporter's approximately 30-second full travel. A successful
+motor-key write clears this window, even if later repeats are cancelled or fail.
+Cancellation during wake-up does not count as a transmitted movement command.
+The window estimates possible motion; it does not confirm that a preset is still
+running. Stop can therefore send the motor-key tap after an early completion,
+and sends STOP alone after the window expires. The reporter observed no visible
+idle movement on their Sealy Element; this is not a verified guarantee for every
+CB35 model. These timings and physical observations come from that hardware
+report, not a newly verified APK analysis.
+
 The bed accepts only one BLE connection. While the Sealy app is open on a phone (including in the background) the bed stops advertising and the integration cannot connect.
 
 ## Relationship to Other Protocols

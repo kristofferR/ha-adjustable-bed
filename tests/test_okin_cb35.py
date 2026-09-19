@@ -247,6 +247,93 @@ class TestOkinCB35Controller:
 
         assert controller._preset_started_at is None
 
+    @pytest.mark.parametrize("operation", ["preset", "motor"])
+    async def test_cancel_during_wake_preserves_previous_preset_state(
+        self,
+        hass: HomeAssistant,
+        mock_okin_cb35_config_entry: MockConfigEntry,
+        mock_cb35_client: AsyncMock,
+        operation: str,
+    ) -> None:
+        """A cancelled wake sends no movement packet and cannot change preset state."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_cb35_config_entry)
+        coordinator._client = mock_cb35_client
+        controller = OkinCB35Controller(coordinator)
+        previous = asyncio.get_running_loop().time() if operation == "motor" else None
+        controller._preset_started_at = previous
+
+        async def cancel_on_wake(uuid: str, command: bytes, **kwargs: object) -> None:
+            if command == OKIN_CB35_CONFIG.init_commands[0]:
+                coordinator.cancel_command.set()
+
+        mock_cb35_client.write_gatt_char.side_effect = cancel_on_wake
+        with patch("asyncio.sleep", new=AsyncMock()):
+            if operation == "preset":
+                await controller.preset_flat()
+            else:
+                await controller.move_feet_up()
+
+        payloads = [call.args[1] for call in mock_cb35_client.write_gatt_char.await_args_list]
+        assert payloads == list(OKIN_CB35_CONFIG.init_commands) + [_cmd(0x0F)] * 3
+        assert controller._preset_started_at == previous
+
+        mock_cb35_client.write_gatt_char.reset_mock()
+        with patch("asyncio.sleep", new=AsyncMock()):
+            await controller.stop_all()
+        payloads = [call.args[1] for call in mock_cb35_client.write_gatt_char.await_args_list]
+        assert payloads == ([_cmd(0x00)] if operation == "motor" else []) + [_cmd(0x0F)] * 3
+
+    @pytest.mark.parametrize("operation", ["preset", "motor"])
+    @pytest.mark.parametrize("interruption", ["cancel_event", "task_cancel", "write_failure"])
+    async def test_successful_first_write_updates_state_before_interruption(
+        self,
+        hass: HomeAssistant,
+        mock_okin_cb35_config_entry: MockConfigEntry,
+        mock_cb35_client: AsyncMock,
+        operation: str,
+        interruption: str,
+    ) -> None:
+        """A successful packet counts even when its later repeats do not finish."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_cb35_config_entry)
+        coordinator._client = mock_cb35_client
+        controller = OkinCB35Controller(coordinator)
+        controller._initialized = True
+        controller._preset_started_at = None if operation == "preset" else 1.0
+        movement = _cmd(0x10 if operation == "preset" else 0x02)
+        movement_writes = 0
+
+        async def interrupt_repeat(uuid: str, command: bytes, **kwargs: object) -> None:
+            nonlocal movement_writes
+            if command != movement:
+                return
+            movement_writes += 1
+            if interruption == "cancel_event":
+                coordinator.cancel_command.set()
+            elif movement_writes == 2:
+                raise BleakError("repeat failed")
+
+        async def interrupt_delay(delay: float) -> None:
+            if interruption == "task_cancel" and movement_writes == 1:
+                # Only the first movement delay is cancelled; cleanup may sleep.
+                if mock_cb35_client.write_gatt_char.await_args.args[1] == movement:
+                    raise asyncio.CancelledError
+
+        mock_cb35_client.write_gatt_char.side_effect = interrupt_repeat
+        with patch("asyncio.sleep", new=AsyncMock(side_effect=interrupt_delay)):
+            command = controller.preset_flat if operation == "preset" else controller.move_feet_up
+            if interruption == "task_cancel":
+                with pytest.raises(asyncio.CancelledError):
+                    await command()
+            elif interruption == "write_failure":
+                with pytest.raises(BleakError, match="repeat failed"):
+                    await command()
+            else:
+                await command()
+
+        assert (controller._preset_started_at is not None) == (operation == "preset")
+        payloads = [call.args[1] for call in mock_cb35_client.write_gatt_char.await_args_list]
+        assert payloads[-3:] == [_cmd(0x0F)] * 3
+
     async def test_stop_all_is_silent_when_idle(
         self,
         hass: HomeAssistant,
