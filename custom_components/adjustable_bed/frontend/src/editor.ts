@@ -7,7 +7,9 @@
 // avoid ha-form's expandable/flatten quirks entirely.
 import { LitElement, type TemplateResult, css, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
-import { SECTION_ORDER, bedEntitiesForDevice } from "./discovery";
+import { SECTION_ORDER } from "./discovery";
+import { applyCompactPreset, COMPACT_PRESETS, compactActionOptions,
+  compactActions, compactTargets } from "./compact";
 import { presentSections } from "./editor-sections";
 import { localize } from "./localize";
 import type {
@@ -46,13 +48,27 @@ export class AdjustableBedCardEditor
   private _bed(): BedEntities | undefined {
     const deviceId = this._config?.device_id;
     if (!this.hass || !deviceId) return undefined;
-    return bedEntitiesForDevice(this.hass, deviceId);
+    const beds = compactTargets(this.hass, deviceId).map((target) => target.bed);
+    const first = beds[0];
+    if (!first) return undefined;
+    const slots = new Map<number, MemorySlot>();
+    for (const bed of beds) {
+      for (const slot of bed.memory) {
+        const previous = slots.get(slot.slot);
+        slots.set(slot.slot, {
+          slot: slot.slot,
+          goto: previous?.goto ?? slot.goto,
+          save: previous?.save ?? slot.save,
+        });
+      }
+    }
+    return { ...first, memory: [...slots.values()].sort((a, b) => a.slot - b.slot) };
   }
 
   // Present section keys in their DEFAULT order.
   private _presentKeys(bed: BedEntities): string[] {
-    const present = presentSections(bed, this.hass!);
-    return SECTION_ORDER.filter((k) => present[k]);
+    const beds = this.hass ? compactTargets(this.hass, this._config?.device_id).map((t) => t.bed) : [bed];
+    return SECTION_ORDER.filter((key) => beds.some((b) => presentSections(b, this.hass!)[key]));
   }
 
   // Present section keys in the user's configured order (with the default order
@@ -76,9 +92,8 @@ export class AdjustableBedCardEditor
     const friendly =
       (id && this.hass?.states[id]?.attributes.friendly_name) ||
       `Memory ${slot.slot}`;
-    const dev = this._config?.device_id
-      ? this.hass?.devices[this._config.device_id]
-      : undefined;
+    const deviceId = id && this.hass?.entities[id]?.device_id;
+    const dev = deviceId ? this.hass?.devices[deviceId] : undefined;
     const device = dev?.name_by_user || dev?.name;
     return device && friendly.startsWith(`${device} `)
       ? friendly.slice(device.length + 1)
@@ -123,6 +138,7 @@ export class AdjustableBedCardEditor
     ev.stopPropagation();
     const value = ev.detail.value as Record<string, unknown>;
     const next = this._cfg;
+    if (next.device_id !== value.device_id) delete next.default_target;
     next.device_id = value.device_id || undefined;
     if (value.name) next.name = value.name;
     else delete next.name;
@@ -280,6 +296,116 @@ export class AdjustableBedCardEditor
     `;
   }
 
+  private _setOption<K extends keyof AdjustableBedCardConfig>(
+    key: K, value: AdjustableBedCardConfig[K],
+  ): void {
+    this._emit({ ...this._cfg, [key]: value });
+  }
+
+  private _compactToggle(
+    key: "show_header" | "show_graphic" | "show_side_selector" | "show_motors" |
+      "show_lighting" | "show_connection" | "animate",
+    defaultValue: boolean,
+  ): TemplateResult {
+    return html`<div class="row"><span class="label">${localize(this.hass, key === "show_connection" ? "editor.compact_connection" : `editor.${key}`)}</span>
+      <ha-switch .checked=${this._config?.[key] ?? defaultValue}
+        @change=${(e: Event) => this._setOption(key, (e.target as HTMLInputElement).checked)}></ha-switch>
+    </div>`;
+  }
+
+  private _compactGroup(): TemplateResult {
+    const c = this._config!;
+    const targets = compactTargets(this.hass!, c.device_id);
+    const target = targets.find((t) => t.key === (c.default_target ?? "both"));
+    // The union includes capabilities that exist only on an individual side.
+    const options = targets.flatMap((t) => compactActionOptions(this.hass!, t.bed))
+      .filter((action, index, all) => all.findIndex((a) => a.key === action.key) === index);
+    const selected = c.compact_actions ?? (target
+      ? compactActions(this.hass!, target.bed).map((a) => a.key) : []);
+    const ordered = [...selected.filter((key) => options.some((a) => a.key === key)),
+      ...options.map((a) => a.key).filter((key) => !selected.includes(key))];
+    return html`
+      <div class="group">
+        <div class="group-title">${localize(this.hass, "editor.compact_appearance")}</div>
+        ${this._compactToggle("show_header", true)}
+        ${this._compactToggle("show_graphic", true)}
+        <label class="row"><span class="label">${localize(this.hass, "editor.compact_labels")}</span>
+          <select .value=${c.compact_labels ?? "angles"}
+            @change=${(e: Event) => this._setOption("compact_labels",
+              (e.target as HTMLSelectElement).value as AdjustableBedCardConfig["compact_labels"])}>
+            ${(["angles", "names", "none"] as const).map((value) => html`
+              <option value=${value}>${localize(this.hass, `editor.labels_${value}`)}</option>`)}
+          </select>
+        </label>
+        ${this._compactToggle("animate", true)}
+        <label class="row path-row"><span class="label">${localize(this.hass, "editor.navigation_path")}</span>
+          <input type="text" .value=${c.navigation_path ?? ""} placeholder="/dashboard/bed"
+            @change=${(e: Event) => this._setOption("navigation_path", (e.target as HTMLInputElement).value || undefined)}>
+        </label>
+      </div>
+      <div class="group">
+        <div class="group-title">${localize(this.hass, "editor.compact_controls")}</div>
+        ${targets.length > 1 || !target ? html`
+          ${this._compactToggle("show_side_selector", true)}
+          <label class="row"><span class="label">${localize(this.hass, "editor.default_target")}</span>
+            <select .value=${c.default_target ?? "both"}
+              @change=${(e: Event) => this._setOption("default_target", (e.target as HTMLSelectElement).value)}>
+              ${!target ? html`<option value=${c.default_target}>${localize(this.hass, "compact.target_missing")}</option>` : nothing}
+              ${targets.map((t) => html`<option value=${t.key}>${t.label}</option>`)}
+            </select>
+          </label>` : nothing}
+        ${this._compactToggle("show_motors", false)}
+        ${this._compactToggle("show_lighting", false)}
+        ${this._compactToggle("show_connection", false)}
+        <p class="hint">${localize(this.hass, "editor.compact_stop_hint")}</p>
+      </div>
+      <div class="group">
+        <div class="group-title">${localize(this.hass, "editor.compact_actions")}</div>
+        <p class="hint">${localize(this.hass, "editor.compact_actions_hint")}</p>
+        <div class="recipes">
+          <button @click=${() => this._setOption("compact_actions", undefined)}>${localize(this.hass, "editor.actions_auto")}</button>
+          <button @click=${() => this._setOption("compact_actions", [])}>${localize(this.hass, "editor.labels_none")}</button>
+        </div>
+        ${ordered.map((key) => {
+          const action = options.find((a) => a.key === key)!;
+          const checked = selected.includes(key);
+          const index = selected.indexOf(key);
+          const move = (delta: number) => {
+            const next = [...selected];
+            [next[index], next[index + delta]] = [next[index + delta], next[index]];
+            this._setOption("compact_actions", next);
+          };
+          const entity = this.hass!.states[action.entityId];
+          return html`<div class="row">
+            <ha-checkbox .checked=${checked} @change=${(e: Event) => this._setOption("compact_actions",
+              (e.target as HTMLInputElement).checked ? [...selected, key] : selected.filter((k) => k !== key))}></ha-checkbox>
+            <span class="label">${entity?.attributes.friendly_name ?? key}</span>
+            <button class="icon-btn" ?disabled=${!checked || index === 0}
+              aria-label=${localize(this.hass, "editor.move_up")} @click=${() => move(-1)}>↑</button>
+            <button class="icon-btn" ?disabled=${!checked || index === selected.length - 1}
+              aria-label=${localize(this.hass, "editor.move_down")} @click=${() => move(1)}>↓</button>
+          </div>`;
+        })}
+      </div>`;
+  }
+
+  private _layoutGroup(): TemplateResult {
+    return html`<div class="group">
+      <label class="row"><span class="label">${localize(this.hass, "editor.layout")}</span>
+        <select .value=${this._config?.layout ?? "full"}
+          @change=${(e: Event) => this._setOption("layout", (e.target as HTMLSelectElement).value as "full" | "compact")}>
+          <option value="full">${localize(this.hass, "editor.layout_full")}</option>
+          <option value="compact">${localize(this.hass, "editor.layout_compact")}</option>
+        </select>
+      </label>
+      <p class="hint">${localize(this.hass, "editor.recipe_hint")}</p>
+      <div class="recipes">${COMPACT_PRESETS.map((preset) => html`
+        <button @click=${() => this._emit({ ...applyCompactPreset(this._config!, preset) })}>
+          ${localize(this.hass, `editor.recipe_${preset}`)}
+        </button>`)}</div>
+    </div>`;
+  }
+
   protected override render(): TemplateResult | typeof nothing {
     if (!this.hass || !this._config) return nothing;
     const bed = this._bed();
@@ -291,12 +417,27 @@ export class AdjustableBedCardEditor
         .computeLabel=${this._computeLabel}
         @value-changed=${this._deviceChanged}
       ></ha-form>
-      ${bed ? this._sectionsGroup(bed) : nothing}
-      ${bed ? this._memoryGroup(bed) : nothing}
+      ${this._layoutGroup()}
+      ${this._config.layout === "compact" ? this._compactGroup() : html`
+        ${bed ? this._sectionsGroup(bed) : nothing}
+        ${bed ? this._memoryGroup(bed) : nothing}
+      `}
     `;
   }
 
   static override styles = css`
+    select, input { min-width: 0; max-width: 60%; box-sizing: border-box;
+      background: var(--card-background-color); color: var(--primary-text-color);
+      border: 1px solid var(--divider-color); border-radius: 6px; padding: 8px; font: inherit; }
+    .path-row { flex-wrap: wrap; }
+    .path-row input { flex: 1; min-width: 180px; max-width: 100%; }
+    .recipes { display: flex; gap: 6px; flex-wrap: wrap; }
+    .recipes button { background: var(--secondary-background-color); color: var(--primary-text-color);
+      border: 1px solid var(--divider-color); border-radius: 7px; min-height: 44px;
+      padding: 8px 12px; cursor: pointer; font: inherit; font-size: .85rem; }
+    .hint { color: var(--secondary-text-color); font-size: .8rem; line-height: 1.4; }
+    button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 2px; }
+
     .group {
       margin-top: 16px;
       border: 1px solid var(--divider-color);

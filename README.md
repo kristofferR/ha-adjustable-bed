@@ -252,6 +252,60 @@ See [paired-bed configuration](docs/CONFIGURATION.md#two-independent-frames-in-v
 and [action targeting](docs/SERVICES.md#targeting-a-bed-or-side) for setup and
 automation behavior.
 
+### Compact room cards
+
+In the visual editor, choose **A · Glance only**, **B · Quick actions**, or
+**C · Compact controls**. These are starting points for the same card, and every
+option remains editable. Existing cards keep their full layout.
+
+- **Glance:** both bed positions, with optional title and side names. Turn off the
+  title and readouts for a graphic-only tile.
+- **Quick actions:** the dual graphic, side selector, selected presets or memory
+  recalls, and Stop. Choose and reorder favourites in the editor.
+- **Controls:** adds the supported hold-to-move motor rows.
+
+Both silhouettes remain visible when switching the action target. Hide the side
+selector to use a fixed target; the card labels that target when controls are
+shown. Native pairs store a child device ID, so renaming a side cannot reroute
+commands. Stop remains available with movement controls and retains targets of
+movement started by this card across side changes. Compact mode never saves
+memory positions. Preset buttons are disabled when the target exposes neither a
+Stop action nor motor covers that can be stopped.
+
+Title, graphic, readouts, motor rows, lighting, and connection status are optional.
+Configure a local **Full view path** to open another dashboard view from the title
+or graphic. Position animation follows real degree readings, honours reduced
+motion, and does not loop while idle. Unknown positions show an explicit fallback;
+percentage feedback is shown as text rather than converted into an invented angle.
+
+```yaml
+type: custom:adjustable-bed-card
+device_id: <your bed device>
+layout: compact
+show_header: true
+compact_labels: angles        # angles, names, or none
+show_side_selector: true
+default_target: both          # both, child device ID, or left/right for a one-address pair
+compact_actions:             # ordered preset translation keys; [] for no quick actions
+  - preset_flat
+  - preset_memory_1
+show_motors: false
+show_lighting: false
+show_connection: false        # compact side statuses, not connection buttons
+animate: true
+navigation_path: /dashboard-bedroom/bed  # optional local HA path
+```
+
+Omit `compact_actions` for Flat plus the first available memory recall (or another
+preset when no memory recall exists). Only actions supported by the selected target
+appear; entity names and icons are preserved. Compact controls are off by default
+except for these quick actions. The other `show_*` sections and `section_order`
+apply to the full layout. Memory saving and position synchronization stay there.
+
+For frontend development, run `bun run check`, `bun test`, and `bun run test:browser`
+from `custom_components/adjustable_bed/frontend`. The browser checks use synthetic
+HA state and recorded service calls, and require Chromium (or `CHROMIUM_PATH`).
+
 ### Customizing the card
 
 Everything is configurable from the card's **visual editor** (no YAML needed):

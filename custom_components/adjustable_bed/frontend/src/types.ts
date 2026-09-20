@@ -57,6 +57,16 @@ export interface AdjustableBedCardConfig {
   type: string;
   device_id?: string;
   name?: string;
+  layout?: "full" | "compact";
+  show_header?: boolean;
+  compact_labels?: "angles" | "names" | "none";
+  show_side_selector?: boolean;
+  // "both", a native child device ID, or "left"/"right" for one-address pairs.
+  default_target?: string;
+  // Stable preset translation keys; omitted = flat + first recall, [] = none.
+  compact_actions?: string[];
+  navigation_path?: string;
+  animate?: boolean;
   show_graphic?: boolean;
   show_motors?: boolean;
   show_firmness?: boolean;

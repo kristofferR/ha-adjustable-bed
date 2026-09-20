@@ -9,7 +9,8 @@
     "build": "bun run build.mjs",
     "watch": "bun run build.mjs --watch",
     "typecheck": "tsc --noEmit",
-    "check": "bun run typecheck && bun run build"
+    "check": "bun run typecheck && bun run build",
+    "test:browser": "uv run --no-project ../../../scripts/test_compact_card_browser.py"
   },
   "dependencies": {
     "lit": "^3.2.1"
