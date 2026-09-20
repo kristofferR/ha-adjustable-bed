@@ -471,6 +471,10 @@ reported value, or remain unknown until the bed reports a position. Sending the
 same target again is allowed when no fresh report verifies the target.
 
 Feedback-driven seeks require a fresh measurement for the requested axis.
+Reports must belong to the current connection and normally be at most three
+seconds old, with controller-specific freshness limits taking precedence.
+Notification-only controllers can use a recent report even when an active read
+does not produce a new one.
 If feedback disappears, the integration performs the controller's existing
 movement cleanup and reports a failure. Last-known values can remain visible
 for reference, but do not authorize further movement.

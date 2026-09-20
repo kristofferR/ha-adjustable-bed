@@ -167,6 +167,7 @@ from .const import (
     OCTO_VARIANT_STAR2,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     OKIMAT_SERVICE_UUID,
+    POSITION_FEEDBACK_TIMEOUT,
     POSITION_MODE_ACCURACY,
     REVERIE_BACK_MAX_ANGLE,
     RICHMAT_REMOTE_AUTO,
@@ -5157,7 +5158,7 @@ class AdjustableBedCoordinator:
             return
 
         try:
-            async with asyncio.timeout(3.0):
+            async with asyncio.timeout(POSITION_FEEDBACK_TIMEOUT):
                 await self._controller.read_positions(self._motor_count)
         except TimeoutError:
             _LOGGER.debug("Position read timed out")

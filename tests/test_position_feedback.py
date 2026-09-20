@@ -10,7 +10,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.core import HomeAssistant
 
+from custom_components.adjustable_bed.beds.keeson import KeesonController
 from custom_components.adjustable_bed.command_scheduler import CommandOutcome
+from custom_components.adjustable_bed.const import (
+    BED_TYPE_KEESON,
+    KEESON_VARIANT_ERGOMOTION,
+    POSITION_FEEDBACK_TIMEOUT,
+)
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.position_seek import PositionFeedbackError, PositionSeekPolicy
 
@@ -40,8 +46,10 @@ async def test_feedback_loss_stops_before_reporting_failure(coordinator, failure
         reads += 1
         if reads == 1:
             coordinator._handle_position_update("back", 20.0)
-        elif failure:
-            raise failure
+        else:
+            coordinator._position_data_updated_monotonic["back"] -= POSITION_FEEDBACK_TIMEOUT + 1
+            if failure:
+                raise failure
 
     coordinator.controller.read_positions = AsyncMock(side_effect=read)
     up, down, stop = AsyncMock(), AsyncMock(), AsyncMock()
@@ -107,12 +115,74 @@ async def test_cancel_interrupts_initial_read_without_starting_movement(coordina
 @pytest.mark.parametrize("axis, expected", [("legs", None), ("back", 20.0)])
 async def test_read_must_refresh_requested_axis_even_if_unchanged(coordinator, axis, expected):
     coordinator._handle_position_update("back", 20.0)
+    coordinator._position_data_updated_monotonic["back"] -= POSITION_FEEDBACK_TIMEOUT + 1
     coordinator.controller.read_positions = AsyncMock(
         side_effect=lambda _count: coordinator._handle_position_update(axis, 20.0)
     )
     assert await coordinator._async_read_seek_position(
         "back", coordinator.controller.position_seek_policy
     ) == expected
+
+
+@pytest.mark.parametrize("read_failure", [None, TimeoutError()])
+async def test_default_policy_retains_recent_notification_after_read(coordinator, read_failure):
+    """A no-op or failed read need not replace a still-fresh device report."""
+    coordinator._handle_position_update("back", 20.0)
+    coordinator._position_data_updated_monotonic["back"] -= 0.5
+    observed_at = coordinator._position_data_updated_monotonic["back"]
+    coordinator.controller.read_positions = AsyncMock(side_effect=read_failure)
+    assert await coordinator._async_read_seek_position(
+        "back", coordinator.controller.position_seek_policy
+    ) == 20
+    assert coordinator._position_data_updated_monotonic["back"] == observed_at
+    coordinator.controller.read_positions.assert_awaited_once()
+
+
+@pytest.mark.parametrize("age, generation", [(POSITION_FEEDBACK_TIMEOUT + 1, 1), (0.5, 0)])
+async def test_default_policy_rejects_expired_or_previous_session_notification(
+    coordinator, age, generation
+):
+    coordinator._handle_position_update("back", 20)
+    coordinator._position_data_updated_monotonic["back"] -= age
+    coordinator._position_data_generation["back"] = generation
+    coordinator.controller.read_positions = AsyncMock()
+    assert await coordinator._async_read_seek_position(
+        "back", coordinator.controller.position_seek_policy
+    ) is None
+
+
+@pytest.mark.parametrize("lose_feedback", [False, True])
+async def test_ergomotion_seek_uses_notifications_and_stops_if_they_expire(
+    coordinator, lose_feedback
+):
+    """Exercise the real notification-only controller's no-op read contract."""
+    coordinator._bed_type = BED_TYPE_KEESON
+    controller = KeesonController(coordinator, variant=KEESON_VARIANT_ERGOMOTION)
+    coordinator._controller = controller
+    controller._notify_callback = coordinator._handle_position_update
+    controller._head_position = 20
+    controller._notify_position_update()
+    coordinator._position_data_updated_monotonic["back"] -= 0.5
+
+    async def move(_controller):
+        if lose_feedback:
+            coordinator._position_data_updated_monotonic["back"] -= POSITION_FEEDBACK_TIMEOUT + 1
+        else:
+            controller._head_position = 40
+            controller._notify_position_update()
+            coordinator._position_data_updated_monotonic["back"] -= 0.5
+
+    up, down, stop = AsyncMock(side_effect=move), AsyncMock(), AsyncMock()
+    with patch("custom_components.adjustable_bed.position_seek.asyncio.sleep", new=AsyncMock()):
+        if lose_feedback:
+            with pytest.raises(PositionFeedbackError, match="Lost fresh position feedback"):
+                await coordinator.async_seek_position("back", 40, up, down, stop)
+        else:
+            await coordinator.async_seek_position("back", 40, up, down, stop)
+            assert coordinator._seek_outcomes["back"]["outcome"] == "reached_target"
+    up.assert_awaited_once()
+    down.assert_not_awaited()
+    stop.assert_awaited_once()
 
 
 async def test_new_notification_survives_failed_active_read(coordinator):

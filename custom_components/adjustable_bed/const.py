@@ -2385,6 +2385,7 @@ POSITION_OVERSHOOT_TOLERANCE: Final = (
     6.0  # Larger tolerance for overshoot detection (prevents oscillation)
 )
 POSITION_SEEK_TIMEOUT: Final = 60.0  # Maximum time in seconds for position seeking
+POSITION_FEEDBACK_TIMEOUT: Final = 3.0  # Maximum wait or default age for position feedback
 POSITION_CHECK_INTERVAL: Final = 0.3  # Interval between position checks in seconds
 POSITION_STALL_THRESHOLD: Final = 0.5  # Minimum movement in degrees to not be considered stalled
 POSITION_STALL_COUNT: Final = 3  # Number of consecutive stall detections before stopping

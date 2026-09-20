@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.exceptions import HomeAssistantError
 
-from .const import POSITION_OVERSHOOT_TOLERANCE, POSITION_SEEK_TIMEOUT
+from .const import POSITION_FEEDBACK_TIMEOUT, POSITION_OVERSHOOT_TOLERANCE, POSITION_SEEK_TIMEOUT
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -149,8 +149,13 @@ class PositionSeekPolicy:
 
     @property
     def cached_position_feedback_max_age(self) -> float:
-        """Return the maximum age of notification feedback used by a seek."""
-        return 0.0
+        """Bound notification age by the same budget as an active read.
+
+        The default still attempts an active read, but notification-only
+        controllers must also be able to use reports received just before it.
+        This is an integration freshness bound, not a device reporting cadence.
+        """
+        return POSITION_FEEDBACK_TIMEOUT
 
     @property
     def stall_count(self) -> int:
