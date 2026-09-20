@@ -692,7 +692,8 @@ var re=Object.defineProperty;var ae=Object.getOwnPropertyDescriptor;var x=(n,o,t
         .stateObj=${i}
       ></ha-state-icon>`:d`<ha-icon class="icon" icon=${e??"mdi:bed"}></ha-icon>`}_notice(t){return d`<ha-card><div class="notice">${h(this.hass,t)}</div></ha-card>`}_state(t){return this.hass?.states[t]}_title(t){return this._config?.name?this._config.name:this._deviceName(t)??h(this.hass,"card.default_name")}_deviceName(t=this._config?.device_id){let e=t?this.hass?.devices[t]:void 0;return e?.name_by_user||e?.name||void 0}_name(t){let e=this._state(t)?.attributes.friendly_name??this.hass?.entities[t]?.name??t,i=this.hass?.entities[t]?.device_id,s=this._deviceName(i);return s&&e.startsWith(s+" ")?e.slice(s.length+1):e}_motorName(t){let e=`motor.${t.key}`,i=h(this.hass,e);return i!==e?i:t.key.split("_").map(s=>s.charAt(0).toUpperCase()+s.slice(1)).join(" ")}_angle(t){let e=t.angle??t.position;if(!e)return;let i=Number.parseFloat(this._state(e)?.state??"");return Number.isFinite(i)?i:void 0}_readout(t){let e=t.angle??t.position;if(e){let i=this._angle(t);if(i===void 0)return;let s=this._state(e)?.attributes.unit_of_measurement,r=t.angle?"\xB0":"%";return`${Math.round(i)}${typeof s=="string"?s:r}`}if(t.cover){let i=this._state(t.cover)?.attributes.current_position;return typeof i=="number"?`${Math.round(i)}%`:void 0}}_stateText(t){let e=this._state(t);if(!e)return"";let i=this.hass?.formatEntityState;return typeof i=="function"?i(e):e.state}_collectWatched(t){let e=new Set;for(let i of t.motors)[i.cover,i.up,i.down,i.angle,i.position].forEach(s=>s&&e.add(s));t.presets.forEach(i=>e.add(i));for(let i of t.memory)[i.goto,i.save].forEach(s=>s&&e.add(s));return[t.stop,t.synchro,t.connect,t.disconnect,t.connectivity,t.lights.light,t.lights.switch,t.lights.state,t.lights.level,t.lights.toggle,t.lights.cycle,t.lights.timer,t.massage.timer].forEach(i=>i&&e.add(i)),t.firmness.forEach(i=>e.add(i)),t.massage.buttons.forEach(i=>e.add(i)),t.massage.numbers.forEach(i=>e.add(i)),t.utility.forEach(i=>e.add(i)),t.climate.entities.forEach(i=>e.add(i)),t.climate.selects.forEach(i=>e.add(i)),[...e]}_startHold(t,e,i,s){let r=null;if(t instanceof KeyboardEvent){if(t.repeat||t.key!=="Enter"&&t.key!==" ")return;t.preventDefault()}else{if(t.button!==0||!t.isPrimary)return;t.currentTarget.setPointerCapture?.(t.pointerId),t.preventDefault(),r=t.pointerId}this._config?.layout==="compact"&&(s?this._compactStopTargets.add(s):e.cover&&this._compactStopTargets.add(e.cover),this.requestUpdate()),this._hold.start(e,i,r,s)}_activateWithoutPointer(t,e,i,s){if(t.detail!==0||this._hold.heldKey!==null)return;if(this._config?.layout==="compact"&&(s?this._compactStopTargets.add(s):e.cover&&this._compactStopTargets.add(e.cover),this.requestUpdate()),e.cover){this._cover(e.cover,i==="up"?"open_cover":"close_cover");return}let r=i==="up"?e.up:e.down;r&&this._press(r)}_endPointerHold(t,e){this._hold.endFromPointer(e,t.pointerId,t.type!=="pointerup"||t.button===0)}_endKeyHold(t,e){t.key!=="Enter"&&t.key!==" "||this._hold.end(e)}_endHold(t){this._hold.end(t)}_motorStop(t,e){if(t.cover){this._hold.cancel(t),this._cover(t.cover,"stop_cover");return}this._hold.stopAll(e)}_toggleSaveMode(t){this._saveModeFor=this._saveModeFor===t?void 0:t}_saveMemory(t){t.save&&this._press(t.save),this._saveModeFor=void 0}_call(t,e,i){this.hass?.callService(t,e,{entity_id:i})?.catch(()=>{})}_press(t){this._call("button","press",t)}_cover(t,e){this._call("cover",e,t)}_toggle(t){this._call("homeassistant","toggle",t)}_setEntities(t,e){this.hass?.callService("homeassistant",e?"turn_on":"turn_off",{entity_id:t})?.catch(()=>{})}_moreInfo(t){this.dispatchEvent(new CustomEvent("hass-more-info",{detail:{entityId:t},bubbles:!0,composed:!0}))}};k.styles=W`
     .compact-card { container-type: inline-size; padding: 12px; }
-    .compact-header { display: flex; align-items: center; gap: 8px; min-height: 32px; }
+    .compact-header { display: grid; grid-template-columns: minmax(0, 1fr) 44px;
+      align-items: center; gap: 8px; min-height: 44px; }
     .compact-header .title { font-size: .95rem; }
     .compact-open { border: 0; background: none; color: var(--secondary-text-color);
       cursor: pointer; min-width: 44px; min-height: 44px; }
@@ -748,7 +749,10 @@ var re=Object.defineProperty;var ae=Object.getOwnPropertyDescriptor;var x=(n,o,t
       overflow: hidden;
     }
     .header {
-      display: flex;
+      /* Reserve the optional Bluetooth action across paired tab changes. */
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr) 32px;
+      min-height: 32px;
       align-items: center;
       gap: 10px;
       padding: 4px 4px 8px;
@@ -767,6 +771,11 @@ var re=Object.defineProperty;var ae=Object.getOwnPropertyDescriptor;var x=(n,o,t
       text-overflow: ellipsis;
     }
     .conn {
+      box-sizing: border-box;
+      width: 32px;
+      height: 32px;
+      align-items: center;
+      justify-content: center;
       border: none;
       background: none;
       cursor: pointer;

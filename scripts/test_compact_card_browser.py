@@ -45,6 +45,7 @@ for (const [id, name] of [['pair','Bed'], ['left','Left'], ['right','Right']]) {
     hass.entities[entity_id] = {entity_id, device_id:id, translation_key:key, platform:'adjustable_bed'};
     hass.states[entity_id] = {entity_id, state, attributes:{friendly_name:`${name} ${key==='preset_flat'?'Flat':key==='preset_memory_1'?'Sit':key}`, ...attrs}, last_changed:'', last_updated:''};
   };
+  if (id !== 'pair') add('binary_sensor','ble_connection','off',{state_detail:'idle'});
   add('button','stop','unknown'); add('button','preset_flat','unknown');
   add('button','preset_memory_1','unknown'); add('button','program_memory_2','unknown');
   for (const motor of ['back','legs']) {
@@ -83,6 +84,26 @@ async def main():
         await page.evaluate(BOOT)
         card = page.locator("adjustable-bed-card")
         await card.locator(".compact-card").wait_for()
+        # Optional header actions must not change title geometry or push tabs.
+        measure_header = """selector => {
+          const root=card.shadowRoot, header=root.querySelector(selector);
+          const box=header.getBoundingClientRect(), title=header.querySelector('.title').getBoundingClientRect();
+          return {height:box.height,titleX:title.x,titleY:title.y,titleWidth:title.width,
+            tabsY:root.querySelector('.pane-tabs').getBoundingClientRect().y};
+        }"""
+        for width in [240, 400]:
+            await page.locator("main").evaluate("(el,w)=>el.style.width=w+'px'", width)
+            await page.evaluate("configure({layout:'full',default_target:'both'})")
+            baseline = await page.evaluate(measure_header, ".header")
+            for side in ["Left", "Right", "Both sides"]:
+                await card.locator(".pane-tab").filter(has_text=side).click()
+                actual = await page.evaluate(measure_header, ".header")
+                assert actual == baseline, (width, side, baseline, actual)
+            await page.evaluate("configure({navigation_path:undefined})")
+            baseline = await page.evaluate(measure_header, ".compact-header")
+            await page.evaluate("configure()")
+            assert await page.evaluate(measure_header, ".compact-header") == baseline
+        await page.locator("main").evaluate("el=>el.style.width='320px'")
         assert await card.locator(".dual-bed-side").count() == 2
         await card.get_by_role("button", name="Left", exact=True).click()
         assert await card.locator(".dual-bed-side").count() == 2

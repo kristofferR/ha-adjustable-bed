@@ -1559,7 +1559,8 @@ export class AdjustableBedCard extends LitElement {
 
   static override styles = css`
     .compact-card { container-type: inline-size; padding: 12px; }
-    .compact-header { display: flex; align-items: center; gap: 8px; min-height: 32px; }
+    .compact-header { display: grid; grid-template-columns: minmax(0, 1fr) 44px;
+      align-items: center; gap: 8px; min-height: 44px; }
     .compact-header .title { font-size: .95rem; }
     .compact-open { border: 0; background: none; color: var(--secondary-text-color);
       cursor: pointer; min-width: 44px; min-height: 44px; }
@@ -1615,7 +1616,10 @@ export class AdjustableBedCard extends LitElement {
       overflow: hidden;
     }
     .header {
-      display: flex;
+      /* Reserve the optional Bluetooth action across paired tab changes. */
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr) 32px;
+      min-height: 32px;
       align-items: center;
       gap: 10px;
       padding: 4px 4px 8px;
@@ -1634,6 +1638,11 @@ export class AdjustableBedCard extends LitElement {
       text-overflow: ellipsis;
     }
     .conn {
+      box-sizing: border-box;
+      width: 32px;
+      height: 32px;
+      align-items: center;
+      justify-content: center;
       border: none;
       background: none;
       cursor: pointer;
