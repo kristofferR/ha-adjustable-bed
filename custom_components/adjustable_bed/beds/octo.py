@@ -135,102 +135,12 @@ OCTO_ESCAPE_MAP: dict[int, int] = {
 OCTO_UNESCAPE_MAP: dict[int, int] = {v: k for k, v in OCTO_ESCAPE_MAP.items()}
 
 
-class OctoController(BedController):
-    """Controller for Octo beds."""
+class OctoPacketCodec:
+    """Packet encoding and stream decoding shared by setup and runtime."""
 
-    _write_with_response = False
-
-    def __init__(
-        self,
-        coordinator: AdjustableBedCoordinator,
-        pin: str = "",
-        capability_snapshot: Mapping[str, Any] | None = None,
-    ) -> None:
-        """Initialize the Octo controller.
-
-        Args:
-            coordinator: The bed coordinator.
-            pin: Optional PIN for authentication. Required for some Octo beds.
-            capability_snapshot: Capabilities captured at pairing, used to mint a
-                client-free controller for an OFFLINE paired side (no live
-                discovery). Ignored once a live discovery overwrites the fields.
-        """
-        super().__init__(coordinator)
-        self._notify_callback: Callable[[str, float], None] | None = None
-        self._pin: str = pin
-        self._keepalive_task: asyncio.Task[None] | None = None
-        self._pin_resend_task: asyncio.Task[None] | None = None
-        self._notifications_started: bool = False  # Track if BLE notifications are active
+    def __init__(self) -> None:
         self._response_buffer = bytearray()
-
-        # Feature discovery state
-        self._has_pin: bool | None = None  # None = not yet discovered
-        self._pin_locked: bool | None = None
-        self._has_lights: bool | None = None  # None = not yet discovered
-        self._has_rgbwi: bool = False  # True if CAP_LIGHT_RGBWI (0x000104) detected
-        self._rgbwi_value_type: int | None = None  # valueType byte from discovery response
-        self._memory_count: int | None = None  # None = not yet discovered
-        # CAP_MEMINFO: slot classes and per-slot description IDs
-        self._memory_mem_count: int = 0  # memCount as reported by CAP_MEMINFO
-        self._memory_fix_count: int = 0
-        self._memory_lock_count: int = 0
-        self._memory_descriptions: tuple[int, ...] = ()
-        self._discovered_motor_count: int | None = None  # None = not yet discovered
-        self._has_synchro: bool | None = None  # None = not yet discovered
-        self._synchro_active: bool | None = None  # None = unknown
-        self._drivemode_event: asyncio.Event = asyncio.Event()
-        self._features_loaded: asyncio.Event = asyncio.Event()
-        self._features_complete: asyncio.Event = (
-            asyncio.Event()
-        )  # Set when 0xFFFFFF sentinel received
-        self._pin_sent: bool = False  # True once a PIN packet was written this session
-
-        if capability_snapshot:
-            # Offline mint: pre-populate discovered capabilities so entity gating
-            # matches the live bed, and mark discovery "done" so nothing awaits a
-            # connection that will never happen for this client-free controller.
-            self._apply_capability_snapshot(capability_snapshot)
-            self._features_loaded.set()
-            self._features_complete.set()
-
-        _LOGGER.debug(
-            "OctoController initialized (PIN %s%s)",
-            "configured" if pin else "not configured",
-            ", from capability snapshot" if capability_snapshot else "",
-        )
-
-    def capability_snapshot(self) -> dict[str, Any] | None:
-        """Return discovered capabilities as a JSON-serialisable snapshot to
-        persist for a paired side, or None if feature discovery has not
-        COMPLETED.
-
-        Discovery is only complete once the 0xFFFFFF CAP_END sentinel arrives
-        (``_features_complete`` is set, see ``_on_notification``) or the
-        controller was minted from a prior complete snapshot. The
-        ``discover_features`` timeout path fills compatibility defaults (e.g.
-        ``_has_lights=True``) but deliberately never sets ``_features_complete``
-        — so guarding on it prevents those fallback values from being persisted
-        over a real snapshot (or minting a reduced offline profile on reload).
-        """
-        if not self._features_complete.is_set():
-            return None
-        snap = {
-            key: getattr(self, f"_{key}") for key in _CAPABILITY_SNAPSHOT_KEYS
-        }
-        if all(value is None or value is False for value in snap.values()):
-            return None
-        return snap
-
-    def _apply_capability_snapshot(self, snap: Mapping[str, Any]) -> None:
-        """Restore capability fields from a persisted snapshot (offline mint)."""
-        for key in _CAPABILITY_SNAPSHOT_KEYS:
-            if key in snap:
-                setattr(self, f"_{key}", snap[key])
-
-    @property
-    def control_characteristic_uuid(self) -> str:
-        """Return the UUID of the control characteristic."""
-        return OCTO_CHAR_UUID
+        self.invalid_response_received = False
 
     def _calculate_checksum(self, packet: list[int]) -> int:
         """Calculate the Octo checksum.
@@ -304,16 +214,6 @@ class OctoController(BedController):
 
         # Build final packet with unescaped delimiters
         return bytes([OCTO_PACKET_CHAR, *escaped_payload, OCTO_PACKET_CHAR])
-
-    def _format_command_trace_payload(self, command: bytes) -> dict[str, object] | None:
-        """Redact PIN authentication packets from logs and support bundles."""
-        if command[:3] == bytes((OCTO_PACKET_CHAR, 0x20, 0x43)):
-            return {
-                "hex": "**REDACTED**",
-                "length": len(command),
-                "ascii_preview": None,
-            }
-        return super()._format_command_trace_payload(command)
 
     def _parse_response_packet(self, message: bytes) -> dict[str, list[int]] | None:
         """Parse a response packet from the bed.
@@ -389,6 +289,8 @@ class OctoController(BedController):
 
             packet = self._parse_response_packet(bytes(buffer[start : end + 1]))
             if packet is None:
+                if end > start + 1:
+                    self.invalid_response_received = True
                 # The end delimiter may also be the start of the next valid packet.
                 # Scan from it without shifting the bytearray on every candidate.
                 trim_at = end
@@ -449,6 +351,114 @@ class OctoController(BedController):
 
         value = data[value_start:]
         return (feature_id, value, value_type)
+
+
+class OctoController(BedController, OctoPacketCodec):
+    """Controller for Octo beds."""
+
+    _write_with_response = False
+
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        pin: str = "",
+        capability_snapshot: Mapping[str, Any] | None = None,
+    ) -> None:
+        """Initialize the Octo controller.
+
+        Args:
+            coordinator: The bed coordinator.
+            pin: Optional PIN for authentication. Required for some Octo beds.
+            capability_snapshot: Capabilities captured at pairing, used to mint a
+                client-free controller for an OFFLINE paired side (no live
+                discovery). Ignored once a live discovery overwrites the fields.
+        """
+        super().__init__(coordinator)
+        self._notify_callback: Callable[[str, float], None] | None = None
+        self._pin: str = pin
+        self._keepalive_task: asyncio.Task[None] | None = None
+        self._pin_resend_task: asyncio.Task[None] | None = None
+        self._notifications_started: bool = False  # Track if BLE notifications are active
+        OctoPacketCodec.__init__(self)
+
+        # Feature discovery state
+        self._has_pin: bool | None = None  # None = not yet discovered
+        self._pin_locked: bool | None = None
+        self._has_lights: bool | None = None  # None = not yet discovered
+        self._has_rgbwi: bool = False  # True if CAP_LIGHT_RGBWI (0x000104) detected
+        self._rgbwi_value_type: int | None = None  # valueType byte from discovery response
+        self._memory_count: int | None = None  # None = not yet discovered
+        # CAP_MEMINFO: slot classes and per-slot description IDs
+        self._memory_mem_count: int = 0  # memCount as reported by CAP_MEMINFO
+        self._memory_fix_count: int = 0
+        self._memory_lock_count: int = 0
+        self._memory_descriptions: tuple[int, ...] = ()
+        self._discovered_motor_count: int | None = None  # None = not yet discovered
+        self._has_synchro: bool | None = None  # None = not yet discovered
+        self._synchro_active: bool | None = None  # None = unknown
+        self._drivemode_event: asyncio.Event = asyncio.Event()
+        self._features_loaded: asyncio.Event = asyncio.Event()
+        self._features_complete: asyncio.Event = (
+            asyncio.Event()
+        )  # Set when 0xFFFFFF sentinel received
+        self._pin_sent: bool = False  # True once a PIN packet was written this session
+
+        if capability_snapshot:
+            # Offline mint: pre-populate discovered capabilities so entity gating
+            # matches the live bed, and mark discovery "done" so nothing awaits a
+            # connection that will never happen for this client-free controller.
+            self._apply_capability_snapshot(capability_snapshot)
+            self._features_loaded.set()
+            self._features_complete.set()
+
+        _LOGGER.debug(
+            "OctoController initialized (PIN %s%s)",
+            "configured" if pin else "not configured",
+            ", from capability snapshot" if capability_snapshot else "",
+        )
+
+    def capability_snapshot(self) -> dict[str, Any] | None:
+        """Return discovered capabilities as a JSON-serialisable snapshot to
+        persist for a paired side, or None if feature discovery has not
+        COMPLETED.
+
+        Discovery is only complete once the 0xFFFFFF CAP_END sentinel arrives
+        (``_features_complete`` is set, see ``_on_notification``) or the
+        controller was minted from a prior complete snapshot. The
+        ``discover_features`` timeout path fills compatibility defaults (e.g.
+        ``_has_lights=True``) but deliberately never sets ``_features_complete``
+        — so guarding on it prevents those fallback values from being persisted
+        over a real snapshot (or minting a reduced offline profile on reload).
+        """
+        if not self._features_complete.is_set():
+            return None
+        snap = {
+            key: getattr(self, f"_{key}") for key in _CAPABILITY_SNAPSHOT_KEYS
+        }
+        if all(value is None or value is False for value in snap.values()):
+            return None
+        return snap
+
+    def _apply_capability_snapshot(self, snap: Mapping[str, Any]) -> None:
+        """Restore capability fields from a persisted snapshot (offline mint)."""
+        for key in _CAPABILITY_SNAPSHOT_KEYS:
+            if key in snap:
+                setattr(self, f"_{key}", snap[key])
+
+    @property
+    def control_characteristic_uuid(self) -> str:
+        """Return the UUID of the control characteristic."""
+        return OCTO_CHAR_UUID
+
+    def _format_command_trace_payload(self, command: bytes) -> dict[str, object] | None:
+        """Redact PIN authentication packets from logs and support bundles."""
+        if command[:3] == bytes((OCTO_PACKET_CHAR, 0x20, 0x43)):
+            return {
+                "hex": "**REDACTED**",
+                "length": len(command),
+                "ascii_preview": None,
+            }
+        return super()._format_command_trace_payload(command)
 
     def _handle_feature_response(self, data: list[int]) -> None:
         """Process feature data from a 0x21 0x71 response."""

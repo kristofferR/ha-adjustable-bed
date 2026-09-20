@@ -75,6 +75,7 @@ class SetupAction(StrEnum):
     READING_CAPABILITIES = "reading_capabilities"
     PAIRING = "pairing"
     VERIFYING_BOND = "verifying_bond"
+    VERIFYING_PIN = "verifying_pin"
     DISCONNECTING = "disconnecting"
     UNPAIRING = "unpairing"
 
@@ -99,6 +100,7 @@ class OperationOutcome(StrEnum):
     TIMEOUT = "timeout"
     PAIRING_NOT_SUPPORTED = "pairing_not_supported"
     AUTHENTICATION_FAILED = "authentication_failed"
+    PIN_VERIFICATION_INCONCLUSIVE = "pin_verification_inconclusive"
     BOND_VERIFICATION_FAILED = "bond_verification_failed"
     # Distinct from a failure: a timeout or an absent characteristic proves
     # neither that a bond exists nor that it does not, and telling a user their

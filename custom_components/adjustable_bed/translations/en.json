@@ -475,6 +475,26 @@
           "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
           "lp_legacy_read_uuid": "Optional full UUID of the notification characteristic confirmed for this bed. Leave empty to disable app response notifications."
         }
+      },
+      "verify_octo_pin": {
+        "title": "Verify Octo PIN",
+        "description": "Checked PIN access for **{name}** without moving the bed.\n\n{result}",
+        "data": {
+          "octo_pin": "Octo PIN",
+          "outcome_accepted": "PIN check: accepted",
+          "outcome_not_required": "PIN check: not required",
+          "outcome_required": "PIN check: required",
+          "outcome_rejected": "PIN check: rejected",
+          "outcome_inconclusive": "PIN check: inconclusive"
+        },
+        "data_description": {
+          "octo_pin": "Enter the four-digit PIN, or leave empty if the bed does not require one.",
+          "outcome_accepted": "The bed accepted the PIN. Submit to finish setup.",
+          "outcome_not_required": "This bed does not require a PIN. Submit to finish setup.",
+          "outcome_required": "The bed requires a PIN. Enter it below and submit to check again.",
+          "outcome_rejected": "The bed rejected the PIN. Correct it below and submit to check again.",
+          "outcome_inconclusive": "PIN verification could not be completed. This does not mean the PIN is wrong. Wake the bed, close other apps connected to it, and check that your Bluetooth adapter or proxy is available. Submit to retry; the entry has not been saved."
+        }
       }
     },
     "progress": {
@@ -485,7 +505,8 @@
       "pairing": "Pairing with the bed…",
       "verifying_bond": "Verifying the Bluetooth bond…",
       "disconnecting": "Disconnecting…",
-      "unpairing": "Removing the Bluetooth bond…"
+      "unpairing": "Removing the Bluetooth bond…",
+      "verifying_pin": "Checking PIN acceptance…"
     },
     "abort": {
       "already_configured": "This Bluetooth address already belongs to an Adjustable Bed entry. Check both active and ignored Adjustable Bed entries under Settings > Devices & services, then reload or reconfigure that entry instead of adding it again.",
@@ -529,7 +550,10 @@
       "jiecang_app_required": "Choose the bed app and physical actuator layout.",
       "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
       "invalid_lp_legacy_mode": "Select Legacy or Framed explicitly.",
-      "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID."
+      "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID.",
+      "octo_pin_required": "A PIN is required.",
+      "octo_pin_rejected": "The bed rejected this PIN.",
+      "octo_pin_inconclusive": "PIN access has not been verified."
     }
   },
   "options": {
@@ -694,7 +718,8 @@
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
-      "disconnecting": "Disconnecting…"
+      "disconnecting": "Disconnecting…",
+      "verifying_pin": "Checking PIN acceptance…"
     },
     "abort": {
       "remove_bond_proxy_owned": "**{name}** is paired through a Bluetooth proxy ({transport}), not through this Home Assistant host, so Home Assistant cannot remove that bond. The bond lives on the proxy itself: clear it there (an ESPHome proxy forgets its bonds when it is reflashed or factory reset), or set the bed's preferred adapter to a Bluetooth adapter on this host and pair again.",

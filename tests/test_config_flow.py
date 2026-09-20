@@ -6854,3 +6854,89 @@ async def test_a_proven_bond_records_provenance_and_no_route_scope(
     assert result["data"][CONF_BLE_BOND_ESTABLISHED] is True
     assert CONF_BLE_BOND_CONTEXT in result["data"]
     assert CONF_BLE_BOND_ATTEMPTED_SOURCE not in result["data"]
+
+
+async def test_octo_discovery_checks_pin_before_saving_and_can_retry(
+    hass: HomeAssistant,
+    mock_bluetooth_service_info_octo_rc2: BluetoothServiceInfoBleak,
+    enable_custom_integrations,
+) -> None:
+    """The real flow manager cannot turn a rejected PIN into a saved entry."""
+    from custom_components.adjustable_bed.config_flow import CapabilityReport
+    from custom_components.adjustable_bed.octo_auth import OctoPinStatus
+
+    with patch.object(
+        AdjustableBedConfigFlow,
+        "_probe_capabilities",
+        AsyncMock(side_effect=[
+            CapabilityReport(connected=True, octo_pin_status=OctoPinStatus.REJECTED),
+            CapabilityReport(connected=True, octo_pin_status=OctoPinStatus.ACCEPTED),
+        ]),
+    ) as probe:
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info_octo_rc2,
+        )
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {
+            CONF_BED_TYPE: BED_TYPE_OCTO,
+            CONF_NAME: "Octo PIN test",
+            CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
+            CONF_MOTOR_COUNT: 2,
+            CONF_OCTO_PIN: "1111",
+        })
+        result = await _advance_progress(hass, result)
+        assert result["step_id"] == "verify_octo_pin"
+        assert result["errors"] == {"base": "octo_pin_rejected"}
+        assert not hass.config_entries.async_entries(DOMAIN)
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {
+            CONF_OCTO_PIN: "1234",
+        })
+        result = await _advance_progress(hass, result)
+        assert result["step_id"] == "verify_octo_pin"
+        assert result["errors"] == {}
+        assert not hass.config_entries.async_entries(DOMAIN)
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_OCTO_PIN] == "1234"
+    assert [call.kwargs["octo_pin"] for call in probe.call_args_list] == ["1111", "1234"]
+
+
+@pytest.mark.parametrize("cancel", [False, True])
+async def test_octo_probe_authenticates_on_owned_connection_and_disconnects(
+    hass: HomeAssistant, cancel: bool,
+) -> None:
+    """PIN verification uses the chosen setup connection and releases it on cancellation."""
+    from custom_components.adjustable_bed.octo_auth import OctoPinStatus
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass = hass
+    client = _fake_connected_client()
+    tracked: list[Any] = []
+    verify = AsyncMock(
+        side_effect=asyncio.CancelledError if cancel else None,
+        return_value=OctoPinStatus.ACCEPTED,
+    )
+    with (
+        _patch_gate("hci0", -55),
+        patch("bleak_retry_connector.establish_connection", AsyncMock(return_value=client)),
+        patch("custom_components.adjustable_bed.config_flow.discover_services", AsyncMock()),
+        patch("custom_components.adjustable_bed.config_flow.read_ble_device_info", AsyncMock(return_value=(None, None))),
+        patch("custom_components.adjustable_bed.config_flow.async_verify_octo_pin", verify),
+    ):
+        if cancel:
+            with pytest.raises(asyncio.CancelledError):
+                await flow._probe_capabilities(
+                    "AA:BB:CC:DD:EE:01", "auto", BED_TYPE_OCTO, OCTO_VARIANT_STANDARD,
+                    octo_pin="1234", client_tracker=tracked.append,
+                )
+        else:
+            report = await flow._probe_capabilities(
+                "AA:BB:CC:DD:EE:01", "auto", BED_TYPE_OCTO, OCTO_VARIANT_STANDARD,
+                octo_pin="1234", client_tracker=tracked.append,
+            )
+            assert report.octo_pin_status is OctoPinStatus.ACCEPTED
+
+    verify.assert_awaited_once_with(client, "1234", OCTO_VARIANT_STANDARD)
+    client.disconnect.assert_awaited_once()
+    assert tracked == [client, None]

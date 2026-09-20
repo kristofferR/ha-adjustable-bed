@@ -36,6 +36,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
     TextSelector,
     TextSelectorConfig,
+    TextSelectorType,
 )
 from homeassistant.helpers.translation import async_get_translations
 from homeassistant.loader import IntegrationNotFound, async_get_integration
@@ -234,6 +235,7 @@ from .discovery_settings import (
 )
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
 from .lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
+from .octo_auth import OctoPinStatus, async_verify_octo_pin
 from .pairing import (
     KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS,
     build_pair_entry_data,
@@ -834,9 +836,21 @@ def _add_cb24_entry_data(
 
 # Short, single-attempt timeout for the optional setup-time connection probe.
 # Keep this small so a failing probe (e.g. the phone app holding the bed's single
-# BLE connection) never makes setup feel slow. The probe is best-effort and never
-# blocks entry creation.
+# BLE connection) never makes setup feel slow. Generic device information is
+# best-effort; standard Octo additionally requires verified PIN access.
 _PROBE_TIMEOUT_SECONDS = 15.0
+
+_OCTO_PIN_MESSAGES: Final[dict[OctoPinStatus, str]] = {
+    OctoPinStatus.ACCEPTED: "The bed accepted the PIN. Submit to finish setup.",
+    OctoPinStatus.NOT_REQUIRED: "This bed does not require a PIN. Submit to finish setup.",
+    OctoPinStatus.REQUIRED: "The bed requires a PIN. Enter it below and submit to check again.",
+    OctoPinStatus.REJECTED: "The bed rejected the PIN. Correct it below and submit to check again.",
+    OctoPinStatus.INCONCLUSIVE: (
+        "PIN verification could not be completed. This does not mean the PIN is wrong. "
+        "Wake the bed, close other apps connected to it, and check that your Bluetooth "
+        "adapter or proxy is available. Submit to retry; the entry has not been saved."
+    ),
+}
 
 # How long the setup probe waits for the bed to advertise before reporting it as
 # absent. Deliberately shorter than the pairing wait: someone who just put a bed
@@ -861,7 +875,7 @@ def _skips_setup_connection_probe(bed_type: str | None, variant: str | None) -> 
 
 @dataclass
 class CapabilityReport:
-    """Result of the read-only setup-time connection probe."""
+    """Result of setup-time connection and optional application PIN checks."""
 
     device_found: bool = False
     connected: bool = False
@@ -874,6 +888,7 @@ class CapabilityReport:
     model: str | None = None
     position_feedback: bool = False
     error: str | None = None
+    octo_pin_status: OctoPinStatus | None = None
     # Which path the probe expected to take, and which one it really took. They
     # can differ: Home Assistant re-ranks every scanner when it connects, so a
     # prediction is never a promise (issue #456).
@@ -1143,6 +1158,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # replayed submission from the previous form cannot be read as a
         # confirmation of a result the user never saw.
         self._verify_form_shown: bool = False
+        self._octo_pin_form_shown: bool = False
         # Set when the user chose to replace an existing host bond rather than
         # pair on top of it.
         self._pairing_remove_record: LocalBondRecord | None = None
@@ -3300,9 +3316,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 errors[CONF_OCTO_PIN] = "invalid_pin"
             else:
                 self._manual_data[CONF_OCTO_PIN] = octo_pin
-                return self.async_create_entry(
-                    title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-                    data=self._manual_data,
+                return await self._finish_with_verify(
+                    self._manual_data,
+                    self._manual_data.get(CONF_NAME, "Adjustable Bed"),
                 )
 
         return self.async_show_form(
@@ -3374,9 +3390,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 errors[CONF_OCTO_PIN] = "invalid_pin"
             else:
                 self._manual_data[CONF_OCTO_PIN] = octo_pin
-                return self.async_create_entry(
-                    title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-                    data=self._manual_data,
+                return await self._finish_with_verify(
+                    self._manual_data,
+                    self._manual_data.get(CONF_NAME, "Adjustable Bed"),
                 )
 
         return self.async_show_form(
@@ -4319,14 +4335,22 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         Skips the verify step (creating the entry directly) when no connectable
         scanner is available to probe through, or for one-connection pairing-window
-        beds whose single connection must be left for setup (issue #385).
+        beds whose single connection must be left for setup (issue #385). Standard
+        Octo must verify PIN requirements even when no scanner is available yet.
         """
-        if not self._verification_possible() or _skips_setup_connection_probe(
+        needs_pin_check = (
+            entry_data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
+            and entry_data.get(CONF_PROTOCOL_VARIANT) != OCTO_VARIANT_STAR2
+        )
+        if (
+            not needs_pin_check and not self._verification_possible()
+        ) or _skips_setup_connection_probe(
             entry_data.get(CONF_BED_TYPE), entry_data.get(CONF_PROTOCOL_VARIANT)
         ):
             return self.async_create_entry(title=title, data=entry_data)
         self._pending_entry = entry_data
         self._pending_title = title
+        self._octo_pin_form_shown = False
         return await self.async_step_setup_progress()
 
     def _async_start_probe_operation(self) -> None:
@@ -4363,6 +4387,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             wait_progress=self.async_report_progress,
             path_reporter=self.async_report_path,
             client_tracker=self.async_track_client,
+            octo_pin=self._pending_entry.get(CONF_OCTO_PIN, ""),
         )
         if report.freshness is FreshnessStatus.DEVICE_UNRESOLVED:
             outcome = OperationOutcome.DEVICE_UNRESOLVED
@@ -4370,6 +4395,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             outcome = OperationOutcome.NOT_ADVERTISING
         elif not report.connected:
             outcome = OperationOutcome.CONNECTION_FAILED
+        elif report.octo_pin_status is OctoPinStatus.INCONCLUSIVE:
+            outcome = OperationOutcome.PIN_VERIFICATION_INCONCLUSIVE
+        elif report.octo_pin_status in (OctoPinStatus.REQUIRED, OctoPinStatus.REJECTED):
+            outcome = OperationOutcome.AUTHENTICATION_FAILED
         else:
             outcome = OperationOutcome.SUCCESS
         return OperationResult(
@@ -4382,7 +4411,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     async def async_step_setup_progress(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Run the read-only capability probe behind a live progress view.
+        """Run connection and PIN checks behind a live progress view.
 
         Without this the form the user just submitted sits there frozen for as
         long as the BLE stack takes, which is indistinguishable from a hang
@@ -4394,7 +4423,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return await self.async_run_operation_step(
             step_id="setup_progress",
             worker=self._async_probe_worker,
-            next_step_id="verify_connection",
+            next_step_id=(
+                "verify_octo_pin"
+                if self._pending_entry.get(CONF_BED_TYPE) == BED_TYPE_OCTO
+                and self._pending_entry.get(CONF_PROTOCOL_VARIANT) != OCTO_VARIANT_STAR2
+                else "verify_connection"
+            ),
         )
 
     async def _probe_capabilities(
@@ -4408,12 +4442,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         wait_progress: Callable[[float], None] | None = None,
         path_reporter: Callable[[ConnectionPath | None], None] | None = None,
         client_tracker: Callable[[BleakClient | None], None] | None = None,
+        octo_pin: str = "",
     ) -> CapabilityReport:
-        """Connect once (read-only) and report what was detected.
+        """Connect once and report device information and Octo PIN acceptance.
 
-        This never sends a movement/control command - it only selects an adapter,
+        This never moves the bed. It selects an adapter,
         establishes a connection, discovers GATT services, and reads the standard
-        Device Information service. It always disconnects in ``finally`` so the
+        Device Information service, then checks application PIN access for Octo.
+        It always disconnects in ``finally`` so the
         coordinator can take the bed's single BLE connection afterwards, and it
         never raises: any failure is captured in ``report.error`` so setup stays
         non-blocking.
@@ -4537,6 +4573,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     report.writable_count = writable
                     _report(SetupAction.READING_CAPABILITIES)
                     report.manufacturer, report.model = await read_ble_device_info(client, address)
+                    if bed_type == BED_TYPE_OCTO:
+                        _report(SetupAction.VERIFYING_PIN)
+                        report.octo_pin_status = await async_verify_octo_pin(
+                            client, octo_pin, protocol_variant
+                        )
                 finally:
                     if client is not None:
                         _report(SetupAction.DISCONNECTING)
@@ -4718,6 +4759,56 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             description_placeholders={
                 "name": self._pending_entry.get(CONF_NAME) or self._pending_entry[CONF_ADDRESS],
                 "capabilities": await self._format_capabilities(report),
+            },
+        )
+
+    async def async_step_verify_octo_pin(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Finish only after PIN acceptance, or let the user correct and retry."""
+        assert self._pending_entry is not None
+        result = self.operation.result
+        report = result.payload if result is not None else None
+        status = (
+            report.octo_pin_status
+            if isinstance(report, CapabilityReport) and report.octo_pin_status is not None
+            else OctoPinStatus.INCONCLUSIVE
+        )
+        errors: dict[str, str] = {}
+        if user_input is not None and self._octo_pin_form_shown:
+            if status.allows_setup:
+                return self.async_create_entry(
+                    title=self._pending_title or self._pending_entry.get(CONF_NAME, "Adjustable Bed"),
+                    data=self._pending_entry,
+                )
+            pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, ""))
+            if not is_valid_octo_pin(pin):
+                errors[CONF_OCTO_PIN] = "invalid_pin"
+            else:
+                self._pending_entry[CONF_OCTO_PIN] = pin
+                self._octo_pin_form_shown = False
+                self._async_start_probe_operation()
+                return await self.async_step_setup_progress()
+
+        schema: dict[vol.Marker, Any] = {}
+        if not status.allows_setup:
+            errors.setdefault("base", f"octo_pin_{status.value}")
+            schema[
+                vol.Optional(CONF_OCTO_PIN, default=self._pending_entry.get(CONF_OCTO_PIN, ""))
+            ] = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
+        self._octo_pin_form_shown = True
+        return self.async_show_form(
+            step_id="verify_octo_pin",
+            data_schema=vol.Schema(schema),
+            errors=errors,
+            description_placeholders={
+                "name": self._pending_title or self._pending_entry.get(CONF_NAME, "Adjustable Bed"),
+                "result": await _async_translation(
+                    self.hass,
+                    "config",
+                    f"step.verify_octo_pin.data_description.outcome_{status.value}",
+                    _OCTO_PIN_MESSAGES[status],
+                ),
             },
         )
 

@@ -66,8 +66,8 @@ def normalize_octo_pin(pin: Any | None) -> str:
 
 
 def is_valid_octo_pin(pin: str) -> bool:
-    """Return True if PIN is empty or exactly 4 digits."""
-    return pin == "" or (len(pin) == 4 and pin.isdigit())
+    """Return True if PIN is empty or exactly four keypad digits."""
+    return pin == "" or (len(pin) == 4 and pin.isascii() and pin.isdigit())
 
 
 # Single source of truth for bed types with variants

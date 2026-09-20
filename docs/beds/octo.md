@@ -63,6 +63,26 @@ an OEM absent here can still use OCTO hardware.
 
 Some Octo beds require a 4-digit PIN to maintain the Bluetooth connection. Without the PIN, the bed will disconnect after ~30 seconds.
 
+### PIN verification during setup (v4)
+
+Standard Octo setup checks the bed's PIN requirements before saving the entry.
+If a PIN is set, Home Assistant sends the entered PIN and waits for the bed's
+acceptance response. Connecting successfully or writing the PIN is not enough
+to confirm it. The check sends no movement commands and does not set or change
+the bed's PIN.
+
+- **Accepted:** finish setup with the verified PIN.
+- **PIN not required:** finish setup after capability discovery confirms this.
+- **Required or rejected:** enter or correct the PIN and retry without losing
+  the other settings.
+- **Could not verify:** the entry remains unsaved. Wake the bed, close other
+  connected apps, check the selected Bluetooth adapter or proxy, and retry.
+  A timeout or connection failure does not mean the PIN is wrong.
+
+The separate Star2 protocol has no application PIN exchange and retains its
+existing setup behavior. Existing configured beds continue to use runtime PIN
+authentication and the repair notification described below.
+
 ### Symptom: the bed connects but nothing moves
 
 A PIN-locked receiver does **not** reject the connection. It connects and
