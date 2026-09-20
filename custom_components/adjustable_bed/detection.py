@@ -136,7 +136,6 @@ from .const import (
     OKIMAT_WRITE_CHAR_UUID,
     OKIN_FFE_NAME_PATTERNS,
     OKIN_GENERIC_NAME_PATTERNS,
-    OKIN_ORE_SERVICE_UUID,
     OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
     OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
     REMACRO_SERVICE_UUID,
@@ -1136,20 +1135,6 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         return DetectionResult(
             bed_type=BED_TYPE_DEWERTOKIN,
             confidence=0.9,
-            signals=signals,
-        )
-
-    # Check for OKIN ORE - unique service UUID (00001000)
-    if OKIN_ORE_SERVICE_UUID.lower() in service_uuids:
-        signals.append("uuid:okin_ore")
-        _LOGGER.info(
-            "Detected OKIN ORE bed at %s (name: %s) by service UUID",
-            service_info.address,
-            service_info.name,
-        )
-        return DetectionResult(
-            bed_type=BED_TYPE_OKIN_ORE,
-            confidence=1.0,
             signals=signals,
         )
 

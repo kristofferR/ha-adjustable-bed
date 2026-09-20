@@ -84,6 +84,7 @@ from custom_components.adjustable_bed.const import (
     OCTO_STAR2_SERVICE_UUID,
     OKIMAT_SERVICE_UUID,
     OKIMAT_WRITE_CHAR_UUID,
+    OKIN_ORE_SERVICE_UUID,
     OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
     OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
     REMACRO_SERVICE_UUID,
@@ -2145,6 +2146,45 @@ class TestExcludedDevicePatterns:
     are also used by legitimate beds, causing false positive discovery.
     See: https://github.com/kristofferR/ha-adjustable-bed/issues/187
     """
+
+    def test_apple_tv_is_not_detected_as_okin_ore(self):
+        """The Apple TV from #577 advertises the generic SDP server UUID."""
+        service_info = _make_service_info(
+            name="Bedroom TV (1019)",
+            address="34:FD:6A:04:C6:9A",
+            service_uuids=[
+                "00000000-deca-fade-deca-deafdecacafe",
+                "00001000-0000-1000-8000-00805f9b34fb",
+                "0000110a-0000-1000-8000-00805f9b34fb",
+                "0000110c-0000-1000-8000-00805f9b34fb",
+                "0000110e-0000-1000-8000-00805f9b34fb",
+                "00001200-0000-1000-8000-00805f9b34fb",
+                "00001801-0000-1000-8000-00805f9b34fb",
+                "02030302-1d19-415f-86f2-22a2106a0a77",
+                "1ff31936-572e-4b36-a2bf-b2409b1aa6f4",
+            ],
+            manufacturer_data={0x004C: bytes.fromhex("10050114fd180f")},
+        )
+
+        result = detect_bed_type_detailed(service_info)
+
+        assert result.bed_type is None
+        assert result.confidence == 0.0
+        assert "uuid:okin_ore" not in result.signals
+
+    def test_sdp_server_uuid_alone_does_not_identify_a_bed(self):
+        """Reject the shared UUID independently of Apple names or payloads."""
+        service_info = _make_service_info(service_uuids=[OKIN_ORE_SERVICE_UUID])
+
+        assert detect_bed_type(service_info) is None
+
+    def test_sdp_server_uuid_does_not_override_a_bed_service(self):
+        """Generic SDP metadata must not take priority over a bed's own UUID."""
+        service_info = _make_service_info(
+            service_uuids=[OKIN_ORE_SERVICE_UUID, JENSEN_SERVICE_UUID],
+        )
+
+        assert detect_bed_type(service_info) == BED_TYPE_JENSEN
 
     def test_jura_bluefrog_is_not_detected_as_dewertokin(self):
         """The TT214H coffee-machine dongle shares DewertOkin's UUID (#450)."""
