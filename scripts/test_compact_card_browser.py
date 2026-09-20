@@ -27,7 +27,15 @@ customElements.define('ha-card', class extends HTMLElement {
 customElements.define('ha-icon', class extends HTMLElement {
   static get observedAttributes(){return ['icon'];}
   connectedCallback(){this.setAttribute('aria-hidden','true');this.attributeChangedCallback();}
-  attributeChangedCallback(){const name=this.getAttribute('icon')||'';this.textContent=name.includes('up')?'↑':name.includes('down')?'↓':name.includes('stop')?'■':name.includes('open-in-new')?'↗':'▱';this.style.cssText='display:inline-block;font-size:20px;line-height:24px';}
+  attributeChangedCallback(){const name=this.getAttribute('icon')||'';this.textContent=name.includes('up')?'↑':name.includes('down')?'↓':name.includes('stop')?'■':name.includes('open-in-new')?'↗':'▱';this.style.cssText='display:inline-flex;align-items:center;justify-content:center;width:var(--mdc-icon-size,24px);height:var(--mdc-icon-size,24px);font-size:19px;line-height:1';}
+});
+customElements.define('ha-state-icon', class extends HTMLElement {
+  set hass(value) {}
+  set stateObj(value) {
+    this.setAttribute('aria-hidden','true');
+    this.style.cssText='display:inline-flex;width:var(--mdc-icon-size,24px);height:var(--mdc-icon-size,24px);align-items:center;justify-content:center';
+    this.innerHTML='<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor"><path d="M3 5h2v10h16v-4H7V9h12a4 4 0 014 4v7h-2v-3H5v3H3V5m4 1h6v2H7z"/></svg>';
+  }
 });
 window.calls = [];
 window.hass = { entities: {}, devices: {}, states: {}, language: 'en',
@@ -43,7 +51,7 @@ for (const [id, name] of [['pair','Bed'], ['left','Left'], ['right','Right']]) {
   const add = (domain,key,state,attrs={}) => {
     const entity_id = `${domain}.${id}_${key}`;
     hass.entities[entity_id] = {entity_id, device_id:id, translation_key:key, platform:'adjustable_bed'};
-    hass.states[entity_id] = {entity_id, state, attributes:{friendly_name:`${name} ${key==='preset_flat'?'Flat':key==='preset_memory_1'?'Sit':key}`, ...attrs}, last_changed:'', last_updated:''};
+    hass.states[entity_id] = {entity_id, state, attributes:{...(id === 'pair' ? {} : {bed_side:id}),friendly_name:`${name} ${key==='preset_flat'?'Flat':key==='preset_memory_1'?'Sit':key}`, ...attrs}, last_changed:'', last_updated:''};
   };
   if (id !== 'pair') add('binary_sensor','ble_connection','off',{state_detail:'idle'});
   add('button','stop','unknown'); add('button','preset_flat','unknown');

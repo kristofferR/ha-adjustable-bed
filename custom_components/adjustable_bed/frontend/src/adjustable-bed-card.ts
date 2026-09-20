@@ -408,13 +408,15 @@ export class AdjustableBedCard extends LitElement {
           </div>` : nothing}
         ${paired && wantsControls ? c.show_side_selector !== false ? html`
           <div class="pane-tabs compact-tabs" role="group"
+            style=${`--pane-count:${panes.filter((pane) => !bedIsEmpty(pane.bed)).length}`}
             aria-label=${localize(this.hass, "compact.target")}>
             ${panes.filter((pane) => !bedIsEmpty(pane.bed)).map((pane) => html`
-              <button class="pane-tab ${pane.key === active?.key ? "active" : ""}"
+              <button class="pane-tab side-${pane.graphicTone ?? "theme"} ${pane.key === active?.key ? "active" : ""}"
                 aria-pressed=${pane.key === active?.key ? "true" : "false"}
                 title=${pane.label}
                 @click=${() => this._selectPairedPane(pane.key)}>
-                <span>${pane.label}</span>
+                ${pane.graphicTone ? html`<span class="dual-swatch" aria-hidden="true"></span>` : nothing}
+                <span class="compact-tab-label">${pane.key === "both" ? localize(this.hass, "compact.both") : pane.label}</span>
               </button>`)}
           </div>` : html`<div class="compact-target">
             ${localize(this.hass, "compact.target")}: ${active?.label ?? localize(this.hass, "compact.target_missing")}
@@ -425,7 +427,7 @@ export class AdjustableBedCard extends LitElement {
           ${localize(this.hass, "compact.target_missing")}</div>` : nothing}
         ${motors.length ? html`<div class="rows compact-motors">
           ${motors.map((m) => m.cover || m.up || m.down
-            ? this._motorRow(m, bed?.stop)
+            ? this._motorRow(m, bed?.stop, true)
             : this._moreInfoRow(m.position!))}
         </div>` : nothing}
         ${actions.length || movingControls || this._compactStopTargets.size ? html`
@@ -482,12 +484,18 @@ export class AdjustableBedCard extends LitElement {
     // The graphic provides its own unknown-feedback fallback even when these
     // optional text readouts are hidden.
     if (mode === "none") return nothing;
-    return html`<div class="compact-readouts">
+    return html`<div class="compact-readouts ${mode === "names" ? "compact-names" : ""}">
       ${sides.map((pane) => html`<div class="side-${pane.graphicTone ?? "theme"}">
-        <span class="compact-side-name"><span class="dual-swatch"></span>${pane.label}</span>
-        ${mode === "angles" ? html`<span class="compact-position">${pane.bed.motors
+        <span class="compact-side-name" title=${pane.label}>
+          <span class="dual-swatch" aria-hidden="true"></span>
+          <span aria-label=${pane.label}>${mode === "angles" && sides.length > 1
+            ? [...pane.label][0] : pane.label}</span>
+        </span>
+        ${mode === "angles" ? html`<span class="compact-position"
+          title=${pane.bed.motors.map((m) => `${this._motorName(m)} ${this._readout(m) ?? "?"}`).join(" · ")}
+        >${pane.bed.motors
           .filter((m) => m.angle || m.position || m.cover)
-          .map((m) => `${this._motorName(m)} ${this._readout(m) ?? "?"}`).join(" · ") ||
+          .map((m) => this._readout(m) ?? "?").join(" / ") ||
           localize(this.hass, "compact.no_position")}</span>` : nothing}
       </div>`)}
     </div>`;
@@ -977,14 +985,12 @@ export class AdjustableBedCard extends LitElement {
   // is passed in rather than read from card-wide state, which during a paired
   // render would point at the parent for every side. It also backs the
   // press-and-hold release, so a hold on one side stops that side.
-  private _motorRow(m: MotorEntity, stopId?: string): TemplateResult {
+  private _motorRow(m: MotorEntity, stopId?: string, compact = false): TemplateResult {
     const readout = this._readout(m);
-    const upId = m.cover ?? m.up;
-    const downId = m.cover ?? m.down;
     const canStop = !!m.cover || !!stopId;
     const label = html`
       <span>${this._motorName(m)}</span>
-      ${readout ? html`<span class="readout">${readout}</span>` : nothing}
+      ${readout && !compact ? html`<span class="readout">${readout}</span>` : nothing}
     `;
     return html`
       <div class="row">
@@ -996,45 +1002,37 @@ export class AdjustableBedCard extends LitElement {
             >${label}</button>`
           : html`<div class="row-label">${label}</div>`}
         <div class="control-group">
-          <button
-            class="cg-btn"
-            aria-label=${localize(this.hass, "action.up")}
-            @pointerdown=${(e: PointerEvent) => this._startHold(e, m, "up", stopId)}
-            @pointerup=${(e: PointerEvent) => this._endPointerHold(e, m)}
-            @pointercancel=${(e: PointerEvent) => this._endPointerHold(e, m)}
-            @keydown=${(e: KeyboardEvent) => this._startHold(e, m, "up", stopId)}
-            @keyup=${(e: KeyboardEvent) => this._endKeyHold(e, m)}
-            @blur=${() => this._endHold(m)}
-            @click=${(e: MouseEvent) => this._activateWithoutPointer(e, m, "up", stopId)}
-            ?disabled=${!upId || (this._config?.layout === "compact" && (!canStop || !this._available(upId)))}
-          >
-            <ha-icon icon="mdi:chevron-up"></ha-icon>
-          </button>
-          <button
+          ${compact ? this._motorDirection(m, "down", stopId) : nothing}
+          ${this._motorDirection(m, "up", stopId)}
+          ${compact ? nothing : html`<button
             class="cg-btn"
             aria-label=${localize(this.hass, "action.stop")}
             @click=${() => this._motorStop(m, stopId)}
             ?disabled=${!canStop}
           >
             <ha-icon icon="mdi:stop"></ha-icon>
-          </button>
-          <button
-            class="cg-btn"
-            aria-label=${localize(this.hass, "action.down")}
-            @pointerdown=${(e: PointerEvent) => this._startHold(e, m, "down", stopId)}
-            @pointerup=${(e: PointerEvent) => this._endPointerHold(e, m)}
-            @pointercancel=${(e: PointerEvent) => this._endPointerHold(e, m)}
-            @keydown=${(e: KeyboardEvent) => this._startHold(e, m, "down", stopId)}
-            @keyup=${(e: KeyboardEvent) => this._endKeyHold(e, m)}
-            @blur=${() => this._endHold(m)}
-            @click=${(e: MouseEvent) => this._activateWithoutPointer(e, m, "down", stopId)}
-            ?disabled=${!downId || (this._config?.layout === "compact" && (!canStop || !this._available(downId)))}
-          >
-            <ha-icon icon="mdi:chevron-down"></ha-icon>
-          </button>
+          </button>`}
+          ${compact ? nothing : this._motorDirection(m, "down", stopId)}
         </div>
       </div>
     `;
+  }
+
+  private _motorDirection(m: MotorEntity, direction: "up" | "down", stopId?: string): TemplateResult {
+    const entityId = m.cover ?? m[direction];
+    const canStop = !!m.cover || !!stopId;
+    return html`
+      <button class="cg-btn"
+        aria-label=${localize(this.hass, `action.${direction}`)}
+        @pointerdown=${(e: PointerEvent) => this._startHold(e, m, direction, stopId)}
+        @pointerup=${(e: PointerEvent) => this._endPointerHold(e, m)}
+        @pointercancel=${(e: PointerEvent) => this._endPointerHold(e, m)}
+        @keydown=${(e: KeyboardEvent) => this._startHold(e, m, direction, stopId)}
+        @keyup=${(e: KeyboardEvent) => this._endKeyHold(e, m)}
+        @blur=${() => this._endHold(m)}
+        @click=${(e: MouseEvent) => this._activateWithoutPointer(e, m, direction, stopId)}
+        ?disabled=${!entityId || (this._config?.layout === "compact" && (!canStop || !this._available(entityId)))}
+      ><ha-icon icon=${`mdi:chevron-${direction}`}></ha-icon></button>`;
   }
 
   private _presets(bed: BedEntities): typeof nothing | TemplateResult {
@@ -1558,55 +1556,99 @@ export class AdjustableBedCard extends LitElement {
   }
 
   static override styles = css`
-    .compact-card { container-type: inline-size; padding: 12px; }
-    .compact-header { display: grid; grid-template-columns: minmax(0, 1fr) 44px;
-      align-items: center; gap: 8px; min-height: 44px; }
-    .compact-header .title { font-size: .95rem; }
-    .compact-open { border: 0; background: none; color: var(--secondary-text-color);
-      cursor: pointer; min-width: 44px; min-height: 44px; }
-    .compact-open ha-icon { --mdc-icon-size: 18px; }
-    .compact-card .compact-tabs { display: flex; flex-wrap: wrap; margin: 6px 0; }
-    .compact-tabs .pane-tab { flex: 1 1 65px; min-height: 44px; padding: 4px 6px; }
-    .compact-tabs .pane-tab span { white-space: normal; overflow-wrap: anywhere; }
+    .compact-card {
+      padding: 13px;
+      --ab-compact-surface: color-mix(in srgb, var(--card-background-color) 94%, var(--primary-text-color));
+      --ab-compact-border: color-mix(in srgb, var(--card-background-color) 85%, var(--primary-text-color));
+      --ab-side-left-rgb: 115, 182, 237;
+      --ab-side-right-rgb: 237, 144, 158;
+    }
+    .compact-header { display: grid; grid-template-columns: minmax(0, 1fr) 24px;
+      align-items: center; gap: 8px; min-height: 22px; padding: 0 2px 9px; }
+    .compact-header .title { font-size: 14px; line-height: 22px; font-weight: 700; }
+    .compact-open { display: grid; place-items: center; padding: 0; border: 0;
+      background: none; color: var(--secondary-text-color); cursor: pointer;
+      width: 24px; height: 22px; }
+    .compact-open ha-icon { --mdc-icon-size: 16px; }
+    .compact-card .compact-tabs {
+      display: grid;
+      grid-template-columns: repeat(var(--pane-count, 3), minmax(0, 1fr));
+      gap: 3px; padding: 3px; margin: 0;
+      border-radius: 9px;
+      background: color-mix(in srgb, var(--card-background-color) 45%,
+        var(--primary-background-color, var(--card-background-color)));
+    }
+    .compact-tabs .pane-tab {
+      min-height: 38px; height: auto; padding: 4px 5px; gap: 4px;
+      border-radius: 6px; font-size: 11px; font-weight: 400; box-shadow: none;
+      color: var(--primary-text-color);
+    }
+    .compact-tabs .pane-tab.active {
+      background: color-mix(in srgb, var(--secondary-background-color), var(--primary-color) 12%);
+      box-shadow: none;
+    }
+    .compact-tabs .dual-swatch, .compact-readouts .dual-swatch { width: 6px; height: 6px; }
+    .compact-tabs .compact-tab-label { min-width: 0; }
     .compact-target { color: var(--secondary-text-color); font-size: .8rem; padding: 6px 0; }
     .compact-graphic { display: block; box-sizing: border-box; width: 100%; padding: 0;
       border: 0; border-radius: 8px; background: none; color: var(--primary-text-color); }
     button.compact-graphic { cursor: pointer; }
-    .compact-graphic .bed-graphic { width: 100%; height: 125px; max-width: 300px; margin: auto; }
-    .compact-glance .compact-graphic .bed-graphic { height: 90px; }
+    .compact-graphic .bed-graphic { display: block; width: 100%; height: 132px; max-width: 300px; margin: auto; }
+    .compact-glance .compact-graphic .bed-graphic { height: 112px; }
+    .compact-graphic .dual-bed-left-stop, .compact-graphic .dual-bed-right-stop { stop-opacity: 1; }
+    .compact-graphic .dual-bed-surface { stroke-opacity: .65; stroke-width: .7px; }
+    .compact-graphic .dual-bed-frame { fill: var(--secondary-text-color); opacity: .55; stroke: none; }
     .compact-no-position { min-height: 90px; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 8px; font-size: .75rem;
       color: var(--secondary-text-color); }
     .compact-no-position ha-icon { --mdc-icon-size: 36px; }
-    .compact-readouts { display: flex; gap: 8px; margin: 0 0 10px; }
-    .compact-readouts > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-    .compact-side-name { display: flex; align-items: center; gap: 5px; font-size: .75rem;
-      color: var(--primary-text-color); overflow-wrap: anywhere; }
-    .compact-position { font-size: .68rem; color: var(--secondary-text-color); overflow-wrap: anywhere; }
+    .compact-readouts { display: flex; justify-content: space-between; gap: 8px;
+      padding: 0 2px 12px; font-size: 11px; line-height: 17px; color: var(--secondary-text-color); }
+    .compact-readouts > div { min-width: 0; display: flex; align-items: center; gap: 5px; }
+    .compact-side-name { display: inline-flex; align-items: center; gap: 5px; }
+    .compact-names { justify-content: center; flex-wrap: wrap; gap: 19px; padding: 4px 0 3px; }
+    .compact-position { font-weight: 500; overflow-wrap: anywhere; }
     .side-theme .dual-swatch { background: var(--primary-color); }
-    .compact-card .compact-actions { grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 6px; }
-    .compact-actions .tile { min-height: 54px; padding: 7px 4px; }
-    .compact-actions .tile-label { font-size: .75rem; white-space: normal; overflow-wrap: anywhere; }
+    .compact-card .compact-actions { grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 7px; }
+    .compact-actions .tile { min-height: 54px; padding: 5px 4px; gap: 2px;
+      justify-content: center; border-radius: 9px; background: var(--ab-compact-surface);
+      border-color: var(--ab-compact-border); }
+    .compact-actions .tile .icon, .compact-actions .tile ha-icon { --mdc-icon-size: 22px; }
+    .compact-actions .tile-label { font-size: 11px; line-height: 17px;
+      white-space: normal; overflow-wrap: anywhere; }
     .compact-stop ha-icon { color: var(--error-color); }
     .compact-actions .tile:disabled { opacity: .45; cursor: default; }
-    .compact-motors { margin-bottom: 10px; }
-    .compact-motors .row { flex-wrap: wrap; }
-    .compact-motors .cg-btn { min-width: 44px; min-height: 44px; }
+    .compact-card .compact-motors { gap: 6px; margin: 0 0 10px; }
+    .compact-motors .row { padding: 0; border: 0; border-radius: 0; gap: 6px; }
+    .compact-motors .row-label { font-size: 12px; }
+    .compact-motors .control-group { gap: 6px; border: 0; border-radius: 0; overflow: visible; }
+    .compact-motors .cg-btn { box-sizing: border-box; width: 44px; height: 44px;
+      padding: 0; justify-content: center; border: 1px solid var(--ab-compact-border);
+      border-radius: 8px; background: var(--ab-compact-surface); }
     .compact-connections { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;
       font-size: .72rem; color: var(--secondary-text-color); }
     .compact-connections > span { display: inline-flex; align-items: center; gap: 5px; }
     .no-animation .bed-panel, .no-animation .dual-bed-panel { transition: none; }
     button:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 2px; }
-    @container (max-width: 230px) {
-      .compact-motors .row-label { flex-basis: 100%; }
-      .compact-motors .control-group { width: 100%; }
-      .compact-graphic .bed-graphic { height: 105px; }
+    @container bed-card (max-width: 258px) {
+      .compact-card { padding: 10px; }
+      .compact-header { min-height: 19px; }
+      .compact-header .title { font-size: 12px; line-height: 19px; }
+      .compact-open { height: 19px; }
+      .compact-graphic .bed-graphic { height: 96px; }
+      .compact-readouts { font-size: 9px; line-height: 14px; gap: 3px; padding-bottom: 10px; }
+      .compact-tabs .pane-tab { min-height: 34px; font-size: 10px; }
+      .compact-actions .tile { min-height: 44px; padding: 2px 3px; }
+      .compact-actions .tile-label { font-size: 10px; line-height: 15px; }
+      .compact-actions .tile .icon, .compact-actions .tile ha-icon { --mdc-icon-size: 20px; }
     }
     @media (prefers-reduced-motion: reduce) {
       :host .bed-panel, :host .dual-bed-panel { transition: none; }
     }
 
     :host {
+      display: block;
+      container: bed-card / inline-size;
       --ab-gap: 10px;
       --ab-side-left-rgb: 75, 0, 255;
       --ab-side-right-rgb: 234, 65, 65;
