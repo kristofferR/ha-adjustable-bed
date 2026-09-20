@@ -123,6 +123,66 @@ async def main():
         assert await page.evaluate("calls.some(c=>c.entity_id==='button.left_stop')")
         assert await page.evaluate("calls.some(c=>c.entity_id==='button.right_stop')")
 
+        # Failed STOP calls remain retryable after switching away from the side.
+        # Successful targets clear independently, including per-cover fallbacks.
+        for use_covers in [False, True]:
+            failed_target = "cover.left_back" if use_covers else "button.left_stop"
+            await page.evaluate(
+                """async ({useCovers, failedTarget}) => {
+              window.stopTestHass=hass;window.failedTarget=failedTarget;
+              const entities={...hass.entities};
+              if(useCovers){delete entities['button.left_stop'];delete entities['button.right_stop'];}
+              let fail=true;
+              hass={...hass,entities,callService:(domain,service,data)=>{
+                calls.push({domain,service,...data});
+                if(data.entity_id===failedTarget && fail){fail=false;return Promise.reject(new Error('BLE unavailable'));}
+                return Promise.resolve();
+              }};
+              card.hass=hass;await configure();calls=[];
+            }""",
+                {"useCovers": use_covers, "failedTarget": failed_target},
+            )
+            await card.get_by_role("button", name="Left", exact=True).click()
+            await card.locator(".compact-actions .tile").first.click()
+            await card.get_by_role("button", name="Right", exact=True).click()
+            await card.locator(".compact-stop").click()
+            await page.evaluate("card.updateComplete")
+            await card.get_by_role("button", name="Both", exact=True).click()
+            await page.evaluate("calls=[]")
+            await card.locator(".compact-stop").click()
+            await page.evaluate("card.updateComplete")
+            assert await page.evaluate("calls.map(c=>c.entity_id)") == [
+                failed_target,
+                "button.pair_stop",
+            ]
+            await page.evaluate("calls=[]")
+            await card.locator(".compact-stop").click()
+            await page.evaluate("card.updateComplete")
+            assert await page.evaluate("calls.map(c=>c.entity_id)") == ["button.pair_stop"]
+            await page.evaluate("hass=stopTestHass;card.hass=hass")
+
+        # A late successful STOP cannot discard a newer movement on the same side.
+        await page.evaluate("""async () => {
+          window.stopTestHass=hass;
+          hass={...hass,callService:(domain,service,data)=>{
+            calls.push({domain,service,...data});
+            if(data.entity_id==='button.left_stop') return new Promise(resolve=>{window.finishStop=resolve});
+            return Promise.resolve();
+          }};card.hass=hass;await configure();
+        }""")
+        await card.get_by_role("button", name="Left", exact=True).click()
+        await card.locator(".compact-actions .tile").first.click()
+        await card.locator(".compact-stop").click()
+        await card.locator(".compact-actions .tile").first.click()
+        await page.evaluate("async ()=>{finishStop();await card.updateComplete;}")
+        await card.get_by_role("button", name="Right", exact=True).click()
+        await page.evaluate("calls=[]")
+        await card.locator(".compact-stop").click()
+        assert await page.evaluate("calls.some(c=>c.entity_id==='button.left_stop')")
+        await page.evaluate(
+            "async ()=>{finishStop();await card.updateComplete;hass=stopTestHass;card.hass=hass;}"
+        )
+
         # A preset-only target without an exposed STOP cannot start movement.
         await page.evaluate("""async () => {
           window.originalHass=hass;

@@ -84,7 +84,7 @@ export class AdjustableBedCard extends LitElement {
   private _watched: string[] = [];
   // Retain STOP targets across tab changes, including presets that outlive their
   // service response. A later Stop must still reach movement this card started.
-  private readonly _compactStopTargets = new Set<string>();
+  private readonly _compactStopTargets = new Map<string, symbol>();
   // Press-and-hold rules live in MotorHold; this class owns only the event
   // wiring and the service calls it drives.
   private readonly _hold = new MotorHold({
@@ -501,20 +501,31 @@ export class AdjustableBedCard extends LitElement {
 
   private _compactRecall(entityId: string, bed: BedEntities): void {
     this._hold.abandon();
-    compactStopEntities(bed).forEach((id) => this._compactStopTargets.add(id));
+    compactStopEntities(bed).forEach((id) => this._compactStopTargets.set(id, Symbol()));
     this._press(entityId);
     this.requestUpdate();
   }
 
   private _stopCompact(bed?: BedEntities): void {
     this._hold.abandon();
-    const targets = new Set([...this._compactStopTargets, ...(bed ? compactStopEntities(bed) : [])]);
-    this._compactStopTargets.clear();
-    for (const id of targets) {
-      if (id.startsWith("cover.")) this._cover(id, "stop_cover");
-      else this._press(id);
+    for (const id of bed ? compactStopEntities(bed) : []) {
+      if (!this._compactStopTargets.has(id)) this._compactStopTargets.set(id, Symbol());
     }
-    if (targets.size) this.requestUpdate();
+    for (const [id, movement] of this._compactStopTargets) {
+      const cover = id.startsWith("cover.");
+      this.hass?.callService(cover ? "cover" : "button", cover ? "stop_cover" : "press", {
+        entity_id: id,
+      }).then(() => {
+        // A completed STOP must not forget movement started while it was pending.
+        if (this._compactStopTargets.get(id) === movement) {
+          this._compactStopTargets.delete(id);
+          this.requestUpdate();
+        }
+      }).catch(() => {
+        // Keep failed targets available for another Stop, even after switching sides.
+      });
+    }
+    if (this._compactStopTargets.size) this.requestUpdate();
   }
 
   private _navigate = (): void => {
@@ -1428,8 +1439,8 @@ export class AdjustableBedCard extends LitElement {
       ownerPointerId = e.pointerId;
     }
     if (this._config?.layout === "compact") {
-      if (stopId) this._compactStopTargets.add(stopId);
-      else if (m.cover) this._compactStopTargets.add(m.cover);
+      if (stopId) this._compactStopTargets.set(stopId, Symbol());
+      else if (m.cover) this._compactStopTargets.set(m.cover, Symbol());
       this.requestUpdate();
     }
     this._hold.start(m, dir, ownerPointerId, stopId);
@@ -1449,8 +1460,8 @@ export class AdjustableBedCard extends LitElement {
   ): void {
     if (e.detail !== 0 || this._hold.heldKey !== null) return;
     if (this._config?.layout === "compact") {
-      if (stopId) this._compactStopTargets.add(stopId);
-      else if (m.cover) this._compactStopTargets.add(m.cover);
+      if (stopId) this._compactStopTargets.set(stopId, Symbol());
+      else if (m.cover) this._compactStopTargets.set(m.cover, Symbol());
       this.requestUpdate();
     }
     if (m.cover) {
