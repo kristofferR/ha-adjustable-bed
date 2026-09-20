@@ -52,6 +52,7 @@ from custom_components.adjustable_bed.paired_coordinator import (
     PairedSideProxy,
     SingleAddressPairedCoordinator,
 )
+from custom_components.adjustable_bed.position_seek import PositionFeedbackError
 
 ADDR = {SIDE_LEFT: "AA:BB:CC:DD:EE:01", SIDE_RIGHT: "AA:BB:CC:DD:EE:02"}
 
@@ -819,6 +820,20 @@ class TestBothFailureContract:
         assert (SIDE_LEFT, "stop") in log
         assert (SIDE_RIGHT, "stop") in log
 
+    async def test_seek_feedback_loss_surfaces_and_stops_both(self):
+        """A child's feedback failure enters the paired cleanup path."""
+        log: list = []
+        coord, left, _ = _pair(log)
+        failure = PositionFeedbackError("Lost fresh position feedback for back during seek")
+        left.async_seek_position = AsyncMock(side_effect=failure)
+        with pytest.raises(PairedSideError) as exc:
+            await coord.async_seek_position(
+                "back", 30.0, _noop, _noop, _noop, side=SIDE_BOTH
+            )
+        assert exc.value.side_errors[SIDE_LEFT] is failure
+        assert (SIDE_LEFT, "stop") in log
+        assert (SIDE_RIGHT, "stop") in log
+
     async def test_cancelled_both_command_stops_both_sides(self):
         # If the parent command coroutine is cancelled (service cancellation /
         # unload) while both sides may be moving, an explicit STOP must reach
@@ -1341,7 +1356,8 @@ class TestSingleAddressCoordinator:
 
         assert sides == [SIDE_LEFT, SIDE_RIGHT]
 
-    async def test_native_both_direct_seek_updates_both_child_position_views(self):
+    @pytest.mark.parametrize("side", [SIDE_LEFT, SIDE_RIGHT, SIDE_BOTH])
+    async def test_direct_seek_does_not_publish_unverified_positions(self, side):
         coordinator = self._coordinator(BED_TYPE_KAIDI, DirectPositionController)
         left = coordinator.children[SIDE_LEFT]
         right = coordinator.children[SIDE_RIGHT]
@@ -1352,16 +1368,16 @@ class TestSingleAddressCoordinator:
 
         move = AsyncMock()
         await coordinator.async_seek_position(
-            "back", 42, move, move, move, side=SIDE_BOTH
+            "back", 42, move, move, move, side=side
         )
 
         assert coordinator._single_inner.controller.targets == [
-            (SIDE_BOTH, "back", 42)
+            (side, "back", 42)
         ]
-        assert left.position_data == {"back": 42}
-        assert right.position_data == {"back": 42}
-        assert left_updates == [{"back": 42}]
-        assert right_updates == [{"back": 42}]
+        assert left.position_data == {}
+        assert right.position_data == {}
+        assert left_updates == []
+        assert right_updates == []
 
     async def test_invalidated_native_both_direct_seek_does_not_publish_target(self):
         coordinator, inner = self._scheduled_coordinator(
@@ -1411,10 +1427,10 @@ class TestSingleAddressCoordinator:
         await asyncio.gather(blocker, latest_seek)
 
         assert inner.controller.targets == [(SIDE_BOTH, "back", 42)]
-        assert left.position_data == {"back": 42}
-        assert right.position_data == {"back": 42}
-        assert left_updates == [{"back": 42}]
-        assert right_updates == [{"back": 42}]
+        assert left.position_data == {}
+        assert right.position_data == {}
+        assert left_updates == []
+        assert right_updates == []
 
     async def test_shared_scheduler_keeps_same_axis_sides_independent(self):
         coordinator, _inner = self._scheduled_coordinator()

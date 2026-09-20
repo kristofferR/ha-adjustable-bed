@@ -82,8 +82,8 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import (
     BOND_LATCH_RETEST_AFTER,
     AdjustableBedCoordinator,
-    NotConnectedError,
 )
+from custom_components.adjustable_bed.position_seek import PositionFeedbackError
 
 from .conftest import TEST_ADDRESS, TEST_NAME, make_controller_mock
 
@@ -1569,7 +1569,7 @@ class TestCoordinatorPositionSeek:
                 "_async_read_positions",
                 new=AsyncMock(),
             ) as read_positions,
-            pytest.raises(NotConnectedError, match="no position data available"),
+            pytest.raises(PositionFeedbackError, match="no fresh position feedback available"),
         ):
             await coordinator.async_seek_position(
                 "back",
@@ -1607,8 +1607,10 @@ class TestCoordinatorPositionSeek:
         move_down = AsyncMock()
         move_stop = AsyncMock()
 
+        readings = iter([0.0, 27.0])
+
         async def _read_positions() -> None:
-            coordinator._position_data["legs"] = 27.0
+            coordinator._handle_position_update("legs", next(readings, 27.0))
 
         with (
             patch.object(
@@ -1655,10 +1657,10 @@ class TestCoordinatorPositionSeek:
         move_up = AsyncMock()
         move_down = AsyncMock()
         move_stop = AsyncMock()
-        readings = iter([27.0, 20.0])
+        readings = iter([0.0, 27.0, 20.0])
 
         async def _read_positions() -> None:
-            coordinator._position_data["legs"] = next(readings, 20.0)
+            coordinator._handle_position_update("legs", next(readings, 20.0))
 
         with (
             patch.object(
@@ -1706,9 +1708,9 @@ class TestCoordinatorPositionSeek:
         move_up = AsyncMock()
         move_down = AsyncMock()
         move_stop = AsyncMock()
-        readings = iter([7.0, 10.0])
+        readings = iter([0.0, 7.0, 10.0])
         read_positions = AsyncMock(
-            side_effect=lambda: coordinator._position_data.__setitem__("legs", next(readings, 10.0))
+            side_effect=lambda: coordinator._handle_position_update("legs", next(readings, 10.0))
         )
 
         with (
@@ -1730,7 +1732,7 @@ class TestCoordinatorPositionSeek:
                 lambda c: move_stop(c),
             )
 
-        assert read_positions.await_count == 2
+        assert read_positions.await_count == 3
         controller.seek_position_step.assert_awaited_once_with("legs", True, 10.0)
         move_up.assert_not_awaited()
         move_down.assert_not_awaited()
@@ -1760,10 +1762,10 @@ class TestCoordinatorPositionSeek:
         move_up = AsyncMock()
         move_down = AsyncMock()
         move_stop = AsyncMock()
-        readings = iter([7.0, 7.0, 10.0])
+        readings = iter([0.0, 7.0, 7.0, 10.0])
 
         async def _read_positions() -> None:
-            coordinator._position_data["legs"] = next(readings, 10.0)
+            coordinator._handle_position_update("legs", next(readings, 10.0))
 
         with (
             patch.object(
@@ -1818,10 +1820,10 @@ class TestCoordinatorPositionSeek:
         move_up = AsyncMock()
         move_down = AsyncMock()
         move_stop = AsyncMock()
-        readings = iter([10.0, 20.0])
+        readings = iter([0.0, 10.0, 20.0])
 
         async def _read_positions() -> None:
-            coordinator._position_data["legs"] = next(readings, 20.0)
+            coordinator._handle_position_update("legs", next(readings, 20.0))
 
         with (
             patch.object(
@@ -1871,6 +1873,9 @@ class TestCoordinatorPositionSeek:
         move_down = AsyncMock()
         move_stop = AsyncMock()
 
+        controller.read_positions = AsyncMock(
+            side_effect=lambda _count: coordinator._handle_position_update("legs", 0.0)
+        )
         with (
             patch(
                 "custom_components.adjustable_bed.position_seek.POSITION_SEEK_TIMEOUT",

@@ -240,6 +240,7 @@ def test_frozen_cluster_vectors_build_exact_frames(
 
 @pytest.mark.parametrize("expected", _PROFILE_EXPECTATIONS, ids=lambda expected: expected.variant)
 async def test_factory_and_config_preserve_every_cst_product_profile(
+    hass,
     expected: CstProfileExpectation,
 ) -> None:
     """Factory and motor-count validation must preserve every fixed profile."""
@@ -248,7 +249,7 @@ async def test_factory_and_config_preserve_every_cst_product_profile(
     assert _motor_count_options(BED_TYPE_OKIN_CST, expected.variant) == [motor_count]
 
     controller = await create_controller(
-        MagicMock(),
+        MagicMock(hass=hass),
         BED_TYPE_OKIN_CST,
         expected.variant,
         None,

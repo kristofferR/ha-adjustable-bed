@@ -204,11 +204,11 @@ def test_static_controller_does_not_gain_a_discovery_listener() -> None:
     coordinator.register_controller_state_callback.assert_not_called()
 
 
-async def test_factory_uses_opt_in_product_and_preserves_legacy_without_it() -> None:
+async def test_factory_uses_opt_in_product_and_preserves_legacy_without_it(hass) -> None:
     from custom_components.adjustable_bed.beds.richmat import RichmatController
     from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
 
-    coordinator = MagicMock()
+    coordinator = MagicMock(hass=hass)
     coordinator.name = "Test bed"
     coordinator.entry.title = "Test bed"
     client = MagicMock()
@@ -229,10 +229,10 @@ async def test_factory_uses_opt_in_product_and_preserves_legacy_without_it() -> 
     assert type(legacy) is RichmatController
 
 
-async def test_factory_rejects_profile_with_unrelated_frame_variant() -> None:
+async def test_factory_rejects_profile_with_unrelated_frame_variant(hass) -> None:
     with pytest.raises(ValueError, match="Nordic or WiLinke"):
         await create_controller(
-            MagicMock(), BED_TYPE_RICHMAT, "prefix55", MagicMock(), rmcontrol_product="A3RM"
+            MagicMock(hass=hass), BED_TYPE_RICHMAT, "prefix55", MagicMock(), rmcontrol_product="A3RM"
         )
 
 

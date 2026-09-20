@@ -405,9 +405,9 @@ async def test_issue_445_manual_lumbar_writes_raw_p_uppercase() -> None:
     client.write_gatt_char.assert_awaited_once_with(MOTOSLEEP_CHAR_UUID, b"$P", response=False)
 
 
-async def test_factory_passes_device_name_into_profile_routing() -> None:
+async def test_factory_passes_device_name_into_profile_routing(hass) -> None:
     """Controller creation retains the advertised name used by both APK routers."""
-    coordinator = MagicMock()
+    coordinator = MagicMock(hass=hass)
     controller = await create_controller(
         coordinator,
         BED_TYPE_MOTOSLEEP,

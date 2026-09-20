@@ -33,9 +33,10 @@ from custom_components.adjustable_bed.validators import (
 )
 
 
-def _make_factory_coordinator() -> SimpleNamespace:
+def _make_factory_coordinator(hass) -> SimpleNamespace:
     """Create a minimal coordinator stub for factory tests."""
     return SimpleNamespace(
+        hass=hass,
         client=None,
         cancel_command=None,
         motor_pulse_count=10,
@@ -209,9 +210,9 @@ class TestOkinCB24FactoryProfiles:
     """Factory tests for CB24 profile selection and override behavior."""
 
     @pytest.mark.asyncio
-    async def test_auto_detect_cb27new_from_smartbed_name_length(self) -> None:
+    async def test_auto_detect_cb27new_from_smartbed_name_length(self, hass) -> None:
         """Factory should detect CB27New for smartbed names with length 18."""
-        coordinator = _make_factory_coordinator()
+        coordinator = _make_factory_coordinator(hass)
         controller = await create_controller(
             coordinator=coordinator,
             bed_type=BED_TYPE_OKIN_CB24,
@@ -225,9 +226,9 @@ class TestOkinCB24FactoryProfiles:
         assert controller._is_new_protocol is True
 
     @pytest.mark.asyncio
-    async def test_auto_detect_defaults_to_old_for_non_cb27new_names(self) -> None:
+    async def test_auto_detect_defaults_to_old_for_non_cb27new_names(self, hass) -> None:
         """Factory should default to CB24 legacy profile when CB27New signature is absent."""
-        coordinator = _make_factory_coordinator()
+        coordinator = _make_factory_coordinator(hass)
         controller = await create_controller(
             coordinator=coordinator,
             bed_type=BED_TYPE_OKIN_CB24,
@@ -253,11 +254,12 @@ class TestOkinCB24FactoryProfiles:
     )
     async def test_auto_detects_cb24_variant_from_manufacturer_payload(
         self,
+        hass,
         manufacturer_payload: bytes,
         expected_variant: str,
     ) -> None:
         """Factory should infer APK CB24 sub-profiles from manufacturer payload markers."""
-        coordinator = _make_factory_coordinator()
+        coordinator = _make_factory_coordinator(hass)
         controller = await create_controller(
             coordinator=coordinator,
             bed_type=BED_TYPE_OKIN_CB24,
@@ -271,9 +273,9 @@ class TestOkinCB24FactoryProfiles:
         assert controller._protocol_variant == expected_variant
 
     @pytest.mark.asyncio
-    async def test_unknown_manufacturer_payload_falls_back_to_name_heuristic(self) -> None:
+    async def test_unknown_manufacturer_payload_falls_back_to_name_heuristic(self, hass) -> None:
         """Unknown OKIN payload should fall through to name-based CB27New detection."""
-        coordinator = _make_factory_coordinator()
+        coordinator = _make_factory_coordinator(hass)
         controller = await create_controller(
             coordinator=coordinator,
             bed_type=BED_TYPE_OKIN_CB24,
@@ -289,9 +291,10 @@ class TestOkinCB24FactoryProfiles:
     @pytest.mark.asyncio
     async def test_obsolete_learned_continuous_flag_cannot_change_safe_behavior(
         self,
+        hass,
     ) -> None:
         """A stale runtime flag must not restore destructive preset repeats."""
-        coordinator = _make_factory_coordinator()
+        coordinator = _make_factory_coordinator(hass)
         coordinator.cb24_continuous_presets_learned = True
         controller = await create_controller(
             coordinator=coordinator,
@@ -312,9 +315,9 @@ class TestOkinCB24FactoryProfiles:
         )
 
     @pytest.mark.asyncio
-    async def test_manufacturer_payload_takes_precedence_over_cb27new_name(self) -> None:
+    async def test_manufacturer_payload_takes_precedence_over_cb27new_name(self, hass) -> None:
         """Manufacturer marker-based profiles should win over CB27New name heuristic."""
-        coordinator = _make_factory_coordinator()
+        coordinator = _make_factory_coordinator(hass)
         controller = await create_controller(
             coordinator=coordinator,
             bed_type=BED_TYPE_OKIN_CB24,
@@ -344,11 +347,12 @@ class TestOkinCB24FactoryProfiles:
     )
     async def test_manual_profile_override_is_respected(
         self,
+        hass,
         profile_variant: str,
         is_new_protocol: bool,
     ) -> None:
         """Factory should honor all explicit CB24 profile variants from APK device profiles."""
-        coordinator = _make_factory_coordinator()
+        coordinator = _make_factory_coordinator(hass)
         controller = await create_controller(
             coordinator=coordinator,
             bed_type=BED_TYPE_OKIN_CB24,

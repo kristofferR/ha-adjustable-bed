@@ -104,9 +104,9 @@ async def test_legacy_options_without_profile_keep_existing_motor_count(hass):
     "bed_type,variant",
     [(BED_TYPE_LEGGETT_OKIN, None), (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN)],
 )
-async def test_factory_routes_profile_and_legacy_default(bed_type, variant):
+async def test_factory_routes_profile_and_legacy_default(hass, bed_type, variant):
     for data, expected in [({}, "prodigy4"), ({CONF_LEGGETT_APP_PROFILE: "useries"}, "useries")]:
-        coordinator = SimpleNamespace(entry=SimpleNamespace(data=data))
+        coordinator = SimpleNamespace(hass=hass, entry=SimpleNamespace(data=data))
         with patch(
             "custom_components.adjustable_bed.beds.leggett_okin.LeggettOkinController"
         ) as controller:

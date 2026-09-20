@@ -2019,6 +2019,8 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
         async_create(
             hass,
             f"[**Download support bundle**]({download_url})\n\n"
+            "The download link expires in one hour or when Home Assistant restarts. "
+            "The saved file remains available at the path below.\n\n"
             f"Captured {notification_count} notifications over "
             f"{capture_duration} seconds."
             f"{logging_notice}"

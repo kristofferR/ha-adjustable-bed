@@ -21,6 +21,8 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING, Final
 
+from homeassistant.exceptions import HomeAssistantError
+
 from .const import POSITION_OVERSHOOT_TOLERANCE, POSITION_SEEK_TIMEOUT
 
 if TYPE_CHECKING:
@@ -107,6 +109,10 @@ class SeekTimeoutError(TimeoutError):
     def __init__(self, message: str, result: SeekResult) -> None:
         super().__init__(message)
         self.result = result
+
+
+class PositionFeedbackError(HomeAssistantError):
+    """A seek cannot continue without trustworthy position feedback."""
 
 
 class PositionSeekPolicy:

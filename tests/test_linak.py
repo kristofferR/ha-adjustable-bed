@@ -524,7 +524,9 @@ class TestLinakController:
         await coordinator.async_connect()
         _mark_session_ready(coordinator)
         coordinator._handle_position_update("back", 10.0)
-        coordinator._position_data_updated_monotonic["back"] = 0.0
+
+        async def stale_after_step(*_args) -> None:
+            coordinator._position_data_updated_monotonic["back"] = 0.0
 
         async def refresh_position() -> None:
             coordinator._handle_position_update("back", 20.0)
@@ -534,7 +536,7 @@ class TestLinakController:
             patch.object(
                 coordinator.controller,
                 "seek_position_step",
-                new=AsyncMock(),
+                new=AsyncMock(side_effect=stale_after_step),
             ),
             patch.object(coordinator, "_async_read_positions", new=read_positions),
         ):
@@ -772,10 +774,15 @@ class TestLinakController:
         await coordinator.async_connect()
         _mark_session_ready(coordinator)
         coordinator._handle_position_update("back", 1.1)
-        coordinator._position_data_updated_monotonic["back"] = 0.0
         mock_bleak_client.write_gatt_char.reset_mock()
         read_started = asyncio.Event()
         release_read = asyncio.Event()
+
+        async def stale_after_movement(_uuid, data, **_kwargs) -> None:
+            if data == LinakCommands.MOVE_BACK_DOWN:
+                coordinator._position_data_updated_monotonic["back"] = 0.0
+
+        mock_bleak_client.write_gatt_char.side_effect = stale_after_movement
 
         async def read_position() -> None:
             read_started.set()

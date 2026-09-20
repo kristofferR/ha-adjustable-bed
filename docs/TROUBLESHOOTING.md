@@ -449,3 +449,28 @@ If you've tried the troubleshooting steps above and still have issues, see the *
 - Filing a bug report on GitHub
 - Requesting support for a new bed
 - Capturing BLE protocol data for debugging
+
+## Support bundle download links
+
+A generated support bundle's download link can be retried for **one hour**.
+It expires sooner if Home Assistant restarts or enough newer bundles replace
+it (only the 32 newest unexpired links are retained). Downloads are not cacheable.
+Treat the URL as a bearer credential: anyone holding it can download that bundle
+while the link is valid.
+
+Expiry does not delete the JSON file. Use the file path shown in the persistent
+notification to retrieve the existing capture, or generate another support
+bundle for a new link. Bundles retain full device addresses and optional logs
+for troubleshooting, so inspect their contents before sharing them publicly.
+
+## Position commands and reported state
+
+A successful direct-position command means that the command was accepted; it
+is not evidence that the target was reached. Position entities keep their last
+reported value, or remain unknown until the bed reports a position. Sending the
+same target again is allowed when no fresh report verifies the target.
+
+Feedback-driven seeks require a fresh measurement for the requested axis.
+If feedback disappears, the integration performs the controller's existing
+movement cleanup and reports a failure. Last-known values can remain visible
+for reference, but do not authorize further movement.

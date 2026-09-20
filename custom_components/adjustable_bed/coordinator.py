@@ -198,6 +198,8 @@ from .detection import (
 from .diagnostic_payloads import new_connection_attempt_details
 from .pairing import inheritable_child_fields, octo_snapshot_from_descriptor
 from .position_seek import (
+    PositionFeedbackError,
+    PositionSeekPolicy,
     PositionSeekRunner,
     SeekMotion,
     SeekOutcome,
@@ -3911,6 +3913,35 @@ class AdjustableBedCoordinator:
             return True
         return self._position_data_generation.get(position) == self._position_connection_generation
 
+    async def _async_read_seek_position(
+        self, position: str, policy: PositionSeekPolicy
+    ) -> float | None:
+        """Read this axis without promoting retained display state to feedback."""
+
+        def has_fresh_notification() -> bool:
+            updated = self._position_data_updated_monotonic.get(position)
+            return (
+                self._position_is_current(position)
+                and updated is not None
+                and policy.cached_position_feedback_max_age > 0
+                and time.monotonic() - updated <= policy.cached_position_feedback_max_age
+            )
+
+        if policy.prefers_cached_position_feedback and has_fresh_notification():
+            return self._position_data[position]
+
+        read_started = time.monotonic()
+        await self._async_read_positions()
+        updated = self._position_data_updated_monotonic.get(position)
+        if has_fresh_notification() or (
+            policy.cached_position_feedback_max_age <= 0
+            and self._position_is_current(position)
+            and updated is not None
+            and updated >= read_started
+        ):
+            return self._position_data[position]
+        return None
+
     async def _async_cancel_position_hydration(self) -> None:
         """Cancel and await the active position hydration task."""
         task = self._position_hydration_task
@@ -5620,33 +5651,31 @@ class AdjustableBedCoordinator:
 
                 supports_direct_position_control = controller.supports_direct_position_control
 
-                # Cached values survive disconnects for display, but must not
-                # drive direction or tolerance decisions on a new BLE session.
-                # Attempt one read whenever this session has not reported the
-                # requested axis. Direct-position controllers can still operate
-                # if the read produces no fresh value.
-                current_angle = (
-                    self._position_data.get(position_key)
-                    if self._position_is_current(position_key)
-                    else None
-                )
-                if current_angle is None:
-                    _LOGGER.debug(
-                        "No current-session position data for %s, attempting one-shot read",
-                        position_key,
-                    )
-                    await self._async_read_positions()
-                    current_angle = (
-                        self._position_data.get(position_key)
-                        if self._position_is_current(position_key)
-                        else None
-                    )
-                    if current_angle is None and not supports_direct_position_control:
-                        raise NotConnectedError(
-                            f"Cannot seek {position_key}: no position data available"
-                        )
-
                 policy = controller.position_seek_policy
+                # Session membership alone does not establish freshness, even
+                # before the first movement or an already-at-target decision.
+                current_angle = await self._async_wait_for_controller_operation(
+                    asyncio.create_task(self._async_read_seek_position(position_key, policy)),
+                    cancel_event=cancel_event,
+                    operation_name="initial position read",
+                    raise_on_cancel=False,
+                )
+                if cancel_event.is_set():
+                    self._record_seek_result(
+                        SeekResult(
+                            position_key=position_key,
+                            target=target_angle,
+                            outcome=SeekOutcome.CANCELLED,
+                            final_angle=None,
+                            final_direction=None,
+                            duration=0.0,
+                        )
+                    )
+                    return
+                if current_angle is None and not supports_direct_position_control:
+                    raise PositionFeedbackError(
+                        f"Cannot seek {position_key}: no fresh position feedback available"
+                    )
 
                 # Check if already at target (per the policy's completion band)
                 if current_angle is not None and policy.accepts_position(
@@ -5703,13 +5732,12 @@ class AdjustableBedCoordinator:
                         native_position,
                     )
                     await controller.set_motor_position(position_key, native_position)
-                    self._handle_position_update(position_key, target_angle)
                     self._record_seek_result(
                         SeekResult(
                             position_key=position_key,
                             target=target_angle,
                             outcome=SeekOutcome.DIRECT_SET,
-                            final_angle=target_angle,
+                            final_angle=None,
                             final_direction=None,
                             duration=0.0,
                         )
@@ -5740,17 +5768,7 @@ class AdjustableBedCoordinator:
                         await move_down_fn(controller)
 
                 async def read_position() -> float | None:
-                    if policy.prefers_cached_position_feedback:
-                        updated_at = self._position_data_updated_monotonic.get(position_key)
-                        if (
-                            updated_at is not None
-                            and self._position_is_current(position_key)
-                            and time.monotonic() - updated_at
-                            <= policy.cached_position_feedback_max_age
-                        ):
-                            return self._position_data.get(position_key)
-                    await self._async_read_positions()
-                    return self._position_data.get(position_key)
+                    return await self._async_read_seek_position(position_key, policy)
 
                 runner = PositionSeekRunner(
                     position_key=position_key,
@@ -5768,6 +5786,12 @@ class AdjustableBedCoordinator:
                     self._record_seek_result(err.result)
                     raise
                 self._record_seek_result(result)
+                if result.outcome is SeekOutcome.POSITION_LOST:
+                    # The runner has completed protocol-owned cleanup before
+                    # paired/service callers receive this failure.
+                    raise PositionFeedbackError(
+                        f"Lost fresh position feedback for {position_key} during seek"
+                    )
 
             finally:
                 if self._bed_type == BED_TYPE_LINAK and not self._command_scheduler.has_pending:

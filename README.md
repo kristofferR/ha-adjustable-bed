@@ -137,6 +137,10 @@ Some brands span multiple controller families. For example, many older Rize beds
 
 v4 requires **Home Assistant 2026.9.0 or newer**. See the [compatibility and migration notes](docs/HA_2026_9.md).
 
+**Before upgrading from v3, save a Home Assistant backup.** v4 migrates stored
+configuration; reinstalling v3 alone cannot undo it. Follow the
+[backup and rollback instructions](docs/HA_2026_9.md#backup-and-rollback).
+
 ### HACS (Recommended)
 
 1. Open HACS in Home Assistant

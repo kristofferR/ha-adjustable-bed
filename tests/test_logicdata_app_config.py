@@ -154,8 +154,9 @@ async def test_options_switch_from_legacy_requires_explicit_app_selection(hass):
     assert entry.data[CONF_BED_TYPE] == BED_TYPE_LOGICDATA
 
 
-async def test_factory_passes_explicit_settings_without_affecting_legacy():
+async def test_factory_passes_explicit_settings_without_affecting_legacy(hass):
     coordinator = SimpleNamespace(
+        hass=hass,
         entry=SimpleNamespace(
             data={
                 CONF_LOGICDATA_APP_PROFILE: "tablet",

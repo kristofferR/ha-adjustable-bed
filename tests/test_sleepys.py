@@ -1608,8 +1608,10 @@ class TestSleepysBox25RuntimeDialect:
     """Tests for the APK-proven 0x2A29 StarCode/legacy runtime switch."""
 
     @staticmethod
-    def _factory_coordinator() -> MagicMock:
+    def _factory_coordinator(hass=None) -> MagicMock:
         coordinator = MagicMock()
+        if hass is not None:
+            coordinator.hass = hass
         coordinator.cancel_command = asyncio.Event()
         coordinator.address = "AA:BB:CC:DD:EE:25"
         return coordinator
@@ -1628,12 +1630,13 @@ class TestSleepysBox25RuntimeDialect:
     )
     async def test_auto_variant_matches_device_information_runtime_branch(
         self,
+        hass,
         device_name: str,
         manufacturer: str | None,
         expected_type: type[SleepysBox25Controller],
     ) -> None:
         controller = await create_controller(
-            self._factory_coordinator(),
+            self._factory_coordinator(hass),
             BED_TYPE_SLEEPYS_BOX25,
             VARIANT_AUTO,
             client=None,
@@ -1652,11 +1655,12 @@ class TestSleepysBox25RuntimeDialect:
     )
     async def test_manual_dialect_override_is_respected(
         self,
+        hass,
         variant: str,
         expected_type: type[SleepysBox25Controller],
     ) -> None:
         controller = await create_controller(
-            self._factory_coordinator(),
+            self._factory_coordinator(hass),
             BED_TYPE_SLEEPYS_BOX25,
             variant,
             client=None,

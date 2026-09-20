@@ -125,9 +125,9 @@ def test_sleep_monitor_variant_selection(
     assert resolve_sleepstar_variant(manufacturer_data) == expected
 
 
-async def test_factory_builds_distinct_controller() -> None:
+async def test_factory_builds_distinct_controller(hass) -> None:
     """The new protocol must never pass through the direct BOX25 controller."""
-    coordinator = MagicMock()
+    coordinator = MagicMock(hass=hass)
     controller = await create_controller(
         coordinator,
         BED_TYPE_SLEEPSTAR,

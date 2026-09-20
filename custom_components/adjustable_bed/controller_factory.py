@@ -376,6 +376,9 @@ async def create_controller(
 
     This factory function handles controller instantiation with lazy imports
     to avoid loading all controller modules until needed.
+    Explicit branches preload their module in the import executor before using
+    a normal import, keeping first-use filesystem work off the loop while
+    retaining static types for constructors and protocol helpers.
 
     Args:
         coordinator: The AdjustableBedCoordinator instance
@@ -401,6 +404,9 @@ async def create_controller(
         ConnectionError: If auto-detection is needed but client is not connected
     """
     if bed_type == BED_TYPE_SLEEP_NUMBER_MCR:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.sleep_number_mcr", __package__
+        )
         from .beds.sleep_number_mcr import SleepNumberMcrController
 
         return SleepNumberMcrController(coordinator, manufacturer_data=manufacturer_data)
@@ -408,6 +414,9 @@ async def create_controller(
     # Protocol-based bed types (new naming convention)
     if bed_type == BED_TYPE_OKIN_HANDLE:
         if _is_dewertokin_rf_gateway(client, ble_model):
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.dewertokin_rf_gateway", __package__
+            )
             from .beds.dewertokin_rf_gateway import DewertOkinRfGatewayController
 
             _LOGGER.info(
@@ -416,11 +425,17 @@ async def create_controller(
             )
             return DewertOkinRfGatewayController(coordinator)
 
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.okin_handle", __package__
+        )
         from .beds.okin_handle import OkinHandleController
 
         return OkinHandleController(coordinator)
 
     if bed_type == BED_TYPE_OKIN_DOT:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.okin_dot", __package__
+        )
         from .beds.okin_dot import OkinDotController
 
         variant = protocol_variant or VARIANT_AUTO
@@ -430,6 +445,9 @@ async def create_controller(
     if bed_type in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT):
         variant = protocol_variant or "auto"
         if _is_dewertokin_rf_gateway(client, ble_model):
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.dewertokin_rf_gateway", __package__
+            )
             from .beds.dewertokin_rf_gateway import DewertOkinUuidRfGatewayController
 
             _LOGGER.info(
@@ -441,6 +459,9 @@ async def create_controller(
             return DewertOkinUuidRfGatewayController(coordinator, variant=variant)
 
         if _is_dewertokin_dot_box(client):
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.okin_dot", __package__
+            )
             from .beds.okin_dot import OkinDotController
 
             _LOGGER.info(
@@ -451,6 +472,9 @@ async def create_controller(
             )
             return OkinDotController(coordinator, variant=variant)
 
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.okin_uuid", __package__
+        )
         from .beds.okin_uuid import OkinUuidController
 
         # Pass the configured variant (remote code) to the controller
@@ -458,6 +482,9 @@ async def create_controller(
         return OkinUuidController(coordinator, variant=variant)
 
     if bed_type == BED_TYPE_LEGGETT_OKIN:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.leggett_okin", __package__
+        )
         from .beds.leggett_okin import LeggettOkinController
 
         entry_data = getattr(getattr(coordinator, "entry", None), "data", {})
@@ -467,6 +494,9 @@ async def create_controller(
         )
 
     if bed_type == BED_TYPE_LOGICDATA_APP:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.logicdata_app", __package__
+        )
         from .beds.logicdata_app import LogicdataAppController
 
         entry_data = coordinator.entry.data
@@ -481,6 +511,9 @@ async def create_controller(
         )
 
     if bed_type == BED_TYPE_JIECANG_APP:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.jiecang_app", __package__
+        )
         from .beds.jiecang_app import JiecangAppController
 
         entry_data = coordinator.entry.data
@@ -493,6 +526,9 @@ async def create_controller(
         )
 
     if bed_type == BED_TYPE_KAIDI:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.kaidi", __package__
+        )
         from .beds.kaidi import KaidiController
 
         advertisement = extract_kaidi_advertisement(manufacturer_data)
@@ -525,6 +561,9 @@ async def create_controller(
         )
 
     if bed_type == BED_TYPE_OKIN_CB24:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.okin_cb24", __package__
+        )
         from .beds.okin_cb24 import OkinCB24Controller
 
         # Manual override via protocol_variant.
@@ -556,6 +595,9 @@ async def create_controller(
         )
 
     if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.leggett_lp_legacy", __package__
+        )
         from .beds.leggett_lp_legacy import LeggettLpLegacyController
         from .lp_legacy_profiles import get_lp_legacy_profile
 
@@ -573,12 +615,21 @@ async def create_controller(
         )
 
     if bed_type == BED_TYPE_LEGGETT_GEN2:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.leggett_gen2", __package__
+        )
         from .beds.leggett_gen2 import LeggettGen2Controller
 
         return LeggettGen2Controller(coordinator, manufacturer_data=manufacturer_data)
 
     if bed_type == BED_TYPE_LINAK:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.linak", __package__
+        )
         from .beds.linak import LinakController
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.linak_protocol", __package__
+        )
         from .beds.linak_protocol import LinakProfile
 
         profile = (
@@ -594,6 +645,9 @@ async def create_controller(
 
     # Brand-specific bed types
     if bed_type == BED_TYPE_RICHMAT:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.richmat", __package__
+        )
         from .beds.richmat import RichmatController, detect_richmat_variant
 
         entry = getattr(coordinator, "entry", None)
@@ -604,6 +658,9 @@ async def create_controller(
         }
 
         if rmcontrol_product:
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.rmcontrol", __package__
+            )
             from .beds.rmcontrol import RmcontrolController, detect_rmcontrol_transport
 
             if protocol_variant in {RICHMAT_VARIANT_PREFIX55, RICHMAT_VARIANT_PREFIXAA}:
@@ -698,6 +755,9 @@ async def create_controller(
             )
 
     if bed_type == BED_TYPE_KEESON:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.keeson", __package__
+        )
         from .beds.keeson import KeesonController
 
         keeson_variant = protocol_variant
@@ -827,6 +887,9 @@ async def create_controller(
             return KeesonController(coordinator, variant="base", device_name=device_name)
 
     if bed_type == BED_TYPE_MOTOSLEEP:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.motosleep", __package__
+        )
         from .beds.motosleep import MotoSleepController
 
         return MotoSleepController(coordinator, device_name=device_name)
@@ -834,11 +897,17 @@ async def create_controller(
     if bed_type == BED_TYPE_LEGGETT_PLATT:
         # Use configured variant or auto-detect
         if protocol_variant == LEGGETT_VARIANT_MLRM:
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.leggett_wilinke", __package__
+            )
             from .beds.leggett_wilinke import LeggettWilinkeController
 
             _LOGGER.debug("Using MlRM Leggett & Platt variant (configured)")
             return LeggettWilinkeController(coordinator)
         elif protocol_variant == LEGGETT_VARIANT_OKIN:
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.leggett_okin", __package__
+            )
             from .beds.leggett_okin import LeggettOkinController
 
             _LOGGER.debug("Using Okin Leggett & Platt variant (configured)")
@@ -870,18 +939,27 @@ async def create_controller(
             wilinke_uuids_lower = [uuid.lower() for uuid in RICHMAT_WILINKE_SERVICE_UUIDS]
             for service in client.services:
                 if service.uuid.lower() in wilinke_uuids_lower:
+                    await coordinator.hass.async_add_import_executor_job(
+                        import_module, ".beds.leggett_wilinke", __package__
+                    )
                     from .beds.leggett_wilinke import LeggettWilinkeController
 
                     _LOGGER.debug("Using MlRM Leggett & Platt variant (auto-detected)")
                     return LeggettWilinkeController(coordinator)
 
             # Default to gen2 variant (most common L&P variant)
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.leggett_gen2", __package__
+            )
             from .beds.leggett_gen2 import LeggettGen2Controller
 
             _LOGGER.debug("Using Gen2 Leggett & Platt variant (no WiLinke UUID found)")
             return LeggettGen2Controller(coordinator, manufacturer_data=manufacturer_data)
         else:
             # Explicit gen2 variant
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.leggett_gen2", __package__
+            )
             from .beds.leggett_gen2 import LeggettGen2Controller
 
             _LOGGER.debug("Using Gen2 Leggett & Platt variant (configured)")
@@ -889,6 +967,9 @@ async def create_controller(
 
     if bed_type == BED_TYPE_DEWERTOKIN:
         if _is_dewertokin_rf_gateway(client, ble_model):
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.dewertokin_rf_gateway", __package__
+            )
             from .beds.dewertokin_rf_gateway import DewertOkinRfGatewayController
 
             _LOGGER.info(
@@ -897,11 +978,17 @@ async def create_controller(
             )
             return DewertOkinRfGatewayController(coordinator)
 
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.okin_handle", __package__
+        )
         from .beds.okin_handle import OkinHandleController
 
         return OkinHandleController(coordinator)
 
     if bed_type == BED_TYPE_OCTO:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.octo", __package__
+        )
         from .beds.octo import OctoController, OctoStar2Controller
 
         use_star2 = protocol_variant == OCTO_VARIANT_STAR2
@@ -925,11 +1012,17 @@ async def create_controller(
         return OctoController(coordinator, pin=octo_pin, capability_snapshot=capability_snapshot)
 
     if bed_type == BED_TYPE_JENSEN:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.jensen", __package__
+        )
         from .beds.jensen import JensenController
 
         return JensenController(coordinator, pin=jensen_pin)
 
     if bed_type == BED_TYPE_OKIN_CST:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.okin_cst", __package__
+        )
         from .beds.okin_cst import OkinCstController
 
         variant = protocol_variant or VARIANT_AUTO
@@ -939,6 +1032,9 @@ async def create_controller(
         return OkinCstController(coordinator, variant=variant)
 
     if bed_type == BED_TYPE_SLEEP_NUMBER:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.sleep_number", __package__
+        )
         from .beds.sleep_number import SleepNumberController
 
         side = protocol_variant or VARIANT_AUTO
@@ -948,6 +1044,9 @@ async def create_controller(
         return SleepNumberController(coordinator, side=side)
 
     if bed_type == BED_TYPE_SLEEPSTAR:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.sleepstar", __package__
+        )
         from .beds.sleepstar import SleepStarController
 
         _LOGGER.debug("Using SleepSpa S9000AI SLEEPSTAR controller")
@@ -957,6 +1056,9 @@ async def create_controller(
         )
 
     if bed_type == BED_TYPE_OKIN_64BIT:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.okin_64bit", __package__
+        )
         from .beds.okin_64bit import Okin64BitController
 
         # Use configured variant, default to Nordic UART (fire-and-forget)
@@ -965,6 +1067,9 @@ async def create_controller(
         return Okin64BitController(coordinator, variant=variant)
 
     if bed_type == BED_TYPE_SLEEPYS_BOX25:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.sleepys_box25", __package__
+        )
         from .beds.sleepys_box25 import (
             SleepysBox25Controller,
             SleepysBox25LegacyController,
@@ -1003,6 +1108,9 @@ async def create_controller(
         return SleepysBox25Controller(coordinator)
 
     if bed_type == BED_TYPE_RONDURE:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.rondure", __package__
+        )
         from .beds.rondure import RondureController
         from .const import RONDURE_VARIANTS
 
@@ -1022,6 +1130,9 @@ async def create_controller(
         return RondureController(coordinator, variant=variant)
 
     if bed_type == BED_TYPE_COOLBASE:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.coolbase", __package__
+        )
         from .beds.coolbase import CoolBaseController
 
         normalized_name = (device_name or "").lower()
@@ -1035,6 +1146,9 @@ async def create_controller(
         return CoolBaseController(coordinator, dewert_okin_profile=dewert_okin_profile)
 
     if bed_type == BED_TYPE_SBI:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.sbi", __package__
+        )
         from .beds.sbi import SBIController
 
         # Use configured variant or default to "both" for dual-bed control

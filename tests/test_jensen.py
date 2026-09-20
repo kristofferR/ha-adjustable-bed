@@ -588,7 +588,7 @@ class TestJensenCoordinatorAuthRefresh:
 
         coordinator._controller.send_pin.assert_awaited_once()
         coordinator._controller.set_motor_position.assert_awaited_once_with("back", 55)
-        assert coordinator.position_data["back"] == 20.0
+        assert "back" not in coordinator.position_data
         move_up.assert_not_awaited()
         move_down.assert_not_awaited()
         move_stop.assert_not_awaited()
