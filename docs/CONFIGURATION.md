@@ -523,6 +523,12 @@ Left and Right. The resulting parent device provides
 combined controls; the child devices provide side-specific controls. The card
 also offers Left/Both/Right selection. This does not require Controller Sync.
 
+Automatic connection mode keeps each receiver's own connection settings, including
+its idle timeout and Disconnect After Command choice. Selecting one side does not
+disconnect the other, and Both can operate the two receivers concurrently. This
+also applies to OCTO/Star2 pairs. Existing automatic pairs pick up this behavior
+on reload; an explicitly stored sequential connection mode is retained.
+
 The wizard checks protocol and motor-layout compatibility. Some controllers need
 a successful connection first to discover their capabilities. One-motor OCTO
 TV/bed lifts remain standalone. Combined controls use capabilities shared by both

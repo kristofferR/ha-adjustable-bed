@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+from functools import partial
 from types import SimpleNamespace
 from typing import cast
 from unittest.mock import AsyncMock
@@ -38,8 +39,10 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SBI,
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
+    CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     DOMAIN,
+    PAIR_CONNECTION_MODE_AUTO,
     PAIR_CONNECTION_MODE_CONCURRENT,
     PAIR_CONNECTION_MODE_SEQUENTIAL,
     SIDE_BOTH,
@@ -1907,29 +1910,35 @@ class TestSingleAddressCoordinator:
 
 
 class TestConnectionModeResolution:
-    """Phase 2.5 C1: 'auto' resolves to sequential for single-connection beds
-    (Octo) and concurrent for everything else; an explicit choice is honoured."""
+    """Independent receivers keep independent links, regardless of bed type."""
 
-    def _coord(self, bed_type, *, mode=None):
+    def _coord(self, bed_type, *, mode=None, stored_mode=None):
         entry = SimpleNamespace(
             data={CONF_PAIR_ID: "pair_abc123", "name": "X", CONF_BED_TYPE: bed_type}
         )
+        if stored_mode is not None:
+            entry.data[CONF_PAIR_CONNECTION_MODE] = stored_mode
         children = {
             SIDE_LEFT: RecordingChild(SIDE_LEFT, []),
             SIDE_RIGHT: RecordingChild(SIDE_RIGHT, []),
         }
         return PairedBedCoordinator(None, entry, children, connection_mode=mode)
 
-    def test_auto_resolves_sequential_for_octo(self):
+    @pytest.mark.parametrize("bed_type", [BED_TYPE_OCTO, BED_TYPE_LINAK])
+    @pytest.mark.parametrize("stored_mode", [None, PAIR_CONNECTION_MODE_AUTO])
+    def test_auto_resolves_concurrent(self, bed_type, stored_mode):
         assert (
-            self._coord(BED_TYPE_OCTO).connection_mode
-            == PAIR_CONNECTION_MODE_SEQUENTIAL
+            self._coord(bed_type, stored_mode=stored_mode).connection_mode
+            == PAIR_CONNECTION_MODE_CONCURRENT
         )
 
-    def test_auto_resolves_concurrent_for_linak(self):
+    @pytest.mark.parametrize(
+        "stored_mode", [PAIR_CONNECTION_MODE_CONCURRENT, PAIR_CONNECTION_MODE_SEQUENTIAL]
+    )
+    def test_explicit_stored_mode_preserved(self, stored_mode):
         assert (
-            self._coord(BED_TYPE_LINAK).connection_mode
-            == PAIR_CONNECTION_MODE_CONCURRENT
+            self._coord(BED_TYPE_OCTO, stored_mode=stored_mode).connection_mode
+            == stored_mode
         )
 
     def test_explicit_concurrent_preserved_for_octo(self):
@@ -1944,9 +1953,51 @@ class TestConnectionModeResolution:
             == PAIR_CONNECTION_MODE_SEQUENTIAL
         )
 
+    @pytest.mark.parametrize("side", [SIDE_LEFT, SIDE_RIGHT, SIDE_BOTH])
+    async def test_octo_commands_reuse_setup_connections(self, side):
+        coordinator = self._coord(BED_TYPE_OCTO)
+        children = coordinator.children
+        assert await coordinator.async_connect()
+        assert all(child.is_connected for child in children.values())
+        for child in children.values():
+            child.log.clear()
+
+        for _ in range(2):
+            await coordinator.async_execute_controller_command(_noop, side=side)
+
+        for child_side, child in children.items():
+            expected = 2 if side in (child_side, SIDE_BOTH) else 0
+            assert child.log == [(child_side, "command")] * expected
+            assert child.is_connected
+
+    async def test_octo_both_starts_both_sides_before_either_finishes(self):
+        coordinator = self._coord(BED_TYPE_OCTO)
+        started = {side: asyncio.Event() for side in coordinator.sides}
+        release = asyncio.Event()
+
+        async def command(side, *args, **kwargs):
+            started[side].set()
+            await release.wait()
+
+        for side, child in coordinator.children.items():
+            child.async_execute_controller_command = AsyncMock(
+                side_effect=partial(command, side)
+            )
+
+        task = asyncio.create_task(
+            coordinator.async_execute_controller_command(_noop, side=SIDE_BOTH)
+        )
+        try:
+            async with asyncio.timeout(1):
+                await asyncio.gather(*(event.wait() for event in started.values()))
+            assert not task.done()
+        finally:
+            release.set()
+            await task
+
 
 class TestSequentialCycle:
-    """Phase 2.5 C2: single-connection beds (Octo) hold ONE BLE link at a time —
+    """Explicit sequential mode holds ONE BLE link at a time —
     connect/op/disconnect each side in turn, never two links at once."""
 
     SEQ = PAIR_CONNECTION_MODE_SEQUENTIAL

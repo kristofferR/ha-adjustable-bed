@@ -50,7 +50,6 @@ from .const import (
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
-    requires_sequential_pairing,
 )
 from .entity_runtime import ControllerCommand, EntityRuntime, EntityRuntimeView
 from .paired_devices import child_device_info
@@ -118,20 +117,15 @@ class PairedBedCoordinator:
         }
         if not self._children:
             raise ValueError("PairedBedCoordinator requires at least one child")
-        # Resolve "auto" to a concrete mode from the bed type: single-connection
-        # beds (Octo) get the sequential active-connection profile; everything
-        # else stays concurrent. An explicit concurrent/sequential choice is
-        # honoured as-is. Resolving here (not at pair-build) auto-upgrades any
-        # pre-existing "auto" pair on the next load; entry.data stays "auto".
+        # Separate receivers retain their standalone connection lifecycles.
+        # A per-receiver link limit does not require switching between addresses.
+        # Resolve at load time so existing auto pairs also pick up this policy;
+        # preserve an explicitly configured sequential mode.
         raw_mode = connection_mode or entry.data.get(
             CONF_PAIR_CONNECTION_MODE, DEFAULT_PAIR_CONNECTION_MODE
         )
         if raw_mode == PAIR_CONNECTION_MODE_AUTO:
-            raw_mode = (
-                PAIR_CONNECTION_MODE_SEQUENTIAL
-                if requires_sequential_pairing(entry.data.get(CONF_BED_TYPE))
-                else PAIR_CONNECTION_MODE_CONCURRENT
-            )
+            raw_mode = PAIR_CONNECTION_MODE_CONCURRENT
         self._connection_mode: str = raw_mode
         # Orders connection switching in sequential mode; unused when concurrent.
         self._pair_command_lock = asyncio.Lock()
@@ -826,8 +820,8 @@ class PairedBedCoordinator:
         """Run each side in turn holding only ONE BLE link at a time: connect the
         side, run its op, then disconnect it before moving to the next.
 
-        Used for single-connection beds (Octo) whose firmware allows only one
-        concurrent link. Dropping the link halts that side's motors (verified
+        Used when sequential switching is explicitly configured.
+        Dropping the link halts that side's motors (verified
         dead-man model — the bed only moves while a command stream arrives), so a
         side that has been disconnected needs no separate STOP. On failure the
         loop stops at the first failing side; every side that was connected is
@@ -1008,7 +1002,7 @@ class PairedBedCoordinator:
         """Connect the children; succeed if *at least one* connects (half-available)."""
         items = list(self._children.items())
         if self._connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL:
-            # Single-connection beds hold one link at a time, so don't keep either
+            # Explicit sequential mode holds one link at a time, so don't keep either
             # side connected after setup. Connect each side once to verify it is
             # reachable (this is also where a capability snapshot is captured),
             # then release it; commands reconnect the targeted side on demand.

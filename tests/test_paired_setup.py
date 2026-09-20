@@ -2073,10 +2073,8 @@ class TestPairBedsConversion:
         mock_coordinator_connected,
         enable_custom_integrations,
     ):
-        """A concurrent child that fails its initial connect only because its
-        original single still held the single-link BLE is retried after the absorb
-        frees the link — so a non-offline-mintable side isn't left empty until a
-        reload."""
+        """Release both originals before concurrent setup; retry a contended
+        side after absorption if that best-effort release wasn't sufficient."""
         from unittest.mock import MagicMock, patch
 
         from custom_components.adjustable_bed.coordinator import (
@@ -2086,12 +2084,18 @@ class TestPairBedsConversion:
         left = await self._setup_single(hass, LEFT_ADDR, "Seng")
         right = await self._setup_single(hass, RIGHT_ADDR, "Bed 4587")
 
+        releases = [
+            AsyncMock(wraps=hass.data[DOMAIN][entry.entry_id].async_disconnect)
+            for entry in (left, right)
+        ]
         calls: dict[str, int] = {}
 
         async def fake_connect(self):
+            for release in releases:
+                assert release.await_args_list[0].args == ("absorbed_by_pair",)
             calls[self.address] = calls.get(self.address, 0) + 1
-            # The left child's FIRST connect fails (its original single still
-            # holds the link); every other connect — including the post-absorb
+            # The left child's FIRST connect fails (the old link hasn't been
+            # released by the transport yet); every other connect, including the post-absorb
             # retry — succeeds and marks the link live.
             if self.address == LEFT_ADDR and calls[self.address] == 1:
                 return False
@@ -2101,7 +2105,11 @@ class TestPairBedsConversion:
             return True
 
         result = await self._reach_pair_step(hass)
-        with patch.object(AdjustableBedCoordinator, "async_connect", fake_connect):
+        with (
+            patch.object(AdjustableBedCoordinator, "async_connect", fake_connect),
+            patch.object(hass.data[DOMAIN][left.entry_id], "async_disconnect", releases[0]),
+            patch.object(hass.data[DOMAIN][right.entry_id], "async_disconnect", releases[1]),
+        ):
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
                 {CONF_PAIR_SELECTION: encode_pair_selection(left.entry_id, right.entry_id)},

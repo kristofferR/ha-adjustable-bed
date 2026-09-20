@@ -2489,8 +2489,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     not self._is_octo_star2(right) and self._octo_capability_snapshot(right) is None
                 )
             ):
-                # Standard Octo is paired via the sequential active-connection
-                # profile, and its OFFLINE side mints its light/RGBW/memory/synchro
+                # An OFFLINE Standard Octo side mints its light/RGBW/memory/synchro
                 # entities from a capability snapshot captured here from the live bed
                 # — so each STANDARD Octo bed must be connected at pairing for its
                 # snapshot to exist. Star2 has fixed caps and needs no snapshot.

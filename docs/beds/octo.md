@@ -235,7 +235,8 @@ The current app confirms these lifecycle details:
 - A pushed `SYSTEM_BLE_PIN_LOCK` notification immediately retransmits the saved
   four-digit PIN. `SYSTEM_BLE_PIN_STATE` reports whether the link is unlocked.
 
-The paired coordinator follows the stricter control-screen contract: a
+When explicitly configured for sequential switching, the paired coordinator follows
+the stricter control-screen contract: a
 disconnect error that still reports an active physical link is retained and
 reported, and sequential switching stops before connecting the other address.
 Unit tests cover left-then-right switching, abort-on-release-failure, PIN
@@ -243,14 +244,19 @@ re-authentication, memory streaming, cancellation, and STOP cleanup.
 
 The APK proves the app uses one active GATT target, but it cannot prove whether
 bed firmware permits two simultaneous central connections or whether two
-Bluetooth proxies behave differently from one. Single-proxy and dual-proxy
-operation therefore remain hardware-validation items; the integration makes no
-concurrency claim and uses the conservative one-link-at-a-time profile.
+Bluetooth proxies behave differently from one. It also does not establish a
+shared connection limit across two independent receivers. Single-proxy and
+dual-proxy operation remain hardware-validation items.
 
 In 4.0, two compatible bed-side receivers can be paired into one Home Assistant
-device. OCTO pairs use conservative one-link switching: Left, Right, or Both
-commands connect to one side at a time, and Both visits the two sides
-sequentially. A separate one-motor `RTV` remains its own TV Lift device and must
+device. Automatic connection mode preserves each receiver's standalone connection
+policy and runs Both commands concurrently. The previous bed-type-based default
+forced a disconnect after every command, overriding each side's idle settings
+and repeating connection setup even for successive commands to the same side
+(Ref #612). Existing automatic pairs adopt the corrected policy on reload;
+explicit sequential mode still visits the two sides in turn. This changes
+integration scheduling, not controller commands, authentication, or timing.
+A separate one-motor `RTV` remains its own TV Lift device and must
 not be added as a bed side. Pairing requires compatible bed-side actuator
 layouts, so a one-motor RTV cannot be paired with a two-motor RC2.
 

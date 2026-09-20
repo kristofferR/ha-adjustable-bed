@@ -204,10 +204,9 @@ PAIR_SIDES: Final = (SIDE_LEFT, SIDE_RIGHT)
 # Internal forward-compat marker for the paired-entry data shape within v4.
 PAIR_SCHEMA_VERSION: Final = 1
 
-# How the two sides' BLE links are driven. ``auto``/``concurrent`` hold both
-# links at once (correct for independent two-device beds like Linak — both sides
-# run truly simultaneously). ``sequential`` switches the active connection per
-# command (the Octo profile, where the firmware allows only one active link).
+# How the two sides' BLE links are driven. ``auto``/``concurrent`` let each
+# independent receiver retain its own connection policy. Explicit ``sequential``
+# mode switches the active connection per command, holding one link at a time.
 CONF_PAIR_CONNECTION_MODE: Final = "pair_connection_mode"
 PAIR_CONNECTION_MODE_AUTO: Final = "auto"
 PAIR_CONNECTION_MODE_CONCURRENT: Final = "concurrent"
@@ -483,21 +482,6 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_LOGICDATA,
     }
 )
-
-
-# Bed types whose firmware allows only ONE concurrent BLE link, so a paired bed
-# of this type must use the SEQUENTIAL active-connection profile (connect one
-# side, act, disconnect, switch to the other) instead of holding both links at
-# once. Verified from the Octo app: it holds a single connected-device slot and
-# switches sequentially (disconnect-then-connect). This is a SEPARATE marker from
-# BEDS_REQUIRING_PAIRING — Octo PIN-auths per connection, it does not OS-bond.
-SINGLE_CONNECTION_BED_TYPES: Final = frozenset({BED_TYPE_OCTO})
-
-
-def requires_sequential_pairing(bed_type: str | None) -> bool:
-    """Return True if a paired bed of this type must use the sequential
-    active-connection profile (only one BLE link held at a time)."""
-    return bed_type in SINGLE_CONNECTION_BED_TYPES
 
 
 # Mapping from legacy bed types to their protocol-based equivalents
