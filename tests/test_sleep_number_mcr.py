@@ -12,6 +12,7 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.sleep_number_mcr import SleepNumberMcrController
+from custom_components.adjustable_bed.beds.sleep_number_mcr_protocol import decode_foundation
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEP_NUMBER_MCR,
     CONF_BED_TYPE,
@@ -168,7 +169,7 @@ async def test_se_command_payloads(controller, command, parameters, key, payload
     controller._prepare_foundation_motion = AsyncMock(return_value={})
     controller._wait_for_foundation = AsyncMock()
     controller._check_pinch = AsyncMock()
-    controller._read_foundation = AsyncMock()
+    controller._read_foundation = AsyncMock(return_value=decode_foundation(foundation_reply()))
     await controller.async_execute_sleep_number_command(command, parameters)
     assert controller._se_write.await_args_list[0].args == (key, payload)
     if command == "stop":
@@ -207,7 +208,7 @@ async def test_bound_side_cannot_be_overridden(controller):
 
 async def test_movement_cancel_always_releases(controller):
     controller._prepare_foundation_motion = AsyncMock(return_value={})
-    controller._read_foundation = AsyncMock()
+    controller._read_foundation = AsyncMock(return_value=decode_foundation(foundation_reply()))
     controller._mcr_request = AsyncMock(side_effect=asyncio.CancelledError)
     controller._stop_side = AsyncMock()
     with pytest.raises(asyncio.CancelledError):
@@ -393,7 +394,7 @@ async def test_motion_rejects_obstruction_sensor_fault(controller, motion, pinch
 
 async def test_motion_detects_new_obstruction_event(controller, motion):
     motion.pinch = [bytes(5), bytes((0, 0, 0, 0, 1))]
-    with pytest.raises(ValueError, match="obstruction occurred"):
+    with pytest.raises(ValueError, match="obstruction counter changed"):
         await controller._set_position("left", "head", 0)
     assert controller._mcr_request.await_args_list[-2].kwargs["payload"] == b"MFHL110"
 
@@ -419,6 +420,11 @@ async def test_preset_keeps_selected_side_and_monitors_recovery(
             foundation_reply(status=0x63, flags=(1, 1, 0, 0)),
             foundation_reply(),
         ]
+    else:
+        motion.foundation = [
+            foundation_reply(),
+            foundation_reply(presets=0x24 if side == "left" else 0x42),
+        ]
     await controller.set_foundation_preset_for_side(side, preset)
     writes = [
         call for call in controller._mcr_request.await_args_list if call.args[:2] == (0x42, 0x15)
@@ -432,6 +438,55 @@ async def test_flat_does_not_mistake_homing_flag_for_recovery(controller, motion
     motion.foundation = [foundation_reply(status=0x62)]
     with pytest.raises(ValueError, match="needs homing"):
         await controller.set_foundation_preset_for_side("left", "Flat")
+
+
+async def test_preset_ack_without_execution_does_not_claim_success(controller, motion):
+    with pytest.raises(ValueError, match="without confirming left preset Read"):
+        await controller.set_foundation_preset_for_side("left", "Read")
+    assert controller._mcr_request.await_args_list[-2].kwargs["payload"] == b"MFHL110"
+
+
+async def test_already_selected_preset_can_complete_without_movement(controller, motion):
+    motion.foundation = [foundation_reply(presets=0x24)]
+    await controller.set_foundation_preset_for_side("left", "Read")
+    assert controller._state["foundation_preset_left"] == "Read"
+
+
+@pytest.mark.parametrize("before,after", [(127, 128), (255, 0), (5, 0)])
+async def test_changed_obstruction_counter_cannot_wrap_or_reset_silently(
+    controller, motion, before, after
+):
+    motion.pinch = [bytes((0, 0, 0, 0, before)), bytes((0, 0, 0, 0, after))]
+    with pytest.raises(ValueError, match="obstruction counter changed"):
+        await controller._set_position("left", "head", 0)
+
+
+async def test_unchanged_signed_obstruction_counter_is_not_a_new_fault(controller, motion):
+    motion.pinch = [bytes((0, 0, 0, 0, 128))]
+    await controller._set_position("left", "head", 0)
+
+
+async def test_hold_checks_fault_in_final_read_after_duration_expires(controller, motion):
+    controller._coordinator.motor_pulse_count = 1
+    controller._coordinator.motor_pulse_delay_ms = 1
+    motion.foundation = [foundation_reply(), foundation_reply(flags=(0, 16, 0, 0))]
+
+    async def blocked(_seconds):
+        await asyncio.Event().wait()
+
+    controller._foundation_delay = blocked
+    with pytest.raises(ValueError, match="current is over"):
+        await controller.bind_side("left").move_back_up()
+    assert controller._state["foundation_head_left_current"] == "over"
+    assert controller._mcr_request.await_args_list[-2].kwargs["payload"] == b"MFHL110"
+
+
+async def test_final_read_fault_does_not_replace_cancellation(controller, motion):
+    motion.foundation = [foundation_reply(), foundation_reply(flags=(0, 16, 0, 0))]
+    controller._foundation_delay = AsyncMock(side_effect=asyncio.CancelledError)
+    with pytest.raises(asyncio.CancelledError):
+        await controller._set_position("left", "head", 50)
+    assert controller._state["foundation_head_left_current"] == "over"
 
 
 @pytest.mark.parametrize("operation", ["hold", "target", "preset"])
@@ -575,7 +630,7 @@ async def test_shared_foundation_checks_opposite_obstruction_events(
         controller._foundation_features, configuration=configuration
     )
     motion.pinch = [bytes(5), bytes((0, 0, 0, 0, 1))]
-    with pytest.raises(ValueError, match="left head: obstruction occurred"):
+    with pytest.raises(ValueError, match="left head: obstruction counter changed"):
         await controller._set_position("right", "head", 0)
 
 

@@ -499,7 +499,12 @@ class SleepNumberMcrController(BedController):
                     if recovery
                     else {}
                 )
-                await self._wait_for_foundation((side,), targets, allow_homing=recovery)
+                await self._wait_for_foundation(
+                    (side,),
+                    targets,
+                    allow_homing=recovery,
+                    expected_preset=None if recovery else preset,
+                )
                 await self._check_pinch((side,), previous=pinch)
 
     async def lights_on(self) -> None:
@@ -1022,9 +1027,10 @@ class SleepNumberMcrController(BedController):
                 key = f"pinch_{axis}_{side}"
                 events = state[f"{key}_events"]
                 before = previous.get(f"{key}_events") if previous else None
-                if isinstance(events, int) and isinstance(before, int) and events > before:
+                # Conservatively reject any counter change, including signed wrap/reset.
+                if isinstance(events, int) and isinstance(before, int) and events != before:
                     raise ValueError(
-                        f"Foundation {side} {axis}: obstruction occurred during movement"
+                        f"Foundation {side} {axis}: obstruction counter changed during movement"
                     )
         return state
 
@@ -1050,7 +1056,12 @@ class SleepNumberMcrController(BedController):
         )
 
     async def _wait_for_foundation(
-        self, sides: tuple[str, ...], targets: Mapping[str, int], *, allow_homing: bool = False
+        self,
+        sides: tuple[str, ...],
+        targets: Mapping[str, int],
+        *,
+        allow_homing: bool = False,
+        expected_preset: str | None = None,
     ) -> None:
         await self._foundation_delay(_FOUNDATION_START_SECONDS)
         stationary = 0
@@ -1062,6 +1073,12 @@ class SleepNumberMcrController(BedController):
             # Confirm an initial stationary reply with two more samples.
             if stationary == 3:
                 self._check_foundation(state, sides)
+                if expected_preset is not None:
+                    for side in sides:
+                        if state[f"foundation_preset_{side}"] != expected_preset:
+                            raise ValueError(
+                                f"Foundation stopped without confirming {side} preset {expected_preset}"
+                            )
                 for key, target in targets.items():
                     actual = state[key]
                     if not isinstance(actual, int) or abs(actual - target) >= 3:
@@ -1095,7 +1112,8 @@ class SleepNumberMcrController(BedController):
             # Release and final readback must survive the movement's cancel signal.
             try:
                 async with asyncio.timeout(_FOUNDATION_CLEANUP_TIMEOUT_SECONDS):
-                    await self._read_foundation(cancel_event=asyncio.Event())
+                    state = await self._read_foundation(cancel_event=asyncio.Event())
+                self._check_foundation(state, sides)
             except Exception:
                 if released:
                     raise

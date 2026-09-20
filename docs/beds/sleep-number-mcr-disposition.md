@@ -155,7 +155,14 @@ These are HA safeguards, not APK timing values. Held motion releases immediately
 when its configured duration expires, before post-movement obstruction checks.
 STOP and final read use fresh cancellation events. Failed cleanup is reported;
 an existing movement error is preserved. A readback failure is not reported as
-successful completion. No physical validation is claimed.
+successful completion, and the final read is checked for newly reported faults.
+Non-Flat presets require the reported current preset to match the requested one;
+stationary feedback alone does not prove an acknowledged request executed.
+For obstruction event counters, HA conservatively rejects any change, including a
+signed-byte wrap or reset, rather than copying the app's numeric-increase check.
+It reports a changed counter without guessing whether the cause was a rollover
+or reset. These completion guards add no protocol commands. No physical
+validation is claimed.
 
 | ID | Finding | Disposition | Implementation, verification, or exclusion |
 |---|---|---|---|
