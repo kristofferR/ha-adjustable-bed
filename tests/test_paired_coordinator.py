@@ -52,7 +52,11 @@ from custom_components.adjustable_bed.paired_coordinator import (
     PairedSideProxy,
     SingleAddressPairedCoordinator,
 )
-from custom_components.adjustable_bed.position_seek import PositionFeedbackError
+from custom_components.adjustable_bed.position_seek import (
+    PositionFeedbackError,
+    SeekOutcome,
+    SeekResult,
+)
 
 ADDR = {SIDE_LEFT: "AA:BB:CC:DD:EE:01", SIDE_RIGHT: "AA:BB:CC:DD:EE:02"}
 
@@ -1105,6 +1109,10 @@ class SingleAddressInner:
         self.cancelled_position_hydrations = 0
         self.position_hydration_events: list[str] = []
         self.position_hydration_pause_count = 0
+        self.seek_results: list[SeekResult] = []
+
+    def _record_seek_result(self, result: SeekResult) -> None:
+        self.seek_results.append(result)
 
     @property
     def client(self):
@@ -1357,8 +1365,9 @@ class TestSingleAddressCoordinator:
         assert sides == [SIDE_LEFT, SIDE_RIGHT]
 
     @pytest.mark.parametrize("side", [SIDE_LEFT, SIDE_RIGHT, SIDE_BOTH])
-    async def test_direct_seek_does_not_publish_unverified_positions(self, side):
-        coordinator = self._coordinator(BED_TYPE_KAIDI, DirectPositionController)
+    @pytest.mark.parametrize("bed_type", [BED_TYPE_KAIDI, BED_TYPE_SLEEP_NUMBER])
+    async def test_direct_seek_does_not_publish_unverified_positions(self, side, bed_type):
+        coordinator = self._coordinator(bed_type, DirectPositionController)
         left = coordinator.children[SIDE_LEFT]
         right = coordinator.children[SIDE_RIGHT]
         left_updates = []
@@ -1371,8 +1380,24 @@ class TestSingleAddressCoordinator:
             "back", 42, move, move, move, side=side
         )
 
+        expected_sides = (
+            [SIDE_LEFT, SIDE_RIGHT]
+            if side == SIDE_BOTH and bed_type == BED_TYPE_SLEEP_NUMBER
+            else [side]
+        )
         assert coordinator._single_inner.controller.targets == [
-            (side, "back", 42)
+            (target_side, "back", 42) for target_side in expected_sides
+        ]
+        assert coordinator._single_inner.seek_results == [
+            SeekResult(
+                position_key=f"{target_side}:back",
+                target=42,
+                outcome=SeekOutcome.DIRECT_SET,
+                final_angle=None,
+                final_direction=None,
+                duration=0.0,
+            )
+            for target_side in expected_sides
         ]
         assert left.position_data == {}
         assert right.position_data == {}
@@ -1418,6 +1443,7 @@ class TestSingleAddressCoordinator:
         )
         await stale_seek
 
+        assert inner.seek_results == []
         assert left.position_data == {}
         assert right.position_data == {}
         assert left_updates == []
@@ -1427,6 +1453,7 @@ class TestSingleAddressCoordinator:
         await asyncio.gather(blocker, latest_seek)
 
         assert inner.controller.targets == [(SIDE_BOTH, "back", 42)]
+        assert [result.target for result in inner.seek_results] == [42]
         assert left.position_data == {}
         assert right.position_data == {}
         assert left_updates == []

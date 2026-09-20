@@ -3915,7 +3915,7 @@ class AdjustableBedCoordinator:
         return self._position_data_generation.get(position) == self._position_connection_generation
 
     async def _async_read_seek_position(
-        self, position: str, policy: PositionSeekPolicy
+        self, position: str, policy: PositionSeekPolicy, *, after: float | None = None
     ) -> float | None:
         """Read this axis without promoting retained display state to feedback."""
 
@@ -3924,6 +3924,7 @@ class AdjustableBedCoordinator:
             return (
                 self._position_is_current(position)
                 and updated is not None
+                and (after is None or updated > after)
                 and policy.cached_position_feedback_max_age > 0
                 and time.monotonic() - updated <= policy.cached_position_feedback_max_age
             )
@@ -5753,9 +5754,12 @@ class AdjustableBedCoordinator:
                     )
 
                 use_custom_seek_steps = controller.uses_custom_position_seek_steps
+                feedback_after = time.monotonic()
 
                 async def issue_seek_step(direction_up: bool, remaining_distance: float) -> None:
                     """Execute one seek movement step using controller-specific tuning."""
+                    nonlocal feedback_after
+                    feedback_after = time.monotonic()
                     if use_custom_seek_steps:
                         await controller.seek_position_step(
                             position_key,
@@ -5769,7 +5773,18 @@ class AdjustableBedCoordinator:
                         await move_down_fn(controller)
 
                 async def read_position() -> float | None:
-                    return await self._async_read_seek_position(position_key, policy)
+                    nonlocal feedback_after
+                    # Active-read fallback may consume a notification once, but
+                    # cannot turn one pre-movement report into repeated samples.
+                    # Explicit notification policies retain their own age rules.
+                    result = await self._async_read_seek_position(
+                        position_key,
+                        policy,
+                        after=None if policy.prefers_cached_position_feedback else feedback_after,
+                    )
+                    if result is not None:
+                        feedback_after = self._position_data_updated_monotonic[position_key]
+                    return result
 
                 runner = PositionSeekRunner(
                     position_key=position_key,

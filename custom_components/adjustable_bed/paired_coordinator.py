@@ -54,6 +54,7 @@ from .const import (
 )
 from .entity_runtime import ControllerCommand, EntityRuntime, EntityRuntimeView
 from .paired_devices import child_device_info
+from .position_seek import SeekOutcome, SeekResult
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -1386,6 +1387,16 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
                 bound = live_controller.bind_side(self._single_side)
                 native = bound.angle_to_native_position(position_key, target_angle)
                 await bound.set_motor_position(position_key, native)
+                self._single_inner._record_seek_result(
+                    SeekResult(
+                        position_key=f"{self._single_side}:{position_key}",
+                        target=target_angle,
+                        outcome=SeekOutcome.DIRECT_SET,
+                        final_angle=None,
+                        final_direction=None,
+                        duration=0.0,
+                    )
+                )
 
             await self._single_inner.async_execute_controller_command(
                 set_direct,

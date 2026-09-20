@@ -153,6 +153,7 @@ class PositionSeekPolicy:
 
         The default still attempts an active read, but notification-only
         controllers must also be able to use reports received just before it.
+        The coordinator consumes fallback reports once per movement decision.
         This is an integration freshness bound, not a device reporting cadence.
         """
         return POSITION_FEEDBACK_TIMEOUT

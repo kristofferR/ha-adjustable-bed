@@ -46,10 +46,8 @@ async def test_feedback_loss_stops_before_reporting_failure(coordinator, failure
         reads += 1
         if reads == 1:
             coordinator._handle_position_update("back", 20.0)
-        else:
-            coordinator._position_data_updated_monotonic["back"] -= POSITION_FEEDBACK_TIMEOUT + 1
-            if failure:
-                raise failure
+        elif failure:
+            raise failure
 
     coordinator.controller.read_positions = AsyncMock(side_effect=read)
     up, down, stop = AsyncMock(), AsyncMock(), AsyncMock()
@@ -151,7 +149,7 @@ async def test_default_policy_rejects_expired_or_previous_session_notification(
     ) is None
 
 
-@pytest.mark.parametrize("lose_feedback", [False, True])
+@pytest.mark.parametrize("lose_feedback", [False, "expired", "unchanged"])
 async def test_ergomotion_seek_uses_notifications_and_stops_if_they_expire(
     coordinator, lose_feedback
 ):
@@ -165,12 +163,11 @@ async def test_ergomotion_seek_uses_notifications_and_stops_if_they_expire(
     coordinator._position_data_updated_monotonic["back"] -= 0.5
 
     async def move(_controller):
-        if lose_feedback:
+        if lose_feedback == "expired":
             coordinator._position_data_updated_monotonic["back"] -= POSITION_FEEDBACK_TIMEOUT + 1
-        else:
+        elif not lose_feedback:
             controller._head_position = 40
             controller._notify_position_update()
-            coordinator._position_data_updated_monotonic["back"] -= 0.5
 
     up, down, stop = AsyncMock(side_effect=move), AsyncMock(), AsyncMock()
     with patch("custom_components.adjustable_bed.position_seek.asyncio.sleep", new=AsyncMock()):
@@ -180,6 +177,22 @@ async def test_ergomotion_seek_uses_notifications_and_stops_if_they_expire(
         else:
             await coordinator.async_seek_position("back", 40, up, down, stop)
             assert coordinator._seek_outcomes["back"]["outcome"] == "reached_target"
+    up.assert_awaited_once()
+    down.assert_not_awaited()
+    stop.assert_awaited_once()
+
+
+async def test_seek_cannot_reuse_a_consumed_notification_to_confirm_stall(coordinator):
+    """One post-movement report cannot stand in for repeated active samples."""
+    coordinator.controller.read_positions = AsyncMock()
+    coordinator._handle_position_update("back", 20)
+
+    async def move(_controller):
+        coordinator._handle_position_update("back", 25)
+
+    up, down, stop = AsyncMock(side_effect=move), AsyncMock(), AsyncMock()
+    with pytest.raises(PositionFeedbackError):
+        await coordinator.async_seek_position("back", 40, up, down, stop)
     up.assert_awaited_once()
     down.assert_not_awaited()
     stop.assert_awaited_once()

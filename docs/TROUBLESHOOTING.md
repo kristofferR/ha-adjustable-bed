@@ -474,7 +474,9 @@ Feedback-driven seeks require a fresh measurement for the requested axis.
 Reports must belong to the current connection and normally be at most three
 seconds old, with controller-specific freshness limits taking precedence.
 Notification-only controllers can use a recent report even when an active read
-does not produce a new one.
+does not produce a new one. This fallback requires a new report after movement
+and does not reuse a consumed report to confirm a stall or authorize another
+burst. Explicit notification policies retain their controller-specific rules.
 If feedback disappears, the integration performs the controller's existing
 movement cleanup and reports a failure. Last-known values can remain visible
 for reference, but do not authorize further movement.
