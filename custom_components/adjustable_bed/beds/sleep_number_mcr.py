@@ -13,7 +13,7 @@ import secrets
 import struct
 import time
 import zlib
-from collections.abc import Callable, Mapping
+from collections.abc import AsyncIterator, Callable, Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
 
@@ -70,6 +70,13 @@ _OPTIONAL_RESPONSE_GRACE_SECONDS: Final = 0.2
 _INIT_HANDSHAKE_TIMEOUT_SECONDS: Final = 0.9
 # HA safety bound: do not hold the serialized command path indefinitely.
 _PUMP_CLEANUP_TIMEOUT_SECONDS: Final = 10.0
+# SleepIQ's legacy FlexFit transition and continued-adjustment delays.
+_FOUNDATION_POLL_SECONDS: Final = 0.333
+_FOUNDATION_START_SECONDS: Final = 1.0
+_FOUNDATION_SETTLE_SECONDS: Final = 0.5
+# HA safety bound, not a firmware travel time or APK protocol constant.
+_FOUNDATION_TIMEOUT_SECONDS: Final = 120.0
+_FOUNDATION_CLEANUP_TIMEOUT_SECONDS: Final = 10.0
 
 _SLEEP_NUMBER_MCR_PRESETS: Final[dict[str, int]] = {
     "Favorite": 1,
@@ -241,7 +248,6 @@ class SleepNumberMcrController(BedController):
         # are drained before the key can be reused.
         self._quarantined_response_keys: dict[tuple[int, int], float] = {}
         self._sleep_numbers: dict[str, int | None] = {"left": None, "right": None}
-        self._foundation_presets: dict[str, str | None] = {"left": None, "right": None}
         self._under_bed_lights_on: bool | None = None
 
     @property
@@ -481,18 +487,20 @@ class SleepNumberMcrController(BedController):
         if preset not in self.foundation_preset_options:
             raise ValueError("Preset is not supported by the foundation")
         await self._async_initialize_session()
-        await self._async_send_frame(
-            command_type=_MCR_CMD_FOUNDATION,
-            status=_MCR_STATUS_FOUNDATION,
-            function_code=_MCR_FUNC_PRESET,
-            side=self._side_value(side),
-            payload=bytes([preset_value, 0x00]),
-            timeout=0.9,
-            require_response=True,
-        )
-
-        self._foundation_presets[side] = preset
-        self.forward_controller_state_updates({f"foundation_preset_{side}": preset})
+        recovery = preset == "Flat"
+        pinch = await self._prepare_foundation_motion((side,), allow_homing=recovery)
+        async with self._foundation_motion((side,)):
+            async with asyncio.timeout(_FOUNDATION_TIMEOUT_SECONDS):
+                await self._mcr_request(
+                    0x42, 0x15, self._side_value(side), bytes([preset_value, 0])
+                )
+                targets = (
+                    {f"foundation_{axis}_{side}": 0 for axis in self._foundation_axes}
+                    if recovery
+                    else {}
+                )
+                await self._wait_for_foundation((side,), targets, allow_homing=recovery)
+                await self._check_pinch((side,), previous=pinch)
 
     async def lights_on(self) -> None:
         """Turn on the under-bed light."""
@@ -555,7 +563,7 @@ class SleepNumberMcrController(BedController):
             await self._mcr_request(0x02, 0x02, cancel_event=asyncio.Event())
 
     async def preset_flat(self) -> None:
-        """Move the left side to flat when called directly."""
+        """Move each available foundation side to flat."""
         for side in self.foundation_preset_sides:
             await self.set_foundation_preset_for_side(side, "Flat")
 
@@ -873,8 +881,13 @@ class SleepNumberMcrController(BedController):
             0x52, 0x1B, payload=key.encode("ascii") + value, cancel_event=cancel_event
         )
 
-    async def _read_foundation(self) -> dict[str, object]:
-        state = decode_foundation(await self._mcr_request(0x42, 0x12))
+    async def _read_foundation(
+        self, *, keep_adjusting: str | None = None, cancel_event: asyncio.Event | None = None
+    ) -> dict[str, object]:
+        selector = 0 if keep_adjusting is None else self._side_value(keep_adjusting) + 2
+        state = decode_foundation(
+            await self._mcr_request(0x42, 0x12, selector, cancel_event=cancel_event)
+        )
         self._publish(state)
         return state
 
@@ -915,7 +928,8 @@ class SleepNumberMcrController(BedController):
         failure: BaseException | None = None
         for side in sides:
             try:
-                await self._stop_side(side)
+                async with asyncio.timeout(_FOUNDATION_CLEANUP_TIMEOUT_SECONDS):
+                    await self._stop_side(side)
             except BaseException as exc:
                 if failure is None:
                     failure = exc
@@ -924,33 +938,170 @@ class SleepNumberMcrController(BedController):
 
     async def _set_position(self, side: str, axis: str, position: int) -> None:
         self._require_foundation(side, axis)
+        pinch = await self._prepare_foundation_motion((side,))
         key = ("MFU" if axis == "head" else "MFF") + ("L" if side == "left" else "R")
-        try:
-            await self._se_write(key, f"{position}_0".encode("ascii"))
-        except BaseException:
-            await self._stop_side(side)
-            raise
+        async with self._foundation_motion((side,)):
+            async with asyncio.timeout(_FOUNDATION_TIMEOUT_SECONDS):
+                await self._se_write(key, f"{position}_0".encode("ascii"))
+                await self._wait_for_foundation((side,), {f"foundation_{axis}_{side}": position})
+                await self._check_pinch((side,), previous=pinch)
 
     async def _move_axis(self, axis: str, target: int) -> None:
-        """One absolute microadjust, wait for the requested hold, always release."""
+        """Maintain microadjust with side-specific status requests, then release."""
         sides = (self.command_side,) if self.command_side else self.foundation_preset_sides
         for side in sides:
             self._require_foundation(side, axis)
-        try:
-            for side in sides:
-                payload = bytearray(b"\xff" * 12)
-                offset = 0 if axis == "head" else 2
-                payload[offset : offset + 2] = bytes((target, 0))
-                await self._mcr_request(0x42, 0x11, self._side_value(side), bytes(payload))
+        pinch = await self._prepare_foundation_motion(sides)
+        async with self._foundation_motion(sides):
+            async with asyncio.timeout(_FOUNDATION_TIMEOUT_SECONDS):
+                for side in sides:
+                    payload = bytearray(b"\xff" * 12)
+                    offset = 0 if axis == "head" else 2
+                    payload[offset : offset + 2] = bytes((target, 0))
+                    await self._mcr_request(0x42, 0x11, self._side_value(side), bytes(payload))
             count, delay = self.motor_pulse_settings()
+            # The configured hold bounds BLE waits too, not just sleeps.
+            hold = asyncio.timeout(min(count * delay / 1000, _FOUNDATION_TIMEOUT_SECONDS))
             try:
-                await asyncio.wait_for(
-                    self._coordinator.cancel_command.wait(), count * delay / 1000
-                )
+                async with hold:
+                    moving = True
+                    while moving:
+                        await self._foundation_delay(_FOUNDATION_POLL_SECONDS)
+                        for side in sides:
+                            state = await self._read_foundation(keep_adjusting=side)
+                            self._check_foundation(state, sides)
+                            moving = self._foundation_is_moving(state)
+                            if not moving:
+                                break
             except TimeoutError:
-                pass
-        finally:
+                if not hold.expired():
+                    raise
+        await self._check_pinch(sides, previous=pinch)
+
+    @property
+    def _foundation_axes(self) -> tuple[str, ...]:
+        return (
+            ("head", "foot")
+            if self._foundation_features and self._foundation_features.foot
+            else ("head",)
+        )
+
+    def _check_foundation(
+        self, state: Mapping[str, object], sides: tuple[str, ...], *, allow_homing: bool = False
+    ) -> None:
+        if not state["foundation_configured"]:
+            raise ValueError("Foundation is not configured")
+        for side in sides:
+            for axis in self._foundation_axes:
+                for diagnostic in ("limit", "current", "movement"):
+                    value = state[f"foundation_{axis}_{side}_{diagnostic}"]
+                    if value != "normal":
+                        raise ValueError(f"Foundation {side} {axis}: {diagnostic} is {value}")
+        if state["foundation_needs_homing"] and not allow_homing:
+            raise ValueError("Foundation needs homing; use the Flat preset to recover")
+
+    async def _check_pinch(
+        self, sides: tuple[str, ...], *, previous: Mapping[str, object] | None = None
+    ) -> dict[str, object]:
+        # The artifact queries obstruction sensors only for 360 foundations.
+        if not self._foundation_features or self._foundation_features.generation != "360":
+            return {}
+        state = decode_pinch(await self._mcr_request(0x42, 0x28))
+        self._publish(state)
+        for side in sides:
+            for axis in self._foundation_axes:
+                key = f"pinch_{axis}_{side}"
+                if state[f"{key}_disconnected"] or state[f"{key}_continuous"]:
+                    raise ValueError(f"Foundation {side} {axis}: obstruction sensor fault")
+        # A non-split foundation compares obstruction events on both sides.
+        event_sides = (
+            sides if self._foundation_features.configuration in (1, 2) else ("right", "left")
+        )
+        for side in event_sides:
+            for axis in self._foundation_axes:
+                key = f"pinch_{axis}_{side}"
+                events = state[f"{key}_events"]
+                before = previous.get(f"{key}_events") if previous else None
+                if isinstance(events, int) and isinstance(before, int) and events > before:
+                    raise ValueError(
+                        f"Foundation {side} {axis}: obstruction occurred during movement"
+                    )
+        return state
+
+    async def _prepare_foundation_motion(
+        self, sides: tuple[str, ...], *, allow_homing: bool = False
+    ) -> dict[str, object]:
+        self._check_foundation(await self._read_foundation(), sides, allow_homing=allow_homing)
+        return await self._check_pinch(sides)
+
+    async def _foundation_delay(self, seconds: float) -> None:
+        try:
+            await asyncio.wait_for(self._coordinator.cancel_command.wait(), seconds)
+        except TimeoutError:
+            return
+        raise asyncio.CancelledError("Foundation movement cancelled")
+
+    @staticmethod
+    def _foundation_is_moving(state: Mapping[str, object]) -> bool:
+        return any(
+            state[f"foundation_{axis}_{side}_moving"]
+            for side in ("right", "left")
+            for axis in ("head", "foot")
+        )
+
+    async def _wait_for_foundation(
+        self, sides: tuple[str, ...], targets: Mapping[str, int], *, allow_homing: bool = False
+    ) -> None:
+        await self._foundation_delay(_FOUNDATION_START_SECONDS)
+        stationary = 0
+        while True:
+            state = await self._read_foundation()
+            self._check_foundation(state, sides, allow_homing=allow_homing)
+            moving = self._foundation_is_moving(state)
+            stationary = 0 if moving else stationary + 1
+            # Confirm an initial stationary reply with two more samples.
+            if stationary == 3:
+                self._check_foundation(state, sides)
+                for key, target in targets.items():
+                    actual = state[key]
+                    if not isinstance(actual, int) or abs(actual - target) >= 3:
+                        raise ValueError(
+                            f"Foundation stopped before reaching {key} target {target}: {actual}"
+                        )
+                return
+            await self._foundation_delay(
+                _FOUNDATION_POLL_SECONDS if moving else _FOUNDATION_SETTLE_SECONDS
+            )
+
+    @contextlib.asynccontextmanager
+    async def _foundation_motion(self, sides: tuple[str, ...]) -> AsyncIterator[None]:
+        try:
+            yield
+        except BaseException:
+            try:
+                await self._finish_foundation_motion(sides)
+            except Exception:
+                _LOGGER.warning("Foundation cleanup failed after movement error", exc_info=True)
+            raise
+        else:
+            await self._finish_foundation_motion(sides)
+
+    async def _finish_foundation_motion(self, sides: tuple[str, ...]) -> None:
+        released = False
+        try:
             await self._stop_sides(sides)
+            released = True
+        finally:
+            # Release and final readback must survive the movement's cancel signal.
+            try:
+                async with asyncio.timeout(_FOUNDATION_CLEANUP_TIMEOUT_SECONDS):
+                    await self._read_foundation(cancel_event=asyncio.Event())
+            except Exception:
+                if released:
+                    raise
+                _LOGGER.warning(
+                    "Could not refresh foundation positions after release", exc_info=True
+                )
 
     def _require_foundation(self, side: str, axis: str | None = None) -> None:
         if not self._foundation_features or side not in self._foundation_features.sides:

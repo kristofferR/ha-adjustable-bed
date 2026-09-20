@@ -165,8 +165,12 @@ async def test_frozen_command_payloads(controller, command, parameters, node, op
 )
 async def test_se_command_payloads(controller, command, parameters, key, payload):
     controller._se_write = AsyncMock()
+    controller._prepare_foundation_motion = AsyncMock(return_value={})
+    controller._wait_for_foundation = AsyncMock()
+    controller._check_pinch = AsyncMock()
+    controller._read_foundation = AsyncMock()
     await controller.async_execute_sleep_number_command(command, parameters)
-    assert controller._se_write.await_args.args == (key, payload)
+    assert controller._se_write.await_args_list[0].args == (key, payload)
     if command == "stop":
         assert not controller._se_write.await_args.kwargs["cancel_event"].is_set()
 
@@ -202,6 +206,8 @@ async def test_bound_side_cannot_be_overridden(controller):
 
 
 async def test_movement_cancel_always_releases(controller):
+    controller._prepare_foundation_motion = AsyncMock(return_value={})
+    controller._read_foundation = AsyncMock()
     controller._mcr_request = AsyncMock(side_effect=asyncio.CancelledError)
     controller._stop_side = AsyncMock()
     with pytest.raises(asyncio.CancelledError):
@@ -216,6 +222,374 @@ async def test_stop_ignores_prior_cancel(controller):
     assert controller._mcr_request.await_args.args == (0x52, 0x1B)
     assert controller._mcr_request.await_args.kwargs["payload"] == b"MFHL110"
     assert not controller._mcr_request.await_args.kwargs["cancel_event"].is_set()
+
+
+def foundation_reply(*, status=64, positions=(0, 0, 0, 0), flags=(0, 0, 0, 0), presets=0x44):
+    """Literal layout from the frozen 15-byte foundation parser fixture."""
+    return bytes((status, *positions, 0, 0, 0, 0, *flags, 0, presets))
+
+
+@pytest.fixture
+def motion(controller):
+    responses = SimpleNamespace(foundation=[foundation_reply()], pinch=[bytes(5)])
+
+    async def request(node, opcode, sub=0, payload=b"", **kwargs):
+        if (node, opcode) == (0x42, 0x12):
+            return (
+                responses.foundation.pop(0)
+                if len(responses.foundation) > 1
+                else responses.foundation[0]
+            )
+        if (node, opcode) == (0x42, 0x28):
+            return responses.pinch.pop(0) if len(responses.pinch) > 1 else responses.pinch[0]
+        return b""
+
+    controller._mcr_request = AsyncMock(side_effect=request)
+    controller._foundation_delay = AsyncMock()
+    controller._notify_callback = MagicMock()
+    controller._coordinator.motor_pulse_count = 10
+    controller._coordinator.motor_pulse_delay_ms = 100
+    return responses
+
+
+@pytest.mark.parametrize(
+    ("side", "axis", "index", "selector"),
+    [
+        ("right", "head", 0, 2),
+        ("left", "head", 1, 3),
+        ("right", "foot", 2, 2),
+        ("left", "foot", 3, 3),
+    ],
+)
+async def test_held_motion_keeps_selected_side_moving(
+    controller, motion, side, axis, index, selector
+):
+    flags, positions = [0] * 4, [0] * 4
+    flags[index], positions[index] = 1, 20
+    motion.foundation = [
+        foundation_reply(),
+        foundation_reply(flags=flags, positions=positions),
+        foundation_reply(positions=positions),
+    ]
+    controller._coordinator.disable_angle_sensing = True
+    await controller.bind_side(side)._move_axis(axis, 100)
+    calls = controller._mcr_request.await_args_list
+    status_calls = [call for call in calls if call.args[:2] == (0x42, 0x12)]
+    assert [call.args[2] for call in status_calls] == [0, selector, selector, 0]
+    assert all(len(call.args) == 3 for call in status_calls)
+    target_call = next(call for call in calls if call.args[:2] == (0x42, 0x11))
+    expected = bytearray(b"\xff" * 12)
+    offset = 0 if axis == "head" else 2
+    expected[offset : offset + 2] = b"\x64\x00"
+    assert target_call.args == (0x42, 0x11, selector - 2, bytes(expected))
+    stop = next(call for call in calls if call.args[:2] == (0x52, 0x1B))
+    assert stop.kwargs["payload"] == (b"MFHR110" if side == "right" else b"MFHL110")
+    assert not stop.kwargs["cancel_event"].is_set()
+    controller._notify_callback.assert_any_call(
+        f"{side}_{'back' if axis == 'head' else 'legs'}", 20.0
+    )
+
+
+async def test_held_motion_refreshes_selected_sides_until_all_actuators_stop(controller, motion):
+    motion.foundation = [
+        foundation_reply(),
+        foundation_reply(flags=(1, 1, 0, 0)),
+        foundation_reply(flags=(1, 0, 0, 0)),
+        foundation_reply(),
+    ]
+    await controller.move_back_up()
+    calls = controller._mcr_request.await_args_list
+    assert [call.args[2] for call in calls if call.args[:2] == (0x42, 0x12)] == [0, 2, 3, 2, 0]
+    assert [call.kwargs["payload"] for call in calls if call.args[:2] == (0x52, 0x1B)] == [
+        b"MFHR110",
+        b"MFHL110",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("side", "axis", "index", "key"),
+    [
+        ("right", "head", 0, b"MFUR"),
+        ("left", "head", 1, b"MFUL"),
+        ("right", "foot", 2, b"MFFR"),
+        ("left", "foot", 3, b"MFFL"),
+    ],
+)
+async def test_absolute_target_waits_for_stable_feedback(
+    controller, motion, side, axis, index, key
+):
+    moving, near, final, flags = [0] * 4, [0] * 4, [0] * 4, [0] * 4
+    moving[index], near[index], final[index], flags[index] = 10, 49, 50, 1
+    motion.foundation = [
+        foundation_reply(),
+        foundation_reply(positions=moving, flags=flags),
+        foundation_reply(positions=near),
+        foundation_reply(positions=final),
+    ]
+    await controller._set_position(side, axis, 50)
+    calls = controller._mcr_request.await_args_list
+    writes = [call.kwargs["payload"] for call in calls if call.args[:2] == (0x52, 0x1B)]
+    assert writes == [key + b"50_0", b"MFHL110" if side == "left" else b"MFHR110"]
+    assert all(call.args[2] == 0 for call in calls if call.args[:2] == (0x42, 0x12))
+    assert [call.args[0] for call in controller._foundation_delay.await_args_list] == [
+        1.0,
+        0.333,
+        0.5,
+        0.5,
+    ]
+    assert controller._state[f"foundation_{axis}_{side}"] == 50
+
+
+async def test_absolute_target_reports_early_stop(controller, motion):
+    with pytest.raises(ValueError, match="stopped before reaching"):
+        await controller._set_position("left", "head", 50)
+    assert controller._mcr_request.await_args_list[-2].kwargs["payload"] == b"MFHL110"
+    assert controller._state["foundation_head_left"] == 0
+
+
+@pytest.mark.parametrize("status", [0, 0x62, 0x63])
+@pytest.mark.parametrize("operation", ["hold", "target", "preset"])
+async def test_motion_rejects_unconfigured_or_homing(controller, motion, status, operation):
+    motion.foundation = [foundation_reply(status=status)]
+    with pytest.raises(ValueError, match="configured|homing"):
+        if operation == "hold":
+            await controller.move_back_up()
+        elif operation == "target":
+            await controller._set_position("left", "head", 50)
+        else:
+            await controller.set_foundation_preset_for_side("left", "Read")
+    assert all(call.args[:2] == (0x42, 0x12) for call in controller._mcr_request.await_args_list)
+
+
+@pytest.mark.parametrize("fault", [2, 4, 8, 16, 32, 64])
+async def test_motion_rejects_selected_side_actuator_fault(controller, motion, fault):
+    motion.foundation = [foundation_reply(flags=(0, 0, 0, fault))]
+    with pytest.raises(ValueError, match="left foot"):
+        await controller._set_position("left", "head", 50)
+    assert controller._mcr_request.await_count == 1
+
+
+async def test_running_fault_releases_and_publishes_positions(controller, motion):
+    motion.foundation = [
+        foundation_reply(),
+        foundation_reply(flags=(0, 16, 0, 0), positions=(0, 10, 0, 0)),
+    ]
+    with pytest.raises(ValueError, match="current is over"):
+        await controller.bind_side("left").move_back_up()
+    assert controller._mcr_request.await_args_list[-2].kwargs["payload"] == b"MFHL110"
+    assert controller._state["foundation_head_left"] == 10
+
+
+@pytest.mark.parametrize("pinch", [bytes((8, 0, 0, 0, 0)), bytes((128, 0, 0, 0, 0))])
+async def test_motion_rejects_obstruction_sensor_fault(controller, motion, pinch):
+    motion.pinch = [pinch]
+    with pytest.raises(ValueError, match="obstruction sensor"):
+        await controller._set_position("left", "head", 50)
+    assert all(
+        call.args[0] == 0x42 and call.args[1] in (0x12, 0x28)
+        for call in controller._mcr_request.await_args_list
+    )
+
+
+async def test_motion_detects_new_obstruction_event(controller, motion):
+    motion.pinch = [bytes(5), bytes((0, 0, 0, 0, 1))]
+    with pytest.raises(ValueError, match="obstruction occurred"):
+        await controller._set_position("left", "head", 0)
+    assert controller._mcr_request.await_args_list[-2].kwargs["payload"] == b"MFHL110"
+
+
+async def test_legacy_foundation_does_not_request_pinch_status(controller, motion):
+    from dataclasses import replace
+
+    controller._foundation_features = replace(controller._foundation_features, generation="legacy")
+    await controller._set_position("left", "head", 0)
+    assert not any(
+        call.args[:2] == (0x42, 0x28) for call in controller._mcr_request.await_args_list
+    )
+
+
+@pytest.mark.parametrize("side,selector", [("right", 0), ("left", 1)])
+@pytest.mark.parametrize("preset,preset_id", [("Read", 2), ("Flat", 4)])
+async def test_preset_keeps_selected_side_and_monitors_recovery(
+    controller, motion, side, selector, preset, preset_id
+):
+    if preset == "Flat":
+        motion.foundation = [
+            foundation_reply(status=0x62),
+            foundation_reply(status=0x63, flags=(1, 1, 0, 0)),
+            foundation_reply(),
+        ]
+    await controller.set_foundation_preset_for_side(side, preset)
+    writes = [
+        call for call in controller._mcr_request.await_args_list if call.args[:2] == (0x42, 0x15)
+    ]
+    assert len(writes) == 1
+    assert writes[0].args == (0x42, 0x15, selector, bytes((preset_id, 0)))
+    assert controller._state["foundation_needs_homing"] is False
+
+
+async def test_flat_does_not_mistake_homing_flag_for_recovery(controller, motion):
+    motion.foundation = [foundation_reply(status=0x62)]
+    with pytest.raises(ValueError, match="needs homing"):
+        await controller.set_foundation_preset_for_side("left", "Flat")
+
+
+@pytest.mark.parametrize("operation", ["hold", "target", "preset"])
+async def test_motion_cancellation_releases_and_refreshes(controller, motion, operation):
+    async def cancel(_seconds):
+        controller._coordinator.cancel_command.set()
+        raise asyncio.CancelledError
+
+    controller._foundation_delay = cancel
+    with pytest.raises(asyncio.CancelledError):
+        if operation == "hold":
+            await controller.bind_side("left").move_back_up()
+        elif operation == "target":
+            await controller._set_position("left", "head", 50)
+        else:
+            await controller.set_foundation_preset_for_side("left", "Read")
+    calls = controller._mcr_request.await_args_list
+    assert calls[-2].kwargs["payload"] == b"MFHL110"
+    assert calls[-1].args == (0x42, 0x12, 0)
+    assert all(not call.kwargs["cancel_event"].is_set() for call in calls[-2:])
+
+
+async def test_position_timeout_stops_and_does_not_claim_success(controller, motion, monkeypatch):
+    monkeypatch.setattr(
+        "custom_components.adjustable_bed.beds.sleep_number_mcr._FOUNDATION_TIMEOUT_SECONDS", 0.01
+    )
+
+    async def blocked(_seconds):
+        await asyncio.Event().wait()
+
+    controller._foundation_delay = blocked
+    with pytest.raises(TimeoutError):
+        await controller._set_position("left", "head", 50)
+    assert controller._mcr_request.await_args_list[-2].kwargs["payload"] == b"MFHL110"
+
+
+async def test_held_duration_expires_without_hanging_on_status(controller, motion):
+    controller._coordinator.motor_pulse_count = 1
+    controller._coordinator.motor_pulse_delay_ms = 1
+
+    async def blocked(_seconds):
+        await asyncio.Event().wait()
+
+    controller._foundation_delay = blocked
+    await controller.bind_side("left").move_back_up()
+    calls = controller._mcr_request.await_args_list
+    assert calls[-3].kwargs["payload"] == b"MFHL110"
+    assert calls[-1].args == (0x42, 0x28)
+
+
+async def test_stalled_held_target_still_releases(controller, motion, monkeypatch):
+    monkeypatch.setattr(
+        "custom_components.adjustable_bed.beds.sleep_number_mcr._FOUNDATION_TIMEOUT_SECONDS",
+        0.01,
+    )
+    normal = controller._mcr_request.side_effect
+
+    async def request(node, opcode, *args, **kwargs):
+        if (node, opcode) == (0x42, 0x11):
+            await asyncio.Event().wait()
+        return await normal(node, opcode, *args, **kwargs)
+
+    controller._mcr_request.side_effect = request
+    with pytest.raises(TimeoutError):
+        await controller.bind_side("left").move_back_up()
+    assert controller._mcr_request.await_args_list[-2].kwargs["payload"] == b"MFHL110"
+
+
+async def test_target_waits_for_opposite_actuator_to_stop(controller, motion):
+    motion.foundation = [
+        foundation_reply(),
+        foundation_reply(flags=(0, 0, 1, 0)),
+        foundation_reply(),
+    ]
+    await controller._set_position("left", "head", 0)
+    assert controller._foundation_delay.await_args_list[1].args == (0.333,)
+    assert controller._foundation_delay.await_count == 4
+
+
+async def test_hold_keeps_refreshing_while_opposite_actuator_moves(controller, motion):
+    motion.foundation = [
+        foundation_reply(),
+        foundation_reply(flags=(0, 0, 1, 0)),
+        foundation_reply(),
+    ]
+    await controller.bind_side("left").move_back_up()
+    calls = controller._mcr_request.await_args_list
+    assert [call.args[2] for call in calls if call.args[:2] == (0x42, 0x12)] == [0, 3, 3, 0]
+
+
+async def test_foundation_delay_observes_cancel_signal(controller):
+    controller._coordinator.cancel_command.set()
+    with pytest.raises(asyncio.CancelledError):
+        await controller._foundation_delay(10)
+
+
+async def test_stop_timeout_still_releases_other_side(controller, motion, monkeypatch):
+    monkeypatch.setattr(
+        "custom_components.adjustable_bed.beds.sleep_number_mcr._FOUNDATION_CLEANUP_TIMEOUT_SECONDS",
+        0.01,
+    )
+
+    async def stop(side):
+        if side == "right":
+            await asyncio.Event().wait()
+
+    controller._stop_side = AsyncMock(side_effect=stop)
+    with pytest.raises(TimeoutError):
+        await controller._finish_foundation_motion(("right", "left"))
+    assert [call.args for call in controller._stop_side.await_args_list] == [("right",), ("left",)]
+    assert controller._mcr_request.await_args.args == (0x42, 0x12, 0)
+
+
+async def test_final_read_timeout_does_not_claim_success(controller, motion, monkeypatch):
+    monkeypatch.setattr(
+        "custom_components.adjustable_bed.beds.sleep_number_mcr._FOUNDATION_CLEANUP_TIMEOUT_SECONDS",
+        0.01,
+    )
+
+    async def read(**kwargs):
+        await asyncio.Event().wait()
+
+    controller._read_foundation = read
+    with pytest.raises(TimeoutError):
+        await controller._finish_foundation_motion(("left",))
+
+
+async def test_cleanup_failure_preserves_original_motion_error(controller, motion):
+    controller._finish_foundation_motion = AsyncMock(side_effect=TimeoutError)
+    with pytest.raises(ValueError, match="stopped before reaching"):
+        await controller._set_position("left", "head", 50)
+
+
+@pytest.mark.parametrize("configuration", [0, 3])
+async def test_shared_foundation_checks_opposite_obstruction_events(
+    controller, motion, configuration
+):
+    from dataclasses import replace
+
+    controller._foundation_features = replace(
+        controller._foundation_features, configuration=configuration
+    )
+    motion.pinch = [bytes(5), bytes((0, 0, 0, 0, 1))]
+    with pytest.raises(ValueError, match="left head: obstruction occurred"):
+        await controller._set_position("right", "head", 0)
+
+
+async def test_split_foundation_ignores_opposite_obstruction_events(controller, motion):
+    motion.pinch = [bytes(5), bytes((0, 0, 0, 0, 1))]
+    await controller._set_position("right", "head", 0)
+
+
+async def test_hold_stops_before_reading_post_motion_obstruction_status(controller, motion):
+    await controller.bind_side("left").move_back_up()
+    calls = controller._mcr_request.await_args_list
+    assert calls[-3].kwargs["payload"] == b"MFHL110"
+    assert calls[-2].args == (0x42, 0x12, 0)
+    assert calls[-1].args == (0x42, 0x28)
 
 
 async def test_binding_requires_valid_reply(controller, monkeypatch):

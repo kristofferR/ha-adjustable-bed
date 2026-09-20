@@ -34,15 +34,17 @@ dual has both sides; single routes to the artifact's LEFT warmer, with both phys
 advertisement classification determines 360 eligibility for Responsive Air; legacy
 chamber types refine Adult/Genie/K1/K2. No bed model is assumed from its name.
 
-Microadjust sends one absolute target and releases every selected side after the
+Microadjust sends one absolute target and uses side-specific continued-adjustment
+status requests during the hold. It releases every selected side after the
 requested hold or cancellation. Each release uses a fresh cancellation token;
 one side's release failure does not suppress the other. Cancelled firmness writes issue fresh-token pump ForceIdle and poll status every 500 ms until inactive. A separate 10-second HA safety deadline
 bounds this cleanup, including the ForceIdle request, so an unresponsive or
 continuously busy pump cannot hold the command lock indefinitely. Deadline expiry
 raises an error asking the user to check the bed and Bluetooth connection; it does
 not report that the pump stopped. This deadline is an integration safeguard, not
-an APK-derived protocol timing value. Set-and-go absolute
-positions stop on cancellation/failure. Motion values are percentages, not degrees.
+an APK-derived protocol timing value. Native absolute positions and presets are
+monitored until stationary and stop on completion, cancellation or failure.
+Motion values are percentages, not degrees.
 A preset recall is distinct from saving or restoring its stored definition.
 
 ## Discovery ledger
@@ -115,3 +117,62 @@ Totals: **57 rows: 44 IMPLEMENTED, 1 ALREADY_IMPLEMENTED, 12 EXCLUDED**.
 Exclusions are individually enumerated in M02, M28, M33, S02, S03, S07, S09,
 S11, S14, S17, X06 and X07. No in-scope control is deferred for lack of maintainer
 hardware. Physical semantics and device-specific compatibility remain unverified.
+
+## Motion follow-up from the BedRemote comparison (2026-09-20)
+
+This follow-up reuses the accepted artifact and report identified above. It is a
+post-freeze comparison against BedRemote commit
+`360dd040eb02bfefb13b089a04bde601026259a5` and integration v4 commit
+`9bd5ee81b9e319773a9ec83f1eeb177bb543ecf8`, not a new clean-room analysis.
+The original 57-row catalog and corpus completion counts remain unchanged.
+
+Artifact-local references (Java package `com.selectcomfort.sleepiq` appears as
+`com.selectcomfort.p066sleepiq` in jadx):
+
+- `device/call/C2988l.java:46` and `capability/flexfit/q0.java:46`: continued
+  adjustment uses selector `side + 2`, no payload. Authoritative
+  `capability/flexfit/a0.smali`, methods `n` and `B`, establish the 333 ms delay.
+- `device/call/W.java:79-88`: native target keys and decimal `_0` values.
+  `a0.smali` methods `t` and `x`: 1000 ms initial delay, 333 ms moving checks,
+  two further stationary samples separated by 500 ms; `Nd/d.java:62` ORs all
+  four actuator moving flags. `C3948a0.h` supplies the target tolerance, less than 3.
+- `C3948a0.b`, `w`, and `a0.smali` methods `e`, `t`: diagnostic gates, 360
+  obstruction status, non-split two-side event comparison, selected-side Flat
+  recovery. Flat recovery here retains fault gates as an explicit safety boundary.
+- `device/call/q0.java:49-57`: selected-side `MFHL`/`MFHR`, ASCII `110` STOP.
+  `device/call/X.java:45` and `app/v4/ui/bed/flexfit/screen/S.java:76-84` preserve
+  the selected side for ordinary presets; Partner Snore is the explicit exception.
+
+The controller owns the polling inside the coordinator's command lock. Held
+movement refreshes selected sides even when optional angle sensing is disabled.
+Every status reply publishes decoded positions. Targets must finish within the
+artifact's tolerance; Flat also requires the homing flag to clear. Status bytes
+`0x62` and `0x63` both mean homing is still required.
+
+The integration bounds target/preset monitoring and held target dispatch at 120 seconds, each side's STOP
+at 10 seconds, and final status readback at 10 seconds, including GATT writes.
+These are HA safeguards, not APK timing values. Held motion releases immediately
+when its configured duration expires, before post-movement obstruction checks.
+STOP and final read use fresh cancellation events. Failed cleanup is reported;
+an existing movement error is preserved. A readback failure is not reported as
+successful completion. No physical validation is claimed.
+
+| ID | Finding | Disposition | Implementation, verification, or exclusion |
+|---|---|---|---|
+| H01 | Held-motion continuation | IMPLEMENTED | `_move_axis`, `_read_foundation`; `test_held_motion_keeps_selected_side_moving`, `test_hold_keeps_refreshing_while_opposite_actuator_moves` |
+| H02 | Native target/preset completion | IMPLEMENTED | `_wait_for_foundation`; `test_absolute_target_waits_for_stable_feedback`, `test_absolute_target_reports_early_stop`, `test_target_waits_for_opposite_actuator_to_stop` |
+| H03 | Movement diagnostic handling | IMPLEMENTED | `_check_foundation`, `_check_pinch`; actuator/homing/obstruction rejection tests and shared/split obstruction-event tests |
+| H04 | Bounded release and final readback | IMPLEMENTED | `_foundation_motion`, `_finish_foundation_motion`, `_stop_sides`; cancellation, timeout, release-order and original-error preservation tests |
+| H05 | Explicit monitored Flat recovery | IMPLEMENTED | `set_foundation_preset_for_side`; `test_preset_keeps_selected_side_and_monitors_recovery`, `test_flat_does_not_mistake_homing_flag_for_recovery` |
+| H06 | Selected-side preset packets | ALREADY_IMPLEMENTED | Retained selected-side opcode `0x15` and preset IDs; both-side preset tests |
+| H07 | Position/actuator flag decoder | ALREADY_IMPLEMENTED | `decode_foundation`; existing parser fixtures retained, published positions exercised by motion tests |
+| H08 | Native 0..100 position values | ALREADY_IMPLEMENTED | Native SE target path retained; no universal head-83 rescaling supported by this artifact |
+| H09 | MotorStart, direct foundation ForceIdle and alternate absolute packets | EXCLUDED | Hardware/version-specific leads not established by the accepted APK's reachable motion path; do not replace confirmed commands |
+| H10 | Blanket global-preset restrictions | EXCLUDED | APK preserves selected-side routing; mechanically shared sections require layout/firmware-specific real-user validation after beta/release |
+| H11 | New occupancy capability | EXCLUDED | Comparison produced no dependable occupancy method |
+| H12 | Unrestricted reset-to-flat bypass | EXCLUDED | The app's reset path can bypass ordinary diagnostic gates. HA permits homing recovery but conservatively refuses configuration, actuator and obstruction faults; no force-reset control is exposed |
+
+Follow-up totals: **12 rows: 5 IMPLEMENTED, 3 ALREADY_IMPLEMENTED, 4 EXCLUDED**.
+Exclusions are H09–H12. Together with the original catalog: **69 rows:
+49 IMPLEMENTED, 4 ALREADY_IMPLEMENTED, 16 EXCLUDED**. These are discovery
+dispositions, not additional package completions or changes to the frozen corpus.

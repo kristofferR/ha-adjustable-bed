@@ -88,6 +88,22 @@ in integration options to expose position sliders. Optional polling can keep the
 BLE connection occupied, so leave it disabled if it interferes with another
 controller.
 
+MCR movement performs its own status checks even with optional angle sensing
+disabled. Held controls send continued-adjustment requests; position targets and
+presets wait for stationary feedback. A target that stops short reports an error
+instead of treating command delivery as completed movement. Positions are read
+again after release, including cancellation.
+
+If MCR reports that it needs homing, use the selected side's **Flat** preset.
+Recovery is monitored and succeeds only after the homing flag clears. Other
+configuration, actuator and obstruction faults still block motion. The integration
+does not bypass those faults to force a reset.
+
+MCR presets retain the app's selected-side routing. A side selector does not
+guarantee mechanically independent movement on foundations with shared sections.
+Firmware/layout-specific reports that some presets move both sides remain pending
+real-user validation; there is no blanket whole-bed preset restriction.
+
 ## Protocol behavior
 
 Fuzion reads Auth (`8d4675a5-b5fa-42b2-b587-0ee71c46b709`) before subscribing to
