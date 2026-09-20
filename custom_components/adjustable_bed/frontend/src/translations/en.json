@@ -90,5 +90,5 @@
   "editor.navigation_path": "Full view path (optional)",
   "editor.show_utility": "Utility",
   "editor.compact_connection": "Connection status",
-  "compact.both": "Both"
+  "card.both": "Both"
 }

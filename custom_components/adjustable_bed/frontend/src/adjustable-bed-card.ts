@@ -46,7 +46,6 @@ import "./editor";
 interface PairedPane {
   key: string;
   label: string;
-  icon: string;
   bed: BedEntities;
   graphicTone?: BedGraphicTone;
   synchronizationTarget?: {
@@ -212,7 +211,7 @@ export class AdjustableBedCard extends LitElement {
     if (bedIsEmpty(bed)) return this._notice("card.no_entities");
     if (this._config.layout === "compact") {
       return this._renderCompact(this._config.device_id, [{
-        key: "both", label: this._title(), icon: "mdi:bed-outline", bed,
+        key: "both", label: this._title(), bed,
       }], false);
     }
 
@@ -259,7 +258,6 @@ export class AdjustableBedCard extends LitElement {
     const sides = childIds.map((id, index) => ({
       key: id,
       label: this._deviceLabel(id),
-      icon: "mdi:bed-single-outline",
       bed: bedEntitiesForDevice(hass, id),
       graphicTone: index === 0 ? ("left" as const) : ("right" as const),
       // Target the selected child device instead of inferring its backend side
@@ -279,7 +277,6 @@ export class AdjustableBedCard extends LitElement {
       {
         key: "both",
         label: localize(hass, "card.both_sides"),
-        icon: "mdi:link-variant",
         bed: parentBed,
       },
       ...sides,
@@ -303,13 +300,11 @@ export class AdjustableBedCard extends LitElement {
       {
         key: "both",
         label: localize(hass, "card.both_sides"),
-        icon: "mdi:link-variant",
         bed: beds.both,
       },
       {
         key: "left",
         label: localize(hass, "card.left_side"),
-        icon: "mdi:bed-single-outline",
         bed: beds.left,
         graphicTone: "left",
         synchronizationTarget: { deviceId, side: "left" },
@@ -317,7 +312,6 @@ export class AdjustableBedCard extends LitElement {
       {
         key: "right",
         label: localize(hass, "card.right_side"),
-        icon: "mdi:bed-single-outline",
         bed: beds.right,
         graphicTone: "right",
         synchronizationTarget: { deviceId, side: "right" },
@@ -348,14 +342,13 @@ export class AdjustableBedCard extends LitElement {
           ${panes.map(
             (pane) => html`
               <button
-                class="pane-tab ${pane.key === active.key ? "active" : ""}"
+                class="pane-tab side-${pane.graphicTone ?? "theme"} ${pane.key === active.key ? "active" : ""}"
                 role="tab"
                 aria-selected=${pane.key === active.key ? "true" : "false"}
                 @click=${() => this._selectPairedPane(pane.key)}
               >
-                <ha-icon icon=${pane.icon}></ha-icon>
-                <span>${pane.label}</span>
-                ${this._connectionDot(pane.bed)}
+                ${pane.graphicTone ? html`<span class="dual-swatch" aria-hidden="true"></span>` : nothing}
+                <span>${pane.key === "both" ? localize(this.hass, "card.both") : pane.label}</span>
               </button>
             `,
           )}
@@ -416,7 +409,7 @@ export class AdjustableBedCard extends LitElement {
                 title=${pane.label}
                 @click=${() => this._selectPairedPane(pane.key)}>
                 ${pane.graphicTone ? html`<span class="dual-swatch" aria-hidden="true"></span>` : nothing}
-                <span class="compact-tab-label">${pane.key === "both" ? localize(this.hass, "compact.both") : pane.label}</span>
+                <span class="compact-tab-label">${pane.key === "both" ? localize(this.hass, "card.both") : pane.label}</span>
               </button>`)}
           </div>` : html`<div class="compact-target">
             ${localize(this.hass, "compact.target")}: ${active?.label ?? localize(this.hass, "compact.target_missing")}
@@ -1556,13 +1549,7 @@ export class AdjustableBedCard extends LitElement {
   }
 
   static override styles = css`
-    .compact-card {
-      padding: 13px;
-      --ab-compact-surface: color-mix(in srgb, var(--card-background-color) 94%, var(--primary-text-color));
-      --ab-compact-border: color-mix(in srgb, var(--card-background-color) 85%, var(--primary-text-color));
-      --ab-side-left-rgb: 115, 182, 237;
-      --ab-side-right-rgb: 237, 144, 158;
-    }
+    .compact-card { padding: 13px; }
     .compact-header { display: grid; grid-template-columns: minmax(0, 1fr) 24px;
       align-items: center; gap: 8px; min-height: 22px; padding: 0 2px 9px; }
     .compact-header .title { font-size: 14px; line-height: 22px; font-weight: 700; }
@@ -1570,22 +1557,10 @@ export class AdjustableBedCard extends LitElement {
       background: none; color: var(--secondary-text-color); cursor: pointer;
       width: 24px; height: 22px; }
     .compact-open ha-icon { --mdc-icon-size: 16px; }
-    .compact-card .compact-tabs {
-      display: grid;
-      grid-template-columns: repeat(var(--pane-count, 3), minmax(0, 1fr));
-      gap: 3px; padding: 3px; margin: 0;
-      border-radius: 9px;
-      background: color-mix(in srgb, var(--card-background-color) 45%,
-        var(--primary-background-color, var(--card-background-color)));
-    }
+    .compact-card .compact-tabs { margin: 0; }
     .compact-tabs .pane-tab {
       min-height: 38px; height: auto; padding: 4px 5px; gap: 4px;
-      border-radius: 6px; font-size: 11px; font-weight: 400; box-shadow: none;
-      color: var(--primary-text-color);
-    }
-    .compact-tabs .pane-tab.active {
-      background: color-mix(in srgb, var(--secondary-background-color), var(--primary-color) 12%);
-      box-shadow: none;
+      font-size: 11px;
     }
     .compact-tabs .dual-swatch, .compact-readouts .dual-swatch { width: 6px; height: 6px; }
     .compact-tabs .compact-tab-label { min-width: 0; }
@@ -1595,9 +1570,6 @@ export class AdjustableBedCard extends LitElement {
     button.compact-graphic { cursor: pointer; }
     .compact-graphic .bed-graphic { display: block; width: 100%; height: 132px; max-width: 300px; margin: auto; }
     .compact-glance .compact-graphic .bed-graphic { height: 112px; }
-    .compact-graphic .dual-bed-left-stop, .compact-graphic .dual-bed-right-stop { stop-opacity: 1; }
-    .compact-graphic .dual-bed-surface { stroke-opacity: .65; stroke-width: .7px; }
-    .compact-graphic .dual-bed-frame { fill: var(--secondary-text-color); opacity: .55; stroke: none; }
     .compact-no-position { min-height: 90px; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 8px; font-size: .75rem;
       color: var(--secondary-text-color); }
@@ -1611,8 +1583,7 @@ export class AdjustableBedCard extends LitElement {
     .side-theme .dual-swatch { background: var(--primary-color); }
     .compact-card .compact-actions { grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 7px; }
     .compact-actions .tile { min-height: 54px; padding: 5px 4px; gap: 2px;
-      justify-content: center; border-radius: 9px; background: var(--ab-compact-surface);
-      border-color: var(--ab-compact-border); }
+      justify-content: center; }
     .compact-actions .tile .icon, .compact-actions .tile ha-icon { --mdc-icon-size: 22px; }
     .compact-actions .tile-label { font-size: 11px; line-height: 17px;
       white-space: normal; overflow-wrap: anywhere; }
@@ -1621,10 +1592,6 @@ export class AdjustableBedCard extends LitElement {
     .compact-card .compact-motors { gap: 6px; margin: 0 0 10px; }
     .compact-motors .row { padding: 0; border: 0; border-radius: 0; gap: 6px; }
     .compact-motors .row-label { font-size: 12px; }
-    .compact-motors .control-group { gap: 6px; border: 0; border-radius: 0; overflow: visible; }
-    .compact-motors .cg-btn { box-sizing: border-box; width: 44px; height: 44px;
-      padding: 0; justify-content: center; border: 1px solid var(--ab-compact-border);
-      border-radius: 8px; background: var(--ab-compact-surface); }
     .compact-connections { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;
       font-size: .72rem; color: var(--secondary-text-color); }
     .compact-connections > span { display: inline-flex; align-items: center; gap: 5px; }
@@ -1650,8 +1617,10 @@ export class AdjustableBedCard extends LitElement {
       display: block;
       container: bed-card / inline-size;
       --ab-gap: 10px;
-      --ab-side-left-rgb: 75, 0, 255;
-      --ab-side-right-rgb: 234, 65, 65;
+      --ab-control-surface: color-mix(in srgb, var(--card-background-color) 94%, var(--primary-text-color));
+      --ab-control-border: color-mix(in srgb, var(--card-background-color) 85%, var(--primary-text-color));
+      --ab-side-left-rgb: 115, 182, 237;
+      --ab-side-right-rgb: 237, 144, 158;
     }
     ha-card {
       padding: 12px 12px 16px;
@@ -1671,8 +1640,8 @@ export class AdjustableBedCard extends LitElement {
       --mdc-icon-size: 22px;
     }
     .title {
-      font-size: 1.1rem;
-      font-weight: 500;
+      font-size: 1rem;
+      font-weight: 700;
       color: var(--primary-text-color);
       flex: 1;
       white-space: nowrap;
@@ -1716,49 +1685,38 @@ export class AdjustableBedCard extends LitElement {
     .pane-tabs {
       display: grid;
       grid-template-columns: repeat(var(--pane-count, 3), minmax(0, 1fr));
-      gap: 4px;
-      padding: 4px;
+      gap: 3px;
+      padding: 3px;
       margin: 0 0 6px;
-      border-radius: 14px;
-      background: var(--secondary-background-color);
+      border-radius: 9px;
+      background: color-mix(in srgb, var(--card-background-color) 45%,
+        var(--primary-background-color, var(--card-background-color)));
     }
     .pane-tab {
       min-width: 0;
-      height: 42px;
-      padding: 0 8px;
+      min-height: 44px;
+      padding: 4px 8px;
       border: 0;
-      border-radius: 11px;
+      border-radius: 6px;
       background: transparent;
-      color: var(--secondary-text-color);
+      color: var(--primary-text-color);
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 5px;
       font: inherit;
-      font-size: 0.82rem;
-      font-weight: 500;
-      transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-      -webkit-user-select: none;
+      font-size: .8rem;
+      font-weight: 400;
+      transition: background .15s ease;
       user-select: none;
       touch-action: manipulation;
     }
-    .pane-tab ha-icon {
-      --mdc-icon-size: 19px;
-      flex: none;
-    }
-    .pane-tab span:not(.connection-dot) {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .pane-tab:hover {
-      color: var(--primary-text-color);
-    }
+    .pane-tab .dual-swatch { width: 6px; height: 6px; }
+    .pane-tab span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pane-tab:hover { background: var(--ab-control-surface); }
     .pane-tab.active {
-      color: var(--primary-text-color);
-      background: var(--card-background-color);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14);
+      background: color-mix(in srgb, var(--secondary-background-color), var(--primary-color) 12%);
     }
     .connection-dot {
       width: 6px;
@@ -1802,8 +1760,8 @@ export class AdjustableBedCard extends LitElement {
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      border: 1px solid var(--divider-color);
-      background: var(--card-background-color);
+      border: 1px solid var(--ab-control-border);
+      background: var(--ab-control-surface);
       color: var(--primary-color);
       border-radius: 999px;
       padding: 4px 12px 4px 9px;
@@ -1878,11 +1836,9 @@ export class AdjustableBedCard extends LitElement {
     }
     .bed-frame,
     .dual-bed-frame {
-      opacity: 0.78;
-      stroke: var(--primary-text-color);
-      stroke-opacity: 0.14;
-      stroke-width: 1px;
-      vector-effect: non-scaling-stroke;
+      fill: var(--secondary-text-color);
+      opacity: .55;
+      stroke: none;
     }
     .bed-side-layer {
       opacity: 0.86;
@@ -1894,10 +1850,11 @@ export class AdjustableBedCard extends LitElement {
     .bed-surface,
     .dual-bed-surface {
       stroke: var(--primary-text-color);
-      stroke-opacity: 0.1;
-      stroke-width: 1px;
+      stroke-opacity: .65;
+      stroke-width: .7px;
       vector-effect: non-scaling-stroke;
     }
+    .dual-bed-left-stop, .dual-bed-right-stop { stop-opacity: 1; }
     .bed-pillow,
     .dual-bed-pillow {
       opacity: 0.9;
@@ -1939,8 +1896,6 @@ export class AdjustableBedCard extends LitElement {
       align-items: center;
       gap: 3px;
       padding: 8px 10px;
-      border-radius: 10px;
-      background: var(--secondary-background-color);
       text-align: center;
     }
     .dual-side-name {
@@ -1980,9 +1935,9 @@ export class AdjustableBedCard extends LitElement {
       display: flex;
       align-items: center;
       gap: 8px;
-      border: 1px solid var(--divider-color);
+
       border-radius: 11px;
-      background: var(--card-background-color);
+
     }
     .dual-sync-row > ha-icon {
       flex: none;
@@ -2015,9 +1970,9 @@ export class AdjustableBedCard extends LitElement {
       align-items: center;
       justify-content: center;
       gap: 6px;
-      border: 1px solid var(--divider-color);
+      border: 1px solid var(--ab-control-border);
       border-radius: 9px;
-      background: var(--secondary-background-color);
+      background: var(--ab-control-surface);
       color: var(--primary-text-color);
       font: inherit;
       font-size: 0.74rem;
@@ -2078,10 +2033,7 @@ export class AdjustableBedCard extends LitElement {
       align-items: center;
       gap: 10px;
       flex-wrap: wrap;
-      background: var(--card-background-color);
-      border: 1px solid var(--divider-color);
-      border-radius: 12px;
-      padding: 8px 12px;
+      padding: 6px 0;
     }
     .row-label {
       display: flex;
@@ -2108,20 +2060,20 @@ export class AdjustableBedCard extends LitElement {
       text-decoration: underline dotted;
       text-underline-offset: 3px;
     }
-    .control-group {
-      display: inline-flex;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid var(--divider-color);
-    }
+    .control-group { display: inline-flex; gap: 6px; }
     .cg-btn {
-      border: none;
-      background: var(--card-background-color);
+      box-sizing: border-box;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--ab-control-border);
+      border-radius: 8px;
+      background: var(--ab-control-surface);
       color: var(--primary-color);
       cursor: pointer;
-      padding: 8px 14px;
+      padding: 0;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       --mdc-icon-size: 22px;
       transition: background 0.15s ease;
       /* Press-and-hold has to survive a slightly unsteady finger. Pointer
@@ -2129,9 +2081,6 @@ export class AdjustableBedCard extends LitElement {
          gesture arbitration, so without this a small vertical drag starts
          scrolling the page, fires pointercancel and cuts the hold short. */
       touch-action: none;
-    }
-    .cg-btn:not(:last-child) {
-      border-right: 1px solid var(--divider-color);
     }
     .cg-btn:hover {
       background: var(--secondary-background-color);
@@ -2151,10 +2100,10 @@ export class AdjustableBedCard extends LitElement {
       width: 100%;
       margin-top: var(--ab-gap);
       padding: 10px;
-      border-radius: 12px;
+      border-radius: 9px;
       cursor: pointer;
-      background: var(--card-background-color);
-      border: 1px solid var(--divider-color);
+      background: var(--ab-control-surface);
+      border: 1px solid var(--ab-control-border);
       color: var(--error-color);
       font-size: 0.9rem;
       font-weight: 500;
@@ -2176,11 +2125,13 @@ export class AdjustableBedCard extends LitElement {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
-      padding: 14px 6px 10px;
-      background: var(--card-background-color);
-      border: 1px solid var(--divider-color);
-      border-radius: 12px;
+      gap: 4px;
+      justify-content: center;
+      min-height: 64px;
+      padding: 8px 6px;
+      background: var(--ab-control-surface);
+      border: 1px solid var(--ab-control-border);
+      border-radius: 9px;
       cursor: pointer;
       color: var(--primary-text-color);
       transition: background 0.15s ease, border-color 0.15s ease;
@@ -2196,7 +2147,7 @@ export class AdjustableBedCard extends LitElement {
     }
     .tile .icon {
       color: var(--primary-color);
-      --mdc-icon-size: 24px;
+      --mdc-icon-size: 22px;
     }
     .tile.danger .icon {
       color: var(--error-color);
@@ -2214,9 +2165,9 @@ export class AdjustableBedCard extends LitElement {
       align-items: center;
       gap: 12px;
       padding: 8px 12px;
-      background: var(--card-background-color);
-      border: 1px solid var(--divider-color);
-      border-radius: 12px;
+      background: var(--ab-control-surface);
+      border: 1px solid var(--ab-control-border);
+      border-radius: 9px;
       cursor: pointer;
       margin-bottom: var(--ab-gap);
     }
@@ -2282,9 +2233,9 @@ export class AdjustableBedCard extends LitElement {
       align-items: center;
       gap: 10px;
       padding: 10px 12px;
-      border: 1px solid var(--divider-color);
-      border-radius: 12px;
-      background: var(--card-background-color);
+      border: 1px solid var(--ab-control-border);
+      border-radius: 9px;
+      background: var(--ab-control-surface);
       color: var(--primary-text-color);
       cursor: pointer;
       font: inherit;

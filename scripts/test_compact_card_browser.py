@@ -103,7 +103,7 @@ async def main():
             await page.locator("main").evaluate("(el,w)=>el.style.width=w+'px'", width)
             await page.evaluate("configure({layout:'full',default_target:'both'})")
             baseline = await page.evaluate(measure_header, ".header")
-            for side in ["Left", "Right", "Both sides"]:
+            for side in ["Left", "Right", "Both"]:
                 await card.locator(".pane-tab").filter(has_text=side).click()
                 actual = await page.evaluate(measure_header, ".header")
                 assert actual == baseline, (width, side, baseline, actual)
