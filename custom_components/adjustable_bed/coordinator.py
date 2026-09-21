@@ -634,6 +634,7 @@ class AdjustableBedCoordinator:
             not self._pending_capability_reload
             or self._capability_reload_scheduled
             or self._shutting_down
+            or self._pairing_transfer_active
         ):
             return
         self._capability_reload_scheduled = True
@@ -666,7 +667,11 @@ class AdjustableBedCoordinator:
 
     async def _async_reload_if_capability_changed(self) -> None:
         """Reload if this disconnected coordinator still owns the loaded entry."""
-        if not self._pending_capability_reload or self._shutting_down:
+        if (
+            not self._pending_capability_reload
+            or self._shutting_down
+            or self._pairing_transfer_active
+        ):
             return
         if self._client is not None and self._client.is_connected:
             return
@@ -4217,6 +4222,7 @@ class AdjustableBedCoordinator:
     def finish_pairing_transfer(self) -> None:
         """Allow standalone reconnects after pair setup absorbs or releases us."""
         self._pairing_transfer_active = False
+        self._schedule_pending_capability_reload()
 
     @contextlib.asynccontextmanager
     async def async_transport_operation(self, operation: str) -> AsyncIterator[None]:

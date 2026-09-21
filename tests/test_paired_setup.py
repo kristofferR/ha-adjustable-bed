@@ -2083,6 +2083,60 @@ class TestPairBedsConversion:
         # ...but the original entry is still present (released, not removed).
         assert single.entry_id in {e.entry_id for e in hass.config_entries.async_entries(DOMAIN)}
 
+    @pytest.mark.parametrize(
+        ("standalone_survives", "reload_count"), [(True, 1), (False, 0)]
+    )
+    async def test_pairing_transfer_defers_pending_capability_reload(
+        self,
+        hass: HomeAssistant,
+        standalone_survives: bool,
+        reload_count: int,
+    ) -> None:
+        """A learned Solace profile reload waits until ownership is settled."""
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
+
+        from custom_components.adjustable_bed.coordinator import (
+            AdjustableBedCoordinator,
+        )
+
+        single = MockConfigEntry(
+            domain=DOMAIN,
+            data={CONF_ADDRESS: LEFT_ADDR, CONF_BED_TYPE: BED_TYPE_SOLACE},
+            unique_id=LEFT_ADDR,
+            version=4,
+        )
+        single.add_to_hass(hass)
+        coord = AdjustableBedCoordinator(hass, single)
+        client = MagicMock(is_connected=True)
+        client.disconnect = AsyncMock(
+            side_effect=lambda: setattr(client, "is_connected", False)
+        )
+        coord._client = client
+        coord._controller = SimpleNamespace(
+            manual_disconnect_strands_connection=False,
+            stop_notify=AsyncMock(),
+        )
+        coord._pending_capability_reload = True
+        hass.data.setdefault(DOMAIN, {})[single.entry_id] = coord
+
+        with patch.object(
+            hass.config_entries,
+            "async_reload",
+            new_callable=AsyncMock,
+        ) as reload_entry:
+            assert await coord.async_release_for_pairing_transfer()
+            await hass.async_block_till_done()
+
+            reload_entry.assert_not_awaited()
+            if not standalone_survives:
+                hass.data[DOMAIN].pop(single.entry_id)
+
+            coord.finish_pairing_transfer()
+            await hass.async_block_till_done()
+
+            assert reload_entry.await_count == reload_count
+
     async def test_release_refuses_to_strand_pairing_only_original(
         self, hass: HomeAssistant
     ):
