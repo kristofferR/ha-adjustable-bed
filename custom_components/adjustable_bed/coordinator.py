@@ -228,6 +228,7 @@ _INITIAL_POSITION_READ_TOTAL_TIMEOUT = 40.0
 _INITIAL_POSITION_READ_RETRY_DELAY = 3.0
 _INITIAL_POSITION_READ_MAX_ATTEMPTS = 6
 _PASSIVE_POSITION_RECONCILIATION_IDLE_MARGIN = 15.0
+_PAIRING_RELEASE_RESTORE_TIMEOUT = 5.0
 
 
 class PairingOnlyConnectionActiveError(RuntimeError):
@@ -4242,12 +4243,19 @@ class AdjustableBedCoordinator:
         if not self.is_connected or controller is None:
             return
         try:
-            await self.async_start_notify()
-            if hasattr(controller, "send_pin"):
-                await cast(Any, controller).send_pin()
-            if hasattr(controller, "start_keepalive"):
-                await cast(Any, controller).start_keepalive()
-            self._reset_disconnect_timer()
+            async with asyncio.timeout(_PAIRING_RELEASE_RESTORE_TIMEOUT):
+                await self.async_start_notify()
+                if hasattr(controller, "send_pin"):
+                    await cast(Any, controller).send_pin()
+                if hasattr(controller, "start_keepalive"):
+                    await cast(Any, controller).start_keepalive()
+                self._reset_disconnect_timer()
+        except TimeoutError:
+            _LOGGER.warning(
+                "Timed out restoring controller tasks for %s after pairing transfer "
+                "cancellation",
+                self._address,
+            )
         except Exception:
             _LOGGER.exception(
                 "Could not restore controller tasks for %s after pairing transfer cancellation",

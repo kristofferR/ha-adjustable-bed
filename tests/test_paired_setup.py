@@ -2359,6 +2359,69 @@ class TestPairBedsConversion:
         controller.send_pin.assert_awaited_once_with()
         controller.start_keepalive.assert_awaited_once_with()
 
+    async def test_cancelled_pairing_release_bounds_original_restoration(
+        self, hass: HomeAssistant
+    ) -> None:
+        """A stalled task restoration cannot extend the paired setup deadline."""
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
+
+        from custom_components.adjustable_bed.coordinator import (
+            AdjustableBedCoordinator,
+        )
+
+        single = MockConfigEntry(
+            domain=DOMAIN,
+            data={CONF_ADDRESS: LEFT_ADDR, CONF_BED_TYPE: BED_TYPE_OCTO},
+            unique_id=LEFT_ADDR,
+            version=4,
+        )
+        single.add_to_hass(hass)
+        coord = AdjustableBedCoordinator(hass, single)
+        disconnect_started = asyncio.Event()
+        restoration_started = asyncio.Event()
+
+        async def stalled_disconnect() -> None:
+            disconnect_started.set()
+            await asyncio.Event().wait()
+
+        async def stalled_start_notify(*_args) -> None:
+            restoration_started.set()
+            await asyncio.Event().wait()
+
+        client = MagicMock(is_connected=True)
+        client.disconnect = AsyncMock(side_effect=stalled_disconnect)
+        controller = SimpleNamespace(
+            manual_disconnect_strands_connection=False,
+            requires_notification_channel=True,
+            stop_notify=AsyncMock(),
+            start_notify=AsyncMock(side_effect=stalled_start_notify),
+            stop_keepalive=AsyncMock(),
+            send_pin=AsyncMock(),
+            start_keepalive=AsyncMock(),
+        )
+        coord._client = client
+        coord._controller = controller
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator."
+            "_PAIRING_RELEASE_RESTORE_TIMEOUT",
+            0.01,
+        ):
+            release = asyncio.create_task(coord.async_release_for_pairing_transfer())
+            await disconnect_started.wait()
+            release.cancel()
+            await restoration_started.wait()
+            with pytest.raises(asyncio.CancelledError):
+                async with asyncio.timeout(0.5):
+                    await release
+
+        assert coord.is_connected
+        assert coord._pairing_transfer_active is False
+        controller.start_notify.assert_awaited_once_with(None)
+        controller.send_pin.assert_not_awaited()
+        controller.start_keepalive.assert_not_awaited()
+
     async def test_conversion_retries_contended_side_after_absorb(
         self,
         hass: HomeAssistant,
