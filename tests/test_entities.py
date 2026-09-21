@@ -2001,21 +2001,25 @@ class TestLightEntities:
             for item in mock_bleak_client.write_gatt_char.call_args_list
         )
 
-    @pytest.mark.parametrize("skipped", [False, True])
+    @pytest.mark.parametrize(
+        "initialization_error",
+        [ConnectionError("bed unreachable"), RuntimeError("no controller"), None],
+        ids=["connection-error", "controller-unavailable", "skipped"],
+    )
     async def test_linak_failed_initial_off_keeps_unknown_until_successful_command(
         self,
         hass: HomeAssistant,
         mock_config_entry,
         mock_coordinator_connected,
         enable_custom_integrations,
-        skipped: bool,
+        initialization_error: Exception | None,
     ):
         """Failed or preempted initialization must not report an unexecuted OFF."""
         from homeassistant.helpers import entity_registry as er
 
         with patch(
             "custom_components.adjustable_bed.coordinator.AdjustableBedCoordinator.async_execute_controller_command",
-            side_effect=None if skipped else ConnectionError("bed unreachable"),
+            side_effect=initialization_error,
         ):
             await hass.config_entries.async_setup(mock_config_entry.entry_id)
             await hass.async_block_till_done()

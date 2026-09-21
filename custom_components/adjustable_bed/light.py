@@ -366,7 +366,13 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             # reconnects. A failed write must leave the light unknown.
             try:
                 await self.async_turn_off()
-            except (HomeAssistantError, BleakError, ConnectionError, TimeoutError) as err:
+            except (
+                HomeAssistantError,
+                BleakError,
+                ConnectionError,
+                TimeoutError,
+                RuntimeError,
+            ) as err:
                 _LOGGER.warning("Could not initialize under-bed light for %s: %s", self.name, err)
 
     async def async_will_remove_from_hass(self) -> None:
