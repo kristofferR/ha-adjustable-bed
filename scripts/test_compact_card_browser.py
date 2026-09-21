@@ -203,6 +203,10 @@ async def main():
         assert await page.evaluate(
             "calls.some(c=>c.entity_id==='cover.left_back' && c.service==='stop_cover')"
         )
+        await page.evaluate("async ()=>{await Promise.resolve();await card.updateComplete;calls=[]}")
+        await card.locator(".compact-stop").click()
+        release_calls = await page.evaluate("calls.map(c=>c.entity_id)")
+        assert release_calls == ["button.right_stop"], release_calls
 
         # Side-scoped assistive activation also remains stoppable after a tab change.
         await page.evaluate("calls=[]")

@@ -11,6 +11,7 @@ interface Recorder {
   actions: HoldActions;
   pulses: Array<{ key: string; dir: Direction }>;
   stoppedCovers: string[];
+  stoppedCoverTargets: Array<string | undefined>;
   bedStops: number;
   // Which stop each bedStop pressed. On a paired bed each side has its own, so
   // "a stop happened" is not enough: it has to be the held side's.
@@ -31,6 +32,7 @@ function recorder(opts: { reject?: boolean; missingEntity?: boolean } = {}): Rec
   const rec: Recorder = {
     pulses,
     stoppedCovers,
+    stoppedCoverTargets: [],
     bedStops: 0,
     stoppedBeds: [],
     release: () => resolvePending?.(),
@@ -45,7 +47,10 @@ function recorder(opts: { reject?: boolean; missingEntity?: boolean } = {}): Rec
           resolvePending = resolve;
         });
       },
-      stopCover: (cover) => stoppedCovers.push(cover),
+      stopCover: (cover, stopEntityId) => {
+        stoppedCovers.push(cover);
+        rec.stoppedCoverTargets.push(stopEntityId);
+      },
       stopBed: (stopEntityId) => {
         rec.bedStops += 1;
         rec.stoppedBeds.push(stopEntityId);
@@ -164,17 +169,18 @@ test("keyboard holds have no owning pointer, so any release ends them", async ()
   await tick();
 });
 
-test("a cover-backed hold stops the cover, not the bed", async () => {
+test("a cover-backed hold stops the cover and preserves its retained bed target", async () => {
   const rec = recorder();
   const hold = new MotorHold(rec.actions);
 
-  hold.start(coverMotor, "down", 1);
+  hold.start(coverMotor, "down", 1, "button.left_stop");
   await tick();
   hold.end(coverMotor);
   rec.release();
   await tick();
 
   expect(rec.stoppedCovers).toEqual(["cover.legs"]);
+  expect(rec.stoppedCoverTargets).toEqual(["button.left_stop"]);
   expect(rec.bedStops).toBe(0);
 });
 

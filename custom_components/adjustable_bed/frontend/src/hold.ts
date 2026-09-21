@@ -12,8 +12,9 @@ export interface HoldActions {
   // Runs one finite movement pulse and resolves when the bed has finished it.
   // Resolving is what paces the repeat loop; rejecting stops it.
   pulse: (motor: MotorEntity, dir: Direction) => Promise<void> | undefined;
-  // Stops a cover-backed motor, which is the only kind with its own stop.
-  stopCover: (coverEntityId: string) => void;
+  // Stops a cover-backed motor, which is the only kind with its own stop. The
+  // bed stop identifies the compact target retained when the hold began.
+  stopCover: (coverEntityId: string, stopEntityId?: string) => void;
   // The stop that covers the held motor. Cancels the command in flight.
   // `stopEntityId` is the stop belonging to the bed the motor is on, which on a
   // paired bed is the side's own stop rather than the parent's; omitted falls
@@ -111,7 +112,7 @@ export class MotorHold {
     const stop = this._stop ?? undefined;
     if (!this.cancel(motor)) return;
     if (motor.cover) {
-      this.actions.stopCover(motor.cover);
+      this.actions.stopCover(motor.cover, stop);
       return;
     }
     // Cancelling the loop does not touch the pulse already in flight, and each
@@ -153,7 +154,7 @@ export class MotorHold {
     const wasHolding = this._key !== null;
     this._reset();
     if (!wasHolding) return;
-    if (cover) this.actions.stopCover(cover);
+    if (cover) this.actions.stopCover(cover, stop);
     else this.actions.stopBed(stop);
   }
 

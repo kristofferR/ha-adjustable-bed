@@ -103,12 +103,13 @@ export class AdjustableBedCard extends LitElement {
           }) as Promise<void> | undefined)
         : undefined;
     },
-    stopCover: (cover) => this._cover(cover, "stop_cover"),
+    stopCover: (cover, stopEntityId) =>
+      this._stopCompactTarget(cover, stopEntityId ?? cover),
     // Which stop applies depends on the bed the held motor belongs to, so it is
     // threaded in from the row that started the hold rather than read from a
     // single bed-wide stop, which a paired render does not have.
     stopBed: (stopEntityId) => {
-      if (stopEntityId) this._press(stopEntityId);
+      if (stopEntityId) this._stopCompactTarget(stopEntityId);
     },
   });
 
@@ -511,21 +512,25 @@ export class AdjustableBedCard extends LitElement {
     for (const id of bed ? compactStopEntities(bed) : []) {
       if (!this._compactStopTargets.has(id)) this._compactStopTargets.set(id, Symbol());
     }
-    for (const [id, movement] of this._compactStopTargets) {
-      const cover = id.startsWith("cover.");
-      this.hass?.callService(cover ? "cover" : "button", cover ? "stop_cover" : "press", {
-        entity_id: id,
-      }).then(() => {
-        // A completed STOP must not forget movement started while it was pending.
-        if (this._compactStopTargets.get(id) === movement) {
-          this._compactStopTargets.delete(id);
-          this.requestUpdate();
-        }
-      }).catch(() => {
-        // Keep failed targets available for another Stop, even after switching sides.
-      });
-    }
+    for (const id of this._compactStopTargets.keys()) this._stopCompactTarget(id);
     if (this._compactStopTargets.size) this.requestUpdate();
+  }
+
+  private _stopCompactTarget(id: string, retainedTarget = id): void {
+    const movement = this._compactStopTargets.get(retainedTarget);
+    const cover = id.startsWith("cover.");
+    this.hass?.callService(cover ? "cover" : "button", cover ? "stop_cover" : "press", {
+      entity_id: id,
+    }).then(() => {
+      // A completed STOP must not forget movement started while it was pending.
+      if (movement !== undefined &&
+          this._compactStopTargets.get(retainedTarget) === movement) {
+        this._compactStopTargets.delete(retainedTarget);
+        this.requestUpdate();
+      }
+    }).catch(() => {
+      // Keep failed targets available for another Stop, even after switching sides.
+    });
   }
 
   private _navigate = (): void => {
