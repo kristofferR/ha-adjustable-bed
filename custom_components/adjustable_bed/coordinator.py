@@ -687,6 +687,14 @@ class AdjustableBedCoordinator:
         async with self._command_lock:
             yield
 
+    @contextlib.asynccontextmanager
+    async def async_connection_operation_guard(
+        self,
+    ) -> AsyncIterator[Callable[[str], Coroutine[object, object, bool]]]:
+        """Keep the connection lane idle and expose its locked disconnect."""
+        async with self._lock:
+            yield self._async_disconnect_locked
+
     def _capability_reload_blocks_connection(self) -> bool:
         """Return whether a deferred entity reload owns the next disconnected state."""
         link_is_up = self._client is not None and self._client.is_connected

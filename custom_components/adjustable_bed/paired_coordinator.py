@@ -66,6 +66,7 @@ CommandFn = ControllerCommand
 
 type BedChild = AdjustableBedCoordinator | SingleAddressSideCoordinator
 type ConnectionAttemptCursor = tuple[int | None, Mapping[str, object] | None]
+type GuardedDisconnect = Callable[[str], Coroutine[Any, Any, bool | None]]
 
 
 class _ConnectionModeChanged(Exception):
@@ -977,7 +978,11 @@ class PairedBedCoordinator:
         return ok
 
     async def _safe_disconnect(
-        self, side: str, child: BedChild
+        self,
+        side: str,
+        child: BedChild,
+        *,
+        disconnect: GuardedDisconnect | None = None,
     ) -> bool:
         """Disconnect one side, swallowing failures. Returns True on success — a
         disconnect error must not mask the command outcome, but callers that rely
@@ -988,7 +993,8 @@ class PairedBedCoordinator:
         treated as success for backward compatibility.
         """
         try:
-            disconnected = await child.async_disconnect("sequential_switch")
+            disconnect_fn = disconnect or child.async_disconnect
+            disconnected = await disconnect_fn("sequential_switch")
         except Exception as err:  # noqa: BLE001 - CancelledError must propagate
             _LOGGER.warning(
                 "Disconnect failed on %s side (%s): %s", side, child.address, err
@@ -1229,8 +1235,13 @@ class PairedBedCoordinator:
             self._locked_target_sides(items),
             contextlib.AsyncExitStack() as stack,
         ):
+            guarded_disconnects: dict[str, GuardedDisconnect] = {}
             for _, child in items:
                 await stack.enter_async_context(child.async_command_operation_guard())
+            for side, child in items:
+                guarded_disconnects[side] = await stack.enter_async_context(
+                    child.async_connection_operation_guard()
+                )
 
             if self._connection_mode != PAIR_CONNECTION_MODE_CONCURRENT:
                 return
@@ -1248,7 +1259,9 @@ class PairedBedCoordinator:
                 if not child.is_connected:
                     continue
                 child.cache_capability_controller()
-                if not await self._safe_disconnect(side, child):
+                if not await self._safe_disconnect(
+                    side, child, disconnect=guarded_disconnects[side]
+                ):
                     _LOGGER.warning(
                         "Automatic paired command could not release the %s "
                         "side, so concurrent mode remains active",
@@ -1349,6 +1362,13 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
 
     def async_command_operation_guard(self) -> contextlib.AbstractAsyncContextManager[None]:
         return self._single_inner.async_command_operation_guard()
+
+    def async_connection_operation_guard(
+        self,
+    ) -> contextlib.AbstractAsyncContextManager[
+        Callable[[str], Coroutine[object, object, bool]]
+    ]:
+        return self._single_inner.async_connection_operation_guard()
 
     def cache_capability_controller(self) -> None:
         return self._single_inner.cache_capability_controller()

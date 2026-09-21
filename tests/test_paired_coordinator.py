@@ -117,6 +117,10 @@ class RecordingChild:
     async def async_command_operation_guard(self):
         yield
 
+    @contextlib.asynccontextmanager
+    async def async_connection_operation_guard(self):
+        yield self.async_disconnect
+
     def request_command_cancel(self, resource=None, *, resources=None) -> None:
         del resource, resources
         self.log.append((self.side, "cancel"))
@@ -2137,6 +2141,53 @@ class TestConnectionModeResolution:
         await coordinator.async_execute_controller_command(_noop, side=SIDE_RIGHT)
         assert not right.is_connected
 
+    async def test_auto_command_disconnects_inside_held_connection_lane(self):
+        class ConnectionLockedChild(RecordingChild):
+            def __init__(self):
+                super().__init__(SIDE_LEFT, [])
+                self._connection_lane = asyncio.Lock()
+
+            @contextlib.asynccontextmanager
+            async def async_connection_operation_guard(self):
+                async with self._connection_lane:
+                    yield super().async_disconnect
+
+            async def async_disconnect(self, reason="intentional"):
+                async with self._connection_lane:
+                    return await super().async_disconnect(reason)
+
+        left = ConnectionLockedChild()
+        right = RecordingChild(SIDE_RIGHT, [], connected=False)
+        entry = SimpleNamespace(
+            data={
+                CONF_PAIR_ID: "pair_abc123",
+                "name": "X",
+                CONF_BED_TYPE: BED_TYPE_OCTO,
+            }
+        )
+        coordinator = PairedBedCoordinator(
+            None, entry, {SIDE_LEFT: left, SIDE_RIGHT: right}
+        )
+
+        async def fail_for_slot(*_args, **_kwargs):
+            right.connection_attempt_details.append(
+                {"error": "No connection slot available"}
+            )
+            raise ConnectionError("Not connected to bed")
+
+        right.async_execute_controller_command = fail_for_slot
+
+        with pytest.raises(ConnectionError, match="Not connected"):
+            await asyncio.wait_for(
+                coordinator.async_execute_controller_command(
+                    _noop, side=SIDE_RIGHT
+                ),
+                timeout=1,
+            )
+
+        assert coordinator.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL
+        assert not left.is_connected
+
     async def test_auto_command_detects_slot_error_after_attempt_history_wraps(self):
         coordinator = self._coord(BED_TYPE_OCTO)
         left = coordinator.children[SIDE_LEFT]
@@ -2225,6 +2276,68 @@ class TestConnectionModeResolution:
 
         with pytest.raises(ConnectionError, match="Not connected"):
             await coordinator.async_execute_controller_command(_noop, side=SIDE_RIGHT)
+
+        assert coordinator.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
+        assert left.is_connected
+        assert (SIDE_LEFT, "disconnect") not in left.log
+
+    async def test_auto_command_waits_for_reconnect_before_fallback_safety_check(self):
+        reconnect_started = asyncio.Event()
+        finish_reconnect = asyncio.Event()
+        pairing_only = SimpleNamespace(manual_disconnect_strands_connection=True)
+
+        class ReconnectingChild(RecordingChild):
+            def __init__(self):
+                super().__init__(SIDE_LEFT, [], connected=False)
+                self._connection_lane = asyncio.Lock()
+
+            @contextlib.asynccontextmanager
+            async def async_connection_operation_guard(self):
+                async with self._connection_lane:
+                    yield self.async_disconnect
+
+            async def async_connect(self):
+                async with self._connection_lane:
+                    reconnect_started.set()
+                    await finish_reconnect.wait()
+                    self._connected = True
+                    self.controller = pairing_only
+                    return True
+
+        left = ReconnectingChild()
+        right = RecordingChild(SIDE_RIGHT, [], connected=False)
+        entry = SimpleNamespace(
+            data={
+                CONF_PAIR_ID: "pair_abc123",
+                "name": "X",
+                CONF_BED_TYPE: BED_TYPE_OCTO,
+            }
+        )
+        coordinator = PairedBedCoordinator(
+            None, entry, {SIDE_LEFT: left, SIDE_RIGHT: right}
+        )
+
+        async def fail_for_slot(*_args, **_kwargs):
+            right.connection_attempt_details.append(
+                {"error": "No connection slot available"}
+            )
+            raise ConnectionError("Not connected to bed")
+
+        right.async_execute_controller_command = fail_for_slot
+        reconnect = asyncio.create_task(left.async_connect())
+        await reconnect_started.wait()
+        command = asyncio.create_task(
+            coordinator.async_execute_controller_command(_noop, side=SIDE_RIGHT)
+        )
+        await asyncio.sleep(0)
+
+        assert not command.done()
+        assert coordinator.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
+
+        finish_reconnect.set()
+        await reconnect
+        with pytest.raises(ConnectionError, match="Not connected"):
+            await command
 
         assert coordinator.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
         assert left.is_connected
