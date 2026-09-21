@@ -228,6 +228,12 @@ _INITIAL_POSITION_READ_TOTAL_TIMEOUT = 40.0
 _INITIAL_POSITION_READ_RETRY_DELAY = 3.0
 _INITIAL_POSITION_READ_MAX_ATTEMPTS = 6
 _PASSIVE_POSITION_RECONCILIATION_IDLE_MARGIN = 15.0
+
+
+class PairingOnlyConnectionActiveError(RuntimeError):
+    """Raised when pair takeover would consume a receiver's one-use link."""
+
+
 # Share a connection across rapid taps, then give the physical remote back its link.
 _COMMAND_BURST_GRACE_SECONDS = 1.0
 # One reconnect gives a stale preserved OKIN profile another chance to reveal
@@ -519,6 +525,7 @@ class AdjustableBedCoordinator:
         self._pending_capability_reload = False
         self._capability_reload_scheduled = False
         self._shutting_down = False
+        self._pairing_transfer_active = False
         self._last_bond_verification: dict[str, Any] = {
             "status": "not_attempted",
             "timestamp": None,
@@ -1971,6 +1978,11 @@ class AdjustableBedCoordinator:
         return list(self._connection_attempt_details)
 
     @property
+    def connection_attempt_count(self) -> int:
+        """Return the monotonic number of connection attempts."""
+        return self._connection_attempt_count
+
+    @property
     def device_info(self) -> DeviceInfo:
         """Return device info for this bed."""
         return DeviceInfo(
@@ -2445,6 +2457,12 @@ class AdjustableBedCoordinator:
 
     async def _async_connect_locked(self, reset_timer: bool = True) -> bool:
         """Allow automatic auth recovery before asking the user to re-pair."""
+        if self._pairing_transfer_active:
+            _LOGGER.debug(
+                "Skipping connection to %s while ownership transfers to a paired entry",
+                self._address,
+            )
+            return False
         try:
             return await self._async_connect_attempts_locked(reset_timer)
         finally:
@@ -4162,6 +4180,35 @@ class AdjustableBedCoordinator:
 
         async with self._lock:
             return await self._async_disconnect_locked(reason)
+
+    async def async_release_for_pairing_transfer(self) -> bool:
+        """Release this standalone link for takeover by a paired entry.
+
+        Pairing-window-only receivers must be checked after any command or
+        automatic reconnect already using the connection lane has completed.
+        Holding both lanes through teardown keeps that check atomic.
+        """
+        async with self._command_lock, self._lock:
+            controller = self._controller
+            if (
+                self.is_connected
+                and controller is not None
+                and controller.manual_disconnect_strands_connection
+            ):
+                raise PairingOnlyConnectionActiveError
+            self._pairing_transfer_active = True
+            try:
+                released = await self._async_disconnect_locked("absorbed_by_pair")
+            except (Exception, asyncio.CancelledError):
+                self._pairing_transfer_active = False
+                raise
+            if not released:
+                self._pairing_transfer_active = False
+            return released
+
+    def finish_pairing_transfer(self) -> None:
+        """Allow standalone reconnects after pair setup absorbs or releases us."""
+        self._pairing_transfer_active = False
 
     @contextlib.asynccontextmanager
     async def async_transport_operation(self, operation: str) -> AsyncIterator[None]:

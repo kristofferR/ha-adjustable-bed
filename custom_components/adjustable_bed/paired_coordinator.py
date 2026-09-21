@@ -65,6 +65,11 @@ _LOGGER = logging.getLogger(__name__)
 CommandFn = ControllerCommand
 
 type BedChild = AdjustableBedCoordinator | SingleAddressSideCoordinator
+type ConnectionAttemptCursor = tuple[int | None, Mapping[str, object] | None]
+
+
+class _ConnectionModeChanged(Exception):
+    """Signal that a command queued in concurrent mode must be rerouted."""
 
 
 def _merge_stop_errors(
@@ -415,8 +420,8 @@ class PairedBedCoordinator:
         }
 
         if not sequential:
-            attempt_offsets = {
-                target_side: len(self._connection_attempts(child))
+            attempt_cursors = {
+                target_side: self._connection_attempt_cursor(child)
                 for target_side, child in self._children.items()
             }
             try:
@@ -428,12 +433,15 @@ class PairedBedCoordinator:
                     resources=command_scope,
                     entry_cancel=entry_cancel,
                 )
+            except _ConnectionModeChanged:
+                sequential = True
             except Exception as err:
                 await self._async_fallback_after_connection_slot_exhaustion(
-                    err, attempt_offsets
+                    err, attempt_cursors
                 )
                 raise
-            return
+            else:
+                return
 
         # Sequential pairs share a one-link connection lane. Keep the existing
         # lock and disconnect dead-man sequencing for that hardware profile.
@@ -497,6 +505,8 @@ class PairedBedCoordinator:
         # takes them again for commit/execution, but releases them while waiting
         # for READY so a command for the active motor can preempt.
         async with self._pair_group_lock:
+            if self._connection_mode != PAIR_CONNECTION_MODE_CONCURRENT:
+                raise _ConnectionModeChanged
             if any(
                 self._pair_command_was_cancelled(side, resources, entry_cancel)
                 for side, _ in targets
@@ -551,6 +561,8 @@ class PairedBedCoordinator:
             # Compatibility for coordinator doubles. Separate side locks still
             # allow left and right to overlap while serializing one fake child.
             async with self._pair_side_locks[side]:
+                if self._connection_mode != PAIR_CONNECTION_MODE_CONCURRENT:
+                    raise _ConnectionModeChanged
                 if self._pair_command_was_cancelled(side, resources, entry_cancel):
                     return
                 await op(child)
@@ -558,6 +570,8 @@ class PairedBedCoordinator:
 
         handle: CommandHandle | None = None
         async with self._pair_side_locks[side]:
+            if self._connection_mode != PAIR_CONNECTION_MODE_CONCURRENT:
+                raise _ConnectionModeChanged
             if self._pair_command_was_cancelled(side, resources, entry_cancel):
                 return
             handle = await child.async_prepare_command_operation(
@@ -579,6 +593,9 @@ class PairedBedCoordinator:
         # lane, because that group needs the lane to commit. Reacquire only for
         # the synchronous validation/commit transition.
         async with self._pair_side_locks[side]:
+            if self._connection_mode != PAIR_CONNECTION_MODE_CONCURRENT:
+                await child.async_abort_prepared_command(handle)
+                raise _ConnectionModeChanged
             try:
                 await child.async_wait_prepared_command(handle)
                 if self._pair_command_was_cancelled(side, resources, entry_cancel):
@@ -1065,8 +1082,8 @@ class PairedBedCoordinator:
                         break
             return any_connected
 
-        attempt_offsets = {
-            side: len(self._connection_attempts(child)) for side, child in items
+        attempt_cursors = {
+            side: self._connection_attempt_cursor(child) for side, child in items
         }
         results = await asyncio.gather(
             *(child.async_connect() for _, child in items), return_exceptions=True
@@ -1078,7 +1095,7 @@ class PairedBedCoordinator:
             self._connection_slot_exhausted(
                 child,
                 result,
-                attempt_offsets[side],
+                attempt_cursors[side],
             )
             for (side, child), result in zip(items, results, strict=True)
         ):
@@ -1116,11 +1133,40 @@ class PairedBedCoordinator:
         )
 
     @classmethod
+    def _connection_attempt_cursor(cls, child: BedChild) -> ConnectionAttemptCursor:
+        """Return a stable cursor into a child's bounded attempt history."""
+        count = getattr(child, "connection_attempt_count", None)
+        attempts = cls._connection_attempts(child)
+        return (
+            count if isinstance(count, int) else None,
+            attempts[-1] if attempts else None,
+        )
+
+    @classmethod
+    def _connection_attempts_since(
+        cls, child: BedChild, cursor: ConnectionAttemptCursor
+    ) -> tuple[Mapping[str, object], ...]:
+        """Return attempts recorded after a cursor, despite deque eviction."""
+        attempts = cls._connection_attempts(child)
+        previous_count, previous_tail = cursor
+        if previous_tail is not None:
+            for index in range(len(attempts) - 1, -1, -1):
+                if attempts[index] is previous_tail:
+                    return attempts[index + 1 :]
+        current_count = getattr(child, "connection_attempt_count", None)
+        if previous_count is not None and isinstance(current_count, int):
+            added = max(0, current_count - previous_count)
+            if added == 0:
+                return ()
+            return attempts[-added:]
+        return attempts
+
+    @classmethod
     def _connection_slot_exhausted(
         cls,
         child: BedChild,
         result: object,
-        attempt_offset: int,
+        attempt_cursor: ConnectionAttemptCursor,
     ) -> bool:
         """Return whether this connect failed because its transport had no slot."""
         if result is True:
@@ -1130,7 +1176,7 @@ class PairedBedCoordinator:
             and "connection slot" in str(result).lower()
         ):
             return True
-        attempts = cls._connection_attempts(child)[attempt_offset:]
+        attempts = cls._connection_attempts_since(child, attempt_cursor)
         return any(
             "connection slot" in str(attempt.get("error", "")).lower()
             for attempt in attempts
@@ -1150,7 +1196,7 @@ class PairedBedCoordinator:
     async def _async_fallback_after_connection_slot_exhaustion(
         self,
         error: BaseException,
-        attempt_offsets: Mapping[str, int],
+        attempt_cursors: Mapping[str, ConnectionAttemptCursor],
     ) -> None:
         """Adopt sequential mode after a command-time connection-slot failure.
 
@@ -1169,7 +1215,7 @@ class PairedBedCoordinator:
             self._connection_slot_exhausted(
                 child,
                 side_errors.get(side, error),
-                attempt_offsets.get(side, 0),
+                attempt_cursors.get(side, (None, None)),
             )
             for side, child in items
         ):
@@ -1366,6 +1412,10 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
     @property
     def connection_attempt_details(self) -> list[dict[str, object]]:
         return self._single_inner.connection_attempt_details
+
+    @property
+    def connection_attempt_count(self) -> int:
+        return self._single_inner.connection_attempt_count
 
     def pause_disconnect_timer(self) -> None:
         return self._single_inner.pause_disconnect_timer()

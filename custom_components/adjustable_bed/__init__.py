@@ -59,7 +59,11 @@ from .const import (
     connection_gated_by_bond,
     requires_pairing,
 )
-from .coordinator import AdjustableBedCoordinator, ChildEntryView
+from .coordinator import (
+    AdjustableBedCoordinator,
+    ChildEntryView,
+    PairingOnlyConnectionActiveError,
+)
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
 from .paired_coordinator import PairedBedCoordinator, SingleAddressPairedCoordinator
 from .paired_devices import async_register_children
@@ -481,7 +485,9 @@ def _async_ensure_paired_device_registry(
     async_register_children(hass, coordinator)
 
 
-async def _async_release_absorbed_singles(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def _async_release_absorbed_singles(
+    hass: HomeAssistant, entry: ConfigEntry
+) -> tuple[AdjustableBedCoordinator, ...]:
     """Release the original singles' links before their paired children connect.
 
     Each child takes over the SAME address as its original, so a still-connected
@@ -493,48 +499,45 @@ async def _async_release_absorbed_singles(hass: HomeAssistant, entry: ConfigEntr
     released safely; absorbing it after a partial paired connect could otherwise
     strand that side.
     """
-    for child in iter_children(entry.data):
-        absorbed_id = child.get(KEY_ABSORBED_ENTRY_ID)
-        if not absorbed_id:
-            continue
-        original = hass.config_entries.async_get_entry(absorbed_id)
-        if original is None or is_paired(original.data):
-            continue
-        original_coordinator = hass.data.get(DOMAIN, {}).get(absorbed_id)
-        if not isinstance(original_coordinator, AdjustableBedCoordinator):
-            continue
-        try:
-            # Keep the pairing-only safety check atomic with teardown. A command
-            # may be reconnecting this original while pair setup starts; checking
-            # before taking its command lane could miss the newly established,
-            # one-use connection and then immediately strand it.
-            async with original_coordinator.async_command_operation_guard():
-                controller = original_coordinator.controller
-                if (
-                    original_coordinator.is_connected
-                    and controller is not None
-                    and controller.manual_disconnect_strands_connection
-                ):
-                    raise ConfigEntryNotReady(
-                        f"Cannot transfer {original.title} while its pairing-only connection is active"
-                    )
-                released = await original_coordinator.async_disconnect(
-                    "absorbed_by_pair"
-                )
+    transferring: list[AdjustableBedCoordinator] = []
+    try:
+        for child in iter_children(entry.data):
+            absorbed_id = child.get(KEY_ABSORBED_ENTRY_ID)
+            if not absorbed_id:
+                continue
+            original = hass.config_entries.async_get_entry(absorbed_id)
+            if original is None or is_paired(original.data):
+                continue
+            original_coordinator = hass.data.get(DOMAIN, {}).get(absorbed_id)
+            if not isinstance(original_coordinator, AdjustableBedCoordinator):
+                continue
+            try:
+                released = await original_coordinator.async_release_for_pairing_transfer()
+                if released is not False:
+                    transferring.append(original_coordinator)
                 if released is False or original_coordinator.is_connected:
                     raise ConfigEntryNotReady(
                         f"Could not release {original.title} before paired setup"
                     )
-            _LOGGER.debug(
-                "Released absorbed single %s's BLE link before paired connect",
-                absorbed_id,
-            )
-        except ConfigEntryNotReady:
-            raise
-        except Exception as err:  # noqa: BLE001 - retain both working originals
-            raise ConfigEntryNotReady(
-                f"Could not release {original.title} before paired setup: {err}"
-            ) from err
+                _LOGGER.debug(
+                    "Released absorbed single %s's BLE link before paired connect",
+                    absorbed_id,
+                )
+            except PairingOnlyConnectionActiveError as err:
+                raise ConfigEntryNotReady(
+                    f"Cannot transfer {original.title} while its pairing-only connection is active"
+                ) from err
+            except ConfigEntryNotReady:
+                raise
+            except Exception as err:  # noqa: BLE001 - retain both working originals
+                raise ConfigEntryNotReady(
+                    f"Could not release {original.title} before paired setup: {err}"
+                ) from err
+    except (Exception, asyncio.CancelledError):
+        for coordinator in transferring:
+            coordinator.finish_pairing_transfer()
+        raise
+    return tuple(transferring)
 
 
 async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -580,46 +583,53 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
             if not child.is_connected:
                 await _maybe_create_pairing_issue_for(hass, child)
 
+    transferring: tuple[AdjustableBedCoordinator, ...] = ()
     try:
-        async with asyncio.timeout(SETUP_TIMEOUT):
-            # Release the old owners of these addresses before opening replacement
-            # links. Keep their entries until setup succeeds so they can reconnect
-            # on failure. The shared setup deadline also bounds stalled BLE teardown.
-            await _async_release_absorbed_singles(hass, entry)
-            connected = await coordinator.async_connect()
-    except ConfigEntryNotReady:
-        await coordinator.async_shutdown()
-        raise
-    except TimeoutError:
-        # The coordinator isn't in hass.data yet, so the unload path won't run —
-        # shut it down here or a side that already connected keeps its BLE link
-        # alive across SETUP_RETRY.
+        try:
+            async with asyncio.timeout(SETUP_TIMEOUT):
+                # Release the old owners of these addresses before opening replacement
+                # links. Keep their entries until setup succeeds so they can reconnect
+                # on failure. The shared setup deadline also bounds stalled BLE teardown.
+                transferring = await _async_release_absorbed_singles(hass, entry)
+                connected = await coordinator.async_connect()
+        except ConfigEntryNotReady:
+            await coordinator.async_shutdown()
+            raise
+        except TimeoutError:
+            # The coordinator isn't in hass.data yet, so the unload path won't run —
+            # shut it down here or a side that already connected keeps its BLE link
+            # alive across SETUP_RETRY.
+            await _pairing_repairs_for_unconnected()
+            await coordinator.async_shutdown()
+            raise ConfigEntryNotReady(
+                f"Paired bed {entry.title} timed out connecting after {SETUP_TIMEOUT:.0f}s"
+            ) from None
+
+        # Half-available is fine, but surface pairing repairs for any unconnected side
+        # first — including the all-offline case, which aborts below.
         await _pairing_repairs_for_unconnected()
-        await coordinator.async_shutdown()
-        raise ConfigEntryNotReady(
-            f"Paired bed {entry.title} timed out connecting after {SETUP_TIMEOUT:.0f}s"
-        ) from None
+        if not connected:
+            # If NO side connected there is nothing to control yet — retry like a
+            # single bed.
+            await coordinator.async_shutdown()
+            raise ConfigEntryNotReady(
+                f"No side of paired bed {entry.title} could be connected"
+            )
 
-    # Half-available is fine, but surface pairing repairs for any unconnected side
-    # first — including the all-offline case, which aborts below.
-    await _pairing_repairs_for_unconnected()
-    if not connected:
-        # If NO side connected there is nothing to control yet — retry like a
-        # single bed.
-        await coordinator.async_shutdown()
-        raise ConfigEntryNotReady(f"No side of paired bed {entry.title} could be connected")
-
-    hass.data[DOMAIN][entry.entry_id] = coordinator
-    # At least one child connected, so the pair can provide controls. ONLY NOW
-    # absorb the original single entries — re-home their entity/device registry
-    # rows onto the pair, then remove them. Deferring this until after a successful
-    # connect keeps the originals (and their live controls) intact on the timeout /
-    # no-side-connected paths above: if the pair can't load, the user keeps two
-    # working beds that can reconnect on demand. Must run before
-    # forwarding platforms so the originals' live entities are torn down first,
-    # freeing the shared {address}_{key} unique_ids the paired platforms reuse.
-    # No-op on reload (originals already gone).
-    absorbed_sides = await _async_rehome_absorbed_singles(hass, entry)
+        hass.data[DOMAIN][entry.entry_id] = coordinator
+        # At least one child connected, so the pair can provide controls. ONLY NOW
+        # absorb the original single entries — re-home their entity/device registry
+        # rows onto the pair, then remove them. Deferring this until after a successful
+        # connect keeps the originals (and their live controls) intact on the timeout /
+        # no-side-connected paths above: if the pair can't load, the user keeps two
+        # working beds that can reconnect on demand. Must run before
+        # forwarding platforms so the originals' live entities are torn down first,
+        # freeing the shared {address}_{key} unique_ids the paired platforms reuse.
+        # No-op on reload (originals already gone).
+        absorbed_sides = await _async_rehome_absorbed_singles(hass, entry)
+    finally:
+        for original_coordinator in transferring:
+            original_coordinator.finish_pairing_transfer()
     # A side whose original entry survived a registry rollback must remain solely
     # controlled by that original. Do not let paired platforms adopt the same
     # unique ids back onto the pair under Home Assistant's single-owner registry.

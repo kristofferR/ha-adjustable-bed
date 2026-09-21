@@ -2137,6 +2137,73 @@ class TestConnectionModeResolution:
         await coordinator.async_execute_controller_command(_noop, side=SIDE_RIGHT)
         assert not right.is_connected
 
+    async def test_auto_command_detects_slot_error_after_attempt_history_wraps(self):
+        coordinator = self._coord(BED_TYPE_OCTO)
+        left = coordinator.children[SIDE_LEFT]
+        right = coordinator.children[SIDE_RIGHT]
+        right._connected = False
+        right.connection_attempt_details = [
+            {"error": f"old failure {index}"} for index in range(25)
+        ]
+        right.connection_attempt_count = 25
+
+        async def fail_for_slot(*_args, **_kwargs):
+            right.connection_attempt_count += 1
+            right.connection_attempt_details.pop(0)
+            right.connection_attempt_details.append(
+                {"error": "No connection slot available"}
+            )
+            raise ConnectionError("Not connected to bed")
+
+        right.async_execute_controller_command = fail_for_slot
+
+        with pytest.raises(ConnectionError, match="Not connected"):
+            await coordinator.async_execute_controller_command(_noop, side=SIDE_RIGHT)
+
+        assert coordinator.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL
+        assert not left.is_connected
+
+    def test_retained_attempt_tail_is_more_precise_than_count_delta(self):
+        coordinator = self._coord(BED_TYPE_OCTO)
+        child = coordinator.children[SIDE_RIGHT]
+        child.connection_attempt_details = [
+            {"error": "Old connection slot failure"}
+        ]
+        child.connection_attempt_count = 1
+        cursor = coordinator._connection_attempt_cursor(child)
+
+        child.connection_attempt_count = 3
+        child.connection_attempt_details.append({"error": "Unrelated failure"})
+
+        assert not coordinator._connection_slot_exhausted(
+            child, ConnectionError("Not connected to bed"), cursor
+        )
+
+    async def test_command_queued_across_auto_fallback_reroutes_to_sequential(self):
+        log: list[tuple[str, str]] = []
+        left = RecordingChild(SIDE_LEFT, log, connected=False)
+        right = RecordingChild(SIDE_RIGHT, log, connected=False)
+        coordinator = _make({SIDE_LEFT: left, SIDE_RIGHT: right})
+
+        await coordinator._pair_group_lock.acquire()
+        task = asyncio.create_task(
+            coordinator.async_execute_controller_command(_noop, side=SIDE_BOTH)
+        )
+        await asyncio.sleep(0)
+        coordinator._connection_mode = PAIR_CONNECTION_MODE_SEQUENTIAL
+        coordinator._pair_group_lock.release()
+
+        await task
+
+        assert log == [
+            (SIDE_LEFT, "connect"),
+            (SIDE_LEFT, "command"),
+            (SIDE_LEFT, "disconnect"),
+            (SIDE_RIGHT, "connect"),
+            (SIDE_RIGHT, "command"),
+            (SIDE_RIGHT, "disconnect"),
+        ]
+
     async def test_auto_command_does_not_strand_pairing_only_receiver(self):
         coordinator = self._coord(BED_TYPE_OCTO)
         left = coordinator.children[SIDE_LEFT]

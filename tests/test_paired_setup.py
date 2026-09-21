@@ -2029,7 +2029,8 @@ class TestPairBedsConversion:
         so a still-loaded original would block the paired child (same MAC) and the
         pair would hang in setup retry. The original entry stays loaded (only its
         link is dropped)."""
-        from unittest.mock import AsyncMock
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
 
         from custom_components.adjustable_bed.coordinator import (
             AdjustableBedCoordinator,
@@ -2044,7 +2045,13 @@ class TestPairBedsConversion:
         )
         single.add_to_hass(hass)
         coord = AdjustableBedCoordinator(hass, single)
-        coord.async_disconnect = AsyncMock()  # type: ignore[method-assign]
+        client = MagicMock(is_connected=True)
+        client.disconnect = AsyncMock()
+        coord._client = client
+        coord._controller = SimpleNamespace(
+            manual_disconnect_strands_connection=False,
+            stop_notify=AsyncMock(),
+        )
         hass.data.setdefault(DOMAIN, {})[single.entry_id] = coord
 
         pair_data = build_pair_entry_data(
@@ -2061,10 +2068,18 @@ class TestPairBedsConversion:
         )
         pair.add_to_hass(hass)
 
-        await _async_release_absorbed_singles(hass, pair)
+        transferring = await _async_release_absorbed_singles(hass, pair)
 
         # The absorbed original's link was dropped...
-        coord.async_disconnect.assert_awaited_once_with("absorbed_by_pair")
+        client.disconnect.assert_awaited_once_with()
+        assert transferring == (coord,)
+        # ...and cannot reconnect while pair setup is taking over the address.
+        assert not await coord.async_connect()
+        coord.finish_pairing_transfer()
+        connect_attempts = AsyncMock(return_value=True)
+        coord._async_connect_attempts_locked = connect_attempts  # type: ignore[method-assign]
+        assert await coord.async_connect()
+        connect_attempts.assert_awaited_once_with(True)
         # ...but the original entry is still present (released, not removed).
         assert single.entry_id in {e.entry_id for e in hass.config_entries.async_entries(DOMAIN)}
 
@@ -2093,7 +2108,6 @@ class TestPairBedsConversion:
         coord._controller = SimpleNamespace(
             manual_disconnect_strands_connection=True
         )
-        coord.async_disconnect = AsyncMock()  # type: ignore[method-assign]
         hass.data.setdefault(DOMAIN, {})[single.entry_id] = coord
         pair_data = build_pair_entry_data(
             {CONF_ADDRESS: LEFT_ADDR, CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2},
@@ -2112,15 +2126,57 @@ class TestPairBedsConversion:
         with pytest.raises(ConfigEntryNotReady, match="pairing-only connection"):
             await _async_release_absorbed_singles(hass, pair)
 
-        coord.async_disconnect.assert_not_awaited()
         assert coord.is_connected
 
-    async def test_release_rechecks_pairing_only_safety_under_command_lock(
+    async def test_release_failure_clears_started_pairing_transfer(
         self, hass: HomeAssistant
     ):
-        """A command reconnect completed while takeover waits must not be torn down."""
+        """A release that leaves its link up must not leave reconnects latched off."""
+        from unittest.mock import MagicMock
+
+        from custom_components.adjustable_bed.coordinator import (
+            AdjustableBedCoordinator,
+        )
+        from custom_components.adjustable_bed.pairing import build_pair_entry_data
+
+        single = MockConfigEntry(
+            domain=DOMAIN,
+            title="Still connected bed",
+            data={CONF_ADDRESS: LEFT_ADDR, CONF_BED_TYPE: BED_TYPE_OCTO},
+            unique_id=LEFT_ADDR,
+            version=4,
+        )
+        single.add_to_hass(hass)
+        coord = AdjustableBedCoordinator(hass, single)
+        coord._client = MagicMock(is_connected=True)
+        coord.async_release_for_pairing_transfer = AsyncMock(return_value=True)  # type: ignore[method-assign]
+        coord.finish_pairing_transfer = MagicMock()  # type: ignore[method-assign]
+        hass.data.setdefault(DOMAIN, {})[single.entry_id] = coord
+        pair_data = build_pair_entry_data(
+            {CONF_ADDRESS: LEFT_ADDR, CONF_BED_TYPE: BED_TYPE_OCTO},
+            {CONF_ADDRESS: RIGHT_ADDR, CONF_BED_TYPE: BED_TYPE_OCTO},
+            name="Pair",
+            left_origin=(single.entry_id, single.unique_id),
+        )
+        pair = MockConfigEntry(
+            domain=DOMAIN,
+            data=pair_data,
+            unique_id=pair_data[CONF_PAIR_ID],
+            version=4,
+        )
+        pair.add_to_hass(hass)
+
+        with pytest.raises(ConfigEntryNotReady, match="Could not release"):
+            await _async_release_absorbed_singles(hass, pair)
+
+        coord.finish_pairing_transfer.assert_called_once_with()
+
+    async def test_release_rechecks_pairing_only_safety_under_connection_lock(
+        self, hass: HomeAssistant
+    ):
+        """An automatic reconnect completed while takeover waits is not torn down."""
         from types import SimpleNamespace
-        from unittest.mock import AsyncMock, MagicMock
+        from unittest.mock import MagicMock
 
         from custom_components.adjustable_bed.coordinator import (
             AdjustableBedCoordinator,
@@ -2136,7 +2192,6 @@ class TestPairBedsConversion:
         )
         single.add_to_hass(hass)
         coord = AdjustableBedCoordinator(hass, single)
-        coord.async_disconnect = AsyncMock()  # type: ignore[method-assign]
         hass.data.setdefault(DOMAIN, {})[single.entry_id] = coord
         pair_data = build_pair_entry_data(
             {CONF_ADDRESS: LEFT_ADDR, CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2},
@@ -2152,7 +2207,7 @@ class TestPairBedsConversion:
         )
         pair.add_to_hass(hass)
 
-        await coord._command_lock.acquire()
+        await coord._lock.acquire()
         release_task = asyncio.create_task(_async_release_absorbed_singles(hass, pair))
         await asyncio.sleep(0)
         assert not release_task.done()
@@ -2161,11 +2216,11 @@ class TestPairBedsConversion:
         coord._controller = SimpleNamespace(
             manual_disconnect_strands_connection=True
         )
-        coord._command_lock.release()
+        coord._lock.release()
 
         with pytest.raises(ConfigEntryNotReady, match="pairing-only connection"):
             await release_task
-        coord.async_disconnect.assert_not_awaited()
+        assert coord.is_connected
 
     async def test_pair_setup_bounds_absorbed_single_release(
         self, hass: HomeAssistant
@@ -2212,14 +2267,18 @@ class TestPairBedsConversion:
         right = await self._setup_single(hass, RIGHT_ADDR, "Bed 4587")
 
         releases = [
-            AsyncMock(wraps=hass.data[DOMAIN][entry.entry_id].async_disconnect)
+            AsyncMock(
+                wraps=hass.data[DOMAIN][
+                    entry.entry_id
+                ].async_release_for_pairing_transfer
+            )
             for entry in (left, right)
         ]
         calls: dict[str, int] = {}
 
         async def fake_connect(self):
             for release in releases:
-                assert release.await_args_list[0].args == ("absorbed_by_pair",)
+                assert release.await_args_list[0].args == ()
             calls[self.address] = calls.get(self.address, 0) + 1
             # The left child's FIRST connect fails (the old link hasn't been
             # released by the transport yet); every other connect, including the post-absorb
@@ -2234,8 +2293,16 @@ class TestPairBedsConversion:
         result = await self._reach_pair_step(hass)
         with (
             patch.object(AdjustableBedCoordinator, "async_connect", fake_connect),
-            patch.object(hass.data[DOMAIN][left.entry_id], "async_disconnect", releases[0]),
-            patch.object(hass.data[DOMAIN][right.entry_id], "async_disconnect", releases[1]),
+            patch.object(
+                hass.data[DOMAIN][left.entry_id],
+                "async_release_for_pairing_transfer",
+                releases[0],
+            ),
+            patch.object(
+                hass.data[DOMAIN][right.entry_id],
+                "async_release_for_pairing_transfer",
+                releases[1],
+            ),
         ):
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
