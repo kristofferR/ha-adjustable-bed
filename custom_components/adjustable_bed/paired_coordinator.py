@@ -1094,37 +1094,58 @@ class PairedBedCoordinator:
         results = await asyncio.gather(
             *(child.async_connect() for _, child in items), return_exceptions=True
         )
+        results_by_side = {
+            side: result
+            for (side, _), result in zip(items, results, strict=True)
+        }
         for (side, _), result in zip(items, results, strict=True):
             if isinstance(result, BaseException):
                 _LOGGER.warning("Connect failed on %s side: %s", side, result)
-        if self._automatic_connection_mode and any(
-            self._connection_slot_exhausted(
-                child,
-                result,
-                attempt_cursors[side],
-            )
-            for (side, child), result in zip(items, results, strict=True)
+        if self._automatic_connection_mode and self._shared_connection_slot_pressure(
+            items,
+            results_by_side,
+            attempt_cursors,
         ):
-            if any(
-                self._manual_disconnect_would_strand(child) for _, child in items
-            ):
+            async with contextlib.AsyncExitStack() as stack:
+                guarded_disconnects: dict[str, GuardedDisconnect] = {}
+                for _, child in items:
+                    await stack.enter_async_context(
+                        child.async_command_operation_guard()
+                    )
+                for side, child in items:
+                    guarded_disconnects[side] = await stack.enter_async_context(
+                        child.async_connection_operation_guard()
+                    )
+
+                if not self._shared_connection_slot_pressure(
+                    items,
+                    results_by_side,
+                    attempt_cursors,
+                ):
+                    return any(result is True for result in results)
+                if any(
+                    self._manual_disconnect_would_strand(child)
+                    for _, child in items
+                ):
+                    _LOGGER.warning(
+                        "Automatic paired connection cannot fall back to sequential "
+                        "mode because disconnecting a pairing-only receiver would "
+                        "strand it; retaining the usable concurrent link"
+                    )
+                    return any(result is True for result in results)
                 _LOGGER.warning(
-                    "Automatic paired connection cannot fall back to sequential "
-                    "mode because disconnecting a pairing-only receiver would "
-                    "strand it; retaining the usable concurrent link"
+                    "Automatic paired connection fell back to sequential mode because "
+                    "the concurrent connect exhausted an adapter's connection slots"
                 )
-                return any(result is True for result in results)
-            _LOGGER.warning(
-                "Automatic paired connection fell back to sequential mode because "
-                "the concurrent connect exhausted an adapter's connection slots"
-            )
-            for side, child in items:
-                if not child.is_connected:
-                    continue
-                child.cache_capability_controller()
-                if not await self._safe_disconnect(side, child):
-                    return True
-            self._connection_mode = PAIR_CONNECTION_MODE_SEQUENTIAL
+                for side, child in items:
+                    if not child.is_connected:
+                        continue
+                    child.cache_capability_controller()
+                    if not await self._safe_disconnect(
+                        side, child, disconnect=guarded_disconnects[side]
+                    ):
+                        return True
+                self._connection_mode = PAIR_CONNECTION_MODE_SEQUENTIAL
             return await self.async_connect()
         return any(result is True for result in results)
 
@@ -1188,6 +1209,49 @@ class PairedBedCoordinator:
             for attempt in attempts
         )
 
+    @classmethod
+    def _connection_slot_exhausted_sources(
+        cls,
+        child: BedChild,
+        result: object,
+        attempt_cursor: ConnectionAttemptCursor,
+    ) -> set[str]:
+        """Return transports that reported slot exhaustion in this operation."""
+        if result is True:
+            return set()
+        sources: set[str] = set()
+        for attempt in cls._connection_attempts_since(child, attempt_cursor):
+            if "connection slot" not in str(attempt.get("error", "")).lower():
+                continue
+            source = attempt.get("selected_source") or attempt.get("actual_source")
+            if isinstance(source, str) and source:
+                sources.add(source)
+        return sources
+
+    @classmethod
+    def _shared_connection_slot_pressure(
+        cls,
+        items: Collection[tuple[str, BedChild]],
+        results: Mapping[str, object],
+        attempt_cursors: Mapping[str, ConnectionAttemptCursor],
+    ) -> bool:
+        """Return whether a live sibling occupies an exhausted transport."""
+        for failed_side, failed_child in items:
+            result = results.get(failed_side)
+            cursor = attempt_cursors.get(failed_side, (None, None))
+            if not cls._connection_slot_exhausted(failed_child, result, cursor):
+                continue
+            exhausted_sources = cls._connection_slot_exhausted_sources(
+                failed_child, result, cursor
+            )
+            for live_side, live_child in items:
+                if live_side == failed_side or not live_child.is_connected:
+                    continue
+                live_source = getattr(live_child, "connection_source", None)
+                if live_source in exhausted_sources:
+                    return True
+        return False
+
     @staticmethod
     def _manual_disconnect_would_strand(child: BedChild) -> bool:
         """Return whether sequential switching is unsafe for this child."""
@@ -1217,10 +1281,11 @@ class PairedBedCoordinator:
 
         items = list(self._children.items())
         side_errors = error.side_errors if isinstance(error, PairedSideError) else {}
+        results = {side: side_errors.get(side, error) for side, _ in items}
         if not any(
             self._connection_slot_exhausted(
                 child,
-                side_errors.get(side, error),
+                results[side],
                 attempt_cursors.get(side, (None, None)),
             )
             for side, child in items
@@ -1244,6 +1309,10 @@ class PairedBedCoordinator:
                 )
 
             if self._connection_mode != PAIR_CONNECTION_MODE_CONCURRENT:
+                return
+            if not self._shared_connection_slot_pressure(
+                items, results, attempt_cursors
+            ):
                 return
             if any(
                 self._manual_disconnect_would_strand(child) for _, child in items

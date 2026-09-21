@@ -92,6 +92,7 @@ class RecordingChild:
         self.connect_raises = connect_raises
         self.fail_disconnect = fail_disconnect
         self.connection_attempt_details: list[dict[str, object]] = []
+        self.connection_source = "hci0"
         self.controller = None
         self.capability_controller = None
         self.connection_cb = None
@@ -2023,7 +2024,10 @@ class TestConnectionModeResolution:
                     await asyncio.sleep(0)
                 if active and self.side not in active:
                     self.connection_attempt_details.append(
-                        {"error": "No connection slot available"}
+                        {
+                            "error": "No connection slot available",
+                            "selected_source": "hci0",
+                        }
                     )
                     return False
                 active.add(self.side)
@@ -2051,6 +2055,94 @@ class TestConnectionModeResolution:
         assert not active
         assert all(not child.is_connected for child in children.values())
 
+    async def test_auto_setup_keeps_concurrent_mode_for_distinct_sources(self):
+        coordinator = self._coord(BED_TYPE_OCTO)
+        left = coordinator.children[SIDE_LEFT]
+        right = coordinator.children[SIDE_RIGHT]
+        left.connection_source = "proxy-left"
+        right._connected = False
+
+        async def fail_for_slot():
+            right.connection_attempt_details.append(
+                {
+                    "error": "No connection slot available",
+                    "selected_source": "proxy-right",
+                }
+            )
+            return False
+
+        right.async_connect = fail_for_slot
+
+        assert await coordinator.async_connect()
+        assert coordinator.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
+        assert left.is_connected
+        assert (SIDE_LEFT, "disconnect") not in left.log
+
+    async def test_auto_setup_waits_for_hydration_before_fallback_disconnect(self):
+        hydration_started = asyncio.Event()
+        release_hydration = asyncio.Event()
+
+        class HydratingChild(RecordingChild):
+            def __init__(self):
+                super().__init__(SIDE_LEFT, [], connected=False)
+                self._command_lane = asyncio.Lock()
+                self.hydration_task: asyncio.Task[None] | None = None
+
+            @contextlib.asynccontextmanager
+            async def async_command_operation_guard(self):
+                async with self._command_lane:
+                    yield
+
+            async def async_connect(self):
+                self._connected = True
+
+                async def hydrate():
+                    async with self._command_lane:
+                        hydration_started.set()
+                        await release_hydration.wait()
+
+                if self.hydration_task is None:
+                    self.hydration_task = asyncio.create_task(hydrate())
+                    await hydration_started.wait()
+                return True
+
+        class SlotFailureChild(RecordingChild):
+            async def async_connect(self):
+                self.connection_attempt_details.append(
+                    {
+                        "error": "No connection slot available",
+                        "selected_source": "hci0",
+                    }
+                )
+                self._connected = False
+                return False
+
+        left = HydratingChild()
+        right = SlotFailureChild(SIDE_RIGHT, [], connected=False)
+        entry = SimpleNamespace(
+            data={
+                CONF_PAIR_ID: "pair_abc123",
+                "name": "X",
+                CONF_BED_TYPE: BED_TYPE_OCTO,
+            }
+        )
+        coordinator = PairedBedCoordinator(
+            None, entry, {SIDE_LEFT: left, SIDE_RIGHT: right}
+        )
+
+        connect = asyncio.create_task(coordinator.async_connect())
+        try:
+            await hydration_started.wait()
+            await asyncio.sleep(0)
+            assert not connect.done()
+            assert left.is_connected
+        finally:
+            release_hydration.set()
+
+        assert await connect
+        assert coordinator.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL
+        assert not left.is_connected
+
     async def test_explicit_concurrent_does_not_fall_back_on_slot_error(self):
         coordinator = self._coord(
             BED_TYPE_OCTO, mode=PAIR_CONNECTION_MODE_CONCURRENT
@@ -2060,7 +2152,10 @@ class TestConnectionModeResolution:
 
         async def fail_for_slot():
             right.connection_attempt_details.append(
-                {"error": "No connection slot available"}
+                {
+                    "error": "No connection slot available",
+                    "selected_source": "hci0",
+                }
             )
             right._connected = False
             return False
@@ -2077,7 +2172,10 @@ class TestConnectionModeResolution:
 
         async def recover_on_retry():
             right.connection_attempt_details.append(
-                {"error": "No connection slot available"}
+                {
+                    "error": "No connection slot available",
+                    "selected_source": "hci0",
+                }
             )
             right._connected = True
             return True
@@ -2099,7 +2197,10 @@ class TestConnectionModeResolution:
 
         async def fail_for_slot():
             right.connection_attempt_details.append(
-                {"error": "No connection slot available"}
+                {
+                    "error": "No connection slot available",
+                    "selected_source": "hci0",
+                }
             )
             right._connected = False
             return False
@@ -2126,7 +2227,10 @@ class TestConnectionModeResolution:
             if not failed_once:
                 failed_once = True
                 right.connection_attempt_details.append(
-                    {"error": "No connection slot available"}
+                    {
+                        "error": "No connection slot available",
+                        "selected_source": "hci0",
+                    }
                 )
                 raise ConnectionError("Not connected to bed")
 
@@ -2171,7 +2275,10 @@ class TestConnectionModeResolution:
 
         async def fail_for_slot(*_args, **_kwargs):
             right.connection_attempt_details.append(
-                {"error": "No connection slot available"}
+                {
+                    "error": "No connection slot available",
+                    "selected_source": "hci0",
+                }
             )
             raise ConnectionError("Not connected to bed")
 
@@ -2202,7 +2309,10 @@ class TestConnectionModeResolution:
             right.connection_attempt_count += 1
             right.connection_attempt_details.pop(0)
             right.connection_attempt_details.append(
-                {"error": "No connection slot available"}
+                {
+                    "error": "No connection slot available",
+                    "selected_source": "hci0",
+                }
             )
             raise ConnectionError("Not connected to bed")
 
@@ -2268,7 +2378,10 @@ class TestConnectionModeResolution:
 
         async def fail_for_slot(*_args, **_kwargs):
             right.connection_attempt_details.append(
-                {"error": "No connection slot available"}
+                {
+                    "error": "No connection slot available",
+                    "selected_source": "hci0",
+                }
             )
             raise ConnectionError("Not connected to bed")
 
@@ -2319,7 +2432,10 @@ class TestConnectionModeResolution:
 
         async def fail_for_slot(*_args, **_kwargs):
             right.connection_attempt_details.append(
-                {"error": "No connection slot available"}
+                {
+                    "error": "No connection slot available",
+                    "selected_source": "hci0",
+                }
             )
             raise ConnectionError("Not connected to bed")
 
