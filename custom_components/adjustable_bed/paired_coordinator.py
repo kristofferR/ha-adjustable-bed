@@ -141,6 +141,9 @@ class PairedBedCoordinator:
         # side lanes while waiting for both physical schedulers to become ready.
         self._pair_side_locks = {side: asyncio.Lock() for side in PAIR_SIDES}
         self._pair_group_lock = asyncio.Lock()
+        # Keep a public STOP from selecting concurrent targets while automatic
+        # fallback is disconnecting those same children before switching modes.
+        self._connection_mode_transition_lock = asyncio.Lock()
         # Preemption: STOP bumps this so a movement still queued on the lock is
         # dropped instead of starting after the stop; _active_children are the
         # sides executing under the lock, so a cancel_running command can cancel
@@ -1009,7 +1012,8 @@ class PairedBedCoordinator:
         # lock for that side drops instead of starting right after this safety stop.
         for target_side, _ in targets:
             self._bump_pair_cancel_generation(target_side, command_resources("*"))
-        errors = await self._stop_children(targets)
+        async with self._connection_mode_transition_lock:
+            errors = await self._stop_children(targets)
         if errors:
             raise PairedSideError("stop", errors)
 
@@ -1298,13 +1302,15 @@ class PairedBedCoordinator:
         # connection contract or releasing a live link. This also rechecks the
         # pairing-only safety property after any in-flight reconnect completed.
         async with (
-            self._pair_group_lock,
+            self._connection_mode_transition_lock, self._pair_group_lock,
             self._locked_target_sides(items),
             contextlib.AsyncExitStack() as stack,
         ):
             guarded_disconnects: dict[str, GuardedDisconnect] = {}
             for _, child in items:
-                await stack.enter_async_context(child.async_command_operation_guard())
+                await stack.enter_async_context(
+                    child.async_command_operation_guard()
+                )
             for side, child in items:
                 guarded_disconnects[side] = await stack.enter_async_context(
                     child.async_connection_operation_guard()
@@ -1317,7 +1323,8 @@ class PairedBedCoordinator:
             ):
                 return
             if any(
-                self._manual_disconnect_would_strand(child) for _, child in items
+                self._manual_disconnect_would_strand(child)
+                for _, child in items
             ):
                 _LOGGER.warning(
                     "Automatic paired command cannot fall back to sequential "
