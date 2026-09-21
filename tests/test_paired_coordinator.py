@@ -2078,6 +2078,29 @@ class TestConnectionModeResolution:
         assert left.is_connected
         assert (SIDE_LEFT, "disconnect") not in left.log
 
+    async def test_auto_falls_back_using_actual_attempt_source(self):
+        coordinator = self._coord(BED_TYPE_OCTO)
+        left = coordinator.children[SIDE_LEFT]
+        right = coordinator.children[SIDE_RIGHT]
+        left.connection_source = "proxy-right"
+        right._connected = False
+
+        async def fail_for_slot():
+            right.connection_attempt_details.append(
+                {
+                    "error": "No connection slot available",
+                    "selected_source": "proxy-left",
+                    "actual_source": "proxy-right",
+                }
+            )
+            return False
+
+        right.async_connect = fail_for_slot
+
+        assert await coordinator.async_connect()
+        assert coordinator.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL
+        assert not left.is_connected
+
     async def test_auto_setup_waits_for_hydration_before_fallback_disconnect(self):
         hydration_started = asyncio.Event()
         release_hydration = asyncio.Event()

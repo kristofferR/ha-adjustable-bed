@@ -1223,7 +1223,7 @@ class PairedBedCoordinator:
         for attempt in cls._connection_attempts_since(child, attempt_cursor):
             if "connection slot" not in str(attempt.get("error", "")).lower():
                 continue
-            source = attempt.get("selected_source") or attempt.get("actual_source")
+            source = attempt.get("actual_source") or attempt.get("selected_source")
             if isinstance(source, str) and source:
                 sources.add(source)
         return sources

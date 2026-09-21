@@ -2739,6 +2739,7 @@ class AdjustableBedCoordinator:
 
                 def _get_fresh_device_for_connection(
                     selected_source: str | None = target_source,
+                    current_attempt: dict[str, Any] = attempt_details,
                 ) -> BLEDevice:
                     """Return a fresh BLEDevice from the current scanner data."""
                     discovered = get_discovered_service_info(
@@ -2750,6 +2751,8 @@ class AdjustableBedCoordinator:
                             continue
                         svc_source = getattr(svc_info, "source", None)
                         if selected_source is None or svc_source == selected_source:
+                            if isinstance(svc_source, str) and svc_source:
+                                current_attempt["actual_source"] = svc_source
                             if svc_info.device.name:
                                 self._record_observed_ble_device_name(svc_info.device.name)
                             _LOGGER.debug(
@@ -2774,6 +2777,14 @@ class AdjustableBedCoordinator:
                     )
                     if fallback is None:
                         raise BleakError(f"Device {self._address} not found")
+                    fallback_details = getattr(fallback, "details", None)
+                    fallback_source = (
+                        fallback_details.get("source")
+                        if isinstance(fallback_details, dict)
+                        else None
+                    )
+                    if isinstance(fallback_source, str) and fallback_source:
+                        current_attempt["actual_source"] = fallback_source
                     if fallback.name:
                         self._record_observed_ble_device_name(fallback.name)
                     if connectable is False:
@@ -3542,8 +3553,8 @@ class AdjustableBedCoordinator:
                 # Detect connection slot exhaustion and exclude the adapter
                 # on subsequent retries so we try an alternative (issue #152).
                 if "connection slot" in err_str and adapter_result is not None:
-                    failed_source = adapter_result.source
-                    if failed_source:
+                    failed_source = attempt_details.get("actual_source") or adapter_result.source
+                    if isinstance(failed_source, str) and failed_source:
                         exhausted_adapters.add(failed_source)
                         _LOGGER.info(
                             "Adapter %s out of connection slots for %s, "

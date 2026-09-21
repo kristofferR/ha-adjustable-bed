@@ -2192,6 +2192,67 @@ class TestCoordinatorPositionSeek:
             ble_device_callback = mock_establish_connection.await_args.kwargs["ble_device_callback"]
             assert ble_device_callback is not None
             assert ble_device_callback() is fallback_device
+            assert coordinator.connection_attempt_details[0]["actual_source"] == "local"
+
+    async def test_connect_slot_failure_records_fallback_source(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_bluetooth_adapters,
+    ):
+        """A failed connect should identify the source returned by its callback."""
+        del mock_bluetooth_adapters
+
+        selected_device = MagicMock(
+            address=TEST_ADDRESS,
+            name=TEST_NAME,
+            details={"source": "proxy_1"},
+        )
+        adapter_result = MagicMock(
+            device=selected_device,
+            source="proxy_1",
+            rssi=-67,
+            connectable=True,
+            available_sources=("proxy_1", "local"),
+        )
+        fallback_device = MagicMock(
+            address=TEST_ADDRESS,
+            name=TEST_NAME,
+            details={"source": "local"},
+        )
+
+        async def fail_from_fallback(*_args: Any, **kwargs: Any):
+            assert kwargs["ble_device_callback"]() is fallback_device
+            raise BleakError("No connection slot available")
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.select_adapter",
+                new_callable=AsyncMock,
+                return_value=adapter_result,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.establish_connection",
+                new_callable=AsyncMock,
+                side_effect=fail_from_fallback,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.bluetooth.async_discovered_service_info",
+                return_value=[],
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.bluetooth.async_ble_device_from_address",
+                return_value=fallback_device,
+            ),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+            coordinator._max_retries = 1
+
+            assert await coordinator.async_connect() is False
+
+        attempt = coordinator.connection_attempt_details[0]
+        assert attempt["selected_source"] == "proxy_1"
+        assert attempt["actual_source"] == "local"
 
     async def test_disconnect(
         self,
