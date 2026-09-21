@@ -14,7 +14,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import BED_TYPE_SLEEP_NUMBER_MCR, DOMAIN
+from .const import BED_TYPE_LINAK, BED_TYPE_SLEEP_NUMBER_MCR, DOMAIN
 from .entity import AdjustableBedEntity
 from .entity_runtime import EntityRuntime
 from .paired_coordinator import entity_runtimes
@@ -117,7 +117,7 @@ def _switch_entities_for(
             and (
                 controller.supports_light_color_control
                 or (
-                    coordinator.bed_type == BED_TYPE_SLEEP_NUMBER_MCR
+                    coordinator.bed_type in (BED_TYPE_LINAK, BED_TYPE_SLEEP_NUMBER_MCR)
                     and controller.supports_discrete_light_control
                 )
             )

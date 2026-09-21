@@ -1450,9 +1450,9 @@ class TestButtonEntities:
 
         # The mock has no reference-output service, so it represents the
         # app's Standard model: flat, both-up, stop, connection controls,
-        # wake, defaults reset, and the app's single light-toggle action. The
+        # wake and defaults reset. Lighting has its own light entity. The
         # distinct destructive factory reset is registered but disabled.
-        assert len(button_states) == 8
+        assert len(button_states) == 7
 
     async def test_button_entities_with_massage(
         self,
@@ -1482,10 +1482,10 @@ class TestButtonEntities:
             state for state in hass.states.async_all() if state.entity_id.startswith("button.")
         ]
 
-        # Eight enabled Standard-model base actions plus the modern app's eleven
+        # Seven enabled Standard-model base actions plus the modern app's eleven
         # massage actions. Memory controls are absent without the reference
         # service, exactly as they are in Bed Control.
-        assert len(button_states) == 19
+        assert len(button_states) == 18
 
     async def test_keeson_base_exposes_direct_massage_buttons(
         self,
@@ -1929,6 +1929,105 @@ class TestSwitchEntities:
 
 class TestLightEntities:
     """Test light entities."""
+
+    @pytest.mark.parametrize("restored", [None, "on", "off", "unknown", "unavailable"])
+    async def test_linak_initializes_light_off_with_discrete_commands(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        enable_custom_integrations,
+        restored: str | None,
+    ):
+        """Preserve entity identity and replace stale state with a physical OFF."""
+        from homeassistant.core import State
+        from homeassistant.helpers import entity_registry as er
+
+        from custom_components.adjustable_bed.const import LINAK_CONTROL_CHAR_UUID
+
+        registry = er.async_get(hass)
+        unique_id = f"{mock_config_entry.data[CONF_ADDRESS]}_under_bed_lights"
+        old_light = registry.async_get_or_create(
+            "light", DOMAIN, unique_id, config_entry=mock_config_entry,
+            suggested_object_id="my_existing_bed_light",
+        )
+        for domain, key in (("switch", "under_bed_lights"), ("button", "toggle_light")):
+            registry.async_get_or_create(
+                domain, DOMAIN, f"{mock_config_entry.data[CONF_ADDRESS]}_{key}",
+                config_entry=mock_config_entry,
+            )
+        with patch(
+            "custom_components.adjustable_bed.light.AdjustableBedOnOffLight.async_get_last_state",
+            return_value=State(old_light.entity_id, restored) if restored else None,
+        ):
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert registry.async_get_entity_id("light", DOMAIN, unique_id) == old_light.entity_id
+        assert registry.async_get_entity_id("switch", DOMAIN, unique_id) is None
+        assert registry.async_get_entity_id(
+            "button", DOMAIN, f"{mock_config_entry.data[CONF_ADDRESS]}_toggle_light"
+        ) is None
+        state = hass.states.get(old_light.entity_id)
+        assert state.state == "off"
+        assert not state.attributes.get("assumed_state", False)
+        mock_bleak_client.write_gatt_char.assert_any_call(
+            LINAK_CONTROL_CHAR_UUID, b"\x93\x00", response=True
+        )
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+        coordinator.controller._session_ready = True
+        mock_bleak_client.write_gatt_char.reset_mock()
+        for service, expected_state in (
+            ("turn_on", "on"), ("turn_on", "on"), ("turn_off", "off"), ("turn_off", "off")
+        ):
+            await hass.services.async_call(
+                "light", service, {"entity_id": old_light.entity_id}, blocking=True,
+            )
+            assert hass.states.get(old_light.entity_id).state == expected_state
+        assert mock_bleak_client.write_gatt_char.call_args_list == [
+            call(LINAK_CONTROL_CHAR_UUID, packet, response=True)
+            for packet in (b"\x92\x00", b"\x92\x00", b"\x93\x00", b"\x93\x00")
+        ]
+        await hass.services.async_call(
+            "light", "turn_on", {"entity_id": old_light.entity_id}, blocking=True,
+        )
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await coordinator.async_disconnect()
+        await coordinator.async_connect()
+        assert hass.states.get(old_light.entity_id).state == "on"
+        assert all(
+            item.args[1] != b"\x93\x00"
+            for item in mock_bleak_client.write_gatt_char.call_args_list
+        )
+
+    @pytest.mark.parametrize("skipped", [False, True])
+    async def test_linak_failed_initial_off_keeps_unknown_until_successful_command(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+        skipped: bool,
+    ):
+        """Failed or preempted initialization must not report an unexecuted OFF."""
+        from homeassistant.helpers import entity_registry as er
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.AdjustableBedCoordinator.async_execute_controller_command",
+            side_effect=None if skipped else ConnectionError("bed unreachable"),
+        ):
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+        entity_id = er.async_get(hass).async_get_entity_id(
+            "light", DOMAIN, f"{mock_config_entry.data[CONF_ADDRESS]}_under_bed_lights"
+        )
+        assert entity_id is not None
+        assert hass.states.get(entity_id).state == "unknown"
+        await hass.services.async_call(
+            "light", "turn_off", {"entity_id": entity_id}, blocking=True,
+        )
+        assert hass.states.get(entity_id).state == "off"
 
     async def test_motosleep_panel_eight_restores_toggle_button(
         self,

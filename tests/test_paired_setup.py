@@ -1298,6 +1298,32 @@ class TestPairBedsConversion:
         assert result["type"] == FlowResultType.FORM
         assert result["errors"]["base"] == "pairing_unsupported_entities"
 
+    @pytest.mark.parametrize("has_snapshot", [False, True])
+    def test_linak_light_pairing_requires_saved_capabilities(
+        self, hass: HomeAssistant, has_snapshot: bool,
+    ):
+        """A saved Linak snapshot lets an offline side keep its light entity."""
+        from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data={
+                CONF_ADDRESS: LEFT_ADDR,
+                CONF_BED_TYPE: BED_TYPE_LINAK,
+                "capabilities": {"linak": {
+                    "profile": "bed_control", "model_variant": "standard",
+                    "discovery_complete": True,
+                }} if has_snapshot else {},
+            },
+        )
+        entry.add_to_hass(hass)
+        er.async_get(hass).async_get_or_create(
+            "light", DOMAIN, f"{LEFT_ADDR}_under_bed_lights", config_entry=entry,
+        )
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        assert flow._has_unsafe_offline_platforms(entry) is not has_snapshot
+
     async def test_pairing_blocked_for_same_address(
         self,
         hass: HomeAssistant,

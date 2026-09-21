@@ -97,6 +97,7 @@ from .const import (
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
@@ -1540,6 +1541,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         bed_type = self._offline_safe_bed_type(entry)
         if bed_type in OFFLINE_CAPABILITY_SAFE_BED_TYPES:
             return False
+        if bed_type == BED_TYPE_LINAK:
+            # Match the coordinator's saved-capability path: a modern Linak
+            # light can be recreated even if this side cannot connect at setup.
+            capabilities = entry.data.get("capabilities")
+            if isinstance(capabilities, dict) and isinstance(capabilities.get("linak"), dict):
+                return False
         if bed_type == BED_TYPE_OCTO:
             # Star2 has fixed caps -> statically offline-safe; standard Octo needs a
             # live capability snapshot.

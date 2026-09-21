@@ -1483,14 +1483,18 @@ class TestLinakPresets:
 class TestLinakLights:
     """Test Linak light commands."""
 
-    async def test_discrete_lights_are_not_exposed(
+    async def test_discrete_lights_are_not_exposed_for_legacy_profile(
         self,
         hass: HomeAssistant,
         mock_config_entry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """The analyzed apps expose AUX toggle, not guessed on/off commands."""
+        """Modern hardware evidence must not enable untested legacy commands."""
+        hass.config_entries.async_update_entry(
+            mock_config_entry,
+            data={**mock_config_entry.data, CONF_PROTOCOL_VARIANT: LINAK_VARIANT_PERFORMANCE},
+        )
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
         _mark_session_ready(coordinator)
@@ -1501,6 +1505,26 @@ class TestLinakLights:
         with pytest.raises(NotImplementedError):
             await coordinator.controller.lights_off()
         mock_bleak_client.write_gatt_char.assert_not_called()
+
+    async def test_discrete_lights_match_hardware_verified_sequence(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Repeated ON/OFF uses the exact single-write sequence tested for #615."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        _mark_session_ready(coordinator)
+        assert coordinator.controller.supports_discrete_light_control
+        assert not coordinator.controller.supports_light_state_feedback
+        for method in ("lights_on", "lights_on", "lights_off", "lights_off"):
+            await getattr(coordinator.controller, method)()
+        assert mock_bleak_client.write_gatt_char.call_args_list == [
+            call(LINAK_CONTROL_CHAR_UUID, packet, response=True)
+            for packet in (b"\x92\x00", b"\x92\x00", b"\x93\x00", b"\x93\x00")
+        ]
 
     async def test_lights_toggle(
         self,

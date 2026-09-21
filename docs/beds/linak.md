@@ -98,7 +98,7 @@ genuinely unreachable bed still reports failure after this bounded retry budget.
 | Position, reported speed and four status flags | Advanced only | ❌ |
 | All 104 protocol error codes | ✅ | ❌, notification payload is opaque |
 | Massage | Off, modes, zones and intensity | Toggle, wave/frequency, intensity and impulse |
-| AUX/under-bed light | Toggle button | Toggle button |
+| AUX/under-bed light | On/off light entity | Toggle button |
 | Automatic drive configuration | ✅ | ❌ |
 | BLE device rename | ✅ | ❌ |
 | Alarm event, recurrence and commit | Alarm model only | ❌ |
@@ -106,10 +106,49 @@ genuinely unreachable bed still reports failure after this bounded retry budget.
 | Configuration factory reset (`7F 3E 80`) | ✅, disabled by default | ❌ |
 | Wake command | ✅ | ❌ |
 
-The modern app exposes only a light toggle. The integration deliberately does not
-create an inaccurate on/off switch or implement the dead library-only `92 00` and
-`93 00` constants. The same rule excludes dead memory 5/6 and discrete massage
-toggle constants that have no reachable current-app caller.
+The modern app exposes only a light toggle, but direct hardware testing for
+[issue #615](https://github.com/kristofferR/ha-adjustable-bed/issues/615) confirmed
+the library's separate ON (`92 00`) and OFF (`93 00`) commands. The modern profile
+therefore exposes a normal on/off light entity. Loading the integration (including
+adding a bed or reloading its entry) sends OFF once to synchronize the physical
+light and HA. Ordinary BLE reconnects do not reset it. A failed initialization
+leaves the state unknown until a successful on/off command.
+
+HA tracks successful commands; this is not device-reported light feedback.
+Changing the light with the physical remote or app can desynchronize the displayed
+state. An explicit HA ON or OFF command sets the requested state again, even if HA
+already displays that state. Performance Series remains toggle-only because its
+discrete controls have not been verified.
+
+### Hardware evidence for issue #615
+
+On 2026-09-21, the maintainer observed the built-in light on the right-hand bed
+(modern Advanced profile, actuator mask `C0`) while an isolated probe used the
+kitchen ESPHome proxy. Each command was one acknowledged write to the control
+characteristic; no movement or configuration commands were sent:
+
+| Local time (Europe/Oslo) | Write | Maintainer-observed result |
+| --- | --- | --- |
+| 15:48:59 | `92 00` | Initially off, turned on |
+| 15:49:44 | `92 00` | Stayed on |
+| 15:50:17 | `93 00` | Turned off |
+| 15:50:39 | `93 00` | Stayed off |
+
+All available Linak notification channels were subscribed, and readable Linak
+characteristics were sampled before and after writes. No usable light-state
+feedback was observed: the error read stayed empty, configuration stayed `FE`,
+and subsequent readable values were identical across ON/OFF. Initial reference
+notifications were position values, not evidence of light state. This does not
+prove that every firmware lacks another feedback mechanism. The issue reporter's
+TD5 (Standard profile) has not been physically tested in this session.
+
+This hardware evidence supplements the unchanged frozen app reports: absence of
+an app caller did not establish that the peripheral rejects those constants.
+It does not enable other dead library commands (such as memories 5/6).
+The modern-profile ON/OFF commands also restore the pre-v4 integration behavior
+reported working in #615. They are not gated on the position-feedback service
+that distinguishes Standard from Advanced; the frozen modern AUX command enum
+does not define a separate packet format for those models.
 
 ## Corpus discovery disposition
 
@@ -125,7 +164,7 @@ tables below remain exhaustive.
 | STOP/release and 100 ms held-command lifecycle | Implemented | Guaranteed cleanup on completion, failure and cancellation |
 | Four favorite recalls and stores with model gating | Implemented | Buttons and generic preset services |
 | Massage zones, modes and all intensity actions | Implemented | Capability-gated buttons |
-| AUX/light toggle | Implemented | Toggle button only |
+| AUX/light toggle | Implemented | Native controller action; legacy toggle button, modern on/off entity |
 | Defaults reset and configuration factory reset | Implemented | Separate buttons; factory reset disabled by default |
 | Automatic drive configuration | Implemented | Assumed-state switch, disabled by default |
 | Device rename | Implemented | `linak_rename` service plus advertising refresh disconnect |
@@ -138,7 +177,7 @@ tables below remain exhaustive.
 | Bed Connect direct-BLE P1 commands, variants and parsers | Already implemented | Modern controller is a superset; its unique factory reset is implemented separately |
 | Bed Connect phone-local scheduled favorite/massage actions | Already implemented | Home Assistant scheduling invokes the same preset/massage controls |
 | Bed Connect P2 WiFi module | Excluded | WiFi provisioning, cloud/module state and firmware are outside this BLE-only integration |
-| Library constants and implementations with no app caller | Excluded | Proven dead/unreachable, including memories 5/6 and discrete light on/off |
+| Library constants and implementations with no app caller | Excluded | App-unreachable, including memories 5/6; discrete light on/off separately enabled by the hardware evidence above |
 | App-local settings with no BLE effect | Excluded | Unrelated to bed transport, including the Performance app's local child-lock preference |
 
 ## BLE protocol
@@ -186,6 +225,7 @@ service to select two axes, their directions and a bounded duration.
 | Zone 2 only | `8A 00`, wait 100 ms, `8B 00` |
 | Both zones | `89 00`, wait 100 ms, `8B 00` |
 | Light toggle | `94 00` |
+| Light on/off (modern hardware verification, #615) | `92 00` / `93 00` |
 | Reset defaults | `4E 00` to control |
 | Configuration factory reset | `7F 3E 80` to configuration |
 

@@ -196,6 +196,8 @@ class LinakCommands:
     PROGRAM_MEMORY_4 = bytes([0x45, 0x00])
 
     # Under-bed lights
+    LIGHTS_ON = bytes([0x92, 0x00])
+    LIGHTS_OFF = bytes([0x93, 0x00])
     LIGHTS_TOGGLE = bytes([0x94, 0x00])
 
     # Massage - all
@@ -303,8 +305,8 @@ class LinakController(BedController):
 
     @property
     def supports_discrete_light_control(self) -> bool:
-        """Return False because current apps expose only AUX/light toggle."""
-        return False
+        """Expose hardware-verified AUX on/off for the modern profile (issue #615)."""
+        return self._profile is LinakProfile.BED_CONTROL
 
     @property
     def supports_memory_presets(self) -> bool:
@@ -1841,12 +1843,16 @@ class LinakController(BedController):
 
     # Light methods
     async def lights_on(self) -> None:
-        """Reject a discrete action the applications do not expose."""
-        raise NotImplementedError("Linak exposes only an AUX/light toggle")
+        """Set the modern controller's AUX output on, independently of HA state."""
+        if not self.supports_discrete_light_control:
+            raise NotImplementedError("Legacy Linak exposes only an AUX/light toggle")
+        await self.write_command(LinakCommands.LIGHTS_ON)
 
     async def lights_off(self) -> None:
-        """Reject a discrete action the applications do not expose."""
-        raise NotImplementedError("Linak exposes only an AUX/light toggle")
+        """Set the modern controller's AUX output off, independently of HA state."""
+        if not self.supports_discrete_light_control:
+            raise NotImplementedError("Legacy Linak exposes only an AUX/light toggle")
+        await self.write_command(LinakCommands.LIGHTS_OFF)
 
     async def lights_toggle(self) -> None:
         """Toggle under-bed lights."""
