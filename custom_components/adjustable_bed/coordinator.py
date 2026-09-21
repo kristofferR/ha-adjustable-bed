@@ -4223,12 +4223,36 @@ class AdjustableBedCoordinator:
             self._pairing_transfer_active = True
             try:
                 released = await self._async_disconnect_locked("absorbed_by_pair")
-            except (Exception, asyncio.CancelledError):
+            except asyncio.CancelledError:
+                try:
+                    await self._async_restore_cancelled_pairing_release()
+                finally:
+                    self._pairing_transfer_active = False
+                raise
+            except Exception:
                 self._pairing_transfer_active = False
                 raise
             if not released:
                 self._pairing_transfer_active = False
             return released
+
+    async def _async_restore_cancelled_pairing_release(self) -> None:
+        """Restore controller tasks when a bounded pairing release is cancelled."""
+        controller = self._controller
+        if not self.is_connected or controller is None:
+            return
+        try:
+            await self.async_start_notify()
+            if hasattr(controller, "send_pin"):
+                await cast(Any, controller).send_pin()
+            if hasattr(controller, "start_keepalive"):
+                await cast(Any, controller).start_keepalive()
+            self._reset_disconnect_timer()
+        except Exception:
+            _LOGGER.exception(
+                "Could not restore controller tasks for %s after pairing transfer cancellation",
+                self._address,
+            )
 
     def finish_pairing_transfer(self) -> None:
         """Allow standalone reconnects after pair setup absorbs or releases us."""

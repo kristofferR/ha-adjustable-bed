@@ -2305,6 +2305,60 @@ class TestPairBedsConversion:
 
         assert cancelled is True
 
+    async def test_cancelled_pairing_release_restores_live_original(
+        self, hass: HomeAssistant
+    ) -> None:
+        """A timed-out teardown restores tasks on the original live link."""
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
+
+        from custom_components.adjustable_bed.coordinator import (
+            AdjustableBedCoordinator,
+        )
+
+        single = MockConfigEntry(
+            domain=DOMAIN,
+            data={CONF_ADDRESS: LEFT_ADDR, CONF_BED_TYPE: BED_TYPE_OCTO},
+            unique_id=LEFT_ADDR,
+            version=4,
+        )
+        single.add_to_hass(hass)
+        coord = AdjustableBedCoordinator(hass, single)
+        disconnect_started = asyncio.Event()
+
+        async def stalled_disconnect() -> None:
+            disconnect_started.set()
+            await asyncio.Event().wait()
+
+        client = MagicMock(is_connected=True)
+        client.disconnect = AsyncMock(side_effect=stalled_disconnect)
+        controller = SimpleNamespace(
+            manual_disconnect_strands_connection=False,
+            requires_notification_channel=True,
+            stop_notify=AsyncMock(),
+            start_notify=AsyncMock(),
+            stop_keepalive=AsyncMock(),
+            send_pin=AsyncMock(),
+            start_keepalive=AsyncMock(),
+        )
+        coord._client = client
+        coord._controller = controller
+
+        release = asyncio.create_task(coord.async_release_for_pairing_transfer())
+        await disconnect_started.wait()
+        release.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await release
+
+        assert coord.is_connected
+        assert coord._controller is controller
+        assert coord._pairing_transfer_active is False
+        controller.stop_keepalive.assert_awaited_once_with()
+        controller.stop_notify.assert_awaited_once_with()
+        controller.start_notify.assert_awaited_once_with(None)
+        controller.send_pin.assert_awaited_once_with()
+        controller.start_keepalive.assert_awaited_once_with()
+
     async def test_conversion_retries_contended_side_after_absorb(
         self,
         hass: HomeAssistant,

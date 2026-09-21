@@ -2482,6 +2482,71 @@ class TestConnectionModeResolution:
         assert left.is_connected
         assert (SIDE_LEFT, "disconnect") not in left.log
 
+    async def test_auto_command_ignores_stale_slot_failure_after_failed_side_reconnects(
+        self,
+    ):
+        reconnect_started = asyncio.Event()
+        finish_reconnect = asyncio.Event()
+
+        class ReconnectingChild(RecordingChild):
+            def __init__(self):
+                super().__init__(SIDE_RIGHT, [], connected=False)
+                self._connection_lane = asyncio.Lock()
+
+            @contextlib.asynccontextmanager
+            async def async_connection_operation_guard(self):
+                async with self._connection_lane:
+                    yield self.async_disconnect
+
+            async def async_connect(self):
+                async with self._connection_lane:
+                    reconnect_started.set()
+                    await finish_reconnect.wait()
+                    self._connected = True
+                    return True
+
+        left = RecordingChild(SIDE_LEFT, [])
+        right = ReconnectingChild()
+        entry = SimpleNamespace(
+            data={
+                CONF_PAIR_ID: "pair_abc123",
+                "name": "X",
+                CONF_BED_TYPE: BED_TYPE_OCTO,
+            }
+        )
+        coordinator = PairedBedCoordinator(
+            None, entry, {SIDE_LEFT: left, SIDE_RIGHT: right}
+        )
+
+        async def fail_for_slot(*_args, **_kwargs):
+            right.connection_attempt_details.append(
+                {
+                    "error": "No connection slot available",
+                    "selected_source": "hci0",
+                }
+            )
+            raise ConnectionError("Not connected to bed")
+
+        right.async_execute_controller_command = fail_for_slot
+        reconnect = asyncio.create_task(right.async_connect())
+        await reconnect_started.wait()
+        command = asyncio.create_task(
+            coordinator.async_execute_controller_command(_noop, side=SIDE_RIGHT)
+        )
+        await asyncio.sleep(0)
+
+        assert not command.done()
+        finish_reconnect.set()
+        await reconnect
+        with pytest.raises(ConnectionError, match="Not connected"):
+            await command
+
+        assert coordinator.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
+        assert left.is_connected
+        assert right.is_connected
+        assert (SIDE_LEFT, "disconnect") not in left.log
+        assert (SIDE_RIGHT, "disconnect") not in right.log
+
 
 class TestSequentialCycle:
     """Explicit sequential mode holds ONE BLE link at a time —

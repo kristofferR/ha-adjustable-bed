@@ -1239,7 +1239,9 @@ class PairedBedCoordinator:
         for failed_side, failed_child in items:
             result = results.get(failed_side)
             cursor = attempt_cursors.get(failed_side, (None, None))
-            if not cls._connection_slot_exhausted(failed_child, result, cursor):
+            if failed_child.is_connected or not cls._connection_slot_exhausted(
+                failed_child, result, cursor
+            ):
                 continue
             exhausted_sources = cls._connection_slot_exhausted_sources(
                 failed_child, result, cursor
