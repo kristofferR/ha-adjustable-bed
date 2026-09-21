@@ -91,6 +91,9 @@ class RecordingChild:
         self.connect_result = connect_result
         self.connect_raises = connect_raises
         self.fail_disconnect = fail_disconnect
+        self.connection_attempt_details: list[dict[str, object]] = []
+        self.controller = None
+        self.capability_controller = None
         self.connection_cb = None
         # When block=True a command waits on this gate; request_command_cancel /
         # async_stop_command release it (mirrors the real cancel-aware child).
@@ -109,6 +112,10 @@ class RecordingChild:
             yield
         finally:
             self.connection_holds -= 1
+
+    @contextlib.asynccontextmanager
+    async def async_command_operation_guard(self):
+        yield
 
     def request_command_cancel(self, resource=None, *, resources=None) -> None:
         del resource, resources
@@ -2076,6 +2083,85 @@ class TestConnectionModeResolution:
         assert await coordinator.async_connect()
         assert coordinator.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
         assert all(child.is_connected for child in coordinator.children.values())
+
+    async def test_auto_setup_retains_pairing_only_connection_on_slot_error(self):
+        coordinator = self._coord(BED_TYPE_OCTO)
+        left = coordinator.children[SIDE_LEFT]
+        right = coordinator.children[SIDE_RIGHT]
+        pairing_only = SimpleNamespace(manual_disconnect_strands_connection=True)
+        left.controller = pairing_only
+        right.capability_controller = pairing_only
+        right.connection_attempt_details = []
+
+        async def fail_for_slot():
+            right.connection_attempt_details.append(
+                {"error": "No connection slot available"}
+            )
+            right._connected = False
+            return False
+
+        right.async_connect = fail_for_slot
+
+        assert await coordinator.async_connect()
+        assert coordinator.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
+        assert left.is_connected
+        assert (SIDE_LEFT, "disconnect") not in left.log
+
+    async def test_auto_command_falls_back_after_reconnect_slot_error(self):
+        coordinator = self._coord(BED_TYPE_OCTO)
+        left = coordinator.children[SIDE_LEFT]
+        right = coordinator.children[SIDE_RIGHT]
+        right._connected = False
+        left.connection_attempt_details = []
+        right.connection_attempt_details = []
+        failed_once = False
+
+        async def command_after_connect(*_args, **_kwargs):
+            nonlocal failed_once
+            right.log.append((SIDE_RIGHT, "command"))
+            if not failed_once:
+                failed_once = True
+                right.connection_attempt_details.append(
+                    {"error": "No connection slot available"}
+                )
+                raise ConnectionError("Not connected to bed")
+
+        right.async_execute_controller_command = command_after_connect
+
+        with pytest.raises(ConnectionError, match="Not connected"):
+            await coordinator.async_execute_controller_command(_noop, side=SIDE_RIGHT)
+
+        assert coordinator.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL
+        assert not left.is_connected
+
+        await coordinator.async_execute_controller_command(_noop, side=SIDE_RIGHT)
+        assert not right.is_connected
+
+    async def test_auto_command_does_not_strand_pairing_only_receiver(self):
+        coordinator = self._coord(BED_TYPE_OCTO)
+        left = coordinator.children[SIDE_LEFT]
+        right = coordinator.children[SIDE_RIGHT]
+        pairing_only = SimpleNamespace(manual_disconnect_strands_connection=True)
+        left.controller = pairing_only
+        right.capability_controller = pairing_only
+        right._connected = False
+        left.connection_attempt_details = []
+        right.connection_attempt_details = []
+
+        async def fail_for_slot(*_args, **_kwargs):
+            right.connection_attempt_details.append(
+                {"error": "No connection slot available"}
+            )
+            raise ConnectionError("Not connected to bed")
+
+        right.async_execute_controller_command = fail_for_slot
+
+        with pytest.raises(ConnectionError, match="Not connected"):
+            await coordinator.async_execute_controller_command(_noop, side=SIDE_RIGHT)
+
+        assert coordinator.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
+        assert left.is_connected
+        assert (SIDE_LEFT, "disconnect") not in left.log
 
 
 class TestSequentialCycle:

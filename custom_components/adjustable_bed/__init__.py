@@ -503,23 +503,28 @@ async def _async_release_absorbed_singles(hass: HomeAssistant, entry: ConfigEntr
         original_coordinator = hass.data.get(DOMAIN, {}).get(absorbed_id)
         if not isinstance(original_coordinator, AdjustableBedCoordinator):
             continue
-        controller = original_coordinator.controller
-        if (
-            original_coordinator.is_connected
-            and controller is not None
-            and controller.manual_disconnect_strands_connection
-        ):
-            raise ConfigEntryNotReady(
-                f"Cannot transfer {original.title} while its pairing-only connection is active"
-            )
         try:
-            released = await original_coordinator.async_disconnect(
-                "absorbed_by_pair", serialize_with_commands=True
-            )
-            if released is False or original_coordinator.is_connected:
-                raise ConfigEntryNotReady(
-                    f"Could not release {original.title} before paired setup"
+            # Keep the pairing-only safety check atomic with teardown. A command
+            # may be reconnecting this original while pair setup starts; checking
+            # before taking its command lane could miss the newly established,
+            # one-use connection and then immediately strand it.
+            async with original_coordinator.async_command_operation_guard():
+                controller = original_coordinator.controller
+                if (
+                    original_coordinator.is_connected
+                    and controller is not None
+                    and controller.manual_disconnect_strands_connection
+                ):
+                    raise ConfigEntryNotReady(
+                        f"Cannot transfer {original.title} while its pairing-only connection is active"
+                    )
+                released = await original_coordinator.async_disconnect(
+                    "absorbed_by_pair"
                 )
+                if released is False or original_coordinator.is_connected:
+                    raise ConfigEntryNotReady(
+                        f"Could not release {original.title} before paired setup"
+                    )
             _LOGGER.debug(
                 "Released absorbed single %s's BLE link before paired connect",
                 absorbed_id,

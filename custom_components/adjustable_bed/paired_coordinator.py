@@ -415,46 +415,24 @@ class PairedBedCoordinator:
         }
 
         if not sequential:
-            if len(targets) == 1:
-                target_side, child = targets[0]
-                await self._run_single_concurrent(
+            attempt_offsets = {
+                target_side: len(self._connection_attempts(child))
+                for target_side, child in self._children.items()
+            }
+            try:
+                await self._run_concurrent(
                     action,
-                    target_side,
-                    child,
+                    targets,
                     op,
                     cancel_running=cancel_running,
                     resources=command_scope,
                     entry_cancel=entry_cancel,
                 )
-                return
-
-            # Only one linked group may coordinate the two device schedulers at
-            # a time. The group itself briefly takes the side lanes for enqueue
-            # and takes them again for commit/execution, but releases them while
-            # waiting for READY so a command for the active motor can preempt.
-            async with self._pair_group_lock:
-                if any(
-                    self._pair_command_was_cancelled(s, command_scope, entry_cancel)
-                    for s in target_sides
-                ):
-                    return
-
-                active_children = {child for _, child in targets}
-                self._active_children = active_children
-                self._active_group_resources = command_scope
-                try:
-                    with self._hold_command_connections(targets):
-                        await self._run_both_concurrent(
-                            action,
-                            targets,
-                            op,
-                            cancel_running=cancel_running,
-                            resources=command_scope,
-                            entry_cancel=entry_cancel,
-                        )
-                finally:
-                    self._active_children = set()
-                    self._active_group_resources = frozenset()
+            except Exception as err:
+                await self._async_fallback_after_connection_slot_exhaustion(
+                    err, attempt_offsets
+                )
+                raise
             return
 
         # Sequential pairs share a one-link connection lane. Keep the existing
@@ -489,6 +467,57 @@ class PairedBedCoordinator:
                     raise
             finally:
                 self._active_children = set()
+
+    async def _run_concurrent(
+        self,
+        action: str,
+        targets: list[tuple[str, BedChild]],
+        op: Callable[[BedChild], Coroutine[Any, Any, None]],
+        *,
+        cancel_running: bool,
+        resources: frozenset[str],
+        entry_cancel: Mapping[str, tuple[int, ...]],
+    ) -> None:
+        """Run one concurrent-mode command without connection-mode fallback."""
+        if len(targets) == 1:
+            target_side, child = targets[0]
+            await self._run_single_concurrent(
+                action,
+                target_side,
+                child,
+                op,
+                cancel_running=cancel_running,
+                resources=resources,
+                entry_cancel=entry_cancel,
+            )
+            return
+
+        # Only one linked group may coordinate the two device schedulers at a
+        # time. The group itself briefly takes the side lanes for enqueue and
+        # takes them again for commit/execution, but releases them while waiting
+        # for READY so a command for the active motor can preempt.
+        async with self._pair_group_lock:
+            if any(
+                self._pair_command_was_cancelled(side, resources, entry_cancel)
+                for side, _ in targets
+            ):
+                return
+
+            self._active_children = {child for _, child in targets}
+            self._active_group_resources = resources
+            try:
+                with self._hold_command_connections(targets):
+                    await self._run_both_concurrent(
+                        action,
+                        targets,
+                        op,
+                        cancel_running=cancel_running,
+                        resources=resources,
+                        entry_cancel=entry_cancel,
+                    )
+            finally:
+                self._active_children = set()
+                self._active_group_resources = frozenset()
 
     @contextlib.asynccontextmanager
     async def _locked_target_sides(
@@ -1053,17 +1082,26 @@ class PairedBedCoordinator:
             )
             for (side, child), result in zip(items, results, strict=True)
         ):
+            if any(
+                self._manual_disconnect_would_strand(child) for _, child in items
+            ):
+                _LOGGER.warning(
+                    "Automatic paired connection cannot fall back to sequential "
+                    "mode because disconnecting a pairing-only receiver would "
+                    "strand it; retaining the usable concurrent link"
+                )
+                return any(result is True for result in results)
             _LOGGER.warning(
                 "Automatic paired connection fell back to sequential mode because "
                 "the concurrent connect exhausted an adapter's connection slots"
             )
-            self._connection_mode = PAIR_CONNECTION_MODE_SEQUENTIAL
             for side, child in items:
                 if not child.is_connected:
                     continue
                 child.cache_capability_controller()
                 if not await self._safe_disconnect(side, child):
                     return True
+            self._connection_mode = PAIR_CONNECTION_MODE_SEQUENTIAL
             return await self.async_connect()
         return any(result is True for result in results)
 
@@ -1097,6 +1135,86 @@ class PairedBedCoordinator:
             "connection slot" in str(attempt.get("error", "")).lower()
             for attempt in attempts
         )
+
+    @staticmethod
+    def _manual_disconnect_would_strand(child: BedChild) -> bool:
+        """Return whether sequential switching is unsafe for this child."""
+        controller = getattr(child, "controller", None) or getattr(
+            child, "capability_controller", None
+        )
+        return bool(
+            controller is not None
+            and getattr(controller, "manual_disconnect_strands_connection", False)
+        )
+
+    async def _async_fallback_after_connection_slot_exhaustion(
+        self,
+        error: BaseException,
+        attempt_offsets: Mapping[str, int],
+    ) -> None:
+        """Adopt sequential mode after a command-time connection-slot failure.
+
+        The failing command remains failed because another side may already have
+        acted. The next command uses the safe one-link path.
+        """
+        if (
+            not self._automatic_connection_mode
+            or self._connection_mode != PAIR_CONNECTION_MODE_CONCURRENT
+        ):
+            return
+
+        items = list(self._children.items())
+        side_errors = error.side_errors if isinstance(error, PairedSideError) else {}
+        if not any(
+            self._connection_slot_exhausted(
+                child,
+                side_errors.get(side, error),
+                attempt_offsets.get(side, 0),
+            )
+            for side, child in items
+        ):
+            return
+
+        # Quiesce both parent lanes and child command lanes before changing the
+        # connection contract or releasing a live link. This also rechecks the
+        # pairing-only safety property after any in-flight reconnect completed.
+        async with (
+            self._pair_group_lock,
+            self._locked_target_sides(items),
+            contextlib.AsyncExitStack() as stack,
+        ):
+            for _, child in items:
+                await stack.enter_async_context(child.async_command_operation_guard())
+
+            if self._connection_mode != PAIR_CONNECTION_MODE_CONCURRENT:
+                return
+            if any(
+                self._manual_disconnect_would_strand(child) for _, child in items
+            ):
+                _LOGGER.warning(
+                    "Automatic paired command cannot fall back to sequential "
+                    "mode because disconnecting a pairing-only receiver would "
+                    "strand it; retaining the usable concurrent link"
+                )
+                return
+
+            for side, child in items:
+                if not child.is_connected:
+                    continue
+                child.cache_capability_controller()
+                if not await self._safe_disconnect(side, child):
+                    _LOGGER.warning(
+                        "Automatic paired command could not release the %s "
+                        "side, so concurrent mode remains active",
+                        side,
+                    )
+                    return
+
+            self._connection_mode = PAIR_CONNECTION_MODE_SEQUENTIAL
+            _LOGGER.warning(
+                "Automatic paired connection fell back to sequential mode "
+                "after a command reconnect exhausted an adapter's connection slots"
+            )
 
     async def async_disconnect(self, reason: str = "intentional") -> None:
         await asyncio.gather(
