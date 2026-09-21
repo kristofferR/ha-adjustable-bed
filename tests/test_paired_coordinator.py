@@ -1995,6 +1995,88 @@ class TestConnectionModeResolution:
             release.set()
             await task
 
+    @pytest.mark.parametrize("winning_side", [SIDE_LEFT, SIDE_RIGHT])
+    async def test_auto_falls_back_when_concurrent_connect_exhausts_slots(
+        self, winning_side
+    ):
+        active: set[str] = set()
+
+        class SlotLimitedChild(RecordingChild):
+            def __init__(self, side):
+                super().__init__(side, [], connected=False)
+                self.connection_attempt_details = []
+
+            async def async_connect(self):
+                self.log.append((self.side, "connect"))
+                if self.side != winning_side:
+                    await asyncio.sleep(0)
+                if active and self.side not in active:
+                    self.connection_attempt_details.append(
+                        {"error": "No connection slot available"}
+                    )
+                    return False
+                active.add(self.side)
+                self._connected = True
+                return True
+
+            async def async_disconnect(self, reason="intentional"):
+                await super().async_disconnect(reason)
+                active.discard(self.side)
+
+        entry = SimpleNamespace(
+            data={
+                CONF_PAIR_ID: "pair_abc123",
+                "name": "X",
+                CONF_BED_TYPE: BED_TYPE_OCTO,
+            }
+        )
+        children = {
+            side: SlotLimitedChild(side) for side in (SIDE_LEFT, SIDE_RIGHT)
+        }
+        coordinator = PairedBedCoordinator(None, entry, children)
+
+        assert await coordinator.async_connect()
+        assert coordinator.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL
+        assert not active
+        assert all(not child.is_connected for child in children.values())
+
+    async def test_explicit_concurrent_does_not_fall_back_on_slot_error(self):
+        coordinator = self._coord(
+            BED_TYPE_OCTO, mode=PAIR_CONNECTION_MODE_CONCURRENT
+        )
+        right = coordinator.children[SIDE_RIGHT]
+        right.connection_attempt_details = []
+
+        async def fail_for_slot():
+            right.connection_attempt_details.append(
+                {"error": "No connection slot available"}
+            )
+            right._connected = False
+            return False
+
+        right.async_connect = fail_for_slot
+
+        assert await coordinator.async_connect()
+        assert coordinator.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
+
+    async def test_auto_stays_concurrent_when_slot_retry_succeeds(self):
+        coordinator = self._coord(BED_TYPE_OCTO)
+        right = coordinator.children[SIDE_RIGHT]
+        right.connection_attempt_details = []
+
+        async def recover_on_retry():
+            right.connection_attempt_details.append(
+                {"error": "No connection slot available"}
+            )
+            right._connected = True
+            return True
+
+        right.async_connect = recover_on_retry
+
+        assert await coordinator.async_connect()
+        assert coordinator.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
+        assert all(child.is_connected for child in coordinator.children.values())
+
 
 class TestSequentialCycle:
     """Explicit sequential mode holds ONE BLE link at a time —

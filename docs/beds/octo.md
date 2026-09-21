@@ -254,7 +254,9 @@ policy and runs Both commands concurrently. The previous bed-type-based default
 forced a disconnect after every command, overriding each side's idle settings
 and repeating connection setup even for successive commands to the same side
 (Ref #612). Existing automatic pairs adopt the corrected policy on reload;
-explicit sequential mode still visits the two sides in turn. This changes
+automatic mode falls back to sequential switching if the adapter reports that
+the second link exhausted its connection slots, and explicit sequential mode
+still visits the two sides in turn. This changes
 integration scheduling, not controller commands, authentication, or timing.
 A separate one-motor `RTV` remains its own TV Lift device and must
 not be added as a bed side. Pairing requires compatible bed-side actuator

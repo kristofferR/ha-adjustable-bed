@@ -489,8 +489,9 @@ async def _async_release_absorbed_singles(hass: HomeAssistant, entry: ConfigEntr
 
     The originals stay LOADED config entries (re-homed + removed only after a
     successful connect), so a failed pair setup still leaves the user two working
-    singles that reconnect on demand. Best-effort: a failed release just means the
-    pair's connect retries.
+    singles that reconnect on demand. Refuse the takeover if an original cannot be
+    released safely; absorbing it after a partial paired connect could otherwise
+    strand that side.
     """
     for child in iter_children(entry.data):
         absorbed_id = child.get(KEY_ABSORBED_ENTRY_ID)
@@ -502,14 +503,33 @@ async def _async_release_absorbed_singles(hass: HomeAssistant, entry: ConfigEntr
         original_coordinator = hass.data.get(DOMAIN, {}).get(absorbed_id)
         if not isinstance(original_coordinator, AdjustableBedCoordinator):
             continue
+        controller = original_coordinator.controller
+        if (
+            original_coordinator.is_connected
+            and controller is not None
+            and controller.manual_disconnect_strands_connection
+        ):
+            raise ConfigEntryNotReady(
+                f"Cannot transfer {original.title} while its pairing-only connection is active"
+            )
         try:
-            await original_coordinator.async_disconnect("absorbed_by_pair")
+            released = await original_coordinator.async_disconnect(
+                "absorbed_by_pair", serialize_with_commands=True
+            )
+            if released is False or original_coordinator.is_connected:
+                raise ConfigEntryNotReady(
+                    f"Could not release {original.title} before paired setup"
+                )
             _LOGGER.debug(
                 "Released absorbed single %s's BLE link before paired connect",
                 absorbed_id,
             )
-        except Exception:  # noqa: BLE001 - best-effort; the pair connect retries
-            _LOGGER.debug("Could not pre-release absorbed single %s", absorbed_id)
+        except ConfigEntryNotReady:
+            raise
+        except Exception as err:  # noqa: BLE001 - retain both working originals
+            raise ConfigEntryNotReady(
+                f"Could not release {original.title} before paired setup: {err}"
+            ) from err
 
 
 async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -555,13 +575,16 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
             if not child.is_connected:
                 await _maybe_create_pairing_issue_for(hass, child)
 
-    # Release the old owners of these addresses before opening replacement links.
-    # Keep their entries until setup succeeds so they can reconnect on failure.
-    await _async_release_absorbed_singles(hass, entry)
-
     try:
         async with asyncio.timeout(SETUP_TIMEOUT):
+            # Release the old owners of these addresses before opening replacement
+            # links. Keep their entries until setup succeeds so they can reconnect
+            # on failure. The shared setup deadline also bounds stalled BLE teardown.
+            await _async_release_absorbed_singles(hass, entry)
             connected = await coordinator.async_connect()
+    except ConfigEntryNotReady:
+        await coordinator.async_shutdown()
+        raise
     except TimeoutError:
         # The coordinator isn't in hass.data yet, so the unload path won't run —
         # shut it down here or a side that already connected keeps its BLE link

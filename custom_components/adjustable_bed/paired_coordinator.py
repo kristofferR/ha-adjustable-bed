@@ -117,14 +117,15 @@ class PairedBedCoordinator:
         }
         if not self._children:
             raise ValueError("PairedBedCoordinator requires at least one child")
-        # Separate receivers retain their standalone connection lifecycles.
-        # A per-receiver link limit does not require switching between addresses.
-        # Resolve at load time so existing auto pairs also pick up this policy;
-        # preserve an explicitly configured sequential mode.
+        # Separate receivers retain their standalone connection lifecycles. Auto
+        # starts concurrent and can fall back at runtime when a real adapter-slot
+        # exhaustion error proves that both links cannot coexist. Explicit choices
+        # never change automatically.
         raw_mode = connection_mode or entry.data.get(
             CONF_PAIR_CONNECTION_MODE, DEFAULT_PAIR_CONNECTION_MODE
         )
-        if raw_mode == PAIR_CONNECTION_MODE_AUTO:
+        self._automatic_connection_mode = raw_mode == PAIR_CONNECTION_MODE_AUTO
+        if self._automatic_connection_mode:
             raw_mode = PAIR_CONNECTION_MODE_CONCURRENT
         self._connection_mode: str = raw_mode
         # Orders connection switching in sequential mode; unused when concurrent.
@@ -1035,13 +1036,67 @@ class PairedBedCoordinator:
                         break
             return any_connected
 
+        attempt_offsets = {
+            side: len(self._connection_attempts(child)) for side, child in items
+        }
         results = await asyncio.gather(
             *(child.async_connect() for _, child in items), return_exceptions=True
         )
         for (side, _), result in zip(items, results, strict=True):
             if isinstance(result, BaseException):
                 _LOGGER.warning("Connect failed on %s side: %s", side, result)
+        if self._automatic_connection_mode and any(
+            self._connection_slot_exhausted(
+                child,
+                result,
+                attempt_offsets[side],
+            )
+            for (side, child), result in zip(items, results, strict=True)
+        ):
+            _LOGGER.warning(
+                "Automatic paired connection fell back to sequential mode because "
+                "the concurrent connect exhausted an adapter's connection slots"
+            )
+            self._connection_mode = PAIR_CONNECTION_MODE_SEQUENTIAL
+            for side, child in items:
+                if not child.is_connected:
+                    continue
+                child.cache_capability_controller()
+                if not await self._safe_disconnect(side, child):
+                    return True
+            return await self.async_connect()
         return any(result is True for result in results)
+
+    @staticmethod
+    def _connection_attempts(child: BedChild) -> tuple[Mapping[str, object], ...]:
+        """Return a child's structured connection attempts when it exposes them."""
+        attempts = getattr(child, "connection_attempt_details", ())
+        if not isinstance(attempts, (list, tuple)):
+            return ()
+        return tuple(
+            attempt for attempt in attempts if isinstance(attempt, Mapping)
+        )
+
+    @classmethod
+    def _connection_slot_exhausted(
+        cls,
+        child: BedChild,
+        result: object,
+        attempt_offset: int,
+    ) -> bool:
+        """Return whether this connect failed because its transport had no slot."""
+        if result is True:
+            return False
+        if (
+            isinstance(result, BaseException)
+            and "connection slot" in str(result).lower()
+        ):
+            return True
+        attempts = cls._connection_attempts(child)[attempt_offset:]
+        return any(
+            "connection slot" in str(attempt.get("error", "")).lower()
+            for attempt in attempts
+        )
 
     async def async_disconnect(self, reason: str = "intentional") -> None:
         await asyncio.gather(

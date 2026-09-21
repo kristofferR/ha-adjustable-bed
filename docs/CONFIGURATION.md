@@ -527,7 +527,9 @@ Automatic connection mode keeps each receiver's own connection settings, includi
 its idle timeout and Disconnect After Command choice. Selecting one side does not
 disconnect the other, and Both can operate the two receivers concurrently. This
 also applies to OCTO/Star2 pairs. Existing automatic pairs pick up this behavior
-on reload; an explicitly stored sequential connection mode is retained.
+on reload. If the active adapter reports that the second link exhausted its
+connection slots, automatic mode falls back to sequential switching for that
+runtime. Explicit concurrent or sequential modes are retained.
 
 The wizard checks protocol and motor-layout compatibility. Some controllers need
 a successful connection first to discover their capabilities. One-motor OCTO
