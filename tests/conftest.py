@@ -576,8 +576,15 @@ def mock_bleak_client() -> MagicMock:
     async def _read_gatt_char(target) -> bytes:
         return readable_values.get(str(target), b"")
 
-    client.connect = AsyncMock(return_value=True)
-    client.disconnect = AsyncMock()
+    async def _disconnect() -> None:
+        client.is_connected = False
+
+    async def _connect() -> bool:
+        client.is_connected = True
+        return True
+
+    client.connect = AsyncMock(side_effect=_connect)
+    client.disconnect = AsyncMock(side_effect=_disconnect)
     client.write_gatt_char = AsyncMock(side_effect=_write_gatt_char)
     client.read_gatt_char = AsyncMock(side_effect=_read_gatt_char)
     client.start_notify = AsyncMock(side_effect=_start_notify)
@@ -764,7 +771,11 @@ def mock_establish_connection(mock_bleak_client: MagicMock) -> Generator[AsyncMo
         "custom_components.adjustable_bed.coordinator.establish_connection",
         new_callable=AsyncMock,
     ) as mock:
-        mock.return_value = mock_bleak_client
+        async def _establish(*_args, **_kwargs):
+            mock_bleak_client.is_connected = True
+            return mock_bleak_client
+
+        mock.side_effect = _establish
         yield mock
 
 

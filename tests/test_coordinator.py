@@ -2772,6 +2772,30 @@ class TestCoordinatorDisconnectTimer:
         mock_bleak_client.disconnect.side_effect = None
         mock_bleak_client.is_connected = False
 
+    async def test_disconnect_return_with_live_link_is_reported_and_retained(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """A successful Bleak return cannot hide a physical link still in use."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        mock_bleak_client.is_connected = True
+        mock_bleak_client.disconnect = AsyncMock()
+
+        disconnected = await coordinator.async_disconnect("sequential_switch")
+
+        assert disconnected is False
+        assert coordinator._client is mock_bleak_client
+        assert coordinator.controller is controller
+        assert coordinator.is_connected is True
+
+        # Leave the shared fixture clean for teardown.
+        mock_bleak_client.is_connected = False
+
     async def test_failed_connection_cleanup_is_intentional(
         self,
         hass: HomeAssistant,
@@ -4048,7 +4072,9 @@ class TestCoordinatorWriteCommand:
         coordinator = AdjustableBedCoordinator(hass, entry)
         client = MagicMock()
         client.is_connected = True
-        client.disconnect = AsyncMock()
+        client.disconnect = AsyncMock(
+            side_effect=lambda: setattr(client, "is_connected", False)
+        )
         client.read_gatt_char = AsyncMock(
             side_effect=BleakError(
                 "Bluetooth GATT Error address=AA:BB:CC:DD:EE:FF "
@@ -4998,6 +5024,10 @@ class TestRuntimeBedTypeCorrection:
         mock_controller = MagicMock()
         mock_controller.start_notify = AsyncMock()
 
+        async def establish_connection(*_args, **_kwargs):
+            mock_bleak_client.is_connected = True
+            return mock_bleak_client
+
         with (
             patch(
                 "custom_components.adjustable_bed.coordinator.select_adapter",
@@ -5007,7 +5037,7 @@ class TestRuntimeBedTypeCorrection:
             patch(
                 "custom_components.adjustable_bed.coordinator.establish_connection",
                 new_callable=AsyncMock,
-                return_value=mock_bleak_client,
+                side_effect=establish_connection,
             ) as mock_establish_connection,
             patch(
                 "custom_components.adjustable_bed.coordinator.discover_services",
@@ -5212,6 +5242,10 @@ class TestDeviceInfoCache:
         mock_controller = MagicMock()
         mock_controller.start_notify = AsyncMock()
 
+        async def establish_connection(*_args, **_kwargs):
+            mock_bleak_client.is_connected = True
+            return mock_bleak_client
+
         with (
             patch(
                 "custom_components.adjustable_bed.coordinator.select_adapter",
@@ -5221,7 +5255,7 @@ class TestDeviceInfoCache:
             patch(
                 "custom_components.adjustable_bed.coordinator.establish_connection",
                 new_callable=AsyncMock,
-                return_value=mock_bleak_client,
+                side_effect=establish_connection,
             ),
             patch(
                 "custom_components.adjustable_bed.coordinator.discover_services",

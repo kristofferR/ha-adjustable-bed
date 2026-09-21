@@ -2046,7 +2046,9 @@ class TestPairBedsConversion:
         single.add_to_hass(hass)
         coord = AdjustableBedCoordinator(hass, single)
         client = MagicMock(is_connected=True)
-        client.disconnect = AsyncMock()
+        client.disconnect = AsyncMock(
+            side_effect=lambda: setattr(client, "is_connected", False)
+        )
         coord._client = client
         coord._controller = SimpleNamespace(
             manual_disconnect_strands_connection=False,

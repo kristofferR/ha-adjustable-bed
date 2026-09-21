@@ -4347,7 +4347,6 @@ class AdjustableBedCoordinator:
             # Track disconnect reason for diagnostics (issue #168)
             self._last_disconnect_reason = reason
             client = self._client
-            disconnect_failed = False
             try:
                 # Stop keep-alive and notifications before disconnecting
                 if self._controller is not None:
@@ -4365,15 +4364,14 @@ class AdjustableBedCoordinator:
                 await client.disconnect()
                 _LOGGER.debug("Successfully disconnected from %s", self._address)
             except BleakError as err:
-                disconnect_failed = True
                 _LOGGER.debug("Error during disconnect from %s: %s", self._address, err)
             finally:
                 self._intentional_disconnect = False
-            # Bleak can raise while the OS link remains active. Keep the live
-            # client/controller instead of reporting a logical disconnect: the
-            # paired sequential guard must know that opening the other side
-            # could create two physical links.
-            if disconnect_failed and client.is_connected:
+            # Bleak can raise or return while the OS link remains active. Keep
+            # the live client/controller instead of reporting a logical
+            # disconnect: the paired sequential guard must know that opening
+            # the other side could create two physical links.
+            if client.is_connected:
                 self._client = client
                 _LOGGER.warning("Disconnect from %s did not release the BLE link", self._address)
                 return False

@@ -57,6 +57,7 @@ def mock_cb35_client() -> AsyncMock:
     client = AsyncMock()
     client.is_connected = True
     client.services = []
+    client.disconnect.side_effect = lambda: setattr(client, "is_connected", False)
     return client
 
 
@@ -412,6 +413,7 @@ async def test_stop_after_preset_disconnect_keeps_bounded_interrupt_window(
 
     async def connect(*, reset_timer: bool) -> bool:
         if coordinator.controller is None:
+            mock_cb35_client.is_connected = True
             coordinator._client = mock_cb35_client
             controller = OkinCB35Controller(coordinator)
             controller._initialized = True
