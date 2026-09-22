@@ -1761,6 +1761,34 @@ class TestSupportBundleLoggingWarning:
         assert "[Errno 13] Permission denied" in warning
         assert "configuration.yaml" not in warning
 
+    def test_proxy_entries_make_log_capture_available(self):
+        """Proxy Bluetooth entries are usable logs even without HA memory entries."""
+        evidence = _build_evidence_summary(
+            capture_duration=0,
+            include_logs=True,
+            recent_logs=[],
+            diagnostic_report={"command_trace": [], "notification_summary": {}},
+            reproduction_command_trace=[{"command_origin": "write_command"}],
+            pairing={},
+            bluetooth_info={
+                "scanners": [],
+                "proxy_logs": [
+                    {
+                        "source": "proxy_1",
+                        "status": "available",
+                        "entries": [{"message": "GATT authentication failed"}],
+                    }
+                ],
+            },
+            configured=True,
+            controller={"initialized": True},
+        )
+
+        assert evidence["log_capture_status"] == "available"
+        assert evidence["recent_log_entry_count"] == 0
+        assert evidence["proxy_log_entry_count"] == 1
+        assert not any("No relevant" in warning for warning in evidence["warnings"])
+
     async def test_notification_flags_a_bundle_generated_without_logs(
         self,
         hass: HomeAssistant,

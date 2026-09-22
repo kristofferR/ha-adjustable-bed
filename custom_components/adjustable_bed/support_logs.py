@@ -28,12 +28,23 @@ _SECRETS = re.compile(
     r"authorization|token|\w*_token|secret|\w*_secret)\b['\"]?\s*[:=]\s*)"
     r"(?:'[^']*'|\"[^\"]*\"|(?:Bearer\s+)?[^\s,;}]+)"
 )
+_BLE_WRITE_PAYLOAD = re.compile(
+    r"(?im)(\b(?:write|writing)\s+(?:gatt\s+)?(?:characteristic|descriptor)\b"
+    r"[^\r\n]*?:\s*)[^\r\n]*"
+)
+_FAILED_BLE_WRITE_PAYLOAD = re.compile(
+    r"(?i)(\b(?:could not|failed to)\s+write\s+value\s+).+?"
+    r"(\s+to\s+(?:characteristic|descriptor)\b)"
+)
 DATA_SUPPORT_LOGS: HassKey[SupportLogBuffer] = HassKey("adjustable_bed_support_logs")
 
 
 def sanitize_log_message(message: str) -> str:
-    """Keep useful addresses while removing labeled credentials and bounding size."""
-    return _SECRETS.sub(r"\1**REDACTED**", message)[:MAX_LOG_MESSAGE_LENGTH]
+    """Keep useful connection details while removing credentials and BLE writes."""
+    message = _SECRETS.sub(r"\1**REDACTED**", message)
+    message = _BLE_WRITE_PAYLOAD.sub(r"\1**REDACTED**", message)
+    message = _FAILED_BLE_WRITE_PAYLOAD.sub(r"\1**REDACTED**\2", message)
+    return message[:MAX_LOG_MESSAGE_LENGTH]
 
 
 class SupportLogBuffer(logging.Handler):

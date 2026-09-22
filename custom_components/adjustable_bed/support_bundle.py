@@ -717,12 +717,17 @@ def _build_evidence_summary(
     # "missing" (logging likely off) vs "unreadable" (permissions/log path):
     # only the first is fixed by configuring `logger:`.
     log_capture_reason = log_failure.get("log_read_reason") if log_failure else None
+    proxy_log_entry_count = sum(
+        len(entries)
+        for proxy_log in bluetooth_info.get("proxy_logs", [])
+        if isinstance((entries := proxy_log.get("entries")), list)
+    )
     if not include_logs:
         log_status = "not_requested"
+    elif proxy_log_entry_count or (recent_logs and not log_capture_failed):
+        log_status = "available"
     elif log_capture_failed:
         log_status = "unavailable"
-    elif recent_logs:
-        log_status = "available"
     else:
         log_status = "empty"
 
@@ -798,6 +803,7 @@ def _build_evidence_summary(
         "log_capture_reason": log_capture_reason,
         "log_capture_error": log_capture_error,
         "recent_log_entry_count": len(recent_logs),
+        "proxy_log_entry_count": proxy_log_entry_count,
         "usable_recent_log_entry_count": 0 if log_capture_failed else len(recent_logs),
         "pairing_status": pairing.get("status"),
         "complete": not warnings,

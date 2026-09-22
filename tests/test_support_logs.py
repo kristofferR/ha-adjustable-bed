@@ -20,6 +20,7 @@ from custom_components.adjustable_bed.support_logs import (
     MAX_LOG_ENTRIES,
     MAX_LOG_MESSAGE_LENGTH,
     async_setup_support_logs,
+    sanitize_log_message,
 )
 from custom_components.adjustable_bed.support_proxy_logs import capture_proxy_logs
 from custom_components.adjustable_bed.support_report import _get_recent_logs, async_check_log_file
@@ -92,6 +93,26 @@ async def test_memory_buffer_is_bounded(hass: HomeAssistant, caplog):
     assert len(logs) == MAX_LOG_ENTRIES
     assert logs[0]["message"].startswith("2 ")
     assert len(logs[-1]["message"]) == MAX_LOG_MESSAGE_LENGTH
+
+
+@pytest.mark.parametrize(
+    ("message", "expected"),
+    [
+        (
+            "Write Characteristic 1234 | /org/bluez/char0001: "
+            "bytearray(b'\\x20\\x43\\x01\\x02\\x03\\x04')",
+            "Write Characteristic 1234 | /org/bluez/char0001: **REDACTED**",
+        ),
+        (
+            "Could not write value bytearray(b'\\x20\\x43\\x01\\x02\\x03\\x04') "
+            "to characteristic 0012",
+            "Could not write value **REDACTED** to characteristic 0012",
+        ),
+    ],
+)
+def test_raw_ble_write_payloads_are_redacted(message: str, expected: str):
+    """Transport debug logs must not reintroduce authentication packets."""
+    assert sanitize_log_message(message) == expected
 
 
 async def test_debug_capture_restores_levels_after_overlap_and_cancellation(hass, caplog):
