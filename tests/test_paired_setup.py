@@ -85,6 +85,7 @@ from custom_components.adjustable_bed.const import (
     SIDE_LEFT,
     SIDE_RIGHT,
 )
+from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import (
     PairedBedCoordinator,
     SingleAddressPairedCoordinator,
@@ -174,6 +175,31 @@ def _paired_entry(hass: HomeAssistant) -> MockConfigEntry:
 
 
 class TestPairedSetup:
+    async def test_persisted_capabilities_are_primed_before_live_pair_connect(
+        self, hass: HomeAssistant
+    ) -> None:
+        """An incomplete live discovery must retain the saved fallback."""
+        entry = _paired_entry(hass)
+        primed: set[str] = set()
+
+        async def prime(child: AdjustableBedCoordinator) -> None:
+            primed.add(child.address)
+
+        async def connect(_coordinator) -> bool:
+            assert primed == {LEFT_ADDR, RIGHT_ADDR}
+            return False
+
+        with (
+            patch.object(
+                AdjustableBedCoordinator,
+                "async_prime_offline_controller",
+                prime,
+            ),
+            patch.object(PairedBedCoordinator, "async_connect", connect),
+            pytest.raises(ConfigEntryNotReady, match="No side"),
+        ):
+            await _async_setup_paired_entry(hass, entry)
+
     async def test_retained_original_controls_require_capabilities_before_retry(
         self, hass: HomeAssistant
     ) -> None:

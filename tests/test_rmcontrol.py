@@ -553,6 +553,17 @@ async def test_missing_capability_reply_times_out_and_late_reply_still_enables()
     assert ctrl.controller_entity_discovery_complete
 
 
+def test_non_entity_probe_timeout_does_not_block_entity_discovery() -> None:
+    ctrl = controller("HNRN", nordic=True)
+    ctrl._pending_capabilities = {"light", "alarm", "sleep_advertisement"}
+
+    assert not ctrl.controller_entity_discovery_complete
+    ctrl._accept_notification(Notification("capability", {"light": True}))
+
+    assert not ctrl._capabilities_ready.is_set()
+    assert ctrl.controller_entity_discovery_complete
+
+
 def test_strip_acknowledgement_requires_a_power_off_route() -> None:
     ctrl = controller("A3RN")
     ctrl._accept_notification(Notification("capability", {"light": True}))

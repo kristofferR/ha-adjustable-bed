@@ -571,6 +571,12 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     if not children:
         raise ConfigEntryNotReady("Paired bed has no child sides configured")
 
+    # Seed persisted capability snapshots before a live connection can cache an
+    # incomplete discovery over them. Complete live discovery still refreshes
+    # this fallback through cache_capability_controller().
+    for child in children.values():
+        await child.async_prime_offline_controller()
+
     coordinator = PairedBedCoordinator(hass, entry, children)
     _async_ensure_paired_device_registry(hass, entry, coordinator)
 
