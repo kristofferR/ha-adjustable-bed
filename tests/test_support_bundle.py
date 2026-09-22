@@ -1313,7 +1313,7 @@ class TestSupportBundle:
             )
 
         assert report["target"]["mode"] == "target_address"
-        assert report["metadata"]["report_version"] == "2.3"
+        assert report["metadata"]["report_version"] == "2.4"
         assert report["integration"]["configured_device"] is False
         assert report["integration"]["kaidi_product_id"] is None
         assert report["integration"]["kaidi_sofa_acu_no"] is None
@@ -1466,7 +1466,7 @@ class TestSupportBundle:
             )
 
         pairing = report["pairing"]
-        assert report["metadata"]["report_version"] == "2.3"
+        assert report["metadata"]["report_version"] == "2.4"
         assert pairing["required"] is True
         assert pairing["connection_gated_by_bond"] is True
         assert pairing["persisted_bond_marker"] is True
@@ -1531,8 +1531,8 @@ class TestSupportBundle:
         scanner.current_mode = "active"
         scanner.requested_mode = "active"
         scanner.connecting_count = 1
-        scanner.connections_in_progress = 1
-        scanner.connection_failures = 0
+        scanner.connections_in_progress = MagicMock(return_value=1)
+        scanner.connection_failures = MagicMock(return_value=2)
         scanner.details = {"source": scanner.source, "type": "ESPHomeScanner"}
         scanner.async_diagnostics = AsyncMock(
             return_value={
@@ -1555,6 +1555,7 @@ class TestSupportBundle:
                         "selected_for_connection": True,
                     }
                 ],
+                address="AA:BB:CC:DD:EE:FF",
             )
 
         assert len(rows) == 1
@@ -1562,6 +1563,9 @@ class TestSupportBundle:
         assert row["scanner_type"] == "esphome_proxy"
         assert row["target_visible"] is True
         assert row["target_rssi"] == -71
+        assert row["connections_in_progress"] == 1
+        assert row["connection_failures"] == 2
+        scanner.connection_failures.assert_called_once_with("AA:BB:CC:DD:EE:FF")
         assert row["diagnostics"] == {"scanner_state": "running"}
         proxy = row["esphome_proxy"]
         assert proxy["available"] is True

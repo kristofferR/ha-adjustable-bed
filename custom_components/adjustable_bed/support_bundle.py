@@ -5,6 +5,7 @@ from __future__ import annotations
 import inspect
 import json
 import logging
+from contextlib import nullcontext
 from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
@@ -40,6 +41,8 @@ from .const import (
 from .detection import detect_bed_type_detailed
 from .diagnostic_payloads import format_mapping_payloads
 from .redaction import redact_pins_only
+from .support_logs import async_setup_support_logs
+from .support_proxy_logs import capture_proxy_logs
 from .support_report import (
     _get_bluetooth_info,
     _get_connection_info,
@@ -55,7 +58,7 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-_REPORT_VERSION = "2.3"
+_REPORT_VERSION = "2.4"
 _MAX_NEARBY_BLUETOOTH_DEVICES = 30
 _BLUETOOTH_DOMAIN = "bluetooth"
 _ESPHOME_DOMAIN = "esphome"
@@ -90,12 +93,26 @@ async def generate_support_bundle(
         if trace.get("intent_id") is not None
     ]
 
-    diagnostics_report = await BLEDiagnosticRunner(
-        hass,
-        address,
-        capture_duration=capture_duration,
-        coordinator=coordinator,
-    ).run_diagnostics()
+    preferred_source = (
+        coordinator.adapter_details.get("preferred") if coordinator is not None else
+        entry.options.get(CONF_PREFERRED_ADAPTER, entry.data.get(CONF_PREFERRED_ADAPTER))
+        if entry is not None else None
+    )
+    if not isinstance(preferred_source, str):
+        preferred_source = None
+    log_buffer = async_setup_support_logs(hass) if include_logs else None
+    pre_capture_logs = log_buffer.snapshot() if log_buffer is not None else []
+    with log_buffer.capture_debug() if log_buffer is not None else nullcontext():
+        async with (
+            capture_proxy_logs(hass, address, preferred_source)
+            if include_logs else nullcontext([])
+        ) as proxy_logs:
+            diagnostics_report = await BLEDiagnosticRunner(
+                hass,
+                address,
+                capture_duration=capture_duration,
+                coordinator=coordinator,
+            ).run_diagnostics()
 
     bluetooth_info = await _build_bluetooth_section(
         hass,
@@ -103,6 +120,7 @@ async def generate_support_bundle(
         diagnostics_report.to_dict(),
         coordinator,
     )
+    bluetooth_info["proxy_logs"] = proxy_logs
 
     if coordinator is not None:
         connection = _get_connection_info(coordinator)
@@ -118,6 +136,11 @@ async def generate_support_bundle(
         position_data = {}
 
     recent_logs = await _get_recent_logs(hass) if include_logs else []
+    # Preserve the original failure if verbose capture traffic fills the ring.
+    recent_logs = list({
+        (log.get("timestamp"), log.get("name"), log.get("message")): log
+        for log in [*pre_capture_logs, *recent_logs]
+    }.values())
     diagnostic_dict = diagnostics_report.to_dict()
     pairing = _build_pairing_assessment(
         diagnostic_dict,
@@ -142,6 +165,7 @@ async def generate_support_bundle(
             "generated_at": timestamp.isoformat(),
             "capture_duration_seconds": capture_duration,
             "integration_domain": DOMAIN,
+            "log_source": "memory" if include_logs else "not_requested",
         },
         "target": {
             "mode": "configured_device" if entry is not None else "target_address",
@@ -213,6 +237,7 @@ async def _build_bluetooth_section(
         info["scanners"] = await _build_scanner_status(
             hass,
             diagnostics_report.get("advertisements_by_source", []),
+            address=address,
         )
     except Exception as err:  # noqa: BLE001 - diagnostics must degrade gracefully
         info["scanners_error"] = str(err)
@@ -369,6 +394,8 @@ def _nearby_device_sort_key(device: dict[str, Any]) -> tuple[Any, ...]:
 async def _build_scanner_status(
     hass: HomeAssistant,
     advertisements_by_source: list[dict[str, Any]],
+    *,
+    address: str | None = None,
 ) -> list[dict[str, Any]]:
     """Return enriched status for local adapters and remote Bluetooth proxies."""
     advertisements = {
@@ -390,6 +417,12 @@ async def _build_scanner_status(
         registration_data = registration.data if registration is not None else {}
         source_domain = registration_data.get(CONF_SOURCE_DOMAIN)
         target = advertisements.get(source)
+        connections_in_progress = getattr(scanner, "connections_in_progress", None)
+        if callable(connections_in_progress):
+            connections_in_progress = connections_in_progress()
+        connection_failures = getattr(scanner, "connection_failures", None)
+        if callable(connection_failures):
+            connection_failures = connection_failures(address) if address is not None else None
 
         row: dict[str, Any] = {
             "source": source,
@@ -404,10 +437,8 @@ async def _build_scanner_status(
             "current_mode": _simple_value(getattr(scanner, "current_mode", None)),
             "requested_mode": _simple_value(getattr(scanner, "requested_mode", None)),
             "connecting_count": getattr(scanner, "connecting_count", None),
-            "connections_in_progress": getattr(scanner, "connections_in_progress", None),
-            "connection_failures": _json_friendly(
-                getattr(scanner, "connection_failures", None)
-            ),
+            "connections_in_progress": _json_friendly(connections_in_progress),
+            "connection_failures": _json_friendly(connection_failures),
             "target_visible": target is not None,
             "target_rssi": target.get("rssi") if target else None,
             "target_connectable": target.get("connectable") if target else None,
@@ -741,9 +772,20 @@ def _build_evidence_summary(
         proxy = scanner.get("esphome_proxy")
         if isinstance(proxy, dict) and proxy.get("available") is False:
             warnings.append("The selected ESPHome Bluetooth proxy reports unavailable.")
+        if include_logs and isinstance(proxy, dict) and not any(
+            row.get("source") == selected_source for row in bluetooth_info.get("proxy_logs", [])
+        ):
+            warnings.append("The selected ESPHome proxy was not available for log capture when the bundle started.")
         bluetooth_status = proxy.get("bluetooth", {}) if isinstance(proxy, dict) else {}
         if bluetooth_status.get("connections_free") == 0:
             warnings.append("The selected ESPHome proxy has no free BLE connection slots.")
+
+    for proxy_log in bluetooth_info.get("proxy_logs", []):
+        if proxy_log.get("status") != "available":
+            warnings.append(
+                f"ESPHome Bluetooth log capture for {proxy_log.get('source', 'unknown source')}: "
+                f"{proxy_log.get('status')} ({proxy_log.get('reason', 'no Bluetooth messages received')})."
+            )
 
     return {
         "command_trace_count": command_count,

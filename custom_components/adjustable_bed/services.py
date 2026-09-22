@@ -2075,6 +2075,9 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
 
 async def async_register_services(hass: HomeAssistant) -> None:
     """Register the Adjustable Bed services (idempotent)."""
+    from .support_logs import async_setup_support_logs
+
+    async_setup_support_logs(hass)
     if hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET):
         return  # Services already registered
 

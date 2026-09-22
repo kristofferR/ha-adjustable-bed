@@ -42,6 +42,7 @@ from .const import (
 from .diagnostics_utils import get_gatt_summary
 from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
 from .redaction import redact_data, redact_pins_only
+from .support_logs import DATA_SUPPORT_LOGS
 
 if TYPE_CHECKING:
     from .paired_coordinator import BedChild
@@ -302,12 +303,9 @@ async def _get_bluetooth_info(
 
 
 async def _get_recent_logs(hass: HomeAssistant) -> list[dict[str, str]]:
-    """Return recent integration-related entries from the HA log file.
-
-    Home Assistant does not keep an in-memory debug-log buffer we can read, so
-    this tails the on-disk ``home-assistant.log`` (off-loop, in an executor) and
-    keeps only lines emitted by the integration, the Bluetooth stack, or bleak.
-    """
+    """Read the integration's memory buffer, with a file fallback for legacy callers."""
+    if (buffer := hass.data.get(DATA_SUPPORT_LOGS)) is not None:
+        return buffer.snapshot()
     log_path = hass.config.path("home-assistant.log")
     return await hass.async_add_executor_job(_read_log_file, log_path)
 
@@ -483,14 +481,9 @@ def _probe_log_file(log_path: str) -> tuple[bool, str | None, str | None]:
 
 
 async def async_check_log_file(hass: HomeAssistant) -> dict[str, Any]:
-    """Check up front whether a support bundle will be able to include logs.
-
-    The capture itself takes minutes, and a bundle without logs is missing the
-    single most useful evidence for connection problems (issue #385: every
-    bundle in that report had ``log_capture_status: "unavailable"``). Probing
-    first lets the caller tell the user *before* they wait for a useless
-    capture.
-    """
+    """Check memory capture availability, falling back to a safe disk probe."""
+    if DATA_SUPPORT_LOGS in hass.data:
+        return {"available": True, "reason": None, "path": "memory", "error": None}
     log_path = hass.config.path("home-assistant.log")
     # Uses Home Assistant's shared executor, deliberately.
     #

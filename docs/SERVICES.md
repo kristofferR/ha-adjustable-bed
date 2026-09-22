@@ -137,6 +137,9 @@ renaming an HA entity or device is a separate operation.
 evidence, GATT data, notifications, nearby advertisements, and recent command
 trace. `capture_duration` is 10–300 seconds (default 120); `include_logs` defaults
 to `true`. Provide exactly one configured `device_id` or raw `target_address`.
+Logs include recent in-memory HA Bluetooth records and live Bluetooth messages
+from reachable ESPHome proxies. A disk log file is not required. Capture enables
+HA debug logging temporarily and restores the previous levels afterward.
 
 See [Getting Help](GETTING_HELP.md) for the capture procedure, privacy details,
 and how to download the report.
