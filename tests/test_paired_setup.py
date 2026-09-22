@@ -174,10 +174,10 @@ def _paired_entry(hass: HomeAssistant) -> MockConfigEntry:
 
 
 class TestPairedSetup:
-    async def test_retained_original_controls_do_not_block_partial_pair_reload(
+    async def test_retained_original_controls_require_capabilities_before_retry(
         self, hass: HomeAssistant
     ) -> None:
-        """A rolled-back side stays with its original after another side commits."""
+        """A rolled-back side is validated before its next absorption attempt."""
         retained = MockConfigEntry(
             domain=DOMAIN,
             data={CONF_ADDRESS: LEFT_ADDR, CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25},
@@ -202,7 +202,7 @@ class TestPairedSetup:
             config_entry=retained,
         )
 
-        assert not async_has_side_controller_entities(
+        assert async_has_side_controller_entities(
             hass, pair, LEFT_ADDR
         )
 
@@ -3478,6 +3478,22 @@ class TestOfflineSideEntities:
         left._controller = None
         assert left.capability_controller is live
 
+        # A later complete discovery replaces the earlier cached profile.
+        refreshed = MagicMock()
+        refreshed.controller_entity_discovery_complete = True
+        left._controller = refreshed
+        left.cache_capability_controller()
+        left._controller = None
+        assert left.capability_controller is refreshed
+
+        # A transient incomplete discovery cannot erase known capabilities.
+        incomplete = MagicMock()
+        incomplete.controller_entity_discovery_complete = False
+        left._controller = incomplete
+        left.cache_capability_controller()
+        left._controller = None
+        assert left.capability_controller is refreshed
+
     async def test_leggett_platt_explicit_variant_side_is_offline_minted(self, hass: HomeAssistant):
         # Even if a child descriptor still carries the UMBRELLA leggett_platt with
         # an explicit gen2 variant, the coordinator resolves it before the
@@ -3960,10 +3976,8 @@ class TestOctoSnapshotBackfill:
 
     async def test_backfill_refreshes_stale_offline_controller(self, hass: HomeAssistant):
         """A backfill that discovers NEW caps must also refresh the in-memory
-        offline controller — cache_capability_controller only fills an empty slot,
-        so without this a later sequential release falls back to the stale
-        pairing-time controller and per-side entity gating stays wrong until
-        reload."""
+        offline controller, so a later sequential release cannot fall back to the
+        stale pairing-time controller before the cache refresh runs."""
         from types import SimpleNamespace
 
         data = _paired_entry_data()

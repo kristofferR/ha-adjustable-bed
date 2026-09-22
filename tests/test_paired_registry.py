@@ -18,7 +18,9 @@ from custom_components.adjustable_bed.paired_registry import (
 from .test_paired_setup import LEFT_ADDR, PAIR_ID, RIGHT_ADDR, _paired_entry
 
 
-@pytest.mark.parametrize("domain", ["climate", "light", "select"])
+@pytest.mark.parametrize(
+    "domain", ["button", "climate", "cover", "light", "number", "select", "switch"]
+)
 def test_controller_entity_check_is_scoped_to_its_side_and_integration(
     hass: HomeAssistant, domain: str,
 ) -> None:

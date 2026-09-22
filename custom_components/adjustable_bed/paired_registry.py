@@ -41,6 +41,10 @@ from .pairing import (
 
 _LOGGER = logging.getLogger(__name__)
 
+_CONTROLLER_GATED_CONTROL_DOMAINS = frozenset(
+    {"button", "climate", "cover", "light", "number", "select", "switch"}
+)
+
 
 def async_has_side_controller_entities(
     hass: HomeAssistant, entry: ConfigEntry, address: str,
@@ -56,20 +60,13 @@ def async_has_side_controller_entities(
         for child in children
         if (origin_id := child.get(KEY_ABSORBED_ENTRY_ID))
     }
-    # Once one original has been absorbed, any remaining original is a side whose
-    # registry transfer rolled back. It remains solely controlled by that entry;
-    # do not make the usable paired side depend on its live capability discovery.
-    conversion_started = any(
-        hass.config_entries.async_get_entry(origin_id) is None
-        for origin_id in origin_ids
-    )
-    owner_ids = {entry.entry_id}
-    if not conversion_started:
-        owner_ids.update(origin_ids)
+    # A surviving original is retried by _async_rehome_absorbed_singles below, so
+    # validate its rows before that retry can transfer them to the pair.
+    owner_ids = {entry.entry_id, *origin_ids}
     registry = er.async_get(hass)
     return any(
         row.platform == DOMAIN
-        and row.domain in {"climate", "light", "select"}
+        and row.domain in _CONTROLLER_GATED_CONTROL_DOMAINS
         and row.unique_id.startswith(f"{address}_")
         for owner_id in owner_ids
         for row in er.async_entries_for_config_entry(registry, owner_id)
