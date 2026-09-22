@@ -69,6 +69,7 @@ from .paired_coordinator import PairedBedCoordinator, SingleAddressPairedCoordin
 from .paired_devices import async_register_children
 from .paired_registry import (
     _async_rehome_absorbed_singles,
+    async_has_side_controller_entities,
 )
 from .paired_registry import (
     async_unpair_entry as async_unpair_entry,
@@ -616,6 +617,23 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                 f"No side of paired bed {entry.title} could be connected"
             )
 
+        # Some sides cannot recreate their extra controls without discovery.
+        # Validate before absorbing originals, and again on every pair reload.
+        # Sequential setup caches discovered controllers after releasing links.
+        try:
+            for child in children.values():
+                if not async_has_side_controller_entities(hass, entry, child.address):
+                    continue
+                await child.async_prime_offline_controller()
+                if child.capability_controller is None:
+                    raise ConfigEntryNotReady(
+                        f"Paired bed {entry.title} needs {child.name} to connect "
+                        "before its controls can be restored"
+                    )
+        except (Exception, asyncio.CancelledError):
+            await coordinator.async_shutdown()
+            raise
+
         hass.data[DOMAIN][entry.entry_id] = coordinator
         # At least one child connected, so the pair can provide controls. ONLY NOW
         # absorb the original single entries — re-home their entity/device registry
@@ -914,6 +932,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # and we do not want that one-time migration to trigger an immediate reload.
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     _LOGGER.info("Successfully connected to bed at %s", entry.data.get(CONF_ADDRESS))
+    # Keep the proven layout available to the combine wizard after idle disconnect.
+    coordinator.cache_capability_controller()
     return await _async_finish_entry_setup(
         hass,
         entry,

@@ -11,10 +11,27 @@ from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.paired_registry import (
     _DeviceMove,
     _RegistryOwnership,
+    async_has_side_controller_entities,
     async_unpair_entry,
 )
 
 from .test_paired_setup import LEFT_ADDR, PAIR_ID, RIGHT_ADDR, _paired_entry
+
+
+@pytest.mark.parametrize("domain", ["climate", "light", "select"])
+def test_controller_entity_check_is_scoped_to_its_side_and_integration(
+    hass: HomeAssistant, domain: str,
+) -> None:
+    entry = _paired_entry(hass)
+    registry = er.async_get(hass)
+    registry.async_get_or_create(
+        domain, DOMAIN, f"{LEFT_ADDR}_control", config_entry=entry,
+    )
+    registry.async_get_or_create(
+        domain, "other_integration", f"{RIGHT_ADDR}_control", config_entry=entry,
+    )
+    assert async_has_side_controller_entities(hass, entry, LEFT_ADDR)
+    assert not async_has_side_controller_entities(hass, entry, RIGHT_ADDR)
 
 
 def _registered_pair(hass):

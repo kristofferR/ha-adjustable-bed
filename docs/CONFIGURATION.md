@@ -536,6 +536,14 @@ a successful connection first to discover their capabilities. One-motor OCTO
 TV/bed lifts remain standalone. Combined controls use capabilities shared by both
 sides; side-specific controls retain each side's own features.
 
+Beds whose extra controls require live discovery, including Sleepy's BOX25,
+can also be combined. Each such side must connect during paired setup, including
+after a Home Assistant restart or integration reload. Otherwise setup retries
+instead of loading with missing controls. During conversion, the original
+standalone entries remain intact until this check succeeds. Once loaded, an
+ordinary disconnect does not remove the side's controls. Beds with saved or
+offline-safe capabilities still support setup with one side unavailable.
+
 Existing side entity IDs, device IDs, names, areas, and history are retained when
 combining entries. To undo it, choose **Split paired bed** in the pair's options;
 the side entries are restored and combined controls are removed. Update any

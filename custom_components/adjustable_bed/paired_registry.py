@@ -42,6 +42,29 @@ from .pairing import (
 _LOGGER = logging.getLogger(__name__)
 
 
+def async_has_side_controller_entities(
+    hass: HomeAssistant, entry: ConfigEntry, address: str,
+) -> bool:
+    """Find controls that require a capability controller before platform setup.
+
+    During conversion they still belong to the original entry; after conversion
+    they belong to the pair. Side unique IDs survive both ownership transfers.
+    """
+    owner_ids = {entry.entry_id}
+    owner_ids.update(
+        origin_id for child in iter_children(entry.data)
+        if (origin_id := child.get(KEY_ABSORBED_ENTRY_ID))
+    )
+    registry = er.async_get(hass)
+    return any(
+        row.platform == DOMAIN
+        and row.domain in {"climate", "light", "select"}
+        and row.unique_id.startswith(f"{address}_")
+        for owner_id in owner_ids
+        for row in er.async_entries_for_config_entry(registry, owner_id)
+    )
+
+
 def _device_for_entry_and_identifier(
     registry: dr.DeviceRegistry,
     config_entry_id: str,

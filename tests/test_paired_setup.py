@@ -44,6 +44,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
     BED_TYPE_SBI,
+    BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
@@ -59,6 +60,7 @@ from custom_components.adjustable_bed.const import (
     CONF_LP_LEGACY_WRITE_UUID,
     CONF_MOTOR_COUNT,
     CONF_PAIR_CHILDREN,
+    CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     CONF_PAIR_MEMBER_ADDRESSES,
     CONF_PAIR_MODE,
@@ -75,6 +77,7 @@ from custom_components.adjustable_bed.const import (
     LINAK_VARIANT_PERFORMANCE,
     OCTO_VARIANT_STAR2,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
+    PAIR_CONNECTION_MODE_SEQUENTIAL,
     PAIR_MODE_SEPARATE_ADDRESS,
     PAIR_MODE_SINGLE_ADDRESS,
     SBI_VARIANT_BOTH,
@@ -1190,19 +1193,23 @@ class TestPairBedsConversion:
             result["flow_id"], {CONF_ADDRESS: "pair_beds"}
         )
 
-    async def _setup_single(self, hass: HomeAssistant, address: str, name: str) -> MockConfigEntry:
-        """Set up a REAL single Linak bed so it owns real entity/device rows."""
+    async def _setup_single(
+        self, hass: HomeAssistant, address: str, name: str,
+        *, bed_type: str = BED_TYPE_LINAK, has_massage: bool = False,
+    ) -> MockConfigEntry:
+        """Set up a single bed so it owns real entity/device rows."""
         entry = MockConfigEntry(
             domain=DOMAIN,
             title=name,
             data={
                 CONF_ADDRESS: address,
                 CONF_NAME: name,
-                CONF_BED_TYPE: BED_TYPE_LINAK,
+                CONF_BED_TYPE: bed_type,
+                CONF_HAS_MASSAGE: has_massage,
                 CONF_MOTOR_COUNT: 2,
                 CONF_DISABLE_ANGLE_SENSING: True,
                 CONF_PREFERRED_ADAPTER: "auto",
-                "capabilities": _linak_capabilities(),
+                "capabilities": _linak_capabilities() if bed_type == BED_TYPE_LINAK else {},
             },
             unique_id=address,
             version=4,
@@ -1273,16 +1280,13 @@ class TestPairBedsConversion:
         with pytest.raises(vol.Invalid):
             schema({CONF_PAIR_SELECTION: encode_pair_selection(left.entry_id, left.entry_id)})
 
-    async def test_pairing_blocked_for_unsafe_offline_platform_entities(
+    async def test_pairing_requires_layout_for_undiscovered_controller(
         self,
         hass: HomeAssistant,
         mock_coordinator_connected,
         enable_custom_integrations,
     ):
-        """A NON-offline-capability-safe bed exposing climate/light/select stays
-        blocked: those platforms are forwarded per-side now (Phase 2.3), but such
-        a bed can't rebuild them when a side is offline, so a half-available pair
-        would lose them. (Richmat is not in OFFLINE_CAPABILITY_SAFE_BED_TYPES.)"""
+        """Allowing live-only controls must not bypass motor-layout validation."""
         from homeassistant.helpers import entity_registry as er
 
         left = self._single(hass, LEFT_ADDR, "Left", bed_type=BED_TYPE_RICHMAT)
@@ -1297,14 +1301,108 @@ class TestPairBedsConversion:
             {CONF_PAIR_SELECTION: encode_pair_selection(left.entry_id, right.entry_id)},
         )
         assert result["type"] == FlowResultType.FORM
-        assert result["errors"]["base"] == "pairing_unsupported_entities"
+        assert result["errors"]["base"] == "pairing_needs_capabilities"
+
+    @pytest.mark.parametrize("right_offline", [False, True])
+    @patch(
+        "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+        new=AsyncMock(return_value=("Star", None)),
+    )
+    async def test_box25_combine_preserves_controls_and_retries_offline_setup(
+        self, hass: HomeAssistant, mock_coordinator_connected,
+        enable_custom_integrations, right_offline: bool,
+    ):
+        """Ref #617: discovery happens before ownership transfer, also on reload."""
+        from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+        singles = [
+            await self._setup_single(
+                hass, address, name, bed_type=BED_TYPE_SLEEPYS_BOX25, has_massage=True,
+            )
+            for address, name in ((LEFT_ADDR, "Left"), (RIGHT_ADDR, "Right"))
+        ]
+        registry = er.async_get(hass)
+        rows = [
+            row for single in singles
+            for row in er.async_entries_for_config_entry(registry, single.entry_id)
+        ]
+        assert any(row.domain == "select" for row in rows)
+        # The ordinary idle-disconnect state must still provide the known layout.
+        for single in singles:
+            await hass.data[DOMAIN][single.entry_id].async_disconnect()
+
+        original_connect = AdjustableBedCoordinator.async_connect
+
+        async def connect(coordinator):
+            if right_offline and coordinator.address == RIGHT_ADDR:
+                return False
+            return await original_connect(coordinator)
+
+        result = await self._reach_pair_step(hass)
+        with patch.object(AdjustableBedCoordinator, "async_connect", connect):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {CONF_PAIR_SELECTION: encode_pair_selection(*(e.entry_id for e in singles))},
+            )
+            await hass.async_block_till_done()
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        paired = result["result"]
+        if right_offline:
+            assert paired.state == ConfigEntryState.SETUP_RETRY
+            assert paired.entry_id not in hass.data[DOMAIN]
+            for single in singles:
+                assert hass.config_entries.async_get_entry(single.entry_id) is single
+                assert single.state == ConfigEntryState.LOADED
+            for row in rows:
+                assert registry.async_get(row.entity_id).config_entry_id == row.config_entry_id
+            await hass.config_entries.async_reload(paired.entry_id)
+            await hass.async_block_till_done()
+
+        assert paired.state == ConfigEntryState.LOADED
+        for row in rows:
+            current = registry.async_get(row.entity_id)
+            assert current.config_entry_id == paired.entry_id
+            assert current.unique_id == row.unique_id
+            assert current.device_id == row.device_id
+            if row.domain in {"light", "select"} and row.disabled_by is None:
+                state = hass.states.get(row.entity_id)
+                assert state is not None and state.state != "unavailable"
+
+        # A fresh setup cannot reuse the previous runtime's capability cache.
+        right_offline = True
+        with patch.object(AdjustableBedCoordinator, "async_connect", connect):
+            await hass.config_entries.async_reload(paired.entry_id)
+            await hass.async_block_till_done()
+        assert paired.state == ConfigEntryState.SETUP_RETRY
+        for row in rows:
+            assert registry.async_get(row.entity_id).config_entry_id == paired.entry_id
+        await hass.config_entries.async_reload(paired.entry_id)
+        await hass.async_block_till_done()
+        assert paired.state == ConfigEntryState.LOADED
+        for row in rows:
+            if row.domain == "select" and row.disabled_by is None:
+                state = hass.states.get(row.entity_id)
+                assert state is not None and state.state != "unavailable"
+
+        # Sequential discovery releases each link before checking capabilities.
+        await hass.config_entries.async_unload(paired.entry_id)
+        hass.config_entries.async_update_entry(
+            paired,
+            data={**paired.data, CONF_PAIR_CONNECTION_MODE: PAIR_CONNECTION_MODE_SEQUENTIAL},
+        )
+        await hass.config_entries.async_setup(paired.entry_id)
+        await hass.async_block_till_done()
+        assert paired.state == ConfigEntryState.LOADED
+        coordinator = hass.data[DOMAIN][paired.entry_id]
+        assert all(child.capability_controller is not None for child in coordinator.children.values())
+        assert all(not child.is_connected for child in coordinator.children.values())
 
     @pytest.mark.parametrize("has_snapshot", [False, True])
-    def test_linak_light_pairing_requires_saved_capabilities(
+    async def test_linak_light_pairing_requires_saved_capabilities(
         self, hass: HomeAssistant, has_snapshot: bool,
     ):
         """A saved Linak snapshot lets an offline side keep its light entity."""
-        from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+        from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
         entry = MockConfigEntry(
             domain=DOMAIN,
@@ -1321,9 +1419,9 @@ class TestPairBedsConversion:
         er.async_get(hass).async_get_or_create(
             "light", DOMAIN, f"{LEFT_ADDR}_under_bed_lights", config_entry=entry,
         )
-        flow = AdjustableBedConfigFlow()
-        flow.hass = hass
-        assert flow._has_unsafe_offline_platforms(entry) is not has_snapshot
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_prime_offline_controller()
+        assert (coordinator.capability_controller is not None) is has_snapshot
 
     async def test_pairing_blocked_for_same_address(
         self,
@@ -1572,15 +1670,12 @@ class TestPairBedsConversion:
         # Gate: a live snapshot makes Octo offline-safe AND is cached on the flow,
         # so the side stays safe even after it disconnects (sequential capture).
         assert flow._octo_capability_snapshot(entry) == snap
-        assert flow._has_unsafe_offline_platforms(entry) is False
         hass.data[DOMAIN].pop(entry.entry_id)
         assert flow._octo_capability_snapshot(entry) == snap  # cached, survives drop
-        assert flow._has_unsafe_offline_platforms(entry) is False
         # A FRESH flow that never saw a live snapshot keeps Octo unsafe.
         fresh = AdjustableBedConfigFlow()
         fresh.hass = hass
         assert fresh._octo_capability_snapshot(entry) is None
-        assert fresh._has_unsafe_offline_platforms(entry) is True
         # Capture: the snapshot lands in the built descriptor's capabilities['octo'].
         pair = build_pair_entry_data(
             {CONF_ADDRESS: LEFT_ADDR, CONF_BED_TYPE: BED_TYPE_OCTO},
@@ -1691,22 +1786,6 @@ class TestPairBedsConversion:
         assert flow._offline_safe_bed_type(
             _entry(LEFT_ADDR, LEGGETT_VARIANT_GEN2)
         ) != flow._offline_safe_bed_type(_entry(RIGHT_ADDR, LEGGETT_VARIANT_MLRM))
-
-        ent_reg = er.async_get(hass)
-
-        # Gen2 entry with a light entity is STILL offline-safe — the resolved type
-        # short-circuits the registry scan that previously blocked it.
-        gen2 = _entry(LEFT_ADDR, LEGGETT_VARIANT_GEN2)
-        gen2.add_to_hass(hass)
-        ent_reg.async_get_or_create("light", DOMAIN, f"{LEFT_ADDR}_rgb_light", config_entry=gen2)
-        assert flow._has_unsafe_offline_platforms(gen2) is False
-
-        # okin resolves to a non-offline-safe type, so the same light entity keeps
-        # it blocked.
-        okin = _entry(RIGHT_ADDR, LEGGETT_VARIANT_OKIN)
-        okin.add_to_hass(hass)
-        ent_reg.async_get_or_create("light", DOMAIN, f"{RIGHT_ADDR}_rgb_light", config_entry=okin)
-        assert flow._has_unsafe_offline_platforms(okin) is True
 
         # The pair descriptor is built through the SAME resolver, so a stored
         # child carries the concrete (mintable) type — not the umbrella — and
@@ -3776,8 +3855,6 @@ class TestOctoOfflineSnapshot:
         flow.hass = hass
         assert flow._is_octo_star2(star2) is True
         assert flow._octo_capability_snapshot(star2) is None  # no dynamic snapshot
-        # ...yet still offline-safe (standard Octo without a snapshot would be unsafe).
-        assert flow._has_unsafe_offline_platforms(star2) is False
 
 
 class TestOctoSnapshotBackfill:
