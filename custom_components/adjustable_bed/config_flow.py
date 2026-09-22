@@ -4190,9 +4190,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             NotImplementedError: the Bluetooth backend does not support pairing.
             NotAdvertisingError: the bed is not currently advertising.
         """
-        from bleak import BleakClient
-        from bleak_retry_connector import establish_connection
-
         from .support_proxy_logs import capture_proxy_logs
 
         if not address:
@@ -4201,6 +4198,28 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         preferred_adapter = ADAPTER_AUTO
         if self._manual_data:
             preferred_adapter = self._manual_data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
+
+        async with capture_proxy_logs(self.hass, address, preferred_adapter, retain=True):
+            return await self._attempt_pairing_with_capture(
+                address,
+                request_bond=request_bond,
+                track_for_flow_cleanup=track_for_flow_cleanup,
+                device=device,
+                preferred_adapter=preferred_adapter,
+            )
+
+    async def _attempt_pairing_with_capture(
+        self,
+        address: str,
+        *,
+        request_bond: bool,
+        track_for_flow_cleanup: bool,
+        device: BLEDevice | None,
+        preferred_adapter: str,
+    ) -> BondEvidence:
+        """Run freshness, connection and Auth checks under one retained trace."""
+        from bleak import BleakClient
+        from bleak_retry_connector import establish_connection
 
         _LOGGER.info(
             "Attempting to pair with %s (preferred adapter: %s)...",
@@ -4256,10 +4275,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # caller's connect attempt, where bleak's cleanup can abort it. Keeping
         # it all in this one task is also required, because the lock is
         # reentrant per task rather than per caller.
-        async with (
-            async_get_connect_lock(self.hass, address),
-            capture_proxy_logs(self.hass, address, preferred_adapter, retain=True),
-        ):
+        async with async_get_connect_lock(self.hass, address):
             self.async_report_action(SetupAction.CONNECTING)
             connect_kwargs: dict[str, Any] = {
                 "use_services_cache": not pair_after_service_discovery,

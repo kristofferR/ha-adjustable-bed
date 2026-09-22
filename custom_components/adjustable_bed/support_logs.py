@@ -7,6 +7,7 @@ import re
 from collections import deque
 from collections.abc import Iterator
 from contextlib import contextmanager
+from contextvars import ContextVar
 from copy import copy
 from datetime import UTC, datetime
 
@@ -16,6 +17,7 @@ from homeassistant.util.hass_dict import HassKey
 
 MAX_LOG_ENTRIES = 500
 MAX_PAIRING_LOG_ENTRIES = 200
+MAX_PAIRING_AUTH_ENTRIES = 20
 MAX_PAIRING_LOG_ADDRESSES = 4
 MAX_LOG_MESSAGE_LENGTH = 4096
 _LOGGER_NAMES = (
@@ -26,6 +28,7 @@ _LOGGER_NAMES = (
     "bleak_esphome",
     "bleak_retry_connector",
 )
+_PAIRING_TARGET: ContextVar[str | None] = ContextVar("adjustable_bed_pairing_target", default=None)
 _SECRETS = re.compile(
     r"(?i)(\b(?:\w*_pin|pin|passkey|password|noise_psk|encryption_key|api_key|ltk|irk|csrk|"
     r"authorization|token|\w*_token|secret|\w*_secret)\b['\"]?\s*[:=]\s*)"
@@ -75,6 +78,7 @@ class SupportLogBuffer(logging.Handler):
         super().__init__(logging.DEBUG)
         self._entries: deque[dict[str, str]] = deque(maxlen=MAX_LOG_ENTRIES)
         self._active_pairings: dict[str, deque[dict[str, str]]] = {}
+        self._active_pairing_auth: dict[str, deque[dict[str, str]]] = {}
         self._pairing_counts: dict[str, int] = {}
         self._pairing_history: dict[str, tuple[list[dict[str, str]], bool]] = {}
         self._captures = 0
@@ -99,6 +103,9 @@ class SupportLogBuffer(logging.Handler):
         for address, pairing in self._active_pairings.items():
             pairing.append(entry)
             self._pairing_counts[address] += 1
+        target = _PAIRING_TARGET.get()
+        if target in self._active_pairing_auth and record.name == "custom_components.adjustable_bed.sleep_number_auth":
+            self._active_pairing_auth[target].append(entry)
 
     def snapshot(self) -> list[dict[str, str]]:
         """Copy records under the handler lock because workers can log too."""
@@ -122,25 +129,34 @@ class SupportLogBuffer(logging.Handler):
         """Keep a bounded, sanitized attempt trace for the next support bundle."""
         address = address.upper()
         entries: deque[dict[str, str]] = deque(maxlen=MAX_PAIRING_LOG_ENTRIES)
+        auth_entries: deque[dict[str, str]] = deque(maxlen=MAX_PAIRING_AUTH_ENTRIES)
         self.acquire()
         try:
             self._active_pairings[address] = entries
+            self._active_pairing_auth[address] = auth_entries
             self._pairing_counts[address] = 0
         finally:
             self.release()
+        token = _PAIRING_TARGET.set(address)
         try:
             with self.capture_debug():
                 yield
         finally:
+            _PAIRING_TARGET.reset(token)
             self.acquire()
             try:
                 if self._active_pairings.get(address) is entries:
                     self._active_pairings.pop(address, None)
+                    self._active_pairing_auth.pop(address, None)
                     # A full ring might have dropped earlier records. Preserve
                     # that limitation instead of presenting it as complete.
                     truncated = self._pairing_counts.pop(address, 0) > MAX_PAIRING_LOG_ENTRIES
+                    retained = list(entries)
+                    retained_ids = {id(entry) for entry in retained}
+                    retained.extend(entry for entry in auth_entries if id(entry) not in retained_ids)
+                    retained.sort(key=lambda entry: entry["timestamp"])
                     self._pairing_history.pop(address, None)
-                    self._pairing_history[address] = (list(entries), truncated)
+                    self._pairing_history[address] = (retained, truncated)
                     while len(self._pairing_history) > MAX_PAIRING_LOG_ADDRESSES:
                         self._pairing_history.pop(next(iter(self._pairing_history)))
             finally:

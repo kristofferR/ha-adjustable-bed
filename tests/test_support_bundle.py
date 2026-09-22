@@ -57,10 +57,12 @@ from custom_components.adjustable_bed.support_bundle import (
 )
 
 
-def test_sleep_number_bundle_redacts_session_bytes_but_keeps_failure_evidence():
+@pytest.mark.parametrize("detected_bed_type", [BED_TYPE_SLEEP_NUMBER, None])
+def test_sleep_number_bundle_redacts_session_bytes_but_keeps_failure_evidence(detected_bed_type):
     session = "112233445566778899aabbccddeeff00"
     report = {
-        "detection": {"bed_type": BED_TYPE_SLEEP_NUMBER},
+        "detection": {"bed_type": detected_bed_type},
+        "integration": {"bed_type": BED_TYPE_SLEEP_NUMBER},
         "gatt_services": [{"characteristics": [{
             "uuid": SLEEP_NUMBER_AUTH_CHAR_UUID,
             "read_result": {"hex": session, "length": 16, "ascii_preview": "secret"},

@@ -135,7 +135,10 @@ def redact_sleep_number_sessions(report: dict[str, Any]) -> None:
                 read_result["hex"] = "**REDACTED**"
                 read_result["ascii_preview"] = None
 
-    if report.get("detection", {}).get("bed_type") != BED_TYPE_SLEEP_NUMBER:
+    if (
+        report.get("detection", {}).get("bed_type") != BED_TYPE_SLEEP_NUMBER
+        and report.get("integration", {}).get("bed_type") != BED_TYPE_SLEEP_NUMBER
+    ):
         return
     # Fuzion notification hints can carry the same session UUID. Their timing,
     # characteristic and lengths remain useful without the reusable identifier.

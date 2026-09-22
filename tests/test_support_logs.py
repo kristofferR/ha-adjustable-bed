@@ -293,6 +293,22 @@ def test_pairing_log_limit_is_reported_and_new_attempt_replaces_old(hass):
     assert entries[0]["message"] == "Attempt two"
 
 
+def test_target_auth_survives_unrelated_bluetooth_log_churn(hass):
+    """A noisy overlapping bed cannot evict this attempt's Auth result."""
+    buffer = async_setup_support_logs(hass)
+    address = "AA:BB:CC:DD:EE:FF"
+    auth_logger = logging.getLogger("custom_components.adjustable_bed.sleep_number_auth")
+    bluetooth_logger = logging.getLogger("bleak")
+    with buffer.capture_pairing(address):
+        auth_logger.warning("Sleep Number Auth rejected: bytes=0")
+        for index in range(MAX_PAIRING_LOG_ENTRIES + 1):
+            bluetooth_logger.warning("Unrelated bed activity %d", index)
+
+    entries, truncated = buffer.pairing_snapshot(address)
+    assert truncated
+    assert any("Sleep Number Auth rejected: bytes=0" in entry["message"] for entry in entries)
+
+
 @pytest.mark.parametrize("include_logs", [True, False])
 async def test_bundle_captures_debug_without_file_and_honors_opt_out(
     hass, proxy, caplog, enable_custom_integrations, include_logs,
