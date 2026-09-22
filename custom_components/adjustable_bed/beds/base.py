@@ -1230,6 +1230,11 @@ class BedController(ABC):
         return False
 
     @property
+    def controller_entity_discovery_complete(self) -> bool:
+        """Whether setup has finished discovering controller-gated entities."""
+        return True
+
+    @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         """Return additional, product-gated actions for the button platform."""
         return ()

@@ -540,6 +540,11 @@ class LinakController(BedController):
         """Return a serializable snapshot for offline entity gating."""
         return self._capabilities.as_dict()
 
+    @property
+    def controller_entity_discovery_complete(self) -> bool:
+        """Return whether model-dependent entity capabilities are resolved."""
+        return self._capabilities.discovery_complete
+
     def _publish_capability_state(self) -> None:
         """Publish capability state used by diagnostics entities."""
         self.forward_controller_state_updates(

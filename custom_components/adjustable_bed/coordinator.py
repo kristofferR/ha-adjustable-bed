@@ -1097,10 +1097,16 @@ class AdjustableBedCoordinator:
         A sequential pair connects each side at setup then releases it; that
         disconnect drops the live controller, and a bed that can't be minted
         offline from config/snapshot would otherwise build no per-side entities.
-        Caching the just-discovered live controller keeps them. No-op if an
-        offline controller is already set or there is no live controller.
+        Caching the just-discovered live controller keeps them. A complete live
+        discovery replaces an older cache, while an incomplete discovery only
+        fills an empty cache. This preserves known capabilities across transient
+        probe failures while allowing a later successful fallback connection to
+        refresh them.
         """
-        if self._offline_controller is None and self._controller is not None:
+        if self._controller is not None and (
+            self._offline_controller is None
+            or self._controller.controller_entity_discovery_complete
+        ):
             self._offline_controller = self._controller
 
     @property
@@ -1251,12 +1257,10 @@ class AdjustableBedCoordinator:
             return  # unchanged — avoid a redundant persist
         capabilities["octo"] = snapshot
         self._async_persist_config({**self.entry.data, "capabilities": capabilities})
-        # The offline controller minted from the pairing-time snapshot is now stale
-        # (cache_capability_controller only fills an EMPTY slot, so it never refreshes
-        # it). Point it at the live controller — the same client-free capability
-        # source — so a later sequential release gates per-side entities off the
-        # freshly discovered capabilities, not the old snapshot, before the next
-        # reload.
+        # The offline controller minted from the pairing-time snapshot is now
+        # stale. Refresh it immediately so a later sequential release gates
+        # per-side entities off the freshly discovered capabilities before the
+        # next reload.
         self._offline_controller = self._controller
 
     def _backfill_linak_snapshot(self) -> None:

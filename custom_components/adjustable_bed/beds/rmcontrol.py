@@ -185,6 +185,14 @@ class RmcontrolController(RichmatController):
         return True
 
     @property
+    def controller_entity_discovery_complete(self) -> bool:
+        """Return whether probes that gate controller entities have answered."""
+        # Alarm and sleep-advertisement replies only gate services and telemetry.
+        # A missing light reply can still hide a light or timer select, so keep
+        # pairing/reload blocked only while that entity-bearing probe is pending.
+        return "light" not in self._pending_capabilities
+
+    @property
     def _side_value(self) -> int:
         return _SIDE_VALUES[self.command_side or self._rmcontrol_side]
 

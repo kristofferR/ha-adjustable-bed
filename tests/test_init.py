@@ -1208,6 +1208,7 @@ class TestServices:
         original_controller = coordinator.controller
         assert original_controller is not None
         coordinator._controller = None
+        coordinator._offline_controller = None
 
         async def _restore_controller(reset_timer: bool = True) -> bool:
             coordinator._controller = original_controller

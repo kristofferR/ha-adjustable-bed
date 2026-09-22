@@ -97,7 +97,6 @@ from .const import (
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
-    BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
@@ -195,7 +194,6 @@ from .const import (
     MALOUF_MEMORY_SLOT_OPTIONS,
     MALOUF_MEMORY_SLOTS_AUTO,
     OCTO_VARIANT_STAR2,
-    OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     OKIN_CST_THREE_MOTOR_VARIANTS,
     PAIR_MODE_SEPARATE_ADDRESS,
     PAIR_MODE_SINGLE_ADDRESS,
@@ -1441,15 +1439,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return dict(cached) if isinstance(cached, dict) else None
 
     def _offline_safe_bed_type(self, entry: ConfigEntry) -> str | None:
-        """Resolve ``entry``'s bed type for the offline-capability-safe check.
+        """Resolve a concrete bed type for pairing compatibility.
 
-        A legacy ``leggett_platt`` entry stores its real protocol under
-        ``protocol_variant``; an EXPLICIT variant resolves to a concrete type
-        that the offline-safe set already lists (``leggett_gen2`` /
-        ``leggett_wilinke``), even though the umbrella ``leggett_platt`` is not.
-        Funnel through the shared ``resolve_explicit_bed_type`` so the gate,
-        offline minting, and the pair descriptors all agree (``okin`` ->
-        leggett_okin, still unsafe; ``auto``/unset stays the umbrella type).
+        Legacy entries may store their concrete type under protocol_variant.
+        Use the same resolver as offline controller creation and pair descriptors.
         """
         return resolve_explicit_bed_type(
             entry.data.get(CONF_BED_TYPE), entry.data.get(CONF_PROTOCOL_VARIANT)
@@ -1460,12 +1453,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         variant resolved to its concrete bed type.
 
         Options (e.g. customized angle limits, which the coordinator reads before
-        data) are merged in so they survive the original being absorbed. The
-        bed_type is normalised through the SAME resolver the offline-safe gate
-        used, so the descriptor that gets stored is the one the gate approved —
-        otherwise the pair would carry the umbrella ``leggett_platt`` and
-        ``async_prime_offline_controller`` would refuse to mint the side the gate
-        just promised was offline-safe.
+        data) are merged in so they survive the original being absorbed. Resolve
+        bed_type consistently with the compatibility check and offline controller
+        creation, so an explicit legacy variant keeps its concrete type.
         """
         data = {**entry.data, **dict(entry.options)}
         data[CONF_BED_TYPE] = resolve_explicit_bed_type(
@@ -1524,41 +1514,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ),
             "supports_motor_control": bool(getattr(controller, "supports_motor_control", False)),
         }
-
-    def _has_unsafe_offline_platforms(self, entry: ConfigEntry) -> bool:
-        """Whether ``entry`` exposes climate/light/select a half-available pair
-        couldn't recreate.
-
-        These platforms are now forwarded per-side, but their per-side entities
-        are built from a side's ``capability_controller`` — which only an
-        offline-capability-safe bed type has when a side is offline at setup. For
-        any other type, a half-available pair (or a conversion where a side drops
-        before connecting) would lose those entities, so keep blocking those.
-
-        Octo is offline-capable ONLY via a captured snapshot, so it is unsafe iff
-        it has no snapshot (i.e. wasn't connected at pairing).
-        """
-        bed_type = self._offline_safe_bed_type(entry)
-        if bed_type in OFFLINE_CAPABILITY_SAFE_BED_TYPES:
-            return False
-        if bed_type == BED_TYPE_LINAK:
-            # Match the coordinator's saved-capability path: a modern Linak
-            # light can be recreated even if this side cannot connect at setup.
-            capabilities = entry.data.get("capabilities")
-            if isinstance(capabilities, dict) and isinstance(capabilities.get("linak"), dict):
-                return False
-        if bed_type == BED_TYPE_OCTO:
-            # Star2 has fixed caps -> statically offline-safe; standard Octo needs a
-            # live capability snapshot.
-            if self._is_octo_star2(entry):
-                return False
-            return self._octo_capability_snapshot(entry) is None
-        registry = er.async_get(self.hass)
-        platforms = {"climate", "light", "select"}
-        return any(
-            entity.domain in platforms
-            for entity in er.async_entries_for_config_entry(registry, entry.entry_id)
-        )
 
     def _is_absorbed_pair_member(self, address: str) -> bool:
         """Whether ``address`` is already a side of an existing paired bed."""
@@ -2501,13 +2456,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 # — so each STANDARD Octo bed must be connected at pairing for its
                 # snapshot to exist. Star2 has fixed caps and needs no snapshot.
                 errors["base"] = "octo_pairing_needs_connection"
-            elif self._has_unsafe_offline_platforms(left) or self._has_unsafe_offline_platforms(
-                right
-            ):
-                # climate/light/select are forwarded per-side now, but a
-                # non-offline-capability-safe bed can't rebuild them when a side
-                # is offline, so a half-available pair would lose them.
-                errors["base"] = "pairing_unsupported_entities"
             elif left_layout is None or right_layout is None:
                 errors["base"] = "pairing_needs_capabilities"
             elif left_layout != right_layout:

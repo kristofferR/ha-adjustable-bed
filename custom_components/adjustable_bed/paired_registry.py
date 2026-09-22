@@ -41,6 +41,37 @@ from .pairing import (
 
 _LOGGER = logging.getLogger(__name__)
 
+_CONTROLLER_GATED_CONTROL_DOMAINS = frozenset(
+    {"button", "climate", "cover", "light", "number", "select", "switch"}
+)
+
+
+def async_has_side_controller_entities(
+    hass: HomeAssistant, entry: ConfigEntry, address: str,
+) -> bool:
+    """Find controls that require a capability controller before platform setup.
+
+    During conversion they still belong to the original entry; after conversion
+    they belong to the pair. Side unique IDs survive both ownership transfers.
+    """
+    children = iter_children(entry.data)
+    origin_ids = {
+        origin_id
+        for child in children
+        if (origin_id := child.get(KEY_ABSORBED_ENTRY_ID))
+    }
+    # A surviving original is retried by _async_rehome_absorbed_singles below, so
+    # validate its rows before that retry can transfer them to the pair.
+    owner_ids = {entry.entry_id, *origin_ids}
+    registry = er.async_get(hass)
+    return any(
+        row.platform == DOMAIN
+        and row.domain in _CONTROLLER_GATED_CONTROL_DOMAINS
+        and row.unique_id.startswith(f"{address}_")
+        for owner_id in owner_ids
+        for row in er.async_entries_for_config_entry(registry, owner_id)
+    )
+
 
 def _device_for_entry_and_identifier(
     registry: dr.DeviceRegistry,

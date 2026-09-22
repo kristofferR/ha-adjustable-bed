@@ -546,9 +546,22 @@ async def test_missing_capability_reply_times_out_and_late_reply_still_enables()
     with patch("custom_components.adjustable_bed.beds.rmcontrol._CAPABILITY_TIMEOUT", 0):
         await ctrl.start_notify()
     assert not ctrl.supports_light_color_control
+    assert not ctrl.controller_entity_discovery_complete
     assert ctrl._notify_uuid is not None
     ctrl._accept_notification(Notification("capability", {"light": True}))
     assert ctrl.supports_light_color_control
+    assert ctrl.controller_entity_discovery_complete
+
+
+def test_non_entity_probe_timeout_does_not_block_entity_discovery() -> None:
+    ctrl = controller("HNRN", nordic=True)
+    ctrl._pending_capabilities = {"light", "alarm", "sleep_advertisement"}
+
+    assert not ctrl.controller_entity_discovery_complete
+    ctrl._accept_notification(Notification("capability", {"light": True}))
+
+    assert not ctrl._capabilities_ready.is_set()
+    assert ctrl.controller_entity_discovery_complete
 
 
 def test_strip_acknowledgement_requires_a_power_off_route() -> None:

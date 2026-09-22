@@ -69,6 +69,7 @@ from .paired_coordinator import PairedBedCoordinator, SingleAddressPairedCoordin
 from .paired_devices import async_register_children
 from .paired_registry import (
     _async_rehome_absorbed_singles,
+    async_has_side_controller_entities,
 )
 from .paired_registry import (
     async_unpair_entry as async_unpair_entry,
@@ -570,6 +571,12 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     if not children:
         raise ConfigEntryNotReady("Paired bed has no child sides configured")
 
+    # Seed persisted capability snapshots before a live connection can cache an
+    # incomplete discovery over them. Complete live discovery still refreshes
+    # this fallback through cache_capability_controller().
+    for child in children.values():
+        await child.async_prime_offline_controller()
+
     coordinator = PairedBedCoordinator(hass, entry, children)
     _async_ensure_paired_device_registry(hass, entry, coordinator)
 
@@ -615,6 +622,49 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
             raise ConfigEntryNotReady(
                 f"No side of paired bed {entry.title} could be connected"
             )
+
+        # Some sides cannot recreate their extra controls without discovery. A
+        # concurrent side can lose its first race with the standalone receiver's
+        # just-released link, so retry it while the original entry and registry
+        # ownership are still intact. This keeps capability validation before the
+        # irreversible absorption step without making the later reconnect path
+        # unreachable for controller-gated sides.
+        try:
+            for child in children.values():
+                if not async_has_side_controller_entities(hass, entry, child.address):
+                    continue
+                await child.async_prime_offline_controller()
+                capability_controller = child.capability_controller
+                if (
+                    coordinator.connection_mode != PAIR_CONNECTION_MODE_SEQUENTIAL
+                    and not child.is_connected
+                    and (
+                        capability_controller is None
+                        or not capability_controller.controller_entity_discovery_complete
+                    )
+                ):
+                    try:
+                        async with asyncio.timeout(SETUP_TIMEOUT):
+                            if await child.async_connect():
+                                child.cache_capability_controller()
+                    except Exception:  # noqa: BLE001 - validation below reports the retry
+                        _LOGGER.debug(
+                            "Pre-absorb capability reconnect of %s failed",
+                            child.address,
+                            exc_info=True,
+                        )
+                    capability_controller = child.capability_controller
+                if (
+                    capability_controller is None
+                    or not capability_controller.controller_entity_discovery_complete
+                ):
+                    raise ConfigEntryNotReady(
+                        f"Paired bed {entry.title} needs {child.name} to connect "
+                        "and finish discovering its controls before they can be restored"
+                    )
+        except (Exception, asyncio.CancelledError):
+            await coordinator.async_shutdown()
+            raise
 
         hass.data[DOMAIN][entry.entry_id] = coordinator
         # At least one child connected, so the pair can provide controls. ONLY NOW
@@ -914,6 +964,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # and we do not want that one-time migration to trigger an immediate reload.
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     _LOGGER.info("Successfully connected to bed at %s", entry.data.get(CONF_ADDRESS))
+    # Keep the proven layout available to the combine wizard after idle disconnect.
+    coordinator.cache_capability_controller()
     return await _async_finish_entry_setup(
         hass,
         entry,

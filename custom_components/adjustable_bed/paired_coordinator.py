@@ -1095,8 +1095,16 @@ class PairedBedCoordinator:
         attempt_cursors = {
             side: self._connection_attempt_cursor(child) for side, child in items
         }
+        async def connect_and_cache(child: BedChild) -> bool:
+            connected = await child.async_connect()
+            if connected:
+                # Cache as soon as this side completes. The other side may take
+                # longer than this receiver's idle disconnect grace period.
+                child.cache_capability_controller()
+            return connected
+
         results = await asyncio.gather(
-            *(child.async_connect() for _, child in items), return_exceptions=True
+            *(connect_and_cache(child) for _, child in items), return_exceptions=True
         )
         results_by_side = {
             side: result

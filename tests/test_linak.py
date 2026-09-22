@@ -965,6 +965,7 @@ class TestLinakCorpusProfiles:
         await coordinator.async_connect()
 
         assert coordinator.controller.protocol_diagnostics["model_variant"] == "standard"
+        assert coordinator.controller.controller_entity_discovery_complete
         assert coordinator.controller.memory_slot_count == 0
         assert coordinator.controller.supports_position_feedback is False
         assert coordinator.controller.passive_position_reconciliation_interval is None
@@ -1000,6 +1001,7 @@ class TestLinakCorpusProfiles:
         await coordinator.async_connect()
         assert mask_attempts == 1
         assert coordinator.controller._capability_discovery_deferred is True
+        assert not coordinator.controller.controller_entity_discovery_complete
         assert _written_commands(mock_bleak_client) == []
 
         await coordinator.async_execute_controller_command(
@@ -1007,6 +1009,7 @@ class TestLinakCorpusProfiles:
         )
 
         assert mask_attempts == 2
+        assert coordinator.controller.controller_entity_discovery_complete
         assert coordinator.controller.protocol_diagnostics["model_variant"] == "advanced"
         assert coordinator.controller.supports_position_feedback is True
         assert coordinator.controller.passive_position_reconciliation_interval == pytest.approx(

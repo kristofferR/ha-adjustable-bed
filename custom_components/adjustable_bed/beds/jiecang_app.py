@@ -162,6 +162,11 @@ class JiecangAppController(BedController):
         return True
 
     @property
+    def controller_entity_discovery_complete(self) -> bool:
+        """Return whether any expected capability response was received."""
+        return not self._bootstrap_ready or self._capabilities_received.is_set()
+
+    @property
     def protocol_diagnostics(self) -> dict[str, object]:
         return {
             "app_profile": self.profile,

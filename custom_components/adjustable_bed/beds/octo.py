@@ -439,6 +439,11 @@ class OctoController(BedController, OctoPacketCodec):
             return None
         return snap
 
+    @property
+    def controller_entity_discovery_complete(self) -> bool:
+        """Return whether the complete feature list has been received."""
+        return self._features_complete.is_set()
+
     def _apply_capability_snapshot(self, snap: Mapping[str, Any]) -> None:
         """Restore capability fields from a persisted snapshot (offline mint)."""
         for key in _CAPABILITY_SNAPSHOT_KEYS:

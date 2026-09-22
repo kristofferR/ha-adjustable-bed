@@ -237,6 +237,23 @@ async def test_g2_copresent_still_bootstraps(make_controller):
     assert packets(client) == [command for _, command in protocol.BOOTSTRAP_SCHEDULE]
 
 
+async def test_capability_timeout_does_not_mark_entity_discovery_complete(
+    make_controller,
+):
+    controller, _, _ = make_controller()
+    await controller.start_notify()
+    assert not controller.controller_entity_discovery_complete
+
+    controller._capabilities_received.set()
+    assert controller.controller_entity_discovery_complete
+
+
+async def test_transport_without_capability_bootstrap_is_complete(make_controller):
+    controller, _, _ = make_controller(profile="dreamotion", transports=("g2",))
+    await controller.start_notify()
+    assert controller.controller_entity_discovery_complete
+
+
 @pytest.mark.parametrize("transport", ["g1", "g2"])
 async def test_missing_g1_name_role_does_not_bootstrap(make_controller, transport):
     controller, _, client = make_controller(transports=("g1", "g2"), transport=transport)
