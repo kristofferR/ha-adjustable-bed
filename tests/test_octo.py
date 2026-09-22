@@ -1277,7 +1277,9 @@ class TestCapabilitySnapshot:
     def test_no_snapshot_when_nothing_discovered(self):
         # An all-unknown controller yields no snapshot (don't persist over a real
         # one with all-None).
-        assert OctoController(self._coord()).capability_snapshot() is None
+        controller = OctoController(self._coord())
+        assert controller.capability_snapshot() is None
+        assert not controller.controller_entity_discovery_complete
 
     def test_no_snapshot_from_timeout_fallback(self):
         # When discover_features() times out it fills compatibility DEFAULTS
@@ -1297,6 +1299,7 @@ class TestCapabilitySnapshot:
         # Once discovery actually completes (sentinel → _features_complete), the
         # very same fields DO produce a snapshot.
         controller._features_complete.set()
+        assert controller.controller_entity_discovery_complete
         assert controller.capability_snapshot() == {
             "has_pin": True,
             "pin_locked": True,
