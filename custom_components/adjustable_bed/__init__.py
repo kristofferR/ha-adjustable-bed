@@ -623,15 +623,37 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                 f"No side of paired bed {entry.title} could be connected"
             )
 
-        # Some sides cannot recreate their extra controls without discovery.
-        # Validate before absorbing originals, and again on every pair reload.
-        # Sequential setup caches discovered controllers after releasing links.
+        # Some sides cannot recreate their extra controls without discovery. A
+        # concurrent side can lose its first race with the standalone receiver's
+        # just-released link, so retry it while the original entry and registry
+        # ownership are still intact. This keeps capability validation before the
+        # irreversible absorption step without making the later reconnect path
+        # unreachable for controller-gated sides.
         try:
             for child in children.values():
                 if not async_has_side_controller_entities(hass, entry, child.address):
                     continue
                 await child.async_prime_offline_controller()
                 capability_controller = child.capability_controller
+                if (
+                    coordinator.connection_mode != PAIR_CONNECTION_MODE_SEQUENTIAL
+                    and not child.is_connected
+                    and (
+                        capability_controller is None
+                        or not capability_controller.controller_entity_discovery_complete
+                    )
+                ):
+                    try:
+                        async with asyncio.timeout(SETUP_TIMEOUT):
+                            if await child.async_connect():
+                                child.cache_capability_controller()
+                    except Exception:  # noqa: BLE001 - validation below reports the retry
+                        _LOGGER.debug(
+                            "Pre-absorb capability reconnect of %s failed",
+                            child.address,
+                            exc_info=True,
+                        )
+                    capability_controller = child.capability_controller
                 if (
                     capability_controller is None
                     or not capability_controller.controller_entity_discovery_complete

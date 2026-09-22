@@ -200,6 +200,55 @@ class TestPairedSetup:
         ):
             await _async_setup_paired_entry(hass, entry)
 
+    async def test_capability_side_retries_before_registry_ownership_moves(
+        self, hass: HomeAssistant
+    ) -> None:
+        """A failed first connect can recover before capability validation."""
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
+
+        data = _paired_entry_data()
+        data[CONF_BED_TYPE] = BED_TYPE_SLEEPYS_BOX25
+        for descriptor in data[CONF_PAIR_CHILDREN]:
+            descriptor[CONF_BED_TYPE] = BED_TYPE_SLEEPYS_BOX25
+            descriptor.pop("capabilities", None)
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=data,
+            unique_id=PAIR_ID,
+            entry_id="capability_retry_pair",
+            version=4,
+        )
+        entry.add_to_hass(hass)
+        hass.data.setdefault(DOMAIN, {})
+        er.async_get(hass).async_get_or_create(
+            "select",
+            DOMAIN,
+            f"{LEFT_ADDR}_massage_timer",
+            config_entry=entry,
+        )
+        attempts: dict[str, int] = {LEFT_ADDR: 0, RIGHT_ADDR: 0}
+
+        async def connect(child: AdjustableBedCoordinator) -> bool:
+            attempts[child.address] += 1
+            if child.address == LEFT_ADDR and attempts[child.address] == 1:
+                return False
+            child._client = MagicMock(is_connected=True)
+            child._controller = SimpleNamespace(
+                controller_entity_discovery_complete=True
+            )
+            return True
+
+        with (
+            patch.object(AdjustableBedCoordinator, "async_connect", connect),
+            patch.object(AdjustableBedCoordinator, "_schedule_position_hydration"),
+            patch.object(hass.config_entries, "async_forward_entry_setups", new_callable=AsyncMock),
+        ):
+            assert await _async_setup_paired_entry(hass, entry)
+
+        assert attempts == {LEFT_ADDR: 2, RIGHT_ADDR: 1}
+        hass.data[DOMAIN].pop(entry.entry_id, None)
+
     async def test_retained_original_controls_require_capabilities_before_retry(
         self, hass: HomeAssistant
     ) -> None:
