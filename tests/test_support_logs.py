@@ -112,10 +112,27 @@ async def test_memory_buffer_is_bounded(hass: HomeAssistant, caplog):
             "to characteristic 0012",
             "Could not write value **REDACTED** to characteristic 0012",
         ),
+        (
+            "Read Characteristic 8d4675a5 | /org/bluez/char0012: "
+            "bytearray(b'\\x11\\x22\\x33\\x44')",
+            "Read Characteristic 8d4675a5 | /org/bluez/char0012: **REDACTED**",
+        ),
+        (
+            "Read Descriptor 0012 | /org/bluez/desc0001: bytearray(b'\\x11\\x22')",
+            "Read Descriptor 0012 | /org/bluez/desc0001: **REDACTED**",
+        ),
+        (
+            "Notification from characteristic 8d4675a5: bytearray(b'\\x11\\x22')",
+            "Notification from characteristic 8d4675a5: **REDACTED**",
+        ),
+        (
+            "Notification 8d4675a5: b'\\x11\\x22'",
+            "Notification 8d4675a5: **REDACTED**",
+        ),
     ],
 )
-def test_raw_ble_write_payloads_are_redacted(message: str, expected: str):
-    """Transport debug logs must not reintroduce authentication packets."""
+def test_raw_ble_payloads_are_redacted(message: str, expected: str):
+    """Transport debug logs must not reintroduce sessions or auth packets."""
     assert sanitize_log_message(message) == expected
 
 
@@ -151,9 +168,14 @@ async def test_debug_capture_only_forwards_sanitized_records(hass, caplog):
         logger.debug(
             "Write Characteristic 1234: bytearray(b'\\x20\\x43\\x01\\x02')"
         )
+        logger.debug(
+            "Read Characteristic 8d4675a5: bytearray(b'\\x11\\x22\\x33\\x44')"
+        )
 
     assert "bytearray" not in caplog.text
     assert "Write Characteristic 1234: **REDACTED**" in caplog.text
+    assert "Read Characteristic 8d4675a5: **REDACTED**" in caplog.text
+    assert all("bytearray" not in entry["message"] for entry in buffer.snapshot())
     assert logger.propagate is True
 
 

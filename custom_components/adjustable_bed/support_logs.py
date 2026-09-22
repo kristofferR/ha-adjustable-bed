@@ -31,9 +31,13 @@ _SECRETS = re.compile(
     r"authorization|token|\w*_token|secret|\w*_secret)\b['\"]?\s*[:=]\s*)"
     r"(?:'[^']*'|\"[^\"]*\"|(?:Bearer\s+)?[^\s,;}]+)"
 )
-_BLE_WRITE_PAYLOAD = re.compile(
-    r"(?im)(\b(?:write|writing)\s+(?:gatt\s+)?(?:characteristic|descriptor)\b"
+_BLE_GATT_PAYLOAD = re.compile(
+    r"(?im)(\b(?:read|reading|write|writing|notification(?:\s+from)?|notify(?:\s+from)?)"
+    r"\s+(?:gatt\s+)?(?:characteristic|descriptor)\b"
     r"[^\r\n]*?:\s*)[^\r\n]*"
+)
+_BLE_NOTIFICATION_PAYLOAD = re.compile(
+    r"(?im)(\bnotification\b[^\r\n]*?:\s*)(?:bytearray\(|b['\"]|[0-9a-f]{16,})[^\r\n]*"
 )
 _FAILED_BLE_WRITE_PAYLOAD = re.compile(
     r"(?i)(\b(?:could not|failed to)\s+write\s+value\s+).+?"
@@ -43,9 +47,10 @@ DATA_SUPPORT_LOGS: HassKey[SupportLogBuffer] = HassKey("adjustable_bed_support_l
 
 
 def sanitize_log_message(message: str) -> str:
-    """Keep useful connection details while removing credentials and BLE writes."""
+    """Keep connection details while removing credentials and BLE payloads."""
     message = _SECRETS.sub(r"\1**REDACTED**", message)
-    message = _BLE_WRITE_PAYLOAD.sub(r"\1**REDACTED**", message)
+    message = _BLE_GATT_PAYLOAD.sub(r"\1**REDACTED**", message)
+    message = _BLE_NOTIFICATION_PAYLOAD.sub(r"\1**REDACTED**", message)
     message = _FAILED_BLE_WRITE_PAYLOAD.sub(r"\1**REDACTED**\2", message)
     return message[:MAX_LOG_MESSAGE_LENGTH]
 
