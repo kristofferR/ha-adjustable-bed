@@ -7,6 +7,7 @@ import re
 from collections import deque
 from collections.abc import Iterator
 from contextlib import contextmanager
+from copy import copy
 from datetime import UTC, datetime
 
 from homeassistant.const import EVENT_HOMEASSISTANT_CLOSE
@@ -47,6 +48,19 @@ def sanitize_log_message(message: str) -> str:
     return message[:MAX_LOG_MESSAGE_LENGTH]
 
 
+class _SanitizedRecordForwarder(logging.Handler):
+    """Forward a sanitized copy to root handlers during debug capture."""
+
+    def emit(self, record: logging.LogRecord) -> None:
+        sanitized_record = copy(record)
+        sanitized_record.msg = sanitize_log_message(self.format(sanitized_record))
+        sanitized_record.args = ()
+        sanitized_record.exc_info = None
+        sanitized_record.exc_text = None
+        sanitized_record.stack_info = None
+        logging.getLogger().handle(sanitized_record)
+
+
 class SupportLogBuffer(logging.Handler):
     """Retain recent records without keeping LogRecords or exception objects alive."""
 
@@ -55,6 +69,8 @@ class SupportLogBuffer(logging.Handler):
         self._entries: deque[dict[str, str]] = deque(maxlen=MAX_LOG_ENTRIES)
         self._captures = 0
         self._levels: dict[logging.Logger, int] = {}
+        self._propagates: dict[logging.Logger, bool] = {}
+        self._forwarder = _SanitizedRecordForwarder(logging.DEBUG)
 
     def emit(self, record: logging.LogRecord) -> None:
         """Copy relevant records; logging's handler lock serializes writers."""
@@ -87,6 +103,9 @@ class SupportLogBuffer(logging.Handler):
                 if logger.getEffectiveLevel() > logging.DEBUG:
                     self._levels[logger] = logger.level
                     logger.setLevel(logging.DEBUG)
+                self._propagates[logger] = logger.propagate
+                logger.addHandler(self._forwarder)
+                logger.propagate = False
         self._captures += 1
         try:
             yield
@@ -97,6 +116,11 @@ class SupportLogBuffer(logging.Handler):
                     if logger.level == logging.DEBUG:
                         logger.setLevel(level)
                 self._levels.clear()
+                for logger, propagate in self._propagates.items():
+                    logger.removeHandler(self._forwarder)
+                    if logger.propagate is False:
+                        logger.propagate = propagate
+                self._propagates.clear()
 
 
 @callback

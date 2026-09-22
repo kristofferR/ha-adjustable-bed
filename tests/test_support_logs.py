@@ -137,6 +137,22 @@ async def test_debug_capture_restores_levels_after_overlap_and_cancellation(hass
     assert logger.level == logging.ERROR
 
 
+async def test_debug_capture_only_forwards_sanitized_records(hass, caplog):
+    """Capture-only debug logging must not expose payloads to root handlers."""
+    buffer = async_setup_support_logs(hass)
+    logger = logging.getLogger("bleak")
+    caplog.set_level(logging.DEBUG)
+
+    with buffer.capture_debug():
+        logger.debug(
+            "Write Characteristic 1234: bytearray(b'\\x20\\x43\\x01\\x02')"
+        )
+
+    assert "bytearray" not in caplog.text
+    assert "Write Characteristic 1234: **REDACTED**" in caplog.text
+    assert logger.propagate is True
+
+
 @pytest.fixture
 def proxy(hass):
     """A registered proxy with a separate, existing HA control connection."""
