@@ -24,8 +24,9 @@ _LOGGER_NAMES = (
     "bleak_retry_connector",
 )
 _SECRETS = re.compile(
-    r"(?i)(\b(?:\w*_pin|pin|passkey|password|noise_psk|encryption_key|api_key|ltk|irk|csrk)\b['\"]?\s*[:=]\s*)"
-    r"(?:'[^']*'|\"[^\"]*\"|[^\s,;}]+)"
+    r"(?i)(\b(?:\w*_pin|pin|passkey|password|noise_psk|encryption_key|api_key|ltk|irk|csrk|"
+    r"authorization|token|\w*_token|secret|\w*_secret)\b['\"]?\s*[:=]\s*)"
+    r"(?:'[^']*'|\"[^\"]*\"|(?:Bearer\s+)?[^\s,;}]+)"
 )
 DATA_SUPPORT_LOGS: HassKey[SupportLogBuffer] = HassKey("adjustable_bed_support_logs")
 

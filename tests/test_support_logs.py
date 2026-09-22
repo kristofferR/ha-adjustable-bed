@@ -1,6 +1,7 @@
 """Support evidence works without a disk log and releases temporary resources."""
 
 import asyncio
+import json
 import logging
 from pathlib import Path
 from types import SimpleNamespace
@@ -11,7 +12,10 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.ble_diagnostics import BLEDiagnosticRunner, DiagnosticReport
-from custom_components.adjustable_bed.support_bundle import generate_support_bundle
+from custom_components.adjustable_bed.support_bundle import (
+    generate_support_bundle,
+    save_support_bundle,
+)
 from custom_components.adjustable_bed.support_logs import (
     MAX_LOG_ENTRIES,
     MAX_LOG_MESSAGE_LENGTH,
@@ -32,14 +36,48 @@ async def test_memory_logs_include_failure_before_capture_without_file(hass: Hom
     try:
         raise ValueError("Authentication failed")
     except ValueError:
-        logger.exception("Pairing failed, octo_pin='123456', noise_psk=secret")
+        logger.exception("Pairing failed, octo_pin='123456', noise_psk=noise-psk-value")
+    logger.error(
+        "Credentials: token=plain-token, access_token='access token', "
+        "refresh_token=refresh-token, secret=plain-secret, "
+        'client_secret="client secret", authorization=Bearer bearer-token'
+    )
     logging.getLogger("other.integration").error("Unrelated secret")
 
     logs = await _get_recent_logs(hass)
-    assert len(logs) == 1
+    assert len(logs) == 2
     assert "ValueError: Authentication failed" in logs[0]["message"]
-    assert "123456" not in logs[0]["message"]
-    assert "secret" not in logs[0]["message"]
+    serialized_logs = json.dumps(logs)
+    for credential in (
+        "123456",
+        "noise-psk-value",
+        "plain-token",
+        "access token",
+        "refresh-token",
+        "plain-secret",
+        "client secret",
+        "bearer-token",
+    ):
+        assert credential not in serialized_logs
+
+    bundle_path = save_support_bundle(
+        hass,
+        {"recent_logs": logs},
+        "AA:BB:CC:DD:EE:FF",
+    )
+    saved_bundle = bundle_path.read_text(encoding="utf-8")
+    assert "**REDACTED**" in saved_bundle
+    for credential in (
+        "123456",
+        "noise-psk-value",
+        "plain-token",
+        "access token",
+        "refresh-token",
+        "plain-secret",
+        "client secret",
+        "bearer-token",
+    ):
+        assert credential not in saved_bundle
     assert (await async_check_log_file(hass))["available"] is True
 
 
