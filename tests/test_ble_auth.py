@@ -9,6 +9,20 @@ from custom_components.adjustable_bed.ble_auth import (
     is_ble_authentication_error,
     is_ble_pairing_auth_failure,
 )
+from custom_components.adjustable_bed.sleep_number_auth import validate_sleep_number_session
+
+
+@pytest.mark.parametrize(
+    "value,authentication_failure",
+    [(b"", True), (b"\x00\x00", True), ((1).to_bytes(16, "big"), True), (bytes(16), False)],
+)
+def test_sleep_number_session_failure_classification(
+    value: bytes, authentication_failure: bool,
+) -> None:
+    """Missing/rejected Auth needs recovery; a full connection table does not."""
+    with pytest.raises(BleakError) as exc:
+        validate_sleep_number_session(value)
+    assert is_ble_authentication_error(exc.value) is authentication_failure
 
 
 @pytest.mark.parametrize(

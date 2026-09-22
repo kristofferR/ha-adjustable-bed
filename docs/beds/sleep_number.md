@@ -25,17 +25,31 @@ Auth, and only then subscribes to notifications. The integration follows that
 order. It does not request pairing during the initial connection or repeatedly
 pair a connection whose bond is still usable.
 
-Auth must return a 16-byte session UUID. A short value such as `0000` is invalid;
-the all-zero and UUID-one values are explicit failure responses. A failed or
-malformed Auth value keeps pairing verification incomplete and prevents
-notification startup and commands. Successful
-notification subscription alone does not prove authentication.
+Auth must return a 16-byte session UUID. An empty or short value such as `0000`
+is an authentication failure, as is UUID one. These failures invalidate the
+cached bond marker, allow the next connection attempt to request pairing, and
+raise the pairing repair if recovery fails. The all-zero UUID means the
+connection limit was reached; it blocks startup without invalidating the bond
+or requesting re-pairing. None of these responses permit notification startup
+or commands. Successful notification subscription alone does not prove
+authentication.
 
 An ATT error 15 (`Insufficient encryption`) is an authentication failure, just
 like ATT error 5. Recovery tracks the adapter or Bluetooth proxy that actually
 carried the connection. Pairing on the Home Assistant host does not establish a
 bond on a separate ESPHome proxy. Use the integration's pairing repair for the
 active transport and close the phone app before connecting.
+
+The September 22 bundles in #574 show two failed sessions: an empty Auth read,
+then ATT error 15 on Auth and notification subscriptions through the same
+proxy. Both captures used a standalone diagnostic connection, contained no
+pairing-attempt history, and reported that the Home Assistant log file was
+missing. They establish failed authentication but do not identify why the
+proxy/bed bond failed. To capture that step, enable integration debug logging,
+reproduce **Pair Now** or setup, then disable debug logging and attach the
+downloaded log separately. Include the proxy's ESPHome version and its logs
+covering the same pairing attempt. The runtime recovery correction does not
+establish successful Climate 360 hardware operation.
 
 Earlier documentation incorrectly stated that Fuzion never bonds. The 5.4.11
 application explicitly bonds after service discovery. This ordering matters for

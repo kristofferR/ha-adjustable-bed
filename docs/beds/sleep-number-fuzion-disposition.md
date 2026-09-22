@@ -47,7 +47,7 @@ fragmentation, cancellation, parsers, schedules and feature gates) and
 
 | Discovery | Disposition | Implementation/evidence |
 |---|---|---|
-| Bond before Auth, Auth before CCCD; reject malformed UUID and zero/one sentinels | IMPLEMENTED | `async_read_sleep_number_session`, `start_notify`; C2592h.h/k and n, G.c; auth tests |
+| Bond before Auth, Auth before CCCD; reject malformed UUID and zero/one sentinels | IMPLEMENTED | `async_read_sleep_number_session`, `start_notify`; C2592h.h/k and n, G.c; auth tests. Ref #574: shared authentication classification now routes malformed/UUID-one failures into coordinator recovery; zero remains a connection-limit failure. `TestSleepNumberAuthentication` covers re-pairing, successful recovery and exhausted retries; `test_sleep_number_connection_limit_does_not_invalidate_bond` preserves the distinct zero outcome. |
 | Session UUID notification ownership and non-bulk broadcast acceptance | IMPLEMENTED | `_handle_bamkey_notification`; C2592h.p/u and blob/d; session hint test |
 | UTF-8 command plus mandatory space, fUzIoN/LE length/CRC32 | IMPLEMENTED | `_format_bamkey_command`, `_build_bamkey_blob`; A2/b, blob/a; exact frozen catalog vectors |
 | Consecutive no-response slices respecting transport capacity, no blind chunk retransmit | IMPLEMENTED | `_send_bamkey_raw_response`; blob/e and C2592h.t; ATT slice test. Bleak backend capacity replaces Android-version-specific MTU bookkeeping |

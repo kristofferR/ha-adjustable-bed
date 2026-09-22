@@ -3335,6 +3335,91 @@ class TestDisconnectCommandSerialization:
 class TestSleepNumberAuthentication:
     """Only valid Auth reads prove the session, never a successful pair call."""
 
+    @pytest.mark.parametrize("auth", [b"", bytes(15) + b"\x01"])
+    @pytest.mark.parametrize("recovers", [False, True])
+    async def test_invalid_auth_retries_with_pairing_and_reports_final_outcome(
+        self, hass: HomeAssistant, mock_config_entry, mock_coordinator_connected,
+        mock_bleak_client, auth: bytes, recovers: bool,
+    ):
+        """An unusable session must release a cached marker before retrying (#574)."""
+        del mock_coordinator_connected
+        hass.config_entries.async_update_entry(
+            mock_config_entry,
+            data={
+                **mock_config_entry.data,
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER,
+                CONF_BLE_BOND_ESTABLISHED: True,
+            },
+        )
+        original_read = mock_bleak_client.read_gatt_char.side_effect
+        auth_reads = 0
+
+        async def read(uuid, *args, **kwargs):
+            nonlocal auth_reads
+            if uuid == SLEEP_NUMBER_AUTH_CHAR_UUID:
+                auth_reads += 1
+                if auth_reads == 1 or not recovers:
+                    return auth
+            return await original_read(uuid, *args, **kwargs)
+
+        mock_bleak_client.read_gatt_char.side_effect = read
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._max_retries = 2
+        with (
+            patch("custom_components.adjustable_bed.coordinator.asyncio.sleep", new=AsyncMock()),
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ) as repair,
+        ):
+            assert await coordinator.async_connect() is recovers
+
+        mock_bleak_client.pair.assert_awaited_once()
+        assert auth_reads == 2
+        # The old marker remains distrusted until the existing latch proves
+        # that a bond survives reconnecting without another pairing request.
+        assert not coordinator._ble_bond_established
+        first = coordinator._connection_attempt_details[0]
+        assert first["error_category"] == "AUTHENTICATION"
+        assert first["pairing"]["bond_verification"]["status"] == "authentication_failed"
+        if recovers:
+            repair.assert_not_awaited()
+            assert coordinator.controller is not None
+            assert coordinator._last_bond_verification["status"] == "succeeded"
+            await coordinator.async_disconnect()
+        else:
+            repair.assert_awaited_once()
+            assert repair.await_args.kwargs["evidence"]["status"] == "auth_failed"
+            mock_bleak_client.start_notify.assert_not_awaited()
+            assert coordinator.controller is None
+
+    async def test_connection_limit_keeps_bond_without_pairing_repair(
+        self, hass: HomeAssistant, mock_config_entry, mock_coordinator_connected,
+        mock_bleak_client,
+    ):
+        """The zero UUID denies a session without proving stale pairing keys."""
+        del mock_coordinator_connected
+        hass.config_entries.async_update_entry(
+            mock_config_entry,
+            data={
+                **mock_config_entry.data,
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER,
+                CONF_BLE_BOND_ESTABLISHED: True,
+            },
+        )
+        mock_bleak_client.read_gatt_char = AsyncMock(return_value=bytes(16))
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._max_retries = 1
+        with patch(
+            "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+            new_callable=AsyncMock,
+        ) as repair:
+            assert not await coordinator.async_connect()
+        assert coordinator._ble_bond_established
+        mock_bleak_client.pair.assert_not_awaited()
+        mock_bleak_client.start_notify.assert_not_awaited()
+        repair.assert_not_awaited()
+
     @pytest.mark.parametrize(
         "moving,stopping",
         [("motor:back", "motor:legs"), ("side:right:motor:back", "side:left:motor:legs")],

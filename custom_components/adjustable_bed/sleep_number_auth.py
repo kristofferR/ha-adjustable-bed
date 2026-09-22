@@ -14,16 +14,22 @@ if TYPE_CHECKING:
 
 
 class InvalidSleepNumberSession(BleakError):
-    """The Auth characteristic returned explicit evidence of an unusable session."""
+    """Auth returned a missing, malformed or explicitly rejected session UUID."""
+
+
+class SleepNumberConnectionLimitError(BleakError):
+    """Auth refused another session without establishing a bond failure."""
 
 
 def validate_sleep_number_session(value: bytes) -> bytes:
     """Reject malformed UUIDs and the two protocol failure sentinels."""
     if len(value) != 16:
-        raise InvalidSleepNumberSession("Sleep Number Auth must contain a 16-byte session UUID")
+        raise InvalidSleepNumberSession(
+            f"Sleep Number Auth must contain a 16-byte session UUID (received {len(value)} bytes)"
+        )
     identifier = int.from_bytes(value, "big")
     if identifier == 0:
-        raise InvalidSleepNumberSession("Sleep Number connection limit reached (zero Auth UUID)")
+        raise SleepNumberConnectionLimitError("Sleep Number connection limit reached (zero Auth UUID)")
     if identifier == 1:
         raise InvalidSleepNumberSession("Sleep Number authentication rejected (Auth UUID one)")
     return value

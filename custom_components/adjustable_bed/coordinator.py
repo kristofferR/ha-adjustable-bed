@@ -3497,7 +3497,8 @@ class AdjustableBedCoordinator:
                     # BaseException, so cancellation still propagates.
                     try:
                         await self._async_handle_ble_authentication_error(
-                            err, holding_lock=True, defer_pairing_issue=True
+                            err, holding_lock=True, attempt_details=attempt_details,
+                            defer_pairing_issue=True,
                         )
                     except Exception:
                         _LOGGER.debug(
@@ -3543,7 +3544,9 @@ class AdjustableBedCoordinator:
                 attempt_details["error_type"] = type(err).__name__
                 err_str = str(err).lower()
                 # Categorize the error for clearer diagnostics
-                if isinstance(err, TimeoutError) or "timeout" in err_str:
+                if _is_ble_authentication_error(err):
+                    error_category = "AUTHENTICATION"
+                elif isinstance(err, TimeoutError) or "timeout" in err_str:
                     error_category = "CONNECTION TIMEOUT"
                 elif "refused" in err_str or "rejected" in err_str:
                     error_category = "CONNECTION REFUSED (another device may be connected)"
