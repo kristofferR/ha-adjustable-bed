@@ -3374,6 +3374,14 @@ class TestSleepNumberAuthentication:
         ):
             assert await coordinator.async_connect() is recovers
 
+        from custom_components.adjustable_bed.support_logs import async_setup_support_logs
+        from custom_components.adjustable_bed.support_proxy_logs import DATA_PAIRING_PROXY_LOGS
+
+        pairing_logs, truncated = async_setup_support_logs(hass).pairing_snapshot(coordinator._address)
+        assert not truncated
+        assert any("Sleep Number Auth rejected" in entry["message"] for entry in pairing_logs)
+        assert coordinator._address.upper() in hass.data[DATA_PAIRING_PROXY_LOGS]
+
         mock_bleak_client.pair.assert_awaited_once()
         assert auth_reads == 2
         # The old marker remains distrusted until the existing latch proves
@@ -3499,6 +3507,10 @@ class TestSleepNumberAuthentication:
         coordinator._client = mock_bleak_client
         mock_bleak_client.read_gatt_char = AsyncMock(return_value=auth)
         result = await coordinator.async_pair_now()
+        from custom_components.adjustable_bed.support_logs import async_setup_support_logs
+
+        pairing_logs, _ = async_setup_support_logs(hass).pairing_snapshot(TEST_ADDRESS)
+        assert any("Sleep Number Auth" in entry["message"] for entry in pairing_logs)
         assert result is (len(auth) == 16)
         assert bool(entry.data.get(CONF_BLE_BOND_ESTABLISHED)) is result
         mock_bleak_client.read_gatt_char.assert_awaited_once_with(SLEEP_NUMBER_AUTH_CHAR_UUID)

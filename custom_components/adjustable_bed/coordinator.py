@@ -1708,20 +1708,31 @@ class AdjustableBedCoordinator:
             self._last_bond_evidence = None
 
             if self._client is not None and self._client.is_connected:
-                pairing_details: dict[str, Any] = {}
-                if await self._async_pair_on_live_link(pairing_details):
-                    if self._bed_type == BED_TYPE_SLEEP_NUMBER:
-                        return await self._async_verify_bonded() and self._ble_bond_established
-                    self._mark_ble_bond_established()
-                    await delete_pairing_required_issue(self.hass, self._address)
-                    return True
-                # The bond request failed but the link survived; the probe is
-                # the authority on whether we are nevertheless bonded.
-                return await self._async_verify_bonded() and self._ble_bond_established
+                if self._bed_type == BED_TYPE_SLEEP_NUMBER:
+                    from .support_proxy_logs import capture_proxy_logs
+
+                    async with capture_proxy_logs(
+                        self.hass, self._address, self._preferred_adapter, retain=True
+                    ):
+                        return await self._async_pair_live_and_verify()
+                return await self._async_pair_live_and_verify()
 
             if not await self._async_connect_locked():
                 return False
             return self._ble_bond_established
+
+    async def _async_pair_live_and_verify(self) -> bool:
+        """Pair and verify the live link while the coordinator lock is held."""
+        pairing_details: dict[str, Any] = {}
+        if await self._async_pair_on_live_link(pairing_details):
+            if self._bed_type == BED_TYPE_SLEEP_NUMBER:
+                return await self._async_verify_bonded() and self._ble_bond_established
+            self._mark_ble_bond_established()
+            await delete_pairing_required_issue(self.hass, self._address)
+            return True
+        # The bond request failed but the link survived; the probe is the
+        # authority on whether we are nevertheless bonded.
+        return await self._async_verify_bonded() and self._ble_bond_established
 
     async def _async_verify_bonded(
         self,
@@ -2480,6 +2491,17 @@ class AdjustableBedCoordinator:
             )
             return False
         try:
+            if self._bed_type == BED_TYPE_SLEEP_NUMBER and (
+                self._client is None or not self._client.is_connected or self._controller is None
+            ):
+                # A configured bed can pair and verify Auth here without going
+                # through config flow. Keep that attempt for a later bundle.
+                from .support_proxy_logs import capture_proxy_logs
+
+                async with capture_proxy_logs(
+                    self.hass, self._address, self._preferred_adapter, retain=True
+                ):
+                    return await self._async_connect_attempts_locked(reset_timer)
             return await self._async_connect_attempts_locked(reset_timer)
         finally:
             # A verified retry clears this evidence. An inconclusive retry,
