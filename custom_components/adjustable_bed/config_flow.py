@@ -40,6 +40,7 @@ from homeassistant.helpers.selector import (
 )
 from homeassistant.helpers.translation import async_get_translations
 from homeassistant.loader import IntegrationNotFound, async_get_integration
+from homeassistant.setup import async_setup_component
 
 from .actuator_groups import (
     ACTUATOR_GROUPS,
@@ -1620,6 +1621,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             )
             return self.async_abort(reason="discovery_disabled")
 
+        # First-time setup can fail before any entry exists. Load the domain
+        # so the support action and its download route are already available.
+        await async_setup_component(self.hass, DOMAIN, {})
+
         _LOGGER.info(
             "Bluetooth discovery triggered for device: %s (name: %s, RSSI: %s)",
             discovery_info.address,
@@ -2243,6 +2248,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Handle the user step to pick discovered device or manual entry."""
+        await async_setup_component(self.hass, DOMAIN, {})
         _LOGGER.debug("async_step_user called with input: %s", user_input)
 
         if user_input is not None:
@@ -4187,6 +4193,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         from bleak import BleakClient
         from bleak_retry_connector import establish_connection
 
+        from .support_proxy_logs import capture_proxy_logs
+
         if not address:
             raise ValueError("No address provided for pairing")
 
@@ -4248,7 +4256,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # caller's connect attempt, where bleak's cleanup can abort it. Keeping
         # it all in this one task is also required, because the lock is
         # reentrant per task rather than per caller.
-        async with async_get_connect_lock(self.hass, address):
+        async with (
+            async_get_connect_lock(self.hass, address),
+            capture_proxy_logs(self.hass, address, preferred_adapter, retain=True),
+        ):
             self.async_report_action(SetupAction.CONNECTING)
             connect_kwargs: dict[str, Any] = {
                 "use_services_cache": not pair_after_service_discovery,
@@ -4300,15 +4311,21 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     )
                     self.async_report_action(SetupAction.PAIRING)
                     await client.pair()
+                    _LOGGER.info("BLE backend pairing completed for %s via %s; verifying Auth next", address, actual_source)
 
                 self.async_report_action(SetupAction.VERIFYING_BOND)
-                return await async_verify_authenticated_access(
+                evidence = await async_verify_authenticated_access(
                     client,
                     bed_type=bed_type,
                     protocol_variant=protocol_variant,
                     path=path,
                     operation=("setup_pairing" if request_bond else "verify_existing_bond"),
                 )
+                _LOGGER.info(
+                    "Bond verification result for %s via %s: status=%s reason=%s; disconnecting setup probe",
+                    address, actual_source, evidence.status, evidence.error or "none",
+                )
+                return evidence
             finally:
                 self.async_report_action(SetupAction.DISCONNECTING)
                 try:

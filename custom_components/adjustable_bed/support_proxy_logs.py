@@ -6,7 +6,7 @@ import asyncio
 import re
 from collections import deque
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, nullcontext
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
@@ -17,8 +17,9 @@ from homeassistant.components.bluetooth.const import (
 )
 from homeassistant.const import CONF_PASSWORD, CONF_SOURCE
 from homeassistant.core import HomeAssistant
+from homeassistant.util.hass_dict import HassKey
 
-from .support_logs import MAX_LOG_ENTRIES, sanitize_log_message
+from .support_logs import MAX_LOG_ENTRIES, async_setup_support_logs, sanitize_log_message
 
 if TYPE_CHECKING:
     from aioesphomeapi.api_pb2 import SubscribeLogsResponse  # type: ignore[attr-defined]
@@ -26,11 +27,13 @@ if TYPE_CHECKING:
 
 _ANSI = re.compile(r"\x1b\[[0-9;]*m")
 _BLUETOOTH_LOG = re.compile(r"(?i)bluetooth|\bble\b|ble_|\bbt_|\bgatt|\bgap|\bbond|\bsmp\b")
+DATA_PAIRING_PROXY_LOGS: HassKey[dict[str, list[dict[str, Any]]]] = HassKey("adjustable_bed_pairing_proxy_logs")
 
 
 @asynccontextmanager
 async def capture_proxy_logs(
-    hass: HomeAssistant, address: str, preferred_source: str | None = None
+    hass: HomeAssistant, address: str, preferred_source: str | None = None,
+    *, retain: bool = False,
 ) -> AsyncIterator[list[dict[str, Any]]]:
     """Best-effort capture from proxies that see this bed, without altering HA's API stream."""
     reports: list[dict[str, Any]] = []
@@ -42,6 +45,7 @@ async def capture_proxy_logs(
             "source": source, "config_entry_id": entry_id,
             "status": "unavailable", "entries": [],
             "requested_level": "DEBUG",
+            "started_at": datetime.now(UTC).isoformat(),
             "note": "Only Bluetooth-related messages are retained. Firmware log levels may limit output.",
         }
         reports.append(row)
@@ -115,9 +119,20 @@ async def capture_proxy_logs(
             await asyncio.gather(*(start(source, entry_id) for source, entry_id in registrations.items()))
         except Exception as err:  # noqa: BLE001
             reports.append({"status": "unavailable", "reason": type(err).__name__, "entries": []})
-        yield reports
+        with async_setup_support_logs(hass).capture_pairing(address) if retain else nullcontext():
+            yield reports
     finally:
         closing = True
         # Force-close only these temporary sockets, including partially connected
         # clients after a timeout or cancellation. HA's control client is untouched.
-        await asyncio.gather(*(client.disconnect(force=True) for client in clients), return_exceptions=True)
+        try:
+            await asyncio.gather(*(client.disconnect(force=True) for client in clients), return_exceptions=True)
+        finally:
+            if retain:
+                for row in reports:
+                    row["finished_at"] = datetime.now(UTC).isoformat()
+                cache = hass.data.setdefault(DATA_PAIRING_PROXY_LOGS, {})
+                cache.pop(address.upper(), None)
+                cache[address.upper()] = reports
+                while len(cache) > 4:
+                    cache.pop(next(iter(cache)))

@@ -40,16 +40,16 @@ carried the connection. Pairing on the Home Assistant host does not establish a
 bond on a separate ESPHome proxy. Use the integration's pairing repair for the
 active transport and close the phone app before connecting.
 
-The September 22 bundles in #574 show two failed sessions: an empty Auth read,
-then ATT error 15 on Auth and notification subscriptions through the same
-proxy. Both captures used a standalone diagnostic connection, contained no
-pairing-attempt history, and reported that the Home Assistant log file was
-missing. They establish failed authentication but do not identify why the
-proxy/bed bond failed. To capture that step, enable integration debug logging,
-reproduce **Pair Now** or setup, then disable debug logging and attach the
-downloaded log separately. Include the proxy's ESPHome version and its logs
-covering the same pairing attempt. The runtime recovery correction does not
-establish successful Climate 360 hardware operation.
+The September 22 captures in #574 show that the ESPHome proxy completed pairing
+and retained a bond, while the subsequent Auth read returned zero bytes. Other
+GATT reads worked. That identifies the failed step but does not establish why
+the bed returned an empty Auth value. Regular support bundles now retain the
+latest setup/pairing HA trace and available proxy logs, including Auth outcome
+and read length, so this does not require a separate diagnostic HA build or
+manual debug-log download. The standard ESPHome API cannot report stored bond
+keys or link-security details; those fields require proxy firmware support.
+The runtime recovery correction does not establish successful Climate 360
+hardware operation.
 
 Earlier documentation incorrectly stated that Fuzion never bonds. The 5.4.11
 application explicitly bonds after service discovery. This ordering matters for

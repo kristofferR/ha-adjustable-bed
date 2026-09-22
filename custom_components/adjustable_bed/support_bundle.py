@@ -40,9 +40,9 @@ from .const import (
 )
 from .detection import detect_bed_type_detailed
 from .diagnostic_payloads import format_mapping_payloads
-from .redaction import redact_pins_only
+from .redaction import redact_pins_only, redact_sleep_number_sessions
 from .support_logs import async_setup_support_logs
-from .support_proxy_logs import capture_proxy_logs
+from .support_proxy_logs import DATA_PAIRING_PROXY_LOGS, capture_proxy_logs
 from .support_report import (
     _get_bluetooth_info,
     _get_connection_info,
@@ -58,7 +58,7 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-_REPORT_VERSION = "2.4"
+_REPORT_VERSION = "2.5"
 _MAX_NEARBY_BLUETOOTH_DEVICES = 30
 _BLUETOOTH_DOMAIN = "bluetooth"
 _ESPHOME_DOMAIN = "esphome"
@@ -102,6 +102,9 @@ async def generate_support_bundle(
         preferred_source = None
     log_buffer = async_setup_support_logs(hass) if include_logs else None
     pre_capture_logs = log_buffer.snapshot() if log_buffer is not None else []
+    pairing_logs, pairing_logs_truncated = (
+        log_buffer.pairing_snapshot(address) if log_buffer is not None else ([], False)
+    )
     with log_buffer.capture_debug() if log_buffer is not None else nullcontext():
         async with (
             capture_proxy_logs(hass, address, preferred_source)
@@ -121,6 +124,9 @@ async def generate_support_bundle(
         coordinator,
     )
     bluetooth_info["proxy_logs"] = proxy_logs
+    bluetooth_info["pairing_proxy_logs"] = (
+        hass.data.get(DATA_PAIRING_PROXY_LOGS, {}).get(address.upper(), []) if include_logs else []
+    )
 
     if coordinator is not None:
         connection = _get_connection_info(coordinator)
@@ -139,7 +145,7 @@ async def generate_support_bundle(
     # Preserve the original failure if verbose capture traffic fills the ring.
     recent_logs = list({
         (log.get("timestamp"), log.get("name"), log.get("message")): log
-        for log in [*pre_capture_logs, *recent_logs]
+        for log in [*pairing_logs, *pre_capture_logs, *recent_logs]
     }.values())
     diagnostic_dict = diagnostics_report.to_dict()
     pairing = _build_pairing_assessment(
@@ -151,6 +157,8 @@ async def generate_support_bundle(
         capture_duration=capture_duration,
         include_logs=include_logs,
         recent_logs=recent_logs,
+        pairing_logs=pairing_logs,
+        pairing_logs_truncated=pairing_logs_truncated,
         diagnostic_report=diagnostic_dict,
         reproduction_command_trace=reproduction_command_trace,
         pairing=pairing,
@@ -194,11 +202,13 @@ async def generate_support_bundle(
         "command_timing": diagnostics_report.command_timing,
         "command_trace": diagnostics_report.command_trace if coordinator is not None else [],
         "recent_logs": recent_logs,
+        "pairing_logs": pairing_logs,
         "evidence": evidence,
         "supported_bed_types": list(SUPPORTED_BED_TYPES),
         "errors": list(diagnostics_report.errors),
     }
 
+    redact_sleep_number_sessions(report)
     return redact_pins_only(report)  # type: ignore[no-any-return]
 
 
@@ -696,8 +706,12 @@ def _build_evidence_summary(
     bluetooth_info: dict[str, Any],
     configured: bool,
     controller: dict[str, Any],
+    pairing_logs: list[dict[str, str]] | None = None,
+    pairing_logs_truncated: bool = False,
 ) -> dict[str, Any]:
     """Summarize whether the bundle contains enough evidence to act on."""
+    if pairing_logs is None:
+        pairing_logs = []
     command_count = len(diagnostic_report.get("command_trace", []))
     reproduction_command_count = len(reproduction_command_trace)
     notification_count = diagnostic_report.get("notification_summary", {}).get(
@@ -719,7 +733,10 @@ def _build_evidence_summary(
     log_capture_reason = log_failure.get("log_read_reason") if log_failure else None
     proxy_log_entry_count = sum(
         len(entries)
-        for proxy_log in bluetooth_info.get("proxy_logs", [])
+        for proxy_log in [
+            *bluetooth_info.get("proxy_logs", []),
+            *bluetooth_info.get("pairing_proxy_logs", []),
+        ]
         if isinstance((entries := proxy_log.get("entries")), list)
     )
     if not include_logs:
@@ -742,6 +759,8 @@ def _build_evidence_summary(
             "No BLE notifications were captured. Operate the physical remote during "
             "the capture window when protocol traffic is needed."
         )
+    if pairing_logs_truncated:
+        warnings.append("The pairing attempt produced more than 200 HA log entries; its earliest entries were dropped.")
     if log_status == "not_requested":
         warnings.append("Recent logs were not requested for this bundle.")
     elif log_status == "unavailable" and log_capture_reason == "unreadable":
@@ -785,12 +804,17 @@ def _build_evidence_summary(
         if bluetooth_status.get("connections_free") == 0:
             warnings.append("The selected ESPHome proxy has no free BLE connection slots.")
 
-    for proxy_log in bluetooth_info.get("proxy_logs", []):
-        if proxy_log.get("status") != "available":
-            warnings.append(
-                f"ESPHome Bluetooth log capture for {proxy_log.get('source', 'unknown source')}: "
-                f"{proxy_log.get('status')} ({proxy_log.get('reason', 'no Bluetooth messages received')})."
-            )
+    for origin, proxy_logs in (
+        ("current capture", bluetooth_info.get("proxy_logs", [])),
+        ("retained pairing attempt", bluetooth_info.get("pairing_proxy_logs", [])),
+    ):
+        for proxy_log in proxy_logs:
+            if proxy_log.get("status") != "available":
+                warnings.append(
+                    f"ESPHome Bluetooth log capture ({origin}) for "
+                    f"{proxy_log.get('source', 'unknown source')}: "
+                    f"{proxy_log.get('status')} ({proxy_log.get('reason', 'no Bluetooth messages received')})."
+                )
 
     return {
         "command_trace_count": command_count,
@@ -803,6 +827,8 @@ def _build_evidence_summary(
         "log_capture_reason": log_capture_reason,
         "log_capture_error": log_capture_error,
         "recent_log_entry_count": len(recent_logs),
+        "pairing_log_entry_count": len(pairing_logs),
+        "pairing_log_truncated": pairing_logs_truncated,
         "proxy_log_entry_count": proxy_log_entry_count,
         "usable_recent_log_entry_count": 0 if log_capture_failed else len(recent_logs),
         "pairing_status": pairing.get("status"),

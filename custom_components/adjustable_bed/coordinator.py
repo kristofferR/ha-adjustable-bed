@@ -1606,7 +1606,9 @@ class AdjustableBedCoordinator:
             return False
         advisory = grants_one_connection_per_pairing_window(self._bed_type, self._protocol_variant)
         try:
+            _LOGGER.info("BLE backend pairing starting for %s on the discovered link", self._address)
             await client.pair()
+            _LOGGER.info("BLE backend pairing completed for %s; authenticated access is not yet verified", self._address)
         except (NotImplementedError, TypeError) as err:
             if not advisory:
                 raise

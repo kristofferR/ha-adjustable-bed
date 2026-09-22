@@ -19,10 +19,14 @@ from custom_components.adjustable_bed.support_bundle import (
 from custom_components.adjustable_bed.support_logs import (
     MAX_LOG_ENTRIES,
     MAX_LOG_MESSAGE_LENGTH,
+    MAX_PAIRING_LOG_ENTRIES,
     async_setup_support_logs,
     sanitize_log_message,
 )
-from custom_components.adjustable_bed.support_proxy_logs import capture_proxy_logs
+from custom_components.adjustable_bed.support_proxy_logs import (
+    DATA_PAIRING_PROXY_LOGS,
+    capture_proxy_logs,
+)
 from custom_components.adjustable_bed.support_report import _get_recent_logs, async_check_log_file
 
 
@@ -225,6 +229,48 @@ async def test_proxy_disconnect_is_explicit_even_after_receiving_logs(hass, prox
         assert len(reports[0]["entries"]) == 1
 
 
+async def test_pairing_logs_survive_the_general_log_ring_and_restore_debug(hass, proxy):
+    """One later bundle can see the entire pairing result after noisy activity."""
+    client, _, _ = proxy
+    address = "AA:BB:CC:DD:EE:FF"
+    logger = logging.getLogger("custom_components.adjustable_bed.sleep_number_auth")
+    previous_level = logger.getEffectiveLevel()
+    buffer = async_setup_support_logs(hass)
+    async with capture_proxy_logs(hass, address, retain=True):
+        assert logger.getEffectiveLevel() == logging.DEBUG
+        logger.info("Sleep Number Auth rejected: bytes=0")
+        client.subscribe_logs.call_args.args[0](SimpleNamespace(
+            message=b"[bluetooth_proxy] BLE authentication complete", level=3,
+        ))
+    assert logger.getEffectiveLevel() == previous_level
+    for index in range(MAX_LOG_ENTRIES + 1):
+        logger.warning("Later activity %d", index)
+    assert not any("Auth rejected" in row["message"] for row in buffer.snapshot())
+    pairing_logs, truncated = buffer.pairing_snapshot(address)
+    assert not truncated
+    assert any("Auth rejected: bytes=0" in row["message"] for row in pairing_logs)
+    assert "BLE authentication complete" in hass.data[DATA_PAIRING_PROXY_LOGS][address][0]["entries"][0]["message"]
+
+
+def test_pairing_log_limit_is_reported_and_new_attempt_replaces_old(hass):
+    """The retained evidence has a fixed size and reflects the last attempt."""
+    buffer = async_setup_support_logs(hass)
+    logger = logging.getLogger("custom_components.adjustable_bed.sleep_number_auth")
+    address = "AA:BB:CC:DD:EE:FF"
+    with buffer.capture_pairing(address):
+        for index in range(MAX_PAIRING_LOG_ENTRIES + 1):
+            logger.warning("Attempt one %d", index)
+    entries, truncated = buffer.pairing_snapshot(address)
+    assert len(entries) == MAX_PAIRING_LOG_ENTRIES
+    assert truncated
+    with buffer.capture_pairing(address):
+        logger.warning("Attempt two")
+    entries, truncated = buffer.pairing_snapshot(address)
+    assert not truncated
+    assert len(entries) == 1
+    assert entries[0]["message"] == "Attempt two"
+
+
 @pytest.mark.parametrize("include_logs", [True, False])
 async def test_bundle_captures_debug_without_file_and_honors_opt_out(
     hass, proxy, caplog, enable_custom_integrations, include_logs,
@@ -233,8 +279,13 @@ async def test_bundle_captures_debug_without_file_and_honors_opt_out(
     client, _, factory = proxy
     caplog.set_level(logging.WARNING, logger="custom_components.adjustable_bed")
     logger = logging.getLogger("custom_components.adjustable_bed.coordinator")
-    async_setup_support_logs(hass)
+    buffer = async_setup_support_logs(hass)
     logger.warning("Original pairing failure before capture")
+    hass.data[DATA_PAIRING_PROXY_LOGS] = {
+        "AA:BB:CC:DD:EE:FF": [{"source": "proxy", "status": "available", "entries": [{"message": "BLE pairing"}]}],
+    }
+    with buffer.capture_pairing("AA:BB:CC:DD:EE:FF"):
+        logger.warning("Retained pairing failure")
 
     async def run():
         for _ in range(MAX_LOG_ENTRIES + 1):
@@ -259,8 +310,13 @@ async def test_bundle_captures_debug_without_file_and_honors_opt_out(
         assert any("authentication failure" in item["message"] for item in report["recent_logs"])
         assert any("Original pairing failure" in item["message"] for item in report["recent_logs"])
         assert report["bluetooth"]["proxy_logs"][0]["status"] == "available"
+        assert any("Retained pairing failure" in item["message"] for item in report["pairing_logs"])
+        assert report["bluetooth"]["pairing_proxy_logs"][0]["entries"][0]["message"] == "BLE pairing"
+        assert report["evidence"]["pairing_log_entry_count"] > 0
     else:
         assert report["recent_logs"] == []
+        assert report["pairing_logs"] == []
         assert report["bluetooth"]["proxy_logs"] == []
+        assert report["bluetooth"]["pairing_proxy_logs"] == []
         assert report["evidence"]["log_capture_status"] == "not_requested"
         factory.assert_not_called()

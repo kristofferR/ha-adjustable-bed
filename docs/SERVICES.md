@@ -138,8 +138,11 @@ evidence, GATT data, notifications, nearby advertisements, and recent command
 trace. `capture_duration` is 10–300 seconds (default 120); `include_logs` defaults
 to `true`. Provide exactly one configured `device_id` or raw `target_address`.
 Logs include recent in-memory HA Bluetooth records and live Bluetooth messages
-from reachable ESPHome proxies. A disk log file is not required. Capture enables
-HA debug logging temporarily and restores the previous levels afterward.
+from reachable ESPHome proxies, plus the latest setup/pairing attempt for the
+target address when available. A disk log file is not required. Debug logging
+is enabled temporarily during both setup/pairing and bundle capture, then the
+previous levels are restored. The action is available once the integration's
+setup flow starts, even before a bed entry is created.
 
 See [Getting Help](GETTING_HELP.md) for the capture procedure, privacy details,
 and how to download the report.

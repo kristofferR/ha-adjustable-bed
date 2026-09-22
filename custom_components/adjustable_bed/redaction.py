@@ -7,7 +7,12 @@ from typing import Any
 
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
-from .const import CONF_JENSEN_PIN, CONF_OCTO_PIN
+from .const import (
+    BED_TYPE_SLEEP_NUMBER,
+    CONF_JENSEN_PIN,
+    CONF_OCTO_PIN,
+    SLEEP_NUMBER_AUTH_CHAR_UUID,
+)
 
 # Keys to fully redact
 KEYS_TO_REDACT = {CONF_NAME, CONF_JENSEN_PIN, CONF_OCTO_PIN, "title", "serial", "serial_number", "configuration_url"}
@@ -117,3 +122,26 @@ def redact_pins_only(data: Any, depth: int = 0) -> Any:
     if isinstance(data, list):
         return [redact_pins_only(item, depth + 1) for item in data]
     return data
+
+
+def redact_sleep_number_sessions(report: dict[str, Any]) -> None:
+    """Keep Auth lengths and notification counts without publishing session IDs."""
+    for service in report.get("gatt_services", []):
+        for characteristic in service.get("characteristics", []):
+            if str(characteristic.get("uuid", "")).lower() != SLEEP_NUMBER_AUTH_CHAR_UUID:
+                continue
+            read_result = characteristic.get("read_result")
+            if isinstance(read_result, dict) and read_result.get("hex"):
+                read_result["hex"] = "**REDACTED**"
+                read_result["ascii_preview"] = None
+
+    if report.get("detection", {}).get("bed_type") != BED_TYPE_SLEEP_NUMBER:
+        return
+    # Fuzion notification hints can carry the same session UUID. Their timing,
+    # characteristic and lengths remain useful without the reusable identifier.
+    for notification in report.get("notifications", []):
+        if len(str(notification.get("data_hex", ""))) == 32:
+            notification["data_hex"] = "**REDACTED**"
+    for summary in report.get("notification_summary", {}).get("by_characteristic", {}).values():
+        summary["top_repeated_payloads"] = []
+        summary["ascii_previews"] = []

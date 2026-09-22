@@ -15,6 +15,8 @@ from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.util.hass_dict import HassKey
 
 MAX_LOG_ENTRIES = 500
+MAX_PAIRING_LOG_ENTRIES = 200
+MAX_PAIRING_LOG_ADDRESSES = 4
 MAX_LOG_MESSAGE_LENGTH = 4096
 _LOGGER_NAMES = (
     "custom_components.adjustable_bed",
@@ -67,6 +69,9 @@ class SupportLogBuffer(logging.Handler):
     def __init__(self) -> None:
         super().__init__(logging.DEBUG)
         self._entries: deque[dict[str, str]] = deque(maxlen=MAX_LOG_ENTRIES)
+        self._active_pairings: dict[str, deque[dict[str, str]]] = {}
+        self._pairing_counts: dict[str, int] = {}
+        self._pairing_history: dict[str, tuple[list[dict[str, str]], bool]] = {}
         self._captures = 0
         self._levels: dict[logging.Logger, int] = {}
         self._propagates: dict[logging.Logger, bool] = {}
@@ -79,12 +84,16 @@ class SupportLogBuffer(logging.Handler):
             for name in _LOGGER_NAMES
         ):
             return
-        self._entries.append({
+        entry = {
             "timestamp": datetime.fromtimestamp(record.created, UTC).isoformat(),
             "level": record.levelname,
             "name": record.name,
             "message": sanitize_log_message(self.format(record)),
-        })
+        }
+        self._entries.append(entry)
+        for address, pairing in self._active_pairings.items():
+            pairing.append(entry)
+            self._pairing_counts[address] += 1
 
     def snapshot(self) -> list[dict[str, str]]:
         """Copy records under the handler lock because workers can log too."""
@@ -93,6 +102,44 @@ class SupportLogBuffer(logging.Handler):
             return list(self._entries)
         finally:
             self.release()
+
+    def pairing_snapshot(self, address: str) -> tuple[list[dict[str, str]], bool]:
+        """Return the latest pairing attempt, even after the general log ring wraps."""
+        self.acquire()
+        try:
+            entries, truncated = self._pairing_history.get(address.upper(), ([], False))
+            return list(entries), truncated
+        finally:
+            self.release()
+
+    @contextmanager
+    def capture_pairing(self, address: str) -> Iterator[None]:
+        """Keep a bounded, sanitized attempt trace for the next support bundle."""
+        address = address.upper()
+        entries: deque[dict[str, str]] = deque(maxlen=MAX_PAIRING_LOG_ENTRIES)
+        self.acquire()
+        try:
+            self._active_pairings[address] = entries
+            self._pairing_counts[address] = 0
+        finally:
+            self.release()
+        try:
+            with self.capture_debug():
+                yield
+        finally:
+            self.acquire()
+            try:
+                if self._active_pairings.get(address) is entries:
+                    self._active_pairings.pop(address, None)
+                    # A full ring might have dropped earlier records. Preserve
+                    # that limitation instead of presenting it as complete.
+                    truncated = self._pairing_counts.pop(address, 0) > MAX_PAIRING_LOG_ENTRIES
+                    self._pairing_history.pop(address, None)
+                    self._pairing_history[address] = (list(entries), truncated)
+                    while len(self._pairing_history) > MAX_PAIRING_LOG_ADDRESSES:
+                        self._pairing_history.pop(next(iter(self._pairing_history)))
+            finally:
+                self.release()
 
     @contextmanager
     def capture_debug(self) -> Iterator[None]:
