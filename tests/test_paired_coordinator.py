@@ -2078,6 +2078,48 @@ class TestConnectionModeResolution:
         assert left.is_connected
         assert (SIDE_LEFT, "disconnect") not in left.log
 
+    async def test_concurrent_setup_caches_each_side_when_its_connect_finishes(self):
+        """A slow peer cannot outlive the first side's capability cache window."""
+        log: list[tuple[str, str]] = []
+        left_cached = asyncio.Event()
+        release_right = asyncio.Event()
+
+        class FastLeftChild(RecordingChild):
+            def cache_capability_controller(self) -> None:
+                super().cache_capability_controller()
+                left_cached.set()
+
+        class SlowRightChild(RecordingChild):
+            async def async_connect(self) -> bool:
+                self.log.append((self.side, "connect"))
+                await release_right.wait()
+                self._connected = True
+                return True
+
+        left = FastLeftChild(SIDE_LEFT, log, connected=False)
+        right = SlowRightChild(SIDE_RIGHT, log, connected=False)
+        entry = SimpleNamespace(
+            data={
+                CONF_PAIR_ID: "pair_abc123",
+                "name": "X",
+                CONF_BED_TYPE: BED_TYPE_OCTO,
+                CONF_PAIR_CONNECTION_MODE: PAIR_CONNECTION_MODE_CONCURRENT,
+            }
+        )
+        coordinator = PairedBedCoordinator(
+            None, entry, {SIDE_LEFT: left, SIDE_RIGHT: right}
+        )
+
+        connect = asyncio.create_task(coordinator.async_connect())
+        try:
+            await left_cached.wait()
+            assert (SIDE_LEFT, "cache_caps") in log
+            assert (SIDE_RIGHT, "cache_caps") not in log
+        finally:
+            release_right.set()
+        assert await connect
+        assert (SIDE_RIGHT, "cache_caps") in log
+
     async def test_auto_falls_back_using_actual_attempt_source(self):
         coordinator = self._coord(BED_TYPE_OCTO)
         left = coordinator.children[SIDE_LEFT]

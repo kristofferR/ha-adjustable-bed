@@ -50,11 +50,22 @@ def async_has_side_controller_entities(
     During conversion they still belong to the original entry; after conversion
     they belong to the pair. Side unique IDs survive both ownership transfers.
     """
-    owner_ids = {entry.entry_id}
-    owner_ids.update(
-        origin_id for child in iter_children(entry.data)
+    children = iter_children(entry.data)
+    origin_ids = {
+        origin_id
+        for child in children
         if (origin_id := child.get(KEY_ABSORBED_ENTRY_ID))
+    }
+    # Once one original has been absorbed, any remaining original is a side whose
+    # registry transfer rolled back. It remains solely controlled by that entry;
+    # do not make the usable paired side depend on its live capability discovery.
+    conversion_started = any(
+        hass.config_entries.async_get_entry(origin_id) is None
+        for origin_id in origin_ids
     )
+    owner_ids = {entry.entry_id}
+    if not conversion_started:
+        owner_ids.update(origin_ids)
     registry = er.async_get(hass)
     return any(
         row.platform == DOMAIN

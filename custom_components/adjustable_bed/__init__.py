@@ -625,10 +625,14 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                 if not async_has_side_controller_entities(hass, entry, child.address):
                     continue
                 await child.async_prime_offline_controller()
-                if child.capability_controller is None:
+                capability_controller = child.capability_controller
+                if (
+                    capability_controller is None
+                    or not capability_controller.controller_entity_discovery_complete
+                ):
                     raise ConfigEntryNotReady(
                         f"Paired bed {entry.title} needs {child.name} to connect "
-                        "before its controls can be restored"
+                        "and finish discovering its controls before they can be restored"
                     )
         except (Exception, asyncio.CancelledError):
             await coordinator.async_shutdown()

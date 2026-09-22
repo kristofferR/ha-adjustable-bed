@@ -185,6 +185,11 @@ class RmcontrolController(RichmatController):
         return True
 
     @property
+    def controller_entity_discovery_complete(self) -> bool:
+        """Return whether every expected menu capability answered its probe."""
+        return self._capabilities_ready.is_set()
+
+    @property
     def _side_value(self) -> int:
         return _SIDE_VALUES[self.command_side or self._rmcontrol_side]
 

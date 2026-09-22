@@ -89,8 +89,12 @@ from custom_components.adjustable_bed.paired_coordinator import (
     PairedBedCoordinator,
     SingleAddressPairedCoordinator,
 )
-from custom_components.adjustable_bed.paired_registry import _device_for_entry_and_identifier
+from custom_components.adjustable_bed.paired_registry import (
+    _device_for_entry_and_identifier,
+    async_has_side_controller_entities,
+)
 from custom_components.adjustable_bed.pairing import (
+    KEY_ABSORBED_ENTRY_ID,
     effective_child_data,
     get_child,
     is_paired,
@@ -170,6 +174,38 @@ def _paired_entry(hass: HomeAssistant) -> MockConfigEntry:
 
 
 class TestPairedSetup:
+    async def test_retained_original_controls_do_not_block_partial_pair_reload(
+        self, hass: HomeAssistant
+    ) -> None:
+        """A rolled-back side stays with its original after another side commits."""
+        retained = MockConfigEntry(
+            domain=DOMAIN,
+            data={CONF_ADDRESS: LEFT_ADDR, CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25},
+            entry_id="retained_left",
+        )
+        retained.add_to_hass(hass)
+        data = _paired_entry_data()
+        data[CONF_PAIR_CHILDREN][0][KEY_ABSORBED_ENTRY_ID] = retained.entry_id
+        data[CONF_PAIR_CHILDREN][1][KEY_ABSORBED_ENTRY_ID] = "already_absorbed_right"
+        pair = MockConfigEntry(
+            domain=DOMAIN,
+            data=data,
+            unique_id=PAIR_ID,
+            entry_id="partial_pair",
+            version=4,
+        )
+        pair.add_to_hass(hass)
+        er.async_get(hass).async_get_or_create(
+            "select",
+            DOMAIN,
+            f"{LEFT_ADDR}_massage_timer",
+            config_entry=retained,
+        )
+
+        assert not async_has_side_controller_entities(
+            hass, pair, LEFT_ADDR
+        )
+
     async def test_pair_setup_clears_pending_member_discoveries(
         self,
         hass: HomeAssistant,
