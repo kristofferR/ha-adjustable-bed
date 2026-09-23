@@ -161,11 +161,14 @@ class WoosaController(SolaceController):
 
     @property
     def light_auto_off_seconds(self) -> int | None:
+        option = self._coordinator.controller_state.get("light_timer_option")
+        if not isinstance(option, str):
+            return None
         return {
             "10 min": 10 * 60,
             "8 hours": 8 * 60 * 60,
             "10 hours": 10 * 60 * 60,
-        }.get(self._coordinator.controller_state.get("light_timer_option", "10 min"))
+        }.get(option)
 
     @property
     def supports_massage(self) -> bool:

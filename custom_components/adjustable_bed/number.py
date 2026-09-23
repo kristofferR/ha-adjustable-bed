@@ -855,9 +855,14 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
     @property
     def native_value(self) -> float | None:
         """Return the current massage intensity from controller state."""
-        controller = self._coordinator.capability_controller
+        controller = self._coordinator.controller
         if controller is None:
-            return None
+            state_key = {
+                "head": "woosa_head_level",
+                "foot": "woosa_foot_level",
+            }.get(self.entity_description.massage_zone)
+            value = self._coordinator.controller_state.get(state_key) if state_key else None
+            return float(value) if isinstance(value, (int, float)) else None
 
         # Get massage state from controller
         state = controller.get_massage_state()

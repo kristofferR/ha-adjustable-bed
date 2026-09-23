@@ -368,13 +368,11 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
     @property
     def current_option(self) -> str | None:
         """Return the current timer setting from controller state."""
-        controller = self._coordinator.capability_controller
+        controller = self._coordinator.controller
         if controller is None:
-            return "Off"
-
-        # Get massage state from controller
-        state = controller.get_massage_state()
-        timer_mode = state.get("timer_mode")
+            timer_mode = self._coordinator.controller_state.get("woosa_massage_timer", 0)
+        else:
+            timer_mode = controller.get_massage_state().get("timer_mode")
 
         # Normalize: treat "0", 0, empty, or None as "Off"
         if not timer_mode or str(timer_mode) == "0":

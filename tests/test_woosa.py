@@ -115,6 +115,8 @@ async def test_light_level_vectors(controller, level, expected) -> None:
     assert controller._coordinator.controller_state["under_bed_lights_on"] is (level > 0)
     if level == 0:
         assert controller._coordinator.controller_state["light_timer_option"] == "Off"
+    else:
+        assert controller.light_auto_off_seconds is None
 
 
 @pytest.mark.parametrize(
@@ -193,7 +195,12 @@ async def test_massage_modes_and_timer_vectors(controller) -> None:
 def test_massage_entities_retain_state_without_live_controller(controller) -> None:
     coordinator = controller._coordinator
     coordinator.controller = None
-    coordinator.capability_controller = controller
+    coordinator.capability_controller = MagicMock()
+    coordinator.capability_controller.get_massage_state.return_value = {
+        "head_intensity": 1,
+        "foot_intensity": 1,
+        "timer_mode": "10",
+    }
     coordinator.entity_side = None
     coordinator.device_info = {}
     coordinator.controller_state.update(
@@ -207,6 +214,16 @@ def test_massage_entities_retain_state_without_live_controller(controller) -> No
     assert head.native_value == 2
     assert foot.native_value == 3
     assert timer.current_option == "20 min"
+
+    coordinator.controller = MagicMock()
+    coordinator.controller.get_massage_state.return_value = {
+        "head_intensity": 3,
+        "foot_intensity": 2,
+        "timer_mode": "30",
+    }
+    assert head.native_value == 3
+    assert foot.native_value == 2
+    assert timer.current_option == "30 min"
 
 
 async def test_massage_timer_expiry_clears_activity_and_preserves_preferences(controller) -> None:
