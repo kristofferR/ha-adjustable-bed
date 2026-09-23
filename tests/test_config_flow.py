@@ -57,6 +57,7 @@ from custom_components.adjustable_bed.bond_verification import (
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
+    BondRouteMismatchError,
     NotAdvertisingError,
     _default_motor_count,
     _is_valid_motor_count,
@@ -5622,6 +5623,65 @@ async def test_pairing_outcome_uses_the_active_language(
     assert outcome == "❌ Paringen ble avbrutt."
 
 
+@pytest.mark.parametrize(
+    ("transport", "status", "outcome", "show_recovery"),
+    [
+        (
+            TransportClass.PROXY,
+            BondVerificationStatus.AUTH_FAILED,
+            OperationOutcome.BOND_VERIFICATION_FAILED,
+            True,
+        ),
+        (
+            TransportClass.LOCAL,
+            BondVerificationStatus.AUTH_FAILED,
+            OperationOutcome.BOND_VERIFICATION_FAILED,
+            False,
+        ),
+        (
+            TransportClass.UNKNOWN,
+            BondVerificationStatus.AUTH_FAILED,
+            OperationOutcome.BOND_VERIFICATION_FAILED,
+            False,
+        ),
+        (
+            TransportClass.PROXY,
+            BondVerificationStatus.INCONCLUSIVE,
+            OperationOutcome.BOND_VERIFICATION_INCONCLUSIVE,
+            False,
+        ),
+        (TransportClass.PROXY, BondVerificationStatus.AUTH_FAILED, OperationOutcome.TIMEOUT, False),
+    ],
+)
+async def test_proxy_recovery_guidance_requires_observed_auth_failure(
+    hass: HomeAssistant,
+    transport: TransportClass,
+    status: BondVerificationStatus,
+    outcome: OperationOutcome,
+    show_recovery: bool,
+) -> None:
+    """Only a failed authenticated check on an actual proxy justifies this advice."""
+    from custom_components.adjustable_bed.unsupported import PROXY_PAIRING_RECOVERY_URL
+
+    flow = _pairing_flow(hass)
+    evidence = BondEvidence(
+        status=status,
+        owner=BondOwner(transport=transport, source="bedroom-proxy"),
+        operation="setup_pairing",
+        observed_at="2026-09-23T00:00:00+00:00",
+    )
+    note = await flow._async_pairing_outcome_note(
+        OperationResult(outcome=outcome, payload=evidence), evidence
+    )
+
+    assert (PROXY_PAIRING_RECOVERY_URL in note) is show_recovery
+    if show_recovery:
+        assert "bedroom-proxy" in note
+        assert "Try again" in note
+        assert "{transport}" not in note
+        assert "{recovery_url}" not in note
+
+
 async def test_each_pairing_failure_gets_its_own_advice(
     hass: HomeAssistant,
 ) -> None:
@@ -6060,6 +6120,126 @@ async def test_a_pinned_proxy_seen_only_as_non_connectable_can_still_pair(
     # refusing on the prediction's say-so.
     assert wait.await_args.kwargs["source"] == "bedroom_proxy"
     assert connects.await_args.args[1] is device
+
+
+async def test_proxy_auth_retry_checks_route_before_pairing(hass: HomeAssistant) -> None:
+    """A rerouted retry cannot bond another proxy and claim recovery."""
+    flow = _pairing_flow(hass)
+    flow._pairing_retry_source = "failed-proxy"
+    client = MagicMock()
+    client._connected_scanner = MagicMock(source="other-proxy")
+    client.pair = AsyncMock()
+    client.disconnect = AsyncMock()
+
+    with (
+        _patch_pairing_gate(source="failed-proxy") as wait,
+        patch(
+            "bleak_retry_connector.establish_connection",
+            new=AsyncMock(return_value=client),
+        ) as connect,
+        pytest.raises(BondRouteMismatchError),
+    ):
+        await flow._attempt_pairing(flow._manual_data[CONF_ADDRESS])
+
+    assert wait.await_args.kwargs["source"] == "failed-proxy"
+    assert "pair" not in connect.await_args.kwargs
+    client.pair.assert_not_awaited()
+    client.disconnect.assert_awaited_once()
+
+
+@pytest.mark.parametrize("authenticated", [True, False])
+async def test_proxy_retry_verifies_bond_after_pair_rpc_error(
+    hass: HomeAssistant, authenticated: bool
+) -> None:
+    """A proxy can create a bond before its pairing RPC reports an error."""
+    flow = _pairing_flow(hass)
+    flow._pairing_retry_source = "failed-proxy"
+    client = MagicMock()
+    client.is_connected = True
+    client._connected_scanner = MagicMock(source="failed-proxy")
+    client.pair = AsyncMock(side_effect=BleakError("pair RPC timed out"))
+    client.read_gatt_char = AsyncMock(
+        return_value=b"Model X" if authenticated else None,
+        side_effect=(None if authenticated else BleakError("Insufficient authentication")),
+    )
+    client.disconnect = AsyncMock()
+    proxy_path = ConnectionPath(source="failed-proxy", transport=TransportClass.PROXY)
+
+    with (
+        _patch_pairing_gate(source="failed-proxy") as wait,
+        patch(
+            "custom_components.adjustable_bed.config_flow.async_path_for_source",
+            return_value=proxy_path,
+        ),
+        patch(
+            "bleak_retry_connector.establish_connection",
+            new=AsyncMock(return_value=client),
+        ) as connect,
+    ):
+        result = await flow._async_pair_and_classify(flow._manual_data[CONF_ADDRESS], "new")
+
+    if authenticated:
+        assert result.outcome is OperationOutcome.SUCCESS
+        assert result.payload.proves_bond
+    else:
+        assert result.outcome is OperationOutcome.BOND_VERIFICATION_FAILED
+        assert result.payload.status is BondVerificationStatus.AUTH_FAILED
+    assert result.payload.owner.source == "failed-proxy"
+
+    assert wait.await_args.kwargs["source"] == "failed-proxy"
+    assert "pair" not in connect.await_args.kwargs
+    client.pair.assert_awaited_once_with()
+    client.read_gatt_char.assert_awaited_once()
+    client.disconnect.assert_awaited_once()
+
+
+@pytest.mark.parametrize("error", [NotImplementedError(), TypeError("pair unavailable")])
+async def test_proxy_retry_reports_unsupported_pairing_before_auth_read(
+    hass: HomeAssistant, error: Exception
+) -> None:
+    """An unsupported proxy cannot create a bond for an auth read to verify."""
+    flow = _pairing_flow(hass)
+    flow._pairing_retry_source = "failed-proxy"
+    client = MagicMock()
+    client._connected_scanner = MagicMock(source="failed-proxy")
+    client.pair = AsyncMock(side_effect=error)
+    client.read_gatt_char = AsyncMock(
+        side_effect=BleakError("Insufficient authentication")
+    )
+    client.disconnect = AsyncMock()
+
+    with (
+        _patch_pairing_gate(source="failed-proxy"),
+        patch(
+            "bleak_retry_connector.establish_connection",
+            new=AsyncMock(return_value=client),
+        ),
+    ):
+        result = await flow._async_pair_and_classify(flow._manual_data[CONF_ADDRESS], "new")
+
+    assert result.outcome is OperationOutcome.PAIRING_NOT_SUPPORTED
+    client.read_gatt_char.assert_not_awaited()
+    client.disconnect.assert_awaited_once()
+
+
+async def test_proxy_auth_failure_pins_subsequent_setup_retry(hass: HomeAssistant) -> None:
+    """The result form carries its failed proxy into the next attempt."""
+    flow = _pairing_flow(hass)
+    failed = BondEvidence(
+        status=BondVerificationStatus.AUTH_FAILED,
+        owner=BondOwner(transport=TransportClass.PROXY, source="failed-proxy"),
+        operation="setup_pairing",
+        observed_at="2026-09-23T00:00:00+00:00",
+    )
+    flow._pairing_result_shown = True
+    flow._pairing_origin_step = "bluetooth_pairing"
+    flow.operation.result = OperationResult(
+        outcome=OperationOutcome.BOND_VERIFICATION_FAILED, payload=failed
+    )
+    with patch.object(flow, "_async_pairing_step", AsyncMock()) as retry:
+        await flow.async_step_pairing_result({"action": "retry"})
+    assert flow._pairing_retry_source == "failed-proxy"
+    retry.assert_awaited_once_with("bluetooth_pairing", None)
 
 
 async def test_a_legacy_entry_now_routing_through_a_proxy_cannot_unpair(
@@ -6797,6 +6977,7 @@ async def test_a_reconnect_while_confirming_still_authorizes_the_replacement(
     flow._pairing_origin_step = "manual_pairing"
     record = _bond_record()
     flow._pairing_remove_record = record
+    flow._pairing_retry_source = "failed-proxy"
     reconnected = LocalBondInventory(
         status=BluezReadStatus.OK,
         records=(replace(record, connected=True, trusted=True),),
@@ -6811,6 +6992,7 @@ async def test_a_reconnect_while_confirming_still_authorizes_the_replacement(
 
     start.assert_called_once()
     assert flow._pairing_remove_record == record
+    assert flow._pairing_retry_source is None
 
 
 async def test_a_reconnect_before_removal_still_replaces_the_bond(

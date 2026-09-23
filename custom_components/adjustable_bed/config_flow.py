@@ -262,6 +262,7 @@ from .setup_operation import (
     SetupAction,
 )
 from .unsupported import (
+    PROXY_PAIRING_RECOVERY_URL,
     build_misidentified_issue_url,
     capture_device_info,
 )
@@ -440,10 +441,25 @@ _PAIRING_OUTCOME_FALLBACKS: Final[dict[str, str]] = {
         "into pairing mode or move it closer to an adapter or proxy, then select "
         "**Try again**."
     ),
+    "route_mismatch": (
+        "❌ Home Assistant connected through a different Bluetooth path. No new "
+        "pairing was attempted. Check that the selected adapter or proxy can "
+        "reach the bed, then select **Try again**."
+    ),
     "auth_failed": (
         "❌ The bed connected, but the link is still unauthenticated, so the bond "
         "did not form. Put the bed back into pairing mode and select **Try "
         "again**."
+    ),
+    "auth_failed_proxy": (
+        "❌ The bed connected through Bluetooth proxy **{transport}**, but "
+        "authentication failed. Close the bed's phone app, put the bed back into "
+        "Bluetooth pairing mode, and select **Try again** using the same proxy.\n\n"
+        "If the same authentication error returns, saved pairing keys on the "
+        "proxy may be stale. Follow the [step-by-step recovery guide]({recovery_url}). "
+        "A normal wireless firmware update does not erase these keys. A full "
+        "flash erase is a last resort: it removes the proxy's settings and ALL "
+        "Bluetooth pairings, so save its configuration first."
     ),
     "inconclusive": (
         "⚠️ Home Assistant could not confirm the existing bond either way: the "
@@ -1174,6 +1190,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # The adapter that owns the bond being verified, so the check runs on the
         # route that can actually authenticate, and the record it belongs to.
         self._pairing_verify_source: str | None = None
+        # An authentication failure on a proxy pins the next pairing attempt
+        # to that source, even when the configured adapter is Automatic.
+        self._pairing_retry_source: str | None = None
         self._pairing_verify_record: LocalBondRecord | None = None
         # True only when every route that could take the connection holds the
         # record being verified, which is what makes asserting it without
@@ -3708,6 +3727,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     self._pairing_origin_step or "bluetooth_pairing", None
                 )
             self._pairing_mode = "replace_local"
+            # A previous proxy retry must not route the replacement away from
+            # the host bond the user just approved removing.
+            self._pairing_retry_source = None
             self._pairing_origin_step = self._pairing_origin_step or "bluetooth_pairing"
             return await self._async_start_pairing_operation(
                 address,
@@ -3923,9 +3945,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 device=device,
             )
         except BondRouteMismatchError as err:
-            _LOGGER.info("Could not verify the existing bond for %s: %s", address, err)
+            _LOGGER.info("Pairing route mismatch for %s: %s", address, err)
             return OperationResult(
-                outcome=OperationOutcome.BOND_VERIFICATION_INCONCLUSIVE,
+                outcome=(
+                    OperationOutcome.BOND_VERIFICATION_INCONCLUSIVE
+                    if mode == "verify_existing"
+                    else OperationOutcome.ROUTE_MISMATCH
+                ),
                 detail=str(err),
             )
         except NotAdvertisingError as err:
@@ -3999,6 +4025,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         if user_input is not None and self._pairing_result_shown:
             if user_input.get("action") == "retry":
+                if (
+                    isinstance(evidence, BondEvidence)
+                    and evidence.status is BondVerificationStatus.AUTH_FAILED
+                    and evidence.owner.transport is TransportClass.PROXY
+                ):
+                    self._pairing_retry_source = evidence.owner.source
                 self._pairing_result_shown = False
                 return await self._async_pairing_step(
                     self._pairing_origin_step or "bluetooth_pairing", None
@@ -4067,6 +4099,21 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if result is None:
             return await self._pairing_text("no_run")
 
+        if (
+            result.outcome is OperationOutcome.BOND_VERIFICATION_FAILED
+            and isinstance(evidence, BondEvidence)
+            and evidence.status is BondVerificationStatus.AUTH_FAILED
+            and evidence.owner.transport is TransportClass.PROXY
+        ):
+            path = async_path_for_source(self.hass, evidence.owner.source)
+            transport = evidence.owner.source or "ESPHome proxy"
+            if path is not None and path.display_name != transport:
+                transport = f"{path.display_name} ({transport})"
+            return (await self._pairing_text("auth_failed_proxy")).format(
+                transport=transport,
+                recovery_url=PROXY_PAIRING_RECOVERY_URL,
+            )
+
         if result.succeeded and isinstance(evidence, BondEvidence):
             if not evidence.proves_bond:
                 # Nothing contradicted the pairing, but nothing proved it either.
@@ -4088,6 +4135,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         keys = {
             OperationOutcome.NOT_ADVERTISING: "not_advertising",
+            OperationOutcome.ROUTE_MISMATCH: "route_mismatch",
             OperationOutcome.BOND_VERIFICATION_FAILED: "auth_failed",
             OperationOutcome.BOND_VERIFICATION_INCONCLUSIVE: "inconclusive",
             OperationOutcome.PAIRING_NOT_SUPPORTED: "unsupported",
@@ -4146,6 +4194,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         preferred_adapter = ADAPTER_AUTO
         if self._manual_data:
             preferred_adapter = self._manual_data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
+        if request_bond and self._pairing_retry_source:
+            preferred_adapter = self._pairing_retry_source
 
         async with capture_proxy_logs(self.hass, address, preferred_adapter, retain=True):
             return await self._attempt_pairing_with_capture(
@@ -4186,6 +4236,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # non-connectable, so refusing here would block pairing over exactly the
         # proxy that Automatic mode uses happily.
         source = preferred_adapter if pinned else None
+        if request_bond and self._pairing_retry_source:
+            source = self._pairing_retry_source
         if not request_bond and self._pairing_verify_source:
             # Verifying an existing bond has to happen on the adapter that holds
             # it. A stronger but unbonded adapter would answer with an
@@ -4211,8 +4263,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         )
         pair_after_service_discovery = bool(
             request_bond
-            and bed_type
-            and requires_pairing_after_service_discovery(bed_type, protocol_variant)
+            and (
+                self._pairing_retry_source
+                or (
+                    bed_type
+                    and requires_pairing_after_service_discovery(bed_type, protocol_variant)
+                )
+            )
         )
 
         # LP Control and Sleep Number discover GATT, then ask Android to
@@ -4267,15 +4324,39 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         f"{actual_source or 'an unknown adapter'}, expected "
                         f"{self._pairing_verify_source}"
                     )
+                if (
+                    request_bond
+                    and self._pairing_retry_source
+                    and actual_source != self._pairing_retry_source
+                ):
+                    raise BondRouteMismatchError(
+                        "connected through "
+                        f"{actual_source or 'an unknown adapter'}, expected "
+                        f"{self._pairing_retry_source}"
+                    )
 
+                pair_error: Exception | None = None
                 if pair_after_service_discovery:
                     _LOGGER.info(
                         "Connected to %s and discovered services; creating the BLE bond now",
                         address,
                     )
                     self.async_report_action(SetupAction.PAIRING)
-                    await client.pair()
-                    _LOGGER.info("BLE backend pairing completed for %s via %s; verifying Auth next", address, actual_source)
+                    try:
+                        await client.pair()
+                    except (NotImplementedError, TypeError):
+                        # The backend cannot pair at all; an unauthenticated
+                        # read would misreport this as stale proxy keys.
+                        raise
+                    except Exception as err:  # noqa: BLE001 - verify before judging the RPC
+                        pair_error = err
+                        _LOGGER.warning(
+                            "Pairing %s raised (%s); verifying whether a bond was made",
+                            address,
+                            err,
+                        )
+                    else:
+                        _LOGGER.info("BLE backend pairing completed for %s via %s; verifying Auth next", address, actual_source)
 
                 self.async_report_action(SetupAction.VERIFYING_BOND)
                 evidence = await async_verify_authenticated_access(
@@ -4285,6 +4366,16 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     path=path,
                     operation=("setup_pairing" if request_bond else "verify_existing_bond"),
                 )
+                if (
+                    pair_after_service_discovery
+                    and pair_error is not None
+                    and evidence.status
+                    not in (
+                        BondVerificationStatus.VERIFIED,
+                        BondVerificationStatus.AUTH_FAILED,
+                    )
+                ):
+                    raise pair_error
                 _LOGGER.info(
                     "Bond verification result for %s via %s: status=%s reason=%s; disconnecting setup probe",
                     address, actual_source, evidence.status, evidence.error or "none",

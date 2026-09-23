@@ -344,8 +344,8 @@ The integration connects with pairing enabled and, for OKIN-style beds, verifies
 
 A Bluetooth bond belongs to whichever transport created it. A bond made through
 an adapter on the Home Assistant host lives in that host's BlueZ. A bond made
-through an ESPHome proxy lives on the proxy, where Home Assistant can neither
-read nor remove it. They are separate: pairing through one does nothing for the
+through an ESPHome proxy lives on the proxy. This integration's host bond-removal
+action does not remove proxy bonds. They are separate: pairing through one does nothing for the
 other, and moving a bed to a different proxy means pairing again.
 
 The setup and pairing screens say which path they expect to use, and warn before
@@ -380,6 +380,80 @@ preferred adapter to the one you want cleared and try again.
 For a bed combined from two entries, the action first asks which side you mean.
 Each side keeps its own Bluetooth address and bond state, so only the selected
 side is disconnected and updated.
+
+### Repeated authentication failures through an ESPHome proxy
+
+Use these steps when setup or **Settings → System → Repairs → Bluetooth pairing
+required** says the bed connected through a proxy but **authentication failed**.
+Bluetooth can connect even when its saved pairing keys no longer work. A full
+erase and reinstall resolved this for a Sleep Number user in
+[issue #574](https://github.com/kristofferR/ha-adjustable-bed/issues/574#issuecomment-5797294142).
+It is a last resort, not a guaranteed fix for every pairing failure.
+
+**First, try ordinary pairing:**
+
+1. Note the proxy named in the error. If only its address is shown, find the
+   matching device under **Settings → Devices & Services → ESPHome**. In
+   **Settings → Devices & Services → Adjustable Bed → Configure**, select that
+   proxy as the bed's preferred Bluetooth adapter. If you are still adding the bed, keep the same proxy
+   selected in setup.
+2. Close the bed's phone app and keep the proxy near the bed.
+3. Put the bed into **Bluetooth pairing mode**, following its manufacturer's
+   instructions. For Sleep Number Climate 360 / FlexFit Fuzion, hold the side
+   pairing button until the blue light blinks.
+4. Select **Try again** in setup, or **Submit** in the pairing repair, while the
+   bed is still in pairing mode.
+
+The preferred adapter does not pin Home Assistant's connection route. Check the
+bed's Bluetooth connection sensor's `connection_source` attribute after the
+retry. Only treat the named proxy as recovered if the successful connection
+used that proxy. If the route differs or is unknown, do not erase the named
+proxy based on that retry.
+
+If the **same authentication error** returns, the proxy may have stale pairing
+keys. Updating its firmware wirelessly, restarting Home Assistant, or deleting
+and re-adding the bed in Home Assistant does **not** erase those keys. Timeouts,
+a bed that cannot be found, or missing Bluetooth services alone do not justify
+erasing a proxy. Generate a support bundle if you are unsure.
+
+**Last resort: erase and reinstall the affected proxy over USB**
+
+**This removes the proxy's Wi-Fi settings and every Bluetooth pairing stored on
+it, including pairings for other devices.** Those devices may need pairing again.
+Do not erase anything until you have the original proxy configuration and can
+reinstall it. The steps below are for a proxy managed in ESPHome Device Builder.
+If yours is not, use its supplier's reinstall instructions or ask for help first.
+
+1. Open **ESPHome Device Builder** in Home Assistant. Find the **exact proxy
+   named in the error**, open **Edit**, and save a copy of its YAML configuration.
+   Keep any referenced secrets or included files too. Do not delete the device
+   from Device Builder. Then select **Install → Manual download → Factory
+   format** and save the firmware file. If it cannot build, stop here, before
+   erasing. Do not share the configuration or firmware publicly, as they can
+   contain Wi-Fi passwords and API keys.
+2. Connect that proxy to your computer with a **USB data cable**. A charging-only
+   cable will not work. Keep Home Assistant open on that computer so you can
+   return to Device Builder afterward.
+3. In desktop **Chrome or Edge**, open
+   [Espressif's flashing tool](https://espressif.github.io/esptool-js/).
+   Select **Connect**, choose the proxy's USB serial port, and select
+   **Erase Flash**. Wait for it to finish, then select **Disconnect** to release
+   the USB port. If you cannot identify the port, stop before erasing.
+4. Return to **ESPHome Device Builder**. On that same proxy, select **Install →
+   Plug into this computer**, then follow the prompts to install its existing
+   configuration. Use the original configuration, not a generic proxy image.
+   If that option is unavailable, open [ESPHome Web](https://web.esphome.io/),
+   select **Connect**, choose the proxy's USB port, then **Install** and select
+   the factory firmware file saved in step 1.
+5. Wait until the proxy shows **Online** in Device Builder. Return it to its
+   usual power supply near the bed and check that it comes online again.
+6. Keep the bed's phone app closed. Put the bed back into Bluetooth pairing mode
+   and retry setup or the pairing repair, using **that same proxy**.
+
+The repair stays available if pairing fails. If the same error remains after
+these steps, generate an Adjustable Bed support bundle and include it with your
+report. Say which proxy you erased and that you used **Erase Flash**, rather than
+only updating its firmware. Repeatedly erasing the proxy is not useful.
 
 ### Signs Pairing is Needed
 - Connection succeeds but no commands work

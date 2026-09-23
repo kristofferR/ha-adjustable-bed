@@ -379,7 +379,9 @@
           "outcome_timed_out": "Outcome: timed out",
           "outcome_cancelled": "Outcome: cancelled",
           "outcome_connection_failed": "Outcome: connection failed",
-          "outcome_removal_unconfirmed": "Outcome: removal unconfirmed"
+          "outcome_route_mismatch": "Outcome: Bluetooth path changed",
+          "outcome_removal_unconfirmed": "Outcome: removal unconfirmed",
+          "outcome_auth_failed_proxy": "Outcome: proxy authentication failed"
         },
         "data_description": {
           "action": "Try again keeps the bed type, adapter and protocol settings you already chose.",
@@ -401,7 +403,9 @@
           "outcome_timed_out": "❌ The bed stopped responding partway through. Put it back into pairing mode and select **Try again**.",
           "outcome_cancelled": "❌ Pairing was cancelled.",
           "outcome_connection_failed": "❌ Could not pair. Another app or the bed's own remote may be holding the bed's connection, or it may be out of range. Select **Try again**.",
-          "outcome_removal_unconfirmed": "⚠️ Home Assistant could not confirm what happened to the existing bond, so pairing was not attempted and the bond may still be in place. Check the host's Bluetooth settings, then select **Try again**."
+          "outcome_route_mismatch": "❌ Home Assistant connected through a different Bluetooth path. No new pairing was attempted. Check that the selected adapter or proxy can reach the bed, then select **Try again**.",
+          "outcome_removal_unconfirmed": "⚠️ Home Assistant could not confirm what happened to the existing bond, so pairing was not attempted and the bond may still be in place. Check the host's Bluetooth settings, then select **Try again**.",
+          "outcome_auth_failed_proxy": "❌ The bed connected through Bluetooth proxy **{transport}**, but authentication failed. Close the bed's phone app, put the bed back into Bluetooth pairing mode, and select **Try again** using the same proxy.\n\nIf the same authentication error returns, saved pairing keys on the proxy may be stale. Follow the [step-by-step recovery guide]({recovery_url}). A normal wireless firmware update does not erase these keys. A full flash erase is a last resort: it removes the proxy's settings and ALL Bluetooth pairings, so save its configuration first."
         }
       },
       "pairing_replace_confirm": {
@@ -2724,9 +2728,9 @@
             "title": "Pair your adjustable bed",
             "description": "**{name}** ({address}) requires a Bluetooth bond before it can be controlled.\n\n1. Put the bed into pairing mode. **OKIN bases** (Okimat, Okin CST, Nectar OKIN-*, Mattress Firm 900-O): power-cycle the control box — unplug it for ~30 seconds, then plug it back in (the light blinks blue, then turns green); they have no Bluetooth pairing button. **Leggett & Platt Smart Bed (LP Comfort Connect)**: unplug the bed's power cord, remove any batteries from the power supply, then plug it back in — wait for a chime and a pulsing blue light under the bed. **Other beds**: hold the pairing button on the control box or remote until its light blinks.\n2. While the bed is in pairing mode, promptly press **Submit** to pair.\n\nPairing happens on your Home Assistant host or Bluetooth proxy — not your phone. ESPHome proxies must run ESPHome 2024.3.0 or newer.\n\nIf pairing keeps failing and the log names `AuthenticationFailed` or `AuthenticationRejected`, the bond is failing at the authentication stage rather than timing out, and retrying unchanged rarely helps. One common cause is stored pairing keys that no longer match: the bed still stores a pairing for the adapter you are connecting from, while that adapter no longer has the matching key. Clearing only one side does not help in that case.\n\nRemove the stored pairing on the adapter that connects to the bed: on a Home Assistant host that is `bluetoothctl remove {address}`; if you connect through an ESPHome Bluetooth proxy the bond is stored on the proxy and has to be cleared there. Then clear the bed's own stored pairings the way its manufacturer documents, and pair again."
           },
-          "proxy_bond": {
-            "title": "The bond is stored on a Bluetooth proxy",
-            "description": "**{name}** ({address}) last failed to authenticate through **{transport}**, which is a Bluetooth proxy rather than this Home Assistant host.\n\nA proxy keeps its own Bluetooth bonds, and Home Assistant can neither read nor remove them, so there is nothing this repair can safely change.\n\nTo clear it: reflash or factory reset the proxy, which makes it forget its bonds, then put the bed into pairing mode so it bonds again. Alternatively set this bed's preferred adapter to a Bluetooth adapter on the Home Assistant host and pair there, where the bond can be managed."
+          "proxy_pairing": {
+            "title": "Pair your bed through the Bluetooth proxy",
+            "description": "**{name}** ({address}) connected through Bluetooth proxy **{transport}**, but authentication failed. The bed may need pairing, or saved pairing keys may no longer match.\n\n1. Close the bed's phone app and keep the proxy near the bed.\n2. Put the bed into **Bluetooth pairing mode**, following its manufacturer's instructions. For Sleep Number Climate 360 / FlexFit Fuzion, hold the side pairing button until the blue light blinks.\n3. Select **Submit** to try pairing again through the bed's configured Bluetooth path. Keep using the same proxy.\n\nIf the **same authentication error** returns, follow the [step-by-step proxy recovery guide]({recovery_url}). It explains how to save your proxy configuration, connect it by USB, fully erase its flash, reinstall its original configuration, and pair again. A normal wireless firmware update does **not** erase saved pairing keys.\n\n**A full erase is a last resort:** it removes the proxy's Wi-Fi settings and **all Bluetooth pairings**, including other devices. This repair does not erase anything automatically. Timeouts or missing Bluetooth services alone are not a reason to erase the proxy."
           },
           "stale_bond_confirm": {
             "title": "Replace a bond the bed no longer accepts",
@@ -2751,7 +2755,8 @@
         },
         "abort": {
           "pairing_failed": "Pairing didn't complete. Put the bed back into pairing mode (OKIN bases: unplug the control box ~30s, then plug it back in; Leggett & Platt Smart Bed: unplug the bed and remove the power-supply batteries, then plug it back in and wait for the chime and pulsing blue light; other beds: hold the pairing button), make sure it is in range of your Home Assistant adapter or an ESPHome proxy on 2024.3.0+, then run this repair again. If the log names `AuthenticationFailed` or `AuthenticationRejected`, the bond failed to authenticate. If it keeps happening, clear the stored pairing both on the adapter you connect from and on the bed itself, then try again.",
-          "proxy_bond_guidance": "Nothing was changed. The Bluetooth bond for this bed is stored on a proxy, where Home Assistant cannot reach it.",
+          "proxy_pairing_requires_setup": "This bed permits only one connection during pairing, and its setup has no active connection for this repair to reuse. Select **{transport}** as the bed's preferred Bluetooth adapter, put the bed in pairing mode, then reload the integration entry. A preferred adapter does not guarantee the connection route. Check the Bluetooth connection sensor's `connection_source` attribute before concluding that the named proxy was repaired. If authentication still fails through that proxy, follow the [proxy recovery guide]({recovery_url}). A full flash erase removes every pairing stored on the proxy.",
+          "proxy_pairing_issue_changed": "The pairing issue changed while this repair was open. Open the current repair to retry through the proxy that most recently failed.",
           "stale_bond_recovery_failed": "The bond could not be recovered, so this repair stays open. Put the bed into pairing mode and run it again.",
           "recovery_success": "✅ The Bluetooth bond was confirmed. The bed should respond normally now.",
           "recovery_not_run": "❌ The recovery did not run.",
@@ -2760,6 +2765,11 @@
           "recovery_unpair_unconfirmed": "❌ Removing the old bond could not be confirmed, so it may or may not still be there and no new one was made. Put the bed into pairing mode and run this repair again.",
           "recovery_failed_unchanged": "❌ The existing bond could not be checked safely, so nothing was changed. Make sure the bed is in range and run this repair again.",
           "recovery_partial": "❌ The old bond was removed but the new one could not be confirmed, so this repair stays open. Put the bed into pairing mode and run it again."
+        },
+        "error": {
+          "pairing_failed": "Pairing did not complete. Check that the bed is still in pairing mode and the same proxy is online, then retry. Use the recovery guide below only if authentication keeps failing.",
+          "pairing_not_supported": "This proxy cannot pair through its current Bluetooth backend. Update its ESPHome firmware to 2024.3.0 or newer, then retry. Do not erase the proxy's flash for this error.",
+          "pairing_route_mismatch": "Home Assistant retried through a different or unknown Bluetooth path. This does not confirm a failure on the named proxy. Check which proxy is connected and retry before using the recovery guide; do not erase that proxy based on this retry."
         }
       }
     },
