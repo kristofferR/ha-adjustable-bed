@@ -2763,7 +2763,8 @@
           "recovery_partial": "❌ The old bond was removed but the new one could not be confirmed, so this repair stays open. Put the bed into pairing mode and run it again."
         },
         "error": {
-          "pairing_failed": "Pairing did not complete. Check that the bed is still in pairing mode and the same proxy is online, then retry. Use the recovery guide below only if authentication keeps failing."
+          "pairing_failed": "Pairing did not complete. Check that the bed is still in pairing mode and the same proxy is online, then retry. Use the recovery guide below only if authentication keeps failing.",
+          "pairing_route_mismatch": "Home Assistant retried through a different or unknown Bluetooth path. This does not confirm a failure on the named proxy. Check which proxy is connected and retry before using the recovery guide; do not erase that proxy based on this retry."
         }
       }
     },

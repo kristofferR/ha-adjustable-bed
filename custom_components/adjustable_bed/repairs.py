@@ -82,7 +82,7 @@ from .setup_operation import (
     OperationResult,
     SetupAction,
 )
-from .unsupported import PROXY_PAIRING_RECOVERY_URL
+from .unsupported import PROXY_PAIRING_RECOVERY_URL, create_pairing_required_issue
 
 if TYPE_CHECKING:
     from bleak.backends.device import BLEDevice
@@ -300,6 +300,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         self._evidence = evidence
         self._offer: RecoveryOffer | None = None
         self._result_shown = False
+        self._retry_route_mismatch = False
 
     def _async_flow_manager(self) -> Any:
         """Repairs flows are driven by their own manager, not the config one."""
@@ -529,9 +530,43 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         """Retry pairing, with recovery guidance for the proxy that failed."""
         errors: dict[str, str] = {}
         if user_input is not None:
-            if await self._async_try_pair():
+            issue_id = f"pairing_required_{self._address.replace(':', '_').lower()}"
+            issue_existed = (
+                async_get_issue_registry(self.hass).async_get_issue(DOMAIN, issue_id)
+                is not None
+            )
+            if await self._async_try_pair(
+                expected_source=self._issue_data.get("evidence_source")
+            ):
                 return self.async_create_entry(title="", data={})
-            errors["base"] = "pairing_failed"
+            if (
+                self._retry_route_mismatch
+                and issue_existed
+                and async_get_issue_registry(self.hass).async_get_issue(DOMAIN, issue_id)
+                is None
+            ):
+                # A coordinator can clear its issue while bonding through a
+                # different path. Keep the original proxy failure actionable.
+                await create_pairing_required_issue(
+                    self.hass,
+                    self._address,
+                    self._name,
+                    self._entry_id,
+                    evidence={
+                        "status": self._issue_data.get("evidence_status"),
+                        "owner": {
+                            "transport": self._issue_data.get("evidence_transport"),
+                            "source": self._issue_data.get("evidence_source"),
+                            "adapter": self._issue_data.get("evidence_adapter"),
+                        },
+                        "observed_at": self._issue_data.get("evidence_observed_at"),
+                    },
+                )
+            errors["base"] = (
+                "pairing_route_mismatch"
+                if self._retry_route_mismatch
+                else "pairing_failed"
+            )
         source = self._issue_data.get("evidence_source")
         path = async_path_for_source(self.hass, source)
         transport = source or "ESPHome proxy"
@@ -790,7 +825,9 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
             and self._target_data().get(CONF_BLE_BOND_ESTABLISHED)
         )
 
-    async def _async_pair_via_coordinator(self) -> bool | None:
+    async def _async_pair_via_coordinator(
+        self, expected_source: str | None = None
+    ) -> bool | None:
         """Pair without ever opening a throwaway connection.
 
         Returns True/False for a bed that grants one connection per pairing
@@ -838,13 +875,26 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
             except Exception as err:  # noqa: BLE001 - any failure means "not paired"
                 _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
                 return False
+            actual_source = getattr(coordinator, "connection_source", None)
+            evidence = getattr(coordinator, "last_bond_evidence", None)
+            observed_source = (
+                evidence.owner.source
+                if isinstance(evidence, BondEvidence)
+                else actual_source
+            )
+            if (
+                expected_source
+                and (paired or observed_source)
+                and observed_source != expected_source
+            ):
+                self._retry_route_mismatch = True
+                return False
             if paired:
                 # What matters is whether this pairing was proven, not whether
                 # the stored context changed. The coordinator deliberately skips
                 # rewriting provenance when the owner is identical, so comparing
                 # contexts would read a correctly re-verified same-adapter bond
                 # as "nothing was established" and delete a valid record.
-                evidence = getattr(coordinator, "last_bond_evidence", None)
                 if isinstance(evidence, BondEvidence) and evidence.proves_bond:
                     self._persist_repaired_bond(evidence.owner)
                 else:
@@ -878,13 +928,22 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
             # than reading "unchanged" as "unproven".
             reloaded = self._target_coordinator()
             evidence = getattr(reloaded, "last_bond_evidence", None)
+            actual_source = getattr(reloaded, "connection_source", None)
+            observed_source = (
+                evidence.owner.source
+                if isinstance(evidence, BondEvidence)
+                else actual_source
+            )
+            if expected_source and observed_source != expected_source:
+                self._retry_route_mismatch = True
+                return False
             if isinstance(evidence, BondEvidence) and evidence.proves_bond:
                 self._persist_repaired_bond(evidence.owner)
             else:
                 self._persist_repaired_bond(None)
         return bonded
 
-    async def _async_try_pair(self) -> bool:
+    async def _async_try_pair(self, expected_source: str | None = None) -> bool:
         """Create a bond for beds that pair at connect time, and verify it.
 
         Beds that must bond after service discovery never reach this path: they
@@ -895,7 +954,8 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         from bleak.exc import BleakError
         from bleak_retry_connector import establish_connection
 
-        via_coordinator = await self._async_pair_via_coordinator()
+        self._retry_route_mismatch = False
+        via_coordinator = await self._async_pair_via_coordinator(expected_source)
         if via_coordinator is not None:
             return via_coordinator
 
@@ -928,6 +988,16 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                 return False
 
             try:
+                source = client_source(client)
+                if expected_source and source != expected_source:
+                    self._retry_route_mismatch = True
+                    _LOGGER.warning(
+                        "Repair: pairing for %s used %s instead of failed proxy %s",
+                        self._address,
+                        source or "an unknown adapter",
+                        expected_source,
+                    )
+                    return False
                 bonded = False
                 try:
                     # Verify the bond by reading a known auth-gated characteristic. A
@@ -935,7 +1005,6 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                     # (e.g. the characteristic is absent) are inconclusive, not failures.
                     await client.read_gatt_char(DEVICE_INFO_CHARS["model_number"])
                     bonded = True
-                    source = client_source(client)
                     path = async_path_for_source(self.hass, source) if source else None
                     if path is not None:
                         verified_owner = BondOwner.from_path(path)

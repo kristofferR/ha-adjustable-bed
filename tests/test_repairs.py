@@ -71,7 +71,10 @@ from custom_components.adjustable_bed.setup_operation import (
     OperationOutcome,
     OperationResult,
 )
-from custom_components.adjustable_bed.unsupported import create_pairing_required_issue
+from custom_components.adjustable_bed.unsupported import (
+    create_pairing_required_issue,
+    delete_pairing_required_issue,
+)
 
 from .conftest import TEST_ADDRESS, TEST_NAME
 
@@ -722,6 +725,7 @@ def test_pairing_repair_translations_cover_every_progress_and_result() -> None:
         assert "pairing_failed" in flow["abort"]
         for step in required_steps:
             assert flow["step"][step].keys() >= {"title", "description"}
+        assert "pairing_route_mismatch" in flow["error"]
 
 
 async def test_try_pair_returns_false_when_device_not_in_range(hass: HomeAssistant) -> None:
@@ -771,7 +775,7 @@ async def test_try_pair_succeeds_and_clears_marker(hass: HomeAssistant) -> None:
             hass.config_entries, "async_reload", new=AsyncMock()
         ) as mock_reload,
     ):
-        result = await flow._async_try_pair()
+        result = await flow._async_try_pair(expected_source="bedroom-proxy")
 
     assert result is True
     assert entry.data[CONF_BLE_BOND_ESTABLISHED] is True
@@ -1830,7 +1834,7 @@ async def test_an_unbonded_proxy_link_keeps_the_guided_pairing_retry(
     assert result["description_placeholders"]["transport"] == "proxy-source"
     with patch.object(flow, "_async_try_pair", AsyncMock(return_value=False)) as pair:
         retry = await flow.async_step_proxy_pairing({})
-    pair.assert_awaited_once()
+    pair.assert_awaited_once_with(expected_source="proxy-source")
     assert retry["step_id"] == "proxy_pairing"
     assert retry["errors"] == {"base": "pairing_failed"}
     with patch.object(flow, "_async_try_pair", AsyncMock(return_value=True)):
@@ -1884,6 +1888,86 @@ async def test_a_proxy_authentication_failure_still_gets_proxy_guidance(
         result = await flow.async_step_init()
 
     assert result["step_id"] == "proxy_pairing"
+
+
+async def test_proxy_retry_does_not_accept_a_bond_on_another_path(
+    hass: HomeAssistant,
+) -> None:
+    """A rerouted retry cannot clear a repair for the proxy that failed."""
+    entry = _bed_entry(hass, address=TEST_ADDRESS, name=TEST_NAME)
+    flow = PairingRequiredRepairFlow(
+        TEST_ADDRESS,
+        TEST_NAME,
+        entry.entry_id,
+        issue_data={"evidence_source": "failed-proxy"},
+    )
+    flow.hass = hass
+    client = MagicMock()
+    client._connected_scanner = MagicMock(source="other-proxy")
+    client.read_gatt_char = AsyncMock(return_value=b"Model X")
+    client.disconnect = AsyncMock()
+
+    with (
+        patch(BLEAK_DEVICE, return_value=MagicMock()),
+        patch(ESTABLISH, new=AsyncMock(return_value=client)),
+        patch.object(hass.config_entries, "async_reload", new=AsyncMock()) as reload,
+    ):
+        result = await flow.async_step_proxy_pairing({})
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "pairing_route_mismatch"}
+    assert CONF_BLE_BOND_ESTABLISHED not in entry.data
+    client.read_gatt_char.assert_not_awaited()
+    client.disconnect.assert_awaited_once()
+    reload.assert_not_awaited()
+
+
+async def test_proxy_retry_checks_a_coordinator_pairing_route(
+    hass: HomeAssistant,
+) -> None:
+    """A one-connection bed can also reroute while the coordinator pairs."""
+    entry = _bed_entry(hass, address=TEST_ADDRESS, name=TEST_NAME)
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2}
+    )
+    await create_pairing_required_issue(
+        hass,
+        TEST_ADDRESS,
+        TEST_NAME,
+        entry.entry_id,
+        evidence={
+            "status": "auth_failed",
+            "owner": {"transport": "proxy", "source": "failed-proxy"},
+        },
+    )
+
+    async def pair_on_other_proxy() -> bool:
+        await delete_pairing_required_issue(hass, TEST_ADDRESS)
+        return True
+
+    coordinator = MagicMock()
+    coordinator.async_pair_now = AsyncMock(side_effect=pair_on_other_proxy)
+    coordinator.connection_source = "other-proxy"
+    coordinator.last_bond_evidence = None
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+    flow = PairingRequiredRepairFlow(
+        TEST_ADDRESS,
+        TEST_NAME,
+        entry.entry_id,
+        issue_data={
+            "evidence_status": "auth_failed",
+            "evidence_transport": "proxy",
+            "evidence_source": "failed-proxy",
+        },
+    )
+    flow.hass = hass
+
+    result = await flow.async_step_proxy_pairing({})
+
+    assert result["errors"] == {"base": "pairing_route_mismatch"}
+    coordinator.async_pair_now.assert_awaited_once()
+    issue_id = f"pairing_required_{TEST_ADDRESS.replace(':', '_').lower()}"
+    assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is not None
 
 
 async def test_a_one_connection_bed_with_a_proxy_bond_still_gets_proxy_guidance(
