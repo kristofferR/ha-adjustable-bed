@@ -104,11 +104,14 @@ controller.
 
 For a single-address Fuzion pair, each position report belongs to the side that
 was queried. Commands refresh that side before releasing the command lock, and
-the side's entities receive each new reading immediately. This fixes the stale
-and cross-side activity entries reported in #623, where another button press
-could be needed just to display values already received from the bed. An activity
-entry showing a position change is feedback, not an additional movement command;
-the percentages do not by themselves prove that physical movement has finished.
+the side's entities receive each new reading immediately. With position feedback
+enabled, preset buttons query `AGCP <side>` and both enabled `ACTG` axes at the
+app's one-second interval until the preset finishes. This publishes intermediate
+and final measured percentages, rather than leaving the initial position on
+screen until the next press (#623). Bluetooth response time adds to the interval;
+Fuzion does not stream actuator positions like Linak. Stop or a replacement
+command can cancel the refresh. A 90-second integration timeout bounds the wait
+if the bed never reports completion; it is not a hardware movement deadline.
 
 MCR movement performs its own status checks even with optional angle sensing
 disabled. Held controls send continued-adjustment requests; position targets and

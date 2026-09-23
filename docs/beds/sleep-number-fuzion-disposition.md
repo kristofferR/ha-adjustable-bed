@@ -2,8 +2,8 @@
 
 ## Issue #623 feedback correction
 
-This follow-up reuses the accepted report below without changing protocol
-commands, timing, artifact acceptance, or corpus counts. The reporter's two
+This follow-up reuses the accepted report below without changing artifact
+acceptance or corpus counts. The reporter's original two
 screenshots and debug log show the left-side display lagging received feedback
 until another press. The paired runtime also copied unqualified values between
 sides. Physical preset completion is not inferred from those activity entries.
@@ -14,9 +14,26 @@ sides. Physical preset completion is not inferred from those activity entries.
 | A command returned before an unbound background read updated its side | IMPLEMENTED | The side coordinator reads its bound controller under the command lock, including direct position controls. The same test requires fresh feedback before the preset action returns. |
 | Reconnect hydration inherited an expired scheduler context and selected inconsistent cancellation events | IMPLEMENTED | `_async_execute_controller_operation` resolves its context after taking the command lock. The same test checks both sides after a command establishes the connection. |
 | Anti-Snore and Zero Gravity preset payloads | ALREADY_IMPLEMENTED | `_send_preset` keeps the accepted `ACSP <side> <preset> 0` format; the test checks exactly one selected-side `snore` or `zero_g` request on cold and connected links. |
+| Preset acceptance was mistaken for final position availability | IMPLEMENTED | `_send_preset` polls `AGCP` and reads enabled `ACTG` axes until completion. `tests/test_sleep_number_pair_feedback.py` models delayed start, intermediate motion and completion on both sides, plus cancellation, timeout and disabled feedback. |
 
-Follow-up totals: **3 IMPLEMENTED, 1 ALREADY_IMPLEMENTED, 0 EXCLUDED**. No new
+Follow-up totals: **4 IMPLEMENTED, 1 ALREADY_IMPLEMENTED, 0 EXCLUDED**. No new
 APK analysis or hardware compatibility claim is made.
+
+The two screenshots in [the follow-up comment](https://github.com/kristofferR/ha-adjustable-bed/issues/623#issuecomment-5802827098)
+show initial Anti-Snore values after Zero Gravity, then Zero Gravity values after
+Anti-Snore. Both images were inspected. The support bundle identifies 4.0.1 but
+contains no command trace of those presses. The original regression fake changed
+positions immediately on acknowledgement; it now keeps them unchanged until the
+simulated bed moves and checks intermediate as well as final feedback.
+
+Existing accepted source evidence: `capability/flexfit/C3957f.p` connects the
+preset command, `C3976p` (`AGCP == IN_PROGRESS`), `C3977q` (both position reads),
+and `C3973n`/`C3957f.y` (1000 ms delay) through the shared `z` loop. Its authoritative
+`flexfit/f.smali` implementation invokes the delay before checking progress.
+The integration also tolerates an old preset status before movement starts;
+completion requires the requested preset or leaving an observed `in_progress`.
+Its 90-second wait limit is an integration safeguard, not an artifact-derived
+movement timeout. No command is resent and no target percentage is fabricated.
 
 ## Accepted artifact evidence
 
