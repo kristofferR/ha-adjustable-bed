@@ -441,6 +441,11 @@ _PAIRING_OUTCOME_FALLBACKS: Final[dict[str, str]] = {
         "into pairing mode or move it closer to an adapter or proxy, then select "
         "**Try again**."
     ),
+    "route_mismatch": (
+        "❌ Home Assistant connected through a different Bluetooth path. No new "
+        "pairing was attempted. Check that the selected adapter or proxy can "
+        "reach the bed, then select **Try again**."
+    ),
     "auth_failed": (
         "❌ The bed connected, but the link is still unauthenticated, so the bond "
         "did not form. Put the bed back into pairing mode and select **Try "
@@ -1185,6 +1190,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # The adapter that owns the bond being verified, so the check runs on the
         # route that can actually authenticate, and the record it belongs to.
         self._pairing_verify_source: str | None = None
+        # An authentication failure on a proxy pins the next pairing attempt
+        # to that source, even when the configured adapter is Automatic.
+        self._pairing_retry_source: str | None = None
         self._pairing_verify_record: LocalBondRecord | None = None
         # True only when every route that could take the connection holds the
         # record being verified, which is what makes asserting it without
@@ -3934,9 +3942,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 device=device,
             )
         except BondRouteMismatchError as err:
-            _LOGGER.info("Could not verify the existing bond for %s: %s", address, err)
+            _LOGGER.info("Pairing route mismatch for %s: %s", address, err)
             return OperationResult(
-                outcome=OperationOutcome.BOND_VERIFICATION_INCONCLUSIVE,
+                outcome=(
+                    OperationOutcome.BOND_VERIFICATION_INCONCLUSIVE
+                    if mode == "verify_existing"
+                    else OperationOutcome.ROUTE_MISMATCH
+                ),
                 detail=str(err),
             )
         except NotAdvertisingError as err:
@@ -4010,6 +4022,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         if user_input is not None and self._pairing_result_shown:
             if user_input.get("action") == "retry":
+                if (
+                    isinstance(evidence, BondEvidence)
+                    and evidence.status is BondVerificationStatus.AUTH_FAILED
+                    and evidence.owner.transport is TransportClass.PROXY
+                ):
+                    self._pairing_retry_source = evidence.owner.source
                 self._pairing_result_shown = False
                 return await self._async_pairing_step(
                     self._pairing_origin_step or "bluetooth_pairing", None
@@ -4114,6 +4132,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         keys = {
             OperationOutcome.NOT_ADVERTISING: "not_advertising",
+            OperationOutcome.ROUTE_MISMATCH: "route_mismatch",
             OperationOutcome.BOND_VERIFICATION_FAILED: "auth_failed",
             OperationOutcome.BOND_VERIFICATION_INCONCLUSIVE: "inconclusive",
             OperationOutcome.PAIRING_NOT_SUPPORTED: "unsupported",
@@ -4172,6 +4191,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         preferred_adapter = ADAPTER_AUTO
         if self._manual_data:
             preferred_adapter = self._manual_data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
+        if request_bond and self._pairing_retry_source:
+            preferred_adapter = self._pairing_retry_source
 
         async with capture_proxy_logs(self.hass, address, preferred_adapter, retain=True):
             return await self._attempt_pairing_with_capture(
@@ -4212,6 +4233,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # non-connectable, so refusing here would block pairing over exactly the
         # proxy that Automatic mode uses happily.
         source = preferred_adapter if pinned else None
+        if request_bond and self._pairing_retry_source:
+            source = self._pairing_retry_source
         if not request_bond and self._pairing_verify_source:
             # Verifying an existing bond has to happen on the adapter that holds
             # it. A stronger but unbonded adapter would answer with an
@@ -4237,8 +4260,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         )
         pair_after_service_discovery = bool(
             request_bond
-            and bed_type
-            and requires_pairing_after_service_discovery(bed_type, protocol_variant)
+            and (
+                self._pairing_retry_source
+                or (
+                    bed_type
+                    and requires_pairing_after_service_discovery(bed_type, protocol_variant)
+                )
+            )
         )
 
         # LP Control and Sleep Number discover GATT, then ask Android to
@@ -4292,6 +4320,16 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         "connected through "
                         f"{actual_source or 'an unknown adapter'}, expected "
                         f"{self._pairing_verify_source}"
+                    )
+                if (
+                    request_bond
+                    and self._pairing_retry_source
+                    and actual_source != self._pairing_retry_source
+                ):
+                    raise BondRouteMismatchError(
+                        "connected through "
+                        f"{actual_source or 'an unknown adapter'}, expected "
+                        f"{self._pairing_retry_source}"
                     )
 
                 if pair_after_service_discovery:

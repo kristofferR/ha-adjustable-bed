@@ -863,6 +863,13 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
 
         coordinator = self._target_coordinator()
         if coordinator is not None:
+            actual_source = getattr(coordinator, "connection_source", None)
+            if expected_source and (
+                getattr(coordinator, "is_connected", False) is not True
+                or actual_source != expected_source
+            ):
+                self._retry_route_mismatch = True
+                return False
             _LOGGER.info(
                 "Repair: pairing %s through the existing coordinator so the "
                 "bed's single connection is kept rather than spent",
@@ -907,6 +914,12 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         # No coordinator: the entry failed setup and is retrying. Clear the bond
         # marker so the next setup requests the bond, then let setup own the one
         # connection instead of racing it with a client of our own.
+        if expected_source:
+            # A reload may pair during connect before this flow can inspect its
+            # route. It cannot safely repair a particular proxy without a live
+            # coordinator link on that proxy.
+            self._retry_route_mismatch = True
+            return False
         if target_data.get(CONF_BLE_BOND_ESTABLISHED):
             target_data[CONF_BLE_BOND_ESTABLISHED] = False
             self._persist_target_bond_data(target_data)
@@ -975,13 +988,16 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         # connect attempt, where bleak's cleanup can abort it.
         async with async_get_connect_lock(self.hass, self._address):
             try:
+                connect_kwargs: dict[str, Any] = (
+                    {"pair": True} if expected_source is None else {}
+                )
                 client = await establish_connection(
                     BleakClient,
                     device,
                     self._name,
                     max_attempts=1,
-                    pair=True,
                     use_services_cache=False,
+                    **connect_kwargs,
                 )
             except Exception as err:  # noqa: BLE001 - any failure means "not paired"
                 _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
@@ -998,6 +1014,12 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                         expected_source,
                     )
                     return False
+                if expected_source:
+                    try:
+                        await client.pair()
+                    except Exception as err:  # noqa: BLE001 - failed repair stays open
+                        _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
+                        return False
                 bonded = False
                 try:
                     # Verify the bond by reading a known auth-gated characteristic. A

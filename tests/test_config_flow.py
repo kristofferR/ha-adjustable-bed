@@ -57,6 +57,7 @@ from custom_components.adjustable_bed.bond_verification import (
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
+    BondRouteMismatchError,
     NotAdvertisingError,
     _default_motor_count,
     _is_valid_motor_count,
@@ -6119,6 +6120,51 @@ async def test_a_pinned_proxy_seen_only_as_non_connectable_can_still_pair(
     # refusing on the prediction's say-so.
     assert wait.await_args.kwargs["source"] == "bedroom_proxy"
     assert connects.await_args.args[1] is device
+
+
+async def test_proxy_auth_retry_checks_route_before_pairing(hass: HomeAssistant) -> None:
+    """A rerouted retry cannot bond another proxy and claim recovery."""
+    flow = _pairing_flow(hass)
+    flow._pairing_retry_source = "failed-proxy"
+    client = MagicMock()
+    client._connected_scanner = MagicMock(source="other-proxy")
+    client.pair = AsyncMock()
+    client.disconnect = AsyncMock()
+
+    with (
+        _patch_pairing_gate(source="failed-proxy") as wait,
+        patch(
+            "bleak_retry_connector.establish_connection",
+            new=AsyncMock(return_value=client),
+        ) as connect,
+        pytest.raises(BondRouteMismatchError),
+    ):
+        await flow._attempt_pairing(flow._manual_data[CONF_ADDRESS])
+
+    assert wait.await_args.kwargs["source"] == "failed-proxy"
+    assert "pair" not in connect.await_args.kwargs
+    client.pair.assert_not_awaited()
+    client.disconnect.assert_awaited_once()
+
+
+async def test_proxy_auth_failure_pins_subsequent_setup_retry(hass: HomeAssistant) -> None:
+    """The result form carries its failed proxy into the next attempt."""
+    flow = _pairing_flow(hass)
+    failed = BondEvidence(
+        status=BondVerificationStatus.AUTH_FAILED,
+        owner=BondOwner(transport=TransportClass.PROXY, source="failed-proxy"),
+        operation="setup_pairing",
+        observed_at="2026-09-23T00:00:00+00:00",
+    )
+    flow._pairing_result_shown = True
+    flow._pairing_origin_step = "bluetooth_pairing"
+    flow.operation.result = OperationResult(
+        outcome=OperationOutcome.BOND_VERIFICATION_FAILED, payload=failed
+    )
+    with patch.object(flow, "_async_pairing_step", AsyncMock()) as retry:
+        await flow.async_step_pairing_result({"action": "retry"})
+    assert flow._pairing_retry_source == "failed-proxy"
+    retry.assert_awaited_once_with("bluetooth_pairing", None)
 
 
 async def test_a_legacy_entry_now_routing_through_a_proxy_cannot_unpair(

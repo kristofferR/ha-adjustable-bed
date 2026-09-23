@@ -402,6 +402,7 @@
           "outcome_timed_out": "❌ The bed stopped responding partway through. Put it back into pairing mode and select **Try again**.",
           "outcome_cancelled": "❌ Pairing was cancelled.",
           "outcome_connection_failed": "❌ Could not pair. Another app or the bed's own remote may be holding the bed's connection, or it may be out of range. Select **Try again**.",
+          "outcome_route_mismatch": "❌ Home Assistant connected through a different Bluetooth path. No new pairing was attempted. Check that the selected adapter or proxy can reach the bed, then select **Try again**.",
           "outcome_removal_unconfirmed": "⚠️ Home Assistant could not confirm what happened to the existing bond, so pairing was not attempted and the bond may still be in place. Check the host's Bluetooth settings, then select **Try again**.",
           "outcome_auth_failed_proxy": "❌ The bed connected through Bluetooth proxy **{transport}**, but authentication failed. Close the bed's phone app, put the bed back into Bluetooth pairing mode, and select **Try again** using the same proxy.\n\nIf the same authentication error returns, saved pairing keys on the proxy may be stale. Follow the [step-by-step recovery guide]({recovery_url}). A normal wireless firmware update does not erase these keys. A full flash erase is a last resort: it removes the proxy's settings and ALL Bluetooth pairings, so save its configuration first."
         }

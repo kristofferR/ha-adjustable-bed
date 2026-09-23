@@ -95,6 +95,7 @@ class OperationOutcome(StrEnum):
     # is "try again" rather than "go wake your bed".
     DEVICE_UNRESOLVED = "device_unresolved"
     CONNECTION_FAILED = "connection_failed"
+    ROUTE_MISMATCH = "route_mismatch"
     CONNECTION_IN_USE = "connection_in_use"
     NO_CONNECTION_SLOTS = "no_connection_slots"
     TIMEOUT = "timeout"
