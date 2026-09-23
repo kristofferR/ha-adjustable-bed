@@ -1,11 +1,15 @@
 # Leggett & Platt
 
-**Status:** ❓ Needs testing
+**Status:** ✅ Tested for Gen2 LP Comfort Connect pairing and motor movement; other variants and features need more testing
+
+[Discussion #614](https://github.com/kristofferR/ha-adjustable-bed/discussions/614) confirms that a Prodigy LBR with an LP Comfort Connect 209-M001 controller was auto-detected, bonded through an ESPHome Bluetooth proxy, and moved with tested commands. The reporter has not yet checked every motor, preset, massage and lighting control, or long-term connection stability.
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), MarcusW, [Josh Pearce](https://github.com/joshpearce), and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
 ## Known Models
+
 - Leggett & Platt Prodigy 2.0 / S-Cape 2.0
+- Leggett & Platt Prodigy LBR (LP Comfort Connect 209-M001; Gen2 movement and bonding confirmed)
 - Leggett & Platt Prodigy Comfort Elite / Prodigy CE (`LP BED CONTROL`, CU170)
 - Leggett & Platt beds with "MlRM" Bluetooth name prefix
 - Some Tempur-Pedic bases (non-Ergo)
@@ -98,7 +102,10 @@ physical validation. See [Richmat](richmat.md) for the protocol details.
 >   the APK does not state the duration of this initial power-cycle window.
 >   A connected client can also re-open the window with the `PAIR ENABLE`
 >   serial command; for that "Pair Another Phone" flow, the app states that
->   pairing mode remains active for 2 minutes.
+>   pairing mode remains active for 2 minutes. On the reported Prodigy LBR,
+>   **LP Control → Settings → Change Bed settings → Re-enable pairing mode**
+>   opened the pairing window without a power cycle; the integration's
+>   **Begin pairing** action then bonded through an ESPHome proxy.
 > - `DWIPE` is the app's Gen2 factory-reset command, and its own dialog lists
 >   "Bluetooth Pairings" among what it erases. The app's take-ownership copy
 >   also tells the user to remove the bond from phone settings afterwards, so
@@ -127,10 +134,12 @@ physical validation. See [Richmat](richmat.md) for the protocol details.
 >   firmware.
 >
 > Once BlueZ confirms the bond the integration records it and skips `pair=True`
-> on later connections. Hardware confirmation of the initial bond and of a
-> subsequent reconnect remains pending. The integration holds the link open for
-> this bed type (no idle disconnect); LP Control's own UI warns that the remote
-> does not function while the app is connected.
+> on later connections. The initial bond is confirmed on the Prodigy LBR in
+> [discussion #614](https://github.com/kristofferR/ha-adjustable-bed/discussions/614);
+> subsequent reconnects and long-term stability remain unverified. The
+> integration holds the link open for this bed type (no idle disconnect); LP
+> Control's own UI warns that the remote does not function while the app is
+> connected.
 
 ### Okin Variant
 - **Service UUID:** `62741523-...` (shared with Okimat and Nectar)
