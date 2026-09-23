@@ -1119,6 +1119,7 @@ class SingleAddressInner:
         self.cancel_command = None
         self.motor_pulse_count = 1
         self.motor_pulse_delay_ms = 1
+        self.disable_angle_sensing = True
         self.position_data = {}
         self._position_callbacks = set()
         self.cancelled_position_hydrations = 0

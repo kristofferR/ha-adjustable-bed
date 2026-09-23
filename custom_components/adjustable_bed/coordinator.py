@@ -215,7 +215,7 @@ from .unsupported import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController
+    from .beds.base import BedController, SideBoundController
 
 T = TypeVar("T")
 _LOGGER = logging.getLogger(__name__)
@@ -4885,17 +4885,19 @@ class AdjustableBedCoordinator:
             self._cancel_command.set()
 
         entry_cancel_count = self._cancel_counter
-        command_context = current_command_context()
-        scheduler_managed = bool(
-            command_context is not None
-            and command_context.scheduler_token is self._command_scheduler.token
-        )
-        legacy_exclusive = bool(
-            scheduler_managed and command_context is not None and "*" in command_context.resources
-        )
-        cancel_event = self.cancel_command
-
         async with self._command_lock:
+            # Background reads can inherit a command context while it is active,
+            # then acquire this lock after that command has finished. Resolve
+            # ownership here so their controller sees the same cancellation event.
+            command_context = current_command_context()
+            scheduler_managed = bool(
+                command_context is not None
+                and command_context.scheduler_token is self._command_scheduler.token
+            )
+            legacy_exclusive = bool(
+                scheduler_managed and command_context is not None and "*" in command_context.resources
+            )
+            cancel_event = self.cancel_command
             self._cancel_disconnect_timer()
 
             cancelled_while_waiting = (
@@ -5027,6 +5029,7 @@ class AdjustableBedCoordinator:
         pulse_delay_ms: int | None = None,
         group_id: str | None = None,
         kind: CommandKind = CommandKind.COMMAND,
+        read_positions_after_operation: bool = True,
     ) -> None:
         """Execute an opaque controller command through the device scheduler."""
 
@@ -5038,7 +5041,7 @@ class AdjustableBedCoordinator:
                 raise_on_lock_cancel=False,
                 preemptible=True,
                 enable_position_polling=True,
-                read_positions_after_operation=True,
+                read_positions_after_operation=read_positions_after_operation,
                 operation_name="command",
             )
 
@@ -5307,7 +5310,9 @@ class AdjustableBedCoordinator:
         if self._controller is not None:
             self._controller.set_raw_notify_callback(callback)
 
-    async def _async_read_positions(self) -> None:
+    async def _async_read_positions(
+        self, controller: BedController | SideBoundController | None = None
+    ) -> None:
         """Actively read current positions from the bed.
 
         Called after movement commands to ensure position data is up to date.
@@ -5317,12 +5322,13 @@ class AdjustableBedCoordinator:
         within a command (which already holds the lock), this is correct.
         For fire-and-forget background reads, use _async_read_positions_background().
         """
-        if self._controller is None:
+        controller = controller if controller is not None else self._controller
+        if controller is None:
             return
 
         try:
             async with asyncio.timeout(POSITION_FEEDBACK_TIMEOUT):
-                await self._controller.read_positions(self._motor_count)
+                await controller.read_positions(self._motor_count)
         except TimeoutError:
             _LOGGER.debug("Position read timed out")
         except Exception as err:

@@ -1436,8 +1436,8 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
         self._single_position_data: dict[str, float] = {}
         self._single_position_callbacks: set[Callable[[dict[str, float]], None]] = set()
         self._single_unregister_position_callback: Callable[[], None] | None = None
-        # Only CB24 reports shared axes that can be relayed to both logical sides.
-        if inner.bed_type == BED_TYPE_OKIN_CB24:
+        # CB24 shares axes; Sleep Number reports explicitly side-owned axes.
+        if inner.bed_type in {BED_TYPE_OKIN_CB24, BED_TYPE_SLEEP_NUMBER}:
             self._single_unregister_position_callback = inner.register_position_callback(
                 lambda _positions: self._sync_position_state()
             )
@@ -1565,13 +1565,23 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
         return dict(self._single_position_data)
 
     def _sync_position_state(self) -> None:
+        positions = self._single_inner.position_data
+        if self._single_inner.bed_type == BED_TYPE_SLEEP_NUMBER:
+            prefix = f"{self._single_side}_"
+            positions = {
+                key.removeprefix(prefix): value
+                for key, value in positions.items()
+                if key.startswith(prefix)
+            }
+        if positions == self._single_position_data:
+            return
         self._single_position_data.clear()
-        self._single_position_data.update(self._single_inner.position_data)
+        self._single_position_data.update(positions)
         for callback_fn in list(self._single_position_callbacks):
             callback_fn(dict(self._single_position_data))
 
     def _unregister_inner_position_callback(self) -> None:
-        """Release the shared-position relay registered by CB24 views."""
+        """Release the physical coordinator's position relay."""
         unregister = self._single_unregister_position_callback
         if unregister is not None:
             unregister()
@@ -1655,8 +1665,22 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
     async def async_execute_controller_command(
         self, command_fn: CommandFn, **kwargs: Any
     ) -> None:
+        side_feedback = self._single_inner.bed_type == BED_TYPE_SLEEP_NUMBER
+
         async def bound(controller: Any) -> None:
-            await command_fn(controller.bind_side(self._single_side))
+            side_controller = controller.bind_side(self._single_side)
+            await command_fn(side_controller)
+            if (
+                side_feedback
+                and not self._single_inner.disable_angle_sensing
+                and not self._single_inner.cancel_command.is_set()
+            ):
+                # Read under the same command lock and side binding. An unbound
+                # background read would query the default side after this returns.
+                await self._single_inner._async_read_positions(side_controller)
+
+        if side_feedback:
+            kwargs["read_positions_after_operation"] = False
 
         resource = kwargs.pop("resource", None)
         resources = kwargs.pop("resources", None)
@@ -1706,8 +1730,7 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
         controller = self.capability_controller
         if controller is not None and controller.supports_direct_position_control:
 
-            async def set_direct(live_controller: Any) -> None:
-                bound = live_controller.bind_side(self._single_side)
+            async def set_direct(bound: Any) -> None:
                 native = bound.angle_to_native_position(position_key, target_angle)
                 await bound.set_motor_position(position_key, native)
                 self._single_inner._record_seek_result(
@@ -1721,11 +1744,9 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
                     )
                 )
 
-            await self._single_inner.async_execute_controller_command(
+            await self.async_execute_controller_command(
                 set_direct,
-                resources=self._scoped_command_resources(
-                    resource=f"motor:{position_key}"
-                ),
+                resource=f"motor:{position_key}",
             )
             return
 
