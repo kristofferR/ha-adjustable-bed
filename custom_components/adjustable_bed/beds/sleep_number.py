@@ -58,10 +58,11 @@ _BAMKEY_BLOB_MIN_LENGTH = _BAMKEY_BLOB_HEADER_LENGTH + 4
 _BED_PRESENCE_POLL_TTL_SECONDS = 5.0
 _SLEEP_NUMBER_MIN_POSITION = 0
 _SLEEP_NUMBER_MAX_POSITION = 100
-# SleepIQ FuzionFlexFitCapability waits one second between preset checks.
-_PRESET_POLL_INTERVAL_SECONDS = 1.0
+# SleepIQ FuzionFlexFitCapability waits one second between movement checks.
+_MOVEMENT_POLL_INTERVAL_SECONDS = 1.0
 # Integration safeguard, not a hardware movement deadline.
-_PRESET_FEEDBACK_TIMEOUT_SECONDS = 90.0
+_MOVEMENT_FEEDBACK_TIMEOUT_SECONDS = 90.0
+_MOVEMENT_COMMANDS = frozenset({"ACTS", "ASTM", "ACSP", "ASTP", "ACHS"})
 _SLEEP_NUMBER_SLEEP_SETTING_MIN = 5
 _SLEEP_NUMBER_SLEEP_SETTING_MAX = 100
 _SLEEP_NUMBER_SLEEP_SETTING_STEP = 5
@@ -391,8 +392,29 @@ class SleepNumberController(BedController):
         """Execute one validated semantic command under the coordinator lock."""
         self.validate_sleep_number_command(command, parameters)
         spec, args = format_command(command, parameters)
-        values = await self._send_bamkey_command(spec.key, *args, expected_args=len(spec.response))
-        result = parse_response(spec, values)
+        try:
+            values = await self._send_bamkey_command(
+                spec.key, *args, expected_args=len(spec.response)
+            )
+            result = parse_response(spec, values)
+            if spec.key in _MOVEMENT_COMMANDS and not self._coordinator.disable_angle_sensing:
+                await self._monitor_articulation(spec.key, parameters)
+        except BaseException:
+            if spec.key in _MOVEMENT_COMMANDS:
+                # Finish release while the command still owns the shared queue;
+                # a replacement must not race the old command's global halt.
+                cleanup = asyncio.create_task(self.stop_all())
+                try:
+                    try:
+                        await asyncio.shield(cleanup)
+                    except asyncio.CancelledError:
+                        await cleanup
+                except Exception:
+                    _LOGGER.warning("Sleep Number movement cleanup failed", exc_info=True)
+            raise
+        if spec.key in {"ACHA", "ACCP"} and not self._coordinator.disable_angle_sensing:
+            sides = self._feature_sides if spec.key == "ACHA" else (str(parameters["side"]),)
+            await self._read_stopped_positions(sides)
         if command == "get_temperature_programs":
             settings = await self.async_execute_sleep_number_command(
                 "get_temperature_program_settings", parameters
@@ -653,10 +675,10 @@ class SleepNumberController(BedController):
             spec for spec in specs if self._actuator_enabled(self._motor_to_actuator(spec.key))
         )
 
-    def _actuator_enabled(self, actuator: str) -> bool:
+    def _actuator_enabled(self, actuator: str, side: str | None = None) -> bool:
         return (
             self._system_config.get("articulation_enable_flag", "yes") == "yes"
-            and self._system_config.get(f"{self._side}_{actuator}_actuator", "yes") == "yes"
+            and self._system_config.get(f"{side or self._side}_{actuator}_actuator", "yes") == "yes"
         )
 
     def angle_to_native_position(self, motor: str, angle: float) -> int:  # noqa: ARG002
@@ -833,13 +855,25 @@ class SleepNumberController(BedController):
 
     async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
         """Read actuator positions, preserving explicit logical-side ownership."""
+        await self._read_positions_for_side(self._side)
+
+    async def _read_positions_for_side(
+        self, side: str, *, cancel_event: asyncio.Event | None = None
+    ) -> dict[str, int]:
+        """Publish measured positions without attributing another side to this view."""
+        positions: dict[str, int] = {}
+        logical_side = self.command_side if side == self._side else side
         for motor, actuator in (("back", "head"), ("legs", "foot")):
-            if not self._actuator_enabled(actuator):
+            if not self._actuator_enabled(actuator, side):
                 continue
-            position = await self._read_actuator_position(actuator)
+            position = await self._read_actuator_position(
+                actuator, side=side, cancel_event=cancel_event
+            )
+            positions[actuator] = position
             if self._notify_callback is not None:
-                key = f"{self.command_side}_{motor}" if self.command_side else motor
+                key = f"{logical_side}_{motor}" if logical_side else motor
                 self._notify_callback(key, float(position))
+        return positions
 
     async def read_non_notifying_positions(self) -> None:
         """Sleep Number uses request/response reads rather than streaming positions."""
@@ -860,10 +894,7 @@ class SleepNumberController(BedController):
 
     async def _send_stop_for_motor(self, motor: str) -> None:
         """Use the app's global foundation halt, including on user release."""
-        await self._send_bamkey_command(
-            SleepNumberCommands.HALT_ALL_ACTUATORS,
-            cancel_event=asyncio.Event(),
-        )
+        await self.stop_all()
 
     async def move_head_up(self) -> None:
         await self.move_back_up()
@@ -903,6 +934,8 @@ class SleepNumberController(BedController):
 
     async def stop_all(self) -> None:
         await self._send_bamkey_command("ACHA", cancel_event=asyncio.Event())
+        if not self._coordinator.disable_angle_sensing:
+            await self._read_stopped_positions(self._feature_sides)
 
     async def lights_on(self) -> None:
         """Turn on the underbed light using the last active or default level."""
@@ -1492,46 +1525,77 @@ class SleepNumberController(BedController):
 
     async def _send_preset(self, preset: str) -> None:
         """Send a Fuzion articulation preset with timer=0."""
-        await self._send_bamkey_command(
-            SleepNumberCommands.SET_TARGET_PRESET,
-            self._side,
-            preset,
-            "0",
+        await self.async_execute_sleep_number_command(
+            "set_target_preset_with_timer",
+            {"side": self._side, "target_preset_with_timer": preset, "timer": 0},
         )
-        if self._coordinator.disable_angle_sensing:
-            return
 
-        # ACSP acknowledges acceptance, not completed movement. Keep the side
-        # binding and command lock until AGCP leaves its in-progress state.
+    async def _monitor_articulation(self, key: str, parameters: Mapping[str, object]) -> None:
+        """Keep motion feedback serialized with its command until it settles."""
+        side = str(parameters.get("side", self._side))
         cancel_event = self._coordinator.cancel_command
         saw_progress = False
-        async with asyncio.timeout(_PRESET_FEEDBACK_TIMEOUT_SECONDS):
+        async with asyncio.timeout(_MOVEMENT_FEEDBACK_TIMEOUT_SECONDS):
             while True:
                 try:
                     await asyncio.wait_for(
-                        cancel_event.wait(), timeout=_PRESET_POLL_INTERVAL_SECONDS
+                        cancel_event.wait(), timeout=_MOVEMENT_POLL_INTERVAL_SECONDS
                     )
                 except TimeoutError:
                     pass
                 if cancel_event.is_set():
                     raise asyncio.CancelledError
-                state = await self.async_execute_sleep_number_command(
-                    "get_current_preset", {"side": self._side}
-                )
-                await self.read_positions()
-                current = state["current_preset"]
-                if current == "in_progress":
+                if key == "ACHS":
+                    state = await self.async_execute_sleep_number_command(
+                        "gets_actuator_homing_state", {}
+                    )
+                    current = state["bed_homing_state"]
+                    if current in {"error", "required"}:
+                        raise ValueError(f"Sleep Number homing did not complete: {current}")
+                    if current == "done":
+                        for homing_side in self._feature_sides:
+                            await self._read_positions_for_side(homing_side)
+                        return
+                    continue
+                if key in {"ACTS", "ASTM"}:
+                    state = await self.async_execute_sleep_number_command(
+                        "get_actuator_movement_status", {}
+                    )
+                    positions = await self._read_positions_for_side(side)
+                    actuator = str(parameters["actuator"])
+                    moving = state[f"{side}_{actuator}"] == "1"
+                    at_target = positions.get(actuator) == parameters["target_actuator_position"]
+                else:
+                    state = await self.async_execute_sleep_number_command(
+                        "get_current_preset", {"side": side}
+                    )
+                    await self._read_positions_for_side(side)
+                    current = state["current_preset"]
+                    moving = current == "in_progress"
+                    at_target = current == parameters.get(
+                        "target_preset", parameters.get("target_preset_with_timer")
+                    )
+                if moving:
                     saw_progress = True
-                elif current == preset or saw_progress:
+                elif at_target or saw_progress:
                     return
 
-    async def _read_actuator_position(self, actuator: str) -> int:
+    async def _read_stopped_positions(self, sides: tuple[str, ...]) -> None:
+        """Bound readback after halt without letting the movement cancel suppress it."""
+        async with asyncio.timeout(_BAMKEY_RESPONSE_TIMEOUT):
+            for side in sides:
+                await self._read_positions_for_side(side, cancel_event=asyncio.Event())
+
+    async def _read_actuator_position(
+        self, actuator: str, *, side: str | None = None, cancel_event: asyncio.Event | None = None
+    ) -> int:
         """Read an actuator position from the selected side."""
         response = await self._send_bamkey_command(
             SleepNumberCommands.GET_ACTUATOR_POSITION,
-            self._side,
+            side or self._side,
             actuator,
             expected_args=1,
+            cancel_event=cancel_event,
         )
         return max(
             _SLEEP_NUMBER_MIN_POSITION,

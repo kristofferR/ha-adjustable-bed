@@ -338,8 +338,8 @@ class TestSleepNumberController:
 
         coordinator.controller._send_bamkey_command.assert_has_awaits(
             [
-                call("ACTG", "left", "head", expected_args=1),
-                call("ACTG", "left", "foot", expected_args=1),
+                call("ACTG", "left", "head", expected_args=1, cancel_event=None),
+                call("ACTG", "left", "foot", expected_args=1, cancel_event=None),
             ]
         )
         callback.assert_has_calls([call("back", 41.0), call("legs", 19.0)])
@@ -699,6 +699,7 @@ class TestSleepNumberController:
             "left",
             "zero_g",
             "0",
+            expected_args=0,
         )
 
     async def test_read_bed_presence_maps_in_to_true(

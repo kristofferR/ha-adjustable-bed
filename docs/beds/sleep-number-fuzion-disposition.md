@@ -14,9 +14,13 @@ sides. Physical preset completion is not inferred from those activity entries.
 | A command returned before an unbound background read updated its side | IMPLEMENTED | The side coordinator reads its bound controller under the command lock, including direct position controls. The same test requires fresh feedback before the preset action returns. |
 | Reconnect hydration inherited an expired scheduler context and selected inconsistent cancellation events | IMPLEMENTED | `_async_execute_controller_operation` resolves its context after taking the command lock. The same test checks both sides after a command establishes the connection. |
 | Anti-Snore and Zero Gravity preset payloads | ALREADY_IMPLEMENTED | `_send_preset` keeps the accepted `ACSP <side> <preset> 0` format; the test checks exactly one selected-side `snore` or `zero_g` request on cold and connected links. |
-| Preset acceptance was mistaken for final position availability | IMPLEMENTED | `_send_preset` polls `AGCP` and reads enabled `ACTG` axes until completion. `tests/test_sleep_number_pair_feedback.py` models delayed start, intermediate motion and completion on both sides, plus cancellation, timeout and disabled feedback. |
+| Preset acceptance was mistaken for final position availability | IMPLEMENTED | The shared articulation monitor polls `AGCP` and reads enabled `ACTG` axes until completion. `tests/test_sleep_number_pair_feedback.py` models delayed start, intermediate motion and completion on both sides, plus cancellation, timeout and disabled feedback. |
+| Direct targets and held motor controls lacked ongoing feedback | IMPLEMENTED | `ACTS` and `ASTM` invoke the shared monitor, checking the requested side/actuator's `ACTM` bit and publishing enabled `ACTG` axes. Tests exercise cold and connected left/right targets and held controls, with unrelated axes moving. |
+| Semantic service commands bypassed preset-button monitoring | IMPLEMENTED | Monitoring lives in `async_execute_sleep_number_command`; `ACSP` (including nonzero timers) and `ASTP` services share the same completion path as buttons. Tests also check explicitly selected non-default sides without corrupting standalone feedback. |
+| Global homing had no completion monitor | IMPLEMENTED | `ACHS` follows `ACHG` until done or error and refreshes both physical sides after completion. Tests cover in-progress, done, required and error replies. |
+| Cancellation, failure and release could leave stale feedback or outlive queue ownership | IMPLEMENTED | Movement cleanup sends fresh-event `ACHA`, drains shielded cleanup before releasing the queue, and attempts bounded readback. Explicit Stop refreshes both sides. Real scheduler tests cover Stop, replacement and shutdown; unit tests cover timeout and lost feedback. |
 
-Follow-up totals: **4 IMPLEMENTED, 1 ALREADY_IMPLEMENTED, 0 EXCLUDED**. No new
+Follow-up totals: **8 IMPLEMENTED, 1 ALREADY_IMPLEMENTED, 0 EXCLUDED**. No new
 APK analysis or hardware compatibility claim is made.
 
 The two screenshots in [the follow-up comment](https://github.com/kristofferR/ha-adjustable-bed/issues/623#issuecomment-5802827098)
@@ -34,6 +38,19 @@ The integration also tolerates an old preset status before movement starts;
 completion requires the requested preset or leaving an observed `in_progress`.
 Its 90-second wait limit is an integration safeguard, not an artifact-derived
 movement timeout. No command is resent and no target percentage is fabricated.
+
+The same accepted `C3957f.h` and `.n` routes wire absolute and micro-adjustment
+targets through `z`, using `.w`/`GetActuatorMovementStatus` and `.y`'s 1000 ms
+cadence. `ACTM` response order is right head, right foot, left head, left foot;
+only the requested actuator controls target-monitor completion. An initial
+stationary reply below the target is not treated as completed movement.
+The accepted `flexfit/S.smali` homing tracker uses `ACHG`, treats required/error
+as failure, and invokes the same delay while in progress. Homing publishes
+measured positions after completion, not fabricated intermediate percentages.
+Application evidence defines global `ACHA` cleanup; the integration additionally
+guarantees cleanup on command cancellation/replacement under its global movement
+resource, before the successor is dispatched. Existing autonomous preset timer
+semantics are preserved; monitoring does not wait out a timer countdown.
 
 ## Accepted artifact evidence
 
