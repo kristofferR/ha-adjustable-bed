@@ -47,8 +47,10 @@ from .bond_verification import (
     BondEvidence,
     BondOwner,
     BondVerificationStatus,
+    async_verify_authenticated_access,
     bond_context_matches,
     build_bond_context,
+    has_evidence_backed_verifier,
 )
 from .combine_suggestion import async_dismiss, async_is_dismissed, normalize_addresses
 from .const import (
@@ -528,6 +530,21 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Retry pairing, with recovery guidance for the proxy that failed."""
+        target_data = self._target_data()
+        if (
+            grants_one_connection_per_pairing_window(
+                target_data.get(CONF_BED_TYPE) or "",
+                target_data.get(CONF_PROTOCOL_VARIANT),
+            )
+            and self._target_coordinator() is None
+        ):
+            return self.async_abort(
+                reason="proxy_pairing_requires_setup",
+                description_placeholders={
+                    "transport": self._issue_data.get("evidence_source") or "the failed proxy",
+                    "recovery_url": PROXY_PAIRING_RECOVERY_URL,
+                },
+            )
         errors: dict[str, str] = {}
         if user_input is not None:
             issue_id = f"pairing_required_{self._address.replace(':', '_').lower()}"
@@ -783,16 +800,16 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
             },
         )
 
-    def _find_device(self) -> BLEDevice | None:
-        """Find the BLE device, honoring the entry's preferred adapter.
+    def _find_device(self, expected_source: str | None = None) -> BLEDevice | None:
+        """Find the BLE device on the failed source or preferred adapter.
 
         BLE bonds live on the adapter/proxy that performed pairing, so a repair
         must pair on the same source the coordinator will use — otherwise it can
         bond one source, mark the entry bonded, and leave the configured source
         still unauthenticated.
         """
-        preferred = ADAPTER_AUTO
-        if self._entry_id is not None:
+        preferred = expected_source or ADAPTER_AUTO
+        if expected_source is None and self._entry_id is not None:
             entry = self.hass.config_entries.async_get_entry(self._entry_id)
             if entry is not None:
                 preferred = self._target_data().get(
@@ -972,7 +989,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         if via_coordinator is not None:
             return via_coordinator
 
-        device = self._find_device()
+        device = self._find_device(expected_source)
         if device is None:
             _LOGGER.warning(
                 "Repair: bed %s not reachable on the configured adapter — cannot pair",
@@ -1014,43 +1031,63 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                         expected_source,
                     )
                     return False
+                pair_error: Exception | None = None
                 if expected_source:
                     try:
                         await client.pair()
-                    except Exception as err:  # noqa: BLE001 - failed repair stays open
-                        _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
-                        return False
-                bonded = False
-                try:
-                    # Verify the bond by reading a known auth-gated characteristic. A
-                    # still-unbonded link fails with GATT error=5; non-auth errors
-                    # (e.g. the characteristic is absent) are inconclusive, not failures.
-                    await client.read_gatt_char(DEVICE_INFO_CHARS["model_number"])
-                    bonded = True
-                    path = async_path_for_source(self.hass, source) if source else None
-                    if path is not None:
-                        verified_owner = BondOwner.from_path(path)
-                except BleakError as err:
-                    if is_ble_authentication_error(err):
+                    except Exception as err:  # noqa: BLE001 - the verifier decides
+                        pair_error = err
                         _LOGGER.warning(
-                            "Repair: bond verification failed for %s: %s",
+                            "Repair: pairing %s raised (%s); verifying the bond",
                             self._address,
                             err,
                         )
-                    else:
+                path = async_path_for_source(self.hass, source) if source else None
+                bed_type, variant = self._bed_type()
+                proven_bond = False
+                if has_evidence_backed_verifier(bed_type, variant):
+                    evidence = await async_verify_authenticated_access(
+                        client,
+                        bed_type=bed_type,
+                        protocol_variant=variant,
+                        path=path,
+                        operation="repair_pairing",
+                    )
+                    bonded = evidence.proves_bond
+                    proven_bond = bonded
+                    if bonded:
+                        verified_owner = evidence.owner
+                else:
+                    bonded = False
+                    try:
+                        await client.read_gatt_char(DEVICE_INFO_CHARS["model_number"])
+                        bonded = True
+                        if path is not None:
+                            verified_owner = BondOwner.from_path(path)
+                    except BleakError as err:
+                        if is_ble_authentication_error(err):
+                            _LOGGER.warning(
+                                "Repair: bond verification failed for %s: %s",
+                                self._address,
+                                err,
+                            )
+                        else:
+                            _LOGGER.debug(
+                                "Repair: bond verification inconclusive for %s: %s",
+                                self._address,
+                                err,
+                            )
+                            bonded = True
+                    except Exception as err:  # noqa: BLE001
                         _LOGGER.debug(
                             "Repair: bond verification inconclusive for %s: %s",
                             self._address,
                             err,
                         )
                         bonded = True
-                except Exception as err:  # noqa: BLE001
-                    _LOGGER.debug(
-                        "Repair: bond verification inconclusive for %s: %s",
-                        self._address,
-                        err,
-                    )
-                    bonded = True
+
+                if pair_error is not None and not proven_bond:
+                    return False
 
                 if not bonded:
                     return False

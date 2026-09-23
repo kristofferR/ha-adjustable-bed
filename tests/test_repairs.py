@@ -39,6 +39,7 @@ from custom_components.adjustable_bed.bond_verification import (
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_OKIMAT,
+    BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
     CONF_BLE_BOND_MARKER_UNRELIABLE,
@@ -46,6 +47,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PAIR_ID,
     CONF_PAIR_MEMBER_ADDRESSES,
     CONF_PAIR_MODE,
+    CONF_PREFERRED_ADAPTER,
     CONF_SIDE,
     DOMAIN,
     PAIR_MODE_SEPARATE_ADDRESS,
@@ -722,6 +724,7 @@ def test_pairing_repair_translations_cover_every_progress_and_result() -> None:
         assert "title" in pairing
         assert required_steps <= flow["step"].keys()
         assert "pairing_failed" in flow["abort"]
+        assert "proxy_pairing_requires_setup" in flow["abort"]
         for step in required_steps:
             assert flow["step"][step].keys() >= {"title", "description"}
         assert "pairing_route_mismatch" in flow["error"]
@@ -762,7 +765,7 @@ async def test_try_pair_succeeds_and_clears_marker(hass: HomeAssistant) -> None:
     client.disconnect = AsyncMock()
 
     with (
-        patch(BLEAK_DEVICE, return_value=MagicMock()),
+        patch.object(flow, "_find_device", return_value=MagicMock()),
         patch(ESTABLISH, new=AsyncMock(return_value=client)) as mock_establish,
         patch(
             "custom_components.adjustable_bed.repairs.async_path_for_source",
@@ -784,6 +787,29 @@ async def test_try_pair_succeeds_and_clears_marker(hass: HomeAssistant) -> None:
     client.pair.assert_awaited_once()
     mock_reload.assert_awaited_once_with(entry.entry_id)
     client.disconnect.assert_awaited_once()
+
+
+async def test_proxy_retry_selects_the_failed_source(hass: HomeAssistant) -> None:
+    """The failed proxy takes precedence over Automatic or another preference."""
+    entry = _bed_entry(hass, address=TEST_ADDRESS, name=TEST_NAME)
+    flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, entry.entry_id)
+    flow.hass = hass
+    failed_device = MagicMock()
+    other_device = MagicMock()
+    service_infos = [
+        MagicMock(address=TEST_ADDRESS, source="other-proxy", device=other_device),
+        MagicMock(address=TEST_ADDRESS, source="failed-proxy", device=failed_device),
+    ]
+
+    with patch(
+        "custom_components.adjustable_bed.repairs.get_discovered_service_info",
+        return_value=service_infos,
+    ):
+        assert flow._find_device("failed-proxy") is failed_device
+        hass.config_entries.async_update_entry(
+            entry, data={**entry.data, CONF_PREFERRED_ADAPTER: "other-proxy"}
+        )
+        assert flow._find_device("failed-proxy") is failed_device
 
 
 @pytest.mark.parametrize("bonded", [True, False])
@@ -986,7 +1012,7 @@ async def test_repair_releases_its_client_when_verification_is_unauthenticated(
 
 
 async def test_try_pair_treats_non_auth_read_error_as_success(hass: HomeAssistant) -> None:
-    """A non-auth read failure (e.g. char absent) is inconclusive, not a failure.
+    """For a protocol without a known verifier, a non-auth error is inconclusive.
 
     It must still persist the bond marker and reload the entry so the repair
     closes for good rather than re-triggering on the next connection.
@@ -997,7 +1023,7 @@ async def test_try_pair_treats_non_auth_read_error_as_success(hass: HomeAssistan
         data={
             CONF_ADDRESS: TEST_ADDRESS,
             CONF_NAME: TEST_NAME,
-            CONF_BED_TYPE: "okimat",
+            CONF_BED_TYPE: "richmat",
             CONF_BLE_BOND_ESTABLISHED: False,
             CONF_BLE_BOND_CONTEXT: {
                 "version": 1,
@@ -1019,7 +1045,7 @@ async def test_try_pair_treats_non_auth_read_error_as_success(hass: HomeAssistan
     client.disconnect = AsyncMock()
 
     with (
-        patch(BLEAK_DEVICE, return_value=MagicMock()),
+        patch.object(flow, "_find_device", return_value=MagicMock()),
         patch(ESTABLISH, new=AsyncMock(return_value=client)),
         patch.object(hass.config_entries, "async_reload", new=AsyncMock()) as mock_reload,
     ):
@@ -1029,6 +1055,77 @@ async def test_try_pair_treats_non_auth_read_error_as_success(hass: HomeAssistan
     assert CONF_BLE_BOND_CONTEXT not in entry.data
     mock_reload.assert_awaited_once_with(entry.entry_id)
     client.disconnect.assert_awaited_once()
+
+
+@pytest.mark.parametrize("authenticated", [True, False])
+async def test_sleep_number_proxy_retry_uses_session_verifier(
+    hass: HomeAssistant, authenticated: bool
+) -> None:
+    """A model-number read cannot prove a Sleep Number bond."""
+    entry = _bed_entry(hass, address=TEST_ADDRESS, name=TEST_NAME)
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER}
+    )
+    flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, entry.entry_id)
+    flow.hass = hass
+    client = MagicMock()
+    client.is_connected = True
+    client._connected_scanner = MagicMock(source="bedroom-proxy")
+    client.pair = AsyncMock()
+    client.read_gatt_char = AsyncMock(return_value=b"Model X")
+    client.disconnect = AsyncMock()
+    session = AsyncMock(
+        side_effect=None if authenticated else BleakError("Insufficient authentication")
+    )
+
+    with (
+        patch.object(flow, "_find_device", return_value=MagicMock()),
+        patch(ESTABLISH, new=AsyncMock(return_value=client)),
+        patch(
+            "custom_components.adjustable_bed.bond_verification.async_read_sleep_number_session",
+            session,
+        ),
+        patch.object(hass.config_entries, "async_reload", new=AsyncMock()) as reload,
+    ):
+        result = await flow._async_try_pair(expected_source="bedroom-proxy")
+
+    assert result is authenticated
+    session.assert_awaited_once_with(client)
+    client.read_gatt_char.assert_not_awaited()
+    assert bool(entry.data.get(CONF_BLE_BOND_ESTABLISHED)) is authenticated
+    if authenticated:
+        reload.assert_awaited_once_with(entry.entry_id)
+    else:
+        reload.assert_not_awaited()
+
+
+async def test_proxy_pair_rpc_error_can_still_produce_verified_bond(
+    hass: HomeAssistant,
+) -> None:
+    """The authenticated read decides after an ESPHome pairing RPC timeout."""
+    entry = _bed_entry(hass, address=TEST_ADDRESS, name=TEST_NAME)
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_BED_TYPE: BED_TYPE_OKIMAT}
+    )
+    flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, entry.entry_id)
+    flow.hass = hass
+    client = MagicMock()
+    client.is_connected = True
+    client._connected_scanner = MagicMock(source="bedroom-proxy")
+    client.pair = AsyncMock(side_effect=BleakError("pair RPC timed out"))
+    client.read_gatt_char = AsyncMock(return_value=b"Model X")
+    client.disconnect = AsyncMock()
+
+    with (
+        patch.object(flow, "_find_device", return_value=MagicMock()),
+        patch(ESTABLISH, new=AsyncMock(return_value=client)),
+        patch.object(hass.config_entries, "async_reload", new=AsyncMock()) as reload,
+    ):
+        assert await flow._async_try_pair(expected_source="bedroom-proxy") is True
+
+    client.read_gatt_char.assert_awaited_once()
+    assert entry.data[CONF_BLE_BOND_ESTABLISHED] is True
+    reload.assert_awaited_once_with(entry.entry_id)
 
 
 async def test_try_pair_returns_false_on_auth_error(hass: HomeAssistant) -> None:
@@ -1908,7 +2005,7 @@ async def test_proxy_retry_does_not_accept_a_bond_on_another_path(
     client.disconnect = AsyncMock()
 
     with (
-        patch(BLEAK_DEVICE, return_value=MagicMock()),
+        patch.object(flow, "_find_device", return_value=MagicMock()),
         patch(ESTABLISH, new=AsyncMock(return_value=client)),
         patch.object(hass.config_entries, "async_reload", new=AsyncMock()) as reload,
     ):
@@ -1986,6 +2083,31 @@ async def test_proxy_retry_does_not_reload_a_one_connection_bed_without_a_live_l
     reload.assert_not_awaited()
 
 
+async def test_one_connection_proxy_repair_gives_setup_guidance_without_a_live_link(
+    hass: HomeAssistant,
+) -> None:
+    """A setup-retry entry must not offer a Submit action that always fails."""
+    entry = _bed_entry(hass, address=TEST_ADDRESS, name=TEST_NAME)
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2}
+    )
+    flow = PairingRequiredRepairFlow(
+        TEST_ADDRESS,
+        TEST_NAME,
+        entry.entry_id,
+        issue_data={"evidence_source": "failed-proxy"},
+    )
+    flow.hass = hass
+
+    with patch.object(flow, "_async_try_pair", new=AsyncMock()) as pair:
+        result = await flow.async_step_proxy_pairing()
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "proxy_pairing_requires_setup"
+    assert result["description_placeholders"]["transport"] == "failed-proxy"
+    pair.assert_not_awaited()
+
+
 async def test_a_one_connection_bed_with_a_proxy_bond_still_gets_proxy_guidance(
     hass: HomeAssistant,
 ) -> None:
@@ -2028,8 +2150,9 @@ async def test_a_one_connection_bed_with_a_proxy_bond_still_gets_proxy_guidance(
 
     result = await flow.async_step_init()
 
-    assert result["type"] == FlowResultType.FORM
-    assert result["step_id"] == "proxy_pairing"
+    assert result["type"] == FlowResultType.ABORT
+    assert result["reason"] == "proxy_pairing_requires_setup"
+    assert result["description_placeholders"]["transport"] == "bedroom-proxy"
 
 
 async def test_the_combine_suggestion_can_be_answered_with_separate_beds(

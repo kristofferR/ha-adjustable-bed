@@ -2754,6 +2754,7 @@
         },
         "abort": {
           "pairing_failed": "Pairing didn't complete. Put the bed back into pairing mode (OKIN bases: unplug the control box ~30s, then plug it back in; Leggett & Platt Smart Bed: unplug the bed and remove the power-supply batteries, then plug it back in and wait for the chime and pulsing blue light; other beds: hold the pairing button), make sure it is in range of your Home Assistant adapter or an ESPHome proxy on 2024.3.0+, then run this repair again. If the log names `AuthenticationFailed` or `AuthenticationRejected`, the bond failed to authenticate. If it keeps happening, clear the stored pairing both on the adapter you connect from and on the bed itself, then try again.",
+          "proxy_pairing_requires_setup": "This bed permits only one connection during pairing, and its setup has no active connection for this repair to reuse. To retry safely, select **{transport}** as the bed's preferred Bluetooth adapter, put the bed in pairing mode, then reload the integration entry. This repair cannot pair it from this screen. If authentication still fails on that proxy, follow the [proxy recovery guide]({recovery_url}). A full flash erase removes every pairing stored on the proxy.",
           "stale_bond_recovery_failed": "The bond could not be recovered, so this repair stays open. Put the bed into pairing mode and run it again.",
           "recovery_success": "✅ The Bluetooth bond was confirmed. The bed should respond normally now.",
           "recovery_not_run": "❌ The recovery did not run.",
