@@ -102,6 +102,14 @@ in integration options to expose position sliders. Optional polling can keep the
 BLE connection occupied, so leave it disabled if it interferes with another
 controller.
 
+For a single-address Fuzion pair, each position report belongs to the side that
+was queried. Commands refresh that side before releasing the command lock, and
+the side's entities receive each new reading immediately. This fixes the stale
+and cross-side activity entries reported in #623, where another button press
+could be needed just to display values already received from the bed. An activity
+entry showing a position change is feedback, not an additional movement command;
+the percentages do not by themselves prove that physical movement has finished.
+
 MCR movement performs its own status checks even with optional angle sensing
 disabled. Held controls send continued-adjustment requests; position targets and
 presets wait for stationary feedback. A target that stops short reports an error
