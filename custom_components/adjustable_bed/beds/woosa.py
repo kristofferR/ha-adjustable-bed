@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 from collections.abc import Collection
 from functools import partial
 from typing import TYPE_CHECKING
@@ -164,15 +165,23 @@ class WoosaController(SolaceController):
         option = self._coordinator.controller_state.get("light_timer_option")
         if not isinstance(option, str):
             return None
-        return {
+        duration = {
             "10 min": 10 * 60,
             "8 hours": 8 * 60 * 60,
             "10 hours": 10 * 60 * 60,
         }.get(option)
+        deadline = self._coordinator.controller_state.get("woosa_light_deadline")
+        if duration is None or not isinstance(deadline, float):
+            return None
+        return max(0, math.ceil(deadline - asyncio.get_running_loop().time()))
 
     def on_light_auto_off(self) -> None:
         self.forward_controller_state_updates(
-            {"under_bed_lights_on": False, "light_timer_option": "Off"}
+            {
+                "under_bed_lights_on": False,
+                "light_timer_option": "Off",
+                "woosa_light_deadline": None,
+            }
         )
 
     @property
@@ -312,7 +321,11 @@ class WoosaController(SolaceController):
     async def lights_off(self) -> None:
         await self.write_command(_LIGHT_OFF)
         self.forward_controller_state_updates(
-            {"under_bed_lights_on": False, "light_timer_option": "Off"}
+            {
+                "under_bed_lights_on": False,
+                "light_timer_option": "Off",
+                "woosa_light_deadline": None,
+            }
         )
 
     async def set_light_level(self, level: int) -> None:
@@ -321,7 +334,11 @@ class WoosaController(SolaceController):
             self.forward_controller_state_updates(
                 {
                     "under_bed_lights_on": level > 0,
-                    **({"light_timer_option": "Off"} if level == 0 else {}),
+                    **(
+                        {"light_timer_option": "Off", "woosa_light_deadline": None}
+                        if level == 0
+                        else {}
+                    ),
                 }
             )
 
@@ -332,11 +349,13 @@ class WoosaController(SolaceController):
         if timer_option not in self.light_timer_options:
             raise ValueError("Unsupported Woosa light timer")
         await super().set_light_timer(timer_option)
+        duration = {"10 min": 600, "8 hours": 28800, "10 hours": 36000}[timer_option]
         self.forward_controller_state_updates(
             {
                 "woosa_light_timer": timer_option,
                 "light_timer_option": timer_option,
                 "under_bed_lights_on": True,
+                "woosa_light_deadline": asyncio.get_running_loop().time() + duration,
             }
         )
 
@@ -353,8 +372,17 @@ class WoosaController(SolaceController):
             raise ValueError("Woosa massage supports head/foot levels 0-3")
         commands = _HEAD_LEVELS if zone == "head" else _FOOT_LEVELS
         await self.write_command(commands[level])
+        self._publish_massage_level(zone, level)
+
+    def _publish_massage_level(self, zone: str, level: int) -> None:
+        other_zone = "foot" if zone == "head" else "head"
+        other_level = int(self._coordinator.controller_state.get(f"woosa_{other_zone}_level", 0))
         self.forward_controller_state_updates(
-            {f"woosa_{zone}_level": level, f"woosa_{zone}_preference": level}
+            {
+                f"woosa_{zone}_level": level,
+                f"woosa_{zone}_preference": level,
+                "woosa_massage_active": bool(level or other_level),
+            }
         )
 
     async def set_massage_mode(self, mode: int) -> None:
@@ -381,9 +409,7 @@ class WoosaController(SolaceController):
             ("foot", -1): SolaceCommands.MASSAGE_FOOT_DOWN,
         }[zone, delta]
         await self.write_command(command)
-        self.forward_controller_state_updates(
-            {f"woosa_{zone}_level": level, f"woosa_{zone}_preference": level}
-        )
+        self._publish_massage_level(zone, level)
 
     async def massage_head_up(self) -> None:
         await self._step_massage("head", 1)

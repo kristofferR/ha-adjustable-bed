@@ -143,6 +143,19 @@ async def test_light_timer_and_explicit_off(controller, option, frame) -> None:
         assert written(controller) == [frame, frame]
 
 
+async def test_light_timer_reports_remaining_hardware_time(controller) -> None:
+    await controller.set_light_timer("10 min")
+    deadline = controller._coordinator.controller_state["woosa_light_deadline"]
+    with patch("custom_components.adjustable_bed.beds.woosa.asyncio.get_running_loop") as loop:
+        loop.return_value.time.return_value = deadline - 60
+        assert controller.light_auto_off_seconds == 60
+    await controller.set_light_level(5)
+    assert controller._coordinator.controller_state["woosa_light_deadline"] == deadline
+    await controller.set_light_level(0)
+    assert controller.light_auto_off_seconds is None
+    assert controller._coordinator.controller_state["woosa_light_deadline"] is None
+
+
 @pytest.mark.parametrize(
     ("zone", "frames"),
     [
@@ -171,6 +184,25 @@ async def test_absolute_massage_vectors(controller, zone, frames) -> None:
         await controller.set_massage_intensity(zone, level)
     assert written(controller) == frames
     assert controller.get_massage_state()[f"{zone}_intensity"] == 3
+
+
+async def test_massage_level_writes_update_activity(controller) -> None:
+    state = controller._coordinator.controller_state
+    await controller.set_massage_intensity("head", 1)
+    assert state["woosa_massage_active"] is True
+    await controller.set_massage_intensity("foot", 2)
+    await controller.set_massage_intensity("head", 0)
+    assert state["woosa_massage_active"] is True
+    await controller.set_massage_intensity("foot", 0)
+    assert state["woosa_massage_active"] is False
+    await controller.massage_head_up()
+    assert state["woosa_massage_active"] is True
+    await controller.massage_head_down()
+    assert state["woosa_massage_active"] is False
+    await controller.set_massage_intensity("foot", 1)
+    controller.write_command.reset_mock()
+    await controller.massage_toggle()
+    assert written(controller) == ["FFFFFFFF050000001CD6C9"]
 
 
 async def test_massage_modes_and_timer_vectors(controller) -> None:
@@ -273,9 +305,9 @@ async def test_massage_manual_steps_and_limits(controller) -> None:
 
 
 async def test_massage_start_sequence_preserves_independent_zones(controller) -> None:
-    await controller.set_massage_intensity("head", 1)
-    await controller.set_massage_intensity("foot", 3)
-    controller.write_command.reset_mock()
+    controller._coordinator.controller_state.update(
+        {"woosa_head_preference": 1, "woosa_foot_preference": 3}
+    )
     with patch(
         "custom_components.adjustable_bed.beds.woosa.asyncio.sleep", new_callable=AsyncMock
     ) as sleep:
@@ -667,6 +699,7 @@ async def test_woosa_setup_restores_light_and_exposes_profile_controls(
     entity_id("select", "massage_timer")
     assert registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:FF_back_position") is None
     scheduled_auto_off: list[Callable[[], None]] = []
+    scheduled_delays: list[float] = []
     original_call_later = hass.loop.call_later
 
     def capture_auto_off(
@@ -674,15 +707,20 @@ async def test_woosa_setup_restores_light_and_exposes_profile_controls(
     ) -> object:
         if getattr(callback, "__name__", "") == "auto_off_callback":
             scheduled_auto_off.append(lambda: callback(*args))
+            scheduled_delays.append(delay)
             return MagicMock()
         return original_call_later(delay, callback, *args)
 
     with patch.object(hass.loop, "call_later", side_effect=capture_auto_off):
         await hass.services.async_call("switch", "turn_on", {"entity_id": light}, blocking=True)
         assert scheduled_auto_off
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        deadline = coordinator.controller_state["woosa_light_deadline"]
+        with patch.object(hass.loop, "time", return_value=deadline - 60):
+            coordinator.handle_controller_state_updates({"woosa_massage_mode": 2})
+        assert scheduled_delays[-1] == 60
         scheduled_auto_off[-1]()
         await hass.async_block_till_done()
-        coordinator = hass.data[DOMAIN][entry.entry_id]
         assert coordinator.controller_state["under_bed_lights_on"] is False
         assert coordinator.controller_state["light_timer_option"] == "Off"
         assert coordinator.controller_state["woosa_light_timer"] == "10 min"
