@@ -6193,6 +6193,35 @@ async def test_proxy_retry_verifies_bond_after_pair_rpc_error(
     client.disconnect.assert_awaited_once()
 
 
+@pytest.mark.parametrize("error", [NotImplementedError(), TypeError("pair unavailable")])
+async def test_proxy_retry_reports_unsupported_pairing_before_auth_read(
+    hass: HomeAssistant, error: Exception
+) -> None:
+    """An unsupported proxy cannot create a bond for an auth read to verify."""
+    flow = _pairing_flow(hass)
+    flow._pairing_retry_source = "failed-proxy"
+    client = MagicMock()
+    client._connected_scanner = MagicMock(source="failed-proxy")
+    client.pair = AsyncMock(side_effect=error)
+    client.read_gatt_char = AsyncMock(
+        side_effect=BleakError("Insufficient authentication")
+    )
+    client.disconnect = AsyncMock()
+
+    with (
+        _patch_pairing_gate(source="failed-proxy"),
+        patch(
+            "bleak_retry_connector.establish_connection",
+            new=AsyncMock(return_value=client),
+        ),
+    ):
+        result = await flow._async_pair_and_classify(flow._manual_data[CONF_ADDRESS], "new")
+
+    assert result.outcome is OperationOutcome.PAIRING_NOT_SUPPORTED
+    client.read_gatt_char.assert_not_awaited()
+    client.disconnect.assert_awaited_once()
+
+
 async def test_proxy_auth_failure_pins_subsequent_setup_retry(hass: HomeAssistant) -> None:
     """The result form carries its failed proxy into the next attempt."""
     flow = _pairing_flow(hass)

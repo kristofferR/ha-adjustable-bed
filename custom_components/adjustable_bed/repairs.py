@@ -530,6 +530,20 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Retry pairing, with recovery guidance for the proxy that failed."""
+        issue_id = f"pairing_required_{self._address.replace(':', '_').lower()}"
+
+        def issue_matches() -> bool:
+            issue = async_get_issue_registry(self.hass).async_get_issue(DOMAIN, issue_id)
+            if issue is None:
+                return False
+            current = issue.data or {}
+            return (
+                current.get("entry_id") == self._entry_id
+                and current.get("evidence_status") == self._issue_data.get("evidence_status")
+                and current.get("evidence_transport") == self._issue_data.get("evidence_transport")
+                and current.get("evidence_source") == self._issue_data.get("evidence_source")
+            )
+
         target_data = self._target_data()
         if (
             grants_one_connection_per_pairing_window(
@@ -547,21 +561,21 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
             )
         errors: dict[str, str] = {}
         if user_input is not None:
-            issue_id = f"pairing_required_{self._address.replace(':', '_').lower()}"
-            issue_existed = (
-                async_get_issue_registry(self.hass).async_get_issue(DOMAIN, issue_id)
-                is not None
-            )
-            if await self._async_try_pair(
+            if not issue_matches():
+                return self.async_abort(reason="proxy_pairing_issue_changed")
+            paired = await self._async_try_pair(
                 expected_source=self._issue_data.get("evidence_source")
-            ):
+            )
+            current_issue = async_get_issue_registry(self.hass).async_get_issue(
+                DOMAIN, issue_id
+            )
+            if current_issue is not None and not issue_matches():
+                return self.async_abort(reason="proxy_pairing_issue_changed")
+            if paired:
                 return self.async_create_entry(title="", data={})
-            if (
-                self._retry_route_mismatch
-                and issue_existed
-                and async_get_issue_registry(self.hass).async_get_issue(DOMAIN, issue_id)
-                is None
-            ):
+            if current_issue is None and not self._retry_route_mismatch:
+                return self.async_abort(reason="proxy_pairing_issue_changed")
+            if self._retry_route_mismatch and current_issue is None:
                 # A coordinator can clear its issue while bonding through a
                 # different path. Keep the original proxy failure actionable.
                 await create_pairing_required_issue(

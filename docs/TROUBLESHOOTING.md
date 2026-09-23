@@ -404,6 +404,12 @@ It is a last resort, not a guaranteed fix for every pairing failure.
 4. Select **Try again** in setup, or **Submit** in the pairing repair, while the
    bed is still in pairing mode.
 
+The preferred adapter does not pin Home Assistant's connection route. Check the
+bed's Bluetooth connection sensor's `connection_source` attribute after the
+retry. Only treat the named proxy as recovered if the successful connection
+used that proxy. If the route differs or is unknown, do not erase the named
+proxy based on that retry.
+
 If the **same authentication error** returns, the proxy may have stale pairing
 keys. Updating its firmware wirelessly, restarting Home Assistant, or deleting
 and re-adding the bed in Home Assistant does **not** erase those keys. Timeouts,

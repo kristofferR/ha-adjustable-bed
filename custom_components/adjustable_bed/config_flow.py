@@ -4344,6 +4344,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     self.async_report_action(SetupAction.PAIRING)
                     try:
                         await client.pair()
+                    except (NotImplementedError, TypeError):
+                        # The backend cannot pair at all; an unauthenticated
+                        # read would misreport this as stale proxy keys.
+                        raise
                     except Exception as err:  # noqa: BLE001 - verify before judging the RPC
                         pair_error = err
                         _LOGGER.warning(

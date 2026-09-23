@@ -1908,6 +1908,16 @@ async def test_an_unbonded_proxy_link_keeps_the_guided_pairing_retry(
         entry_id="repair_unbonded_proxy_entry",
     )
     entry.add_to_hass(hass)
+    await create_pairing_required_issue(
+        hass,
+        TEST_ADDRESS,
+        TEST_NAME,
+        entry.entry_id,
+        evidence={
+            "status": BondVerificationStatus.AUTH_FAILED.value,
+            "owner": {"transport": TransportClass.PROXY.value, "source": "proxy-source"},
+        },
+    )
     flow = PairingRequiredRepairFlow(
         TEST_ADDRESS,
         TEST_NAME,
@@ -1991,6 +2001,13 @@ async def test_proxy_retry_does_not_accept_a_bond_on_another_path(
 ) -> None:
     """A rerouted retry cannot clear a repair for the proxy that failed."""
     entry = _bed_entry(hass, address=TEST_ADDRESS, name=TEST_NAME)
+    await create_pairing_required_issue(
+        hass,
+        TEST_ADDRESS,
+        TEST_NAME,
+        entry.entry_id,
+        evidence={"owner": {"source": "failed-proxy"}},
+    )
     flow = PairingRequiredRepairFlow(
         TEST_ADDRESS,
         TEST_NAME,
@@ -2018,6 +2035,57 @@ async def test_proxy_retry_does_not_accept_a_bond_on_another_path(
     client.pair.assert_not_awaited()
     client.disconnect.assert_awaited_once()
     reload.assert_not_awaited()
+
+
+@pytest.mark.parametrize("change_during_pair", [False, True])
+async def test_proxy_retry_keeps_a_newer_proxy_issue_open(
+    hass: HomeAssistant, change_during_pair: bool
+) -> None:
+    """A repair opened for proxy A cannot dismiss a later failure on proxy B."""
+    entry = _bed_entry(hass, address=TEST_ADDRESS, name=TEST_NAME)
+
+    async def set_issue(source: str) -> None:
+        await create_pairing_required_issue(
+            hass,
+            TEST_ADDRESS,
+            TEST_NAME,
+            entry.entry_id,
+            evidence={
+                "status": BondVerificationStatus.AUTH_FAILED.value,
+                "owner": {"transport": TransportClass.PROXY.value, "source": source},
+            },
+        )
+
+    await set_issue("proxy-a")
+    flow = PairingRequiredRepairFlow(
+        TEST_ADDRESS,
+        TEST_NAME,
+        entry.entry_id,
+        issue_data={
+            "evidence_status": BondVerificationStatus.AUTH_FAILED.value,
+            "evidence_transport": TransportClass.PROXY.value,
+            "evidence_source": "proxy-a",
+        },
+    )
+    flow.hass = hass
+
+    async def pair(*, expected_source: str | None) -> bool:
+        assert expected_source == "proxy-a"
+        await set_issue("proxy-b")
+        return True
+
+    if not change_during_pair:
+        await set_issue("proxy-b")
+    with patch.object(flow, "_async_try_pair", AsyncMock(side_effect=pair)) as attempt:
+        result = await flow.async_step_proxy_pairing({})
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "proxy_pairing_issue_changed"
+    assert attempt.await_count == int(change_during_pair)
+    issue_id = f"pairing_required_{TEST_ADDRESS.replace(':', '_').lower()}"
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, issue_id)
+    assert issue is not None
+    assert issue.data["evidence_source"] == "proxy-b"
 
 
 async def test_proxy_retry_checks_a_coordinator_pairing_route(
