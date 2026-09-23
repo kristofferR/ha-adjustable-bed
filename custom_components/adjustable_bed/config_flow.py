@@ -3727,6 +3727,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     self._pairing_origin_step or "bluetooth_pairing", None
                 )
             self._pairing_mode = "replace_local"
+            # A previous proxy retry must not route the replacement away from
+            # the host bond the user just approved removing.
+            self._pairing_retry_source = None
             self._pairing_origin_step = self._pairing_origin_step or "bluetooth_pairing"
             return await self._async_start_pairing_operation(
                 address,
@@ -4362,7 +4365,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 if (
                     pair_after_service_discovery
                     and pair_error is not None
-                    and not evidence.proves_bond
+                    and evidence.status
+                    not in (
+                        BondVerificationStatus.VERIFIED,
+                        BondVerificationStatus.AUTH_FAILED,
+                    )
                 ):
                     raise pair_error
                 _LOGGER.info(

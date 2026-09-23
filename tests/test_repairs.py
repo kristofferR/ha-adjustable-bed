@@ -2083,10 +2083,11 @@ async def test_proxy_retry_does_not_reload_a_one_connection_bed_without_a_live_l
     reload.assert_not_awaited()
 
 
+@pytest.mark.parametrize("loaded_coordinator", [False, True])
 async def test_one_connection_proxy_repair_gives_setup_guidance_without_a_live_link(
-    hass: HomeAssistant,
+    hass: HomeAssistant, loaded_coordinator: bool
 ) -> None:
-    """A setup-retry entry must not offer a Submit action that always fails."""
+    """A missing or disconnected link cannot pair from the repair form."""
     entry = _bed_entry(hass, address=TEST_ADDRESS, name=TEST_NAME)
     hass.config_entries.async_update_entry(
         entry, data={**entry.data, CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2}
@@ -2098,6 +2099,10 @@ async def test_one_connection_proxy_repair_gives_setup_guidance_without_a_live_l
         issue_data={"evidence_source": "failed-proxy"},
     )
     flow.hass = hass
+    if loaded_coordinator:
+        coordinator = MagicMock()
+        coordinator.is_connected = False
+        hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 
     with patch.object(flow, "_async_try_pair", new=AsyncMock()) as pair:
         result = await flow.async_step_proxy_pairing()

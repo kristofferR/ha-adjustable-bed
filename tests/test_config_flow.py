@@ -6176,13 +6176,15 @@ async def test_proxy_retry_verifies_bond_after_pair_rpc_error(
             new=AsyncMock(return_value=client),
         ) as connect,
     ):
-        if authenticated:
-            evidence = await flow._attempt_pairing(flow._manual_data[CONF_ADDRESS])
-            assert evidence.proves_bond
-            assert evidence.owner.source == "failed-proxy"
-        else:
-            with pytest.raises(BleakError, match="pair RPC timed out"):
-                await flow._attempt_pairing(flow._manual_data[CONF_ADDRESS])
+        result = await flow._async_pair_and_classify(flow._manual_data[CONF_ADDRESS], "new")
+
+    if authenticated:
+        assert result.outcome is OperationOutcome.SUCCESS
+        assert result.payload.proves_bond
+    else:
+        assert result.outcome is OperationOutcome.BOND_VERIFICATION_FAILED
+        assert result.payload.status is BondVerificationStatus.AUTH_FAILED
+    assert result.payload.owner.source == "failed-proxy"
 
     assert wait.await_args.kwargs["source"] == "failed-proxy"
     assert "pair" not in connect.await_args.kwargs
@@ -6946,6 +6948,7 @@ async def test_a_reconnect_while_confirming_still_authorizes_the_replacement(
     flow._pairing_origin_step = "manual_pairing"
     record = _bond_record()
     flow._pairing_remove_record = record
+    flow._pairing_retry_source = "failed-proxy"
     reconnected = LocalBondInventory(
         status=BluezReadStatus.OK,
         records=(replace(record, connected=True, trusted=True),),
@@ -6960,6 +6963,7 @@ async def test_a_reconnect_while_confirming_still_authorizes_the_replacement(
 
     start.assert_called_once()
     assert flow._pairing_remove_record == record
+    assert flow._pairing_retry_source is None
 
 
 async def test_a_reconnect_before_removal_still_replaces_the_bond(

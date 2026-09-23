@@ -536,7 +536,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                 target_data.get(CONF_BED_TYPE) or "",
                 target_data.get(CONF_PROTOCOL_VARIANT),
             )
-            and self._target_coordinator() is None
+            and not getattr(self._target_coordinator(), "is_connected", False)
         ):
             return self.async_abort(
                 reason="proxy_pairing_requires_setup",
