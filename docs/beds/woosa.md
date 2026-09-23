@@ -11,6 +11,8 @@ Automatic `QMS-MQ` and `QMS2` discovery retains the conservative common Solace p
 
 The profile supplies back and leg controls, Flat, Favourite (Memory 1), Love, TV and Zero-G presets, save actions for all four stored presets, dimmable lighting, timed lighting, massage levels/modes/timers, and a controller alarm. It has no measured position feedback, second numbered memory slot, audio player, or wire-level side selector.
 
+The [remote illustration supplied with issue #606](https://github.com/user-attachments/assets/b3752885-7151-4b51-9649-eb0ec4b3ad62) shows back/leg adjustment, one memory button, Flat, TV, Zero Gravity, massage and an LED night light. Its remaining preset is labeled **Anti-Snore**, while the audited Android app labels its corresponding preset category **Love**. The illustration supplies no BLE bytes, so it does not establish that those differently named actions are equivalent. This explicit app profile retains the audited app label; the remote/iOS mapping remains a deferred hardware check.
+
 ## Movement and presets
 
 The app sends one movement-start frame on touch down and a global STOP on release, without held-command repetition. HA movement uses the integration's bounded movement lifecycle and always sends STOP during cleanup. This cap is an integration safety limit, not a claimed firmware timeout.
