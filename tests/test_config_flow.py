@@ -23,7 +23,9 @@ from homeassistant.config_entries import (
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers import config_validation as cv
 from homeassistant.setup import async_setup_component
+from probatio import to_field_list
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.address_lock import async_get_connect_lock
@@ -3281,7 +3283,7 @@ class TestOptionsFlow:
         assert rebuilt["type"] == FlowResultType.FORM
         markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
         assert markers[CONF_PROTOCOL_VARIANT].default() == requested_variant
-        assert markers[CONF_MOTOR_COUNT].default() == expected_count
+        assert markers[CONF_MOTOR_COUNT].default() == str(expected_count)
 
     async def test_richmat_options_can_replace_detected_qrrm_with_lp_profile(
         self,
@@ -3372,6 +3374,55 @@ class TestOptionsFlow:
         assert entry.data[CONF_MOTOR_PULSE_DELAY_MS] == 100
         assert entry.data[CONF_MOTOR_PULSE_USER_SET] is True
 
+    @pytest.mark.parametrize("motor_count", [2, 3, 4])
+    async def test_vibradorm_options_motor_count_display_and_save(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+        mock_coordinator_connected,
+        motor_count: int,
+    ) -> None:
+        """The frontend receives string selections while storage keeps integers."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="VMAT",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:98",
+                CONF_NAME: "VMAT",
+                CONF_BED_TYPE: BED_TYPE_VIBRADORM,
+                CONF_MOTOR_COUNT: motor_count,
+                CONF_DISABLE_ANGLE_SENSING: True,
+            },
+            unique_id="AA:BB:CC:DD:EE:98",
+            version=4,
+        )
+        entry.add_to_hass(hass)
+        await async_setup_component(hass, DOMAIN, {})
+        await hass.async_block_till_done()
+
+        initial = await _open_options_form(hass, entry.entry_id)
+        serialized = to_field_list(
+            initial["data_schema"], custom_serializer=cv.custom_serializer
+        )
+        field = next(item for item in serialized if item["name"] == CONF_MOTOR_COUNT)
+        assert field["default"] == str(motor_count)
+        assert field["options"] == [(str(count), str(count)) for count in (2, 3, 4)]
+
+        saved = await hass.config_entries.options.async_configure(
+            initial["flow_id"], {CONF_MOTOR_COUNT: str(motor_count)}
+        )
+        assert saved["type"] == FlowResultType.CREATE_ENTRY
+        assert entry.data[CONF_MOTOR_COUNT] == motor_count
+        assert isinstance(entry.data[CONF_MOTOR_COUNT], int)
+        await hass.async_block_till_done()
+
+        reopened = await _open_options_form(hass, entry.entry_id)
+        marker = next(
+            marker for marker in reopened["data_schema"].schema
+            if marker.schema == CONF_MOTOR_COUNT
+        )
+        assert marker.default() == str(motor_count)
+
     async def test_leggett_okin_options_restore_motor_count_and_hide_positions(
         self,
         hass: HomeAssistant,
@@ -3399,7 +3450,7 @@ class TestOptionsFlow:
         initial = await _open_options_form(hass, entry.entry_id)
         markers = {marker.schema: marker for marker in initial["data_schema"].schema}
 
-        assert markers[CONF_MOTOR_COUNT].default() == 4
+        assert markers[CONF_MOTOR_COUNT].default() == "4"
         assert CONF_DISABLE_ANGLE_SENSING not in markers
         assert CONF_POSITION_MODE not in markers
         assert CONF_BACK_MAX_ANGLE not in markers
@@ -3511,7 +3562,7 @@ class TestOptionsFlow:
         )
 
         rebuilt_markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
-        assert rebuilt_markers[CONF_MOTOR_COUNT].default() == 2
+        assert rebuilt_markers[CONF_MOTOR_COUNT].default() == "2"
         assert rebuilt_markers[CONF_DISABLE_ANGLE_SENSING].default() is False
         assert rebuilt_markers[CONF_PROTOCOL_VARIANT].default() == VARIANT_AUTO
         assert CONF_OCTO_PIN not in rebuilt_markers
@@ -3773,7 +3824,7 @@ class TestOptionsFlow:
             step_id="settings",
         )
         markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
-        assert markers[CONF_MOTOR_COUNT].default() == expected_count
+        assert markers[CONF_MOTOR_COUNT].default() == str(expected_count)
         saved = await flow._async_options_form(
             {
                 CONF_BED_TYPE: bed_type,
@@ -6645,8 +6696,11 @@ def test_shown_option_values_coerces_defaults():
     schema = {
         vol.Optional("pulse", default="10"): vol.Coerce(int),
         vol.Optional("angle", default="68.0"): vol.Coerce(float),
+        vol.Optional(CONF_MOTOR_COUNT, default="2"): vol.All(
+            vol.Coerce(str), vol.In(["2", "3", "4"])
+        ),
     }
-    assert _shown_option_values(schema) == {"pulse": 10, "angle": 68.0}
+    assert _shown_option_values(schema) == {"pulse": 10, "angle": 68.0, CONF_MOTOR_COUNT: 2}
 
 
 async def test_the_probe_hands_its_client_to_the_operation_cleanup(

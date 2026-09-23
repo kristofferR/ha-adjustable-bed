@@ -4890,7 +4890,11 @@ def _shown_option_values(schema_dict: dict[Any, Any]) -> dict[str, Any]:
     changed (and not clobber per-side values with mistyped "changes").
     """
     try:
-        return cast("dict[str, Any]", vol.Schema(schema_dict)({}))
+        shown = cast("dict[str, Any]", vol.Schema(schema_dict)({}))
+        # Match the options handler's conversion from the string-valued select.
+        if CONF_MOTOR_COUNT in shown:
+            shown[CONF_MOTOR_COUNT] = int(shown[CONF_MOTOR_COUNT])
+        return shown
     except vol.Invalid:
         return {}
 
@@ -5303,10 +5307,10 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             ),
             vol.Optional(
                 CONF_MOTOR_COUNT,
-                default=form_motor_count,
+                default=str(form_motor_count),
             ): vol.All(
-                vol.Coerce(int),
-                vol.In(motor_count_options),
+                vol.Coerce(str),
+                vol.In([str(count) for count in motor_count_options]),
             ),
             vol.Optional(
                 CONF_HAS_MASSAGE,
@@ -5488,6 +5492,9 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             ] = TextSelector(TextSelectorConfig())
 
         if user_input is not None:
+            # HA's select control uses string values; keep persisted counts numeric.
+            if CONF_MOTOR_COUNT in user_input:
+                user_input = {**user_input, CONF_MOTOR_COUNT: int(user_input[CONF_MOTOR_COUNT])}
             requested_bed_type = user_input.get(CONF_BED_TYPE, bed_type)
             requested_route = user_input.get(CONF_PROTOCOL_VARIANT, form_variant)
             if (
