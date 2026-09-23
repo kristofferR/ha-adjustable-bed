@@ -15,6 +15,16 @@
 
 This file provides guidance for agents working with code in this repository.
 
+## Screenshots and visual evidence
+
+- Always open and visually inspect every screenshot and image supplied with a
+  task, including attachments and images linked or embedded in issue and PR
+  descriptions and comments. Reading the surrounding text, alt text, or logs
+  does not replace inspecting the images.
+- Correlate visible values, timestamps, labels, and UI state with the other
+  evidence before drawing conclusions. If an image cannot be accessed, state
+  which image is missing and the resulting limitation.
+
 ## Project Overview
 
 This is a Home Assistant custom integration for controlling smart adjustable beds via Bluetooth Low Energy (BLE). It replaces the broken `smartbed-mqtt` addon with a native HA integration that uses Home Assistant's Bluetooth stack directly.
