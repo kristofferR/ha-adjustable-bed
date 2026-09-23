@@ -26,6 +26,10 @@ _LOGGER = logging.getLogger(__name__)
 
 GITHUB_REPO = "kristofferR/ha-adjustable-bed"
 GITHUB_NEW_ISSUE_URL = f"https://github.com/{GITHUB_REPO}/issues/new"
+PROXY_PAIRING_RECOVERY_URL = (
+    f"https://github.com/{GITHUB_REPO}/blob/master/docs/TROUBLESHOOTING.md"
+    "#repeated-authentication-failures-through-an-esphome-proxy"
+)
 
 # Prefix for the legacy "unsupported BLE device" Repairs issues. These were
 # created automatically on discovery, but proved to be noise (the integration's

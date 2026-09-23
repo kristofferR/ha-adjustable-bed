@@ -71,6 +71,7 @@ from custom_components.adjustable_bed.setup_operation import (
     OperationOutcome,
     OperationResult,
 )
+from custom_components.adjustable_bed.unsupported import create_pairing_required_issue
 
 from .conftest import TEST_ADDRESS, TEST_NAME
 
@@ -433,6 +434,46 @@ async def test_async_create_fix_flow_routes_combine_suggestion(
     assert isinstance(flow, CombineBedsRepairFlow)
 
 
+async def test_proxy_pairing_repair_persists_until_success(
+    hass: HomeAssistant, enable_custom_integrations
+) -> None:
+    """Repeated failures share one issue; a failed retry must not dismiss it."""
+    assert await async_setup_component(hass, "repairs", {})
+    assert await async_setup_component(hass, DOMAIN, {})
+    evidence = BondEvidence(
+        status=BondVerificationStatus.AUTH_FAILED,
+        owner=BondOwner(transport=TransportClass.PROXY, source="bedroom-proxy"),
+        operation="runtime",
+        observed_at="2026-09-23T00:00:00+00:00",
+    )
+    for _ in range(2):
+        await create_pairing_required_issue(
+            hass, TEST_ADDRESS, TEST_NAME, evidence=evidence.as_dict()
+        )
+    registry = ir.async_get(hass)
+    issues = [
+        issue for (domain, _), issue in registry.issues.items() if domain == DOMAIN
+    ]
+    assert len(issues) == 1
+    issue = issues[0]
+    assert issue.is_persistent
+    manager = repairs_flow_manager(hass)
+    assert manager is not None
+    with patch.object(
+        PairingRequiredRepairFlow, "_async_try_pair", AsyncMock(side_effect=[False, True])
+    ) as pair:
+        form = await manager.async_init(DOMAIN, data={"issue_id": issue.issue_id})
+        assert form["step_id"] == "proxy_pairing"
+        pair.assert_not_awaited()
+        failed = await manager.async_configure(form["flow_id"], {})
+        assert failed["type"] is FlowResultType.FORM
+        assert registry.async_get_issue(DOMAIN, issue.issue_id) is not None
+        succeeded = await manager.async_configure(form["flow_id"], {})
+
+    assert succeeded["type"] is FlowResultType.CREATE_ENTRY
+    assert registry.async_get_issue(DOMAIN, issue.issue_id) is None
+
+
 async def test_confirm_step_shows_form_first(hass: HomeAssistant) -> None:
     """The first step presents the pairing instructions form."""
     flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, None)
@@ -656,7 +697,7 @@ def test_pairing_repair_translations_cover_every_progress_and_result() -> None:
     # an untitled, undescribed dialog for the whole time it is on screen.
     required_steps = {
         "confirm",
-        "proxy_bond",
+        "proxy_pairing",
         "stale_bond_confirm",
         "stale_bond_progress",
         "stale_bond_result",
@@ -1754,14 +1795,7 @@ async def test_a_proxy_pairing_failure_keeps_the_guided_pairing_retry(
 async def test_an_unbonded_proxy_link_keeps_the_guided_pairing_retry(
     hass: HomeAssistant,
 ) -> None:
-    """An auth failure over a proxy is what an unbonded bed looks like.
-
-    ``pair=True`` fails, the fallback connects without pairing, and the
-    auth-gated read then reports insufficient authentication. Nothing there says
-    a proxy bond exists, and the guidance would tell the user to reflash the
-    proxy: that erases every unrelated bond on it and still leaves this bed
-    unpaired.
-    """
+    """A proxy auth failure still allows ordinary pairing without a known bond."""
     entry = MockConfigEntry(
         domain=DOMAIN,
         title=TEST_NAME,
@@ -1792,7 +1826,16 @@ async def test_an_unbonded_proxy_link_keeps_the_guided_pairing_retry(
     ):
         result = await flow.async_step_init()
 
-    assert result["step_id"] == "confirm"
+    assert result["step_id"] == "proxy_pairing"
+    assert result["description_placeholders"]["transport"] == "proxy-source"
+    with patch.object(flow, "_async_try_pair", AsyncMock(return_value=False)) as pair:
+        retry = await flow.async_step_proxy_pairing({})
+    pair.assert_awaited_once()
+    assert retry["step_id"] == "proxy_pairing"
+    assert retry["errors"] == {"base": "pairing_failed"}
+    with patch.object(flow, "_async_try_pair", AsyncMock(return_value=True)):
+        paired = await flow.async_step_proxy_pairing({})
+    assert paired["type"] is FlowResultType.CREATE_ENTRY
 
 
 async def test_a_proxy_authentication_failure_still_gets_proxy_guidance(
@@ -1840,7 +1883,7 @@ async def test_a_proxy_authentication_failure_still_gets_proxy_guidance(
     ):
         result = await flow.async_step_init()
 
-    assert result["step_id"] == "proxy_bond"
+    assert result["step_id"] == "proxy_pairing"
 
 
 async def test_a_one_connection_bed_with_a_proxy_bond_still_gets_proxy_guidance(
@@ -1886,7 +1929,7 @@ async def test_a_one_connection_bed_with_a_proxy_bond_still_gets_proxy_guidance(
     result = await flow.async_step_init()
 
     assert result["type"] == FlowResultType.FORM
-    assert result["step_id"] == "proxy_bond"
+    assert result["step_id"] == "proxy_pairing"
 
 
 async def test_the_combine_suggestion_can_be_answered_with_separate_beds(

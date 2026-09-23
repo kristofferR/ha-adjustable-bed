@@ -5622,6 +5622,65 @@ async def test_pairing_outcome_uses_the_active_language(
     assert outcome == "❌ Paringen ble avbrutt."
 
 
+@pytest.mark.parametrize(
+    ("transport", "status", "outcome", "show_recovery"),
+    [
+        (
+            TransportClass.PROXY,
+            BondVerificationStatus.AUTH_FAILED,
+            OperationOutcome.BOND_VERIFICATION_FAILED,
+            True,
+        ),
+        (
+            TransportClass.LOCAL,
+            BondVerificationStatus.AUTH_FAILED,
+            OperationOutcome.BOND_VERIFICATION_FAILED,
+            False,
+        ),
+        (
+            TransportClass.UNKNOWN,
+            BondVerificationStatus.AUTH_FAILED,
+            OperationOutcome.BOND_VERIFICATION_FAILED,
+            False,
+        ),
+        (
+            TransportClass.PROXY,
+            BondVerificationStatus.INCONCLUSIVE,
+            OperationOutcome.BOND_VERIFICATION_INCONCLUSIVE,
+            False,
+        ),
+        (TransportClass.PROXY, BondVerificationStatus.AUTH_FAILED, OperationOutcome.TIMEOUT, False),
+    ],
+)
+async def test_proxy_recovery_guidance_requires_observed_auth_failure(
+    hass: HomeAssistant,
+    transport: TransportClass,
+    status: BondVerificationStatus,
+    outcome: OperationOutcome,
+    show_recovery: bool,
+) -> None:
+    """Only a failed authenticated check on an actual proxy justifies this advice."""
+    from custom_components.adjustable_bed.unsupported import PROXY_PAIRING_RECOVERY_URL
+
+    flow = _pairing_flow(hass)
+    evidence = BondEvidence(
+        status=status,
+        owner=BondOwner(transport=transport, source="bedroom-proxy"),
+        operation="setup_pairing",
+        observed_at="2026-09-23T00:00:00+00:00",
+    )
+    note = await flow._async_pairing_outcome_note(
+        OperationResult(outcome=outcome, payload=evidence), evidence
+    )
+
+    assert (PROXY_PAIRING_RECOVERY_URL in note) is show_recovery
+    if show_recovery:
+        assert "bedroom-proxy" in note
+        assert "Try again" in note
+        assert "{transport}" not in note
+        assert "{recovery_url}" not in note
+
+
 async def test_each_pairing_failure_gets_its_own_advice(
     hass: HomeAssistant,
 ) -> None:

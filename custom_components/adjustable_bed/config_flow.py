@@ -262,6 +262,7 @@ from .setup_operation import (
     SetupAction,
 )
 from .unsupported import (
+    PROXY_PAIRING_RECOVERY_URL,
     build_misidentified_issue_url,
     capture_device_info,
 )
@@ -444,6 +445,16 @@ _PAIRING_OUTCOME_FALLBACKS: Final[dict[str, str]] = {
         "❌ The bed connected, but the link is still unauthenticated, so the bond "
         "did not form. Put the bed back into pairing mode and select **Try "
         "again**."
+    ),
+    "auth_failed_proxy": (
+        "❌ The bed connected through Bluetooth proxy **{transport}**, but "
+        "authentication failed. Close the bed's phone app, put the bed back into "
+        "Bluetooth pairing mode, and select **Try again** using the same proxy.\n\n"
+        "If the same authentication error returns, saved pairing keys on the "
+        "proxy may be stale. Follow the [step-by-step recovery guide]({recovery_url}). "
+        "A normal wireless firmware update does not erase these keys. A full "
+        "flash erase is a last resort: it removes the proxy's settings and ALL "
+        "Bluetooth pairings, so save its configuration first."
     ),
     "inconclusive": (
         "⚠️ Home Assistant could not confirm the existing bond either way: the "
@@ -4066,6 +4077,21 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Describe what the operation achieved, in the user's language."""
         if result is None:
             return await self._pairing_text("no_run")
+
+        if (
+            result.outcome is OperationOutcome.BOND_VERIFICATION_FAILED
+            and isinstance(evidence, BondEvidence)
+            and evidence.status is BondVerificationStatus.AUTH_FAILED
+            and evidence.owner.transport is TransportClass.PROXY
+        ):
+            path = async_path_for_source(self.hass, evidence.owner.source)
+            transport = evidence.owner.source or "ESPHome proxy"
+            if path is not None and path.display_name != transport:
+                transport = f"{path.display_name} ({transport})"
+            return (await self._pairing_text("auth_failed_proxy")).format(
+                transport=transport,
+                recovery_url=PROXY_PAIRING_RECOVERY_URL,
+            )
 
         if result.succeeded and isinstance(evidence, BondEvidence):
             if not evidence.proves_bond:

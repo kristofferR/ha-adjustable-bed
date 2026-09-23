@@ -48,7 +48,6 @@ from .bond_verification import (
     BondOwner,
     BondVerificationStatus,
     bond_context_matches,
-    bond_owner_from_entry,
     build_bond_context,
 )
 from .combine_suggestion import async_dismiss, async_is_dismissed, normalize_addresses
@@ -83,6 +82,7 @@ from .setup_operation import (
     OperationResult,
     SetupAction,
 )
+from .unsupported import PROXY_PAIRING_RECOVERY_URL
 
 if TYPE_CHECKING:
     from bleak.backends.device import BLEDevice
@@ -443,25 +443,6 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         """Return whether the repair maps to exactly one combined child."""
         return not self._is_combined_pair() or self._target_side() is not None
 
-    def _proxy_bond_recorded(self) -> bool:
-        """Return True when this entry records a bond that a proxy made.
-
-        An authentication failure carried by a proxy is not by itself evidence
-        that the proxy holds a bond. The coordinator reports exactly the same
-        evidence for a bed that is simply not bonded: ``pair=True`` fails, the
-        fallback connects without pairing, and the auth-gated read then reports
-        insufficient authentication. Sending that user to read-only guidance
-        tells them to factory-reset or reflash a proxy, which erases every
-        unrelated bond on it and still leaves this bed unpaired.
-
-        Provenance is the independent signal, because it is only ever written
-        from a verification that positively proved a bond.
-        """
-        data = self._target_data()
-        if not data.get(CONF_BLE_BOND_ESTABLISHED):
-            return False
-        return bond_owner_from_entry(data).transport is TransportClass.PROXY
-
     def _paired_entry_data(self, verified_owner: BondOwner | None) -> dict[str, Any] | None:
         """Return entry data for a repaired bond without stale ownership."""
         if self._entry() is None:
@@ -531,36 +512,40 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
             )
         if self._offer.is_eligible:
             return await self.async_step_stale_bond_confirm()
-        if evidence_is_proxy_auth_failure(self._issue_data) and self._proxy_bond_recorded():
-            # A proxy carried an authentication failure *and* this entry records
-            # a bond the proxy proved, so the suspect is that bond, and it lives
-            # in a store this host cannot read. Nothing here can clear it, and
-            # offering a host-side action would only look like it had. Without
-            # both halves the bed is simply unbonded and keeps guided pairing.
-            #
-            # Checked ahead of KEEPS_FIRST_LINK deliberately. async_recovery_offer
-            # answers that first, without looking at the transport, so a bed
-            # granting one connection per pairing window would otherwise be sent
-            # to a pairing form that cannot reach the proxy's bond store and
-            # would hit the identical failure again.
-            return await self.async_step_proxy_bond()
+        if (
+            evidence_is_proxy_auth_failure(self._issue_data)
+            and self._combined_target_is_resolved()
+        ):
+            # A failed authenticated read does not prove a stale bond. Keep the
+            # normal pairing retry, with manual recovery advice if it repeats.
+            return await self.async_step_proxy_pairing()
         # Everything else, KEEPS_FIRST_LINK included, is a bed that simply needs
         # pairing rather than a bond removed.
         return await self.async_step_confirm()
 
-    async def async_step_proxy_bond(
+    async def async_step_proxy_pairing(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Explain a proxy-owned bond rather than pretending to fix it."""
+        """Retry pairing, with recovery guidance for the proxy that failed."""
+        errors: dict[str, str] = {}
         if user_input is not None:
-            return self.async_abort(reason="proxy_bond_guidance")
+            if await self._async_try_pair():
+                return self.async_create_entry(title="", data={})
+            errors["base"] = "pairing_failed"
+        source = self._issue_data.get("evidence_source")
+        path = async_path_for_source(self.hass, source)
+        transport = source or "ESPHome proxy"
+        if path is not None and path.display_name != transport:
+            transport = f"{path.display_name} ({transport})"
         return self.async_show_form(
-            step_id="proxy_bond",
+            step_id="proxy_pairing",
             data_schema=vol.Schema({}),
+            errors=errors,
             description_placeholders={
                 "name": self._name,
                 "address": self._address,
-                "transport": self._issue_data.get("evidence_source") or "a Bluetooth proxy",
+                "transport": transport,
+                "recovery_url": PROXY_PAIRING_RECOVERY_URL,
             },
         )
 
