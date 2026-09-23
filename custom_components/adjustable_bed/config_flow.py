@@ -206,6 +206,7 @@ from .const import (
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
     RUNTIME_BOND_KEYS,
+    SOLACE_VARIANT_WOOSA,
     VARIANT_AUTO,
     DetectionResult,
     bed_type_has_position_feedback,
@@ -586,6 +587,8 @@ def _motor_count_options(
         return [1, 2, 3, 4]
     if bed_type == BED_TYPE_OKIN_CST:
         return [3] if protocol_variant in OKIN_CST_THREE_MOTOR_VARIANTS else [2]
+    if bed_type == BED_TYPE_SOLACE and protocol_variant == SOLACE_VARIANT_WOOSA:
+        return [2]
     return [2, 3, 4]
 
 

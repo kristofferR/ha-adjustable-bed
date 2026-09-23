@@ -1406,7 +1406,7 @@ async def handle_solace_audio(call: ServiceCall) -> None:
 
 
 async def handle_solace_set_alarm(call: ServiceCall) -> None:
-    """Program the MotionFlex alarm packet family."""
+    """Program the selected app profile's alarm packet family."""
     weekday_numbers = tuple(
         SOLACE_WEEKDAY_OPTIONS.index(day) + 1 for day in call.data[ATTR_WEEKDAYS]
     )
@@ -1418,10 +1418,16 @@ async def handle_solace_set_alarm(call: ServiceCall) -> None:
     )
     if missing:
         raise _missing_device_error(missing[0])
+
+    def validate_sound(controller: BedController | SideBoundController) -> None:
+        if call.data[ATTR_SOUND] not in controller.solace_alarm_sound_options:
+            raise ServiceValidationError("This bed profile does not support the selected alarm sound")
+
     preflighted = await _preflight_capability(
         targets,
         "supports_solace_alarm",
         "Solace alarm programming",
+        validate_sound,
     )
 
     async def program(controller: BedController | SideBoundController) -> None:

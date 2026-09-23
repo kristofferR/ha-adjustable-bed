@@ -533,7 +533,7 @@ solace_audio:
 
 solace_set_alarm:
   name: Set Solace alarm
-  description: Program the MotionFlex alarm time, recurrence, action, massage, and sound.
+  description: Program the MotionFlex or Woosa Sleep alarm time, recurrence, action, massage, and sound. Woosa supports sound off or alarm only.
   fields:
     device_id:
       name: Device

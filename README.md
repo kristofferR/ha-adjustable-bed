@@ -97,7 +97,7 @@ The entries below identify motor/actuator manufacturers or supported app profile
 | 🧪 [RMControl product profiles](docs/beds/rmcontrol.md) | Explicit Richmat RMControl 21.3.7 product catalogs; hardware unverified |
 | ✅ [MotoSleep](docs/beds/motosleep.md) | HHC, Power Bob, binary MOTO models |
 | ✅ [Octo](docs/beds/octo.md) | Octo |
-| ✅ [Solace](docs/beds/solace.md) | Solace, Sealy, Woosa Sleep, QMS |
+| ✅ [Solace](docs/beds/solace.md) | Solace, Sealy, QMS; explicit [Woosa Sleep](docs/beds/woosa.md) app profile (hardware unverified) |
 | ✅ [Leggett & Platt](docs/beds/leggett-platt.md) | Leggett & Platt, Prodigy Comfort Elite / Prodigy CE |
 | 🧪 [Prodigy / U Series app profiles](docs/beds/leggett-okin.md) | Prodigy 2L, Prodigy 2, Prodigy 4 and U / Ultra Series (BLE profiles and timers) |
 | 🧪 [L&P Adjustable Base, legacy app](docs/beds/lp-legacy.md) | Explicit app remote layouts from `com.richmat.lp` 2.2.1; hardware unverified |
