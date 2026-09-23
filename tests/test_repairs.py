@@ -728,6 +728,7 @@ def test_pairing_repair_translations_cover_every_progress_and_result() -> None:
         for step in required_steps:
             assert flow["step"][step].keys() >= {"title", "description"}
         assert "pairing_route_mismatch" in flow["error"]
+        assert "pairing_not_supported" in flow["error"]
 
 
 async def test_try_pair_returns_false_when_device_not_in_range(hass: HomeAssistant) -> None:
@@ -2033,6 +2034,49 @@ async def test_proxy_retry_does_not_accept_a_bond_on_another_path(
     assert CONF_BLE_BOND_ESTABLISHED not in entry.data
     client.read_gatt_char.assert_not_awaited()
     client.pair.assert_not_awaited()
+    client.disconnect.assert_awaited_once()
+    reload.assert_not_awaited()
+
+
+@pytest.mark.parametrize("pair_error", [NotImplementedError(), TypeError("unsupported")])
+async def test_proxy_retry_reports_unsupported_pairing(
+    hass: HomeAssistant, pair_error: Exception
+) -> None:
+    """An unsupported proxy backend needs an update, not stale-key recovery."""
+    entry = _bed_entry(hass, address=TEST_ADDRESS, name=TEST_NAME)
+    await create_pairing_required_issue(
+        hass,
+        TEST_ADDRESS,
+        TEST_NAME,
+        entry.entry_id,
+        evidence={"owner": {"source": "failed-proxy"}},
+    )
+    flow = PairingRequiredRepairFlow(
+        TEST_ADDRESS,
+        TEST_NAME,
+        entry.entry_id,
+        issue_data={"evidence_source": "failed-proxy"},
+    )
+    flow.hass = hass
+    client = MagicMock()
+    client._connected_scanner = MagicMock(source="failed-proxy")
+    client.pair = AsyncMock(side_effect=pair_error)
+    client.read_gatt_char = AsyncMock()
+    client.disconnect = AsyncMock()
+
+    with (
+        patch.object(flow, "_find_device", return_value=MagicMock()),
+        patch(ESTABLISH, new=AsyncMock(return_value=client)),
+        patch.object(hass.config_entries, "async_reload", new=AsyncMock()) as reload,
+    ):
+        result = await flow.async_step_proxy_pairing({})
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "pairing_not_supported"}
+    assert ir.async_get(hass).async_get_issue(
+        DOMAIN, f"pairing_required_{TEST_ADDRESS.replace(':', '_').lower()}"
+    ) is not None
+    client.read_gatt_char.assert_not_awaited()
     client.disconnect.assert_awaited_once()
     reload.assert_not_awaited()
 

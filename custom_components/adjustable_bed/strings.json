@@ -2767,6 +2767,7 @@
         },
         "error": {
           "pairing_failed": "Pairing did not complete. Check that the bed is still in pairing mode and the same proxy is online, then retry. Use the recovery guide below only if authentication keeps failing.",
+          "pairing_not_supported": "This proxy cannot pair through its current Bluetooth backend. Update its ESPHome firmware to 2024.3.0 or newer, then retry. Do not erase the proxy's flash for this error.",
           "pairing_route_mismatch": "Home Assistant retried through a different or unknown Bluetooth path. This does not confirm a failure on the named proxy. Check which proxy is connected and retry before using the recovery guide; do not erase that proxy based on this retry."
         }
       }

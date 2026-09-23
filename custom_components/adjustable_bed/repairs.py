@@ -303,6 +303,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         self._offer: RecoveryOffer | None = None
         self._result_shown = False
         self._retry_route_mismatch = False
+        self._retry_pairing_not_supported = False
 
     def _async_flow_manager(self) -> Any:
         """Repairs flows are driven by their own manager, not the config one."""
@@ -593,11 +594,12 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                         "observed_at": self._issue_data.get("evidence_observed_at"),
                     },
                 )
-            errors["base"] = (
-                "pairing_route_mismatch"
-                if self._retry_route_mismatch
-                else "pairing_failed"
-            )
+            if self._retry_route_mismatch:
+                errors["base"] = "pairing_route_mismatch"
+            elif self._retry_pairing_not_supported:
+                errors["base"] = "pairing_not_supported"
+            else:
+                errors["base"] = "pairing_failed"
         source = self._issue_data.get("evidence_source")
         path = async_path_for_source(self.hass, source)
         transport = source or "ESPHome proxy"
@@ -999,6 +1001,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         from bleak_retry_connector import establish_connection
 
         self._retry_route_mismatch = False
+        self._retry_pairing_not_supported = False
         via_coordinator = await self._async_pair_via_coordinator(expected_source)
         if via_coordinator is not None:
             return via_coordinator
@@ -1049,6 +1052,14 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                 if expected_source:
                     try:
                         await client.pair()
+                    except (NotImplementedError, TypeError) as err:
+                        self._retry_pairing_not_supported = True
+                        _LOGGER.warning(
+                            "Repair: pairing not supported for %s: %s",
+                            self._address,
+                            err,
+                        )
+                        return False
                     except Exception as err:  # noqa: BLE001 - the verifier decides
                         pair_error = err
                         _LOGGER.warning(
