@@ -142,6 +142,7 @@ from .const import (
     SLEEPYS_BOX25_FIXED_STAR_NAME_PREFIXES,
     SLEEPYS_BOX25_VARIANT_LEGACY,
     SLEEPYS_BOX25_VARIANT_STAR,
+    SOLACE_VARIANT_WOOSA,
     VARIANT_AUTO,
 )
 from .kaidi_protocol import extract_kaidi_advertisement
@@ -295,7 +296,6 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_OKIN_FFE: _ControllerSpec(
         "keeson", "KeesonController", MappingProxyType({"variant": KEESON_VARIANT_OKIN})
     ),
-    BED_TYPE_SOLACE: _ControllerSpec("solace", "SolaceController"),
     BED_TYPE_SUTA: _ControllerSpec("suta", "SutaController"),
     BED_TYPE_TIMOTION_AHF: _ControllerSpec("timotion_ahf", "TiMOTIONAhfController"),
     BED_TYPE_REVERIE: _ControllerSpec("reverie", "ReverieController"),
@@ -403,6 +403,22 @@ async def create_controller(
         ValueError: If bed_type is unknown
         ConnectionError: If auto-detection is needed but client is not connected
     """
+    if bed_type == BED_TYPE_SOLACE:
+        if protocol_variant == SOLACE_VARIANT_WOOSA:
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.woosa", __package__
+            )
+            from .beds.woosa import WoosaController
+
+            return WoosaController(coordinator)
+
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.solace", __package__
+        )
+        from .beds.solace import SolaceController
+
+        return SolaceController(coordinator)
+
     if bed_type == BED_TYPE_SLEEP_NUMBER_MCR:
         await coordinator.hass.async_add_import_executor_job(
             import_module, ".beds.sleep_number_mcr", __package__

@@ -1217,6 +1217,11 @@ REMACRO_READ_CHAR_UUID: Final = "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
 
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
+SOLACE_VARIANT_WOOSA: Final = "woosa"
+SOLACE_VARIANTS: Final = {
+    VARIANT_AUTO: "Auto (conservative device-name profile)",
+    SOLACE_VARIANT_WOOSA: "Woosa Sleep app (select explicitly)",
+}
 LINAK_VARIANTS: Final = {
     VARIANT_AUTO: "Auto (Bed Control)",
     LINAK_VARIANT_BED_CONTROL: "Bed Control (modern, auto-detected capabilities)",
@@ -2116,6 +2121,7 @@ OKIN_64BIT_VARIANTS: Final = {
 # All protocol variants (for validation)
 ALL_PROTOCOL_VARIANTS: Final = [
     VARIANT_AUTO,
+    SOLACE_VARIANT_WOOSA,
     KAIDI_VARIANT_SEAT_1,
     KAIDI_VARIANT_SEAT_2,
     KAIDI_VARIANT_SEAT_3,

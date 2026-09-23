@@ -121,6 +121,7 @@ enable additional commands.
 |--------------------|---------|-------|
 | Linak Bed Control | `linak_move_simultaneously`, `linak_rename`, `linak_set_alarm` | [Linak](beds/linak.md) |
 | Solace MotionFlex | `solace_audio`, `solace_set_alarm` | [Solace](beds/solace.md) |
+| Solace Woosa Sleep | `solace_set_alarm` (sound `none` or `alarm`, no music) | [Woosa](beds/woosa.md) |
 | Leggett Okin app profiles | `leggett_sleep_timer`, `leggett_alarm_timer`, `leggett_hold_control` | [Prodigy / U Series](beds/leggett-okin.md) |
 | LOGICDATA app profiles | `logicdata_set_alarm`, `logicdata_rename`, `logicdata_hold_preset` | [LOGICDATA](beds/logicdata-app.md) |
 | Jiecang app profiles | `jiecang_set_alarm`, `jiecang_wake`, `jiecang_stop_wake`, `jiecang_rename` | [Jiecang](beds/jiecang-app.md) |

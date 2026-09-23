@@ -259,6 +259,7 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
                 auto_off_seconds,
             )
             self._auto_off_timer = None
+            controller.on_light_auto_off()
             self._attr_is_on = False
             self.async_write_ha_state()
 

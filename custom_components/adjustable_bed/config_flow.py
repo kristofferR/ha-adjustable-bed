@@ -206,6 +206,7 @@ from .const import (
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
     RUNTIME_BOND_KEYS,
+    SOLACE_VARIANT_WOOSA,
     VARIANT_AUTO,
     DetectionResult,
     bed_type_has_position_feedback,
@@ -602,6 +603,8 @@ def _motor_count_options(
         return [1, 2, 3, 4]
     if bed_type == BED_TYPE_OKIN_CST:
         return [3] if protocol_variant in OKIN_CST_THREE_MOTOR_VARIANTS else [2]
+    if bed_type == BED_TYPE_SOLACE and protocol_variant == SOLACE_VARIANT_WOOSA:
+        return [2]
     return [2, 3, 4]
 
 
@@ -5739,6 +5742,23 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     if key in shown and shown[key] != value
                 },
             }
+            if (
+                separate_address_pair
+                and CONF_PROTOCOL_VARIANT in paired_changes
+                and (
+                    paired_changes[CONF_PROTOCOL_VARIANT]
+                    == SOLACE_VARIANT_WOOSA
+                    or any(
+                        child.get(CONF_PROTOCOL_VARIANT) == SOLACE_VARIANT_WOOSA
+                        for child in iter_children(self.config_entry.data)
+                    )
+                )
+            ):
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={CONF_PROTOCOL_VARIANT: "woosa_unpair_first"},
+                )
             incompatible_child = any(
                 child.get(CONF_BED_TYPE) == BED_TYPE_RICHMAT
                 and not _is_valid_rmcontrol_variant(

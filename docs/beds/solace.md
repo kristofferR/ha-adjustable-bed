@@ -4,7 +4,7 @@
 
 **Hardware validation:** Partial (the legacy S4-Y motor layout is user-confirmed; accepted APK routes await post-release validation)
 
-This controller covers a family of beds that write fixed 11-byte frames to FFE1. The apps overlap, but do not expose one universal feature set. The integration therefore selects a conservative capability profile from the observed BLE name.
+This controller covers a family of beds that write fixed 11-byte frames to FFE1. The apps overlap, but do not expose one universal feature set. The integration therefore selects a conservative capability profile from the observed BLE name, with explicit protocol variant `woosa` for the Woosa Sleep app. The [Woosa profile](woosa.md) documents its distinct commands and behavior.
 
 ## Evidence status
 
@@ -14,7 +14,7 @@ This controller covers a family of beds that write fixed 11-byte frames to FFE1.
 | Sealy MotionFlex | `com.sealy.motionflex` 1.0.3 | COMPLETE |
 | Sweet Night | `com.sn.dianqi` 1.0.6 | COMPLETE, FULL comparison |
 | Motion Bed | `com.sn.blackdianqi` 1.24 | Pending |
-| Woosa Sleep | `com.sn.woosa` 1.1.6 | Pending |
+| Woosa Sleep | `com.sn.woosa` 1.1.9 | COMPLETE, explicit [Woosa profile](woosa.md) |
 
 The accepted reports prove application behavior exhaustively. Physical behavior that cannot be established statically remains explicitly hardware-unverified.
 
@@ -29,7 +29,7 @@ The accepted reports prove application behavior exhaustively. Physical behavior 
 | Exact `S4-Y-<digits>-<id>` | Back, legs, bed height, tilt | Two memories, TV/zero-G/anti-snore, deployed legacy flat | None |
 | Any unidentified manual Solace route | Back, legs | No unverified presets or accessories | None |
 
-`QMS2` and `QMS-MQ` deliberately use the common profile. HomeKobo and Sweet Night both route these names, but only HomeKobo exposes massage. The integration does not assume that optional hardware exists.
+`QMS2` and `QMS-MQ` deliberately use the common profile unless the user explicitly selects protocol variant `woosa` (Woosa Sleep). HomeKobo and Sweet Night both route these names, but only HomeKobo exposes massage. The integration does not assume that optional hardware exists.
 
 The exact S4-Y route preserves a real user's confirmed four-cover layout and the previously deployed legacy all-flat command. Auto-discovery is limited to names beginning with the accepted values in the table, plus the accepted `My QMS2` prefix. Broad `QMS*`, arbitrarily prefixed substring, and S3/S4/S5/S6 matching was removed because Home Assistant cannot safely index leading-wildcard discovery hints and the broader families include names sourced only from the still-pending Motion Bed APK. A name merely containing `solace` is not evidence and is not auto-detected. Existing manual entries with an unidentified name retain basic back/legs movement and STOP but do not receive guessed query, preset, massage, or lighting commands.
 
@@ -52,7 +52,7 @@ FF FF FF FF 05 00 00 <mode> <selector> <crc-low> <crc-high>
 
 The checksum is CRC-16/MODBUS over bytes 0-8, initial value `0xFFFF`, reflected polynomial `0xA001`, low byte first. The accepted apps decode fixed hexadecimal strings rather than constructing these CRCs at runtime.
 
-The integration's accepted family command set is:
+The following command set applies to the name-selected profiles. The explicit [Woosa profile](woosa.md) differs, including leg down, Love, one numbered Favourite slot and preset activation timing:
 
 | Action | Frame |
 |---|---|
@@ -70,13 +70,13 @@ Sweet Night's shipped Memory 2 short-press path duplicates Memory 1. The
 distinct Memory 2 frame above is independently accepted from HomeKobo and
 MotionFlex; Sweet Night runtime validation remains explicitly requested.
 
-Flat and preset actions are single writes. The accepted apps do not send STOP or wait 200 ms before a preset. Movement sends one start frame and the global STOP on release. Home Assistant cover actions have no matching button-release event, so the integration retains a five-second integration safety cap and always sends STOP in cleanup; an explicit Stop cancels it immediately.
+For these name-selected profiles, Flat and preset actions are single writes without a STOP or 200 ms preamble. The explicit Woosa profile follows its separately proven STOP and 200 ms preset sequence. Movement sends one start frame and the global STOP on release. Home Assistant cover actions have no matching button-release event, so the integration retains a five-second integration safety cap and always sends STOP in cleanup; an explicit Stop cancels it immediately.
 
 ## Preset state
 
 Q1 and Q2 use different five-command query sets. Queries start after notification setup, then use the app-proven pacing. Responses are substring-matched by the accepted apps and identify selected state for memory 1, memory 2, TV, zero-G, and anti-snore. The integration records the same controller state for diagnostics without treating it as position feedback.
 
-There are two numbered memory slots. Historical “memory 3-5” frames are actually the selected/program branches for TV, zero-G, and anti-snore.
+The name-selected profiles have two numbered memory slots; the explicit Woosa profile has one Favourite slot. Historical “memory 3-5” frames are actually the selected/program branches for TV, zero-G, and anti-snore.
 
 ## Profile-specific features
 
@@ -92,19 +92,17 @@ MotionFlex proves light brightness levels 0-10; level 0 is the accepted off comm
 
 ## Intentionally withheld behavior
 
-These historical commands remain out of accepted profiles until their own APKs pass APK Protocol Audit:
+These historical commands remain outside the name-selected profiles. Woosa's absolute massage selectors `4F`–`56` and light-off selector `4B` are now supported only by its explicitly selected, independently audited profile:
 
 - Yoga selector `4E`
 - Legacy all-flat selector `2A` outside the exact S4-Y compatibility profile
-- Woosa absolute massage selectors `4F`-`56`
-- Woosa light-off selector `4B`
 - Five generic numbered memory slots
 - Broad S3/S4/S5/S6 detection
-- The historical STOP + 200 ms preset preamble
+- Applying Woosa's STOP + 200 ms preset preamble to other profiles
 
 ## MotionFlex audio, clock, and alarm
 
-The MotionFlex profile exposes its relaxing-bedtime preset and music start/stop actions as buttons. The `adjustable_bed.solace_audio` service selects or previews tracks 1-5, queries the current volume, and sets volume levels 1-5. The `adjustable_bed.solace_set_alarm` service programs the enabled state, time, weekdays, bed action, massage flag, and alarm or music sound. These services reject non-MotionFlex targets.
+The MotionFlex profile exposes its relaxing-bedtime preset and music start/stop actions as buttons. The `adjustable_bed.solace_audio` service selects or previews tracks 1-5, queries the current volume, and sets volume levels 1-5. The `adjustable_bed.solace_set_alarm` service programs the enabled state, time, weekdays, bed action, massage flag, and alarm or music sound. Audio actions require MotionFlex. The alarm action also supports the explicit [Woosa profile](woosa.md), restricted to its proven modes and alarm sound choices.
 
 On notification startup the controller first sends the app's local-time clock frame, then runs the Q2 preset queries and brightness query. MotionFlex brightness, audio-volume, and alarm replies are decoded into controller state.
 

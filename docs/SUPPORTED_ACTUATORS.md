@@ -13,7 +13,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [RMControl products](beds/rmcontrol.md) | Explicit product catalogs, reported state, alarms and snore intervention |
 | [MotoSleep](beds/motosleep.md) | Model-dependent HHC/MOTO controls, memory, massage and lighting |
 | [Octo](beds/octo.md) | Two protocol variants, optional PIN auth, RGBW lights. Sold as bett1.de, Dunlopillo, Hüsler Nest, Swiss Sense, Velda, Werkmeister, sleepling and more ([known brand list](beds/octo.md#bed-brands-that-ship-octo-actuators)) |
-| [Solace](beds/solace.md) | Name-based profiles, 2 memories, named presets, optional massage/lights, exact S4-Y lift/tilt |
+| [Solace](beds/solace.md) | Name-based profiles, named presets, optional massage/lights, exact S4-Y lift/tilt; explicit [Woosa Sleep](beds/woosa.md) profile with one Favourite memory |
 | [Leggett & Platt](beds/leggett-platt.md) | Gen2: motor control + RGB lighting; Okin: tilt/lumbar, massage |
 | [Prodigy / U Series app profiles](beds/leggett-okin.md) | Explicit layout, held controls, sleep/alarm timers |
 | [L&P legacy app](beds/lp-legacy.md) | Explicit model, protocol mode and confirmed GATT characteristics |

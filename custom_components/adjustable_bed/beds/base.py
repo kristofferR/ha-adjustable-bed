@@ -1051,6 +1051,11 @@ class BedController(ABC):
         return False
 
     @property
+    def solace_alarm_sound_options(self) -> tuple[str, ...]:
+        """Sounds accepted by this app profile's alarm action."""
+        return ("none", "alarm", "music_1", "music_2", "music_3", "music_4", "music_5")
+
+    @property
     def supports_memory_presets(self) -> bool:
         """Return True if bed supports recalling saved memory presets."""
         return False
@@ -2546,6 +2551,10 @@ class BedController(ABC):
             Number of seconds until lights auto-off, or None if lights stay on
             until manually turned off.
         """
+        return None
+
+    def on_light_auto_off(self) -> None:
+        """Update controller state after a hardware light timer expires."""
         return None
 
     @property

@@ -39,6 +39,7 @@ class SolaceProfile(StrEnum):
     HOME_K1 = "home_k1"
     HOME_K2 = "home_k2"
     MOTION_FLEX = "motion_flex"
+    WOOSA = "woosa"
     LEGACY_S4_Y = "legacy_s4_y"
     UNVERIFIED = "unverified"
 
