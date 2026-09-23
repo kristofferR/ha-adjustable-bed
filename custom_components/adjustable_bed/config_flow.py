@@ -40,6 +40,7 @@ from homeassistant.helpers.selector import (
 )
 from homeassistant.helpers.translation import async_get_translations
 from homeassistant.loader import IntegrationNotFound, async_get_integration
+from homeassistant.setup import async_setup_component
 
 from .actuator_groups import (
     ACTUATOR_GROUPS,
@@ -1575,6 +1576,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             )
             return self.async_abort(reason="discovery_disabled")
 
+        # First-time setup can fail before any entry exists. Load the domain
+        # so the support action and its download route are already available.
+        await async_setup_component(self.hass, DOMAIN, {})
+
         _LOGGER.info(
             "Bluetooth discovery triggered for device: %s (name: %s, RSSI: %s)",
             discovery_info.address,
@@ -2198,6 +2203,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Handle the user step to pick discovered device or manual entry."""
+        await async_setup_component(self.hass, DOMAIN, {})
         _LOGGER.debug("async_step_user called with input: %s", user_input)
 
         if user_input is not None:
@@ -4132,8 +4138,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             NotImplementedError: the Bluetooth backend does not support pairing.
             NotAdvertisingError: the bed is not currently advertising.
         """
-        from bleak import BleakClient
-        from bleak_retry_connector import establish_connection
+        from .support_proxy_logs import capture_proxy_logs
 
         if not address:
             raise ValueError("No address provided for pairing")
@@ -4141,6 +4146,28 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         preferred_adapter = ADAPTER_AUTO
         if self._manual_data:
             preferred_adapter = self._manual_data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
+
+        async with capture_proxy_logs(self.hass, address, preferred_adapter, retain=True):
+            return await self._attempt_pairing_with_capture(
+                address,
+                request_bond=request_bond,
+                track_for_flow_cleanup=track_for_flow_cleanup,
+                device=device,
+                preferred_adapter=preferred_adapter,
+            )
+
+    async def _attempt_pairing_with_capture(
+        self,
+        address: str,
+        *,
+        request_bond: bool,
+        track_for_flow_cleanup: bool,
+        device: BLEDevice | None,
+        preferred_adapter: str,
+    ) -> BondEvidence:
+        """Run freshness, connection and Auth checks under one retained trace."""
+        from bleak import BleakClient
+        from bleak_retry_connector import establish_connection
 
         _LOGGER.info(
             "Attempting to pair with %s (preferred adapter: %s)...",
@@ -4248,15 +4275,21 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     )
                     self.async_report_action(SetupAction.PAIRING)
                     await client.pair()
+                    _LOGGER.info("BLE backend pairing completed for %s via %s; verifying Auth next", address, actual_source)
 
                 self.async_report_action(SetupAction.VERIFYING_BOND)
-                return await async_verify_authenticated_access(
+                evidence = await async_verify_authenticated_access(
                     client,
                     bed_type=bed_type,
                     protocol_variant=protocol_variant,
                     path=path,
                     operation=("setup_pairing" if request_bond else "verify_existing_bond"),
                 )
+                _LOGGER.info(
+                    "Bond verification result for %s via %s: status=%s reason=%s; disconnecting setup probe",
+                    address, actual_source, evidence.status, evidence.error or "none",
+                )
+                return evidence
             finally:
                 self.async_report_action(SetupAction.DISCONNECTING)
                 try:

@@ -96,7 +96,7 @@ class TestVerificationOutcomes:
         client.read_gatt_char.assert_awaited_once_with(SLEEP_NUMBER_AUTH_CHAR_UUID)
         assert not has_evidence_backed_verifier(BED_TYPE_SLEEP_NUMBER_MCR, None)
 
-    @pytest.mark.parametrize("value", [b"\x00\x00", bytes(16), bytes(15) + b"\x01"])
+    @pytest.mark.parametrize("value", [b"", b"\x00\x00", bytes(15) + b"\x01"])
     async def test_sleep_number_invalid_auth_is_not_bond_proof(self, value: bytes) -> None:
         client = _client()
         client.read_gatt_char.return_value = value
@@ -106,6 +106,17 @@ class TestVerificationOutcomes:
         )
         assert not evidence.proves_bond
         assert evidence.status is BondVerificationStatus.AUTH_FAILED
+
+    async def test_sleep_number_connection_limit_does_not_invalidate_bond(self) -> None:
+        client = _client()
+        client.read_gatt_char.return_value = bytes(16)
+        evidence = await async_verify_authenticated_access(
+            client, bed_type=BED_TYPE_SLEEP_NUMBER, protocol_variant=None,
+            path=_LOCAL, operation="setup_pairing",
+        )
+        assert evidence.status is BondVerificationStatus.INCONCLUSIVE
+        assert not evidence.proves_bond
+        assert not evidence.proves_stale_host_bond
 
     async def test_sleep_number_encryption_error_is_a_failed_bond(self) -> None:
         evidence = await async_verify_authenticated_access(

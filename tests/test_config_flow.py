@@ -5981,6 +5981,13 @@ async def test_pairing_refuses_rather_than_bonding_through_another_adapter(
     """
     flow = _pairing_flow(hass)
     flow._manual_data[CONF_PREFERRED_ADAPTER] = "hci0"
+    from custom_components.adjustable_bed.support_logs import async_setup_support_logs
+    from custom_components.adjustable_bed.support_proxy_logs import DATA_PAIRING_PROXY_LOGS
+
+    address = "AA:BB:CC:DD:EE:01"
+    buffer = async_setup_support_logs(hass)
+    with buffer.capture_pairing(address):
+        logging.getLogger("custom_components.adjustable_bed.config_flow").warning("Stale pairing result")
     elsewhere = ConnectionPath(source="proxy", transport=TransportClass.PROXY)
     unavailable = AdvertisementEvidence(status=FreshnessStatus.SOURCE_UNAVAILABLE)
     with (
@@ -6000,11 +6007,15 @@ async def test_pairing_refuses_rather_than_bonding_through_another_adapter(
         ) as wait,
         pytest.raises(NotAdvertisingError),
     ):
-        await flow._attempt_pairing("AA:BB:CC:DD:EE:01")
+        await flow._attempt_pairing(address)
 
     # The pinned adapter is what was asked about, and nothing connected.
     assert wait.await_args.kwargs["source"] == "hci0"
     connects.assert_not_called()
+    pairing_logs, _ = buffer.pairing_snapshot(address)
+    assert not any("Stale pairing result" in row["message"] for row in pairing_logs)
+    assert any("Attempting to pair" in row["message"] for row in pairing_logs)
+    assert address in hass.data[DATA_PAIRING_PROXY_LOGS]
 
 
 async def test_a_pinned_proxy_seen_only_as_non_connectable_can_still_pair(

@@ -25,17 +25,31 @@ Auth, and only then subscribes to notifications. The integration follows that
 order. It does not request pairing during the initial connection or repeatedly
 pair a connection whose bond is still usable.
 
-Auth must return a 16-byte session UUID. A short value such as `0000` is invalid;
-the all-zero and UUID-one values are explicit failure responses. A failed or
-malformed Auth value keeps pairing verification incomplete and prevents
-notification startup and commands. Successful
-notification subscription alone does not prove authentication.
+Auth must return a 16-byte session UUID. An empty or short value such as `0000`
+is an authentication failure, as is UUID one. These failures invalidate the
+cached bond marker, allow the next connection attempt to request pairing, and
+raise the pairing repair if recovery fails. The all-zero UUID means the
+connection limit was reached; it blocks startup without invalidating the bond
+or requesting re-pairing. None of these responses permit notification startup
+or commands. Successful notification subscription alone does not prove
+authentication.
 
 An ATT error 15 (`Insufficient encryption`) is an authentication failure, just
 like ATT error 5. Recovery tracks the adapter or Bluetooth proxy that actually
 carried the connection. Pairing on the Home Assistant host does not establish a
 bond on a separate ESPHome proxy. Use the integration's pairing repair for the
 active transport and close the phone app before connecting.
+
+The September 22 captures in #574 show that the ESPHome proxy completed pairing
+and retained a bond, while the subsequent Auth read returned zero bytes. Other
+GATT reads worked. That identifies the failed step but does not establish why
+the bed returned an empty Auth value. Regular support bundles now retain the
+latest setup/pairing HA trace and available proxy logs, including Auth outcome
+and read length, so this does not require a separate diagnostic HA build or
+manual debug-log download. The standard ESPHome API cannot report stored bond
+keys or link-security details; those fields require proxy firmware support.
+The runtime recovery correction does not establish successful Climate 360
+hardware operation.
 
 Earlier documentation incorrectly stated that Fuzion never bonds. The 5.4.11
 application explicitly bonds after service discovery. This ordering matters for

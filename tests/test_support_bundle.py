@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -26,6 +27,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
     CONF_DISABLE_ANGLE_SENSING,
@@ -41,9 +43,11 @@ from custom_components.adjustable_bed.const import (
     OKIMAT_WRITE_CHAR_UUID,
     OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
     OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
+    SLEEP_NUMBER_AUTH_CHAR_UUID,
     SOLACE_SERVICE_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.redaction import redact_sleep_number_sessions
 from custom_components.adjustable_bed.support_bundle import (
     _build_evidence_summary,
     _build_nearby_device_inventory,
@@ -51,6 +55,36 @@ from custom_components.adjustable_bed.support_bundle import (
     _build_scanner_status,
     generate_support_bundle,
 )
+
+
+@pytest.mark.parametrize("detected_bed_type", [BED_TYPE_SLEEP_NUMBER, None])
+def test_sleep_number_bundle_redacts_session_bytes_but_keeps_failure_evidence(detected_bed_type):
+    session = "112233445566778899aabbccddeeff00"
+    report = {
+        "detection": {"bed_type": detected_bed_type},
+        "integration": {"bed_type": BED_TYPE_SLEEP_NUMBER},
+        "gatt_services": [{"characteristics": [{
+            "uuid": SLEEP_NUMBER_AUTH_CHAR_UUID,
+            "read_result": {"hex": session, "length": 16, "ascii_preview": "secret"},
+        }]}],
+        "notifications": [{"data_hex": session, "timestamp": "2026-09-22T10:00:00Z"}],
+        "notification_summary": {"by_characteristic": {"status": {
+            "count": 1,
+            "observed_payload_lengths": [16],
+            "top_repeated_payloads": [{"hex": session, "count": 1}],
+            "ascii_previews": ["secret"],
+        }}},
+    }
+
+    redact_sleep_number_sessions(report)
+
+    assert session not in json.dumps(report)
+    assert "secret" not in json.dumps(report)
+    assert report["gatt_services"][0]["characteristics"][0]["read_result"] == {
+        "hex": "**REDACTED**", "length": 16, "ascii_preview": None,
+    }
+    assert report["notifications"][0]["timestamp"] == "2026-09-22T10:00:00Z"
+    assert report["notification_summary"]["by_characteristic"]["status"]["count"] == 1
 
 
 class _FakeServices:
@@ -1313,7 +1347,7 @@ class TestSupportBundle:
             )
 
         assert report["target"]["mode"] == "target_address"
-        assert report["metadata"]["report_version"] == "2.3"
+        assert report["metadata"]["report_version"] == "2.5"
         assert report["integration"]["configured_device"] is False
         assert report["integration"]["kaidi_product_id"] is None
         assert report["integration"]["kaidi_sofa_acu_no"] is None
@@ -1466,7 +1500,7 @@ class TestSupportBundle:
             )
 
         pairing = report["pairing"]
-        assert report["metadata"]["report_version"] == "2.3"
+        assert report["metadata"]["report_version"] == "2.5"
         assert pairing["required"] is True
         assert pairing["connection_gated_by_bond"] is True
         assert pairing["persisted_bond_marker"] is True
@@ -1531,8 +1565,8 @@ class TestSupportBundle:
         scanner.current_mode = "active"
         scanner.requested_mode = "active"
         scanner.connecting_count = 1
-        scanner.connections_in_progress = 1
-        scanner.connection_failures = 0
+        scanner.connections_in_progress = MagicMock(return_value=1)
+        scanner.connection_failures = MagicMock(return_value=2)
         scanner.details = {"source": scanner.source, "type": "ESPHomeScanner"}
         scanner.async_diagnostics = AsyncMock(
             return_value={
@@ -1555,6 +1589,7 @@ class TestSupportBundle:
                         "selected_for_connection": True,
                     }
                 ],
+                address="AA:BB:CC:DD:EE:FF",
             )
 
         assert len(rows) == 1
@@ -1562,6 +1597,9 @@ class TestSupportBundle:
         assert row["scanner_type"] == "esphome_proxy"
         assert row["target_visible"] is True
         assert row["target_rssi"] == -71
+        assert row["connections_in_progress"] == 1
+        assert row["connection_failures"] == 2
+        scanner.connection_failures.assert_called_once_with("AA:BB:CC:DD:EE:FF")
         assert row["diagnostics"] == {"scanner_state": "running"}
         proxy = row["esphome_proxy"]
         assert proxy["available"] is True
@@ -1756,6 +1794,38 @@ class TestSupportBundleLoggingWarning:
         warning = next(w for w in evidence["warnings"] if "could not be read" in w)
         assert "[Errno 13] Permission denied" in warning
         assert "configuration.yaml" not in warning
+
+    def test_proxy_entries_make_log_capture_available(self):
+        """Proxy Bluetooth entries are usable logs even without HA memory entries."""
+        evidence = _build_evidence_summary(
+            capture_duration=0,
+            include_logs=True,
+            recent_logs=[],
+            diagnostic_report={"command_trace": [], "notification_summary": {}},
+            reproduction_command_trace=[{"command_origin": "write_command"}],
+            pairing={},
+            bluetooth_info={
+                "scanners": [],
+                "proxy_logs": [
+                    {
+                        "source": "proxy_1",
+                        "status": "available",
+                        "entries": [{"message": "GATT authentication failed"}],
+                    }
+                ],
+                "pairing_proxy_logs": [
+                    {"source": "proxy_1", "status": "unavailable", "reason": "not_connected", "entries": []}
+                ],
+            },
+            configured=True,
+            controller={"initialized": True},
+        )
+
+        assert evidence["log_capture_status"] == "available"
+        assert evidence["recent_log_entry_count"] == 0
+        assert evidence["proxy_log_entry_count"] == 1
+        assert not any("No relevant" in warning for warning in evidence["warnings"])
+        assert any("retained pairing attempt" in warning for warning in evidence["warnings"])
 
     async def test_notification_flags_a_bundle_generated_without_logs(
         self,

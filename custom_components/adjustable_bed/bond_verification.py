@@ -44,7 +44,7 @@ from .const import (
     DEVICE_INFO_CHARS,
     DEVICE_INFO_READ_TIMEOUT,
 )
-from .sleep_number_auth import InvalidSleepNumberSession, async_read_sleep_number_session
+from .sleep_number_auth import async_read_sleep_number_session
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -185,7 +185,7 @@ async def async_verify_authenticated_access(
                 DEVICE_INFO_READ_TIMEOUT,
             )
     except Exception as err:  # noqa: BLE001 - the failure mode is the result
-        if isinstance(err, InvalidSleepNumberSession) or is_ble_authentication_error(err):
+        if is_ble_authentication_error(err):
             return BondEvidence(
                 status=BondVerificationStatus.AUTH_FAILED,
                 owner=owner,

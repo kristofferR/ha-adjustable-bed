@@ -3,27 +3,37 @@
 from __future__ import annotations
 
 import asyncio
+import logging
+from time import monotonic
 from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
 from .const import SLEEP_NUMBER_AUTH_CHAR_UUID
 
+_LOGGER = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from bleak import BleakClient
 
 
 class InvalidSleepNumberSession(BleakError):
-    """The Auth characteristic returned explicit evidence of an unusable session."""
+    """Auth returned a missing, malformed or explicitly rejected session UUID."""
+
+
+class SleepNumberConnectionLimitError(BleakError):
+    """Auth refused another session without establishing a bond failure."""
 
 
 def validate_sleep_number_session(value: bytes) -> bytes:
     """Reject malformed UUIDs and the two protocol failure sentinels."""
     if len(value) != 16:
-        raise InvalidSleepNumberSession("Sleep Number Auth must contain a 16-byte session UUID")
+        raise InvalidSleepNumberSession(
+            f"Sleep Number Auth must contain a 16-byte session UUID (received {len(value)} bytes)"
+        )
     identifier = int.from_bytes(value, "big")
     if identifier == 0:
-        raise InvalidSleepNumberSession("Sleep Number connection limit reached (zero Auth UUID)")
+        raise SleepNumberConnectionLimitError("Sleep Number connection limit reached (zero Auth UUID)")
     if identifier == 1:
         raise InvalidSleepNumberSession("Sleep Number authentication rejected (Auth UUID one)")
     return value
@@ -32,12 +42,30 @@ def validate_sleep_number_session(value: bytes) -> bytes:
 async def async_read_sleep_number_session(client: BleakClient) -> bytes:
     """Read a session UUID with the app's three attempts and 10-second timeout."""
     for attempt in range(3):
+        started = monotonic()
+        _LOGGER.info("Sleep Number Auth read starting: attempt=%d", attempt + 1)
         try:
             async with asyncio.timeout(10):
                 value = bytes(await client.read_gatt_char(SLEEP_NUMBER_AUTH_CHAR_UUID))
-        except BleakError, TimeoutError:
+        except (BleakError, TimeoutError) as err:
+            _LOGGER.warning(
+                "Sleep Number Auth read failed: attempt=%d elapsed_ms=%.0f error_type=%s error=%s",
+                attempt + 1, (monotonic() - started) * 1000, type(err).__name__, err,
+            )
             if attempt == 2:
                 raise
             continue
-        return validate_sleep_number_session(value)
+        try:
+            session = validate_sleep_number_session(value)
+        except (InvalidSleepNumberSession, SleepNumberConnectionLimitError) as err:
+            _LOGGER.warning(
+                "Sleep Number Auth rejected: attempt=%d elapsed_ms=%.0f bytes=%d reason=%s",
+                attempt + 1, (monotonic() - started) * 1000, len(value), err,
+            )
+            raise
+        _LOGGER.info(
+            "Sleep Number Auth accepted: attempt=%d elapsed_ms=%.0f bytes=%d",
+            attempt + 1, (monotonic() - started) * 1000, len(value),
+        )
+        return session
     raise AssertionError("Unreachable authentication retry state")

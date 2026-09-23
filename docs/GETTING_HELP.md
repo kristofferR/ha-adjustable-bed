@@ -104,13 +104,29 @@ The support bundle includes:
 - Integration configuration and detected bed type
 - Connection status, BLE adapter/proxy health, and connection attempt details
 - ESPHome proxy firmware, API version, pairing capability, availability, and free BLE connection slots when Home Assistant exposes them
+- Live Bluetooth logs from ESPHome proxies that can see the bed, when their API and firmware logging settings allow capture
 - BLE advertisements by source, detection reasoning, and GATT/descriptor details
 - Up to 30 ranked nearby BLE devices, including their names and addresses
 - A structured pairing assessment that detects stale saved bond state and adapter mismatches
 - Captured notifications and buffered command trace
-- Recent error logs plus evidence warnings when logs or a command reproduction are missing
+- Up to 500 recent in-memory integration/Bluetooth log entries from before capture and 500 from its end, including debug logs collected automatically during capture, plus evidence warnings when logs or a command reproduction are missing
+- The latest setup or pairing attempt's HA debug trace and available ESPHome proxy logs for that bed, retained until Home Assistant restarts or a later attempt replaces them
 
-**Privacy note:** PINs are redacted. MAC addresses, device names, and other BLE identifiers are preserved since they are essential for debugging.
+Log capture works without a `home-assistant.log` file. Recent records are retained
+from integration setup at the configured log levels; debug logging is enabled
+temporarily during capture and automatically during setup/pairing. Start the
+integration's setup flow once to make the support action and download link
+available even if no bed entry can be created. Later support bundles include the
+retained attempt in `pairing_logs` and `bluetooth.pairing_proxy_logs`; proxy logs
+from the bundle's own capture are in `bluetooth.proxy_logs`. Proxy logging uses a
+separate temporary API connection and preserves the proxy's existing Home
+Assistant connection. Unavailable, interrupted, or empty captures are marked in
+the report. Firmware that excludes debug messages cannot provide them without a
+firmware configuration change. Standard ESPHome API logs do not expose the
+proxy's stored bond keys or link security state. Set `include_logs: false` to
+omit both HA and proxy logs.
+
+**Privacy note:** PINs and Sleep Number session IDs are redacted. MAC addresses, device names, and other BLE identifiers are preserved since they are essential for debugging.
 
 Review the bundle before posting it publicly. The download link is usable for up
 to one hour and expires on restart; the JSON file remains in the HA configuration

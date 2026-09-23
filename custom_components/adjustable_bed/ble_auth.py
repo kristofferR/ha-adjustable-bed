@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import re
 
+from .sleep_number_auth import InvalidSleepNumberSession
+
 _BLE_AUTHENTICATION_ERROR_MARKERS: tuple[str, ...] = (
     "insufficient authentication",
     "insufficient authorization",
@@ -13,7 +15,9 @@ _BLE_AUTHENTICATION_ERROR_CODE_RE = re.compile(r"\b(?:error=|gatt error )(?:5|15
 
 
 def is_ble_authentication_error(err: BaseException) -> bool:
-    """Return True if a Bleak error indicates an unauthenticated GATT link."""
+    """Recognize GATT security errors and explicit protocol authentication failures."""
+    if isinstance(err, InvalidSleepNumberSession):
+        return True
     message = str(err).lower()
     return (
         any(marker in message for marker in _BLE_AUTHENTICATION_ERROR_MARKERS)
