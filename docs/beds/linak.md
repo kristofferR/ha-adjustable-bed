@@ -297,9 +297,17 @@ and completes after two consecutive stalled checks at or below 1.1°, with at
 most one retry after the first confirmed stall. Mid-range stalls continue to
 retry normally.
 
-An actuator resting just below its learned zero reports a signed extension of
--1 or -2 (`0xFFFF`/`0xFFFE`). Small negatives decode as 0°; larger negatives
-are still discarded as invalid.
+An actuator resting just below its learned zero can report -1, -2 or -3
+(`0xFFFF`/`0xFFFE`/`0xFFFD`). Those observed samples decode as 0°; values below
+-3 are still discarded as invalid.
+
+On 2026-09-23, a stationary Advanced controller returned `FD FF 00 00` for its
+leg position during startup, while the other side returned `FE FF 00 00`.
+The earlier -2 cutoff discarded the right leg sample and left its number and
+cover entities `unknown`. This hardware observation extends the existing
+near-zero handling by one count. It supplements the frozen Bed Control 6.0.9
+reference-parser evidence; it does not change the packet parser, status flags,
+command timing or connection policy.
 
 Upper endpoints retain the normal tolerance. No upper-endpoint exception is
 enabled without supporting evidence.

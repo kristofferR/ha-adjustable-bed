@@ -1812,13 +1812,17 @@ class TestLinakPositionData:
         assert coordinator.controller_state["linak_back_status_flags"] == 0
         assert coordinator.controller_state["linak_position_feedback_fault"] is False
 
+    @pytest.mark.parametrize("axis,max_position,max_angle", [("back", 820, 68.0), ("legs", 548, 45.0)])
     async def test_extension_just_below_zero_decodes_as_flat(
         self,
         hass: HomeAssistant,
         mock_config_entry,
         mock_coordinator_connected,
+        axis,
+        max_position,
+        max_angle,
     ) -> None:
-        """Live beds report 0xFFFE/0xFFFF when resting below the learned zero."""
+        """Observed resting samples, including FD FF 00 00, must populate feedback."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
         controller = coordinator.controller
@@ -1826,14 +1830,14 @@ class TestLinakPositionData:
         callback = MagicMock()
         controller._notify_callback = callback
 
-        controller._handle_position_data("back", bytearray.fromhex("FE FF 00 00"), 820, 68.0)
-        controller._handle_position_data("back", bytearray.fromhex("FF FF 00 00"), 820, 68.0)
-        assert callback.call_args_list == [call("back", 0.0), call("back", 0.0)]
+        for sample in ("FD FF 00 00", "FE FF 00 00", "FF FF 00 00"):
+            controller._handle_position_data(axis, bytearray.fromhex(sample), max_position, max_angle)
+        assert callback.call_args_list == [call(axis, 0.0)] * 3
 
-        # Values outside the observed -1/-2 range are still garbage, not a
-        # resting position.
+        # Do not expand the accepted range beyond observed resting samples.
         callback.reset_mock()
-        controller._handle_position_data("back", bytearray.fromhex("FD FF 00 00"), 820, 68.0)
+        for sample in ("FC FF 00 00", "00 80 00 00"):
+            controller._handle_position_data(axis, bytearray.fromhex(sample), max_position, max_angle)
         callback.assert_not_called()
 
     async def test_reference_notification_publishes_speed_and_every_status_flag(
