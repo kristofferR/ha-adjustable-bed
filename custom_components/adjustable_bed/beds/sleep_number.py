@@ -58,6 +58,10 @@ _BAMKEY_BLOB_MIN_LENGTH = _BAMKEY_BLOB_HEADER_LENGTH + 4
 _BED_PRESENCE_POLL_TTL_SECONDS = 5.0
 _SLEEP_NUMBER_MIN_POSITION = 0
 _SLEEP_NUMBER_MAX_POSITION = 100
+# SleepIQ FuzionFlexFitCapability waits one second between preset checks.
+_PRESET_POLL_INTERVAL_SECONDS = 1.0
+# Integration safeguard, not a hardware movement deadline.
+_PRESET_FEEDBACK_TIMEOUT_SECONDS = 90.0
 _SLEEP_NUMBER_SLEEP_SETTING_MIN = 5
 _SLEEP_NUMBER_SLEEP_SETTING_MAX = 100
 _SLEEP_NUMBER_SLEEP_SETTING_STEP = 5
@@ -1494,6 +1498,32 @@ class SleepNumberController(BedController):
             preset,
             "0",
         )
+        if self._coordinator.disable_angle_sensing:
+            return
+
+        # ACSP acknowledges acceptance, not completed movement. Keep the side
+        # binding and command lock until AGCP leaves its in-progress state.
+        cancel_event = self._coordinator.cancel_command
+        saw_progress = False
+        async with asyncio.timeout(_PRESET_FEEDBACK_TIMEOUT_SECONDS):
+            while True:
+                try:
+                    await asyncio.wait_for(
+                        cancel_event.wait(), timeout=_PRESET_POLL_INTERVAL_SECONDS
+                    )
+                except TimeoutError:
+                    pass
+                if cancel_event.is_set():
+                    raise asyncio.CancelledError
+                state = await self.async_execute_sleep_number_command(
+                    "get_current_preset", {"side": self._side}
+                )
+                await self.read_positions()
+                current = state["current_preset"]
+                if current == "in_progress":
+                    saw_progress = True
+                elif current == preset or saw_progress:
+                    return
 
     async def _read_actuator_position(self, actuator: str) -> int:
         """Read an actuator position from the selected side."""
