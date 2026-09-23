@@ -46,6 +46,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SBI,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
+    BED_TYPE_VIBRADORM,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
     CONF_DISABLE_ANGLE_SENSING,
@@ -1360,6 +1361,37 @@ class TestPairBedsConversion:
         paired = [entry for entry in remaining if is_paired(entry.data)]
         assert len(paired) == 1
         assert set(pair_member_addresses(paired[0].data)) == {LEFT_ADDR, RIGHT_ADDR}
+
+    async def test_vibradorm_combine_after_both_sides_disconnect(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Ref #620: disconnected VMAT beds retain their verified layout."""
+        singles = [
+            await self._setup_single(hass, address, name, bed_type=BED_TYPE_VIBRADORM)
+            for address, name in ((LEFT_ADDR, "Left"), (RIGHT_ADDR, "Right"))
+        ]
+        for single in singles:
+            coordinator = hass.data[DOMAIN][single.entry_id]
+            await coordinator.async_disconnect()
+            assert coordinator.controller is None
+            assert coordinator.capability_controller is not None
+
+        result = await self._reach_pair_step(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_PAIR_SELECTION: encode_pair_selection(*(e.entry_id for e in singles))},
+        )
+        await hass.async_block_till_done()
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        paired = result["result"]
+        assert paired.state == ConfigEntryState.LOADED
+        assert set(pair_member_addresses(paired.data)) == {LEFT_ADDR, RIGHT_ADDR}
+        for single in singles:
+            assert hass.config_entries.async_get_entry(single.entry_id) is None
 
     async def test_pair_form_defaults_to_distinct_beds_and_cannot_select_same_bed(
         self,
