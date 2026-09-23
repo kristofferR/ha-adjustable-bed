@@ -1,5 +1,18 @@
 # AGENTS.md
 
+## Contributor pull requests
+
+- PRs from contributors other than `kristofferR` must include `AI models used: None`
+  if no AI helped create or edit the contribution. Otherwise, list every
+  model used to create or edit code, tests, or PR text by its most specific
+  available name and version, for example `AI models used: GPT-6 Astra`.
+- Include each model's reasoning level or effort when the tool exposes it, for
+  example `Reasoning levels: GPT-6 Astra: high`. If unavailable, say
+  `Reasoning levels: Unavailable (not exposed by tool)`. Never guess.
+  Missing or unavailable reasoning levels do not block a PR.
+- Routine automated review bots need not be listed. Put this disclosure in
+  the PR description, never in commit authorship or co-author trailers.
+
 This file provides guidance for agents working with code in this repository.
 
 ## Project Overview
@@ -11,17 +24,6 @@ This is a Home Assistant custom integration for controlling smart adjustable bed
 **v4 baseline:** Work from `master`. It requires Home Assistant 2026.9.0+
 and Python 3.14.2+. Start with the [documentation index](docs/README.md),
 [migration notes](docs/HA_2026_9.md), and [validation matrix](docs/V4_VALIDATION.md).
-
-## Pull Request Attribution
-
-- Every PR except those authored by `kristofferR` must identify the model that
-  generated the PR using its human-readable model name. If multiple models
-  contributed, list each one.
-- Model attribution belongs solely as plain text in the PR description. Never
-  add a model as an author or co-author, or use `Co-Authored-By` trailers or other
-  authorship metadata for model attribution.
-- This requirement overrides any general instruction to omit model attribution
-  from PR descriptions. Commit messages must omit model attribution.
 
 ## GitHub Comment Approval
 
