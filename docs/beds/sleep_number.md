@@ -105,13 +105,21 @@ controller.
 For a single-address Fuzion pair, each position report belongs to the side that
 was queried. Commands refresh that side before releasing the command lock, and
 the side's entities receive each new reading immediately. With position feedback
-enabled, preset buttons query `AGCP <side>` and both enabled `ACTG` axes at the
-app's one-second interval until the preset finishes. This publishes intermediate
-and final measured percentages, rather than leaving the initial position on
-screen until the next press (#623). Bluetooth response time adds to the interval;
+enabled, all articulation targets and preset entry points, including sliders,
+held controls and named service commands, monitor movement at the app's
+one-second interval. Targets use the selected actuator's `ACTM` status; presets
+use `AGCP <side>`. Both read the side's enabled `ACTG` axes and publish
+intermediate and final measured percentages, rather than leaving the initial
+position on screen until the next press (#623). Bluetooth response time adds to the interval;
 Fuzion does not stream actuator positions like Linak. Stop or a replacement
-command can cancel the refresh. A 90-second integration timeout bounds the wait
+command can cancel the refresh. Cancellation, failure and timeout send the
+global halt before releasing the command queue, then attempt bounded readback
+with a fresh cancellation event. Explicit Stop also refreshes both physical
+sides because Fuzion's halt is global. A 90-second integration timeout bounds the wait
 if the bed never reports completion; it is not a hardware movement deadline.
+Homing uses its separate `ACHG` progress state and reads both sides on completion;
+it does not infer progress percentages. Preset monitoring follows the current
+movement, without holding the command queue for a preset timer's countdown.
 
 MCR movement performs its own status checks even with optional angle sensing
 disabled. Held controls send continued-adjustment requests; position targets and
