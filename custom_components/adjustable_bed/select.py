@@ -164,20 +164,23 @@ def _select_entities_for(
     entities: list[SelectEntity] = []
 
     # Set up massage timer select (only for beds with massage and timer support)
-    if has_massage and controller is not None:
-        if controller.supports_massage_timer:
-            timer_options = controller.massage_timer_options
-            if timer_options:
-                _LOGGER.debug(
-                    "Setting up massage timer select for %s (options: %s)",
-                    coordinator.name,
-                    timer_options,
+    if has_massage and controller is not None and controller.supports_massage_timer:
+        timer_options = controller.massage_timer_options
+        if timer_options:
+            _LOGGER.debug(
+                "Setting up massage timer select for %s (options: %s)",
+                coordinator.name,
+                timer_options,
+            )
+            entities.append(
+                AdjustableBedMassageTimerSelect(
+                    coordinator, MASSAGE_TIMER_DESCRIPTION, timer_options
                 )
-                entities.append(
-                    AdjustableBedMassageTimerSelect(
-                        coordinator, MASSAGE_TIMER_DESCRIPTION, timer_options
-                    )
-                )
+            )
+        else:
+            _async_remove_stale_select_entity(hass, coordinator, MASSAGE_TIMER_DESCRIPTION.key)
+    elif controller is not None:
+        _async_remove_stale_select_entity(hass, coordinator, MASSAGE_TIMER_DESCRIPTION.key)
 
     if controller is not None:
         if getattr(controller, LIGHT_TIMER_DESCRIPTION.required_capability, False):

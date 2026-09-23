@@ -2553,6 +2553,10 @@ class BedController(ABC):
         """
         return None
 
+    def on_light_auto_off(self) -> None:
+        """Update controller state after a hardware light timer expires."""
+        return None
+
     @property
     def light_timer_options(self) -> list[str]:
         """Return available light timer options.

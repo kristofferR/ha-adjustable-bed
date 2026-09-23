@@ -170,6 +170,11 @@ class WoosaController(SolaceController):
             "10 hours": 10 * 60 * 60,
         }.get(option)
 
+    def on_light_auto_off(self) -> None:
+        self.forward_controller_state_updates(
+            {"under_bed_lights_on": False, "light_timer_option": "Off"}
+        )
+
     @property
     def supports_massage(self) -> bool:
         return True

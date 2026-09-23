@@ -7,7 +7,7 @@ docs/beds/woosa-disposition.md. No physical hardware confirmation is implied.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from datetime import datetime, time
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -664,8 +664,34 @@ async def test_woosa_setup_restores_light_and_exposes_profile_controls(
     entity_id("button", "woosa_massage_mode_4")
     entity_id("button", "massage_mode_step")
     entity_id("binary_sensor", "solace_alarm_enabled")
+    entity_id("select", "massage_timer")
     assert registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:FF_back_position") is None
-    await hass.services.async_call("switch", "turn_on", {"entity_id": light}, blocking=True)
+    scheduled_auto_off: list[Callable[[], None]] = []
+    original_call_later = hass.loop.call_later
+
+    def capture_auto_off(
+        delay: float, callback: Callable[..., None], *args: object
+    ) -> object:
+        if getattr(callback, "__name__", "") == "auto_off_callback":
+            scheduled_auto_off.append(lambda: callback(*args))
+            return MagicMock()
+        return original_call_later(delay, callback, *args)
+
+    with patch.object(hass.loop, "call_later", side_effect=capture_auto_off):
+        await hass.services.async_call("switch", "turn_on", {"entity_id": light}, blocking=True)
+        assert scheduled_auto_off
+        scheduled_auto_off[-1]()
+        await hass.async_block_till_done()
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        assert coordinator.controller_state["under_bed_lights_on"] is False
+        assert coordinator.controller_state["light_timer_option"] == "Off"
+        assert coordinator.controller_state["woosa_light_timer"] == "10 min"
+        assert hass.states.get(light).state == "off"
+        assert hass.states.get(entity_id("select", "light_timer")).state == "Off"
+        timer_count = len(scheduled_auto_off)
+        coordinator.handle_controller_state_updates({"woosa_massage_mode": 2})
+        assert hass.states.get(light).state == "off"
+        assert len(scheduled_auto_off) == timer_count
     mock_bleak_client.write_gatt_char.assert_any_call(
         SOLACE_CHAR_UUID, bytes.fromhex("FFFFFFFF050000001916CA"), response=True
     )
@@ -716,6 +742,14 @@ async def test_woosa_setup_restores_light_and_exposes_profile_controls(
     mock_bleak_client.write_gatt_char.assert_any_call(
         SOLACE_CHAR_UUID, bytes.fromhex("FFFFFFFF01000213010730000A010101015804"), response=True
     )
+    await hass.config_entries.async_unload(entry.entry_id)
+    hass.config_entries.async_update_entry(
+        entry,
+        data={**entry.data, CONF_PROTOCOL_VARIANT: "auto"},
+    )
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert registry.async_get_entity_id("select", DOMAIN, "AA:BB:CC:DD:EE:FF_massage_timer") is None
     await hass.config_entries.async_unload(entry.entry_id)
 
 
