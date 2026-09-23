@@ -6147,6 +6147,50 @@ async def test_proxy_auth_retry_checks_route_before_pairing(hass: HomeAssistant)
     client.disconnect.assert_awaited_once()
 
 
+@pytest.mark.parametrize("authenticated", [True, False])
+async def test_proxy_retry_verifies_bond_after_pair_rpc_error(
+    hass: HomeAssistant, authenticated: bool
+) -> None:
+    """A proxy can create a bond before its pairing RPC reports an error."""
+    flow = _pairing_flow(hass)
+    flow._pairing_retry_source = "failed-proxy"
+    client = MagicMock()
+    client.is_connected = True
+    client._connected_scanner = MagicMock(source="failed-proxy")
+    client.pair = AsyncMock(side_effect=BleakError("pair RPC timed out"))
+    client.read_gatt_char = AsyncMock(
+        return_value=b"Model X" if authenticated else None,
+        side_effect=(None if authenticated else BleakError("Insufficient authentication")),
+    )
+    client.disconnect = AsyncMock()
+    proxy_path = ConnectionPath(source="failed-proxy", transport=TransportClass.PROXY)
+
+    with (
+        _patch_pairing_gate(source="failed-proxy") as wait,
+        patch(
+            "custom_components.adjustable_bed.config_flow.async_path_for_source",
+            return_value=proxy_path,
+        ),
+        patch(
+            "bleak_retry_connector.establish_connection",
+            new=AsyncMock(return_value=client),
+        ) as connect,
+    ):
+        if authenticated:
+            evidence = await flow._attempt_pairing(flow._manual_data[CONF_ADDRESS])
+            assert evidence.proves_bond
+            assert evidence.owner.source == "failed-proxy"
+        else:
+            with pytest.raises(BleakError, match="pair RPC timed out"):
+                await flow._attempt_pairing(flow._manual_data[CONF_ADDRESS])
+
+    assert wait.await_args.kwargs["source"] == "failed-proxy"
+    assert "pair" not in connect.await_args.kwargs
+    client.pair.assert_awaited_once_with()
+    client.read_gatt_char.assert_awaited_once()
+    client.disconnect.assert_awaited_once()
+
+
 async def test_proxy_auth_failure_pins_subsequent_setup_retry(hass: HomeAssistant) -> None:
     """The result form carries its failed proxy into the next attempt."""
     flow = _pairing_flow(hass)

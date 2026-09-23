@@ -4332,14 +4332,24 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         f"{self._pairing_retry_source}"
                     )
 
+                pair_error: Exception | None = None
                 if pair_after_service_discovery:
                     _LOGGER.info(
                         "Connected to %s and discovered services; creating the BLE bond now",
                         address,
                     )
                     self.async_report_action(SetupAction.PAIRING)
-                    await client.pair()
-                    _LOGGER.info("BLE backend pairing completed for %s via %s; verifying Auth next", address, actual_source)
+                    try:
+                        await client.pair()
+                    except Exception as err:  # noqa: BLE001 - verify before judging the RPC
+                        pair_error = err
+                        _LOGGER.warning(
+                            "Pairing %s raised (%s); verifying whether a bond was made",
+                            address,
+                            err,
+                        )
+                    else:
+                        _LOGGER.info("BLE backend pairing completed for %s via %s; verifying Auth next", address, actual_source)
 
                 self.async_report_action(SetupAction.VERIFYING_BOND)
                 evidence = await async_verify_authenticated_access(
@@ -4349,6 +4359,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     path=path,
                     operation=("setup_pairing" if request_bond else "verify_existing_bond"),
                 )
+                if (
+                    pair_after_service_discovery
+                    and pair_error is not None
+                    and not evidence.proves_bond
+                ):
+                    raise pair_error
                 _LOGGER.info(
                     "Bond verification result for %s via %s: status=%s reason=%s; disconnecting setup probe",
                     address, actual_source, evidence.status, evidence.error or "none",
