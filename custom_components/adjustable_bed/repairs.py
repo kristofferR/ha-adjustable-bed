@@ -915,6 +915,8 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
             except Exception as err:  # noqa: BLE001 - any failure means "not paired"
                 _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
                 return False
+            if not paired and coordinator.pairing_supported is False:
+                self._retry_pairing_not_supported = True
             actual_source = getattr(coordinator, "connection_source", None)
             evidence = getattr(coordinator, "last_bond_evidence", None)
             observed_source = (

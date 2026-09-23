@@ -2081,6 +2081,45 @@ async def test_proxy_retry_reports_unsupported_pairing(
     reload.assert_not_awaited()
 
 
+@pytest.mark.parametrize("pairing_supported", [False, True])
+async def test_proxy_retry_reports_live_coordinator_pairing_support(
+    hass: HomeAssistant, pairing_supported: bool
+) -> None:
+    """A failed retry on the existing link preserves the backend's diagnosis."""
+    entry = _bed_entry(hass, address=TEST_ADDRESS, name=TEST_NAME)
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2}
+    )
+    await create_pairing_required_issue(
+        hass,
+        TEST_ADDRESS,
+        TEST_NAME,
+        entry.entry_id,
+        evidence={"owner": {"source": "failed-proxy"}},
+    )
+    coordinator = MagicMock()
+    coordinator.async_pair_now = AsyncMock(return_value=False)
+    coordinator.is_connected = True
+    coordinator.connection_source = "failed-proxy"
+    coordinator.last_bond_evidence = None
+    coordinator.pairing_supported = pairing_supported
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+    flow = PairingRequiredRepairFlow(
+        TEST_ADDRESS,
+        TEST_NAME,
+        entry.entry_id,
+        issue_data={"evidence_source": "failed-proxy"},
+    )
+    flow.hass = hass
+
+    result = await flow.async_step_proxy_pairing({})
+
+    assert result["errors"] == {
+        "base": "pairing_failed" if pairing_supported else "pairing_not_supported"
+    }
+    coordinator.async_pair_now.assert_awaited_once_with()
+
+
 @pytest.mark.parametrize("change_during_pair", [False, True])
 async def test_proxy_retry_keeps_a_newer_proxy_issue_open(
     hass: HomeAssistant, change_during_pair: bool
