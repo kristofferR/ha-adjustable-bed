@@ -379,6 +379,7 @@
           "outcome_timed_out": "Outcome: timed out",
           "outcome_cancelled": "Outcome: cancelled",
           "outcome_connection_failed": "Outcome: connection failed",
+          "outcome_route_mismatch": "Outcome: Bluetooth path changed",
           "outcome_removal_unconfirmed": "Outcome: removal unconfirmed",
           "outcome_auth_failed_proxy": "Outcome: proxy authentication failed"
         },
