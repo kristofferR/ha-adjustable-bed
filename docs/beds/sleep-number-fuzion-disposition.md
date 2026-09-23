@@ -1,5 +1,25 @@
 # SleepIQ 5.4.11 Fuzion discovery disposition
 
+## Issue #623 feedback correction
+
+This follow-up reuses the accepted report below without changing protocol
+commands, timing, artifact acceptance, or corpus counts. The reporter's two
+screenshots and debug log show the left-side display lagging received feedback
+until another press. The paired runtime also copied unqualified values between
+sides. Physical preset completion is not inferred from those activity entries.
+
+| Finding | Disposition | Implementation and validation |
+|---|---|---|
+| Side-owned ACTG feedback was copied through a shared unqualified cache | IMPLEMENTED | `SleepNumberController.read_positions` publishes logical-side keys; `SingleAddressSideCoordinator` relays only its own keys. `tests/test_sleep_number_pair_feedback.py` checks distinct left/right values. |
+| A command returned before an unbound background read updated its side | IMPLEMENTED | The side coordinator reads its bound controller under the command lock, including direct position controls. The same test requires fresh feedback before the preset action returns. |
+| Reconnect hydration inherited an expired scheduler context and selected inconsistent cancellation events | IMPLEMENTED | `_async_execute_controller_operation` resolves its context after taking the command lock. The same test checks both sides after a command establishes the connection. |
+| Anti-Snore and Zero Gravity preset payloads | ALREADY_IMPLEMENTED | `_send_preset` keeps the accepted `ACSP <side> <preset> 0` format; the test checks exactly one selected-side `snore` or `zero_g` request on cold and connected links. |
+
+Follow-up totals: **3 IMPLEMENTED, 1 ALREADY_IMPLEMENTED, 0 EXCLUDED**. No new
+APK analysis or hardware compatibility claim is made.
+
+## Accepted artifact evidence
+
 The accepted static analysis covers `com.selectcomfort.SleepIQ` 5.4.11
 (1787576046), APK SHA-256
 `710b7dfd536007fc4812ad9a16402be3c1bf882cfc27fa9214ad72154bf36f5f`.

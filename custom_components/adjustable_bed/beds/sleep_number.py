@@ -828,13 +828,14 @@ class SleepNumberController(BedController):
             self._drain_readback_hint_queue()
 
     async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
-        """Read the current head and foot target positions for the selected side."""
+        """Read actuator positions, preserving explicit logical-side ownership."""
         for motor, actuator in (("back", "head"), ("legs", "foot")):
             if not self._actuator_enabled(actuator):
                 continue
             position = await self._read_actuator_position(actuator)
             if self._notify_callback is not None:
-                self._notify_callback(motor, float(position))
+                key = f"{self.command_side}_{motor}" if self.command_side else motor
+                self._notify_callback(key, float(position))
 
     async def read_non_notifying_positions(self) -> None:
         """Sleep Number uses request/response reads rather than streaming positions."""

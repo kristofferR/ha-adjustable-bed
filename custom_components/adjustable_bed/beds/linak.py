@@ -81,7 +81,7 @@ LINAK_DOWNWARD_STOP_LEAD_TIME_S = 0.4
 LINAK_MAX_DOWNWARD_STOP_LEAD_DEGREES = 1.5
 LINAK_LOWER_ENDPOINT_MAX_ANGLE_DEGREES = 1.1
 LINAK_LOWER_ENDPOINT_STALL_CONFIRMATIONS = 2
-LINAK_MIN_OBSERVED_EXTENSION_COUNT = -2
+LINAK_MIN_OBSERVED_EXTENSION_COUNT = -3
 LINAK_CONTROLLER_STATE_SENSOR_ENTITY_KEYS = frozenset(
     {
         "linak_protocol_error",
@@ -1459,10 +1459,9 @@ class LinakController(BedController):
         self._publish_reference_state(source_name, reference)
         raw_position = reference.raw_extension
 
-        # The extension is a signed 16-bit count. An actuator resting a count or
-        # two below its learned zero reports 0xFFFE/0xFFFF; discarding those left
-        # the axis with no current-session sample, so every seek on it failed.
-        # Only the observed -1/-2 sentinels are known to mean fully down.
+        # Resting actuators have reported signed counts -1 through -3 below
+        # their learned zero. Publish those observed samples as flat so startup
+        # feedback and seeks have a usable position; reject larger negatives.
         if raw_position >= 0x8000:
             signed_position = raw_position - 0x10000
             if signed_position < LINAK_MIN_OBSERVED_EXTENSION_COUNT:
