@@ -11,6 +11,7 @@ import asyncio
 import logging
 from collections.abc import Collection
 from functools import partial
+from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
@@ -23,6 +24,9 @@ from .solace import (
     build_solace_alarm_command,
     build_solace_clock_command,
 )
+
+if TYPE_CHECKING:
+    from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -117,6 +121,10 @@ async def _button_action(controller: BedController, *, action: str) -> None:
 
 class WoosaController(SolaceController):
     """Woosa's two-motor, lighting, massage, preset and alarm surface."""
+
+    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
+        super().__init__(coordinator)
+        self._massage_expiry_handle: asyncio.TimerHandle | None = None
 
     @property
     def profile(self) -> SolaceProfile:
@@ -299,6 +307,16 @@ class WoosaController(SolaceController):
             {"under_bed_lights_on": False, "light_timer_option": "Off"}
         )
 
+    async def set_light_level(self, level: int) -> None:
+        await super().set_light_level(level)
+        if 0 <= level <= self.light_level_max:
+            self.forward_controller_state_updates(
+                {
+                    "under_bed_lights_on": level > 0,
+                    **({"light_timer_option": "Off"} if level == 0 else {}),
+                }
+            )
+
     async def set_light_timer(self, timer_option: str) -> None:
         if timer_option == "Off":
             await self.lights_off()
@@ -378,14 +396,49 @@ class WoosaController(SolaceController):
             await self.massage_off()
             return
         await super().set_massage_timer(minutes)
+        if self._massage_expiry_handle is not None:
+            self._massage_expiry_handle.cancel()
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + minutes * 60
+        self._massage_expiry_handle = loop.call_later(
+            minutes * 60, self._expire_massage, deadline
+        )
         self.forward_controller_state_updates(
-            {"woosa_massage_timer": minutes, "woosa_massage_timer_preference": minutes}
+            {
+                "woosa_massage_timer": minutes,
+                "woosa_massage_timer_preference": minutes,
+                "woosa_massage_deadline": deadline,
+            }
+        )
+
+    def _expire_massage(self, deadline: float) -> None:
+        state = self._coordinator.controller_state
+        if state.get("woosa_massage_deadline") != deadline:
+            return
+        self._massage_expiry_handle = None
+        self.forward_controller_state_updates(
+            {
+                "woosa_massage_active": False,
+                "woosa_massage_timer": 0,
+                "woosa_massage_deadline": None,
+                "woosa_head_level": 0,
+                "woosa_foot_level": 0,
+            }
         )
 
     async def massage_off(self) -> None:
         await super().massage_off()
+        if self._massage_expiry_handle is not None:
+            self._massage_expiry_handle.cancel()
+            self._massage_expiry_handle = None
         self.forward_controller_state_updates(
-            {"woosa_massage_active": False, "woosa_massage_timer": 0}
+            {
+                "woosa_massage_active": False,
+                "woosa_massage_timer": 0,
+                "woosa_massage_deadline": None,
+                "woosa_head_level": 0,
+                "woosa_foot_level": 0,
+            }
         )
 
     async def massage_toggle(self) -> None:
@@ -420,8 +473,17 @@ class WoosaController(SolaceController):
         except Exception, asyncio.CancelledError:
             try:
                 await self.write_command(SolaceCommands.MASSAGE_STOP, cancel_event=asyncio.Event())
+                if self._massage_expiry_handle is not None:
+                    self._massage_expiry_handle.cancel()
+                    self._massage_expiry_handle = None
                 self.forward_controller_state_updates(
-                    {"woosa_massage_active": False, "woosa_massage_timer": 0}
+                    {
+                        "woosa_massage_active": False,
+                        "woosa_massage_timer": 0,
+                        "woosa_massage_deadline": None,
+                        "woosa_head_level": 0,
+                        "woosa_foot_level": 0,
+                    }
                 )
             except BleakError, ConnectionError:
                 _LOGGER.debug("Could not stop interrupted Woosa massage sequence")

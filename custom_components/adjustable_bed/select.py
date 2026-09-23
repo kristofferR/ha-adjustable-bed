@@ -348,11 +348,27 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
 
         # Build options list: "Off" plus timer durations
         self._attr_options = ["Off"] + [f"{m} min" for m in timer_options]
+        self._unregister_callback: Callable[[], None] | None = None
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self._unregister_callback = self._coordinator.register_controller_state_callback(
+            self._handle_controller_state_update
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        if self._unregister_callback:
+            self._unregister_callback()
+        await super().async_will_remove_from_hass()
+
+    @callback
+    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+        self.async_write_ha_state()
 
     @property
     def current_option(self) -> str | None:
         """Return the current timer setting from controller state."""
-        controller = self._coordinator.controller
+        controller = self._coordinator.capability_controller
         if controller is None:
             return "Off"
 
