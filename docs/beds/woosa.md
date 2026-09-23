@@ -5,7 +5,7 @@
 
 ## Selecting the profile
 
-Use bed type **Solace** and explicitly select protocol variant **`woosa`** (Woosa Sleep) when your bed uses the Woosa Sleep app. For an existing entry, update the integration, restart Home Assistant, then open **Settings → Devices & Services → Adjustable Bed → Configure → Change settings** and change the protocol variant to **`woosa`**. Submit the change so the integration reloads its entities. Woosa massage controls are enabled automatically by this profile.
+Use bed type **Solace** and explicitly select protocol variant **`woosa`** (Woosa Sleep) when your bed uses the Woosa Sleep app. For an existing entry, update the integration, restart Home Assistant, then open **Settings → Devices & Services → Adjustable Bed → Configure → Change settings** and change the protocol variant to **`woosa`**. Submit the change so the integration reloads its entities. For a separate-address pair, unpair and configure each side before changing this profile. Woosa massage controls are enabled automatically by this profile.
 
 Automatic `QMS-MQ` and `QMS2` discovery retains the conservative common Solace profile. Those names are shared across apps and do not identify a Woosa product. An nRF Connect scan proves an advertised name, address and GATT structure, not which app's commands or physical layout a bed implements. Select this profile from the app/product you use, not merely from its BLE name.
 

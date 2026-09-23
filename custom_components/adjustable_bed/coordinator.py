@@ -172,6 +172,7 @@ from .const import (
     REVERIE_BACK_MAX_ANGLE,
     RICHMAT_REMOTE_AUTO,
     RUNTIME_BOND_KEYS,
+    SOLACE_VARIANT_WOOSA,
     VARIANT_AUTO,
     bed_type_has_position_feedback,
     connection_gated_by_bond,
@@ -1047,6 +1048,7 @@ class AdjustableBedCoordinator:
         statically_mintable = bed_type in OFFLINE_CAPABILITY_SAFE_BED_TYPES and (
             bed_type != BED_TYPE_SOLACE
             or isinstance(self.entry.data.get(CONF_BLE_DEVICE_NAME), str)
+            or self._protocol_variant == SOLACE_VARIANT_WOOSA
         )
         mintable = (
             statically_mintable

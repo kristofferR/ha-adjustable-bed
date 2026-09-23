@@ -155,3 +155,42 @@ async def test_paired_options_preserve_different_side_profiles(hass: HomeAssista
         child = AdjustableBedCoordinator(hass, MockConfigEntry(domain=DOMAIN, data=side_data))
         await child.async_prime_offline_controller()
         assert child.capability_controller.profile is expected
+
+
+@pytest.mark.parametrize(
+    ("initial", "requested"),
+    [(VARIANT_AUTO, SOLACE_VARIANT_WOOSA), (SOLACE_VARIANT_WOOSA, VARIANT_AUTO)],
+)
+async def test_paired_options_reject_woosa_profile_change(
+    hass: HomeAssistant, initial: str, requested: str
+) -> None:
+    left = _entry_data(variant=initial)
+    right = {**_entry_data(variant=VARIANT_AUTO), CONF_ADDRESS: "AA:BB:CC:DD:EE:22"}
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=build_pair_entry_data(left, right, name="Paired bed"),
+    )
+    entry.add_to_hass(hass)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass = hass
+    flow.handler = entry.entry_id
+
+    result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: requested})
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "woosa_unpair_first"}
+    assert effective_child_data(entry.data, "left")[CONF_PROTOCOL_VARIANT] == initial
+    assert effective_child_data(entry.data, "right")[CONF_PROTOCOL_VARIANT] == VARIANT_AUTO
+
+
+async def test_explicit_woosa_mints_offline_without_ble_name(hass: HomeAssistant) -> None:
+    from custom_components.adjustable_bed.beds.woosa import WoosaController
+
+    data = _entry_data()
+    data.pop(CONF_BLE_DEVICE_NAME)
+    entry = MockConfigEntry(domain=DOMAIN, data=data)
+    coordinator = AdjustableBedCoordinator(hass, entry)
+
+    await coordinator.async_prime_offline_controller()
+
+    assert isinstance(coordinator.capability_controller, WoosaController)

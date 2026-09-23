@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.base import (
@@ -72,6 +73,36 @@ async def test_remote_action_dispatches_to_current_controller(hass):
     await actions[0].async_press()
     current.stop_all.assert_awaited_once()
     previous.stop_all.assert_not_awaited()
+
+
+async def test_deselected_woosa_actions_are_removed_for_only_that_side(
+    hass: HomeAssistant,
+) -> None:
+    entry = MockConfigEntry(domain=DOMAIN, data={})
+    entry.add_to_hass(hass)
+    registry = er.async_get(hass)
+    stale = registry.async_get_or_create(
+        "button", DOMAIN, "bed_woosa_love_left", config_entry=entry
+    )
+    other_side = registry.async_get_or_create(
+        "button", DOMAIN, "bed_woosa_love_right", config_entry=entry
+    )
+    other_action = registry.async_get_or_create(
+        "button", DOMAIN, "bed_other_action_left", config_entry=entry
+    )
+    coordinator = MagicMock()
+    coordinator.entry = entry
+    coordinator.capability_controller = make_controller_mock(controller_button_specs=())
+    coordinator.has_massage = False
+    coordinator.device_info = {}
+    coordinator.entity_side = "left"
+    coordinator.entity_unique_id.side_effect = lambda key: f"bed_{key}_left"
+
+    _button_entities_for(hass, coordinator)
+
+    assert registry.async_get(stale.entity_id) is None
+    assert registry.async_get(other_side.entity_id) is not None
+    assert registry.async_get(other_action.entity_id) is not None
 
 
 async def test_legacy_profile_exposes_app_actions_without_guessed_covers(

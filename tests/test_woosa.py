@@ -116,6 +116,12 @@ async def test_light_timer_and_explicit_off(controller, option, frame) -> None:
     await controller.set_light_timer(option)
     assert written(controller) == [frame]
     assert controller._coordinator.controller_state["light_timer_option"] == option
+    assert controller.light_auto_off_seconds == {
+        "10 min": 600,
+        "8 hours": 28800,
+        "10 hours": 36000,
+        "Off": None,
+    }[option]
     if option != "Off":
         await controller.lights_on()
         assert written(controller) == [frame, frame]
