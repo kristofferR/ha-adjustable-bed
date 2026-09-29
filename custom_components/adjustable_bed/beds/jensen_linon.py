@@ -12,8 +12,11 @@ position feedback, and its memory and light-intensity paths never reach the bed.
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any
+
+from bleak.exc import BleakError
 
 from ..const import (
     SVANE_CHAR_DOWN_UUID,
@@ -28,6 +31,8 @@ from .svane import SvaneController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
+
+_LOGGER = logging.getLogger(__name__)
 
 # The app resends a held frame, or steps a combined-motion sequence, every 800 ms.
 HOLD_INTERVAL_MS = 800
@@ -50,6 +55,11 @@ class JensenLinonCommands:
     def light(on: bool) -> bytes:
         """Build the under-bed light frame: state, timer seconds (none), 0."""
         return bytes([0x01 if on else 0x00, 0x00, 0x00])
+
+
+def _hold_steps(duration_ms: int) -> int:
+    """Return the MOVE writes that cover ``duration_ms``, one per 800 ms."""
+    return max(1, -(-duration_ms // HOLD_INTERVAL_MS))
 
 
 def _direction_char(up: bool) -> str:
@@ -109,8 +119,7 @@ class JensenLinonController(SvaneController):
     def motor_pulse_settings(self) -> tuple[int, int]:
         """Keep the configured hold duration at the app's 800 ms cadence."""
         pulse_count, pulse_delay = super().motor_pulse_settings()
-        duration_ms = max(0, pulse_count - 1) * pulse_delay
-        return self.timed_move_repeat_count(duration_ms, HOLD_INTERVAL_MS), HOLD_INTERVAL_MS
+        return _hold_steps(max(0, pulse_count - 1) * pulse_delay), HOLD_INTERVAL_MS
 
     # Notifications: the app never subscribes, so there is nothing to follow.
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
@@ -126,7 +135,11 @@ class JensenLinonController(SvaneController):
 
     # Movement
     async def _hold_sequence(self, steps: Sequence[tuple[str, str]], repeat_count: int) -> None:
-        """Write MOVE through ``steps`` in turn every 800 ms, then always STOP."""
+        """Write MOVE through ``steps`` in turn every 800 ms, then always STOP.
+
+        Each write is held for a full interval, so the last step of a combined
+        move runs as long as the others before STOP.
+        """
         cancel_event = self._coordinator.cancel_command
         try:
             for index in range(repeat_count):
@@ -136,10 +149,15 @@ class JensenLinonController(SvaneController):
                 await self._write_to_service_char(
                     service_uuid, char_uuid, JensenLinonCommands.MOVE, cancel_event=cancel_event
                 )
-                if index < repeat_count - 1:
-                    await asyncio.sleep(HOLD_INTERVAL_MS / 1000)
-        finally:
-            await self._send_stop()
+                await asyncio.sleep(HOLD_INTERVAL_MS / 1000)
+        except BaseException:
+            # Release the bed, but let the original error or cancellation propagate.
+            try:
+                await asyncio.shield(self._send_stop())
+            except (BleakError, ConnectionError):
+                _LOGGER.debug("Failed to send Jensen LinOn STOP after an interrupted move")
+            raise
+        await self._send_stop()
 
     async def _move_motor(self, service_uuid: str, char_uuid: str) -> None:
         """Hold one direction characteristic, then STOP."""
@@ -147,12 +165,25 @@ class JensenLinonController(SvaneController):
         await self._hold_sequence(((service_uuid, char_uuid),), pulse_count)
 
     async def _send_stop(self) -> None:
-        """Write STOP to the head, then the foot, up characteristic."""
+        """Write STOP to the head, then the foot, up characteristic.
+
+        The foot STOP is attempted even when the head write fails; the first
+        failure is raised afterwards.
+        """
         cancel_event = asyncio.Event()  # STOP must not be suppressed by a cancel
+        first_error: BleakError | ConnectionError | None = None
         for service_uuid in (SVANE_HEAD_SERVICE_UUID, SVANE_FEET_SERVICE_UUID):
-            await self._write_to_service_char(
-                service_uuid, SVANE_CHAR_UP_UUID, JensenLinonCommands.STOP, cancel_event=cancel_event
-            )
+            try:
+                await self._write_to_service_char(
+                    service_uuid,
+                    SVANE_CHAR_UP_UUID,
+                    JensenLinonCommands.STOP,
+                    cancel_event=cancel_event,
+                )
+            except (BleakError, ConnectionError) as err:
+                first_error = first_error or err
+        if first_error is not None:
+            raise first_error
 
     async def move_head_stop(self) -> None:
         """Stop both motors; the app has one STOP for the bed."""
@@ -180,7 +211,7 @@ class JensenLinonController(SvaneController):
             raise ValueError("Jensen LinOn beds combine only the back and legs sections")
         repeat_count, _ = self.motor_pulse_settings()
         if duration_ms is not None:
-            repeat_count = self.timed_move_repeat_count(duration_ms, HOLD_INTERVAL_MS)
+            repeat_count = _hold_steps(duration_ms)
         steps = tuple(
             (_MOTOR_SERVICES[axis], _direction_char(directions[axis])) for axis in ("back", "legs")
         )
@@ -188,14 +219,26 @@ class JensenLinonController(SvaneController):
 
     # Presets
     async def preset_flat(self) -> None:
-        """Send position zero to the head, then the foot, motor."""
+        """Send position zero to the head, then the foot, motor.
+
+        The motors then move on their own, so an interrupted flat sends STOP.
+        """
         cancel_event = self._coordinator.cancel_command
-        for service_uuid in (SVANE_HEAD_SERVICE_UUID, SVANE_FEET_SERVICE_UUID):
-            if cancel_event.is_set():
-                return
-            await self._write_to_service_char(
-                service_uuid, SVANE_CHAR_POSITION_UUID, JensenLinonCommands.FLAT
-            )
+        try:
+            for service_uuid in (SVANE_HEAD_SERVICE_UUID, SVANE_FEET_SERVICE_UUID):
+                if cancel_event.is_set():
+                    break
+                await self._write_to_service_char(
+                    service_uuid, SVANE_CHAR_POSITION_UUID, JensenLinonCommands.FLAT
+                )
+        except BaseException:
+            try:
+                await asyncio.shield(self._send_stop())
+            except (BleakError, ConnectionError):
+                _LOGGER.debug("Failed to send Jensen LinOn STOP after an interrupted flat")
+            raise
+        if cancel_event.is_set():
+            await self._send_stop()
 
     async def preset_zero_g(self) -> None:
         """Not part of the Jensen LinOn profile."""

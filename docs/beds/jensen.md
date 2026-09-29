@@ -205,7 +205,9 @@ and the light `0000d07b`:
 | Under-bed light | `0000a8e0` | on `01 00 00`, off `00 00 00` |
 
 The app sends STOP after every movement and for every stop control. It repeats
-the STOP pair until a 20 s cap, which Home Assistant does not copy.
+the STOP pair until a 20 s cap, which Home Assistant does not copy. Home
+Assistant also sends STOP when a flat is interrupted, because the motors keep
+moving on their own after its frames.
 
 The app offers more than reaches the bed. Its light intensity slider crashes
 the app instead of writing, its favourite recall stalls before its first write,

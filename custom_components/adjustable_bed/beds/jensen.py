@@ -13,8 +13,9 @@ foot value falling as the foot rises.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from enum import IntFlag
 from typing import TYPE_CHECKING, Any
 
@@ -171,8 +172,17 @@ class JensenController(BedController):
 
     DEFAULT_PIN: str = "3060"
 
-    def __init__(self, coordinator: AdjustableBedCoordinator, pin: str = "") -> None:
-        """Initialize the Jensen controller."""
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        pin: str = "",
+        capability_snapshot: Mapping[str, Any] | None = None,
+    ) -> None:
+        """Initialize the Jensen controller.
+
+        ``capability_snapshot`` is the last config report stored for this bed; it
+        stands in when this connection's config request goes unanswered.
+        """
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
         self._features: JensenFeatureFlags = JensenFeatureFlags.NONE
@@ -195,7 +205,22 @@ class JensenController(BedController):
         self._fan_level: int = 0
         self._write_with_response: bool = False
         self._pin: str = pin if pin else self.DEFAULT_PIN
+        # The config report as the bed sent it; None until one has been received.
+        self._reported_config: tuple[JensenFeatureFlags, int] | None = None
+        if capability_snapshot is not None:
+            with contextlib.suppress(KeyError, TypeError, ValueError):
+                self._reported_config = (
+                    JensenFeatureFlags(int(capability_snapshot["features"])),
+                    int(capability_snapshot["box_type"]),
+                )
         _LOGGER.debug("JensenController initialized with PIN: %s", "*" * len(self._pin))
+
+    def capability_snapshot(self) -> dict[str, Any] | None:
+        """Return the bed-reported features and box type, once known."""
+        if self._reported_config is None:
+            return None
+        features, box_type = self._reported_config
+        return {"features": int(features), "box_type": box_type}
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -363,22 +388,31 @@ class JensenController(BedController):
 
     async def async_discover_capabilities(self) -> None:
         """Load the app-stored memory positions saved for this bed."""
-        stored = await self._memory_store().async_load() or {}
-        slots = stored.get(self._coordinator.address, {})
+        slots = await self._memory_store().async_load() or {}
         self._memory_slots = {
             int(slot): (int(values[0]), int(values[1])) for slot, values in slots.items()
         }
 
-    def _memory_store(self) -> Store[dict[str, dict[str, list[int]]]]:
-        return Store(self._coordinator.hass, _MEMORY_STORE_VERSION, _MEMORY_STORE_KEY)
+    def _memory_store(self) -> Store[dict[str, list[int]]]:
+        # One file per bed, so the two sides of a pair never overwrite each other.
+        address = self._coordinator.address.replace(":", "_").lower()
+        return Store(
+            self._coordinator.hass, _MEMORY_STORE_VERSION, f"{_MEMORY_STORE_KEY}.{address}"
+        )
 
     async def _save_memory_slots(self) -> None:
-        store = self._memory_store()
-        stored = await store.async_load() or {}
-        stored[self._coordinator.address] = {
-            str(slot): list(values) for slot, values in self._memory_slots.items()
-        }
-        await store.async_save(stored)
+        await self._memory_store().async_save(
+            {str(slot): list(values) for slot, values in self._memory_slots.items()}
+        )
+
+    def _use_stored_config(self, fallback: JensenFeatureFlags) -> None:
+        """Keep the last reported config when this connection's report is missing."""
+        if self._reported_config is not None:
+            _LOGGER.info("Using the stored Jensen config")
+            self._features, self._box_type = self._reported_config
+        else:
+            _LOGGER.warning("No stored Jensen config, assuming features %s", fallback)
+            self._features = fallback
 
     async def query_config(self) -> None:
         """Read the bed's feature flags and box type after connection."""
@@ -407,14 +441,15 @@ class JensenController(BedController):
                     timeout=_CONFIG_RESPONSE_TIMEOUT,
                 )
             except TimeoutError:
-                _LOGGER.warning("Timeout waiting for config response, assuming full features")
-                self._features = _MASSAGE_FLAGS | _LIGHT_FLAGS
+                _LOGGER.warning("Timeout waiting for Jensen config response")
+                self._use_stored_config(_MASSAGE_FLAGS | _LIGHT_FLAGS | JensenFeatureFlags.FAN)
                 return
 
             data = self._config_data
             if data is not None and len(data) >= 5:
                 self._features = JensenFeatureFlags(_decode_config_field(data[2]))
                 self._box_type = _decode_config_field(data[4])
+                self._reported_config = (self._features, self._box_type)
                 _LOGGER.info(
                     "Jensen bed features: %s, box type %d (raw: %s)",
                     self._features,
@@ -423,11 +458,11 @@ class JensenController(BedController):
                 )
             else:
                 _LOGGER.warning("Unusable Jensen config response: %s", data.hex() if data else None)
-                self._features = JensenFeatureFlags.NONE
+                self._use_stored_config(JensenFeatureFlags.NONE)
 
         except BleakError as err:
             _LOGGER.warning("Failed to query config: %s", err)
-            self._features = JensenFeatureFlags.NONE
+            self._use_stored_config(JensenFeatureFlags.NONE)
         finally:
             self._config_loaded = True
             self._config_received = None
@@ -680,7 +715,7 @@ class JensenController(BedController):
         except BaseException:
             try:
                 await asyncio.shield(self._send_stop())
-            except BleakError:
+            except (BleakError, ConnectionError):
                 _LOGGER.debug("Failed to send Jensen STOP after an interrupted move")
             raise
 
@@ -701,7 +736,7 @@ class JensenController(BedController):
         finally:
             try:
                 await self._send_stop()
-            except BleakError:
+            except (BleakError, ConnectionError):
                 _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
@@ -824,7 +859,9 @@ class JensenController(BedController):
         self._light_level = level
         if level:
             self._last_light_level = level
-        self.forward_controller_state_updates({"light_level": level})
+        self.forward_controller_state_updates(
+            {"light_level": level, "under_bed_lights_on": level > 0}
+        )
 
     async def lights_on(self) -> None:
         """Turn the light on at its last level."""
@@ -859,11 +896,13 @@ class JensenController(BedController):
             JensenCommands.massage(updated["head"], updated["foot"], updated["wave"])
         )
         self._massage_levels = updated
+        self.forward_controller_state_updates(self.get_massage_state())
 
     async def massage_off(self) -> None:
         """Turn off all massage."""
         await self.write_command(JensenCommands.MASSAGE_OFF)
         self._massage_levels = {"head": 0, "foot": 0, "wave": 0}
+        self.forward_controller_state_updates(self.get_massage_state())
 
     async def _toggle_zone(self, zone: str) -> None:
         await self._send_massage(**{zone: 0 if self._massage_levels[zone] else 5})

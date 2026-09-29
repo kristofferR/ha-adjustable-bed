@@ -10,8 +10,10 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.jensen_linon import (
@@ -20,11 +22,18 @@ from custom_components.adjustable_bed.beds.jensen_linon import (
     JensenLinonController,
 )
 from custom_components.adjustable_bed.beds.svane import SvaneController
-from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+from custom_components.adjustable_bed.config_flow import (
+    AdjustableBedConfigFlow,
+    AdjustableBedOptionsFlow,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
     CONF_BED_TYPE,
+    CONF_DISABLE_ANGLE_SENSING,
     CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_HAS_MASSAGE,
+    CONF_MOTOR_COUNT,
+    CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
     SVANE_CHAR_DOWN_UUID,
@@ -40,6 +49,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import is_jensen_linon_name
+from custom_components.adjustable_bed.pairing import build_pair_entry_data, effective_child_data
 
 HEAD = SVANE_HEAD_SERVICE_UUID
 FOOT = SVANE_FEET_SERVICE_UUID
@@ -105,21 +115,23 @@ class TestJensenLinonMovement:
     async def test_single_motor_hold_then_stop(
         self, method: str, target: tuple[str, str], _no_sleep: AsyncMock
     ) -> None:
-        """The default 0.9 s hold becomes 01 every 800 ms, then STOP head then foot."""
+        """The default 0.9 s hold becomes two 800 ms steps, then STOP head then foot."""
         controller = make_controller()
 
         await getattr(controller, method)()
 
-        assert written(controller) == [(*target, "01")] * 3 + STOP_PAIR
+        assert written(controller) == [(*target, "01")] * 2 + STOP_PAIR
         assert [c.args[0] for c in _no_sleep.await_args_list] == [HOLD_INTERVAL_MS / 1000] * 2
 
-    async def test_combined_motion_alternates_head_and_foot(self) -> None:
-        """TV113: head up + foot down steps head, then foot, then STOP."""
+    async def test_combined_motion_alternates_head_and_foot(self, _no_sleep: AsyncMock) -> None:
+        """TV113: head up + foot down steps head, then foot, each held before STOP."""
         controller = make_controller()
 
         await controller.move_simultaneously("back", True, "legs", False, duration_ms=800)
 
         assert written(controller) == [(HEAD, UP, "01"), (FOOT, DOWN, "01")] + STOP_PAIR
+        # The foot's step is held for a full interval too, not stopped at once.
+        assert _no_sleep.await_count == 2
 
     async def test_combined_motion_rejects_other_axes(self) -> None:
         controller = make_controller()
@@ -135,6 +147,30 @@ class TestJensenLinonMovement:
 
         assert written(controller) == STOP_PAIR
 
+    async def test_foot_stop_follows_a_failed_head_stop(self) -> None:
+        """Both motors get STOP even when the head write fails."""
+        controller = make_controller()
+        head_error = BleakError("head write failed")
+        controller._write_to_service_char.side_effect = [head_error, None]
+
+        with pytest.raises(BleakError):
+            await controller.stop_all()
+
+        assert written(controller) == STOP_PAIR
+
+    async def test_failed_move_keeps_its_error(self) -> None:
+        """A STOP failure after a failed MOVE does not replace the MOVE error."""
+        controller = make_controller()
+        move_error = BleakError("move write failed")
+        stop_error = ConnectionError("Not connected to bed")
+        controller._write_to_service_char.side_effect = [move_error, stop_error, stop_error]
+
+        with pytest.raises(BleakError) as raised:
+            await controller.move_head_up()
+
+        assert raised.value is move_error
+        assert written(controller) == [(HEAD, UP, "01"), *STOP_PAIR]
+
     async def test_stop_all(self) -> None:
         """TV099/TV100: STOP is FF to the head, then the foot, up characteristic."""
         controller = make_controller()
@@ -143,6 +179,29 @@ class TestJensenLinonMovement:
         await controller.move_legs_stop()
 
         assert written(controller) == STOP_PAIR * 2
+
+    async def test_interrupted_flat_sends_stop(self) -> None:
+        """A flat cancelled mid-write releases both motors and keeps the cancellation."""
+        controller = make_controller()
+        controller._write_to_service_char.side_effect = [asyncio.CancelledError, None, None]
+
+        with pytest.raises(asyncio.CancelledError):
+            await controller.preset_flat()
+
+        assert written(controller) == [(HEAD, SVANE_CHAR_POSITION_UUID, "00"), *STOP_PAIR]
+
+    async def test_flat_cancelled_between_motors_sends_stop(self) -> None:
+        """A stop request after the head's frame releases the head again."""
+        controller = make_controller()
+
+        async def write(*_args: object, **_kwargs: object) -> None:
+            controller._coordinator.cancel_command.set()
+
+        controller._write_to_service_char.side_effect = write
+
+        await controller.preset_flat()
+
+        assert written(controller) == [(HEAD, SVANE_CHAR_POSITION_UUID, "00"), *STOP_PAIR]
 
     async def test_flat(self) -> None:
         """TV125/TV126: 00 to the head, then the foot, position characteristic."""
@@ -287,3 +346,45 @@ async def test_factory_uses_the_stored_profile(
     )
 
     assert type(controller) is controller_type
+
+
+@pytest.mark.parametrize(
+    ("initial", "requested"),
+    [(VARIANT_AUTO, SVANE_VARIANT_JENSEN_LINON), (SVANE_VARIANT_JENSEN_LINON, VARIANT_AUTO)],
+)
+async def test_paired_options_reject_a_shared_profile_change(
+    hass: HomeAssistant, initial: str, requested: str
+) -> None:
+    """One pair side's LinOn profile is never copied onto a Svane side."""
+
+    def side(address: str, variant: str) -> dict:
+        return {
+            CONF_ADDRESS: address,
+            CONF_NAME: "Bed",
+            CONF_BED_TYPE: BED_TYPE_SVANE,
+            CONF_PROTOCOL_VARIANT: variant,
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PREFERRED_ADAPTER: "auto",
+            CONF_DISCONNECT_AFTER_COMMAND: False,
+        }
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=build_pair_entry_data(
+            side("AA:BB:CC:DD:EE:11", initial),
+            side("AA:BB:CC:DD:EE:22", VARIANT_AUTO),
+            name="Paired bed",
+        ),
+    )
+    entry.add_to_hass(hass)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass = hass
+    flow.handler = entry.entry_id
+
+    result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: requested})
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "jensen_linon_unpair_first"}
+    assert effective_child_data(entry.data, "right")[CONF_PROTOCOL_VARIANT] == VARIANT_AUTO

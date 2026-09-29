@@ -1278,6 +1278,22 @@ class AdjustableBedCoordinator:
         self._async_persist_config({**self.entry.data, "capabilities": capabilities})
         self._offline_controller = self._controller
 
+    def _backfill_jensen_snapshot(self) -> None:
+        """Persist the Jensen config report when it changed.
+
+        The entry update reloads the entry, so entities built from a missing or
+        older report (a config timeout at setup) are rebuilt from this one.
+        """
+        snapshot_fn = getattr(self._controller, "capability_snapshot", None)
+        snapshot = snapshot_fn() if callable(snapshot_fn) else None
+        if not snapshot:
+            return
+        capabilities = dict(self.entry.data.get("capabilities") or {})
+        if capabilities.get("jensen") == snapshot:
+            return
+        capabilities["jensen"] = snapshot
+        self._async_persist_config({**self.entry.data, "capabilities": capabilities})
+
     def _persist_bond_flags(
         self,
         *,
@@ -3309,13 +3325,11 @@ class AdjustableBedCoordinator:
                 stored_capabilities = self.entry.data.get("capabilities")
                 stored_capability_snapshot: Mapping[str, Any] | None = None
                 if isinstance(stored_capabilities, dict):
-                    namespace = (
-                        "octo"
-                        if self._bed_type == BED_TYPE_OCTO
-                        else "linak"
-                        if self._bed_type == BED_TYPE_LINAK
-                        else None
-                    )
+                    namespace = {
+                        BED_TYPE_OCTO: "octo",
+                        BED_TYPE_LINAK: "linak",
+                        BED_TYPE_JENSEN: "jensen",
+                    }.get(self._bed_type)
                     candidate = stored_capabilities.get(namespace) if namespace else None
                     if isinstance(candidate, Mapping):
                         stored_capability_snapshot = candidate
@@ -3428,6 +3442,8 @@ class AdjustableBedCoordinator:
                     self._controller, "query_config"
                 ):
                     await cast(Any, self._controller).query_config()
+                    if self._bed_type == BED_TYPE_JENSEN:
+                        self._backfill_jensen_snapshot()
 
                 # Read deferred BLE Device Information now that the
                 # notification channel and protocol handshake are done.

@@ -8,7 +8,7 @@ from the JMC400 support bundle and capture in issue #631.
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, call
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 from bleak.exc import BleakError
@@ -504,15 +504,63 @@ class TestJensenConfig:
         mock_jensen_config_entry,
         mock_coordinator_connected,
     ):
-        """Without a config reply, massage and light stay available."""
+        """Without a config reply or a stored one, every feature stays available."""
         coordinator = AdjustableBedCoordinator(hass, mock_jensen_config_entry)
         await coordinator.async_connect()
 
         controller = coordinator.controller
         assert controller.supports_lights is True
         assert controller.has_massage is True
-        assert controller.has_fan is False
+        assert controller.has_fan is True
         assert controller.memory_slot_count == 4
+        assert controller.capability_snapshot() is None
+        assert "capabilities" not in mock_jensen_config_entry.data
+
+    async def test_stored_config_is_used_on_timeout(
+        self,
+        hass: HomeAssistant,
+        mock_jensen_config_entry,
+        mock_coordinator_connected,
+    ):
+        """An unanswered request keeps the last report instead of guessing."""
+        hass.config_entries.async_update_entry(
+            mock_jensen_config_entry,
+            data={
+                **mock_jensen_config_entry.data,
+                "capabilities": {"jensen": {"features": 0x01, "box_type": 4}},
+            },
+        )
+        coordinator = AdjustableBedCoordinator(hass, mock_jensen_config_entry)
+        await coordinator.async_connect()
+
+        controller = coordinator.controller
+        assert controller.has_massage_head
+        assert not controller.has_fan
+        assert not controller.supports_lights
+        assert controller.memory_slot_count == 1
+
+    async def test_changed_report_is_persisted(
+        self, hass: HomeAssistant, mock_jensen_config_entry
+    ):
+        """A new report is stored once, so the entry reload rebuilds entities."""
+        coordinator = AdjustableBedCoordinator(hass, mock_jensen_config_entry)
+        controller = make_controller()
+        await self._query(controller, bytes.fromhex("0a0503080175"))
+        coordinator._controller = controller
+
+        with patch.object(
+            hass.config_entries,
+            "async_update_entry",
+            wraps=hass.config_entries.async_update_entry,
+        ) as update_entry:
+            coordinator._backfill_jensen_snapshot()
+            coordinator._backfill_jensen_snapshot()
+
+        update_entry.assert_called_once()
+        assert mock_jensen_config_entry.data["capabilities"]["jensen"] == {
+            "features": 0x03,
+            "box_type": 1,
+        }
 
 
 class TestJensenPositionParsing:
@@ -813,6 +861,19 @@ class TestJensenMovementMonitoring:
             await task
         assert written(controller)[-1] == JensenCommands.MOTOR_STOP
 
+    async def test_cancellation_survives_a_disconnected_stop(self):
+        """A STOP that cannot reach the bed does not replace the cancellation."""
+        controller = make_controller()
+        stop_error = ConnectionError("Not connected to bed")
+        controller._write_gatt_with_retry.side_effect = [None, stop_error]
+
+        task = await self._run(controller, controller.preset_flat())
+        task.cancel()
+
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        assert written(controller)[-1] == JensenCommands.MOTOR_STOP
+
     async def test_bounded_timeout_releases_command(
         self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
     ):
@@ -934,6 +995,24 @@ class TestJensenMemory:
 
         assert written(reloaded) == [bytes.fromhex("100433783075")]
 
+    async def test_paired_sides_keep_their_own_slots(self, hass: HomeAssistant):
+        """Concurrent saves on two beds cannot overwrite each other's slots."""
+        left = make_controller(hass)
+        right = make_controller(hass)
+        right._coordinator.address = "AA:BB:CC:DD:EE:00"
+        left._memory_slots = {1: (30100, 30000)}
+        right._memory_slots = {1: (30200, 29900)}
+
+        # Separate files: neither save reads and rewrites the other bed's slots.
+        assert left._memory_store().key != right._memory_store().key
+        await asyncio.gather(left._save_memory_slots(), right._save_memory_slots())
+
+        for saved, expected in ((left, (30100, 30000)), (right, (30200, 29900))):
+            reloaded = make_controller(hass)
+            reloaded._coordinator.address = saved._coordinator.address
+            await reloaded.async_discover_capabilities()
+            assert reloaded._memory_slots == {1: expected}
+
     async def test_unsaved_app_memory_is_rejected(self, hass: HomeAssistant):
         """Recalling an empty slot says so instead of moving."""
         controller = make_controller(hass)
@@ -971,7 +1050,7 @@ class TestJensenLightsAndFan:
             "130204000000",
         ]
         controller._coordinator.handle_controller_state_updates.assert_called_with(
-            {"light_level": 4}
+            {"light_level": 4, "under_bed_lights_on": True}
         )
         assert controller.get_light_state() == {"is_on": True, "light_level": 4}
 
@@ -1041,6 +1120,18 @@ class TestJensenMassage:
             "120000000000",
             "120505000000",
         ]
+
+    async def test_massage_changes_are_published(self):
+        """The level sliders refresh after toggles and off, not just their own writes."""
+        controller = make_controller()
+        controller._features = JensenFeatureFlags.MASSAGE_HEAD
+        publish = controller._coordinator.handle_controller_state_updates
+
+        await controller.massage_head_toggle()
+        assert publish.call_args.args[0]["head_intensity"] == 5
+
+        await controller.massage_off()
+        assert publish.call_args.args[0]["head_intensity"] == 0
 
     async def test_massage_requires_feature(self):
         """Beds without massage raise instead of writing."""

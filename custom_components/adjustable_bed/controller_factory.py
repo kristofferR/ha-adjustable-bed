@@ -1049,7 +1049,9 @@ async def create_controller(
         )
         from .beds.jensen import JensenController
 
-        return JensenController(coordinator, pin=jensen_pin)
+        return JensenController(
+            coordinator, pin=jensen_pin, capability_snapshot=capability_snapshot
+        )
 
     if bed_type == BED_TYPE_OKIN_CST:
         await coordinator.hass.async_add_import_executor_job(

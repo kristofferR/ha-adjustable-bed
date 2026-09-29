@@ -597,6 +597,14 @@ class BondRouteMismatchError(Exception):
     """Raised when existing-bond verification connects through another adapter."""
 
 
+# App profiles that one side of a separate-address pair may use without the
+# other, so the shared options form must not propagate them.
+_PER_SIDE_APP_PROFILES: Final = {
+    SOLACE_VARIANT_WOOSA: "woosa_unpair_first",
+    SVANE_VARIANT_JENSEN_LINON: "jensen_linon_unpair_first",
+}
+
+
 def _motor_count_options(
     bed_type: str | None,
     protocol_variant: str = DEFAULT_PROTOCOL_VARIANT,
@@ -5755,18 +5763,24 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 separate_address_pair
                 and CONF_PROTOCOL_VARIANT in paired_changes
                 and (
-                    paired_changes[CONF_PROTOCOL_VARIANT]
-                    == SOLACE_VARIANT_WOOSA
-                    or any(
-                        child.get(CONF_PROTOCOL_VARIANT) == SOLACE_VARIANT_WOOSA
-                        for child in iter_children(self.config_entry.data)
+                    unpair_error := next(
+                        (
+                            error
+                            for profile, error in _PER_SIDE_APP_PROFILES.items()
+                            if paired_changes[CONF_PROTOCOL_VARIANT] == profile
+                            or any(
+                                child.get(CONF_PROTOCOL_VARIANT) == profile
+                                for child in iter_children(self.config_entry.data)
+                            )
+                        ),
+                        None,
                     )
                 )
             ):
                 return self.async_show_form(
                     step_id=step_id,
                     data_schema=vol.Schema(schema_dict),
-                    errors={CONF_PROTOCOL_VARIANT: "woosa_unpair_first"},
+                    errors={CONF_PROTOCOL_VARIANT: unpair_error},
                 )
             incompatible_child = any(
                 child.get(CONF_BED_TYPE) == BED_TYPE_RICHMAT

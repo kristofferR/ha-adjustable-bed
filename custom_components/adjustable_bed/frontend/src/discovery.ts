@@ -82,7 +82,7 @@ function emptyBed(): BedEntities {
     presence: [],
     lights: {},
     massage: { buttons: [], numbers: [] },
-    climate: { entities: [], selects: [] },
+    climate: { entities: [], selects: [], numbers: [] },
     utility: [],
   };
 }
@@ -155,6 +155,7 @@ export function bedEntitiesForDevice(
         else if (key.startsWith("massage_") && key.endsWith("_intensity"))
           bed.massage.numbers.push(id);
         else if (key === "light_level") bed.lights.level = id;
+        else if (key === "fan_level") bed.climate.numbers.push(id);
         else if (key.startsWith("sleep_number_setting")) bed.firmness.push(id);
         break;
 
@@ -338,6 +339,7 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     !bed.massage.timer &&
     bed.climate.entities.length === 0 &&
     bed.climate.selects.length === 0 &&
+    bed.climate.numbers.length === 0 &&
     bed.utility.length === 0
   );
 }

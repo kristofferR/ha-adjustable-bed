@@ -1182,7 +1182,7 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _climate(bed: BedEntities): typeof nothing | TemplateResult {
-    const items = [...bed.climate.entities, ...bed.climate.selects];
+    const items = [...bed.climate.entities, ...bed.climate.selects, ...bed.climate.numbers];
     if (items.length === 0) return nothing;
     return html`
       ${this._heading("section.climate")}
@@ -1413,6 +1413,7 @@ export class AdjustableBedCard extends LitElement {
     bed.utility.forEach((x) => ids.add(x));
     bed.climate.entities.forEach((x) => ids.add(x));
     bed.climate.selects.forEach((x) => ids.add(x));
+    bed.climate.numbers.forEach((x) => ids.add(x));
     return [...ids];
   }
 
