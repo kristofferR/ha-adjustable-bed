@@ -1,22 +1,30 @@
 # Jensen
 
-**Status:** ✅ Tested (motion, position reports, massage); lights, fan and memory
-recall are implemented from app evidence and await user confirmation.
+**Status:** ✅ Tested on JMC400 (motion, position reports, massage); JMC400 lights,
+fan and memory recall, and every LinOn control, are implemented from app
+evidence and await user confirmation.
 
 ## Known Models
-- Jensen JMC400 (JMC 400)
-- Jensen LinON Entry
+- Jensen JMC400 (JMC 400), including its LinON Entry box
+- Jensen LinOn beds named "Adjustable Bed" or "Jensen Bed" (LinonPI services)
 
 ## Apps
 
 | Analyzed | App | Package ID |
 |----------|-----|------------|
+| ✅ | Adjustable Sleep 2.0.37 (106) | `air.no.jensen.adjustablesleep` |
 | ✅ | Adjustable Sleep 2.0.29 (98) | `air.no.jensen.adjustablesleep` |
 
-The `air.` prefix is historical: 2.0.29 is a React Native app. The same app also
-drives Linak-based Jensen beds; those use the [Linak](linak.md) bed type. Its
-third bed family ("Adjustable Bed"/"Jensen Bed" names) never writes a frame in
-this version. See the [discovery ledger](jensen-disposition.md).
+The `air.` prefix is historical: both versions are React Native apps. The app
+drives three bed families:
+
+- **JMC400** beds use the `jensen` bed type (this page).
+- **LinOn** beds ("Adjustable Bed"/"Jensen Bed" names) use the Svane bed type's
+  Jensen LinOn profile; see [LinOn](#linon) below. 2.0.29 never wrote a LinOn
+  frame; 2.0.37 does.
+- **Linak**-based Jensen beds use the [Linak](linak.md) bed type.
+
+See the [discovery ledger](jensen-disposition.md).
 
 ## PIN Authentication
 
@@ -166,6 +174,7 @@ app's scripted comfort mode (see the ledger).
 |---------|-------|
 | Massage | `12 head foot wave H M` (levels 0-10, 0 = off) |
 | Light | `13 02 level 00 H M` (level 0-10; every light kind uses output `02`) |
+| Light off | `13 02 00 00 00 32` (a fixed frame in 2.0.37) |
 | Fan | `14 level 00 H M 50` (level 0-10) |
 
 `H M` is a timer. The Android app encodes it incorrectly (hexadecimal digits
@@ -173,9 +182,39 @@ parsed as decimal) and the iOS app ends up sending `00 00`. The #631 iOS capture
 shows massage running with `00 00`, so the integration always sends `00 00` and
 offers no timers.
 
+## LinOn
+
+LinOn beds expose the LinonPI services that [Svane](svane.md) beds use, but the
+Jensen app writes its own one-byte frames to them. They use the **Svane /
+Jensen LinOn** bed type with protocol variant **`jensen_linon`**. Bluetooth
+setup selects it for new beds whose name contains "Adjustable Bed" or "Jensen
+Bed" (the app's rule); `auto` keeps the Svane app profile, so existing entries
+change only when you select `jensen_linon` in the options. Beds named "Jensen
+Bed" are discovered by name; "Adjustable Bed" is too generic, so those beds are
+found by their head service UUID.
+
+All writes are with response. Head uses service `0000abcb`, foot `0000c258`
+and the light `0000d07b`:
+
+| Command | Characteristic | Bytes |
+|---------|----------------|-------|
+| Up / down (held) | `000001ac` up, `0000bae9` down, in the head or foot service | `01`, resent every 800 ms |
+| Head and foot together | head, then foot direction characteristic, alternating | `01` every 800 ms |
+| STOP | `000001ac` in the head, then the foot, service | `FF` |
+| Flat | `0000143d` in the head, then the foot, service | `00` |
+| Under-bed light | `0000a8e0` | on `01 00 00`, off `00 00 00` |
+
+The app sends STOP after every movement and for every stop control. It repeats
+the STOP pair until a 20 s cap, which Home Assistant does not copy.
+
+The app offers more than reaches the bed. Its light intensity slider crashes
+the app instead of writing, its favourite recall stalls before its first write,
+and it never subscribes to position reports. Home Assistant therefore offers
+no light level, memory or position feedback for LinOn beds.
+
 ## Limitations
 
 - The position anchors come from one JMC400.
-- Lights, fan and device memory have no hardware confirmation yet.
+- JMC400 lights, fan and device memory have no hardware confirmation yet.
 - Massage wave only has an effect while head or foot massage runs.
-- Version 2.0.37 on Google Play was not analyzed; the frozen corpus has 2.0.29.
+- LinOn control comes from app evidence only; no LinOn bed has been tested.

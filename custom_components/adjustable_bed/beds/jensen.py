@@ -1,8 +1,8 @@
 """Jensen JMC400 bed controller.
 
-Protocol from the clean-room APK Protocol Audit of ``air.no.jensen.adjustablesleep``
-2.0.29 (98). See docs/beds/jensen.md for the frame table and the evidence behind
-each behavior.
+Protocol from the clean-room APK Protocol Audits of ``air.no.jensen.adjustablesleep``
+2.0.29 (98) and 2.0.37 (106). See docs/beds/jensen.md for the frame table and the
+evidence behind each behavior.
 
 The app treats the four position bytes of a ``0x10`` report as opaque and only
 echoes them back in go-to frames. Their byte order and physical scale come from
@@ -100,7 +100,8 @@ class JensenCommands:
     READ_POSITION = bytes([0x10, 0xFF, 0x00, 0x00, 0x00, 0x00])
 
     MASSAGE_OFF = bytes([0x12, 0x00, 0x00, 0x00, 0x00, 0x00])
-    LIGHT_OFF = bytes([0x13, 0x02, 0x00, 0x00, 0x00, 0x00])
+    # A fixed frame in 2.0.37, unlike the level frame's layout.
+    LIGHT_OFF = bytes([0x13, 0x02, 0x00, 0x00, 0x00, 0x32])
     FAN_OFF = bytes([0x14, 0x00, 0x00, 0x00, 0x00, 0x50])
 
     @staticmethod

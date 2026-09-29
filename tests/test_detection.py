@@ -610,6 +610,11 @@ class TestDetectBedTypeByNamePattern:
         service_info = _make_service_info(name="Svane Bed Living Room")
         assert detect_bed_type(service_info) == BED_TYPE_SVANE
 
+    def test_detect_jensen_linon_by_name(self):
+        """Jensen Adjustable Sleep's LinOn beds use the LinonPI bed type."""
+        service_info = _make_service_info(name="Jensen Bed")
+        assert detect_bed_type(service_info) == BED_TYPE_SVANE
+
     def test_detect_motosleep_by_name_hhc(self):
         """Test MotoSleep detection by HHC prefix."""
         service_info = _make_service_info(name="hhc1234")

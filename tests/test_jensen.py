@@ -143,7 +143,8 @@ class TestJensenFrames:
             (JensenCommands.massage(6, 0, 6), "120600060000"),
             (JensenCommands.MASSAGE_OFF, "120000000000"),
             (JensenCommands.light(4), "130204000000"),
-            (JensenCommands.LIGHT_OFF, "130200000000"),
+            # 2.0.37 vector TV078.
+            (JensenCommands.LIGHT_OFF, "130200000032"),
             (JensenCommands.fan(4), "140400000050"),
             (JensenCommands.FAN_OFF, "140000000050"),
         ],
@@ -966,7 +967,7 @@ class TestJensenLightsAndFan:
         assert [f.hex() for f in written(controller)] == [
             "13020a000000",
             "130204000000",
-            "130200000000",
+            "130200000032",
             "130204000000",
         ]
         controller._coordinator.handle_controller_state_updates.assert_called_with(

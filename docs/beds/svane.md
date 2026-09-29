@@ -8,6 +8,9 @@
 
 - Svane adjustable beds with "Svane Bed" BLE name (LinonPI controller)
 - Note: JMC400 beds (also in Svane app) use the [Jensen protocol](jensen.md)
+- Jensen LinOn beds ("Adjustable Bed"/"Jensen Bed") share these services but
+  use the Jensen app's own frames: protocol variant `jensen_linon`, described
+  in the [Jensen guide](jensen.md#linon)
 
 ## Apps
 
