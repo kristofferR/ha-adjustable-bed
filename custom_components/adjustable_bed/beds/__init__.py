@@ -18,6 +18,7 @@ if TYPE_CHECKING:
         DewertOkinUuidRfGatewayController as DewertOkinUuidRfGatewayController,
     )
     from .jensen import JensenController as JensenController
+    from .jensen_linon import JensenLinonController as JensenLinonController
     from .jiecang import JiecangController as JiecangController
     from .jiecang_app import JiecangAppController as JiecangAppController
     from .kaidi import KaidiController as KaidiController
@@ -67,6 +68,7 @@ _EXPORT_MODULES = {
     "DewertOkinRfGatewayController": "dewertokin_rf_gateway",
     "DewertOkinUuidRfGatewayController": "dewertokin_rf_gateway",
     "JensenController": "jensen",
+    "JensenLinonController": "jensen_linon",
     "JiecangController": "jiecang",
     "JiecangAppController": "jiecang_app",
     "KaidiController": "kaidi",
@@ -137,6 +139,7 @@ __all__ = [
     "JiecangController",
     "JiecangAppController",
     "JensenController",
+    "JensenLinonController",
     "KaidiController",
     "KeesonController",
     "LimossController",

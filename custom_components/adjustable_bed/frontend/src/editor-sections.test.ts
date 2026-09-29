@@ -10,7 +10,7 @@ const emptyBed = (): BedEntities => ({
   presence: [],
   lights: {},
   massage: { buttons: [], numbers: [] },
-  climate: { entities: [], selects: [] },
+  climate: { entities: [], selects: [], numbers: [] },
   utility: [],
 });
 

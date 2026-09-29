@@ -137,7 +137,7 @@ export interface BedEntities {
   presence: string[]; // binary_sensor.* bed_presence*
   lights: LightEntities;
   massage: { buttons: string[]; numbers: string[]; timer?: string };
-  climate: { entities: string[]; selects: string[] };
+  climate: { entities: string[]; selects: string[]; numbers: string[] }; // numbers: fan_level
   utility: string[]; // button.* sync_positions / child_lock_toggle
 }
 

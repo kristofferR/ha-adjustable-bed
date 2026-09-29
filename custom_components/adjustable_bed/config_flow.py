@@ -110,6 +110,7 @@ from .const import (
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SOLACE,
+    BED_TYPE_SVANE,
     BEDS_WITH_PERCENTAGE_POSITIONS,
     BEDS_WITH_POSITION_FEEDBACK,
     CB24_BED_SELECTION_A,
@@ -207,6 +208,7 @@ from .const import (
     RICHMAT_VARIANT_WILINKE,
     RUNTIME_BOND_KEYS,
     SOLACE_VARIANT_WOOSA,
+    SVANE_VARIANT_JENSEN_LINON,
     VARIANT_AUTO,
     DetectionResult,
     bed_type_has_position_feedback,
@@ -227,6 +229,7 @@ from .detection import (
     detect_bed_type_detailed,
     detect_richmat_remote_from_name,
     get_bed_type_options,
+    is_jensen_linon_name,
     is_mac_like_name,
 )
 from .discovery_log import async_get_discovery_log
@@ -592,6 +595,14 @@ class NotAdvertisingError(Exception):
 
 class BondRouteMismatchError(Exception):
     """Raised when existing-bond verification connects through another adapter."""
+
+
+# App profiles that one side of a separate-address pair may use without the
+# other, so the shared options form must not propagate them.
+_PER_SIDE_APP_PROFILES: Final = {
+    SOLACE_VARIANT_WOOSA: "woosa_unpair_first",
+    SVANE_VARIANT_JENSEN_LINON: "jensen_linon_unpair_first",
+}
 
 
 def _motor_count_options(
@@ -1930,6 +1941,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 }
                 if selected_bed_type == BED_TYPE_SOLACE and self._discovery_info.name:
                     entry_data[CONF_BLE_DEVICE_NAME] = self._discovery_info.name
+                if (
+                    selected_bed_type == BED_TYPE_SVANE
+                    and protocol_variant == VARIANT_AUTO
+                    and is_jensen_linon_name(self._discovery_info.name)
+                ):
+                    entry_data[CONF_PROTOCOL_VARIANT] = SVANE_VARIANT_JENSEN_LINON
                 if _is_leggett_app_type(selected_bed_type, protocol_variant):
                     self._manual_data = entry_data
                     self._leggett_app_pairing_step = "bluetooth_pairing"
@@ -5746,18 +5763,24 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 separate_address_pair
                 and CONF_PROTOCOL_VARIANT in paired_changes
                 and (
-                    paired_changes[CONF_PROTOCOL_VARIANT]
-                    == SOLACE_VARIANT_WOOSA
-                    or any(
-                        child.get(CONF_PROTOCOL_VARIANT) == SOLACE_VARIANT_WOOSA
-                        for child in iter_children(self.config_entry.data)
+                    unpair_error := next(
+                        (
+                            error
+                            for profile, error in _PER_SIDE_APP_PROFILES.items()
+                            if paired_changes[CONF_PROTOCOL_VARIANT] == profile
+                            or any(
+                                child.get(CONF_PROTOCOL_VARIANT) == profile
+                                for child in iter_children(self.config_entry.data)
+                            )
+                        ),
+                        None,
                     )
                 )
             ):
                 return self.async_show_form(
                     step_id=step_id,
                     data_schema=vol.Schema(schema_dict),
-                    errors={CONF_PROTOCOL_VARIANT: "woosa_unpair_first"},
+                    errors={CONF_PROTOCOL_VARIANT: unpair_error},
                 )
             incompatible_child = any(
                 child.get(CONF_BED_TYPE) == BED_TYPE_RICHMAT

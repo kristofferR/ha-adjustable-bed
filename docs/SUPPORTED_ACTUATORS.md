@@ -23,7 +23,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Jiecang](beds/jiecang.md) | Motor control, 3 memory slots, massage, split bed support |
 | [Jiecang app profiles](beds/jiecang-app.md) | ERGOBALANCE / Dream Motion layouts, alarms, wake routines, renaming |
 | [Kaidi](beds/kaidi.md) | Mouselet-based beds, Flat/Zero-G/Anti-Snore, 4 memory slots |
-| [Jensen](beds/jensen.md) | Go-to-position, variable massage (0-10), dynamic feature detection |
+| [Jensen](beds/jensen.md) | Go-to-position, massage/light/fan levels (0-10), app-stored memories, dynamic feature detection |
 | [DewertOkin](beds/dewertokin.md) | 79 brands (many older Rize/Simmons models), multiple protocols |
 | [Serta](beds/serta.md) | Massage intensity control, Zero-G/TV/Lounge |
 | [Mattress Firm 900](beds/mattressfirm.md) | Older iFlex/Nordic UART bases, lumbar control, built-in presets |
@@ -33,7 +33,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Sleep Number](beds/sleep_number.md) | Fuzion and BAM/MCR: capability-dependent position, firmness, presets, lighting and thermal controls |
 | [Sleepy's Elite](beds/sleepys.md) | BOX15/24/25 variants, presets, BOX25 position sliders including lumbar |
 | [SleepSpa S9000AI](beds/sleepstar.md) | CB37 sleep monitor, five app-addressable actuators, position feedback, sonic massage, RGB lighting |
-| [Svane](beds/svane.md) | LinonPI protocol, multi-service |
+| [Svane](beds/svane.md) | LinonPI protocol, multi-service; Jensen LinOn app profile |
 | [Vibradorm](beds/vibradorm.md) | Position feedback, 4 memory presets, lights |
 | [SUTA Smart Home](beds/suta.md) | AT command protocol, 4 memory slots, discrete lights |
 | [TiMOTION AHF](beds/timotion-ahf.md) | 5-motor bitmask protocol, toggle lights, AHF name detection |

@@ -95,6 +95,8 @@ from .const import (
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
     DEWERTOKIN_SERVICE_UUID,
     ERGOMOTION_NAME_PATTERNS,
+    JENSEN_LINON_NAME_PATTERNS,
+    JENSEN_NAME_FRAGMENT,
     JENSEN_NAME_PATTERNS,
     JENSEN_SERVICE_UUID,
     KAIDI_DISCOVERY_SERVICE_UUID,
@@ -545,12 +547,18 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_STAR_ELEVATE: "DewertOkin ELEVATE (two-actuator lift)",
     BED_TYPE_SOLACE: "Solace",
     BED_TYPE_SUTA: "SUTA Smart Home (AT protocol)",
-    BED_TYPE_SVANE: "Svane",
+    BED_TYPE_SVANE: "Svane / Jensen LinOn",
     BED_TYPE_TIMOTION_AHF: "TiMOTION AHF",
     BED_TYPE_VIBRADORM: "Vibradorm (VMAT)",
     # Diagnostic
     BED_TYPE_DIAGNOSTIC: "Diagnostic (unknown bed)",
 }
+
+
+def is_jensen_linon_name(name: str | None) -> bool:
+    """Return True for names the Jensen app drives with its LinOn profile."""
+    lowered = (name or "").lower()
+    return any(pattern in lowered for pattern in JENSEN_LINON_NAME_PATTERNS)
 
 
 def get_bed_type_options() -> list[SelectOptionDict]:
@@ -1187,7 +1195,10 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
 
     # Check for Jensen by name pattern (JMC400)
-    if any(device_name.startswith(pattern) for pattern in JENSEN_NAME_PATTERNS):
+    if (
+        any(device_name.startswith(pattern) for pattern in JENSEN_NAME_PATTERNS)
+        or JENSEN_NAME_FRAGMENT in device_name
+    ):
         signals.append("name:jensen")
         _LOGGER.info(
             "Detected Jensen bed at %s (name: %s) by name pattern",
@@ -1245,7 +1256,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             signals=signals,
         )
 
-    # Check for Svane - unique service UUID (abcb)
+    # Check for Svane / Jensen LinOn - unique service UUID (abcb)
     if SVANE_HEAD_SERVICE_UUID.lower() in service_uuids:
         signals.append("uuid:svane")
         _LOGGER.info(
@@ -1259,7 +1270,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             signals=signals,
         )
 
-    # Check for Svane by name pattern
+    # Check for Svane / Jensen LinOn by name pattern
     if any(pattern in device_name for pattern in SVANE_NAME_PATTERNS):
         signals.append("name:svane")
         _LOGGER.info(

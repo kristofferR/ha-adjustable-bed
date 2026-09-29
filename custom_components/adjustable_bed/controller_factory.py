@@ -143,6 +143,7 @@ from .const import (
     SLEEPYS_BOX25_VARIANT_LEGACY,
     SLEEPYS_BOX25_VARIANT_STAR,
     SOLACE_VARIANT_WOOSA,
+    SVANE_VARIANT_JENSEN_LINON,
     VARIANT_AUTO,
 )
 from .kaidi_protocol import extract_kaidi_advertisement
@@ -321,7 +322,6 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_SLEEPYS_BOX15: _ControllerSpec("sleepys", "SleepysBox15Controller"),
     BED_TYPE_SLEEPYS_BOX24: _ControllerSpec("sleepys", "SleepysBox24Controller"),
     BED_TYPE_STAR_ELEVATE: _ControllerSpec("star_elevate", "StarElevateController"),
-    BED_TYPE_SVANE: _ControllerSpec("svane", "SvaneController"),
     BED_TYPE_VIBRADORM: _ControllerSpec("vibradorm", "VibradormController"),
     BED_TYPE_REMACRO: _ControllerSpec("remacro", "RemacroController"),
     BED_TYPE_SCOTT_LIVING: _ControllerSpec("scott_living", "ScottLivingController"),
@@ -418,6 +418,22 @@ async def create_controller(
         from .beds.solace import SolaceController
 
         return SolaceController(coordinator)
+
+    if bed_type == BED_TYPE_SVANE:
+        if protocol_variant == SVANE_VARIANT_JENSEN_LINON:
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.jensen_linon", __package__
+            )
+            from .beds.jensen_linon import JensenLinonController
+
+            return JensenLinonController(coordinator)
+
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.svane", __package__
+        )
+        from .beds.svane import SvaneController
+
+        return SvaneController(coordinator)
 
     if bed_type == BED_TYPE_SLEEP_NUMBER_MCR:
         await coordinator.hass.async_add_import_executor_job(
@@ -1033,7 +1049,9 @@ async def create_controller(
         )
         from .beds.jensen import JensenController
 
-        return JensenController(coordinator, pin=jensen_pin)
+        return JensenController(
+            coordinator, pin=jensen_pin, capability_snapshot=capability_snapshot
+        )
 
     if bed_type == BED_TYPE_OKIN_CST:
         await coordinator.hass.async_add_import_executor_job(

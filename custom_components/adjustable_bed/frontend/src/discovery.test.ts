@@ -342,6 +342,13 @@ test("not empty when only climate select controls exist", () => {
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
+test("fan level renders in the climate section", () => {
+  const hass = hassWith([entry("number.b_fan", "fan_level")]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.climate.numbers).toEqual(["number.b_fan"]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
 test("presence-only device is treated as empty (no presence section)", () => {
   const hass = hassWith([entry("binary_sensor.b_pres", "bed_presence")]);
   const bed = bedEntitiesForDevice(hass, "dev1");

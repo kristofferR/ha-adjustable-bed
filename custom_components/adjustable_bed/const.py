@@ -1097,6 +1097,8 @@ STAR_ELEVATE_NAME_PATTERNS: Final = ("elevate",)
 # Jensen name patterns (JMC400 / LinON Entry)
 # Source: com.hilding.jbg_ble APK analysis
 JENSEN_NAME_PATTERNS: Final = ("jmc",)  # JMC400, JMC300, etc.
+# Adjustable Sleep 2.0.29 accepts "JMC400" anywhere in the name, case-insensitively.
+JENSEN_NAME_FRAGMENT: Final = "jmc400"
 
 # SUTA Smart Home name patterns.
 # Note: The integration currently targets the bed-frame AT protocol (FFF0 service).
@@ -1158,8 +1160,13 @@ SVANE_CHAR_POSITION_UUID: Final = "0000143d-0000-1000-8000-00805f9b34fb"
 SVANE_CHAR_MEMORY_UUID: Final = "0000fb6e-0000-1000-8000-00805f9b34fb"
 SVANE_LIGHT_ON_OFF_UUID: Final = "0000a8e0-0000-1000-8000-00805f9b34fb"
 
-# Svane name patterns
-SVANE_NAME_PATTERNS: Final = ("svane bed",)
+# Jensen Adjustable Sleep sends its own LinOn frames over the same services to
+# beds whose name matches these fragments (the app's name rule). Bluetooth setup
+# stores that profile for new entries; existing entries keep the Svane profile.
+JENSEN_LINON_NAME_PATTERNS: Final = ("adjustable bed", "jensen bed")
+# Names detected as LinonPI beds. "Adjustable Bed" alone is too generic for
+# discovery; those beds are found by their head service UUID.
+SVANE_NAME_PATTERNS: Final = ("svane bed", "jensen bed")
 
 # Vibradorm specific UUIDs (VMAT Basic protocol)
 # Protocol reverse-engineered from de.vibradorm.vra and com.vibradorm.vmatbasic APKs
@@ -1221,6 +1228,11 @@ SOLACE_VARIANT_WOOSA: Final = "woosa"
 SOLACE_VARIANTS: Final = {
     VARIANT_AUTO: "Auto (conservative device-name profile)",
     SOLACE_VARIANT_WOOSA: "Woosa Sleep app (select explicitly)",
+}
+SVANE_VARIANT_JENSEN_LINON: Final = "jensen_linon"
+SVANE_VARIANTS: Final = {
+    VARIANT_AUTO: "Auto (Svane app)",
+    SVANE_VARIANT_JENSEN_LINON: "Jensen Adjustable Sleep app (LinOn)",
 }
 LINAK_VARIANTS: Final = {
     VARIANT_AUTO: "Auto (Bed Control)",
@@ -2122,6 +2134,7 @@ OKIN_64BIT_VARIANTS: Final = {
 ALL_PROTOCOL_VARIANTS: Final = [
     VARIANT_AUTO,
     SOLACE_VARIANT_WOOSA,
+    SVANE_VARIANT_JENSEN_LINON,
     KAIDI_VARIANT_SEAT_1,
     KAIDI_VARIANT_SEAT_2,
     KAIDI_VARIANT_SEAT_3,
@@ -2582,9 +2595,9 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Sleepy's BOX24: 100ms delay → 10 repeats = 1.0s total
     # Source: com.okin.bedding.sleepy ANALYSIS.md
     BED_TYPE_SLEEPYS_BOX24: (10, 100),
-    # Jensen: 400ms delay → 3 repeats = 1.2s total
-    # Source: air.no.jensen.adjustablesleep APK analysis (RaiseAndLower.as:79 uses 400ms)
-    BED_TYPE_JENSEN: (3, 400),
+    # Jensen: 300ms delay → 4 repeats = 1.2s total
+    # Source: air.no.jensen.adjustablesleep 2.0.29 audit (held frames re-sent every 300 ms)
+    BED_TYPE_JENSEN: (4, 300),
     # Svane: 100ms delay → 10 repeats = 1.0s total
     # Source: com.produktide.svane.svaneremote ANALYSIS.md (motorRunnable posts every 100ms)
     BED_TYPE_SVANE: (10, 100),

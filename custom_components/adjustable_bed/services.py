@@ -1204,7 +1204,7 @@ async def _preflight_capability(
 
 
 async def handle_linak_move_simultaneously(call: ServiceCall) -> None:
-    """Drive two Linak sections with the app's combined opcode table."""
+    """Drive two sections with one native combined-motion command."""
     hass = call.hass
     first_motor = call.data[ATTR_FIRST_MOTOR]
     second_motor = call.data[ATTR_SECOND_MOTOR]
@@ -1213,7 +1213,7 @@ async def handle_linak_move_simultaneously(call: ServiceCall) -> None:
     duration_ms = call.data[ATTR_DURATION_MS]
     explicit_side = call.data.get(ATTR_SIDE)
     if first_motor == second_motor:
-        raise ServiceValidationError("Select two different Linak motors")
+        raise ServiceValidationError("Select two different motors")
 
     targets, missing = _resolve_sided_targets(
         hass,
@@ -1225,7 +1225,7 @@ async def handle_linak_move_simultaneously(call: ServiceCall) -> None:
     preflighted = await _preflight_capability(
         targets,
         "supports_simultaneous_movement",
-        "Linak simultaneous movement",
+        "simultaneous movement",
     )
     try:
         for coordinator, side in targets:
@@ -1241,7 +1241,7 @@ async def handle_linak_move_simultaneously(call: ServiceCall) -> None:
                 if unavailable:
                     axes = ", ".join(sorted(unavailable))
                     raise ServiceValidationError(
-                        f"Device '{target.name}' does not expose Linak axis: {axes}",
+                        f"Device '{target.name}' cannot combine motor: {axes}",
                     )
     except ServiceValidationError:
         await _release_preflighted(preflighted)

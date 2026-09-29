@@ -27,7 +27,10 @@ export function presentSections(
       bed.massage.numbers.length > 0 ||
       !!bed.massage.timer,
     utility: bed.utility.length > 0,
-    climate: bed.climate.entities.length > 0 || bed.climate.selects.length > 0,
+    climate:
+      bed.climate.entities.length > 0 ||
+      bed.climate.selects.length > 0 ||
+      bed.climate.numbers.length > 0,
     connection: !!(bed.connect || bed.disconnect),
   };
 }
