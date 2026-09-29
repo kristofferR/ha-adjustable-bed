@@ -585,6 +585,11 @@ class TestDetectBedTypeByNamePattern:
         service_info = _make_service_info(name="jmc400")
         assert detect_bed_type(service_info) == BED_TYPE_JENSEN
 
+    def test_detect_jensen_by_app_name_fragment(self):
+        """The app accepts JMC400 anywhere in the name."""
+        service_info = _make_service_info(name="Bedroom JMC400")
+        assert detect_bed_type(service_info) == BED_TYPE_JENSEN
+
     def test_detect_jensen_by_name_jmc_uppercase(self):
         """Test Jensen detection by JMC prefix (uppercase)."""
         service_info = _make_service_info(name="JMC300")

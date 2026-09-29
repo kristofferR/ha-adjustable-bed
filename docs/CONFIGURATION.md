@@ -203,7 +203,7 @@ timing; these settings do not replace it. Use the matching [protocol guide](SUPP
 | Sleepy's BOX15 | 10 | 100ms |
 | Sleepy's BOX24 | 10 | 100ms |
 | SleepSpa S9000AI / SLEEPSTAR | 10 | 100ms |
-| Jensen | 3 | 400ms |
+| Jensen | 4 | 300ms |
 | Svane | 10 | 100ms |
 | Vibradorm | 10 | 100ms |
 | Rondure | 25 | 50ms |

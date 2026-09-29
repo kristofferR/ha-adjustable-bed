@@ -1097,6 +1097,8 @@ STAR_ELEVATE_NAME_PATTERNS: Final = ("elevate",)
 # Jensen name patterns (JMC400 / LinON Entry)
 # Source: com.hilding.jbg_ble APK analysis
 JENSEN_NAME_PATTERNS: Final = ("jmc",)  # JMC400, JMC300, etc.
+# Adjustable Sleep 2.0.29 accepts "JMC400" anywhere in the name, case-insensitively.
+JENSEN_NAME_FRAGMENT: Final = "jmc400"
 
 # SUTA Smart Home name patterns.
 # Note: The integration currently targets the bed-frame AT protocol (FFF0 service).
@@ -2582,9 +2584,9 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Sleepy's BOX24: 100ms delay → 10 repeats = 1.0s total
     # Source: com.okin.bedding.sleepy ANALYSIS.md
     BED_TYPE_SLEEPYS_BOX24: (10, 100),
-    # Jensen: 400ms delay → 3 repeats = 1.2s total
-    # Source: air.no.jensen.adjustablesleep APK analysis (RaiseAndLower.as:79 uses 400ms)
-    BED_TYPE_JENSEN: (3, 400),
+    # Jensen: 300ms delay → 4 repeats = 1.2s total
+    # Source: air.no.jensen.adjustablesleep 2.0.29 audit (held frames re-sent every 300 ms)
+    BED_TYPE_JENSEN: (4, 300),
     # Svane: 100ms delay → 10 repeats = 1.0s total
     # Source: com.produktide.svane.svaneremote ANALYSIS.md (motorRunnable posts every 100ms)
     BED_TYPE_SVANE: (10, 100),

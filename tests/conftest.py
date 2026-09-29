@@ -448,9 +448,10 @@ def mock_bleak_client() -> MagicMock:
         ):
             callback = notify_callbacks.get(char_uuid)
             if callback is not None:
+                # A flat JMC400 report: head and foot at raw 30000 (u16 LE).
                 callback(
                     MagicMock(),
-                    bytearray([0x10, 0x00, 0x00, 0x01, 0x00, 0x01]),
+                    bytearray([0x10, 0xFF, 0x30, 0x75, 0x30, 0x75]),
                 )
             return
 

@@ -23,7 +23,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Jiecang](beds/jiecang.md) | Motor control, 3 memory slots, massage, split bed support |
 | [Jiecang app profiles](beds/jiecang-app.md) | ERGOBALANCE / Dream Motion layouts, alarms, wake routines, renaming |
 | [Kaidi](beds/kaidi.md) | Mouselet-based beds, Flat/Zero-G/Anti-Snore, 4 memory slots |
-| [Jensen](beds/jensen.md) | Go-to-position, variable massage (0-10), dynamic feature detection |
+| [Jensen](beds/jensen.md) | Go-to-position, massage/light/fan levels (0-10), app-stored memories, dynamic feature detection |
 | [DewertOkin](beds/dewertokin.md) | 79 brands (many older Rize/Simmons models), multiple protocols |
 | [Serta](beds/serta.md) | Massage intensity control, Zero-G/TV/Lounge |
 | [Mattress Firm 900](beds/mattressfirm.md) | Older iFlex/Nordic UART bases, lumbar control, built-in presets |

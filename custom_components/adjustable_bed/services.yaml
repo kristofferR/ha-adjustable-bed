@@ -358,12 +358,12 @@ timed_move:
               label: Right
 
 linak_move_simultaneously:
-  name: Move Two Linak Sections
-  description: Move two different sections with one native Linak Bed Control command, then send STOP.
+  name: Move Two Sections Together
+  description: Move two different sections with one native command (Linak Bed Control, Jensen JMC400), then send STOP.
   fields:
     device_id:
       name: Device
-      description: A Linak Bed Control device.
+      description: A Linak Bed Control or Jensen JMC400 device.
       required: true
       selector:
         device:

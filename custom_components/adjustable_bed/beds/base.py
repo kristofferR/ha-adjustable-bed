@@ -2623,6 +2623,19 @@ class BedController(ABC):
         """Return maximum fan level supported by the bed."""
         return 0
 
+    @property
+    def supports_fan_level_control(self) -> bool:
+        """Return True if the fan level can be set directly (enables a slider)."""
+        return False
+
+    async def set_fan_level(self, level: int) -> None:
+        """Set the fan level (0 to fan_level_max, 0 = off).
+
+        Raises:
+            NotImplementedError: If the bed doesn't support fan level control
+        """
+        raise NotImplementedError("Fan level control not supported on this bed")
+
     async def fan_left_cycle(self) -> None:
         """Cycle the left fan speed.
 

@@ -2134,6 +2134,9 @@
       "light_level": {
         "name": "Light Level"
       },
+      "fan_level": {
+        "name": "Fan Level"
+      },
       "sleep_number_setting": {
         "name": "Sleep Number Setting"
       },

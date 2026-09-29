@@ -1413,7 +1413,7 @@ class TestServices:
         ].id
         mock_bleak_client.write_gatt_char.reset_mock()
 
-        with pytest.raises(ServiceValidationError, match="does not expose Linak axis: base"):
+        with pytest.raises(ServiceValidationError, match="cannot combine motor: base"):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_LINAK_MOVE_SIMULTANEOUS,

@@ -1,23 +1,27 @@
 # Jensen
 
-**Status:** ✅ Tested
-
-**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
+**Status:** ✅ Tested (motion, position reports, massage); lights, fan and memory
+recall are implemented from app evidence and await user confirmation.
 
 ## Known Models
-- Jensen JMC400
+- Jensen JMC400 (JMC 400)
 - Jensen LinON Entry
-- Other Jensen beds using the JBG BLE app
 
 ## Apps
 
 | Analyzed | App | Package ID |
 |----------|-----|------------|
-| ✅ | Adjustable Sleep | `air.no.jensen.adjustablesleep` |
+| ✅ | Adjustable Sleep 2.0.29 (98) | `air.no.jensen.adjustablesleep` |
+
+The `air.` prefix is historical: 2.0.29 is a React Native app. The same app also
+drives Linak-based Jensen beds; those use the [Linak](linak.md) bed type. Its
+third bed family ("Adjustable Bed"/"Jensen Bed" names) never writes a frame in
+this version. See the [discovery ledger](jensen-disposition.md).
 
 ## PIN Authentication
 
-Jensen beds require a 4-digit PIN for authentication. The integration uses **3060** as the default PIN, which works for most beds.
+Jensen beds require a 4-digit PIN. The integration uses **3060** as the default
+PIN, which works for most beds.
 
 **If commands don't work or the bed disconnects immediately:**
 1. Go to **Settings** → **Devices & Services** → **Adjustable Bed**
@@ -25,166 +29,153 @@ Jensen beds require a 4-digit PIN for authentication. The integration uses **306
 3. Enter your bed's correct PIN in the **Jensen PIN** field
 4. Save and reload the integration
 
-**Finding your PIN:** Check your bed's documentation, the label on the control box, or try common defaults like `0000`, `1234`, or `3060`.
+The bed answers the PIN frame; a rejection is logged as a warning.
 
 ## Features
 
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | ✅ |
-| Go-to-Position | ✅ |
-| Position Feedback | ✅ |
-| Memory Presets | ✅ (1 slot) |
-| Flat Preset | ✅ |
-| Massage | ✅ (dynamic, variable intensity 0-10) |
-| Main Light | ✅ (dynamic) |
-| Under-bed Light | ✅ (dynamic) |
-| Fan | ❌ (detected but not implemented) |
+| Motor control (head, foot, both together) | ✅ |
+| Position feedback | ✅ (pushed by the bed while it moves) |
+| Go-to-position | ✅ |
+| Flat | ✅ |
+| Memory | ✅ 1 device slot on box type 4, otherwise 4 slots stored by Home Assistant |
+| Massage | ✅ head, foot and wave, levels 0-10 (from the config report) |
+| Light | ✅ levels 0-10 (from the config report) |
+| Fan | ✅ levels 0-10 (from the config report) |
 
-**Note:** Massage and light features are dynamically detected. Not all Jensen beds have these features - the integration queries the bed's configuration on connection to determine available capabilities.
+Massage, light and fan appear only when the bed's config report lists them. The
+bed does not report their state, so Home Assistant shows what it last sent.
 
-**Position Feedback:** The integration supports reading head and foot positions via the `READ_POSITION` command. Position values are converted to percentages (0% = flat, 100% = max raised). The calibration constants are based on APK analysis and may need adjustment for some bed variants.
+### Memory
+
+The app keeps its memories in one of two places, chosen by the box type in the
+config report:
+
+- **Box type 4** has one memory slot on the device. Save and recall use the
+  device commands.
+- **Every other box type** keeps up to four favourites in the app as measured
+  head and foot positions, and recalls them with a go-to command. Home
+  Assistant does the same: saving reads the current position and stores it
+  (surviving restarts), and recall moves the bed back there. A slot must be
+  saved before it can be recalled.
+
+App favourites can also replay massage, light and fan settings. Home Assistant
+recalls only the position; use a scene or script for the rest.
+
+### Movement feedback
+
+After a single flat, memory or go-to frame the bed moves on its own. Home
+Assistant keeps the command running until the bed's position reports show the
+move has ended: reports stop arriving, or an idle report repeats the last
+position. It then reads the final position once. A Stop or another command
+interrupts the move and sends STOP. The wait is bounded at 90 seconds. With
+angle sensing disabled, the frame is sent without waiting.
+
+The bed pushes reports roughly every half second while it moves, so no queries
+are sent mid-move.
 
 ## Protocol Details
 
 **Service UUID:** `00001234-0000-1000-8000-00805f9b34fb`
-**Characteristic UUID:** `00001111-0000-1000-8000-00805f9b34fb`
-**Format:** 6-byte packets, no checksum
-**Pairing Required:** No
+**Characteristic UUID:** `00001111-0000-1000-8000-00805f9b34fb` (write without
+response, notify)
+**Checksum:** none
+**Pairing:** not required
 
-## Detection
+### Detection
 
-- Service UUID: `00001234` (unique to Jensen)
-- Device name starting with: `jmc400`
+- Service UUID `00001234`
+- Device name containing `JMC400` (the app's rule); the integration also accepts
+  names starting with `jmc`
 
-## Command Format
+### Session start
 
-All commands are 6 bytes: `[cmd_type, param1, param2, param3, param4, param5]`
+1. Subscribe to notifications on `0x1111`.
+2. PIN frame `1E d1 d2 d3 d4` (each digit as a byte; `1E 03 00 06 00` for 3060).
+3. Config request `0A 00 00 00 00`.
 
-Command types:
-- `0x0A` - Configuration commands
-- `0x10` - Motor/preset commands
-- `0x12` - Massage commands
-- `0x13` - Light commands
+The integration additionally sends `10 FF 00 00 00 00` and waits for its
+position reply. The app does not send it, but the bed answers it, and some beds
+ignore the first flat after reconnect until they see a `0x10` frame
+([#217](https://github.com/kristofferR/ha-adjustable-bed/issues/217)). The iOS
+app sends STOP at the same point for the same effect.
 
-### PIN Unlock Command
+### Motion (`0x10`)
 
-The PIN unlock command must be sent immediately after enabling notifications, before any other commands will work.
-The integration also sends a one-time `READ_POSITION` warm-up right after PIN unlock, even when angle sensing is disabled, because some Jensen beds ignore the first preset command after reconnect unless they have already seen a `0x10` command.
+`[0x10, flags, 00, 00, 00, 00]`, where flags combine one head bit and one foot
+bit:
 
-| Command | Bytes (hex) | Notes |
-|---------|-------------|-------|
-| PIN Unlock | `1E d1 d2 d3 d4 00` | d1-d4 are the 4 PIN digits (e.g., `1E 03 00 06 00 00` for PIN "3060") |
+| Flag | Meaning |
+|------|---------|
+| `0x01` | Head up |
+| `0x02` | Head down |
+| `0x10` | Foot up |
+| `0x20` | Foot down |
 
-### Motor Commands
+So `10 11` raises both and `10 21` raises the head while lowering the foot. The
+app repeats a held frame every 300 ms and sends STOP `10 00 00 00 00 00` once on
+release. Combined movement is available through the
+`adjustable_bed.linak_move_simultaneously` action (back and legs only).
 
-| Command | Bytes (hex) |
-|---------|-------------|
-| Stop | `10 00 00 00 00 00` |
-| Head Up | `10 01 00 00 00 00` |
-| Head Down | `10 02 00 00 00 00` |
-| Foot Up | `10 10 00 00 00 00` |
-| Foot Down | `10 20 00 00 00 00` |
+| Command | Bytes |
+|---------|-------|
+| Flat | `10 81 00 00 00 00` (sent once by the app) |
+| Save device memory (box type 4) | `10 40 00 00 00 00` |
+| Recall device memory (box type 4) | `10 80 00 00 00 00` |
+| Go to position | `10 04 hL hH fL fH` |
 
-### Preset Commands
+### Position reports
 
-| Command | Bytes (hex) |
-|---------|-------------|
-| Flat (Flatten) | `10 81 00 00 00 00` |
-| Save Memory | `10 40 00 00 00 00` |
-| Recall Memory | `10 80 00 00 00 00` |
+`[0x10, state, head u16 LE, foot u16 LE]`, pushed while the bed moves and in
+reply to `0x10` frames. `state` is the active motion flags (`00` idle, `FF` for
+the query reply). The app treats the four position bytes as opaque and echoes
+them in go-to frames, so both use the same byte order.
 
-### Configuration Commands
+The app shows no position scale. The integration's percentage mapping uses
+anchors measured on one JMC400
+([#631](https://github.com/kristofferR/ha-adjustable-bed/issues/631)):
 
-| Command | Bytes (hex) |
-|---------|-------------|
-| Read All Config | `0A 00 00 00 00 00` |
-| Read Position | `10 FF 00 00 00 00` |
+| Axis | Flat | Fully raised |
+|------|------|--------------|
+| Head | 30000 | 30804 |
+| Foot | 30000 | 29369 (the value falls as the foot rises) |
 
-### Config Response
+Other units may differ slightly; values beyond the anchors clamp to 0 or 100 %.
 
-The bed responds to `CONFIG_READ_ALL` with feature flags in byte 2:
+### Config report (`0x0A`)
 
-| Bit | Value | Feature |
-|-----|-------|---------|
-| 0 | 0x01 | Head massage |
-| 1 | 0x02 | Foot massage |
-| 2 | 0x04 | Main light |
-| 4 | 0x10 | Fan |
-| 6 | 0x40 | Under-bed light |
+The reply to `0A 00 00 00 00`, for example `0A 05 03 08 01 75`. The app reads
+bytes 2 and 4 by treating their decimal digits as hexadecimal (a byte of 16
+means `0x16`); the integration does the same.
 
-Byte 4 contains the box type:
-- `4` = LinON Entry
-- `2` = Dynamique
+| Byte 2 bit | Feature |
+|------------|---------|
+| `0x01` | Head massage |
+| `0x02` | Foot massage |
+| `0x04` | Light |
+| `0x10` | Fan |
+| `0x40` | Under-bed light |
 
-### Go-to-Position Command
+Byte 4 is the box type. Box type 4 has device memory; box type 2 also offers the
+app's scripted comfort mode (see the ledger).
 
-The bed supports absolute position seeking via the `M_GOTO_POS` command. Positions are 16-bit values (0-1000 range mapped from percentage).
+### Massage, light and fan
 
-Format: `[0x10, 0x04, headMSB, headLSB, footMSB, footLSB]`
+| Command | Bytes |
+|---------|-------|
+| Massage | `12 head foot wave H M` (levels 0-10, 0 = off) |
+| Light | `13 02 level 00 H M` (level 0-10; every light kind uses output `02`) |
+| Fan | `14 level 00 H M 50` (level 0-10) |
 
-| Field | Description |
-|-------|-------------|
-| Byte 0 | `0x10` - Motor command type |
-| Byte 1 | `0x04` - Go-to-position subcommand |
-| Bytes 2-3 | Head position as 16-bit big-endian (MSB, LSB) |
-| Bytes 4-5 | Foot position as 16-bit big-endian (MSB, LSB) |
-
-The command is sent repeatedly (with STOP at the end) while the bed moves to the target position.
-
-### Massage Commands
-
-Massage commands use format: `[0x12, headIntensity, footIntensity, 0x00, hours, minutes]`
-
-**Toggle commands (fixed intensity 5):**
-
-| Command | Bytes (hex) |
-|---------|-------------|
-| Massage Off | `12 00 00 00 00 00` |
-| Head Massage On | `12 05 00 00 00 00` |
-| Foot Massage On | `12 00 05 00 00 00` |
-| Both Massage On | `12 05 05 00 00 00` |
-
-**Variable intensity (0-10 per zone):**
-
-Format: `[0x12, head_level, foot_level, 0x00, 0x00, 0x00]`
-
-| Field | Range | Description |
-|-------|-------|-------------|
-| head_level | 0-10 | Head massage intensity (0 = off) |
-| foot_level | 0-10 | Foot massage intensity (0 = off) |
-
-Both zones are set in a single command. To change one zone, include the current intensity of the other zone to preserve its state.
-
-### Light Commands
-
-Light commands use format: `[0x13, light_id, brightness, 0x00, 0x00, 0x50]`
-
-| Command | Bytes (hex) |
-|---------|-------------|
-| Main Light On | `13 00 FF 00 00 50` |
-| Main Light Off | `13 00 00 00 00 50` |
-| Under-bed Light On | `13 02 FF 00 00 50` |
-| Under-bed Light Off | `13 02 00 00 00 50` |
-
-## Command Timing
-
-From APK analysis:
-- **Motor Commands:** Repeated while button held (10 repeats, 100ms delay = 1s movement)
-- **Stop Required:** Yes, explicit stop command sent after movement
-- **Presets:** Longer repeat duration for preset commands (bed moves to target position)
-
-## Position Response Format
-
-When querying position with `10 FF 00 00 00 00`, the bed responds with:
-`[0x10, ??, headMSB, headLSB, footMSB, footLSB]`
-
-Position value ranges (from APK analysis):
-- **Head:** 1 = flat, ~30500 = max raised
-- **Foot:** 1 = flat, ~30500 = max raised (same scale as head)
+`H M` is a timer. The Android app encodes it incorrectly (hexadecimal digits
+parsed as decimal) and the iOS app ends up sending `00 00`. The #631 iOS capture
+shows massage running with `00 00`, so the integration always sends `00 00` and
+offers no timers.
 
 ## Limitations
 
-- Only 1 memory slot (some beds may have more)
-- Position calibration may vary between bed models - values are estimated from APK analysis
-- Fan control not implemented (flag is detected but commands unknown)
+- The position anchors come from one JMC400.
+- Lights, fan and device memory have no hardware confirmation yet.
+- Massage wave only has an effect while head or foot massage runs.
+- Version 2.0.37 on Google Play was not analyzed; the frozen corpus has 2.0.29.

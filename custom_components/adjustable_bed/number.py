@@ -211,7 +211,15 @@ MASSAGE_NUMBER_DESCRIPTIONS: tuple[AdjustableBedMassageNumberEntityDescription, 
 )
 
 
-LIGHT_LEVEL_DESCRIPTION = NumberEntityDescription(
+@dataclass(frozen=True, kw_only=True)
+class AdjustableBedLevelNumberEntityDescription(NumberEntityDescription):
+    """Describes a 0-to-max level slider backed by controller state."""
+
+    state_key: str
+    set_fn: Callable[[BedController, int], Coroutine[Any, Any, None]]
+
+
+LIGHT_LEVEL_DESCRIPTION = AdjustableBedLevelNumberEntityDescription(
     key="light_level",
     translation_key="light_level",
     icon="mdi:brightness-6",
@@ -219,6 +227,20 @@ LIGHT_LEVEL_DESCRIPTION = NumberEntityDescription(
     native_max_value=10,
     native_step=1,
     mode=NumberMode.SLIDER,
+    state_key="light_level",
+    set_fn=lambda ctrl, level: ctrl.set_light_level(level),
+)
+
+FAN_LEVEL_DESCRIPTION = AdjustableBedLevelNumberEntityDescription(
+    key="fan_level",
+    translation_key="fan_level",
+    icon="mdi:fan",
+    native_min_value=0,
+    native_max_value=10,
+    native_step=1,
+    mode=NumberMode.SLIDER,
+    state_key="fan_level",
+    set_fn=lambda ctrl, level: ctrl.set_fan_level(level),
 )
 
 SLEEP_NUMBER_SETTING_DESCRIPTION = NumberEntityDescription(
@@ -434,19 +456,21 @@ def _number_entities_for(
             coordinator.name,
             max_level,
         )
-        # Create description with correct max value for this controller
-        light_adjusted = NumberEntityDescription(
-            key=LIGHT_LEVEL_DESCRIPTION.key,
-            translation_key=LIGHT_LEVEL_DESCRIPTION.translation_key,
-            icon=LIGHT_LEVEL_DESCRIPTION.icon,
-            native_min_value=0,
-            native_max_value=max_level,
-            native_step=1,
-            mode=NumberMode.SLIDER,
+        entities.append(
+            AdjustableBedLevelNumber(
+                coordinator, replace(LIGHT_LEVEL_DESCRIPTION, native_max_value=max_level)
+            )
         )
-        entities.append(AdjustableBedLightLevelNumber(coordinator, light_adjusted))
     elif bed_type in (BED_TYPE_SOLACE, BED_TYPE_JIECANG_APP) and controller is not None:
         _async_remove_stale_light_level_entity(hass, coordinator)
+
+    if controller is not None and controller.supports_fan_level_control:
+        entities.append(
+            AdjustableBedLevelNumber(
+                coordinator,
+                replace(FAN_LEVEL_DESCRIPTION, native_max_value=controller.fan_level_max),
+            )
+        )
 
     sleep_number_sides = controller.sleep_number_setting_sides if controller else ()
     if controller is not None and sleep_number_sides:
@@ -899,17 +923,17 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
         await self._coordinator.async_execute_controller_command(_set_intensity)
 
 
-class AdjustableBedLightLevelNumber(AdjustableBedEntity, NumberEntity):
-    """Number entity for Adjustable Bed light level control."""
+class AdjustableBedLevelNumber(AdjustableBedEntity, NumberEntity):
+    """Level slider (light, fan) whose value the controller publishes as state."""
 
-    entity_description: NumberEntityDescription
+    entity_description: AdjustableBedLevelNumberEntityDescription
 
     def __init__(
         self,
         coordinator: EntityRuntime,
-        description: NumberEntityDescription,
+        description: AdjustableBedLevelNumberEntityDescription,
     ) -> None:
-        """Initialize the light level number entity."""
+        """Initialize the level number entity."""
         super().__init__(coordinator)
         self.entity_description = description
         self._set_sided_translation_key(description.translation_key, description.key)
@@ -931,30 +955,31 @@ class AdjustableBedLightLevelNumber(AdjustableBedEntity, NumberEntity):
 
     @callback
     def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
-        """Write state when the controller publishes light updates."""
-        if "light_level" in state:
+        """Write state when the controller publishes this level."""
+        if self.entity_description.state_key in state:
             self.async_write_ha_state()
 
     @property
     def native_value(self) -> float | None:
-        """Return the current light level when the controller tracks it."""
-        level = self._coordinator.controller_state.get("light_level")
+        """Return the current level when the controller tracks it."""
+        level = self._coordinator.controller_state.get(self.entity_description.state_key)
         if not isinstance(level, (str, int, float)):
             return None
         return float(level)
 
     async def async_set_native_value(self, value: float) -> None:
-        """Set the light level."""
+        """Set the level."""
         level = round(value)
 
         _LOGGER.info(
-            "Light level set requested: level %d (device: %s)",
+            "%s set requested: level %d (device: %s)",
+            self.entity_description.key,
             level,
             self._coordinator.name,
         )
 
         async def _set_level(ctrl: BedController) -> None:
-            await ctrl.set_light_level(level)
+            await self.entity_description.set_fn(ctrl, level)
 
         await self._coordinator.async_execute_controller_command(_set_level)
 

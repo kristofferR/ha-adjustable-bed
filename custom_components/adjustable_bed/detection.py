@@ -95,6 +95,7 @@ from .const import (
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
     DEWERTOKIN_SERVICE_UUID,
     ERGOMOTION_NAME_PATTERNS,
+    JENSEN_NAME_FRAGMENT,
     JENSEN_NAME_PATTERNS,
     JENSEN_SERVICE_UUID,
     KAIDI_DISCOVERY_SERVICE_UUID,
@@ -1187,7 +1188,10 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
 
     # Check for Jensen by name pattern (JMC400)
-    if any(device_name.startswith(pattern) for pattern in JENSEN_NAME_PATTERNS):
+    if (
+        any(device_name.startswith(pattern) for pattern in JENSEN_NAME_PATTERNS)
+        or JENSEN_NAME_FRAGMENT in device_name
+    ):
         signals.append("name:jensen")
         _LOGGER.info(
             "Detected Jensen bed at %s (name: %s) by name pattern",
