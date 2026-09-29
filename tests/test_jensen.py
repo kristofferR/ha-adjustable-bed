@@ -582,6 +582,48 @@ class TestJensenConfig:
         assert mock_jensen_config_entry.data["capabilities"]["jensen"]["box_type"] == 1
 
 
+    def test_snapshot_sets_capabilities_before_the_report(self):
+        """A stored report drives capabilities until this connection's report."""
+        controller = JensenController(
+            make_controller()._coordinator,
+            capability_snapshot={"features": 0x10, "box_type": 4},
+        )
+
+        assert controller.has_fan
+        assert not controller.has_massage
+        assert controller.memory_slot_count == 1
+
+    async def test_offline_side_mints_from_the_stored_report(
+        self, hass: HomeAssistant, mock_jensen_config_entry
+    ):
+        """An unreachable side with a stored report still gets its entities."""
+        hass.config_entries.async_update_entry(
+            mock_jensen_config_entry,
+            data={
+                **mock_jensen_config_entry.data,
+                "capabilities": {"jensen": {"features": 0x04, "box_type": 1}},
+            },
+        )
+        coordinator = AdjustableBedCoordinator(hass, mock_jensen_config_entry)
+
+        await coordinator.async_prime_offline_controller()
+
+        controller = coordinator.capability_controller
+        assert isinstance(controller, JensenController)
+        assert controller.supports_lights
+        assert not controller.has_fan
+
+    async def test_offline_side_without_a_report_is_not_minted(
+        self, hass: HomeAssistant, mock_jensen_config_entry
+    ):
+        """Without a stored report there is nothing safe to build entities from."""
+        coordinator = AdjustableBedCoordinator(hass, mock_jensen_config_entry)
+
+        await coordinator.async_prime_offline_controller()
+
+        assert coordinator.capability_controller is None
+
+
 class TestJensenPositionParsing:
     """Position reports from the #631 support bundle."""
 
@@ -1032,6 +1074,17 @@ class TestJensenMemory:
             await reloaded.async_discover_capabilities()
             assert reloaded._memory_slots == {1: expected}
 
+    async def test_unreadable_slots_are_skipped(self, hass: HomeAssistant):
+        """A damaged store entry cannot break setup; readable slots still load."""
+        controller = make_controller(hass)
+        await controller._memory_store().async_save(
+            {"1": [30100, 30000], "2": "bad", "x": [1, 2], "3": [5]}
+        )
+
+        await controller.async_discover_capabilities()
+
+        assert controller._memory_slots == {1: (30100, 30000)}
+
     async def test_unsaved_app_memory_is_rejected(self, hass: HomeAssistant):
         """Recalling an empty slot says so instead of moving."""
         controller = make_controller(hass)
@@ -1173,7 +1226,7 @@ class TestJensenEntities:
         enable_custom_integrations,
         monkeypatch: pytest.MonkeyPatch,
     ):
-        """A fan slider from the fallback goes away once the bed reports no fan."""
+        """Fan and light sliders from the fallback go away once the bed reports neither."""
         del mock_coordinator_connected, enable_custom_integrations
         from homeassistant.helpers import entity_registry as er
 
@@ -1192,14 +1245,16 @@ class TestJensenEntities:
         )
         entry.add_to_hass(hass)
         registry = er.async_get(hass)
-        registry.async_get_or_create(
-            "number", DOMAIN, "AA:BB:CC:DD:EE:FF_fan_level", config_entry=entry
-        )
+        for key in ("fan_level", "light_level"):
+            registry.async_get_or_create(
+                "number", DOMAIN, f"AA:BB:CC:DD:EE:FF_{key}", config_entry=entry
+            )
 
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-        assert registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:FF_fan_level") is None
+        for key in ("fan_level", "light_level"):
+            assert registry.async_get_entity_id("number", DOMAIN, f"AA:BB:CC:DD:EE:FF_{key}") is None
 
     async def test_config_driven_entities(
         self,

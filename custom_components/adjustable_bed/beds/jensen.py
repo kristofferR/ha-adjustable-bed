@@ -180,8 +180,10 @@ class JensenController(BedController):
     ) -> None:
         """Initialize the Jensen controller.
 
-        ``capability_snapshot`` is the last config report stored for this bed; it
-        stands in when this connection's config request goes unanswered.
+        ``capability_snapshot`` is the last config report stored for this bed. It
+        sets the capabilities until this connection's report arrives, stands in
+        when that request goes unanswered, and lets an offline paired side build
+        its entities.
         """
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
@@ -213,6 +215,8 @@ class JensenController(BedController):
                     JensenFeatureFlags(int(capability_snapshot["features"])),
                     int(capability_snapshot["box_type"]),
                 )
+        if self._reported_config is not None:
+            self._features, self._box_type = self._reported_config
         _LOGGER.debug("JensenController initialized with PIN: %s", "*" * len(self._pin))
 
     def capability_snapshot(self) -> dict[str, Any] | None:
@@ -388,10 +392,13 @@ class JensenController(BedController):
 
     async def async_discover_capabilities(self) -> None:
         """Load the app-stored memory positions saved for this bed."""
-        slots = await self._memory_store().async_load() or {}
-        self._memory_slots = {
-            int(slot): (int(values[0]), int(values[1])) for slot, values in slots.items()
-        }
+        stored = await self._memory_store().async_load()
+        self._memory_slots = {}
+        for slot, values in (stored if isinstance(stored, dict) else {}).items():
+            try:
+                self._memory_slots[int(slot)] = (int(values[0]), int(values[1]))
+            except (IndexError, TypeError, ValueError):
+                _LOGGER.warning("Ignoring unreadable Jensen memory slot %r: %r", slot, values)
 
     def _memory_store(self) -> Store[dict[str, list[int]]]:
         # One file per bed, so the two sides of a pair never overwrite each other.

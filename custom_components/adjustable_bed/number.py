@@ -463,7 +463,10 @@ def _number_entities_for(
                 coordinator, replace(LIGHT_LEVEL_DESCRIPTION, native_max_value=max_level)
             )
         )
-    elif bed_type in (BED_TYPE_SOLACE, BED_TYPE_JIECANG_APP, BED_TYPE_SVANE) and controller is not None:
+    elif (
+        bed_type in (BED_TYPE_SOLACE, BED_TYPE_JIECANG_APP, BED_TYPE_SVANE, BED_TYPE_JENSEN)
+        and controller is not None
+    ):
         _async_remove_stale_level_entity(hass, coordinator, LIGHT_LEVEL_DESCRIPTION)
 
     if controller is not None and controller.supports_fan_level_control:
