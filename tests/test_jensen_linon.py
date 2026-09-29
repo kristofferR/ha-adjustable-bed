@@ -388,3 +388,38 @@ async def test_paired_options_reject_a_shared_profile_change(
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {CONF_PROTOCOL_VARIANT: "jensen_linon_unpair_first"}
     assert effective_child_data(entry.data, "right")[CONF_PROTOCOL_VARIANT] == VARIANT_AUTO
+
+
+async def test_svane_light_slider_removed_for_linon(
+    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
+) -> None:
+    """Switching a Svane entry to LinOn drops its now-unsupported light slider."""
+    del mock_coordinator_connected, enable_custom_integrations
+    from homeassistant.helpers import entity_registry as er
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Jensen Bed",
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
+            CONF_NAME: "Jensen Bed",
+            CONF_BED_TYPE: BED_TYPE_SVANE,
+            CONF_PROTOCOL_VARIANT: SVANE_VARIANT_JENSEN_LINON,
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PREFERRED_ADAPTER: "auto",
+        },
+        unique_id="AA:BB:CC:DD:EE:FF",
+        entry_id="linon_stale_light_entry",
+    )
+    entry.add_to_hass(hass)
+    registry = er.async_get(hass)
+    registry.async_get_or_create(
+        "number", DOMAIN, "AA:BB:CC:DD:EE:FF_light_level", config_entry=entry
+    )
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:FF_light_level") is None

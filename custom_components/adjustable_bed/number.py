@@ -26,6 +26,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPSTAR,
     BED_TYPE_SOLACE,
+    BED_TYPE_SVANE,
     BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
@@ -462,7 +463,7 @@ def _number_entities_for(
                 coordinator, replace(LIGHT_LEVEL_DESCRIPTION, native_max_value=max_level)
             )
         )
-    elif bed_type in (BED_TYPE_SOLACE, BED_TYPE_JIECANG_APP) and controller is not None:
+    elif bed_type in (BED_TYPE_SOLACE, BED_TYPE_JIECANG_APP, BED_TYPE_SVANE) and controller is not None:
         _async_remove_stale_level_entity(hass, coordinator, LIGHT_LEVEL_DESCRIPTION)
 
     if controller is not None and controller.supports_fan_level_control:
