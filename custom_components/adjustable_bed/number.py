@@ -19,6 +19,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .beds.base import PositionNumberSpec
 from .const import (
+    BED_TYPE_JENSEN,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA_APP,
@@ -462,7 +463,7 @@ def _number_entities_for(
             )
         )
     elif bed_type in (BED_TYPE_SOLACE, BED_TYPE_JIECANG_APP) and controller is not None:
-        _async_remove_stale_light_level_entity(hass, coordinator)
+        _async_remove_stale_level_entity(hass, coordinator, LIGHT_LEVEL_DESCRIPTION)
 
     if controller is not None and controller.supports_fan_level_control:
         entities.append(
@@ -471,6 +472,9 @@ def _number_entities_for(
                 replace(FAN_LEVEL_DESCRIPTION, native_max_value=controller.fan_level_max),
             )
         )
+    elif bed_type == BED_TYPE_JENSEN and controller is not None:
+        # A corrected config report can take away a fan the fallback assumed.
+        _async_remove_stale_level_entity(hass, coordinator, FAN_LEVEL_DESCRIPTION)
 
     sleep_number_sides = controller.sleep_number_setting_sides if controller else ()
     if controller is not None and sleep_number_sides:
@@ -635,16 +639,17 @@ def _async_remove_stale_sleep_number_entity(
         registry.async_remove(entity_id)
 
 
-def _async_remove_stale_light_level_entity(
+def _async_remove_stale_level_entity(
     hass: HomeAssistant,
     coordinator: EntityRuntime,
+    description: AdjustableBedLevelNumberEntityDescription,
 ) -> None:
-    """Remove brightness when the current profile no longer exposes it."""
+    """Remove a level slider the current profile no longer exposes."""
     registry = er.async_get(hass)
     entity_id = registry.async_get_entity_id(
         "number",
         DOMAIN,
-        coordinator.entity_unique_id(LIGHT_LEVEL_DESCRIPTION.key),
+        coordinator.entity_unique_id(description.key),
     )
     if entity_id is not None:
         registry.async_remove(entity_id)

@@ -77,8 +77,9 @@ After a single flat, memory or go-to frame the bed moves on its own. Home
 Assistant keeps the command running until the bed's position reports show the
 move has ended: reports stop arriving, or an idle report repeats the last
 position. It then reads the final position once. A Stop or another command
-interrupts the move and sends STOP. The wait is bounded at 90 seconds. With
-angle sensing disabled, the frame is sent without waiting.
+interrupts the move and sends STOP. If the bed still reports motion after 90
+seconds, STOP is sent and the command ends. With angle sensing disabled, the
+frame is sent without waiting.
 
 The bed pushes reports roughly every half second while it moves, so no queries
 are sent mid-move.

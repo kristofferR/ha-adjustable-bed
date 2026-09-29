@@ -557,10 +557,29 @@ class TestJensenConfig:
             coordinator._backfill_jensen_snapshot()
 
         update_entry.assert_called_once()
+        # Not loaded here, so no listener could consume a deferred reload.
+        assert not coordinator._pending_capability_reload
         assert mock_jensen_config_entry.data["capabilities"]["jensen"] == {
             "features": 0x03,
             "box_type": 1,
         }
+
+
+    async def test_runtime_report_defers_the_reload(
+        self, hass: HomeAssistant, mock_jensen_config_entry
+    ):
+        """A report found while loaded reloads after the command, not during it."""
+        coordinator = AdjustableBedCoordinator(hass, mock_jensen_config_entry)
+        hass.data.setdefault(DOMAIN, {})[mock_jensen_config_entry.entry_id] = coordinator
+        controller = make_controller()
+        await self._query(controller, bytes.fromhex("0a0503080175"))
+        coordinator._controller = controller
+
+        coordinator._backfill_jensen_snapshot()
+
+        assert coordinator._pending_capability_reload
+        assert coordinator.consume_internal_entry_update(mock_jensen_config_entry)
+        assert mock_jensen_config_entry.data["capabilities"]["jensen"]["box_type"] == 1
 
 
 class TestJensenPositionParsing:
@@ -877,7 +896,7 @@ class TestJensenMovementMonitoring:
     async def test_bounded_timeout_releases_command(
         self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
     ):
-        """Endless movement reports cannot hold the command forever."""
+        """Endless movement reports cannot hold the command forever; the bed is stopped."""
         monkeypatch.setattr(f"{JENSEN_MODULE}._MOVEMENT_FEEDBACK_TIMEOUT_SECONDS", 0.1)
         controller = make_controller()
 
@@ -895,7 +914,7 @@ class TestJensenMovementMonitoring:
             mover.cancel()
 
         assert "still reported movement" in caplog.text
-        assert JensenCommands.MOTOR_STOP not in written(controller)
+        assert written(controller)[-1] == JensenCommands.MOTOR_STOP
 
     async def test_disabled_angle_sensing_skips_monitoring(self):
         """With feedback disabled the frame is sent and the command returns."""
@@ -1145,6 +1164,42 @@ class TestJensenMassage:
 
 class TestJensenEntities:
     """Entities follow the config report."""
+
+    async def test_fan_slider_removed_when_report_has_no_fan(
+        self,
+        hass: HomeAssistant,
+        mock_jensen_config_entry_data: dict,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        """A fan slider from the fallback goes away once the bed reports no fan."""
+        del mock_coordinator_connected, enable_custom_integrations
+        from homeassistant.helpers import entity_registry as er
+
+        async def reported_config(self: JensenController) -> None:
+            self._features = JensenFeatureFlags.MASSAGE_HEAD
+            self._box_type = 1
+            self._config_loaded = True
+
+        monkeypatch.setattr(JensenController, "query_config", reported_config)
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Jensen Test Bed",
+            data=mock_jensen_config_entry_data,
+            unique_id="AA:BB:CC:DD:EE:FF",
+            entry_id="jensen_stale_fan_entry",
+        )
+        entry.add_to_hass(hass)
+        registry = er.async_get(hass)
+        registry.async_get_or_create(
+            "number", DOMAIN, "AA:BB:CC:DD:EE:FF_fan_level", config_entry=entry
+        )
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        assert registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:FF_fan_level") is None
 
     async def test_config_driven_entities(
         self,

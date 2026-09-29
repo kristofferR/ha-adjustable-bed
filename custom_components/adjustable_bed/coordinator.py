@@ -1281,8 +1281,9 @@ class AdjustableBedCoordinator:
     def _backfill_jensen_snapshot(self) -> None:
         """Persist the Jensen config report when it changed.
 
-        The entry update reloads the entry, so entities built from a missing or
-        older report (a config timeout at setup) are rebuilt from this one.
+        Entities built from a missing or older report (a config timeout at
+        setup) are rebuilt by a reload deferred until the link is released, so
+        the command that opened this connection still runs.
         """
         snapshot_fn = getattr(self._controller, "capability_snapshot", None)
         snapshot = snapshot_fn() if callable(snapshot_fn) else None
@@ -1292,6 +1293,9 @@ class AdjustableBedCoordinator:
         if capabilities.get("jensen") == snapshot:
             return
         capabilities["jensen"] = snapshot
+        self._begin_internal_entry_update(self._ble_bond_established)
+        if self._pending_internal_bond_marker is not None:
+            self._pending_capability_reload = True
         self._async_persist_config({**self.entry.data, "capabilities": capabilities})
 
     def _persist_bond_flags(

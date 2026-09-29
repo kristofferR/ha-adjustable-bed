@@ -689,10 +689,14 @@ class JensenController(BedController):
                         break
         except TimeoutError:
             _LOGGER.warning(
-                "Jensen bed at %s still reported movement after %.0f s; releasing the command",
+                "Jensen bed at %s still reported movement after %.0f s; stopping it",
                 self._coordinator.address,
                 _MOVEMENT_FEEDBACK_TIMEOUT_SECONDS,
             )
+            try:
+                await asyncio.shield(self._send_stop())
+            except (BleakError, ConnectionError):
+                _LOGGER.debug("Failed to send Jensen STOP after the movement timeout")
             return
         try:
             await self.read_positions()
