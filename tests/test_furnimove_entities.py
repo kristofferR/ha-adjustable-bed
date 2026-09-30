@@ -1,5 +1,6 @@
 """Layout replacement keeps matching identities and removes retired controls."""
 
+import pytest
 from homeassistant.helpers import entity_registry as er
 
 from custom_components.adjustable_bed.beds.okin_rf_eco_bt import OkinRfEcoBtController
@@ -14,6 +15,17 @@ from custom_components.adjustable_bed.cover import _cover_entities_for
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from tests.test_furnimove import make_controller
 from tests.test_malouf_app_entities import configure_entity_runtime
+
+
+@pytest.mark.parametrize(("handset", "massage"), [("00000", False), ("12234", True)])
+async def test_local_massage_sensors_follow_selected_handset(hass, handset, massage):
+    controller = make_controller(handset)
+    runtime = configure_entity_runtime(hass, controller, BED_TYPE_FURNIMOVE)
+    sensors = _sensor_entities_for(hass, runtime) + _binary_sensor_entities_for(hass, runtime)
+    massage_entities = {
+        entity.unique_id for entity in sensors if "furnimove_massage_" in entity.unique_id
+    }
+    assert len(massage_entities) == (5 if massage else 0)
 
 
 async def test_replacing_stair_cover_preserves_matching_bed_motor_ids(hass):

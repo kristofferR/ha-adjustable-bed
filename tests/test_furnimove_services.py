@@ -26,6 +26,7 @@ async def target(handset="82417", *, bed_type=BED_TYPE_FURNIMOVE, entry=None, re
         await command(controller)
 
     coordinator.async_execute_controller_command = AsyncMock(side_effect=execute)
+    coordinator.async_set_furnimove_massage_duration = AsyncMock(side_effect=controller.set_massage_timer)
     return coordinator, controller
 
 
@@ -65,7 +66,38 @@ async def test_advisory_duration_accepts_ui_selection_without_wire_or_preemption
     await invoke(hass, [coordinator], "furnimove_massage_duration", {"minutes": "20"})
     assert controller.furnimove_local_state["duration_minutes"] == 20
     assert not written(controller)
-    assert coordinator.async_execute_controller_command.await_args.kwargs["cancel_running"] is False
+    coordinator.async_execute_controller_command.assert_not_awaited()
+    coordinator.async_ensure_connected.assert_not_awaited()
+    coordinator.async_set_furnimove_massage_duration.assert_awaited_once_with(20)
+
+
+async def test_advisory_duration_updates_disconnected_receiver_and_survives_reconnect(hass):
+    from custom_components.adjustable_bed.beds.furnimove import FurniMoveController
+    from custom_components.adjustable_bed.const import CONF_FURNIMOVE_REMOTE
+    from tests.test_furnimove_connection import coordinator as make_coordinator
+
+    coordinator = make_coordinator(hass)
+    hass.config_entries.async_update_entry(
+        coordinator.entry, data={**coordinator.entry.data, CONF_FURNIMOVE_REMOTE: "12234"}
+    )
+    coordinator = AdjustableBedCoordinator(hass, coordinator.entry)
+    coordinator.async_ensure_connected = AsyncMock(return_value=False)
+    await invoke(hass, [coordinator], "furnimove_massage_duration", {"minutes": "20"})
+    assert coordinator.controller is None and coordinator.client is None
+    assert coordinator.capability_controller.furnimove_local_state == {"duration_minutes": 20}
+    coordinator.async_ensure_connected.assert_not_awaited()
+    coordinator._controller = FurniMoveController(coordinator, handset_id="12234")
+    await coordinator._async_restore_furnimove_local_state()
+    assert coordinator.controller.furnimove_local_state == {"duration_minutes": 20}
+
+
+async def test_advisory_duration_validates_all_profiles_before_updating_any(hass):
+    first, controller = await target("12234")
+    second, _ = await target("00000")
+    with pytest.raises(ServiceValidationError, match="no supported local massage duration"):
+        await invoke(hass, [first, second], "furnimove_massage_duration", {"minutes": 20})
+    first.async_set_furnimove_massage_duration.assert_not_awaited()
+    assert controller.furnimove_local_state == {"duration_minutes": 15}
 
 
 async def test_rename_connects_for_live_role_then_preserves_wire_text_and_identity(hass):

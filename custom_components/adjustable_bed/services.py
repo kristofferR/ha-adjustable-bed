@@ -1772,16 +1772,26 @@ async def handle_furnimove_massage_program(call: ServiceCall) -> None:
 
 async def handle_furnimove_massage_duration(call: ServiceCall) -> None:
     """Store the app's advisory duration without programming a hardware timer."""
+    from .coordinator import AdjustableBedCoordinator
+
     minutes = call.data["minutes"]
+    physical_targets: list[AdjustableBedCoordinator] = []
+    for coordinator, side in _furnimove_targets(call):
+        for target in _command_targets(coordinator, side):
+            if not isinstance(target, AdjustableBedCoordinator):
+                raise ServiceValidationError("FurniMove requires a physical receiver target")
+            await target.async_prime_offline_controller()
+            physical_targets.append(target)
 
-    def validate(controller: BedController | SideBoundController) -> None:
+    for target in physical_targets:
+        controller = target.capability_controller
+        if controller is None:
+            raise ServiceValidationError("No selected FurniMove handset is available")
         if not controller.supports_massage or minutes not in controller.massage_timer_options:
-            raise ValueError("This handset has no supported local massage duration")
+            raise ServiceValidationError("This handset has no supported local massage duration")
 
-    async def execute(controller: BedController | SideBoundController) -> None:
-        await controller.set_massage_timer(minutes)
-
-    await _execute_furnimove(call, validate, execute, cancel_running=False)
+    for target in physical_targets:
+        await target.async_set_furnimove_massage_duration(minutes)
 
 
 async def handle_furnimove_move_simultaneously(call: ServiceCall) -> None:

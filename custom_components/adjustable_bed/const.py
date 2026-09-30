@@ -499,6 +499,7 @@ SUPPORTED_BED_TYPES: Final = [
 # every member, so adding a post-connect mutation later fails loudly.
 OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
     {
+        BED_TYPE_FURNIMOVE,
         BED_TYPE_OKIN_HANDLE,
         BED_TYPE_DEWERTOKIN,
         BED_TYPE_OKIN_ORE,

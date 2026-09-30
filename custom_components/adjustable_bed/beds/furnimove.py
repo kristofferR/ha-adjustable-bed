@@ -150,6 +150,9 @@ class FurniMoveController(BedController):
         self._widget_pending = False
         self._widget_last: bytes | None = None
         self._widget_before_last: bytes | None = None
+        widget_state = getattr(coordinator, "furnimove_widget_state", None)
+        if isinstance(widget_state, tuple):
+            self._widget_pending, self._widget_last, self._widget_before_last = widget_state
         self._cleanup_kind: str | None = None
         self._cleanup_dot = True
         self._cleanup_query = False
@@ -414,6 +417,7 @@ class FurniMoveController(BedController):
                 ("furnimove_child_lock", "mdi:lock"),
                 ("furnimove_massage_running", "mdi:vibrate"),
             )
+            if key != "furnimove_massage_running" or self.supports_massage
         )
 
     @property
@@ -434,6 +438,7 @@ class FurniMoveController(BedController):
                 "massage_timer_minutes",
                 "function_result",
             )
+            if not key.startswith("massage_") or self.supports_massage
         )
 
     def _frame(self, row: FurniMoveAction | None, *, dot: bool = True) -> bytes:
@@ -1217,9 +1222,15 @@ class FurniMoveController(BedController):
             else:
                 completed = True
         finally:
-            await self._finish_cleanup()
-            if completed:
-                self._widget_before_last = frame
+            try:
+                await self._finish_cleanup()
+                if completed:
+                    self._widget_before_last = frame
+            finally:
+                # Dispatch history belongs to the app session, across BLE handoffs.
+                self._coordinator.furnimove_widget_state = (
+                    self._widget_pending, self._widget_last, self._widget_before_last
+                )
 
     @property
     def supports_device_rename(self) -> bool:

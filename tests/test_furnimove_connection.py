@@ -19,10 +19,10 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
 
-def coordinator(hass):
+def coordinator(hass, handset="00000"):
     entry = MockConfigEntry(domain=DOMAIN, data={
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_FURNIMOVE,
-        CONF_FURNIMOVE_REMOTE: "00000",
+        CONF_FURNIMOVE_REMOTE: handset,
     })
     entry.add_to_hass(hass)
     result = AdjustableBedCoordinator(hass, entry)
@@ -188,3 +188,63 @@ async def test_invalid_local_preferences_do_not_block_connection_startup(hass):
     await ctrl._async_restore_furnimove_local_state()
     assert ctrl._controller.furnimove_local_state == {"duration_minutes": 15}
     assert not ctrl._client.write_gatt_char.called
+
+
+@pytest.mark.parametrize("cancelled", [False, True])
+async def test_widget_dispatch_history_survives_ble_handoff(hass, cancelled):
+    from custom_components.adjustable_bed.beds.furnimove import FurniMoveController
+    from tests.test_furnimove import WRITE, char, written
+
+    ctrl = coordinator(hass, "82417")
+    ctrl._client.services = [MagicMock(characteristics=[char(WRITE)])]
+    ctrl._client.write_gatt_char = AsyncMock()
+    ctrl._controller = FurniMoveController(ctrl, handset_id="82417")
+    first = ctrl._controller
+    await first.async_discover_capabilities()
+    first._pause = AsyncMock(return_value=not cancelled)
+    index = next(i for i, row in enumerate(first.profile.actions) if row.action == "Flat")
+    await first.async_execute_furnimove_action(index, consumer="widget")
+    frame = first._frame(first.profile.actions[index], dot=False)
+    release = first._frame(first.profile.first("DisobeyStandbyTime"), dot=False)
+    assert ctrl.furnimove_widget_state == (True, frame, None if cancelled else frame)
+    await first.stop_notify()
+    ctrl._controller = None
+    ctrl._client.write_gatt_char.reset_mock()
+    ctrl._controller = FurniMoveController(ctrl, handset_id="82417")
+    reconnected = ctrl._controller
+    await reconnected.async_discover_capabilities()
+    reconnected._pause = AsyncMock(return_value=True)
+    await reconnected.async_execute_furnimove_action(index, consumer="widget")
+    assert written(reconnected) == (
+        [release.hex()] + ([] if cancelled else [frame.hex()] * 100) + [release.hex()]
+    )
+
+
+async def test_feedback_does_not_rearm_local_preference_save(hass):
+    from custom_components.adjustable_bed.beds.furnimove import FurniMoveController
+
+    ctrl = coordinator(hass)
+    ctrl._controller = FurniMoveController(ctrl, handset_id="12234")
+    await ctrl._async_restore_furnimove_local_state()
+    ctrl._furnimove_state_store.async_delay_save = MagicMock()
+    ctrl.handle_controller_state_update("furnimove_sync", True)
+    ctrl._furnimove_state_store.async_delay_save.assert_not_called()
+    await ctrl._controller.set_massage_timer(20)
+    ctrl._furnimove_state_store.async_delay_save.assert_called_once()
+    ctrl.handle_controller_state_update("furnimove_sync", False)
+    ctrl._furnimove_state_store.async_delay_save.assert_called_once()
+
+
+async def test_local_duration_waits_for_command_lock_without_connecting(hass):
+    ctrl = coordinator(hass, "12234")
+    ctrl._client = None
+    ctrl.async_ensure_connected = AsyncMock(return_value=False)
+    await ctrl.async_prime_offline_controller()
+    async with ctrl._command_lock:
+        update = asyncio.create_task(ctrl.async_set_furnimove_massage_duration(20))
+        await asyncio.sleep(0)
+        assert not update.done()
+        assert ctrl.capability_controller.furnimove_local_state == {"duration_minutes": 15}
+    await update
+    assert ctrl.capability_controller.furnimove_local_state == {"duration_minutes": 20}
+    ctrl.async_ensure_connected.assert_not_awaited()

@@ -487,6 +487,7 @@ class AdjustableBedCoordinator:
         self._furnimove_local_state: dict[str, int | str | bool] = {}
         self._furnimove_state_loaded = False
         self._furnimove_state_restoring = False
+        self.furnimove_widget_state: tuple[bool, bytes | None, bytes | None] = (False, None, None)
         if self._bed_type == BED_TYPE_FURNIMOVE:
             self._furnimove_state_store = Store(
                 hass, 1, f"{DOMAIN}.furnimove_{self._address.replace(':', '_').lower()}_"
@@ -1101,6 +1102,7 @@ class AdjustableBedCoordinator:
                 cb24_bed_selection=self._cb24_bed_selection,
                 capability_snapshot=octo_snapshot or linak_snapshot or jensen_snapshot,
             )
+            await self._async_restore_furnimove_local_state()
         except ConnectionError:
             # Auto-detected variant: needs a live client to resolve. Leave the
             # offline controller unset (this side behaves as today until connect).
@@ -5814,10 +5816,20 @@ class AdjustableBedCoordinator:
         """Store a single controller state value and notify listeners."""
         self.handle_controller_state_updates({key: value})
 
+    async def async_set_furnimove_massage_duration(self, minutes: int) -> None:
+        """Serialize an app preference without reserving a Bluetooth connection."""
+        async with self._command_lock:
+            await self.async_prime_offline_controller()
+            controller = self.capability_controller
+            if self._bed_type != BED_TYPE_FURNIMOVE or controller is None:
+                raise ValueError("No selected FurniMove handset is available")
+            await self._async_restore_furnimove_local_state()
+            await controller.set_massage_timer(minutes)
+
     async def _async_restore_furnimove_local_state(self) -> None:
         """Restore app state used by massage dispatch, never physical feedback."""
         store = self._furnimove_state_store
-        controller = self._controller
+        controller = self.capability_controller
         if store is None or controller is None:
             return
         if not self._furnimove_state_loaded:
@@ -5832,6 +5844,7 @@ class AdjustableBedCoordinator:
                 _LOGGER.warning("Ignoring invalid local FurniMove preferences for %s", self._address)
                 self._furnimove_local_state = {}
                 controller.restore_furnimove_local_state({})
+            self._furnimove_local_state = controller.furnimove_local_state
         finally:
             self._furnimove_state_restoring = False
 
@@ -5842,14 +5855,17 @@ class AdjustableBedCoordinator:
             return
 
         self._controller_state.update(updates)
+        controller = self.capability_controller
         if (
             self._furnimove_state_store is not None
             and self._furnimove_state_loaded
             and not self._furnimove_state_restoring
-            and self._controller is not None
+            and controller is not None
         ):
-            self._furnimove_local_state = self._controller.furnimove_local_state
-            self._furnimove_state_store.async_delay_save(lambda: self._furnimove_local_state, 1)
+            snapshot = controller.furnimove_local_state
+            if snapshot != self._furnimove_local_state:
+                self._furnimove_local_state = snapshot
+                self._furnimove_state_store.async_delay_save(lambda: self._furnimove_local_state, 1)
         for callback_fn in list(self._controller_state_callbacks):
             try:
                 callback_fn(self._controller_state)

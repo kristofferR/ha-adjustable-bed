@@ -87,6 +87,7 @@ Hardware behavior remains unverified. Physical checks are deferred to real users
 - Main/utility/massage/widget/programming consumers retain their distinct release formats. Cancellation completes the active consumer’s cleanup before the generic STOP path; it does not append a release from a different consumer.
 - Characteristics with repeated UUIDs are written by the selected instance; managed Bluetooth subscriptions and write properties replace Android-specific GATT plumbing.
 - Local massage state is stored by physical address and selected handset. Active zone/intensity/duration affect subsequent dispatch; program counters and reported booleans are retained only within the same coordinator. Stored local state is never hardware proof.
+- Widget dispatch history stays in the coordinator across Bluetooth handoffs. Offline sides derive entities from the stored handset, including massage-state sensors only when that handset supports massage. Advisory duration updates use the command lock without connecting; unchanged feedback does not reschedule preference storage.
 - The app’s broad DIS advertisement acceptance, Android UI broadcasts, callback races and millisecond countdown text are replaced by HA discovery/lifecycle or excluded presentation. No extra hardware command is inferred from them.
 
 ## Validation
