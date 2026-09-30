@@ -31,16 +31,21 @@ uv run gen_module.py   # -> okin_uuid_remotes.py (copy into beds/)
                        #    + gen_okimat_variants.py (OKIMAT_VARIANTS body for const.py)
 ```
 
-To refresh `master.json` from the network (rarely needed):
+To refresh `master.json` from the network (rarely needed), provide a text file
+with one remote ID per line. Include the `RemoteID` values from
+`handsetlist.csv` and the already-shipped codes in `master.json`. The example
+path below is your supplied file, not a file included in this repository.
 
 ```bash
-# 1. Fetch known codes (handsetlist.csv IDs + already-shipped codes)
-uv run fetch_handsets.py cache all_known_ids.txt
-# 2. Sweep for codes newer than the CSV (object endpoint is cheap)
-uv run sweep_objects.py sweep_ids.txt sweep_live.txt   # then fetch their buttons
-# 3. Rebuild the normalized dataset
+# Fetch object and button responses for the supplied IDs
+uv run fetch_handsets.py "cache" "/path/to/remote-ids.txt"
+# Rebuild the normalized dataset from the cached responses
 uv run build_master.py        # -> master.json
 ```
+
+The fetcher preserves existing cache files. Use a fresh cache when refreshing
+previously fetched IDs. No ID-sweep script is shipped here; add independently
+verified new IDs to your input file before fetching.
 
 ## Notes
 

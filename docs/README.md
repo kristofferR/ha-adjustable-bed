@@ -26,9 +26,8 @@ hints to the detailed guides in [`beds/`](beds/). Those guides distinguish
 implemented behavior, artifact evidence, and physical validation. A supported
 family does not mean every retail model has been tested.
 
-[Scraped brands](SCRAPED_BRANDS.md) is a historical research inventory, not a
-compatibility list. App-disposition ledgers in `beds/` and implementation records
-in `apk-analysis/` preserve the scope and evidence of individual audits.
+App-disposition ledgers in `beds/` and implementation records in `apk-analysis/`
+preserve the scope and evidence of individual audits.
 
 ## Development and Validation
 
@@ -43,7 +42,6 @@ including the Bluetooth dependencies from Home Assistant's own manifests.
 | [Command lifecycle](COMMAND_LIFECYCLE.md) | Serialization, cancellation, STOP, timed movement and connection handoff |
 | [Paired runtimes and registry ownership](design/paired-runtime-and-registry.md) | Runtime interfaces and registry transfer/rollback |
 | [v4 validation matrix](V4_VALIDATION.md) | Automated coverage and installed release-candidate gates |
-| [Original dual-bed plan](design/dual-bed-4.0-plan.md) | Historical design rationale; current behavior is documented above |
 | [Linak reversal assessment](design/linak-reversal-assessment.md) | Dated evidence and bounded follow-up |
 | [APK Protocol Audit workflow](apk-analysis/phase4-coordinator-workflow.md) | Coordination and evidence gates |
 | [Analysis tooling](apk-analysis/TOOLING.md) | Protocol-neutral decompiler setup and stack coverage |
