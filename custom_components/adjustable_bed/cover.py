@@ -274,10 +274,13 @@ def _async_remove_stale_cover_entities(
         if controller.supports_motor_control and not controller.has_discrete_motor_control
         else set()
     )
-    # MOTIONrelax covers must also retire when a different protocol replaces it.
+    # App-specific covers must retire when a different protocol replaces them.
     stale_keys = controller.stale_motor_entity_keys | {
         axis for layout in LAYOUTS for axis in layout_axes(layout)
-    } | {"both", "right_back", "right_legs", "both_backs", "both_legs"}
+    } | {
+        "both", "right_back", "right_legs", "both_backs", "both_legs",
+        "malouf_tilt_head", "malouf_full_tilt",
+    }
 
     for key in stale_keys:
         if key in active_keys:
