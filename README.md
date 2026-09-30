@@ -115,6 +115,7 @@ The entries below identify motor/actuator manufacturers or supported app profile
 | ✅ [Mattress Firm 900](docs/beds/mattressfirm.md) | iFlex / older Nordic UART bases |
 | ✅ [Nectar](docs/beds/nectar.md) | Nectar |
 | ✅ [Malouf/Lucid](docs/beds/malouf.md) | Malouf, Lucid, Structures |
+| 🔬 [Malouf Base / Lucid Base app profiles](docs/beds/malouf-app.md) | Explicit app/model selection, five transports, artifact-verified, hardware unverified |
 | ✅ [BedTech](docs/beds/bedtech.md) | BedTech |
 | ✅ [Sleep Number](docs/beds/sleep_number.md) | Climate 360, FlexFit, FlexFit Smart, i8 / 360 FlexFit 2 |
 | ✅ [Sleepy's Elite](docs/beds/sleepys.md) | Sleepy's |

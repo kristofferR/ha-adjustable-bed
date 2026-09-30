@@ -24,6 +24,7 @@ from .const import (
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_APP,
+    BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MOTOSLEEP,
@@ -188,9 +189,15 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
         "variants": None,  # Single protocol
     },
     "malouf": {
-        "display": "Malouf",
-        "description": "Malouf adjustable bases",
+        "display": "Malouf / Lucid",
+        "description": "Malouf and Lucid adjustable bases",
         "variants": [
+            {
+                "type": BED_TYPE_MALOUF_APP,
+                "label": "Malouf Base / Lucid Base apps",
+                "description": "App model controls, status feedback and alarms",
+                "hint": "Choose the app and model shown in your app in the next step.",
+            },
             {
                 "type": BED_TYPE_MALOUF_NEW_OKIN,
                 "label": "New (Nordic UART)",

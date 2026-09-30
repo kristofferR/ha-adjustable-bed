@@ -106,6 +106,9 @@ class _FactoryCoordinator(SimpleNamespace):
                     const.CONF_JIECANG_APP_PROFILE: "dreamask",
                     const.CONF_JIECANG_APP_LAYOUT: "standard_2",
                     const.CONF_JIECANG_APP_TRANSPORT: "g1",
+                    const.CONF_MALOUF_APP_PROFILE: "malouf",
+                    const.CONF_MALOUF_APP_MODEL: "L600",
+                    const.CONF_MALOUF_APP_TRANSPORT: "okin_new",
                 }
             ),
             cancel_command=asyncio.Event(),

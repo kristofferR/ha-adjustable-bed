@@ -499,6 +499,22 @@
           "outcome_rejected": "The bed rejected the PIN. Correct it below and submit to check again.",
           "outcome_inconclusive": "PIN verification could not be completed. This does not mean the PIN is wrong. Wake the bed, close other apps connected to it, and check that your Bluetooth adapter or proxy is available. Submit to retry; the entry has not been saved."
         }
+      },
+      "malouf_app": {
+        "title": "Malouf Base / Lucid Base profile",
+        "description": "Select the app and exact bed model used by your physical bed. These profiles are derived from the Android apps and have not been verified on hardware.",
+        "data": {
+          "malouf_app_profile": "Android app",
+          "malouf_app_model": "Bed model",
+          "malouf_app_transport": "Bluetooth transport",
+          "malouf_app_primary": "Primary bed in the app"
+        },
+        "data_description": {
+          "malouf_app_profile": "Choose the app you use with this bed. Shared Bluetooth identifiers do not identify an app.",
+          "malouf_app_model": "Choose the exact model selected in the app. Model controls are independent of the Bluetooth transport.",
+          "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous.",
+          "malouf_app_primary": "Match the physical primary/secondary setting in the app. Home Assistant Left/Right labels do not change this role."
+        }
       }
     },
     "progress": {
@@ -557,7 +573,9 @@
       "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID.",
       "octo_pin_required": "A PIN is required.",
       "octo_pin_rejected": "The bed rejected this PIN.",
-      "octo_pin_inconclusive": "PIN access has not been verified."
+      "octo_pin_inconclusive": "PIN access has not been verified.",
+      "malouf_app_required": "Select the Android app and exact bed model.",
+      "malouf_app_pair_settings": "Unpair first, then select each physical bed’s app profile before combining them again."
     }
   },
   "options": {
@@ -614,7 +632,11 @@
           "lp_legacy_model": "Legacy app model code",
           "lp_legacy_mode": "Legacy app protocol mode",
           "lp_legacy_write_uuid": "Write characteristic UUID",
-          "lp_legacy_read_uuid": "Notification characteristic UUID"
+          "lp_legacy_read_uuid": "Notification characteristic UUID",
+          "malouf_app_profile": "Android app",
+          "malouf_app_model": "Bed model",
+          "malouf_app_transport": "Bluetooth transport",
+          "malouf_app_primary": "Primary bed in the app"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -653,7 +675,11 @@
           "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
           "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
           "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
-          "lp_legacy_read_uuid": "Optional full UUID of the notification characteristic confirmed for this bed. Leave empty to disable app response notifications."
+          "lp_legacy_read_uuid": "Optional full UUID of the notification characteristic confirmed for this bed. Leave empty to disable app response notifications.",
+          "malouf_app_profile": "Choose the app you use with this bed. Shared Bluetooth identifiers do not identify an app.",
+          "malouf_app_model": "Choose the exact model selected in the app. Model controls are independent of the Bluetooth transport.",
+          "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous.",
+          "malouf_app_primary": "Match the physical primary/secondary setting in the app. Home Assistant Left/Right labels do not change this role."
         }
       },
       "remove_bond": {
@@ -720,7 +746,9 @@
       "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
       "invalid_lp_legacy_mode": "Select Legacy or Framed explicitly.",
       "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID.",
-      "lp_legacy_pair_settings": "Unpair the beds and configure the legacy L&P profile, packet mode and Bluetooth characteristics on each bed before pairing them again."
+      "lp_legacy_pair_settings": "Unpair the beds and configure the legacy L&P profile, packet mode and Bluetooth characteristics on each bed before pairing them again.",
+      "malouf_app_required": "Select the Android app and exact bed model.",
+      "malouf_app_pair_settings": "Unpair first, then select each physical bed’s app profile before combining them again."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -1821,6 +1849,12 @@
       },
       "both_legs": {
         "name": "Both legs"
+      },
+      "malouf_tilt_head": {
+        "name": "Head tilt"
+      },
+      "malouf_full_tilt": {
+        "name": "Full tilt"
       }
     },
     "sensor": {
@@ -1988,6 +2022,9 @@
       },
       "lp_legacy_notification": {
         "name": "App response"
+      },
+      "malouf_massage_remaining": {
+        "name": "Massage remaining time"
       }
     },
     "light": {
@@ -2664,6 +2701,43 @@
         "parameters": {
           "name": "Parameters",
           "description": "Command-specific fields. Unknown fields and values are rejected. Parameter side cannot override the selected physical side."
+        }
+      }
+    },
+    "malouf_set_alarm": {
+      "name": "Malouf / Lucid alarm",
+      "description": "Set or clear the selected app model’s alarm. Time uses the Home Assistant time zone.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Alarm time",
+          "description": "Minute precision. Omit weekdays for the next occurrence."
+        },
+        "weekdays": {
+          "name": "Repeat on"
+        },
+        "preset": {
+          "name": "Alarm position"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "malouf_sync_clock": {
+      "name": "Malouf / Lucid synchronize clock",
+      "description": "Set the supported device clock to the current Home Assistant local time.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
         }
       }
     }

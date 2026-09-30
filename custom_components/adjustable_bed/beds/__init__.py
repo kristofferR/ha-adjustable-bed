@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from .linak import LinakController as LinakController
     from .logicdata import LogicdataController as LogicdataController
     from .logicdata_app import LogicdataAppController as LogicdataAppController
+    from .malouf_app import MaloufAppController as MaloufAppController
     from .motosleep import MotoSleepController as MotoSleepController
     from .octo import OctoController as OctoController
     from .okin_7byte import Okin7ByteController as Okin7ByteController
@@ -81,6 +82,7 @@ _EXPORT_MODULES = {
     "LinakController": "linak",
     "LogicdataController": "logicdata",
     "LogicdataAppController": "logicdata_app",
+    "MaloufAppController": "malouf_app",
     "MotoSleepController": "motosleep",
     "OctoController": "octo",
     "Okin7ByteController": "okin_7byte",

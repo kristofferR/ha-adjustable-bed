@@ -692,6 +692,64 @@ leggett_hold_control:
         select:
           options: [both, left, right]
 
+malouf_set_alarm:
+  name: Set Malouf / Lucid clock alarm
+  description: Program or clear an alarm on a compatible Malouf Base or Lucid Base app profile. Programming synchronizes the bed clock to Home Assistant's local time first.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    enabled:
+      name: Enabled
+      description: Turn off to clear the stored alarm.
+      required: true
+      selector:
+        boolean:
+    time:
+      name: Local alarm time
+      description: Time to the nearest minute, using Home Assistant's configured time zone.
+      selector:
+        time:
+    weekdays:
+      name: Repeat on
+      description: Leave empty for the next occurrence of the selected time.
+      selector:
+        select:
+          multiple: true
+          options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+    preset:
+      name: Bed preset
+      default: zero_g
+      selector:
+        select:
+          options: [zero_g, lounge, tv, anti_snore, memory_1, memory_2]
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
+
+malouf_sync_clock:
+  name: Synchronize Malouf / Lucid clock
+  description: Set a compatible Malouf Base or Lucid Base app controller's clock to Home Assistant's local time.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
+
 logicdata_set_alarm:
   name: Set Logicdata clock alarm
   description: Configure the controller's recurring alarm with a preset and massage levels.

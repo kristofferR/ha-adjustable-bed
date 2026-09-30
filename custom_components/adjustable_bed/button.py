@@ -744,27 +744,27 @@ def _button_entities_for(
             ):
                 registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
-        # Woosa's named actions use their own stable namespace. Reconcile it
-        # when an entry returns to the automatic Solace profile.
-        desired_woosa = {
-            coordinator.entity_unique_id(spec.key)
-            for spec in controller.controller_button_specs
-            if spec.key.startswith("woosa_")
-        }
-        woosa_prefix, woosa_suffix = coordinator.entity_unique_id("woosa_").split(
-            "woosa_", 1
-        )
-        woosa_prefix += "woosa_"
-        for row in list(
-            er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)
-        ):
-            if (
-                row.domain == "button"
-                and row.unique_id.startswith(woosa_prefix)
-                and row.unique_id.endswith(woosa_suffix)
-                and row.unique_id not in desired_woosa
+        # Named app actions disappear when their profile or transport changes.
+        for namespace in ("woosa_", "malouf_"):
+            desired_actions = {
+                coordinator.entity_unique_id(spec.key)
+                for spec in controller.controller_button_specs
+                if spec.key.startswith(namespace)
+            }
+            action_prefix, action_suffix = coordinator.entity_unique_id(namespace).split(
+                namespace, 1
+            )
+            action_prefix += namespace
+            for row in list(
+                er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)
             ):
-                registry.async_remove(row.entity_id)
+                if (
+                    row.domain == "button"
+                    and row.unique_id.startswith(action_prefix)
+                    and row.unique_id.endswith(action_suffix)
+                    and row.unique_id not in desired_actions
+                ):
+                    registry.async_remove(row.entity_id)
         entities.extend(
             ControllerActionButton(coordinator, spec)
             for spec in controller.controller_button_specs

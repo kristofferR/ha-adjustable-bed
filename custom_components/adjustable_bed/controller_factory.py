@@ -32,6 +32,7 @@ from .const import (
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_APP,
+    BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MATTRESSFIRM,
@@ -90,6 +91,10 @@ from .const import (
     CONF_LP_LEGACY_MODEL,
     CONF_LP_LEGACY_READ_UUID,
     CONF_LP_LEGACY_WRITE_UUID,
+    CONF_MALOUF_APP_MODEL,
+    CONF_MALOUF_APP_PRIMARY,
+    CONF_MALOUF_APP_PROFILE,
+    CONF_MALOUF_APP_TRANSPORT,
     DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
     DEWERTOKIN_RF_GATEWAY_MODEL,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
@@ -555,6 +560,21 @@ async def create_controller(
             layout=entry_data[CONF_JIECANG_APP_LAYOUT],
             transport=entry_data.get(CONF_JIECANG_APP_TRANSPORT, "auto"),
             has_light=entry_data.get(CONF_JIECANG_APP_HAS_LIGHT, True),
+        )
+
+    if bed_type == BED_TYPE_MALOUF_APP:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.malouf_app", __package__
+        )
+        from .beds.malouf_app import MaloufAppController
+
+        entry_data = coordinator.entry.data
+        return MaloufAppController(
+            coordinator,
+            app_profile=entry_data[CONF_MALOUF_APP_PROFILE],
+            model=entry_data[CONF_MALOUF_APP_MODEL],
+            transport=entry_data.get(CONF_MALOUF_APP_TRANSPORT, "auto"),
+            primary=entry_data.get(CONF_MALOUF_APP_PRIMARY, True),
         )
 
     if bed_type == BED_TYPE_KAIDI:

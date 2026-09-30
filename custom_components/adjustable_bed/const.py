@@ -107,6 +107,37 @@ JIECANG_APP_TRANSPORTS: Final = {
 
 CONF_MALOUF_LAYOUT: Final = "malouf_layout"
 CONF_MALOUF_MEMORY_SLOTS: Final = "malouf_memory_slots"
+CONF_MALOUF_APP_PROFILE: Final = "malouf_app_profile"
+CONF_MALOUF_APP_MODEL: Final = "malouf_app_model"
+CONF_MALOUF_APP_TRANSPORT: Final = "malouf_app_transport"
+CONF_MALOUF_APP_PRIMARY: Final = "malouf_app_primary"
+MALOUF_APP_PROFILES: Final = {"malouf": "Malouf Base", "lucid": "Lucid Base"}
+MALOUF_APP_MODELS: Final = {
+    "Altitude": "Altitude",
+    "E450": "E450",
+    "E455": "E455",
+    "Forte": "Forte",
+    "GoodLifeBase": "Good Life Base",
+    "GoodLifePremierBase": "Good Life Premier Base",
+    "GoodLifeProBase": "Good Life Pro Base",
+    "L300": "L300",
+    "L600": "L600",
+    "M455": "M455",
+    "M550": "M550",
+    "M555": "M555",
+    "Premium": "Premium",
+    "S655": "S655",
+    "S750": "S750",
+    "S755": "S755",
+}
+MALOUF_APP_TRANSPORTS: Final = {
+    "auto": "Automatic (one compatible GATT endpoint)",
+    "richmat_single": "Richmat Nordic UART",
+    "richmat_framed": "Richmat framed",
+    "okin_legacy": "OKIN legacy (FFE5)",
+    "okin_custom": "OKIN custom",
+    "okin_new": "OKIN new (Nordic UART)",
+}
 CONF_HAS_MASSAGE: Final = "has_massage"
 CONF_DISABLE_ANGLE_SENSING: Final = "disable_angle_sensing"
 CONF_PREFERRED_ADAPTER: Final = "preferred_adapter"
@@ -307,6 +338,7 @@ BED_TYPE_MATTRESSFIRM: Final = "mattressfirm"  # -> okin_nordic
 BED_TYPE_NECTAR: Final = "nectar"  # -> okin_7byte
 BED_TYPE_MALOUF_NEW_OKIN: Final = "malouf_new_okin"
 BED_TYPE_MALOUF_LEGACY_OKIN: Final = "malouf_legacy_okin"
+BED_TYPE_MALOUF_APP: Final = "malouf_app"
 BED_TYPE_OKIN_FFE: Final = "okin_ffe"  # OKIN 13/15 series via FFE5 service (0xE6 prefix)
 BED_TYPE_REVERIE_NIGHTSTAND: Final = "reverie_nightstand"  # Reverie Protocol 110
 BED_TYPE_COMFORT_MOTION: Final = "comfort_motion"  # Comfort Motion / Lierda protocol
@@ -375,6 +407,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_MATTRESSFIRM,
     BED_TYPE_NECTAR,
     # Malouf protocols
+    BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     # OKIN FFE series
@@ -2354,6 +2387,7 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
 # not remain "unknown" forever (#322, #344, #501).
 BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
     {
+        BED_TYPE_MALOUF_APP,
         BED_TYPE_LOGICDATA_APP,
         BED_TYPE_JIECANG_APP,
         BED_TYPE_LEGGETT_LP_LEGACY,
@@ -2431,6 +2465,7 @@ BEDS_WITH_DISCONNECT_AFTER_COMMAND_DEFAULT_DISABLED: Final = (
             BED_TYPE_LEGGETT_WILINKE,
             BED_TYPE_LIMOSS,
             BED_TYPE_LOGICDATA_APP,
+            BED_TYPE_MALOUF_APP,
             BED_TYPE_OCTO,
             BED_TYPE_OKIMAT,
             BED_TYPE_OKIN_CB24,
@@ -2541,6 +2576,8 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Malouf Legacy OKIN: 150ms delay → 7 repeats = 1.05s total
     # Source: com.malouf.bedbase / com.lucid.bedbase ANALYSIS.md
     BED_TYPE_MALOUF_LEGACY_OKIN: (7, 150),
+    # Both app UIs refresh held movement every 150 ms, on all five transports.
+    BED_TYPE_MALOUF_APP: (7, 150),
     # Malouf New OKIN (Nordic): 100ms delay → 10 repeats = 1.0s total
     # Source: com.malouf.bedbase / com.lucid.bedbase ANALYSIS.md
     BED_TYPE_MALOUF_NEW_OKIN: (10, 100),

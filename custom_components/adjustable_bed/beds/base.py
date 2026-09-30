@@ -1401,6 +1401,16 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_clock_sync(self) -> bool:
+        """Return whether the device clock can be synchronized explicitly."""
+        return False
+
+    @property
+    def clock_alarm_preset_options(self) -> tuple[str, ...]:
+        """Return explicitly selectable actions for a clock alarm."""
+        return ()
+
+    @property
     def supports_preset_hold(self) -> bool:
         """Return whether a preset can be held for a bounded duration."""
         return False
@@ -2110,6 +2120,10 @@ class BedController(ABC):
     ) -> None:
         """Configure a weekly alarm with Monday numbered zero."""
         raise NotImplementedError("Clock alarm not supported on this bed")
+
+    async def sync_clock(self) -> None:
+        """Synchronize the device clock to Home Assistant's local time."""
+        raise NotImplementedError("Clock synchronization not supported on this bed")
 
     async def execute_wake_routine(
         self,
