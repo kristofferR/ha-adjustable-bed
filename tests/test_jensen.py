@@ -61,6 +61,22 @@ def _fast_movement_monitor(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(f"{JENSEN_MODULE}._MOVEMENT_START_SECONDS", 0.05)
     monkeypatch.setattr(f"{JENSEN_MODULE}._MOVEMENT_STALL_SECONDS", 0.05)
     monkeypatch.setattr(f"{JENSEN_MODULE}._POSITION_RESPONSE_TIMEOUT", 0.05)
+    monkeypatch.setattr(f"{JENSEN_MODULE}._SETTLE_READ_INTERVAL_SECONDS", 0.01)
+    monkeypatch.setattr(f"{JENSEN_MODULE}._SETTLE_TIMEOUT_SECONDS", 0.2)
+
+
+def reply_to_reads(controller: JensenController, *positions: tuple[int, int]) -> None:
+    """Answer each position query with the next (head, foot), then repeat the last."""
+    replies = list(positions)
+
+    async def write(_uuid: str, frame: bytes, **_kwargs: object) -> None:
+        if frame == JensenCommands.READ_POSITION:
+            head, foot = replies.pop(0) if len(replies) > 1 else replies[0]
+            asyncio.get_running_loop().call_soon(
+                controller._handle_notification, MagicMock(), report(0xFF, head, foot)
+            )
+
+    controller._write_gatt_with_retry.side_effect = write
 
 
 @pytest.fixture
@@ -857,23 +873,22 @@ class TestJensenMovementMonitoring:
             await asyncio.sleep(0.01)
             assert not task.done()
 
+        reply_to_reads(controller, (30000, 30000))
         controller._handle_notification(MagicMock(), report(0x00, 30000, 30000))
         await asyncio.sleep(0.01)
         assert not task.done()  # a changed position still counts as movement
         controller._handle_notification(MagicMock(), report(0x00, 30000, 30000))
-        await asyncio.sleep(0.01)
-
-        # The settled move ends with a measured read.
-        assert written(controller)[-1] == JensenCommands.READ_POSITION
-        controller._handle_notification(MagicMock(), report(0xFF, 30000, 30000))
         await task
+
+        # The settled move ends with two agreeing measured reads.
+        assert written(controller)[-2:] == [JensenCommands.READ_POSITION] * 2
 
         assert JensenCommands.MOTOR_STOP not in written(controller)
         legs = [c.args[1] for c in callback.call_args_list if c.args[0] == "legs"]
         assert legs[0] > legs[-1] == 0.0
 
     async def test_move_ends_when_reports_stop(self, monkeypatch: pytest.MonkeyPatch):
-        """Silence after movement means the bed stopped or dropped the link."""
+        """Silence after movement leads to settle reads, not an immediate finish."""
         monkeypatch.setattr(f"{JENSEN_MODULE}._POSITION_RESPONSE_TIMEOUT", 5.0)
         controller = make_controller()
         controller._coordinator.client.is_connected = True
@@ -885,8 +900,57 @@ class TestJensenMovementMonitoring:
 
         assert written(controller)[-1] == JensenCommands.READ_POSITION
         assert not task.done()
+        reply_to_reads(controller, (30100, 30000))
         controller._handle_notification(MagicMock(), report(0xFF, 30100, 30000))
         await task
+
+    async def test_quiet_bed_is_read_until_it_settles(self):
+        """Issue #631: reports pause mid-flat, so reads continue until two agree."""
+        controller = make_controller()
+        callback = MagicMock()
+        controller._notify_callback = callback
+        controller._raw_positions = (30250, 29600)
+        reply_to_reads(
+            controller, (30062, 29784), (30033, 29813), (30000, 30000), (30000, 30000)
+        )
+
+        task = await self._run(controller, controller.preset_flat())
+        for head, foot in ((30224, 29629), (30198, 29652), (30175, 29675)):
+            controller._handle_notification(MagicMock(), report(0x81, head, foot))
+            await asyncio.sleep(0.01)
+        await task
+
+        reads = [f for f in written(controller) if f == JensenCommands.READ_POSITION]
+        assert len(reads) == 4
+        assert callback.call_args_list[-2:] == [call("back", 0.0), call("legs", 0.0)]
+        assert JensenCommands.MOTOR_STOP not in written(controller)
+
+    async def test_settle_reads_are_bounded(self):
+        """A position that never agrees stops the reads without failing the command."""
+        controller = make_controller()
+        controller._raw_positions = (30000, 30000)
+        reply_to_reads(controller, *((30000 + step, 30000) for step in range(1, 200)))
+
+        await controller.preset_flat()
+
+        reads = [f for f in written(controller) if f == JensenCommands.READ_POSITION]
+        assert 2 <= len(reads) < 199
+        assert JensenCommands.MOTOR_STOP not in written(controller)
+
+    async def test_cancel_during_settle_reads_sends_stop(self):
+        """Stop while settling still ends the move with STOP."""
+        controller = make_controller()
+        controller._raw_positions = (30000, 30000)
+        reply_to_reads(controller, *((30000 + step, 30000) for step in range(1, 200)))
+
+        task = await self._run(controller, controller.preset_flat())
+        await asyncio.sleep(0.08)
+        assert not task.done()
+        controller._coordinator.cancel_command.set()
+
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        assert written(controller)[-1] == JensenCommands.MOTOR_STOP
 
     async def test_no_movement_reported_ends_after_start_window(self):
         """A bed already at the target sends nothing; the command still finishes."""

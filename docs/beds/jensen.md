@@ -76,13 +76,15 @@ recalls only the position; use a scene or script for the rest.
 After a single flat, memory or go-to frame the bed moves on its own. Home
 Assistant keeps the command running until the bed's position reports show the
 move has ended: reports stop arriving, or an idle report repeats the last
-position. It then reads the final position once. A Stop or another command
-interrupts the move and sends STOP. If the bed still reports motion after 90
-seconds, STOP is sent and the command ends. With angle sensing disabled, the
-frame is sent without waiting.
+position. A Stop or another command interrupts the move and sends STOP. If the
+bed still reports motion after 90 seconds, STOP is sent and the command ends.
+With angle sensing disabled, the frame is sent without waiting.
 
-The bed pushes reports roughly every half second while it moves, so no queries
-are sent mid-move.
+The bed pushes reports roughly every half second while it moves, but it can go
+quiet for about two seconds while still travelling
+([#631](https://github.com/kristofferR/ha-adjustable-bed/issues/631)). So the
+command then queries the position once a second until two replies agree, for at
+most 10 seconds. Those queries do not interrupt the move.
 
 ## Protocol Details
 

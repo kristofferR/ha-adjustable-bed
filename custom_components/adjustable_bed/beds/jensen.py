@@ -50,6 +50,10 @@ _POSITION_RESPONSE_TIMEOUT = 5.0
 _MOVEMENT_START_SECONDS = 3.0
 _MOVEMENT_STALL_SECONDS = 2.0
 _MOVEMENT_FEEDBACK_TIMEOUT_SECONDS = 90.0
+# A moving bed can pause its reports for about 2 s (issue #631), so the closing
+# read repeats until two replies agree, within a bound.
+_SETTLE_READ_INTERVAL_SECONDS = 1.0
+_SETTLE_TIMEOUT_SECONDS = 10.0
 # Report state bytes that do not indicate motion: idle, and the reply to a query.
 _IDLE_MOTION_STATES = frozenset({0x00, 0xFF})
 
@@ -706,9 +710,39 @@ class JensenController(BedController):
                 _LOGGER.debug("Failed to send Jensen STOP after the movement timeout")
             return
         try:
-            await self.read_positions()
+            await self._read_settled_positions(cancel_event)
         except (TimeoutError, ConnectionError, BleakError) as err:
             _LOGGER.debug("Jensen final position read failed: %s", err)
+
+    async def _read_settled_positions(self, cancel_event: asyncio.Event) -> None:
+        """Query positions until two consecutive replies agree.
+
+        Silence does not prove the move ended: the bed can go quiet while it
+        still travels. Queries do not interrupt an autonomous move (#631).
+        """
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + _SETTLE_TIMEOUT_SECONDS
+        previous: tuple[int, int] | None = None
+        while True:
+            await self.read_positions()
+            if self._raw_positions == previous:
+                return
+            previous = self._raw_positions
+            remaining = deadline - loop.time()
+            if remaining <= 0:
+                _LOGGER.debug(
+                    "Jensen bed at %s still moving after %.0f s of settle reads",
+                    self._coordinator.address,
+                    _SETTLE_TIMEOUT_SECONDS,
+                )
+                return
+            try:
+                await asyncio.wait_for(
+                    cancel_event.wait(), min(_SETTLE_READ_INTERVAL_SECONDS, remaining)
+                )
+            except TimeoutError:
+                continue
+            raise asyncio.CancelledError
 
     async def _run_monitored(self, command: bytes, repeat_count: int = 1) -> None:
         """Send an autonomous-move frame and follow the move to completion.

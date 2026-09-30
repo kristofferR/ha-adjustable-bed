@@ -60,7 +60,7 @@ JMC400 tests are in `tests/test_jensen.py`, LinOn tests in
 | J26 | Commands fanned out to every controlled bed of the same type and box | C28 | ALREADY_IMPLEMENTED | Paired entries (`paired_coordinator.py`); `tests/test_paired_setup.py::test_paired_entry_loads_with_both_sides`. |
 | J27 | Type selection, variant inventory and command-service factories | C05, C06, C21 | ALREADY_IMPLEMENTED | V01–V03 map to `jensen`, V05–V08 advertise the Linak control or position service and map to `linak` (`detection.py`, Linak UUID detection tests). V04 is L01. |
 | J28 | Unused JMC400 opcodes, `N/A` type, UI gating and store wiring | C18, C31, C36, C37 | EXCLUDED | Dead or UI-only: defined but never sent, or no BLE I/O. |
-| J29 | Position monitoring after autonomous moves (#628) | Integration requirement | IMPLEMENTED | `_monitor_movement` follows pushed reports: no mid-move queries, a final measured read, and STOP on cancel or when motion is still reported after 90 s. `TestJensenMovementMonitoring`. |
+| J29 | Position monitoring after autonomous moves (#628) | Integration requirement | IMPLEMENTED | `_monitor_movement` follows pushed reports, then `_read_settled_positions` queries until two replies agree (reports can pause mid-move, #631), and STOP is sent on cancel or when motion is still reported after 90 s. `TestJensenMovementMonitoring`. |
 
 ## LinOn (P2)
 
