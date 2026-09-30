@@ -17,7 +17,7 @@ Brands using DewertOkin/ORE actuators (79 apps analyzed):
 - Simmons Korea (시몬스)
 
 **Customatic:**
-- Customatic (Clarity, Demo, Remedy, Jerome's)
+- Customatic Demo; Clarity, Remedy and Jerome's C use explicit [Customatic app profiles](customatic.md)
 
 **Mattress Brands:**
 - Mattress Firm (except Sleepy's Elite - see [Sleepy's Elite](sleepys.md))

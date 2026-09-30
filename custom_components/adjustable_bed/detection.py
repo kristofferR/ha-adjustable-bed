@@ -23,6 +23,9 @@ from .const import (
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
+    BED_TYPE_CUSTOMATIC_CLARITY,
+    BED_TYPE_CUSTOMATIC_JEROMES,
+    BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
@@ -495,6 +498,9 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # are NOT included here - they're only kept for backward compatibility with
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    BED_TYPE_CUSTOMATIC_CLARITY: "Customatic Clarity app",
+    BED_TYPE_CUSTOMATIC_JEROMES: "Customatic Jerome's C app",
+    BED_TYPE_CUSTOMATIC_REMEDY: "Customatic Remedy app",
     # Protocol-based types (Okin family)
     BED_TYPE_OKIN_HANDLE: "Okin Handle (DewertOkin, A H Beard)",
     BED_TYPE_OKIN_UUID: "Okin UUID (Okimat, Lucid, requires pairing)",

@@ -2025,6 +2025,21 @@
       },
       "malouf_massage_remaining": {
         "name": "Massage remaining time"
+      },
+      "customatic_manufacturer": {
+        "name": "Manufacturer"
+      },
+      "customatic_hardware_revision": {
+        "name": "Hardware revision"
+      },
+      "customatic_software_revision": {
+        "name": "Software revision"
+      },
+      "customatic_firmware_revision": {
+        "name": "Firmware revision"
+      },
+      "customatic_model": {
+        "name": "Model"
       }
     },
     "light": {
@@ -2735,6 +2750,46 @@
       "fields": {
         "device_id": {
           "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "customatic_hold_memory": {
+      "name": "Hold Customatic memory controls",
+      "description": "Hold a nonempty combination of the Clarity or Remedy memory-page actions. Program combinations can change stored positions.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "actions": {
+          "name": "Actions",
+          "description": "Select any combination of flat, zg, anti, program and incline. Jerome's C has no memory page."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold for 0.1 to 60 seconds, in whole milliseconds. The refresh ends without a separate STOP frame."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "customatic_move_simultaneously": {
+      "name": "Move Customatic motors together",
+      "description": "Move one to three axes with one native mask, then send the movement release frame.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "actions": {
+          "name": "Motor directions",
+          "description": "A mapping of back, legs and optionally lumbar to up or down. Lumbar requires the Remedy profile. Opposing directions on one motor are rejected."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold for 0.1 to 60 seconds, in whole milliseconds, then release."
         },
         "side": {
           "name": "Side"

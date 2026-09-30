@@ -28,6 +28,9 @@ from homeassistant.helpers.service import async_get_device_and_config_entry
 
 from .beds.linak_protocol import LinakAlarmAction, LinakAlarmStep
 from .const import (
+    BED_TYPE_CUSTOMATIC_CLARITY,
+    BED_TYPE_CUSTOMATIC_JEROMES,
+    BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
@@ -81,6 +84,8 @@ SERVICE_SOLACE_SET_ALARM = "solace_set_alarm"
 SERVICE_LEGGETT_SLEEP_TIMER = "leggett_sleep_timer"
 SERVICE_LEGGETT_ALARM_TIMER = "leggett_alarm_timer"
 SERVICE_LEGGETT_HOLD_CONTROL = "leggett_hold_control"
+SERVICE_CUSTOMATIC_HOLD_MEMORY = "customatic_hold_memory"
+SERVICE_CUSTOMATIC_MOVE_SIMULTANEOUSLY = "customatic_move_simultaneously"
 SERVICE_LOGICDATA_SET_ALARM = "logicdata_set_alarm"
 SERVICE_LOGICDATA_RENAME = "logicdata_rename"
 SERVICE_LOGICDATA_HOLD_PRESET = "logicdata_hold_preset"
@@ -1590,6 +1595,94 @@ async def handle_leggett_hold_control(call: ServiceCall) -> None:
         raise
 
 
+CUSTOMATIC_MEMORY_ACTIONS = ("flat", "zg", "anti", "program", "incline")
+
+
+def _customatic_memory_actions(value: object) -> list[str]:
+    """Validate a nonempty subset before any bed receives a command."""
+    if not isinstance(value, list) or not value or len(value) > 5:
+        raise vol.Invalid("Select one to five memory actions")
+    if any(
+        not isinstance(action, str) or action not in CUSTOMATIC_MEMORY_ACTIONS
+        for action in value
+    ):
+        raise vol.Invalid("Unknown Customatic memory action")
+    if len(set(value)) != len(value):
+        raise vol.Invalid("Memory actions must be unique")
+    return [action for action in CUSTOMATIC_MEMORY_ACTIONS if action in value]
+
+
+async def handle_customatic_hold_memory(call: ServiceCall) -> None:
+    """Hold an artifact-proven memory subset on every validated physical target."""
+    actions = _customatic_memory_actions(call.data[ATTR_ACTIONS])
+    control = "+".join(actions)
+    await _handle_customatic_hold(
+        call, control, {BED_TYPE_CUSTOMATIC_CLARITY, BED_TYPE_CUSTOMATIC_REMEDY}
+    )
+
+
+def _customatic_movement_actions(value: object) -> dict[str, str]:
+    """Allow one direction per physical axis, never contradictory motor bits."""
+    if not isinstance(value, dict) or not 1 <= len(value) <= 3:
+        raise vol.Invalid("Select one to three motor directions")
+    if any(
+        axis not in {"back", "legs", "lumbar"}
+        or not isinstance(direction, str)
+        or direction not in {"up", "down"}
+        for axis, direction in value.items()
+    ):
+        raise vol.Invalid("Select back, legs or lumbar, with direction up or down")
+    return {axis: value[axis] for axis in ("back", "legs", "lumbar") if axis in value}
+
+
+async def handle_customatic_move_simultaneously(call: ServiceCall) -> None:
+    """Move the selected safe axes using one native command mask."""
+    movements = _customatic_movement_actions(call.data[ATTR_ACTIONS])
+    control = "+".join(f"{axis}_{direction}" for axis, direction in movements.items())
+    await _handle_customatic_hold(
+        call, control,
+        {BED_TYPE_CUSTOMATIC_CLARITY, BED_TYPE_CUSTOMATIC_JEROMES, BED_TYPE_CUSTOMATIC_REMEDY},
+    )
+
+
+async def _handle_customatic_hold(
+    call: ServiceCall, control: str, bed_types: set[str]
+) -> None:
+    """Preflight the whole selection before starting any held write sequence."""
+    duration_ms = int(_leggett_hold_seconds(call.data[ATTR_DURATION]) * 1000)
+    targets, missing = _resolve_sided_targets(
+        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    for coordinator, side in targets:
+        for target in _command_targets(coordinator, side):
+            if target.bed_type not in bed_types:
+                raise ServiceValidationError(
+                    f"Device '{target.name}' does not support this Customatic action"
+                )
+
+    def validate(controller: BedController | SideBoundController) -> None:
+        if control not in controller.held_control_options:
+            raise ServiceValidationError(
+                f"The selected profile does not support combination '{control}'"
+            )
+
+    preflighted = await _preflight_capability(
+        targets, "supports_held_control", "Customatic held controls", validate
+    )
+
+    async def hold(controller: BedController | SideBoundController) -> None:
+        await controller.hold_control(control, duration_ms)
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(coordinator, side, hold, cancel_running=True)
+    except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
 async def _preflight_logicdata(
     targets: list[tuple[BedTarget, str]], capability: str, label: str
 ) -> PreflightedSides:
@@ -2399,6 +2492,32 @@ async def async_register_services(hass: HomeAssistant) -> None:
             {
                 vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
                 vol.Required(ATTR_CONTROL): vol.In(LEGGETT_HELD_CONTROLS),
+                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_CUSTOMATIC_HOLD_MEMORY,
+        handle_customatic_hold_memory,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_ACTIONS): _customatic_memory_actions,
+                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_CUSTOMATIC_MOVE_SIMULTANEOUSLY,
+        handle_customatic_move_simultaneously,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_ACTIONS): _customatic_movement_actions,
                 vol.Required(ATTR_DURATION): _leggett_hold_seconds,
                 **SIDE_FIELD,
             }

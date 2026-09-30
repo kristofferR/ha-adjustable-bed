@@ -11,6 +11,7 @@ from .base import BedController
 
 if TYPE_CHECKING:
     from .coolbase import CoolBaseController as CoolBaseController
+    from .customatic import CustomaticController as CustomaticController
     from .dewertokin_rf_gateway import (
         DewertOkinRfGatewayController as DewertOkinRfGatewayController,
     )
@@ -65,6 +66,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "CustomaticController": "customatic",
     "CoolBaseController": "coolbase",
     "DewertOkinRfGatewayController": "dewertokin_rf_gateway",
     "DewertOkinUuidRfGatewayController": "dewertokin_rf_gateway",

@@ -11,6 +11,9 @@ from typing import Final, TypedDict
 from .const import (
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
+    BED_TYPE_CUSTOMATIC_CLARITY,
+    BED_TYPE_CUSTOMATIC_JEROMES,
+    BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
@@ -86,6 +89,30 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
         "display": "Comfort Motion",
         "description": "Comfort Motion, Lierda beds",
         "variants": None,  # Single protocol
+    },
+    "customatic": {
+        "display": "Customatic apps",
+        "description": "Clarity, Jerome's C and Remedy app profiles",
+        "variants": [
+            {
+                "type": BED_TYPE_CUSTOMATIC_CLARITY,
+                "label": "Clarity",
+                "description": "Two motors, memory controls and light toggle",
+                "hint": "Choose the Clarity app shown on your phone.",
+            },
+            {
+                "type": BED_TYPE_CUSTOMATIC_JEROMES,
+                "label": "Jerome's C",
+                "description": "Two motors and the Jerome's flat action",
+                "hint": "Choose the Jerome's C app shown on your phone.",
+            },
+            {
+                "type": BED_TYPE_CUSTOMATIC_REMEDY,
+                "label": "Remedy",
+                "description": "Back, legs and lumbar, memory controls and light toggle",
+                "hint": "Choose the Remedy app shown on your phone.",
+            },
+        ],
     },
     "ergomotion": {
         "display": "Ergomotion",
