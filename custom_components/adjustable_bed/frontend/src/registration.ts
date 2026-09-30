@@ -53,6 +53,37 @@ export function registerCustomCard(target: CustomCardsWindow): void {
   }
 }
 
+export interface ElementRegistryWindow {
+  customElements: CustomElementRegistry;
+}
+
+/**
+ * Define an element where Lovelace will look it up.
+ *
+ * Home Assistant's app bundle replaces `window.customElements` with the
+ * scoped-registry polyfill. When `add_extra_js_url` loads this bundle before
+ * that happens, the native definition is invisible to Lovelace's `get()` and
+ * `whenDefined()`, so the card shows "Custom element doesn't exist" until the
+ * next page load (home-assistant/frontend#53890). The polyfill is in place
+ * once `<home-assistant>` is defined, so define again in its registry then.
+ */
+export function defineElement(
+  tag: string,
+  element: CustomElementConstructor,
+  target: ElementRegistryWindow = window,
+): void {
+  const registry = target.customElements;
+  if (!registry.get(tag)) {
+    registry.define(tag, element);
+  }
+  void registry.whenDefined("home-assistant").then(() => {
+    const current = target.customElements;
+    if (current !== registry && !current.get(tag)) {
+      current.define(tag, element);
+    }
+  });
+}
+
 // Register before the custom elements are defined. A cache-busted second copy
 // can then refresh picker metadata even if the browser rejects duplicate custom
 // element definitions later in that module evaluation.
