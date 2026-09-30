@@ -1,6 +1,6 @@
 # v4 Documentation
 
-These guides describe `master`. The integration requires **Home Assistant
+These guides describe `main`. The integration requires **Home Assistant
 2026.9.0+**. The release version lives in
 [`manifest.json`](../custom_components/adjustable_bed/manifest.json) and
 [`pyproject.toml`](../pyproject.toml).
@@ -31,7 +31,7 @@ preserve the scope and evidence of individual audits.
 
 ## Development and Validation
 
-Work from `master` for v4 changes. Development uses Python **3.14.2+** with
+Work from `main` for v4 changes. Development uses Python **3.14.2+** with
 `uv`, and Bun for the Lit/TypeScript card. Follow the environment and test commands
 in the [v4 validation matrix](V4_VALIDATION.md#reproduce-automated-validation),
 including the Bluetooth dependencies from Home Assistant's own manifests.

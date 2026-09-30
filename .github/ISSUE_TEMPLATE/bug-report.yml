@@ -9,8 +9,8 @@ body:
         Thanks for taking the time to report this bug! Please fill out the form below to help us diagnose and fix the issue.
 
         **Before submitting:**
-        - Check the [v4 Troubleshooting Guide](https://github.com/kristofferR/ha-adjustable-bed/blob/master/docs/TROUBLESHOOTING.md) for common solutions
-        - Read the [v4 Getting Help Guide](https://github.com/kristofferR/ha-adjustable-bed/blob/master/docs/GETTING_HELP.md) for how to gather diagnostics
+        - Check the [v4 Troubleshooting Guide](https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/TROUBLESHOOTING.md) for common solutions
+        - Read the [v4 Getting Help Guide](https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/GETTING_HELP.md) for how to gather diagnostics
         - Search [existing issues](https://github.com/kristofferR/ha-adjustable-bed/issues) to avoid duplicates
 
   - type: textarea
@@ -110,9 +110,9 @@ body:
       label: Checklist
       description: Please confirm you've done the following
       options:
-        - label: I have checked the [Troubleshooting Guide](https://github.com/kristofferR/ha-adjustable-bed/blob/master/docs/TROUBLESHOOTING.md)
+        - label: I have checked the [Troubleshooting Guide](https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/TROUBLESHOOTING.md)
           required: true
-        - label: I have read the [Getting Help Guide](https://github.com/kristofferR/ha-adjustable-bed/blob/master/docs/GETTING_HELP.md) for how to gather diagnostics
+        - label: I have read the [Getting Help Guide](https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/GETTING_HELP.md) for how to gather diagnostics
           required: true
         - label: I have searched for [existing issues](https://github.com/kristofferR/ha-adjustable-bed/issues)
           required: true

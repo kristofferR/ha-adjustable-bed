@@ -9,8 +9,8 @@ body:
         Thanks for taking the time to request support for a new bed! The information you provide helps us implement the protocol correctly.
 
         **Before submitting:**
-        - Check the [Supported Actuators guide](https://github.com/kristofferR/ha-adjustable-bed/blob/master/docs/SUPPORTED_ACTUATORS.md) to see if your bed might already be supported under a different actuator brand name
-        - See the [Getting Help Guide](https://github.com/kristofferR/ha-adjustable-bed/blob/master/docs/GETTING_HELP.md#requesting-support-for-a-new-bed) for more details
+        - Check the [Supported Actuators guide](https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/SUPPORTED_ACTUATORS.md) to see if your bed might already be supported under a different actuator brand name
+        - See the [Getting Help Guide](https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/GETTING_HELP.md#requesting-support-for-a-new-bed) for more details
 
   - type: input
     id: manufacturer
@@ -62,7 +62,7 @@ body:
         5. Click the **download link** in the notification that appears
         6. Drag and drop the JSON file here
 
-        Note: the bundle records what your bed transmits (notifications and GATT structure) plus this integration's own commands. It cannot see commands sent by the official app or remote. An Android Bluetooth HCI snoop capture from the phone running the official app is a valuable supplement; nRF Connect logs only its own connection. See [Capturing App Traffic](https://github.com/kristofferR/ha-adjustable-bed/blob/master/docs/GETTING_HELP.md#capturing-app-traffic-for-new-bed-support).
+        Note: the bundle records what your bed transmits (notifications and GATT structure) plus this integration's own commands. It cannot see commands sent by the official app or remote. An Android Bluetooth HCI snoop capture from the phone running the official app is a valuable supplement; nRF Connect logs only its own connection. See [Capturing App Traffic](https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/GETTING_HELP.md#capturing-app-traffic-for-new-bed-support).
       placeholder: "Attach the support bundle, or explain why capture was not possible"
     validations:
       required: true

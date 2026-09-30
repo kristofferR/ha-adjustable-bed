@@ -27,7 +27,7 @@ _LOGGER = logging.getLogger(__name__)
 GITHUB_REPO = "kristofferR/ha-adjustable-bed"
 GITHUB_NEW_ISSUE_URL = f"https://github.com/{GITHUB_REPO}/issues/new"
 PROXY_PAIRING_RECOVERY_URL = (
-    f"https://github.com/{GITHUB_REPO}/blob/master/docs/TROUBLESHOOTING.md"
+    f"https://github.com/{GITHUB_REPO}/blob/main/docs/TROUBLESHOOTING.md"
     "#repeated-authentication-failures-through-an-esphome-proxy"
 )
 
@@ -326,7 +326,7 @@ def update_octo_pin_required_issue(
             "recovery_url": OCTO_PIN_RECOVERY_URL,
         },
         learn_more_url=(
-            "https://github.com/kristofferR/ha-adjustable-bed/blob/master/docs/beds/octo.md"
+            "https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/beds/octo.md"
             "#lost-pin-factory-reset"
         ),
     )

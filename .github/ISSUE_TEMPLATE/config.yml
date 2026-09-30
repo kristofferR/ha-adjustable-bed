@@ -1,10 +1,10 @@
 blank_issues_enabled: false
 contact_links:
   - name: Troubleshooting Guide
-    url: https://github.com/kristofferR/ha-adjustable-bed/blob/master/docs/TROUBLESHOOTING.md
+    url: https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/TROUBLESHOOTING.md
     about: Solutions for common issues with connection, commands, and position feedback
   - name: Getting Help Guide
-    url: https://github.com/kristofferR/ha-adjustable-bed/blob/master/docs/GETTING_HELP.md
+    url: https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/GETTING_HELP.md
     about: How to get support, generate diagnostics, and what info we need
   - name: 💬 Ask a Question
     url: https://github.com/kristofferR/ha-adjustable-bed/discussions/new?category=help-questions

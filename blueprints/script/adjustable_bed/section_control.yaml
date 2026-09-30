@@ -8,7 +8,7 @@ blueprint:
     Run the separate Stop script to stop; turning a HomeKit script switch off
     does not stop the bed.
   domain: script
-  source_url: https://github.com/kristofferR/ha-adjustable-bed/blob/master/blueprints/script/adjustable_bed/section_control.yaml
+  source_url: https://github.com/kristofferR/ha-adjustable-bed/blob/main/blueprints/script/adjustable_bed/section_control.yaml
   homeassistant:
     min_version: "2026.9.0"
   input:

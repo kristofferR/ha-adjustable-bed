@@ -177,7 +177,7 @@ configuration; reinstalling v3 alone cannot undo it. Follow the
 
 ### Manual
 
-Use a v4 release archive, or check out `master` for the current development
+Use a v4 release archive, or check out `main` for the current development
 code. Copy `custom_components/adjustable_bed` to your
 `config/custom_components/` directory and restart. The committed frontend bundle
 is included; an end-user installation does not require Bun or a frontend build.
@@ -375,7 +375,7 @@ See the [Connection Guide](docs/CONNECTION_GUIDE.md) for setup help.
 - **Bug reports** - Found something wrong? [Open an issue](https://github.com/kristofferR/ha-adjustable-bed/issues)
 - **Code contributions** - PRs welcome!
 
-For v4 changes, work from `master`. See the [developer documentation](docs/README.md#development-and-validation)
+For v4 changes, work from `main`. See the [developer documentation](docs/README.md#development-and-validation)
 for environment setup, validation, architecture, and the APK Protocol Audit workflow.
 
 ## Credits

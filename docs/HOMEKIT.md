@@ -24,10 +24,10 @@ finishes for another adjustment.
 
 ### Recommended: import the script blueprint
 
-[Import Adjustable Bed section control](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FkristofferR%2Fha-adjustable-bed%2Fblob%2Fmaster%2Fblueprints%2Fscript%2Fadjustable_bed%2Fsection_control.yaml)
+[Import Adjustable Bed section control](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FkristofferR%2Fha-adjustable-bed%2Fblob%2Fmain%2Fblueprints%2Fscript%2Fadjustable_bed%2Fsection_control.yaml)
 into your Home Assistant instance. You can also open **Settings → Automations &
 scenes → Blueprints → Import blueprint** and paste the
-[blueprint's GitHub URL](https://github.com/kristofferR/ha-adjustable-bed/blob/master/blueprints/script/adjustable_bed/section_control.yaml).
+[blueprint's GitHub URL](https://github.com/kristofferR/ha-adjustable-bed/blob/main/blueprints/script/adjustable_bed/section_control.yaml).
 
 1. Open **Adjustable Bed section control** in the Blueprints list to create a script.
 2. Select the **Bed section**, for example your back section cover. The picker
