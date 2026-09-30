@@ -1681,7 +1681,7 @@ async def _handle_customatic_hold(
     try:
         for coordinator, side in targets:
             await _execute_sided(coordinator, side, hold, cancel_running=True)
-    except Exception:
+    except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
         raise
 

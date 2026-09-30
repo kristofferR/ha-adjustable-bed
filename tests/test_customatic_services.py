@@ -211,6 +211,48 @@ async def test_cancelled_preflight_restores_connected_target_idle_timer(
     second.async_execute_controller_command.assert_not_awaited()
 
 
+async def test_cancelled_dispatch_restores_unexecuted_target_idle_timer(
+    hass: HomeAssistant, service_target
+):
+    first, _, resolve = service_target
+    second, _ = target(BED_TYPE_CUSTOMATIC_CLARITY)
+    for coordinator in (first, second):
+        controller = coordinator.capability_controller
+        coordinator.controller = None
+        coordinator.capability_controller = None
+        coordinator.is_connected = False
+
+        async def connect(*, reset_timer, target=coordinator, connected_controller=controller):
+            target.controller = connected_controller
+            target.is_connected = True
+            return True
+
+        coordinator.async_ensure_connected = AsyncMock(side_effect=connect)
+    running = asyncio.Event()
+
+    async def execute_first(*args, **kwargs):
+        running.set()
+        await asyncio.Event().wait()
+
+    first.async_execute_controller_command = AsyncMock(side_effect=execute_first)
+    resolve.return_value = ([(first, SIDE_BOTH), (second, SIDE_BOTH)], [])
+    call = asyncio.create_task(hass.services.async_call(
+        DOMAIN, SERVICE_CUSTOMATIC_HOLD_MEMORY,
+        {"device_id": ["first", "second"], "actions": ["zg"], "duration": 1},
+        blocking=True,
+    ))
+    await running.wait()
+    call.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await call
+    first.async_execute_controller_command.assert_awaited_once()
+    second.async_execute_controller_command.assert_not_awaited()
+    for coordinator in (first, second):
+        assert [args.kwargs for args in coordinator.async_ensure_connected.await_args_list] == [
+            {"reset_timer": False}, {"reset_timer": True}
+        ]
+
+
 async def test_real_pair_preflights_later_side_before_either_command(
     hass: HomeAssistant, service_target
 ):
