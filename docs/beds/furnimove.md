@@ -82,12 +82,16 @@ restarts; the program-click counter is retained across reconnects within one
 coordinator, matching the app's separate in-process behavior.
 Program selection accepts only programs present in the selected handset table;
 the mode-step button cycles those programs and is hidden when none are available.
+Wave intensity requires a `Massager3` row. The separate Wave program (4)
+requires `MassagerWave`, so a handset can offer that program without wave intensity.
 
 UBL is a toggle button plus reported binary state, rather than a fabricated
 discrete on/off switch. Sync and Child Lock have exact command buttons and
 reported booleans; Sync does not infer physical paired-side addressing.
 Hardware booleans are retained across the same coordinator's reconnects, but
 are not restored from storage as proof of current receiver state.
+The first valid feedback publishes reported off values even when they match
+the controller's defaults, so HA sensors leave unknown without needing an on transition.
 
 ## Transport and packet construction
 

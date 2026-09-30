@@ -402,7 +402,10 @@ class FurniMoveController(BedController):
                 start = 3 if data[0] & 15 == 5 else 4
                 if int.from_bytes(data[start : start + 4], "big") & mask and data[2] in (6, 7):
                     value = data[2] == 6
-            if value is not None and value != self._state[state_key]:
+            if value is not None and (
+                value != self._state[state_key]
+                or type(self._coordinator.controller_state.get(state_key)) is not bool
+            ):
                 self._publish(state_key, value)
 
     @property
@@ -842,7 +845,12 @@ class FurniMoveController(BedController):
 
     @property
     def massage_intensity_zones(self) -> list[str]:
-        return ["head", "foot", "all", "wave"] if self.supports_massage else []
+        if not self.supports_massage:
+            return []
+        zones = ["head", "foot", "all"]
+        if self.profile.first("Massager3") is not None:
+            zones.append("wave")
+        return zones
 
     @property
     def massage_intensity_max(self) -> int:
@@ -875,6 +883,8 @@ class FurniMoveController(BedController):
             raise ValueError("Unknown massage zone")
         names: list[str] = []
         if zone == "wave":
+            if self.profile.first("Massager3") is None:
+                raise ValueError("Wave intensity is absent from the selected handset")
             repeats = 1 if direction is not None else intensity if 1 <= intensity <= 4 else 0
             names = ["Massager3", "DisobeyStandbyTime"] * repeats
         else:
@@ -919,6 +929,7 @@ class FurniMoveController(BedController):
             zone = "both"
         if (
             not self.supports_massage
+            or (zone == "wave" and "wave" not in self.massage_intensity_zones)
             or isinstance(level, bool)
             or not 0 <= level <= self.massage_intensity_max
         ):

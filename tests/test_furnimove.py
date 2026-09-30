@@ -35,6 +35,10 @@ def make_controller(handset_id="82417", *, characteristics=None) -> FurniMoveCon
     coordinator = MagicMock()
     coordinator.address = "AA:BB:CC:DD:EE:FF"
     coordinator.cancel_command = asyncio.Event()
+    coordinator.controller_state = {}
+    coordinator.handle_controller_state_update.side_effect = (
+        lambda key, value: coordinator.controller_state.update({key: value})
+    )
     coordinator.motor_pulse_count = 2
     coordinator.client = MagicMock(
         is_connected=True,
@@ -329,6 +333,26 @@ def generic(bits: int) -> bytes:
     return b"\x08\x0b" + bits.to_bytes(4, "big") * 2
 
 
+@pytest.mark.parametrize("rf", [False, True])
+def test_initial_off_feedback_publishes_once_and_invalid_packets_remain_unknown(rf):
+    controller = make_controller()
+    if rf:
+        controller._rf_name = char(RF_NAME)
+    controller._parse_feedback(bytes(9))
+    controller._parse_feedback(bytes(10))
+    assert controller._coordinator.controller_state == {}
+    feedback = bytes.fromhex("e5fe0714020000000000") if rf else generic(0)
+    controller._parse_feedback(feedback)
+    assert controller._coordinator.controller_state == {
+        "furnimove_ubl": False,
+        "furnimove_sync": False,
+        "furnimove_child_lock": False,
+    }
+    controller._coordinator.handle_controller_state_update.reset_mock()
+    controller._parse_feedback(feedback)
+    controller._coordinator.handle_controller_state_update.assert_not_called()
+
+
 def test_generic_rf_cu170_and_dot_state_parser_order() -> None:
     controller = make_controller()
     controller._parse_feedback(generic(0x14020000))
@@ -396,6 +420,7 @@ def test_recreated_controller_retains_runtime_feedback_without_publishing_new_pr
     assert old._coordinator.handle_controller_state_update.call_args_list == [
         call("furnimove_ubl", False),
         call("furnimove_sync", False),
+        call("furnimove_child_lock", False),
     ]
 
 
@@ -460,6 +485,21 @@ async def test_absent_massage_program_rejected_without_writes_or_state_changes(h
         await controller.set_furnimove_massage_program(missing)
     assert not written(controller)
     assert controller.protocol_diagnostics == state
+
+
+@pytest.mark.parametrize("handset", ["90167", "91983", "93558"])
+async def test_absent_wave_intensity_rejected_but_wave_program_remains_available(handset):
+    controller = await fast_controller(handset)
+    assert controller.massage_intensity_zones == ["head", "foot", "all"]
+    state = controller.protocol_diagnostics.copy()
+    with pytest.raises(ValueError, match="absent"):
+        controller.build_massage_queue("wave", 1)
+    with pytest.raises(ValueError, match="Unsupported"):
+        await controller.set_massage_intensity("wave", 1)
+    assert not written(controller)
+    assert controller.protocol_diagnostics == state
+    await controller.set_furnimove_massage_program(4)
+    assert written(controller)[-2] == controller._frame(controller.profile.first("MassagerWave")).hex()
 
 
 @pytest.mark.parametrize(
