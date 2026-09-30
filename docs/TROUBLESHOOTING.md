@@ -581,3 +581,13 @@ burst. Explicit notification policies retain their controller-specific rules.
 If feedback disappears, the integration performs the controller's existing
 movement cleanup and reports a failure. Last-known values can remain visible
 for reference, but do not authorize further movement.
+
+### RF ECO BT bed shows only a Stair control or fails pairing
+
+RF ECO BT and P1103 are receiver identities shared by beds and staircases.
+After upgrading, open **Settings → System → Repairs** and use **Confirm the
+control layout**. Choose the single-actuator staircase or FurniMove with its
+exact handset ID. This works while the bed is offline and preserves the same
+entry, device and matching entity IDs. For another app, select its documented
+profile in integration options. Do not infer the layout from the receiver
+label or configured motor count. See [FurniMove](beds/furnimove.md).

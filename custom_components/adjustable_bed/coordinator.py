@@ -33,6 +33,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.storage import Store
 
 from .adapter import (
     AdapterSelectionResult,
@@ -81,6 +82,7 @@ from .const import (
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_FURNIMOVE,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_KEESON,
@@ -123,6 +125,7 @@ from .const import (
     CONF_CONNECTION_PROFILE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_FURNIMOVE_REMOTE,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
     CONF_JENSEN_PIN,
@@ -368,6 +371,8 @@ class AdjustableBedCoordinator:
         # separately so protocol detection never relies on a user-facing rename.
         self._ble_device_name: str = entry.data.get(CONF_BLE_DEVICE_NAME, self._name)
         self._observed_ble_device_name: str | None = None
+        self._furnimove_bond_task: asyncio.Task[None] | None = None
+        self._furnimove_bond_request: dict[str, object] = {"status": "not_requested"}
         self._malouf_layout: str = entry.data.get(CONF_MALOUF_LAYOUT, MALOUF_LAYOUT_AUTO)
         self._malouf_memory_slots: int = int(
             entry.data.get(CONF_MALOUF_MEMORY_SLOTS, MALOUF_MEMORY_SLOTS_AUTO)
@@ -478,6 +483,15 @@ class AdjustableBedCoordinator:
         # CB35 autonomous presets can outlive the connection-scoped controller.
         self.okin_cb35_preset_started_at: float | None = None
         self._controller_state: dict[str, Any] = {}
+        self._furnimove_state_store: Store[dict[str, int | str | bool]] | None = None
+        self._furnimove_local_state: dict[str, int | str | bool] = {}
+        self._furnimove_state_loaded = False
+        self._furnimove_state_restoring = False
+        if self._bed_type == BED_TYPE_FURNIMOVE:
+            self._furnimove_state_store = Store(
+                hass, 1, f"{DOMAIN}.furnimove_{self._address.replace(':', '_').lower()}_"
+                f"{entry.data.get(CONF_FURNIMOVE_REMOTE, 'unset')}"
+            )
         self._controller_state_callbacks: set[Callable[[dict[str, Any]], None]] = set()
         self._controller_state_refresh_task: asyncio.Task[None] | None = None
         self._controller_state_refresh_retry_timer: asyncio.TimerHandle | None = None
@@ -1951,6 +1965,7 @@ class AdjustableBedCoordinator:
             and pairing.get("required") is not None
         ]
         return {
+            "furnimove_bond_request": dict(self._furnimove_bond_request),
             "required": requires_pairing(self._bed_type, self._protocol_variant),
             "connection_gated_by_bond": connection_gated_by_bond(
                 self._bed_type, self._protocol_variant
@@ -2488,8 +2503,78 @@ class AdjustableBedCoordinator:
         self._skip_pair_next_attempt = False
         return bed_requires_pairing, use_pairing, pair_after_service_discovery
 
+    async def _async_cancel_furnimove_bond_request(self) -> None:
+        task = self._furnimove_bond_task
+        try:
+            if task is not None:
+                if not task.done():
+                    task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    current_task = asyncio.current_task()
+                    if current_task is not None and current_task.cancelling():
+                        raise
+        finally:
+            if self._furnimove_bond_task is task:
+                self._furnimove_bond_task = None
+
+    def _start_furnimove_bond_request(self, device: BLEDevice) -> None:
+        """Request a bond without making it a prerequisite for app control.
+
+        Android requests createBond and immediately connects. Bleak needs a live
+        link, so this backend adaptation requests it after GATT discovery while
+        controller startup continues. A completed request is not bond proof.
+        """
+        if self._bed_type != BED_TYPE_FURNIMOVE:
+            return
+        client = self._client
+        if client is None:
+            return
+        if device.name is None:
+            reason = "unnamed_device"
+        elif device.name.lower().startswith("okinmat"):
+            reason = "okinmat_name"
+        elif self._device_reports_existing_bond(device):
+            reason = "existing_os_bond"
+        else:
+            reason = "request"
+        self._furnimove_bond_request = {"status": "not_requested", "reason": reason}
+        if reason != "request":
+            return
+        self._furnimove_bond_request = {
+            "status": "requested", "ordering": "connect_discover_then_background_request"
+        }
+
+        async def request() -> None:
+            status = "completed"
+            error: Exception | None = None
+            try:
+                async with asyncio.timeout(5):
+                    await client.pair()
+            except asyncio.CancelledError:
+                status = "cancelled"
+                raise
+            except (NotImplementedError, TypeError) as err:
+                status, error = "unsupported", err
+            except TimeoutError as err:
+                status, error = "timed_out", err
+            except Exception as err:  # Optional pairing must not interrupt ordinary control.
+                status, error = "failed", err
+            finally:
+                if client is self._client:
+                    self._furnimove_bond_request["status"] = status
+                    if error is not None:
+                        self._furnimove_bond_request["error_type"] = type(error).__name__
+                        _LOGGER.debug("FurniMove optional bond request %s: %s", status, error)
+
+        self._furnimove_bond_task = self.entry.async_create_background_task(
+            self.hass, request(), f"adjustable_bed_furnimove_bond_{self._address}"
+        )
+
     async def _async_cleanup_failed_connection(self) -> None:
         """Release a failed-attempt client without scheduling auto-reconnect."""
+        await self._async_cancel_furnimove_bond_request()
         client = self._client
         if client is None:
             return
@@ -2926,6 +3011,7 @@ class AdjustableBedCoordinator:
                     # see live services to confirm the bond instead of looping.
                     disable_cache = bed_requires_pairing
                     try:
+                        await self._async_cancel_furnimove_bond_request()
                         self._client = await establish_connection(
                             BleakClient,
                             device,
@@ -2937,6 +3023,7 @@ class AdjustableBedCoordinator:
                             pair=use_pairing and not pair_after_service_discovery,
                             use_services_cache=not disable_cache,
                         )
+                        self._start_furnimove_bond_request(device)
                         # LP Control and Sleep Number request the bond after the
                         # unbonded GATT link has reported SERVICES_DISCOVERED.
                         # establish_connection() returns after Bleak has loaded
@@ -3365,6 +3452,7 @@ class AdjustableBedCoordinator:
                     manufacturer_data=manufacturer_data,
                     capability_snapshot=stored_capability_snapshot,
                 )
+                await self._async_restore_furnimove_local_state()
                 discovery_result = cast(Any, self._controller).async_discover_capabilities()
                 if inspect.isawaitable(discovery_result):
                     await discovery_result
@@ -3715,6 +3803,9 @@ class AdjustableBedCoordinator:
                 self._address,
             )
             return
+
+        if self._furnimove_bond_task is not None:
+            self._furnimove_bond_task.cancel()
 
         # If we're in the middle of connecting, this is likely bleak's internal retry
         # for le-connection-abort-by-local - don't log warnings or clear references
@@ -4225,7 +4316,11 @@ class AdjustableBedCoordinator:
             try:
                 await self._command_scheduler.async_shutdown()
             finally:
-                await self.async_disconnect()
+                try:
+                    await self.async_disconnect()
+                finally:
+                    if self._furnimove_state_store is not None and self._furnimove_state_loaded:
+                        await self._furnimove_state_store.async_save(self._furnimove_local_state)
 
     async def async_disconnect(
         self,
@@ -4419,6 +4514,7 @@ class AdjustableBedCoordinator:
         ``_async_connect_locked`` (lock already held) and would otherwise
         deadlock on the public ``async_disconnect`` re-acquiring the lock.
         """
+        await self._async_cancel_furnimove_bond_request()
         self._cancel_disconnect_timer()
         self._cancel_controller_state_refresh_retry()
         if self._controller_state_refresh_task is not None:
@@ -5718,6 +5814,27 @@ class AdjustableBedCoordinator:
         """Store a single controller state value and notify listeners."""
         self.handle_controller_state_updates({key: value})
 
+    async def _async_restore_furnimove_local_state(self) -> None:
+        """Restore app state used by massage dispatch, never physical feedback."""
+        store = self._furnimove_state_store
+        controller = self._controller
+        if store is None or controller is None:
+            return
+        if not self._furnimove_state_loaded:
+            stored = await store.async_load()
+            self._furnimove_local_state = stored if isinstance(stored, dict) else {}
+            self._furnimove_state_loaded = True
+        self._furnimove_state_restoring = True
+        try:
+            try:
+                controller.restore_furnimove_local_state(self._furnimove_local_state)
+            except (ValueError, TypeError):
+                _LOGGER.warning("Ignoring invalid local FurniMove preferences for %s", self._address)
+                self._furnimove_local_state = {}
+                controller.restore_furnimove_local_state({})
+        finally:
+            self._furnimove_state_restoring = False
+
     @callback
     def handle_controller_state_updates(self, updates: dict[str, Any]) -> None:
         """Store controller state values and notify listeners."""
@@ -5725,6 +5842,14 @@ class AdjustableBedCoordinator:
             return
 
         self._controller_state.update(updates)
+        if (
+            self._furnimove_state_store is not None
+            and self._furnimove_state_loaded
+            and not self._furnimove_state_restoring
+            and self._controller is not None
+        ):
+            self._furnimove_local_state = self._controller.furnimove_local_state
+            self._furnimove_state_store.async_delay_save(lambda: self._furnimove_local_state, 1)
         for callback_fn in list(self._controller_state_callbacks):
             try:
                 callback_fn(self._controller_state)

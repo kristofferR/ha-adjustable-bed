@@ -299,7 +299,9 @@ BED_TYPE_OKIN_CB24: Final = "okin_cb24"  # CB24 protocol via Nordic UART (SmartB
 BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniMove remote keycodes
 BED_TYPE_OKIN_ORE: Final = "okin_ore"  # OREBedBleProtocol (A5 5A format, 00001000 service)
 BED_TYPE_OKIN_CST: Final = "okin_cst"  # OKIN CSTProtocol (14-byte dual-field commands)
-BED_TYPE_OKIN_RF_ECO_BT: Final = "okin_rf_eco_bt"  # OKIN Smart Remote single-actuator
+BED_TYPE_OKIN_RF_ECO_BT: Final = "okin_rf_eco_bt"  # Single-actuator staircase
+BED_TYPE_FURNIMOVE: Final = "furnimove"
+CONF_FURNIMOVE_REMOTE: Final = "furnimove_remote"
 BED_TYPE_LEGGETT_LP_LEGACY: Final = "leggett_lp_legacy"
 BED_TYPE_LEGGETT_GEN2: Final = "leggett_gen2"  # Leggett Gen2 ASCII protocol
 BED_TYPE_LEGGETT_OKIN: Final = "leggett_okin"  # Leggett Okin binary protocol
@@ -380,6 +382,7 @@ BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 # All supported bed types (includes both protocol-based and legacy names)
 SUPPORTED_BED_TYPES: Final = [
     # Protocol-based types (new naming)
+    BED_TYPE_FURNIMOVE,
     BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_OKIN_7BYTE,
@@ -2396,6 +2399,7 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
 # not remain "unknown" forever (#322, #344, #501).
 BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
     {
+        BED_TYPE_FURNIMOVE,
         BED_TYPE_SERENITY,
         BED_TYPE_CUSTOMATIC_CLARITY,
         BED_TYPE_CUSTOMATIC_JEROMES,

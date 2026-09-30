@@ -21,6 +21,7 @@ from .const import (
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_FURNIMOVE,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -78,6 +79,7 @@ from .const import (
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
     CB1322_MANUFACTURER_MARKERS,
+    CONF_FURNIMOVE_REMOTE,
     CONF_HAS_MASSAGE,
     CONF_JIECANG_APP_HAS_LIGHT,
     CONF_JIECANG_APP_LAYOUT,
@@ -542,6 +544,16 @@ async def create_controller(
         return LeggettOkinController(
             coordinator,
             app_profile=entry_data.get(CONF_LEGGETT_APP_PROFILE, LEGGETT_APP_DEFAULT_PROFILE),
+        )
+
+    if bed_type == BED_TYPE_FURNIMOVE:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.furnimove", __package__
+        )
+        from .beds.furnimove import FurniMoveController
+
+        return FurniMoveController(
+            coordinator, handset_id=coordinator.entry.data[CONF_FURNIMOVE_REMOTE]
         )
 
     if bed_type == BED_TYPE_LOGICDATA_APP:

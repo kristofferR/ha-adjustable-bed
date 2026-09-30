@@ -94,6 +94,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DIAGNOSTIC,
+    BED_TYPE_FURNIMOVE,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
@@ -132,6 +133,7 @@ from .const import (
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISABLE_DISCOVERY,
     CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_FURNIMOVE_REMOTE,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
     CONF_JENSEN_PIN,
@@ -622,6 +624,10 @@ def _motor_count_options(
     protocol_variant: str = DEFAULT_PROTOCOL_VARIANT,
 ) -> list[int]:
     """Return motor counts supported by the selected protocol."""
+    if bed_type == BED_TYPE_OKIN_RF_ECO_BT:
+        return [1]
+    if bed_type == BED_TYPE_FURNIMOVE:
+        return [1, 2, 3, 4]
     if bed_type in {BED_TYPE_SERENITY, BED_TYPE_CUSTOMATIC_CLARITY, BED_TYPE_CUSTOMATIC_JEROMES}:
         return [2]
     if bed_type == BED_TYPE_CUSTOMATIC_REMEDY:
@@ -705,6 +711,42 @@ CONNECTION_PROFILE_OPTIONS: dict[str, str] = {
 }
 
 MALOUF_BED_TYPES = frozenset({BED_TYPE_MALOUF_NEW_OKIN, BED_TYPE_MALOUF_LEGACY_OKIN})
+
+
+def _add_furnimove_schema_field(
+    schema: dict[vol.Marker, Any], current_data: dict[str, Any] | None = None
+) -> None:
+    from .furnimove_profiles import FURNIMOVE_PROFILES
+
+    current_data = current_data or {}
+    schema[vol.Required(
+        CONF_FURNIMOVE_REMOTE,
+        default=current_data.get(CONF_FURNIMOVE_REMOTE, vol.UNDEFINED),
+    )] = vol.In({
+        key: f"{key}: {profile.description or 'Shipped offline table'}"
+        for key, profile in FURNIMOVE_PROFILES.items()
+    })
+
+
+def _furnimove_errors(data: dict[str, Any]) -> dict[str, str]:
+    from .furnimove_profiles import FURNIMOVE_PROFILES
+
+    remote = data.get(CONF_FURNIMOVE_REMOTE)
+    if not isinstance(remote, str) or remote not in FURNIMOVE_PROFILES:
+        return {CONF_FURNIMOVE_REMOTE: "furnimove_remote_required"}
+    return {}
+
+
+def _furnimove_settings(data: dict[str, Any]) -> dict[str, Any]:
+    from .furnimove_profiles import get_furnimove_profile
+
+    profile = get_furnimove_profile(data[CONF_FURNIMOVE_REMOTE])
+    return {
+        CONF_FURNIMOVE_REMOTE: profile.handset_id,
+        CONF_MOTOR_COUNT: profile.motor_count,
+        CONF_HAS_MASSAGE: bool(profile.by_type("massage-function")),
+        CONF_DISABLE_ANGLE_SENSING: True,
+    }
 
 
 def _add_malouf_schema_fields(schema: dict[vol.Marker, Any]) -> None:
@@ -1209,6 +1251,25 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         _add_logicdata_app_schema_fields(schema, user_input)
         return self.async_show_form(
             step_id="logicdata_app", data_schema=vol.Schema(schema), errors=errors
+        )
+
+    async def async_step_furnimove(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Choose the handset table independently of the receiver and GATT."""
+        assert self._manual_data is not None
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            errors = _furnimove_errors(user_input)
+            if not errors:
+                self._manual_data.update(_furnimove_settings(user_input))
+                return await self._finish_with_verify(
+                    self._manual_data, self._manual_data.get(CONF_NAME, "Adjustable Bed")
+                )
+        schema: dict[vol.Marker, Any] = {}
+        _add_furnimove_schema_field(schema, user_input or self._manual_data)
+        return self.async_show_form(
+            step_id="furnimove", data_schema=vol.Schema(schema), errors=errors
         )
 
     async def async_step_jiecang_app(
@@ -2250,16 +2311,17 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
         }
 
-        if bed_type_default == BED_TYPE_SERENITY:
+        if bed_type_default in {BED_TYPE_SERENITY, BED_TYPE_FURNIMOVE}:
             schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
             schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
+        if bed_type_default == BED_TYPE_FURNIMOVE:
+            schema_dict.pop(vol.Optional(CONF_HAS_MASSAGE), None)
 
-        # Always show variant selection - user may change bed type to one with variants
-        # If user changes bed type, they can select the appropriate variant
-        # Validation on submission ensures only valid variants are accepted
-        schema_dict[vol.Optional(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO)] = vol.In(
-            ALL_PROTOCOL_VARIANTS
-        )
+        # FurniMove derives its protocol from the selected handset and live GATT.
+        if bed_type_default != BED_TYPE_FURNIMOVE:
+            schema_dict[vol.Optional(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO)] = vol.In(
+                ALL_PROTOCOL_VARIANTS
+            )
 
         if bed_type in MALOUF_BED_TYPES:
             _add_malouf_schema_fields(schema_dict)
@@ -3157,9 +3219,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
             }
         )
-        if defaults_bed_type == BED_TYPE_SERENITY:
+        if defaults_bed_type in {BED_TYPE_SERENITY, BED_TYPE_FURNIMOVE}:
             schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
             schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
+        if defaults_bed_type == BED_TYPE_FURNIMOVE:
+            schema_dict.pop(vol.Optional(CONF_HAS_MASSAGE), None)
+            schema_dict.pop(vol.Optional(CONF_PROTOCOL_VARIANT), None)
         if defaults_bed_type in MALOUF_BED_TYPES:
             _add_malouf_schema_fields(schema_dict)
         if defaults_bed_type == BED_TYPE_OKIN_CB24:
@@ -3424,9 +3489,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             _add_malouf_schema_fields(schema_dict)
         if preselected_bed_type == BED_TYPE_OKIN_CB24:
             _add_cb24_side_schema_field(schema_dict)
-        if preselected_bed_type == BED_TYPE_SERENITY:
+        if preselected_bed_type in {BED_TYPE_SERENITY, BED_TYPE_FURNIMOVE}:
             schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
             schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
+        if preselected_bed_type == BED_TYPE_FURNIMOVE:
+            schema_dict.pop(vol.Optional(CONF_HAS_MASSAGE), None)
+            schema_dict.pop(vol.Optional(CONF_PROTOCOL_VARIANT), None)
 
         typed_address = (user_input or {}).get(CONF_ADDRESS, "")
         return self.async_show_form(
@@ -4600,6 +4668,18 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         beds whose single connection must be left for setup (issue #385). Standard
         Octo must verify PIN requirements even when no scanner is available yet.
         """
+        if entry_data.get(CONF_BED_TYPE) == BED_TYPE_OKIN_RF_ECO_BT:
+            from .furnimove_repair import CONF_STAIRCASE_LAYOUT_CONFIRMED
+
+            entry_data[CONF_STAIRCASE_LAYOUT_CONFIRMED] = True
+            entry_data[CONF_MOTOR_COUNT] = 1
+        if entry_data.get(CONF_BED_TYPE) == BED_TYPE_FURNIMOVE:
+            from .furnimove_profiles import FURNIMOVE_PROFILES
+
+            if entry_data.get(CONF_FURNIMOVE_REMOTE) not in FURNIMOVE_PROFILES:
+                self._manual_data = entry_data
+                self._manual_data[CONF_NAME] = title
+                return await self.async_step_furnimove()
         needs_pin_check = (
             entry_data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
             and entry_data.get(CONF_PROTOCOL_VARIANT) != OCTO_VARIANT_STAR2
@@ -5288,6 +5368,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             data.pop(CONF_RMCONTROL_SIDE, None)
         if not _is_leggett_app_type(bed_type, data.get(CONF_PROTOCOL_VARIANT)):
             data.pop(CONF_LEGGETT_APP_PROFILE, None)
+        if bed_type != BED_TYPE_FURNIMOVE:
+            data.pop(CONF_FURNIMOVE_REMOTE, None)
         if bed_type != BED_TYPE_LOGICDATA_APP:
             for key in (
                 CONF_LOGICDATA_APP_PROFILE, CONF_LOGICDATA_APP_FAMILY,
@@ -5666,9 +5748,12 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             ): bool,
         }
 
-        if bed_type == BED_TYPE_SERENITY:
+        if bed_type in {BED_TYPE_SERENITY, BED_TYPE_FURNIMOVE}:
             schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
             schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
+        if bed_type == BED_TYPE_FURNIMOVE:
+            schema_dict.pop(vol.Optional(CONF_HAS_MASSAGE), None)
+            schema_dict.pop(vol.Optional(CONF_PROTOCOL_VARIANT), None)
 
         if has_position_feedback:
             schema_dict[
@@ -5755,6 +5840,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
 
         if _is_leggett_app_type(bed_type, form_variant) and not separate_address_pair:
             _add_leggett_app_schema_field(schema_dict, current_data)
+        if bed_type == BED_TYPE_FURNIMOVE and not separate_address_pair:
+            _add_furnimove_schema_field(schema_dict, current_data)
         if bed_type == BED_TYPE_LOGICDATA_APP and not separate_address_pair:
             _add_logicdata_app_schema_fields(schema_dict, current_data)
         if bed_type == BED_TYPE_JIECANG_APP and not separate_address_pair:
@@ -5821,6 +5908,15 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 user_input = {**user_input, CONF_MOTOR_COUNT: int(user_input[CONF_MOTOR_COUNT])}
             requested_bed_type = user_input.get(CONF_BED_TYPE, bed_type)
             requested_route = user_input.get(CONF_PROTOCOL_VARIANT, form_variant)
+            if (
+                separate_address_pair
+                and requested_bed_type == BED_TYPE_FURNIMOVE
+                and requested_bed_type != bed_type
+            ):
+                return self.async_show_form(
+                    step_id=step_id, data_schema=vol.Schema(schema_dict),
+                    errors={CONF_BED_TYPE: "furnimove_unpair_first"},
+                )
             if (
                 separate_address_pair
                 and _is_leggett_app_type(requested_bed_type, requested_route)
@@ -6058,6 +6154,14 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                             errors={CONF_LEGGETT_APP_PROFILE: "leggett_app_invalid_profile"},
                         )
                     user_input[CONF_MOTOR_COUNT] = LEGGETT_APP_MOTOR_COUNTS[profile]
+            if bed_type == BED_TYPE_FURNIMOVE and not separate_address_pair:
+                app_data = {**current_data, **user_input}
+                app_errors = _furnimove_errors(app_data)
+                if app_errors:
+                    return self.async_show_form(
+                        step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
+                    )
+                user_input.update(_furnimove_settings(app_data))
             if bed_type == BED_TYPE_LOGICDATA_APP and not separate_address_pair:
                 app_errors = _logicdata_app_errors({**current_data, **user_input})
                 if app_errors:

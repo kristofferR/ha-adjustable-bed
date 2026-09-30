@@ -1150,6 +1150,11 @@ async def async_create_fix_flow(
         return CombineBedsRepairFlow()
 
     payload = data or {}
+    from .furnimove_repair import ISSUE_PREFIX, FurniMoveLayoutRepairFlow
+
+    if issue_id.startswith(ISSUE_PREFIX):
+        return FurniMoveLayoutRepairFlow(payload.get("entry_id", ""), payload.get("side"))
+
     evidence: BondEvidence | None = None
     raw_status = payload.get("evidence_status")
     status: BondVerificationStatus | None = None

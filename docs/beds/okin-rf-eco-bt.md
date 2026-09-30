@@ -29,9 +29,12 @@ emergency lowering.
 Use manual setup and choose **OKIN Smart Remote / RF ECO BT single actuator**.
 
 Choose this profile only for a single moving actuator. RF ECO BT is also used
-as the receiver for adjustable beds. For a bed, choose **Okin UUID (Okimat,
-Lucid, requires pairing)**, set the motor count, and select the code printed on
-the handset under **Protocol variant**.
+as the receiver for adjustable beds. For a bed controlled by the FurniMove app,
+choose **[FurniMove / OKIN Smart Remote](furnimove.md)** and select its exact
+handset ID. For another app, use that app’s documented integration profile.
+Legacy RF ECO BT entries receive an offline layout repair, including entries
+with a configured count of one. Explicit staircase confirmation prevents the
+repair from returning while preserving the existing Stair entity.
 
 The reported device advertises as `OKIN-050226` with no service UUIDs, so the
 integration cannot safely auto-detect it from advertisements alone. Diagnostics
@@ -67,26 +70,23 @@ protocols use that naming pattern.
 
 ## Protocol
 
-The local OKIN Smart Remote APK artifact is package `com.okin.okinsmartcomfort`.
-Evidence used for this profile:
-
-- `ApiService.java` returns RF-TOPLINE fallback actuator commands:
-  - `M2Out`: `0x00000001`
-  - `M2In`: `0x00000002`
-  - `DisobeyStandbyTime`: `0x00000000`
-- `HexValueConverter.java` encodes normal commands as `04 02` followed by the
-  4-byte keycode.
-- `BluetoothCharacteristics.java` defines the standard OKIN write
-  characteristic `62741525-...` and the CSS characteristic `90311625-...` seen
-  in the support bundle.
-
-Packets:
+The accepted clean-room audit of `com.okin.okinsmartcomfort` 2.2.0 (19) proves
+the shipped offline two-axis fallback table's M2 commands and six-byte frame.
+The staircase retains its independently reported M2 actuator mapping from
+issue #344. The generic zero-valued frame is not a valid staircase STOP: the
+reporter found it switched a light on, while ending refresh stopped motion.
+The integration therefore sends only the held direction and ends its cancellable
+refresh on release. It does not fabricate a zero command.
 
 | Action | Packet |
 |--------|--------|
 | Open / up | `04 02 00 00 00 01` |
 | Close / down | `04 02 00 00 00 02` |
-| Stop / release | `04 02 00 00 00 00` |
+| Stop / release | End held-command refresh, no extra frame |
+
+Direction refresh uses the app's 100 ms interval with the configured bounded
+pulse count. Cancellation always clears the held motor state. An explicit stop
+ends the running command; it sends no unsupported opcode.
 
 ## Safety
 
@@ -98,5 +98,5 @@ motion is safe, visible, and supervised.
 If M2 is not the correct actuator channel for a single-actuator installation, a
 future follow-up may need the reporter's OKIN Smart Remote ID or QR contents to
 map the actual channel. Do not add M3, reversed, DOT, or RF-gateway variants to
-the stair profile without new evidence. Adjustable beds belong on the Okin UUID
-profile with their printed handset code.
+the stair profile without new evidence. Beds using FurniMove belong on its explicit app profile with their selected
+handset ID.

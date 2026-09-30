@@ -115,7 +115,11 @@ def _binary_sensor_entities_for(
         specs = controller.controller_state_binary_sensor_specs
         active_keys = {spec.key for spec in specs}
         stale_keys = controller.stale_controller_state_binary_sensor_entity_keys | (
-            {"leggett_alarm_indicator", "leggett_sleep_timer_indicator", "under_bed_lights"} - active_keys
+            {
+                "leggett_alarm_indicator", "leggett_sleep_timer_indicator", "under_bed_lights",
+                "furnimove_ubl", "furnimove_sync", "furnimove_child_lock",
+                "furnimove_massage_running",
+            } - active_keys
         )
         _async_remove_stale_controller_state_binary_sensor_entities(
             hass,

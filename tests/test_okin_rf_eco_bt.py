@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import MagicMock
 
 import pytest
@@ -12,7 +13,6 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.adjustable_bed.beds.okin_rf_eco_bt import (
     STAIR_IN_COMMAND,
     STAIR_OUT_COMMAND,
-    STOP_COMMAND,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_RF_ECO_BT,
@@ -31,7 +31,6 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 TEST_ADDRESS = "AA:BB:CC:DD:EE:44"
 STAIR_OUT_PACKET = bytes.fromhex("040200000001")
 STAIR_IN_PACKET = bytes.fromhex("040200000002")
-STOP_PACKET = bytes.fromhex("040200000000")
 
 
 @pytest.fixture
@@ -89,18 +88,17 @@ class TestOkinRfEcoBtController:
             assert controller.supports_massage is False
             assert controller._build_command(STAIR_OUT_COMMAND) == STAIR_OUT_PACKET
             assert controller._build_command(STAIR_IN_COMMAND) == STAIR_IN_PACKET
-            assert controller._build_command(STOP_COMMAND) == STOP_PACKET
         finally:
             await coordinator.async_disconnect()
 
-    async def test_open_sends_m2_out_then_stop(
+    async def test_open_sends_only_m2_out(
         self,
         hass: HomeAssistant,
         mock_okin_rf_eco_bt_config_entry: MockConfigEntry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ) -> None:
-        """Opening the stair should send M2Out then DisobeyStandbyTime."""
+        """The fallback table defines movement but no DisobeyStandbyTime row."""
         coordinator = AdjustableBedCoordinator(hass, mock_okin_rf_eco_bt_config_entry)
         await coordinator.async_connect()
         try:
@@ -108,18 +106,18 @@ class TestOkinRfEcoBtController:
 
             await coordinator.controller.move_back_up()
 
-            assert _payloads(mock_bleak_client) == [STAIR_OUT_PACKET, STOP_PACKET]
+            assert _payloads(mock_bleak_client) == [STAIR_OUT_PACKET]
         finally:
             await coordinator.async_disconnect()
 
-    async def test_close_sends_m2_in_then_stop(
+    async def test_close_sends_only_m2_in(
         self,
         hass: HomeAssistant,
         mock_okin_rf_eco_bt_config_entry: MockConfigEntry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ) -> None:
-        """Closing the stair should send M2In then DisobeyStandbyTime."""
+        """Closing must not send the zero payload that toggles the receiver light."""
         coordinator = AdjustableBedCoordinator(hass, mock_okin_rf_eco_bt_config_entry)
         await coordinator.async_connect()
         try:
@@ -127,18 +125,18 @@ class TestOkinRfEcoBtController:
 
             await coordinator.controller.move_back_down()
 
-            assert _payloads(mock_bleak_client) == [STAIR_IN_PACKET, STOP_PACKET]
+            assert _payloads(mock_bleak_client) == [STAIR_IN_PACKET]
         finally:
             await coordinator.async_disconnect()
 
-    async def test_stop_all_sends_disobey_standby_time(
+    async def test_stop_all_ends_refresh_without_a_packet(
         self,
         hass: HomeAssistant,
         mock_okin_rf_eco_bt_config_entry: MockConfigEntry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ) -> None:
-        """Stop should send the APK DisobeyStandbyTime command."""
+        """STOP cancels refresh without inventing a release frame."""
         coordinator = AdjustableBedCoordinator(hass, mock_okin_rf_eco_bt_config_entry)
         await coordinator.async_connect()
         try:
@@ -146,7 +144,32 @@ class TestOkinRfEcoBtController:
 
             await coordinator.controller.stop_all()
 
-            assert _payloads(mock_bleak_client) == [STOP_PACKET]
+            assert _payloads(mock_bleak_client) == []
+        finally:
+            await coordinator.async_disconnect()
+
+    async def test_stop_cancels_running_refresh_without_a_release_frame(
+        self,
+        hass: HomeAssistant,
+        mock_okin_rf_eco_bt_config_entry: MockConfigEntry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_rf_eco_bt_config_entry)
+        await coordinator.async_connect()
+        try:
+            coordinator._motor_pulse_count = 100
+            mock_bleak_client.write_gatt_char.reset_mock()
+            first_write = asyncio.Event()
+            mock_bleak_client.write_gatt_char.side_effect = lambda *args, **kwargs: first_write.set()
+            movement = asyncio.create_task(coordinator.async_execute_controller_command(
+                lambda controller: controller.move_back_up(), cancel_running=False,
+            ))
+            await asyncio.wait_for(first_write.wait(), timeout=1)
+            await asyncio.wait_for(coordinator.async_stop_command(), timeout=1)
+            await asyncio.wait_for(movement, timeout=1)
+            assert _payloads(mock_bleak_client) == [STAIR_OUT_PACKET]
+            assert coordinator.controller._motor_state == {}
         finally:
             await coordinator.async_disconnect()
 
@@ -157,7 +180,7 @@ class TestOkinRfEcoBtController:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ) -> None:
-        """Timed movement should repeat M2Out and then release with stop."""
+        """Timed movement ends its held-command refresh."""
         coordinator = AdjustableBedCoordinator(hass, mock_okin_rf_eco_bt_config_entry)
         await coordinator.async_connect()
         try:
@@ -170,7 +193,6 @@ class TestOkinRfEcoBtController:
                 STAIR_OUT_PACKET,
                 STAIR_OUT_PACKET,
                 STAIR_OUT_PACKET,
-                STOP_PACKET,
             ]
         finally:
             await coordinator.async_disconnect()

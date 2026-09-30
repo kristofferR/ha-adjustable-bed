@@ -188,3 +188,14 @@ setup flow starts, even before a bed entry is created.
 
 See [Getting Help](GETTING_HELP.md) for the capture procedure, privacy details,
 and how to download the report.
+
+### FurniMove app controls
+
+The [FurniMove guide](beds/furnimove.md#controls-and-actions) describes
+`furnimove_action`, `furnimove_move_simultaneously`, `furnimove_massage_program`,
+`furnimove_massage_duration` and `furnimove_rename`. Every action takes
+`device_id` and optional `side`; rename targets one physical receiver.
+Ordered action indexes come from diagnostics and the selected handset.
+Hold overrides accept 0.1–60 seconds; widgets use their separate fixed timing.
+All targets validate before movement starts. The advisory massage duration is
+local state, sends no timer packet and does not stop the receiver on expiry.
