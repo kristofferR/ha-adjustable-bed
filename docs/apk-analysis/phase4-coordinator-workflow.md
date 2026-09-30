@@ -8,7 +8,7 @@ remain authoritative. Do not migrate accepted reports to a new representation.
 
 - Read the single ordered queue in #436. #443 is the evidence specification and
   batch ledger; #447 is the accepted-early exclusion registry, not another queue.
-- Target integration changes at `release/4.0`. Verify linked PR merge states and
+- Target integration changes at `master`, the released v4 baseline. Verify linked PR merge states and
   target branches before treating historical implementation debt as current.
 - Clear the accepted prefix's implementation debt before untouched analysis.
   A formal cluster still needs every member, audit and reconciliation accepted

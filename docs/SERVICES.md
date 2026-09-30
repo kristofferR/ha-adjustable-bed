@@ -33,6 +33,39 @@ both sides.
 `target_address` and has no `side` parameter. Select a child device for a
 two-address pair. See [support capture](GETTING_HELP.md#generating-a-support-bundle).
 
+## Malouf Base / Lucid Base Clock and Alarm
+
+The explicit [app profile](beds/malouf-app.md) exposes clock actions only for
+supported OKIN model/transport combinations. These actions accept `device_id`
+and the ordinary optional `side`. Every target is validated before any write.
+
+```yaml
+action: adjustable_bed.malouf_set_alarm
+data:
+  device_id: YOUR_DEVICE_ID
+  enabled: true
+  time: "07:30:00"
+  weekdays: [monday, tuesday, wednesday, thursday, friday]
+  preset: zero_g
+```
+
+Choose `zero_g`, `lounge`, `tv`, `anti_snore`, `memory_1`, or `memory_2`.
+Memory choices must fit every selected model's capacity. Time uses Home
+Assistant's configured time zone and minute precision. An empty weekday list
+programs the next occurrence as a one-shot alarm. Setting an enabled alarm
+also synchronizes the device clock.
+
+```yaml
+action: adjustable_bed.malouf_set_alarm
+data:
+  device_id: YOUR_DEVICE_ID
+  enabled: false
+```
+
+Use `adjustable_bed.malouf_sync_clock` with `device_id` to synchronize the
+clock separately. Both actions serialize configuration with other commands
+without cancelling active movement. Hardware behavior remains unverified.
+
 ## Movement and Memory
 
 | Action | Required fields besides `device_id` | Behavior |

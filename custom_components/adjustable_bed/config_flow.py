@@ -99,6 +99,7 @@ from .const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LOGICDATA_APP,
+    BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_OCTO,
@@ -146,6 +147,10 @@ from .const import (
     CONF_LP_LEGACY_MODEL,
     CONF_LP_LEGACY_READ_UUID,
     CONF_LP_LEGACY_WRITE_UUID,
+    CONF_MALOUF_APP_MODEL,
+    CONF_MALOUF_APP_PRIMARY,
+    CONF_MALOUF_APP_PROFILE,
+    CONF_MALOUF_APP_TRANSPORT,
     CONF_MALOUF_LAYOUT,
     CONF_MALOUF_MEMORY_SLOTS,
     CONF_MOTOR_COUNT,
@@ -191,6 +196,9 @@ from .const import (
     LOGICDATA_APP_LAYOUTS,
     LOGICDATA_APP_PROFILES,
     LOGICDATA_APP_TRANSPORTS,
+    MALOUF_APP_MODELS,
+    MALOUF_APP_PROFILES,
+    MALOUF_APP_TRANSPORTS,
     MALOUF_LAYOUT_AUTO,
     MALOUF_LAYOUTS,
     MALOUF_MEMORY_SLOT_OPTIONS,
@@ -791,6 +799,42 @@ def _jiecang_app_errors(data: dict[str, Any]) -> dict[str, str]:
     return errors
 
 
+def _add_malouf_app_schema_fields(
+    schema: dict[vol.Marker, Any], current_data: dict[str, Any] | None = None
+) -> None:
+    """Select the app and model independently from the connected GATT transport."""
+    current_data = current_data or {}
+    for key, choices in (
+        (CONF_MALOUF_APP_PROFILE, MALOUF_APP_PROFILES),
+        (CONF_MALOUF_APP_MODEL, MALOUF_APP_MODELS),
+    ):
+        schema[vol.Required(key, default=current_data.get(key, vol.UNDEFINED))] = vol.In(choices)
+    schema[
+        vol.Optional(
+            CONF_MALOUF_APP_TRANSPORT,
+            default=current_data.get(CONF_MALOUF_APP_TRANSPORT, "auto"),
+        )
+    ] = vol.In(MALOUF_APP_TRANSPORTS)
+    schema[
+        vol.Optional(
+            CONF_MALOUF_APP_PRIMARY,
+            default=current_data.get(CONF_MALOUF_APP_PRIMARY, True),
+        )
+    ] = bool
+
+
+def _malouf_app_errors(data: dict[str, Any]) -> dict[str, str]:
+    """Reject missing profile inputs instead of choosing a retail model by name."""
+    errors = {}
+    for key, choices in (
+        (CONF_MALOUF_APP_PROFILE, MALOUF_APP_PROFILES),
+        (CONF_MALOUF_APP_MODEL, MALOUF_APP_MODELS),
+    ):
+        if data.get(key) not in choices:
+            errors[key] = "malouf_app_required"
+    return errors
+
+
 def _add_cb24_side_schema_field(schema: dict[vol.Marker, Any]) -> None:
     """Expose the legacy CB24 native A/B selector when the type is known."""
     schema[
@@ -1150,6 +1194,24 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         _add_jiecang_app_schema_fields(schema, user_input)
         return self.async_show_form(
             step_id="jiecang_app", data_schema=vol.Schema(schema), errors=errors
+        )
+
+    async def async_step_malouf_app(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect the app and model for every setup route."""
+        assert self._manual_data is not None
+        errors = _malouf_app_errors(user_input) if user_input is not None else {}
+        if user_input is not None and not errors:
+            self._manual_data.update(user_input)
+            self._manual_data[CONF_DISABLE_ANGLE_SENSING] = True
+            return await self._finish_with_verify(
+                self._manual_data, self._manual_data.get(CONF_NAME, "Adjustable Bed")
+            )
+        schema: dict[vol.Marker, Any] = {}
+        _add_malouf_app_schema_fields(schema, user_input)
+        return self.async_show_form(
+            step_id="malouf_app", data_schema=vol.Schema(schema), errors=errors
         )
 
     @staticmethod
@@ -1957,6 +2019,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 if selected_bed_type == BED_TYPE_JIECANG_APP:
                     self._manual_data = entry_data
                     return await self.async_step_jiecang_app()
+                if selected_bed_type == BED_TYPE_MALOUF_APP:
+                    self._manual_data = entry_data
+                    return await self.async_step_malouf_app()
                 _add_malouf_entry_data(entry_data, user_input, selected_bed_type)
                 _add_cb24_entry_data(entry_data, user_input, selected_bed_type)
                 if selected_bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
@@ -2870,6 +2935,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 if bed_type == BED_TYPE_JIECANG_APP:
                     self._manual_data = entry_data
                     return await self.async_step_jiecang_app()
+                if bed_type == BED_TYPE_MALOUF_APP:
+                    self._manual_data = entry_data
+                    return await self.async_step_malouf_app()
                 _add_malouf_entry_data(entry_data, user_input, bed_type)
                 _add_cb24_entry_data(entry_data, user_input, bed_type)
                 if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
@@ -3153,6 +3221,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     if bed_type == BED_TYPE_JIECANG_APP:
                         self._manual_data = entry_data
                         return await self.async_step_jiecang_app()
+                    if bed_type == BED_TYPE_MALOUF_APP:
+                        self._manual_data = entry_data
+                        return await self.async_step_malouf_app()
                     _add_malouf_entry_data(entry_data, user_input, bed_type)
                     _add_cb24_entry_data(entry_data, user_input, bed_type)
                     if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
@@ -5139,6 +5210,14 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 CONF_JIECANG_APP_HAS_LIGHT,
             ):
                 data.pop(key, None)
+        if bed_type != BED_TYPE_MALOUF_APP:
+            for key in (
+                CONF_MALOUF_APP_PROFILE,
+                CONF_MALOUF_APP_MODEL,
+                CONF_MALOUF_APP_TRANSPORT,
+                CONF_MALOUF_APP_PRIMARY,
+            ):
+                data.pop(key, None)
         if bed_type != BED_TYPE_LEGGETT_LP_LEGACY:
             for key in (
                 CONF_LP_LEGACY_MODEL,
@@ -5583,6 +5662,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             _add_logicdata_app_schema_fields(schema_dict, current_data)
         if bed_type == BED_TYPE_JIECANG_APP and not separate_address_pair:
             _add_jiecang_app_schema_fields(schema_dict, current_data)
+        if bed_type == BED_TYPE_MALOUF_APP and not separate_address_pair:
+            _add_malouf_app_schema_fields(schema_dict, current_data)
 
         if bed_type in MALOUF_BED_TYPES:
             schema_dict[
@@ -5665,6 +5746,16 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     step_id=step_id,
                     data_schema=vol.Schema(schema_dict),
                     errors={"base": "jiecang_app_pair_settings"},
+                )
+            if (
+                separate_address_pair
+                and requested_bed_type == BED_TYPE_MALOUF_APP
+                and requested_bed_type != bed_type
+            ):
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={"base": "malouf_app_pair_settings"},
                 )
             if (
                 separate_address_pair
@@ -5877,6 +5968,13 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 user_input[CONF_DISABLE_ANGLE_SENSING] = True
             if bed_type == BED_TYPE_JIECANG_APP and not separate_address_pair:
                 app_errors = _jiecang_app_errors({**current_data, **user_input})
+                if app_errors:
+                    return self.async_show_form(
+                        step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
+                    )
+                user_input[CONF_DISABLE_ANGLE_SENSING] = True
+            if bed_type == BED_TYPE_MALOUF_APP and not separate_address_pair:
+                app_errors = _malouf_app_errors({**current_data, **user_input})
                 if app_errors:
                     return self.async_show_form(
                         step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors

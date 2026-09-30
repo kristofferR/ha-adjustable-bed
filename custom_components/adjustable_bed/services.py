@@ -35,6 +35,7 @@ from .const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA_APP,
+    BED_TYPE_MALOUF_APP,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
@@ -87,6 +88,8 @@ SERVICE_JIECANG_SET_ALARM = "jiecang_set_alarm"
 SERVICE_JIECANG_WAKE = "jiecang_wake"
 SERVICE_JIECANG_STOP_WAKE = "jiecang_stop_wake"
 SERVICE_JIECANG_RENAME = "jiecang_rename"
+SERVICE_MALOUF_SET_ALARM = "malouf_set_alarm"
+SERVICE_MALOUF_SYNC_CLOCK = "malouf_sync_clock"
 
 # Service call attributes
 ATTR_PRESET = "preset"
@@ -126,6 +129,7 @@ ATTR_HEAD_LEVEL = "head_level"
 ATTR_FOOT_LEVEL = "foot_level"
 
 LINAK_MOTOR_OPTIONS = ("base", "feet", "head", "legs", "back")
+MALOUF_ALARM_PRESETS = ("zero_g", "lounge", "tv", "anti_snore", "memory_1", "memory_2")
 LINAK_DIRECTION_OPTIONS = ("up", "down")
 LINAK_ALARM_ACTION_SCHEMA = vol.Schema(
     {
@@ -1599,6 +1603,84 @@ async def _preflight_logicdata(
     return await _preflight_capability(targets, capability, label)
 
 
+async def _preflight_malouf(
+    targets: list[tuple[BedTarget, str]],
+    capability: str,
+    label: str,
+    validate: Callable[[BedController | SideBoundController], None] | None = None,
+) -> PreflightedSides:
+    """Validate the explicit app profile on every physical target before writing."""
+    for coordinator, side in targets:
+        for target in _command_targets(coordinator, side):
+            if target.bed_type != BED_TYPE_MALOUF_APP:
+                raise ServiceValidationError(
+                    f"Device '{target.name}' is not a Malouf Base / Lucid Base app controller"
+                )
+    return await _preflight_capability(targets, capability, label, validate=validate)
+
+
+async def handle_malouf_set_alarm(call: ServiceCall) -> None:
+    """Set or clear the app profile's clock alarm through its command lock."""
+    alarm_time = call.data[ATTR_TIME]
+    if alarm_time.second or alarm_time.microsecond:
+        raise ServiceValidationError("Malouf alarms use minute precision")
+    weekdays = tuple(SOLACE_WEEKDAY_OPTIONS.index(day) for day in call.data[ATTR_WEEKDAYS])
+    targets, missing = _resolve_sided_targets(
+        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    def validate_alarm(controller: BedController | SideBoundController) -> None:
+        if call.data[ATTR_ENABLED] and call.data[ATTR_PRESET] not in controller.clock_alarm_preset_options:
+            raise ServiceValidationError("The selected alarm preset is unavailable on this model")
+
+    preflighted = await _preflight_malouf(
+        targets, "supports_clock_alarm", "Malouf clock alarms", validate=validate_alarm
+    )
+
+    async def program(controller: BedController | SideBoundController) -> None:
+        await controller.configure_clock_alarm(
+            enabled=call.data[ATTR_ENABLED],
+            weekdays=weekdays,
+            hour=alarm_time.hour,
+            minute=alarm_time.minute,
+            preset=call.data[ATTR_PRESET],
+        )
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(
+                coordinator, side, program, cancel_running=False, resource="configuration"
+            )
+    except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
+async def handle_malouf_sync_clock(call: ServiceCall) -> None:
+    """Synchronize the app profile's device clock using HA's configured time zone."""
+    targets, missing = _resolve_sided_targets(
+        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    preflighted = await _preflight_malouf(
+        targets, "supports_clock_sync", "Malouf clock synchronization"
+    )
+
+    async def sync(controller: BedController | SideBoundController) -> None:
+        await controller.sync_clock()
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(
+                coordinator, side, sync, cancel_running=False, resource="configuration"
+            )
+    except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
 async def handle_logicdata_set_alarm(call: ServiceCall) -> None:
     """Configure the Logicdata app controller's recurring clock alarm."""
     alarm_time = call.data[ATTR_TIME]
@@ -2430,6 +2512,34 @@ async def async_register_services(hass: HomeAssistant) -> None:
             {
                 vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
                 vol.Required(ATTR_NAME): vol.All(cv.string, vol.Match(r"\A[A-Za-z0-9]{1,20}\Z")),
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_MALOUF_SET_ALARM,
+        handle_malouf_set_alarm,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_ENABLED): cv.boolean,
+                vol.Optional(ATTR_TIME, default="00:00:00"): cv.time,
+                vol.Optional(ATTR_WEEKDAYS, default=[]): vol.All(
+                    cv.ensure_list, [vol.In(SOLACE_WEEKDAY_OPTIONS)]
+                ),
+                vol.Optional(ATTR_PRESET, default="zero_g"): vol.In(MALOUF_ALARM_PRESETS),
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_MALOUF_SYNC_CLOCK,
+        handle_malouf_sync_clock,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
                 **SIDE_FIELD,
             }
         ),
