@@ -502,6 +502,29 @@ async def test_absent_wave_intensity_rejected_but_wave_program_remains_available
     assert written(controller)[-2] == controller._frame(controller.profile.first("MassagerWave")).hex()
 
 
+@pytest.mark.parametrize("handset", ["90167", "91983", "93558"])
+@pytest.mark.parametrize("direction", ["up", "down"])
+async def test_absent_wave_intensity_step_preserves_program_state(handset, direction):
+    controller = await fast_controller(handset)
+    await controller.set_furnimove_massage_program(4)
+    await controller.set_furnimove_massage_program(4)
+    state = controller.protocol_diagnostics.copy()
+    assert controller.get_massage_state()["intensity"] == 2
+    controller.client.write_gatt_char.reset_mock()
+    controller._coordinator.handle_controller_state_update.reset_mock()
+    controller._pause.reset_mock()
+
+    if direction == "up":
+        await controller.massage_intensity_up()
+    else:
+        await controller.massage_intensity_down()
+
+    assert not written(controller)
+    assert controller.protocol_diagnostics == state
+    controller._coordinator.handle_controller_state_update.assert_not_called()
+    controller._pause.assert_not_called()
+
+
 @pytest.mark.parametrize(
     ("handset", "programs"),
     [("90167", [4, 4]), ("91983", [4, 4]), ("93558", [4, 4]),

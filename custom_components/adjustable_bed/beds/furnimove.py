@@ -997,6 +997,8 @@ class FurniMoveController(BedController):
             raise ValueError("The handset does not expose massage")
         if not self._state["furnimove_massage_running"]:
             return
+        if zone == "wave" and self.profile.first("Massager3") is None:
+            return
         level = int(str(self._state["furnimove_massage_intensity"]))
         if direction == 1 and level >= self.massage_intensity_max or direction != 1 and level <= 1:
             return
