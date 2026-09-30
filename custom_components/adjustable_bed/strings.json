@@ -3046,7 +3046,6 @@
     },
     "furnimove_layout": {
       "title": "Confirm the control layout for {name}",
-      "description": "This entry was configured using a shared RF ECO BT receiver identity. The receiver can control either a single-actuator staircase or an adjustable bed. Confirm the product and, for FurniMove, select its handset layout to restore the correct motor controls.",
       "fix_flow": {
         "step": {
           "init": {

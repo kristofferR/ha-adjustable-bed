@@ -60,6 +60,7 @@ async def test_optional_request_outcome_retains_link_and_never_asserts_bond(hass
     client = ctrl._client
     client.pair.side_effect = error
     ctrl._start_furnimove_bond_request(BLEDevice(ctrl.address, "OKIN-560024", {}))
+    assert ctrl._furnimove_bond_task is not None
     await ctrl._furnimove_bond_task
     assert ctrl._client is client
     assert client.is_connected
@@ -109,6 +110,7 @@ async def test_old_client_completion_cannot_modify_new_client_diagnostics(hass):
     ctrl._client = MagicMock()
     ctrl._furnimove_bond_request = {"status": "new_generation"}
     release.set()
+    assert ctrl._furnimove_bond_task is not None
     await ctrl._furnimove_bond_task
     assert ctrl._furnimove_bond_request == {"status": "new_generation"}
     await ctrl._async_cancel_furnimove_bond_request()
