@@ -14,7 +14,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import BED_TYPE_LINAK, BED_TYPE_SLEEP_NUMBER_MCR, DOMAIN
+from .const import BED_TYPE_LINAK, BED_TYPE_SERENITY, BED_TYPE_SLEEP_NUMBER_MCR, DOMAIN
 from .entity import AdjustableBedEntity
 from .entity_runtime import EntityRuntime
 from .paired_coordinator import entity_runtimes
@@ -174,6 +174,10 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         if description.state_key is None:
             self._attr_is_on = False
+            if description.key == "under_bed_lights" and coordinator.bed_type == BED_TYPE_SERENITY:
+                # This app has on/off commands but no physical state response.
+                self._attr_is_on = None
+                self._attr_assumed_state = True
         else:
             initial_state = coordinator.controller_state.get(description.state_key)
             self._attr_is_on = initial_state if isinstance(initial_state, bool) else None

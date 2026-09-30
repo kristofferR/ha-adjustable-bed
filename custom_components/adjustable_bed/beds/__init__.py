@@ -52,6 +52,7 @@ if TYPE_CHECKING:
     from .rondure import RondureController as RondureController
     from .sbi import SBIController as SBIController
     from .scott_living import ScottLivingController as ScottLivingController
+    from .serenity import SerenityController as SerenityController
     from .sleep_number import SleepNumberController as SleepNumberController
     from .sleep_number_mcr import SleepNumberMcrController as SleepNumberMcrController
     from .sleepstar import SleepStarController as SleepStarController
@@ -66,6 +67,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "SerenityController": "serenity",
     "CustomaticController": "customatic",
     "CoolBaseController": "coolbase",
     "DewertOkinRfGatewayController": "dewertokin_rf_gateway",

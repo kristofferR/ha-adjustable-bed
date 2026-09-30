@@ -71,6 +71,7 @@ from .const import (
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SCOTT_LIVING,
+    BED_TYPE_SERENITY,
     BED_TYPE_SERTA,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
@@ -498,6 +499,7 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # are NOT included here - they're only kept for backward compatibility with
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    BED_TYPE_SERENITY: "Jordan's Serenity app",
     BED_TYPE_CUSTOMATIC_CLARITY: "Customatic Clarity app",
     BED_TYPE_CUSTOMATIC_JEROMES: "Customatic Jerome's C app",
     BED_TYPE_CUSTOMATIC_REMEDY: "Customatic Remedy app",

@@ -39,6 +39,7 @@ from .const import (
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
+    BED_TYPE_SERENITY,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
@@ -84,6 +85,7 @@ SERVICE_SOLACE_SET_ALARM = "solace_set_alarm"
 SERVICE_LEGGETT_SLEEP_TIMER = "leggett_sleep_timer"
 SERVICE_LEGGETT_ALARM_TIMER = "leggett_alarm_timer"
 SERVICE_LEGGETT_HOLD_CONTROL = "leggett_hold_control"
+SERVICE_SERENITY_HOLD_CONTROL = "serenity_hold_control"
 SERVICE_CUSTOMATIC_HOLD_MEMORY = "customatic_hold_memory"
 SERVICE_CUSTOMATIC_MOVE_SIMULTANEOUSLY = "customatic_move_simultaneously"
 SERVICE_LOGICDATA_SET_ALARM = "logicdata_set_alarm"
@@ -1648,8 +1650,15 @@ async def handle_customatic_move_simultaneously(call: ServiceCall) -> None:
     )
 
 
+async def handle_serenity_hold_control(call: ServiceCall) -> None:
+    """Hold one literal Serenity action, then send its proven release sequence."""
+    await _handle_customatic_hold(
+        call, call.data[ATTR_CONTROL], {BED_TYPE_SERENITY}, label="Serenity"
+    )
+
+
 async def _handle_customatic_hold(
-    call: ServiceCall, control: str, bed_types: set[str]
+    call: ServiceCall, control: str, bed_types: set[str], *, label: str = "Customatic"
 ) -> None:
     """Preflight the whole selection before starting any held write sequence."""
     duration_ms = int(_leggett_hold_seconds(call.data[ATTR_DURATION]) * 1000)
@@ -1662,7 +1671,7 @@ async def _handle_customatic_hold(
         for target in _command_targets(coordinator, side):
             if target.bed_type not in bed_types:
                 raise ServiceValidationError(
-                    f"Device '{target.name}' does not support this Customatic action"
+                    f"Device '{target.name}' does not support this {label} action"
                 )
 
     def validate(controller: BedController | SideBoundController) -> None:
@@ -1672,7 +1681,7 @@ async def _handle_customatic_hold(
             )
 
     preflighted = await _preflight_capability(
-        targets, "supports_held_control", "Customatic held controls", validate
+        targets, "supports_held_control", f"{label} held controls", validate
     )
 
     async def hold(controller: BedController | SideBoundController) -> None:
@@ -2495,6 +2504,19 @@ async def async_register_services(hass: HomeAssistant) -> None:
             {
                 vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
                 vol.Required(ATTR_CONTROL): vol.In(LEGGETT_HELD_CONTROLS),
+                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SERENITY_HOLD_CONTROL,
+        handle_serenity_hold_control,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_CONTROL): cv.string,
                 vol.Required(ATTR_DURATION): _leggett_hold_seconds,
                 **SIDE_FIELD,
             }

@@ -237,6 +237,9 @@ def _sensor_entities_for(
                 "customatic_manufacturer", "customatic_hardware_revision",
                 "customatic_software_revision", "customatic_firmware_revision",
                 "customatic_model",
+                "serenity_manufacturer", "serenity_status_code",
+                "serenity_massage_timer_code", "serenity_massage_timer_minutes",
+                "serenity_save_event_code", "serenity_alarm_type",
             } - active_keys
         )
         _async_remove_stale_sensor_entities(

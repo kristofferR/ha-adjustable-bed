@@ -43,6 +43,7 @@ from .const import (
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
+    BED_TYPE_SERENITY,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
@@ -303,6 +304,12 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "label": "Mattress Firm 900 / iFlex",
                 "description": "Uses Nordic UART protocol",
                 "hint": "Device name contains 'iFlex' or 'MF900'",
+            },
+            {
+                "type": BED_TYPE_SERENITY,
+                "label": "Jordan's Serenity app",
+                "description": "Serenity app controls, M1/M2 and separate massage zones",
+                "hint": "Choose the app shown on your phone; a shared OKIN name is not enough.",
             },
             {
                 "type": BED_TYPE_OKIN_FFE,

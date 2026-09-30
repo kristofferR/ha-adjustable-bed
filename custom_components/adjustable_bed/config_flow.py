@@ -8,7 +8,7 @@ import logging
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, Final, cast
+from typing import TYPE_CHECKING, Any, Final, Literal, cast
 from uuid import UUID
 
 import voluptuous as vol
@@ -112,6 +112,7 @@ from .const import (
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_RICHMAT,
+    BED_TYPE_SERENITY,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SOLACE,
     BED_TYPE_SVANE,
@@ -621,7 +622,7 @@ def _motor_count_options(
     protocol_variant: str = DEFAULT_PROTOCOL_VARIANT,
 ) -> list[int]:
     """Return motor counts supported by the selected protocol."""
-    if bed_type in {BED_TYPE_CUSTOMATIC_CLARITY, BED_TYPE_CUSTOMATIC_JEROMES}:
+    if bed_type in {BED_TYPE_SERENITY, BED_TYPE_CUSTOMATIC_CLARITY, BED_TYPE_CUSTOMATIC_JEROMES}:
         return [2]
     if bed_type == BED_TYPE_CUSTOMATIC_REMEDY:
         return [3]
@@ -1859,6 +1860,39 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             },
         )
 
+    async def _async_rebuild_changed_serenity_form(
+        self,
+        user_input: dict[str, Any] | None,
+        shown_bed_type: str | None,
+        step: Literal["bluetooth_confirm", "manual_config", "manual_entry"],
+    ) -> ConfigFlowResult | None:
+        """Restore hidden layout/timing choices before accepting another profile."""
+        if user_input is None:
+            return None
+        requested = user_input.get(CONF_BED_TYPE, shown_bed_type)
+        if requested == shown_bed_type or BED_TYPE_SERENITY not in (shown_bed_type, requested):
+            return None
+        self._selected_bed_type = None if requested == BED_TYPE_AUTO_DETECT else requested
+        self._selected_protocol_variant = None
+        if step == "bluetooth_confirm":
+            self._disambiguated_bed_type = self._selected_bed_type
+            self._show_full_bed_type_list = True
+            result = await self.async_step_bluetooth_confirm()
+        elif step == "manual_config":
+            result = await self.async_step_manual_config()
+        else:
+            result = await self.async_step_manual_entry()
+        if isinstance(schema := result.get("data_schema"), vol.Schema):
+            suggestions = dict(user_input)
+            if not is_valid_variant_for_bed_type(
+                requested, suggestions.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
+            ):
+                suggestions.pop(CONF_PROTOCOL_VARIANT, None)
+            result["data_schema"] = self.add_suggested_values_to_schema(
+                schema, suggestions
+            )
+        return result
+
     async def async_step_bluetooth_confirm(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -1903,6 +1937,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         defaults_bed_type = (
             None if bed_type_default == BED_TYPE_AUTO_DETECT else bed_type_default
         )
+        if rebuilt := await self._async_rebuild_changed_serenity_form(
+            user_input, bed_type_default, "bluetooth_confirm"
+        ):
+            return rebuilt
         default_disconnect_after_command = disconnect_after_command_default_enabled(
             defaults_bed_type, VARIANT_AUTO
         )
@@ -2211,6 +2249,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS
             ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
         }
+
+        if bed_type_default == BED_TYPE_SERENITY:
+            schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
+            schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
 
         # Always show variant selection - user may change bed type to one with variants
         # If user changes bed type, they can select the appropriate variant
@@ -2859,6 +2901,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         detection_result = detect_bed_type_detailed(self._discovery_info)
         confident_bed_type = _confident_auto_detect(detection_result)
         defaults_bed_type = preselected_bed_type or confident_bed_type
+        if rebuilt := await self._async_rebuild_changed_serenity_form(
+            user_input, defaults_bed_type, "manual_config"
+        ):
+            return rebuilt
         default_disconnect_after_command = disconnect_after_command_default_enabled(
             defaults_bed_type, preselected_protocol_variant
         )
@@ -3111,6 +3157,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
             }
         )
+        if defaults_bed_type == BED_TYPE_SERENITY:
+            schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
+            schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
         if defaults_bed_type in MALOUF_BED_TYPES:
             _add_malouf_schema_fields(schema_dict)
         if defaults_bed_type == BED_TYPE_OKIN_CB24:
@@ -3140,6 +3189,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         errors: dict[str, str] = {}
         preselected_bed_type = self._selected_bed_type
         preselected_protocol_variant = self._selected_protocol_variant or VARIANT_AUTO
+        if rebuilt := await self._async_rebuild_changed_serenity_form(
+            user_input, preselected_bed_type, "manual_entry"
+        ):
+            return rebuilt
         default_disconnect_after_command = disconnect_after_command_default_enabled(
             preselected_bed_type, preselected_protocol_variant
         )
@@ -3371,6 +3424,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             _add_malouf_schema_fields(schema_dict)
         if preselected_bed_type == BED_TYPE_OKIN_CB24:
             _add_cb24_side_schema_field(schema_dict)
+        if preselected_bed_type == BED_TYPE_SERENITY:
+            schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
+            schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
 
         typed_address = (user_input or {}).get(CONF_ADDRESS, "")
         return self.async_show_form(
@@ -5609,6 +5665,10 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 default=discovery_disabled,
             ): bool,
         }
+
+        if bed_type == BED_TYPE_SERENITY:
+            schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
+            schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
 
         if has_position_feedback:
             schema_dict[

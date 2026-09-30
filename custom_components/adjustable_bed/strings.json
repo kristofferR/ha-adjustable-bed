@@ -2040,6 +2040,24 @@
       },
       "customatic_model": {
         "name": "Model"
+      },
+      "serenity_manufacturer": {
+        "name": "Manufacturer"
+      },
+      "serenity_status_code": {
+        "name": "App status code"
+      },
+      "serenity_massage_timer_code": {
+        "name": "Massage timer code"
+      },
+      "serenity_massage_timer_minutes": {
+        "name": "Massage timer"
+      },
+      "serenity_save_event_code": {
+        "name": "Local memory save event"
+      },
+      "serenity_alarm_type": {
+        "name": "App alarm state"
       }
     },
     "light": {
@@ -2362,6 +2380,26 @@
     }
   },
   "services": {
+    "serenity_hold_control": {
+      "name": "Hold Serenity control",
+      "description": "Hold one supported Serenity app action, then release it. Save actions can change stored positions.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "Literal action from the Serenity profile held-control options."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
     "rmcontrol_alarm": {
       "name": "RMControl alarm",
       "description": "Configure a supported product's countdown or repeating alarm using its exact action catalog.",
