@@ -51,6 +51,11 @@ that has no endpoint in the selected app and transport.
 - Notification state reports massage time and, where supported, light status.
   The apps provide no motor-position, light-brightness, or color feedback.
 
+For a feedback light whose state is still unknown, use the card's light toggle
+or Home Assistant's `light.toggle` action. Both send the native toggle without
+guessing the current state. Explicit `light.turn_on` and `light.turn_off` require
+known feedback.
+
 ## Transport contracts
 
 All characteristic writes use Android's numeric mode 2, `WRITE_TYPE_DEFAULT`,

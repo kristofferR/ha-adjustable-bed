@@ -761,7 +761,7 @@ class MaloufAppController(BedController):
         if preset not in ALARM_TYPES:
             raise ValueError("Alarm preset must be one of the six app alarm choices")
         if enabled and preset.startswith("memory_"):
-            self._validate_memory(int(preset[-1]))
+            self._validate_memory(int(preset.removeprefix("memory_")))
         if not enabled:
             frame = alarm_frame(transport, 0, 0, 0, 0)
         else:
@@ -791,6 +791,11 @@ class MaloufAppController(BedController):
                 ),
             )
         return ()
+
+    @property
+    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
+        active_keys = {spec.key for spec in self.controller_state_sensor_specs}
+        return frozenset({"malouf_massage_remaining"} - active_keys)
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         self._notify_callback = callback
