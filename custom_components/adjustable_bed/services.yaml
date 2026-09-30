@@ -1162,3 +1162,73 @@ sleep_number_command:
       description: Command-specific fields. Unknown fields and unsupported values are rejected. A parameter side cannot override the selected physical side.
       selector:
         object:
+
+customatic_hold_memory:
+  name: Hold Customatic memory controls
+  description: Hold a nonempty combination of the Clarity or Remedy memory-page actions. Program combinations can change stored positions.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    actions:
+      name: Actions
+      description: Select any combination of flat, zg, anti, program and incline. Jerome's C has no memory page.
+      required: true
+      selector:
+        select:
+          multiple: true
+          options: [flat, zg, anti, program, incline]
+    duration:
+      name: Duration
+      description: Hold for 0.1 to 60 seconds, in whole milliseconds. The refresh ends without a separate STOP frame.
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.001
+          unit_of_measurement: seconds
+          mode: box
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
+
+customatic_move_simultaneously:
+  name: Move Customatic motors together
+  description: Move one to three axes with one native mask, then send the movement release frame.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    actions:
+      name: Motor directions
+      description: A mapping of back, legs and optionally lumbar to up or down. Lumbar requires the Remedy profile. Opposing directions on one motor are rejected.
+      required: true
+      selector:
+        object:
+    duration:
+      name: Duration
+      description: Hold for 0.1 to 60 seconds, in whole milliseconds, then release.
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.001
+          unit_of_measurement: seconds
+          mode: box
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]

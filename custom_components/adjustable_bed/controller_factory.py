@@ -15,6 +15,9 @@ from .const import (
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
+    BED_TYPE_CUSTOMATIC_CLARITY,
+    BED_TYPE_CUSTOMATIC_JEROMES,
+    BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
@@ -290,6 +293,15 @@ class _ControllerSpec:
 # tests/test_controller_contract.py resolves every entry, so a bad module or
 # class name fails the suite rather than a user's bed setup.
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
+    BED_TYPE_CUSTOMATIC_CLARITY: _ControllerSpec(
+        "customatic", "CustomaticController", MappingProxyType({"profile": "clarity"})
+    ),
+    BED_TYPE_CUSTOMATIC_JEROMES: _ControllerSpec(
+        "customatic", "CustomaticController", MappingProxyType({"profile": "jeromes"})
+    ),
+    BED_TYPE_CUSTOMATIC_REMEDY: _ControllerSpec(
+        "customatic", "CustomaticController", MappingProxyType({"profile": "remedy"})
+    ),
     BED_TYPE_OKIN_RF_ECO_BT: _ControllerSpec("okin_rf_eco_bt", "OkinRfEcoBtController"),
     BED_TYPE_OKIN_7BYTE: _ControllerSpec("okin_7byte", "Okin7ByteController"),
     BED_TYPE_OKIN_NORDIC: _ControllerSpec("okin_nordic", "OkinNordicController"),

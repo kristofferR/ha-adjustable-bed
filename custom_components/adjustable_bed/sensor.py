@@ -234,6 +234,9 @@ def _sensor_entities_for(
             {
                 "leggett_led_mask", "leggett_status", "logicdata_app_alarm",
                 "logicdata_app_family_match", "malouf_massage_remaining",
+                "customatic_manufacturer", "customatic_hardware_revision",
+                "customatic_software_revision", "customatic_firmware_revision",
+                "customatic_model",
             } - active_keys
         )
         _async_remove_stale_sensor_entities(

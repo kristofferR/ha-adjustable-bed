@@ -339,6 +339,9 @@ BED_TYPE_NECTAR: Final = "nectar"  # -> okin_7byte
 BED_TYPE_MALOUF_NEW_OKIN: Final = "malouf_new_okin"
 BED_TYPE_MALOUF_LEGACY_OKIN: Final = "malouf_legacy_okin"
 BED_TYPE_MALOUF_APP: Final = "malouf_app"
+BED_TYPE_CUSTOMATIC_CLARITY: Final = "customatic_clarity"
+BED_TYPE_CUSTOMATIC_JEROMES: Final = "customatic_jeromes"
+BED_TYPE_CUSTOMATIC_REMEDY: Final = "customatic_remedy"
 BED_TYPE_OKIN_FFE: Final = "okin_ffe"  # OKIN 13/15 series via FFE5 service (0xE6 prefix)
 BED_TYPE_REVERIE_NIGHTSTAND: Final = "reverie_nightstand"  # Reverie Protocol 110
 BED_TYPE_COMFORT_MOTION: Final = "comfort_motion"  # Comfort Motion / Lierda protocol
@@ -406,6 +409,10 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_MATTRESSFIRM,
     BED_TYPE_NECTAR,
+    # Explicit Customatic app profiles
+    BED_TYPE_CUSTOMATIC_CLARITY,
+    BED_TYPE_CUSTOMATIC_JEROMES,
+    BED_TYPE_CUSTOMATIC_REMEDY,
     # Malouf protocols
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_NEW_OKIN,
@@ -2387,6 +2394,9 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
 # not remain "unknown" forever (#322, #344, #501).
 BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
     {
+        BED_TYPE_CUSTOMATIC_CLARITY,
+        BED_TYPE_CUSTOMATIC_JEROMES,
+        BED_TYPE_CUSTOMATIC_REMEDY,
         BED_TYPE_MALOUF_APP,
         BED_TYPE_LOGICDATA_APP,
         BED_TYPE_JIECANG_APP,
@@ -2578,6 +2588,10 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_MALOUF_LEGACY_OKIN: (7, 150),
     # Both app UIs refresh held movement every 150 ms, on all five transports.
     BED_TYPE_MALOUF_APP: (7, 150),
+    # The apps refresh every 120 ms; eight pulses are HA's bounded tap default.
+    BED_TYPE_CUSTOMATIC_CLARITY: (8, 120),
+    BED_TYPE_CUSTOMATIC_JEROMES: (8, 120),
+    BED_TYPE_CUSTOMATIC_REMEDY: (8, 120),
     # Malouf New OKIN (Nordic): 100ms delay → 10 repeats = 1.0s total
     # Source: com.malouf.bedbase / com.lucid.bedbase ANALYSIS.md
     BED_TYPE_MALOUF_NEW_OKIN: (10, 100),

@@ -90,6 +90,9 @@ from .bond_verification import (
 from .const import (
     ADAPTER_AUTO,
     ALL_PROTOCOL_VARIANTS,
+    BED_TYPE_CUSTOMATIC_CLARITY,
+    BED_TYPE_CUSTOMATIC_JEROMES,
+    BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG_APP,
@@ -618,6 +621,10 @@ def _motor_count_options(
     protocol_variant: str = DEFAULT_PROTOCOL_VARIANT,
 ) -> list[int]:
     """Return motor counts supported by the selected protocol."""
+    if bed_type in {BED_TYPE_CUSTOMATIC_CLARITY, BED_TYPE_CUSTOMATIC_JEROMES}:
+        return [2]
+    if bed_type == BED_TYPE_CUSTOMATIC_REMEDY:
+        return [3]
     if bed_type == BED_TYPE_OCTO and protocol_variant != OCTO_VARIANT_STAR2:
         return [1, 2, 3, 4]
     if bed_type == BED_TYPE_OKIN_CST:
@@ -671,7 +678,7 @@ def _default_motor_count(
         and device_name.strip().lower().startswith("rtv")
     ):
         return 1
-    if bed_type == BED_TYPE_OKIN_CST:
+    if bed_type in {BED_TYPE_OKIN_CST, BED_TYPE_CUSTOMATIC_REMEDY}:
         return 3
     return DEFAULT_MOTOR_COUNT
 

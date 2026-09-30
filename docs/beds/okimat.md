@@ -8,7 +8,7 @@
 - Okimat beds
 - Lucid L600
 - Rize beds (II, Contempo, Bob, Sanctuary, Aviada, MF900, Resident)
-- Customatic beds (Clarity, Demo, Remedy, Jerome's)
+- Customatic Demo (select explicit [Customatic app profiles](customatic.md) for Clarity, Remedy or Jerome's C)
 - Glory, Tranquil, Jobs 賈伯斯, Nectar Motion
 - Other beds with Okin motors
 
@@ -23,7 +23,6 @@ Several apps use this protocol:
 | ✅ | [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi) | `com.okin.bedding.smartbedwifi` |
 | ✅ | Rize II | `com.okin.bedding.rizeii` |
 | ✅ | Rize Resident | `com.okin.bedding.rizeResident` |
-| ✅ | Customatic Clarity | `com.okin.bedding.customaticclarity` |
 | ✅ | OkinSmartComfort | `com.okin.okinsmartcomfort` |
 | ✅ | Glory | `com.okin.bedding.glory` |
 | ✅ | Tranquil | `com.okin.bedding.tranquil` |
