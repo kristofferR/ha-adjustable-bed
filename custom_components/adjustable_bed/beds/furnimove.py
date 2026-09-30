@@ -1013,9 +1013,25 @@ class FurniMoveController(BedController):
     async def massage_foot_down(self) -> None:
         await self._massage_step("foot", -1)
 
-    async def set_furnimove_massage_program(self, program: int) -> None:
+    @property
+    def _massage_programs(self) -> tuple[int, ...]:
+        return tuple(
+            program for program in (1, 2, 3, 4)
+            if self.profile.first(f"Massager{program}" if program < 4 else "MassagerWave") is not None
+        )
+
+    @property
+    def supports_massage_mode_step_control(self) -> bool:
+        return self.supports_massage and bool(self._massage_programs)
+
+    def validate_furnimove_massage_program(self, program: int) -> None:
         if not self.supports_massage or isinstance(program, bool) or program not in (1, 2, 3, 4):
             raise ValueError("FurniMove massage program must be 1–4")
+        if program not in self._massage_programs:
+            raise ValueError("Massage program is absent from the selected handset")
+
+    async def set_furnimove_massage_program(self, program: int) -> None:
+        self.validate_furnimove_massage_program(program)
         over_max = False
         if program == self._state["furnimove_massage_program"]:
             level = int(str(self._state["furnimove_massage_intensity"])) + 1
@@ -1040,8 +1056,12 @@ class FurniMoveController(BedController):
                 self._publish("furnimove_massage_running", True)
 
     async def massage_mode_step(self) -> None:
+        if not self.supports_massage_mode_step_control:
+            raise ValueError("The selected handset has no massage programs")
         program = int(str(self._state["furnimove_massage_program"]))
-        await self.set_furnimove_massage_program(program % 4 + 1)
+        programs = self._massage_programs
+        next_program = next((value for value in programs if value > program), programs[0])
+        await self.set_furnimove_massage_program(next_program)
 
     @property
     def supports_massage_intensity_preset_control(self) -> bool:
@@ -1138,7 +1158,7 @@ class FurniMoveController(BedController):
 
     def validate_furnimove_action(
         self, row_index: int, *, duration_ms: int | None = None, consumer: str = "app"
-    ) -> None:
+    ) -> tuple[str, str]:
         if isinstance(row_index, bool) or not 0 <= row_index < len(self.profile.actions):
             raise ValueError("Unknown FurniMove action row")
         row = self.profile.actions[row_index]
@@ -1162,6 +1182,7 @@ class FurniMoveController(BedController):
             and row.frequency_ms <= 0
         ):
             raise ValueError("The captured timer cannot be safely executed")
+        return row.action, row.type
 
     async def async_execute_furnimove_action(
         self, row_index: int, *, duration_ms: int | None = None, consumer: str = "app"

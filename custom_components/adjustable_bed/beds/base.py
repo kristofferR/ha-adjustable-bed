@@ -2105,8 +2105,8 @@ class BedController(ABC):
 
     def validate_furnimove_action(
         self, row_index: int, *, duration_ms: int | None = None, consumer: str = "app"
-    ) -> None:
-        """Validate a selected app row before any target begins writing."""
+    ) -> tuple[str, str]:
+        """Validate an app row and return its action name and category."""
         raise NotImplementedError("FurniMove actions not supported on this bed")
 
     async def async_execute_furnimove_action(
@@ -2114,6 +2114,10 @@ class BedController(ABC):
     ) -> None:
         """Execute one validated app row through its traced consumer."""
         raise NotImplementedError("FurniMove actions not supported on this bed")
+
+    def validate_furnimove_massage_program(self, program: int) -> None:
+        """Validate program availability before any target begins writing."""
+        raise NotImplementedError("FurniMove massage programs not supported on this bed")
 
     async def set_furnimove_massage_program(self, program: int) -> None:
         """Select one of the app's four massage programs."""

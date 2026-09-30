@@ -61,6 +61,45 @@ async def test_later_target_is_validated_before_first_target_moves(hass, invalid
     assert not written(controller) and not written(other)
 
 
+@pytest.mark.parametrize("paired", [False, True])
+async def test_same_row_with_different_actions_rejected_before_any_target_moves(hass, paired):
+    from custom_components.adjustable_bed.const import CONF_PAIR_ID, SIDE_LEFT, SIDE_RIGHT
+    from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
+
+    first, controller = await target("00000")
+    second, other = await target("82417")
+    targets = [first, second]
+    if paired:
+        targets = [PairedBedCoordinator(
+            hass, SimpleNamespace(data={CONF_PAIR_ID: "furnimove-pair"}),
+            {SIDE_LEFT: first, SIDE_RIGHT: second},
+        )]
+    with pytest.raises(ServiceValidationError, match="different actions"):
+        await invoke(hass, targets, "furnimove_action", {"row_index": 1, "duration": .1})
+    first.async_execute_controller_command.assert_not_awaited()
+    second.async_execute_controller_command.assert_not_awaited()
+    assert not written(controller) and not written(other)
+
+
+async def test_matching_actions_on_different_handsets_can_target_both_devices(hass):
+    first, controller = await target("82417")
+    second, other = await target("90167")
+    await invoke(hass, [first, second], "furnimove_action", {"row_index": 1, "duration": .1})
+    assert written(controller) and written(other)
+    first.async_execute_controller_command.assert_awaited_once()
+    second.async_execute_controller_command.assert_awaited_once()
+
+
+async def test_missing_massage_program_on_later_target_rejected_before_any_write(hass):
+    first, controller = await target("12234")
+    second, other = await target("90167")
+    with pytest.raises(ServiceValidationError, match="absent"):
+        await invoke(hass, [first, second], "furnimove_massage_program", {"program": 1})
+    first.async_execute_controller_command.assert_not_awaited()
+    second.async_execute_controller_command.assert_not_awaited()
+    assert not written(controller) and not written(other)
+
+
 async def test_advisory_duration_accepts_ui_selection_without_wire_or_preemption(hass):
     coordinator, controller = await target("12234")
     await invoke(hass, [coordinator], "furnimove_massage_duration", {"minutes": "20"})

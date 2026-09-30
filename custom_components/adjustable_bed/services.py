@@ -1695,9 +1695,16 @@ async def handle_furnimove_action(call: ServiceCall) -> None:
     duration = call.data.get(ATTR_DURATION)
     duration_ms = int(duration * 1000) if duration is not None else None
     consumer = call.data["consumer"]
+    selected_action: tuple[str, str] | None = None
 
     def validate(controller: BedController | SideBoundController) -> None:
-        controller.validate_furnimove_action(row_index, duration_ms=duration_ms, consumer=consumer)
+        nonlocal selected_action
+        action = controller.validate_furnimove_action(
+            row_index, duration_ms=duration_ms, consumer=consumer
+        )
+        if selected_action is not None and action != selected_action:
+            raise ValueError("The selected row represents different actions; target one device or side")
+        selected_action = action
 
     async def execute(controller: BedController | SideBoundController) -> None:
         await controller.async_execute_furnimove_action(
@@ -1761,8 +1768,7 @@ async def handle_furnimove_massage_program(call: ServiceCall) -> None:
     program = call.data["program"]
 
     def validate(controller: BedController | SideBoundController) -> None:
-        if not controller.supports_massage:
-            raise ValueError("This handset has no massage-function rows")
+        controller.validate_furnimove_massage_program(program)
 
     async def execute(controller: BedController | SideBoundController) -> None:
         await controller.set_furnimove_massage_program(program)

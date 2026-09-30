@@ -62,6 +62,8 @@ All reachable non-actuator rows also have named buttons, with indexed keys
 that distinguish duplicate labels. Diagnostics list every captured row and the
 reachable row indexes. Actions use the shared command lock and all-target
 validation; paired sides retain their own profiles.
+An ordered row must have the same action name and category on every target.
+If it differs, select one device or physical side instead.
 
 | Action | Parameters | Behavior |
 |--------|------------|----------|
@@ -78,6 +80,8 @@ zone, intensity, program and duration sensors describe **local app state**,
 not receiver acknowledgement. Active zone/intensity and duration survive HA
 restarts; the program-click counter is retained across reconnects within one
 coordinator, matching the app's separate in-process behavior.
+Program selection accepts only programs present in the selected handset table;
+the mode-step button cycles those programs and is hidden when none are available.
 
 UBL is a toggle button plus reported binary state, rather than a fabricated
 discrete on/off switch. Sync and Child Lock have exact command buttons and

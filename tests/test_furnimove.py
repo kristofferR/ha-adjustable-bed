@@ -448,6 +448,49 @@ async def test_massage_program_stop_variants_and_local_countdown_no_wire() -> No
     assert not controller.supports_massage_timer
 
 
+@pytest.mark.parametrize(
+    ("handset", "missing"),
+    [(handset, program) for handset in ("90167", "91983", "93558") for program in (1, 2, 3)]
+    + [("90916", 4), ("91914", 4)],
+)
+async def test_absent_massage_program_rejected_without_writes_or_state_changes(handset, missing):
+    controller = await fast_controller(handset)
+    state = controller.protocol_diagnostics.copy()
+    with pytest.raises(ValueError, match="absent"):
+        await controller.set_furnimove_massage_program(missing)
+    assert not written(controller)
+    assert controller.protocol_diagnostics == state
+
+
+@pytest.mark.parametrize(
+    ("handset", "programs"),
+    [("90167", [4, 4]), ("91983", [4, 4]), ("93558", [4, 4]),
+     ("90916", [1, 2, 3, 1]), ("91914", [1, 2, 3, 1])],
+)
+async def test_mode_step_cycles_only_available_massage_programs(handset, programs):
+    controller = await fast_controller(handset)
+    assert controller.supports_massage_mode_step_control
+    for program in programs:
+        await controller.massage_mode_step()
+        assert controller.get_massage_state()["mode"] == program
+        name = f"Massager{program}" if program < 4 else "MassagerWave"
+        assert written(controller)[-2] == controller._frame(controller.profile.first(name)).hex()
+
+
+async def test_massage_handset_without_program_rows_hides_mode_step():
+    controller = await fast_controller("12234")
+    controller.profile = replace(
+        controller.profile,
+        actions=tuple(row for row in controller.profile.actions
+                      if row.action not in {"Massager1", "Massager2", "Massager3", "MassagerWave"}),
+    )
+    assert controller.supports_massage
+    assert not controller.supports_massage_mode_step_control
+    with pytest.raises(ValueError, match="no massage programs"):
+        await controller.massage_mode_step()
+    assert not written(controller)
+
+
 async def test_local_state_restore_selects_wire_consumer_without_hardware_claim() -> None:
     controller = await fast_controller("12234")
     controller.restore_furnimove_local_state(
