@@ -27,10 +27,14 @@ Shared UART and custom service identifiers never select an app or retail model.
 
 ## Models and controls
 
-The selectable model constructors include Altitude, E450, E455, Forte, Good Life
+The supported model constructors include Altitude, E450, E455, Forte, Good Life
 Base, Good Life Premier Base, Good Life Pro Base, L300, L600, M455, M550, M555,
 Premium, S655, S750, and S755. Some are available only through the apps' persisted
 model selection, so the selected app remains significant for these models too.
+Setup selects the app first, then offers its packaged model picker: 14 choices
+for Malouf Base and L300, L600, and Premium for Lucid Base. Options retain an
+existing persisted-only model for that same app. Changing apps refreshes the
+model choices before saving; it does not carry a stored-only model to another app.
 
 Controls follow the selected constructor and its reachable app routes. These
 include back/legs, supported combined movement, tilt/lumbar, Altitude head/full
