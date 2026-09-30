@@ -59,6 +59,12 @@ lovelace:
       type: module
 ```
 
+Home Assistant's frontend can replace its custom element registry after the
+card has already defined itself, which made Lovelace intermittently report the
+card as missing until the next page load. The card now also registers in the
+replacement registry, so this no longer needs a reload or cache reset. Remove any manually added duplicate or relative
+`adjustable_bed_frontend/...` resource; it is not needed.
+
 After updating the integration and restarting Home Assistant, reload the page
 or fully close and reopen the Companion app. A page already running JavaScript
 from an older version cannot replace its registered custom element in place.
@@ -88,6 +94,10 @@ show why browser JavaScript failed to load.
 
 ### Related upstream reports
 
+- [Home Assistant frontend #53890](https://github.com/home-assistant/frontend/issues/53890)
+  documents that elements defined by an `extra_module_url` module before the
+  scoped registry polyfill loads are invisible to Lovelace. The card handles
+  this itself.
 - [Home Assistant frontend #52570](https://github.com/home-assistant/frontend/issues/52570)
   documents custom-module loading races, especially panel views and custom
   dashboard strategies. Resource registration alone does not guarantee that

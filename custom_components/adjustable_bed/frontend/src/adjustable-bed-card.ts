@@ -2,7 +2,7 @@
 // supported bed types: it discovers a device's entities (by translation_key) and
 // renders only the sections that exist. Styling comes entirely from Home
 // Assistant theme variables so it inherits the user's theme.
-import "./registration";
+import { defineElement } from "./registration";
 import {
   LitElement,
   type PropertyValues,
@@ -2294,9 +2294,7 @@ export class AdjustableBedCard extends LitElement {
   `;
 }
 
-if (!customElements.get("adjustable-bed-card")) {
-  customElements.define("adjustable-bed-card", AdjustableBedCard);
-}
+defineElement("adjustable-bed-card", AdjustableBedCard);
 
 // eslint-disable-next-line no-console
 console.info(

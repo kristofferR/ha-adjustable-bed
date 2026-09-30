@@ -11,6 +11,7 @@ import { SECTION_ORDER } from "./discovery";
 import { applyCompactPreset, COMPACT_PRESETS, compactActionOptions,
   compactActions, compactTargets } from "./compact";
 import { presentSections } from "./editor-sections";
+import { defineElement } from "./registration";
 import { localize } from "./localize";
 import type {
   AdjustableBedCardConfig,
@@ -510,9 +511,7 @@ export class AdjustableBedCardEditor
   `;
 }
 
-if (!customElements.get("adjustable-bed-card-editor")) {
-  customElements.define("adjustable-bed-card-editor", AdjustableBedCardEditor);
-}
+defineElement("adjustable-bed-card-editor", AdjustableBedCardEditor);
 
 declare global {
   interface HTMLElementTagNameMap {

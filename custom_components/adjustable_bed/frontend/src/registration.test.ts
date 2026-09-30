@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import {
   type CustomCardsWindow,
+  type ElementRegistryWindow,
+  defineElement,
   registerCustomCard,
 } from "./registration";
 import type { HomeAssistant } from "./types";
@@ -90,5 +92,79 @@ describe("custom card registration", () => {
         "cover.bed_back",
       ),
     ).toBeNull();
+  });
+});
+
+class FakeRegistry {
+  private readonly elements = new Map<string, CustomElementConstructor>();
+  private readonly waiters = new Map<
+    string,
+    (element: CustomElementConstructor) => void
+  >();
+
+  define(tag: string, element: CustomElementConstructor): void {
+    if (this.elements.has(tag)) throw new Error(`${tag} already defined`);
+    this.elements.set(tag, element);
+    this.waiters.get(tag)?.(element);
+  }
+
+  get(tag: string): CustomElementConstructor | undefined {
+    return this.elements.get(tag);
+  }
+
+  whenDefined(tag: string): Promise<CustomElementConstructor> {
+    const element = this.elements.get(tag);
+    if (element) return Promise.resolve(element);
+    return new Promise((resolve) => this.waiters.set(tag, resolve));
+  }
+}
+
+const CardElement = class {} as unknown as CustomElementConstructor;
+const AppElement = class {} as unknown as CustomElementConstructor;
+const flush = () => new Promise((resolve) => setTimeout(resolve));
+
+describe("element definition", () => {
+  test("survives the frontend replacing the registry after definition", async () => {
+    const native = new FakeRegistry();
+    const target: ElementRegistryWindow = { customElements: native };
+
+    defineElement("adjustable-bed-card", CardElement, target);
+    expect(native.get("adjustable-bed-card")).toBe(CardElement);
+
+    // The polyfill installs a new registry, then defines <home-assistant>
+    // through it, which also defines a stand-in natively.
+    const scoped = new FakeRegistry();
+    target.customElements = scoped;
+    scoped.define("home-assistant", AppElement);
+    native.define("home-assistant", AppElement);
+    await flush();
+
+    expect(scoped.get("adjustable-bed-card")).toBe(CardElement);
+  });
+
+  test("defines once when the frontend registry is already in place", async () => {
+    const registry = new FakeRegistry();
+    registry.define("home-assistant", AppElement);
+
+    defineElement("adjustable-bed-card", CardElement, {
+      customElements: registry,
+    });
+    await flush();
+
+    expect(registry.get("adjustable-bed-card")).toBe(CardElement);
+  });
+
+  test("keeps a definition from an earlier bundle copy", async () => {
+    const OlderCard = class {} as unknown as CustomElementConstructor;
+    const registry = new FakeRegistry();
+    registry.define("adjustable-bed-card", OlderCard);
+
+    defineElement("adjustable-bed-card", CardElement, {
+      customElements: registry,
+    });
+    registry.define("home-assistant", AppElement);
+    await flush();
+
+    expect(registry.get("adjustable-bed-card")).toBe(OlderCard);
   });
 });
