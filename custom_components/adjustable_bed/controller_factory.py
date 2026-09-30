@@ -63,6 +63,7 @@ from .const import (
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SCOTT_LIVING,
+    BED_TYPE_SERENITY,
     BED_TYPE_SERTA,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
@@ -293,6 +294,7 @@ class _ControllerSpec:
 # tests/test_controller_contract.py resolves every entry, so a bad module or
 # class name fails the suite rather than a user's bed setup.
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
+    BED_TYPE_SERENITY: _ControllerSpec("serenity", "SerenityController"),
     BED_TYPE_CUSTOMATIC_CLARITY: _ControllerSpec(
         "customatic", "CustomaticController", MappingProxyType({"profile": "clarity"})
     ),

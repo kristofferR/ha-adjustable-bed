@@ -339,6 +339,7 @@ BED_TYPE_NECTAR: Final = "nectar"  # -> okin_7byte
 BED_TYPE_MALOUF_NEW_OKIN: Final = "malouf_new_okin"
 BED_TYPE_MALOUF_LEGACY_OKIN: Final = "malouf_legacy_okin"
 BED_TYPE_MALOUF_APP: Final = "malouf_app"
+BED_TYPE_SERENITY: Final = "serenity"  # Explicit Jordan's Serenity app profile
 BED_TYPE_CUSTOMATIC_CLARITY: Final = "customatic_clarity"
 BED_TYPE_CUSTOMATIC_JEROMES: Final = "customatic_jeromes"
 BED_TYPE_CUSTOMATIC_REMEDY: Final = "customatic_remedy"
@@ -409,6 +410,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_MATTRESSFIRM,
     BED_TYPE_NECTAR,
+    BED_TYPE_SERENITY,
     # Explicit Customatic app profiles
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
@@ -2394,6 +2396,7 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
 # not remain "unknown" forever (#322, #344, #501).
 BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
     {
+        BED_TYPE_SERENITY,
         BED_TYPE_CUSTOMATIC_CLARITY,
         BED_TYPE_CUSTOMATIC_JEROMES,
         BED_TYPE_CUSTOMATIC_REMEDY,
@@ -2592,6 +2595,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_CUSTOMATIC_CLARITY: (8, 120),
     BED_TYPE_CUSTOMATIC_JEROMES: (8, 120),
     BED_TYPE_CUSTOMATIC_REMEDY: (8, 120),
+    BED_TYPE_SERENITY: (10, 100),  # APK refresh cadence; bounded HA movement duration
     # Malouf New OKIN (Nordic): 100ms delay → 10 repeats = 1.0s total
     # Source: com.malouf.bedbase / com.lucid.bedbase ANALYSIS.md
     BED_TYPE_MALOUF_NEW_OKIN: (10, 100),

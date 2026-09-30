@@ -159,6 +159,7 @@ enable additional commands.
 | Leggett Okin app profiles | `leggett_sleep_timer`, `leggett_alarm_timer`, `leggett_hold_control` | [Prodigy / U Series](beds/leggett-okin.md) |
 | Customatic Clarity / Remedy | `customatic_hold_memory` (all 31 memory combinations), `customatic_move_simultaneously` (safe motor combinations) | [Customatic](beds/customatic.md) |
 | Customatic Jerome's C | `customatic_move_simultaneously` (back and legs) | [Customatic](beds/customatic.md) |
+| Jordan's Serenity app | `serenity_hold_control` (one of 31 literal app actions) | [Serenity](beds/serenity.md) |
 | LOGICDATA app profiles | `logicdata_set_alarm`, `logicdata_rename`, `logicdata_hold_preset` | [LOGICDATA](beds/logicdata-app.md) |
 | Jiecang app profiles | `jiecang_set_alarm`, `jiecang_wake`, `jiecang_stop_wake`, `jiecang_rename` | [Jiecang](beds/jiecang-app.md) |
 | Richmat RMControl products | `rmcontrol_alarm`, `rmcontrol_anti_snore` | [RMControl](beds/rmcontrol.md) |
@@ -167,6 +168,10 @@ enable additional commands.
 Controller alarm actions program the bed itself, rather than creating a Home
 Assistant automation. Rename actions change the controller's Bluetooth name;
 renaming an HA entity or device is a separate operation.
+
+### `serenity_hold_control`
+
+Hold one literal control from the explicit Jordan's Serenity profile for `duration` seconds (0.1–60), then send its two-frame release sequence. Supply `device_id`, `control`, `duration` and optional `side`. The [Serenity control catalog](beds/serenity.md#reachable-commands) lists the literal action names. The controller validates supported action names before dispatch; arbitrary combinations are rejected. Save controls can change stored positions. This action uses all-target capability preflight and the shared command lock.
 
 ## Support Bundle
 
