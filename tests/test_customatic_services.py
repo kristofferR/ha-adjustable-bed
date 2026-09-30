@@ -1,5 +1,6 @@
 """Customatic action preflight, exact selection and paired target routing."""
 
+import asyncio
 from itertools import combinations, product
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -169,6 +170,45 @@ async def test_each_valid_physical_target_receives_same_mask(
     )
     controller.hold_control.assert_awaited_once_with("zg+program", 2700)
     other_controller.hold_control.assert_awaited_once_with("zg+program", 2700)
+
+
+async def test_cancelled_preflight_restores_connected_target_idle_timer(
+    hass: HomeAssistant, service_target
+):
+    first, controller, resolve = service_target
+    second, _ = target(BED_TYPE_CUSTOMATIC_CLARITY)
+    first.capability_controller = second.capability_controller = None
+    first.controller = None
+    first.is_connected = False
+
+    async def connect_first(*, reset_timer):
+        first.controller = controller
+        first.is_connected = True
+        return True
+
+    first.async_ensure_connected = AsyncMock(side_effect=connect_first)
+    connecting = asyncio.Event()
+
+    async def connect_second(*, reset_timer):
+        connecting.set()
+        await asyncio.Event().wait()
+
+    second.async_ensure_connected = AsyncMock(side_effect=connect_second)
+    resolve.return_value = ([(first, SIDE_BOTH), (second, SIDE_BOTH)], [])
+    call = asyncio.create_task(hass.services.async_call(
+        DOMAIN, SERVICE_CUSTOMATIC_HOLD_MEMORY,
+        {"device_id": ["first", "second"], "actions": ["zg"], "duration": 1},
+        blocking=True,
+    ))
+    await connecting.wait()
+    call.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await call
+    assert [args.kwargs for args in first.async_ensure_connected.await_args_list] == [
+        {"reset_timer": False}, {"reset_timer": True}
+    ]
+    first.async_execute_controller_command.assert_not_awaited()
+    second.async_execute_controller_command.assert_not_awaited()
 
 
 async def test_real_pair_preflights_later_side_before_either_command(

@@ -1204,6 +1204,9 @@ async def _preflight_capability(
                     )
                 if validate is not None:
                     validate(controller)
+    except asyncio.CancelledError:
+        await _release_preflighted(preflighted)
+        raise
     except (ServiceValidationError, ValueError) as err:
         await _release_preflighted(preflighted)
         if isinstance(err, ValueError):
