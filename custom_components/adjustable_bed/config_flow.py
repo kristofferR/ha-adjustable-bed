@@ -6012,6 +6012,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 ):
                     self._remember_pending_changes(schema_dict, user_input)
                     self._pending_data.update(user_input)
+                    if discovery_disabled_input is not None:
+                        self._pending_data[CONF_DISABLE_DISCOVERY] = discovery_disabled_input
                     return await self._async_options_form(None, step_id=step_id)
                 app_errors = _malouf_app_errors(
                     {**current_data, **user_input}, self.config_entry.data

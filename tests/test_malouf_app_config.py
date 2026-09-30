@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_MALOUF_NEW_OKIN,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_DISABLE_DISCOVERY,
     CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_MALOUF_APP_MODEL,
@@ -31,6 +32,10 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
+from custom_components.adjustable_bed.discovery_settings import (
+    async_is_discovery_disabled,
+    async_set_discovery_disabled,
+)
 from custom_components.adjustable_bed.pairing import build_pair_entry_data
 
 
@@ -153,7 +158,9 @@ async def test_options_preserve_explicit_app_and_role(hass):
     assert entry.data[CONF_MALOUF_APP_PRIMARY] is False
 
 
-async def test_options_app_change_requires_model_from_new_picker(hass):
+@pytest.mark.parametrize("disable_discovery", [True, False])
+async def test_options_app_change_requires_model_from_new_picker(hass, disable_discovery):
+    await async_set_discovery_disabled(hass, not disable_discovery)
     entry = MockConfigEntry(domain=DOMAIN, data={
         CONF_BED_TYPE: BED_TYPE_MALOUF_APP, CONF_MOTOR_COUNT: 2,
         CONF_MALOUF_APP_PROFILE: "malouf", CONF_MALOUF_APP_MODEL: "S755",
@@ -162,9 +169,15 @@ async def test_options_app_change_requires_model_from_new_picker(hass):
     flow = AdjustableBedOptionsFlow(entry)
     flow.handler = entry.entry_id
     flow.hass = hass
-    result = await flow.async_step_settings({CONF_MALOUF_APP_PROFILE: "lucid"})
+    result = await flow.async_step_settings({
+        CONF_MALOUF_APP_PROFILE: "lucid", CONF_DISABLE_DISCOVERY: disable_discovery,
+    })
     schema = result["data_schema"]
     assert schema is not None
+    discovery_marker = next(marker for marker in schema.schema
+                            if marker.schema == CONF_DISABLE_DISCOVERY)
+    assert discovery_marker.default() is disable_discovery
+    assert await async_is_discovery_disabled(hass) is not disable_discovery
     model_marker, validator = next(
         (marker, validator) for marker, validator in schema.schema.items()
         if marker.schema == CONF_MALOUF_APP_MODEL
@@ -174,10 +187,13 @@ async def test_options_app_change_requires_model_from_new_picker(hass):
     result = await flow.async_step_settings({CONF_MALOUF_APP_MODEL: "S755"})
     assert result["errors"] == {CONF_MALOUF_APP_MODEL: "malouf_app_required"}
     assert entry.data[CONF_MALOUF_APP_PROFILE] == "malouf"
+    assert await async_is_discovery_disabled(hass) is not disable_discovery
     result = await flow.async_step_settings({CONF_MALOUF_APP_MODEL: "Premium"})
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert entry.data[CONF_MALOUF_APP_PROFILE] == "lucid"
     assert entry.data[CONF_MALOUF_APP_MODEL] == "Premium"
+    assert await async_is_discovery_disabled(hass) is disable_discovery
+    assert CONF_DISABLE_DISCOVERY not in entry.data
 
 
 async def test_switching_from_legacy_requires_explicit_profile(hass):
