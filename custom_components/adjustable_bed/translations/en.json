@@ -2900,6 +2900,9 @@
       },
       "starcode_eq_band_7": {
         "name": "Eq band 7"
+      },
+      "adjustable_lite_massage_timer": {
+        "name": "Massage timer"
       }
     },
     "light": {
@@ -3020,6 +3023,9 @@
       },
       "vmatbasic_ed": {
         "name": "ED motor status"
+      },
+      "adjustable_lite_light": {
+        "name": "Light"
       },
       "starcode_motor_stopped": {
         "name": "Motor stopped"
