@@ -13,7 +13,7 @@ import logging
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable, Collection, Coroutine, Mapping, Sequence
 from contextvars import ContextVar
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 from bleak import BleakClient
@@ -97,6 +97,8 @@ class ControllerButtonSpec:
     press_fn: MotorCommandCallable
     icon: str = "mdi:gesture-tap"
     translation_key: str | None = None
+    cancel_movement: bool = field(default=True, kw_only=True)
+    scheduler_resource: str | None = field(default=None, kw_only=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -395,6 +397,11 @@ class BedController(ABC):
     def client(self) -> BleakClient | None:
         """Return the BLE client."""
         return self._coordinator.client
+
+    @property
+    def supports_single_address_pairing(self) -> bool:
+        """Whether this profile supports a one-address side selector."""
+        return True
 
     @property
     def auto_stops_on_idle(self) -> bool:

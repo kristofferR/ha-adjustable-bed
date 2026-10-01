@@ -547,3 +547,56 @@ test("native children retain side ordering and normalize single-address entity k
   }
   expect(bedEntitiesForDevice(hass, "left").memory[0]?.goto).toBe("button.memory_left");
 });
+
+test("AdjustableM5X4 exact bounded controls remain on their physical child", () => {
+  const entries = ["left", "right"].flatMap((side) => [
+    entry(`light.${side}_floor`, "under_bed_lights", side),
+    entry(`number.${side}_level`, "starcode_abm5_4_light_level", side),
+    entry(`select.${side}_timer`, "starcode_abm5_4_massage_timer", side),
+    entry(`button.${side}_plus`, "starcode_abm5_4_light_plus", side),
+    entry(`button.${side}_minus`, "starcode_abm5_4_light_minus", side),
+    entry(`button.${side}_release`, "starcode_abm5_4_massage_release", side),
+    entry(`button.${side}_union`, "starcode_abm5_4_union_up", side),
+    entry(`button.${side}_adopt`, "starcode_abm5_4_use_detected_profile", side),
+    entry(`button.${side}_save_tv`, "starcode_abm5_4_save_tv", side),
+  ]);
+  const hass = hassWith(entries);
+  hass.devices = {
+    parent: { id: "parent" },
+    left: { id: "left", parent_device_id: "parent" },
+    right: { id: "right", parent_device_id: "parent" },
+  };
+  for (const side of ["left", "right"]) {
+    const bed = bedEntitiesForDevice(hass, side);
+    expect(bed.lights.level).toBe(`number.${side}_level`);
+    expect(bed.lights.buttons).toEqual([`button.${side}_plus`, `button.${side}_minus`]);
+    expect(bed.massage.timer).toBe(`select.${side}_timer`);
+    expect(bed.massage.buttons).toEqual([`button.${side}_release`]);
+    expect(bed.utility).toEqual([`button.${side}_union`, `button.${side}_adopt`, `button.${side}_save_tv`]);
+    expect(bed.motors).toEqual([]);
+    expect(bedIsEmpty(bed)).toBe(false);
+  }
+  expect(bedIsEmpty(bedEntitiesForDevice(hass, "parent"))).toBe(true);
+});
+
+
+test("stateless native floor power buttons stay in the physical child's lighting section", () => {
+  const hass = hassWith([
+    entry("button.left_on", "starcode_abm5_4_light_on", "left"),
+    entry("button.left_off", "starcode_abm5_4_light_off", "left"),
+    entry("button.left_toggle", "toggle_light", "left"),
+    entry("button.right_on", "starcode_abm5_4_light_on", "right"),
+    entry("button.right_off", "starcode_abm5_4_light_off", "right"),
+  ]);
+  const left = bedEntitiesForDevice(hass, "left");
+  expect(left.lights.buttons).toEqual(["button.left_on", "button.left_off"]);
+  expect(left.lights.toggle).toBe("button.left_toggle");
+  expect(left.lights.light).toBeUndefined();
+  expect(left.lights.switch).toBeUndefined();
+  expect(left.utility).toEqual([]);
+  const right = bedEntitiesForDevice(hass, "right");
+  expect(right.lights.buttons).toEqual(["button.right_on", "button.right_off"]);
+  expect(right.lights.toggle).toBeUndefined();
+  expect(right.utility).toEqual([]);
+  expect(bedIsEmpty(left)).toBe(false);
+});

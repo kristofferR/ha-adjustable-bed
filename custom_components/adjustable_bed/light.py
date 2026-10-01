@@ -322,6 +322,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
 class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
     """On/off under-bed light, optionally driven solely by device feedback."""
 
+    _attr_should_poll = False
     entity_description: LightEntityDescription
 
     _attr_color_mode = ColorMode.ONOFF

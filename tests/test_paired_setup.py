@@ -3714,6 +3714,12 @@ class TestOfflineSafeBedTypes:
                 })
             elif bed_type == BED_TYPE_VMATBASIC:
                 child[CONF_VMATBASIC_PROFILE] = "cbi"
+            elif bed_type == "starcode_abm5_4":
+                child.update({
+                    "starcode_abm5_4_command_selector": "none",
+                    "starcode_abm5_4_ui_selector": "none",
+                    "starcode_abm5_4_transport_selector": "BOX3633",
+                })
             elif bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
                 child.update(
                     {

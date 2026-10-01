@@ -230,7 +230,10 @@ def _sensor_entities_for(
     if controller is not None:
         specs = controller.controller_state_sensor_specs
         active_keys = {spec.key for spec in specs}
-        stale_keys = controller.stale_controller_state_sensor_entity_keys | (
+        from .beds.starcode_abm5_4_profiles import STATE_KEYS
+
+        starcode_keys = {"starcode_abm5_4_" + key for key in STATE_KEYS}
+        stale_keys = (starcode_keys - active_keys) | controller.stale_controller_state_sensor_entity_keys | (
             {
                 "leggett_led_mask", "leggett_status", "logicdata_app_alarm",
                 "logicdata_app_family_match", "malouf_massage_remaining",

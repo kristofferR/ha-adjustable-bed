@@ -276,6 +276,51 @@
     },
     {
       "service_uuid": "00001420-0000-1000-8000-00805f9b34fb"
+    },
+    {
+      "local_name": "star*"
+    },
+    {
+      "local_name": "staR*"
+    },
+    {
+      "local_name": "stAr*"
+    },
+    {
+      "local_name": "stAR*"
+    },
+    {
+      "local_name": "sTar*"
+    },
+    {
+      "local_name": "sTaR*"
+    },
+    {
+      "local_name": "sTAr*"
+    },
+    {
+      "local_name": "sTAR*"
+    },
+    {
+      "local_name": "StaR*"
+    },
+    {
+      "local_name": "StAr*"
+    },
+    {
+      "local_name": "StAR*"
+    },
+    {
+      "local_name": "STar*"
+    },
+    {
+      "local_name": "STaR*"
+    },
+    {
+      "local_name": "STAr*"
+    },
+    {
+      "local_name": "STAR*"
     }
   ],
   "codeowners": ["@kristofferR"],

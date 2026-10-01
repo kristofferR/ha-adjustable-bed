@@ -74,6 +74,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
+    BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
     BED_TYPE_TIMOTION_AHF,
@@ -103,6 +104,9 @@ from .const import (
     CONF_MALOUF_APP_PRIMARY,
     CONF_MALOUF_APP_PROFILE,
     CONF_MALOUF_APP_TRANSPORT,
+    CONF_STARCODE_COMMAND_SELECTOR,
+    CONF_STARCODE_TRANSPORT_SELECTOR,
+    CONF_STARCODE_UI_SELECTOR,
     CONF_VIBRADORM_APP_PROFILE,
     CONF_VIBRADORM_CONTROL_TYPE,
     CONF_VIBRADORM_FLOOR_DEFAULT,
@@ -604,6 +608,18 @@ async def create_controller(
             session_intent=get_vmatbasic_session_intent(
                 coordinator.hass, coordinator.address, data[CONF_VMATBASIC_PROFILE]
             ),
+        )
+
+    if bed_type == BED_TYPE_STARCODE_ABM5_4:
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.starcode_abm5_4", __package__)
+        from .beds.starcode_abm5_4 import StarcodeAbm5_4Controller
+
+        data = coordinator.entry.data
+        return StarcodeAbm5_4Controller(
+            coordinator,
+            command_selector=data.get(CONF_STARCODE_COMMAND_SELECTOR, "none"),
+            ui_selector=data.get(CONF_STARCODE_UI_SELECTOR),
+            transport_selector=data.get(CONF_STARCODE_TRANSPORT_SELECTOR),
         )
 
     if bed_type == BED_TYPE_VIBRADORM_APP:

@@ -746,7 +746,7 @@ def _button_entities_for(
                 registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
         # Named app actions disappear when their profile or transport changes.
-        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_"):
+        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_"):
             desired_actions = {
                 coordinator.entity_unique_id(spec.key)
                 for spec in controller.controller_button_specs
@@ -1155,9 +1155,16 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
             self._attr_name = None
 
     async def async_press(self) -> None:
-        """Cancel the previous action and execute against the current controller."""
+        """Execute the named action with its declared replacement policy."""
+        if self._spec.scheduler_resource is not None:
+            await self._coordinator.async_execute_controller_command(
+                self._spec.press_fn,
+                cancel_running=self._spec.cancel_movement,
+                resource=self._spec.scheduler_resource,
+            )
+            return
         await self._coordinator.async_execute_controller_command(
-            self._spec.press_fn, cancel_running=True
+            self._spec.press_fn, cancel_running=self._spec.cancel_movement
         )
 
 

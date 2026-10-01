@@ -51,6 +51,11 @@ class ConnectionProfileSettings:
 CONF_BED_TYPE: Final = "bed_type"
 CONF_PROTOCOL_VARIANT: Final = "protocol_variant"
 CONF_MOTOR_COUNT: Final = "motor_count"
+CONF_STARCODE_COMMAND_SELECTOR: Final = "starcode_abm5_4_command_selector"
+CONF_STARCODE_UI_SELECTOR: Final = "starcode_abm5_4_ui_selector"
+CONF_STARCODE_TRANSPORT_SELECTOR: Final = "starcode_abm5_4_transport_selector"
+STARCODE_APP_CONNECTION_TIMEOUT_SECONDS: Final = 8.0
+STARCODE_APP_CONFIG_KEYS: Final = frozenset({CONF_STARCODE_COMMAND_SELECTOR, CONF_STARCODE_UI_SELECTOR, CONF_STARCODE_TRANSPORT_SELECTOR})
 CONF_VIBRADORM_APP_PROFILE: Final = "vibradorm_app_profile"
 CONF_VMATBASIC_PROFILE: Final = "vmatbasic_profile"
 CONF_VMATBASIC_FLOOR_LEVEL: Final = "vmatbasic_floor_level"
@@ -421,6 +426,7 @@ BED_TYPE_SVANE: Final = "svane"  # Svane LinonPI multi-service protocol
 BED_TYPE_VIBRADORM: Final = "vibradorm"  # Vibradorm VMAT protocol
 BED_TYPE_VIBRADORM_APP: Final = "vibradorm_app"
 BED_TYPE_VMATBASIC: Final = "vmatbasic"
+BED_TYPE_STARCODE_ABM5_4: Final = "starcode_abm5_4"
 BED_TYPE_RONDURE: Final = "rondure"  # 1500 Tilt Base / Rondure Hump (8/9-byte FurniBus protocol)
 BED_TYPE_REMACRO: Final = (
     "remacro"  # Remacro protocol (CheersSleep/Jeromes/Slumberland/The Brick, 8-byte SynData)
@@ -534,6 +540,7 @@ SUPPORTED_BED_TYPES: Final = [
     # Logicdata SimplicityFrame (SILVERmotion)
     BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_APP,
+    BED_TYPE_STARCODE_ABM5_4,
 ]
 
 
@@ -586,6 +593,9 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_LOGICDATA,
         BED_TYPE_VIBRADORM_APP,
         BED_TYPE_VMATBASIC,
+        # The constructor refuses offline UART catalogs whose nonpositive C
+        # can gain controls from live manufacturer classification.
+        BED_TYPE_STARCODE_ABM5_4,
     }
 )
 
@@ -2472,6 +2482,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_LEGGETT_LP_LEGACY,
         BED_TYPE_VIBRADORM_APP,
         BED_TYPE_VMATBASIC,
+        BED_TYPE_STARCODE_ABM5_4,
         BED_TYPE_OKIN_CST,
         BED_TYPE_OKIN_RF_ECO_BT,
     }
@@ -2563,6 +2574,7 @@ BEDS_WITH_DISCONNECT_AFTER_COMMAND_DEFAULT_DISABLED: Final = (
             BED_TYPE_VIBRADORM,
             BED_TYPE_VIBRADORM_APP,
             BED_TYPE_VMATBASIC,
+            BED_TYPE_STARCODE_ABM5_4,
         }
     )
 )
@@ -2641,6 +2653,7 @@ OCTO_STAR2_PULSE_DEFAULTS: Final = (3, 50)
 # Per-bed-type motor pulse defaults based on app disassembly analysis
 # Target: ~1.0 second total motor movement duration (repeat_count = 1000ms / delay_ms)
 BED_MOTOR_PULSE_DEFAULTS: Final = {
+    BED_TYPE_STARCODE_ABM5_4: (10, 100),
     # SleepSpa S9000AI: all transparent StarCode traffic uses the app's
     # 100 ms BLE sender cadence.
     BED_TYPE_SLEEPSTAR: (10, 100),
