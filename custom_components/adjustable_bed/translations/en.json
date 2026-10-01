@@ -574,6 +574,20 @@
           "starcode_abm5_4_command_selector": "Match the saved command/parser selector. The app initially saves none; manufacturer classification may update it without changing its UI selector.",
           "starcode_abm5_4_transport_selector": "Use the original Bluetooth device name unless matching a proven app transport explicitly."
         }
+      },
+      "fsm_relax": {
+        "title": "FSM Relax app profile",
+        "description": "Select the app layout and optional controls explicitly. Raw memories have no known physical units. Shared Bluetooth advertisements do not identify this app profile.",
+        "data": {
+          "fsm_relax_layout": "App layout",
+          "fsm_relax_light": "Expose app light controls",
+          "fsm_relax_massage": "Expose app massage controls",
+          "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
+          "fsm_relax_reverse_1": "Reverse actuator flag 1",
+          "fsm_relax_reverse_2": "Reverse actuator flag 2",
+          "fsm_relax_reverse_3": "Reverse actuator flag 3",
+          "fsm_relax_reverse_4": "Reverse actuator flag 4"
+        }
       }
     },
     "progress": {
@@ -645,7 +659,8 @@
       "vmatbasic_unpair_first": "Unpair these entries before changing product settings; each receiver retains its own profile.",
       "vmatbasic_required": "Choose the V-MAT Basic product profile.",
       "starcode_app_invalid": "Choose a supported app selector and a live Bluetooth transport.",
-      "starcode_app_unpair_first": "Unpair these entries before changing app selectors. Each physical side retains its own app controls."
+      "starcode_app_unpair_first": "Unpair these entries before changing app selectors. Each physical side retains its own app controls.",
+      "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each)."
     }
   },
   "options": {
@@ -721,7 +736,15 @@
           "vmatbasic_floor_minutes": "Saved floor timer (minutes)",
           "vmatbasic_profile": "V-MAT Basic product profile",
           "starcode_abm5_4_command_selector": "Saved command/parser selector",
-          "starcode_abm5_4_transport_selector": "Bluetooth transport selector"
+          "starcode_abm5_4_transport_selector": "Bluetooth transport selector",
+          "fsm_relax_layout": "App layout",
+          "fsm_relax_light": "Expose app light controls",
+          "fsm_relax_massage": "Expose app massage controls",
+          "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
+          "fsm_relax_reverse_1": "Reverse actuator flag 1",
+          "fsm_relax_reverse_2": "Reverse actuator flag 2",
+          "fsm_relax_reverse_3": "Reverse actuator flag 3",
+          "fsm_relax_reverse_4": "Reverse actuator flag 4"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -863,7 +886,8 @@
       "vmatbasic_unpair_first": "Unpair these entries before changing product settings; each receiver retains its own profile.",
       "vmatbasic_required": "Choose the V-MAT Basic product profile.",
       "starcode_app_invalid": "Choose a supported app selector and a live Bluetooth transport.",
-      "starcode_app_unpair_first": "Unpair these entries before changing app selectors. Each physical side retains its own app controls."
+      "starcode_app_unpair_first": "Unpair these entries before changing app selectors. Each physical side retains its own app controls.",
+      "fsm_relax_unpair_first": "Unpair the beds first, configure each physical FSM Relax profile, then combine them again."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -1908,6 +1932,18 @@
       },
       "starcode_abm5_4_reset": {
         "name": "Reset stored positions"
+      },
+      "preset_memory_7": {
+        "name": "Memory 7"
+      },
+      "program_memory_7": {
+        "name": "Save Memory 7"
+      },
+      "preset_memory_8": {
+        "name": "Memory 8"
+      },
+      "program_memory_8": {
+        "name": "Save Memory 8"
       }
     },
     "cover": {
@@ -2639,6 +2675,48 @@
       },
       "starcode_abm5_4_raw_7f": {
         "name": "Raw app field 7f"
+      },
+      "fsm_relax_key_count": {
+        "name": "FSM Relax key count"
+      },
+      "fsm_relax_vibration_count": {
+        "name": "FSM Relax vibration count"
+      },
+      "fsm_relax_reported_memory_count": {
+        "name": "FSM Relax reported memory count"
+      },
+      "fsm_relax_hardware_version": {
+        "name": "FSM Relax hardware version"
+      },
+      "fsm_relax_software_version": {
+        "name": "FSM Relax software version"
+      },
+      "fsm_relax_serial": {
+        "name": "FSM Relax serial"
+      },
+      "fsm_relax_acknowledgement": {
+        "name": "FSM Relax acknowledgement"
+      },
+      "fsm_relax_calibration_observed": {
+        "name": "FSM Relax calibration observed"
+      },
+      "fsm_relax_memory_quarantined": {
+        "name": "FSM Relax memory quarantined"
+      },
+      "fsm_relax_optional_information": {
+        "name": "FSM Relax optional information"
+      },
+      "fsm_relax_motor_1_raw": {
+        "name": "FSM Relax motor 1 raw"
+      },
+      "fsm_relax_motor_2_raw": {
+        "name": "FSM Relax motor 2 raw"
+      },
+      "fsm_relax_motor_3_raw": {
+        "name": "FSM Relax motor 3 raw"
+      },
+      "fsm_relax_motor_4_raw": {
+        "name": "FSM Relax motor 4 raw"
       }
     },
     "light": {

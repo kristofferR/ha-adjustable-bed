@@ -108,12 +108,12 @@ goto_preset:
           integration: adjustable_bed
     preset:
       name: Preset Number
-      description: Memory slot number (1-6, device-dependent).
+      description: Memory slot number (1-8, device-dependent).
       required: true
       selector:
         number:
           min: 1
-          max: 6
+          max: 8
           mode: box
     side:
       name: Side
@@ -142,12 +142,12 @@ save_preset:
           integration: adjustable_bed
     preset:
       name: Preset Number
-      description: Memory slot number (1-6, device-dependent).
+      description: Memory slot number (1-8, device-dependent).
       required: true
       selector:
         number:
           min: 1
-          max: 6
+          max: 8
           mode: box
     side:
       name: Side
@@ -1598,3 +1598,64 @@ starcode_abm5_4_hold_control:
       selector:
         select:
           options: [both, left, right]
+
+fsm_relax_hold_control:
+  name: FSM Relax hold control
+  description: Hold an app-labelled control, then send the five-frame release. Physical actuator mapping is unverified.
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    control:
+      required: true
+      description: Use a command listed in the selected profile's protocol diagnostics.
+      selector:
+        text:
+    duration:
+      required: true
+      description: Local gesture duration in seconds, not a physical arrival deadline.
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.001
+          unit_of_measurement: s
+fsm_relax_recall_memory:
+  name: FSM Relax recall local memory
+  description: Send saved opaque targets and release after an explicit local hold. Replies cannot prove physical arrival.
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    preset:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 8
+    duration:
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.001
+          unit_of_measurement: s
+fsm_relax_calibrate:
+  name: FSM Relax confirmed calibration
+  description: Calibrate using the four configured reversal flags. One write attempt; a failed write does not prove that hardware did nothing.
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    confirmed:
+      required: true
+      description: Explicitly confirm calibration before invoking this action.
+      selector:
+        boolean:

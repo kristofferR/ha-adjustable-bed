@@ -660,3 +660,11 @@ the other side automatically if one side fails.
 - **Having connection issues?** See [Troubleshooting](TROUBLESHOOTING.md)
 - **Want to learn about your bed's protocol?** See [Supported Actuators](SUPPORTED_ACTUATORS.md)
 - **Setting up Bluetooth?** See [Connection Guide](CONNECTION_GUIDE.md)
+
+### FSM Relax app
+
+Select the explicit FSM Relax app bed type, then choose chair/bed layout, optional
+light/massage controls and four reversal flags. These settings are local app
+configuration, not inferred hardware identity. Options include eight local memory
+names, with blank names resetting M1–M8. Raw memory values have no known units.
+See [FSM Relax](beds/fsm_relax.md) for exact controls, quarantine and calibration.

@@ -808,6 +808,9 @@ class BedController(ABC):
         """Return discovered capabilities safe to persist across connections."""
         return None
 
+    def on_disconnect(self) -> None:  # noqa: B027
+        """Invalidate connection-owned work immediately when the BLE link drops."""
+
     async def stop_notify(self) -> None:
         """Stop listening for position notifications.
 
@@ -1050,6 +1053,19 @@ class BedController(ABC):
         Args:
             memory_num: Memory slot number (1-4, availability varies by bed)
         """
+
+    @property
+    def supports_confirmed_calibration(self) -> bool:
+        """Whether an explicitly confirmed calibration action is available."""
+        return False
+
+    async def calibrate(self, *, confirmed: bool) -> None:
+        """Calibrate only with explicit confirmation where supported."""
+        raise NotImplementedError("Confirmed calibration is unavailable")
+
+    async def recall_memory(self, slot: int, *, hold_ms: int) -> None:
+        """Recall a local memory with an explicit caller-owned hold policy."""
+        raise NotImplementedError("Held local memories are unavailable")
 
     @abstractmethod
     async def program_memory(self, memory_num: int) -> None:

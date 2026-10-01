@@ -152,7 +152,7 @@ enable additional commands.
 
 | Controller/profile | Actions | Guide |
 |--------------------|---------|-------|
-| Linak Bed Control | `linak_move_simultaneously`, `linak_rename`, `linak_set_alarm` | [Linak](beds/linak.md) |
+| Linak Bed Control | `linak_move_simultaneously`, `linak_rename `, `linak_set_alarm` | [Linak](beds/linak.md) |
 | Jensen JMC400 | `linak_move_simultaneously` (back and legs only; the action keeps its original name) | [Jensen](beds/jensen.md) |
 | Solace MotionFlex | `solace_audio`, `solace_set_alarm` | [Solace](beds/solace.md) |
 | Solace Woosa Sleep | `solace_set_alarm` (sound `none` or `alarm`, no music) | [Woosa](beds/woosa.md) |
@@ -214,7 +214,7 @@ and how to download the report.
 
 The [FurniMove guide](beds/furnimove.md#controls-and-actions) describes
 `furnimove_action`, `furnimove_move_simultaneously`, `furnimove_massage_program`,
-`furnimove_massage_duration` and `furnimove_rename`. Every action takes
+`furnimove_massage_duration` and `furnimove_rename `. Every action takes
 `device_id` and optional `side`; rename targets one physical receiver.
 Ordered action indexes come from diagnostics and the selected handset.
 Hold overrides accept 0.1–60 seconds; widgets use their separate fixed timing.
@@ -226,3 +226,13 @@ local state, sends no timer packet and does not stop the receiver on expiry.
 Hold one exact app action. Flat runs 600 ms; save and reset run the six-second local confirmation interval. No device acknowledgement is inferred.
 
 Target one or more physical devices with `device_id`, an exact supported `control`, `duration` in seconds (0.1–60), and optional paired `side`. Every target’s profile and observed-state gate is checked before any write. Movement and memory refresh every 100 ms with immediate STOP; presets release according to the retained UI selector. Flat runs 600 ms after activation; save/reset stream through the six-second local confirmation interval regardless of the duration field. Positive massage controls require observed active state; this profile has no massage timer Off command. [The protocol document](beds/starcode-abm5-4.md) lists all controls, exact capability gates and exclusions.
+
+### FSM Relax app actions
+
+`fsm_relax_hold_control` accepts a supported `command_XX` and explicit `duration`
+in seconds. `fsm_relax_recall_memory` accepts local `preset` 1–8 and `duration`;
+`fsm_relax_calibrate` requires `confirmed: true` and makes one write attempt.
+Native Save/Memory buttons and generic memory actions expose up to eight slots
+subject to the reported count. All actions use the serialized coordinator path.
+Duration is local gesture policy and replies cannot prove physical arrival.
+See [FSM Relax](beds/fsm_relax.md) for profile gates and reply ambiguity.

@@ -97,6 +97,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DIAGNOSTIC,
+    BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG_APP,
@@ -139,6 +140,11 @@ from .const import (
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISABLE_DISCOVERY,
     CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_FSM_RELAX_LAYOUT,
+    CONF_FSM_RELAX_LIGHT,
+    CONF_FSM_RELAX_MASSAGE,
+    CONF_FSM_RELAX_MEMORY_NAMES,
+    CONF_FSM_RELAX_REVERSALS,
     CONF_FURNIMOVE_REMOTE,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
@@ -915,6 +921,27 @@ def _starcode_setup_transport_present(client: BleakClient, selector: str) -> boo
             if {transport.write, transport.notify}.issubset(roles):
                 return True
     return False
+
+
+def _add_fsm_relax_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[str, Any]) -> None:
+    """Expose local layout, optional controls, reversals and all eight labels."""
+    schema[vol.Required(CONF_FSM_RELAX_LAYOUT, default=data.get(CONF_FSM_RELAX_LAYOUT, "chair"))] = vol.In(("chair", "bed"))
+    for key in (CONF_FSM_RELAX_LIGHT, CONF_FSM_RELAX_MASSAGE, *CONF_FSM_RELAX_REVERSALS):
+        schema[vol.Optional(key, default=data.get(key, False))] = bool
+    schema[vol.Optional(CONF_FSM_RELAX_MEMORY_NAMES, default=data.get(CONF_FSM_RELAX_MEMORY_NAMES, [""] * 8))] = TextSelector(TextSelectorConfig(multiple=True))
+
+
+def _fsm_relax_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .beds.fsm_relax import FsmRelaxProfile
+    from .fsm_relax_state import validate_names
+
+    try:
+        r = tuple(data.get(key, False) for key in CONF_FSM_RELAX_REVERSALS)
+        FsmRelaxProfile(data.get(CONF_FSM_RELAX_LAYOUT, "chair"), data.get(CONF_FSM_RELAX_LIGHT, False), data.get(CONF_FSM_RELAX_MASSAGE, False), (r[0], r[1], r[2], r[3]))
+        validate_names(data.get(CONF_FSM_RELAX_MEMORY_NAMES, [""] * 8))
+    except ValueError:
+        return {"base": "fsm_relax_invalid"}
+    return {}
 
 
 def _add_vibradorm_app_schema_fields(
@@ -1721,6 +1748,20 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return self.async_show_form(
             step_id="starcode_app", data_schema=vol.Schema(schema), errors=errors
         )
+
+    async def async_step_fsm_relax(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Select an app profile explicitly, without inferring physical axes."""
+        assert self._manual_data is not None
+        data = {**self._manual_data, **(user_input or {})}
+        errors = _fsm_relax_errors(data) if user_input is not None else {}
+        self._manual_data = data
+        if user_input is not None and not errors:
+            data[CONF_HAS_MASSAGE] = False
+            data[CONF_DISABLE_ANGLE_SENSING] = True
+            return await self.async_step_manual_pairing()
+        schema: dict[vol.Marker, Any] = {}
+        _add_fsm_relax_schema_fields(schema, data)
+        return self.async_show_form(step_id="fsm_relax", data_schema=vol.Schema(schema), errors=errors)
 
     async def async_step_vibradorm_app(
         self, user_input: dict[str, Any] | None = None
@@ -2622,6 +2663,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 if selected_bed_type == BED_TYPE_STARCODE_ABM5_4:
                     self._manual_data = entry_data
                     return await self.async_step_starcode_app()
+
+                if selected_bed_type == BED_TYPE_FSM_RELAX:
+                    self._manual_data = entry_data
+                    return await self.async_step_fsm_relax()
                 if selected_bed_type == BED_TYPE_VIBRADORM_APP:
                     self._manual_data = entry_data
                     self._vibradorm_app_bluetooth_pairing = True
@@ -3563,6 +3608,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 if bed_type == BED_TYPE_STARCODE_ABM5_4:
                     self._manual_data = entry_data
                     return await self.async_step_starcode_app()
+
+                if bed_type == BED_TYPE_FSM_RELAX:
+                    self._manual_data = entry_data
+                    return await self.async_step_fsm_relax()
                 if bed_type == BED_TYPE_VIBRADORM_APP:
                     self._manual_data = entry_data
                     return await self.async_step_vibradorm_app()
@@ -3869,6 +3918,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     if bed_type == BED_TYPE_STARCODE_ABM5_4:
                         self._manual_data = entry_data
                         return await self.async_step_starcode_app()
+
+                    if bed_type == BED_TYPE_FSM_RELAX:
+                        self._manual_data = entry_data
+                        return await self.async_step_fsm_relax()
                     if bed_type == BED_TYPE_VIBRADORM_APP:
                         self._manual_data = entry_data
                         return await self.async_step_vibradorm_app()
@@ -6603,6 +6656,9 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             _add_jiecang_app_schema_fields(schema_dict, current_data)
         if bed_type == BED_TYPE_STARCODE_ABM5_4 and not separate_address_pair:
             _add_starcode_app_schema_fields(schema_dict, current_data)
+
+        if bed_type == BED_TYPE_FSM_RELAX and not separate_address_pair:
+            _add_fsm_relax_schema_fields(schema_dict, current_data)
         if bed_type == BED_TYPE_VIBRADORM_APP and not separate_address_pair:
             _add_vibradorm_app_schema_fields(schema_dict, current_data)
         if bed_type == BED_TYPE_VMATBASIC and not separate_address_pair:
@@ -6664,6 +6720,14 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 user_input = {**user_input, CONF_MOTOR_COUNT: int(user_input[CONF_MOTOR_COUNT])}
             requested_bed_type = user_input.get(CONF_BED_TYPE, bed_type)
             requested_route = user_input.get(CONF_PROTOCOL_VARIANT, form_variant)
+            if separate_address_pair and (
+                (requested_bed_type == BED_TYPE_FSM_RELAX and requested_bed_type != bed_type)
+                or any(key in user_input for key in (CONF_FSM_RELAX_LAYOUT, CONF_FSM_RELAX_LIGHT, CONF_FSM_RELAX_MASSAGE, CONF_FSM_RELAX_MEMORY_NAMES, *CONF_FSM_RELAX_REVERSALS))
+            ):
+                return self.async_show_form(
+                    step_id=step_id, data_schema=vol.Schema(schema_dict),
+                    errors={"base": "fsm_relax_unpair_first"},
+                )
             if (
                 separate_address_pair
                 and requested_bed_type == BED_TYPE_FURNIMOVE
@@ -7010,6 +7074,12 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 user_input[CONF_MOTOR_COUNT] = 2
                 user_input[CONF_HAS_MASSAGE] = True
                 user_input[CONF_DISABLE_ANGLE_SENSING] = True
+
+            if bed_type == BED_TYPE_FSM_RELAX and not separate_address_pair:
+                if errors := _fsm_relax_errors({**current_data, **user_input}):
+                    return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors=errors)
+                user_input[CONF_DISABLE_ANGLE_SENSING] = True
+                user_input[CONF_HAS_MASSAGE] = False
             if bed_type == BED_TYPE_VIBRADORM_APP and not separate_address_pair:
                 app_data = _vibradorm_app_data(current_data, user_input)
                 if _vibradorm_app_form_changed(current_data, user_input):
