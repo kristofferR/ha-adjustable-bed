@@ -126,6 +126,53 @@ async def test_corrupt_record_is_never_projected_to_bed(hass):
     assert state.slots == {}
 
 
+async def test_metadata_idempotence_first_change_and_rollback(hass):
+    state = FsmRelaxState(hass, "entry", "AA:BB:CC:DD:EE:FF")
+    save = AsyncMock()
+    state._store = MagicMock(async_save=save)
+    first = bytes.fromhex("0202000008")
+    changed = bytes.fromhex("0204000008")
+    await state.async_save_capabilities(first)
+    await state.async_save_serial(1)
+    assert save.await_count == 2
+    for _ in range(2):
+        await state.async_save_capabilities(first)
+        await state.async_save_serial(1)
+    assert save.await_count == 2
+    await state.async_save_capabilities(changed)
+    await state.async_save_serial(-1)
+    assert save.await_count == 4
+    assert state.capability_body == changed and state.serial == -1
+    save.side_effect = OSError("disk")
+    await state.async_save_capabilities(changed)
+    await state.async_save_serial(-1)
+    for operation in (state.async_save_capabilities(first), state.async_save_serial(2)):
+        with pytest.raises(OSError):
+            await operation
+    assert state.capability_body == changed and state.serial == -1
+    assert save.await_count == 6
+
+
+@pytest.mark.parametrize("field,value", [
+    ("capability_body", bytes.fromhex("0302000008")),
+    ("capability_body", bytes.fromhex("02020000")),
+    ("serial", True),
+    ("serial", 2**31),
+    ("serial", -(2**31) - 1),
+])
+async def test_invalid_metadata_is_rejected_even_when_equal_to_local_state(hass, field, value):
+    state = FsmRelaxState(hass, "entry", "AA:BB:CC:DD:EE:FF")
+    save = AsyncMock()
+    state._store = MagicMock(async_save=save)
+    setattr(state, field, value)
+    with pytest.raises(ValueError):
+        if field == "capability_body":
+            await state.async_save_capabilities(value)
+        else:
+            await state.async_save_serial(value)
+    save.assert_not_awaited()
+
+
 async def test_unchanged_names_skip_store_write(hass):
     state = FsmRelaxState(hass, "entry", "AA:BB:CC:DD:EE:FF")
     await state.async_load()

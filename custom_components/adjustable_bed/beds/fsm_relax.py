@@ -202,6 +202,10 @@ class FsmRelaxController(BedController):
         return False
 
     @property
+    def controller_entity_discovery_complete(self) -> bool:
+        return self._capabilities is not None
+
+    @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
         # App-labelled buttons/services do not assert physical actuator axes.
         return ()
@@ -394,7 +398,7 @@ class FsmRelaxController(BedController):
         self._buffer.clear()
         for future in self._pending.values():
             if not future.done():
-                future.cancel()
+                future.set_exception(ConnectionError("FSM Relax disconnected"))
         self._pending.clear()
         if self._optional_task is not None:
             self._optional_task.cancel()
@@ -503,9 +507,6 @@ class FsmRelaxController(BedController):
                 if cancelled in done:
                     raise asyncio.CancelledError
                 if future in done:
-                    if future.cancelled():
-                        # A dropped link is a connection failure, not task cancellation.
-                        raise ConnectionError("FSM Relax disconnected")
                     return future.result()
             raise TimeoutError("FSM Relax response timed out; no reply correlation is available")
         finally:
@@ -513,6 +514,9 @@ class FsmRelaxController(BedController):
             cancelled.cancel()
             if not future.done():
                 future.cancel()
+            elif not future.cancelled():
+                # Disconnect also cancels optional tasks before they can consume the error.
+                future.exception()
 
     async def async_discover_capabilities(self) -> None:
         await self.local.async_load()
@@ -524,8 +528,7 @@ class FsmRelaxController(BedController):
         loaded = self._coordinator.hass.config_entries.async_get_entry(
             self._coordinator.entry.entry_id
         )
-        # A loaded entry without a prior body built its platforms from an empty
-        # offline controller, so the first body must reconcile entities too.
+        # Initial setup builds its platforms from this discovery; loaded entries need reload.
         if previous != body and (
             previous is not None
             or (loaded is not None and loaded.state is ConfigEntryState.LOADED)

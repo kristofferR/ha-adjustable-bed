@@ -83,7 +83,14 @@ Acknowledgement 04 is observed only and cannot prove physical arrival.
 Options expose exactly eight local memory names. A blank field resets that slot
 to M1–M8. Editing/resetting names never writes BLE. Names and raw targets persist
 across HA restart/controller replacement; removing the entry removes its store.
+Reconnects do not rewrite storage when the normalized names are unchanged.
+Identical valid capability snapshots and serial observations also skip storage
+writes. First and changed values still persist atomically; failed writes retain
+the previous value. Fresh live capability readiness is required on each connection.
 Unsolicited signed serial 06 is remembered, without inventing a serial query.
+
+All three FSM Relax action forms expose `side:both/left/right`. A child device
+retains its physical side; a paired parent defaults to both unless a side is selected.
 
 `adjustable_bed.fsm_relax_calibrate` requires `confirmed:true`. It sends one 05
 frame with all four configured reversal flags and never automatically retries.
@@ -91,6 +98,14 @@ A failed write does not prove hardware did nothing. Response 05 records an obser
 calibration notification, without claiming measured calibration success.
 
 ## BLE and lifecycle
+
+A link drop fails pending queries with a connection error so initialization can
+use the coordinator's remaining retries. Explicit caller cancellation still
+propagates as cancellation. An offline controller without a capability snapshot
+has incomplete entity discovery. A loaded entry's first persisted capability response
+requests the existing deferred reload after link release, including the parent of a pair,
+so native actions and memories appear without a manual reload. Initial setup builds
+its platforms from that first response without scheduling an unnecessary reload.
 
 The exact service is `0000ffe0-0000-1000-8000-00805f9b34fb`, with one write/notify
 role `0000ffe1-0000-1000-8000-00805f9b34fb`. Every write uses `response=False`, even

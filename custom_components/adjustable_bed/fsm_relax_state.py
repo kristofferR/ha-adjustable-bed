@@ -133,7 +133,6 @@ class FsmRelaxState:
     async def async_set_names(self, names: object) -> None:
         validated = validate_names(names)
         async with self._lock:
-            # Controllers are rebuilt on every reconnect; skip redundant writes.
             if validated == self.names:
                 return
             await self._store.async_save(self._data(self.slots, validated))
@@ -143,6 +142,8 @@ class FsmRelaxState:
         if len(body) != 5 or body[0] != 2:
             raise ValueError("Invalid capability record")
         async with self._lock:
+            if body == self.capability_body:
+                return
             previous = self.capability_body
             self.capability_body = body
             try:
@@ -156,6 +157,8 @@ class FsmRelaxState:
         if type(serial) is not int or not -(2**31) <= serial < 2**31:
             raise ValueError("Serial must be signed 32-bit")
         async with self._lock:
+            if serial == self.serial:
+                return
             previous = self.serial
             self.serial = serial
             try:

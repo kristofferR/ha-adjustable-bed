@@ -52,7 +52,8 @@ async def test_actual_coordinator_drop_immediately_invalidates_owned_session(has
     assert coordinator.controller is None and coordinator.client is None
     assert ctrl._generation == generation + 1
     assert not ctrl._subscribed and not ctrl._live_capabilities
-    assert not ctrl._buffer and not ctrl._pending and pending.cancelled()
+    assert not ctrl._buffer and not ctrl._pending
+    assert isinstance(pending.exception(), ConnectionError)
     assert optional.cancelling() and metadata.cancelling()
     await asyncio.gather(optional, metadata, return_exceptions=True)
 
@@ -88,7 +89,7 @@ async def test_initializing_disconnect_fails_query_and_rejects_same_client_old_c
         assert coordinator.client is client and coordinator.controller is ctrl
         assert ctrl._generation == generation + 1
         assert not ctrl._live_capabilities and not ctrl._subscribed
-        with pytest.raises(ConnectionError):
+        with pytest.raises(ConnectionError, match="disconnected"):
             await query
         assert not ctrl._pending
         client.is_connected = True
