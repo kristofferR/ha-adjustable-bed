@@ -1398,13 +1398,53 @@ async def test_validation_and_failed_one_shot_no_false_published_success():
 
 
 @pytest.mark.asyncio
-async def test_cancel_dropped_floor_work_consumes_construction_not_execution_toggle():
+async def test_pre_cancelled_floor_level_does_not_construct_command():
     c = make_controller(7, features=True)
     c._coordinator.cancel_command.set()
     await c.set_light_level(1)
-    assert c._toggle == 0x8000
+    assert c._toggle == 0 and c._floor_level == 0
     assert written(c) == []
     assert not c._coordinator.handle_controller_state_updates.called
+
+
+@pytest.mark.parametrize(("control", "extension"), [(2, False), (2, True), (7, False), (7, True)])
+@pytest.mark.parametrize("initial_level", [0, 3])
+@pytest.mark.parametrize("action", ["on", "off", "level", "toggle"])
+@pytest.mark.asyncio
+async def test_pre_cancelled_floor_actions_preserve_session_intent_and_sequence(
+    control, extension, initial_level, action
+):
+    existing = make_controller(control)
+    floor = VibradormAppFloorIntent(level=initial_level, default_level=6)
+    timer = VibradormAppTimerIntent(enabled=True, minutes=12)
+    c = VibradormAppController(
+        existing._coordinator,
+        app_profile="caresse",
+        control_type=control,
+        restored=True,
+        floor_light=True,
+        light_extension=extension,
+        floor_intent=floor,
+        timer_intent=timer,
+    )
+    c._toggle = 0x8000
+    before = c.get_light_state()
+    c._coordinator.cancel_command.set()
+    if action == "on":
+        await c.lights_on()
+    elif action == "off":
+        await c.lights_off()
+    elif action == "level":
+        await c.set_light_level(2)
+    else:
+        await c.lights_toggle()
+    assert written(c) == []
+    assert floor.level == initial_level and floor.default_level == 6
+    assert timer.enabled and timer.minutes == 12
+    assert c._toggle == 0x8000 and c.get_light_state() == before
+    c._coordinator.remember_vibradorm_app_floor_default.assert_not_called()
+    c._coordinator.handle_controller_state_updates.assert_not_called()
+    c._coordinator.record_command_trace.assert_not_called()
 
 
 @pytest.mark.asyncio

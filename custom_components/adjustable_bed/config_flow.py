@@ -880,14 +880,17 @@ def _vibradorm_app_data(
 ) -> dict[str, Any]:
     """Normalize explicit fresh defaults and clear incompatible retained state."""
     data = dict(previous)
+    updates = dict(submitted)
     if (
         CONF_VIBRADORM_APP_PROFILE in submitted
         and submitted[CONF_VIBRADORM_APP_PROFILE] != previous.get(CONF_VIBRADORM_APP_PROFILE)
     ):
         for key in VIBRADORM_APP_CONFIG_KEYS - {CONF_VIBRADORM_APP_PROFILE}:
             data.pop(key, None)
+            updates.pop(key, None)
         data.pop(CONF_VIBRADORM_APP_METADATA, None)
-    data.update(submitted)
+        updates.pop(CONF_VIBRADORM_APP_METADATA, None)
+    data.update(updates)
     app = data.get(CONF_VIBRADORM_APP_PROFILE)
     restored = data.get(CONF_VIBRADORM_RESTORED, False) if app == "caresse" else False
     data[CONF_VIBRADORM_RESTORED] = restored

@@ -1231,6 +1231,8 @@ class VibradormAppController(BedController):
     async def _floor(self, level: int, *, toggle: bool = False) -> None:
         if not self.profile.floor_light:
             raise ValueError("This profile has no floor-light route")
+        if self._coordinator.cancel_command.is_set():
+            return
         if toggle:
             self._consume_toggle()
         self._floor_level = level
@@ -1257,11 +1259,15 @@ class VibradormAppController(BedController):
         await self._floor(self._floor_level or self._floor_default, toggle=True)
 
     async def lights_off(self) -> None:
+        if self._coordinator.cancel_command.is_set():
+            return
         if self._floor_level:
             self._floor_default = self._floor_level
         await self._floor(0, toggle=True)
 
     async def lights_toggle(self) -> None:
+        if self._coordinator.cancel_command.is_set():
+            return
         if self._floor_level:
             self._floor_default = self._floor_level
             await self._floor(0, toggle=True)

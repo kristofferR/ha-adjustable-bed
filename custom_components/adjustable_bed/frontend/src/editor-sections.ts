@@ -15,7 +15,7 @@ export function presentSections(
     firmness: bed.firmness.length > 0,
     presets: bed.presets.length > 0,
     memory: bed.memory.length > 0,
-    lighting: hasLightingControls(bed.lights),
+    lighting: hasLightingControls(bed.lights) || !!bed.lights.state,
     massage:
       bed.massage.buttons.length > 0 ||
       bed.massage.numbers.length > 0 ||

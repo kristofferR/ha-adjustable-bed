@@ -141,6 +141,66 @@ async def test_app_change_rebuilds_options_and_clears_retained_features(hass):
     assert const.CONF_VIBRADORM_APP_METADATA not in entry.data
 
 
+@pytest.mark.parametrize("options", [False, True])
+@pytest.mark.parametrize("old_app", ["caresse", "werkmeister"])
+async def test_full_rendered_form_profile_switch_discards_old_app_fields(hass, options, old_app):
+    old = app_data(old_app, "2" if old_app == "caresse" else "7", **{
+        const.CONF_VIBRADORM_RESTORED: old_app == "caresse",
+        const.CONF_VIBRADORM_RGB: old_app == "caresse",
+        const.CONF_VIBRADORM_MASSAGE: old_app == "caresse",
+        const.CONF_VIBRADORM_LIGHT_EXTENSION: old_app == "caresse",
+        const.CONF_VIBRADORM_FLOOR_DEFAULT: 8,
+        const.CONF_VIBRADORM_APP_METADATA: {"model": "old metadata"},
+    })
+    entry = MockConfigEntry(domain=const.DOMAIN, data=old)
+    if options:
+        entry.add_to_hass(hass)
+        flow = AdjustableBedOptionsFlow(entry)
+        flow.handler = entry.entry_id
+        step = flow.async_step_settings
+    else:
+        flow = AdjustableBedConfigFlow()
+        flow.context = {}
+        flow._manual_data = old
+        step = flow.async_step_vibradorm_app
+    flow.hass = hass
+    rendered = await step()
+    assert rendered["type"] == FlowResultType.FORM
+    assert rendered["data_schema"] is not None
+    submitted = rendered["data_schema"]({})
+    assert isinstance(submitted, dict)
+    new_app = "werkmeister" if old_app == "caresse" else "caresse"
+    submitted[const.CONF_VIBRADORM_APP_PROFILE] = new_app
+    rebuilt = await step(submitted)
+    assert rebuilt["type"] == FlowResultType.FORM
+    assert not rebuilt["errors"]
+    assert rebuilt["data_schema"] is not None
+    defaults = rebuilt["data_schema"]({})
+    assert isinstance(defaults, dict)
+    assert defaults[const.CONF_VIBRADORM_APP_PROFILE] == new_app
+    if new_app == "werkmeister":
+        assert defaults[const.CONF_VIBRADORM_CONTROL_TYPE] == "5"
+    else:
+        assert defaults[const.CONF_VIBRADORM_RESTORED] is False
+    for key in (const.CONF_VIBRADORM_RGB, const.CONF_VIBRADORM_MASSAGE,
+                const.CONF_VIBRADORM_LIGHT_EXTENSION, const.CONF_VIBRADORM_FLOOR_DEFAULT):
+        assert key not in defaults
+    if options:
+        finished = await step(defaults)
+        assert finished["type"] == FlowResultType.CREATE_ENTRY
+        updated = entry.data
+    else:
+        with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as pairing:
+            await step(defaults)
+        pairing.assert_awaited_once()
+        updated = flow._manual_data
+    assert updated[const.CONF_VIBRADORM_CONTROL_TYPE] == ("5" if new_app == "werkmeister" else "2")
+    assert updated[const.CONF_VIBRADORM_FLOOR_DEFAULT] == 6
+    assert updated[const.CONF_VIBRADORM_MASSAGE] is False
+    assert updated[const.CONF_VIBRADORM_RGB] is False
+    assert const.CONF_VIBRADORM_APP_METADATA not in updated
+
+
 async def test_two_address_pair_keeps_different_side_profiles(hass):
     left = app_data()
     right = app_data("werkmeister", "7")
