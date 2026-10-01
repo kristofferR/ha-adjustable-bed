@@ -1,6 +1,6 @@
 # Row037 V-MAT Basic implementation dispositions
 
-Current code and focused executed proof cover all 95 immutable comparison discoveries: 76 IMPLEMENTED, 3 narrow ALREADY_IMPLEMENTED leaves and 16 exact EXCLUDED items. Latest-main integration, the root-owned full suite and current-head PR review/CI remain pending. No reachable discovery is deferred for lack of hardware.
+Current code and focused executed proof cover all 95 immutable comparison discoveries: 76 IMPLEMENTED, 3 narrow ALREADY_IMPLEMENTED leaves and 16 exact EXCLUDED items. Current work status is tracked in the canonical APK Protocol Audit issues and published queue plan. No reachable discovery is deferred for lack of hardware.
 
 The accepted package is `com.vibradorm.vmatbasic` 2.4.3 (code 14). Comparison manifest SHA-256: `c2245ace9595cc7c0ca0d9798c2ea583cca24a0367053711fea164824c4c47d3`. See the [profile documentation](../beds/vmatbasic.md) for artifact/report/audit identities and public behavior. Raw package evidence and final executable proof bindings remain machine-local. Hardware status is **UNVERIFIED**.
 
