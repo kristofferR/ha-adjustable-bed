@@ -141,3 +141,9 @@ def test_service_metadata_matches_every_layout_control():
         for name in ("simmons_hold_control", "simmons_set_alarm"):
             assert set(metadata["services"][name]["fields"]) == set(services[name]["fields"])
         assert {"simmons_alarm_1", "simmons_alarm_2"} <= set(metadata["entity"]["sensor"])
+        buttons = {
+            spec.translation_key
+            for variant in (None, "simmons_inclined")
+            for spec in make_controller(variant).controller_button_specs
+        }
+        assert buttons <= set(metadata["entity"]["button"])

@@ -1402,7 +1402,7 @@ serenity_hold_control:
 
 simmons_hold_control:
   name: Hold SIMMONS control
-  description: Hold one SIMMONS app control, repeating it every 300 ms, then send its release stops. Holding Custom Mode past 5 seconds saves the current position.
+  description: Hold one SIMMONS app control, repeating it every 300 ms, then send its release stops. The app's help says holding Custom Mode for 5 seconds saves the current position; the save on the bed is unverified.
   fields:
     device_id:
       name: Device

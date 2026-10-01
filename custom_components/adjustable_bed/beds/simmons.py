@@ -25,6 +25,7 @@ from ..const import (
     SIMMONS_VARIANT_OKIN,
     SIMMONS_VARIANT_SMARTBED,
 )
+from ..detection import is_mac_like_name
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -117,6 +118,19 @@ PEER_CONFLICT_ERROR: Final = (
 )
 
 
+def _protocol_name(live: str | None, stored: object) -> str | None:
+    """Pick the name for the app's prefix rule.
+
+    The app reads Android's GAP name; HA sees the advertised name or BlueZ
+    alias, which is the address when a bed sends no name. An address-like live
+    name falls back to the name stored at setup, so the format stays stable
+    across connections and proxies.
+    """
+    if not is_mac_like_name(live):
+        return live
+    return stored if isinstance(stored, str) and not is_mac_like_name(stored) else None
+
+
 def _action(name: str) -> MotorCommandCallable:
     async def invoke(controller: BedController | SideBoundController) -> None:
         target = (
@@ -142,10 +156,8 @@ class SimmonsController(BedController):
         super().__init__(coordinator)
         variant = protocol_variant or ""
         self._inclined = variant in _INCLINED_VARIANTS
-        # The connect-time Bluetooth name, else the name stored at setup.
-        stored_name = getattr(coordinator, "ble_device_name", None)
         self._protocol: Protocol = _PROTOCOL_BY_VARIANT.get(variant) or resolve_protocol(
-            device_name or (stored_name if isinstance(stored_name, str) else None)
+            _protocol_name(device_name, getattr(coordinator, "ble_device_name", None))
         )
         self._write_char: BleakGATTCharacteristic | None = None
         self._notify_char: BleakGATTCharacteristic | None = None
@@ -253,7 +265,9 @@ class SimmonsController(BedController):
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         inclined = (
             tuple(
-                ControllerButtonSpec(f"simmons_{key}", label, _action(key))
+                ControllerButtonSpec(
+                    f"simmons_{key}", label, _action(key), translation_key=f"simmons_{key}"
+                )
                 for key, label in _INCLINED_LABELS.items()
             )
             if self._inclined
@@ -265,6 +279,7 @@ class SimmonsController(BedController):
                 "simmons_sync_clock",
                 "Sync Clock",
                 _action("sync_clock"),
+                translation_key="simmons_sync_clock",
                 icon="mdi:clock-check",
                 cancel_movement=False,
                 scheduler_resource="configuration",
@@ -273,6 +288,7 @@ class SimmonsController(BedController):
                 "simmons_refresh_alarms",
                 "Refresh Alarms",
                 _action("refresh_alarms"),
+                translation_key="simmons_refresh_alarms",
                 icon="mdi:alarm",
                 cancel_movement=False,
                 scheduler_resource="configuration",
@@ -385,9 +401,14 @@ class SimmonsController(BedController):
                 await asyncio.shield(task)
             except asyncio.CancelledError:
                 cancelled = True
-        task.result()
+            except Exception:  # noqa: BLE001 - re-raised below unless cancelled
+                break
         if cancelled:
+            # The caller's cancellation wins; still retrieve a STOP failure.
+            if not task.cancelled():
+                task.exception()
             raise asyncio.CancelledError
+        task.result()
 
     async def _move(self, action: str) -> None:
         count, delay = self.motor_pulse_settings()
@@ -532,17 +553,22 @@ class SimmonsController(BedController):
         self._session_ready = False
         self._awaiting = [False, False]
         self._pending_record = None
+        self._publish_slots()  # No reply can arrive once the session ends.
 
     async def sync_clock(self) -> None:
         """Write the local clock, as the control page does when a bed links."""
-        await self.write_command(clock_frame(self._protocol, dt_util.now()))
+        await self._configure_write(clock_frame(self._protocol, dt_util.now()))
 
     async def _query_once(self) -> None:
         frames = query_frames(self._protocol)
-        await self.write_command(frames[0])
+        await self._configure_write(frames[0])
         for frame in frames[1:]:
             await asyncio.sleep(QUERY_GAP_S)
-            await self.write_command(frame)
+            await self._configure_write(frame)
+
+    async def _configure_write(self, frame: bytes) -> None:
+        """Write a clock, query or alarm frame that a movement STOP must not skip."""
+        await self.write_command(frame, cancel_event=asyncio.Event())
 
     async def refresh_alarms(self) -> None:
         """Repeat the alarm page's opening queries at 0, 300 and 600 ms."""
@@ -630,7 +656,7 @@ class SimmonsController(BedController):
                 if self._protocol == "smartbed"
                 else self._p1_frame(index, [hour, minute, weekday, wire_type], peer)
             )
-        await self.write_command(frame)
+        await self._configure_write(frame)
         # Local state follows only a successful write, so a failed write cannot
         # change the overlays applied to later replies.
         if self._protocol == "okin":

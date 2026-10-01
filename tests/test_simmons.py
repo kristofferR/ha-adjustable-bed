@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from zoneinfo import ZoneInfo
 
 import pytest
+from bleak.exc import BleakError
 
 from custom_components.adjustable_bed.beds.simmons import (
     CUSTOM_MODE_WARNING,
@@ -87,8 +88,10 @@ def make_controller(
     name: str | None = "OKIN-123456",
     services: list[SimpleNamespace] | None = None,
     state: dict[str, object] | None = None,
+    stored_name: str | None = None,
 ) -> SimmonsController:
     coordinator = MagicMock()
+    coordinator.ble_device_name = stored_name
     coordinator.address = "AA:BB:CC:DD:EE:FF"
     coordinator.cancel_command = asyncio.Event()
     coordinator.motor_pulse_count = 3
@@ -545,3 +548,127 @@ async def test_notifications_subscribe_to_the_selected_role():
     await controller.start_notify(None)
     assert controller.requires_notification_channel
     assert controller.client.start_notify.call_args.args[0].uuid.lower() == FFE0[1]
+
+
+@pytest.mark.parametrize(
+    ("live", "stored", "expected"),
+    [
+        ("AA:BB:CC:DD:EE:FF", "SmartBed123", "smartbed"),
+        ("AA-BB-CC-DD-EE-FF", "OKIN-1", "okin"),
+        (None, "OKIN-1", "okin"),
+        ("OKIN-2", "SmartBed123", "okin"),
+        ("AA:BB:CC:DD:EE:FF", "11:22:33:44:55:66", "smartbed"),
+    ],
+)
+def test_address_like_live_name_falls_back_to_the_stored_name(live, stored, expected):
+    assert make_controller(name=live, stored_name=stored).protocol == expected
+
+
+async def test_configuration_writes_are_not_skipped_by_a_movement_stop():
+    controller = make_controller()
+    await controller.async_discover_capabilities()
+    _known(controller, AlarmSlot(6, 0, 0, 0, False), AlarmSlot(8, 45, 132, 28, False))
+    controller._coordinator.cancel_command.set()  # A STOP is in flight.
+    with (
+        patch("asyncio.sleep", new=AsyncMock()),
+        patch(
+            "custom_components.adjustable_bed.beds.simmons.dt_util.now",
+            return_value=datetime(2026, 10, 1, 7, 30, 45),
+        ),
+    ):
+        await controller.sync_clock()
+        await controller.configure_simmons_alarm(
+            slot=1, enabled=True, hour=7, minute=30, mode="flat"
+        )
+    assert written(controller) == [
+        "E7 80 01 7E 09 01 07 1E 2D BD",
+        # 07:30:00 has passed at 07:30:45, so the one-off lands on Friday (bit 5).
+        p1_alarm_frame([7, 30, 32, 28], [8, 45, 0, 28]).hex(" ").upper(),
+        "E1 80 03 9B",
+    ]
+    assert controller._slots[0] == AlarmSlot(7, 30, 128, 28, True)
+
+
+async def test_failed_alarm_write_leaves_local_state_unchanged():
+    controller = make_controller()
+    await controller.async_discover_capabilities()
+    before = [AlarmSlot(6, 0, 0, 0, False), AlarmSlot(8, 45, 132, 28, True)]
+    _known(controller, *before)
+    controller.client.write_gatt_char.side_effect = BleakError("write failed")
+    with pytest.raises(BleakError):
+        await controller.configure_simmons_alarm(
+            slot=1, enabled=True, hour=7, minute=30, mode="anti_snore"
+        )
+    assert controller._slots == before and controller._awaiting == [False, False]
+
+
+async def test_disabled_other_alarm_may_share_time_and_mode():
+    controller = make_controller()
+    await controller.async_discover_capabilities()
+    _known(controller, AlarmSlot(6, 0, 0, 0, False), AlarmSlot(8, 45, 132, 28, False))
+    with patch("asyncio.sleep", new=AsyncMock()):
+        await controller.configure_simmons_alarm(
+            slot=1, enabled=True, hour=8, minute=45, weekdays=[0], mode="flat"
+        )
+    assert (
+        written(controller)[0] == p1_alarm_frame([8, 45, 130, 28], [8, 45, 0, 28]).hex(" ").upper()
+    )
+
+
+async def test_alarm_page_queries_run_at_0_300_and_600_ms():
+    controller = make_controller()
+    await controller.async_discover_capabilities()
+    with patch("asyncio.sleep", new=AsyncMock()) as sleep:
+        await controller.refresh_alarms()
+    assert written(controller) == ["E1 80 03 9B"] * 3
+    # Mocked sleeps do not advance the clock: each offset is from one origin.
+    delays = [call.args[0] for call in sleep.call_args_list]
+    assert delays[0] == 0 and 0.29 < delays[1] <= 0.3 and 0.59 < delays[2] <= 0.6
+
+
+async def test_hold_ends_at_its_deadline_then_releases():
+    controller = make_controller()
+    await controller.async_discover_capabilities()
+    stalled = asyncio.Event()
+
+    async def write(_char: object, data: bytes, response: bool) -> None:
+        if data != bytes.fromhex("E6 FE 16 00 00 00 00 00 05"):
+            await stalled.wait()  # The held frame outlives the 1 ms deadline.
+
+    controller.client.write_gatt_char.side_effect = write
+    with patch("asyncio.sleep", new=AsyncMock()):
+        await controller.hold_control("flat", 1)
+    assert written(controller) == [OKIN_ROWS["flat"], OKIN_ROWS["stop"], OKIN_ROWS["stop"]]
+
+
+async def test_cancelled_release_reraises_cancellation_after_a_stop_failure():
+    controller = make_controller()
+    await controller.async_discover_capabilities()
+    gate = asyncio.Event()
+
+    async def fail(*_args: object, **_kwargs: object) -> None:
+        await gate.wait()
+        raise BleakError("stop failed")
+
+    controller.client.write_gatt_char.side_effect = fail
+    real_sleep = asyncio.sleep
+    with patch("asyncio.sleep", new=lambda _delay, *args: real_sleep(0, *args)):
+        task = asyncio.create_task(controller.stop_all())
+        for _ in range(5):
+            await real_sleep(0)
+        task.cancel()
+        gate.set()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+    assert len(written(controller)) == 2  # Both STOPs were still attempted.
+
+
+def test_session_end_publishes_cleared_awaiting_flags():
+    controller = make_controller()
+    _known(controller, AlarmSlot(7, 30, 130, 17, True), AlarmSlot(8, 45, 132, 28, True))
+    controller._awaiting = [True, True]
+    controller._publish_slots()
+    controller.invalidate_diagnostics()
+    state = controller._coordinator.controller_state
+    assert state["simmons_alarm_1_awaiting_reply"] is False
+    assert state["simmons_alarm_2_awaiting_reply"] is False

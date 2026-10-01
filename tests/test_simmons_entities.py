@@ -29,6 +29,13 @@ async def test_buttons_follow_the_bed_layout(hass, variant, present, absent):
         "simmons_refresh_alarms",
     } <= keys
     assert not {key for key in keys if key.startswith("massage")}
+    app_buttons = {
+        entity.unique_id: entity.translation_key
+        for entity in _button_entities_for(hass, runtime)
+        if "simmons_" in entity.unique_id
+    }
+    # Stable translation keys let the card bucket them (presets / utility).
+    assert all(f"bed_{key}_left" == unique for unique, key in app_buttons.items())
 
 
 @pytest.mark.parametrize("retain", [True, False])

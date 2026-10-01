@@ -1929,6 +1929,21 @@
       },
       "coolbase_star": {
         "name": "Star button"
+      },
+      "simmons_inclined_left": {
+        "name": "Inclined left"
+      },
+      "simmons_inclined_middle": {
+        "name": "Inclined middle"
+      },
+      "simmons_inclined_right": {
+        "name": "Inclined right"
+      },
+      "simmons_sync_clock": {
+        "name": "Sync clock"
+      },
+      "simmons_refresh_alarms": {
+        "name": "Refresh alarms"
       }
     },
     "cover": {
@@ -3838,7 +3853,7 @@
     },
     "simmons_hold_control": {
       "name": "Hold SIMMONS control",
-      "description": "Hold one SIMMONS app control, repeating it every 300 ms, then send its release stops. Holding Custom Mode past 5 seconds saves the current position.",
+      "description": "Hold one SIMMONS app control, repeating it every 300 ms, then send its release stops. The app's help says holding Custom Mode for 5 seconds saves the current position; the save on the bed is unverified.",
       "fields": {
         "device_id": {
           "name": "Device"

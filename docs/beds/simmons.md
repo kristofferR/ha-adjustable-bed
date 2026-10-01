@@ -15,7 +15,7 @@ The protocol variant carries two independent choices from the app:
 | `simmons_inclined` | Inclined | From the Bluetooth name |
 | `simmons_inclined_okin` / `simmons_inclined_smartbed` | Inclined | Fixed |
 
-The name rule is the app's: the lowercased name is checked for a `smartbed` prefix, then an `okin` prefix, with no trimming. Any other name, including a missing one, uses the SmartBed format, as the app does for a reconnect to a saved bed whose name matches neither prefix. Use a fixed variant if Home Assistant sees a different name than the phone.
+The name rule is the app's, which reads Android's device (GAP) name; HA sees the advertised name or BlueZ alias instead. An address-like name (BlueZ uses the address when a bed sends no name) falls back to the name stored at setup. The lowercased name is checked for a `smartbed` prefix, then an `okin` prefix, with no trimming. Any other name, including a missing one, uses the SmartBed format, as the app does for a reconnect to a saved bed whose name matches neither prefix. Use a fixed variant if Home Assistant sees a different name than the phone.
 
 The app offers the inclined bed type only in its Japanese language setting; the profile offers it regardless of language. Motor count is fixed at two (back, legs). Position feedback, massage and pairing do not exist in the app.
 
@@ -58,7 +58,7 @@ The inclined controls always send the SmartBed frame, even with the OKIN format 
 
 Every control repeats every 300 ms while held. On release the app schedules two STOP frames, at +100 ms and +400 ms. HA sends both from one release origin with fresh cancellation events, even if the movement was cancelled or a write failed. Every release is global, so all axes share one command resource.
 
-Covers move for the configured pulse count at the fixed 300 ms interval. Preset, Custom Mode recall, light and inclined buttons are app taps: the button-down frame once, with no 300 ms refresh because the press is already released, then the two release STOPs at +100 and +400 ms. The app enforces no minimum preset hold. **Save Custom Mode** holds the recall frame for 5.5 s: the app's help says to hold M for 5 seconds and its "Custom Mode has been set" notice appears at 5.5 s. There is no separate save frame. Use `simmons_hold_control` for a longer hold. Whether a tap completes a preset on the bed, or the bed needs a hold, is unverified.
+Covers move for the configured pulse count at the fixed 300 ms interval. Preset, Custom Mode recall, light and inclined buttons are app taps: the button-down frame once, with no 300 ms refresh because the press is already released, then the two release STOPs at +100 and +400 ms. The app enforces no minimum preset hold. **Save Custom Mode** holds the recall frame for 5.5 s: the app's help says to hold M for 5 seconds and its "Custom Mode has been set" notice appears at 5.5 s. There is no separate save frame, and whether the bed stores the position is unverified. Use `simmons_hold_control` for a longer hold. Whether a tap completes a preset on the bed, or the bed needs a hold, is unverified.
 
 The app's own races (a new press replacing a pending STOP, repeat revival, no STOP on page dispose or disconnect) are not reproduced: HA serializes commands and always finishes the release.
 
@@ -74,11 +74,11 @@ On each connection, once idle, HA writes the local clock and repeats the alarm p
 | Disable | Same frame; selected weekday and type 0, hours/minutes kept | `07 05` or `07 06` + seven zero bytes |
 | Reply | `ED 80 03`: records at offsets 3 and 7; enabled unless weekday is 0 or 128 | `A5 0C 0E` / `A5 0D 0E`: weekday 4, type 5, hour 6, minute 7, open 9 |
 
-Each integer is masked to one byte. Alarm modes map to wire types Custom Mode/Flat/Anti-snore = 17/28/16 (OKIN) or 5/9/4 (SmartBed). Anti-snore is offered only on a regular bed.
+These writes are not press/hold commands: a movement STOP never cancels them, and local records change only after the write is sent. Each integer is masked to one byte. Alarm modes map to wire types Custom Mode/Flat/Anti-snore = 17/28/16 (OKIN) or 5/9/4 (SmartBed). Anti-snore is offered only on a regular bed.
 
 The weekday is a bitmask with Sunday as bit 0 and bit 7 marking a repeat. A repeat mask passes through. A one-off alarm (mask 128) is sent as the bit of the next occurrence: today if the time, truncated to whole milliseconds, is not yet past, otherwise after an absolute 24 hours, so a DST change can shift the day.
 
-OKIN programming rewrites both slots, so the other slot's record is preserved (its weekday is sent as 0 when that alarm is disabled). The written record is remembered as pending until an exactly matching reply arrives. After a write, HA queries again 300 ms later.
+OKIN programming rewrites both slots, so the other slot's stored record is re-sent unchanged (its weekday is sent as 0 when that alarm is disabled). The app stores the weekday mask from its editor and encodes only the slot being written, so an enabled one-off alarm in the other slot is re-sent as mask 128, which the app's own reply parser reads as disabled. The profile reproduces this; whether the bed then keeps or drops that one-off alarm is unverified. The written record is remembered as pending until an exactly matching reply arrives. After a write, HA queries again 300 ms later.
 
 `simmons_set_alarm` follows the app's rules: Custom Mode needs `confirm_custom_mode` (the app warns that extreme custom angles can cause injury), and an enabled alarm cannot share its time or mode with the other enabled alarm. If this HA run has no alarm records yet, the bed is queried first and the write is refused if it does not answer within 2 s (an integration-side guard, not an app value).
 
@@ -90,4 +90,4 @@ Differences from the app: alarm records belong to each physical bed rather than 
 
 ## Validation requests
 
-For real users after a beta or release: whether each name prefix matches the bed's actual protocol, which GATT roles the bed exposes, whether a preset tap completes the motion or needs a hold, what the inclined controls move, whether the bed accepts SmartBed inclined frames in OKIN mode, how the light responds to a hold, and how alarm replies report one-off alarms.
+For real users after a beta or release: whether each name prefix matches the bed's actual protocol, which GATT roles the bed exposes, whether a preset tap completes the motion or needs a hold, what the inclined controls move, whether the bed accepts SmartBed inclined frames in OKIN mode, how the light responds to a hold, how alarm replies report one-off alarms, and whether an enabled one-off alarm survives programming the other slot on an OKIN bed (it is re-sent as mask 128).
