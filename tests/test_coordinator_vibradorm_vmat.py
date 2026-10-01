@@ -22,6 +22,39 @@ from tests.test_vibradorm_vmat import frames, make_vmat
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("retained", [False, True])
+async def test_vmat_runtime_uses_own_45_second_budget_including_retained_native_observation(hass, retained):
+    data = _vibradorm_app_data({
+        CONF_ADDRESS: "11:22:33:44:55:66",
+        const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM_APP,
+        const.CONF_VIBRADORM_APP_PROFILE: "vmat",
+    }, {const.CONF_VIBRADORM_VMAT_REMOTE: "07"})
+    entry = MockConfigEntry(domain=const.DOMAIN, data=data)
+    entry.add_to_hass(hass)
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    coordinator._client = make_vmat("07").client
+    coordinator._ble_bond_established = retained
+    timeout_at = asyncio.timeout_at
+    captured = []
+
+    def capture(deadline):
+        captured.append(deadline - asyncio.get_running_loop().time())
+        return timeout_at(deadline)
+
+    with (
+        patch.object(coordinator, "_unverified_marker_applies", return_value=retained),
+        patch.object(coordinator, "_async_observe_native_bond", new=AsyncMock(return_value=True)),
+        patch("custom_components.adjustable_bed.coordinator.asyncio.timeout_at", side_effect=capture),
+    ):
+        assert await coordinator._async_pair_vibradorm_app(
+            coordinator._client, {}, onboarding_deadline=None,
+            force_pairing=False, metadata_progress={},
+        )
+    assert len(captured) == 1
+    assert 44.0 < captured[0] <= 45.0
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("verified", [False, True])
 async def test_runtime_first_bond_always_closes_setup_and_unproven_rpc_is_not_a_marker(hass, verified):
     address, source = "11:22:33:44:55:66", "AA:BB:CC:DD:EE:FF"

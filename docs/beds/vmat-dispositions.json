@@ -46,12 +46,14 @@
         "vibradorm_vmat_setup.py:validate_vmat_roles",
         "vibradorm_vmat_setup.py:async_prepare_vmat_pairing",
         "config_flow.py:_attempt_pairing_with_capture",
-        "coordinator.py:_async_pair_on_live_link"
+        "coordinator.py:_async_pair_on_live_link",
+        "coordinator.py:_async_pair_vibradorm_app"
       ],
       "executed_proof": [
         "test_vibradorm_vmat_setup.py:test_three_dis_reads_then_seven_distinct_serial_stages",
         "test_vibradorm_vmat_config.py:test_real_setup_stages_then_pair_proof_close_disconnect_and_metadata_retention",
-        "test_coordinator_vibradorm_vmat.py:test_runtime_first_bond_always_closes_setup_and_unproven_rpc_is_not_a_marker"
+        "test_coordinator_vibradorm_vmat.py:test_runtime_first_bond_always_closes_setup_and_unproven_rpc_is_not_a_marker",
+        "test_coordinator_vibradorm_vmat.py:test_vmat_runtime_uses_own_45_second_budget_including_retained_native_observation"
       ]
     },
     "PACKET": {
@@ -129,13 +131,15 @@
         "beds/vibradorm_app.py:start_notify",
         "beds/vibradorm_app.py:stop_notify",
         "coordinator.py:_async_pair_on_live_link",
-        "vibradorm_app_state.py:get_vibradorm_app_session_intent"
+        "vibradorm_app_state.py:get_vibradorm_app_session_intent",
+        "config_flow.py:_create_selected_app_entry"
       ],
       "executed_proof": [
         "test_vibradorm_vmat.py:test_single_shots_wait_after_success_completion_and_stop_bypasses_delay",
         "test_vibradorm_vmat_setup.py:test_cancel_pending_stage_stops_notifications_without_later_queries",
         "test_vibradorm_vmat.py:test_registered_notifications_are_bound_to_live_role_and_generation",
-        "test_vibradorm_vmat_config.py:test_reconnect_retains_all_accessory_intent_but_another_remote_does_not"
+        "test_vibradorm_vmat_config.py:test_reconnect_retains_all_accessory_intent_but_another_remote_does_not",
+        "test_vibradorm_vmat_config.py:test_selected_vmat_entry_discards_previous_app_selection_intent"
       ]
     },
     "UI_STATE": {

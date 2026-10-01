@@ -235,7 +235,7 @@ async def async_get_config_entry_diagnostics(
             service_info.manufacturer_data if service_info else {}
         )
         advertisement_info["available"] = service_info is not None
-        if coordinator.entry.data.get("vibradorm_app_profile") == "vmat":
+        if entry.data.get("vibradorm_app_profile") == "vmat":
             advertisement_info["vmat_discovery"] = vmat_manufacturer_diagnostics(
                 service_info.manufacturer_data if service_info else {}
             )

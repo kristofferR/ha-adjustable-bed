@@ -108,11 +108,45 @@ async def test_actual_entity_factories_follow_remote_gates(hass, remote):
     assert ("vibradorm_app_massage_speed" in number_keys) is c.profile.massage
     assert ("vibradorm_app_floor_timer_minutes" in number_keys) is c.profile.floor_light
     assert "vibradorm_app_opmode" in sensor_keys
+    assert "vibradorm_app_main_firmware_article" in sensor_keys
     assert ("vibradorm_app_sync_observed" in sensor_keys) is c.profile.sync
     assert ("massage_head_toggle" in button_keys) is c.profile.massage
     assert ("massage_foot_toggle" in button_keys) is c.profile.massage
     assert ("under_bed_lights" in switch_keys) is c.profile.floor_light
     assert light_keys == set()  # No arbitrary RGB light or measured on/off feedback.
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("restored", [False, True])
+async def test_selected_vmat_entry_discards_previous_app_selection_intent(hass, restored):
+    from homeassistant.data_entry_flow import FlowResultType
+
+    from custom_components.adjustable_bed.vibradorm_app_state import mark_vibradorm_app_selection
+
+    address = "11:22:33:44:55:66"
+    old = mark_vibradorm_app_selection(
+        hass, address, app_profile="caresse", control_type=5,
+    )
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    data = _vibradorm_app_data({
+        CONF_ADDRESS: address, const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM_APP,
+        const.CONF_VIBRADORM_APP_PROFILE: "vmat",
+        const.CONF_VIBRADORM_RESTORED: restored,
+    }, {const.CONF_VIBRADORM_VMAT_REMOTE: "07"})
+    result = flow._create_selected_app_entry(title="VMAT", data=data)
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    restored_old = get_vibradorm_app_session_intent(
+        hass, address, app_profile="caresse", control_type=5,
+        remembered_floor_default=6,
+    )
+    assert restored_old is not old
+    assert restored_old.floor.level == 0
+    vmat = get_vibradorm_app_session_intent(
+        hass, address, app_profile="vmat", control_type=8,
+        remembered_floor_default=8, remote="07",
+    )
+    assert vmat.floor.level == 0
 
 
 @pytest.mark.asyncio
