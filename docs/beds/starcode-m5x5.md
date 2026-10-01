@@ -93,3 +93,17 @@ All selected targets must be ready before group writes. Main movement interrupts
 The full [225-item disposition ledger](../apk-analysis/row005-dispositions.md) binds implementation and exclusions to code and executed tests. All 111 owned command rows, 138 inherited command routes, accepted packet/parser vectors and exhaustive enum branches have focused tests. Raw APKs, decompilation and frozen reports stay machine-local.
 
 Real users after beta/release can validate five physical domains: movement/release and programming duration; units/actuator mapping; palette/brightness/modes; manufacturer/GATT/session observations; and multiple-device interrupt/flat/feedback behavior. Hardware is not needed to complete the proven static implementation. Actual peripheral write delivery, actuator cessation, negotiated MTU and the physical meanings of raw fields remain separately unverified.
+
+## Group ownership and profile changes
+
+A configured main and its selected lifts retain their standalone entry IDs.
+Remove the lift selection before combining any group member into a Dual Bed.
+The pairing picker rechecks this ownership when a previous selection is submitted.
+
+Group-command suppression applies only while the exact scheduled group action
+runs. A later ordinary command on the same scheduler still interrupts the group,
+cancels its retained delayed movement and cleans up the admitted targets.
+
+Selecting Elevate retires the previous back, legs and lumbar position sliders
+and every M5X5 telemetry entity. The BLE connection sensor and unrelated registry
+rows retain their identities. Other profiles keep their active feedback entities.

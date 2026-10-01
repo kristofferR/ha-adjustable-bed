@@ -341,6 +341,18 @@ class StarcodeM5X5Controller(BedController):
     @property
     def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
         all_keys = (
+            "firmware",
+            "massage_time_raw",
+            "massage_head_level",
+            "massage_foot_level",
+            "massage_mode",
+            "light_brightness",
+            "light_color_index",
+            "light_rgb_mode",
+            "light_mode",
+            "motor_part4",
+            "motor_part5",
+            "motor_part6",
             "alarm_0",
             "alarm_1",
             "sonic_time_raw",
@@ -362,6 +374,7 @@ class StarcodeM5X5Controller(BedController):
     @property
     def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
         all_keys = (
+            "firmware_read_ok",
             "motor_stopped",
             "massage_active",
             "light_on",

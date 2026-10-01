@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Mapping, Sequence
-from contextlib import ExitStack
+from collections.abc import Iterator, Mapping, Sequence
+from contextlib import ExitStack, contextmanager
 from contextvars import ContextVar
 from typing import cast
 
@@ -109,16 +109,29 @@ async def _interrupt(controller: BedController) -> None:
     await _controller(controller).interrupt()
 
 
+@contextmanager
+def _group_dispatch() -> Iterator[None]:
+    """Suppress cross-interrupt only inside this scheduled group command."""
+    token = _GROUP_DISPATCH.set(True)
+    try:
+        yield
+    finally:
+        _GROUP_DISPATCH.reset(token)
+
+
 async def _flat(controller: BedController) -> None:
-    await _controller(controller).preset_flat()
+    with _group_dispatch():
+        await _controller(controller).preset_flat()
 
 
 async def _up(controller: BedController) -> None:
-    await _controller(controller).move_both_up()
+    with _group_dispatch():
+        await _controller(controller).move_both_up()
 
 
 async def _down(controller: BedController) -> None:
-    await _controller(controller).move_both_down()
+    with _group_dispatch():
+        await _controller(controller).move_both_down()
 
 
 async def _preflight(
@@ -199,7 +212,6 @@ async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
     retained = cast(asyncio.Task[object], task)
     for target in targets:
         _tasks(hass).setdefault(target.entry.entry_id, set()).add(retained)
-    token = _GROUP_DISPATCH.set(True)
     admitted: list[AdjustableBedCoordinator] = []
     completed = False
     connections = ExitStack()
@@ -264,7 +276,6 @@ async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
             if not completed or action != "flat":
                 await _stop(admitted)
         finally:
-            _GROUP_DISPATCH.reset(token)
             connections.close()
 
 
