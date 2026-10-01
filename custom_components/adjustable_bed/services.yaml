@@ -1656,3 +1656,24 @@ svane_release_axis:
       selector:
         select:
           options: [both, left, right]
+
+starcode_move_lifts:
+  name: Control AdjustableM5X5 lifts
+  description: Control up to three independently addressed lifts configured on a main bed. Flat sends main flat before the delayed lift flat action.
+  fields:
+    device_id:
+      name: Main bed
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    action:
+      name: Action
+      required: true
+      selector:
+        select:
+          options:
+            - up
+            - down
+            - flat
+            - stop

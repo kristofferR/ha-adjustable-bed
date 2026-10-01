@@ -18,7 +18,7 @@ from homeassistant.components.light.const import ColorMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_OFF, STATE_ON
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
@@ -439,11 +439,24 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         )
 
     async def async_toggle(self, **kwargs: object) -> None:
-        """Use the native toggle even before feedback has established state."""
+        """Use discrete commands with known feedback, or a native toggle."""
         if not self._feedback_only:
             await super().async_toggle(**kwargs)
             return
-        await self._coordinator.async_execute_controller_command(
-            lambda ctrl: ctrl.lights_toggle(),
-            cancel_running=False,
-        )
+
+        async def toggle(ctrl: BedController) -> None:
+            if ctrl.supports_light_toggle_control:
+                await ctrl.lights_toggle()
+            elif ctrl.supports_discrete_light_control:
+                if not isinstance(self.is_on, bool):
+                    raise ServiceValidationError(
+                        "Light state is unknown; use turn_on or turn_off"
+                    )
+                if self.is_on:
+                    await ctrl.lights_off()
+                else:
+                    await ctrl.lights_on()
+            else:
+                raise ServiceValidationError("No supported light toggle action")
+
+        await self._coordinator.async_execute_controller_command(toggle, cancel_running=False)

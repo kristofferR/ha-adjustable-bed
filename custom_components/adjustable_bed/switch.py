@@ -123,6 +123,7 @@ def _switch_entities_for(
             and controller is not None
             and (
                 controller.supports_light_color_control
+                or controller.supports_light_state_feedback
                 or (
                     coordinator.bed_type in (BED_TYPE_LINAK, BED_TYPE_SLEEP_NUMBER_MCR)
                     and controller.supports_discrete_light_control
