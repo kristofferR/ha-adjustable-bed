@@ -206,9 +206,12 @@ async def test_real_reconnect_retains_only_same_address_observed_app_state(
             replacement._level,
             replacement._timer_index,
         ) == (True, True, 2, 1)
-        assert (
-            spawn.call_count == 3
-        )  # Only normal connection initialization; no cached white replay.
+        # Required initialization is awaited; only the two optional operations
+        # are scheduled, with no replay of the cached automatic-white callback.
+        assert [call.args[0].__name__ for call in spawn.call_args_list] == [
+            "classify",
+            "connected_reads",
+        ]
         assert replacement._raw_fields == initial_fields()
         assert not replacement._parser_state_observed
         retained_values = {

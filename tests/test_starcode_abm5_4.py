@@ -380,9 +380,7 @@ async def test_connection_actual_roles_subscription_wake_retry_and_delays(device
     sleep = AsyncMock()
     with patch("custom_components.adjustable_bed.beds.starcode_abm5_4.asyncio.sleep", sleep):
         await c.start_notify()
-        assert c._ready and len(pending) == 3
-        c.client.start_notify.assert_not_awaited()
-        await pending[0]()
+        assert c._ready and len(pending) == 2
         if subscribe:
             sleep.assert_awaited_once_with(2)
         assert c.client.start_notify.call_count == (2 if subscribe else 0)
@@ -390,8 +388,8 @@ async def test_connection_actual_roles_subscription_wake_retry_and_delays(device
         for call in c.client.write_gatt_char.call_args_list:
             assert call.args[0] is c.client.services[0].characteristics[0]
             assert call.args[1] == bytes.fromhex("5a0b00a5") and call.kwargs["response"] is True
-        assert len(pending) == 3
-        await pending[2]()
+        assert len(pending) == 2
+        await pending[1]()
         assert [x.args[0] for x in sleep.call_args_list][-2:] == [0.5, 1]
         assert c.client.read_gatt_char.call_args.args[0] is c.client.services[1].characteristics[1]
     await c.stop_notify()
@@ -731,10 +729,11 @@ async def test_optional_absence_and_pending_notification_do_not_block_control():
     assert c.command_selector == "BOX15"
     await c._stream("headUp", 0)
     assert [call.args[1] for call in c.client.write_gatt_char.call_args_list] == [
+        build_frame("BOX15", "keepConnect"),
         build_frame("BOX15", "headUp"),
         build_frame("BOX15", "stop"),
     ]
-    assert not c.client.start_notify.called
+    c.client.start_notify.assert_awaited_once()
 
 
 async def test_exact_required_service_cannot_reuse_a_foreign_role_uuid():

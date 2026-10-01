@@ -426,27 +426,27 @@ class TestDetectBedTypeByServiceUUID:
         assert detect_bed_type(service_info) == BED_TYPE_OCTO
 
     def test_detect_okin_cb35_by_star35_name_and_nordic_uart(self):
-        """Star35* plus Nordic UART should detect as CB35 with high confidence."""
+        """Star35/Nordic identifies a CB35 candidate alongside the explicit app."""
         service_info = _make_service_info(
             name="Star352201011800",
             service_uuids=[NORDIC_UART_SERVICE_UUID],
         )
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type == BED_TYPE_OKIN_CB35
-        assert result.confidence == 0.95
+        assert result.confidence == 0.65
         assert "uuid:nordic_uart" in result.signals
         assert "star_digits:35" in result.signals
         assert result.ambiguous_types == [BED_TYPE_STARCODE_ABM5_4]
 
     def test_detect_sleepys_box25_by_star25_name_and_nordic_uart(self):
-        """Star25* plus Nordic UART should detect as BOX25 with high confidence."""
+        """Star25/Nordic identifies a BOX25 candidate alongside the explicit app."""
         service_info = _make_service_info(
             name="Star254202079996",
             service_uuids=[NORDIC_UART_SERVICE_UUID],
         )
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type == BED_TYPE_SLEEPYS_BOX25
-        assert result.confidence == 0.95
+        assert result.confidence == 0.65
         assert "uuid:nordic_uart" in result.signals
         assert "star_digits:25" in result.signals
         assert result.ambiguous_types == [BED_TYPE_STARCODE_ABM5_4]

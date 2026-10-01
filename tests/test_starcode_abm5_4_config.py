@@ -31,20 +31,11 @@ def app_data(**extra):
     }
 
 
-@pytest.mark.parametrize(
-    "step,pairing",
-    [
-        ("manual_entry", "manual_pairing"),
-        ("manual_config", "manual_pairing"),
-        ("bluetooth_confirm", "bluetooth_pairing"),
-    ],
-)
-async def test_every_setup_route_collects_explicit_C_D_then_pairs(
-    hass, mock_bluetooth_service_info, step, pairing
+@pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
+async def test_every_setup_route_collects_explicit_C_D_without_requesting_bond(
+    hass, mock_bluetooth_service_info, step
 ):
     flow = AdjustableBedConfigFlow()
-    assert flow._starcode_bluetooth_pairing is False
-    flow._starcode_bluetooth_pairing = True
     flow.context = {}
     flow.hass = hass
     flow._discovery_info = mock_bluetooth_service_info
@@ -61,14 +52,20 @@ async def test_every_setup_route_collects_explicit_C_D_then_pairs(
     assert result["step_id"] == "starcode_app"
     fields = {marker.schema for marker in result["data_schema"].schema}
     assert fields == {const.CONF_STARCODE_COMMAND_SELECTOR, const.CONF_STARCODE_TRANSPORT_SELECTOR}
-    with patch.object(flow, f"async_step_{pairing}", new=AsyncMock()) as resume:
-        await flow.async_step_starcode_app(
+    with (
+        patch.object(flow, "_verification_possible", return_value=False),
+        patch.object(flow, "async_step_bluetooth_pairing", new=AsyncMock()) as bluetooth_pairing,
+        patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as manual_pairing,
+    ):
+        completed = await flow.async_step_starcode_app(
             {
                 const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: "auto",
             }
         )
-    resume.assert_awaited_once()
+    assert completed["type"] == FlowResultType.CREATE_ENTRY
+    bluetooth_pairing.assert_not_awaited()
+    manual_pairing.assert_not_awaited()
     assert flow._manual_data[const.CONF_STARCODE_COMMAND_SELECTOR] == "BOX15"
     assert flow._manual_data[const.CONF_STARCODE_UI_SELECTOR] == "BOX15"
     assert const.CONF_STARCODE_TRANSPORT_SELECTOR not in flow._manual_data

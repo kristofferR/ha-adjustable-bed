@@ -1664,9 +1664,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             data[CONF_HAS_MASSAGE] = True
             data[CONF_DISABLE_ANGLE_SENSING] = True
             self._manual_data = data
-            if self._starcode_bluetooth_pairing:
-                return await self.async_step_bluetooth_pairing()
-            return await self.async_step_manual_pairing()
+            return await self._finish_with_verify(data, data.get(CONF_NAME, "Adjustable Bed"))
         schema: dict[vol.Marker, Any] = {}
         _add_starcode_app_schema_fields(schema, data)
         return self.async_show_form(
@@ -1745,7 +1743,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._manual_data: dict[str, Any] | None = None
         self._leggett_app_pairing_step = "manual_pairing"
         self._vibradorm_app_bluetooth_pairing = False
-        self._starcode_bluetooth_pairing = False
         # For two-tier actuator selection
         self._selected_actuator: str | None = None
         self._selected_bed_type: str | None = None
@@ -2573,7 +2570,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     return await self.async_step_jiecang_app()
                 if selected_bed_type == BED_TYPE_STARCODE_ABM5_4:
                     self._manual_data = entry_data
-                    self._starcode_bluetooth_pairing = True
                     return await self.async_step_starcode_app()
                 if selected_bed_type == BED_TYPE_VIBRADORM_APP:
                     self._manual_data = entry_data
@@ -3515,7 +3511,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     return await self.async_step_jiecang_app()
                 if bed_type == BED_TYPE_STARCODE_ABM5_4:
                     self._manual_data = entry_data
-                    self._starcode_bluetooth_pairing = False
                     return await self.async_step_starcode_app()
                 if bed_type == BED_TYPE_VIBRADORM_APP:
                     self._manual_data = entry_data
@@ -3822,7 +3817,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         return await self.async_step_jiecang_app()
                     if bed_type == BED_TYPE_STARCODE_ABM5_4:
                         self._manual_data = entry_data
-                        self._starcode_bluetooth_pairing = False
                         return await self.async_step_starcode_app()
                     if bed_type == BED_TYPE_VIBRADORM_APP:
                         self._manual_data = entry_data

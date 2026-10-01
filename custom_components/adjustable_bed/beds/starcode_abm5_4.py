@@ -11,6 +11,7 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ..const import CONF_BLE_DEVICE_NAME
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -111,12 +112,18 @@ class StarcodeAbm5_4Controller(BedController):
         super().__init__(coordinator)
         self.command_selector = validate_selector(command_selector)
         self.ui_selector = validate_selector(ui_selector or command_selector)
+        if coordinator.client is None and transport_selector is None:
+            original_name = coordinator.entry.data.get(CONF_BLE_DEVICE_NAME)
+            if not isinstance(original_name, str) or not original_name:
+                raise ConnectionError("Offline app transport requires stored original BLE name")
         self.transport_selector = transport_selector or constructor_selector(
             coordinator.ble_device_name
         )
         if self.transport_selector not in TRANSPORTS:
             raise ValueError("No live app transport for this selector")
         self._transport = TRANSPORTS[self.transport_selector]
+        if coordinator.client is None and not self._catalog_is_stable:
+            raise ConnectionError("App entity catalog requires live manufacturer classification")
         self._owner_address = coordinator.address
         self._session_generation = 0
         self._operation_generation = 0
@@ -124,6 +131,9 @@ class StarcodeAbm5_4Controller(BedController):
         self._notify_characteristic: BleakGATTCharacteristic | None = None
         self._write_characteristic: BleakGATTCharacteristic | None = None
         self._tasks: set[asyncio.Task[None]] = set()
+        self._initialization_lock = asyncio.Lock()
+        self._startup_task: asyncio.Task[object] | None = None
+        self._classification_complete = not self._transport.wake
         self._raw_fields = initial_fields()
         self._parser_state_observed = False
         self._ui_state_observed = False
@@ -171,7 +181,13 @@ class StarcodeAbm5_4Controller(BedController):
 
     @property
     def controller_entity_discovery_complete(self) -> bool:
-        return self._ready
+        return self._catalog_is_stable or self._ready and self._classification_complete
+
+    @property
+    def _catalog_is_stable(self) -> bool:
+        # UART manufacturer classification can add C-gated controls, but never
+        # removes them from an already-positive C. U only consumes observed state.
+        return not self._transport.wake or self.command_selector in _POSITIVE_SELECTORS
 
     @property
     def supports_position_feedback(self) -> bool:
@@ -932,24 +948,43 @@ class StarcodeAbm5_4Controller(BedController):
         self._publish()
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
+        async with self._initialization_lock:
+            self._startup_task = asyncio.current_task()
+            try:
+                await self._start_notify(callback)
+            except asyncio.CancelledError:
+                # Cancellation can also arrive while releasing an old session,
+                # before _start_notify enters its new-session failure handler.
+                await self.stop_notify()
+                raise
+            finally:
+                self._startup_task = None
+
+    async def _start_notify(self, callback: Callable[[str, float], None] | None) -> None:
         client = self.client
         if client is None:
             raise ConnectionError("No app BLE client")
-        if self._notify_client is client and self._ready:
+        if (
+            self._notify_client is client
+            and self._ready
+            and self._session_valid(client, self._session_generation)
+        ):
             return
         await self.stop_notify()
         self._session_generation += 1
         session = self._session_generation
         self._notify_callback = callback
         self._notify_client = client
-        self._write_characteristic = self._role(client, self._transport.write)
-        notify = self._role(client, self._transport.notify)
-        self._ready = True
-        self._publish()
+        self._classification_complete = not self._transport.wake
+        notify: BleakGATTCharacteristic | None = None
+        subscription_attempted = False
 
         async def initialize_roles() -> None:
+            nonlocal subscription_attempted
             if not self._session_valid(client, session):
-                return
+                raise ConnectionError("App target changed before initialization")
+            self._write_characteristic = self._role(client, self._transport.write)
+            notify = self._role(client, self._transport.notify)
             if self._transport.wake:
                 try:
                     await self._send(
@@ -958,29 +993,45 @@ class StarcodeAbm5_4Controller(BedController):
                         response=True,
                     )
                 except Exception:
+                    if not self._session_valid(client, session):
+                        raise ConnectionError("App target changed before wake retry") from None
                     await self._send(
                         build_frame(self.command_selector, "keepConnect"),
                         client=client,
                         response=True,
                     )
+                if not self._session_valid(client, session):
+                    raise ConnectionError("App target changed during wake initialization")
             if self._transport.subscribe:
                 for attempt in range(2):
                     try:
+                        subscription_attempted = True
                         await client.start_notify(
                             notify,
                             lambda sender, data: self._notification(client, session, sender, data),
                         )
+                        if not self._session_valid(client, session):
+                            raise ConnectionError(
+                                "App target changed during notification initialization"
+                            )
                         self._notify_characteristic = notify
                         break
                     except Exception:
-                        if attempt:
+                        if attempt or not self._session_valid(client, session):
                             raise
                         await asyncio.sleep(2)
                         if not self._session_valid(client, session):
-                            return
+                            raise ConnectionError(
+                                "App target changed before notification retry"
+                            ) from None
 
-        self._spawn(initialize_roles)
-        self._spawn(self._classify)
+        async def classify() -> None:
+            await self._classify()
+            if self._session_valid(client, session):
+                self._classification_complete = True
+                self._publish()
+
+        self._spawn(classify)
 
         async def connected_reads() -> None:
             await asyncio.sleep(0.5)
@@ -997,6 +1048,24 @@ class StarcodeAbm5_4Controller(BedController):
                 await self._read_firmware()
 
         self._spawn(connected_reads)
+        try:
+            notify = self._role(client, self._transport.notify)
+            await initialize_roles()
+            if not self._session_valid(client, session):
+                raise ConnectionError("App target changed during initialization")
+            self._ready = True
+            self._publish()
+        except Exception, asyncio.CancelledError:
+            if session == self._session_generation and self._notify_client is client:
+                await self.stop_notify()
+            # Also undo a partially-completed backend subscription. Initialization
+            # is serialized, so cleanup cannot remove a newer subscription.
+            if subscription_attempted and notify is not None and client.is_connected:
+                try:
+                    await client.stop_notify(notify)
+                except Exception:
+                    _LOGGER.debug("App failed-start notification cleanup failed", exc_info=True)
+            raise
 
     async def _cleanup_active(self) -> None:
         active = self._active_release
@@ -1022,11 +1091,19 @@ class StarcodeAbm5_4Controller(BedController):
         self._active_release = None
 
     async def stop_notify(self) -> None:
+        startup = self._startup_task
+        if startup is not None and startup is not asyncio.current_task() and not startup.done():
+            startup.cancel()
+            await asyncio.gather(startup, return_exceptions=True)
+            # Its cancellation handler owns cleanup. A waiting replacement may
+            # already be starting, so this caller must not clear its resources.
+            return
         client, role = self._notify_client, self._notify_characteristic
         await self._cleanup_active()
         self._session_generation += 1
         self._operation_generation += 1
-        for task in tuple(self._tasks):
+        tasks = tuple(task for task in self._tasks if task is not asyncio.current_task())
+        for task in tasks:
             task.cancel()
         self._tasks.clear()
         self._notify_client = None
@@ -1034,6 +1111,9 @@ class StarcodeAbm5_4Controller(BedController):
         self._write_characteristic = None
         self._notify_callback = None
         self._ready = False
+        self._classification_complete = not self._transport.wake
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
         if client is not None and client.is_connected and role is not None:
             await client.stop_notify(role)
 

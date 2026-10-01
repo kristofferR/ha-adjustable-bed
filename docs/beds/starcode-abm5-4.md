@@ -85,6 +85,12 @@ already-notifying app toggle-off quirk must not leave HA without a required live
 subscription. The app's 30 s reboot wait belongs only to the Nordic firmware
 updater completion flow, which this BLE bed-control integration does not expose.
 
+HA awaits the required wake and notification setup before reporting the session
+ready. A terminal failure, cancellation or change of the original physical target
+clears readiness and notification resources so a later connection can retry.
+The optional manufacturer/query tasks retain their separate native delays and
+are cancelled with a failed session.
+
 Repeated control writes keep the exact 100 ms cadence after a platform write
 failure, with a logged failure and no immediate retry or acknowledgement claim.
 STOP cleanup and the massage release query retain their deadlines. A completed
@@ -161,6 +167,15 @@ Their semantic keys use `starcode_abm5_4_*` for platform, translation and card
 discovery. Custom controls stay owned by their physical child
 when using a two-address paired entry. This app has no encoded one-address
 left/right selector.
+
+Offline paired-side restoration is limited to stored selectors that prove a
+fixed entity catalog. An omitted transport selector requires the stored original
+BLE name; a display alias cannot supply that identity. BOX1220/BOX3633 transports do not reclassify C. UART
+transports can restore offline when C is already BOX1220, BOX3633, BOX25 or
+BOX25_STAR, since either manufacturer result keeps the same C-gated controls.
+UART with another C must connect and finish classification before its complete
+catalog is known. U remains independent. Offline capabilities do not create
+observed feedback or permission for state-gated timer/light/massage commands.
 
 The `adjustable_bed.starcode_abm5_4_hold_control` action accepts
 `device_id`, profile-specific `control`, `duration` in seconds (0.1–60), and an

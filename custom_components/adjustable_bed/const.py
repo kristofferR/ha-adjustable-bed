@@ -593,6 +593,9 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_LOGICDATA,
         BED_TYPE_VIBRADORM_APP,
         BED_TYPE_VMATBASIC,
+        # The constructor refuses offline UART catalogs whose nonpositive C
+        # can gain controls from live manufacturer classification.
+        BED_TYPE_STARCODE_ABM5_4,
     }
 )
 
