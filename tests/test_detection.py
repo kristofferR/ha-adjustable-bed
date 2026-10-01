@@ -763,6 +763,11 @@ class TestDetectBedTypeByNamePattern:
         service_info = _make_service_info(name="base-i5.00000682")
         assert detect_bed_type(service_info) == BED_TYPE_COOLBASE
 
+    def test_detect_coolbase_by_base_i5_substring(self):
+        """The Cool Base app's scan filter is a substring test, not a prefix."""
+        service_info = _make_service_info(name="CB base-i5.00000682")
+        assert detect_bed_type(service_info) == BED_TYPE_COOLBASE
+
     def test_detect_keeson_by_name_ksbt(self):
         """Test Keeson detection by KSBT prefix."""
         service_info = _make_service_info(name="KSBT03C000015046")
