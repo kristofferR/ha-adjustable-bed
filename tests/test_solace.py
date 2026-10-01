@@ -646,6 +646,11 @@ class TestSolaceProfiles:
 class TestSolaceMovement:
     """Test Solace movement commands."""
 
+    @pytest.fixture(autouse=True)
+    def _short_movement(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Latched moves otherwise run for the full 5s safety window."""
+        monkeypatch.setattr(SolaceController, "_MOVEMENT_SAFETY_TIMEOUT", 0.01)
+
     async def test_move_head_up(
         self,
         hass: HomeAssistant,
