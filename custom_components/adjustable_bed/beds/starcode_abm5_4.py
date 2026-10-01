@@ -11,6 +11,7 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ..command_scheduler import copy_context_without_command
 from ..const import CONF_BLE_DEVICE_NAME
 from .base import (
     BedController,
@@ -381,6 +382,10 @@ class StarcodeAbm5_4Controller(BedController):
                 action.replace("_", " ").title(),
                 _button(action),
                 translation_key="starcode_abm5_4_" + action,
+                cancel_movement=action not in ("light_plus", "light_minus", "light_on", "light_off"),
+                scheduler_resource="lighting"
+                if action in ("light_plus", "light_minus", "light_on", "light_off")
+                else None,
             )
             for action in actions
         )
@@ -889,7 +894,7 @@ class StarcodeAbm5_4Controller(BedController):
             except Exception:
                 _LOGGER.debug("App delayed operation failed", exc_info=True)
 
-        task = asyncio.create_task(run())
+        task = asyncio.create_task(run(), context=copy_context_without_command())
         self._tasks.add(task)
         task.add_done_callback(self._tasks.discard)
 

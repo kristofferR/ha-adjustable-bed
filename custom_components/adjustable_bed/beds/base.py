@@ -13,7 +13,7 @@ import logging
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable, Collection, Coroutine, Mapping, Sequence
 from contextvars import ContextVar
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 from bleak import BleakClient
@@ -97,6 +97,8 @@ class ControllerButtonSpec:
     press_fn: MotorCommandCallable
     icon: str = "mdi:gesture-tap"
     translation_key: str | None = None
+    cancel_movement: bool = field(default=True, kw_only=True)
+    scheduler_resource: str | None = field(default=None, kw_only=True)
 
 
 @dataclass(frozen=True, slots=True)

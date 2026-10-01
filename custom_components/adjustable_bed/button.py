@@ -1155,9 +1155,16 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
             self._attr_name = None
 
     async def async_press(self) -> None:
-        """Cancel the previous action and execute against the current controller."""
+        """Execute the named action with its declared replacement policy."""
+        if self._spec.scheduler_resource is not None:
+            await self._coordinator.async_execute_controller_command(
+                self._spec.press_fn,
+                cancel_running=self._spec.cancel_movement,
+                resource=self._spec.scheduler_resource,
+            )
+            return
         await self._coordinator.async_execute_controller_command(
-            self._spec.press_fn, cancel_running=True
+            self._spec.press_fn, cancel_running=self._spec.cancel_movement
         )
 
 

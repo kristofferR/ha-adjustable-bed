@@ -14,7 +14,7 @@ import contextlib
 import time
 from collections import deque
 from collections.abc import Awaitable, Callable, Collection
-from contextvars import ContextVar, Token
+from contextvars import Context, ContextVar, Token, copy_context
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
@@ -165,6 +165,13 @@ def current_command_context() -> CommandContext | None:
     """Return the command context bound to the current task, if any."""
     context = _CURRENT_COMMAND_CONTEXT.get()
     return context if context is None or context.active else None
+
+
+def copy_context_without_command() -> Context:
+    """Keep tracing and HA context, without a parent's command reservation."""
+    context = copy_context()
+    context.run(_CURRENT_COMMAND_CONTEXT.set, None)
+    return context
 
 
 def command_resources(*resources: str) -> frozenset[str]:

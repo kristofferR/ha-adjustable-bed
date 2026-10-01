@@ -205,6 +205,9 @@ U with C3 must finish live classification because C8/9 would add power buttons.
 UART command admission waits for optional manufacturer classification to finish
 (or prove unavailable), alongside required wake/subscription initialization.
 Its query/read cadence stays parallel, and stale sessions cannot publish readiness.
+Delayed queries and automatic-white callbacks use their own queued command
+reservation, preserving the current HA and tracing context while detaching the
+movement reservation. Native lighting buttons queue without cancelling movement.
 UART with another C must connect and finish classification before its complete
 catalog is known. U remains independent. Offline capabilities do not create
 observed feedback or permission for state-gated timer/light/massage commands.
