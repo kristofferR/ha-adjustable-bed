@@ -95,6 +95,10 @@ are cancelled with a failed session.
 
 Repeated control writes keep the exact 100 ms cadence after a platform write
 failure, with a logged failure and no immediate retry or acknowledgement claim.
+The `timed_move` action plans the held duration on that same 100 ms cadence,
+rounding up to whole intervals without adding a second immediate-write interval.
+Its service deadline bounds nonmultiples of 100 ms, and the 60-second limit
+remains valid. Stored pulse count and delay options remain unchanged.
 STOP cleanup and the massage release query retain their deadlines. A completed
 service call does not prove that an unacknowledged write reached the bed.
 
@@ -142,7 +146,13 @@ offer only those choices; the app's `massageOff` path is dead, so no generic Off
 timer command is inferred. Absolute intensity, absolute modes and sonic setters
 are not proved controls.
 
-Floor on/off/toggle and plus/minus are independent actions. Brightness is a raw
+Floor on/off/toggle and plus/minus are independent actions. The HA feedback
+light exists only when U8/9 consumes state and the physical transport subscribes.
+It remains unknown until a valid native callback (or same-address retained Home
+state), and commands do not optimistically change it. Other profiles expose the
+native toggle button. Non-feedback C7/8/9 additionally expose stateless native
+on/off buttons with distinct accepted frames. C0/1/2/3/4/5/6 on/off builders
+coincide, so no discrete power switch or assumed on/off state is inferred. Brightness is a raw
 integer, not measured percent, lux or a calibrated hardware level. Zero selects
 the off action rather than a raw-zero slider frame.
 
@@ -188,8 +198,10 @@ left/right selector.
 Offline paired-side restoration is limited to stored selectors that prove a
 fixed entity catalog. An omitted transport selector requires the stored original
 BLE name; a display alias cannot supply that identity. BOX1220/BOX3633 transports do not reclassify C. UART
-transports can restore offline when C is already BOX1220, BOX3633, BOX25 or
-BOX25_STAR, since either manufacturer result keeps the same C-gated controls.
+transports can restore offline when either possible manufacturer result keeps
+the same complete catalog: positive controls, feedback light and stateless power
+buttons. C7/8/9 qualify; C3 qualifies only with a consuming U8/9. A nonconsuming
+U with C3 must finish live classification because C8/9 would add power buttons.
 UART command admission waits for optional manufacturer classification to finish
 (or prove unavailable), alongside required wake/subscription initialization.
 Its query/read cadence stays parallel, and stale sessions cannot publish readiness.
@@ -209,7 +221,8 @@ Do not use another application's held-command catalog.
 
 The `starcode_abm5_4_use_detected_profile` button cancels and cleans up
 the current owner's work before adopting D into C/U. It retains own-address
-state and invalidates old callbacks. Crossing the C-gated entity boundary
+state and invalidates old callbacks. Changing positive controls, the feedback
+light or the stateless native power-button catalog
 defers a capability reload until the owned connection is released; unchanged
 catalogs do not trigger reload loops. Each paired child persists its own selectors
 and rebuilds under the parent registry guard. Consumed-state diagnostics include

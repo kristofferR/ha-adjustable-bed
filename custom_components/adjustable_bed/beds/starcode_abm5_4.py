@@ -207,9 +207,30 @@ class StarcodeAbm5_4Controller(BedController):
 
     @property
     def _catalog_is_stable(self) -> bool:
-        # UART manufacturer classification can add C-gated controls, but never
-        # removes them from an already-positive C. U only consumes observed state.
-        return not self._transport.wake or self.command_selector in _POSITIVE_SELECTORS
+        # UART can select C8/9. Both have positive controls and dedicated power
+        # buttons when feedback is unavailable; offline catalogs must match both.
+        feedback = self.supports_light_state_feedback
+        return not self._transport.wake or self._entity_catalog_signature == (
+            True,
+            feedback,
+            not feedback,
+        )
+
+    @property
+    def _entity_catalog_signature(self) -> tuple[bool, bool, bool]:
+        return (
+            self.command_selector in _POSITIVE_SELECTORS,
+            self.supports_light_state_feedback,
+            self._native_light_power_buttons,
+        )
+
+    @property
+    def _native_light_power_buttons(self) -> bool:
+        return not self.supports_light_state_feedback and self.command_selector in (
+            "BOX3633",
+            "BOX25",
+            "BOX25_STAR",
+        )
 
     @property
     def supports_position_feedback(self) -> bool:
@@ -240,6 +261,14 @@ class StarcodeAbm5_4Controller(BedController):
             ),
         )
 
+    def motor_pulse_settings(self) -> tuple[int, int]:
+        """Use the app's native held refresh cadence, retaining the repeat count."""
+        return self._coordinator.motor_pulse_count, 100
+
+    def timed_move_repeat_count(self, duration_ms: int, pulse_delay_ms: int) -> int:
+        """Movement handlers use count times 100 ms as the entire held duration."""
+        return max(1, (duration_ms + 99) // 100)
+
     @property
     def auto_stops_on_idle(self) -> bool:
         return False
@@ -254,7 +283,7 @@ class StarcodeAbm5_4Controller(BedController):
 
     @property
     def supports_light_state_feedback(self) -> bool:
-        return True
+        return self.ui_selector in ("BOX25", "BOX25_STAR") and self._transport.subscribe
 
     def get_light_state(self) -> dict[str, object]:
         return {
@@ -344,6 +373,8 @@ class StarcodeAbm5_4Controller(BedController):
             "save_zero_g",
             "reset",
         )
+        if self._native_light_power_buttons:
+            actions += ("light_on", "light_off")
         return tuple(
             ControllerButtonSpec(
                 "starcode_abm5_4_" + action,
@@ -611,6 +642,10 @@ class StarcodeAbm5_4Controller(BedController):
             await self.release_massage()
         elif action in ("union_up", "union_down"):
             await self.hold_control(action, self._coordinator.motor_pulse_count * 100)
+        elif action == "light_on":
+            await self.lights_on()
+        elif action == "light_off":
+            await self.lights_off()
         elif action in ("light_plus", "light_minus"):
             await self._light_step(1 if action == "light_plus" else -1)
         elif action == "reset":
@@ -965,12 +1000,11 @@ class StarcodeAbm5_4Controller(BedController):
             raise ValueError("Cannot move observed state to another physical bed")
         await self._cleanup_active()
         self._operation_generation += 1
-        had_positive_controls = self.command_selector in _POSITIVE_SELECTORS
+        previous_catalog = self._entity_catalog_signature
         self.command_selector = self.transport_selector
         self.ui_selector = self.transport_selector
         self._persist_selectors(
-            capabilities_changed=had_positive_controls
-            != (self.command_selector in _POSITIVE_SELECTORS)
+            capabilities_changed=previous_catalog != self._entity_catalog_signature
         )
         self._publish()
 
@@ -997,13 +1031,12 @@ class StarcodeAbm5_4Controller(BedController):
             return
         self._manufacturer = data.decode("utf-8", errors="replace")
         if self._transport.wake:
-            had_positive_controls = self.command_selector in _POSITIVE_SELECTORS
+            previous_catalog = self._entity_catalog_signature
             self.command_selector = manufacturer_selector(self._manufacturer)
             # Both manufacturer choices keep the same UART roles; D changes independently of U.
             self.transport_selector = self.command_selector
             self._persist_selectors(
-                capabilities_changed=had_positive_controls
-                != (self.command_selector in _POSITIVE_SELECTORS)
+                capabilities_changed=previous_catalog != self._entity_catalog_signature
             )
         self._publish()
 

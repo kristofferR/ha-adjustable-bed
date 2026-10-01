@@ -59,7 +59,11 @@ async def test_actual_offline_factory_only_mints_invariant_selector_catalog(
     coordinator = AdjustableBedCoordinator(hass, entry)
     await coordinator.async_prime_offline_controller()
     controller = coordinator.capability_controller
-    stable = transport in ("BOX1220", "BOX3633") or command in POSITIVE
+    stable = (
+        transport in ("BOX1220", "BOX3633")
+        or command in POSITIVE
+        and (command != "BOX1220" or ui in ("BOX25", "BOX25_STAR"))
+    )
     if not stable:
         assert controller is None
         with pytest.raises(ConnectionError, match="manufacturer classification"):
@@ -85,7 +89,9 @@ async def test_manufacturer_catalog_mutation_preserves_U_and_proves_offline_boun
 ):
     controller = make_controller(command, ui="BOX15", device="BOX25")
     before = bool(controller.controller_number_specs)
-    assert controller.controller_entity_discovery_complete == (command in POSITIVE)
+    assert controller.controller_entity_discovery_complete == (
+        command in POSITIVE and command != "BOX1220"
+    )
     controller.client.read_gatt_char.return_value = manufacturer
     await controller._classify()
     assert controller.ui_selector == "BOX15"
@@ -96,14 +102,22 @@ async def test_manufacturer_catalog_mutation_preserves_U_and_proves_offline_boun
 
 
 @pytest.mark.parametrize(
-    "offline_command,offline_transport",
-    [("BOX25_STAR", "BOX25"), ("BOX15", "BOX1220"), ("BOX15", "BOX25"), ("BOX25_STAR", None)],
+    "offline_command,offline_transport,offline_ui",
+    [
+        ("BOX25_STAR", "BOX25", "BOX15"),
+        ("BOX15", "BOX1220", "BOX15"),
+        ("BOX15", "BOX25", "BOX15"),
+        ("BOX25_STAR", None, "BOX15"),
+        ("BOX1220", "BOX25", "BOX15"),
+        ("BOX1220", "BOX25", "BOX25"),
+    ],
 )
 async def test_registered_pair_reload_restores_unreachable_invariant_side(
     hass: HomeAssistant,
     enable_custom_integrations,
     offline_command: str,
     offline_transport: str | None,
+    offline_ui: str,
 ):
     left, right = "AA:BB:CC:DD:EE:01", "AA:BB:CC:DD:EE:02"
     entry = MockConfigEntry(
@@ -128,7 +142,7 @@ async def test_registered_pair_reload_restores_unreachable_invariant_side(
                     const.CONF_DISABLE_ANGLE_SENSING: True,
                     const.CONF_BLE_DEVICE_NAME: "Star original",
                     const.CONF_STARCODE_COMMAND_SELECTOR: command,
-                    const.CONF_STARCODE_UI_SELECTOR: "BOX15",
+                    const.CONF_STARCODE_UI_SELECTOR: offline_ui if side == "right" else "BOX15",
                     const.CONF_STARCODE_TRANSPORT_SELECTOR: transport,
                 }
                 for side, address, command, transport in [
@@ -162,7 +176,11 @@ async def test_registered_pair_reload_restores_unreachable_invariant_side(
         patch.object(AdjustableBedCoordinator, "async_connect", connect),
         patch.object(AdjustableBedCoordinator, "_schedule_position_hydration"),
     ):
-        if offline_transport == "BOX25" and offline_command not in POSITIVE:
+        if offline_transport == "BOX25" and (
+            offline_command not in POSITIVE
+            or offline_command == "BOX1220"
+            and offline_ui not in ("BOX25", "BOX25_STAR")
+        ):
             assert not await hass.config_entries.async_setup(entry.entry_id)
             assert entry.entry_id not in hass.data[const.DOMAIN]
             return

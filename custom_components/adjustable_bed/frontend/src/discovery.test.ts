@@ -578,3 +578,25 @@ test("AdjustableM5X4 exact bounded controls remain on their physical child", () 
   }
   expect(bedIsEmpty(bedEntitiesForDevice(hass, "parent"))).toBe(true);
 });
+
+
+test("stateless native floor power buttons stay in the physical child's lighting section", () => {
+  const hass = hassWith([
+    entry("button.left_on", "starcode_abm5_4_light_on", "left"),
+    entry("button.left_off", "starcode_abm5_4_light_off", "left"),
+    entry("button.left_toggle", "toggle_light", "left"),
+    entry("button.right_on", "starcode_abm5_4_light_on", "right"),
+    entry("button.right_off", "starcode_abm5_4_light_off", "right"),
+  ]);
+  const left = bedEntitiesForDevice(hass, "left");
+  expect(left.lights.buttons).toEqual(["button.left_on", "button.left_off"]);
+  expect(left.lights.toggle).toBe("button.left_toggle");
+  expect(left.lights.light).toBeUndefined();
+  expect(left.lights.switch).toBeUndefined();
+  expect(left.utility).toEqual([]);
+  const right = bedEntitiesForDevice(hass, "right");
+  expect(right.lights.buttons).toEqual(["button.right_on", "button.right_off"]);
+  expect(right.lights.toggle).toBeUndefined();
+  expect(right.utility).toEqual([]);
+  expect(bedIsEmpty(left)).toBe(false);
+});

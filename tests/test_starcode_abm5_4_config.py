@@ -68,7 +68,8 @@ async def test_every_setup_route_collects_explicit_C_D_without_requesting_bond(
     manual_pairing.assert_not_awaited()
     assert flow._manual_data[const.CONF_STARCODE_COMMAND_SELECTOR] == "BOX15"
     assert flow._manual_data[const.CONF_STARCODE_UI_SELECTOR] == "BOX15"
-    assert const.CONF_STARCODE_TRANSPORT_SELECTOR not in flow._manual_data
+    assert flow._manual_data[const.CONF_STARCODE_TRANSPORT_SELECTOR] == "BOX3633"
+    assert completed["data"][const.CONF_STARCODE_TRANSPORT_SELECTOR] == "BOX3633"
     assert flow._manual_data[const.CONF_MOTOR_COUNT] == 2
     assert flow._manual_data[const.CONF_HAS_MASSAGE] is True
     assert flow._manual_data[const.CONF_DISABLE_ANGLE_SENSING] is True

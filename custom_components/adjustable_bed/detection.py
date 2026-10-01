@@ -1018,7 +1018,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         result.ambiguous_types = candidates
         # Shared app transports require a choice; unrelated private UUIDs retain
         # their receiver confidence even when the advertisement name starts Star.
-        advertised_services = {uuid.lower() for uuid in service_info.service_uuids}
+        advertised_services = {uuid.lower() for uuid in (service_info.service_uuids or [])}
         if any(role.service.lower() in advertised_services for role in TRANSPORTS.values()):
             result.confidence = min(result.confidence, 0.65)
         result.signals.append("name:starcode_abm5_4_app_candidate")

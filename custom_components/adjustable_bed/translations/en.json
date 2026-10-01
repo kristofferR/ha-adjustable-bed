@@ -1885,6 +1885,12 @@
       "starcode_abm5_4_union_down": {
         "name": "Lower both control axes"
       },
+      "starcode_abm5_4_light_on": {
+        "name": "Turn floor light on"
+      },
+      "starcode_abm5_4_light_off": {
+        "name": "Turn floor light off"
+      },
       "starcode_abm5_4_light_plus": {
         "name": "Increase floor light"
       },

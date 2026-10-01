@@ -365,7 +365,15 @@ async def test_actual_HA_adoption_rebuilds_catalog_once_preserves_side_identity_
                 row.unique_id: row.entity_id
                 for row in er.async_entries_for_config_entry(registry, entry.entry_id)
             }
-            assert all(current.get(key) == value for key, value in original.items())
+            removed_light = coordinator.entity_unique_id("under_bed_lights")
+            assert removed_light not in current
+            assert all(
+                current.get(key) == value for key, value in original.items() if key != removed_light
+            )
+            assert any(
+                left in row.unique_id and row.translation_key == "toggle_light"
+                for row in er.async_entries_for_config_entry(registry, entry.entry_id)
+            )
             assert any(
                 left in key and "controller_number_starcode_abm5_4_light_level" in key
                 for key in current

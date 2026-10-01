@@ -197,7 +197,7 @@ export function bedEntitiesForDevice(
           bed.massage.buttons.push(id);
         } else if (key === "vibradorm_app_floor_timer_toggle") {
           bed.lights.timerToggle = id;
-        } else if (key === "starcode_abm5_4_light_plus" || key === "starcode_abm5_4_light_minus") {
+        } else if (key === "starcode_abm5_4_light_plus" || key === "starcode_abm5_4_light_minus" || key === "starcode_abm5_4_light_on" || key === "starcode_abm5_4_light_off") {
           (bed.lights.buttons ??= []).push(id);
         } else if (key === "starcode_abm5_4_massage_release") {
           bed.massage.buttons.push(id);
