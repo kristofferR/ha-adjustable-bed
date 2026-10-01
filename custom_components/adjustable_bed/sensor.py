@@ -263,6 +263,7 @@ def _sensor_entities_for(
                 "limoss_remote_motor_1_position_raw", "limoss_remote_motor_2_position_raw",
                 "limoss_remote_motor_3_position_raw", "limoss_remote_motor_4_position_raw",
                 "coolbase_left_fan_level", "coolbase_right_fan_level", "coolbase_massage_mode",
+                "adjustable_lite_massage_timer",
             } - active_keys
         )
         _async_remove_stale_sensor_entities(
