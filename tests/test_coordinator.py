@@ -544,7 +544,7 @@ class TestCoordinatorConnection:
 
         mock_bleak_client.pair = AsyncMock(side_effect=pair)
 
-        controller = MagicMock()
+        controller = make_controller_mock()
         controller.requires_persistent_connection = True
         controller.requires_notification_channel = False
         controller.supports_under_bed_lights = False
@@ -877,7 +877,7 @@ class TestCoordinatorConnection:
             side_effect=BleakError("Insufficient authentication")
         )
 
-        controller = MagicMock()
+        controller = make_controller_mock()
         controller.requires_persistent_connection = True
         controller.requires_notification_channel = False
         controller.supports_under_bed_lights = False
@@ -5118,7 +5118,7 @@ class TestRuntimeBedTypeCorrection:
         adapter_result.connectable = True
         adapter_result.available_sources = ["local"]
 
-        mock_controller = MagicMock()
+        mock_controller = make_controller_mock()
         mock_controller.start_notify = AsyncMock()
 
         async def establish_connection(*_args, **_kwargs):
@@ -5336,7 +5336,7 @@ class TestDeviceInfoCache:
         adapter_result.connectable = True
         adapter_result.available_sources = ["local"]
 
-        mock_controller = MagicMock()
+        mock_controller = make_controller_mock()
         mock_controller.start_notify = AsyncMock()
 
         async def establish_connection(*_args, **_kwargs):
