@@ -167,3 +167,21 @@ async def test_held_cleanup_releases_exact_original_binding_once_without_replace
         replacement.write_gatt_char.assert_not_awaited()
     else:
         assert all(call.args[0] is old.last for call in old_calls)
+
+
+async def test_connecting_disconnect_invalidates_owned_work_before_retry_reference_retention(hass):
+    coord = await real_coordinator(hass, "QMS-IQ")
+    controller, client = coord.controller, coord.client
+    controller._spawn(lambda: controller._followup(MotionBedFollowup("position_query", 25)))
+    tasks = tuple(controller._tasks)
+    await asyncio.sleep(0)
+    generation = controller._generation
+    coord._connecting = True
+    client.is_connected = False
+    coord._on_disconnect(client)
+    assert controller._generation == generation + 1
+    assert coord.controller is controller and coord.client is client
+    assert not controller._tasks
+    await asyncio.gather(*tasks, return_exceptions=True)
+    assert all(task.cancelled() for task in tasks)
+    client.write_gatt_char.assert_not_awaited()
