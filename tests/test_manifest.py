@@ -80,3 +80,15 @@ def test_manifest_discovers_leggett_gen2_manufacturer_advertisements() -> None:
     }
     assert (88, 80) in starts  # "XP"
     assert (67, 80) in starts  # "CP"
+
+
+def test_manifest_discovers_adjustable_lite_name_only_advertisements() -> None:
+    """Adjustable Lite scans by name alone, with no advertised service filter."""
+    manifest_path = (
+        Path(__file__).parents[1] / "custom_components" / "adjustable_bed" / "manifest.json"
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    patterns = [entry["local_name"] for entry in manifest["bluetooth"] if "local_name" in entry]
+
+    for name in ("KSBT01C000015046", "KSBT03C000015046"):
+        assert any(fnmatchcase(name, pattern) for pattern in patterns)

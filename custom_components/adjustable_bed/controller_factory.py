@@ -125,8 +125,10 @@ from .const import (
     KEESON_BETTERLIVING_SERVICE_UUIDS,
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_JSON_SERVICE_UUID,
+    KEESON_NAME_SUBSTRINGS,
     KEESON_SINO_NAME_PATTERNS,
     # Variants and UUIDs
+    KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_JSON,
     KEESON_VARIANT_KSBT,
@@ -1004,7 +1006,9 @@ async def create_controller(
                     device_name,
                 )
                 keeson_variant = KEESON_VARIANT_KSBT04C
-            elif normalized_name.startswith("ksbt"):
+            elif normalized_name.startswith("ksbt") or any(
+                token in normalized_name for token in KEESON_NAME_SUBSTRINGS
+            ):
                 keeson_variant = KEESON_VARIANT_KSBT
 
         # Use configured variant or default to base
@@ -1029,6 +1033,13 @@ async def create_controller(
             return KeesonController(
                 coordinator,
                 variant=KEESON_VARIANT_SLEEP_HARMONY,
+                device_name=device_name,
+            )
+        elif keeson_variant == KEESON_VARIANT_ADJUSTABLE_LITE:
+            _LOGGER.debug("Using explicit Adjustable Lite Keeson variant")
+            return KeesonController(
+                coordinator,
+                variant=KEESON_VARIANT_ADJUSTABLE_LITE,
                 device_name=device_name,
             )
         elif keeson_variant == KEESON_VARIANT_ERGOMOTION:

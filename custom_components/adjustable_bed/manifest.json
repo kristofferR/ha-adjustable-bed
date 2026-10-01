@@ -181,6 +181,14 @@
       "connectable": true
     },
     {
+      "local_name": "KSBT01C*",
+      "connectable": true
+    },
+    {
+      "local_name": "KSBT03C*",
+      "connectable": true
+    },
+    {
       "service_uuid": "6e400020-b5a3-f393-e0a9-e50e24dcca9e",
       "connectable": true
     },

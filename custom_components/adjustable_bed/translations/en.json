@@ -2639,6 +2639,9 @@
       },
       "starcode_abm5_4_raw_7f": {
         "name": "Raw app field 7f"
+      },
+      "adjustable_lite_massage_timer": {
+        "name": "Massage timer"
       }
     },
     "light": {
@@ -2759,6 +2762,9 @@
       },
       "vmatbasic_ed": {
         "name": "ED motor status"
+      },
+      "adjustable_lite_light": {
+        "name": "Light"
       }
     },
     "number": {

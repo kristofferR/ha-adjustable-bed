@@ -56,6 +56,7 @@ for all 128 exclusions and exact accepted evidence.
 | ✅ | Linx | `com.keeson.connectedbed` |
 | ✅ | Juna Sleep | `com.keeson.junasleep` |
 | ✅ | [Purple Smart Base](https://play.google.com/store/apps/details?id=com.keeson.purpleBase) | `com.keeson.purpleBase` |
+| ✅ | [Adjustable Lite](https://play.google.com/store/apps/details?id=com.keeson.adjustablelite) | `com.keeson.adjustablelite` |
 
 ## Features
 
@@ -203,6 +204,61 @@ These prefixes overlap Purple Smart Base while the packet endings differ. Select
 the explicit Purple or Sleep Harmony profile; a name alone cannot distinguish
 the ecosystems safely.
 
+### Adjustable Lite Profile
+
+**Validation status:** clean-room analysis of Adjustable Lite 1.0.2 (5) is
+complete; hardware is unverified. See the
+[app disposition](../apk-analysis/dispositions/row051-adjustable-lite.md).
+
+Select the `adjustable_lite` (`Adjustable Lite app (KSBT01C / KSBT03C)`)
+protocol variant. Auto keeps the generic KSBT profile, because Ergomotion Sync
+and Sleep Harmony also use `KSBT03C` names with different memory labels,
+cadence or release behavior.
+
+The app writes the six-byte KSBT frame `04 02 b2 b3 b4 b5` to Nordic UART
+`6e400002`, with no checksum, and never sets a write type. The integration
+therefore writes without response when the characteristic offers it, as
+Android does by default. It has two remotes, chosen by the case-sensitive
+token `KSBT03C` in the device name; any other name gets the KSBT01C remote.
+
+| Control | Frame | KSBT01C | KSBT03C |
+|---------|-------|---------|---------|
+| Head/back up / down | `04 02 00 00 00 01` / `04 02 00 00 00 02` | ✅ | ✅ |
+| Leg/foot up / down | `04 02 00 00 00 04` / `04 02 00 00 00 08` | ✅ | ✅ |
+| Flat | `04 02 08 00 00 00` | ✅ | ✅ |
+| Zero G | `04 02 00 00 10 00` | ✅ | ✅ |
+| Memory 1 (MI) | `04 02 00 01 00 00` | ✅ | ✅ |
+| Memory 2 (MII) | `04 02 00 00 20 00` | ✅ | ✅ |
+| Memory 3 (MIII) | `04 02 00 00 40 00` | ✅ | ✅ |
+| Light | `04 02 00 02 00 00` | ✅ | ✅ |
+| Anti-snore | `04 02 00 00 80 00` | ❌ | ✅ |
+| Massage timer | `04 02 00 00 02 00` | ❌ | ✅ |
+| Head massage + / - | `04 02 00 00 08 00` / `04 02 00 80 00 00` | ❌ | ✅ |
+| Leg massage + / - | `04 02 00 00 04 00` / `04 02 01 00 00 00` | ❌ | ✅ |
+| Status query | `00 B0` | ✅ | ✅ |
+
+The shipped MI/MII/MIII labels take precedence over the app's internal
+`m`/`read`/`tv` names, so memory slots 1-3 differ from the generic KSBT
+mapping. The app has no memory save, lounge, TV, tilt, lumbar, massage
+toggle or massage off control, and the profile exposes none. Movement
+repeats at 0 ms and then every 300 ms. Release only cancels that timer: no
+STOP or release frame exists, so the integration sends none. One-shot
+controls are written once.
+
+While connected, the app queries `00 B0` every 500 ms. The integration polls
+at the same interval on a live connection, without keeping the link open.
+Notifications from `6e400003` longer than 12 bytes are read without header or
+checksum checks:
+
+| Byte(s) | Meaning | Entity |
+|---------|---------|--------|
+| 12 | `1` lights the bulb icon; anything else is off | **Light** binary sensor |
+| 3-4 (KSBT03C) | Big-endian value; above 1200, 600 or 0 shows the 30, 20 or 10 minute timer image, otherwise none | **Massage timer** sensor (0/10/20/30 min, raw value as attribute) |
+
+The app does not decode whether the light button toggles, how the timer
+button cycles, massage level limits, or the unit of the raw timer value. Those
+remain to be confirmed on hardware.
+
 ### Sino Variant (Dynasty, INNOVA, BetterLiving)
 **Primary Service UUID:** `0000ffe5-0000-1000-8000-00805f9b34fb`
 **Format:** 8 bytes `[0xE5, 0xFE, 0x16, b4, b5, b6, b7, checksum]` (big-endian byte order)
@@ -289,6 +345,7 @@ app/protocol family, not to the shared 32-bit command values:
 | KSBT03C | Ergomotion Sync 1.0.5, Rio 5 layout | Immediate write plus 300ms `Timer.schedule`; release only cancels the timer | 4 writes, 300ms apart, with no release packet |
 | KSBT03CR | SomosBeds | 300ms `Timer.schedule` | 4 writes, 300ms apart |
 | Sleep Harmony (`KSBT04C` / `base-i5.`) | Sleep Harmony | 300ms handler loop | 4 writes, 300ms apart |
+| Adjustable Lite (`KSBT01C` / `KSBT03C`) | Adjustable Lite | Immediate write plus 300ms `Timer.schedule`; release only cancels the timer | 4 writes, 300ms apart, with no release packet |
 | Ergomotion | Ergomotion / Ergomotion 4.0 / Tempur Zero G | 100ms handler loop | 10 writes, 100ms apart |
 | Serta | Serta MP Remote | 100ms handler loop | 10 writes, 100ms apart |
 | Sino / BetterLiving OKIN | BetterLiving | 100ms on the two-motor screen, 200ms on the three-motor screen | 10 x 100ms or 5 x 200ms |
@@ -341,8 +398,13 @@ Unique service UUID auto-detection:
 | Device Name Prefix | Protocol |
 |-------------------|----------|
 | `base` / `base-i5` | Ambiguous: Auto keeps the Base profile; Purple Premium uses E5/8-byte and Sleep Harmony uses E6/9-byte, so select either profile explicitly |
-| `KSBT03C` | Nordic UART with 6-byte packets (3 motors: no head tilt; e.g. Ergomotion Rio 5.0) |
+| `KSBT01C` | Nordic UART with 6-byte packets; select the Adjustable Lite profile for that app |
+| `KSBT03C` | Nordic UART with 6-byte packets (3 motors: no head tilt; e.g. Ergomotion Rio 5.0); Adjustable Lite users select its profile |
 | `KSBT04` | Nordic UART with 6-byte packets (confirmed Rio 6.0 family) |
 | `KSBT04C` | Ambiguous: Auto keeps the legacy generic checksum profile; Purple Plus uses a trailing zero and Sleep Harmony uses app-specific checksum/release behavior, so select either profile explicitly |
 | `ksbt03cr` | Nordic UART with 7-byte packets (KSBT03CR variant) |
 | `EH` | Mattress variant (E0FF service) |
+
+Names that contain `KSBT01C` or `KSBT03C` later in the name are also detected
+as Keeson and use the KSBT profile, matching the Adjustable Lite scan. Discovery
+also matches name-only `KSBT01C*` and `KSBT03C*` advertisements.

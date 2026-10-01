@@ -76,6 +76,16 @@ test("read-only light state is visible independently of light controls", () => {
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
+test("Adjustable Lite light toggle and reported bulb state share the lighting section", () => {
+  const hass = hassWith([
+    entry("button.lite_toggle_light", "toggle_light"),
+    entry("binary_sensor.lite_light", "adjustable_lite_light"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.lights.toggle).toBe("button.lite_toggle_light");
+  expect(bed.lights.state).toBe("binary_sensor.lite_light");
+});
+
 test("exact app controls separate floor, bounded mood and massage surfaces", () => {
   const hass = hassWith([
     entry("light.floor", "under_bed_lights"),
