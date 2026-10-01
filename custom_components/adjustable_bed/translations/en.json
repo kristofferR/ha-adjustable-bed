@@ -588,6 +588,20 @@
           "fsm_relax_reverse_3": "Reverse actuator flag 3",
           "fsm_relax_reverse_4": "Reverse actuator flag 4"
         }
+      },
+      "starcode_m5x5": {
+        "title": "AdjustableM5X5 app",
+        "description": "Confirm the exact bedding class and optional accessory group. Shared Bluetooth services do not identify an app.",
+        "data": {
+          "starcode_device_name": "Exact Bluetooth name",
+          "starcode_m5x5_profile": "AdjustableM5X5 bed class",
+          "starcode_lift_entries": "Independently addressed lifts (up to three)"
+        },
+        "data_description": {
+          "starcode_device_name": "Enter the unchanged Bluetooth name, preserving case. A friendly display name cannot identify the app class or remote.",
+          "starcode_m5x5_profile": "Choose CB25, F23, kneading or Elevate to match the exact Bluetooth name.",
+          "starcode_lift_entries": "Choose up to three other configured AdjustableM5X5 entries. This main and the three lifts keep separate Bluetooth addresses and controls."
+        }
       }
     },
     "progress": {
@@ -660,7 +674,10 @@
       "vmatbasic_required": "Choose the V-MAT Basic product profile.",
       "starcode_app_invalid": "Choose a supported app selector and a live Bluetooth transport.",
       "starcode_app_unpair_first": "Unpair these entries before changing app selectors. Each physical side retains its own app controls.",
-      "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each)."
+      "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each).",
+      "starcode_profile_mismatch": "Choose the bed class matching the exact case-sensitive Bluetooth name.",
+      "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 entries with different Bluetooth addresses.",
+      "starcode_unpair_first": "Use standalone entries for this independently addressed accessory group."
     }
   },
   "options": {
@@ -744,7 +761,10 @@
           "fsm_relax_reverse_1": "Reverse actuator flag 1",
           "fsm_relax_reverse_2": "Reverse actuator flag 2",
           "fsm_relax_reverse_3": "Reverse actuator flag 3",
-          "fsm_relax_reverse_4": "Reverse actuator flag 4"
+          "fsm_relax_reverse_4": "Reverse actuator flag 4",
+          "starcode_device_name": "Exact Bluetooth name",
+          "starcode_m5x5_profile": "AdjustableM5X5 bed class",
+          "starcode_lift_entries": "Independently addressed lifts (up to three)"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -795,7 +815,10 @@
           "vibradorm_vmat_remote": "Choose the same remote ordinal shown in VMAT. This sets its controls and features; Bluetooth metadata cannot identify the remote.",
           "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0–255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1–6. This is not measured brightness.",
           "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting.",
-          "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls."
+          "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
+          "starcode_device_name": "Enter the unchanged Bluetooth name, preserving case. A friendly display name cannot identify the app class or remote.",
+          "starcode_m5x5_profile": "Choose CB25, F23, kneading or Elevate to match the exact Bluetooth name.",
+          "starcode_lift_entries": "Choose up to three other configured AdjustableM5X5 entries. This main and the three lifts keep separate Bluetooth addresses and controls."
         }
       },
       "remove_bond": {
@@ -888,7 +911,10 @@
       "starcode_app_invalid": "Choose a supported app selector and a live Bluetooth transport.",
       "starcode_app_unpair_first": "Unpair these entries before changing app selectors. Each physical side retains its own app controls.",
       "fsm_relax_unpair_first": "Unpair the beds first, configure each physical FSM Relax profile, then combine them again.",
-      "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each)."
+      "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each).",
+      "starcode_profile_mismatch": "Choose the bed class matching the exact case-sensitive Bluetooth name.",
+      "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 entries with different Bluetooth addresses.",
+      "starcode_unpair_first": "Use standalone entries for this independently addressed accessory group."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -1966,6 +1992,27 @@
       },
       "coolbase_star": {
         "name": "Star button"
+      },
+      "starcode_save_tv": {
+        "name": "Save Ascent"
+      },
+      "starcode_save_zero_g": {
+        "name": "Save Zero Gravity"
+      },
+      "starcode_save_lounge": {
+        "name": "Save Lounge"
+      },
+      "starcode_reset": {
+        "name": "Reset saved positions"
+      },
+      "starcode_light_mode": {
+        "name": "Light mode 1"
+      },
+      "starcode_light_cycle": {
+        "name": "Cycle light color"
+      },
+      "starcode_query": {
+        "name": "Refresh massage and RGB"
       }
     },
     "cover": {
@@ -2208,6 +2255,9 @@
       },
       "malouf_full_tilt": {
         "name": "Full tilt"
+      },
+      "starcode_union": {
+        "name": "Head and foot together"
       }
     },
     "sensor": {
@@ -2748,6 +2798,108 @@
       },
       "coolbase_massage_mode": {
         "name": "Massage mode"
+      },
+      "starcode_firmware": {
+        "name": "Firmware"
+      },
+      "starcode_massage_time_raw": {
+        "name": "Massage time raw"
+      },
+      "starcode_massage_head_level": {
+        "name": "Massage head level"
+      },
+      "starcode_massage_foot_level": {
+        "name": "Massage foot level"
+      },
+      "starcode_massage_mode": {
+        "name": "Massage mode"
+      },
+      "starcode_light_brightness": {
+        "name": "Light brightness"
+      },
+      "starcode_light_color_index": {
+        "name": "Light color index"
+      },
+      "starcode_light_rgb_mode": {
+        "name": "Light rgb mode"
+      },
+      "starcode_light_mode": {
+        "name": "Light mode"
+      },
+      "starcode_motor_part4": {
+        "name": "Motor part4"
+      },
+      "starcode_motor_part5": {
+        "name": "Motor part5"
+      },
+      "starcode_motor_part6": {
+        "name": "Motor part6"
+      },
+      "starcode_sonic_time_raw": {
+        "name": "Sonic time raw"
+      },
+      "starcode_sonic_frequency": {
+        "name": "Sonic frequency"
+      },
+      "starcode_sonic_head_level": {
+        "name": "Sonic head level"
+      },
+      "starcode_sonic_foot_level": {
+        "name": "Sonic foot level"
+      },
+      "starcode_sonic_mode": {
+        "name": "Sonic mode"
+      },
+      "starcode_sonic_massage_type": {
+        "name": "Sonic massage type"
+      },
+      "starcode_alarm_0": {
+        "name": "Alarm 0"
+      },
+      "starcode_alarm_1": {
+        "name": "Alarm 1"
+      },
+      "starcode_eq_volume": {
+        "name": "Eq volume"
+      },
+      "starcode_eq_preset": {
+        "name": "Eq preset"
+      },
+      "starcode_eq_low_frequency": {
+        "name": "Eq low frequency"
+      },
+      "starcode_eq_high_frequency": {
+        "name": "Eq high frequency"
+      },
+      "starcode_kneading_time_raw": {
+        "name": "Kneading time raw"
+      },
+      "starcode_kneading_mode": {
+        "name": "Kneading mode"
+      },
+      "starcode_eq_band_0": {
+        "name": "Eq band 0"
+      },
+      "starcode_eq_band_1": {
+        "name": "Eq band 1"
+      },
+      "starcode_eq_band_2": {
+        "name": "Eq band 2"
+      },
+      "starcode_eq_band_3": {
+        "name": "Eq band 3"
+      },
+      "starcode_eq_band_4": {
+        "name": "Eq band 4"
+      },
+      "starcode_eq_band_5": {
+        "name": "Eq band 5"
+      },
+      "starcode_eq_band_6": {
+        "name": "Eq band 6"
+      },
+      "starcode_eq_band_7": {
+        "name": "Eq band 7"
       }
     },
     "light": {
@@ -2868,6 +3020,30 @@
       },
       "vmatbasic_ed": {
         "name": "ED motor status"
+      },
+      "starcode_motor_stopped": {
+        "name": "Motor stopped"
+      },
+      "starcode_massage_active": {
+        "name": "Massage active"
+      },
+      "starcode_light_on": {
+        "name": "Light on"
+      },
+      "starcode_sonic_active": {
+        "name": "Sonic active"
+      },
+      "starcode_usb_on": {
+        "name": "Usb on"
+      },
+      "starcode_kneading_on": {
+        "name": "Kneading on"
+      },
+      "starcode_kneading_demo": {
+        "name": "Kneading demo"
+      },
+      "starcode_firmware_read_ok": {
+        "name": "Firmware read ok"
       }
     },
     "number": {
@@ -3047,6 +3223,9 @@
       },
       "starcode_abm5_4_light_level": {
         "name": "Floor light level"
+      },
+      "starcode_brightness": {
+        "name": "RGB brightness"
       }
     },
     "select": {
@@ -3219,6 +3398,9 @@
           "20": "20 minutes",
           "30": "30 minutes"
         }
+      },
+      "starcode_color": {
+        "name": "RGB palette index"
       }
     },
     "climate": {
@@ -3906,6 +4088,20 @@
         },
         "side": {
           "name": "Side"
+        }
+      }
+    },
+    "starcode_move_lifts": {
+      "name": "Control AdjustableM5X5 lifts",
+      "description": "Control the independently addressed accessories configured on one main bed. Flat moves the main before the delayed lift action.",
+      "fields": {
+        "device_id": {
+          "name": "Main bed",
+          "description": "An AdjustableM5X5 main entry with selected lift entries."
+        },
+        "action": {
+          "name": "Action",
+          "description": "Up, down, composite flat or STOP."
         }
       }
     }

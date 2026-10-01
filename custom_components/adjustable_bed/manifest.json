@@ -1,7 +1,10 @@
 {
   "domain": "adjustable_bed",
   "name": "Adjustable Bed",
-  "after_dependencies": ["frontend", "lovelace"],
+  "after_dependencies": [
+    "frontend",
+    "lovelace"
+  ],
   "bluetooth": [
     {
       "service_uuid": "99fa0001-338a-1024-8a49-009c0215f78a"
@@ -42,7 +45,10 @@
     },
     {
       "manufacturer_id": 65535,
-      "manufacturer_data_start": [192, 255]
+      "manufacturer_data_start": [
+        192,
+        255
+      ]
     },
     {
       "service_uuid": "9e5d1e47-5c13-43a0-8635-82adffc0386f"
@@ -62,11 +68,17 @@
     },
     {
       "manufacturer_id": 2349,
-      "manufacturer_data_start": [88, 80]
+      "manufacturer_data_start": [
+        88,
+        80
+      ]
     },
     {
       "manufacturer_id": 2349,
-      "manufacturer_data_start": [67, 80]
+      "manufacturer_data_start": [
+        67,
+        80
+      ]
     },
     {
       "service_uuid": "62741523-52f9-8864-b1ab-3b3a8d65950b"
@@ -321,14 +333,26 @@
     },
     {
       "local_name": "STAR*"
+    },
+    {
+      "local_name": "STAR25*",
+      "connectable": true
     }
   ],
-  "codeowners": ["@kristofferR"],
+  "codeowners": [
+    "@kristofferR"
+  ],
   "config_flow": true,
-  "dependencies": ["bluetooth_adapters", "http"],
+  "dependencies": [
+    "bluetooth_adapters",
+    "http"
+  ],
   "documentation": "https://github.com/kristofferR/ha-adjustable-bed",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/kristofferR/ha-adjustable-bed/issues",
-  "requirements": ["bleak>=1.0.0", "bleak-retry-connector>=3.5.0"],
+  "requirements": [
+    "bleak>=1.0.0",
+    "bleak-retry-connector>=3.5.0"
+  ],
   "version": "4.0.2"
 }

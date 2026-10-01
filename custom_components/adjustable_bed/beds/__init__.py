@@ -63,6 +63,7 @@ if TYPE_CHECKING:
     from .solace import SolaceController as SolaceController
     from .star_elevate import StarElevateController as StarElevateController
     from .starcode_abm5_4 import StarcodeAbm5_4Controller as StarcodeAbm5_4Controller
+    from .starcode_m5x5 import StarcodeM5X5Controller as StarcodeM5X5Controller
     from .suta import SutaController as SutaController
     from .svane import SvaneController as SvaneController
     from .timotion_ahf import TiMOTIONAhfController as TiMOTIONAhfController
@@ -72,6 +73,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "StarcodeM5X5Controller": "starcode_m5x5",
     "FurniMoveController": "furnimove",
     "FsmRelaxController": "fsm_relax",
     "SerenityController": "serenity",

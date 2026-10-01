@@ -56,6 +56,9 @@ CONF_STARCODE_UI_SELECTOR: Final = "starcode_abm5_4_ui_selector"
 CONF_STARCODE_TRANSPORT_SELECTOR: Final = "starcode_abm5_4_transport_selector"
 STARCODE_APP_CONNECTION_TIMEOUT_SECONDS: Final = 8.0
 STARCODE_APP_CONFIG_KEYS: Final = frozenset({CONF_STARCODE_COMMAND_SELECTOR, CONF_STARCODE_UI_SELECTOR, CONF_STARCODE_TRANSPORT_SELECTOR})
+CONF_STARCODE_M5X5_PROFILE: Final = "starcode_m5x5_profile"
+CONF_STARCODE_DEVICE_NAME: Final = "starcode_device_name"
+CONF_STARCODE_LIFT_ENTRIES: Final = "starcode_lift_entries"
 CONF_VIBRADORM_APP_PROFILE: Final = "vibradorm_app_profile"
 CONF_VMATBASIC_PROFILE: Final = "vmatbasic_profile"
 CONF_VMATBASIC_FLOOR_LEVEL: Final = "vmatbasic_floor_level"
@@ -430,6 +433,7 @@ BED_TYPE_SLEEPSTAR: Final = "sleepstar"  # SleepSpa S9000AI / SLEEPSTAR transpar
 BED_TYPE_STAR_ELEVATE: Final = "star_elevate"  # ELEVATE two-actuator StarCode accessory
 BED_TYPE_SVANE: Final = "svane"  # Svane LinonPI multi-service protocol
 BED_TYPE_VIBRADORM: Final = "vibradorm"  # Vibradorm VMAT protocol
+BED_TYPE_STARCODE_M5X5: Final = "starcode_m5x5"
 BED_TYPE_VIBRADORM_APP: Final = "vibradorm_app"
 BED_TYPE_VMATBASIC: Final = "vmatbasic"
 BED_TYPE_STARCODE_ABM5_4: Final = "starcode_abm5_4"
@@ -524,6 +528,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_STAR_ELEVATE,
     # Svane
     BED_TYPE_SVANE,
+    BED_TYPE_STARCODE_M5X5,
     # Vibradorm
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
@@ -2439,6 +2444,7 @@ BEDS_WITH_ANGLE_SENSING: Final = frozenset(
 # corresponding actuator exists; its controller supplies the per-side specs.
 BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
     {
+        BED_TYPE_STARCODE_M5X5,
         BED_TYPE_LINAK,
         BED_TYPE_OKIMAT,
         BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
@@ -2504,6 +2510,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
 # since KeesonController.start_notify() never subscribes outside that variant.
 BEDS_WITH_PERCENTAGE_POSITIONS: Final = frozenset(
     {
+        BED_TYPE_STARCODE_M5X5,
         BED_TYPE_KEESON,
         BED_TYPE_ERGOMOTION,
         BED_TYPE_SERTA,

@@ -84,6 +84,7 @@ from .const import (
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
     BED_TYPE_TIMOTION_AHF,
@@ -510,6 +511,8 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
 
     BED_TYPE_FSM_RELAX: "FSM Relax app (explicit chair/bed profile)",
+
+    BED_TYPE_STARCODE_M5X5: "AdjustableM5X5 app (CB25 / F23 / kneading / Elevate)",
     BED_TYPE_FURNIMOVE: "FurniMove / OKIN Smart Remote (choose handset ID)",
     BED_TYPE_SERENITY: "Jordan's Serenity app",
     BED_TYPE_CUSTOMATIC_CLARITY: "Customatic Clarity app",
@@ -1466,6 +1469,14 @@ def _detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detect
                 if SLEEPSTAR_MANUFACTURER_ID in (service_info.manufacturer_data or {})
                 else None
             ),
+        )
+
+    if (service_info.name or "").startswith(("STAR25", "ELEVATE")):
+        other = BED_TYPE_STAR_ELEVATE if (service_info.name or "").startswith("ELEVATE") else BED_TYPE_SLEEPYS_BOX25
+        return DetectionResult(
+            bed_type=other, confidence=0.65,
+            signals=[*signals, "name:starcode_bedding_app_choices"],
+            ambiguous_types=[BED_TYPE_STARCODE_M5X5],
         )
 
     # ELEVATE is a separate StarCode controller with a dedicated 0x40-0x4F
