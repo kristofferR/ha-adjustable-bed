@@ -6239,6 +6239,26 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         """Manage the options."""
         return await self._async_options_form(user_input, step_id="settings")
 
+    def _starcode_live_transport_valid(self, selector: str) -> bool | None:
+        """Check the current receiver without connecting or disturbing its link."""
+        from bleak.exc import BleakError
+
+        from .coordinator import AdjustableBedCoordinator
+
+        runtime = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        if not isinstance(runtime, AdjustableBedCoordinator):
+            return None
+        client = runtime.client
+        if client is None or client.is_connected is not True:
+            return None
+        try:
+            if client.services is None:
+                return None
+            return _starcode_setup_transport_present(client, selector)
+        except BleakError:
+            # A just-connected client may not have completed GATT discovery.
+            return None
+
     async def async_step_unpair(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Confirm splitting a paired bed back into two entries."""
         return await self._async_unpair_form(user_input, step_id="unpair")
@@ -6973,6 +6993,20 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                             errors={CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"},
                         )
                     user_input[CONF_STARCODE_TRANSPORT_SELECTOR] = initial_transport
+                selected_transport = _starcode_initial_transport(
+                    {**app_data, **user_input}, None
+                )
+                if (
+                    selected_transport is not None
+                    and selected_transport
+                    != _starcode_initial_transport(self.config_entry.data, None)
+                    and self._starcode_live_transport_valid(selected_transport) is False
+                ):
+                    return self.async_show_form(
+                        step_id=step_id,
+                        data_schema=vol.Schema(schema_dict),
+                        errors={CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"},
+                    )
                 user_input[CONF_MOTOR_COUNT] = 2
                 user_input[CONF_HAS_MASSAGE] = True
                 user_input[CONF_DISABLE_ANGLE_SENSING] = True

@@ -56,6 +56,13 @@ user picker. Automatic transport selection may use the original Bluetooth name;
 explicit app selection supplies the application contract. Each physical address
 owns its selectors, observed state and operation generation.
 
+Options transport changes check the exact selected service and write/receive
+roles when the receiver is already connected and its GATT tree is available.
+A mismatch leaves the saved settings unchanged. Disconnected receivers,
+including those still advertising, remain unverified until startup; options do
+not open another connection. Auto uses the retained original BLE name and
+requires an explicit transport when that identity is unavailable.
+
 ## GATT and connection
 
 | Live D route | Service | Write | Receive | Normal writes | App subscription |
