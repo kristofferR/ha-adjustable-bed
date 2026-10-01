@@ -70,7 +70,7 @@ async def service_target(hass):
             {"underbed_light": True, "massage": False},
             "set_optional_features",
             (True, False),
-            {},
+            {"persist": False},
         ),
     ],
 )
@@ -83,7 +83,10 @@ async def test_public_actions_dispatch_live_controller(
     setattr(controller, method, action)
     await hass.services.async_call(DOMAIN, service, {"device_id": "app", **data}, blocking=True)
     action.assert_awaited_once_with(*args, **kwargs)
-    assert coordinator.async_execute_controller_command.await_args.kwargs["cancel_running"] is True
+    if service == "limoss_remote_rename_memory":
+        coordinator.async_execute_controller_command.assert_not_awaited()
+    else:
+        assert coordinator.async_execute_controller_command.await_args.kwargs["cancel_running"] is True
 
 
 @pytest.mark.parametrize(

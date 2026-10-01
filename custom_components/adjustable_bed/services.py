@@ -1868,13 +1868,10 @@ async def _execute_limoss_remote(
     call: ServiceCall,
     validate: Callable[[LimossRemoteController | SideBoundController], object],
     execute: Callable[[LimossRemoteController | SideBoundController], Coroutine[Any, Any, None]],
+    *,
+    targets: list[tuple[BedTarget, str]] | None = None,
 ) -> None:
-    targets, missing = _resolve_sided_targets(call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE))
-    if missing:
-        raise _missing_device_error(missing[0])
-    for coordinator, side in targets:
-        if any(target.bed_type != BED_TYPE_LIMOSS_REMOTE for target in _command_targets(coordinator, side)):
-            raise ServiceValidationError("This action requires the explicit Limoss Remote profile")
+    targets = _limoss_remote_targets(call) if targets is None else targets
     def check(controller: BedController | SideBoundController) -> None:
         try:
             validate(_limoss_remote_controller(controller))
@@ -1891,6 +1888,16 @@ async def _execute_limoss_remote(
         raise
 
 
+def _limoss_remote_targets(call: ServiceCall) -> list[tuple[BedTarget, str]]:
+    targets, missing = _resolve_sided_targets(call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE))
+    if missing:
+        raise _missing_device_error(missing[0])
+    for coordinator, side in targets:
+        if any(target.bed_type != BED_TYPE_LIMOSS_REMOTE for target in _command_targets(coordinator, side)):
+            raise ServiceValidationError("This action requires the explicit Limoss Remote profile")
+    return targets
+
+
 async def handle_limoss_remote_recall_memory(call: ServiceCall) -> None:
     slot, duration = call.data[ATTR_PRESET], int(call.data[ATTR_DURATION] * 1000)
     await _execute_limoss_remote(call, lambda ctrl: ctrl.validate_memory_recall(slot), lambda ctrl: ctrl.hold_memory(slot, duration))
@@ -1898,7 +1905,21 @@ async def handle_limoss_remote_recall_memory(call: ServiceCall) -> None:
 
 async def handle_limoss_remote_rename_memory(call: ServiceCall) -> None:
     slot, name = call.data[ATTR_PRESET], call.data[ATTR_NAME]
-    await _execute_limoss_remote(call, lambda ctrl: ctrl._slot(slot), lambda ctrl: ctrl.rename_memory(slot, name))
+    controllers: list[LimossRemoteController | SideBoundController] = []
+    for coordinator, side in _limoss_remote_targets(call):
+        for target in _command_targets(coordinator, side):
+            controller = target.capability_controller
+            if controller is None:
+                raise ServiceValidationError("This receiver has no cached memory capacity")
+            local = _limoss_remote_controller(controller)
+            try:
+                local._slot(slot)
+            except ValueError as error:
+                raise ServiceValidationError(str(error)) from error
+            controllers.append(local)
+    # No receiver access or suspension occurs during this local edit.
+    for controller in controllers:
+        await controller.rename_memory(slot, name)
 
 
 async def handle_limoss_remote_calibrate(call: ServiceCall) -> None:
@@ -1909,7 +1930,38 @@ async def handle_limoss_remote_calibrate(call: ServiceCall) -> None:
 
 
 async def handle_limoss_remote_features(call: ServiceCall) -> None:
-    await _execute_limoss_remote(call, lambda ctrl: None, lambda ctrl: ctrl.set_optional_features(call.data["underbed_light"], call.data["massage"]))
+    from .beds.base import SideBoundController
+    from .beds.limoss_remote import LimossRemoteController
+
+    light, massage = call.data["underbed_light"], call.data["massage"]
+    targets = _limoss_remote_targets(call)
+    touched: list[tuple[LimossRemoteController, bool, bool]] = []
+
+    async def apply(controller: LimossRemoteController | SideBoundController) -> None:
+        physical = controller._controller if isinstance(controller, SideBoundController) else controller
+        assert isinstance(physical, LimossRemoteController)
+        touched.append((physical, physical.underbed_light, physical.massage))
+        await controller.set_optional_features(light, massage, persist=False)
+
+    try:
+        await _execute_limoss_remote(call, lambda ctrl: None, apply, targets=targets)
+        async with contextlib.AsyncExitStack() as stack:
+            # Shared guards use one process-local order across multi-target calls.
+            owners = {id(coordinator): coordinator for coordinator, _ in targets}
+            for _, coordinator in sorted(owners.items()):
+                guard = (
+                    coordinator.async_capability_reload_guard()
+                    if isinstance(coordinator, PairedBedCoordinator)
+                    else coordinator.async_command_operation_guard()
+                )
+                await stack.enter_async_context(guard)
+            for controller, _, _ in touched:
+                controller._coordinator.remember_limoss_remote_features(light, massage)
+    except (Exception, asyncio.CancelledError):
+        # Flags describe the selected local layout, not a hardware acknowledgement.
+        for controller, previous_light, previous_massage in touched:
+            controller.underbed_light, controller.massage = previous_light, previous_massage
+        raise
 
 
 async def handle_vibradorm_hold_control(call: ServiceCall) -> None:

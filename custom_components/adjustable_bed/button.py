@@ -1060,7 +1060,11 @@ def _discovered_memory_slot_name(
 ) -> str | None:
     """Return the bed-reported name for a memory button, if there is one."""
     slot = description.memory_slot
-    controller = coordinator.controller
+    controller = (
+        coordinator.capability_controller
+        if coordinator.bed_type == BED_TYPE_LIMOSS_REMOTE
+        else coordinator.controller
+    )
     if slot is None or controller is None:
         return None
 
@@ -1098,6 +1102,20 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
     """Button entity for Adjustable Bed."""
 
     entity_description: AdjustableBedButtonEntityDescription
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        if (
+            self._coordinator.bed_type == BED_TYPE_LIMOSS_REMOTE
+            and self.entity_description.memory_slot is not None
+        ):
+            def names_changed(state: dict[str, Any]) -> None:
+                if "limoss_remote_memory_names" in state:
+                    self.async_write_ha_state()
+
+            self.async_on_remove(
+                self._coordinator.register_controller_state_callback(names_changed)
+            )
 
     @property
     def name(self) -> str | UndefinedType | None:

@@ -1970,7 +1970,14 @@ class AdjustableBedCoordinator:
         if state == previous:
             return
         self._begin_internal_entry_update(self._ble_bond_established)
+        capabilities_changed = state.get("capabilities") != previous.get("capabilities")
+        if capabilities_changed:
+            self._offline_controller = self._controller
+            if self._pending_internal_bond_marker is not None:
+                self._pending_capability_reload = True
         self._async_persist_config({**self.entry.data, CONF_LIMOSS_REMOTE_STATE: state}, keys={CONF_LIMOSS_REMOTE_STATE})
+        if capabilities_changed:
+            self._schedule_pending_capability_reload()
 
     def remember_limoss_remote_features(self, light: bool, massage: bool) -> None:
         """Reload the exact target's entity layout after completed OFF writes."""
@@ -1979,7 +1986,17 @@ class AdjustableBedCoordinator:
         changed = {CONF_LIMOSS_REMOTE_LIGHT: light, CONF_LIMOSS_REMOTE_MASSAGE: massage}
         if all(self.entry.data.get(key, False) == value for key, value in changed.items()):
             return
+        self._begin_internal_entry_update(self._ble_bond_established)
+        self._offline_controller = self._controller or self._offline_controller
+        from .beds.limoss_remote import LimossRemoteController
+
+        if isinstance(self._offline_controller, LimossRemoteController):
+            self._offline_controller.underbed_light = light
+            self._offline_controller.massage = massage
+        if self._pending_internal_bond_marker is not None:
+            self._pending_capability_reload = True
         self._async_persist_config({**self.entry.data, **changed}, keys=set(changed))
+        self._schedule_pending_capability_reload()
 
     def _merged_vibradorm_app_metadata(self, progress: Mapping[str, str]) -> dict[str, str | None]:
         """Preserve completed fields; omitted values mean not read, never clear."""

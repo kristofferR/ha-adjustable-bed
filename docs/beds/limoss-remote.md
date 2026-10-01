@@ -20,7 +20,11 @@ change the available controls, not measured hardware state. Enabling a feature
 changes the local layout. Disabling a previously selected lamp or massage feature
 first sends ten source OFF commands, then saves the selection. Failed OFF writes
 leave the saved selection unchanged. The settings action supports the same
-transaction. App artwork themes are retained as a local preference in diagnostics;
+transaction. For paired or multi-target service calls, every selected OFF burst
+must finish before any feature selections are saved. A failure or cancellation
+retains the previous local selections even if some hardware writes succeeded.
+Entity reloads wait until the selected operations and any active sibling command
+have released their command lanes. App artwork themes are retained as a local preference in diagnostics;
 Home Assistant continues to use its own theme and does not copy app artwork.
 
 ## Controls and actions
@@ -130,7 +134,9 @@ send ten `71` and `66` frames respectively with four zero bytes and no STOP tail
 After notification subscription, the information transaction requests `02`,
 retries that capability query at one-second intervals, then requests hardware `00`
 and software `01` in reply order. The host bounds this transaction to ten seconds.
-Completed diagnostic fields survive later failures and reconstruction. There are
+Completed diagnostic fields survive later failures and reconstruction. Changed
+capability snapshots refresh the offline layout and request an entity
+reload after the link and paired command lanes are released. There are
 no live Device Information Service reads or idle position queries in this profile.
 An unsolicited `06` reply retains its signed serial value; there is no reachable
 serial-query sender.
