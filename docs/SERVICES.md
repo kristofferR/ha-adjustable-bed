@@ -160,6 +160,7 @@ enable additional commands.
 | Customatic Clarity / Remedy | `customatic_hold_memory` (all 31 memory combinations), `customatic_move_simultaneously` (safe motor combinations) | [Customatic](beds/customatic.md) |
 | Customatic Jerome's C | `customatic_move_simultaneously` (back and legs) | [Customatic](beds/customatic.md) |
 | Jordan's Serenity app | `serenity_hold_control` (one of 31 literal app actions) | [Serenity](beds/serenity.md) |
+| SIMMONS app | `simmons_hold_control`, `simmons_set_alarm` | [SIMMONS](beds/simmons.md) |
 | AdjustableM5X4 app | `starcode_abm5_4_hold_control` (literal held movement, preset, save or massage controls) | [AdjustableM5X4](beds/starcode-abm5-4.md) |
 | Caresse / Werkmeister apps | `vibradorm_hold_control` (profile-specific movement, memory recall or sync) | [Caresse / Werkmeister](beds/vibradorm_app.md) |
 | V-MAT Basic app | `vmatbasic_hold_control`, `vmatbasic_rename` | [V-MAT Basic](beds/vmatbasic.md) |
@@ -175,6 +176,12 @@ renaming an HA entity or device is a separate operation.
 ### `serenity_hold_control`
 
 Hold one literal control from the explicit Jordan's Serenity profile for `duration` seconds (0.1–60), then send its two-frame release sequence. Supply `device_id`, `control`, `duration` and optional `side`. The [Serenity control catalog](beds/serenity.md#reachable-commands) lists the literal action names. The controller validates supported action names before dispatch; arbitrary combinations are rejected. Save controls can change stored positions. This action uses all-target capability preflight and the shared command lock.
+
+### `simmons_hold_control` and `simmons_set_alarm`
+
+Hold accepts `device_id`, `control`, `duration` (0.1–60 seconds in whole milliseconds) and optional `side`. The frame repeats every 300 ms, then two STOP frames follow at +100 and +400 ms. Controls are `head_up`, `head_down`, `legs_up`, `legs_down`, `flat`, `memory`, `light`, plus `zero_g`, `tv`, `anti_snore` on a regular bed or `inclined_left`, `inclined_middle`, `inclined_right` on an inclined bed. Holding `memory` for more than 5 seconds saves the current position as Custom Mode.
+
+Set alarm accepts `device_id`, `slot` (1 or 2), `enabled`, `time`, `weekdays` (empty for the next occurrence), `mode` (`custom_mode`, `flat`, or regular-bed `anti_snore`), `confirm_custom_mode` and optional `side`. Custom Mode requires `confirm_custom_mode: true`. An enabled alarm cannot share its time or mode with the other enabled alarm. The bed is queried first if its alarm records are not known yet. See [SIMMONS alarms](beds/simmons.md#alarms-and-clock).
 
 ### `vibradorm_hold_control`
 

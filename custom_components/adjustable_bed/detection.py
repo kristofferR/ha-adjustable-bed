@@ -74,6 +74,7 @@ from .const import (
     BED_TYPE_SCOTT_LIVING,
     BED_TYPE_SERENITY,
     BED_TYPE_SERTA,
+    BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPSTAR,
@@ -508,6 +509,7 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_FURNIMOVE: "FurniMove / OKIN Smart Remote (choose handset ID)",
     BED_TYPE_SERENITY: "Jordan's Serenity app",
+    BED_TYPE_SIMMONS: "SIMMONS app",
     BED_TYPE_CUSTOMATIC_CLARITY: "Customatic Clarity app",
     BED_TYPE_CUSTOMATIC_JEROMES: "Customatic Jerome's C app",
     BED_TYPE_CUSTOMATIC_REMEDY: "Customatic Remedy app",

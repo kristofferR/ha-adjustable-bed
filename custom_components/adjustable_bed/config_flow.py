@@ -117,6 +117,7 @@ from .const import (
     BED_TYPE_OKIN_UUID,
     BED_TYPE_RICHMAT,
     BED_TYPE_SERENITY,
+    BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SOLACE,
     BED_TYPE_STARCODE_ABM5_4,
@@ -666,7 +667,12 @@ def _motor_count_options(
         return [1]
     if bed_type == BED_TYPE_FURNIMOVE:
         return [1, 2, 3, 4]
-    if bed_type in {BED_TYPE_SERENITY, BED_TYPE_CUSTOMATIC_CLARITY, BED_TYPE_CUSTOMATIC_JEROMES}:
+    if bed_type in {
+        BED_TYPE_SERENITY,
+        BED_TYPE_SIMMONS,
+        BED_TYPE_CUSTOMATIC_CLARITY,
+        BED_TYPE_CUSTOMATIC_JEROMES,
+    }:
         return [2]
     if bed_type == BED_TYPE_CUSTOMATIC_REMEDY:
         return [3]
@@ -2785,7 +2791,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
         }
 
-        if bed_type_default in {BED_TYPE_SERENITY, BED_TYPE_FURNIMOVE}:
+        if bed_type_default in {BED_TYPE_SERENITY, BED_TYPE_SIMMONS, BED_TYPE_FURNIMOVE}:
             schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
             schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
         if bed_type_default == BED_TYPE_FURNIMOVE:
@@ -3708,7 +3714,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
             }
         )
-        if defaults_bed_type in {BED_TYPE_SERENITY, BED_TYPE_FURNIMOVE}:
+        if defaults_bed_type in {BED_TYPE_SERENITY, BED_TYPE_SIMMONS, BED_TYPE_FURNIMOVE}:
             schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
             schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
         if defaults_bed_type == BED_TYPE_FURNIMOVE:
@@ -3986,7 +3992,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             _add_malouf_schema_fields(schema_dict)
         if preselected_bed_type == BED_TYPE_OKIN_CB24:
             _add_cb24_side_schema_field(schema_dict)
-        if preselected_bed_type in {BED_TYPE_SERENITY, BED_TYPE_FURNIMOVE}:
+        if preselected_bed_type in {BED_TYPE_SERENITY, BED_TYPE_SIMMONS, BED_TYPE_FURNIMOVE}:
             schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
             schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
         if preselected_bed_type == BED_TYPE_FURNIMOVE:
@@ -6502,7 +6508,12 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             ): bool,
         }
 
-        if bed_type in {BED_TYPE_SERENITY, BED_TYPE_FURNIMOVE, BED_TYPE_STARCODE_ABM5_4}:
+        if bed_type in {
+            BED_TYPE_SERENITY,
+            BED_TYPE_SIMMONS,
+            BED_TYPE_FURNIMOVE,
+            BED_TYPE_STARCODE_ABM5_4,
+        }:
             schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
             schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
         if bed_type == BED_TYPE_FURNIMOVE:
