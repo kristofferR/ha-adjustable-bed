@@ -10,7 +10,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed import _build_paired_children, const
 from custom_components.adjustable_bed.beds.vibradorm_app import (
     VibradormAppController,
     VibradormAppMetadata,
@@ -37,6 +37,7 @@ from custom_components.adjustable_bed.pairing import (
     supports_single_address_pairing,
 )
 from custom_components.adjustable_bed.setup_operation import OperationOutcome, OperationResult
+from custom_components.adjustable_bed.switch import _switch_entities_for
 from custom_components.adjustable_bed.vibradorm_app_state import clear_vibradorm_app_session_intent
 
 PREFIX = "custom_components.adjustable_bed.config_flow."
@@ -207,6 +208,12 @@ async def test_two_address_pair_keeps_different_side_profiles(hass):
     right[CONF_ADDRESS] = "11:22:33:44:55:77"
     entry = MockConfigEntry(domain=const.DOMAIN, data=build_pair_entry_data(left, right, name="Pair"))
     entry.add_to_hass(hass)
+    children = _build_paired_children(hass, entry)
+    intents = {side: child.vibradorm_app_session_intent for side, child in children.items()}
+    for index, intent in enumerate(intents.values(), 1):
+        intent.floor.level = index
+        intent.timer.enabled, intent.timer.minutes = True, index * 10
+    identities = {side: (child.address, child.entity_side) for side, child in children.items()}
     flow = AdjustableBedOptionsFlow(entry)
     flow.handler = entry.entry_id
     flow.hass = hass
@@ -218,15 +225,37 @@ async def test_two_address_pair_keeps_different_side_profiles(hass):
     assert result["errors"] == {"base": "vibradorm_app_unpair_first"}
     assert [child[const.CONF_VIBRADORM_CONTROL_TYPE] for child in entry.data[const.CONF_PAIR_CHILDREN]] == ["2", "7"]
     assert not supports_single_address_pairing(const.BED_TYPE_VIBRADORM_APP)
+    assert (await flow.async_step_settings({const.CONF_IDLE_DISCONNECT_SECONDS: 55}))["type"] == FlowResultType.CREATE_ENTRY
+    rebuilt = _build_paired_children(hass, entry)
+    assert {side: (child.address, child.entity_side) for side, child in rebuilt.items()} == identities
+    for index, (side, child) in enumerate(rebuilt.items(), 1):
+        assert child.vibradorm_app_session_intent is intents[side]
+        assert (intents[side].floor.level, intents[side].timer.enabled, intents[side].timer.minutes) == (index, True, index * 10)
 
 
 @pytest.mark.parametrize("options", [False, True])
 async def test_enabling_restored_form_recomputes_hidden_floor_default(hass, options):
     from tests.test_vibradorm_app import make_controller, written
 
-    entry = MockConfigEntry(domain=const.DOMAIN, data=app_data(**{
+    selection = AdjustableBedConfigFlow()
+    selection.context = {}
+    selection.hass = hass
+    selected = app_data(**{
         const.CONF_VIBRADORM_FLOOR_DEFAULT: 6,
-    }))
+    })
+    with patch.object(selection, "_verification_possible", return_value=False):
+        initial = await selection._finish_with_verify(selected, "Fresh bed")
+    entry = MockConfigEntry(domain=const.DOMAIN, data=initial["data"])
+    old_runtime = AdjustableBedCoordinator(hass, entry)
+    old_intent = old_runtime.vibradorm_app_session_intent
+    assert old_intent.floor.level == old_intent.floor.default_level == 6
+    other_entry = MockConfigEntry(domain=const.DOMAIN, data={
+        **selected, CONF_ADDRESS: "11:22:33:44:55:77",
+    })
+    other_runtime = AdjustableBedCoordinator(hass, other_entry)
+    other_intent = other_runtime.vibradorm_app_session_intent
+    other_intent.floor.level = 4
+    other_intent.timer.enabled, other_intent.timer.minutes = True, 23
     if options:
         entry.add_to_hass(hass)
         flow = AdjustableBedOptionsFlow(entry)
@@ -258,16 +287,66 @@ async def test_enabling_restored_form_recomputes_hidden_floor_default(hass, opti
         with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as pairing:
             await step(selected)
         pairing.assert_awaited_once()
-        entry = MockConfigEntry(domain=const.DOMAIN, data=flow._manual_data)
+        with patch.object(flow, "_verification_possible", return_value=False):
+            finished = await flow._finish_with_verify(flow._manual_data, "Restored bed")
+        entry = MockConfigEntry(domain=const.DOMAIN, data=finished["data"])
         entry.add_to_hass(hass)
     assert entry.data[const.CONF_VIBRADORM_FLOOR_DEFAULT] == 8
     runtime = AdjustableBedCoordinator(hass, entry)
+    assert runtime.vibradorm_app_session_intent is not old_intent
+    assert runtime.vibradorm_app_session_intent.floor.level == 0
+    assert other_runtime.vibradorm_app_session_intent is other_intent
+    assert (other_intent.floor.level, other_intent.timer.enabled, other_intent.timer.minutes) == (4, True, 23)
     client = make_controller(2).client
     runtime._client = client
     controller = await create_controller(runtime, const.BED_TYPE_VIBRADORM_APP, None, client)
     assert isinstance(controller, VibradormAppController)
-    await controller.lights_toggle()
+    runtime._controller = controller
+    switch = next(entity for entity in _switch_entities_for(hass, runtime)
+                  if entity.entity_description.key == "under_bed_lights")
+    switch.hass = hass
+    switch.async_write_ha_state = MagicMock()
+
+    async def execute(command, **kwargs):
+        assert kwargs == {"cancel_running": False}
+        await command(controller)
+
+    with patch.object(runtime, "async_execute_controller_command", new=AsyncMock(side_effect=execute)) as dispatch:
+        await switch.async_turn_on()
+    dispatch.assert_awaited_once()
     assert written(controller) == ["c80000"]
+
+
+@pytest.mark.parametrize("restored", [None, False, True])
+async def test_unrelated_options_preserve_same_profile_session_intent(hass, restored):
+    from tests.test_vibradorm_app import make_controller
+
+    data = app_data(**{
+        const.CONF_VIBRADORM_RESTORED: restored is True,
+        const.CONF_VIBRADORM_FLOOR_LIGHT: True,
+        const.CONF_VIBRADORM_FLOOR_DEFAULT: 8 if restored else 6,
+    })
+    if restored is None:
+        data.pop(const.CONF_VIBRADORM_RESTORED)
+    entry = MockConfigEntry(domain=const.DOMAIN, data=data)
+    entry.add_to_hass(hass)
+    runtime = AdjustableBedCoordinator(hass, entry)
+    intent = runtime.vibradorm_app_session_intent
+    intent.floor.level = 4
+    intent.timer.enabled, intent.timer.minutes = True, 23
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.handler = entry.entry_id
+    flow.hass = hass
+    result = await flow.async_step_settings({const.CONF_IDLE_DISCONNECT_SECONDS: 55})
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert entry.data[const.CONF_IDLE_DISCONNECT_SECONDS] == 55
+    rebuilt = AdjustableBedCoordinator(hass, entry)
+    assert rebuilt.vibradorm_app_session_intent is intent
+    assert (intent.floor.level, intent.timer.enabled, intent.timer.minutes) == (4, True, 23)
+    rebuilt._client = make_controller(2).client
+    controller = await create_controller(rebuilt, const.BED_TYPE_VIBRADORM_APP, None, rebuilt.client)
+    assert isinstance(controller, VibradormAppController)
+    assert (controller._floor_level, controller._timer_enabled, controller._timer_minutes) == (4, True, 23)
 
 
 @pytest.mark.parametrize("failure", [None, "information", "pair", "deadline", "cancel"])

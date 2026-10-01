@@ -4,16 +4,19 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
+from dataclasses import replace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from bleak import BleakClient
+from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _build_paired_children
+from custom_components.adjustable_bed.adapter import AdapterSelectionResult
 from custom_components.adjustable_bed.beds.vibradorm_app import (
     CBI,
     COMMAND,
@@ -1001,3 +1004,159 @@ async def test_real_refresh_batch_persists_partial_or_full_metadata_for_reconstr
     assert recreated.protocol_diagnostics["metadata"] == expected
     for field, value in expected.items():
         assert reloaded.controller_state[f"vibradorm_app_{field}"] == value
+
+
+@pytest.mark.parametrize("timeout", [20, 25])
+@pytest.mark.parametrize(("path", "native_context"), [(_LOCAL, True), (_LOCAL, False), (_PROXY, False)])
+async def test_established_reconnect_retains_connection_profile_budget(
+    coordinator: AdjustableBedCoordinator, hass: HomeAssistant,
+    mock_coordinator_connected, mock_bleak_client, timeout, path, native_context,
+) -> None:
+    if native_context:
+        coordinator._persist_bond_flags(established=True, context=build_bond_context(_evidence(path, True)))
+    else:
+        hass.config_entries.async_update_entry(coordinator.entry, data={
+            **coordinator.entry.data, CONF_BLE_BOND_ATTEMPTED_SOURCE: path.source,
+        })
+        coordinator._persist_bond_flags(established=True)
+    coordinator._client = None
+    coordinator._max_retries = 1
+    coordinator._retry_base_delay = 0
+    coordinator._connection_timeout = timeout
+    device = BLEDevice(TEST_ADDRESS, TEST_NAME, {"source": path.source})
+    adapter = AdapterSelectionResult(device, path.source, -50, True, [path.source])
+    controller = make_controller_mock(supports_position_feedback=False)
+
+    async def connect(*args, **kwargs):
+        assert kwargs["timeout"] == timeout and kwargs["pair"] is False
+        await asyncio.sleep(0.02)  # Longer than the compressed first-onboarding budget.
+        return mock_bleak_client
+
+    with patch(f"{_MODULE}.VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS", 0.01), patch(
+        f"{_MODULE}.select_adapter", return_value=adapter
+    ), patch(f"{_MODULE}.establish_connection", side_effect=connect), patch(
+        f"{_MODULE}.client_source", return_value=path.source
+    ), patch(f"{_MODULE}.async_path_for_source", return_value=path), patch(
+        f"{_MODULE}.async_verify_native_bond", return_value=_evidence(path, native_context)
+    ), patch(_HELPER, new_callable=AsyncMock) as info, patch(
+        f"{_MODULE}.create_controller", return_value=controller
+    ), patch(f"{_MODULE}.close_stale_connections_by_address", new_callable=AsyncMock), patch.object(
+        coordinator, "_async_pair_on_live_link", wraps=coordinator._async_pair_on_live_link
+    ) as pairing:
+        assert await coordinator.async_connect()
+    assert pairing.await_args.kwargs["onboarding_deadline"] < asyncio.get_running_loop().time()
+    info.assert_not_awaited()
+    mock_bleak_client.pair.assert_not_awaited()
+    assert coordinator.client is mock_bleak_client
+    await coordinator.async_shutdown()
+
+
+@pytest.mark.parametrize("native_context", [True, False])
+async def test_established_selected_path_reroute_retains_original_onboarding_deadline(
+    coordinator: AdjustableBedCoordinator, hass: HomeAssistant,
+    mock_coordinator_connected, mock_bleak_client, native_context,
+) -> None:
+    if native_context:
+        coordinator._persist_bond_flags(established=True, context=build_bond_context(_evidence(_LOCAL, True)))
+    else:
+        hass.config_entries.async_update_entry(coordinator.entry, data={
+            **coordinator.entry.data, CONF_BLE_BOND_ATTEMPTED_SOURCE: _LOCAL.source,
+        })
+        coordinator._persist_bond_flags(established=True)
+    coordinator._client = None
+    coordinator._max_retries = 1
+    coordinator._retry_base_delay = 0
+    device = BLEDevice(TEST_ADDRESS, TEST_NAME, {"source": _LOCAL.source})
+    adapter = AdapterSelectionResult(device, _LOCAL.source, -50, True, [_LOCAL.source])
+    connection_started = 0.0
+
+    async def connect(*args, **kwargs):
+        nonlocal connection_started
+        connection_started = asyncio.get_running_loop().time()
+        await asyncio.sleep(0.02)
+        return mock_bleak_client
+
+    with patch(f"{_MODULE}.VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS", 0.01), patch(
+        f"{_MODULE}.select_adapter", return_value=adapter
+    ), patch(f"{_MODULE}.establish_connection", side_effect=connect), patch(
+        f"{_MODULE}.client_source", return_value=_PROXY.source
+    ), patch(f"{_MODULE}.async_path_for_source", return_value=_PROXY), patch(
+        f"{_MODULE}.async_verify_native_bond", return_value=_evidence(_PROXY)
+    ), patch(_HELPER, new_callable=AsyncMock) as info, patch(
+        f"{_MODULE}.close_stale_connections_by_address", new_callable=AsyncMock
+    ), patch.object(
+        coordinator, "_async_pair_on_live_link", wraps=coordinator._async_pair_on_live_link
+    ) as pairing:
+        assert not await coordinator.async_connect()
+    deadline = pairing.await_args.kwargs["onboarding_deadline"]
+    assert 0.005 < deadline - connection_started <= 0.01
+    assert coordinator._connection_path == _PROXY
+    info.assert_not_awaited()
+    mock_bleak_client.pair.assert_not_awaited()
+    assert mock_bleak_client.disconnect.await_count >= 1
+    assert coordinator.client is None
+
+
+@pytest.mark.parametrize("error", ["native_bond_no_bond", "native_bond_not_stored"])
+@pytest.mark.parametrize("native_context", [True, False])
+async def test_readable_native_absence_replaces_saved_same_source_marker(
+    coordinator: AdjustableBedCoordinator, hass: HomeAssistant, error: str, native_context: bool,
+) -> None:
+    if native_context:
+        coordinator._persist_bond_flags(established=True, context=build_bond_context(_evidence(_LOCAL, True)))
+    else:
+        hass.config_entries.async_update_entry(coordinator.entry, data={
+            **coordinator.entry.data, CONF_BLE_BOND_ATTEMPTED_SOURCE: _LOCAL.source,
+        })
+        coordinator._persist_bond_flags(established=True)
+    client = coordinator.client
+    absent = replace(_evidence(_LOCAL), status=BondVerificationStatus.NATIVE_ABSENT, error=error)
+
+    async def info(*args, **kwargs):
+        assert coordinator._ble_bond_established is False
+        assert not coordinator._unverified_marker_applies(_LOCAL.source)
+        return _METADATA
+
+    with patch(f"{_MODULE}.async_verify_native_bond", side_effect=[absent, _evidence(_LOCAL, True)]), patch(
+        _HELPER, side_effect=info
+    ) as metadata:
+        assert await coordinator._async_pair_on_live_link({})
+    metadata.assert_awaited_once()
+    client.pair.assert_awaited_once()
+    assert coordinator.entry.data[CONF_BLE_BOND_ESTABLISHED] is True
+    assert CONF_BLE_BOND_ATTEMPTED_SOURCE not in coordinator.entry.data
+    assert coordinator.entry.data[CONF_BLE_BOND_CONTEXT]["source"] == _LOCAL.source
+    assert coordinator.last_bond_evidence.proves_bond
+
+
+async def test_readable_absence_after_slow_reconnect_does_not_reset_onboarding_budget(
+    coordinator: AdjustableBedCoordinator, mock_coordinator_connected, mock_bleak_client,
+) -> None:
+    coordinator._persist_bond_flags(established=True, context=build_bond_context(_evidence(_LOCAL, True)))
+    coordinator._client = None
+    coordinator._max_retries = 1
+    coordinator._retry_base_delay = 0
+    device = BLEDevice(TEST_ADDRESS, TEST_NAME, {"source": _LOCAL.source})
+    adapter = AdapterSelectionResult(device, _LOCAL.source, -50, True, [_LOCAL.source])
+
+    async def connect(*args, **kwargs):
+        await asyncio.sleep(0.02)
+        return mock_bleak_client
+
+    with patch(f"{_MODULE}.VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS", 0.01), patch(
+        f"{_MODULE}.select_adapter", return_value=adapter
+    ), patch(f"{_MODULE}.establish_connection", side_effect=connect), patch(
+        f"{_MODULE}.client_source", return_value=_LOCAL.source
+    ), patch(f"{_MODULE}.async_path_for_source", return_value=_LOCAL), patch(
+        f"{_MODULE}.async_verify_native_bond", return_value=replace(
+            _evidence(_LOCAL), status=BondVerificationStatus.NATIVE_ABSENT, error="native_bond_no_bond"
+        )
+    ), patch(_HELPER, new_callable=AsyncMock) as info, patch(
+        f"{_MODULE}.close_stale_connections_by_address", new_callable=AsyncMock
+    ):
+        assert not await coordinator.async_connect()
+    info.assert_not_awaited()
+    mock_bleak_client.pair.assert_not_awaited()
+    assert mock_bleak_client.disconnect.await_count >= 1
+    assert coordinator.client is None
+    assert coordinator.entry.data[CONF_BLE_BOND_ESTABLISHED] is False

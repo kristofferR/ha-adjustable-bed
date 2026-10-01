@@ -38,7 +38,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 from .ble_auth import is_ble_authentication_error
-from .bluetooth_bond import async_read_local_bonds, select_local_bond
+from .bluetooth_bond import BondSelectionStatus, async_read_local_bonds, select_local_bond
 from .bluetooth_transport import ConnectionPath, TransportClass
 from .const import (
     BED_TYPE_OKIMAT,
@@ -64,6 +64,7 @@ class BondVerificationStatus(StrEnum):
 
     VERIFIED = "verified"
     NATIVE_OS_STATE = "native_os_state"
+    NATIVE_ABSENT = "native_absent"
     AUTH_FAILED = "auth_failed"
     INCONCLUSIVE = "inconclusive"
     UNSUPPORTED = "unsupported"
@@ -141,6 +142,15 @@ class BondEvidence:
             and self.owner.is_host
         )
 
+    @property
+    def proves_native_bond_absent(self) -> bool:
+        """Distinguish readable absence from an unavailable native inventory."""
+        return (
+            self.kind is BondEvidenceKind.NATIVE_OS_STATE
+            and self.status is BondVerificationStatus.NATIVE_ABSENT
+            and self.owner.is_host
+        )
+
     def as_dict(self) -> dict[str, Any]:
         """Return a JSON-friendly view for diagnostics."""
         return {
@@ -203,7 +213,10 @@ async def async_verify_native_bond(
     record = selection.record
     if not selection.is_exact or record is None:
         return result(
-            BondVerificationStatus.INCONCLUSIVE, f"native_bond_{selection.status}"
+            BondVerificationStatus.NATIVE_ABSENT
+            if selection.status is BondSelectionStatus.NO_BOND
+            else BondVerificationStatus.INCONCLUSIVE,
+            f"native_bond_{selection.status}",
         )
 
     # The shared selector also serves legacy removal flows with looser fallback
@@ -221,7 +234,7 @@ async def async_verify_native_bond(
     ):
         return result(BondVerificationStatus.INCONCLUSIVE, "native_identity_mismatch")
     if not record.bonded:
-        return result(BondVerificationStatus.INCONCLUSIVE, "native_bond_not_stored")
+        return result(BondVerificationStatus.NATIVE_ABSENT, "native_bond_not_stored")
 
     return result(BondVerificationStatus.NATIVE_OS_STATE)
 

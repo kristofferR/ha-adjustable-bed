@@ -151,6 +151,7 @@ class TestNativeBondVerification:
         assert evidence.kind is BondEvidenceKind.NATIVE_OS_STATE
         assert evidence.owner == BondOwner.from_path(path)
         assert evidence.proves_bond
+        assert not evidence.proves_native_bond_absent
         assert not evidence.proves_stale_host_bond
         inventory_read.assert_awaited_once_with(_TARGET)
         context = build_bond_context(evidence)
@@ -167,6 +168,7 @@ class TestNativeBondVerification:
     ) -> None:
         evidence = await async_verify_native_bond(_TARGET, path=path, operation="pairing")
         assert evidence.status is BondVerificationStatus.UNSUPPORTED
+        assert not evidence.proves_native_bond_absent
         assert evidence.kind is BondEvidenceKind.NATIVE_OS_STATE
         assert not evidence.proves_bond
         assert not evidence.proves_stale_host_bond
@@ -225,22 +227,25 @@ class TestNativeBondVerification:
         assert evidence.owner.source == _NATIVE_PATH.source
 
     @pytest.mark.parametrize(
-        "inventory",
+        ("inventory", "absent"),
         [
-            LocalBondInventory(BluezReadStatus.UNAVAILABLE, (_NATIVE_RECORD,)),
-            LocalBondInventory(BluezReadStatus.OK),
-            LocalBondInventory(BluezReadStatus.OK, (_NATIVE_RECORD, _NATIVE_RECORD)),
-            LocalBondInventory(BluezReadStatus.OK, (replace(_NATIVE_RECORD, bonded=False),)),
+            (LocalBondInventory(BluezReadStatus.UNAVAILABLE, (_NATIVE_RECORD,)), False),
+            (LocalBondInventory(BluezReadStatus.OK), True),
+            (LocalBondInventory(BluezReadStatus.OK, (_NATIVE_RECORD, _NATIVE_RECORD)), False),
+            (LocalBondInventory(BluezReadStatus.OK, (replace(_NATIVE_RECORD, bonded=False),)), True),
         ],
     )
     async def test_unreadable_absent_duplicate_and_negative_state_are_not_proof(
-        self, inventory_read: AsyncMock, inventory: LocalBondInventory
+        self, inventory_read: AsyncMock, inventory: LocalBondInventory, absent: bool
     ) -> None:
         inventory_read.return_value = inventory
         evidence = await async_verify_native_bond(_TARGET, path=_NATIVE_PATH, operation="pairing")
-        assert evidence.status is BondVerificationStatus.INCONCLUSIVE
+        assert evidence.status is (
+            BondVerificationStatus.NATIVE_ABSENT if absent else BondVerificationStatus.INCONCLUSIVE
+        )
         assert not evidence.proves_bond
         assert not evidence.proves_stale_host_bond
+        assert evidence.proves_native_bond_absent is absent
 
     async def test_paired_without_bonded_is_not_positive_stored_bond_proof(
         self, inventory_read: AsyncMock
@@ -249,8 +254,9 @@ class TestNativeBondVerification:
         assert transient.has_bond  # The shared legacy inventory semantics remain unchanged.
         inventory_read.return_value = LocalBondInventory(BluezReadStatus.OK, (transient,))
         evidence = await async_verify_native_bond(_TARGET, path=_NATIVE_PATH, operation="pairing")
-        assert evidence.status is BondVerificationStatus.INCONCLUSIVE
+        assert evidence.status is BondVerificationStatus.NATIVE_ABSENT
         assert evidence.error == "native_bond_not_stored"
+        assert evidence.proves_native_bond_absent
         assert not evidence.proves_bond
         assert not evidence.proves_stale_host_bond
 
@@ -261,6 +267,7 @@ class TestNativeBondVerification:
         evidence = await async_verify_native_bond(_TARGET, path=_NATIVE_PATH, operation="pairing")
         assert evidence.status is BondVerificationStatus.INCONCLUSIVE
         assert not evidence.proves_stale_host_bond
+        assert not evidence.proves_native_bond_absent
         inventory_read.side_effect = asyncio.CancelledError
         with pytest.raises(asyncio.CancelledError):
             await async_verify_native_bond(_TARGET, path=_NATIVE_PATH, operation="pairing")

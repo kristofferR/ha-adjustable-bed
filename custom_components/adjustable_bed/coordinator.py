@@ -1878,13 +1878,23 @@ class AdjustableBedCoordinator:
         deadline = onboarding_deadline
         if deadline is None:
             deadline = asyncio.get_running_loop().time() + VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS
-        async with asyncio.timeout_at(deadline):
+        source = self._connection_path.source if self._connection_path is not None else None
+        retained_context = (
+            not force_pairing and self._ble_bond_established
+            and self._unverified_marker_applies(source)
+        )
+        if not retained_context and deadline <= asyncio.get_running_loop().time():
+            raise TimeoutError("App onboarding budget expired during connection")
+        observation_deadline = (
+            asyncio.get_running_loop().time() + VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS
+            if retained_context else deadline
+        )
+        async with asyncio.timeout_at(observation_deadline) as budget:
             if await self._async_observe_native_bond(pairing_details):
                 pairing_details["native_pairing"] = "already_stored"
                 pairing_details["requested"] = False
                 self._attempt_used_pairing = False
                 return True
-            source = self._connection_path.source if self._connection_path is not None else None
             if (
                 not force_pairing and self._ble_bond_established and source
                 and self._unverified_marker_applies(source)
@@ -1897,6 +1907,9 @@ class AdjustableBedCoordinator:
             # Defer the entry write until the terminal observation, so its
             # one-shot internal-update guard covers the whole transition.
             self._ble_bond_established = False
+            if deadline <= asyncio.get_running_loop().time():
+                raise TimeoutError("App onboarding budget expired during connection")
+            budget.reschedule(deadline)
             if not force_pairing and self._pairing_supported is False:
                 pairing_details["native_pairing"] = "unsupported_link_retained"
                 self._persist_bond_flags(established=False)
@@ -2670,6 +2683,12 @@ class AdjustableBedCoordinator:
         """
         attempted = self.entry.data.get(CONF_BLE_BOND_ATTEMPTED_SOURCE)
         if self._bed_type == BED_TYPE_VIBRADORM_APP:
+            evidence = self._last_bond_evidence
+            if (
+                evidence is not None and evidence.proves_native_bond_absent
+                and source == evidence.owner.source
+            ):
+                return False
             owner = bond_owner_from_entry(self.entry.data)
             return bool(source) and (
                 source == attempted
@@ -3291,9 +3310,15 @@ class AdjustableBedCoordinator:
                         asyncio.get_running_loop().time() + VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS
                         if self._bed_type == BED_TYPE_VIBRADORM_APP else None
                     )
+                    connection_deadline = (
+                        None if self._bed_type == BED_TYPE_VIBRADORM_APP
+                        and self._ble_bond_established
+                        and self._unverified_marker_applies(adapter_result.source)
+                        else onboarding_deadline
+                    )
                     try:
                         await self._async_cancel_furnimove_bond_request()
-                        async with asyncio.timeout_at(onboarding_deadline):
+                        async with asyncio.timeout_at(connection_deadline):
                             self._client = await establish_connection(
                                 BleakClient,
                                 device,

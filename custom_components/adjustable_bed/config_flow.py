@@ -4921,16 +4921,22 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
     def _create_selected_app_entry(self, *, title: str, data: dict[str, Any]) -> ConfigFlowResult:
         """Retain first-selection intent only in this running Home Assistant session."""
-        if data.get(CONF_BED_TYPE) == BED_TYPE_VIBRADORM_APP and not data.get(CONF_VIBRADORM_RESTORED, False):
-            from .vibradorm_app_state import mark_vibradorm_app_selection
-
-            control = data[CONF_VIBRADORM_CONTROL_TYPE]
-            mark_vibradorm_app_selection(
-                self.hass, data[CONF_ADDRESS],
-                app_profile=data[CONF_VIBRADORM_APP_PROFILE],
-                control_type="other" if control == "other" else int(control),
-                remembered_floor_default=data.get(CONF_VIBRADORM_FLOOR_DEFAULT, 6),
+        if data.get(CONF_BED_TYPE) == BED_TYPE_VIBRADORM_APP:
+            from .vibradorm_app_state import (
+                clear_vibradorm_app_session_intent,
+                mark_vibradorm_app_selection,
             )
+
+            if data.get(CONF_VIBRADORM_RESTORED, False):
+                clear_vibradorm_app_session_intent(self.hass, data[CONF_ADDRESS])
+            else:
+                control = data[CONF_VIBRADORM_CONTROL_TYPE]
+                mark_vibradorm_app_selection(
+                    self.hass, data[CONF_ADDRESS],
+                    app_profile=data[CONF_VIBRADORM_APP_PROFILE],
+                    control_type="other" if control == "other" else int(control),
+                    remembered_floor_default=data.get(CONF_VIBRADORM_FLOOR_DEFAULT, 6),
+                )
         return self.async_create_entry(title=title, data=data)
 
     async def _finish_with_verify(self, entry_data: dict[str, Any], title: str) -> ConfigFlowResult:
@@ -6684,11 +6690,14 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 bed_type == BED_TYPE_VIBRADORM_APP
                 or self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_VIBRADORM_APP
             ):
-                profile_changed = any(
+                selection_changed = any(
                     new_data.get(key) != self.config_entry.data.get(key)
                     for key in (CONF_BED_TYPE, CONF_VIBRADORM_APP_PROFILE, CONF_VIBRADORM_CONTROL_TYPE)
+                ) or (
+                    new_data.get(CONF_VIBRADORM_RESTORED, False)
+                    != self.config_entry.data.get(CONF_VIBRADORM_RESTORED, False)
                 )
-                if profile_changed:
+                if selection_changed:
                     from .vibradorm_app_state import (
                         clear_vibradorm_app_session_intent,
                         mark_vibradorm_app_selection,
