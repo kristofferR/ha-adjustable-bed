@@ -5555,6 +5555,7 @@ class AdjustableBedCoordinator:
         raise_on_cancel: bool,
     ) -> T | None:
         """Wait for a controller operation or cancel it when preempted."""
+        caller_task = asyncio.current_task()
         cancel_wait_task = asyncio.create_task(cancel_event.wait())
         try:
             done, pending = await asyncio.wait(
@@ -5565,8 +5566,11 @@ class AdjustableBedCoordinator:
             for task in pending:
                 task.cancel()
             for task in pending:
-                with contextlib.suppress(asyncio.CancelledError):
+                try:
                     await task
+                except asyncio.CancelledError:
+                    if caller_task is not None and caller_task.cancelling():
+                        raise
 
             if cancel_wait_task in done:
                 _LOGGER.debug("Controller %s cancelled during execution", operation_name)
@@ -5575,19 +5579,26 @@ class AdjustableBedCoordinator:
                 try:
                     await operation_task
                 except asyncio.CancelledError:
-                    pass
+                    if caller_task is not None and caller_task.cancelling():
+                        raise
                 if raise_on_cancel:
                     raise asyncio.CancelledError
                 return None
 
             return operation_task.result()
         finally:
+            # Cancel both children before draining either, even if the caller exits.
+            for task in (operation_task, cancel_wait_task):
+                if not task.done():
+                    task.cancel()
             for task in (operation_task, cancel_wait_task):
                 if task.done():
                     continue
-                task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
+                try:
                     await task
+                except asyncio.CancelledError:
+                    if caller_task is not None and caller_task.cancelling():
+                        raise
 
     async def _async_execute_controller_operation(
         self,
