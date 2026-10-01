@@ -4421,9 +4421,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 detail=str(err) or err.__class__.__name__,
             )
 
-        if evidence.status is BondVerificationStatus.AUTH_FAILED:
-            # The link came up but is still unauthenticated, which is the one
-            # outcome that says the bond really did not form.
+        if (
+            evidence.status is BondVerificationStatus.AUTH_FAILED
+            or evidence.proves_native_bond_absent
+        ):
+            # Authentication failure or exact host absence contradicts a
+            # successful bond, even when the pairing RPC returned normally.
             return OperationResult(
                 outcome=OperationOutcome.BOND_VERIFICATION_FAILED,
                 detail=evidence.error,
@@ -4879,6 +4882,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 if (
                     pair_after_service_discovery
                     and pair_error is not None
+                    and not evidence.proves_native_bond_absent
                     and evidence.status
                     not in (
                         BondVerificationStatus.VERIFIED,

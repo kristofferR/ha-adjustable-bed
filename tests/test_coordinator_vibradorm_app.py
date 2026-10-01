@@ -267,6 +267,37 @@ async def test_proxy_rpc_success_is_only_source_scoped_unverified_attempt(
     assert not coordinator._unverified_marker_applies(_LOCAL.source)
 
 
+@pytest.mark.parametrize("error", ["native_bond_no_bond", "native_bond_not_stored"])
+@pytest.mark.parametrize("previous_native_bond", [False, True])
+async def test_successful_pair_rpc_with_readable_absence_cannot_establish_a_marker(
+    coordinator: AdjustableBedCoordinator, error: str, previous_native_bond: bool,
+) -> None:
+    if previous_native_bond:
+        coordinator._persist_bond_flags(
+            established=True, context=build_bond_context(_evidence(_LOCAL, True)),
+        )
+    absent = replace(_evidence(_LOCAL), status=BondVerificationStatus.NATIVE_ABSENT, error=error)
+    details: dict = {}
+    with patch(f"{_MODULE}.async_verify_native_bond", return_value=absent), patch(
+        _HELPER, return_value=_METADATA,
+    ) as info, patch.object(coordinator, "_async_raise_pairing_issue", new_callable=AsyncMock) as issue:
+        assert not await coordinator._async_pair_on_live_link(details, force_pairing=True)
+        assert not coordinator._ble_bond_established
+        assert not coordinator.entry.data.get(CONF_BLE_BOND_ESTABLISHED, False)
+        assert CONF_BLE_BOND_ATTEMPTED_SOURCE not in coordinator.entry.data
+        assert details["native_pairing"] == "not_stored"
+        assert coordinator._last_bond_verification["status"] == "native_absent"
+        assert coordinator.last_bond_evidence.proves_native_bond_absent
+        assert not coordinator.last_bond_evidence.proves_bond
+        assert coordinator.entry.data[CONF_VIBRADORM_APP_METADATA]["model"] == "model"
+        # The next unforced attempt must run information and pairing again.
+        assert not await coordinator._async_pair_on_live_link({})
+    assert info.await_count == 2
+    assert coordinator.client.pair.await_count == 2
+    assert issue.await_count == 2
+    coordinator.client.disconnect.assert_not_called()
+
+
 @pytest.mark.parametrize("error", [NotImplementedError(), BleakError("pairing rejected")])
 async def test_failed_native_pair_keeps_live_link_without_proof(
     coordinator: AdjustableBedCoordinator, error: Exception

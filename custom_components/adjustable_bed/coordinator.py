@@ -1962,6 +1962,14 @@ class AdjustableBedCoordinator:
             if await self._async_observe_native_bond(pairing_details, metadata=stored_metadata):
                 pairing_details["native_pairing"] = "stored"
                 return True
+            if (
+                self._last_bond_evidence is not None
+                and self._last_bond_evidence.proves_native_bond_absent
+            ):
+                pairing_details["native_pairing"] = "not_stored"
+                self._persist_bond_flags(established=False, profile_metadata=stored_metadata)
+                await self._async_raise_pairing_issue()
+                return False
             # A successful RPC is only an attempted marker, scoped to this live
             # source. It avoids proxy re-pair storms without inventing proof.
             if source and source != "unknown":

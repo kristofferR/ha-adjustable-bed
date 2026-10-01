@@ -15,6 +15,11 @@ from custom_components.adjustable_bed.beds.vibradorm_app import (
     VibradormAppController,
     VibradormAppMetadata,
 )
+from custom_components.adjustable_bed.bluetooth_bond import (
+    BluezReadStatus,
+    LocalBondInventory,
+    LocalBondRecord,
+)
 from custom_components.adjustable_bed.bluetooth_transport import (
     ConnectionPath,
     PathPrediction,
@@ -412,6 +417,104 @@ async def test_information_precedes_native_pair_and_shares_connection_deadline(h
     assert events[:2] == ["connect", "information"]
     assert ("pair" in events) == (failure not in {"information", "cancel"})
     client.disconnect.assert_awaited_once()
+
+
+@pytest.mark.parametrize("observation,mode,rpc_error", [
+    (observation, mode, rpc_error)
+    for observation in ("empty", "not_stored", "unavailable", "ambiguous", "proxy")
+    for mode, rpc_error in (("new", False), ("verify_existing", False))
+] + [(observation, "new", True) for observation in ("empty", "not_stored")])
+async def test_setup_native_post_pair_observation_controls_result_and_marker(
+    hass, observation, mode, rpc_error,
+):
+    """Judge real native inventory after the RPC, then persist only a credible attempt."""
+    flow = AdjustableBedConfigFlow()
+    flow.context = {}
+    flow.hass = hass
+    flow._manual_data = app_data("werkmeister", "7")
+    flow._pairing_mode = mode
+    path = ConnectionPath(
+        SOURCE,
+        transport=TransportClass.PROXY if observation == "proxy" else TransportClass.LOCAL,
+        adapter=None if observation == "proxy" else "hci0",
+    )
+    record = LocalBondRecord(
+        address=ADDRESS,
+        device_path="/org/bluez/hci0/dev_11_22_33_44_55_66",
+        adapter_path="/org/bluez/hci0",
+        adapter_address=SOURCE,
+        paired=True,
+        bonded=observation != "not_stored",
+    )
+    inventory = LocalBondInventory(
+        BluezReadStatus.UNAVAILABLE if observation == "unavailable" else BluezReadStatus.OK,
+        () if observation in {"empty", "unavailable", "proxy"} else
+        (record, record) if observation == "ambiguous" else (record,),
+    )
+    read = AsyncMock(side_effect=[LocalBondInventory(BluezReadStatus.UNAVAILABLE), inventory])
+    client = MagicMock(
+        pair=AsyncMock(side_effect=ValueError("pair RPC failed") if rpc_error else None),
+        disconnect=AsyncMock(),
+    )
+    with (
+        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs"),
+        patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=client)),
+        patch(PREFIX + "async_predict_path", return_value=PathPrediction(path, (path,))),
+        patch(PREFIX + "client_source", return_value=SOURCE),
+        patch(PREFIX + "async_path_for_source", return_value=path),
+        patch("custom_components.adjustable_bed.bond_verification.async_read_local_bonds", new=read),
+        patch(
+            "custom_components.adjustable_bed.beds.vibradorm_app.async_prepare_vibradorm_app_pairing",
+            new=AsyncMock(return_value=VibradormAppMetadata("model", "firmware", "software", "article")),
+        ) as information,
+    ):
+        operation = await flow._async_pair_and_classify(
+            ADDRESS, mode, BLEDevice(ADDRESS, "Bed", {}),
+        )
+    absent = observation in {"empty", "not_stored"}
+    expected = (
+        OperationOutcome.BOND_VERIFICATION_FAILED if absent else
+        OperationOutcome.BOND_VERIFICATION_INCONCLUSIVE if mode == "verify_existing" else
+        OperationOutcome.SUCCESS
+    )
+    assert operation.outcome is expected
+    assert isinstance(operation.payload, BondEvidence)
+    assert operation.payload.kind is BondEvidenceKind.NATIVE_OS_STATE
+    assert operation.payload.owner.source == SOURCE
+    assert operation.payload.operation == (
+        "setup_native_pairing" if mode == "new" else "verify_existing_native_bond"
+    )
+    assert operation.payload.status is (
+        BondVerificationStatus.NATIVE_ABSENT if absent else
+        BondVerificationStatus.UNSUPPORTED if observation == "proxy" else
+        BondVerificationStatus.INCONCLUSIVE
+    )
+    assert operation.payload.proves_native_bond_absent is absent
+    assert not operation.payload.proves_bond
+    if observation == "proxy":
+        read.assert_not_awaited()
+    else:
+        assert read.await_count == 2
+    if mode == "new":
+        client.pair.assert_awaited_once()
+        information.assert_awaited_once()
+    else:
+        client.pair.assert_not_awaited()
+        information.assert_not_awaited()
+    client.disconnect.assert_awaited_once()
+    assert flow._operation_client is None
+    flow.operation.result = operation
+    flow._pairing_result_shown = True
+    result = await flow.async_step_pairing_result({"action": "finish"})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    data = result["data"]
+    assert const.CONF_BLE_BOND_CONTEXT not in data
+    if expected is OperationOutcome.SUCCESS:
+        assert data[const.CONF_BLE_BOND_ESTABLISHED] is True
+        assert data[const.CONF_BLE_BOND_ATTEMPTED_SOURCE] == SOURCE
+    else:
+        assert const.CONF_BLE_BOND_ESTABLISHED not in data
+        assert const.CONF_BLE_BOND_ATTEMPTED_SOURCE not in data
 
 
 @pytest.mark.parametrize("succeeded", [False, True])
