@@ -71,6 +71,10 @@ or position polls. Explicit information refresh reads only three DIS fields.
 Disconnect still runs if setup close fails or is cancelled. Cancellation
 propagates, and a failed or interrupted disconnect retains the live client
 owner for cleanup rather than dropping its tracking or runtime pointer.
+The physical BLE connection remains visible until it actually closes. A
+retained setup or failed-startup link cannot serve commands or be replaced by
+retry/reconnect. Sequential paired verification must release it before opening
+the other side. Successful observed teardown restores normal connection admission.
 
 Onboarding connection timeout is 5 seconds. HA bounds the complete operation
 with a separate 45-second resource budget, not a device pairing timing claim.

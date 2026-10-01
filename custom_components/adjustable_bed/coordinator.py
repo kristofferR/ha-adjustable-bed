@@ -466,6 +466,7 @@ class AdjustableBedCoordinator:
         self._cb24_bed_selection: int = entry.data.get(CONF_CB24_BED_SELECTION, 0x00)
 
         self._client: BleakClient | None = None
+        self._vmat_unready_client: BleakClient | None = None
         self._controller: BedController | None = None
         # A client-free controller minted from config purely to read this bed's
         # CAPABILITIES (which entities to expose) when no live controller exists.
@@ -1205,6 +1206,11 @@ class AdjustableBedCoordinator:
         """Return whether we are currently connected to the bed."""
         return self._client is not None and self._client.is_connected
 
+    def _vmat_unready_link_pending(self) -> bool:
+        """Keep an unclosed setup/failed-startup link owned but unusable."""
+        client = self._vmat_unready_client
+        return client is not None and client.is_connected
+
     @property
     def is_connecting(self) -> bool:
         """Return whether we are currently connecting to the bed."""
@@ -1763,6 +1769,8 @@ class AdjustableBedCoordinator:
                     finally:
                         if self._client is client and (disconnected or not client.is_connected):
                             self._client = None
+                            if self._vmat_unready_client is client:
+                                self._vmat_unready_client = None
                         self._intentional_disconnect = False
         advisory = grants_one_connection_per_pairing_window(self._bed_type, self._protocol_variant)
         try:
@@ -1980,6 +1988,7 @@ class AdjustableBedCoordinator:
                 raise ValueError("Invalid retained Vibradorm control type")
             if self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat":
                 pairing_details["vmat_setup_started"] = True
+                self._vmat_unready_client = client
             metadata = await async_prepare_vibradorm_app_pairing(
                 client, self.entry.data[CONF_VIBRADORM_APP_PROFILE],
                 control_type,
@@ -2937,7 +2946,7 @@ class AdjustableBedCoordinator:
     async def _async_cleanup_failed_connection(self) -> None:
         """Release a failed-attempt client without scheduling auto-reconnect."""
         await self._async_cancel_furnimove_bond_request()
-        client = self._client
+        client = self._client or self._vmat_unready_client
         if client is None:
             return
 
@@ -2959,12 +2968,20 @@ class AdjustableBedCoordinator:
                 type(disconnect_err).__name__,
             )
         finally:
-            self._client = None
+            if self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat" and client.is_connected:
+                self._client = client
+                self._vmat_unready_client = client
+            else:
+                self._client = None
+                if self._vmat_unready_client is client:
+                    self._vmat_unready_client = None
             self._controller = None
             self._intentional_disconnect = False
 
     async def _async_connect_locked(self, reset_timer: bool = True) -> bool:
         """Allow automatic auth recovery before asking the user to re-pair."""
+        if self._shutting_down and self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat":
+            return False
         if self._pairing_transfer_active:
             _LOGGER.debug(
                 "Skipping connection to %s while ownership transfers to a paired entry",
@@ -3007,6 +3024,13 @@ class AdjustableBedCoordinator:
         # Clear any prior manual/idle disconnect marker before a fresh connect attempt.
         self._intentional_disconnect = False
 
+        if self._vmat_unready_client is not None and not self._vmat_unready_client.is_connected:
+            self._vmat_unready_client = None
+        if self._vmat_unready_link_pending():
+            await self._async_cleanup_failed_connection()
+            if self._vmat_unready_link_pending():
+                return False
+
         if self._client is not None and self._client.is_connected:
             if self._controller is not None:
                 _LOGGER.debug("Already connected to %s, reusing connection", self._address)
@@ -3022,6 +3046,8 @@ class AdjustableBedCoordinator:
                 self._address,
             )
             await self._async_cleanup_failed_connection()
+            if self._vmat_unready_link_pending():
+                return False
 
         # Routine reconnects after an intentional/idle disconnect are expected for
         # non-persistent beds and shouldn't spam the log. Only the first successful
@@ -3054,6 +3080,8 @@ class AdjustableBedCoordinator:
         attempt = 0
         protocol_correction_pairing_retry_reserved = False
         while attempt < attempt_limit:
+            if self._vmat_unready_link_pending():
+                break
             attempt_index = attempt
             attempt += 1
             attempt_number = attempt_index + 1
@@ -4209,6 +4237,10 @@ class AdjustableBedCoordinator:
 
     def _on_disconnect(self, client: BleakClient) -> None:
         """Handle disconnection callback."""
+        if client is self._vmat_unready_client:
+            if client.is_connected:
+                return
+            self._vmat_unready_client = None
         # Ignore stale disconnect callbacks from old clients
         if client is not self._client:
             _LOGGER.debug(
@@ -4255,6 +4287,8 @@ class AdjustableBedCoordinator:
             )
             self._client = None
             self._controller = None
+            if self._vmat_unready_client is client:
+                self._vmat_unready_client = None
             # Keep _position_data for last known state; entity availability handles offline
             # Flag is reset in _async_connect_locked when reconnecting
             self._notify_connection_state_change(False)
@@ -4979,6 +5013,8 @@ class AdjustableBedCoordinator:
                 return False
             self._client = None
             self._controller = None
+            if self._vmat_unready_client is client:
+                self._vmat_unready_client = None
             # Update disconnect timestamp and notify state change (don't rely on
             # _on_disconnect, which may not fire after a clean disconnect).
             self._last_disconnected = datetime.now(UTC)
@@ -5086,6 +5122,10 @@ class AdjustableBedCoordinator:
     async def async_ensure_connected(self, reset_timer: bool = True) -> bool:
         """Ensure we are connected to the bed."""
         async with self._lock:
+            if self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat" and (
+                self._shutting_down or self._vmat_unready_link_pending() or self._controller is None
+            ):
+                return await self._async_connect_locked(reset_timer=reset_timer)
             if self._client is not None and self._client.is_connected:
                 _LOGGER.debug("Connection check: already connected to %s", self._address)
                 if reset_timer:

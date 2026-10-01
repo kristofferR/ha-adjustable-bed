@@ -2,14 +2,16 @@
 
 import asyncio
 from contextlib import nullcontext
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.adapter import AdapterSelectionResult
 from custom_components.adjustable_bed.bluetooth_transport import ConnectionPath, TransportClass
 from custom_components.adjustable_bed.bond_verification import (
     BondEvidence,
@@ -145,3 +147,158 @@ async def test_runtime_first_bond_always_closes_setup_and_unproven_rpc_is_not_a_
         assert details["native_pairing"] == "not_stored"
         assert coordinator.last_bond_evidence.proves_native_bond_absent
     assert entry.data[const.CONF_VIBRADORM_APP_METADATA]["revision_string"] == "A"
+
+
+@pytest.mark.parametrize("disconnect_kind", ["noop", "error", "cancel", "task_cancel"])
+@pytest.mark.parametrize("max_retries", [1, 3])
+async def test_public_connect_retains_failed_setup_and_denies_reuse_replacement_and_shutdown(hass, disconnect_kind, max_retries):
+    address, source = "11:22:33:44:55:66", "AA:BB:CC:DD:EE:FF"
+    path = ConnectionPath(source, transport=TransportClass.LOCAL, adapter="hci0")
+    data = _vibradorm_app_data({
+        CONF_ADDRESS: address, const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM_APP,
+        const.CONF_VIBRADORM_APP_PROFILE: "vmat",
+    }, {const.CONF_VIBRADORM_VMAT_REMOTE: "07"})
+    entry = MockConfigEntry(domain=const.DOMAIN, data=data)
+    entry.add_to_hass(hass)
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    coordinator._max_retries = max_retries
+    coordinator._retry_base_delay = 0
+    c = make_vmat("07")
+    c.client.pair = AsyncMock()
+    queried = 0
+
+    async def write(char, packet, **kwargs):
+        nonlocal queried
+        if packet == bytes.fromhex("01a7"):
+            return
+        _, expected, prefix, _ = QUERY_STAGES[queried]
+        assert packet == expected
+        c.client.start_notify.call_args.args[1](char, bytearray(prefix + b"A"))
+        queried += 1
+
+    async def disconnect():
+        if disconnect_kind == "error":
+            raise BleakError("disconnect failed")
+        if disconnect_kind == "cancel":
+            raise asyncio.CancelledError
+        if disconnect_kind == "task_cancel":
+            task = asyncio.current_task()
+            assert task is not None
+            task.cancel()
+            await asyncio.sleep(0)
+
+    async def recovered_disconnect():
+        c.client.is_connected = False
+
+    c.client.write_gatt_char.side_effect = write
+    c.client.disconnect = AsyncMock(side_effect=disconnect)
+    unknown = BondEvidence(BondVerificationStatus.INCONCLUSIVE, BondOwner.from_path(path), "native", "now")
+    native = BondEvidence(BondVerificationStatus.NATIVE_OS_STATE, BondOwner.from_path(path), "native", "now", kind=BondEvidenceKind.NATIVE_OS_STATE)
+    device = BLEDevice(address, "Bed", {"source": source})
+    adapter = AdapterSelectionResult(device, source, -50, True, [source])
+    module = "custom_components.adjustable_bed.coordinator."
+    cancels = disconnect_kind in ("cancel", "task_cancel")
+    try:
+        with (
+            patch(module + "select_adapter", return_value=adapter),
+            patch(module + "async_connection_paths", return_value=()),
+            patch(module + "establish_connection", new=AsyncMock(return_value=c.client)) as establish,
+            patch(module + "client_source", return_value=source),
+            patch(module + "async_path_for_source", return_value=path),
+            patch(module + "async_verify_native_bond", new=AsyncMock(side_effect=[unknown, native])) as native_probe,
+            patch(module + "close_stale_connections_by_address", new=AsyncMock()),
+            patch(module + "connection_reachability", return_value=None),
+            patch.object(coordinator, "_async_raise_pairing_issue", new=AsyncMock()),
+        ):
+            with pytest.raises(asyncio.CancelledError) if cancels else nullcontext():
+                assert not await coordinator.async_connect()
+            assert queried == 7
+            establish.assert_awaited_once()
+            assert coordinator.client is c.client
+            assert coordinator.is_connected
+            # A stale callback without observed closure cannot release ownership.
+            coordinator._on_disconnect(c.client)
+            assert coordinator.client is c.client
+            for connect in (coordinator.async_ensure_connected, coordinator.async_connect):
+                with pytest.raises(asyncio.CancelledError) if cancels else nullcontext():
+                    assert not await connect()
+                establish.assert_awaited_once()
+                assert coordinator.client is c.client
+                assert coordinator.is_connected
+            command = AsyncMock()
+            if not cancels:
+                with pytest.raises(ConnectionError):
+                    await coordinator.async_execute_controller_command(command)
+                command.assert_not_awaited()
+                establish.assert_awaited_once()
+                from tests.test_paired_coordinator import RecordingChild, _make
+
+                paired_log = []
+                right = RecordingChild(const.SIDE_RIGHT, paired_log, connected=False)
+                pair = _make(
+                    {const.SIDE_LEFT: coordinator, const.SIDE_RIGHT: right},
+                    connection_mode=const.PAIR_CONNECTION_MODE_SEQUENTIAL,
+                )
+                assert not await pair.async_connect()
+                assert paired_log == []
+                establish.assert_awaited_once()
+            if disconnect_kind == "noop" and max_retries == 1:
+                c.client.disconnect.side_effect = recovered_disconnect
+                assert await coordinator.async_disconnect()
+                assert coordinator._vmat_unready_client is None
+                ordinary = make_vmat("07").client
+
+                async def ordinary_disconnect():
+                    ordinary.is_connected = False
+
+                ordinary.disconnect = AsyncMock(side_effect=ordinary_disconnect)
+                establish.return_value = ordinary
+                native_probe.side_effect = None
+                native_probe.return_value = native
+                restored_command = AsyncMock()
+                await coordinator.async_execute_controller_command(
+                    restored_command, skip_disconnect=True,
+                    read_positions_after_operation=False,
+                )
+                restored_command.assert_awaited_once()
+                assert establish.await_count == 2
+                assert coordinator.client is ordinary
+                assert coordinator.controller is not None
+                assert coordinator._vmat_unready_client is None
+                ordinary.write_gatt_char.assert_not_awaited()
+                assert await coordinator.async_disconnect()
+                return
+            with pytest.raises(asyncio.CancelledError) if cancels else nullcontext():
+                await coordinator.async_shutdown()
+            assert coordinator.client is c.client
+            assert coordinator.is_connected
+            assert not await coordinator.async_ensure_connected()
+            establish.assert_awaited_once()
+    finally:
+        c.client.disconnect.side_effect = recovered_disconnect
+        await coordinator.async_disconnect()
+    assert coordinator.client is None
+    assert coordinator._vmat_unready_client is None
+
+
+@pytest.mark.parametrize("disconnect_kind", ["noop", "error", "cancel"])
+async def test_vmat_half_initialized_link_cannot_be_overwritten_before_observed_close(hass, disconnect_kind):
+    entry = MockConfigEntry(domain=const.DOMAIN, data={
+        CONF_ADDRESS: "11:22:33:44:55:66", const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM_APP,
+        const.CONF_VIBRADORM_APP_PROFILE: "vmat", const.CONF_VIBRADORM_CONTROL_TYPE: "8",
+        const.CONF_VIBRADORM_VMAT_REMOTE: "07",
+    })
+    entry.add_to_hass(hass)
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    coordinator._client = client = MagicMock(is_connected=True)
+    client.disconnect = AsyncMock(side_effect=(BleakError("disconnect failed") if disconnect_kind == "error" else asyncio.CancelledError() if disconnect_kind == "cancel" else None))
+    with patch("custom_components.adjustable_bed.coordinator.establish_connection", new=AsyncMock()) as establish:
+        with pytest.raises(asyncio.CancelledError) if disconnect_kind == "cancel" else nullcontext():
+            assert not await coordinator.async_connect()
+        establish.assert_not_awaited()
+    assert coordinator.client is client
+    assert coordinator.is_connected
+    client.is_connected = False
+    coordinator._on_disconnect(client)
+    assert coordinator.client is None
+    assert coordinator._vmat_unready_client is None

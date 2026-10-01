@@ -132,14 +132,22 @@
         "beds/vibradorm_app.py:stop_notify",
         "coordinator.py:_async_pair_on_live_link",
         "vibradorm_app_state.py:get_vibradorm_app_session_intent",
-        "config_flow.py:_create_selected_app_entry"
+        "config_flow.py:_create_selected_app_entry",
+        "coordinator.py:_vmat_unready_link_pending",
+        "coordinator.py:_async_cleanup_failed_connection",
+        "coordinator.py:_async_connect_attempts_locked",
+        "coordinator.py:_async_disconnect_locked",
+        "coordinator.py:async_ensure_connected",
+        "paired_coordinator.py:async_connect"
       ],
       "executed_proof": [
         "test_vibradorm_vmat.py:test_single_shots_wait_after_success_completion_and_stop_bypasses_delay",
         "test_vibradorm_vmat_setup.py:test_cancel_pending_stage_stops_notifications_without_later_queries",
         "test_vibradorm_vmat.py:test_registered_notifications_are_bound_to_live_role_and_generation",
         "test_vibradorm_vmat_config.py:test_reconnect_retains_all_accessory_intent_but_another_remote_does_not",
-        "test_vibradorm_vmat_config.py:test_selected_vmat_entry_discards_previous_app_selection_intent"
+        "test_vibradorm_vmat_config.py:test_selected_vmat_entry_discards_previous_app_selection_intent",
+        "test_coordinator_vibradorm_vmat.py:test_public_connect_retains_failed_setup_and_denies_reuse_replacement_and_shutdown",
+        "test_coordinator_vibradorm_vmat.py:test_vmat_half_initialized_link_cannot_be_overwritten_before_observed_close"
       ]
     },
     "UI_STATE": {

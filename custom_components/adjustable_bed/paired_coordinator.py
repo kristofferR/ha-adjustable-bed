@@ -1065,6 +1065,8 @@ class PairedBedCoordinator:
             # then release it; commands reconnect the targeted side on demand.
             any_connected = False
             for side, child in items:
+                if not await self._release_other_sides(child):
+                    break
                 try:
                     connected = await child.async_connect()
                 except Exception as err:  # noqa: BLE001 - CancelledError must propagate
