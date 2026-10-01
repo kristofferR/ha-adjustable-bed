@@ -1251,6 +1251,13 @@ class PairedBedCombinedButton(ButtonEntity):
             description.key,
             self._coordinator.name,
         )
+        if description.memory_slot is not None and not description.is_program_button:
+            # Validate every physical slot before dispatching either recall.
+            for child in self._coordinator.children.values():
+                controller = child.capability_controller
+                if controller is None:
+                    raise ValueError(f"Cannot validate memory for unavailable device '{child.name}'")
+                controller.validate_memory_recall(description.memory_slot)
         await self._coordinator.async_execute_controller_command(
             description.press_fn,
             side=SIDE_BOTH,
