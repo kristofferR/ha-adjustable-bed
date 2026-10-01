@@ -6,6 +6,7 @@ import asyncio
 import contextlib
 import inspect
 import logging
+import math
 import random
 import secrets
 import sys
@@ -117,6 +118,7 @@ from .const import (
     BED_TYPE_SOLACE,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
+    BED_TYPE_VMATBASIC,
     BEDS_WITH_POSITION_FEEDBACK,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
@@ -156,6 +158,9 @@ from .const import (
     CONF_VIBRADORM_LIGHT_EXTENSION,
     CONF_VIBRADORM_RESTORED,
     CONF_VIBRADORM_VMAT_REMOTE,
+    CONF_VMATBASIC_FLOOR_LEVEL,
+    CONF_VMATBASIC_FLOOR_MINUTES,
+    CONF_VMATBASIC_PROFILE,
     CONNECTION_PROFILES,
     DEFAULT_BACK_MAX_ANGLE,
     DEFAULT_CONNECTION_PROFILE,
@@ -510,14 +515,18 @@ class AdjustableBedCoordinator:
         self.furnimove_widget_state: tuple[bool, bytes | None, bytes | None] = (False, None, None)
         if self._bed_type == BED_TYPE_FURNIMOVE:
             self._furnimove_state_store = Store(
-                hass, 1, f"{DOMAIN}.furnimove_{self._address.replace(':', '_').lower()}_"
-                f"{entry.data.get(CONF_FURNIMOVE_REMOTE, 'unset')}"
+                hass,
+                1,
+                f"{DOMAIN}.furnimove_{self._address.replace(':', '_').lower()}_"
+                f"{entry.data.get(CONF_FURNIMOVE_REMOTE, 'unset')}",
             )
         self._controller_state_callbacks: set[Callable[[dict[str, Any]], None]] = set()
         self._controller_state_refresh_task: asyncio.Task[None] | None = None
         self._controller_state_refresh_retry_timer: asyncio.TimerHandle | None = None
         self._controller_state_refresh_retry_count = 0
         self._controller_state_refresh_completed = False
+        self._diagnostic_poll_task: asyncio.Task[None] | None = None
+        self._diagnostic_advertisement_task: asyncio.Task[None] | None = None
         self._passive_position_reconciliation_interval_s: float | None = None
         self._passive_position_reconciliation_task: asyncio.Task[None] | None = None
         self._position_hydration_task: asyncio.Task[None] | None = None
@@ -1202,6 +1211,37 @@ class AdjustableBedCoordinator:
             return
         self._begin_internal_entry_update(self._ble_bond_established)
         self._async_persist_config({**self.entry.data, CONF_VIBRADORM_FLOOR_DEFAULT: level})
+
+    def remember_vmatbasic_settings(self, settings: dict[str, int]) -> None:
+        """Persist this physical receiver's requested settings, never measured state."""
+        from .beds.vmatbasic_protocol import integer
+
+        profile = self.entry.data.get(CONF_VMATBASIC_PROFILE)
+        if self._bed_type != BED_TYPE_VMATBASIC or profile not in {"cbi", "xtbox"}:
+            raise ValueError("Floor settings require an explicit V-MAT Basic floor profile")
+        updates: dict[str, int] = {}
+        if "floor_level" in settings:
+            updates[CONF_VMATBASIC_FLOOR_LEVEL] = integer(
+                settings["floor_level"],
+                1 if profile == "xtbox" else 0,
+                6 if profile == "xtbox" else 255,
+            )
+        if "floor_minutes" in settings:
+            updates[CONF_VMATBASIC_FLOOR_MINUTES] = integer(
+                settings["floor_minutes"], 0, 255 if profile == "xtbox" else 1439
+            )
+        if any(self.entry.data.get(key) != value for key, value in updates.items()):
+            self._begin_internal_entry_update(self._ble_bond_established)
+            self._async_persist_config({**self.entry.data, **updates})
+
+    def remember_vmatbasic_name(self, name: str) -> None:
+        """Retain a confirmed GAP write for this exact physical config entry."""
+        if self._bed_type != BED_TYPE_VMATBASIC:
+            raise ValueError("Name persistence requires a V-MAT Basic app profile")
+        if self.entry.data.get(CONF_NAME) != name:
+            self._begin_internal_entry_update(self._ble_bond_established)
+            self._async_persist_config({**self.entry.data, CONF_NAME: name})
+        self._name = name
 
     @property
     def is_connected(self) -> bool:
@@ -3069,9 +3109,9 @@ class AdjustableBedCoordinator:
         connect_log = _LOGGER.info if self._last_connected is None else _LOGGER.debug
 
         attempt_limit = self._max_retries
-        multipath = sum(
-            path.can_connect for path in async_connection_paths(self.hass, self._address)
-        ) > 1
+        multipath = (
+            sum(path.can_connect for path in async_connection_paths(self.hass, self._address)) > 1
+        )
         if multipath:
             # HA may spend several attempts penalizing a strong but unusable
             # proxy before selecting a weaker working one. Keep that fallback
@@ -3110,7 +3150,7 @@ class AdjustableBedCoordinator:
                 retry_exponent = attempt_index - 1
                 if multipath:
                     retry_exponent = min(retry_exponent, 1)
-                base_delay = self._retry_base_delay * (2 ** retry_exponent)
+                base_delay = self._retry_base_delay * (2**retry_exponent)
                 jitter = random.uniform(1 - self._retry_jitter, 1 + self._retry_jitter)
                 pre_retry_delay = base_delay * jitter
                 _LOGGER.info(
@@ -3491,7 +3531,10 @@ class AdjustableBedCoordinator:
                             pairing_details["connection_result"] = pairing_details["native_pairing"]
                         elif use_pairing and bond_created:
                             self._pairing_supported = True
-                            if self._bed_type not in (BED_TYPE_SLEEP_NUMBER, BED_TYPE_VIBRADORM_APP):
+                            if self._bed_type not in (
+                                BED_TYPE_SLEEP_NUMBER,
+                                BED_TYPE_VIBRADORM_APP,
+                            ):
                                 self._mark_ble_bond_established()
                             pairing_details["adapter_pairing_supported"] = True
                             pairing_details["connection_result"] = "pairing_connection_succeeded"
@@ -3742,7 +3785,10 @@ class AdjustableBedCoordinator:
                 ble_manufacturer: str | None = None
                 ble_model: str | None = None
 
-                if not _defer_device_info and self._bed_type != BED_TYPE_VIBRADORM_APP:
+                if not _defer_device_info and self._bed_type not in {
+                    BED_TYPE_VIBRADORM_APP,
+                    BED_TYPE_VMATBASIC,
+                }:
                     if self._device_info_read_done:
                         ble_manufacturer = self._ble_manufacturer
                         ble_model = self._ble_model
@@ -3963,6 +4009,7 @@ class AdjustableBedCoordinator:
                 # after the BLE authentication window, so schedule from the final
                 # resolved controller state.
                 self._refresh_passive_position_reconciliation_schedule()
+                self._refresh_diagnostic_polling_schedule()
 
                 if self._bed_type == BED_TYPE_LINAK:
                     self._backfill_linak_snapshot()
@@ -4081,7 +4128,9 @@ class AdjustableBedCoordinator:
                     async with async_get_connect_lock(self.hass, self._address):
                         await self._async_disconnect_locked("connect_cancelled")
                 except Exception:
-                    _LOGGER.exception("Cleanup after cancelled connection to %s failed", self._address)
+                    _LOGGER.exception(
+                        "Cleanup after cancelled connection to %s failed", self._address
+                    )
                 self._notify_connection_state_change(self.is_connected)
                 raise
             except (BleakError, TimeoutError, OSError) as err:
@@ -4096,7 +4145,9 @@ class AdjustableBedCoordinator:
                     # BaseException, so cancellation still propagates.
                     try:
                         await self._async_handle_ble_authentication_error(
-                            err, holding_lock=True, attempt_details=attempt_details,
+                            err,
+                            holding_lock=True,
+                            attempt_details=attempt_details,
                             defer_pairing_issue=True,
                         )
                     except Exception:
@@ -4274,6 +4325,7 @@ class AdjustableBedCoordinator:
             return
 
         # Store disconnect timestamp for binary sensor
+        self._cancel_diagnostic_polling()
         self._last_disconnected = datetime.now(UTC)
 
         # Track disconnect reason for diagnostics (issue #168)
@@ -4767,6 +4819,7 @@ class AdjustableBedCoordinator:
     async def async_shutdown(self) -> None:
         """Stop background tasks and disconnect the coordinator."""
         self._shutting_down = True
+        self._cancel_diagnostic_polling()
         self._pending_capability_reload = False
         try:
             await self._async_cancel_position_hydration()
@@ -4974,6 +5027,7 @@ class AdjustableBedCoordinator:
         deadlock on the public ``async_disconnect`` re-acquiring the lock.
         """
         await self._async_cancel_furnimove_bond_request()
+        self._cancel_diagnostic_polling()
         self._cancel_disconnect_timer()
         self._cancel_controller_state_refresh_retry()
         if self._controller_state_refresh_task is not None:
@@ -5473,6 +5527,7 @@ class AdjustableBedCoordinator:
         read_positions_after_operation: bool,
         operation_name: str,
         run_if: Callable[[], bool] | None = None,
+        preserve_idle_deadline: bool = False,
     ) -> T | None:
         """Execute a controller operation with shared locking and connection handling."""
         if cancel_running:
@@ -5490,10 +5545,13 @@ class AdjustableBedCoordinator:
                 and command_context.scheduler_token is self._command_scheduler.token
             )
             legacy_exclusive = bool(
-                scheduler_managed and command_context is not None and "*" in command_context.resources
+                scheduler_managed
+                and command_context is not None
+                and "*" in command_context.resources
             )
             cancel_event = self.cancel_command
-            self._cancel_disconnect_timer()
+            if not preserve_idle_deadline:
+                self._cancel_disconnect_timer()
 
             cancelled_while_waiting = (
                 cancel_event.is_set()
@@ -5503,7 +5561,11 @@ class AdjustableBedCoordinator:
             )
             if preemptible and cancelled_while_waiting:
                 _LOGGER.debug("Controller %s cancelled while waiting for lock", operation_name)
-                if self._client is not None and self._client.is_connected:
+                if (
+                    not preserve_idle_deadline
+                    and self._client is not None
+                    and self._client.is_connected
+                ):
                     self._reset_disconnect_timer()
                 if raise_on_lock_cancel:
                     raise asyncio.CancelledError
@@ -5517,7 +5579,14 @@ class AdjustableBedCoordinator:
                         operation_name,
                     )
                     return None
-                controller = await self._async_prepare_controller_operation(operation_name)
+                if preserve_idle_deadline:
+                    # A live diagnostic read must not wait on connect/auth work
+                    # that could reopen a link after the idle deadline expires.
+                    controller = self._controller
+                    if controller is None or not self.is_connected:
+                        raise ConnectionError("Diagnostic query requires a live receiver")
+                else:
+                    controller = await self._async_prepare_controller_operation(operation_name)
                 cancelled_during_preparation = cancel_event.is_set() or (
                     (not scheduler_managed or legacy_exclusive)
                     and self._cancel_counter > entry_cancel_count
@@ -5597,20 +5666,22 @@ class AdjustableBedCoordinator:
                 raise
             except _CONTROLLER_OPERATION_RECOVERY_EXCEPTIONS:
                 if (
-                    self._client is not None
+                    not preserve_idle_deadline
+                    and self._client is not None
                     and self._client.is_connected
                     and not self._disconnect_after_operation_enabled()
                 ):
                     self._reset_disconnect_timer()
                 raise
             finally:
-                await self._async_finish_controller_operation(
-                    entry_cancel_count=entry_cancel_count,
-                    cancel_event=cancel_event,
-                    scheduler_managed=scheduler_managed,
-                    skip_disconnect=skip_disconnect,
-                    operation_name=operation_name,
-                )
+                if not preserve_idle_deadline:
+                    await self._async_finish_controller_operation(
+                        entry_cancel_count=entry_cancel_count,
+                        cancel_event=cancel_event,
+                        scheduler_managed=scheduler_managed,
+                        skip_disconnect=skip_disconnect,
+                        operation_name=operation_name,
+                    )
 
     async def async_execute_controller_command(
         self,
@@ -5753,6 +5824,17 @@ class AdjustableBedCoordinator:
         )
         return await self._command_scheduler.enqueue(intent, prepared=True)
 
+    async def async_validate_linked_command_readiness(self) -> None:
+        """Prepare actual GATT without starting a reserved linked command."""
+        if not await self.async_ensure_connected(reset_timer=False):
+            raise ConnectionError("Linked receiver is unavailable")
+        controller = self._controller
+        if controller is None or controller.requires_linked_live_readiness is not True:
+            raise ValueError("Linked readiness requires an explicitly compatible profile")
+        await controller.async_validate_linked_readiness()
+        if self._controller is not controller or not self.is_connected:
+            raise ConnectionError("Linked session changed during readiness validation")
+
     async def async_wait_prepared_command(self, handle: CommandHandle) -> None:
         """Wait until a prepared command owns this device scheduler."""
         await self._command_scheduler.wait_ready(handle)
@@ -5824,6 +5906,7 @@ class AdjustableBedCoordinator:
         skip_disconnect: bool = False,
         preemptible: bool = True,
         run_if: Callable[[], bool] | None = None,
+        preserve_idle_deadline: bool = False,
     ) -> T:
         """Execute a controller query and return its result."""
         result = await self._async_execute_controller_operation(
@@ -5836,8 +5919,115 @@ class AdjustableBedCoordinator:
             read_positions_after_operation=False,
             operation_name="query",
             run_if=run_if,
+            preserve_idle_deadline=preserve_idle_deadline,
         )
         return cast(T, result)
+
+    def _cancel_diagnostic_polling(self) -> None:
+        """End live-link queries and invalidate this connection's observed values."""
+        task = self._diagnostic_poll_task
+        self._diagnostic_poll_task = None
+        if task is not None and task is not asyncio.current_task():
+            task.cancel()
+        advertisement_task = self._diagnostic_advertisement_task
+        self._diagnostic_advertisement_task = None
+        if advertisement_task is not None and advertisement_task is not asyncio.current_task():
+            advertisement_task.cancel()
+        if self._controller is not None:
+            self._controller.invalidate_diagnostics()
+
+    def _refresh_diagnostic_polling_schedule(self) -> None:
+        self._cancel_diagnostic_polling()
+        controller = self._controller
+        if controller is None or controller.diagnostic_poll_interval is None:
+            return
+        interval = controller.diagnostic_poll_interval
+        if not math.isfinite(interval) or interval <= 0:
+            _LOGGER.warning("Ignoring invalid diagnostic polling interval %s", interval)
+            return
+        self._diagnostic_poll_task = self.entry.async_create_background_task(
+            self.hass,
+            self._async_diagnostic_poll_loop(controller, interval),
+            name=f"adjustable_bed_diagnostics_{self._address}",
+        )
+        sample_interval = controller.diagnostic_advertisement_interval
+        if sample_interval is not None:
+            if not math.isfinite(sample_interval) or sample_interval <= 0:
+                _LOGGER.warning("Ignoring invalid advertisement diagnostic interval %s", sample_interval)
+                return
+            self._diagnostic_advertisement_task = self.entry.async_create_background_task(
+                self.hass, self._async_diagnostic_advertisement_loop(controller, sample_interval),
+                name=f"adjustable_bed_advertisement_diagnostics_{self._address}",
+            )
+
+    async def _async_diagnostic_advertisement_loop(
+        self, controller: BedController, interval: float
+    ) -> None:
+        """Sample retained HA observations without BLE queries or idle-timer renewal."""
+        try:
+            while self._controller is controller and self.is_connected and not self._shutting_down:
+                if self._connecting:
+                    await asyncio.sleep(0.1)
+                    continue
+                info = bluetooth.async_last_service_info(self.hass, self._address, connectable=True)
+                controller.update_advertisement_diagnostics(
+                    info.rssi if info is not None and info.rssi > -127 else None,
+                    info.source if info is not None else None,
+                    info.time if info is not None else None,
+                )
+                await asyncio.sleep(interval)
+        finally:
+            if self._diagnostic_advertisement_task is asyncio.current_task():
+                self._diagnostic_advertisement_task = None
+
+    async def _async_diagnostic_poll_loop(self, controller: BedController, interval: float) -> None:
+        """Refresh only a current live session, with command priority and no idle renewal."""
+
+        def available() -> bool:
+            return (
+                self._controller is controller
+                and self._client is not None
+                and self._client.is_connected
+                and not self._connecting
+                and not self._shutting_down
+            )
+
+        try:
+            while (
+                self._controller is controller
+                and self._client is not None
+                and self._client.is_connected
+            ):
+                if self._connecting:
+                    await asyncio.sleep(0.1)
+                    continue
+                if (
+                    available()
+                    and not self._command_lock.locked()
+                    and not self._command_scheduler.has_pending
+                ):
+                    next_attempt = asyncio.get_running_loop().time() + interval
+                    try:
+                        await self.async_execute_controller_query(
+                            lambda current: current.async_refresh_diagnostics(),
+                            cancel_running=False,
+                            skip_disconnect=True,
+                            preemptible=True,
+                            run_if=available,
+                            preserve_idle_deadline=True,
+                        )
+                    except asyncio.CancelledError:
+                        current_task = asyncio.current_task()
+                        if current_task is not None and current_task.cancelling():
+                            raise
+                    except Exception as error:
+                        _LOGGER.debug("Background diagnostic refresh failed: %s", error)
+                    await asyncio.sleep(max(0, next_attempt - asyncio.get_running_loop().time()))
+                else:
+                    await asyncio.sleep(interval)
+        finally:
+            if self._diagnostic_poll_task is asyncio.current_task():
+                self._diagnostic_poll_task = None
 
     async def async_start_notify(self) -> None:
         """Start listening for position notifications."""

@@ -354,11 +354,16 @@ retain their legacy profile unless you explicitly change it.
 | Jordan's Serenity app | Explicit app selection; two named axes and literal remote selectors 4/5, fixed 100 ms refresh | [Serenity](beds/serenity.md) |
 | Caresse / Werkmeister apps | Explicit app and remote profile; Caresse retained settings and feature flags | [Caresse / Werkmeister](beds/vibradorm_app.md) |
 | VMAT app | Explicit app and exact shipped remote ordinal; remote-derived features | [VMAT](beds/vmat.md) |
+| V-MAT Basic app | Explicit Basic, CBI or CBI with XT-Box product; per-receiver floor settings | [V-MAT Basic](beds/vmatbasic.md) |
 | Legacy OKIN CB24 | Both sides (default), Side A / Left, or Side B / Right | [Single-address controls](#single-address-left--right-controls) |
 
 For two-address pairs, device-specific app/product selections belong to each
 physical bed. If the shared options form refuses a profile change, split the
 pair, configure each side, then combine them again.
+
+### V-MAT Basic app profiles
+
+Choose **V-MAT Basic app**, then the exact Basic, CBI or CBI with XT-Box product. Bluetooth identifiers and diagnostic model strings do not choose this profile. CBI exposes saved floor level 0–255 and timer 0–1439 minutes; XT exposes level 1–6 and timer 0–255 minutes. Leaving the optional level unset preserves the source distinction between the ON-button default and settings-screen default. Timer defaults to zero. Profile changes rebuild the form and discard old dependent floor values. These settings belong to each physical side of a two-address pair; split the pair before changing them. Existing generic Vibradorm entries retain their controller.
 
 ### FurniMove app profile
 

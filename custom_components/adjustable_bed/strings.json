@@ -548,6 +548,20 @@
           "vibradorm_floor_default": "Advanced: the floor-light level remembered by your app (1–8). This is a local setting, not a measured light state. A retained level of 8 is valid even when the lighting extension limits the level slider to 6.",
           "vibradorm_vmat_remote": "Choose the same remote ordinal shown in VMAT. This sets its controls and features; Bluetooth metadata cannot identify the remote."
         }
+      },
+      "vmatbasic": {
+        "title": "V-MAT Basic product",
+        "description": "Select the exact product profile. Native pairing is advisory; no app authentication is performed.",
+        "data": {
+          "vmatbasic_profile": "V-MAT Basic product profile",
+          "vmatbasic_floor_level": "Saved floor brightness",
+          "vmatbasic_floor_minutes": "Saved floor timer (minutes)"
+        },
+        "data_description": {
+          "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
+          "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0–255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1–6. This is not measured brightness.",
+          "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting."
+        }
       }
     },
     "progress": {
@@ -613,7 +627,11 @@
       "vibradorm_app_required": "Choose the bed app.",
       "vibradorm_app_invalid": "Choose a supported app control layout and retained feature settings.",
       "vibradorm_app_unpair_first": "Unpair these entries before changing app settings. Each physical side keeps its own app controls.",
-      "vmat_bond_required": "VMAT setup requires verified native pairing for this exact Bluetooth address. Use a supported host Bluetooth adapter and retry; an unverified proxy pairing request cannot finish setup."
+      "vmat_bond_required": "VMAT setup requires verified native pairing for this exact Bluetooth address. Use a supported host Bluetooth adapter and retry; an unverified proxy pairing request cannot finish setup.",
+      "vmatbasic_invalid": "Enter a whole number within the selected product range.",
+      "vmatbasic_link_profile": "Combine only CBI or CBI with XT-Box receivers. The Basic profile has no linked control.",
+      "vmatbasic_unpair_first": "Unpair these entries before changing product settings; each receiver retains its own profile.",
+      "vmatbasic_required": "Choose the V-MAT Basic product profile."
     }
   },
   "options": {
@@ -684,7 +702,10 @@
           "vibradorm_massage": "Retained massage controls",
           "vibradorm_light_extension": "Retained lighting extension",
           "vibradorm_floor_default": "Remembered floor brightness",
-          "vibradorm_vmat_remote": "VMAT remote"
+          "vibradorm_vmat_remote": "VMAT remote",
+          "vmatbasic_floor_level": "Saved floor brightness",
+          "vmatbasic_floor_minutes": "Saved floor timer (minutes)",
+          "vmatbasic_profile": "V-MAT Basic product profile"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -732,7 +753,10 @@
           "vibradorm_restored": "Advanced: match settings already saved by the Caresse app. Standard controls match a fresh app setup. Retained controls and feature flags do not verify your bed model.",
           "vibradorm_control_type": "Choose the control layout already used in your app. Each choice defines the available movement groups and memory controls.",
           "vibradorm_floor_default": "Advanced: the floor-light level remembered by your app (1–8). This is a local setting, not a measured light state. A retained level of 8 is valid even when the lighting extension limits the level slider to 6.",
-          "vibradorm_vmat_remote": "Choose the same remote ordinal shown in VMAT. This sets its controls and features; Bluetooth metadata cannot identify the remote."
+          "vibradorm_vmat_remote": "Choose the same remote ordinal shown in VMAT. This sets its controls and features; Bluetooth metadata cannot identify the remote.",
+          "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0–255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1–6. This is not measured brightness.",
+          "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting.",
+          "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls."
         }
       },
       "remove_bond": {
@@ -807,7 +831,11 @@
       "vibradorm_app_required": "Choose the bed app.",
       "vibradorm_app_invalid": "Choose a supported app control layout and retained feature settings.",
       "vibradorm_app_unpair_first": "Unpair these entries before changing app settings. Each physical side keeps its own app controls.",
-      "vmat_bond_required": "VMAT setup requires verified native pairing for this exact Bluetooth address. Use a supported host Bluetooth adapter and retry; an unverified proxy pairing request cannot finish setup."
+      "vmat_bond_required": "VMAT setup requires verified native pairing for this exact Bluetooth address. Use a supported host Bluetooth adapter and retry; an unverified proxy pairing request cannot finish setup.",
+      "vmatbasic_invalid": "Enter a whole number within the selected product range.",
+      "vmatbasic_link_profile": "Combine only CBI or CBI with XT-Box receivers. The Basic profile has no linked control.",
+      "vmatbasic_unpair_first": "Unpair these entries before changing product settings; each receiver retains its own profile.",
+      "vmatbasic_required": "Choose the V-MAT Basic product profile."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -1768,6 +1796,45 @@
       },
       "vibradorm_app_refresh_info_both": {
         "name": "Refresh device information (both)"
+      },
+      "vmatbasic_all_up": {
+        "name": "All up"
+      },
+      "vmatbasic_all_down": {
+        "name": "All down"
+      },
+      "vmatbasic_refresh_info": {
+        "name": "Refresh device information"
+      },
+      "vmatbasic_floor_toggle": {
+        "name": "Floor light toggle (fresh status)"
+      },
+      "vmatbasic_floor_hold": {
+        "name": "Floor light held action"
+      },
+      "vmatbasic_mood_toggle": {
+        "name": "Mood light toggle"
+      },
+      "vmatbasic_mood_nightlight": {
+        "name": "Mood nightlight command"
+      },
+      "vmatbasic_massage_back": {
+        "name": "Massage back"
+      },
+      "vmatbasic_massage_legs": {
+        "name": "Massage legs"
+      },
+      "vmatbasic_massage_off": {
+        "name": "Massage off"
+      },
+      "vmatbasic_massage_program_1": {
+        "name": "Massage program 1"
+      },
+      "vmatbasic_massage_program_2": {
+        "name": "Massage program 2"
+      },
+      "vmatbasic_massage_program_3": {
+        "name": "Massage program 3"
       }
     },
     "cover": {
@@ -2391,6 +2458,27 @@
       },
       "vibradorm_app_variant_both": {
         "name": "App variant Both"
+      },
+      "vmatbasic_floor_minutes_observed": {
+        "name": "Observed floor timer"
+      },
+      "vmatbasic_model": {
+        "name": "App model number"
+      },
+      "vmatbasic_temperature": {
+        "name": "Controller die temperature"
+      },
+      "vmatbasic_floor_percent_observed": {
+        "name": "Observed floor brightness"
+      },
+      "vmatbasic_firmware": {
+        "name": "App firmware revision"
+      },
+      "vmatbasic_floor_level_observed": {
+        "name": "Observed floor level"
+      },
+      "vmatbasic_rssi": {
+        "name": "Advertisement signal strength"
       }
     },
     "light": {
@@ -2508,6 +2596,9 @@
       },
       "furnimove_massage_running": {
         "name": "FurniMove local massage session"
+      },
+      "vmatbasic_ed": {
+        "name": "ED motor status"
       }
     },
     "number": {
@@ -2672,6 +2763,18 @@
       },
       "vibradorm_app_floor_timer_minutes_both": {
         "name": "Floor light timer minutes (both)"
+      },
+      "vmatbasic_floor_level": {
+        "name": "Requested floor level"
+      },
+      "vmatbasic_floor_minutes": {
+        "name": "Requested floor timer"
+      },
+      "vmatbasic_mood_brightness": {
+        "name": "Mood brightness"
+      },
+      "vmatbasic_mood_speed": {
+        "name": "Mood effect speed"
       }
     },
     "select": {
@@ -2808,6 +2911,34 @@
           "3": "Wave 3",
           "4": "Wave 4"
         }
+      },
+      "vmatbasic_mood_palette": {
+        "name": "Mood palette",
+        "state": {
+          "col1": "Color 1",
+          "col2": "Color 2",
+          "col3": "Color 3",
+          "col4": "Color 4",
+          "col5": "Color 5",
+          "col6": "Color 6",
+          "col7": "Color 7",
+          "col8": "Color 8",
+          "col9": "Color 9",
+          "col10": "Color 10",
+          "col11": "Color 11",
+          "col12": "Color 12",
+          "col13": "Color 13",
+          "col14": "Color 14",
+          "col15": "Color 15",
+          "col16": "Color 16",
+          "col17": "Color 17",
+          "col18": "Color 18",
+          "col19": "Color 19",
+          "col20": "Color 20"
+        }
+      },
+      "vmatbasic_mood_effect": {
+        "name": "Mood effect"
       }
     },
     "climate": {
@@ -3329,8 +3460,43 @@
         }
       }
     },
-    "furnimove_action": {"name": "FurniMove handset action", "description": "Execute an ordered action row from the selected handset. Find row indexes in controller diagnostics. The widget consumer uses the app’s separate fixed timing.", "fields": {"row_index": {"name": "Action row index"}, "duration": {"name": "Hold duration", "description": "Optional seconds for held actions. Other actions use their captured row timing."}, "consumer": {"name": "Consumer"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}},
-    "furnimove_rename": {"name": "Rename FurniMove receiver", "description": "Rename one receiver using a unique name, with up to 18 UTF-16 units after trimming. The original text is sent to the receiver.", "fields": {"name": {"name": "New name"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}},
+    "furnimove_action": {
+      "name": "FurniMove handset action",
+      "description": "Execute an ordered action row from the selected handset. Find row indexes in controller diagnostics. The widget consumer uses the app’s separate fixed timing.",
+      "fields": {
+        "row_index": {
+          "name": "Action row index"
+        },
+        "duration": {
+          "name": "Hold duration",
+          "description": "Optional seconds for held actions. Other actions use their captured row timing."
+        },
+        "consumer": {
+          "name": "Consumer"
+        },
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "furnimove_rename": {
+      "name": "Rename FurniMove receiver",
+      "description": "Rename one receiver using a unique name, with up to 18 UTF-16 units after trimming. The original text is sent to the receiver.",
+      "fields": {
+        "name": {
+          "name": "New name"
+        },
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
     "furnimove_massage_program": {
       "name": "FurniMove massage program",
       "description": "Select program 1, 2, 3 or 4 (Wave) using the handset’s captured massage queue.",
@@ -3346,8 +3512,48 @@
         }
       }
     },
-    "furnimove_massage_duration": {"name": "FurniMove advisory massage duration", "description": "Set the local app duration preference. This does not program a hardware timer or stop massage when time expires.", "fields": {"minutes": {"name": "Advisory duration"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}},
-    "furnimove_move_simultaneously": {"name": "Move two FurniMove motors", "description": "Hold two supported axes with the app’s combined command and release cleanup.", "fields": {"first_motor": {"name": "First motor"}, "second_motor": {"name": "Second motor"}, "first_direction": {"name": "First direction"}, "second_direction": {"name": "Second direction"}, "duration_ms": {"name": "Duration in milliseconds"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}},
+    "furnimove_massage_duration": {
+      "name": "FurniMove advisory massage duration",
+      "description": "Set the local app duration preference. This does not program a hardware timer or stop massage when time expires.",
+      "fields": {
+        "minutes": {
+          "name": "Advisory duration"
+        },
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "furnimove_move_simultaneously": {
+      "name": "Move two FurniMove motors",
+      "description": "Hold two supported axes with the app’s combined command and release cleanup.",
+      "fields": {
+        "first_motor": {
+          "name": "First motor"
+        },
+        "second_motor": {
+          "name": "Second motor"
+        },
+        "first_direction": {
+          "name": "First direction"
+        },
+        "second_direction": {
+          "name": "Second direction"
+        },
+        "duration_ms": {
+          "name": "Duration in milliseconds"
+        },
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
     "vibradorm_hold_control": {
       "name": "Hold Caresse / Werkmeister / VMAT control",
       "description": "Hold a control supported by the selected app profile, then send its release command.",
@@ -3367,6 +3573,39 @@
         "side": {
           "name": "Side",
           "description": "Physical side to control for a paired bed."
+        }
+      }
+    },
+    "vmatbasic_rename": {
+      "name": "Rename V-MAT Basic receiver",
+      "description": "Write one receiver name and retain it only after success.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "name": {
+          "name": "New name"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "vmatbasic_hold_control": {
+      "name": "Hold V-MAT Basic control",
+      "description": "Hold movement or the XT floor action for a bounded duration. Only movement mirrors both receivers.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control"
+        },
+        "duration": {
+          "name": "Duration"
+        },
+        "side": {
+          "name": "Side"
         }
       }
     }

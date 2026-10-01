@@ -519,6 +519,34 @@ class BedController(ABC):
         """
         return None
 
+    @property
+    def diagnostic_poll_interval(self) -> float | None:
+        """Optional diagnostic refresh cadence on an already live connection.
+
+        Polls are preemptible, never connect or extend the idle deadline, and
+        remain disabled unless the controller explicitly requests them.
+        """
+        return None
+
+    async def async_refresh_diagnostics(self) -> None:
+        """Refresh controller-declared diagnostics under the coordinator's query lock."""
+        return None
+
+    @property
+    def diagnostic_advertisement_interval(self) -> float | None:
+        """Optional HA advertisement sampling on a live link, with no GATT traffic."""
+        return None
+
+    def update_advertisement_diagnostics(
+        self, rssi: int | None, source: str | None, seen_at: float | None
+    ) -> None:
+        """Publish explicitly sourced host observations, never remote-read equivalence."""
+        return None
+
+    def invalidate_diagnostics(self) -> None:
+        """Clear observed diagnostic state when its BLE session ends."""
+        return None
+
     def log_discovered_services(self, level: int = logging.DEBUG) -> None:
         """Log all discovered GATT services and characteristics.
 
@@ -1470,6 +1498,15 @@ class BedController(ABC):
     def supports_held_control(self) -> bool:
         """Return True when held controls are available."""
         return bool(self.held_control_options)
+
+    @property
+    def requires_linked_live_readiness(self) -> bool:
+        """Require both physical GATT sessions ready before a linked command starts."""
+        return False
+
+    async def async_validate_linked_readiness(self) -> None:
+        """Validate the current session without emitting control frames."""
+        return None
 
     @property
     def supports_clock_alarm(self) -> bool:

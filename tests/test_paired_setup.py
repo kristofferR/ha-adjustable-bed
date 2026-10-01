@@ -48,6 +48,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SOLACE,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
+    BED_TYPE_VMATBASIC,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
     CONF_DISABLE_ANGLE_SENSING,
@@ -72,6 +73,7 @@ from custom_components.adjustable_bed.const import (
     CONF_SIDE,
     CONF_VIBRADORM_APP_PROFILE,
     CONF_VIBRADORM_CONTROL_TYPE,
+    CONF_VMATBASIC_PROFILE,
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
     KAIDI_VARIANT_SEAT_1_2,
@@ -2303,6 +2305,7 @@ class TestPairBedsConversion:
         coord._client = client
         coord._controller = SimpleNamespace(
             manual_disconnect_strands_connection=False,
+            invalidate_diagnostics=MagicMock(),
             stop_notify=AsyncMock(),
         )
         hass.data.setdefault(DOMAIN, {})[single.entry_id] = coord
@@ -2368,6 +2371,7 @@ class TestPairBedsConversion:
         coord._client = client
         coord._controller = SimpleNamespace(
             manual_disconnect_strands_connection=False,
+            invalidate_diagnostics=MagicMock(),
             stop_notify=AsyncMock(),
         )
         coord._pending_capability_reload = True
@@ -2585,6 +2589,7 @@ class TestPairBedsConversion:
         client.disconnect = AsyncMock(side_effect=stalled_disconnect)
         controller = SimpleNamespace(
             manual_disconnect_strands_connection=False,
+            invalidate_diagnostics=MagicMock(),
             requires_notification_channel=True,
             stop_notify=AsyncMock(),
             start_notify=AsyncMock(),
@@ -2644,6 +2649,7 @@ class TestPairBedsConversion:
         client.disconnect = AsyncMock(side_effect=stalled_disconnect)
         controller = SimpleNamespace(
             manual_disconnect_strands_connection=False,
+            invalidate_diagnostics=MagicMock(),
             requires_notification_channel=True,
             stop_notify=AsyncMock(),
             start_notify=AsyncMock(side_effect=stalled_start_notify),
@@ -3706,6 +3712,8 @@ class TestOfflineSafeBedTypes:
                     CONF_VIBRADORM_APP_PROFILE: "caresse",
                     CONF_VIBRADORM_CONTROL_TYPE: "2",
                 })
+            elif bed_type == BED_TYPE_VMATBASIC:
+                child[CONF_VMATBASIC_PROFILE] = "cbi"
             elif bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
                 child.update(
                     {

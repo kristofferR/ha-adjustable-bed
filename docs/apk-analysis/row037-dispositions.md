@@ -1,0 +1,34 @@
+# Row037 V-MAT Basic implementation dispositions
+
+Current code and focused executed proof cover all 95 immutable comparison discoveries: 76 IMPLEMENTED, 3 narrow ALREADY_IMPLEMENTED leaves and 16 exact EXCLUDED items. Current work status is tracked in the canonical APK Protocol Audit issues and published queue plan. No reachable discovery is deferred for lack of hardware.
+
+The accepted package is `com.vibradorm.vmatbasic` 2.4.3 (code 14). Comparison manifest SHA-256: `c2245ace9595cc7c0ca0d9798c2ea583cca24a0367053711fea164824c4c47d3`. See the [profile documentation](../beds/vmatbasic.md) for artifact/report/audit identities and public behavior. Raw package evidence and final executable proof bindings remain machine-local. Hardware status is **UNVERIFIED**.
+
+## Exact exclusions
+
+| ID | Discovery | Accepted evidence | Reason |
+|---|---|---|---|
+| X01 | Dormant factory reset | E19 | Dead/unreachable: menu factoryReset permanently hidden; ble/e/ac.j has no live caller. Do not expose reset `2a` or route normal movement to `1528`. |
+| X02 | Dead scanner health/sample GATT | E23 | Dead/unreachable: scanner m.k initialized null with no non-null connectGatt assignment; n/p reads/notifications and generic health UUID dictionary are not live controls. |
+| X03 | Diagnostic activity and reconnect loops | E23 | Dead/unreachable: BLEServiceTest no internal entrypoint/intent filter and non-exported; ch/ci mutually reschedule but neither initially posted. |
+| X04 | Unused characteristic constants | E06, E23 | Dead/unreachable: ba.h manufacturer `2a29` and ba.k software `2a28` have no read/write chain; no new live sensors from constants. |
+| X05 | Support library/absent other stacks | E02, E25 | Unrelated product boundary: Android support 399 classes drawing/menu/logging/ICU reflection, UI close false positives, empty placeholders; no native/business bundle/dynamic loader. Do not implement library internals. |
+| X06 | Nightlight empty tail and synthetic completion | E16 | Safety/app defect: after known C14 RGB-zero write and 100 ms delay, ac.l empty returns no I/O/completion then 800 ms FIFO flush. Retain C14 write; do not reproduce empty task, timeout flush or invent nonzero illumination. |
+| X07 | Uncorrelated callbacks/pending-gate FIFO races | E11, E21 | Safety: callbacks from either GATT advance same global sequencer; pending decrement at dispatch is not in-flight lock. HA must correlate/serialize operations rather than reproduce cross-operation completion. |
+| X08 | Timeout queue clearing and missing lifecycle STOP | E10, E11, E21 | Safety: app timeout drops queue without STOP; pause removes release callbacks and disconnects, duplicate delayed STOP may remain. HA must cancel stale movement and attempt required cleanup, not reproduce lost STOP or blind duplicates. |
+| X09 | Stale-read floor toggle and optimistic rename | E12, E18, E20 | Safety: stale cached level can choose write after failed read; rename preference updates without ACK. Keep corresponding C09/C10/C46 controls but require successful fresh read/write. |
+| X10 | Unchecked malformed/short parser crashes | E04, E20 | Safety: raw AD type out-of-bounds/lax declared-length handling and unguarded short temperature/light/ED reads. Preserve valid decoding and first-AD behavior where representable, reject malformed buffers without crash. |
+| X11 | Non-UI negative/wrapped floor parameter values | E12, E13 | Safety: builder masks low 16/negative U8 and upper-clamps XT only; reachable UI supplies bounded values. Public actions validate documented UI ranges, not permit unintended wrapped timers/levels. |
+| X12 | Android reflection/cache-refresh failure mechanics | E08, E11 | Android platform boundary and safety: reflective refresh retry 1/2 and count 3 incomplete event/hang. Preserve service gate and bounded diagnostics; use HA BLE APIs rather than Android hidden reflection or deliberate timeout. |
+| X13 | Android UI/process-only lifecycle and timers | E03, E05, E14, E21, E22 | Unrelated platform boundary: activity/fragment recreation, toast/dialog styling, local binder, 5 s scan/UI windows, 200 ms connect delay / 500 ms disconnect tail / 1 s link debounce are Android scheduling, not peripheral packet/timing requirements. Every-fifth brightness slider callback plus final release is Android UI batching; send each explicit HA requested setting once. XT fragment does not save its radio/time preferences; preserve requested values through HA configuration without reproducing lost Android UI state. Preserve selection, opt-in link and user reconnect intents through HA APIs, without duplicating Android process shells. |
+| X14 | Android-only failed-I/O silent returns | E07, E08, E11, E20 | Safety: missing targets emit INVALID_EVENT advancing queue; mismatched properties silently hang; status 5 logs then timeout. HA must return explicit failed operation and retain unknown state, not mimic false completion. |
+| X15 | Unsupported write-without-response property mismatch | E07 | Safety: app accepts property mask `0x0c` but always forces default write. Preserve proven with-response contract; do not silently downgrade to no-response or claim unsupported characteristic succeeded. |
+| X16 | Dual connected-state treated as dual service readiness | E08, E22 | Safety: app checks both system connection states == 2 without independent services ready flags. Preserve dual movement only after each address has completed validated service discovery. |
+
+## Narrow existing behavior
+
+A01 covers only the seven exact legacy movement constants. A02 covers only the first head/legs single-byte frames. A03 covers only normal terminal `ff` and explicit stop-byte leaves. These do not establish profile, service selection, timing, release failure, linked readiness, parsing or accessory equivalence. The separate app controller supplies those behaviors with its own executed proof.
+
+The machine-local proof map binds all 46 commands, five reads, three profiles, 22 behavior domains and three existing leaves to current code and focused executed tests. Its read-only verifier preserves the original 189 candidate references, 93 packet vectors, eight parser vectors and 2,020 palette/brightness values, including exact raw-builder versus public-domain distinctions. Public floor actions retain their bounded UI domains; raw wrapped builder vectors do not authorize unsafe public parameters.
+
+Current validation has 1,190 passing focused cases and eight separate legacy leaves. A supplemental run reexecutes 117 protocol cases after test-oracle formatting changes; these overlap the focused suite. Ruff, Pyright, frontend build and all 70 Bun cases pass. Synthetic card screenshots verify rendering with fake HA data only. These receipts establish the current candidate, not a future integrated tree, full-suite result or physical hardware outcome.

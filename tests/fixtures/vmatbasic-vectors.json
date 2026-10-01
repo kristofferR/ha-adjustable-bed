@@ -1,0 +1,839 @@
+{
+  "origin": "Static APK-derived vectors, com.vibradorm.vmatbasic 2.4.3 (14); hardware unverified. Out-of-UI inputs test raw builders only.",
+  "packets": [
+    {
+      "id": "T001",
+      "builder": "motor",
+      "args": [
+        16
+      ],
+      "expected": "10"
+    },
+    {
+      "id": "T002",
+      "builder": "motor",
+      "args": [
+        0
+      ],
+      "expected": "00"
+    },
+    {
+      "id": "T003",
+      "builder": "motor",
+      "args": [
+        11
+      ],
+      "expected": "0b"
+    },
+    {
+      "id": "T004",
+      "builder": "motor",
+      "args": [
+        10
+      ],
+      "expected": "0a"
+    },
+    {
+      "id": "T005",
+      "builder": "motor",
+      "args": [
+        9
+      ],
+      "expected": "09"
+    },
+    {
+      "id": "T006",
+      "builder": "motor",
+      "args": [
+        8
+      ],
+      "expected": "08"
+    },
+    {
+      "id": "T007",
+      "builder": "motor",
+      "args": [
+        -1
+      ],
+      "expected": "ff"
+    },
+    {
+      "id": "T008",
+      "builder": "floor",
+      "args": [
+        255,
+        1439
+      ],
+      "expected": "ff059f"
+    },
+    {
+      "id": "T009",
+      "builder": "floor",
+      "args": [
+        0,
+        0
+      ],
+      "expected": "000000"
+    },
+    {
+      "id": "T010",
+      "builder": "xt_floor",
+      "args": [
+        1,
+        15
+      ],
+      "expected": "0011010f"
+    },
+    {
+      "id": "T011",
+      "builder": "xt_floor",
+      "args": [
+        7,
+        300
+      ],
+      "expected": "001106ff"
+    },
+    {
+      "id": "T012",
+      "builder": "rgb",
+      "args": [
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T013",
+      "builder": "rgb",
+      "args": [
+        -1
+      ],
+      "expected": "00770100ffffff"
+    },
+    {
+      "id": "T014",
+      "builder": "effect",
+      "args": [
+        1
+      ],
+      "expected": "00770801"
+    },
+    {
+      "id": "T015",
+      "builder": "effect",
+      "args": [
+        2
+      ],
+      "expected": "00770802"
+    },
+    {
+      "id": "T016",
+      "builder": "effect",
+      "args": [
+        3
+      ],
+      "expected": "00770803"
+    },
+    {
+      "id": "T017",
+      "builder": "speed",
+      "args": [
+        0
+      ],
+      "expected": "00770901"
+    },
+    {
+      "id": "T018",
+      "builder": "speed",
+      "args": [
+        255
+      ],
+      "expected": "00770900"
+    },
+    {
+      "id": "T019",
+      "builder": "rename",
+      "args": [
+        "Bed"
+      ],
+      "expected": "426564"
+    },
+    {
+      "id": "T020",
+      "builder": "rename",
+      "args": [
+        "B\u00e9d"
+      ],
+      "expected": "42c3a964"
+    },
+    {
+      "id": "T021",
+      "builder": "color_action",
+      "args": [
+        -5979136,
+        100
+      ],
+      "expected": "00770100a4c400"
+    },
+    {
+      "id": "T022",
+      "builder": "color_action",
+      "args": [
+        -5979136,
+        50
+      ],
+      "expected": "00770100526200"
+    },
+    {
+      "id": "T023",
+      "builder": "color_action",
+      "args": [
+        -5979136,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T024",
+      "builder": "color_action",
+      "args": [
+        -10442473,
+        100
+      ],
+      "expected": "007701005fa817"
+    },
+    {
+      "id": "T025",
+      "builder": "color_action",
+      "args": [
+        -10442473,
+        50
+      ],
+      "expected": "007701002f540b"
+    },
+    {
+      "id": "T026",
+      "builder": "color_action",
+      "args": [
+        -10442473,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T027",
+      "builder": "color_action",
+      "args": [
+        -16741888,
+        100
+      ],
+      "expected": "00770100008a00"
+    },
+    {
+      "id": "T028",
+      "builder": "color_action",
+      "args": [
+        -16741888,
+        50
+      ],
+      "expected": "00770100004500"
+    },
+    {
+      "id": "T029",
+      "builder": "color_action",
+      "args": [
+        -16741888,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T030",
+      "builder": "color_action",
+      "args": [
+        -16733271,
+        100
+      ],
+      "expected": "0077010000aaa8"
+    },
+    {
+      "id": "T031",
+      "builder": "color_action",
+      "args": [
+        -16733271,
+        50
+      ],
+      "expected": "00770100005554"
+    },
+    {
+      "id": "T032",
+      "builder": "color_action",
+      "args": [
+        -16733271,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T033",
+      "builder": "color_action",
+      "args": [
+        -14966302,
+        100
+      ],
+      "expected": "007701001aa1e2"
+    },
+    {
+      "id": "T034",
+      "builder": "color_action",
+      "args": [
+        -14966302,
+        50
+      ],
+      "expected": "007701000d5071"
+    },
+    {
+      "id": "T035",
+      "builder": "color_action",
+      "args": [
+        -14966302,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T036",
+      "builder": "color_action",
+      "args": [
+        -16756497,
+        100
+      ],
+      "expected": "007701000050ee"
+    },
+    {
+      "id": "T037",
+      "builder": "color_action",
+      "args": [
+        -16756497,
+        50
+      ],
+      "expected": "00770100002877"
+    },
+    {
+      "id": "T038",
+      "builder": "color_action",
+      "args": [
+        -16756497,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T039",
+      "builder": "color_action",
+      "args": [
+        -9830145,
+        100
+      ],
+      "expected": "007701006a00ff"
+    },
+    {
+      "id": "T040",
+      "builder": "color_action",
+      "args": [
+        -9830145,
+        50
+      ],
+      "expected": "0077010035007f"
+    },
+    {
+      "id": "T041",
+      "builder": "color_action",
+      "args": [
+        -9830145,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T042",
+      "builder": "color_action",
+      "args": [
+        -5635841,
+        100
+      ],
+      "expected": "00770100aa00ff"
+    },
+    {
+      "id": "T043",
+      "builder": "color_action",
+      "args": [
+        -5635841,
+        50
+      ],
+      "expected": "0077010055007f"
+    },
+    {
+      "id": "T044",
+      "builder": "color_action",
+      "args": [
+        -5635841,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T045",
+      "builder": "color_action",
+      "args": [
+        -757040,
+        100
+      ],
+      "expected": "00770100f472d0"
+    },
+    {
+      "id": "T046",
+      "builder": "color_action",
+      "args": [
+        -757040,
+        50
+      ],
+      "expected": "007701007a3968"
+    },
+    {
+      "id": "T047",
+      "builder": "color_action",
+      "args": [
+        -757040,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T048",
+      "builder": "color_action",
+      "args": [
+        -2621325,
+        100
+      ],
+      "expected": "00770100d80073"
+    },
+    {
+      "id": "T049",
+      "builder": "color_action",
+      "args": [
+        -2621325,
+        50
+      ],
+      "expected": "007701006c0039"
+    },
+    {
+      "id": "T050",
+      "builder": "color_action",
+      "args": [
+        -2621325,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T051",
+      "builder": "color_action",
+      "args": [
+        -6160347,
+        100
+      ],
+      "expected": "00770100a20024"
+    },
+    {
+      "id": "T052",
+      "builder": "color_action",
+      "args": [
+        -6160347,
+        50
+      ],
+      "expected": "00770100510012"
+    },
+    {
+      "id": "T053",
+      "builder": "color_action",
+      "args": [
+        -6160347,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T054",
+      "builder": "color_action",
+      "args": [
+        -1764352,
+        100
+      ],
+      "expected": "00770100e51300"
+    },
+    {
+      "id": "T055",
+      "builder": "color_action",
+      "args": [
+        -1764352,
+        50
+      ],
+      "expected": "00770100720900"
+    },
+    {
+      "id": "T056",
+      "builder": "color_action",
+      "args": [
+        -1764352,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T057",
+      "builder": "color_action",
+      "args": [
+        -366592,
+        100
+      ],
+      "expected": "00770100fa6800"
+    },
+    {
+      "id": "T058",
+      "builder": "color_action",
+      "args": [
+        -366592,
+        50
+      ],
+      "expected": "007701007d3400"
+    },
+    {
+      "id": "T059",
+      "builder": "color_action",
+      "args": [
+        -366592,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T060",
+      "builder": "color_action",
+      "args": [
+        -1006838,
+        100
+      ],
+      "expected": "00770100efa209"
+    },
+    {
+      "id": "T061",
+      "builder": "color_action",
+      "args": [
+        -1006838,
+        50
+      ],
+      "expected": "00770100775104"
+    },
+    {
+      "id": "T062",
+      "builder": "color_action",
+      "args": [
+        -1006838,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T063",
+      "builder": "color_action",
+      "args": [
+        -1849344,
+        100
+      ],
+      "expected": "00770100e3c800"
+    },
+    {
+      "id": "T064",
+      "builder": "color_action",
+      "args": [
+        -1849344,
+        50
+      ],
+      "expected": "00770100716400"
+    },
+    {
+      "id": "T065",
+      "builder": "color_action",
+      "args": [
+        -1849344,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T066",
+      "builder": "color_action",
+      "args": [
+        -8234452,
+        100
+      ],
+      "expected": "00770100825a2c"
+    },
+    {
+      "id": "T067",
+      "builder": "color_action",
+      "args": [
+        -8234452,
+        50
+      ],
+      "expected": "00770100412d16"
+    },
+    {
+      "id": "T068",
+      "builder": "color_action",
+      "args": [
+        -8234452,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T069",
+      "builder": "color_action",
+      "args": [
+        -9599132,
+        100
+      ],
+      "expected": "007701006d8764"
+    },
+    {
+      "id": "T070",
+      "builder": "color_action",
+      "args": [
+        -9599132,
+        50
+      ],
+      "expected": "00770100364332"
+    },
+    {
+      "id": "T071",
+      "builder": "color_action",
+      "args": [
+        -9599132,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T072",
+      "builder": "color_action",
+      "args": [
+        -10193273,
+        100
+      ],
+      "expected": "00770100647687"
+    },
+    {
+      "id": "T073",
+      "builder": "color_action",
+      "args": [
+        -10193273,
+        50
+      ],
+      "expected": "00770100323b43"
+    },
+    {
+      "id": "T074",
+      "builder": "color_action",
+      "args": [
+        -10193273,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T075",
+      "builder": "color_action",
+      "args": [
+        -9015158,
+        100
+      ],
+      "expected": "0077010076708a"
+    },
+    {
+      "id": "T076",
+      "builder": "color_action",
+      "args": [
+        -9015158,
+        50
+      ],
+      "expected": "007701003b3845"
+    },
+    {
+      "id": "T077",
+      "builder": "color_action",
+      "args": [
+        -9015158,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T078",
+      "builder": "color_action",
+      "args": [
+        -1,
+        100
+      ],
+      "expected": "00770100ffffff"
+    },
+    {
+      "id": "T079",
+      "builder": "color_action",
+      "args": [
+        -1,
+        50
+      ],
+      "expected": "007701007f7f7f"
+    },
+    {
+      "id": "T080",
+      "builder": "color_action",
+      "args": [
+        -1,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T081",
+      "builder": "literal",
+      "args": [
+        0,
+        0,
+        0
+      ],
+      "expected": "000000"
+    },
+    {
+      "id": "T082",
+      "builder": "literal",
+      "args": [
+        0,
+        17
+      ],
+      "expected": "0011"
+    },
+    {
+      "id": "T083",
+      "builder": "literal",
+      "args": [
+        0,
+        119
+      ],
+      "expected": "0077"
+    },
+    {
+      "id": "T084",
+      "builder": "literal",
+      "args": [
+        0,
+        119,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected": "00770100000000"
+    },
+    {
+      "id": "T085",
+      "builder": "literal",
+      "args": [
+        0,
+        119,
+        8,
+        1
+      ],
+      "expected": "00770801"
+    },
+    {
+      "id": "T086",
+      "builder": "literal",
+      "args": [
+        0,
+        119,
+        8,
+        2
+      ],
+      "expected": "00770802"
+    },
+    {
+      "id": "T087",
+      "builder": "literal",
+      "args": [
+        0,
+        119,
+        8,
+        3
+      ],
+      "expected": "00770803"
+    },
+    {
+      "id": "T088",
+      "builder": "literal",
+      "args": [
+        0,
+        44
+      ],
+      "expected": "002c"
+    },
+    {
+      "id": "T089",
+      "builder": "literal",
+      "args": [
+        0,
+        45
+      ],
+      "expected": "002d"
+    },
+    {
+      "id": "T090",
+      "builder": "literal",
+      "args": [
+        0,
+        52
+      ],
+      "expected": "0034"
+    },
+    {
+      "id": "T091",
+      "builder": "literal",
+      "args": [
+        0,
+        49
+      ],
+      "expected": "0031"
+    },
+    {
+      "id": "T092",
+      "builder": "literal",
+      "args": [
+        0,
+        40
+      ],
+      "expected": "0028"
+    },
+    {
+      "id": "T093",
+      "builder": "literal",
+      "args": [
+        0,
+        41
+      ],
+      "expected": "0029"
+    }
+  ],
+  "palette_all_2020_sha256": "2ea3efe263f3cd7ddfe15964fa016bb1a2d7277ceca7902108bd71775feb84d8"
+}

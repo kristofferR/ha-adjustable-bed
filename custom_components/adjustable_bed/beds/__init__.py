@@ -66,6 +66,7 @@ if TYPE_CHECKING:
     from .timotion_ahf import TiMOTIONAhfController as TiMOTIONAhfController
     from .vibradorm import VibradormController as VibradormController
     from .vibradorm_app import VibradormAppController as VibradormAppController
+    from .vmatbasic import VMatBasicController as VMatBasicController
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
@@ -121,6 +122,7 @@ _EXPORT_MODULES = {
     "TiMOTIONAhfController": "timotion_ahf",
     "VibradormController": "vibradorm",
     "VibradormAppController": "vibradorm_app",
+    "VMatBasicController": "vmatbasic",
     "WoosaController": "woosa",
 }
 

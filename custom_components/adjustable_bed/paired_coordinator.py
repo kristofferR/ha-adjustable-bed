@@ -388,6 +388,8 @@ class PairedBedCoordinator:
         targets = self._targets_for(side)
         target_sides = [target_side for target_side, _ in targets]
         sequential = self._connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL
+        if len(targets) > 1 and self._linked_readiness_required(targets) and sequential:
+            raise ValueError("This linked profile requires concurrent ready physical receivers")
 
         # Preempt: invalidate any OLDER movement still queued on the lock AND
         # cancel the in-flight command on THIS command's own target sides, so a
@@ -438,6 +440,10 @@ class PairedBedCoordinator:
                     entry_cancel=entry_cancel,
                 )
             except _ConnectionModeChanged:
+                if len(targets) > 1 and self._linked_readiness_required(targets):
+                    raise ValueError(
+                        "This linked profile requires concurrent ready physical receivers"
+                    ) from None
                 sequential = True
             except Exception as err:
                 await self._async_fallback_after_connection_slot_exhaustion(
@@ -746,7 +752,14 @@ class PairedBedCoordinator:
                 if revalidation_invalidated:
                     return
 
-                # No controller coroutine has run before this point. Commit every
+                if self._linked_readiness_required(targets):
+                    await self._async_validate_linked_readiness(targets)
+                    # STOP or replacement may invalidate a reservation while its
+                    # receiver connects. Recheck before releasing either side.
+                    for child, handle in prepared.values():
+                        await child.async_wait_prepared_command(handle)
+
+                # No controller command coroutine has run before this point. Commit every
                 # ready handle synchronously so neither side can observe a partial
                 # group caused by another await between releases.
                 for child, handle in prepared.values():
@@ -818,6 +831,46 @@ class PairedBedCoordinator:
                     ),
                     return_exceptions=True,
                 )
+
+    @staticmethod
+    def _linked_readiness_required(targets: Collection[tuple[str, BedChild]]) -> bool:
+        return any(
+            child.capability_controller is not None
+            and getattr(child.capability_controller, "requires_linked_live_readiness", False) is True
+            for _, child in targets
+        )
+
+    async def _async_validate_linked_readiness(
+        self, targets: Collection[tuple[str, BedChild]]
+    ) -> None:
+        from .coordinator import AdjustableBedCoordinator
+
+        if self._connection_mode != PAIR_CONNECTION_MODE_CONCURRENT:
+            raise ValueError("Linked readiness cannot use sequential fallback")
+        physical: dict[str, AdjustableBedCoordinator] = {}
+        for side, child in targets:
+            controller = child.capability_controller
+            if (
+                not isinstance(child, AdjustableBedCoordinator)
+                or controller is None
+                or controller.requires_linked_live_readiness is not True
+            ):
+                raise ValueError("Link only independently configured compatible physical receivers")
+            physical[side] = child
+        outcomes = await asyncio.gather(
+            *(child.async_validate_linked_command_readiness() for child in physical.values()),
+            return_exceptions=True,
+        )
+        errors = {
+            side: outcome for side, outcome in zip(physical, outcomes, strict=True)
+            if isinstance(outcome, BaseException)
+        }
+        if errors:
+            raise PairedSideError("linked readiness", errors)
+        if self._connection_mode != PAIR_CONNECTION_MODE_CONCURRENT or not all(
+            child.is_connected for child in physical.values()
+        ):
+            raise ConnectionError("Both linked receivers must remain concurrently connected")
 
     async def _run_both_concurrent_legacy(
         self,

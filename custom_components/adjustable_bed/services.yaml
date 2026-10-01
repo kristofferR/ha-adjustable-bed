@@ -1233,6 +1233,71 @@ customatic_move_simultaneously:
         select:
           options: [both, left, right]
 
+vmatbasic_hold_control:
+  name: Hold V-MAT Basic control
+  description: Hold a movement for 0.1 to 60 seconds, then send its movement release. The XT floor action ends its refresh without a release packet. Only movement can target both linked receivers.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    control:
+      name: Control
+      required: true
+      selector:
+        select:
+          options:
+            - all_up
+            - all_down
+            - back_up
+            - back_down
+            - legs_up
+            - legs_down
+            - floor_hold
+    duration:
+      name: Duration
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.001
+          unit_of_measurement: s
+          mode: box
+    side:
+      name: Side
+      selector:
+        select:
+          options:
+            - left
+            - right
+            - both
+
+vmatbasic_rename:
+  name: Rename V-MAT Basic receiver
+  description: Rename one selected physical receiver. Accepts at most ten UTF-16 units after Java whitespace trimming and twenty encoded UTF-8 bytes, including an empty name. Saved names change only after a successful write.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    name:
+      name: New name
+      required: true
+      selector:
+        text:
+    side:
+      name: Side
+      selector:
+        select:
+          options:
+            - left
+            - right
+
 vibradorm_hold_control:
   name: Hold Caresse / Werkmeister / VMAT control
   description: Hold a control supported by the selected app profile, then send its release command.

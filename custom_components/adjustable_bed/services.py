@@ -44,6 +44,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_VIBRADORM_APP,
+    BED_TYPE_VMATBASIC,
     CONF_BED_TYPE,
     CONF_MOTOR_COUNT,
     CONF_PROTOCOL_VARIANT,
@@ -94,6 +95,8 @@ SERVICE_FURNIMOVE_MASSAGE_PROGRAM = "furnimove_massage_program"
 SERVICE_FURNIMOVE_MASSAGE_DURATION = "furnimove_massage_duration"
 SERVICE_FURNIMOVE_MOVE_SIMULTANEOUSLY = "furnimove_move_simultaneously"
 SERVICE_VIBRADORM_HOLD_CONTROL = "vibradorm_hold_control"
+SERVICE_VMATBASIC_HOLD_CONTROL = "vmatbasic_hold_control"
+SERVICE_VMATBASIC_RENAME = "vmatbasic_rename"
 SERVICE_CUSTOMATIC_HOLD_MEMORY = "customatic_hold_memory"
 SERVICE_CUSTOMATIC_MOVE_SIMULTANEOUSLY = "customatic_move_simultaneously"
 SERVICE_LOGICDATA_SET_ALARM = "logicdata_set_alarm"
@@ -1833,6 +1836,64 @@ async def handle_vibradorm_hold_control(call: ServiceCall) -> None:
     )
 
 
+async def handle_vmatbasic_hold_control(call: ServiceCall) -> None:
+    """Mirror only movement; the XT floor refresh belongs to one physical receiver."""
+    control = call.data[ATTR_CONTROL]
+    if control != "floor_hold":
+        await _handle_customatic_hold(call, control, {BED_TYPE_VMATBASIC}, label="V-MAT Basic")
+        return
+    targets, missing = _resolve_sided_targets(call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE))
+    if missing:
+        raise _missing_device_error(missing[0])
+    physical = [target for coordinator, side in targets for target in _command_targets(coordinator, side)]
+    if len(physical) != 1 or physical[0].bed_type != BED_TYPE_VMATBASIC:
+        raise ServiceValidationError("Target one physical V-MAT Basic receiver for floor refresh")
+    duration_ms = int(_leggett_hold_seconds(call.data[ATTR_DURATION]) * 1000)
+    def validate(controller: BedController | SideBoundController) -> None:
+        if control not in controller.held_control_options:
+            raise ServiceValidationError("XT floor refresh requires the XT-Box profile")
+    preflighted = await _preflight_capability(targets, "supports_held_control", "V-MAT Basic floor refresh", validate)
+    try:
+        await _execute_sided(targets[0][0], targets[0][1], lambda controller: controller.hold_control(control, duration_ms), resource="lighting")
+    except BaseException:
+        await _release_preflighted(preflighted)
+        raise
+
+
+async def handle_vmatbasic_rename(call: ServiceCall) -> None:
+    """Rename exactly one selected primary receiver, retaining the old name on failure."""
+    from .beds.vmatbasic_protocol import rename
+    from .coordinator import AdjustableBedCoordinator
+
+    try:
+        packet = rename(call.data[ATTR_NAME])
+        if len(packet) > 20:
+            raise ValueError("Encoded name exceeds the safe twenty-byte write payload")
+    except (ValueError, UnicodeError) as error:
+        raise ServiceValidationError(str(error)) from error
+    targets, missing = _resolve_sided_targets(call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE))
+    if missing:
+        raise _missing_device_error(missing[0])
+    physical = [target for coordinator, side in targets for target in _command_targets(coordinator, side)]
+    if len(physical) != 1:
+        raise ServiceValidationError("Rename one physical V-MAT Basic receiver at a time")
+    receiver = physical[0]
+    if not isinstance(receiver, AdjustableBedCoordinator) or receiver.bed_type != BED_TYPE_VMATBASIC:
+        raise ServiceValidationError("Rename one physical V-MAT Basic receiver at a time")
+    preflighted = await _preflight_capability(targets, "supports_device_rename", "V-MAT Basic rename")
+    name = packet.decode("utf-8")
+
+    async def rename_and_remember(controller: BedController) -> None:
+        await controller.rename_device(name)
+        receiver.remember_vmatbasic_name(name)
+
+    try:
+        await _execute_sided(targets[0][0], targets[0][1], rename_and_remember, resource="configuration")
+    except BaseException:
+        await _release_preflighted(preflighted)
+        raise
+
+
 async def _handle_customatic_hold(
     call: ServiceCall, control: str, bed_types: set[str], *, label: str = "Customatic"
 ) -> None:
@@ -2754,6 +2815,23 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 **SIDE_FIELD,
             }
         ),
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_VMATBASIC_HOLD_CONTROL, handle_vmatbasic_hold_control,
+        schema=vol.Schema({
+            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+            vol.Required(ATTR_CONTROL): vol.In(("all_up", "all_down", "back_up", "back_down", "legs_up", "legs_down", "floor_hold")),
+            vol.Required(ATTR_DURATION): _leggett_hold_seconds,
+            **SIDE_FIELD,
+        }),
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_VMATBASIC_RENAME, handle_vmatbasic_rename,
+        schema=vol.Schema({
+            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+            vol.Required(ATTR_NAME): cv.string,
+            **SIDE_FIELD,
+        }),
     )
     hass.services.async_register(
         DOMAIN,

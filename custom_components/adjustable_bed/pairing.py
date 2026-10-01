@@ -61,6 +61,7 @@ from .const import (
     SLEEP_NUMBER_VARIANT_LEFT,
     SLEEP_NUMBER_VARIANT_RIGHT,
     VARIANT_AUTO,
+    VMATBASIC_CONFIG_KEYS,
 )
 
 
@@ -83,6 +84,9 @@ class ChildDescriptor(TypedDict, total=False):
     jensen_pin: str
     cb24_bed_selection: int
     capabilities: dict[str, Any]
+    vmatbasic_profile: str
+    vmatbasic_floor_level: int
+    vmatbasic_floor_minutes: int
     # Set once a BLE bond is established, so future connects skip pairing.
     ble_bond_established: bool
     ble_bond_marker_unreliable: bool
@@ -194,6 +198,7 @@ CHILD_INHERITANCE_EXCLUDED_KEYS: Final = frozenset(
         CONF_PAIR_SCHEMA_VERSION,
         CONF_PAIR_CONNECTION_MODE,
         *RUNTIME_BOND_KEYS,
+        *VMATBASIC_CONFIG_KEYS,
     }
 )
 

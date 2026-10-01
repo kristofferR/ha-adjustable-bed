@@ -125,6 +125,7 @@ The entries below identify motor/actuator manufacturers or supported app profile
 | ✅ [Vibradorm](docs/beds/vibradorm.md) | Vibradorm |
 | 🧪 [Caresse / Werkmeister app profiles](docs/beds/vibradorm_app.md) | Explicit Caresse or Werkmeister app and remote selection; artifact-verified, hardware unverified |
 | 🧪 [VMAT app profile](docs/beds/vmat.md) | Explicit VMAT app and one of 14 shipped remotes; artifact-verified, hardware unverified |
+| 🧪 [V-MAT Basic app profiles](docs/beds/vmatbasic.md) | Explicit Basic, CBI or CBI with XT-Box selection; artifact-verified, hardware unverified |
 | ✅ [SUTA Smart Home](docs/beds/suta.md) | SUTA |
 | ✅ [TiMOTION AHF](docs/beds/timotion-ahf.md) | TiMOTION |
 | ✅ [Rondure](docs/beds/rondure.md) | 1500 Tilt Base |
