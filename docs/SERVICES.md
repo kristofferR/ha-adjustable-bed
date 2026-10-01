@@ -231,3 +231,16 @@ Target one or more physical devices with `device_id`, an exact supported `contro
 ## Motion Bed app actions
 
 The [Motion Bed action index](beds/motion_bed.md#actions) covers all 13 typed app actions, including alarms, sleep calibration/reporting, hub modules, pressure, thermal schedules, audio and BLE Wi-Fi provisioning. Named action keys are listed in controller diagnostics. Persistent changes require confirmation; every target is validated before writes, and native paired child targets retain their side.
+
+### `starcode_move_lifts`
+
+Controls the accessories configured on an AdjustableM5X5 main entry. Choose one main `device_id` and `action`: `up`, `down`, `flat` or `stop`. Movement preflights every selected address and interrupts the conflicting main. `flat` interrupts the selected group, sends main flat, waits 1600 ms and sends lift flat. STOP, unloading or a changed selection cancels the retained delay. If a member fails, every admitted target receives cleanup. The action supports one main plus up to three distinct lifts and never fans out lighting, massage or programming.
+
+```yaml
+action: adjustable_bed.starcode_move_lifts
+data:
+  device_id: YOUR_MAIN_DEVICE_ID
+  action: flat
+```
+
+Main controls also expose Ascent/TV, Zero Gravity, Anti-Snore, Lounge, two memory slots, three named-save buttons and reset. Programming sends 55 attempts and reports transport completion, not proof that firmware retained the setting. RGB palette indices and brightness use controller-declared select/number entities. Alarm, sound/EQ, sonic and kneading feedback are read-only.

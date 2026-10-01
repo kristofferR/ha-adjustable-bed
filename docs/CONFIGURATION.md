@@ -665,3 +665,11 @@ the other side automatically if one side fails.
 ### Motion Bed app
 
 Select the explicit **Motion Bed app** route and the original case-sensitive Bluetooth name. Auto chooses the app’s ordered layout; retained overrides belong to the same physical target. FFE1 alone does not identify this app. Two-address pairs preserve each side’s settings and require unpairing before profile changes. See [Motion Bed setup and controls](beds/motion_bed.md).
+
+### AdjustableM5X5 app
+
+Select **AdjustableM5X5** (`starcode_m5x5`) and enter the exact Bluetooth name, preserving case. Confirm CB25, F23, kneading or Elevate. The specific F23/kneading prefixes take precedence over generic `STAR25`; shared Nordic UART identifiers alone cannot choose an app. The exact optional manufacturer read selects the command dialect when connecting.
+
+On the main entry, select up to **three other configured AdjustableM5X5 entries** as lifts. This supports four independent Bluetooth addresses: one main and three lifts. All four bedding classes can occupy either slot. Duplicate addresses and unrelated products are rejected. This group keeps each device's existing coordinator and entities. It does not convert them into Left/Right paired devices.
+
+Use `adjustable_bed.starcode_move_lifts` for native lift-union movement, STOP or composite flat. A profile or group-selection edit cancels retained delayed writes. Individual controls remain on each physical device. See [protocol and control details](beds/starcode-m5x5.md).
