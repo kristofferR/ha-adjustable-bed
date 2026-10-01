@@ -133,6 +133,9 @@ class FsmRelaxState:
     async def async_set_names(self, names: object) -> None:
         validated = validate_names(names)
         async with self._lock:
+            # Controllers are rebuilt on every reconnect; skip redundant writes.
+            if validated == self.names:
+                return
             await self._store.async_save(self._data(self.slots, validated))
             self.names = validated
 

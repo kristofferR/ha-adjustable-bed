@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
 from bleak.exc import BleakError
+from homeassistant.config_entries import ConfigEntryState
 
 from ..fsm_relax_state import FsmRelaxState, validate_positions
 from .base import (
@@ -502,6 +503,9 @@ class FsmRelaxController(BedController):
                 if cancelled in done:
                     raise asyncio.CancelledError
                 if future in done:
+                    if future.cancelled():
+                        # A dropped link is a connection failure, not task cancellation.
+                        raise ConnectionError("FSM Relax disconnected")
                     return future.result()
             raise TimeoutError("FSM Relax response timed out; no reply correlation is available")
         finally:
@@ -517,7 +521,15 @@ class FsmRelaxController(BedController):
         async with asyncio.timeout(4):
             body = await self._query(2)
         await self.local.async_save_capabilities(body)
-        if previous is not None and previous != body:
+        loaded = self._coordinator.hass.config_entries.async_get_entry(
+            self._coordinator.entry.entry_id
+        )
+        # A loaded entry without a prior body built its platforms from an empty
+        # offline controller, so the first body must reconcile entities too.
+        if previous != body and (
+            previous is not None
+            or (loaded is not None and loaded.state is ConfigEntryState.LOADED)
+        ):
             self._coordinator._pending_capability_reload = True
         if self._optional_task is None or self._optional_task.done():
             self._optional_task = self._coordinator.entry.async_create_background_task(

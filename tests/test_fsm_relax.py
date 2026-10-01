@@ -57,7 +57,7 @@ async def test_actual_coordinator_drop_immediately_invalidates_owned_session(has
     await asyncio.gather(optional, metadata, return_exceptions=True)
 
 
-async def test_initializing_disconnect_cancels_query_and_rejects_same_client_old_callback(hass):
+async def test_initializing_disconnect_fails_query_and_rejects_same_client_old_callback(hass):
     from homeassistant.const import CONF_ADDRESS
     from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -88,7 +88,7 @@ async def test_initializing_disconnect_cancels_query_and_rejects_same_client_old
         assert coordinator.client is client and coordinator.controller is ctrl
         assert ctrl._generation == generation + 1
         assert not ctrl._live_capabilities and not ctrl._subscribed
-        with pytest.raises(asyncio.CancelledError):
+        with pytest.raises(ConnectionError):
             await query
         assert not ctrl._pending
         client.is_connected = True
@@ -684,4 +684,23 @@ async def test_discovery_capability_change_requests_entity_reconciliation():
     await ctrl.async_discover_capabilities()
     assert ctrl._coordinator._pending_capability_reload is True
     assert ctrl.memory_slot_count == 8
+    await ctrl.stop_notify()
+
+
+@pytest.mark.parametrize("loaded", [True, False])
+async def test_first_capability_body_reconciles_loaded_offline_entities(loaded):
+    from homeassistant.config_entries import ConfigEntryState
+
+    ctrl = make_controller(cap=None)
+    ctrl._coordinator._pending_capability_reload = False
+    entry = ctrl._coordinator.hass.config_entries.async_get_entry.return_value
+    entry.state = ConfigEntryState.LOADED if loaded else ConfigEntryState.SETUP_IN_PROGRESS
+
+    def reply(_role, packet, **_kwargs):
+        if decode_packet(packet)[0] == 2:
+            feed(ctrl, bytes.fromhex("0208000008"))
+
+    ctrl.client.write_gatt_char.side_effect = reply
+    await ctrl.async_discover_capabilities()
+    assert ctrl._coordinator._pending_capability_reload is loaded
     await ctrl.stop_notify()

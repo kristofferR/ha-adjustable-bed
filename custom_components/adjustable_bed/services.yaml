@@ -1622,6 +1622,11 @@ fsm_relax_hold_control:
           max: 60
           step: 0.001
           unit_of_measurement: s
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
 fsm_relax_recall_memory:
   name: FSM Relax recall local memory
   description: Send saved opaque targets and release after an explicit local hold. Replies cannot prove physical arrival.
@@ -1645,6 +1650,11 @@ fsm_relax_recall_memory:
           max: 60
           step: 0.001
           unit_of_measurement: s
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
 fsm_relax_calibrate:
   name: FSM Relax confirmed calibration
   description: Calibrate using the four configured reversal flags. One write attempt; a failed write does not prove that hardware did nothing.
@@ -1659,3 +1669,8 @@ fsm_relax_calibrate:
       description: Explicitly confirm calibration before invoking this action.
       selector:
         boolean:
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]

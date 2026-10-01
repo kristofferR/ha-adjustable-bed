@@ -124,3 +124,12 @@ async def test_corrupt_record_is_never_projected_to_bed(hass):
     )
     await state.async_load()
     assert state.slots == {}
+
+
+async def test_unchanged_names_skip_store_write(hass):
+    state = FsmRelaxState(hass, "entry", "AA:BB:CC:DD:EE:FF")
+    await state.async_load()
+    await state.async_set_names(["Sleep"] + [""] * 7)
+    with patch.object(state._store, "async_save", AsyncMock()) as save:
+        await state.async_set_names(["Sleep"] + [""] * 7)
+    save.assert_not_awaited()
