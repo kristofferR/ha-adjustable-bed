@@ -1,6 +1,5 @@
 """The selected app's eight-second connection deadline reaches the BLE driver."""
 
-import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -10,6 +9,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.address_lock import ReentrantAddressLock
 from custom_components.adjustable_bed.beds.starcode_abm5_4_profiles import (
     TRANSPORTS,
     initial_fields,
@@ -86,7 +86,7 @@ async def test_first_setup_connection_uses_selected_app_timeout(hass, request_bo
             "bleak_retry_connector.establish_connection", new=AsyncMock(return_value=client)
         ) as connect,
         patch(prefix + "async_predict_path", return_value=SimpleNamespace(chosen=None)),
-        patch(prefix + "async_get_connect_lock", return_value=asyncio.Lock()),
+        patch(prefix + "async_get_connect_lock", return_value=ReentrantAddressLock()),
         patch(prefix + "client_source", return_value=None),
         patch(prefix + "async_verify_authenticated_access", new=AsyncMock(return_value=evidence)),
     ):
