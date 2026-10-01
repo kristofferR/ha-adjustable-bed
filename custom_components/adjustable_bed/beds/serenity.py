@@ -11,6 +11,7 @@ another app's capabilities.
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import TYPE_CHECKING, Final, Literal
@@ -18,7 +19,11 @@ from typing import TYPE_CHECKING, Final, Literal
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ..const import ZSERIES_PULSE_COUNT_RANGE
+from ..const import (
+    CONF_BLE_BOND_ESTABLISHED,
+    CONF_ZSERIES_ALARM_AVAILABLE,
+    ZSERIES_PULSE_COUNT_RANGE,
+)
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -31,7 +36,7 @@ from .okin_cst import CstFields, CstMemorySlot, CstProfile, OkinCstController
 from .okin_protocol import build_cst_command
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping, Sequence
+    from collections.abc import Callable, Sequence
 
     from ..coordinator import AdjustableBedCoordinator
 
@@ -690,7 +695,8 @@ class ZSeriesController(OkinBeddingAppController):
         self, coordinator: AdjustableBedCoordinator, *, model: Literal["z230", "z280"]
     ) -> None:
         super().__init__(coordinator, app=f"zseries_{model}")
-        self._alarm_available = False
+        # This connection's observation; None until a manufacturer read succeeds.
+        self._alarm_available: bool | None = None
 
     def _hold_ms(self, action: str) -> int:
         if action in self._app.save_codes:
@@ -701,28 +707,69 @@ class ZSeriesController(OkinBeddingAppController):
         low, high = ZSERIES_PULSE_COUNT_RANGE
         return min(max(int(self._coordinator.motor_pulse_count), low), high) * 100
 
+    def _entry_data(self) -> Mapping[str, object] | None:
+        entry = getattr(self._coordinator, "entry", None)
+        data = getattr(entry, "data", None)
+        return data if isinstance(data, Mapping) else None
+
+    @property
+    def alarm_state(self) -> bool | None:
+        """True for CST13/CST14, False for any other string, None while unknown.
+
+        A failed read never changes the state. The last successful observation
+        is persisted per entry, so it survives disconnects, restarts and cached
+        offline controllers.
+        """
+        if self._alarm_available is not None:
+            return self._alarm_available
+        data = self._entry_data()
+        stored = data.get(CONF_ZSERIES_ALARM_AVAILABLE) if data is not None else None
+        return stored if isinstance(stored, bool) else None
+
     def _manufacturer_read(self, manufacturer: str) -> None:
         # Exact, case-sensitive comparison; anything else removes the alarm page.
         self._alarm_available = manufacturer in _ALARM_MANUFACTURERS
+        data = self._entry_data()
+        if data is None or data.get(CONF_ZSERIES_ALARM_AVAILABLE) is self._alarm_available:
+            return
+        updated = {**data, CONF_ZSERIES_ALARM_AVAILABLE: self._alarm_available}
+        # Internal write: the update listener must not reload (and disconnect) the entry.
+        self._coordinator._begin_internal_entry_update(
+            bool(data.get(CONF_BLE_BOND_ESTABLISHED, False))
+        )
+        self._coordinator._async_persist_config(updated, keys={CONF_ZSERIES_ALARM_AVAILABLE})
 
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
-        return {**super().protocol_diagnostics, "alarm_available": self._alarm_available}
+        return {**super().protocol_diagnostics, "alarm_available": self.alarm_state}
 
     @property
     def supports_clock_alarm(self) -> bool:
-        return self._alarm_available
+        return self.alarm_state is True
 
     @property
     def supports_clock_sync(self) -> bool:
-        return self._alarm_available
+        return self.alarm_state is True
+
+    @property
+    def alarm_not_ruled_out(self) -> bool:
+        """Service preflight: only a confirmed non-CST13/CST14 string is rejected offline."""
+        return self.alarm_state is not False
 
     @property
     def clock_alarm_preset_options(self) -> tuple[str, ...]:
-        return tuple(_ALARM_WAKE) if self._alarm_available else ()
+        return tuple(_ALARM_WAKE) if self.alarm_state is True else ()
 
-    def _require_alarm(self) -> None:
-        if not self._alarm_available:
+    async def _require_alarm(self) -> None:
+        if self.alarm_state is None:
+            # Unknown (failed or missing read): re-read on this live connection first.
+            await self.refresh_manufacturer()
+        state = self.alarm_state
+        if state is None:
+            raise ValueError(
+                "Could not read the manufacturer string that enables Z-Series alarms; try again"
+            )
+        if not state:
             raise ValueError("This controller's manufacturer string does not enable app alarms")
 
     async def _query_alarm(self) -> None:
@@ -734,7 +781,7 @@ class ZSeriesController(OkinBeddingAppController):
 
     async def sync_clock(self) -> None:
         """Send the alarm page's local-clock frame, then its status queries."""
-        self._require_alarm()
+        await self._require_alarm()
         await self.write_command(clock_frame(dt_util.now()))
         await self._query_alarm()
 
@@ -754,7 +801,7 @@ class ZSeriesController(OkinBeddingAppController):
         ``preset`` is the app's wake mode. The app has no weekday or level
         fields; it always targets the next occurrence of the time.
         """
-        self._require_alarm()
+        await self._require_alarm()
         if weekdays or head_level or foot_level:
             raise ValueError("Z-Series alarms have no weekday or massage-level fields")
         now = dt_util.now()

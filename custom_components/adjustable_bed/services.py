@@ -1870,11 +1870,16 @@ async def _execute_zseries_alarm(
                     f"Device '{target.name}' is not a Customatic Z-Series app controller"
                 )
     # The alarm page exists only after an exact CST13/CST14 manufacturer read.
-    preflighted = await _preflight_capability(targets, "supports_clock_alarm", label)
+    # A cached controller can only rule a bed out on a confirmed other string;
+    # an unknown state is re-read on the live connection before any write.
+    preflighted = await _preflight_capability(targets, "alarm_not_ruled_out", label)
     try:
         for coordinator, side in targets:
             # The app cancels the running stream first; HA also releases it safely.
             await _execute_sided(coordinator, side, command)
+    except ValueError as err:
+        await _release_preflighted(preflighted)
+        raise ServiceValidationError(str(err)) from err
     except BaseException:
         await _release_preflighted(preflighted)
         raise

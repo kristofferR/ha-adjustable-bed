@@ -386,3 +386,88 @@ async def test_enabling_alarm_requires_time_and_clearing_does_not(hass):
             DOMAIN, "zseries_set_alarm", {"device_id": "bed", "enabled": False}, blocking=True
         )
     assert written(controller) == ["07061a0a01040d2f3b", "070500000000000001", "00c0", "00c0"]
+
+
+def _persisting(controller, data: dict):
+    """Give a controller a real per-entry store, like the coordinator's internal update."""
+    coordinator = controller._coordinator
+    coordinator.entry = SimpleNamespace(data=dict(data))
+
+    def persist(new_data, *, keys=None):
+        coordinator.entry.data = dict(new_data)
+
+    coordinator._async_persist_config = MagicMock(side_effect=persist)
+    coordinator._begin_internal_entry_update = MagicMock()
+    return coordinator
+
+
+async def _set_alarm(hass, controller):
+    await async_register_services(hass)
+    target = _target(BED_TYPE_ZSERIES_Z280, controller)
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(target, SIDE_BOTH)], []),
+        ),
+        patch("asyncio.sleep", new=AsyncMock()),
+        patch(
+            "custom_components.adjustable_bed.beds.serenity.dt_util.now",
+            return_value=datetime(2026, 10, 1, 13, 47, 59),
+        ),
+    ):
+        await hass.services.async_call(
+            DOMAIN,
+            "zseries_set_alarm",
+            {"device_id": "bed", "enabled": True, "time": "07:45:00", "wake_mode": "massage"},
+            blocking=True,
+        )
+
+
+async def test_failed_setup_read_is_retried_before_the_alarm_and_then_persisted(hass):
+    controller = zseries("z280")
+    coordinator = _persisting(controller, {})
+    controller.client.read_gatt_char.side_effect = [TimeoutError("setup read"), b"CST13"]
+    with patch("asyncio.sleep", new=AsyncMock()):
+        await controller.start_notify()
+    assert controller.alarm_state is None  # Unknown, not "no alarm page".
+    assert not controller.supports_clock_alarm and controller.alarm_not_ruled_out
+    await _set_alarm(hass, controller)
+    assert controller.client.read_gatt_char.await_count == 2
+    assert written(controller)[1] == "07052001072d000101"
+    assert coordinator.entry.data["zseries_alarm_available"] is True
+    coordinator._begin_internal_entry_update.assert_called_once_with(False)
+
+
+async def test_persisted_capability_survives_disconnect_and_a_later_failed_read(hass):
+    first = zseries("z280")
+    store = _persisting(first, {})
+    with patch("asyncio.sleep", new=AsyncMock()):
+        await first.start_notify()  # CST13
+    # Reconnect: a new controller for the same entry, whose own read fails.
+    second = zseries("z280")
+    _persisting(second, store.entry.data)
+    second.client.read_gatt_char.side_effect = TimeoutError("flaky")
+    with patch("asyncio.sleep", new=AsyncMock()):
+        await second.start_notify()
+    assert second.supports_clock_alarm and second.alarm_state is True
+    await _set_alarm(hass, second)
+    assert second.client.read_gatt_char.await_count == 1  # No extra read needed.
+    assert written(second)[1] == "07052001072d000101"
+
+
+async def test_confirmed_other_manufacturer_is_rejected_without_reconnecting(hass):
+    controller = zseries("z280")
+    _persisting(controller, {"zseries_alarm_available": False})
+    with pytest.raises(ServiceValidationError, match="does not support"):
+        await _set_alarm(hass, controller)
+    controller.client.read_gatt_char.assert_not_awaited()
+    assert written(controller) == []
+
+
+async def test_unknown_state_that_cannot_be_read_fails_without_writing(hass):
+    controller = zseries("z280")
+    _persisting(controller, {})
+    controller.client.read_gatt_char.side_effect = TimeoutError("still unreadable")
+    with pytest.raises(ServiceValidationError, match="Could not read the manufacturer"):
+        await _set_alarm(hass, controller)
+    assert written(controller) == []

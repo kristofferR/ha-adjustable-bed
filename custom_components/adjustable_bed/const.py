@@ -53,6 +53,8 @@ CONF_PROTOCOL_VARIANT: Final = "protocol_variant"
 CONF_MOTOR_COUNT: Final = "motor_count"
 CONF_STARCODE_COMMAND_SELECTOR: Final = "starcode_abm5_4_command_selector"
 CONF_STARCODE_UI_SELECTOR: Final = "starcode_abm5_4_ui_selector"
+# Last successful Z-Series manufacturer observation: True for exact CST13/CST14.
+CONF_ZSERIES_ALARM_AVAILABLE: Final = "zseries_alarm_available"
 CONF_STARCODE_TRANSPORT_SELECTOR: Final = "starcode_abm5_4_transport_selector"
 STARCODE_APP_CONNECTION_TIMEOUT_SECONDS: Final = 8.0
 STARCODE_APP_CONFIG_KEYS: Final = frozenset({CONF_STARCODE_COMMAND_SELECTOR, CONF_STARCODE_UI_SELECTOR, CONF_STARCODE_TRANSPORT_SELECTOR})

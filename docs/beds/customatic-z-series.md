@@ -41,7 +41,7 @@ Touch controls repeat every 100 ms until release, then two zero frames are attem
 
 ## Alarm
 
-The app shows its alarm page only when the Device Information manufacturer string is exactly `CST13` or `CST14` (case-sensitive), for either model. HA reads it one second after subscribing and on **Refresh Manufacturer**. Other strings or a missing characteristic leave the alarm actions unavailable.
+The app shows its alarm page only when the Device Information manufacturer string is exactly `CST13` or `CST14` (case-sensitive), for either model. HA reads it one second after subscribing and on **Refresh Manufacturer**, and stores the last successful result with the entry so it survives disconnects and restarts. A failed read changes nothing: while the result is unknown, an alarm action reconnects and reads it again before writing. A confirmed other string makes the alarm actions unavailable.
 
 | Frame | Bytes |
 |---|---|
