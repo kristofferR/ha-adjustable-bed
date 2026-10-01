@@ -226,3 +226,8 @@ local state, sends no timer packet and does not stop the receiver on expiry.
 Hold one exact app action. Flat runs 600 ms; save and reset run the six-second local confirmation interval. No device acknowledgement is inferred.
 
 Target one or more physical devices with `device_id`, an exact supported `control`, `duration` in seconds (0.1–60), and optional paired `side`. Every target’s profile and observed-state gate is checked before any write. Movement and memory refresh every 100 ms with immediate STOP; presets release according to the retained UI selector. Flat runs 600 ms after activation; save/reset stream through the six-second local confirmation interval regardless of the duration field. Positive massage controls require observed active state; this profile has no massage timer Off command. [The protocol document](beds/starcode-abm5-4.md) lists all controls, exact capability gates and exclusions.
+
+
+## Motion Bed app actions
+
+The [Motion Bed action index](beds/motion_bed.md#actions) covers all 13 typed app actions, including alarms, sleep calibration/reporting, hub modules, pressure, thermal schedules, audio and BLE Wi-Fi provisioning. Named action keys are listed in controller diagnostics. Persistent changes require confirmation; every target is validated before writes, and native paired child targets retain their side.

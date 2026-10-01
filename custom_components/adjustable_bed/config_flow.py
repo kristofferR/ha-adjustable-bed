@@ -109,6 +109,7 @@ from .const import (
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
+    BED_TYPE_MOTION_BED,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CB24,
@@ -165,6 +166,10 @@ from .const import (
     CONF_MALOUF_APP_TRANSPORT,
     CONF_MALOUF_LAYOUT,
     CONF_MALOUF_MEMORY_SLOTS,
+    CONF_MOTION_BED_MOVEMENT,
+    CONF_MOTION_BED_NAME,
+    CONF_MOTION_BED_PRESET,
+    CONF_MOTION_BED_RESTORED,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
@@ -231,6 +236,7 @@ from .const import (
     MALOUF_LAYOUTS,
     MALOUF_MEMORY_SLOT_OPTIONS,
     MALOUF_MEMORY_SLOTS_AUTO,
+    MOTION_BED_CONFIG_KEYS,
     OCTO_VARIANT_STAR2,
     OKIN_CST_THREE_MOTOR_VARIANTS,
     PAIR_MODE_SEPARATE_ADDRESS,
@@ -917,6 +923,34 @@ def _starcode_setup_transport_present(client: BleakClient, selector: str) -> boo
     return False
 
 
+def _add_motion_bed_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[str, Any]) -> None:
+    from .motion_bed_models import MOVEMENT_LAYOUTS, PRESET_VARIANTS
+    schema[vol.Required(CONF_MOTION_BED_NAME, default=data.get(CONF_MOTION_BED_NAME, data.get(CONF_NAME, "")))] = str
+    schema[vol.Optional(CONF_MOTION_BED_RESTORED, default=data.get(CONF_MOTION_BED_RESTORED, False))] = bool
+    schema[vol.Optional(CONF_MOTION_BED_PRESET, default=data.get(CONF_MOTION_BED_PRESET, "auto"))] = vol.In(("auto", *PRESET_VARIANTS))
+    schema[vol.Optional(CONF_MOTION_BED_MOVEMENT, default=data.get(CONF_MOTION_BED_MOVEMENT, "auto"))] = vol.In(("auto", *MOVEMENT_LAYOUTS))
+
+
+def _motion_bed_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .motion_bed_models import select_motion_bed
+    try:
+        select_motion_bed(data.get(CONF_MOTION_BED_NAME, ""), restored=data.get(CONF_MOTION_BED_RESTORED, False),
+                         preset_override=None if data.get(CONF_MOTION_BED_PRESET, "auto") == "auto" else data[CONF_MOTION_BED_PRESET],
+                         movement_override=None if data.get(CONF_MOTION_BED_MOVEMENT, "auto") == "auto" else data[CONF_MOTION_BED_MOVEMENT])
+    except ValueError:
+        return {"base": "motion_bed_profile"}
+    return {}
+
+
+def _normalize_motion_bed_data(data: dict[str, Any]) -> None:
+    for key in (CONF_MOTION_BED_PRESET, CONF_MOTION_BED_MOVEMENT):
+        if data.get(key) == "auto":
+            data.pop(key)
+    data[CONF_DISABLE_ANGLE_SENSING] = True
+    data[CONF_HAS_MASSAGE] = False  # Named app controls own their capabilities.
+    data[CONF_MOTOR_PULSE_USER_SET] = False
+
+
 def _add_vibradorm_app_schema_fields(
     schema: dict[vol.Marker, Any], current_data: dict[str, Any] | None = None
 ) -> None:
@@ -1160,7 +1194,7 @@ def _vmatbasic_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
 def _hide_vibradorm_generic_fields(schema: dict[vol.Marker, Any], bed_type: str | None) -> None:
     """App profiles define controls and held behavior independently of generic options."""
-    if bed_type not in {BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC}:
+    if bed_type not in {BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC, BED_TYPE_MOTION_BED}:
         return
     hidden = {
         CONF_MOTOR_COUNT,
@@ -1756,6 +1790,19 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return self.async_show_form(
             step_id="vibradorm_app", data_schema=vol.Schema(schema), errors=errors
         )
+
+    async def async_step_motion_bed(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Select the app's exact advertisement identity and optional retained layouts."""
+        assert self._manual_data is not None
+        data = {**self._manual_data, **(user_input or {})}
+        errors = _motion_bed_errors(data) if user_input is not None else {}
+        if user_input is not None and not errors:
+            _normalize_motion_bed_data(data)
+            self._manual_data = data
+            return await self._finish_with_verify(data, data.get(CONF_NAME, "Motion Bed"))
+        schema: dict[vol.Marker, Any] = {}
+        _add_motion_bed_schema_fields(schema, data)
+        return self.async_show_form(step_id="motion_bed", data_schema=vol.Schema(schema), errors=errors)
 
     async def async_step_malouf_app(
         self, user_input: dict[str, Any] | None = None
@@ -2622,6 +2669,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 if selected_bed_type == BED_TYPE_STARCODE_ABM5_4:
                     self._manual_data = entry_data
                     return await self.async_step_starcode_app()
+                if selected_bed_type == BED_TYPE_MOTION_BED:
+                    self._manual_data = entry_data
+                    return await self.async_step_motion_bed()
                 if selected_bed_type == BED_TYPE_VIBRADORM_APP:
                     self._manual_data = entry_data
                     self._vibradorm_app_bluetooth_pairing = True
@@ -3563,6 +3613,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 if bed_type == BED_TYPE_STARCODE_ABM5_4:
                     self._manual_data = entry_data
                     return await self.async_step_starcode_app()
+                if bed_type == BED_TYPE_MOTION_BED:
+                    self._manual_data = entry_data
+                    return await self.async_step_motion_bed()
                 if bed_type == BED_TYPE_VIBRADORM_APP:
                     self._manual_data = entry_data
                     return await self.async_step_vibradorm_app()
@@ -3869,6 +3922,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     if bed_type == BED_TYPE_STARCODE_ABM5_4:
                         self._manual_data = entry_data
                         return await self.async_step_starcode_app()
+                    if bed_type == BED_TYPE_MOTION_BED:
+                        self._manual_data = entry_data
+                        return await self.async_step_motion_bed()
                     if bed_type == BED_TYPE_VIBRADORM_APP:
                         self._manual_data = entry_data
                         return await self.async_step_vibradorm_app()
@@ -6107,6 +6163,9 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         if bed_type != BED_TYPE_STARCODE_ABM5_4:
             for key in STARCODE_APP_CONFIG_KEYS:
                 data.pop(key, None)
+        if bed_type != BED_TYPE_MOTION_BED:
+            for key in MOTION_BED_CONFIG_KEYS:
+                data.pop(key, None)
         if bed_type != BED_TYPE_VIBRADORM_APP:
             for key in VIBRADORM_APP_CONFIG_KEYS:
                 data.pop(key, None)
@@ -6603,6 +6662,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             _add_jiecang_app_schema_fields(schema_dict, current_data)
         if bed_type == BED_TYPE_STARCODE_ABM5_4 and not separate_address_pair:
             _add_starcode_app_schema_fields(schema_dict, current_data)
+        if bed_type == BED_TYPE_MOTION_BED and not separate_address_pair:
+            _add_motion_bed_schema_fields(schema_dict, current_data)
         if bed_type == BED_TYPE_VIBRADORM_APP and not separate_address_pair:
             _add_vibradorm_app_schema_fields(schema_dict, current_data)
         if bed_type == BED_TYPE_VMATBASIC and not separate_address_pair:
@@ -7010,6 +7071,17 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 user_input[CONF_MOTOR_COUNT] = 2
                 user_input[CONF_HAS_MASSAGE] = True
                 user_input[CONF_DISABLE_ANGLE_SENSING] = True
+            if bed_type == BED_TYPE_MOTION_BED:
+                if separate_address_pair and MOTION_BED_CONFIG_KEYS.intersection(user_input):
+                    return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors={"base": "motion_bed_unpair"})
+                if not separate_address_pair:
+                    app_data = {**current_data, **user_input}
+                    app_errors = _motion_bed_errors(app_data)
+                    if app_errors:
+                        return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors)
+                    user_input[CONF_DISABLE_ANGLE_SENSING] = True
+                    user_input[CONF_HAS_MASSAGE] = False
+                    user_input[CONF_MOTOR_PULSE_USER_SET] = False
             if bed_type == BED_TYPE_VIBRADORM_APP and not separate_address_pair:
                 app_data = _vibradorm_app_data(current_data, user_input)
                 if _vibradorm_app_form_changed(current_data, user_input):
@@ -7214,7 +7286,12 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 new_data = {**self.config_entry.data, **changed}
                 if pulse_user_set:
                     new_data[CONF_MOTOR_PULSE_USER_SET] = True
-                if self.config_entry.data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS:
+                if (
+                    self.config_entry.data.get(CONF_PAIR_MODE)
+                    == PAIR_MODE_SINGLE_ADDRESS
+                ):
+                    if bed_type == BED_TYPE_MOTION_BED:
+                        _normalize_motion_bed_data(new_data)
                     self._apply_bed_type_change_cleanup(new_data, bed_type, requested_variant)
                     for key in stale_vibradorm_keys:
                         new_data.pop(key, None)
@@ -7245,6 +7322,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 new_data = {**self.config_entry.data, **self._pending_data, **user_input}
                 if pulse_user_set:
                     new_data[CONF_MOTOR_PULSE_USER_SET] = True
+            if bed_type == BED_TYPE_MOTION_BED and not separate_address_pair:
+                _normalize_motion_bed_data(new_data)
             self._apply_bed_type_change_cleanup(new_data, bed_type, requested_variant)
             for key in stale_vibradorm_keys:
                 new_data.pop(key, None)

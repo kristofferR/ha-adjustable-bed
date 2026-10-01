@@ -1,0 +1,747 @@
+"""Motion Bed app control, using one explicitly selected physical target."""
+from __future__ import annotations
+
+import asyncio
+from collections.abc import Callable, Coroutine, Mapping
+from contextvars import ContextVar
+from dataclasses import fields, replace
+from typing import TYPE_CHECKING
+
+from ..motion_bed_actions import ACTION_BY_KEY, MOTION_BED_ACTIONS, MotionBedAction
+from ..motion_bed_models import MotionBedSelection
+from ..motion_bed_protocol import SOURCE_COMMANDS, build_clock, build_thermal_clock
+from ..motion_bed_requests import MotionBedWrite
+from ..motion_bed_state import (
+    MotionBedContext,
+    MotionBedFollowup,
+    MotionBedState,
+    parse_motion_bed_notification,
+)
+from .base import (
+    BedController,
+    ControllerButtonSpec,
+    ControllerSelectSpec,
+    ControllerStateBinarySensorSpec,
+    ControllerStateSensorSpec,
+    MotorCommandCallable,
+    MotorControlSpec,
+)
+
+if TYPE_CHECKING:
+    from bleak import BleakClient
+    from bleak.backends.characteristic import BleakGATTCharacteristic
+
+    from ..coordinator import AdjustableBedCoordinator
+
+CHARACTERISTIC = "0000ffe1-0000-1000-8000-00805f9b34fb"
+STOP = bytes.fromhex("FFFFFFFF0500000000D700")
+
+
+def _action_callback(key: str) -> MotorCommandCallable:
+    async def invoke(controller: BedController) -> None:
+        await controller.async_execute_motion_bed_action(key)
+    return invoke
+
+
+class MotionBedController(BedController):
+    """Expose app controls without inferring motors or thermostat temperatures."""
+
+    def __init__(self, coordinator: AdjustableBedCoordinator, *, selection: MotionBedSelection) -> None:
+        super().__init__(coordinator)
+        self.selection = selection
+        self._state = MotionBedState()
+        self._route = selection.route
+        self._session_client: BleakClient | None = None
+        self._characteristic: BleakGATTCharacteristic | None = None
+        self._notifying = False
+        self._target_address = coordinator.address
+        self._generation = 0
+        self._tasks: set[asyncio.Task[None]] = set()
+        self._context_expiry: dict[MotionBedContext, float] = {}
+        self._diagnostic_rejection: str | None = None
+        self._receipts: tuple[str, ...] = ()
+        self._operation_generation: ContextVar[int | None] = ContextVar("motion_bed_operation", default=None)
+        self._started_modules: set[str] = set()
+        self._network_queries = 0
+        self._network_poll_active = False
+        self._active_module: str | None = None
+        self._audio_preference = False
+
+    @property
+    def control_characteristic_uuid(self) -> str:
+        return CHARACTERISTIC
+
+    @property
+    def requires_notification_channel(self) -> bool:
+        return True
+
+    @property
+    def auto_stops_on_idle(self) -> bool:
+        return False
+
+    @property
+    def supports_motor_control(self) -> bool:
+        return self.selection.surface in ("home", "motor", "hub")
+
+    @property
+    def supports_preset_flat(self) -> bool:
+        return False  # The complete named actions retain app-specific flat semantics.
+
+    @property
+    def supports_preset_zero_g(self) -> bool:
+        return False
+
+    @property
+    def supports_preset_anti_snore(self) -> bool:
+        return False
+
+    @property
+    def supports_preset_tv(self) -> bool:
+        return False
+
+    @property
+    def memory_slot_count(self) -> int:
+        return 0
+
+    @property
+    def supports_motion_bed_actions(self) -> bool:
+        return True
+
+    @property
+    def motion_bed_local_state(self) -> dict[str, bool]:
+        return {"audio_available": self._audio_preference}
+
+    def restore_motion_bed_local_state(self, state: Mapping[str, bool]) -> None:
+        if set(state) - {"audio_available"} or any(type(value) is not bool for value in state.values()):
+            raise ValueError("Invalid Motion Bed audio preference")
+        self._audio_preference = state.get("audio_available", False)
+
+    @property
+    def _has_audio(self) -> bool:
+        reported = self._state.audio_available
+        return reported if isinstance(reported, bool) else self._audio_preference
+
+    @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        return {
+            "profile": self.selection.surface,
+            "preset_layout": self.selection.preset,
+            "movement_layout": self.selection.movement,
+            "alternate_identity": self.selection.alternate_identity,
+            "write_policy_origin": "host: prefer write property, otherwise write-without-response",
+            "last_notification_rejection": self._diagnostic_rejection,
+            "receipts": self._receipts,
+            "hardware_verified": False,
+            "active_module": self._active_module,
+            "remembered_audio_available": self._audio_preference,
+            "actions": [{"key": action.key, "name": action.name, "kind": action.kind}
+                        for action in self.actions],
+            **self._state.to_updates(),
+        }
+
+    def _active_owners(self) -> frozenset[str]:
+        owners: set[str] = {"Setting2Activity"}
+        if self.selection.surface == "home":
+            owners.update({
+                f"Kuaijie{self.selection.preset}Fragment", f"Weitiao{self.selection.movement}Fragment",
+                "HomeActivity", "AnmoFragment", "DengguangFragment", "SmartSleepFragment",
+                "AlarmActivity", "SleepAdjustActivity", "SleepDataEntryActivity",
+                "SleepDayReportActivity", "SleepFallTimerSelectActivity", "SleepMonthReportActivity",
+                "SleepReportMainActivity", "SleepTimerSelectActivity", "NetworkActivity", "XinLvDaiActivity",
+            })
+        if self.selection.surface == "hub":
+            owners.update({"MainMcuActivity", "ChangeDeviceActivity", "ConnectMcuActivity"})
+        motor = self.selection.surface == "motor" or (self.selection.surface == "hub" and self._state.motor_module_present is True)
+        air = self.selection.surface == "air" or (self.selection.surface == "hub" and self._state.air_module_present is True)
+        thermal = self.selection.surface == "thermal" or (self.selection.surface == "hub" and self._state.thermal_module_present is True)
+        if motor:
+            owners.update({"DiandongFragment", "DianDongSetActivity", "AlarmActivity"})
+        if air:
+            owners.update({"QinangFragment", "AnmoSetActivity", "PressSetActivity"})
+        if thermal:
+            owners.update({"LengnuanFragment", "TimeSettingActivity"})
+        return frozenset(owners)
+
+    @property
+    def actions(self) -> tuple[MotionBedAction, ...]:
+        owners = self._active_owners()
+        return tuple(action for action in MOTION_BED_ACTIONS if action.owner in owners)
+
+    def controller_button_available(self, key: str) -> bool:
+        action = ACTION_BY_KEY.get(key.removeprefix("motion_bed_"))
+        if action is None or action.owner not in self._active_owners():
+            return False
+        try:
+            self.validate_motion_bed_action(action.key)
+        except ValueError:
+            return False
+        return True
+
+    @property
+    def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        return tuple(
+            ControllerButtonSpec(
+                key="motion_bed_" + action.key,
+                name=action.name,
+                press_fn=_action_callback(action.key),
+                translation_key=None,
+            )
+            for action in self.actions
+            if action.kind not in ("persistent", "held", "query")
+            # Programming is offered by the confirmed action service, never a one-tap erase.
+            and action.kind != "program"
+        ) + tuple(
+            ControllerButtonSpec(
+                key="motion_bed_" + action.key,
+                name=action.name,
+                press_fn=_action_callback(action.key),
+                translation_key=None,
+            )
+            for action in self.actions
+            if action.kind == "held" and action.owner in ("DiandongFragment", "SleepAdjustActivity")
+        )
+
+    @property
+    def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
+        if self.selection.surface != "home":
+            return ()  # Modular upper-arrow source callbacks are dead.
+        movement = {action.key: action for action in self.actions if action.kind == "held" and action.owner.startswith("Weitiao")}
+        controls: list[MotorControlSpec] = []
+        for key in movement:
+            if key.endswith("_up") and key[:-3] + "_down" in movement:
+                controls.append(MotorControlSpec(
+                    key="motion_bed_" + key[:-3], translation_key="motion_bed_" + key[:-3],
+                    open_fn=_action_callback(key), close_fn=_action_callback(key[:-3] + "_down"),
+                    stop_fn=lambda controller: controller.stop_all(),
+                    scheduler_resource="motion_bed_motor",
+                ))
+        return tuple(controls)
+
+    @property
+    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
+        if self.selection.surface != "hub":
+            return ()
+        async def select(controller: BedController, value: str) -> None:
+            await controller.set_motion_bed_surface(value)
+        return (ControllerSelectSpec("motion_bed_active_module", "motion_bed_active_module",
+                                     "motion_bed_active_module", ("motor", "air", "thermal"), select),)
+
+    async def set_motion_bed_surface(self, surface: str) -> None:
+        if self.selection.surface != "hub" or surface not in ("motor", "air", "thermal"):
+            raise ValueError("Choose a reported Motion Bed hub module")
+        if getattr(self._state, surface + "_module_present") is not True:
+            raise ValueError("This hub has not reported the selected module")
+        if self._active_module != surface:
+            self._active_module = surface
+            self._started_modules.discard(surface)
+            self._publish()
+            self._spawn(self._start_present_modules)
+
+    @property
+    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
+        return tuple(
+            ControllerStateSensorSpec(
+                key="motion_bed_" + item.name, translation_key="motion_bed_" + item.name,
+                state_key="motion_bed_" + item.name, icon="mdi:bed-outline",
+                entity_registry_enabled_default=item.name in {
+                    "brightness", "upper_massage", "lower_massage", "massage_timer", "thermal_temperature",
+                    "thermal_water", "network_status", "fault", "fault_part", "raw_positions",
+                },
+            )
+            for item in fields(self._state)
+            if "bool" not in str(item.type)
+        )
+
+    @property
+    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
+        return tuple(
+            ControllerStateBinarySensorSpec(
+                key="motion_bed_" + item.name, translation_key="motion_bed_" + item.name,
+                state_key="motion_bed_" + item.name, icon="mdi:bed-outline",
+            )
+            for item in fields(self._state)
+            if "bool" in str(item.type)
+        )
+
+    def _publish(self) -> None:
+        updates = {"motion_bed_" + key: value for key, value in self._state.to_updates().items()}
+        updates["motion_bed_active_module"] = self._active_module
+        self.forward_controller_state_updates(updates)
+
+    async def async_discover_capabilities(self) -> None:
+        client = self.client
+        if client is None or not client.is_connected:
+            raise ConnectionError("Motion Bed is not connected")
+        characteristic: BleakGATTCharacteristic | None = None
+        for service in client.services or ():
+            for candidate in service.characteristics:
+                if candidate.uuid.lower() == CHARACTERISTIC:
+                    characteristic = candidate
+        if characteristic is None:
+            raise ValueError("Motion Bed requires its last FFE1 characteristic")
+        if not {"write", "write-without-response"}.intersection(characteristic.properties):
+            raise ValueError("The last FFE1 characteristic is not writable")
+        if not {"notify", "indicate"}.intersection(characteristic.properties):
+            raise ValueError("The last FFE1 characteristic has no notification support")
+        binding_changed = (self._session_client is not client or self._target_address != self._coordinator.address
+                           or self._characteristic is not characteristic)
+        if self._notifying and binding_changed:
+            await self.stop_notify()
+        if binding_changed:
+            self._generation += 1
+            self._cancel_background()
+            self._context_expiry.clear()
+            self._started_modules.clear()
+            self._network_queries = 0
+            self._network_poll_active = False
+            self._active_module = None
+            self._state = MotionBedState()
+            self._route = self.selection.route
+            self._publish()
+        self._session_client, self._characteristic = client, characteristic
+        self._target_address = self._coordinator.address
+
+    def _current_session(self) -> tuple[BleakClient, BleakGATTCharacteristic]:
+        client, characteristic = self._session_client, self._characteristic
+        origin = self._operation_generation.get()
+        if (origin is not None and origin != self._generation) or (client is None or characteristic is None or self.client is not client
+                or not client.is_connected or self._coordinator.address != self._target_address):
+            raise ConnectionError("Motion Bed target/session changed")
+        return client, characteristic
+
+    def _format_command_trace_payload(self, command: bytes) -> dict[str, object]:
+        if command.startswith(bytes.fromhex("FFFFFFFF02001813")):
+            return {"hex": "**REDACTED**", "reason": "Motion Bed Wi-Fi provisioning"}
+        return {"hex": command.hex()}
+
+    async def write_command(self, command: bytes, repeat_count: int = 1,
+                            repeat_delay_ms: int = 100,
+                            cancel_event: asyncio.Event | None = None) -> None:
+        if repeat_count != 1:
+            raise ValueError("Motion Bed starts once; held motion does not repeat its start frame")
+        cancel = cancel_event or self._coordinator.cancel_command
+        async with self._ble_lock:
+            client, characteristic = self._current_session()
+            if cancel.is_set():
+                return
+            response = "write" in characteristic.properties
+            self._coordinator.record_command_trace(
+                payload=self._format_command_trace_payload(command),
+                characteristic_uuid=CHARACTERISTIC, characteristic_handle=characteristic.handle,
+                response=response, repeat_count=1, repeat_delay_ms=0,
+                command_origin="motion_bed_current_target", controller_class=type(self).__name__,
+            )
+            await client.write_gatt_char(characteristic, command, response=response)
+
+    async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
+        if self._notifying:
+            await self.stop_notify()
+        await self.async_discover_capabilities()
+        self._notify_callback = callback
+        client, characteristic = self._current_session()
+        generation = self._generation
+        address = self._target_address
+        def receive(sender: BleakGATTCharacteristic, data: bytearray) -> None:
+            if (generation != self._generation or self.client is not client or sender is not characteristic
+                    or not client.is_connected or self._coordinator.address != address):
+                return
+            self._handle_notification(bytes(data))
+        async with self._ble_lock:
+            self._current_session()
+            await client.start_notify(characteristic, receive)
+        self._notifying = True
+        token = self._operation_generation.set(generation)
+        try:
+            await self._startup()
+        except BaseException:
+            await self.stop_notify()
+            raise
+        finally:
+            self._operation_generation.reset(token)
+
+    async def stop_notify(self) -> None:
+        self._generation += 1
+        self._cancel_background()
+        try:
+            client, characteristic = self._session_client, self._characteristic
+            if self._notifying and client is not None and client.is_connected and characteristic is not None:
+                async with self._ble_lock:
+                    await client.stop_notify(characteristic)
+        finally:
+            self._notifying = False
+            self._session_client = None
+            self._characteristic = None
+            self._context_expiry.clear()
+            self._started_modules.clear()
+            self._network_queries = 0
+            self._network_poll_active = False
+            self._state = MotionBedState()
+            self._publish()
+            self._notify_callback = None
+
+    def _cancel_background(self) -> None:
+        for task in self._tasks:
+            task.cancel()
+        self._tasks.clear()
+
+    def _spawn(self, operation: Callable[[], Coroutine[object, object, None]]) -> None:
+        # Coroutine functions below own session/generation checks before each write.
+        generation = self._generation
+        async def run() -> None:
+            if generation != self._generation:
+                return
+            token = self._operation_generation.set(generation)
+            try:
+                await operation()
+            finally:
+                self._operation_generation.reset(token)
+        task = self._coordinator.hass.async_create_task(run())
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
+
+    def _activate(self, context: MotionBedContext, seconds: float = 30) -> None:
+        self._context_expiry[context] = asyncio.get_running_loop().time() + seconds
+
+    def _handle_notification(self, data: bytes) -> None:
+        self.forward_raw_notification(CHARACTERISTIC, data)
+        now = asyncio.get_running_loop().time()
+        contexts = self.selection.route.contexts | frozenset(
+            key for key, expiry in self._context_expiry.items() if expiry > now
+        )
+        if self.selection.surface == "hub":
+            if self._state.motor_module_present is True:
+                contexts |= frozenset({"motor"})
+            if self._state.air_module_present is True:
+                contexts |= frozenset({"air"})
+            if self._state.thermal_module_present is True:
+                contexts |= frozenset({"thermal"})
+        route = replace(self._route, contexts=contexts)
+        result = parse_motion_bed_notification(data, route, self._state)
+        self._diagnostic_rejection = result.rejection
+        self._state = result.state
+        if isinstance(self._state.audio_available, bool):
+            self._audio_preference = self._state.audio_available
+        self._receipts = result.receipts
+        self._publish()
+        if self.selection.surface == "hub":
+            self._spawn(self._start_present_modules)
+        for effect in result.effects:
+            if effect.action == "network_status_query" and self._network_poll_active and effect.delay_ms:
+                continue
+            self._spawn(lambda effect=effect: self._followup(effect))
+
+    async def _followup(self, effect: MotionBedFollowup) -> None:
+        generation = self._generation
+        await asyncio.sleep(effect.delay_ms / 1000)
+        if generation != self._generation:
+            return
+        key = {
+            "module_status_query": "main_mcu_activity_module_status",
+            "sensor_query": "diandong_fragment_sensor_status",
+            "position_query": "sleep_adjust_activity_raw_positions",
+            "network_status_query": "network_activity_network_status",
+        }[effect.action]
+        async def execute(controller: BedController) -> None:
+            if generation != self._generation:
+                return
+            if effect.action == "network_status_query":
+                await self._bounded_network_query()
+            else:
+                await controller.async_execute_motion_bed_internal_query(key)
+        await self._coordinator.async_execute_controller_query(execute, cancel_running=False, skip_disconnect=True)
+
+    async def async_execute_motion_bed_internal_query(self, key: str) -> None:
+        action = ACTION_BY_KEY[key]
+        if action.kind != "query":
+            raise ValueError("Internal Motion Bed callback must be a query")
+        self._activate(action.context)
+        for command in dict.fromkeys(SOURCE_COMMANDS[source_id] for source_id in action.select(self._state, self.selection.alternate_identity)):
+            await self.write_command(command)
+
+    async def _send_sequence(self, commands: tuple[bytes, ...], *, spacing: float = 0) -> None:
+        for index, command in enumerate(commands):
+            if index and spacing:
+                await asyncio.sleep(spacing)
+            await self.write_command(command)
+
+    async def _startup(self) -> None:
+        from datetime import datetime
+        surface = self.selection.surface
+        if surface == "home":
+            await asyncio.sleep(0.5)
+            await self.write_command(SOURCE_COMMANDS["HomeActivity:321"])
+            await asyncio.sleep(0.5)
+            await self.write_command(build_clock(datetime.now().astimezone()))
+            await asyncio.sleep(0.5)
+            await self.write_command(SOURCE_COMMANDS["HomeActivity:311"])
+            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.2)  # The inherited fragment event delays status requests.
+            for action in self.actions:
+                if action.kind == "query" and action.owner == f"Kuaijie{self.selection.preset}Fragment":
+                    commands = tuple(dict.fromkeys(SOURCE_COMMANDS[source_id] for source_id in action.select(self._state, self.selection.alternate_identity)))
+                    await self._send_sequence(commands, spacing=0.5)
+        elif surface == "hub":
+            await asyncio.sleep(0.3)
+            await self.write_command(SOURCE_COMMANDS["MainMcuActivity:182"])
+        else:
+            await self._module_startup(surface)
+
+    def _module_is_active(self, module: str) -> bool:
+        return self.selection.surface == module or (
+            self.selection.surface == "hub" and self._active_module == module
+            and getattr(self._state, module + "_module_present") is True
+        )
+
+    async def _module_startup(self, module: str) -> None:
+        from datetime import datetime
+        await asyncio.sleep(0.2)
+        if not self._module_is_active(module):
+            return
+        if module == "motor":
+            await self.write_command(SOURCE_COMMANDS["DiandongFragment:319"])
+            await asyncio.sleep(0.2)
+            if not self._module_is_active(module):
+                return
+            await self.write_command(build_clock(datetime.now().astimezone()))
+        elif module == "air":
+            await self.write_command(SOURCE_COMMANDS["QinangFragment:133"])
+        elif module == "thermal":
+            await self.write_command(SOURCE_COMMANDS["LengnuanFragment:183"])
+            await asyncio.sleep(0.2)
+            if not self._module_is_active(module):
+                return
+            await self.write_command(build_thermal_clock(datetime.now().astimezone()))
+            self._spawn(self._thermal_poll)
+
+    async def _start_present_modules(self) -> None:
+        present = tuple(module for module in ("motor", "air", "thermal")
+                        if getattr(self._state, module + "_module_present") is True)
+        self._started_modules.intersection_update(present)
+        if self._active_module not in present:
+            self._active_module = present[0] if present else None
+            self._publish()
+        module = self._active_module
+        if module is None or module in self._started_modules:
+            return
+        self._started_modules.add(module)
+        generation = self._generation
+        async def prepare(controller: BedController) -> None:
+            if (generation != self._generation or self._active_module != module
+                    or getattr(self._state, module + "_module_present") is not True):
+                self._started_modules.discard(module)
+                return
+            await self._module_startup(module)
+        await self._coordinator.async_execute_controller_query(prepare, cancel_running=False, skip_disconnect=True)
+
+    async def _thermal_poll(self) -> None:
+        generation = self._generation
+        await asyncio.sleep(2)
+        while generation == self._generation and (self.selection.surface == "thermal" or (self._state.thermal_module_present is True and self._active_module == "thermal")):
+            async def query(controller: BedController) -> None:
+                if generation != self._generation or (self.selection.surface == "hub" and (self._state.thermal_module_present is not True or self._active_module != "thermal")):
+                    return
+                await self.write_command(SOURCE_COMMANDS["LengnuanFragment:58"])
+            await self._coordinator.async_execute_controller_query(query, cancel_running=False, skip_disconnect=True)
+            await asyncio.sleep(5)
+
+    def validate_motion_bed_action(self, key: str, *, branch: str = "app",
+                                  duration: float = 1, confirmed: bool = False) -> None:
+        action = ACTION_BY_KEY.get(key)
+        if action is None or action.owner not in self._active_owners():
+            raise ValueError("Action is unavailable in the selected Motion Bed profile")
+        if not 0 < duration <= 10:
+            raise ValueError("Motion Bed bounded movement duration must be 0–10 seconds")
+        if action.kind in ("program", "persistent") and not confirmed:
+            raise ValueError("Confirm this persistent Motion Bed configuration change")
+        selected = action.select(self._state, self.selection.alternate_identity, branch=branch)
+        if not self._has_audio and any(
+            SOURCE_COMMANDS[source_id].startswith(bytes.fromhex("FFFFFFFF0100130B"))
+            or SOURCE_COMMANDS[source_id].startswith(bytes.fromhex("FFFFFFFF0100140B"))
+            for source_id in selected
+        ):
+            raise ValueError("This physical target has not reported audio support")
+
+    async def async_execute_motion_bed_action(self, key: str, *, branch: str = "app",
+                                             duration: float = 1, confirmed: bool = False) -> None:
+        token = self._operation_generation.set(self._generation)
+        try:
+            await self._execute_action(key, branch=branch, duration=duration, confirmed=confirmed)
+        finally:
+            self._operation_generation.reset(token)
+
+    async def _execute_action(self, key: str, *, branch: str, duration: float, confirmed: bool) -> None:
+        self.validate_motion_bed_action(key, branch=branch, duration=duration, confirmed=confirmed)
+        action = ACTION_BY_KEY[key]
+        self._activate(action.context)
+        if self.selection.surface == "hub":
+            module = "thermal" if action.owner == "LengnuanFragment" else "air" if action.owner in ("QinangFragment", "AnmoSetActivity", "PressSetActivity") else "motor" if action.owner in ("DiandongFragment", "DianDongSetActivity") else None
+            if module is not None:
+                await self.set_motion_bed_surface(module)
+        source_ids = action.select(self._state, self.selection.alternate_identity, branch=branch)
+        commands = tuple(dict.fromkeys(SOURCE_COMMANDS[source_id] for source_id in source_ids))
+        if action.kind == "held":
+            try:
+                for command in commands:
+                    await self.write_command(command)
+                await self._hold(duration, sleep_adjust=action.context == "sleep_adjust")
+            finally:
+                if self._operation_generation.get() == self._generation:
+                    await self._send_stop()
+                if self._operation_generation.get() == self._generation and action.context == "sleep_adjust":
+                    await asyncio.sleep(0.1)
+                    await self.write_command(SOURCE_COMMANDS["SleepAdjustActivity:255"], cancel_event=asyncio.Event())
+        elif key == "sleep_data_entry_activity_capture_debug":
+            for _ in range(10):
+                try:
+                    await asyncio.wait_for(self._coordinator.cancel_command.wait(), 2)
+                    return
+                except TimeoutError:
+                    for command in commands:
+                        await self.write_command(command)
+        else:
+            await self._send_sequence(commands, spacing=0.5 if action.kind == "query" and action.owner.startswith("Kuaijie") else 0)
+
+    async def _hold(self, duration: float, *, sleep_adjust: bool = False) -> None:
+        deadline = asyncio.get_running_loop().time() + duration
+        while asyncio.get_running_loop().time() < deadline:
+            remaining = deadline - asyncio.get_running_loop().time()
+            try:
+                await asyncio.wait_for(self._coordinator.cancel_command.wait(), min(remaining, 0.5))
+                return
+            except TimeoutError:
+                if sleep_adjust and asyncio.get_running_loop().time() < deadline:
+                    await self.write_command(SOURCE_COMMANDS["SleepAdjustActivity:281"])
+
+    def validate_motion_bed_write(self, request: MotionBedWrite) -> None:
+        available: set[str] = set()
+        surface = self.selection.surface
+        if surface == "home":
+            available.update({"clock", "alarm", "sleep_angles", "calibration", "sleep_timer", "sleep_report", "provision_wifi"})
+            if self.selection.preset == "K2M":
+                available.add("audio")
+        if surface == "motor" or (surface == "hub" and self._state.motor_module_present is True):
+            available.update({"clock", "alarm", "audio"})
+        if surface == "air" or (surface == "hub" and self._state.air_module_present is True):
+            available.update({"air_setting", "pressure"})
+        if surface == "thermal" or (surface == "hub" and self._state.thermal_module_present is True):
+            available.update({"clock", "thermal_schedule"})
+        if surface == "hub":
+            available.add("module")
+        if request.name not in available:
+            raise ValueError("Configuration is unavailable in this Motion Bed profile/module")
+        if request.name == "clock":
+            thermal = request.context == "thermal"
+            if thermal:
+                if not (surface == "thermal" or (surface == "hub" and self._state.thermal_module_present is True)):
+                    raise ValueError("Thermal clock requires the thermal module/profile")
+            elif not (surface in ("home", "motor") or (surface == "hub" and self._state.motor_module_present is True)):
+                raise ValueError("P1 clock requires a motor/home profile")
+        if request.name == "alarm":
+            if request.alarm_audio != self._has_audio:
+                raise ValueError("Alarm audio must match this physical target's reported audio capability")
+            if surface == "home" and request.alarm_switch is not None:
+                raise ValueError("Home alarms use the enabled flag, not the modular first-alarm switch")
+            if request.alarm_switch == 0 and self._state.alarm_flag is not None:
+                raise ValueError("Uninitialized alarm switch is unavailable after alarm state arrives")
+        if request.name == "audio" and not self._has_audio:
+            raise ValueError("This physical target has not reported audio support")
+        if request.persistent and not request.confirmed:
+            raise ValueError("Confirm this persistent Motion Bed configuration change")
+
+    async def async_execute_motion_bed_write(self, request: MotionBedWrite) -> None:
+        self.validate_motion_bed_write(request)
+        token = self._operation_generation.set(self._generation)
+        try:
+            if self.selection.surface == "hub":
+                module = "thermal" if request.context in ("thermal", "thermal_schedule") else "air" if request.name in ("air_setting", "pressure") else "motor" if request.name in ("alarm", "audio", "clock") else None
+                if module is not None:
+                    await self.set_motion_bed_surface(module)
+            self._activate(request.context, 75 if request.network_poll else 30)
+            if request.name == "sleep_report":
+                fresh = MotionBedState()
+                clean = {item.name: getattr(fresh, item.name) for item in fields(fresh)
+                         if item.name.startswith(("day_", "app_day_", "month_"))}
+                self._state = replace(self._state, **clean)
+                self._publish()
+                self._route = replace(self._route, historical_day=request.historical_day,
+                                      day_window_offset=request.report_offset)
+            if request.initial_delay_ms:
+                try:
+                    await asyncio.wait_for(self._coordinator.cancel_command.wait(), request.initial_delay_ms / 1000)
+                    return
+                except TimeoutError:
+                    pass
+            for index, frame in enumerate(request.frames):
+                if index and request.spacing_ms:
+                    try:
+                        await asyncio.wait_for(self._coordinator.cancel_command.wait(), request.spacing_ms / 1000)
+                        return
+                    except TimeoutError:
+                        pass
+                await self.write_command(frame)
+            if request.network_poll:
+                self._network_queries = 0
+                self._network_poll_active = True
+                self._state = replace(self._state, network_poll_attempts=0, provisioning_status="waiting")
+                self._publish()
+                self._spawn(self._network_poll)
+        finally:
+            self._operation_generation.reset(token)
+
+    async def _bounded_network_query(self) -> None:
+        if self._network_queries >= 10:
+            return
+        self._network_queries += 1
+        await self.async_execute_motion_bed_internal_query("network_activity_network_status")
+
+    async def _network_poll(self) -> None:
+        generation = self._generation
+        try:
+            for _ in range(10):
+                await asyncio.sleep(6)
+                if generation != self._generation or self._state.provisioning_status in ("failed", "success"):
+                    return
+                async def query(controller: BedController) -> None:
+                    if generation == self._generation:
+                        await self._bounded_network_query()
+                await self._coordinator.async_execute_controller_query(query, cancel_running=False, skip_disconnect=True)
+            if generation == self._generation and self._state.provisioning_status == "waiting":
+                self._state = replace(self._state, provisioning_status="timed_out")
+                self._publish()
+        finally:
+            if generation == self._generation:
+                self._network_poll_active = False
+
+    async def _send_stop(self) -> None:
+        await self.write_command(STOP, cancel_event=asyncio.Event())
+
+    async def stop_all(self) -> None:
+        if self.selection.surface == "air":
+            await self.write_command(SOURCE_COMMANDS["QinangFragment:302"], cancel_event=asyncio.Event())
+        elif self.selection.surface == "thermal":
+            from ..motion_bed_protocol import build_thermal_gear
+            await self.write_command(build_thermal_gear(4), cancel_event=asyncio.Event())
+        else:
+            await self._send_stop()
+
+    async def _axis(self, axis: str, direction: str) -> None:
+        candidates = [action for action in self.actions if action.kind == "held" and action.key.endswith("_" + axis + "_" + direction) and action.owner != "SleepAdjustActivity"]
+        if len(candidates) != 1:
+            raise ValueError("Use the explicitly named Motion Bed movement control")
+        await self.async_execute_motion_bed_action(candidates[0].key)
+
+    async def move_head_up(self) -> None: await self._axis("head", "up")
+    async def move_head_down(self) -> None: await self._axis("head", "down")
+    async def move_head_stop(self) -> None: await self.stop_all()
+    async def move_back_up(self) -> None: await self._axis("back", "up")
+    async def move_back_down(self) -> None: await self._axis("back", "down")
+    async def move_back_stop(self) -> None: await self.stop_all()
+    async def move_legs_up(self) -> None: await self._axis("legs", "up")
+    async def move_legs_down(self) -> None: await self._axis("legs", "down")
+    async def move_legs_stop(self) -> None: await self.stop_all()
+    async def move_feet_up(self) -> None: raise NotImplementedError("No inferred feet axis")
+    async def move_feet_down(self) -> None: raise NotImplementedError("No inferred feet axis")
+    async def move_feet_stop(self) -> None: await self.stop_all()
+    async def preset_flat(self) -> None: raise NotImplementedError("Use the app-labelled flat action")
+    async def preset_memory(self, memory_num: int) -> None: raise NotImplementedError("Use the app-labelled memory action")
+    async def program_memory(self, memory_num: int) -> None: raise NotImplementedError("Use confirmed Motion Bed programming")

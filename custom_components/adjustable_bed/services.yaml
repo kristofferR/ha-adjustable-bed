@@ -1598,3 +1598,592 @@ starcode_abm5_4_hold_control:
       selector:
         select:
           options: [both, left, right]
+
+
+motion_bed_action:
+  name: Motion Bed app action
+  description: Run a named action listed in controller diagnostics. Persistent save,
+    clear, reset and module changes require confirmation.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      name: Side
+      selector:
+        select:
+          options:
+          - left
+          - right
+          - both
+    confirmed:
+      name: Confirm persistent change
+      default: false
+      selector:
+        boolean: {}
+    action:
+      name: Action
+      required: true
+      selector:
+        text: {}
+    branch:
+      name: Branch
+      selector:
+        select:
+          options:
+          - app
+          - save
+          - clear
+    duration:
+      name: Duration
+      selector:
+        number:
+          mode: box
+          min: 0.01
+          max: 10
+motion_bed_alarm:
+  name: Motion Bed alarm
+  description: Program the app alarm with all six modes and the current physical target’s
+    reported audio capability.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      name: Side
+      selector:
+        select:
+          options:
+          - left
+          - right
+          - both
+    confirmed:
+      name: Confirm persistent change
+      default: false
+      selector:
+        boolean: {}
+    enabled:
+      name: Enabled
+      required: true
+      selector:
+        boolean: {}
+    hour:
+      name: Hour
+      required: true
+      selector:
+        number:
+          mode: box
+          min: 0
+          max: 23
+    minute:
+      name: Minute
+      required: true
+      selector:
+        number:
+          mode: box
+          min: 0
+          max: 59
+    weekdays:
+      name: Weekdays
+      selector:
+        object: {}
+    repeat:
+      name: Repeat
+      selector:
+        boolean: {}
+    mode:
+      name: Mode
+      required: true
+      selector:
+        number:
+          mode: box
+    massage:
+      name: Massage
+      selector:
+        boolean: {}
+    sound:
+      name: Sound
+      selector:
+        number:
+          mode: box
+    audio:
+      name: Audio
+      selector:
+        boolean: {}
+    switch:
+      name: Switch
+      selector:
+        number:
+          mode: box
+motion_bed_clock:
+  name: Motion Bed clock
+  description: Set the motor or thermal module clock.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      name: Side
+      selector:
+        select:
+          options:
+          - left
+          - right
+          - both
+    confirmed:
+      name: Confirm persistent change
+      default: false
+      selector:
+        boolean: {}
+    timestamp:
+      name: Timestamp
+      required: true
+      selector:
+        text: {}
+    thermal:
+      name: Thermal
+      selector:
+        boolean: {}
+motion_bed_sleep_angles:
+  name: Motion Bed sleep positions
+  description: Save four raw flat and four raw side positions. These values have no
+    established angle or percentage units.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      name: Side
+      selector:
+        select:
+          options:
+          - left
+          - right
+          - both
+    confirmed:
+      name: Confirm persistent change
+      default: false
+      selector:
+        boolean: {}
+    page:
+      name: Page
+      required: true
+      selector:
+        number:
+          mode: box
+    flat:
+      name: Flat
+      required: true
+      selector:
+        object: {}
+    side_positions:
+      name: Side positions
+      required: true
+      selector:
+        object: {}
+motion_bed_calibration:
+  name: Motion Bed sleep calibration
+  description: Save the app’s flat and side calibration readings. Confirm before changing
+    calibration.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      name: Side
+      selector:
+        select:
+          options:
+          - left
+          - right
+          - both
+    confirmed:
+      name: Confirm persistent change
+      default: false
+      selector:
+        boolean: {}
+    flat:
+      name: Flat
+      required: true
+      selector:
+        object: {}
+    side_position:
+      name: Side position
+      required: true
+      selector:
+        number:
+          mode: box
+motion_bed_sleep_timer:
+  name: Motion Bed sleep timer
+  description: Select an app bedtime or fall timer slot.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      name: Side
+      selector:
+        select:
+          options:
+          - left
+          - right
+          - both
+    confirmed:
+      name: Confirm persistent change
+      default: false
+      selector:
+        boolean: {}
+    slot:
+      name: Slot
+      required: true
+      selector:
+        number:
+          mode: box
+    fall:
+      name: Fall
+      selector:
+        boolean: {}
+motion_bed_sleep_report:
+  name: Motion Bed sleep report
+  description: Read current, historical day, month or timer data. Historical day selection
+    and graph window offset are separate.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      name: Side
+      selector:
+        select:
+          options:
+          - left
+          - right
+          - both
+    confirmed:
+      name: Confirm persistent change
+      default: false
+      selector:
+        boolean: {}
+    kind:
+      name: Kind
+      required: true
+      selector:
+        select:
+          options:
+          - month
+          - real
+          - timer
+          - day
+    offset:
+      name: Offset
+      selector:
+        number:
+          mode: box
+          min: 0
+          max: 29
+    window_offset:
+      name: Window offset
+      selector:
+        number:
+          mode: box
+          min: 0
+          max: 4
+motion_bed_module:
+  name: Motion Bed hub module
+  description: Query, bind or delete a motor, air or thermal module on one BLE hub.
+    Confirm bind and delete.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      name: Side
+      selector:
+        select:
+          options:
+          - left
+          - right
+          - both
+    confirmed:
+      name: Confirm persistent change
+      default: false
+      selector:
+        boolean: {}
+    operation:
+      name: Operation
+      required: true
+      selector:
+        select:
+          options:
+          - query
+          - bind
+          - delete
+    module_type:
+      name: Module type
+      selector:
+        number:
+          mode: box
+    address:
+      name: Address
+      selector:
+        text: {}
+motion_bed_air_setting:
+  name: Motion Bed air settings
+  description: Query or save the selected mode’s upper gear and optional timer. Lower
+    pressure is readback only.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      name: Side
+      selector:
+        select:
+          options:
+          - left
+          - right
+          - both
+    confirmed:
+      name: Confirm persistent change
+      default: false
+      selector:
+        boolean: {}
+    mode:
+      name: Mode
+      required: true
+      selector:
+        number:
+          mode: box
+    query:
+      name: Query
+      selector:
+        boolean: {}
+    gear:
+      name: Gear
+      selector:
+        number:
+          mode: box
+    timer:
+      name: Timer
+      selector:
+        number:
+          mode: box
+motion_bed_pressure:
+  name: Motion Bed air pressure
+  description: Edit one explicitly bound channel after the app’s 2.5-second quiet
+    check, or save twelve channel values in one whole frame.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      name: Side
+      selector:
+        select:
+          options:
+          - left
+          - right
+          - both
+    confirmed:
+      name: Confirm persistent change
+      default: false
+      selector:
+        boolean: {}
+    operation:
+      name: Operation
+      required: true
+      selector:
+        select:
+          options:
+          - live
+          - save
+    channel:
+      name: Channel
+      selector:
+        number:
+          mode: box
+          min: 0
+          max: 11
+    value:
+      name: Value
+      selector:
+        number:
+          mode: box
+    values:
+      name: Values
+      selector:
+        object: {}
+motion_bed_thermal_schedule:
+  name: Motion Bed thermal schedule
+  description: Save a timer with cooling or heating mode and gear, without guessing
+    a thermostat setpoint.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      name: Side
+      selector:
+        select:
+          options:
+          - left
+          - right
+          - both
+    confirmed:
+      name: Confirm persistent change
+      default: false
+      selector:
+        boolean: {}
+    hour:
+      name: Hour
+      required: true
+      selector:
+        number:
+          mode: box
+          min: 0
+          max: 23
+    minute:
+      name: Minute
+      required: true
+      selector:
+        number:
+          mode: box
+          min: 0
+          max: 59
+    mode:
+      name: Mode
+      required: true
+      selector:
+        number:
+          mode: box
+    gear:
+      name: Gear
+      selector:
+        number:
+          mode: box
+motion_bed_audio:
+  name: Motion Bed audio
+  description: Select a track, preview a track, or set volume on a target that reports
+    audio support.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      name: Side
+      selector:
+        select:
+          options:
+          - left
+          - right
+          - both
+    confirmed:
+      name: Confirm persistent change
+      default: false
+      selector:
+        boolean: {}
+    operation:
+      name: Operation
+      required: true
+      selector:
+        select:
+          options:
+          - track
+          - volume
+    value:
+      name: Value
+      required: true
+      selector:
+        number:
+          mode: box
+    preview:
+      name: Preview
+      selector:
+        boolean: {}
+motion_bed_provision_wifi:
+  name: Motion Bed sensor Wi-Fi provisioning
+  description: Send seven BLE configuration frames, then poll status at most ten times.
+    Credentials are redacted and never stored in the entry.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      name: Side
+      selector:
+        select:
+          options:
+          - left
+          - right
+          - both
+    confirmed:
+      name: Confirm persistent change
+      default: false
+      selector:
+        boolean: {}
+    ssid:
+      name: Ssid
+      required: true
+      selector:
+        text: {}
+    password:
+      name: Password
+      required: true
+      selector:
+        text:
+          type: password
+    longitude:
+      name: Longitude
+      required: true
+      selector:
+        number:
+          mode: box
+          min: -180
+          max: 180
+    latitude:
+      name: Latitude
+      required: true
+      selector:
+        number:
+          mode: box
+          min: -90
+          max: 90

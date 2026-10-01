@@ -56,6 +56,11 @@ CONF_STARCODE_UI_SELECTOR: Final = "starcode_abm5_4_ui_selector"
 CONF_STARCODE_TRANSPORT_SELECTOR: Final = "starcode_abm5_4_transport_selector"
 STARCODE_APP_CONNECTION_TIMEOUT_SECONDS: Final = 8.0
 STARCODE_APP_CONFIG_KEYS: Final = frozenset({CONF_STARCODE_COMMAND_SELECTOR, CONF_STARCODE_UI_SELECTOR, CONF_STARCODE_TRANSPORT_SELECTOR})
+CONF_MOTION_BED_NAME: Final = "motion_bed_name"
+CONF_MOTION_BED_RESTORED: Final = "motion_bed_restored"
+CONF_MOTION_BED_PRESET: Final = "motion_bed_preset"
+CONF_MOTION_BED_MOVEMENT: Final = "motion_bed_movement"
+MOTION_BED_CONFIG_KEYS: Final = frozenset({CONF_MOTION_BED_NAME, CONF_MOTION_BED_PRESET, CONF_MOTION_BED_MOVEMENT, CONF_MOTION_BED_RESTORED})
 CONF_VIBRADORM_APP_PROFILE: Final = "vibradorm_app_profile"
 CONF_VMATBASIC_PROFILE: Final = "vmatbasic_profile"
 CONF_VMATBASIC_FLOOR_LEVEL: Final = "vmatbasic_floor_level"
@@ -427,6 +432,7 @@ BED_TYPE_VIBRADORM: Final = "vibradorm"  # Vibradorm VMAT protocol
 BED_TYPE_VIBRADORM_APP: Final = "vibradorm_app"
 BED_TYPE_VMATBASIC: Final = "vmatbasic"
 BED_TYPE_STARCODE_ABM5_4: Final = "starcode_abm5_4"
+BED_TYPE_MOTION_BED: Final = "motion_bed"
 BED_TYPE_RONDURE: Final = "rondure"  # 1500 Tilt Base / Rondure Hump (8/9-byte FurniBus protocol)
 BED_TYPE_REMACRO: Final = (
     "remacro"  # Remacro protocol (CheersSleep/Jeromes/Slumberland/The Brick, 8-byte SynData)
@@ -521,6 +527,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
+    BED_TYPE_MOTION_BED,
     # Rondure / 1500 Tilt Base
     BED_TYPE_RONDURE,
     # Remacro (CheersSleep / Jeromes / Slumberland / The Brick)
@@ -596,6 +603,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         # The constructor refuses offline UART catalogs whose nonpositive C
         # can gain controls from live manufacturer classification.
         BED_TYPE_STARCODE_ABM5_4,
+        BED_TYPE_MOTION_BED,
     }
 )
 
@@ -2483,6 +2491,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_VIBRADORM_APP,
         BED_TYPE_VMATBASIC,
         BED_TYPE_STARCODE_ABM5_4,
+        BED_TYPE_MOTION_BED,
         BED_TYPE_OKIN_CST,
         BED_TYPE_OKIN_RF_ECO_BT,
     }
@@ -2575,6 +2584,7 @@ BEDS_WITH_DISCONNECT_AFTER_COMMAND_DEFAULT_DISABLED: Final = (
             BED_TYPE_VIBRADORM_APP,
             BED_TYPE_VMATBASIC,
             BED_TYPE_STARCODE_ABM5_4,
+            BED_TYPE_MOTION_BED,
         }
     )
 )

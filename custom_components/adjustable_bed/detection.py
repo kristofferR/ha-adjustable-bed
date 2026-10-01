@@ -48,6 +48,7 @@ from .const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MATTRESSFIRM,
+    BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
@@ -568,6 +569,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_VIBRADORM_APP: "Caresse Diamant / Werkmeister apps",
     BED_TYPE_VMATBASIC: "V-MAT Basic app (explicit product profile)",
     BED_TYPE_STARCODE_ABM5_4: "AdjustableM5X4 app (explicit profile)",
+    BED_TYPE_MOTION_BED: "Motion Bed app",
     # Diagnostic
     BED_TYPE_DIAGNOSTIC: "Diagnostic (unknown bed)",
 }

@@ -2548,9 +2548,11 @@ async def async_register_services(hass: HomeAssistant) -> None:
     if hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET):
         return  # Services already registered
 
+    from .motion_bed_services import async_register_motion_bed_services
     from .rmcontrol_services import async_register_rmcontrol_services
     from .sleep_number_services import async_register_sleep_number_services
 
+    async_register_motion_bed_services(hass)
     async_register_rmcontrol_services(hass)
     async_register_sleep_number_services(hass)
 
