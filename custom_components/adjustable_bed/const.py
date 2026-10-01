@@ -266,7 +266,7 @@ CONF_KAIDI_PRODUCT_ID: Final = "kaidi_product_id"
 CONF_KAIDI_SOFA_ACU_NO: Final = "kaidi_sofa_acu_no"
 # Remacro model selector: the lowest advertised manufacturer company ID.
 CONF_REMACRO_MODEL: Final = "remacro_model"
-# Remacro committed LED level, the app's per-bed "LV" preference.
+# Remacro committed LED levels by model ID, the app's "LV"+model+address preference.
 CONF_REMACRO_LED_LEVEL: Final = "remacro_led_level"
 CONF_KAIDI_ADV_TYPE: Final = "kaidi_adv_type"
 CONF_KAIDI_RESOLVED_VARIANT: Final = "kaidi_resolved_variant"

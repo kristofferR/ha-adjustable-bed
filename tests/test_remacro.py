@@ -551,7 +551,7 @@ async def test_led_brightness_preview_and_save_timing() -> None:
     assert controller._coordinator.controller_state["remacro_led_brightness"] == 0
     # Each commit persists the slider value, like the app's "LV" preference.
     remember = controller._coordinator.remember_remacro_led_level
-    assert [call.args for call in remember.call_args_list] == [(255,), (0,)]
+    assert [call.args for call in remember.call_args_list] == [(53, 255), (53, 0)]
     with pytest.raises(ValueError):
         await controller.set_led_brightness(256)
 
@@ -669,7 +669,7 @@ async def test_factory_resolves_app_and_model() -> None:
     live._serial.hold(0x0101)
     live._active_preset = "tv"
     live._head_level = 2
-    coordinator.entry.data[CONF_REMACRO_LED_LEVEL] = 9
+    coordinator.entry.data[CONF_REMACRO_LED_LEVEL] = {"51": 9, "46": 7}
     again = await create_controller(
         coordinator, BED_TYPE_REMACRO, "the_brick", None, manufacturer_data={51: b""}
     )
@@ -683,6 +683,13 @@ async def test_factory_resolves_app_and_model() -> None:
     )
     assert isinstance(other_app, RemacroController)
     assert other_app.control_side == "left"
+    # "LV" is keyed by model: a model without a committed level starts at 255.
+    coordinator.entry.data[CONF_REMACRO_LED_LEVEL] = {"46": 7}
+    changed = await create_controller(
+        coordinator, BED_TYPE_REMACRO, "the_brick", None, manufacturer_data={51: b""}
+    )
+    assert isinstance(changed, RemacroController)
+    assert changed._led_brightness == 255
 
 
 # -----------------------------------------------------------------------------
@@ -893,12 +900,17 @@ async def test_config_flow_refuses_models_the_app_does_not_list(hass: HomeAssist
         not_listed = flow._remacro_unsupported_abort(
             {**data, CONF_PROTOCOL_VARIANT: "jeromes"}, manufacturer_data={55: b""}
         )
+        field_error = flow._remacro_variant_error(
+            BED_TYPE_REMACRO, "jeromes", data[CONF_ADDRESS], {55: b""}
+        )
         unknown = flow._remacro_unsupported_abort(data, manufacturer_data={})
         listed = flow._remacro_unsupported_abort(data, manufacturer_data={55: b""})
     assert unmapped is not None and unmapped["type"] is FlowResultType.ABORT
     assert unmapped["reason"] == "remacro_model_unmapped"
-    assert not_listed is not None and not_listed["reason"] == "remacro_model_not_in_app"
-    assert not_listed["description_placeholders"] == {"company_id": "55", "app": "Jerome's"}
+    # A model another app lists is a field error on the form choosing the app.
+    assert not_listed is None
+    assert field_error == "remacro_model_not_in_app"
+    assert unmapped["description_placeholders"] == {"company_id": "13", "app": "Slumberland"}
     assert unknown is None and listed is None
     # An empty discovery map falls back to the non-connectable history.
     adverts = {True: None, False: MagicMock(manufacturer_data={52: b""})}
@@ -955,3 +967,154 @@ async def test_paired_sides_cache_their_own_model(hass: HomeAssistant) -> None:
     children = entry.data[CONF_PAIR_CHILDREN]
     assert children[0][CONF_REMACRO_MODEL] == 50
     assert CONF_REMACRO_MODEL not in children[1]
+
+
+async def test_discovery_form_reports_an_app_that_does_not_list_the_model(
+    hass: HomeAssistant, mock_bluetooth_service_info_remacro, enable_custom_integrations
+) -> None:
+    from homeassistant.config_entries import SOURCE_BLUETOOTH
+    from homeassistant.data_entry_flow import FlowResultType
+
+    mock_bluetooth_service_info_remacro.manufacturer_data = {55: b""}
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=mock_bluetooth_service_info_remacro
+    )
+    assert result["step_id"] == "bluetooth_confirm"
+    with patch(_HISTORY, return_value=None):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_BED_TYPE: BED_TYPE_REMACRO, CONF_PROTOCOL_VARIANT: "jeromes"},
+        )
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "bluetooth_confirm"
+    assert result["errors"][CONF_PROTOCOL_VARIANT] == "remacro_model_not_in_app"
+
+
+async def test_options_fix_reloads_a_failed_entry(
+    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
+) -> None:
+    from homeassistant.data_entry_flow import FlowResultType
+
+    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
+
+    entry = _remacro_entry(hass, "AA:BB:CC:DD:EE:68", **{CONF_PROTOCOL_VARIANT: "jeromes"})
+    with patch(_HISTORY, return_value=MagicMock(manufacturer_data={54: b""})):
+        assert not await hass.config_entries.async_setup(entry.entry_id)
+        assert entry.state is ConfigEntryState.SETUP_ERROR
+        flow = AdjustableBedOptionsFlow(entry)
+        flow.handler = entry.entry_id
+        flow.hass = hass
+        result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: "slumberland"})
+        assert result["type"] is FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.LOADED
+    assert entry.data[CONF_REMACRO_MODEL] == 54
+    await hass.config_entries.async_unload(entry.entry_id)
+
+
+async def test_led_level_persists_through_the_coordinator_without_reload(
+    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
+) -> None:
+    entry = _remacro_entry(hass, "AA:BB:CC:DD:EE:69")
+    with patch(_HISTORY, return_value=MagicMock(manufacturer_data={50: b""})):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        coordinator.remember_remacro_led_level(50, 64)
+        await hass.async_block_till_done()
+    assert entry.data[CONF_REMACRO_LED_LEVEL] == {"50": 64}
+    assert hass.data[DOMAIN][entry.entry_id] is coordinator  # No reload replaced it.
+    await hass.config_entries.async_unload(entry.entry_id)
+
+
+def _remacro_pair(hass: HomeAssistant, left_model: int | None, right_model: int | None):
+    from custom_components.adjustable_bed import _build_paired_children
+    from custom_components.adjustable_bed.const import (
+        CONF_PAIR_CHILDREN,
+        CONF_PAIR_ID,
+        CONF_PAIR_MEMBER_ADDRESSES,
+        CONF_PAIR_MODE,
+        CONF_PAIR_SCHEMA_VERSION,
+        CONF_SIDE,
+        PAIR_MODE_SEPARATE_ADDRESS,
+    )
+
+    def child(side: str, address: str, model: int | None) -> dict:
+        data = {
+            CONF_SIDE: side,
+            CONF_ADDRESS: address,
+            CONF_NAME: side.capitalize(),
+            CONF_BED_TYPE: BED_TYPE_REMACRO,
+            CONF_MOTOR_COUNT: 2,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PREFERRED_ADAPTER: "auto",
+        }
+        if model is not None:
+            data[CONF_REMACRO_MODEL] = model
+        return data
+
+    left, right = "AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72"
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Remacro Pair",
+        data={
+            CONF_PAIR_ID: "pair_remacro",
+            CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
+            CONF_PAIR_SCHEMA_VERSION: 1,
+            CONF_BED_TYPE: BED_TYPE_REMACRO,
+            CONF_NAME: "Remacro Pair",
+            CONF_PREFERRED_ADAPTER: "auto",
+            CONF_PAIR_MEMBER_ADDRESSES: [left, right],
+            CONF_PAIR_CHILDREN: [
+                child("left", left, left_model),
+                child("right", right, right_model),
+            ],
+        },
+        unique_id="pair_remacro",
+        version=4,
+    )
+    entry.add_to_hass(hass)
+    return entry, _build_paired_children(hass, entry)
+
+
+async def test_paired_side_with_unlisted_model_does_not_connect(
+    hass: HomeAssistant, mock_coordinator_connected, mock_establish_connection
+) -> None:
+    from homeassistant.helpers import issue_registry as ir
+
+    _entry, children = _remacro_pair(hass, None, None)
+    adverts = {
+        "AA:BB:CC:DD:EE:71": MagicMock(manufacturer_data={50: b""}),
+        "AA:BB:CC:DD:EE:72": MagicMock(manufacturer_data={13: b""}),
+    }
+    with patch(
+        "custom_components.adjustable_bed.remacro_discovery.bluetooth.async_last_service_info",
+        side_effect=lambda _hass, address, connectable: adverts[address],
+    ):
+        assert await children["right"].async_connect() is False
+        mock_establish_connection.assert_not_awaited()
+        assert await children["left"].async_connect() is True
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:72")
+    assert issue is not None and issue.translation_key == "remacro_model_unmapped"
+    assert ir.async_get(hass).async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:71") is None
+    await children["left"].async_disconnect()
+
+
+async def test_paired_side_led_level_persists_to_its_descriptor(hass: HomeAssistant) -> None:
+    from custom_components.adjustable_bed.const import CONF_PAIR_CHILDREN
+
+    entry, children = _remacro_pair(hass, 50, 52)
+    children["right"].remember_remacro_led_level(52, 12)
+    await hass.async_block_till_done()
+    descriptors = {child["side"]: child for child in entry.data[CONF_PAIR_CHILDREN]}
+    assert descriptors["right"][CONF_REMACRO_LED_LEVEL] == {"52": 12}
+    assert CONF_REMACRO_LED_LEVEL not in descriptors["left"]
+
+
+async def test_paired_offline_minting_needs_a_stored_model(hass: HomeAssistant) -> None:
+    _entry, children = _remacro_pair(hass, 51, None)
+    await children["left"].async_prime_offline_controller()
+    await children["right"].async_prime_offline_controller()
+    minted = children["left"].capability_controller
+    assert isinstance(minted, RemacroController) and minted.model.model_id == 51
+    assert children["right"].capability_controller is None

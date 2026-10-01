@@ -104,7 +104,6 @@ from .const import (
     CONF_MALOUF_APP_PRIMARY,
     CONF_MALOUF_APP_PROFILE,
     CONF_MALOUF_APP_TRANSPORT,
-    CONF_REMACRO_LED_LEVEL,
     CONF_REMACRO_MODEL,
     CONF_STARCODE_COMMAND_SELECTOR,
     CONF_STARCODE_TRANSPORT_SELECTOR,
@@ -598,7 +597,12 @@ async def create_controller(
             import_module, ".beds.remacro", __package__
         )
         from .beds.remacro import RemacroController
-        from .beds.remacro_protocol import app_for_variant, resolve_model, session_for
+        from .beds.remacro_protocol import (
+            app_for_variant,
+            remacro_led_level,
+            resolve_model,
+            session_for,
+        )
 
         app = app_for_variant(protocol_variant)
         # The live advertisement wins, as in the apps; the stored selector only
@@ -612,7 +616,7 @@ async def create_controller(
             app=app,
             model=model,
             session=session_for(sessions, coordinator.address, app, model.model_id),
-            led_level=coordinator.entry.data.get(CONF_REMACRO_LED_LEVEL),
+            led_level=remacro_led_level(coordinator.entry.data, model.model_id),
         )
 
     if bed_type == BED_TYPE_VMATBASIC:

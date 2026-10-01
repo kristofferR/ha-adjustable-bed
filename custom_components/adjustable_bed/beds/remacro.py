@@ -680,7 +680,7 @@ class RemacroController(BedController):
             raise NotImplementedError("This app hides the LED light setting for this model")
         # The app persists the slider value before scheduling the write; it seeds
         # the slider and the next commit when the screen reopens.
-        self._coordinator.remember_remacro_led_level(self._led_brightness)
+        self._coordinator.remember_remacro_led_level(self._model.model_id, self._led_brightness)
         await self._sleep(LED_SAVE_DELAY_S)
         await self.write_command(
             self._serial.tap(LIGHT_RGBV_SAVE, LED_WHITE | self._led_brightness)

@@ -7,9 +7,14 @@ from typing import Any
 
 from homeassistant.components import bluetooth
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.issue_registry import (
+    IssueSeverity,
+    async_create_issue,
+    async_delete_issue,
+)
 
 from .beds.remacro_protocol import APP_LABELS, ModelProblem, app_for_variant, model_problem
-from .const import CONF_PROTOCOL_VARIANT, CONF_REMACRO_MODEL
+from .const import CONF_PROTOCOL_VARIANT, CONF_REMACRO_MODEL, DOMAIN
 
 
 def remacro_manufacturer_data(
@@ -32,3 +37,26 @@ def remacro_entry_problem(
     app = app_for_variant(entry_data.get(CONF_PROTOCOL_VARIANT))
     problem, company_id = model_problem(app, manufacturer_data, entry_data.get(CONF_REMACRO_MODEL))
     return problem, {"company_id": str(company_id), "app": APP_LABELS[app]}
+
+
+def update_remacro_model_issue(
+    hass: HomeAssistant,
+    address: str,
+    name: str,
+    problem: ModelProblem | None,
+    placeholders: Mapping[str, str],
+) -> None:
+    """Raise or clear the Repairs issue for a model the selected app refuses."""
+    issue_id = f"remacro_model_{address.upper()}"
+    if problem not in ("unmapped", "not_in_app"):
+        async_delete_issue(hass, DOMAIN, issue_id)
+        return
+    async_create_issue(
+        hass,
+        DOMAIN,
+        issue_id,
+        is_fixable=False,
+        severity=IssueSeverity.ERROR,
+        translation_key=f"remacro_model_{problem}",
+        translation_placeholders={**placeholders, "name": name, "address": address},
+    )

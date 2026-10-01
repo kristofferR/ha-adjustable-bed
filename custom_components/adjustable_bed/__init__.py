@@ -364,7 +364,11 @@ def _async_prepare_remacro_entry(hass: HomeAssistant, entry: ConfigEntry) -> Non
 
 
 def _maybe_cache_paired_remacro_models(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Remember each Remacro side's model so a side can still resolve offline."""
+    """Remember each Remacro side's model from its own advertisement history.
+
+    The stored model lets a side without history resolve its screen at connect
+    and lets its capabilities be minted offline; a live advertisement still wins.
+    """
     children = entry.data.get(CONF_PAIR_CHILDREN)
     if not isinstance(children, list):
         return

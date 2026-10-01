@@ -27,14 +27,20 @@ Like the apps, the integration then picks the model from the **lowest
 manufacturer-specific-data company ID** in the advertisement. Names, payload bytes
 and signal strength are never used. The selected model is remembered in the entry
 (`remacro_model`, and per side for combined beds) as a fallback when no advertisement
-is in Home Assistant's history; a live advertisement always wins.
+is in Home Assistant's history; a live advertisement always wins. A combined bed's side
+with a stored model gets its entities before it first connects.
 
 The model is checked before any connection attempt:
 
 - No model seen yet: setup retries with "model is unknown" until the bed advertises.
 - A company ID no app lists, or one the selected app does not list (for example 54 or
-  55 with Jerome's): setup fails with that reason and does not retry. Setup refuses
-  such a bed, and the options form refuses an app that does not list the stored model.
+  55 with Jerome's): setup fails with that reason and does not retry.
+- On a combined bed, such a side is not connected and gets a Repairs issue; the other
+  side keeps working.
+- Setup aborts for a company ID no app lists. When the chosen app does not list the
+  model, the setup form shows that as an error on the protocol variant field.
+- The options form refuses an app that does not list the stored model. Saving a fix in
+  the options reloads an entry that failed or is retrying, so it applies at once.
 
 | Company ID | App label | Screen | Controls |
 |-----------|-----------|--------|----------|
@@ -165,9 +171,10 @@ they never send the zone off code then. Jerome's wraps to off.
 The light switch sends `0x0501` with parameter 0 for on and `0x0500` for off. The
 LED light setting sends `0x0501` with parameter `0xFFFFFF00 | level` 150 ms after a
 change, and **Save light level** sends `0x050F` with the current level 500 ms after
-the press. Each save stores the level in the entry (`remacro_led_level`), like the
-app's per-bed preference, and the slider starts there on the next connection. Before
-the first save it starts at 255, the app's default.
+the press. Each save stores the level in the entry (`remacro_led_level`) under the
+model's company ID, like the app's preference keyed by model and address, and the
+slider starts there on the next connection. A model without a saved level, including
+one the bed newly advertises, starts at 255, the app's default.
 
 ## Not implemented
 

@@ -17,7 +17,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any, Final, Literal
 
-from ..const import CONF_REMACRO_MODEL
+from ..const import CONF_REMACRO_LED_LEVEL, CONF_REMACRO_MODEL
 
 APP_SLUMBERLAND: Final = "slumberland"
 APP_THE_BRICK: Final = "the_brick"
@@ -418,3 +418,10 @@ def add_remacro_model(
     if model_id in MODELS:
         updated[CONF_REMACRO_MODEL] = model_id
     return updated
+
+
+def remacro_led_level(entry_data: Mapping[str, Any], model_id: int) -> int | None:
+    """Return the level committed for this model, like the app's per-model "LV"."""
+    levels = entry_data.get(CONF_REMACRO_LED_LEVEL)
+    level = levels.get(str(model_id)) if isinstance(levels, Mapping) else None
+    return level if isinstance(level, int) and not isinstance(level, bool) else None

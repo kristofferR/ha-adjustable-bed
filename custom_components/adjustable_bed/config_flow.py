@@ -2033,6 +2033,22 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         )
         return add_kaidi_entry_metadata(entry_data, advertisement)
 
+    def _remacro_variant_error(
+        self,
+        bed_type: str | None,
+        protocol_variant: str,
+        address: str,
+        manufacturer_data: dict[int, bytes] | None = None,
+    ) -> str | None:
+        """Return a form error when the chosen app does not list the bed's model."""
+        if bed_type != BED_TYPE_REMACRO:
+            return None
+        problem, _ = remacro_entry_problem(
+            {CONF_PROTOCOL_VARIANT: protocol_variant},
+            remacro_manufacturer_data(self.hass, address, manufacturer_data),
+        )
+        return "remacro_model_not_in_app" if problem == "not_in_app" else None
+
     def _remacro_unsupported_abort(
         self,
         entry_data: dict[str, Any],
@@ -2046,8 +2062,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             entry_data,
             remacro_manufacturer_data(self.hass, entry_data[CONF_ADDRESS], manufacturer_data),
         )
-        # An unseen model may still advertise later; setup retries for it.
-        if problem in (None, "unknown"):
+        # An unseen model may still advertise later; setup retries for it. A model
+        # another app lists is a field error on the form that picks the app.
+        if problem != "unmapped":
             return None
         return self.async_abort(
             reason=f"remacro_model_{problem}", description_placeholders=placeholders
@@ -2550,6 +2567,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 user_input.get(CONF_RMCONTROL_PRODUCT), protocol_variant
             ):
                 errors[CONF_PROTOCOL_VARIANT] = "invalid_variant_for_bed_type"
+            if variant_error := self._remacro_variant_error(
+                selected_bed_type,
+                protocol_variant,
+                self._discovery_info.address,
+                self._discovery_info.manufacturer_data,
+            ):
+                errors[CONF_PROTOCOL_VARIANT] = variant_error
 
             # Get bed-specific defaults for motor pulse settings
             pulse_defaults = get_motor_pulse_defaults(
@@ -3518,6 +3542,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 bed_type, protocol_variant
             ):
                 errors[CONF_PROTOCOL_VARIANT] = "invalid_variant_for_bed_type"
+            if variant_error := self._remacro_variant_error(
+                bed_type,
+                protocol_variant,
+                self._discovery_info.address,
+                self._discovery_info.manufacturer_data,
+            ):
+                errors[CONF_PROTOCOL_VARIANT] = variant_error
 
             # Get bed-specific defaults for motor pulse settings
             pulse_defaults = get_motor_pulse_defaults(
@@ -3815,6 +3846,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 # Validate protocol variant is valid for bed type
                 if not is_valid_variant_for_bed_type(bed_type, protocol_variant):
                     errors[CONF_PROTOCOL_VARIANT] = "invalid_variant_for_bed_type"
+                if variant_error := self._remacro_variant_error(bed_type, protocol_variant, address):
+                    errors[CONF_PROTOCOL_VARIANT] = variant_error
 
                 # Get bed-specific defaults for motor pulse settings
                 pulse_defaults = get_motor_pulse_defaults(
@@ -7360,6 +7393,13 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 self.config_entry,
                 data=new_data,
             )
+            # A failed or retrying entry has no update listener yet, so a fix made
+            # here (for example a Remacro app that lists the model) would not apply.
+            if self.config_entry.state in (
+                ConfigEntryState.SETUP_ERROR,
+                ConfigEntryState.SETUP_RETRY,
+            ):
+                self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)
             return self.async_create_entry(title="", data={})
 
         return self.async_show_form(

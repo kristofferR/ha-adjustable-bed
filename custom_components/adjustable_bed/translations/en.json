@@ -647,7 +647,8 @@
       "vmatbasic_unpair_first": "Unpair these entries before changing product settings; each receiver retains its own profile.",
       "vmatbasic_required": "Choose the V-MAT Basic product profile.",
       "starcode_app_invalid": "Choose a supported app selector and a live Bluetooth transport.",
-      "starcode_app_unpair_first": "Unpair these entries before changing app selectors. Each physical side retains its own app controls."
+      "starcode_app_unpair_first": "Unpair these entries before changing app selectors. Each physical side retains its own app controls.",
+      "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses."
     }
   },
   "options": {
@@ -4007,6 +4008,14 @@
           "entry_missing": "The entry or paired side no longer exists. Open its current configuration."
         }
       }
+    },
+    "remacro_model_unmapped": {
+      "title": "{name} has an unsupported Remacro model",
+      "description": "**{name}** ({address}) advertises company ID {company_id}, which none of the Slumberland, The Brick or Jerome's apps list. Home Assistant does not connect to it."
+    },
+    "remacro_model_not_in_app": {
+      "title": "{name} is not listed by the {app} app",
+      "description": "**{name}** ({address}) advertises company ID {company_id}, which the {app} app does not list. Home Assistant does not connect to it. Choose the app this bed uses as the protocol variant in the integration options."
     }
   },
   "selector": {
