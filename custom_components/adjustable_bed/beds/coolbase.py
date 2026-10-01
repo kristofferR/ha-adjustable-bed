@@ -363,6 +363,9 @@ class CoolBaseController(BedController):
             )
             _LOGGER.debug("Started notifications for Cool Base bed")
         except BleakError:
+            if self.requires_notification_channel:
+                # Status replies only arrive here; fail the connect so it retries.
+                raise
             _LOGGER.warning("Failed to start notifications")
 
     def _on_notification(self, _sender: BleakGATTCharacteristic, data: bytearray) -> None:

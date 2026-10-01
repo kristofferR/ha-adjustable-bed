@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
@@ -665,6 +666,19 @@ class TestCoolBaseAppVectors:
         coordinator._client.start_notify.assert_awaited()
         assert coordinator._client.start_notify.await_args.args[0] == KEESON_BASE_NOTIFY_CHAR_UUID
 
+    @pytest.mark.parametrize(("dewert_okin_profile", "raises"), [(False, True), (True, False)])
+    async def test_required_notify_failure_propagates(
+        self, dewert_okin_profile: bool, raises: bool
+    ) -> None:
+        client = MagicMock(is_connected=True)
+        client.start_notify = AsyncMock(side_effect=BleakError("no CCCD"))
+        controller = CoolBaseController(MagicMock(client=client), dewert_okin_profile=dewert_okin_profile)
+        if raises:
+            with pytest.raises(BleakError):
+                await controller.start_notify()
+        else:
+            await controller.start_notify()
+
     def test_dewert_okin_profile_marks_cool_base_sensors_stale(self) -> None:
         assert _controller().stale_controller_state_sensor_entity_keys == frozenset()
         assert _controller(dewert_okin_profile=True).stale_controller_state_sensor_entity_keys == {
@@ -679,3 +693,31 @@ class TestCoolBaseAppVectors:
         assert controller.supports_position_feedback is False
         assert controller.supports_discrete_light_control is False
         assert controller.supports_memory_programming is False
+
+
+async def test_protocol_change_removes_cool_base_entities(hass: HomeAssistant) -> None:
+    """Changing bed type must not strand Cool Base sensors or app buttons."""
+    from homeassistant.helpers import entity_registry as er
+
+    from custom_components.adjustable_bed.beds.okin_rf_eco_bt import OkinRfEcoBtController
+    from custom_components.adjustable_bed.button import _button_entities_for
+    from custom_components.adjustable_bed.const import BED_TYPE_OKIN_RF_ECO_BT
+    from custom_components.adjustable_bed.sensor import _sensor_entities_for
+    from tests.test_furnimove import make_controller
+    from tests.test_malouf_app_entities import configure_entity_runtime
+
+    controller = OkinRfEcoBtController(make_controller()._coordinator)
+    runtime = configure_entity_runtime(hass, controller, BED_TYPE_OKIN_RF_ECO_BT)
+    registry = er.async_get(hass)
+    stale = [
+        registry.async_get_or_create(domain, DOMAIN, f"bed_{key}_left", config_entry=runtime.entry)
+        for domain, key in (
+            ("sensor", STATE_LEFT_FAN),
+            ("sensor", STATE_RIGHT_FAN),
+            ("sensor", STATE_MASSAGE_MODE),
+            ("button", "coolbase_left_fan"),
+        )
+    ]
+    _sensor_entities_for(hass, runtime)
+    _button_entities_for(hass, runtime)
+    assert all(registry.async_get(row.entity_id) is None for row in stale)
