@@ -110,7 +110,10 @@ async def test_name_and_lift_identity_validation(hass: HomeAssistant) -> None:
             CONF_STARCODE_LIFT_ENTRIES: [t.entry.entry_id for t in lifts],
         }
     )
-    assert len(accepted[CONF_STARCODE_LIFT_ENTRIES]) == 3
+    assert isinstance(accepted, dict)
+    accepted_lifts = accepted[CONF_STARCODE_LIFT_ENTRIES]
+    assert isinstance(accepted_lifts, list)
+    assert len(accepted_lifts) == 3
 
 
 async def test_controls_state_and_readonly_domains(hass: HomeAssistant) -> None:

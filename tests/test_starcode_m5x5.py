@@ -467,23 +467,35 @@ def test_all_frozen_existing_leaf_proofs(case: dict[str, object]) -> None:
         normal_packet,
     )
 
-    arguments = case["arguments"]
-    expected = bytes.fromhex(case["vector"])
+    raw_arguments = case["arguments"]
+    assert isinstance(raw_arguments, list)
+    arguments: list[int] = []
+    for argument in raw_arguments:
+        assert isinstance(argument, int)
+        arguments.append(argument)
+    vector = case["vector"]
+    assert isinstance(vector, str)
+    expected = bytes.fromhex(vector)
     name = case["function"]
     if name == "_legacy_normal":
-        actual = sleepys_box25._legacy_normal(*arguments)
+        assert len(arguments) == 1
+        actual = sleepys_box25._legacy_normal(arguments[0])
         replacement = normal_packet(arguments[0], "legacy")
     elif name == "_legacy_extended":
-        actual = sleepys_box25._legacy_extended(*arguments)
-        replacement = extended_packet(*arguments, "legacy")
+        assert len(arguments) == 2
+        actual = sleepys_box25._legacy_extended(arguments[0], arguments[1])
+        replacement = extended_packet(arguments[0], arguments[1], "legacy")
     elif name == "_star_command":
-        actual = sleepys_box25._star_command(*arguments)
+        assert len(arguments) == 2
+        actual = sleepys_box25._star_command(arguments[0], arguments[1])
         replacement = normal_packet(0x03100000 | (arguments[1] << 8) | arguments[0], "star")
     elif name == "_star_extended":
-        actual = sleepys_box25._star_extended(*arguments)
-        replacement = extended_packet(*arguments, "star")
+        assert len(arguments) == 2
+        actual = sleepys_box25._star_extended(arguments[0], arguments[1])
+        replacement = extended_packet(arguments[0], arguments[1], "star")
     else:
         assert name == "_elevate_command"
-        actual = _elevate_command(*arguments)
+        assert len(arguments) == 1
+        actual = _elevate_command(arguments[0])
         replacement = normal_packet(0x03103000 | arguments[0], "star")
     assert actual == replacement == expected

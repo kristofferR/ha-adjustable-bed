@@ -60,9 +60,9 @@ if TYPE_CHECKING:
     from .sleepys_box25 import SleepysBox25Controller as SleepysBox25Controller
     from .sleepys_box25 import SleepysBox25LegacyController as SleepysBox25LegacyController
     from .solace import SolaceController as SolaceController
-    from .starcode_m5x5 import StarcodeM5X5Controller as StarcodeM5X5Controller
     from .star_elevate import StarElevateController as StarElevateController
     from .starcode_abm5_4 import StarcodeAbm5_4Controller as StarcodeAbm5_4Controller
+    from .starcode_m5x5 import StarcodeM5X5Controller as StarcodeM5X5Controller
     from .suta import SutaController as SutaController
     from .svane import SvaneController as SvaneController
     from .timotion_ahf import TiMOTIONAhfController as TiMOTIONAhfController
