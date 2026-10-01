@@ -62,7 +62,6 @@ def _fast_movement_monitor(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(f"{JENSEN_MODULE}._MOVEMENT_STALL_SECONDS", 0.05)
     monkeypatch.setattr(f"{JENSEN_MODULE}._POSITION_RESPONSE_TIMEOUT", 0.05)
     monkeypatch.setattr(f"{JENSEN_MODULE}._SETTLE_READ_INTERVAL_SECONDS", 0.01)
-    monkeypatch.setattr(f"{JENSEN_MODULE}._SETTLE_TIMEOUT_SECONDS", 0.2)
 
 
 def reply_to_reads(controller: JensenController, *positions: tuple[int, int]) -> None:
@@ -925,8 +924,27 @@ class TestJensenMovementMonitoring:
         assert callback.call_args_list[-2:] == [call("back", 0.0), call("legs", 0.0)]
         assert JensenCommands.MOTOR_STOP not in written(controller)
 
-    async def test_settle_reads_are_bounded(self):
-        """A position that never agrees stops the reads without failing the command."""
+    async def test_long_sweep_is_read_until_it_settles(self):
+        """Issue #631: a full head sweep takes about 20 s of changing reads."""
+        controller = make_controller()
+        callback = MagicMock()
+        controller._notify_callback = callback
+        controller._raw_positions = (30000, 29490)
+        climb = [(30106 + 21 * step, 29490) for step in range(26)]
+        reply_to_reads(controller, *climb, (30643, 29490), (30643, 29490))
+
+        await controller.set_motor_position("back", 80)
+
+        reads = [f for f in written(controller) if f == JensenCommands.READ_POSITION]
+        assert len(reads) == len(climb) + 2
+        assert callback.call_args_list[-2][0] == ("back", pytest.approx(80.0, abs=0.1))
+        assert JensenCommands.MOTOR_STOP not in written(controller)
+
+    async def test_settle_reads_share_the_movement_bound(
+        self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    ):
+        """A position that never agrees ends at the movement bound with STOP."""
+        monkeypatch.setattr(f"{JENSEN_MODULE}._MOVEMENT_FEEDBACK_TIMEOUT_SECONDS", 0.2)
         controller = make_controller()
         controller._raw_positions = (30000, 30000)
         reply_to_reads(controller, *((30000 + step, 30000) for step in range(1, 200)))
@@ -935,7 +953,8 @@ class TestJensenMovementMonitoring:
 
         reads = [f for f in written(controller) if f == JensenCommands.READ_POSITION]
         assert 2 <= len(reads) < 199
-        assert JensenCommands.MOTOR_STOP not in written(controller)
+        assert "still reported movement" in caplog.text
+        assert written(controller)[-1] == JensenCommands.MOTOR_STOP
 
     async def test_cancel_during_settle_reads_sends_stop(self):
         """Stop while settling still ends the move with STOP."""
