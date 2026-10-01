@@ -28,6 +28,13 @@ Brands using Keeson/Ergomotion actuators:
 - Sealy Ease
 - Some Costco beds
 
+**Beautyrest BLACK app boundary:** The accepted Android app
+`com.keeson.beautyrestblack` 1.2.1 (18) uses TCP and network services, with no
+reachable Bluetooth bed-control transport in that exact artifact. BLE hardware
+using independently identified Keeson protocols remains supported. See the
+[complete app disposition](../apk-analysis/dispositions/row044-beautyrest-black.md)
+for all 128 exclusions and exact accepted evidence.
+
 **DewertOkin/ORE brands** also using FFE5 protocol (31 apps):
 - Simon Li, Cherish Smart, Minghua, Heal Every Night
 - ORE: Dynasty, LevaSleep, American Star, Avanti, Comfort Furniture, Hestia Motion, Maxcoil, Power's Bedding, SFM, Ultramatic, Better Living, Koizumi
