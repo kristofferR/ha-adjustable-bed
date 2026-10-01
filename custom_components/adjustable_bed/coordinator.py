@@ -4384,11 +4384,6 @@ class AdjustableBedCoordinator:
             )
             return
 
-        # Invalidate owned work even when a connect retry keeps these references.
-        controller = self._controller
-        if controller is not None:
-            controller.on_disconnect()
-
         if self._furnimove_bond_task is not None:
             self._furnimove_bond_task.cancel()
 
