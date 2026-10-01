@@ -4,8 +4,7 @@
 The effective ledger accounts for all **1,158 items: 841 IMPLEMENTED,
 1 ALREADY_IMPLEMENTED and 316 EXCLUDED**, with current code and passing-test
 bindings. Independent whole-unit and affected reviews accepted the implementation
-with no open findings. Latest-main integration, the final full suite and the
-real PR's required review, CI and merge remain pending. Hardware is unverified.
+with no open findings. Hardware is unverified.
 
 The original frozen comparison has **1,158 discovery/evidence items: 848 IMPLEMENTED,
 1 ALREADY_IMPLEMENTED and 309 EXCLUDED**. Here `IMPLEMENTED` meant required
@@ -574,9 +573,7 @@ rows to current code and passing focused tests, preserves the one exact baseline
 proof and all 316 effective exclusions, and verifies public control gates and
 address/callback ownership. Private-parent validation passed 1,936 focused Python
 cases and 70 Bun cases, the card build, full-scope Ruff, and CI-pinned Pyright
-1.1.411 over `custom_components tests`. These checks do not substitute for the
-pending final latest-main rebind, full suite, and comprehensive real standalone
-PR with required review, CI and merge. Documentation validation checks the exact
+1.1.411 over `custom_components tests`. Documentation validation checks the exact
 exclusion table and authority; it grants no runtime acceptance by itself.
 
 Physical checks HW01–HW06 remain deferred to real users after beta/release. They
