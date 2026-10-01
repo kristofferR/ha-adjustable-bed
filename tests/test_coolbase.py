@@ -640,6 +640,17 @@ class TestCoolBaseAppVectors:
         # The dead alternate FFE9 under FFE0 is never the destination.
         assert controller._write_char is char
 
+    async def test_write_command_uses_discovered_mode_and_instance(self) -> None:
+        char = SimpleNamespace(uuid=KEESON_BASE_WRITE_CHAR_UUID, properties=["write-without-response"])
+        client = MagicMock(is_connected=True)
+        client.services = [SimpleNamespace(uuid=KEESON_BASE_SERVICE_UUID, characteristics=[char])]
+        controller = CoolBaseController(MagicMock(client=client))
+        controller._write_gatt_with_retry = AsyncMock()
+        await controller.write_command(STATUS_QUERY)
+        kwargs = controller._write_gatt_with_retry.await_args.kwargs
+        assert kwargs["response"] is False
+        assert kwargs["characteristic"] is char
+
     async def test_status_replies_subscribe_with_angle_sensing_disabled(
         self,
         hass: HomeAssistant,

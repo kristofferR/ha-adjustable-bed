@@ -305,6 +305,7 @@ class CoolBaseController(BedController):
             repeat_count=repeat_count,
             repeat_delay_ms=repeat_delay_ms,
             cancel_event=cancel_event,
+            response=self._write_with_response,
             characteristic=self._write_char,
         )
 
