@@ -1908,6 +1908,9 @@
       },
       "starcode_abm5_4_reset": {
         "name": "Reset stored positions"
+      },
+      "remacro_led_brightness_save": {
+        "name": "Save light level"
       }
     },
     "cover": {
@@ -2150,6 +2153,9 @@
       },
       "malouf_full_tilt": {
         "name": "Full tilt"
+      },
+      "all_motors": {
+        "name": "All motors"
       }
     },
     "sensor": {
@@ -3109,6 +3115,13 @@
           "10": "10 minutes",
           "20": "20 minutes",
           "30": "30 minutes"
+        }
+      },
+      "remacro_control_side": {
+        "name": "Control side",
+        "state": {
+          "left": "Left",
+          "right": "Right"
         }
       }
     },

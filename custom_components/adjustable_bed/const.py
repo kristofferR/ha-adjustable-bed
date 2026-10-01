@@ -264,6 +264,8 @@ CONF_KAIDI_ROOM_ID: Final = "kaidi_room_id"
 CONF_KAIDI_TARGET_VADDR: Final = "kaidi_target_vaddr"
 CONF_KAIDI_PRODUCT_ID: Final = "kaidi_product_id"
 CONF_KAIDI_SOFA_ACU_NO: Final = "kaidi_sofa_acu_no"
+# Remacro model selector: the lowest advertised manufacturer company ID.
+CONF_REMACRO_MODEL: Final = "remacro_model"
 CONF_KAIDI_ADV_TYPE: Final = "kaidi_adv_type"
 CONF_KAIDI_RESOLVED_VARIANT: Final = "kaidi_resolved_variant"
 CONF_KAIDI_VARIANT_SOURCE: Final = "kaidi_variant_source"
@@ -1329,11 +1331,8 @@ SBI_VARIANTS: Final = {
     SBI_VARIANT_SIDE_B: "Side B only",
 }
 
-# Remacro specific UUIDs (SynData protocol)
-# Protocol reverse-engineered from com.cheers.jewmes APK (Jeromes app)
-# Used by: CheersSleep, Jeromes, Slumberland, The Brick furniture store beds
-# Uses 8-byte packets: [serial, PID, cmd_lo, cmd_hi, param0-3]
-# Note: The service UUID is similar to Nordic UART but with different prefix (6e4035xx vs 6e4000xx)
+# Remacro (SynData) UUIDs, shared by the Slumberland, The Brick and Jerome's
+# apps (row 050). Frames are 8 bytes: [serial, PID, LE16 code, LE32 parameter].
 REMACRO_SERVICE_UUID: Final = "6e403587-b5a3-f393-e0a9-e50e24dcca9e"
 REMACRO_WRITE_CHAR_UUID: Final = "6e403588-b5a3-f393-e0a9-e50e24dcca9e"
 REMACRO_READ_CHAR_UUID: Final = "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
@@ -1349,6 +1348,17 @@ SVANE_VARIANT_JENSEN_LINON: Final = "jensen_linon"
 SVANE_VARIANTS: Final = {
     VARIANT_AUTO: "Auto (Svane app)",
     SVANE_VARIANT_JENSEN_LINON: "Jensen Adjustable Sleep app (LinOn)",
+}
+# Remacro app profiles. Company IDs select the model, never the app, so auto
+# keeps the Slumberland app; The Brick and Jerome's are explicit choices.
+REMACRO_VARIANT_SLUMBERLAND: Final = "slumberland"
+REMACRO_VARIANT_THE_BRICK: Final = "the_brick"
+REMACRO_VARIANT_JEROMES: Final = "jeromes"
+REMACRO_VARIANTS: Final = {
+    VARIANT_AUTO: "Auto (Slumberland app)",
+    REMACRO_VARIANT_SLUMBERLAND: "Slumberland app",
+    REMACRO_VARIANT_THE_BRICK: "The Brick app",
+    REMACRO_VARIANT_JEROMES: "Jerome's app",
 }
 LINAK_VARIANTS: Final = {
     VARIANT_AUTO: "Auto (Bed Control)",
@@ -2251,6 +2261,9 @@ ALL_PROTOCOL_VARIANTS: Final = [
     VARIANT_AUTO,
     SOLACE_VARIANT_WOOSA,
     SVANE_VARIANT_JENSEN_LINON,
+    REMACRO_VARIANT_SLUMBERLAND,
+    REMACRO_VARIANT_THE_BRICK,
+    REMACRO_VARIANT_JEROMES,
     KAIDI_VARIANT_SEAT_1,
     KAIDI_VARIANT_SEAT_2,
     KAIDI_VARIANT_SEAT_3,
@@ -2747,8 +2760,8 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Rondure: 50ms delay → 25 repeats = 1.25s total
     # Source: com.sfd.rondure_hump ANALYSIS.md
     BED_TYPE_RONDURE: (25, 50),
-    # Remacro: 100ms delay → 10 repeats = 1.0s total (matches DEFAULT)
-    # Source: com.cheers.jewmes ANALYSIS.md
+    # Remacro: the apps send one press frame and STOP on release, so the
+    # product of these values is HA's hold time (OneActivity streams at 100ms).
     BED_TYPE_REMACRO: (10, 100),
     # Cool Base: 100ms delay → 10 repeats = 1.0s total (same as BaseI5)
     # Source: com.keeson.coolbase ANALYSIS.md

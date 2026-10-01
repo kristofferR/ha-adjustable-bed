@@ -942,12 +942,15 @@ export class AdjustableBedCard extends LitElement {
       motors.length === 0 &&
       positionRows.length === 0 &&
       !bed.synchro &&
+      !bed.controlSide &&
       !bed.stop
     )
       return nothing;
-    const hasRows = motors.length > 0 || positionRows.length > 0 || !!bed.synchro;
+    const hasRows =
+      motors.length > 0 || positionRows.length > 0 || !!bed.synchro || !!bed.controlSide;
     return html`
       ${hasRows ? this._heading("section.position") : nothing}
+      ${bed.controlSide ? this._moreInfoRow(bed.controlSide) : nothing}
       ${bed.synchro ? this._toggleRow(bed.synchro) : nothing}
       ${
         motors.length
@@ -1410,6 +1413,7 @@ export class AdjustableBedCard extends LitElement {
     [
       bed.stop,
       bed.synchro,
+      bed.controlSide,
       bed.connect,
       bed.disconnect,
       bed.connectivity,

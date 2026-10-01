@@ -1,242 +1,336 @@
-"""Remacro bed controller implementation.
+"""Remacro (SynData) controller for the Slumberland, The Brick and Jerome's apps.
 
-Reverse engineered from com.cheers.jewmes APK (Jeromes app).
-This protocol is used by multiple furniture store brands:
-- CheersSleep, Jeromes, Slumberland, The Brick
+Accepted evidence: cluster-002 / row 050 (``com.cheers.slumber`` 1.0 (2),
+``com.cheers.brick`` 1.0 (3), ``com.cheers.jewmes`` 1.202112141512 (20)).
+The advertised company ID selects one of the apps' control screens; this
+controller exposes exactly that screen's controls. Hardware is unverified.
 
-These beds use the SynData protocol with 8-byte command packets.
-
-Packet format:
-- Byte 0: Serial (incrementing sequence number, 1-255)
-- Byte 1: PID/CtrlType (0x01 for control commands)
-- Bytes 2-3: Command code (16-bit little-endian)
-- Bytes 4-7: Parameter (32-bit little-endian, usually 0)
-
-Detection: Service UUID 6e403587-b5a3-f393-e0a9-e50e24dcca9e (unique to this protocol)
+Movement sends one press frame and, after the hold, the axis STOP 120 ms
+later. OneActivity instead repeats three STOPs, and its combined arrows stream
+every 100 ms in Slumberland and Jerome's. STOP cleanup always runs, including
+on cancellation, which the apps themselves do not guarantee.
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING
+from collections.abc import Callable, Coroutine
+from typing import TYPE_CHECKING, Any, Literal
 
 from bleak.exc import BleakError
 
-from ..const import REMACRO_WRITE_CHAR_UUID
-from .base import BedController
+from ..const import REMACRO_READ_CHAR_UUID, REMACRO_WRITE_CHAR_UUID
+from .base import (
+    BedController,
+    ControllerButtonSpec,
+    ControllerNumberSpec,
+    ControllerSelectSpec,
+    MotorCommandCallable,
+    MotorControlSpec,
+    SideBoundController,
+)
+from .remacro_protocol import (
+    APP_JEROMES,
+    APP_LED_SETTINGS_MODEL_IDS,
+    APP_SLUMBERLAND,
+    APP_THE_BRICK,
+    FLAT,
+    LED_PREVIEW_DELAY_S,
+    LED_SAVE_DELAY_S,
+    LED_WHITE,
+    LIGHT_OFF,
+    LIGHT_RGBV,
+    LIGHT_RGBV_SAVE,
+    MOTOR_STOP,
+    RELEASE_DELAY_S,
+    STREAM_INTERVAL_S,
+    Axis,
+    MassageCodes,
+    Model,
+    RemacroApp,
+    RemacroSession,
+    SideCodes,
+    SynDataSerial,
+)
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
+Side = Literal["left", "right"]
+SIDE_STATE_KEY = "remacro_control_side"
+LED_STATE_KEY = "remacro_led_brightness"
+# OneActivity release schedules, measured from the release moment.
+_ONE_INDIVIDUAL_RELEASE = (0.0, 0.120, 0.240)
+_ONE_COMBINED_RELEASE = (0.0, 0.020, 0.040)
 
-class RemacroCommands:
-    """Remacro command constants (16-bit values).
 
-    Commands are sent in little-endian byte order within the 8-byte packet.
-    """
+def _remacro(
+    action: Callable[[RemacroController], Coroutine[Any, Any, None]],
+) -> MotorCommandCallable:
+    async def invoke(controller: BedController) -> None:
+        target: object = controller
+        if isinstance(target, SideBoundController):
+            target = target._controller
+        if not isinstance(target, RemacroController):
+            raise TypeError("This control requires the Remacro controller")
+        await action(target)
 
-    # Control PIDs (byte 1 of packet)
-    CPID_CTRL = 0x01  # Control commands
-    CPID_GET_STATE = 0x02  # Get state
-    CPID_SET_PARA = 0x03  # Set parameters
+    return invoke
 
-    # Stop commands
-    STOP = 0x0000  # Stop all (CCDstop)
-    STOP_MOTOR = 0x0001  # Stop motors (CCDstop_motor)
-    STOP_MASSAGE = 0x0002  # Stop massage (CCDstop_massage)
-    CTRL_HOLD = 0x0003  # Hold command
 
-    # Motor 1 (Head)
-    M1_STOP = 256  # 0x0100
-    M1_UP = 257  # 0x0101
-    M1_DOWN = 258  # 0x0102
-    M1_RUN = 259  # 0x0103
+async def _select_side(controller: BedController, option: str) -> None:
+    await _remacro(lambda ctrl: ctrl.set_control_side(option))(controller)
 
-    # Motor 2 (Foot)
-    M2_STOP = 260  # 0x0104
-    M2_UP = 261  # 0x0105
-    M2_DOWN = 262  # 0x0106
-    M2_RUN = 263  # 0x0107
 
-    # Motor 3 (Lumbar)
-    M3_STOP = 264  # 0x0108
-    M3_UP = 265  # 0x0109
-    M3_DOWN = 266  # 0x010A
-    M3_RUN = 267  # 0x010B
-
-    # Motor 4 (Tilt/Neck)
-    M4_STOP = 268  # 0x010C
-    M4_UP = 269  # 0x010D
-    M4_DOWN = 270  # 0x010E
-    M4_RUN = 271  # 0x010F
-
-    # All motors combined
-    M_UP = 272  # 0x0110 - All motors up
-    M_DOWN = 273  # 0x0111 - All motors down
-
-    # Motor combinations (for convenience, not commonly used)
-    M12_UP = 274  # Head + Foot up
-    M12_DOWN = 275  # Head + Foot down
-    M13_UP = 276  # Head + Lumbar up
-    M13_DOWN = 277  # Head + Lumbar down
-    M23_UP = 278  # Foot + Lumbar up
-    M23_DOWN = 279  # Foot + Lumbar down
-
-    # Massage zone control
-    MM12_RUN = 288  # 0x0120 - Both massage zones
-    MM1_RUN = 289  # 0x0121 - Massage zone 1
-    MM2_RUN = 290  # 0x0122 - Massage zone 2
-    MM1_STOP = 291  # 0x0123
-    MM2_STOP = 292  # 0x0124
-
-    # Massage modes (patterns)
-    MMODE_STOP = 512  # 0x0200 - Stop massage mode
-    MMODE1_RUN = 513  # 0x0201 - Mode 1
-    MMODE2_RUN = 514  # 0x0202 - Mode 2
-    MMODE3_RUN = 515  # 0x0203 - Mode 3
-    MMODE4_RUN = 516  # 0x0204 - Mode 4
-    MMODE5_RUN = 517  # 0x0205 - Mode 5
-
-    # Memory presets - recall (go to position)
-    MOV_ML1 = 785  # 0x0311 - Memory 1
-    MOV_ML2 = 787  # 0x0313 - Memory 2
-    MOV_ML3 = 789  # 0x0315 - Memory 3
-    MOV_ML4 = 791  # 0x0317 - Memory 4
-
-    # Memory presets - save (program current position)
-    SET_ML1 = 784  # 0x0310 - Save Memory 1
-    SET_ML2 = 786  # 0x0312 - Save Memory 2
-    SET_ML3 = 788  # 0x0314 - Save Memory 3
-    SET_ML4 = 790  # 0x0316 - Save Memory 4
-
-    # Default presets (factory)
-    DEF_ML1 = 769  # 0x0301 - Flat
-    DEF_ML2 = 770  # 0x0302 - Zero-G
-    DEF_ML3 = 771  # 0x0303 - TV
-    DEF_ML4 = 772  # 0x0304 - Anti-snore
-
-    # LED control
-    LED_OFF = 1280  # 0x0500
-    LED_RGBV = 1281  # 0x0501 - RGB with value
-    LED_W = 1282  # 0x0502 - White
-    LED_R = 1283  # 0x0503 - Red
-    LED_G = 1284  # 0x0504 - Green
-    LED_B = 1285  # 0x0505 - Blue
-    LED_RG = 1286  # 0x0506 - Red+Green
-    LED_RB = 1287  # 0x0507 - Red+Blue
-    LED_GB = 1288  # 0x0508 - Green+Blue
-    LED_M1 = 1289  # 0x0509 - Mode 1
-    LED_M2 = 1290  # 0x050A - Mode 2
-    LED_M3 = 1291  # 0x050B - Mode 3
-    LED_M4 = 1292  # 0x050C - Mode 4
-    LED_M5 = 1293  # 0x050D - Mode 5
-    LED_M6 = 1294  # 0x050E - Mode 6
-    LED_RGBV_SAVE = 1295  # 0x050F - Save custom RGB to device memory
-
-    # Heat control
-    HEAT_OFF = 28672  # 0x7000
-    HEAT_M1 = 28673  # 0x7001 - Heat mode 1
-    HEAT_M2 = 28674  # 0x7002 - Heat mode 2
-    HEAT_M3 = 28675  # 0x7003 - Heat mode 3
+async def _set_led_brightness(controller: BedController, value: float) -> None:
+    await _remacro(lambda ctrl: ctrl.set_led_brightness(int(value)))(controller)
 
 
 class RemacroController(BedController):
-    """Controller for Remacro protocol beds (CheersSleep, Jeromes, Slumberland, The Brick)."""
+    """One Remacro bed as shown by one app's model-specific control screen."""
 
-    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
-        """Initialize the Remacro controller.
-
-        Args:
-            coordinator: The AdjustableBedCoordinator instance.
-        """
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        *,
+        app: RemacroApp,
+        model: Model,
+        session: RemacroSession | None = None,
+    ) -> None:
         super().__init__(coordinator)
-        self._serial = 1  # Packet sequence number (1-255)
-        _LOGGER.debug("RemacroController initialized")
+        self._app: RemacroApp = app
+        self._model = model
+        # A reconnect must not silently move the other side or restart counters.
+        self._session = session or RemacroSession(
+            SynDataSerial(cache_hold_serial=app == APP_JEROMES)
+        )
+        self._serial = self._session.serial
+        updates: dict[str, Any] = {}
+        if self._model.screen.split:
+            updates[SIDE_STATE_KEY] = self._session.side
+        if self.supports_led_brightness:
+            updates[LED_STATE_KEY] = self._session.led_brightness
+        self.forward_controller_state_updates(updates)
+
+    # ------------------------------------------------------------------
+    # Profile
+    # ------------------------------------------------------------------
+
+    @property
+    def app(self) -> RemacroApp:
+        return self._app
+
+    @property
+    def model(self) -> Model:
+        return self._model
+
+    @property
+    def control_side(self) -> Side:
+        return "right" if self._session.side == "right" else "left"
+
+    @property
+    def _codes(self) -> SideCodes:
+        screen = self._model.screen
+        if self._session.side == "right" and screen.right is not None:
+            return screen.right
+        return screen.left
+
+    @property
+    def protocol_diagnostics(self) -> dict[str, Any]:
+        return {
+            "remacro_app": self._app,
+            "remacro_model_id": self._model.model_id,
+            "remacro_model": self._model.name,
+            "remacro_screen": self._model.screen.name,
+            "remacro_control_side": self.control_side if self._model.screen.split else None,
+        }
 
     @property
     def control_characteristic_uuid(self) -> str:
-        """Return the UUID of the control characteristic."""
         return REMACRO_WRITE_CHAR_UUID
 
-    # Capability properties
     @property
-    def supports_preset_zero_g(self) -> bool:
+    def requires_notification_channel(self) -> bool:
+        # Every app subscribes on connect, independently of any feature.
         return True
+
+    # ------------------------------------------------------------------
+    # Capabilities
+    # ------------------------------------------------------------------
 
     @property
     def supports_preset_flat(self) -> bool:
         return True
 
     @property
+    def supports_preset_anti_snore(self) -> bool:
+        return "anti_snore" in self._model.screen.left.presets
+
+    @property
     def supports_preset_tv(self) -> bool:
-        return True
+        return "tv" in self._model.screen.left.presets
 
     @property
-    def supports_massage(self) -> bool:
-        return True
+    def supports_preset_zero_g(self) -> bool:
+        return "zero_g" in self._model.screen.left.presets
 
     @property
-    def supports_lights(self) -> bool:
-        return True
+    def memory_slot_count(self) -> int:
+        return len(self._model.screen.left.memory_recall)
 
     @property
-    def supports_light_color_control(self) -> bool:
-        return True
+    def supports_memory_presets(self) -> bool:
+        return self.memory_slot_count > 0
 
     @property
-    def supports_explicit_light_on_control(self) -> bool:
-        return False  # set_light_color (LED_RGBV) inherently turns on the LED
-
-    @property
-    def supports_discrete_light_control(self) -> bool:
-        return True  # Has explicit LED_OFF command
-
-    @property
-    def default_light_rgb_color(self) -> tuple[int, int, int] | None:
-        return (255, 255, 255)  # White
+    def supports_memory_programming(self) -> bool:
+        return self.memory_slot_count > 0
 
     @property
     def has_lumbar_support(self) -> bool:
-        """Return True - Remacro beds support lumbar control."""
-        return True
+        return self._model.screen.left.lumbar is not None
 
     @property
-    def has_tilt_support(self) -> bool:
-        """Return True - Remacro beds support tilt/neck control."""
-        return True
+    def supports_massage(self) -> bool:
+        return self._model.screen.left.massage is not None
 
-    def _next_serial(self) -> int:
-        """Get the next serial number and increment."""
-        serial = self._serial
-        self._serial = (self._serial % 255) + 1
-        return serial
+    @property
+    def auto_enable_massage(self) -> bool:
+        return self.supports_massage
 
-    def _build_packet(self, command: int, parameter: int = 0) -> bytes:
-        """Build an 8-byte command packet.
+    @property
+    def supports_head_massage_toggle_control(self) -> bool:
+        return self.supports_massage
 
-        Args:
-            command: 16-bit command code.
-            parameter: 32-bit parameter value (default 0).
+    @property
+    def supports_foot_massage_toggle_control(self) -> bool:
+        return self.supports_massage
 
-        Returns:
-            8-byte packet: [serial, PID, cmd_lo, cmd_hi, param0-3]
-        """
-        serial = self._next_serial()
-        return bytes(
-            [
-                serial,
-                RemacroCommands.CPID_CTRL,
-                command & 0xFF,
-                (command >> 8) & 0xFF,
-                parameter & 0xFF,
-                (parameter >> 8) & 0xFF,
-                (parameter >> 16) & 0xFF,
-                (parameter >> 24) & 0xFF,
-            ]
+    @property
+    def supports_massage_mode_step_control(self) -> bool:
+        return self.supports_massage
+
+    @property
+    def supports_lights(self) -> bool:
+        return self._model.screen.light_toggle
+
+    @property
+    def supports_discrete_light_control(self) -> bool:
+        return self._model.screen.light_toggle
+
+    @property
+    def supports_led_brightness(self) -> bool:
+        return self._model.model_id in APP_LED_SETTINGS_MODEL_IDS[self._app]
+
+    @property
+    def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
+        # Keys keep the legacy unique IDs; translations use the app labels.
+        codes = self._model.screen.left
+        specs: list[MotorControlSpec] = []
+        if codes.head is not None:
+            specs.append(
+                MotorControlSpec(
+                    key="back",
+                    translation_key="head",
+                    open_fn=lambda ctrl: ctrl.move_back_up(),
+                    close_fn=lambda ctrl: ctrl.move_back_down(),
+                    stop_fn=lambda ctrl: ctrl.move_back_stop(),
+                )
+            )
+        if codes.lumbar is not None:
+            specs.append(
+                MotorControlSpec(
+                    key="lumbar",
+                    translation_key="lumbar",
+                    open_fn=lambda ctrl: ctrl.move_lumbar_up(),
+                    close_fn=lambda ctrl: ctrl.move_lumbar_down(),
+                    stop_fn=lambda ctrl: ctrl.move_lumbar_stop(),
+                    max_angle=30,
+                )
+            )
+        if codes.foot is not None:
+            specs.append(
+                MotorControlSpec(
+                    key="legs",
+                    translation_key="feet",
+                    open_fn=lambda ctrl: ctrl.move_legs_up(),
+                    close_fn=lambda ctrl: ctrl.move_legs_down(),
+                    stop_fn=lambda ctrl: ctrl.move_legs_stop(),
+                    max_angle=45,
+                )
+            )
+        if codes.combined is not None:
+            specs.append(
+                MotorControlSpec(
+                    key="all_motors",
+                    translation_key="all_motors",
+                    open_fn=_remacro(lambda ctrl: ctrl.move_all_up()),
+                    close_fn=_remacro(lambda ctrl: ctrl.move_all_down()),
+                    stop_fn=_remacro(lambda ctrl: ctrl.move_all_stop()),
+                )
+            )
+        return tuple(specs)
+
+    @property
+    def stale_motor_entity_keys(self) -> frozenset[str]:
+        return frozenset({"back", "legs", "head", "feet", "lumbar", "tilt", "all_motors"})
+
+    @property
+    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
+        if not self._model.screen.split:
+            return ()
+        return (
+            ControllerSelectSpec(
+                key=SIDE_STATE_KEY,
+                translation_key=SIDE_STATE_KEY,
+                state_key=SIDE_STATE_KEY,
+                options=("left", "right"),
+                select_fn=_select_side,
+            ),
         )
+
+    @property
+    def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
+        if not self.supports_led_brightness:
+            return ()
+        return (
+            ControllerNumberSpec(
+                key=LED_STATE_KEY,
+                translation_key="light_level",
+                state_key=LED_STATE_KEY,
+                native_min_value=0,
+                native_max_value=255,
+                native_step=1,
+                set_fn=_set_led_brightness,
+            ),
+        )
+
+    @property
+    def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        if not self.supports_led_brightness:
+            return ()
+        return (
+            ControllerButtonSpec(
+                key="remacro_led_brightness_save",
+                name="Save light level",
+                press_fn=_remacro(lambda ctrl: ctrl.save_led_brightness()),
+                icon="mdi:content-save",
+                translation_key="remacro_led_brightness_save",
+            ),
+        )
+
+    # ------------------------------------------------------------------
+    # Transport
+    # ------------------------------------------------------------------
+
+    def _main(self, code: int, parameter: int = 0) -> bytes:
+        """Frame for a main-screen tap (flat, memory, preset, massage, light)."""
+        if self._app == APP_JEROMES:
+            return self._serial.tap(code, parameter)
+        return self._serial.hold(code, parameter)
 
     async def write_command(
         self,
@@ -245,262 +339,336 @@ class RemacroController(BedController):
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
-        """Write a command to the bed."""
-        if self.client is None or not self.client.is_connected:
-            _LOGGER.error("Cannot write command: BLE client not connected")
-            raise ConnectionError("Not connected to bed")
-
-        effective_cancel = cancel_event or self._coordinator.cancel_command
-
-        _LOGGER.debug(
-            "Writing command to Remacro bed (%s): %s (repeat: %d, delay: %dms)",
+        # Every app writes WRITE_TYPE_NO_RESPONSE.
+        await self._write_gatt_with_retry(
             REMACRO_WRITE_CHAR_UUID,
-            command.hex(),
-            repeat_count,
-            repeat_delay_ms,
+            command,
+            repeat_count=repeat_count,
+            repeat_delay_ms=repeat_delay_ms,
+            cancel_event=cancel_event,
+            response=False,
         )
 
-        for i in range(repeat_count):
-            if effective_cancel is not None and effective_cancel.is_set():
-                _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
-                return
+    async def _sleep(self, seconds: float) -> None:
+        if seconds > 0:
+            await asyncio.sleep(seconds)
 
-            try:
-                async with self._ble_lock:
-                    await self.client.write_gatt_char(
-                        REMACRO_WRITE_CHAR_UUID, command, response=False
-                    )
-            except BleakError:
-                _LOGGER.exception("Failed to write command")
-                raise
-
-            if i < repeat_count - 1:
-                await asyncio.sleep(repeat_delay_ms / 1000)
-
-    async def _send_command(self, command: int, repeat_count: int = 1) -> None:
-        """Build and send a command packet."""
-        packet = self._build_packet(command)
-        await self.write_command(packet, repeat_count=repeat_count)
-
-    async def _move_with_stop(self, command: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
-        """Execute a movement command and always send STOP at the end."""
+    async def _pause(self, seconds: float, cancel_event: asyncio.Event) -> bool:
+        """Wait for ``seconds``; return True early when cancelled."""
+        if cancel_event.is_set():
+            return True
+        if seconds <= 0:
+            return False
         try:
-            packet = self._build_packet(command)
-            await self.write_command(packet, repeat_count=10, repeat_delay_ms=100)
-        finally:
+            async with asyncio.timeout(seconds):
+                await cancel_event.wait()
+        except TimeoutError:
+            return False
+        return True
+
+    async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
+        """Enable notifications like the apps; payloads carry no bed state."""
+        self._notify_callback = callback
+        client = self.client
+        if client is None or not client.is_connected:
+            return
+        try:
+            async with self._ble_lock:
+                await client.start_notify(REMACRO_READ_CHAR_UUID, self._handle_notification)
+        except BleakError:
+            _LOGGER.warning("Remacro notification subscription failed", exc_info=True)
+
+    async def stop_notify(self) -> None:
+        self._notify_callback = None
+        client = self.client
+        if client is None or not client.is_connected:
+            return
+        try:
+            async with self._ble_lock:
+                await client.stop_notify(REMACRO_READ_CHAR_UUID)
+        except BleakError:
+            _LOGGER.debug("Remacro notification unsubscribe failed", exc_info=True)
+
+    def _handle_notification(self, _sender: object, data: bytearray) -> None:
+        # Sleep-module telemetry and MAC replies only feed app screens that
+        # have no in-app route, so they are recorded for diagnostics only.
+        self.forward_raw_notification(REMACRO_READ_CHAR_UUID, bytes(data))
+
+    # ------------------------------------------------------------------
+    # Movement
+    # ------------------------------------------------------------------
+
+    async def _release(self, code: int, offsets: tuple[float, ...]) -> None:
+        """Send the release STOP at each offset, surviving cancellation."""
+
+        async def send() -> None:
+            event = asyncio.Event()  # Fresh: a STOP request must not suppress it.
+            failure: Exception | None = None
+            elapsed = 0.0
+            for offset in offsets:
+                await self._sleep(offset - elapsed)
+                elapsed = offset
+                try:
+                    await self.write_command(self._serial.hold(code), cancel_event=event)
+                except Exception as error:  # noqa: BLE001 - the apps schedule each STOP independently
+                    failure = failure or error
+            if failure is not None:
+                raise failure
+
+        task = asyncio.create_task(send())
+        cancelled = False
+        while not task.done():
             try:
-                stop_packet = self._build_packet(RemacroCommands.STOP_MOTOR)
-                await self.write_command(
-                    stop_packet,
-                    cancel_event=asyncio.Event(),  # Fresh event, not affected by cancel
-                )
-            except BleakError:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
+                await asyncio.shield(task)
+            except asyncio.CancelledError:
+                cancelled = True
+        task.result()
+        if cancelled:
+            raise asyncio.CancelledError
 
-    # Motor control methods
-    async def move_head_up(self) -> None:
-        """Move head up."""
-        await self._move_with_stop(RemacroCommands.M1_UP)
+    async def _move(self, axis: Axis | None, up: bool, *, combined: bool = False) -> None:
+        if axis is None:
+            raise NotImplementedError(f"{self._model.name} has no such control")
+        code = axis.up if up else axis.down
+        pulse_count, pulse_delay_ms = self.motor_pulse_settings()
+        hold_s = max(pulse_count, 1) * pulse_delay_ms / 1000
+        cancel_event = self._coordinator.cancel_command
+        one_activity = self._model.screen.one_activity_timing
+        stream = one_activity and combined and self._app != APP_THE_BRICK
+        if stream:
+            release = _ONE_COMBINED_RELEASE
+        elif one_activity and not combined:
+            release = _ONE_INDIVIDUAL_RELEASE
+        else:
+            release = (RELEASE_DELAY_S,)
+        try:
+            if not stream:
+                await self.write_command(self._serial.hold(code))
+                await self._pause(hold_s, cancel_event)
+                return
+            elapsed = 0.0
+            while elapsed < hold_s:
+                if cancel_event.is_set():
+                    return
+                await self.write_command(self._serial.hold(code))
+                step = min(STREAM_INTERVAL_S, hold_s - elapsed)
+                if await self._pause(step, cancel_event):
+                    return
+                elapsed += step
+        finally:
+            await self._release(axis.stop, release)
 
-    async def move_head_down(self) -> None:
-        """Move head down."""
-        await self._move_with_stop(RemacroCommands.M1_DOWN)
-
-    async def move_head_stop(self) -> None:
-        """Stop head motor."""
-        await self._send_command(RemacroCommands.M1_STOP)
+    async def _stop_axis(self, axis: Axis | None) -> None:
+        if axis is None:
+            raise NotImplementedError(f"{self._model.name} has no such control")
+        await self.write_command(self._serial.hold(axis.stop), cancel_event=asyncio.Event())
 
     async def move_back_up(self) -> None:
-        """Move back up (alias for head)."""
-        await self.move_head_up()
+        await self._move(self._codes.head, True)
 
     async def move_back_down(self) -> None:
-        """Move back down (alias for head)."""
-        await self.move_head_down()
+        await self._move(self._codes.head, False)
 
     async def move_back_stop(self) -> None:
-        """Stop back motor."""
-        await self.move_head_stop()
+        await self._stop_axis(self._codes.head)
+
+    async def move_head_up(self) -> None:
+        await self.move_back_up()
+
+    async def move_head_down(self) -> None:
+        await self.move_back_down()
+
+    async def move_head_stop(self) -> None:
+        await self.move_back_stop()
 
     async def move_legs_up(self) -> None:
-        """Move legs/feet up."""
-        await self._move_with_stop(RemacroCommands.M2_UP)
+        await self._move(self._codes.foot, True)
 
     async def move_legs_down(self) -> None:
-        """Move legs/feet down."""
-        await self._move_with_stop(RemacroCommands.M2_DOWN)
+        await self._move(self._codes.foot, False)
 
     async def move_legs_stop(self) -> None:
-        """Stop legs motor."""
-        await self._send_command(RemacroCommands.M2_STOP)
+        await self._stop_axis(self._codes.foot)
 
     async def move_feet_up(self) -> None:
-        """Move feet up."""
         await self.move_legs_up()
 
     async def move_feet_down(self) -> None:
-        """Move feet down."""
         await self.move_legs_down()
 
     async def move_feet_stop(self) -> None:
-        """Stop feet motor."""
         await self.move_legs_stop()
 
-    async def stop_all(self) -> None:
-        """Stop all motors."""
-        await self._send_command(RemacroCommands.STOP_MOTOR)
-
-    # Lumbar control
     async def move_lumbar_up(self) -> None:
-        """Move lumbar up."""
-        await self._move_with_stop(RemacroCommands.M3_UP)
+        await self._move(self._codes.lumbar, True)
 
     async def move_lumbar_down(self) -> None:
-        """Move lumbar down."""
-        await self._move_with_stop(RemacroCommands.M3_DOWN)
+        await self._move(self._codes.lumbar, False)
 
     async def move_lumbar_stop(self) -> None:
-        """Stop lumbar motor."""
-        await self._send_command(RemacroCommands.M3_STOP)
+        await self._stop_axis(self._codes.lumbar)
 
-    # Tilt/Neck control
-    async def move_tilt_up(self) -> None:
-        """Move tilt/neck up."""
-        await self._move_with_stop(RemacroCommands.M4_UP)
+    async def move_all_up(self) -> None:
+        await self._move(self._codes.combined, True, combined=True)
 
-    async def move_tilt_down(self) -> None:
-        """Move tilt/neck down."""
-        await self._move_with_stop(RemacroCommands.M4_DOWN)
+    async def move_all_down(self) -> None:
+        await self._move(self._codes.combined, False, combined=True)
 
-    async def move_tilt_stop(self) -> None:
-        """Stop tilt motor."""
-        await self._send_command(RemacroCommands.M4_STOP)
+    async def move_all_stop(self) -> None:
+        await self._stop_axis(self._codes.combined)
 
-    # Preset methods
+    async def stop_all(self) -> None:
+        """Send the screens' global motor STOP; NineActivity defines none."""
+        if not self._model.screen.has_global_stop:
+            return
+        self._session.active_preset = None
+        frame = self._main(MOTOR_STOP) if self._codes.presets else self._serial.hold(MOTOR_STOP)
+        await self.write_command(frame, cancel_event=asyncio.Event())
+
+    async def set_control_side(self, option: str) -> None:
+        """Mirror the split screens' local left/right toggle (no write)."""
+        if not self._model.screen.split or option not in ("left", "right"):
+            raise ValueError(f"Unsupported control side: {option}")
+        self._session.side = option
+        self.forward_controller_state_update(SIDE_STATE_KEY, option)
+
+    # ------------------------------------------------------------------
+    # Presets and memory
+    # ------------------------------------------------------------------
+
     async def preset_flat(self) -> None:
-        """Go to flat position (default preset 1)."""
-        await self._send_command(RemacroCommands.DEF_ML1)
+        await self.write_command(self._main(FLAT))
 
-    async def preset_zero_g(self) -> None:
-        """Go to zero gravity position (default preset 2)."""
-        await self._send_command(RemacroCommands.DEF_ML2)
-
-    async def preset_tv(self) -> None:
-        """Go to TV position (default preset 3)."""
-        await self._send_command(RemacroCommands.DEF_ML3)
+    async def _preset(self, name: str) -> None:
+        code = self._codes.presets.get(name)
+        if code is None:
+            raise NotImplementedError(f"{self._model.name} has no {name} preset")
+        # Tapping the highlighted preset again stops the motors instead.
+        if self._session.active_preset == name:
+            self._session.active_preset = None
+            await self.write_command(self._main(MOTOR_STOP))
+            return
+        self._session.active_preset = name
+        await self.write_command(self._main(code))
 
     async def preset_anti_snore(self) -> None:
-        """Go to anti-snore position (default preset 4)."""
-        await self._send_command(RemacroCommands.DEF_ML4)
+        await self._preset("anti_snore")
+
+    async def preset_tv(self) -> None:
+        await self._preset("tv")
+
+    async def preset_zero_g(self) -> None:
+        await self._preset("zero_g")
+
+    def _memory_code(self, codes: tuple[int, ...], memory_num: int) -> int:
+        if isinstance(memory_num, bool) or not 1 <= memory_num <= len(codes):
+            raise ValueError(f"{self._model.name} has memory slots 1-{len(codes)}")
+        return codes[memory_num - 1]
 
     async def preset_memory(self, memory_num: int) -> None:
-        """Go to memory preset position.
-
-        Args:
-            memory_num: Memory preset number (1-4).
-        """
-        memory_commands = {
-            1: RemacroCommands.MOV_ML1,
-            2: RemacroCommands.MOV_ML2,
-            3: RemacroCommands.MOV_ML3,
-            4: RemacroCommands.MOV_ML4,
-        }
-        if memory_num in memory_commands:
-            await self._send_command(memory_commands[memory_num])
-        else:
-            _LOGGER.warning(
-                "Invalid memory preset number: %d (valid: 1-4)", memory_num
-            )
+        await self.write_command(
+            self._main(self._memory_code(self._codes.memory_recall, memory_num))
+        )
 
     async def program_memory(self, memory_num: int) -> None:
-        """Save current position to memory preset.
+        await self.write_command(self._main(self._memory_code(self._codes.memory_save, memory_num)))
 
-        Args:
-            memory_num: Memory preset number to save to (1-4).
-        """
-        save_commands = {
-            1: RemacroCommands.SET_ML1,
-            2: RemacroCommands.SET_ML2,
-            3: RemacroCommands.SET_ML3,
-            4: RemacroCommands.SET_ML4,
-        }
-        if memory_num in save_commands:
-            await self._send_command(save_commands[memory_num])
-        else:
-            _LOGGER.warning(
-                "Invalid memory preset number for programming: %d (valid: 1-4)",
-                memory_num,
-            )
+    # ------------------------------------------------------------------
+    # Massage: the apps' head, foot and wave buttons with local counters
+    # ------------------------------------------------------------------
 
-    # Massage methods
-    async def massage_toggle(self) -> None:
-        """Toggle massage mode 1."""
-        await self._send_command(RemacroCommands.MMODE1_RUN)
+    def _massage(self) -> MassageCodes:
+        massage = self._codes.massage
+        if massage is None:
+            raise NotImplementedError(f"{self._model.name} has no massage")
+        return massage
+
+    def _next_level(self, level: int) -> int:
+        level += 1
+        if level > 3:
+            # Slumberland and The Brick skip "off" while a wave is running.
+            level = 1 if self._session.wave and self._app != APP_JEROMES else 0
+        return level
+
+    def _zone_code(
+        self, levels: tuple[int, int, int], wave_levels: tuple[int, int, int], off: int, level: int
+    ) -> int:
+        if level == 0:
+            return off
+        return (wave_levels if self._session.wave else levels)[level - 1]
 
     async def massage_head_toggle(self) -> None:
-        """Toggle head massage zone."""
-        await self._send_command(RemacroCommands.MM1_RUN)
+        massage = self._massage()
+        session = self._session
+        session.head_level = self._next_level(session.head_level)
+        await self.write_command(
+            self._main(
+                self._zone_code(
+                    massage.head, massage.head_wave, massage.head_off, session.head_level
+                )
+            )
+        )
 
     async def massage_foot_toggle(self) -> None:
-        """Toggle foot massage zone."""
-        await self._send_command(RemacroCommands.MM2_RUN)
+        massage = self._massage()
+        session = self._session
+        session.foot_level = self._next_level(session.foot_level)
+        await self.write_command(
+            self._main(
+                self._zone_code(
+                    massage.foot, massage.foot_wave, massage.foot_off, session.foot_level
+                )
+            )
+        )
 
-    async def massage_stop(self) -> None:
-        """Stop massage."""
-        await self._send_command(RemacroCommands.MMODE_STOP)
+    async def massage_mode_step(self) -> None:
+        """Advance the wave button: wave 1, wave 2, then off."""
+        massage = self._massage()
+        session = self._session
+        session.wave = (session.wave + 1) % 3
+        if session.wave == 0:
+            session.head_level = session.foot_level = 0
+            code = massage.wave_off
+        elif session.wave == 1:
+            session.head_level = session.foot_level = 1
+            code = massage.wave[0]
+        else:
+            code = massage.wave[1]
+        await self.write_command(self._main(code))
 
-    async def massage_mode_2(self) -> None:
-        """Set massage mode 2."""
-        await self._send_command(RemacroCommands.MMODE2_RUN)
-
-    async def massage_mode_3(self) -> None:
-        """Set massage mode 3."""
-        await self._send_command(RemacroCommands.MMODE3_RUN)
-
-    # Light control
-    async def lights_toggle(self) -> None:
-        """Toggle under-bed light (cycles through modes)."""
-        await self._send_command(RemacroCommands.LED_W)
+    # ------------------------------------------------------------------
+    # Lighting
+    # ------------------------------------------------------------------
 
     async def lights_on(self) -> None:
-        """Turn on under-bed light (white preset)."""
-        await self._send_command(RemacroCommands.LED_W)
+        if not self.supports_lights:
+            raise NotImplementedError(f"{self._model.name} has no light control")
+        await self.write_command(self._main(LIGHT_RGBV, 0))
 
     async def lights_off(self) -> None:
-        """Turn off under-bed light."""
-        await self._send_command(RemacroCommands.LED_OFF)
+        if not self.supports_lights:
+            raise NotImplementedError(f"{self._model.name} has no light control")
+        await self.write_command(self._main(LIGHT_OFF, 0))
 
-    async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
-        """Set LED color using LED_RGBV command.
+    async def set_led_brightness(self, brightness: int) -> None:
+        """Settings > LED light slider: white at ``brightness`` after 150 ms."""
+        if not self.supports_led_brightness:
+            raise NotImplementedError("This app hides the LED light setting for this model")
+        if isinstance(brightness, bool) or not 0 <= brightness <= 255:
+            raise ValueError("Light level must be 0-255")
+        self._session.led_brightness = brightness
+        self.forward_controller_state_update(LED_STATE_KEY, brightness)
+        await self._sleep(LED_PREVIEW_DELAY_S)
+        await self.write_command(self._serial.tap(LIGHT_RGBV, LED_WHITE | brightness))
 
-        The 32-bit parameter encodes RGB + brightness as:
-            dp = (R << 24) | (G << 16) | (B << 8) | brightness
+    async def save_led_brightness(self) -> None:
+        """Settings > LED light commit: store the current level after 500 ms."""
+        if not self.supports_led_brightness:
+            raise NotImplementedError("This app hides the LED light setting for this model")
+        await self._sleep(LED_SAVE_DELAY_S)
+        await self.write_command(
+            self._serial.tap(LIGHT_RGBV_SAVE, LED_WHITE | self._session.led_brightness)
+        )
 
-        This is split into little-endian bytes 4-7 of the packet:
-            [serial, 0x01, 0x01, 0x05, brightness, B, G, R]
-        """
-        r, g, b = rgb_color
-        if not all(0 <= v <= 255 for v in (r, g, b)):
-            raise ValueError(f"RGB values must be 0-255, got {rgb_color}")
-        brightness = 255
-        dp = (r << 24) | (g << 16) | (b << 8) | brightness
-        packet = self._build_packet(RemacroCommands.LED_RGBV, dp)
-        await self.write_command(packet)
 
-    # Heat control
-    async def heat_off(self) -> None:
-        """Turn off heating pad."""
-        await self._send_command(RemacroCommands.HEAT_OFF)
-
-    async def heat_set_mode(self, mode: int) -> None:
-        """Set heating pad mode (1-3). 0 turns off."""
-        commands = {
-            0: RemacroCommands.HEAT_OFF,
-            1: RemacroCommands.HEAT_M1,
-            2: RemacroCommands.HEAT_M2,
-            3: RemacroCommands.HEAT_M3,
-        }
-        if command := commands.get(mode):
-            await self._send_command(command)
-        else:
-            _LOGGER.warning("Invalid heat mode %d (valid: 0-3)", mode)
+__all__ = ["APP_JEROMES", "APP_SLUMBERLAND", "APP_THE_BRICK", "RemacroController"]

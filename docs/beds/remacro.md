@@ -1,172 +1,165 @@
 # Remacro
 
-**Status:** ❓ Needs testing
+**Status:** 🧪 Artifact-verified, hardware unverified
 
-**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
+Remacro is the SynData protocol used by three store-branded Android apps from the
+same developer. The integration follows the accepted row 050 analyses of all three
+([disposition ledger](../apk-analysis/dispositions/row050-remacro.md)). No physical
+bed has confirmed these controls yet.
 
-## Known Models
+## Apps and profile
 
-- CheersSleep beds
-- Jeromes furniture store beds
-- Slumberland furniture store beds
-- The Brick furniture store beds
+| App | Package | Protocol variant |
+|-----|---------|------------------|
+| Slumberland | `com.cheers.slumber` 1.0 (2) | `slumberland` (also `auto`) |
+| The Brick | `com.cheers.brick` 1.0 (3) | `the_brick` |
+| Jerome's | `com.cheers.jewmes` 1.202112141512 (20) | `jeromes` |
 
-These brands share the same OEM controller using the SynData protocol.
+Nothing in the advertisement identifies the app, so choose the protocol variant
+that matches the app you use. `auto` keeps the Slumberland behavior. The apps differ
+in their frame counters, in one OneActivity timing, in massage wave cycling, in the
+models they list and in whether the LED light setting is shown.
 
-## Apps
+## Detection and model selection
 
-| Analyzed | App | Package ID |
-|----------|-----|------------|
-| ✅ | Jeromes | `com.cheers.jewmes` |
-| ✅ | Slumberland | `com.cheers.slumber` |
-| ✅ | The Brick | `com.cheers.brick` |
+Beds are detected by the advertised service `6e403587-b5a3-f393-e0a9-e50e24dcca9e`.
+Like the apps, the integration then picks the model from the **lowest
+manufacturer-specific-data company ID** in the advertisement. Names, payload bytes
+and signal strength are never used. The selected model is remembered in the entry
+(`remacro_model`) for offline capability creation; a live advertisement always wins.
+A company ID the selected app does not list is refused, as the app would not show it.
 
-## Features
+| Company ID | App label | Screen | Controls |
+|-----------|-----------|--------|----------|
+| 14, 16 | BS200C/BS200P | TenActivity | All motors, Flat |
+| 45 | CS-B200 | TwoActivity | Head, Feet, All motors, Flat |
+| 46 | CS-B200A | SixActivity | Head, Feet, All motors, Flat, 2 memories, Anti-snore/TV/Zero-G, light |
+| 47 | CS-B200M | ThreeActivity | Head, Feet, All motors, Flat, 2 memories, massage, light |
+| 48 | CS-B300 | OneActivity | Head, Lumbar, Feet, All motors, Flat |
+| 49 | CS-B300A | FiveActivity | Head, Lumbar, Feet, All motors, Flat, 2 memories, presets, light |
+| 50 | CS-B300M | FourActivity | Head, Lumbar, Feet, All motors, Flat, 2 memories, massage, light |
+| 51 | CS-B500YA | EightActivity | Split: side-selected Head, Lumbar, All motors, memories and presets; shared Feet; light |
+| 52 | CS-B500YM | NineActivity | Split: side-selected Head, Lumbar, All motors, memories and massage; shared Feet; light |
+| 53 | BA210 | TwoActivity1 | Head, Feet, All motors, Flat |
+| 54 | CS-B300M(ASI) | TwelveActivity | Head, Lumbar, Feet (no All motors), Flat, 1 memory, presets, massage, light |
+| 55 | CS-B200M(ASI) | ElevenActivity | Head, Feet, All motors, Flat, 1 memory, presets, massage, light |
 
-| Feature | Supported |
-|---------|-----------|
-| Motor Control | ✅ (4 motors: head, foot, lumbar, tilt/neck) |
-| Position Feedback | ❌ |
-| Memory Presets | ✅ (4 slots) |
-| Factory Presets | ✅ (Flat, Zero-G, TV, Anti-Snore) |
-| Massage | ✅ (3 modes, 2 zones) |
-| RGB Lights | ✅ (color picker) |
-| Heat Control | ✅ (model dependent) |
+Jerome's lists only company IDs 45–53. The motor-count option is ignored: the
+screen decides the controls, and no physical motor count is claimed.
 
-## Protocol Details
+The LED light setting (light level slider and **Save light level**) exists only in
+Slumberland and The Brick, for company IDs 46 and 49–55. Jerome's hides it for
+every model.
 
-**Service UUID:** `6e403587-b5a3-f393-e0a9-e50e24dcca9e`
-**Write Characteristic:** `6e403588-b5a3-f393-e0a9-e50e24dcca9e`
-**Read Characteristic:** `6e403589-b5a3-f393-e0a9-e50e24dcca9e`
-**Format:** 8-byte packets with sequence number
+## GATT
 
-Note: The service UUID is similar to Nordic UART Service (6e400001-...) but with a different prefix (6e4035xx vs 6e4000xx), making it uniquely identifiable.
+| Role | UUID |
+|------|------|
+| Service | `6e403587-b5a3-f393-e0a9-e50e24dcca9e` |
+| Write (without response) | `6e403588-b5a3-f393-e0a9-e50e24dcca9e` |
+| Notify | `6e403589-b5a3-f393-e0a9-e50e24dcca9e` |
 
-## Detection
+The apps subscribe to notifications on connect but use them only for a sleep
+module (heart rate, breathing, presence and its MAC address) whose screens have no
+in-app route. The integration subscribes the same way and records the frames in
+diagnostics only. There is no pairing, PIN, handshake, read or position feedback.
 
-Devices are auto-detected by the unique service UUID `6e403587-b5a3-f393-e0a9-e50e24dcca9e`.
-
-## Packet Format
-
-All commands are 8 bytes:
+## Frame
 
 ```text
-[serial, PID, cmd_lo, cmd_hi, param0, param1, param2, param3]
+[serial, PID, code_lo, code_hi, p0, p1, p2, p3]   PID 0x01 for every control
 ```
 
-Where:
-- `serial` = Incrementing sequence number (1-255, wraps around)
-- `PID` = Command type (0x01 for control commands)
-- `cmd_lo/cmd_hi` = 16-bit command code in little-endian order
-- `param0-3` = 32-bit parameter in little-endian order (usually 0)
+The code and 32-bit parameter are little-endian. There is no checksum. The serial
+is the low byte of one shared counter that starts at 1:
 
-### PID Types
+- A "tap" frame uses the counter, then increments it.
+- A "hold" frame increments first. Slumberland and The Brick always do; Jerome's
+  only when the code differs from the previous hold code, so repeated holds and
+  repeated STOPs reuse one serial.
+- Movement and release STOP use hold frames in every app. Flat, memory, presets,
+  massage and the light toggle use hold frames in Slumberland and The Brick, and tap
+  frames in Jerome's. The LED setting uses tap frames.
 
-| PID | Value | Description |
-|-----|-------|-------------|
-| CPID_CTRL | 0x01 | Control commands |
-| CPID_GET_STATE | 0x02 | Get state |
-| CPID_SET_PARA | 0x03 | Set parameters |
-| CPID_GET_PARA | 0x04 | Get parameters |
+## Movement
 
-## Commands
+| Control | Up | Down | Release STOP |
+|---------|----|------|--------------|
+| All motors | `0x0110` | `0x0111` | `0x0001` |
+| Head | `0x0101` | `0x0102` | `0x0100` |
+| Feet | `0x0105` | `0x0106` | `0x0104` |
+| Lumbar | `0x0109` | `0x010A` | `0x0108` |
+| Split left All / Head / Lumbar | `0x6444` / `0x6401` / `0x6407` | `0x6445` / `0x6402` / `0x6408` | `0x6443` / `0x6400` / `0x6406` |
+| Split right All / Head / Lumbar | `0x6456` / `0x6404` / `0x640A` | `0x6457` / `0x6405` / `0x640B` | `0x6455` / `0x6403` / `0x6409` |
+| Split shared Feet | `0x640D` | `0x640E` | `0x640C` |
 
-### Motor Control
+A press sends one frame; the STOP follows 120 ms after release. Home Assistant's
+hold time is the motor pulse count times the pulse delay (default 10 × 100 ms).
+OneActivity (company ID 48) differs:
 
-| Action | Command | Value | Notes |
-|--------|---------|-------|-------|
-| Stop All | STOP | 0x0000 | Stop everything |
-| Stop Motors | STOP_MOTOR | 0x0001 | Stop all motors |
-| Motor 1 Stop | M1_STOP | 0x0100 (256) | Head |
-| Motor 1 Up | M1_UP | 0x0101 (257) | Head |
-| Motor 1 Down | M1_DOWN | 0x0102 (258) | Head |
-| Motor 2 Stop | M2_STOP | 0x0104 (260) | Foot |
-| Motor 2 Up | M2_UP | 0x0105 (261) | Foot |
-| Motor 2 Down | M2_DOWN | 0x0106 (262) | Foot |
-| Motor 3 Stop | M3_STOP | 0x0108 (264) | Lumbar |
-| Motor 3 Up | M3_UP | 0x0109 (265) | Lumbar |
-| Motor 3 Down | M3_DOWN | 0x010A (266) | Lumbar |
-| Motor 4 Stop | M4_STOP | 0x010C (268) | Tilt/Neck |
-| Motor 4 Up | M4_UP | 0x010D (269) | Tilt/Neck |
-| Motor 4 Down | M4_DOWN | 0x010E (270) | Tilt/Neck |
-| All Up | M_UP | 0x0110 (272) | All motors |
-| All Down | M_DOWN | 0x0111 (273) | All motors |
+- Head, Lumbar and Feet send STOP three times, at 0, 120 and 240 ms after release.
+- All motors repeats the press every 100 ms and sends STOP at 0, 20 and 40 ms after
+  release, except in The Brick, which sends one press and one STOP 120 ms later.
 
-### Presets - User Memory
+The STOP is always sent, including when a movement is cancelled. The apps send no
+STOP for a cancelled touch or a closed screen; that behavior is not copied.
 
-| Action | Command | Value |
-|--------|---------|-------|
-| Go to Memory 1 | MOV_ML1 | 0x0311 (785) |
-| Go to Memory 2 | MOV_ML2 | 0x0313 (787) |
-| Go to Memory 3 | MOV_ML3 | 0x0315 (789) |
-| Go to Memory 4 | MOV_ML4 | 0x0317 (791) |
-| Save Memory 1 | SET_ML1 | 0x0310 (784) |
-| Save Memory 2 | SET_ML2 | 0x0312 (786) |
-| Save Memory 3 | SET_ML3 | 0x0314 (788) |
-| Save Memory 4 | SET_ML4 | 0x0316 (790) |
+Split beds (51, 52) have a **Control side** select that mirrors the app's
+left/right toggle. It starts on the left and sends nothing by itself.
 
-### Presets - Factory Defaults
+Like the app process, the counter, side, active preset, massage counters and LED
+level survive Bluetooth reconnects. They reset when Home Assistant restarts or the
+app profile or model changes.
 
-| Action | Command | Value |
-|--------|---------|-------|
-| Flat | DEF_ML1 | 0x0301 (769) |
-| Zero-G | DEF_ML2 | 0x0302 (770) |
-| TV | DEF_ML3 | 0x0303 (771) |
-| Anti-Snore | DEF_ML4 | 0x0304 (772) |
+## Presets, memory and stop
 
-### Massage Control
+| Action | Code |
+|--------|------|
+| Flat (every screen) | `0x0111`, sent once |
+| Anti-snore / TV / Zero-G | `0x0301` / `0x0302` / `0x0303` |
+| Split left / right presets (51) | `0x6511`–`0x6513` / `0x6521`–`0x6523` |
+| Memory recall 1 / 2 | `0x0311` / `0x0313` |
+| Memory save 1 / 2 | `0x0310` / `0x0312` |
+| Split left recall / save | `0x6530`, `0x6531` / `0x6540`, `0x6541` |
+| Split right recall / save | `0x6538`, `0x6539` / `0x6548`, `0x6549` |
+| Stop | `0x0001` |
 
-| Action | Command | Value |
-|--------|---------|-------|
-| Stop Massage | MMODE_STOP | 0x0200 (512) |
-| Mode 1 | MMODE1_RUN | 0x0201 (513) |
-| Mode 2 | MMODE2_RUN | 0x0202 (514) |
-| Mode 3 | MMODE3_RUN | 0x0203 (515) |
-| Mode 4 | MMODE4_RUN | 0x0204 (516) |
-| Mode 5 | MMODE5_RUN | 0x0205 (517) |
-| Zone 1 (Head) | MM1_RUN | 0x0121 (289) |
-| Zone 2 (Foot) | MM2_RUN | 0x0122 (290) |
-| Both Zones | MM12_RUN | 0x0120 (288) |
+As in the apps, pressing the preset that is already active sends `0x0001` instead.
+The Stop button sends `0x0001` and clears the active preset. NineActivity defines no
+global STOP, so there Stop only ends the running movement with its own release STOP.
 
-### LED Control
+## Massage
 
-| Action | Command | Value |
-|--------|---------|-------|
-| Off | LED_OFF | 0x0500 (1280) |
-| RGB Value | LED_RGBV | 0x0501 (1281) |
-| White | LED_W | 0x0502 (1282) |
-| Red | LED_R | 0x0503 (1283) |
-| Green | LED_G | 0x0504 (1284) |
-| Blue | LED_B | 0x0505 (1285) |
-| Mode 1 | LED_M1 | 0x0509 (1289) |
-| Mode 2 | LED_M2 | 0x050A (1290) |
-| Mode 3 | LED_M3 | 0x050B (1291) |
+Massage models expose the apps' three buttons. They keep the same local counters:
+head and foot each cycle levels 1, 2, 3 and off; the wave button cycles wave 1,
+wave 2 and off. Starting a wave sets both zones to level 1; stopping it sets them off.
 
-### Heat Control
+| Button | Levels 1–3 | Levels with wave | Off |
+|--------|------------|------------------|-----|
+| Head | `0x0201`–`0x0203` | `0x0220`–`0x0222` | `0x0123` |
+| Foot | `0x0204`–`0x0206` | `0x0228`–`0x022A` | `0x0124` |
+| Wave | wave 1 `0x0230`, wave 2 `0x0231` | | `0x0200` |
 
-| Action | Command | Value |
-|--------|---------|-------|
-| Off | HEAT_OFF | 0x7000 (28672) |
-| Mode 1 (Low) | HEAT_M1 | 0x7001 (28673) |
-| Mode 2 (Medium) | HEAT_M2 | 0x7002 (28674) |
-| Mode 3 (High) | HEAT_M3 | 0x7003 (28675) |
+NineActivity left uses wave off `0x0233`. NineActivity right uses head
+`0x0207`–`0x0209`, wave head `0x0240`/`0x2401`/`0x0242` (the `0x2401` is literal in
+all three apps), head off `0x0133`, foot `0x020A`–`0x020C`, wave foot
+`0x0248`–`0x024A`, foot off `0x0134` and wave `0x0250`/`0x0251`/`0x0253`. The
+counters are shared between sides, as in the app.
 
-## Command Timing
+While a wave runs, Slumberland and The Brick wrap a zone from level 3 back to 1, so
+they never send the zone off code then. Jerome's wraps to off.
 
-| Operation | Repeat Count | Delay | Notes |
-|-----------|-------------|-------|-------|
-| Motor movement | 10 | 100ms | Continuous while held |
-| Presets | 1 | - | Single command |
-| Massage toggle | 1 | - | Single command |
-| Light toggle | 1 | - | Single command |
-| Stop | 1 | - | Always sent after movement |
+## Lights
 
-## Notes
+The light switch sends `0x0501` with parameter 0 for on and `0x0500` for off. The
+LED light setting sends `0x0501` with parameter `0xFFFFFF00 | level` 150 ms after a
+change, and **Save light level** sends `0x050F` with the current level 500 ms after
+the press. The level starts at 255, the app's default.
 
-1. The serial number in byte 0 is important - it should increment with each command. The bed uses this for command deduplication.
+## Not implemented
 
-2. Motor movement commands should be sent repeatedly while the button is held, similar to other bed protocols.
-
-3. The app has extensive device model support via manufacturer data lookup, but all models use the same BLE protocol.
-
-4. Sleep tracking functionality (heart rate, breath rate) uses different PID types (-121, -120) in notification responses.
+These app paths have no in-app route, need a network, or are dead code. See the
+ledger for each reason: full-color RGB and light auto-off delay, rocking timer,
+sleep-module settings and telemetry, Wi-Fi provisioning, the HTTP sleep report, the
+Jerome's sleep-module MAC query, and constants that no reachable control sends
+(including the heating and LED mode codes earlier versions of this integration used).

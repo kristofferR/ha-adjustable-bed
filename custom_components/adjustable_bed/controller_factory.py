@@ -104,6 +104,7 @@ from .const import (
     CONF_MALOUF_APP_PRIMARY,
     CONF_MALOUF_APP_PROFILE,
     CONF_MALOUF_APP_TRANSPORT,
+    CONF_REMACRO_MODEL,
     CONF_STARCODE_COMMAND_SELECTOR,
     CONF_STARCODE_TRANSPORT_SELECTOR,
     CONF_STARCODE_UI_SELECTOR,
@@ -362,7 +363,6 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_SLEEPYS_BOX24: _ControllerSpec("sleepys", "SleepysBox24Controller"),
     BED_TYPE_STAR_ELEVATE: _ControllerSpec("star_elevate", "StarElevateController"),
     BED_TYPE_VIBRADORM: _ControllerSpec("vibradorm", "VibradormController"),
-    BED_TYPE_REMACRO: _ControllerSpec("remacro", "RemacroController"),
     BED_TYPE_SCOTT_LIVING: _ControllerSpec("scott_living", "ScottLivingController"),
 }
 
@@ -589,6 +589,27 @@ async def create_controller(
             transport=entry_data.get(CONF_LOGICDATA_APP_TRANSPORT, "auto"),
             has_light=entry_data.get(CONF_LOGICDATA_APP_HAS_LIGHT, True),
             has_massage=entry_data.get(CONF_HAS_MASSAGE, False),
+        )
+
+    if bed_type == BED_TYPE_REMACRO:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.remacro", __package__
+        )
+        from .beds.remacro import RemacroController
+        from .beds.remacro_protocol import app_for_variant, resolve_model, session_for
+
+        app = app_for_variant(protocol_variant)
+        # The live advertisement wins, as in the apps; the stored selector only
+        # covers offline capability minting and missing history.
+        model = resolve_model(
+            app, manufacturer_data, coordinator.entry.data.get(CONF_REMACRO_MODEL)
+        )
+        sessions = coordinator.hass.data.setdefault("adjustable_bed_remacro_sessions", {})
+        return RemacroController(
+            coordinator,
+            app=app,
+            model=model,
+            session=session_for(sessions, coordinator.address, app, model.model_id),
         )
 
     if bed_type == BED_TYPE_VMATBASIC:

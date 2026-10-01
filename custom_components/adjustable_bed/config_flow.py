@@ -55,6 +55,7 @@ from .adapter import (
     read_ble_device_info,
 )
 from .address_lock import async_get_connect_lock
+from .beds.remacro_protocol import add_remacro_model
 from .bluetooth_bond import (
     BondRemovalResult,
     BondSelectionStatus,
@@ -115,6 +116,7 @@ from .const import (
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_REMACRO,
     BED_TYPE_RICHMAT,
     BED_TYPE_SERENITY,
     BED_TYPE_SLEEP_NUMBER,
@@ -2008,13 +2010,20 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             "'Back + Legs Up' only affects the currently connected controller."
         )
 
-    def _maybe_add_kaidi_metadata(
+    def _maybe_add_advertisement_metadata(
         self,
         entry_data: dict[str, Any],
         *,
         manufacturer_data: dict[int, bytes] | None = None,
     ) -> dict[str, Any]:
-        """Cache Kaidi room/VADDR state when this entry targets a Kaidi bed."""
+        """Cache advertisement selectors: Kaidi room/VADDR or the Remacro model."""
+        if entry_data.get(CONF_BED_TYPE) == BED_TYPE_REMACRO:
+            if manufacturer_data is None:
+                info = bluetooth.async_last_service_info(
+                    self.hass, entry_data[CONF_ADDRESS], connectable=True
+                )
+                manufacturer_data = info.manufacturer_data if info is not None else None
+            return add_remacro_model(entry_data, manufacturer_data)
         if entry_data.get(CONF_BED_TYPE) != BED_TYPE_KAIDI:
             return entry_data
 
@@ -2675,7 +2684,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             entry_data[CONF_RICHMAT_REMOTE] = RICHMAT_REMOTE_AUTO
                     else:
                         entry_data[CONF_RICHMAT_REMOTE] = user_selected_remote
-                entry_data = self._maybe_add_kaidi_metadata(
+                entry_data = self._maybe_add_advertisement_metadata(
                     entry_data,
                     manufacturer_data=self._discovery_info.manufacturer_data,
                 )
@@ -3594,7 +3603,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 if requires_pairing(bed_type, protocol_variant):
                     self._manual_data = entry_data
                     return await self.async_step_manual_pairing()
-                entry_data = self._maybe_add_kaidi_metadata(
+                entry_data = self._maybe_add_advertisement_metadata(
                     entry_data,
                     manufacturer_data=self._discovery_info.manufacturer_data,
                 )
@@ -3900,7 +3909,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     if requires_pairing(bed_type, protocol_variant):
                         self._manual_data = entry_data
                         return await self.async_step_manual_pairing()
-                    entry_data = self._maybe_add_kaidi_metadata(entry_data)
+                    entry_data = self._maybe_add_advertisement_metadata(entry_data)
                     return await self._finish_with_verify(
                         entry_data,
                         user_input.get(CONF_NAME, "Adjustable Bed"),

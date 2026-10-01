@@ -3718,6 +3718,8 @@ class TestOfflineSafeBedTypes:
                 })
             elif bed_type == BED_TYPE_VMATBASIC:
                 child[CONF_VMATBASIC_PROFILE] = "cbi"
+            elif bed_type == "remacro":
+                child["remacro_model"] = 50
             elif bed_type == "starcode_abm5_4":
                 child.update({
                     "starcode_abm5_4_command_selector": "none",

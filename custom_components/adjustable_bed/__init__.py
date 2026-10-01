@@ -19,12 +19,14 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.typing import ConfigType
 
+from .beds.remacro_protocol import add_remacro_model
 from .combine_suggestion import async_load_dismissal
 from .const import (
     BED_TYPE_BEDTECH,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_KAIDI,
     BED_TYPE_OCTO,
+    BED_TYPE_REMACRO,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_VIBRADORM,
@@ -333,6 +335,21 @@ def _maybe_cache_kaidi_metadata(hass: HomeAssistant, entry: ConfigEntry) -> None
         new_data.get(CONF_KAIDI_RESOLVED_VARIANT),
         new_data.get(CONF_KAIDI_VARIANT_SOURCE),
     )
+
+
+def _maybe_cache_remacro_model(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Remember the Remacro model selector from Bluetooth history."""
+    if entry.data.get(CONF_BED_TYPE) != BED_TYPE_REMACRO:
+        return
+    for connectable in (True, False):
+        info = bluetooth.async_last_service_info(
+            hass, entry.data[CONF_ADDRESS], connectable=connectable
+        )
+        if info is not None and info.manufacturer_data:
+            new_data = add_remacro_model(entry.data, info.manufacturer_data)
+            if new_data != dict(entry.data):
+                hass.config_entries.async_update_entry(entry, data=new_data)
+            return
 
 
 def _async_ensure_device_registry_entry(
@@ -898,6 +915,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await _async_maybe_reclassify_bedtech_qrrm_entry(hass, entry)
     _maybe_cache_kaidi_metadata(hass, entry)
+    _maybe_cache_remacro_model(hass, entry)
     _async_clear_stale_octo_pin_issue(hass, entry)
 
     _LOGGER.info(
