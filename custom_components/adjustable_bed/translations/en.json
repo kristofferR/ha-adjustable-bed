@@ -515,6 +515,13 @@
           "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous.",
           "malouf_app_primary": "Match the physical primary/secondary setting in the app. Home Assistant Left/Right labels do not change this role."
         }
+      },
+      "furnimove": {
+        "title": "FurniMove handset",
+        "description": "Choose the handset ID used in FurniMove / OKIN Smart Remote. The RF ECO BT receiver label does not identify the motor layout. Use the shipped offline table only when that is the layout selected in the app.",
+        "data": {
+          "furnimove_remote": "Handset ID"
+        }
       }
     },
     "progress": {
@@ -575,7 +582,8 @@
       "octo_pin_rejected": "The bed rejected this PIN.",
       "octo_pin_inconclusive": "PIN access has not been verified.",
       "malouf_app_required": "Select the Android app and exact bed model.",
-      "malouf_app_pair_settings": "Unpair first, then select each physical bed’s app profile before combining them again."
+      "malouf_app_pair_settings": "Unpair first, then select each physical bed’s app profile before combining them again.",
+      "furnimove_remote_required": "Choose a captured FurniMove handset ID. An unknown ID requires its exact app table; the receiver label cannot choose one."
     }
   },
   "options": {
@@ -636,7 +644,8 @@
           "malouf_app_profile": "Android app",
           "malouf_app_model": "Bed model",
           "malouf_app_transport": "Bluetooth transport",
-          "malouf_app_primary": "Primary bed in the app"
+          "malouf_app_primary": "Primary bed in the app",
+          "furnimove_remote": "FurniMove handset ID"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -748,7 +757,9 @@
       "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID.",
       "lp_legacy_pair_settings": "Unpair the beds and configure the legacy L&P profile, packet mode and Bluetooth characteristics on each bed before pairing them again.",
       "malouf_app_required": "Select the Android app and exact bed model.",
-      "malouf_app_pair_settings": "Unpair first, then select each physical bed’s app profile before combining them again."
+      "malouf_app_pair_settings": "Unpair first, then select each physical bed’s app profile before combining them again.",
+      "furnimove_remote_required": "Choose a captured FurniMove handset ID. An unknown ID requires its exact app table; the receiver label cannot choose one.",
+      "furnimove_unpair_first": "Separate the paired entries before changing to FurniMove, then select each side’s own handset layout."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -2058,6 +2069,36 @@
       },
       "serenity_alarm_type": {
         "name": "App alarm state"
+      },
+      "furnimove_model": {
+        "name": "FurniMove model"
+      },
+      "furnimove_hardware": {
+        "name": "FurniMove hardware version"
+      },
+      "furnimove_software": {
+        "name": "FurniMove software version"
+      },
+      "furnimove_firmware": {
+        "name": "FurniMove firmware version"
+      },
+      "furnimove_control_mode": {
+        "name": "FurniMove local control mode"
+      },
+      "furnimove_massage_type": {
+        "name": "FurniMove local massage zone"
+      },
+      "furnimove_massage_intensity": {
+        "name": "FurniMove local massage intensity"
+      },
+      "furnimove_massage_program": {
+        "name": "FurniMove local massage program"
+      },
+      "furnimove_massage_timer_minutes": {
+        "name": "FurniMove advisory massage duration"
+      },
+      "furnimove_function_result": {
+        "name": "FurniMove function feedback result"
       }
     },
     "light": {
@@ -2166,6 +2207,15 @@
       },
       "under_bed_lights": {
         "name": "Under Bed Lights"
+      },
+      "furnimove_sync": {
+        "name": "FurniMove synchronization"
+      },
+      "furnimove_child_lock": {
+        "name": "FurniMove child lock"
+      },
+      "furnimove_massage_running": {
+        "name": "FurniMove local massage session"
       }
     },
     "number": {
@@ -2833,7 +2883,12 @@
           "name": "Side"
         }
       }
-    }
+    },
+    "furnimove_action": {"name": "FurniMove handset action", "description": "Execute an ordered action row from the selected handset. Find row indexes in controller diagnostics. The widget consumer uses the app’s separate fixed timing.", "fields": {"row_index": {"name": "Action row index"}, "duration": {"name": "Hold duration", "description": "Optional seconds for held actions. Other actions use their captured row timing."}, "consumer": {"name": "Consumer"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}},
+    "furnimove_rename": {"name": "Rename FurniMove receiver", "description": "Rename one receiver using a unique name, with up to 18 UTF-16 units after trimming. The original text is sent to the receiver.", "fields": {"name": {"name": "New name"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}},
+    "furnimove_massage_program": {"name": "FurniMove massage program", "description": "Select program 1, 2, 3 or 4 (Wave) using the handset’s captured massage queue.", "fields": {"program": {"name": "Program"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}},
+    "furnimove_massage_duration": {"name": "FurniMove advisory massage duration", "description": "Set the local app duration preference. This does not program a hardware timer or stop massage when time expires.", "fields": {"minutes": {"name": "Advisory duration"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}},
+    "furnimove_move_simultaneously": {"name": "Move two FurniMove motors", "description": "Hold two supported axes with the app’s combined command and release cleanup.", "fields": {"first_motor": {"name": "First motor"}, "second_motor": {"name": "Second motor"}, "first_direction": {"name": "First direction"}, "second_direction": {"name": "Second direction"}, "duration_ms": {"name": "Duration in milliseconds"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}}
   },
   "exceptions": {
     "memory_presets_not_supported": {
@@ -2988,6 +3043,33 @@
     "octo_pin_required": {
       "title": "PIN required for {name}",
       "description": "**{name}** ({address}) is an Octo receiver whose PIN lock is engaged, and no PIN is configured in Home Assistant.\n\nA locked receiver still connects and still reports its capabilities, but it will not act on commands until it is authenticated, so the controls appear to work while the bed does nothing.\n\n**If you know the PIN:** open the OCTO Smart Control app (or your bed brand's version of it) to look it up, then enter it under **Settings → Devices & services → Adjustable Bed → Configure → Octo PIN**.\n\n**If the PIN is lost:** there is no factory-default PIN. OCTO publishes a reset procedure per receiver at {recovery_url} — select yours by its photo. The two common ones are pressing the button on the controller *10 times in quick succession* (Receiver II / RC2, BrickMini Basic), or *once briefly then once long for about 10 seconds* (Brick 2 and others). Micro Lift receivers are reset from the remote instead.\n\n⚠️ Every one of those is a full factory reset: all settings are irrevocably deleted and the remotes must be re-taught. A reset receiver has no PIN and is no longer locked."
+    },
+    "furnimove_layout": {
+      "title": "Confirm the control layout for {name}",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Confirm your product",
+            "description": "Is **{name}** a single-actuator staircase or a bed controlled by FurniMove? Your existing device and matching entity IDs will be preserved.",
+            "data": {
+              "layout": "Product"
+            }
+          },
+          "handset": {
+            "title": "Select the FurniMove handset",
+            "description": "Choose the handset ID used by the FurniMove app, matching its physical remote. Receiver labels such as RF ECO BT and P1103 do not identify the motor layout. No layout is selected automatically.",
+            "data": {
+              "furnimove_remote": "Handset layout"
+            }
+          }
+        },
+        "error": {
+          "handset_required": "Select a captured handset layout. An unknown ID cannot be used safely."
+        },
+        "abort": {
+          "entry_missing": "The entry or paired side no longer exists. Open its current configuration."
+        }
+      }
     }
   },
   "selector": {

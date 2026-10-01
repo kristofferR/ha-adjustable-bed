@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from .dewertokin_rf_gateway import (
         DewertOkinUuidRfGatewayController as DewertOkinUuidRfGatewayController,
     )
+    from .furnimove import FurniMoveController as FurniMoveController
     from .jensen import JensenController as JensenController
     from .jensen_linon import JensenLinonController as JensenLinonController
     from .jiecang import JiecangController as JiecangController
@@ -67,6 +68,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "FurniMoveController": "furnimove",
     "SerenityController": "serenity",
     "CustomaticController": "customatic",
     "CoolBaseController": "coolbase",

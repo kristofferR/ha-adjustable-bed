@@ -29,6 +29,7 @@ from .const import (
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_FURNIMOVE,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -499,6 +500,7 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # are NOT included here - they're only kept for backward compatibility with
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    BED_TYPE_FURNIMOVE: "FurniMove / OKIN Smart Remote (choose handset ID)",
     BED_TYPE_SERENITY: "Jordan's Serenity app",
     BED_TYPE_CUSTOMATIC_CLARITY: "Customatic Clarity app",
     BED_TYPE_CUSTOMATIC_JEROMES: "Customatic Jerome's C app",
@@ -683,13 +685,14 @@ def detect_bed_type_from_gatt_services(
                 bed_type=BED_TYPE_OKIN_CST,
                 confidence=0.8,
                 signals=[*signals, "gatt_service:nordic_dfu"],
-                ambiguous_types=[BED_TYPE_NECTAR, BED_TYPE_OKIN_RF_ECO_BT],
+                ambiguous_types=[BED_TYPE_NECTAR, BED_TYPE_OKIN_RF_ECO_BT, BED_TYPE_FURNIMOVE],
             )
 
         return DetectionResult(
             bed_type=BED_TYPE_OKIN_RF_ECO_BT,
-            confidence=0.9,
+            confidence=0.6,
             signals=signals,
+            ambiguous_types=[BED_TYPE_FURNIMOVE],
         )
 
     return DetectionResult(bed_type=None, confidence=0.0, signals=[])
@@ -1068,6 +1071,15 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
                     bed_type=None, confidence=0.0, signals=["excluded:" + pattern]
                 )
 
+    # FurniMove accepts this advertised gateway service without a payload mask.
+    # It identifies an app candidate, never a handset or actuator layout.
+    if "00001420-0000-1000-8000-00805f9b34fb" in service_uuids:
+        return DetectionResult(
+            bed_type=BED_TYPE_FURNIMOVE, confidence=0.6,
+            signals=["uuid:furnimove_gateway"],
+            ambiguous_types=[BED_TYPE_DEWERTOKIN],
+        )
+
     # Priority 1: Check manufacturer data (highest confidence, unique signal)
     mfr_bed_type, mfr_confidence, mfr_id = _check_manufacturer_data(service_info.manufacturer_data)
     if mfr_bed_type:
@@ -1081,9 +1093,11 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
         return DetectionResult(
             bed_type=mfr_bed_type,
-            confidence=mfr_confidence,
+            confidence=0.6 if mfr_bed_type == BED_TYPE_DEWERTOKIN else mfr_confidence,
             signals=signals,
             manufacturer_id=mfr_id,
+            ambiguous_types=[BED_TYPE_FURNIMOVE]
+            if mfr_bed_type == BED_TYPE_DEWERTOKIN else [],
         )
 
     # Priority 2: Kaidi detection - manufacturer data is the primary signal.
@@ -1145,8 +1159,9 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
         return DetectionResult(
             bed_type=BED_TYPE_DEWERTOKIN,
-            confidence=0.9,
+            confidence=0.6,
             signals=signals,
+            ambiguous_types=[BED_TYPE_FURNIMOVE],
         )
 
     if DEWERTOKIN_RF_GATEWAY_SERVICE_UUID.lower() in service_uuids:
@@ -1158,8 +1173,9 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
         return DetectionResult(
             bed_type=BED_TYPE_DEWERTOKIN,
-            confidence=0.9,
+            confidence=0.6,
             signals=signals,
+            ambiguous_types=[BED_TYPE_FURNIMOVE],
         )
 
     # Check for Jensen - unique service UUID (00001234)
@@ -1640,6 +1656,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
                 BED_TYPE_OKIN_64BIT,
                 BED_TYPE_OKIN_CST,
                 BED_TYPE_OKIN_RF_ECO_BT,
+                BED_TYPE_FURNIMOVE,
             ],
             requires_characteristic_check=True,
         )
@@ -1738,6 +1755,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
                     BED_TYPE_OKIN_64BIT,
                     BED_TYPE_OKIN_CST,
                     BED_TYPE_OKIN_RF_ECO_BT,
+                    BED_TYPE_FURNIMOVE,
                 ],
                 requires_characteristic_check=True,
             )
@@ -1772,6 +1790,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
                     BED_TYPE_OKIN_64BIT,
                     BED_TYPE_OKIN_CST,
                     BED_TYPE_OKIN_RF_ECO_BT,
+                    BED_TYPE_FURNIMOVE,
                 ],
                 requires_characteristic_check=True,
             )
@@ -1794,6 +1813,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
                 BED_TYPE_OKIN_64BIT,
                 BED_TYPE_OKIN_CST,
                 BED_TYPE_OKIN_RF_ECO_BT,
+                BED_TYPE_FURNIMOVE,
             ],
             requires_characteristic_check=True,
         )
@@ -2329,8 +2349,7 @@ async def detect_bed_type_by_characteristics(
     try:
         gatt_detection = detect_bed_type_from_gatt_services(client.services)
         if gatt_detection.bed_type == BED_TYPE_OKIN_RF_ECO_BT:
-            _LOGGER.info("Refined detection: OKIN Smart Remote CSS signature found")
-            return BED_TYPE_OKIN_RF_ECO_BT
+            return None  # Shared receiver characteristics do not prove topology.
         if gatt_detection.bed_type == BED_TYPE_OKIN_CST:
             _LOGGER.info("Refined detection: OKIN CST dual-stack GATT signature found")
             return BED_TYPE_OKIN_CST

@@ -1300,3 +1300,169 @@ serenity_hold_control:
             - both
             - left
             - right
+
+furnimove_action:
+  name: FurniMove handset action
+  description: Execute an ordered action row from the selected handset. Find row indexes
+    in controller diagnostics. The widget consumer uses the app’s separate fixed timing.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector: &id001
+        device:
+          integration: adjustable_bed
+    side:
+      name: Side
+      selector: &id002
+        select:
+          options:
+          - left
+          - right
+          - both
+    row_index:
+      name: Action row index
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 1000
+          mode: box
+    duration:
+      name: Hold duration
+      description: Optional seconds for held actions. Other actions use their captured
+        row timing.
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.001
+          mode: box
+          unit_of_measurement: s
+    consumer:
+      name: Consumer
+      default: app
+      selector:
+        select:
+          options:
+          - app
+          - widget
+furnimove_rename:
+  name: Rename FurniMove receiver
+  description: Rename one receiver using a unique name, with up to 18 UTF-16 units
+    after trimming. The original text is sent to the receiver.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector: *id001
+    side:
+      name: Side
+      selector: *id002
+    name:
+      name: New name
+      required: true
+      selector:
+        text: {}
+furnimove_massage_program:
+  name: FurniMove massage program
+  description: Select program 1, 2, 3 or 4 (Wave) using the handset’s captured massage
+    queue.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector: *id001
+    side:
+      name: Side
+      selector: *id002
+    program:
+      name: Program
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 4
+          mode: box
+furnimove_massage_duration:
+  name: FurniMove advisory massage duration
+  description: Set the local app duration preference. This does not program a hardware
+    timer or stop massage when time expires.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector: *id001
+    side:
+      name: Side
+      selector: *id002
+    minutes:
+      name: Advisory duration
+      required: true
+      selector:
+        select:
+          options:
+          - value: '10'
+            label: 10 minutes
+          - value: '15'
+            label: 15 minutes
+          - value: '20'
+            label: 20 minutes
+          - value: '30'
+            label: 30 minutes
+furnimove_move_simultaneously:
+  name: Move two FurniMove motors
+  description: Hold two supported axes with the app’s combined command and release
+    cleanup.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector: *id001
+    side:
+      name: Side
+      selector: *id002
+    first_motor:
+      name: First motor
+      required: true
+      selector:
+        select:
+          options:
+          - head
+          - back
+          - legs
+          - feet
+    second_motor:
+      name: Second motor
+      required: true
+      selector:
+        select:
+          options:
+          - head
+          - back
+          - legs
+          - feet
+    first_direction:
+      name: First direction
+      required: true
+      selector:
+        select:
+          options:
+          - up
+          - down
+    second_direction:
+      name: Second direction
+      required: true
+      selector:
+        select:
+          options:
+          - up
+          - down
+    duration_ms:
+      name: Duration in milliseconds
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 60000
+          mode: box

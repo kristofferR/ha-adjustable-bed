@@ -3696,6 +3696,8 @@ class TestOfflineSafeBedTypes:
             child[CONF_BED_TYPE] = bed_type
             if bed_type == BED_TYPE_SOLACE:
                 child[CONF_BLE_DEVICE_NAME] = "SealyMF Base"
+            elif bed_type == "furnimove":
+                child["furnimove_remote"] = "00000"
             elif bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
                 child.update(
                     {

@@ -312,9 +312,9 @@ programs, use the [Sleep Number command action](beds/sleep-number-services.md).
 
 Okimat beds use different remote codes that determine available features and command values.
 The table below gives common examples; the setup selector contains the complete
-handset list. RF ECO BT receivers used with adjustable beds also belong on this profile. Select
-the code printed on the handset rather than the single-actuator RF ECO BT stair
-profile. For example, RF-TOPLINE `82620` exposes Back, Legs, Flat, and the
+handset list. For beds controlled by the FurniMove app, including RF ECO BT
+receivers, use the separate [FurniMove profile](beds/furnimove.md) with its exact
+handset selector. Other OKIN app profiles retain their own evidence and options. For example, RF-TOPLINE `82620` exposes Back, Legs, Flat, and the
 receiver's under-bed light toggle.
 
 | Variant | Remote Model | Motors |
@@ -350,12 +350,28 @@ retain their legacy profile unless you explicitly change it.
 | Jiecang app | App, layout, transport, under-bed light | [Jiecang app profiles](beds/jiecang-app.md) |
 | Malouf Base / Lucid Base app | App, exact model, transport, physical primary/secondary role | [Malouf/Lucid app profiles](beds/malouf-app.md) |
 | Customatic apps | Explicit Clarity, Jerome's C or Remedy bed type; fixed two, two or three motor layout | [Customatic app profiles](beds/customatic.md) |
+| FurniMove / OKIN Smart Remote app | Required exact handset ID; table-derived motors and massage, fixed 100 ms refresh | [FurniMove](beds/furnimove.md) |
 | Jordan's Serenity app | Explicit app selection; two named axes and literal remote selectors 4/5, fixed 100 ms refresh | [Serenity](beds/serenity.md) |
 | Legacy OKIN CB24 | Both sides (default), Side A / Left, or Side B / Right | [Single-address controls](#single-address-left--right-controls) |
 
 For two-address pairs, device-specific app/product selections belong to each
 physical bed. If the shared options form refuses a profile change, split the
 pair, configure each side, then combine them again.
+
+### FurniMove app profile
+
+Select **FurniMove / OKIN Smart Remote** and the exact `furnimove_remote` ID used
+by the app. The catalog includes all 87 captured production IDs and three
+shipped local/offline IDs. Motor count, massage capability and ordered commands
+come from the selected table; manual motor count and pulse delay are hidden.
+Shared RF ECO BT receiver labels and GATT UUIDs do not choose a handset.
+The profile has no angle feedback or mandatory pairing/protected-read gate.
+
+Old RF ECO BT entries receive a [guided layout repair](beds/furnimove.md#repairing-existing-configurations),
+including offline entries and unconfirmed one-motor configurations. It preserves
+the existing entry and matching entity IDs. Confirm a staircase or select the
+FurniMove handset. For a bed using another app, select its corresponding profile
+in integration options. Paired repairs change only their own physical side.
 
 ### Jordan's Serenity app profile
 

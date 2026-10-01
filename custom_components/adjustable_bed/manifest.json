@@ -273,6 +273,9 @@
     },
     {
       "service_uuid": "db801000-f324-29c3-38d1-85c0c2e86885"
+    },
+    {
+      "service_uuid": "00001420-0000-1000-8000-00805f9b34fb"
     }
   ],
   "codeowners": ["@kristofferR"],

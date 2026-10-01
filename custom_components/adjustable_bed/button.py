@@ -614,7 +614,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         key="sync_positions",
         translation_key="sync_positions",
         icon="mdi:sync",
-        press_fn=lambda ctrl: cast(Any, ctrl).sync_positions(),
+        press_fn=lambda ctrl: ctrl.sync_positions(),
         cancel_movement=True,
         required_capability="supports_sync",
     ),
@@ -622,7 +622,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         key="child_lock_toggle",
         translation_key="child_lock_toggle",
         icon="mdi:lock",
-        press_fn=lambda ctrl: cast(Any, ctrl).child_lock_toggle(),
+        press_fn=lambda ctrl: ctrl.child_lock_toggle(),
         cancel_movement=True,
         required_capability="supports_child_lock",
     ),
@@ -745,7 +745,7 @@ def _button_entities_for(
                 registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
         # Named app actions disappear when their profile or transport changes.
-        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_"):
+        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "furnimove_"):
             desired_actions = {
                 coordinator.entity_unique_id(spec.key)
                 for spec in controller.controller_button_specs

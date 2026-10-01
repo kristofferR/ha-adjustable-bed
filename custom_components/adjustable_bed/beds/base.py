@@ -22,6 +22,8 @@ from bleak.exc import BleakError
 if TYPE_CHECKING:
     from datetime import datetime
 
+    from bleak.backends.characteristic import BleakGATTCharacteristic
+
     from ..coordinator import AdjustableBedCoordinator
 
 from ..const import (
@@ -102,6 +104,17 @@ class ProductButtonSpec(ControllerButtonSpec):
 
     icon: str = "mdi:gesture-tap-button"
     entity_registry_enabled_default: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class ControllerActionSpec:
+    """One ordered app action, including duplicate or arbitrary labels."""
+
+    row_index: int
+    name: str
+    category: str
+    duration_ms: int = 0
+    frequency_ms: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -542,6 +555,7 @@ class BedController(ABC):
         log_errors: bool = True,
         wall_clock_pacing: bool = False,
         on_write: Callable[[], None] | None = None,
+        characteristic: BleakGATTCharacteristic | None = None,
     ) -> None:
         """Write a command to a GATT characteristic with retry support.
 
@@ -569,6 +583,8 @@ class BedController(ABC):
                      instead of added to it.
             on_write: Called synchronously after each successful GATT write,
                      before any repeat delay or cancellation can interrupt it.
+            characteristic: Exact discovered destination when duplicate UUIDs
+                     require a particular characteristic instance.
 
         Raises:
             ConnectionError: If not connected to the bed
@@ -594,12 +610,12 @@ class BedController(ABC):
             wall_clock_pacing,
         )
 
-        characteristic_handle: int | None = None
-        if client.services:
+        characteristic_handle: int | None = characteristic.handle if characteristic else None
+        if characteristic is None and client.services:
             for service in client.services:
-                for characteristic in service.characteristics:
-                    if characteristic.uuid == char_uuid:
-                        characteristic_handle = getattr(characteristic, "handle", None)
+                for discovered in service.characteristics:
+                    if discovered.uuid == char_uuid:
+                        characteristic_handle = getattr(discovered, "handle", None)
                         break
                 if characteristic_handle is not None:
                     break
@@ -641,7 +657,11 @@ class BedController(ABC):
                         raise ConnectionError("Not connected to bed")
                     if wall_clock_pacing:
                         write_started = asyncio.get_running_loop().time()
-                    await client.write_gatt_char(char_uuid, command, response=response)
+                    await client.write_gatt_char(
+                        characteristic if characteristic is not None else char_uuid,
+                        command,
+                        response=response,
+                    )
                     if on_write is not None:
                         on_write()
             except BleakError:
@@ -2068,6 +2088,59 @@ class BedController(ABC):
     ) -> None:
         """Program a Solace alarm."""
         raise NotImplementedError("Solace alarm programming not supported on this bed")
+
+    @property
+    def furnimove_action_specs(self) -> tuple[ControllerActionSpec, ...]:
+        """Return reachable rows from the selected FurniMove table."""
+        return ()
+
+    @property
+    def furnimove_local_state(self) -> dict[str, int | str | bool]:
+        """Return persisted app preferences, separate from hardware feedback."""
+        return {}
+
+    def restore_furnimove_local_state(self, state: Mapping[str, int | str | bool]) -> None:
+        """Restore only controller-specific local preferences."""
+        raise NotImplementedError("FurniMove preferences not supported on this bed")
+
+    def validate_furnimove_action(
+        self, row_index: int, *, duration_ms: int | None = None, consumer: str = "app"
+    ) -> tuple[str, str]:
+        """Validate an app row and return its action name and category."""
+        raise NotImplementedError("FurniMove actions not supported on this bed")
+
+    async def async_execute_furnimove_action(
+        self, row_index: int, *, duration_ms: int | None = None, consumer: str = "app"
+    ) -> None:
+        """Execute one validated app row through its traced consumer."""
+        raise NotImplementedError("FurniMove actions not supported on this bed")
+
+    def validate_furnimove_massage_program(self, program: int) -> None:
+        """Validate program availability before any target begins writing."""
+        raise NotImplementedError("FurniMove massage programs not supported on this bed")
+
+    async def set_furnimove_massage_program(self, program: int) -> None:
+        """Select one of the app's four massage programs."""
+        raise NotImplementedError("FurniMove massage programs not supported on this bed")
+
+    def validate_furnimove_rename(self, name: str) -> None:
+        """Validate a device name without writing it."""
+        raise NotImplementedError("FurniMove rename not supported on this bed")
+
+    def validate_furnimove_simultaneous(
+        self, first_axis: str, first_up: bool, second_axis: str, second_up: bool,
+        duration_ms: int | None = None,
+    ) -> None:
+        """Validate two selected FurniMove motor directions before writing."""
+        raise NotImplementedError("FurniMove movement not supported on this bed")
+
+    async def sync_positions(self) -> None:
+        """Run the controller's synchronization action."""
+        raise NotImplementedError("Synchronization not supported on this bed")
+
+    async def child_lock_toggle(self) -> None:
+        """Run the controller's child-lock action."""
+        raise NotImplementedError("Child lock not supported on this bed")
 
     async def set_control_mode_press_and_hold(self) -> None:
         """Require controls to remain pressed while their action runs."""

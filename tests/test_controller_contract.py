@@ -97,8 +97,10 @@ class _FactoryCoordinator(SimpleNamespace):
                 async_add_executor_job=_RecordingImportExecutor(),
             ),
             client=None,
+            controller_state={},
             entry=SimpleNamespace(
                 data={
+                    const.CONF_FURNIMOVE_REMOTE: "00000",
                     const.CONF_LOGICDATA_APP_PROFILE: "phone",
                     const.CONF_LOGICDATA_APP_FAMILY: "p1",
                     const.CONF_LOGICDATA_APP_LAYOUT: "standard_2",

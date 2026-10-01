@@ -13,6 +13,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_COOLBASE,
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_FURNIMOVE,
     BED_TYPE_JENSEN,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
@@ -827,7 +828,8 @@ class TestDetectBedTypeByManufacturerData:
         )
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type == BED_TYPE_DEWERTOKIN
-        assert result.confidence == 0.95
+        assert result.confidence == 0.6
+        assert BED_TYPE_FURNIMOVE in result.ambiguous_types
         assert result.manufacturer_id == MANUFACTURER_ID_DEWERTOKIN
 
     def test_detect_vibradorm_by_manufacturer_id(self):
@@ -1069,7 +1071,8 @@ class TestOkinUUIDDisambiguation:
         result = detect_bed_type_detailed(service_info)
 
         assert result.bed_type == BED_TYPE_DEWERTOKIN
-        assert result.confidence == 0.9
+        assert result.confidence == 0.6
+        assert BED_TYPE_FURNIMOVE in result.ambiguous_types
         assert "uuid:dewertokin_rf_gateway" in result.signals
 
     def test_dewertokin_rf_gateway_gatt_signature_is_detected(self):
@@ -1109,7 +1112,8 @@ class TestOkinUUIDDisambiguation:
         result = detect_bed_type_from_gatt_services(gatt_services)
 
         assert result.bed_type == BED_TYPE_OKIN_RF_ECO_BT
-        assert result.confidence == 0.9
+        assert result.confidence == 0.6
+        assert "furnimove" in result.ambiguous_types
         assert "gatt_char:okin_smart_remote_css_write" in result.signals
 
     def test_okin_cst_dual_stack_gatt_signature_wins_over_rf_eco_bt(self):
@@ -2459,13 +2463,14 @@ class TestDetectionConfidenceScores:
         assert result.confidence == 1.0
 
     def test_manufacturer_data_high_confidence(self):
-        """Test manufacturer data returns confidence of 0.95."""
+        """A shared manufacturer ID requires an explicit app profile."""
         service_info = _make_service_info(
             name="Unknown",
             manufacturer_data={MANUFACTURER_ID_DEWERTOKIN: b"\x01"},
         )
         result = detect_bed_type_detailed(service_info)
-        assert result.confidence == 0.95
+        assert result.confidence == 0.6
+        assert BED_TYPE_FURNIMOVE in result.ambiguous_types
 
     def test_name_pattern_medium_confidence(self):
         """Test name pattern detection returns confidence of 0.9."""

@@ -1777,9 +1777,8 @@ class TestServices:
         )
 
         payloads = [call.args[1] for call in mock_bleak_client.write_gatt_char.call_args_list]
-        assert 1 <= len(payloads[:-2]) <= 2
-        assert payloads[:-2] == [bytes.fromhex("040200000001")] * len(payloads[:-2])
-        assert payloads[-2:] == [bytes.fromhex("040200000000")] * 2
+        assert 1 <= len(payloads) <= 2
+        assert payloads == [bytes.fromhex("040200000001")] * len(payloads)
 
     async def test_timed_move_service_accepts_octo_tv_lift(
         self,

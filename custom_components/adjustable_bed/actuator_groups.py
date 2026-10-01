@@ -15,6 +15,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_FURNIMOVE,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -304,6 +305,12 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "label": "Mattress Firm 900 / iFlex",
                 "description": "Uses Nordic UART protocol",
                 "hint": "Device name contains 'iFlex' or 'MF900'",
+            },
+            {
+                "type": BED_TYPE_FURNIMOVE,
+                "label": "FurniMove / OKIN Smart Remote",
+                "description": "Select the handset ID used in the app",
+                "hint": "The receiver label and shared Bluetooth services do not choose the layout.",
             },
             {
                 "type": BED_TYPE_SERENITY,

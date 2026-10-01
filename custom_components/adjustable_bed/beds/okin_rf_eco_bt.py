@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from collections.abc import Callable
 
@@ -13,7 +12,6 @@ _LOGGER = logging.getLogger(__name__)
 
 STAIR_OUT_COMMAND = 0x00000001
 STAIR_IN_COMMAND = 0x00000002
-STOP_COMMAND = 0x00000000
 
 
 class OkinRfEcoBtController(OkinUuidController):
@@ -131,12 +129,23 @@ class OkinRfEcoBtController(OkinUuidController):
         await self._move_motor("back", STAIR_IN_COMMAND)
 
     async def stop_all(self) -> None:
-        """Stop the stair actuator."""
+        """End held-command refresh; this layout defines no release packet."""
         self._motor_state = {}
-        await self.write_command(
-            self._build_command(STOP_COMMAND),
-            cancel_event=asyncio.Event(),
-        )
+
+    async def _move_motor(self, motor: str, command_value: int | None) -> None:
+        """Refresh the stair command without inventing a zero-valued STOP."""
+        if command_value is None or command_value == 0:
+            self._motor_state.pop(motor, None)
+            return
+        self._motor_state[motor] = command_value
+        try:
+            await self.write_command(
+                self._build_command(command_value),
+                repeat_count=self._coordinator.motor_pulse_count,
+                repeat_delay_ms=100,
+            )
+        finally:
+            self._motor_state.pop(motor, None)
 
     async def move_head_up(self) -> None:
         """Reject non-profile motor commands."""

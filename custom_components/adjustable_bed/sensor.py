@@ -240,6 +240,10 @@ def _sensor_entities_for(
                 "serenity_manufacturer", "serenity_status_code",
                 "serenity_massage_timer_code", "serenity_massage_timer_minutes",
                 "serenity_save_event_code", "serenity_alarm_type",
+                "furnimove_model", "furnimove_hardware", "furnimove_software",
+                "furnimove_firmware", "furnimove_control_mode", "furnimove_massage_type",
+                "furnimove_massage_intensity", "furnimove_massage_program",
+                "furnimove_massage_timer_minutes", "furnimove_function_result",
             } - active_keys
         )
         _async_remove_stale_sensor_entities(

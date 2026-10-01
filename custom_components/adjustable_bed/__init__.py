@@ -64,6 +64,10 @@ from .coordinator import (
     ChildEntryView,
     PairingOnlyConnectionActiveError,
 )
+from .furnimove_repair import (
+    async_clear_furnimove_layout_issues,
+    async_refresh_furnimove_layout_issues,
+)
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
 from .paired_coordinator import PairedBedCoordinator, SingleAddressPairedCoordinator
 from .paired_devices import async_register_children
@@ -884,6 +888,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Adjustable Bed from a config entry."""
     hass.data.setdefault(DOMAIN, {})
     async_track_combine_beds_issue(hass, entry)
+    async_refresh_furnimove_layout_issues(hass, entry)
     await async_register_services(hass)
 
     # Paired beds (Dual Bed 4.0) route to a dedicated setup path; single-bed
@@ -1063,6 +1068,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Clean up Repairs issues that would otherwise outlive the entry."""
+    async_clear_furnimove_layout_issues(hass, entry.entry_id)
     address = entry.data.get(CONF_ADDRESS)
     if address:
         clear_octo_pin_required_issue(hass, address)
