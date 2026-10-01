@@ -1758,7 +1758,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if user_input is not None and not errors:
             data[CONF_HAS_MASSAGE] = False
             data[CONF_DISABLE_ANGLE_SENSING] = True
-            return await self.async_step_manual_pairing()
+            return await self._finish_with_verify(data, data.get(CONF_NAME, "Adjustable Bed"))
         schema: dict[vol.Marker, Any] = {}
         _add_fsm_relax_schema_fields(schema, data)
         return self.async_show_form(step_id="fsm_relax", data_schema=vol.Schema(schema), errors=errors)

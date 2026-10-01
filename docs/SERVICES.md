@@ -152,7 +152,7 @@ enable additional commands.
 
 | Controller/profile | Actions | Guide |
 |--------------------|---------|-------|
-| Linak Bed Control | `linak_move_simultaneously`, `linak_rename `, `linak_set_alarm` | [Linak](beds/linak.md) |
+| Linak Bed Control | `linak_move_simultaneously`, `linak_rename`, `linak_set_alarm` | [Linak](beds/linak.md) |
 | Jensen JMC400 | `linak_move_simultaneously` (back and legs only; the action keeps its original name) | [Jensen](beds/jensen.md) |
 | Solace MotionFlex | `solace_audio`, `solace_set_alarm` | [Solace](beds/solace.md) |
 | Solace Woosa Sleep | `solace_set_alarm` (sound `none` or `alarm`, no music) | [Woosa](beds/woosa.md) |
@@ -214,7 +214,7 @@ and how to download the report.
 
 The [FurniMove guide](beds/furnimove.md#controls-and-actions) describes
 `furnimove_action`, `furnimove_move_simultaneously`, `furnimove_massage_program`,
-`furnimove_massage_duration` and `furnimove_rename `. Every action takes
+`furnimove_massage_duration` and `furnimove_rename`. Every action takes
 `device_id` and optional `side`; rename targets one physical receiver.
 Ordered action indexes come from diagnostics and the selected handset.
 Hold overrides accept 0.1–60 seconds; widgets use their separate fixed timing.

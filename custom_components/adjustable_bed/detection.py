@@ -1944,7 +1944,9 @@ def _detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detect
                 service_info.name,
             )
             return DetectionResult(
-                bed_type=BED_TYPE_LIMOSS, confidence=0.9, signals=signals,
+                bed_type=BED_TYPE_LIMOSS,
+                confidence=0.6 if matches_fsm_relax_candidate(service_info.name) else 0.9,
+                signals=signals,
                 ambiguous_types=[BED_TYPE_FSM_RELAX] if matches_fsm_relax_candidate(service_info.name) else [],
             )
 

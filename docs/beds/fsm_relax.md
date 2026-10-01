@@ -6,6 +6,9 @@ artifact, with physical hardware unverified. Existing Limoss/Stawett entries kee
 their existing controller and settings. Shared advertisements and FFE0 services
 cannot identify which app layout a device uses. The exact case-sensitive lowercase
 `limoss` name route adds an ambiguous candidate, requiring explicit selection.
+The focused chooser also applies when that candidate advertises FFE0. After
+profile selection, setup uses normal connection verification when available;
+it does not request an OS bond or enter a pairing step for this profile.
 The source also checks complete raw scan-record text at an index greater than
 zero and rejects null names; HA does not expose that complete Android record,
 so it is never reconstructed from unrelated advertisement fields.
