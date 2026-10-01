@@ -57,6 +57,54 @@ async def test_actual_coordinator_drop_immediately_invalidates_owned_session(has
     await asyncio.gather(optional, metadata, return_exceptions=True)
 
 
+async def test_initializing_disconnect_cancels_query_and_rejects_same_client_old_callback(hass):
+    from homeassistant.const import CONF_ADDRESS
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.const import BED_TYPE_FSM_RELAX, CONF_BED_TYPE, DOMAIN
+    from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_FSM_RELAX},
+    )
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    ctrl = make_controller()
+    client = ctrl.client
+    ctrl._coordinator = coordinator
+    coordinator._client = client
+    coordinator._controller = ctrl
+    coordinator._connecting = True
+    disconnect_callback = coordinator._on_disconnect
+    await ctrl.start_notify()
+    old_notify = client.start_notify.call_args.args[1]
+    query = asyncio.create_task(ctrl._query(2))
+    while not client.write_gatt_char.await_count:
+        await asyncio.sleep(0)
+    generation = ctrl._generation
+    try:
+        client.is_connected = False
+        disconnect_callback(client)
+        assert coordinator.client is client and coordinator.controller is ctrl
+        assert ctrl._generation == generation + 1
+        assert not ctrl._live_capabilities and not ctrl._subscribed
+        with pytest.raises(asyncio.CancelledError):
+            await query
+        assert not ctrl._pending
+        client.is_connected = True
+        await ctrl.start_notify()
+        packet = bytearray(build_packet(bytes.fromhex("0204000004"), 9))
+        old_notify(None, packet)
+        assert not ctrl._live_capabilities
+        client.start_notify.call_args.args[1](None, packet)
+        assert ctrl._live_capabilities and ctrl.key_count == 4 and ctrl.memory_slot_count == 4
+        assert client.write_gatt_char.await_count == 1
+    finally:
+        query.cancel()
+        await asyncio.gather(query, return_exceptions=True)
+        await ctrl.stop_notify()
+
+
 def make_controller(profile=None, *, cap=b"\x02\x08\x04\x00\x08"):
     c = MagicMock()
     c.address = "AA:BB:CC:DD:EE:FF"
