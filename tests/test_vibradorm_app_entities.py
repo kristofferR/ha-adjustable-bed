@@ -152,6 +152,26 @@ async def add_public_floor_entities(hass, runtime):
     return switch, number
 
 
+@pytest.mark.parametrize(("packet", "observed", "state"), [
+    ("203f40", True, "on"),
+    ("203f00", False, "off"),
+])
+async def test_sync_sensor_publishes_translatable_state_without_changing_parser(hass, packet, observed, state):
+    runtime, controller = await floor_runtime(hass, app="werkmeister", control=7)
+    sensor = next(entity for entity in _sensor_entities_for(hass, runtime)
+                  if entity._spec.key == "vibradorm_app_sync_observed")
+    sensor.hass = hass
+    sensor.async_write_ha_state = MagicMock()
+    await sensor.async_added_to_hass()
+    assert sensor.native_value is None
+    controller._notification(MagicMock(uuid="response"), bytearray.fromhex(packet))
+    assert controller._sync_observed is observed
+    assert controller.protocol_diagnostics["sync_observed"] is observed
+    assert sensor.native_value == state
+    sensor.async_write_ha_state.assert_called_once()
+    await sensor.async_will_remove_from_hass()
+
+
 @pytest.mark.parametrize(
     "app,control,extension,frames",
     [

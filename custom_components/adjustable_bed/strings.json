@@ -381,7 +381,8 @@
           "outcome_connection_failed": "Outcome: connection failed",
           "outcome_route_mismatch": "Outcome: Bluetooth path changed",
           "outcome_removal_unconfirmed": "Outcome: removal unconfirmed",
-          "outcome_auth_failed_proxy": "Outcome: proxy authentication failed"
+          "outcome_auth_failed_proxy": "Outcome: proxy authentication failed",
+          "outcome_native_verified_local": "Outcome: native bond confirmed on this host"
         },
         "data_description": {
           "action": "Try again keeps the bed type, adapter and protocol settings you already chose.",
@@ -2286,29 +2287,29 @@
       "vibradorm_app_sync_observed": {
         "name": "Observed synchronization",
         "state": {
-          "True": "On",
-          "False": "Off"
+          "on": "On",
+          "off": "Off"
         }
       },
       "vibradorm_app_sync_observed_left": {
         "name": "Observed synchronization (left)",
         "state": {
-          "True": "On",
-          "False": "Off"
+          "on": "On",
+          "off": "Off"
         }
       },
       "vibradorm_app_sync_observed_right": {
         "name": "Observed synchronization (right)",
         "state": {
-          "True": "On",
-          "False": "Off"
+          "on": "On",
+          "off": "Off"
         }
       },
       "vibradorm_app_sync_observed_both": {
         "name": "Observed synchronization (both)",
         "state": {
-          "True": "On",
-          "False": "Off"
+          "on": "On",
+          "off": "Off"
         }
       }
     },

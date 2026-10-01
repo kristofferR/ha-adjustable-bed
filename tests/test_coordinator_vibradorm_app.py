@@ -391,7 +391,7 @@ async def test_existing_werkmeister_bond_starts_real_notifications_without_infor
     mock_bleak_client.start_notify.assert_awaited_once()
     callback = mock_bleak_client.start_notify.await_args.args[1]
     callback(response, bytearray.fromhex("203f40"))
-    assert coordinator.controller_state["vibradorm_app_sync_observed"] is True
+    assert coordinator.controller_state["vibradorm_app_sync_observed"] == "on"
     assert coordinator._position_hydration_task is None
     await coordinator.async_shutdown()
 

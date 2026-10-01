@@ -949,7 +949,7 @@ class VibradormAppController(BedController):
         sync = parse_sync(raw) if self.profile.sync else None
         if sync is not None:
             self._sync_observed = sync
-            self.forward_controller_state_update("vibradorm_app_sync_observed", sync)
+            self.forward_controller_state_update("vibradorm_app_sync_observed", "on" if sync else "off")
             if self._sync_reply is not None and not self._sync_reply.done():
                 self._sync_reply.set_result(sync)
 
