@@ -52,6 +52,12 @@ Save Memory 1–8 reads each reported raw motor in index order, issuing a new qu
 immediately after the preceding expected reply. It atomically stores the complete
 set in a physical-address-specific HA storage record, retained across combine
 and unpair ownership changes and removed only after its final entry is removed.
+Within one HA entry and physical address, live and cached offline controllers
+share current saved slots, names, capabilities and serial data. Reconnecting or
+replacing that target does not leave recall preflight with a stale slot snapshot.
+Different addresses and entry owners retain separate runtime models; profile
+settings remain controller-local. Ownership transfers load the retained physical
+store, and final removal clears its cached models as well as the stored record.
 Signed 32-bit values have no
 known physical units, scaling, angle or percentage. Slots map to local groups 0–7;
 the slot number is never sent over BLE. An unsolicited response updates raw

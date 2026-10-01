@@ -65,6 +65,11 @@ class FsmRelaxState:
             cache[identity] = session
         self.session = session
         self._sessions = cache
+        states = hass.data.get("adjustable_bed_fsm_relax_states")
+        if not isinstance(states, dict):
+            states = {}
+            hass.data["adjustable_bed_fsm_relax_states"] = states
+        self._states = states
         self._identity = identity
         self._store: Store[dict[str, object]] = Store(
             hass, 1, f"adjustable_bed.fsm_relax.{identity}"
@@ -174,6 +179,25 @@ class FsmRelaxState:
             self.capability_body = None
             self.serial = None
             self._sessions.pop(self._identity, None)
+            for key, state in tuple(self._states.items()):
+                if isinstance(state, FsmRelaxState) and state._identity == self._identity:
+                    state.slots = {}
+                    state.names = validate_names([""] * 8)
+                    state.capability_body = None
+                    state.serial = None
+                    self._states.pop(key)
+
+
+def get_fsm_relax_state(hass: HomeAssistant, entry_id: str, address: str) -> FsmRelaxState:
+    """Share persisted models across live/offline controllers of one owned target."""
+    cache = hass.data.get("adjustable_bed_fsm_relax_states")
+    key = (entry_id, address.upper())
+    state = cache.get(key) if isinstance(cache, dict) else None
+    if isinstance(state, FsmRelaxState):
+        return state
+    state = FsmRelaxState(hass, entry_id, address)
+    state._states[key] = state
+    return state
 
 
 async def async_remove_unowned_states(hass: HomeAssistant, entry: object) -> None:

@@ -631,7 +631,7 @@ async def create_controller(
     if bed_type == BED_TYPE_FSM_RELAX:
         await coordinator.hass.async_add_import_executor_job(import_module, ".beds.fsm_relax", __package__)
         from .beds.fsm_relax import FsmRelaxController, FsmRelaxProfile
-        from .fsm_relax_state import FsmRelaxState
+        from .fsm_relax_state import get_fsm_relax_state
 
         data = {**coordinator.entry.data, **coordinator.entry.options}
         reversals = tuple(data.get(key, False) for key in CONF_FSM_RELAX_REVERSALS)
@@ -639,7 +639,7 @@ async def create_controller(
                                   data.get(CONF_FSM_RELAX_LIGHT, False),
                                   data.get(CONF_FSM_RELAX_MASSAGE, False),
                                   (reversals[0], reversals[1], reversals[2], reversals[3]))
-        state = FsmRelaxState(coordinator.hass, coordinator.entry.entry_id, coordinator.address)
+        state = get_fsm_relax_state(coordinator.hass, coordinator.entry.entry_id, coordinator.address)
         await state.async_load()
         if CONF_FSM_RELAX_MEMORY_NAMES in data:
             await state.async_set_names(data[CONF_FSM_RELAX_MEMORY_NAMES])

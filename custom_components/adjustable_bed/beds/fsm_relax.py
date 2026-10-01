@@ -203,7 +203,14 @@ class FsmRelaxController(BedController):
 
     @property
     def controller_entity_discovery_complete(self) -> bool:
-        return self._capabilities is not None
+        return self._known_capabilities is not None
+
+    @property
+    def _known_capabilities(self) -> bytes | None:
+        # A cached offline controller observes successful saves by its live replacement.
+        if not self._subscribed and self.local.capability_body is not None:
+            return self.local.capability_body
+        return self._capabilities
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -220,7 +227,8 @@ class FsmRelaxController(BedController):
 
     @property
     def memory_slot_count(self) -> int:
-        return min(int.from_bytes(self._capabilities[3:5], "big"), 8) if self._capabilities else 0
+        body = self._known_capabilities
+        return min(int.from_bytes(body[3:5], "big"), 8) if body else 0
 
     @property
     def supports_memory_presets(self) -> bool:
@@ -244,12 +252,13 @@ class FsmRelaxController(BedController):
 
     @property
     def key_count(self) -> int:
-        key = self._capabilities[1] if self._capabilities else 8
+        body = self._known_capabilities
+        key = body[1] if body else 8
         return key if key in (2, 4, 6, 8) else 8
 
     @property
     def action_opcodes(self) -> tuple[int, ...]:
-        if self._capabilities is None:
+        if self._known_capabilities is None:
             return ()
         if self.profile.layout == "chair":
             return (0x50, 0x51) if self.key_count == 2 else (0x22, 0x23, 0x12, 0x13, 0x50, 0x51)
@@ -300,9 +309,21 @@ class FsmRelaxController(BedController):
 
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
+        persisted: dict[str, object] = {}
+        if not self._subscribed:
+            body = self._known_capabilities
+            if body is not None:
+                persisted.update(
+                    fsm_relax_key_count=self.key_count,
+                    fsm_relax_vibration_count=body[2],
+                    fsm_relax_reported_memory_count=int.from_bytes(body[3:5], "big"),
+                )
+            if self.local.serial is not None:
+                persisted["fsm_relax_serial"] = self.local.serial
         return {
             **super().protocol_diagnostics,
             **self._state,
+            **persisted,
             "layout": self.profile.layout,
             "reversals": list(self.profile.reversals),
             "memory_quarantined": self._quarantined,
