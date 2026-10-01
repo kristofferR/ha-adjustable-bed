@@ -15,7 +15,7 @@ The protocol variant carries two independent choices from the app:
 | `simmons_inclined` | Inclined | From the Bluetooth name |
 | `simmons_inclined_okin` / `simmons_inclined_smartbed` | Inclined | Fixed |
 
-The name rule is the app's, which reads Android's device (GAP) name; HA sees the advertised name or BlueZ alias instead. An address-like name (BlueZ uses the address when a bed sends no name) falls back to the name stored at setup. The lowercased name is checked for a `smartbed` prefix, then an `okin` prefix, with no trimming. Any other name, including a missing one, uses the SmartBed format, as the app does for a reconnect to a saved bed whose name matches neither prefix. Use a fixed variant if Home Assistant sees a different name than the phone.
+The name rule is the app's, which reads Android's device (GAP) name; HA sees the advertised name or BlueZ alias instead. HA keeps the raw Bluetooth name from setup and from later real (non-address) observations, never the entry's display name. An address-like live name (BlueZ uses the address when a bed sends no name) falls back to that stored raw name. The lowercased name is checked for a `smartbed` prefix, then an `okin` prefix, with no trimming. Any other name, including a missing one, uses the SmartBed format, as the app does for a reconnect to a saved bed whose name matches neither prefix. Use a fixed variant if Home Assistant sees a different name than the phone. In a two-address pair the variant belongs to each physical bed, so the combined options form refuses variant changes: unpair, set each bed, then combine them again.
 
 The app offers the inclined bed type only in its Japanese language setting; the profile offers it regardless of language. Motor count is fixed at two (back, legs). Position feedback, massage and pairing do not exist in the app.
 
@@ -64,7 +64,7 @@ The app's own races (a new press replacing a pending STOP, repeat revival, no ST
 
 ## Alarms and clock
 
-On each connection, once idle, HA writes the local clock and repeats the alarm page's queries at 0, 300 and 600 ms. **Sync Clock** and **Refresh Alarms** buttons repeat these.
+During connection setup, after notifications start and before any command runs, HA writes the local clock and repeats the alarm page's queries at 0, 300 and 600 ms, so even a quick-disconnect session gets them. If that clock write fails, `simmons_set_alarm` writes the clock first, because the alarm fires on the bed's clock. **Sync Clock** and **Refresh Alarms** buttons repeat these.
 
 | | OKIN | SmartBed |
 |---|---|---|

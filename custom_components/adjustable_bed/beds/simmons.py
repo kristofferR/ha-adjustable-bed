@@ -16,9 +16,11 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import replace
 from typing import TYPE_CHECKING, Final
 
+from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ..const import (
+    CONF_BLE_DEVICE_NAME,
     SIMMONS_VARIANT_INCLINED,
     SIMMONS_VARIANT_INCLINED_OKIN,
     SIMMONS_VARIANT_INCLINED_SMARTBED,
@@ -118,6 +120,12 @@ PEER_CONFLICT_ERROR: Final = (
 )
 
 
+def _stored_ble_name(coordinator: object) -> object:
+    """Return the raw Bluetooth name saved for this entry, never its display name."""
+    data = getattr(getattr(coordinator, "entry", None), "data", None)
+    return data.get(CONF_BLE_DEVICE_NAME) if isinstance(data, Mapping) else None
+
+
 def _protocol_name(live: str | None, stored: object) -> str | None:
     """Pick the name for the app's prefix rule.
 
@@ -157,7 +165,7 @@ class SimmonsController(BedController):
         variant = protocol_variant or ""
         self._inclined = variant in _INCLINED_VARIANTS
         self._protocol: Protocol = _PROTOCOL_BY_VARIANT.get(variant) or resolve_protocol(
-            _protocol_name(device_name, getattr(coordinator, "ble_device_name", None))
+            _protocol_name(device_name, _stored_ble_name(coordinator))
         )
         self._write_char: BleakGATTCharacteristic | None = None
         self._notify_char: BleakGATTCharacteristic | None = None
@@ -165,7 +173,7 @@ class SimmonsController(BedController):
         self._pending_record: bytes | None = None
         self._awaiting = [False, False]
         self._reply = asyncio.Event()
-        self._session_ready = False
+        self._clock_synced = False  # Per connection: this controller is per session.
         # Alarm records live in coordinator state so they survive the
         # per-connection controller. They are per physical bed, not app-global.
         state = getattr(coordinator, "controller_state", {})
@@ -365,6 +373,21 @@ class SimmonsController(BedController):
             return
         async with self._ble_lock:
             await client.start_notify(self._notify_char, self._handle_notification)
+        await self._initialize_session()
+
+    async def _initialize_session(self) -> None:
+        """Run the app's link-time traffic before the first command can start.
+
+        The control page syncs the clock when a bed links and the alarm page
+        queries at 0/300/600 ms. Doing both during connection setup means a
+        quick-disconnect session still gets them. A failed write leaves the
+        clock unsynced, so an alarm write syncs it first.
+        """
+        try:
+            await self.sync_clock()
+            await self.refresh_alarms()
+        except (BleakError, ConnectionError, TimeoutError) as error:
+            _LOGGER.debug("SIMMONS session initialization incomplete: %s", error)
 
     async def stop_notify(self) -> None:
         self._notify_callback = None
@@ -536,21 +559,7 @@ class SimmonsController(BedController):
 
     # ------------------------------------------------------------ clock/alarm
 
-    @property
-    def diagnostic_poll_interval(self) -> float | None:
-        # Runs once per live session (the control page's link-time clock sync
-        # and the alarm page's queries); later polls are no-ops.
-        return 5.0
-
-    async def async_refresh_diagnostics(self) -> None:
-        if self._session_ready:
-            return
-        await self.sync_clock()
-        await self.refresh_alarms()
-        self._session_ready = True
-
     def invalidate_diagnostics(self) -> None:
-        self._session_ready = False
         self._awaiting = [False, False]
         self._pending_record = None
         self._publish_slots()  # No reply can arrive once the session ends.
@@ -558,6 +567,7 @@ class SimmonsController(BedController):
     async def sync_clock(self) -> None:
         """Write the local clock, as the control page does when a bed links."""
         await self._configure_write(clock_frame(self._protocol, dt_util.now()))
+        self._clock_synced = True
 
     async def _query_once(self) -> None:
         frames = query_frames(self._protocol)
@@ -630,6 +640,9 @@ class SimmonsController(BedController):
             raise ValueError("Invalid alarm time")
         if any(isinstance(day, bool) or not 0 <= day <= 6 for day in weekdays):
             raise ValueError("Alarm weekdays use Monday=0 through Sunday=6")
+        if not self._clock_synced:
+            # Alarms fire on the bed's clock, so this session must have set it.
+            await self.sync_clock()
         slots = list(await self._ensure_alarm_state())
         index, peer = slot - 1, slots[2 - slot]
         local = slots[index]

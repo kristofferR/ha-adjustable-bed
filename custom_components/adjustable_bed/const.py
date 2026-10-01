@@ -1358,6 +1358,8 @@ SIMMONS_VARIANT_SMARTBED: Final = "simmons_smartbed"
 SIMMONS_VARIANT_INCLINED: Final = "simmons_inclined"
 SIMMONS_VARIANT_INCLINED_OKIN: Final = "simmons_inclined_okin"
 SIMMONS_VARIANT_INCLINED_SMARTBED: Final = "simmons_inclined_smartbed"
+# Variants whose packet format follows the app's Bluetooth-name rule.
+SIMMONS_NAME_RULE_VARIANTS: Final = frozenset({VARIANT_AUTO, SIMMONS_VARIANT_INCLINED})
 SIMMONS_VARIANTS: Final = {
     VARIANT_AUTO: "Regular bed, protocol from the Bluetooth name",
     SIMMONS_VARIANT_OKIN: "Regular bed, OKIN-name protocol",

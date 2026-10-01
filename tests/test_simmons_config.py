@@ -9,6 +9,7 @@ from custom_components.adjustable_bed.config_flow import _motor_count_options
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SIMMONS,
     BEDS_WITHOUT_ANGLE_FEEDBACK,
+    CONF_BLE_DEVICE_NAME,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     SIMMONS_VARIANTS,
     bed_type_has_position_feedback,
@@ -36,8 +37,12 @@ from tests.test_controller_contract import _FactoryCoordinator
 )
 async def test_factory_resolves_protocol_and_layout_offline(variant, name, protocol, inclined):
     coordinator = _FactoryCoordinator()
-    coordinator.ble_device_name = "Bedroom"
-    controller = await create_controller(coordinator, BED_TYPE_SIMMONS, variant, None, device_name=name)
+    # Offline, the factory is handed the display name; only the stored raw
+    # Bluetooth name may feed the app's name rule.
+    coordinator.entry.data[CONF_BLE_DEVICE_NAME] = name
+    controller = await create_controller(
+        coordinator, BED_TYPE_SIMMONS, variant, None, device_name="OKIN display name"
+    )
     assert controller.protocol_diagnostics["simmons_protocol"] == protocol
     assert controller.protocol_diagnostics["simmons_layout"] == ("inclined" if inclined else "regular")
     assert {spec.key for spec in controller.motor_control_specs} == {"back", "legs"}

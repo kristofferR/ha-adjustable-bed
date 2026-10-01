@@ -454,8 +454,12 @@ async def create_controller(
         )
         from .beds.simmons import SimmonsController
 
+        # Offline capability controllers receive the display name, which the
+        # app's name rule must never read; they use the stored BLE name.
         return SimmonsController(
-            coordinator, protocol_variant=protocol_variant, device_name=device_name
+            coordinator,
+            protocol_variant=protocol_variant,
+            device_name=device_name if client is not None else None,
         )
 
     if bed_type == BED_TYPE_SOLACE:

@@ -91,7 +91,11 @@ def make_controller(
     stored_name: str | None = None,
 ) -> SimmonsController:
     coordinator = MagicMock()
-    coordinator.ble_device_name = stored_name
+    # The display name must never feed the name rule; only the raw BLE name does.
+    coordinator.ble_device_name = "Bedroom"
+    coordinator.entry = SimpleNamespace(
+        data={"ble_device_name": stored_name} if stored_name else {}
+    )
     coordinator.address = "AA:BB:CC:DD:EE:FF"
     coordinator.cancel_command = asyncio.Event()
     coordinator.motor_pulse_count = 3
@@ -390,7 +394,9 @@ def test_alarm_records_survive_controller_recreation():
 
 
 def _known(controller: SimmonsController, first: AlarmSlot, second: AlarmSlot) -> None:
+    """A linked session: clock already synced and both records reported."""
     controller._slots = [first, second]
+    controller._clock_synced = True
 
 
 async def test_okin_program_preserves_the_peer_record_then_queries():
@@ -502,6 +508,7 @@ def test_custom_mode_needs_confirmation_and_anti_snore_needs_regular_layout():
 async def test_unknown_alarm_state_is_queried_before_programming():
     controller = make_controller()
     await controller.async_discover_capabilities()
+    controller._clock_synced = True
 
     async def reply(_char: object, data: bytes, response: bool) -> None:
         if data == bytes.fromhex("E1 80 03 9B"):
@@ -521,6 +528,7 @@ async def test_unknown_alarm_state_is_queried_before_programming():
 async def test_alarm_state_must_be_reported_before_writing():
     controller = make_controller()
     await controller.async_discover_capabilities()
+    controller._clock_synced = True
     with (
         patch("custom_components.adjustable_bed.beds.simmons.ALARM_REPLY_TIMEOUT_S", 0),
         pytest.raises(ValueError, match="did not report"),
@@ -529,7 +537,7 @@ async def test_alarm_state_must_be_reported_before_writing():
     assert written(controller) == ["E1 80 03 9B"]
 
 
-async def test_session_init_syncs_clock_then_runs_the_alarm_page_queries_once():
+async def test_connection_setup_syncs_clock_then_runs_the_alarm_page_queries():
     controller = make_controller(name="SmartBed1")
     await controller.async_discover_capabilities()
     now = datetime(2026, 10, 1, 7, 30, 45)
@@ -537,15 +545,30 @@ async def test_session_init_syncs_clock_then_runs_the_alarm_page_queries_once():
         patch("asyncio.sleep", new=AsyncMock()),
         patch("custom_components.adjustable_bed.beds.simmons.dt_util.now", return_value=now),
     ):
-        await controller.async_refresh_diagnostics()
-        await controller.async_refresh_diagnostics()
+        await controller.start_notify(None)
     assert written(controller) == ["07 04 7E 09 01 07 1E 2D 04"] + ["00 C0", "00 D0"] * 3
+    assert controller._clock_synced
+
+
+async def test_failed_session_clock_is_synced_before_an_alarm_write():
+    controller = make_controller()
+    await controller.async_discover_capabilities()
+    controller.client.write_gatt_char.side_effect = [BleakError("busy"), None, None, None]
+    with patch("asyncio.sleep", new=AsyncMock()):
+        await controller.start_notify(None)  # Setup still succeeds.
+        assert not controller._clock_synced
+        controller._slots = [AlarmSlot(6, 0, 0, 0, False), AlarmSlot(8, 45, 132, 28, False)]
+        await controller.configure_simmons_alarm(slot=1, enabled=False)
+    frames = written(controller)
+    assert frames[1].startswith("E7 80 01") and frames[2].startswith("ED 80 03")
+    assert controller._clock_synced
 
 
 async def test_notifications_subscribe_to_the_selected_role():
     controller = make_controller(services=[_service(*FFE5), _service(*FFE0)])
     await controller.async_discover_capabilities()
-    await controller.start_notify(None)
+    with patch("asyncio.sleep", new=AsyncMock()):
+        await controller.start_notify(None)
     assert controller.requires_notification_channel
     assert controller.client.start_notify.call_args.args[0].uuid.lower() == FFE0[1]
 
