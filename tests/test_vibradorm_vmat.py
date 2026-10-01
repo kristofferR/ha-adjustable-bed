@@ -6,7 +6,7 @@ import asyncio
 import json
 from dataclasses import asdict
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -150,8 +150,8 @@ async def test_complete_nine_frame_save_sequence(v):
 @pytest.mark.parametrize("remote", ["00", "07", "11", "13"])
 @pytest.mark.parametrize("toggle", [0, 0x8000])
 async def test_every_reachable_held_control_releases(remote, toggle):
-    c = make_vmat(remote)
-    for control in c.held_control_options:
+    probe = make_vmat(remote)
+    for control in probe.held_control_options:
         if control == "sync":
             continue
         c = make_vmat(remote)
@@ -214,18 +214,31 @@ async def test_single_shots_wait_after_success_completion_and_stop_bypasses_dela
     c = make_vmat("13")
     completed = []
     started = []
+    clock = [100.0]
+    sleeps = []
+    real_sleep = asyncio.sleep
+
+    async def sleep(delay):
+        sleeps.append(delay)
+        clock[0] += delay
+        await real_sleep(0)
 
     async def write(*args, **kwargs):
-        started.append(asyncio.get_running_loop().time())
+        started.append(clock[0])
         await asyncio.sleep(0.03)
-        completed.append(asyncio.get_running_loop().time())
+        completed.append(clock[0])
 
     c.client.write_gatt_char.side_effect = write
-    await c.set_mood_speed(0)
-    await c.set_mood_speed(1)
-    assert started[1] - completed[0] >= 0.095
-    await c.stop_all()
-    assert started[2] - completed[1] < 0.09
+    with (
+        patch.object(asyncio.get_running_loop(), "time", side_effect=lambda: clock[0]),
+        patch("custom_components.adjustable_bed.beds.vibradorm_app.asyncio.sleep", new=sleep),
+    ):
+        await c.set_mood_speed(0)
+        await c.set_mood_speed(1)
+        await c.stop_all()
+    assert sleeps == pytest.approx([0.03, 0.1, 0.03, 0.03])
+    assert started[1] - completed[0] == pytest.approx(0.1)
+    assert started[2] == completed[1]
     assert frames(c)[-1] == "00ff"
 
 

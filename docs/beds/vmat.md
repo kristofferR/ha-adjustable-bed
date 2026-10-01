@@ -11,6 +11,8 @@ app or its remote layout.
 Choose **VMAT** in the explicit app controller, then the same zero-based remote
 ordinal used by the app. Resource names identify shipped images, not proven
 physical products. Controls and features follow this exact selection.
+Switching to Caresse or Werkmeister removes the VMAT remote from the saved
+profile. Separate-address sides keep their own remote selections.
 
 | Remote | Image | Logical groups | Memory | Sync | Floor | Mood / massage |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -71,6 +73,10 @@ or position polls. Explicit information refresh reads only three DIS fields.
 Disconnect still runs if setup close fails or is cancelled. Cancellation
 propagates, and a failed or interrupted disconnect retains the live client
 owner for cleanup rather than dropping its tracking or runtime pointer.
+An RPC error after observed native closure does not turn completed teardown
+into a failure. An earlier setup error or cancellation still propagates.
+Notification cleanup preserves an earlier setup error or cancellation. A
+cleanup failure after successful reads still fails setup before native pairing.
 The physical BLE connection remains visible until it actually closes. A
 failed config setup link stays owned by Home Assistant's exact address lock
 after the progress worker or flow ends, including local bond replacement.

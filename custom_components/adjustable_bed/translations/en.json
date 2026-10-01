@@ -2235,7 +2235,9 @@
       "furnimove_massage_intensity": {
         "name": "FurniMove local massage intensity"
       },
-      "furnimove_massage_program": {"name": "FurniMove massage program", "description": "Select program 1, 2, 3 or 4 (Wave) using the handset’s captured massage queue.", "fields": {"program": {"name": "Program"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}},
+      "furnimove_massage_program": {
+        "name": "FurniMove local massage program"
+      },
       "furnimove_massage_timer_minutes": {
         "name": "FurniMove advisory massage duration"
       },

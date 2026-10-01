@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import logging
+import sys
 from collections.abc import Callable
 from typing import cast
 
@@ -18,7 +20,10 @@ from .beds.vibradorm_app import (
     VibradormAppMetadataProgress,
     _cancellable,
     _decode_java_utf8,
+    _shield_cleanup,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 SERVICE = "00001525-9f03-0de5-96c5-b8f4f3081186"
 DIS = "0000180a-0000-1000-8000-00805f9b34fb"
@@ -155,8 +160,17 @@ async def async_prepare_vmat_pairing(
     finally:
         current = None
         if subscribed:
-            async with asyncio.timeout(2):
-                await client.stop_notify(notify)
+            async def unsubscribe() -> None:
+                async with asyncio.timeout(2):
+                    await client.stop_notify(notify)
+
+            original = sys.exception()
+            try:
+                await _shield_cleanup(unsubscribe())
+            except (Exception, asyncio.CancelledError):
+                if original is None:
+                    raise
+                _LOGGER.debug("VMAT unsubscribe failed after an earlier setup failure", exc_info=True)
 
 
 async def async_close_vmat_setup(client: BleakClient) -> None:

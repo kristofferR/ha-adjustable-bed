@@ -60,7 +60,7 @@ async def test_vmat_runtime_uses_own_45_second_budget_including_retained_native_
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(("verified", "absent"), [(False, False), (False, True), (True, False)])
-@pytest.mark.parametrize("cleanup", ["normal", "close_error", "close_cancel", "task_cancel", "disconnect_error", "disconnect_cancel", "disconnect_noop", "disconnect_error_without_close_cancel", "disconnect_cancel_without_close_cancel", "disconnect_noop_after_close_cancel"])
+@pytest.mark.parametrize("cleanup", ["normal", "close_error", "close_cancel", "task_cancel", "disconnect_error", "disconnect_cancel", "disconnect_noop", "disconnect_error_without_close_cancel", "disconnect_cancel_without_close_cancel", "disconnect_noop_after_close_cancel", "disconnect_closed_error", "disconnect_closed_error_after_close_cancel"])
 async def test_runtime_first_bond_always_closes_setup_and_unproven_rpc_is_not_a_marker(hass, verified, absent, cleanup):
     address, source = "11:22:33:44:55:66", "AA:BB:CC:DD:EE:FF"
     path = ConnectionPath(source, transport=TransportClass.LOCAL, adapter="hci0")
@@ -80,6 +80,9 @@ async def test_runtime_first_bond_always_closes_setup_and_unproven_rpc_is_not_a_
     async def disconnect():
         nonlocal disconnect_attempts
         disconnect_attempts += 1
+        if cleanup.startswith("disconnect_closed_error"):
+            c.client.is_connected = False
+            raise BleakError("disconnect RPC failed after observed closure")
         if cleanup.startswith("disconnect_error") and disconnect_attempts == 1:
             raise BleakError("disconnect failed")
         if cleanup.startswith("disconnect_cancel") and disconnect_attempts == 1:
@@ -101,7 +104,7 @@ async def test_runtime_first_bond_always_closes_setup_and_unproven_rpc_is_not_a_
                 assert task is not None
                 task.cancel()
                 await asyncio.sleep(0)
-            if cleanup in ("close_cancel", "disconnect_error", "disconnect_cancel", "disconnect_noop_after_close_cancel"):
+            if cleanup in ("close_cancel", "disconnect_error", "disconnect_cancel", "disconnect_noop_after_close_cancel", "disconnect_closed_error_after_close_cancel"):
                 raise asyncio.CancelledError
             return
         field, expected, prefix, _ = QUERY_STAGES[queried]
@@ -120,7 +123,7 @@ async def test_runtime_first_bond_always_closes_setup_and_unproven_rpc_is_not_a_
     expected_error = (
         ConnectionError if cleanup == "disconnect_noop"
         else BleakError if cleanup == "disconnect_error_without_close_cancel"
-        else asyncio.CancelledError if cleanup not in ("normal", "close_error")
+        else asyncio.CancelledError if cleanup not in ("normal", "close_error", "disconnect_closed_error")
         else None
     )
     with (
@@ -134,7 +137,7 @@ async def test_runtime_first_bond_always_closes_setup_and_unproven_rpc_is_not_a_
         assert result is verified
     assert queried == 7 and frames(c)[-1] == "01a7"
     c.client.disconnect.assert_awaited_once()
-    if cleanup.startswith("disconnect_"):
+    if cleanup.startswith("disconnect_") and not cleanup.startswith("disconnect_closed_error"):
         assert coordinator._client is c.client
         assert coordinator.client.is_connected
     else:

@@ -1182,7 +1182,9 @@ class AdjustableBedCoordinator:
             raise ValueError("Invalid retained Vibradorm control type")
         app_profile = self.entry.data[CONF_VIBRADORM_APP_PROFILE]
         fallback = 6
-        if app_profile == "caresse" and self.entry.data.get(CONF_VIBRADORM_RESTORED) is True or app_profile == "vmat":
+        if (
+            app_profile == "caresse" and self.entry.data.get(CONF_VIBRADORM_RESTORED) is True
+        ) or app_profile == "vmat":
             fallback = 6 if self.entry.data.get(CONF_VIBRADORM_LIGHT_EXTENSION) else 8
         return get_vibradorm_app_session_intent(
             self.hass, self._address, app_profile=app_profile, control_type=control_type,
@@ -1759,7 +1761,7 @@ class AdjustableBedCoordinator:
                                 try:
                                     await client.disconnect()
                                 except Exception:
-                                    if pending_failure is None:
+                                    if client.is_connected and pending_failure is None:
                                         raise
                                     _LOGGER.debug("VMAT disconnect failed during setup cleanup", exc_info=True)
                                 else:

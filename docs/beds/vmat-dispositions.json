@@ -22,7 +22,9 @@
       ],
       "executed_proof": [
         "test_vibradorm_vmat.py:test_remote_contract_and_no_guessed_capabilities",
-        "test_vibradorm_vmat_config.py:test_normalization_uses_remote_not_submitted_capability_flags"
+        "test_vibradorm_vmat_config.py:test_normalization_uses_remote_not_submitted_capability_flags",
+        "test_vibradorm_vmat_config.py:test_public_options_switch_from_vmat_removes_remote_before_factory",
+        "test_vibradorm_vmat_config.py:test_separate_address_options_preserve_each_vmat_remote"
       ]
     },
     "DISCOVERY": {
@@ -53,7 +55,9 @@
         "test_vibradorm_vmat_setup.py:test_three_dis_reads_then_seven_distinct_serial_stages",
         "test_vibradorm_vmat_config.py:test_real_setup_stages_then_pair_proof_close_disconnect_and_metadata_retention",
         "test_coordinator_vibradorm_vmat.py:test_runtime_first_bond_always_closes_setup_and_unproven_rpc_is_not_a_marker",
-        "test_coordinator_vibradorm_vmat.py:test_vmat_runtime_uses_own_45_second_budget_including_retained_native_observation"
+        "test_coordinator_vibradorm_vmat.py:test_vmat_runtime_uses_own_45_second_budget_including_retained_native_observation",
+        "test_vibradorm_vmat_setup.py:test_public_setup_classification_preserves_original_when_unsubscribe_fails",
+        "test_vibradorm_vmat_config.py:test_public_setup_accepts_native_closure_after_disconnect_rpc_error"
       ]
     },
     "PACKET": {

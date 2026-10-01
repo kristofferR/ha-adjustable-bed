@@ -932,6 +932,7 @@ def _vibradorm_app_data(
             else:
                 data.setdefault(CONF_VIBRADORM_FLOOR_DEFAULT, 6 if selected.light_extension else 8)
         return data
+    data.pop(CONF_VIBRADORM_VMAT_REMOTE, None)
     if not restored:
         data[CONF_VIBRADORM_CONTROL_TYPE] = (
             data.get(CONF_VIBRADORM_CONTROL_TYPE, "5") if app == "werkmeister" else "2"
@@ -5001,7 +5002,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     try:
                         await client.disconnect()
                     except Exception:  # noqa: BLE001 - cleanup must not mask the result
-                        if vmat_profile and pending_failure is None:
+                        if vmat_profile and client.is_connected and pending_failure is None:
                             raise
                         _LOGGER.debug("Disconnect after pairing %s failed", address, exc_info=True)
                     else:
@@ -5016,6 +5017,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             # Replacement owns its task until terminal cleanup; only
                             # then transfer a surviving native link to flow/HA ownership.
                             self.async_retain_failed_setup_client(client, address)
+                        elif vmat_profile and track_for_flow_cleanup:
+                            self.async_track_client(None)
 
     def _verification_possible(self) -> bool:
         """Return True only when a connectable scanner exists to probe through.
@@ -6426,6 +6429,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 return await self._async_options_form(None, step_id=step_id)
 
             bed_type = requested_bed_type
+            stale_vibradorm_keys: frozenset[str] = frozenset()
             # The discovery toggle is global, not per-entry: pull it out of
             # user_input now so it is never written into entry data, but only
             # persist it on the success path below - otherwise a later
@@ -6609,6 +6613,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     remote=app_data.get(CONF_VIBRADORM_VMAT_REMOTE),
                 )
                 user_input.update({key: app_data[key] for key in VIBRADORM_APP_CONFIG_KEYS if key in app_data})
+                stale_vibradorm_keys = VIBRADORM_APP_CONFIG_KEYS - app_data.keys()
                 user_input[CONF_MOTOR_COUNT] = max(2, len(profile.groups))
                 user_input[CONF_HAS_MASSAGE] = profile.massage
                 user_input[CONF_DISABLE_ANGLE_SENSING] = True
@@ -6766,6 +6771,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     == PAIR_MODE_SINGLE_ADDRESS
                 ):
                     self._apply_bed_type_change_cleanup(new_data, bed_type, requested_variant)
+                    for key in stale_vibradorm_keys:
+                        new_data.pop(key, None)
                     self.hass.config_entries.async_update_entry(
                         self.config_entry, data=new_data
                     )
@@ -6794,6 +6801,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 if pulse_user_set:
                     new_data[CONF_MOTOR_PULSE_USER_SET] = True
             self._apply_bed_type_change_cleanup(new_data, bed_type, requested_variant)
+            for key in stale_vibradorm_keys:
+                new_data.pop(key, None)
             if bed_type == BED_TYPE_VIBRADORM_APP and any(
                 new_data.get(key) != self.config_entry.data.get(key)
                 for key in (CONF_VIBRADORM_APP_PROFILE, CONF_VIBRADORM_CONTROL_TYPE, CONF_VIBRADORM_VMAT_REMOTE)
