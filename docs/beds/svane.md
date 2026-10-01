@@ -40,7 +40,7 @@ P1 writes `0100` to the selected axis/direction role and releases with `0000` to
 
 P2 sends `10 MASK 00 00 00 00`: head up/down masks `01`/`02`, feet up/down `10`/`20`, and combined masks `11`/`21`/`12`/`22`. Final STOP is `100000000000`. Releasing one axis while the other remains active removes its mask and continues the remaining refresh without an immediate global STOP.
 
-Head and P2 combined actions start immediately and schedule the next pass 100 ms after work. Feet-only and P1 separate-axis fallback wait 100 ms before feet, then schedule another 100 ms after work. These are held refreshes, not a source fixed repeat count. Ordinary cover actions use a bounded one-second host duration; the explicit service accepts 0.1–60 seconds. Cancellation, failed writes and controller detach attempt the actual movement releases independently of the cancelled event.
+Head and P2 combined actions start immediately and schedule the next pass 100 ms after work. Feet-only and P1 separate-axis fallback wait 100 ms before feet, then schedule another 100 ms after work. These are held refreshes, not a source fixed repeat count. Ordinary cover actions use a bounded one-second host duration; the explicit service accepts 0.1–60 seconds. Feet-only actions and P1 combinations require more than 0.1 seconds. If awaited writes or scheduling consume that remaining budget before the selected feet axis starts, the action reports an error and releases any started head role instead of reporting a successful incomplete combination. Cancellation and an explicit axis release remain normal exit paths. Cancellation, failed writes and controller detach attempt the actual movement releases independently of the cancelled event. A failed or cancelled release keeps its started role pending for the next serialized STOP; a successfully released role is retired.
 
 `adjustable_bed.svane_hold_control` offers `head_up`, `head_down`, `feet_up`, `feet_down`, the four corresponding `head_*_feet_*` combinations, and `light_adjust`. All selected profiles and live roles are validated before the first motion. Paired physical sides retain their own P1/P2 routes. `adjustable_bed.svane_release_axis` signals the active writer to release `head` or `feet`; it performs no separate BLE write outside command serialization. Global STOP still cancels and releases the whole action.
 
@@ -48,14 +48,14 @@ Head and P2 combined actions start immediately and schedule the next pass 100 ms
 
 The literal **Svane position** button sends one P1 `0300` to `abcb/fb6e`, or one P2 `108100000000` to `1234/1111`. The artifact does not prove a Flat, Zero-G or Anti-Snore meaning. Preset, lamp and memory actions do not append movement STOP.
 
-The two source-labelled positions are **Read** and **TV** (public numbered memory slots 1 and 2). Save refreshes observations and copies valid target-local bytes; it sends no firmware save opcode.
+The two source-labelled positions are **Read** and **TV** (public numbered memory slots 1 and 2). Save copies valid bytes from successful reads in its own head/old/feet/old refresh sequence; it sends no firmware save opcode. Missing, failed, empty or cancelled required reads leave the old slot intact instead of copying an earlier observation. Completed diagnostic observations remain available even when save fails.
 
 - P1 copies the entire opaque head and feet arrays. Recall writes head bytes to `abcb/143d`, waits a cancellable second, then writes feet bytes to `c258/143d`. Length and endian interpretation are not invented. These slots survive BLE reconstruction and entry reload within the HA process and reset on a cold process restart.
 - P2 copies bytes 2–5 of a valid target position record. Slots persist per physical target, with source defaults Read `81388113` and TV `82738204`. Recall sends `1004` plus the stored four bytes. Missing observations and malformed preferences produce an unavailable/validation error, never a null overwrite or dormant command fallback.
 
 Generic memory calls validate every selected target before dispatch. An unsaved P1 slot or malformed stored payload rejects the whole call before an earlier target can move; the controller still checks the slot during locked execution.
 
-Physical-side caches survive paired parent ownership migration and separation. App-profile changes reset the changed physical target's session. The old dormant `3fff`, `3f40`, `3f80` and `3f81` writes are not reachable controls in this profile.
+Physical-side caches survive paired parent ownership migration and separation. App-profile changes reset the changed physical target's session. A shared options form cannot change a Svane profile across two separate addresses: unpair and configure each side separately first. Common options and an unchanged rendered profile preserve mixed P1/P2 routes and target-local caches. The old dormant `3fff`, `3f40`, `3f80` and `3f81` writes are not reachable controls in this profile.
 
 ## Lamp and observations
 

@@ -1624,6 +1624,7 @@ svane_hold_control:
             - head_down_feet_down
             - light_adjust
     duration:
+      description: Feet-only actions and P1 combinations require more than 0.1 seconds.
       required: true
       selector:
         number:

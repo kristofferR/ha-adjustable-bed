@@ -369,14 +369,21 @@ class SvaneController(BedController):
         self._subscriptions.append(role)
         return True
 
-    async def _read(self, service: str, char: str) -> bytes | None:
+    async def _read(
+        self, service: str, char: str, *, fresh: dict[str, bytes] | None = None
+    ) -> bytes | None:
         role = self._role(service, char)
         client = self.client
         if role is None or client is None:
             return None
         async with self._ble_lock:
             raw = bytes(await client.read_gatt_char(role))
-        self.accept_response(service, char, raw)
+        accepted = self.accept_response(service, char, raw)
+        if fresh is not None and accepted:
+            if service in (HEAD, FEET) and char == POSITION:
+                fresh["head" if service == HEAD else "feet"] = raw
+            elif service == OLD and char == OLD_CHAR:
+                fresh["position"] = raw[2:6]
         if service != DIS:
             # Map source CCCD writes to the backend's supported subscription
             # API; a read-only role still remains readable and cacheable.
@@ -393,20 +400,23 @@ class SvaneController(BedController):
             if not await self._wait(1):
                 return
 
-    async def _read_state(self, state: int) -> None:
+    async def _read_state(self, state: int, *, fresh: dict[str, bytes] | None = None) -> None:
         if state in (0, 1):
             for service, char in ((HEAD if state == 0 else FEET, POSITION), (OLD, OLD_CHAR)):
                 try:
-                    await self._read(service, char)
+                    await self._read(service, char, fresh=fresh)
                 except BleakError as error:
                     self.forward_controller_state_update("svane_last_read_error", str(error))
 
     async def read_positions(self, motor_count: int = 2) -> None:
         del motor_count
+        await self._read_positions()
+
+    async def _read_positions(self, *, fresh: dict[str, bytes] | None = None) -> None:
         self._descriptor_state = 0
-        await self._read_state(0)
+        await self._read_state(0, fresh=fresh)
         self._descriptor_state = 1
-        await self._read_state(1)
+        await self._read_state(1, fresh=fresh)
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         del callback  # No numeric position decoder exists in the artifact.
@@ -462,6 +472,11 @@ class SvaneController(BedController):
         integer(duration_ms, 1, 60000)
         if control not in self.held_control_options:
             raise ValueError("Unknown Svane held control")
+        if control != "light_adjust":
+            head, feet = MOTIONS[control]
+            delayed_feet = feet is not None and not (self.profile == "jmc" and head is not None)
+            if delayed_feet and duration_ms <= 100:
+                raise ValueError("Feet controls require a hold longer than 100 ms (0.1 seconds)")
         roles = (
             ((LIGHT, uuid("b5e9")), (LIGHT, uuid("3fb2")))
             if control == "light_adjust"
@@ -531,6 +546,7 @@ class SvaneController(BedController):
         self._active_head, self._active_feet = MOTIONS[control]
         self._pending_release.clear()
         self._wake.clear()
+        feet_started = False
         try:
             while not cancel.is_set() and asyncio.get_running_loop().time() < deadline:
                 await self._consume_release()
@@ -550,11 +566,11 @@ class SvaneController(BedController):
                         )
                         await self._consume_release()
                         feet = self._active_feet
-                        if (
-                            cancel.is_set()
-                            or feet is None
-                            or asyncio.get_running_loop().time() >= deadline
-                        ):
+                        if cancel.is_set() or feet is None:
+                            continue
+                        if asyncio.get_running_loop().time() >= deadline:
+                            if not feet_started:
+                                raise ValueError("Hold ended before the selected feet axis could start")
                             continue
                         role = (
                             (OLD, OLD_CHAR)
@@ -568,6 +584,7 @@ class SvaneController(BedController):
                             if self.profile == "jmc"
                             else SvaneCommands.MOTOR_MOVE,
                         )
+                        feet_started = True
                 await self._motor_wait(
                     min(0.1, max(0, deadline - asyncio.get_running_loop().time()))
                 )
@@ -592,7 +609,7 @@ class SvaneController(BedController):
                 )
             except Exception as error:
                 errors.append(error)
-            finally:
+            else:
                 self._started.discard((service, char))
         if errors:
             raise errors[0]
@@ -682,18 +699,19 @@ class SvaneController(BedController):
 
     async def program_memory(self, memory_num: int) -> None:
         integer(memory_num, 1, 2)
-        await self.read_positions()
+        fresh: dict[str, bytes] = {}
+        await self._read_positions(fresh=fresh)
         if self.profile == "jmc":
-            if self.session.position is None:
-                raise ValueError("No valid four-byte position has been observed for this target")
+            if "position" not in fresh:
+                raise ValueError("No fresh valid four-byte position was read for this target")
             slots = list(self.session.jmc_slots)
-            slots[memory_num - 1] = self.session.position
+            slots[memory_num - 1] = fresh["position"]
             self.session.jmc_slots = (slots[0], slots[1])
             self._remember()
         else:
-            if not self.session.head or not self.session.feet:
-                raise ValueError("No valid raw axes have been observed for this target")
-            self.session.multi_slots[memory_num] = (self.session.head, self.session.feet)
+            if "head" not in fresh or "feet" not in fresh:
+                raise ValueError("Both fresh valid raw axes must be read for this target")
+            self.session.multi_slots[memory_num] = (fresh["head"], fresh["feet"])
 
     async def _light(self, intensity: int, char: str = "a8e0") -> None:
         await self._write(

@@ -492,7 +492,12 @@ async def test_notify_lifecycle_cleanup_unsubscribes_even_failed_motor_release()
     with pytest.raises(BleakError):
         await controller.stop_notify()
     controller.client.stop_notify.assert_awaited_once()
-    assert not controller._subscriptions and not controller._started
+    assert not controller._subscriptions
+    assert controller._started == {(HEAD, UP)}
+    controller.client.write_gatt_char.side_effect = None
+    await controller.stop_all()
+    assert not controller._started
+    assert [packet for _, _, packet in written(controller)] == ["0000", "0000"]
 
 
 @pytest.mark.parametrize("retired", ["stop", "replacement", "disconnected", "role", "sender"])

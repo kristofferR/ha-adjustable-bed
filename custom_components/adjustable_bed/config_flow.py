@@ -248,6 +248,7 @@ from .const import (
     STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
     SVANE_VARIANT_JENSEN_LINON,
     SVANE_VARIANT_JMC,
+    SVANE_VARIANT_MULTI,
     SVANE_VARIANTS,
     VARIANT_AUTO,
     VIBRADORM_APP_CONFIG_KEYS,
@@ -656,6 +657,8 @@ class BondRouteMismatchError(Exception):
 _PER_SIDE_APP_PROFILES: Final = {
     SOLACE_VARIANT_WOOSA: "woosa_unpair_first",
     SVANE_VARIANT_JENSEN_LINON: "jensen_linon_unpair_first",
+    SVANE_VARIANT_MULTI: "svane_unpair_first",
+    SVANE_VARIANT_JMC: "svane_unpair_first",
 }
 
 
@@ -6911,6 +6914,20 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     if key in shown and shown[key] != value
                 },
             }
+            if (
+                separate_address_pair
+                and CONF_PROTOCOL_VARIANT in paired_changes
+                and paired_changes[CONF_PROTOCOL_VARIANT] != SVANE_VARIANT_JENSEN_LINON
+                and not any(child.get(CONF_PROTOCOL_VARIANT) == SVANE_VARIANT_JENSEN_LINON
+                            for child in iter_children(self.config_entry.data))
+                and any(child.get(CONF_BED_TYPE) == BED_TYPE_SVANE
+                        for child in iter_children(self.config_entry.data))
+            ):
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={CONF_PROTOCOL_VARIANT: "svane_unpair_first"},
+                )
             if (
                 separate_address_pair
                 and CONF_PROTOCOL_VARIANT in paired_changes
