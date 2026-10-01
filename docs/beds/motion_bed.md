@@ -36,7 +36,11 @@ pairs and names. Modular motor buttons expose **Back down** and **Leg down**:
 the shipped upper-arrow callbacks are dead and do not establish an up command.
 
 Motion sends one start frame, holds for a bounded duration, and releases with
-the protocol STOP even on cancellation or failure. The default one-second hold
+the protocol STOP even on cancellation or failure. The hold captures its original
+client and characteristic, so a still-live old target is released during rebind
+without sending cleanup or position requests to its replacement. Unexpected
+and intentional disconnect callbacks synchronously invalidate owned timers;
+queued callbacks also check session ownership before reconnect admission. The default one-second hold
 and maximum ten-second bound are integration safety limits, not app repeat
 intervals. Presets and accessories do not acquire an invented motor STOP.
 App preset-selected flags describe programming/parser state, not a measured

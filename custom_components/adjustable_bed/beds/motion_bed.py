@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable, Coroutine, Mapping
 from contextvars import ContextVar
-from dataclasses import fields, replace
+from dataclasses import dataclass, fields, replace
 from typing import TYPE_CHECKING
 
 from ..motion_bed_actions import ACTION_BY_KEY, MOTION_BED_ACTIONS, MotionBedAction
@@ -43,6 +43,14 @@ def _action_callback(key: str) -> MotorCommandCallable:
     return invoke
 
 
+@dataclass(slots=True)
+class _HeldSession:
+    client: BleakClient
+    characteristic: BleakGATTCharacteristic
+    address: str
+    released: bool = False
+
+
 class MotionBedController(BedController):
     """Expose app controls without inferring motors or thermostat temperatures."""
 
@@ -66,6 +74,7 @@ class MotionBedController(BedController):
         self._network_poll_active = False
         self._active_module: str | None = None
         self._audio_preference = False
+        self._held_session: _HeldSession | None = None
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -289,6 +298,8 @@ class MotionBedController(BedController):
             await self.stop_notify()
         if binding_changed:
             self._generation += 1
+            if self._held_session is not None:
+                await self._release_held_session(self._held_session)
             self._cancel_background()
             self._context_expiry.clear()
             self._started_modules.clear()
@@ -359,10 +370,52 @@ class MotionBedController(BedController):
         finally:
             self._operation_generation.reset(token)
 
+    def on_disconnect(self) -> None:
+        self._generation += 1
+        self._cancel_background()
+        self._notifying = False
+        self._session_client = None
+        self._characteristic = None
+        self._notify_callback = None
+        self._context_expiry.clear()
+        self._started_modules.clear()
+        self._network_poll_active = False
+        self._active_module = None
+        self._state = MotionBedState()
+        self._publish()
+
+    def _owned_session_current(self, generation: int) -> bool:
+        if generation != self._generation or self._coordinator.controller is not self:
+            return False
+        try:
+            self._current_session()
+        except ConnectionError:
+            return False
+        return True
+
+    async def _release_held_session(self, session: _HeldSession) -> None:
+        # A started hold owns its original physical client even after a rebind.
+        async with self._ble_lock:
+            if session.released:
+                return
+            session.released = True
+            if not session.client.is_connected:
+                return
+            response = "write" in session.characteristic.properties
+            self._coordinator.record_command_trace(
+                payload={"hex": STOP.hex(), "original_target_address": session.address},
+                characteristic_uuid=CHARACTERISTIC, characteristic_handle=session.characteristic.handle,
+                response=response, repeat_count=1, repeat_delay_ms=0,
+                command_origin="motion_bed_original_hold_release", controller_class=type(self).__name__,
+            )
+            await session.client.write_gatt_char(session.characteristic, STOP, response=response)
+
     async def stop_notify(self) -> None:
         self._generation += 1
         self._cancel_background()
         try:
+            if self._held_session is not None:
+                await self._release_held_session(self._held_session)
             client, characteristic = self._session_client, self._characteristic
             if self._notifying and client is not None and client.is_connected and characteristic is not None:
                 async with self._ble_lock:
@@ -433,7 +486,7 @@ class MotionBedController(BedController):
     async def _followup(self, effect: MotionBedFollowup) -> None:
         generation = self._generation
         await asyncio.sleep(effect.delay_ms / 1000)
-        if generation != self._generation:
+        if not self._owned_session_current(generation):
             return
         key = {
             "module_status_query": "main_mcu_activity_module_status",
@@ -442,13 +495,14 @@ class MotionBedController(BedController):
             "network_status_query": "network_activity_network_status",
         }[effect.action]
         async def execute(controller: BedController) -> None:
-            if generation != self._generation:
+            if controller is not self or not self._owned_session_current(generation):
                 return
             if effect.action == "network_status_query":
                 await self._bounded_network_query()
             else:
                 await controller.async_execute_motion_bed_internal_query(key)
-        await self._coordinator.async_execute_controller_query(execute, cancel_running=False, skip_disconnect=True)
+        await self._coordinator.async_execute_controller_query(execute, cancel_running=False, skip_disconnect=True,
+                                                                     run_if=lambda: self._owned_session_current(generation))
 
     async def async_execute_motion_bed_internal_query(self, key: str) -> None:
         action = ACTION_BY_KEY[key]
@@ -526,22 +580,24 @@ class MotionBedController(BedController):
         self._started_modules.add(module)
         generation = self._generation
         async def prepare(controller: BedController) -> None:
-            if (generation != self._generation or self._active_module != module
+            if (controller is not self or not self._owned_session_current(generation) or self._active_module != module
                     or getattr(self._state, module + "_module_present") is not True):
                 self._started_modules.discard(module)
                 return
             await self._module_startup(module)
-        await self._coordinator.async_execute_controller_query(prepare, cancel_running=False, skip_disconnect=True)
+        await self._coordinator.async_execute_controller_query(prepare, cancel_running=False, skip_disconnect=True,
+                                                                     run_if=lambda: self._owned_session_current(generation))
 
     async def _thermal_poll(self) -> None:
         generation = self._generation
         await asyncio.sleep(2)
         while generation == self._generation and (self.selection.surface == "thermal" or (self._state.thermal_module_present is True and self._active_module == "thermal")):
             async def query(controller: BedController) -> None:
-                if generation != self._generation or (self.selection.surface == "hub" and (self._state.thermal_module_present is not True or self._active_module != "thermal")):
+                if controller is not self or not self._owned_session_current(generation) or (self.selection.surface == "hub" and (self._state.thermal_module_present is not True or self._active_module != "thermal")):
                     return
                 await self.write_command(SOURCE_COMMANDS["LengnuanFragment:58"])
-            await self._coordinator.async_execute_controller_query(query, cancel_running=False, skip_disconnect=True)
+            await self._coordinator.async_execute_controller_query(query, cancel_running=False, skip_disconnect=True,
+                                                                         run_if=lambda: self._owned_session_current(generation))
             await asyncio.sleep(5)
 
     def validate_motion_bed_action(self, key: str, *, branch: str = "app",
@@ -580,14 +636,21 @@ class MotionBedController(BedController):
         source_ids = action.select(self._state, self.selection.alternate_identity, branch=branch)
         commands = tuple(dict.fromkeys(SOURCE_COMMANDS[source_id] for source_id in source_ids))
         if action.kind == "held":
+            client, characteristic = self._current_session()
+            session = _HeldSession(client, characteristic, self._target_address)
+            self._held_session = session
             try:
                 for command in commands:
                     await self.write_command(command)
                 await self._hold(duration, sleep_adjust=action.context == "sleep_adjust")
             finally:
-                if self._operation_generation.get() == self._generation:
-                    await self._send_stop()
-                if self._operation_generation.get() == self._generation and action.context == "sleep_adjust":
+                try:
+                    await self._release_held_session(session)
+                finally:
+                    if self._held_session is session:
+                        self._held_session = None
+                generation = self._operation_generation.get()
+                if generation is not None and self._owned_session_current(generation) and action.context == "sleep_adjust":
                     await asyncio.sleep(0.1)
                     await self.write_command(SOURCE_COMMANDS["SleepAdjustActivity:255"], cancel_event=asyncio.Event())
         elif key == "sleep_data_entry_activity_capture_debug":
@@ -702,9 +765,10 @@ class MotionBedController(BedController):
                 if generation != self._generation or self._state.provisioning_status in ("failed", "success"):
                     return
                 async def query(controller: BedController) -> None:
-                    if generation == self._generation:
+                    if controller is self and self._owned_session_current(generation):
                         await self._bounded_network_query()
-                await self._coordinator.async_execute_controller_query(query, cancel_running=False, skip_disconnect=True)
+                await self._coordinator.async_execute_controller_query(query, cancel_running=False, skip_disconnect=True,
+                                                                         run_if=lambda: self._owned_session_current(generation))
             if generation == self._generation and self._state.provisioning_status == "waiting":
                 self._state = replace(self._state, provisioning_status="timed_out")
                 self._publish()

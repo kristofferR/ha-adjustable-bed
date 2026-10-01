@@ -67,6 +67,9 @@ def rig_for(name: str = "QMS-IQ", *, stub_startup: bool = True) -> Rig:
     coordinator.cancel_command = asyncio.Event()
     coordinator.hass.async_create_task.side_effect = asyncio.create_task
     controller = MotionBedController(coordinator, selection=select_motion_bed(name))
+    coordinator.controller = controller
+    coordinator._controller = controller
+    coordinator._client = client
 
     async def execute(command: Callable[[BedController], Awaitable[None]], **kwargs: object) -> None:
         await command(controller)
@@ -281,6 +284,7 @@ async def test_old_hold_cleanup_never_writes_to_replacement_target(sleep_adjust:
     with suppress(ConnectionError):
         await operation
     replacement.write_gatt_char.assert_not_awaited()
+    assert rig.writes[-1] == STOP
 
 
 @pytest.mark.asyncio
