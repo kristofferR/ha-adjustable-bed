@@ -86,7 +86,7 @@ Read results stay local until ownership is checked before publication. Queued wr
 
 Configure up to three other AdjustableM5X5 entries on the main entry. This supports **four physical targets**, one main plus three lifts, each with its own BLE coordinator. Use `adjustable_bed.starcode_move_lifts` with `up`, `down`, `flat` or `stop`. Each lift may be any of the four bedding classes; lift fanout uses only native union movement, STOP/interrupt and flat. Individual Elevate actuator controls remain available when restored in a main slot.
 
-All selected targets must be ready before group writes. Main movement interrupts lifts; lift movement interrupts main. Composite flat interrupts the group, sends main flat, waits **1600 ms**, then sends lift flat. Every target's connection is held through dispatch, delay and cleanup, including with Disconnect After Command enabled. STOP, changed selection, lost transport, replacement coordinator/controller/client/session or unload cancels delayed writes. Failure/cancellation cleans every admitted target. Group STOP first cancels retained delayed operations and attempts STOP on every reachable configured member, even if the main or another lift is unavailable. It reports missing members or transport errors after attempting the remaining targets. Movement admission still requires the complete selection to be ready. Successful Elevate flat receives no invented immediate STOP. Grouping does not transfer entity/device ownership into the Left/Right paired registry, and never fans out RGB, massage, programming or firmware updates.
+All selected targets must be ready before group writes. Individual main movement interrupts reachable ready lifts; individual lift movement interrupts its reachable ready main. Unloaded, disconnected or unready peers, and peer write failures, do not block a healthy individual control. Related pending group admissions are cancelled before peer writes, without requiring an offline peer to reconnect. Dedicated group movement still requires every selected member to be ready. Composite flat interrupts the group, sends main flat, waits **1600 ms**, then sends lift flat. Every target's connection is held through dispatch, delay and cleanup, including with Disconnect After Command enabled. STOP, changed selection, lost transport, replacement coordinator/controller/client/session or unload cancels delayed writes. Failure/cancellation cleans every admitted target. Group STOP first cancels retained delayed operations and attempts STOP on every reachable configured member, even if the main or another lift is unavailable. It reports missing members or transport errors after attempting the remaining targets. Movement admission still requires the complete selection to be ready. Successful Elevate flat receives no invented immediate STOP. Grouping does not transfer entity/device ownership into the Left/Right paired registry, and never fans out RGB, massage, programming or firmware updates.
 
 ## Evidence and deferred validation
 
@@ -110,6 +110,11 @@ actions; internal cleanup STOP does not invalidate the intended replacement.
 Group-command suppression applies only while the exact scheduled group action
 runs. A later ordinary command on the same scheduler still interrupts the group,
 cancels its retained delayed movement and cleans up the admitted targets.
+An individual command waits for those STOPs before scheduler admission, so old
+cleanup cannot cancel its new movement. Caller cancellation leaves old cleanup
+running; explicit STOP, changed selection, unload or a newer individual request
+invalidates a waiting admission. Failed cleanup on an unavailable peer does not
+block the healthy individual target.
 
 Selecting Elevate retires the previous back, legs and lumbar position sliders
 and every M5X5 telemetry entity. The BLE connection sensor and unrelated registry

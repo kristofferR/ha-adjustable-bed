@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Awaitable, Callable, Iterator, Mapping, Sequence
 from contextlib import ExitStack, contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 from functools import wraps
+from inspect import unwrap
 from typing import cast
 
 import voluptuous as vol
@@ -28,6 +30,8 @@ from .const import (
 )
 from .coordinator import AdjustableBedCoordinator
 from .pairing import is_paired
+
+_LOGGER = logging.getLogger(__name__)
 
 _OPERATIONS = f"{DOMAIN}_starcode_group_operations"
 _GROUP_DISPATCH: ContextVar[bool] = ContextVar("starcode_group_dispatch", default=False)
@@ -184,35 +188,75 @@ async def _stop(targets: Sequence[AdjustableBedCoordinator], *, cleanup: bool = 
         raise ExceptionGroup("Some AdjustableM5X5 targets could not stop", failures)
 
 
+def _conflicting_entry_ids(source: AdjustableBedCoordinator) -> tuple[str, ...]:
+    configured = source.entry.data.get(CONF_STARCODE_LIFT_ENTRIES, ())
+    other_ids = (
+        [entry_id for entry_id in configured if isinstance(entry_id, str)]
+        if isinstance(configured, (tuple, list))
+        else []
+    )
+    for entry in source.hass.config_entries.async_entries(DOMAIN):
+        if source.entry.entry_id in entry.data.get(CONF_STARCODE_LIFT_ENTRIES, ()):
+            other_ids.append(entry.entry_id)
+    return tuple(
+        dict.fromkeys(entry_id for entry_id in other_ids if entry_id != source.entry.entry_id)
+    )
+
+
+async def prepare_individual_command(
+    source: AdjustableBedCoordinator,
+    command: Callable[[BedController], Awaitable[None]] | None,
+) -> None:
+    """Settle old group STOPs before an ordinary command owns its scheduler lane."""
+    if command is not None and unwrap(command) in (_interrupt, _flat, _up, _down):
+        return
+    hass = source.hass
+    source_id = source.entry.entry_id
+    current = asyncio.current_task()
+    if not any(
+        task is not current and not task.done()
+        for cleanup in (False, True)
+        for task in _tasks(hass, cleanup=cleanup).get(source_id, ())
+    ):
+        return
+    other_ids = _conflicting_entry_ids(source)
+    ids = (source_id, *other_ids)
+    for entry_id in ids:
+        cancel_group_operations(hass, entry_id)
+    epochs = tuple(_stop_epochs(hass).get(entry_id, 0) for entry_id in ids)
+    try:
+        await _settle_previous_groups(hass, ids)
+    except Exception as error:
+        # Cleanup attempts every admitted member; unavailable peers remain best-effort.
+        _LOGGER.debug("Previous AdjustableM5X5 group cleanup failed: %s", error)
+    if (
+        epochs != tuple(_stop_epochs(hass).get(entry_id, 0) for entry_id in ids)
+        or other_ids != _conflicting_entry_ids(source)
+        or hass.data.get(DOMAIN, {}).get(source_id) is not source
+    ):
+        raise asyncio.CancelledError("The AdjustableM5X5 individual admission was cancelled")
+
+
 async def interrupt_conflicting_group(source: AdjustableBedCoordinator) -> None:
     """Ordinary main motion interrupts lifts; ordinary lift motion interrupts its main."""
     if _GROUP_DISPATCH.get():
         return
     hass = source.hass
     cancel_group_operations(hass, source.entry.entry_id)
-    other_ids = list(
-        validate_lift_entries(
-            hass,
-            source.entry.data,
-            source.entry.data.get(CONF_STARCODE_LIFT_ENTRIES, []),
-            main_entry_id=source.entry.entry_id,
-        )
-    )
-    for entry in hass.config_entries.async_entries(DOMAIN):
-        if source.entry.entry_id in entry.data.get(CONF_STARCODE_LIFT_ENTRIES, ()):
-            other_ids.append(entry.entry_id)
-    targets = [_resolve(hass, entry_id) for entry_id in dict.fromkeys(other_ids)]
-    admitted: list[AdjustableBedCoordinator] = []
-    try:
-        await _preflight(targets, admitted)
-        for target in targets:
-            cancel_group_operations(hass, target.entry.entry_id)
+    other_ids = _conflicting_entry_ids(source)
+    # Invalidate every related admission before yielding, even for unloaded peers.
+    for entry_id in other_ids:
+        cancel_group_operations(hass, entry_id)
+    for entry_id in other_ids:
+        try:
+            target = _resolve(hass, entry_id)
+            _controller(target.controller)
             await target.async_execute_controller_command(
                 _interrupt, read_positions_after_operation=False
             )
-    except BaseException:
-        await _stop(admitted)
-        raise
+        except Exception as error:
+            # Individual controls depend on their own link, unlike a dedicated group action.
+            _LOGGER.debug("Could not interrupt AdjustableM5X5 peer %s: %s", entry_id, error)
 
 
 async def _stop_configured_group(
