@@ -104,6 +104,7 @@ from .const import (
     CONF_MALOUF_APP_PRIMARY,
     CONF_MALOUF_APP_PROFILE,
     CONF_MALOUF_APP_TRANSPORT,
+    CONF_REMACRO_LED_LEVEL,
     CONF_REMACRO_MODEL,
     CONF_STARCODE_COMMAND_SELECTOR,
     CONF_STARCODE_TRANSPORT_SELECTOR,
@@ -123,6 +124,7 @@ from .const import (
     DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
     DEWERTOKIN_RF_GATEWAY_MODEL,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
+    DOMAIN,
     KEESON_BETTERLIVING_SERVICE_UUIDS,
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_JSON_SERVICE_UUID,
@@ -604,12 +606,13 @@ async def create_controller(
         model = resolve_model(
             app, manufacturer_data, coordinator.entry.data.get(CONF_REMACRO_MODEL)
         )
-        sessions = coordinator.hass.data.setdefault("adjustable_bed_remacro_sessions", {})
+        sessions = coordinator.hass.data.setdefault(DOMAIN, {}).setdefault("remacro_sessions", {})
         return RemacroController(
             coordinator,
             app=app,
             model=model,
             session=session_for(sessions, coordinator.address, app, model.model_id),
+            led_level=coordinator.entry.data.get(CONF_REMACRO_LED_LEVEL),
         )
 
     if bed_type == BED_TYPE_VMATBASIC:

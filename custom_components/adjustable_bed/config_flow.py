@@ -306,6 +306,7 @@ from .pairing_candidates import (
     build_pair_selection_schema,
     selected_pair_ids,
 )
+from .remacro_discovery import remacro_entry_problem, remacro_manufacturer_data
 from .setup_operation import (
     BluetoothOperationMixin,
     ConnectionLifetimePolicy,
@@ -2018,12 +2019,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     ) -> dict[str, Any]:
         """Cache advertisement selectors: Kaidi room/VADDR or the Remacro model."""
         if entry_data.get(CONF_BED_TYPE) == BED_TYPE_REMACRO:
-            if manufacturer_data is None:
-                info = bluetooth.async_last_service_info(
-                    self.hass, entry_data[CONF_ADDRESS], connectable=True
-                )
-                manufacturer_data = info.manufacturer_data if info is not None else None
-            return add_remacro_model(entry_data, manufacturer_data)
+            return add_remacro_model(
+                entry_data,
+                remacro_manufacturer_data(self.hass, entry_data[CONF_ADDRESS], manufacturer_data),
+            )
         if entry_data.get(CONF_BED_TYPE) != BED_TYPE_KAIDI:
             return entry_data
 
@@ -2033,6 +2032,26 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             manufacturer_data=manufacturer_data,
         )
         return add_kaidi_entry_metadata(entry_data, advertisement)
+
+    def _remacro_unsupported_abort(
+        self,
+        entry_data: dict[str, Any],
+        *,
+        manufacturer_data: dict[int, bytes] | None = None,
+    ) -> ConfigFlowResult | None:
+        """Refuse a Remacro bed the selected app would not list."""
+        if entry_data.get(CONF_BED_TYPE) != BED_TYPE_REMACRO:
+            return None
+        problem, placeholders = remacro_entry_problem(
+            entry_data,
+            remacro_manufacturer_data(self.hass, entry_data[CONF_ADDRESS], manufacturer_data),
+        )
+        # An unseen model may still advertise later; setup retries for it.
+        if problem in (None, "unknown"):
+            return None
+        return self.async_abort(
+            reason=f"remacro_model_{problem}", description_placeholders=placeholders
+        )
 
     def _async_abort_diagnostic_browser(
         self,
@@ -2688,6 +2707,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     entry_data,
                     manufacturer_data=self._discovery_info.manufacturer_data,
                 )
+                if (
+                    abort := self._remacro_unsupported_abort(
+                        entry_data, manufacturer_data=self._discovery_info.manufacturer_data
+                    )
+                ) is not None:
+                    return abort
                 # If bed requires pairing, show pairing instructions
                 if selected_bed_type and requires_pairing(selected_bed_type, protocol_variant):
                     self._manual_data = entry_data
@@ -3607,6 +3632,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     entry_data,
                     manufacturer_data=self._discovery_info.manufacturer_data,
                 )
+                if (
+                    abort := self._remacro_unsupported_abort(
+                        entry_data, manufacturer_data=self._discovery_info.manufacturer_data
+                    )
+                ) is not None:
+                    return abort
                 return await self._finish_with_verify(
                     entry_data,
                     user_input.get(CONF_NAME, "Adjustable Bed"),
@@ -3910,6 +3941,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         self._manual_data = entry_data
                         return await self.async_step_manual_pairing()
                     entry_data = self._maybe_add_advertisement_metadata(entry_data)
+                    if (abort := self._remacro_unsupported_abort(entry_data)) is not None:
+                        return abort
                     return await self._finish_with_verify(
                         entry_data,
                         user_input.get(CONF_NAME, "Adjustable Bed"),
@@ -6889,6 +6922,27 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     step_id=step_id,
                     data_schema=vol.Schema(schema_dict),
                     errors={CONF_PROTOCOL_VARIANT: "invalid_variant_for_bed_type"},
+                )
+            # The selected app must list each bed's model, as the app would.
+            remacro_error: str | None = None
+            if bed_type == BED_TYPE_REMACRO:
+                remacro_targets: list[Mapping[str, Any]] = [*iter_children(current_data)]
+                for target in remacro_targets or [current_data]:
+                    target_address = target.get(CONF_ADDRESS)
+                    if not isinstance(target_address, str):
+                        continue
+                    problem, _ = remacro_entry_problem(
+                        {**target, CONF_PROTOCOL_VARIANT: requested_variant},
+                        remacro_manufacturer_data(self.hass, target_address),
+                    )
+                    if problem not in (None, "unknown"):
+                        remacro_error = f"remacro_model_{problem}"
+                        break
+            if remacro_error is not None:
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={CONF_PROTOCOL_VARIANT: remacro_error},
                 )
             if _is_leggett_app_type(bed_type, requested_variant) and not _is_leggett_app_type(
                 bed_type, form_variant

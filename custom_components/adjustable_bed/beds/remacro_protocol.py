@@ -77,20 +77,17 @@ class SynDataSerial:
 
 @dataclass(slots=True)
 class RemacroSession:
-    """App-local state that outlives BLE reconnects, like the app process.
+    """State that outlives one BLE connection.
 
-    Nothing here is read back from the bed: the counter, the side toggle, the
-    highlighted preset, the massage button counters and the LED level are the
-    app's own bookkeeping.
+    ``serial`` matches the app: ``CommandUtils.i`` and its cache are static, so
+    they survive reconnects. ``side`` deliberately deviates: in the app the
+    left/right toggle is a screen field that resets when the screen reopens, but
+    Home Assistant reconnects silently after an idle disconnect, and resetting
+    there would move the other side without warning.
     """
 
     serial: SynDataSerial
     side: str = "left"
-    active_preset: str | None = None
-    head_level: int = 0
-    foot_level: int = 0
-    wave: int = 0
-    led_brightness: int = LED_DEFAULT_BRIGHTNESS
 
 
 def session_for(
@@ -365,12 +362,19 @@ def advertised_model_id(manufacturer_data: Mapping[int, bytes] | None) -> int | 
     return min(manufacturer_data) if manufacturer_data else None
 
 
-def resolve_model(
+ModelProblem = Literal["unknown", "unmapped", "not_in_app"]
+
+
+def model_problem(
     app: RemacroApp,
     manufacturer_data: Mapping[int, bytes] | None,
     stored_model_id: object,
-) -> Model:
-    """Select the model like the app, falling back to the stored selector."""
+) -> tuple[ModelProblem | None, int | None]:
+    """Classify the selector like the app, falling back to the stored value.
+
+    ``unknown``: nothing seen yet. ``unmapped``: no app lists this company ID.
+    ``not_in_app``: another of the apps lists it, but not the selected one.
+    """
     model_id = advertised_model_id(manufacturer_data)
     if (
         model_id is None
@@ -379,10 +383,26 @@ def resolve_model(
     ):
         model_id = stored_model_id
     if model_id is None:
+        return "unknown", None
+    if model_id not in MODELS:
+        return "unmapped", model_id
+    if model_id not in APP_MODEL_IDS[app]:
+        return "not_in_app", model_id
+    return None, model_id
+
+
+def resolve_model(
+    app: RemacroApp,
+    manufacturer_data: Mapping[int, bytes] | None,
+    stored_model_id: object,
+) -> Model:
+    """Select the model like the app, falling back to the stored selector."""
+    problem, model_id = model_problem(app, manufacturer_data, stored_model_id)
+    if problem == "unknown" or model_id is None:
         raise ValueError(
             "Remacro model is unknown: no manufacturer data has been seen for this bed yet"
         )
-    if model_id not in APP_MODEL_IDS[app]:
+    if problem is not None:
         raise ValueError(
             f"The {APP_LABELS[app]} app does not list a bed advertising company ID {model_id}"
         )

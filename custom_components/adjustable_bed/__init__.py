@@ -14,7 +14,7 @@ from homeassistant.config_entries import (
 )
 from homeassistant.const import CONF_ADDRESS, Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.typing import ConfigType
@@ -90,6 +90,7 @@ from .pairing import (
     pair_member_addresses,
     with_updated_child,
 )
+from .remacro_discovery import remacro_entry_problem, remacro_manufacturer_data
 from .repairs import (
     async_refresh_combine_beds_issue,
     async_setup_combine_beds_issue,
@@ -337,19 +338,51 @@ def _maybe_cache_kaidi_metadata(hass: HomeAssistant, entry: ConfigEntry) -> None
     )
 
 
-def _maybe_cache_remacro_model(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Remember the Remacro model selector from Bluetooth history."""
+def _async_prepare_remacro_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Cache and validate the Remacro model before any connection attempt.
+
+    The apps refuse a bed whose lowest company ID they do not list, so such an
+    entry fails permanently instead of reconnecting forever.
+    """
     if entry.data.get(CONF_BED_TYPE) != BED_TYPE_REMACRO:
         return
-    for connectable in (True, False):
-        info = bluetooth.async_last_service_info(
-            hass, entry.data[CONF_ADDRESS], connectable=connectable
+    manufacturer_data = remacro_manufacturer_data(hass, entry.data[CONF_ADDRESS])
+    new_data = add_remacro_model(entry.data, manufacturer_data)
+    if new_data != dict(entry.data):
+        hass.config_entries.async_update_entry(entry, data=new_data)
+    problem, placeholders = remacro_entry_problem(entry.data, manufacturer_data)
+    if problem == "unknown":
+        raise ConfigEntryNotReady(
+            translation_domain=DOMAIN, translation_key="remacro_model_unknown"
         )
-        if info is not None and info.manufacturer_data:
-            new_data = add_remacro_model(entry.data, info.manufacturer_data)
-            if new_data != dict(entry.data):
-                hass.config_entries.async_update_entry(entry, data=new_data)
-            return
+    if problem is not None:
+        raise ConfigEntryError(
+            translation_domain=DOMAIN,
+            translation_key=f"remacro_model_{problem}",
+            translation_placeholders=placeholders,
+        )
+
+
+def _maybe_cache_paired_remacro_models(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Remember each Remacro side's model so a side can still resolve offline."""
+    children = entry.data.get(CONF_PAIR_CHILDREN)
+    if not isinstance(children, list):
+        return
+    updated: list[Any] = []
+    for child in children:
+        if (
+            isinstance(child, dict)
+            and child.get(CONF_BED_TYPE, entry.data.get(CONF_BED_TYPE)) == BED_TYPE_REMACRO
+            and isinstance(child.get(CONF_ADDRESS), str)
+        ):
+            child = add_remacro_model(
+                child, remacro_manufacturer_data(hass, child[CONF_ADDRESS])
+            )
+        updated.append(child)
+    if updated != children:
+        hass.config_entries.async_update_entry(
+            entry, data={**entry.data, CONF_PAIR_CHILDREN: updated}
+        )
 
 
 def _async_ensure_device_registry_entry(
@@ -585,6 +618,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
         [child.get(CONF_SIDE) for child in entry.data.get(CONF_PAIR_CHILDREN, [])],
     )
 
+    _maybe_cache_paired_remacro_models(hass, entry)
     if entry.data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS:
         return await _async_setup_single_address_paired_entry(hass, entry)
 
@@ -915,7 +949,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await _async_maybe_reclassify_bedtech_qrrm_entry(hass, entry)
     _maybe_cache_kaidi_metadata(hass, entry)
-    _maybe_cache_remacro_model(hass, entry)
+    _async_prepare_remacro_entry(hass, entry)
     _async_clear_stale_octo_pin_issue(hass, entry)
 
     _LOGGER.info(

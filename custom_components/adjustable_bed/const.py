@@ -266,6 +266,8 @@ CONF_KAIDI_PRODUCT_ID: Final = "kaidi_product_id"
 CONF_KAIDI_SOFA_ACU_NO: Final = "kaidi_sofa_acu_no"
 # Remacro model selector: the lowest advertised manufacturer company ID.
 CONF_REMACRO_MODEL: Final = "remacro_model"
+# Remacro committed LED level, the app's per-bed "LV" preference.
+CONF_REMACRO_LED_LEVEL: Final = "remacro_led_level"
 CONF_KAIDI_ADV_TYPE: Final = "kaidi_adv_type"
 CONF_KAIDI_RESOLVED_VARIANT: Final = "kaidi_resolved_variant"
 CONF_KAIDI_VARIANT_SOURCE: Final = "kaidi_variant_source"
@@ -431,7 +433,7 @@ BED_TYPE_VMATBASIC: Final = "vmatbasic"
 BED_TYPE_STARCODE_ABM5_4: Final = "starcode_abm5_4"
 BED_TYPE_RONDURE: Final = "rondure"  # 1500 Tilt Base / Rondure Hump (8/9-byte FurniBus protocol)
 BED_TYPE_REMACRO: Final = (
-    "remacro"  # Remacro protocol (CheersSleep/Jeromes/Slumberland/The Brick, 8-byte SynData)
+    "remacro"  # Remacro SynData protocol (Slumberland, The Brick and Jerome's apps)
 )
 BED_TYPE_COOLBASE: Final = "coolbase"  # Cool Base (Keeson BaseI5 with fan control)
 BED_TYPE_SCOTT_LIVING: Final = "scott_living"  # Scott Living 9-byte protocol
@@ -552,7 +554,7 @@ SUPPORTED_BED_TYPES: Final = [
 # DELIBERATELY CONSERVATIVE (deny-by-default): a type must be EXCLUDED if it
 #   (a) auto-detects its variant/profile from live GATT services or BLE
 #       advertisement (Keeson "auto", Richmat non-Nordic, Leggett & Platt "auto",
-#       CB24, Kaidi, CoolBase) — offline it silently resolves the WRONG profile;
+#       CB24, Kaidi, CoolBase, Remacro model) — offline it resolves the WRONG profile;
 #   (b) can be connect-time corrected to a DIFFERENT bed_type (CB35<->BOX25,
 #       Malouf new/legacy, the OKIN shared-UUID set, Nordic-UART) — the stored
 #       type is not final; or
@@ -587,7 +589,6 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_SLEEPYS_BOX24,
         BED_TYPE_SVANE,
         BED_TYPE_RONDURE,
-        BED_TYPE_REMACRO,
         BED_TYPE_SCOTT_LIVING,
         BED_TYPE_SBI,
         BED_TYPE_SUTA,

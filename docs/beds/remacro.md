@@ -26,8 +26,15 @@ Beds are detected by the advertised service `6e403587-b5a3-f393-e0a9-e50e24dcca9
 Like the apps, the integration then picks the model from the **lowest
 manufacturer-specific-data company ID** in the advertisement. Names, payload bytes
 and signal strength are never used. The selected model is remembered in the entry
-(`remacro_model`) for offline capability creation; a live advertisement always wins.
-A company ID the selected app does not list is refused, as the app would not show it.
+(`remacro_model`, and per side for combined beds) as a fallback when no advertisement
+is in Home Assistant's history; a live advertisement always wins.
+
+The model is checked before any connection attempt:
+
+- No model seen yet: setup retries with "model is unknown" until the bed advertises.
+- A company ID no app lists, or one the selected app does not list (for example 54 or
+  55 with Jerome's): setup fails with that reason and does not retry. Setup refuses
+  such a bed, and the options form refuses an app that does not list the stored model.
 
 | Company ID | App label | Screen | Controls |
 |-----------|-----------|--------|----------|
@@ -107,9 +114,12 @@ STOP for a cancelled touch or a closed screen; that behavior is not copied.
 Split beds (51, 52) have a **Control side** select that mirrors the app's
 left/right toggle. It starts on the left and sends nothing by itself.
 
-Like the app process, the counter, side, active preset, massage counters and LED
-level survive Bluetooth reconnects. They reset when Home Assistant restarts or the
-app profile or model changes.
+The frame counter survives Bluetooth reconnects, as the app's static counter does.
+The side also survives reconnects, which deliberately differs from the app (there it
+resets when the screen reopens): Home Assistant reconnects silently after an idle
+disconnect, and resetting would move the other side without warning. Both reset when
+Home Assistant restarts or the app profile or model changes. The active preset and
+the massage counters reset on every new connection, as on reopening the app screen.
 
 ## Presets, memory and stop
 
@@ -126,7 +136,8 @@ app profile or model changes.
 
 As in the apps, pressing the preset that is already active sends `0x0001` instead.
 The Stop button sends `0x0001` and clears the active preset. NineActivity defines no
-global STOP, so there Stop only ends the running movement with its own release STOP.
+global STOP, so it has no Stop button; stopping a cover ends the running movement
+with its own release STOP.
 
 ## Massage
 
@@ -154,7 +165,9 @@ they never send the zone off code then. Jerome's wraps to off.
 The light switch sends `0x0501` with parameter 0 for on and `0x0500` for off. The
 LED light setting sends `0x0501` with parameter `0xFFFFFF00 | level` 150 ms after a
 change, and **Save light level** sends `0x050F` with the current level 500 ms after
-the press. The level starts at 255, the app's default.
+the press. Each save stores the level in the entry (`remacro_led_level`), like the
+app's per-bed preference, and the slider starts there on the next connection. Before
+the first save it starts at 255, the app's default.
 
 ## Not implemented
 

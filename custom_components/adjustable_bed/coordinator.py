@@ -109,6 +109,7 @@ from .const import (
     BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
@@ -147,6 +148,7 @@ from .const import (
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
+    CONF_REMACRO_LED_LEVEL,
     CONF_RICHMAT_REMOTE,
     CONF_RMCONTROL_PRODUCT,
     CONF_RMCONTROL_SIDE,
@@ -1261,6 +1263,19 @@ class AdjustableBedCoordinator:
             return
         self._begin_internal_entry_update(self._ble_bond_established)
         self._async_persist_config({**self.entry.data, CONF_VIBRADORM_FLOOR_DEFAULT: level})
+
+    def remember_remacro_led_level(self, level: int) -> None:
+        """Persist the committed Remacro LED level, the app's per-bed preference."""
+        if self._bed_type != BED_TYPE_REMACRO:
+            raise ValueError("The LED level belongs to the Remacro app profiles")
+        if isinstance(level, bool) or not isinstance(level, int) or not 0 <= level <= 255:
+            raise ValueError("The LED level must be an integer from 0 to 255")
+        if self.entry.data.get(CONF_REMACRO_LED_LEVEL) == level:
+            return
+        self._begin_internal_entry_update(self._ble_bond_established)
+        self._async_persist_config(
+            {**self.entry.data, CONF_REMACRO_LED_LEVEL: level}, keys={CONF_REMACRO_LED_LEVEL}
+        )
 
     def remember_vmatbasic_settings(self, settings: dict[str, int]) -> None:
         """Persist this physical receiver's requested settings, never measured state."""

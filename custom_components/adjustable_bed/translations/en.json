@@ -595,7 +595,9 @@
       "discovery_disabled": "Automatic discovery is turned off for the Adjustable Bed integration. Re-enable it in any bed's options if you want new devices to be discovered.",
       "diagnostic_browser_ready": "**{name}**\n\nAddress: `{address}`\nSource: `{source}`\nScanner connectable: `{connectable}`\n\nRun `adjustable_bed.generate_support_bundle` with `target_address: {address}` to capture the full support bundle.",
       "not_enough_beds": "You need at least two set-up beds of the same type to combine.",
-      "combine_cleanup_failed": "Couldn't remove one of the original beds, so the combined bed wasn't created. Try again or remove the beds manually first."
+      "combine_cleanup_failed": "Couldn't remove one of the original beds, so the combined bed wasn't created. Try again or remove the beds manually first.",
+      "remacro_model_unmapped": "This bed advertises company ID {company_id}, which none of the Slumberland, The Brick or Jerome's apps list, so it cannot be set up as a Remacro bed.",
+      "remacro_model_not_in_app": "The {app} app does not list a bed advertising company ID {company_id}. Set the bed up again and choose the app it uses as the protocol variant."
     },
     "error": {
       "scan_failed": "Bluetooth scanning is unavailable. Check your adapters and try again, or choose a device from the list.",
@@ -863,7 +865,9 @@
       "vmatbasic_unpair_first": "Unpair these entries before changing product settings; each receiver retains its own profile.",
       "vmatbasic_required": "Choose the V-MAT Basic product profile.",
       "starcode_app_invalid": "Choose a supported app selector and a live Bluetooth transport.",
-      "starcode_app_unpair_first": "Unpair these entries before changing app selectors. Each physical side retains its own app controls."
+      "starcode_app_unpair_first": "Unpair these entries before changing app selectors. Each physical side retains its own app controls.",
+      "remacro_model_unmapped": "This bed advertises a company ID that no Remacro app lists.",
+      "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -3868,6 +3872,15 @@
     },
     "bundle_needs_side_for_paired": {
       "message": "{device_name} is a paired bed; pick one side's device to generate a support bundle."
+    },
+    "remacro_model_unknown": {
+      "message": "No advertisement from this Remacro bed has been seen yet, so its model is unknown. Setup retries once the bed is in Bluetooth range."
+    },
+    "remacro_model_unmapped": {
+      "message": "The bed advertises company ID {company_id}, which none of the Slumberland, The Brick or Jerome's apps list. The {app} app would not offer this bed."
+    },
+    "remacro_model_not_in_app": {
+      "message": "The {app} app does not list a bed advertising company ID {company_id}. Choose the app this bed uses as the protocol variant in the integration options."
     }
   },
   "issues": {
