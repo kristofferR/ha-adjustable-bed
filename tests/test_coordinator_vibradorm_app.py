@@ -385,20 +385,23 @@ async def test_connect_and_information_share_deadline_and_expiry_cleans_link(
     coordinator._client = None
     coordinator._max_retries = 1
     coordinator._retry_base_delay = 0
-    connection_started = 0.0
+    connection_deadline: float | None = None
 
     async def connect(*args, **kwargs):
-        nonlocal connection_started
-        connection_started = asyncio.get_running_loop().time()
+        nonlocal connection_deadline
+        connection_deadline = timeout_at.call_args.args[0]
         assert kwargs["pair"] is False
         await asyncio.sleep(0.02)
         return mock_bleak_client
 
     async def info(*args, **kwargs):
-        assert 0.035 < kwargs["deadline"] - connection_started < 0.045
+        assert connection_deadline is not None
+        assert kwargs["deadline"] == connection_deadline
         await asyncio.Event().wait()
 
-    with patch(f"{_MODULE}.VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS", 0.04), patch(
+    with patch(f"{_MODULE}.asyncio.timeout_at", wraps=asyncio.timeout_at) as timeout_at, patch(
+        f"{_MODULE}.VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS", 0.04
+    ), patch(
         f"{_MODULE}.establish_connection", side_effect=connect
     ), patch(f"{_MODULE}.client_source", return_value=_LOCAL.source), patch(
         f"{_MODULE}.async_path_for_source", return_value=_LOCAL
@@ -1118,9 +1121,10 @@ async def test_established_selected_path_reroute_retains_original_onboarding_dea
     ), patch.object(
         coordinator, "_async_pair_on_live_link", wraps=coordinator._async_pair_on_live_link
     ) as pairing:
+        attempt_started = asyncio.get_running_loop().time()
         assert not await coordinator.async_connect()
     deadline = pairing.await_args.kwargs["onboarding_deadline"]
-    assert 0.005 < deadline - connection_started <= 0.01
+    assert attempt_started <= deadline <= connection_started + 0.01
     assert coordinator._connection_path == _PROXY
     info.assert_not_awaited()
     mock_bleak_client.pair.assert_not_awaited()

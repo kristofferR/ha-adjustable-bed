@@ -1,6 +1,6 @@
 # Row031 discovery dispositions
 
-All 1,169 discoveries have an exact disposition: 813 have verified code and executed-test bindings, 0 are classified as already implemented, and 356 are excluded below. The current full suite passes all 7,850 tests. Hardware operation remains unverified.
+All 1,169 discoveries have an exact disposition: 813 have verified code and executed-test bindings, 0 are classified as already implemented, and 356 are excluded below. Validation receipts are maintained in the implementation PR and live audit status. Hardware operation remains unverified.
 
 | Accepted artifact | Version | APK SHA-256 |
 |---|---|---|

@@ -505,6 +505,12 @@ async def test_setup_native_post_pair_observation_controls_result_and_marker(
     assert flow._operation_client is None
     flow.operation.result = operation
     flow._pairing_result_shown = True
+    if absent:
+        shown = await flow.async_step_pairing_result()
+        note = shown["description_placeholders"]["outcome"]
+        assert "no stored bond" in note.lower()
+        assert SOURCE in note
+        assert "unauthenticated" not in note
     result = await flow.async_step_pairing_result({"action": "finish"})
     assert result["type"] is FlowResultType.CREATE_ENTRY
     data = result["data"]
@@ -515,6 +521,27 @@ async def test_setup_native_post_pair_observation_controls_result_and_marker(
     else:
         assert const.CONF_BLE_BOND_ESTABLISHED not in data
         assert const.CONF_BLE_BOND_ATTEMPTED_SOURCE not in data
+
+
+async def test_native_absence_outcome_uses_active_language(hass):
+    flow = AdjustableBedConfigFlow()
+    flow.context = {}
+    flow.hass = hass
+    evidence = BondEvidence(
+        BondVerificationStatus.NATIVE_ABSENT,
+        BondOwner.from_path(ConnectionPath(SOURCE, transport=TransportClass.LOCAL, adapter="hci0")),
+        "verify_existing_native_bond", "now",
+        kind=BondEvidenceKind.NATIVE_OS_STATE, error="native_bond_no_bond",
+    )
+    key = "component.adjustable_bed.config.step.pairing_result.data_description.outcome_native_absent"
+    with patch(PREFIX + "async_get_translations", new=AsyncMock(return_value={
+        key: "Ingen lagret Bluetooth-paring på {transport}.",
+    })):
+        note = await flow._async_pairing_outcome_note(
+            OperationResult(outcome=OperationOutcome.BOND_VERIFICATION_FAILED, payload=evidence),
+            evidence,
+        )
+    assert note == f"Ingen lagret Bluetooth-paring på {SOURCE}."
 
 
 @pytest.mark.parametrize("succeeded", [False, True])

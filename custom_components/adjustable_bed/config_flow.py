@@ -435,6 +435,11 @@ _BOND_STATE_FALLBACKS: Final[dict[str, str]] = {
 # strings.json; these only apply when a translation is missing.
 _PAIRING_OUTCOME_FALLBACKS: Final[dict[str, str]] = {
     "native_verified_local": "A stored bond was confirmed on this Home Assistant adapter ({transport}).",
+    "native_absent": (
+        "❌ No stored bond was found for this bed on this Home Assistant adapter "
+        "({transport}). Put the bed back into Bluetooth pairing mode and select "
+        "**Try again**."
+    ),
     "no_run": "❌ Pairing did not run. Select **Try again**.",
     "verified_local": (
         "✅ Paired, and the bond was confirmed. It is stored on this Home "
@@ -4550,6 +4555,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Describe what the operation achieved, in the user's language."""
         if result is None:
             return await self._pairing_text("no_run")
+
+        if (
+            result.outcome is OperationOutcome.BOND_VERIFICATION_FAILED
+            and isinstance(evidence, BondEvidence)
+            and evidence.proves_native_bond_absent
+        ):
+            where = evidence.owner.source or evidence.owner.adapter or "unknown"
+            return (await self._pairing_text("native_absent")).format(transport=where)
 
         if (
             result.outcome is OperationOutcome.BOND_VERIFICATION_FAILED
