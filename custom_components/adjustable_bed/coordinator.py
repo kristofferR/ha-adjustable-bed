@@ -4387,6 +4387,11 @@ class AdjustableBedCoordinator:
         if self._furnimove_bond_task is not None:
             self._furnimove_bond_task.cancel()
 
+        # Invalidate connection-owned work even during Bleak initialization retries.
+        controller = self._controller
+        if controller is not None:
+            controller.on_disconnect()
+
         # If we're in the middle of connecting, this is likely bleak's internal retry
         # for le-connection-abort-by-local - don't log warnings or clear references
         if self._connecting:
@@ -4406,8 +4411,7 @@ class AdjustableBedCoordinator:
             self._last_disconnect_reason = "unexpected"
 
         # Stop keepalive task before clearing controller to prevent task leak
-        # Capture controller reference before clearing to avoid race condition
-        controller = self._controller
+        # Reuse the controller captured before the connection-retry guard.
         if controller is not None and hasattr(controller, "stop_keepalive"):
             self._stop_keepalive_task = self.entry.async_create_background_task(
                 self.hass,

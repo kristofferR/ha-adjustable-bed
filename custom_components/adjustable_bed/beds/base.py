@@ -809,6 +809,9 @@ class BedController(ABC):
         """Return discovered capabilities safe to persist across connections."""
         return None
 
+    def on_disconnect(self) -> None:  # noqa: B027
+        """Invalidate connection-owned work immediately when the BLE link drops."""
+
     async def stop_notify(self) -> None:
         """Stop listening for position notifications.
 
