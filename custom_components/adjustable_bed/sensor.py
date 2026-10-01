@@ -256,6 +256,7 @@ def _sensor_entities_for(
                 "vmatbasic_model", "vmatbasic_firmware", "vmatbasic_temperature",
                 "vmatbasic_floor_level_observed", "vmatbasic_floor_minutes_observed",
                 "vmatbasic_floor_percent_observed", "vmatbasic_rssi",
+                "coolbase_left_fan_level", "coolbase_right_fan_level", "coolbase_massage_mode",
             } - active_keys
         )
         _async_remove_stale_sensor_entities(
