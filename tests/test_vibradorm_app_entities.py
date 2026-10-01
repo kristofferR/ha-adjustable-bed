@@ -27,6 +27,7 @@ from custom_components.adjustable_bed.paired_coordinator import (
     PairedBedCoordinator,
     PairedSideProxy,
 )
+from custom_components.adjustable_bed.select import _select_entities_for
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.switch import _switch_entities_for
 from tests.conftest import make_controller_mock
@@ -35,10 +36,13 @@ from tests.test_paired_coordinator import RecordingChild
 from tests.test_vibradorm_app import make_controller, written
 
 
-@pytest.mark.parametrize("control", [None, 5, 7])
-async def test_profile_switch_reconciles_metadata_and_sync_for_only_its_side(hass, control):
+@pytest.mark.parametrize(
+    ("control", "app"),
+    [(None, "werkmeister"), (2, "caresse"), (3, "caresse"), (5, "werkmeister"), (7, "werkmeister")],
+)
+async def test_profile_switch_reconciles_metadata_and_sync_for_only_its_side(hass, control, app):
     controller = (
-        make_controller(control, app="werkmeister")
+        make_controller(control, app=app)
         if control is not None
         else make_controller_mock(
             controller_state_sensor_specs=(),
@@ -77,6 +81,7 @@ async def test_profile_switch_reconciles_metadata_and_sync_for_only_its_side(has
     )
     entities = _sensor_entities_for(hass, runtime)
     active = {spec.key for spec in controller.controller_state_sensor_specs}
+    assert ("vibradorm_app_main_firmware_article" in active) is (control in (5, 7))
     assert {entity._spec.key for entity in entities if hasattr(entity, "_spec")} == active
     for key, row in old.items():
         assert (registry.async_get(row.entity_id) is not None) == (key in active)
@@ -352,3 +357,41 @@ async def test_actual_paired_floor_entities_use_each_physical_profile_and_callba
     assert all(child.connection_holds == 0 for child in children.values())
     for entity in (left_switch, left_number, right_switch, right_number):
         await entity.async_will_remove_from_hass()
+
+
+@pytest.mark.parametrize("control", [2, 7])
+async def test_zero_minute_pending_toggle_preserves_source_state_and_effective_timer(hass, control):
+    runtime, controller = await floor_runtime(hass, control=control)
+    timer = next(entity for entity in _select_entities_for(hass, runtime)
+                 if entity.entity_description.key == "light_timer")
+    minutes = next(entity for entity in _number_entities_for(hass, runtime)
+                   if hasattr(entity, "_spec")
+                   and entity._spec.key == "vibradorm_app_floor_timer_minutes")
+    assert controller._timer_minutes == 0 and not controller._timer_enabled
+    await runtime.async_execute_controller_command(
+        lambda ctrl: ctrl.execute_app_action("floor_timer_toggle")
+    )
+    assert controller._timer_enabled and controller._timer_minutes == 0
+    assert controller.protocol_diagnostics["pending_timer"] == {"enabled": True, "minutes": 0}
+    assert timer.current_option == "Off"
+    assert controller.get_light_state()["light_timer_option"] == "Off"
+    assert runtime.controller_state["vibradorm_app_floor_timer_enabled"] is False
+    assert written(controller) == []
+    await controller.set_light_level(6)
+    zero = "c00000" if control == 2 else "0011c000"
+    assert written(controller) == [zero]
+    await minutes.async_set_native_value(17)
+    assert controller._timer_enabled and controller._timer_minutes == 17
+    assert timer.current_option == "17 min"
+    assert runtime.controller_state["vibradorm_app_floor_timer_enabled"] is True
+    assert written(controller) == [zero]
+    await controller.set_light_level(6)
+    positive = "c00011" if control == 2 else "0011c011"
+    assert written(controller) == [zero, positive]
+    await runtime.async_execute_controller_command(
+        lambda ctrl: ctrl.execute_app_action("floor_timer_toggle")
+    )
+    assert not controller._timer_enabled and controller._timer_minutes == 17
+    assert timer.current_option == "Off"
+    await controller.set_light_level(6)
+    assert written(controller) == [zero, positive, zero]

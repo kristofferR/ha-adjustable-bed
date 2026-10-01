@@ -840,9 +840,9 @@ class VibradormAppController(BedController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        fields = ("model", "firmware", "software", "main_firmware_article") + (
-            ("sync_observed",) if self.profile.sync else ()
-        )
+        fields = ("model", "firmware", "software") + (
+            ("main_firmware_article",) if self.profile.article_requests else ()
+        ) + (("sync_observed",) if self.profile.sync else ())
         return tuple(
             ControllerStateSensorSpec(
                 f"vibradorm_app_{field}",
@@ -862,6 +862,7 @@ class VibradormAppController(BedController):
             "sync_observed": self._sync_observed,
             "state_source": "local_intent",
             "floor_intent": self.get_light_state(),
+            "pending_timer": {"enabled": self._timer_enabled, "minutes": self._timer_minutes},
             "mood_intent": dict(self._mood_intent),
             "massage_intent": asdict(self._massage) if self.profile.massage else None,
         }
@@ -1207,14 +1208,16 @@ class VibradormAppController(BedController):
             self._timer_minutes = int(timer_option.split()[0])
         self._publish_floor()
 
+    @property
+    def _effective_timer_option(self) -> str:
+        return f"{self._timer_minutes} min" if self._timer_enabled and self._timer_minutes else "Off"
+
     def _publish_floor(self) -> None:
         self.forward_controller_state_updates(
             {
                 "light_level": self._floor_level,
-                "light_timer_option": f"{self._timer_minutes} min"
-                if self._timer_enabled
-                else "Off",
-                "vibradorm_app_floor_timer_enabled": self._timer_enabled,
+                "light_timer_option": self._effective_timer_option,
+                "vibradorm_app_floor_timer_enabled": self._effective_timer_option != "Off",
                 "vibradorm_app_floor_timer_minutes": self._timer_minutes,
             }
         )
@@ -1223,7 +1226,7 @@ class VibradormAppController(BedController):
         return {
             "is_on": bool(self._floor_level),
             "light_level": self._floor_level,
-            "light_timer_option": f"{self._timer_minutes} min" if self._timer_enabled else "Off",
+            "light_timer_option": self._effective_timer_option,
             "light_timer_minutes": self._timer_minutes,
             "state_source": "local_intent",
         }
