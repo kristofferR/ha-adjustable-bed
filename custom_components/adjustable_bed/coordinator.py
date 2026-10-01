@@ -1887,7 +1887,7 @@ class AdjustableBedCoordinator:
             source = self._connection_path.source if self._connection_path is not None else None
             if (
                 not force_pairing and self._ble_bond_established and source
-                and source == self.entry.data.get(CONF_BLE_BOND_ATTEMPTED_SOURCE)
+                and self._unverified_marker_applies(source)
             ):
                 pairing_details["native_pairing"] = "unverified_attempt_on_same_source"
                 pairing_details["requested"] = False

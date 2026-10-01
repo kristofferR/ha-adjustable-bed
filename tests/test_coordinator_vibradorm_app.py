@@ -139,6 +139,42 @@ async def test_existing_exact_native_proof_skips_first_information_and_pair(
     assert not coordinator.last_bond_evidence.proves_stale_host_bond
 
 
+@pytest.mark.parametrize("same_source", [False, True])
+@pytest.mark.parametrize("force_pairing", [False, True])
+async def test_stored_native_context_avoids_repairing_on_inconclusive_inventory(
+    coordinator: AdjustableBedCoordinator, same_source: bool, force_pairing: bool,
+) -> None:
+    context = build_bond_context(_evidence(_LOCAL, True))
+    coordinator._persist_bond_flags(established=True, context=context)
+    assert CONF_BLE_BOND_ATTEMPTED_SOURCE not in coordinator.entry.data
+    if not same_source:
+        coordinator._connection_path = ConnectionPath(
+            source="22:33:44:55:66:77", transport=TransportClass.LOCAL, adapter="hci1"
+        )
+    path = coordinator._connection_path
+    assert path is not None
+    details: dict = {}
+    _, requested, _ = coordinator._prepare_pairing_attempt(MagicMock(), details, path.source)
+    assert requested is not same_source
+    expected_pair = force_pairing or not same_source
+
+    def native(*args, **kwargs):
+        return _evidence(path, positive=coordinator.client.pair.await_count > 0)
+
+    with patch(f"{_MODULE}.async_verify_native_bond", side_effect=native), patch(
+        _HELPER, return_value=_METADATA
+    ) as info, patch.object(coordinator, "_async_raise_pairing_issue", new_callable=AsyncMock) as issue:
+        result = await coordinator._async_pair_on_live_link(details, force_pairing=force_pairing)
+    assert result is expected_pair  # Only a fresh positive observation proves a bond now.
+    assert coordinator.client.pair.await_count == int(expected_pair)
+    assert info.await_count == int(expected_pair)
+    issue.assert_not_awaited()
+    assert coordinator.entry.data[CONF_BLE_BOND_ESTABLISHED] is True
+    if not expected_pair:
+        assert coordinator.entry.data[CONF_BLE_BOND_CONTEXT] == context
+        assert not coordinator.last_bond_evidence.proves_bond
+
+
 async def test_live_native_repair_does_not_write_an_intermediate_false_marker(
     coordinator: AdjustableBedCoordinator, hass: HomeAssistant
 ) -> None:
@@ -534,7 +570,7 @@ async def test_failed_information_clears_cached_marker_with_one_write_and_reload
     with patch(f"{_MODULE}.async_verify_native_bond", return_value=_evidence(_LOCAL)), patch(
         _HELPER, side_effect=error
     ), patch.object(coordinator, "_async_persist_config", wraps=coordinator._async_persist_config) as persist, pytest.raises(type(error)):
-        await coordinator._async_pair_on_live_link({})
+        await coordinator._async_pair_on_live_link({}, force_pairing=True)
     persist.assert_called_once()
     assert coordinator.entry.data[CONF_BLE_BOND_ESTABLISHED] is False
     assert coordinator.consume_internal_entry_update(coordinator.entry)
@@ -889,7 +925,7 @@ async def test_real_information_partial_progress_survives_terminal_failure_in_on
     with patch(f"{_MODULE}.async_verify_native_bond", return_value=_evidence(_LOCAL)), patch.object(
         coordinator, "_async_persist_config", wraps=coordinator._async_persist_config
     ) as persist, pytest.raises(expected_exception):
-        await coordinator._async_pair_on_live_link({}, onboarding_deadline=deadline)
+        await coordinator._async_pair_on_live_link({}, onboarding_deadline=deadline, force_pairing=True)
     persist.assert_called_once()
     expected = {**old_metadata, "model": "new model", "firmware": ""}
     if not failure.startswith("software_"):

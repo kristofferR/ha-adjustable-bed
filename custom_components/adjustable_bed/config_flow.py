@@ -903,6 +903,9 @@ def _vibradorm_app_data(
             data[key] = False
         data[CONF_VIBRADORM_FLOOR_DEFAULT] = 6
     else:
+        if not previous.get(CONF_VIBRADORM_RESTORED, False):
+            # The fresh profile's hidden default is not a retained preference.
+            data.pop(CONF_VIBRADORM_FLOOR_DEFAULT, None)
         data.setdefault(CONF_VIBRADORM_CONTROL_TYPE, "2")
         for key in (
             CONF_VIBRADORM_FLOOR_LIGHT, CONF_VIBRADORM_RGB,

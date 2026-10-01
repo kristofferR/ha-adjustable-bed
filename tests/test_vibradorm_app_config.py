@@ -220,6 +220,56 @@ async def test_two_address_pair_keeps_different_side_profiles(hass):
     assert not supports_single_address_pairing(const.BED_TYPE_VIBRADORM_APP)
 
 
+@pytest.mark.parametrize("options", [False, True])
+async def test_enabling_restored_form_recomputes_hidden_floor_default(hass, options):
+    from tests.test_vibradorm_app import make_controller, written
+
+    entry = MockConfigEntry(domain=const.DOMAIN, data=app_data(**{
+        const.CONF_VIBRADORM_FLOOR_DEFAULT: 6,
+    }))
+    if options:
+        entry.add_to_hass(hass)
+        flow = AdjustableBedOptionsFlow(entry)
+        flow.handler = entry.entry_id
+        step = flow.async_step_settings
+    else:
+        flow = AdjustableBedConfigFlow()
+        flow.context = {}
+        flow._manual_data = dict(entry.data)
+        step = flow.async_step_vibradorm_app
+    flow.hass = hass
+    fresh = await step()
+    assert fresh["type"] == FlowResultType.FORM
+    assert fresh["data_schema"] is not None
+    submitted = fresh["data_schema"]({})
+    assert isinstance(submitted, dict)
+    assert const.CONF_VIBRADORM_FLOOR_DEFAULT not in submitted
+    submitted[const.CONF_VIBRADORM_RESTORED] = True
+    restored = await step(submitted)
+    assert restored["type"] == FlowResultType.FORM
+    assert restored["data_schema"] is not None
+    selected = restored["data_schema"]({})
+    assert isinstance(selected, dict)
+    assert selected[const.CONF_VIBRADORM_FLOOR_DEFAULT] == 8
+    selected[const.CONF_VIBRADORM_FLOOR_LIGHT] = True
+    if options:
+        assert (await step(selected))["type"] == FlowResultType.CREATE_ENTRY
+    else:
+        with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as pairing:
+            await step(selected)
+        pairing.assert_awaited_once()
+        entry = MockConfigEntry(domain=const.DOMAIN, data=flow._manual_data)
+        entry.add_to_hass(hass)
+    assert entry.data[const.CONF_VIBRADORM_FLOOR_DEFAULT] == 8
+    runtime = AdjustableBedCoordinator(hass, entry)
+    client = make_controller(2).client
+    runtime._client = client
+    controller = await create_controller(runtime, const.BED_TYPE_VIBRADORM_APP, None, client)
+    assert isinstance(controller, VibradormAppController)
+    await controller.lights_toggle()
+    assert written(controller) == ["c80000"]
+
+
 @pytest.mark.parametrize("failure", [None, "information", "pair", "deadline", "cancel"])
 async def test_information_precedes_native_pair_and_shares_connection_deadline(hass, failure):
     flow = AdjustableBedConfigFlow()

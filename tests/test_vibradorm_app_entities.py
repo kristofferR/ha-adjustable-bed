@@ -10,6 +10,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.adjustable_bed.const import (
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_VIBRADORM_APP,
+    CONF_BED_TYPE,
     CONF_PAIR_ID,
     CONF_VIBRADORM_APP_PROFILE,
     CONF_VIBRADORM_CONTROL_TYPE,
@@ -91,6 +92,7 @@ async def floor_runtime(hass, app="caresse", control=2, *, floor=True, extension
     runtime.entry = MockConfigEntry(
         domain=DOMAIN,
         data={
+            CONF_BED_TYPE: BED_TYPE_VIBRADORM_APP,
             CONF_VIBRADORM_APP_PROFILE: app,
             CONF_VIBRADORM_CONTROL_TYPE: str(control),
             CONF_VIBRADORM_RESTORED: app == "caresse"
@@ -246,6 +248,28 @@ async def test_actual_floor_gate_is_independent_of_restored_mood_rgb(hass, floor
     assert bool(controller.controller_select_specs) is rgb
     assert not controller.supports_light_color_control
     assert not controller.supports_light_state_feedback
+
+
+@pytest.mark.parametrize("control", [2, 7])
+async def test_floor_capability_loss_removes_only_its_number_registry_entry(hass, control):
+    runtime, _ = await floor_runtime(hass, control=control, floor=False)
+    registry = er.async_get(hass)
+    unique_id = runtime.entity_unique_id("light_level")
+    stale = registry.async_get_or_create("number", DOMAIN, unique_id, config_entry=runtime.entry)
+    other_side = registry.async_get_or_create(
+        "number", DOMAIN, unique_id + "_right", config_entry=runtime.entry
+    )
+    other_platform = registry.async_get_or_create(
+        "number", "another_integration", unique_id, config_entry=runtime.entry
+    )
+    unrelated = registry.async_get_or_create(
+        "number", DOMAIN, runtime.entity_unique_id("unrelated"), config_entry=runtime.entry
+    )
+    numbers = _number_entities_for(hass, runtime)
+    assert not any(entity.entity_description.key == "light_level" for entity in numbers)
+    assert registry.async_get(stale.entity_id) is None
+    for kept in (other_side, other_platform, unrelated):
+        assert registry.async_get(kept.entity_id) is not None
 
 
 async def test_failed_public_floor_off_retains_last_publication_and_source_intent(hass):

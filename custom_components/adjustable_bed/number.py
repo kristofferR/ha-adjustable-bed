@@ -30,6 +30,7 @@ from .const import (
     BED_TYPE_SLEEPSTAR,
     BED_TYPE_SOLACE,
     BED_TYPE_SVANE,
+    BED_TYPE_VIBRADORM_APP,
     BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
@@ -467,7 +468,10 @@ def _number_entities_for(
             )
         )
     elif (
-        bed_type in (BED_TYPE_SOLACE, BED_TYPE_JIECANG_APP, BED_TYPE_SVANE, BED_TYPE_JENSEN)
+        bed_type in (
+            BED_TYPE_SOLACE, BED_TYPE_JIECANG_APP, BED_TYPE_SVANE,
+            BED_TYPE_JENSEN, BED_TYPE_VIBRADORM_APP,
+        )
         and controller is not None
     ):
         _async_remove_stale_level_entity(hass, coordinator, LIGHT_LEVEL_DESCRIPTION)
