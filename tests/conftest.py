@@ -110,9 +110,12 @@ def controller_mock() -> Callable[..., MagicMock]:
     return make_controller_mock
 
 
+_WORKER_MEMORY_BYTES = 512 * 1024 * 1024
+
+
 @pytest.hookimpl(tryfirst=True)
 def pytest_xdist_auto_num_workers(config: pytest.Config) -> int | None:
-    """Keep automatic local test parallelism laptop-friendly."""
+    """Size automatic parallelism to the machine's cores and free memory."""
     if config.option.numprocesses != "auto":
         return None
 
@@ -132,12 +135,24 @@ def pytest_xdist_auto_num_workers(config: pytest.Config) -> int | None:
 
     usable_workers = os.process_cpu_count() or 1
     physical_workers = psutil.cpu_count(logical=False) or usable_workers
-    detected_workers = min(physical_workers, usable_workers)
-    return min(detected_workers, 4)
+    # Workers peak around 450 MiB, so memory-starved laptops get fewer of them.
+    memory_workers = psutil.virtual_memory().available // _WORKER_MEMORY_BYTES
+    return max(1, min(physical_workers, usable_workers, memory_workers))
+
+
+@pytest.fixture(autouse=True)
+def _shorten_unanswered_probe_timeouts(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Expire discovery probes that mocked beds never answer.
+
+    Tests that deliver replies, or need a specific deadline, patch these again.
+    """
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.octo.OCTO_FEATURE_TIMEOUT", 0.01)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.rmcontrol._CAPABILITY_TIMEOUT", 0.01)
 
 
 @pytest.fixture(autouse=True)
 async def _shutdown_coordinators(
+    request: pytest.FixtureRequest,
     monkeypatch: pytest.MonkeyPatch,
     verify_cleanup: None,
 ) -> AsyncGenerator[None]:
@@ -147,14 +162,22 @@ async def _shutdown_coordinators(
     lingering-timer check in pytest-homeassistant-custom-component passes
     without each test having to disconnect manually. Depending on
     verify_cleanup orders this teardown before the lingering-timer check.
+
+    Also zeroes the connection retry backoff and post-connect settle delay so
+    mock connects do not sleep for real; mark a test ``real_connect_delays``
+    to keep the profile values.
     """
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
     instances: list[AdjustableBedCoordinator] = []
     original_init = AdjustableBedCoordinator.__init__
+    keep_delays = request.node.get_closest_marker("real_connect_delays") is not None
 
     def _tracking_init(self: AdjustableBedCoordinator, *args: object, **kwargs: object) -> None:
         original_init(self, *args, **kwargs)
+        if not keep_delays:
+            self._retry_base_delay = 0
+            self._post_connect_delay = 0
         instances.append(self)
 
     monkeypatch.setattr(AdjustableBedCoordinator, "__init__", _tracking_init)

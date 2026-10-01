@@ -157,7 +157,6 @@ class TestCoordinatorConnection:
         entry.add_to_hass(hass)
         coordinator = AdjustableBedCoordinator(hass, entry)
         coordinator._max_retries = 2
-        coordinator._retry_base_delay = 0
         reads = 0
 
         async def read_characteristic(_uuid):

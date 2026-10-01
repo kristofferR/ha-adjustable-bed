@@ -353,7 +353,6 @@ async def test_actual_rerouted_source_is_used_before_first_bond_and_dis_is_skipp
     coordinator: AdjustableBedCoordinator, mock_coordinator_connected, mock_bleak_client
 ) -> None:
     coordinator._client = None
-    coordinator._retry_base_delay = 0
     controller = make_controller_mock()
     controller.supports_position_feedback = False
     seen_paths: list[ConnectionPath | None] = []
@@ -384,7 +383,6 @@ async def test_connect_and_information_share_deadline_and_expiry_cleans_link(
 ) -> None:
     coordinator._client = None
     coordinator._max_retries = 1
-    coordinator._retry_base_delay = 0
     connection_deadline: float | None = None
 
     async def connect(*args, **kwargs):
@@ -1055,7 +1053,6 @@ async def test_established_reconnect_retains_connection_profile_budget(
         coordinator._persist_bond_flags(established=True)
     coordinator._client = None
     coordinator._max_retries = 1
-    coordinator._retry_base_delay = 0
     coordinator._connection_timeout = timeout
     device = BLEDevice(TEST_ADDRESS, TEST_NAME, {"source": path.source})
     adapter = AdapterSelectionResult(device, path.source, -50, True, [path.source])
@@ -1099,7 +1096,6 @@ async def test_established_selected_path_reroute_retains_original_onboarding_dea
         coordinator._persist_bond_flags(established=True)
     coordinator._client = None
     coordinator._max_retries = 1
-    coordinator._retry_base_delay = 0
     device = BLEDevice(TEST_ADDRESS, TEST_NAME, {"source": _LOCAL.source})
     adapter = AdapterSelectionResult(device, _LOCAL.source, -50, True, [_LOCAL.source])
     connection_started = 0.0
@@ -1170,7 +1166,6 @@ async def test_readable_absence_after_slow_reconnect_does_not_reset_onboarding_b
     coordinator._persist_bond_flags(established=True, context=build_bond_context(_evidence(_LOCAL, True)))
     coordinator._client = None
     coordinator._max_retries = 1
-    coordinator._retry_base_delay = 0
     device = BLEDevice(TEST_ADDRESS, TEST_NAME, {"source": _LOCAL.source})
     adapter = AdapterSelectionResult(device, _LOCAL.source, -50, True, [_LOCAL.source])
 

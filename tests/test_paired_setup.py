@@ -2614,6 +2614,8 @@ class TestPairBedsConversion:
         controller.start_notify.assert_awaited_once_with(None)
         controller.send_pin.assert_awaited_once_with()
         controller.start_keepalive.assert_awaited_once_with()
+        # Let teardown's shutdown disconnect instead of stalling for 5s.
+        client.disconnect.side_effect = None
 
     async def test_cancelled_pairing_release_bounds_original_restoration(
         self, hass: HomeAssistant
@@ -2678,6 +2680,8 @@ class TestPairBedsConversion:
         controller.start_notify.assert_awaited_once_with(None)
         controller.send_pin.assert_not_awaited()
         controller.start_keepalive.assert_not_awaited()
+        # Let teardown's shutdown disconnect instead of stalling for 5s.
+        client.disconnect.side_effect = None
 
     async def test_conversion_retries_contended_side_after_absorb(
         self,
