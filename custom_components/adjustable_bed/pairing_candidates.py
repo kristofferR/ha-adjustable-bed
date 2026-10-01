@@ -17,7 +17,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 
-from .const import DOMAIN
+from .const import BED_TYPE_STARCODE_M5X5, CONF_BED_TYPE, CONF_STARCODE_LIFT_ENTRIES, DOMAIN
 from .pairing import is_paired, pair_member_addresses
 
 CONF_PAIR_SELECTION = "pair_selection"
@@ -38,11 +38,25 @@ def active_pairing_candidates(hass: HomeAssistant) -> list[ConfigEntry]:
         for address in pair_member_addresses(entry.data)
     }
 
+    # Absorbing either a main or one of its lifts would invalidate stored entry
+    # references. Release the group selection before changing registry ownership.
+    group_members: set[str] = set()
+    for entry in entries:
+        lifts = entry.data.get(CONF_STARCODE_LIFT_ENTRIES)
+        if (
+            entry.data.get(CONF_BED_TYPE) == BED_TYPE_STARCODE_M5X5
+            and isinstance(lifts, (tuple, list))
+            and lifts
+        ):
+            group_members.add(entry.entry_id)
+            group_members.update(lift for lift in lifts if isinstance(lift, str))
+
     return [
         entry
         for entry in entries
         if entry.state is ConfigEntryState.LOADED
         and not is_paired(entry.data)
+        and entry.entry_id not in group_members
         and isinstance((address := entry.data.get(CONF_ADDRESS)), str)
         and address.upper() not in absorbed_addresses
     ]

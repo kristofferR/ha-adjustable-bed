@@ -62,3 +62,7 @@ The implementation is based on the frozen COMPLETE APK Protocol Audit reports fo
 
 Command direction and multi-device fan-out remain deferred real-hardware checks
 after beta/release; no APK-analysis gap remains.
+
+## AdjustableM5X5 app selection
+
+For AdjustableM5X5 1.2.3, select the dedicated [app profile](starcode-m5x5.md). It verifies the app's required firmware characteristic, exact session order and timing, and supports an independently addressed main plus three lifts. The generic Elevate route remains available for other app contracts.

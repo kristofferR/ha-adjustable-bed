@@ -25,6 +25,12 @@ BLUEPRINT_SOURCE = (
 
 
 @pytest.fixture
+def hass_config_dir(hass_tmp_config_dir: str) -> str:
+    """Keep blueprint installation private to each test and worker."""
+    return hass_tmp_config_dir
+
+
+@pytest.fixture
 def installed_blueprint(hass: HomeAssistant) -> None:
     """Install the shipped file where HA's blueprint loader will import it."""
     destination = Path(hass.config.path("blueprints/script", BLUEPRINT_PATH))
