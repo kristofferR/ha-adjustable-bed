@@ -81,13 +81,17 @@ async def test_quick_handoff_session_syncs_clock_before_the_first_alarm_write(
     mock_async_ble_device_from_address.return_value.name = "OKIN-112233"
     entry = _entry(hass, **{CONF_DISCONNECT_AFTER_COMMAND: True})
     coordinator = AdjustableBedCoordinator(hass, entry)
-    # Seed reported records so the alarm write needs no reply from the mock.
-    coordinator.controller_state.update(
-        {
-            "simmons_alarm_1_record": (6, 0, 0, 0, False),
-            "simmons_alarm_2_record": (8, 45, 132, 28, False),
-        }
-    )
+    original_write = simmons_client.write_gatt_char.side_effect
+
+    async def write_and_reply(char: object, data: bytes, response: bool = False) -> None:
+        await original_write(char, data, response)
+        if bytes(data) == bytes.fromhex("E1 80 03 9B"):
+            # The bed answers the link-time query, so this connection has fresh records.
+            coordinator.controller._handle_notification(
+                None, bytearray.fromhex("ED 80 03 06 00 00 00 08 2D 84 1C")
+            )
+
+    simmons_client.write_gatt_char.side_effect = write_and_reply
     with (
         patch("custom_components.adjustable_bed.beds.simmons.PAGE_QUERY_OFFSETS_S", (0, 0, 0)),
         patch("custom_components.adjustable_bed.beds.simmons.QUERY_GAP_S", 0),

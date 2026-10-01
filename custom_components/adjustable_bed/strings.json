@@ -4164,6 +4164,9 @@
     },
     "bundle_needs_side_for_paired": {
       "message": "{device_name} is a paired bed; pick one side's device to generate a support bundle."
+    },
+    "simmons_alarm_not_reported": {
+      "message": "The bed did not report both alarm records in this connection, so nothing was written. Try again, or press Refresh Alarms first."
     }
   },
   "issues": {

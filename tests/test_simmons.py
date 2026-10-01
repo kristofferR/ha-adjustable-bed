@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 from bleak.exc import BleakError
+from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.beds.simmons import (
     CUSTOM_MODE_WARNING,
@@ -396,6 +397,7 @@ def test_alarm_records_survive_controller_recreation():
 def _known(controller: SimmonsController, first: AlarmSlot, second: AlarmSlot) -> None:
     """A linked session: clock already synced and both records reported."""
     controller._slots = [first, second]
+    controller._fresh = [True, True]
     controller._clock_synced = True
 
 
@@ -531,7 +533,7 @@ async def test_alarm_state_must_be_reported_before_writing():
     controller._clock_synced = True
     with (
         patch("custom_components.adjustable_bed.beds.simmons.ALARM_REPLY_TIMEOUT_S", 0),
-        pytest.raises(ValueError, match="did not report"),
+        pytest.raises(ServiceValidationError, match="did not report"),
     ):
         await controller.configure_simmons_alarm(slot=1, enabled=False)
     assert written(controller) == ["E1 80 03 9B"]
@@ -558,6 +560,7 @@ async def test_failed_session_clock_is_synced_before_an_alarm_write():
         await controller.start_notify(None)  # Setup still succeeds.
         assert not controller._clock_synced
         controller._slots = [AlarmSlot(6, 0, 0, 0, False), AlarmSlot(8, 45, 132, 28, False)]
+        controller._fresh = [True, True]
         await controller.configure_simmons_alarm(slot=1, enabled=False)
     frames = written(controller)
     assert frames[1].startswith("E7 80 01") and frames[2].startswith("ED 80 03")
@@ -695,3 +698,62 @@ def test_session_end_publishes_cleared_awaiting_flags():
     state = controller._coordinator.controller_state
     assert state["simmons_alarm_1_awaiting_reply"] is False
     assert state["simmons_alarm_2_awaiting_reply"] is False
+
+
+async def test_restored_records_are_requeried_and_an_external_change_wins():
+    # Records restored from before a reconnect: the other alarm was disabled.
+    state = {
+        "simmons_alarm_1_record": (6, 0, 0, 0, False),
+        "simmons_alarm_2_record": (8, 45, 132, 28, False),
+    }
+    controller = make_controller(state=state)
+    await controller.async_discover_capabilities()
+    controller._clock_synced = True
+    assert controller._slots[1] == AlarmSlot(8, 45, 132, 28, False)  # Shown, not trusted.
+
+    async def reply(_char: object, data: bytes, response: bool) -> None:
+        if data == bytes.fromhex("E1 80 03 9B"):
+            # Meanwhile the app enabled alarm 2 at 09:15 in anti-snore.
+            notify(controller, "ED 80 03 06 00 00 00 09 0F 84 10")
+
+    controller.client.write_gatt_char.side_effect = reply
+    with patch("asyncio.sleep", new=AsyncMock()):
+        await controller.configure_simmons_alarm(
+            slot=1, enabled=True, hour=7, minute=30, weekdays=[0], mode="flat"
+        )
+    assert written(controller)[:2] == [
+        "E1 80 03 9B",
+        # The peer record is the fresh one, so the external change survives.
+        p1_alarm_frame([7, 30, 130, 28], [9, 15, 132, 16]).hex(" ").upper(),
+    ]
+
+
+async def test_restored_records_without_a_fresh_reply_refuse_the_write():
+    state = {
+        "simmons_alarm_1_record": (6, 0, 0, 0, False),
+        "simmons_alarm_2_record": (8, 45, 132, 28, False),
+    }
+    controller = make_controller(state=state)
+    await controller.async_discover_capabilities()
+    controller._clock_synced = True
+    with (
+        patch("custom_components.adjustable_bed.beds.simmons.ALARM_REPLY_TIMEOUT_S", 0),
+        pytest.raises(ServiceValidationError) as error,
+    ):
+        await controller.check_simmons_alarm(slot=1, enabled=False)
+    assert error.value.translation_key == "simmons_alarm_not_reported"
+    assert written(controller) == ["E1 80 03 9B"]  # The query only; nothing programmed.
+
+
+async def test_smartbed_needs_a_fresh_reply_for_each_slot():
+    controller = make_controller(name="SmartBed1")
+    await controller.async_discover_capabilities()
+    controller._clock_synced = True
+    notify(controller, "A5 0C 0E 00 00 00 00 00 00 00")  # Only slot 1 reports.
+    with (
+        patch("asyncio.sleep", new=AsyncMock()),
+        patch("custom_components.adjustable_bed.beds.simmons.ALARM_REPLY_TIMEOUT_S", 0),
+        pytest.raises(ServiceValidationError),
+    ):
+        await controller.configure_simmons_alarm(slot=1, enabled=False)
+    assert written(controller) == ["00 C0", "00 D0"]

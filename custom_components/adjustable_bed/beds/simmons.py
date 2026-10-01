@@ -17,10 +17,12 @@ from dataclasses import replace
 from typing import TYPE_CHECKING, Final
 
 from bleak.exc import BleakError
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.util import dt as dt_util
 
 from ..const import (
     CONF_BLE_DEVICE_NAME,
+    DOMAIN,
     SIMMONS_VARIANT_INCLINED,
     SIMMONS_VARIANT_INCLINED_OKIN,
     SIMMONS_VARIANT_INCLINED_SMARTBED,
@@ -172,6 +174,8 @@ class SimmonsController(BedController):
         self._assembler = NotificationAssembler()
         self._pending_record: bytes | None = None
         self._awaiting = [False, False]
+        # Which slots were reported on this connection (this controller is per connection).
+        self._fresh = [False, False]
         self._reply = asyncio.Event()
         self._clock_synced = False  # Per connection: this controller is per session.
         # Alarm records live in coordinator state so they survive the
@@ -605,20 +609,29 @@ class SimmonsController(BedController):
             raise ValueError(CUSTOM_MODE_WARNING)
 
     async def _ensure_alarm_state(self) -> tuple[AlarmSlot, AlarmSlot]:
-        """Query the bed when this HA run has no alarm records yet."""
-        if None in self._slots:
+        """Return both records as reported in this connection, querying if needed.
+
+        Restored records may be stale (the app can change an alarm while HA is
+        away), so they are shown but never feed a conflict check or the peer
+        record of a write.
+        """
+        if not all(self._fresh):
             self._reply.clear()
             await self._query_once()
             try:
                 async with asyncio.timeout(ALARM_REPLY_TIMEOUT_S):
-                    while None in self._slots:
+                    while not all(self._fresh):
                         await self._reply.wait()
                         self._reply.clear()
             except TimeoutError:
                 pass
         first, second = self._slots
-        if first is None or second is None:
-            raise ValueError("The bed did not report its alarm records; try Refresh Alarms")
+        if not all(self._fresh) or first is None or second is None:
+            raise ServiceValidationError(
+                "The bed did not report both alarm records in this connection; nothing was written",
+                translation_domain=DOMAIN,
+                translation_key="simmons_alarm_not_reported",
+            )
         return first, second
 
     async def check_simmons_alarm(
@@ -739,6 +752,7 @@ class SimmonsController(BedController):
             reports = parse_p1_alarm(message)
             if reports is None:
                 return  # Truncated replies are rejected whole.
+            self._fresh = [True, True]
             for report in reports:
                 self._slots[report.slot - 1] = apply_report(
                     report, self._slots[report.slot - 1], "okin"
@@ -751,6 +765,7 @@ class SimmonsController(BedController):
                 report, self._slots[report.slot - 1], "smartbed"
             )
             self._awaiting[report.slot - 1] = False
+            self._fresh[report.slot - 1] = True
         self._publish_slots()
         self._reply.set()
 
