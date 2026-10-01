@@ -54,14 +54,20 @@ CONF_MOTOR_COUNT: Final = "motor_count"
 CONF_VIBRADORM_APP_PROFILE: Final = "vibradorm_app_profile"
 CONF_VIBRADORM_APP_METADATA: Final = "vibradorm_app_metadata"
 CONF_VIBRADORM_CONTROL_TYPE: Final = "vibradorm_control_type"
+CONF_VIBRADORM_VMAT_REMOTE: Final = "vibradorm_vmat_remote"
 CONF_VIBRADORM_RESTORED: Final = "vibradorm_restored"
 CONF_VIBRADORM_FLOOR_LIGHT: Final = "vibradorm_floor_light"
 CONF_VIBRADORM_FLOOR_DEFAULT: Final = "vibradorm_floor_default"
 CONF_VIBRADORM_RGB: Final = "vibradorm_rgb"
 CONF_VIBRADORM_MASSAGE: Final = "vibradorm_massage"
 CONF_VIBRADORM_LIGHT_EXTENSION: Final = "vibradorm_light_extension"
-VIBRADORM_APP_PROFILES: Final = {"caresse": "Caresse Diamant", "werkmeister": "Werkmeister"}
+VIBRADORM_APP_PROFILES: Final = {
+    "caresse": "Caresse Diamant", "werkmeister": "Werkmeister", "vmat": "VMAT",
+}
 VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS: Final = 10.0
+# HA operation budget includes the app's bounded queries and native OS pairing.
+# It is not an app/device pairing timing claim.
+VIBRADORM_VMAT_ONBOARDING_TIMEOUT_SECONDS: Final = 45.0
 VIBRADORM_WERKMEISTER_CONTROLS: Final = {
     "5": "BF 11/21/374 VI remote (back and legs)",
     "7": "CF 17/21/382 VI remote (head, back, legs and feet)",
@@ -82,6 +88,7 @@ VIBRADORM_APP_CONFIG_KEYS: Final = frozenset({
     CONF_VIBRADORM_APP_PROFILE, CONF_VIBRADORM_CONTROL_TYPE, CONF_VIBRADORM_RESTORED,
     CONF_VIBRADORM_FLOOR_LIGHT, CONF_VIBRADORM_RGB, CONF_VIBRADORM_MASSAGE,
     CONF_VIBRADORM_LIGHT_EXTENSION, CONF_VIBRADORM_FLOOR_DEFAULT,
+    CONF_VIBRADORM_VMAT_REMOTE,
 })
 CONF_LEGGETT_APP_PROFILE: Final = "leggett_app_profile"
 LEGGETT_APP_DEFAULT_PROFILE: Final = "prodigy4"

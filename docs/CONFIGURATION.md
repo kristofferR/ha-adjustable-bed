@@ -353,6 +353,7 @@ retain their legacy profile unless you explicitly change it.
 | FurniMove / OKIN Smart Remote app | Required exact handset ID; table-derived motors and massage, fixed 100 ms refresh | [FurniMove](beds/furnimove.md) |
 | Jordan's Serenity app | Explicit app selection; two named axes and literal remote selectors 4/5, fixed 100 ms refresh | [Serenity](beds/serenity.md) |
 | Caresse / Werkmeister apps | Explicit app and remote profile; Caresse retained settings and feature flags | [Caresse / Werkmeister](beds/vibradorm_app.md) |
+| VMAT app | Explicit app and exact shipped remote ordinal; remote-derived features | [VMAT](beds/vmat.md) |
 | Legacy OKIN CB24 | Both sides (default), Side A / Left, or Side B / Right | [Single-address controls](#single-address-left--right-controls) |
 
 For two-address pairs, device-specific app/product selections belong to each
@@ -400,6 +401,18 @@ profile's fixed refresh and release behavior. First onboarding shares one
 10-second connection, information and native pairing deadline. Local stored
 bonds require exact-adapter BlueZ evidence; a successful proxy pairing request
 remains unverified. App metadata is diagnostic information, not bond proof.
+
+### VMAT app profile
+
+Choose **VMAT** in the explicit app controller and select the same remote
+ordinal as the app. Its fourteen shipped selections derive the logical axes,
+memory, sync, floor, mood and massage controls. Independent feature overrides
+and inferred product identification are unavailable. Setup requires positive
+native bond evidence for the exact address and actual host adapter; an
+unverified proxy pairing request cannot finish setup. Ordinary sessions do not
+send onboarding queries or position polls. Accessory state is assumed local
+intent, preserved during the current HA process and rolled back on failed
+writes. See the [complete VMAT contract](beds/vmat.md).
 Configure each physical side separately before combining a two-address pair.
 
 ### Octo PIN

@@ -40,6 +40,7 @@ from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_
 from .paired_coordinator import PairedBedCoordinator
 from .redaction import redact_data
 from .vibradorm_app_discovery import manufacturer_discovery_diagnostics
+from .vibradorm_vmat_discovery import vmat_manufacturer_diagnostics
 
 
 def _normalize_ble_address(value: Any) -> str | None:
@@ -96,6 +97,10 @@ async def _async_paired_diagnostics(
                     service_info.manufacturer_data if service_info else {}
                 ),
             }
+            if child.entry.data.get("vibradorm_app_profile") == "vmat":
+                sides[side]["advertisement"]["vmat_discovery"] = vmat_manufacturer_diagnostics(
+                    service_info.manufacturer_data if service_info else {}
+                )
 
     data: dict[str, Any] = {
         "integration_version": integration.version,
@@ -230,6 +235,10 @@ async def async_get_config_entry_diagnostics(
             service_info.manufacturer_data if service_info else {}
         )
         advertisement_info["available"] = service_info is not None
+        if entry.data.get("vibradorm_app_profile") == "vmat":
+            advertisement_info["vmat_discovery"] = vmat_manufacturer_diagnostics(
+                service_info.manufacturer_data if service_info else {}
+            )
 
     # Include only auto-detections tied to this config entry. The backing log is
     # global, so exposing it wholesale would leak unrelated nearby BLE devices.

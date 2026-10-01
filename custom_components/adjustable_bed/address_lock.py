@@ -31,11 +31,14 @@ from __future__ import annotations
 
 import asyncio
 from types import TracebackType
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
+
+if TYPE_CHECKING:
+    from bleak import BleakClient
 
 _LOCKS_KEY: Final = f"{DOMAIN}_connect_locks"
 
@@ -52,6 +55,38 @@ class ReentrantAddressLock:
         self._lock = asyncio.Lock()
         self._owner: asyncio.Task[object] | None = None
         self._depth = 0
+        self._retained_setup_client: BleakClient | None = None
+
+    @property
+    def retained_setup_client(self) -> BleakClient | None:
+        """Return the failed setup owner until native closure is observed."""
+        client = self._retained_setup_client
+        if client is not None and not client.is_connected:
+            self._retained_setup_client = None
+            return None
+        return client
+
+    def retain_setup_client(self, client: BleakClient) -> None:
+        """Transfer a terminal failed setup link to this HA-owned address."""
+        prior = self.retained_setup_client
+        if prior is not None and prior is not client:
+            raise ConnectionError("A failed setup connection still owns this address")
+        if client.is_connected:
+            self._retained_setup_client = client
+
+    async def async_release_setup_client(self) -> None:
+        """Try the exact retained owner's disconnect, without opening a link."""
+        await self._acquire(allow_retained=True)
+        try:
+            client = self.retained_setup_client
+            if client is not None:
+                try:
+                    await client.disconnect()
+                finally:
+                    # A successful return alone does not prove native closure.
+                    _ = self.retained_setup_client
+        finally:
+            self.release()
 
     def locked(self) -> bool:
         """Return True while any task holds the lock."""
@@ -59,11 +94,19 @@ class ReentrantAddressLock:
 
     async def acquire(self) -> None:
         """Acquire the lock, or re-enter it when this task already owns it."""
+        await self._acquire(allow_retained=False)
+
+    async def _acquire(self, *, allow_retained: bool) -> None:
         task = asyncio.current_task()
         if self._owner is not None and self._owner is task:
+            if not allow_retained and self.retained_setup_client is not None:
+                raise ConnectionError("A failed setup connection still owns this address")
             self._depth += 1
             return
         await self._lock.acquire()
+        if not allow_retained and self.retained_setup_client is not None:
+            self._lock.release()
+            raise ConnectionError("A failed setup connection still owns this address")
         self._owner = task
         self._depth = 1
 

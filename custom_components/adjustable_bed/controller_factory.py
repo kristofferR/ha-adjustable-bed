@@ -110,6 +110,7 @@ from .const import (
     CONF_VIBRADORM_MASSAGE,
     CONF_VIBRADORM_RESTORED,
     CONF_VIBRADORM_RGB,
+    CONF_VIBRADORM_VMAT_REMOTE,
     DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
     DEWERTOKIN_RF_GATEWAY_MODEL,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
@@ -602,10 +603,13 @@ async def create_controller(
             raise ValueError("Invalid retained Vibradorm control type")
         restored = entry_data.get(CONF_VIBRADORM_RESTORED, False)
         missing_default = 6 if not restored or entry_data.get(CONF_VIBRADORM_LIGHT_EXTENSION) else 8
+        if entry_data[CONF_VIBRADORM_APP_PROFILE] == "vmat":
+            missing_default = 6 if entry_data.get(CONF_VIBRADORM_LIGHT_EXTENSION) else 8
         intent = get_vibradorm_app_session_intent(
             coordinator.hass, coordinator.address,
             app_profile=entry_data[CONF_VIBRADORM_APP_PROFILE], control_type=control_type,
             remembered_floor_default=entry_data.get(CONF_VIBRADORM_FLOOR_DEFAULT, missing_default),
+            remote=entry_data.get(CONF_VIBRADORM_VMAT_REMOTE),
         )
         return VibradormAppController(
             coordinator,
@@ -618,6 +622,9 @@ async def create_controller(
             light_extension=entry_data.get(CONF_VIBRADORM_LIGHT_EXTENSION, False),
             floor_intent=intent.floor,
             timer_intent=intent.timer,
+            remote=entry_data.get(CONF_VIBRADORM_VMAT_REMOTE),
+            massage_intent=intent.massage if entry_data[CONF_VIBRADORM_APP_PROFILE] == "vmat" else None,
+            mood_intent=intent.mood if entry_data[CONF_VIBRADORM_APP_PROFILE] == "vmat" else None,
         )
 
     if bed_type == BED_TYPE_JIECANG_APP:

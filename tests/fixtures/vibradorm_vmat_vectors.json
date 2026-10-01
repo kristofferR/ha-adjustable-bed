@@ -1,0 +1,1628 @@
+{
+  "source": "de.vibradorm.vmat 1.11 (49), accepted repair-001",
+  "vectors": [
+    {
+      "id": "V076",
+      "action": "massage",
+      "inputs": {
+        "kind": "massage",
+        "basic": false,
+        "toggle": 0,
+        "effect": 0,
+        "speed": 3,
+        "zone1": 2,
+        "zone2": 5,
+        "timer": 0
+      },
+      "expected_bytes": "10 30 00 03 02 05 00 00 00 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "V077",
+      "action": "massage",
+      "inputs": {
+        "kind": "massage",
+        "basic": false,
+        "toggle": 0,
+        "effect": 1,
+        "speed": 3,
+        "zone1": 2,
+        "zone2": 5,
+        "timer": 0
+      },
+      "expected_bytes": "10 30 01 03 02 05 00 00 00 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "V078",
+      "action": "massage",
+      "inputs": {
+        "kind": "massage",
+        "basic": false,
+        "toggle": 0,
+        "effect": 2,
+        "speed": 3,
+        "zone1": 2,
+        "zone2": 5,
+        "timer": 0
+      },
+      "expected_bytes": "10 30 02 03 02 05 00 00 00 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "V079",
+      "action": "massage",
+      "inputs": {
+        "kind": "massage",
+        "basic": false,
+        "toggle": 0,
+        "effect": 3,
+        "speed": 3,
+        "zone1": 2,
+        "zone2": 5,
+        "timer": 0
+      },
+      "expected_bytes": "10 30 03 03 02 05 00 00 00 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "V080",
+      "action": "massage",
+      "inputs": {
+        "kind": "massage",
+        "basic": false,
+        "toggle": 0,
+        "effect": 4,
+        "speed": 3,
+        "zone1": 2,
+        "zone2": 5,
+        "timer": 0
+      },
+      "expected_bytes": "10 30 04 03 02 05 00 00 00 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "V157",
+      "action": "massage",
+      "inputs": {
+        "kind": "massage",
+        "basic": false,
+        "toggle": 32768,
+        "effect": 0,
+        "speed": 3,
+        "zone1": 2,
+        "zone2": 5,
+        "timer": 0
+      },
+      "expected_bytes": "90 30 00 03 02 05 00 00 00 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "V158",
+      "action": "massage",
+      "inputs": {
+        "kind": "massage",
+        "basic": false,
+        "toggle": 32768,
+        "effect": 1,
+        "speed": 3,
+        "zone1": 2,
+        "zone2": 5,
+        "timer": 0
+      },
+      "expected_bytes": "90 30 01 03 02 05 00 00 00 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "V159",
+      "action": "massage",
+      "inputs": {
+        "kind": "massage",
+        "basic": false,
+        "toggle": 32768,
+        "effect": 2,
+        "speed": 3,
+        "zone1": 2,
+        "zone2": 5,
+        "timer": 0
+      },
+      "expected_bytes": "90 30 02 03 02 05 00 00 00 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "V160",
+      "action": "massage",
+      "inputs": {
+        "kind": "massage",
+        "basic": false,
+        "toggle": 32768,
+        "effect": 3,
+        "speed": 3,
+        "zone1": 2,
+        "zone2": 5,
+        "timer": 0
+      },
+      "expected_bytes": "90 30 03 03 02 05 00 00 00 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "V161",
+      "action": "massage",
+      "inputs": {
+        "kind": "massage",
+        "basic": false,
+        "toggle": 32768,
+        "effect": 4,
+        "speed": 3,
+        "zone1": 2,
+        "zone2": 5,
+        "timer": 0
+      },
+      "expected_bytes": "90 30 04 03 02 05 00 00 00 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "V238",
+      "action": "massage",
+      "inputs": {
+        "kind": "massage",
+        "basic": true,
+        "toggle": 0,
+        "effect": 0,
+        "speed": 3,
+        "zone1": 2,
+        "zone2": 5,
+        "timer": 0
+      },
+      "expected_bytes": "00 30 00 03 02 05 00 00 00 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "V239",
+      "action": "massage",
+      "inputs": {
+        "kind": "massage",
+        "basic": true,
+        "toggle": 0,
+        "effect": 1,
+        "speed": 3,
+        "zone1": 2,
+        "zone2": 5,
+        "timer": 0
+      },
+      "expected_bytes": "00 30 01 03 02 05 00 00 00 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "V240",
+      "action": "massage",
+      "inputs": {
+        "kind": "massage",
+        "basic": true,
+        "toggle": 0,
+        "effect": 2,
+        "speed": 3,
+        "zone1": 2,
+        "zone2": 5,
+        "timer": 0
+      },
+      "expected_bytes": "00 30 02 03 02 05 00 00 00 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "V241",
+      "action": "massage",
+      "inputs": {
+        "kind": "massage",
+        "basic": true,
+        "toggle": 0,
+        "effect": 3,
+        "speed": 3,
+        "zone1": 2,
+        "zone2": 5,
+        "timer": 0
+      },
+      "expected_bytes": "00 30 03 03 02 05 00 00 00 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "V242",
+      "action": "massage",
+      "inputs": {
+        "kind": "massage",
+        "basic": true,
+        "toggle": 0,
+        "effect": 4,
+        "speed": 3,
+        "zone1": 2,
+        "zone2": 5,
+        "timer": 0
+      },
+      "expected_bytes": "00 30 04 03 02 05 00 00 00 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "V319",
+      "action": "massage",
+      "inputs": {
+        "kind": "massage",
+        "basic": true,
+        "toggle": 32768,
+        "effect": 0,
+        "speed": 3,
+        "zone1": 2,
+        "zone2": 5,
+        "timer": 0
+      },
+      "expected_bytes": "80 30 00 03 02 05 00 00 00 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "V320",
+      "action": "massage",
+      "inputs": {
+        "kind": "massage",
+        "basic": true,
+        "toggle": 32768,
+        "effect": 1,
+        "speed": 3,
+        "zone1": 2,
+        "zone2": 5,
+        "timer": 0
+      },
+      "expected_bytes": "80 30 01 03 02 05 00 00 00 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "V321",
+      "action": "massage",
+      "inputs": {
+        "kind": "massage",
+        "basic": true,
+        "toggle": 32768,
+        "effect": 2,
+        "speed": 3,
+        "zone1": 2,
+        "zone2": 5,
+        "timer": 0
+      },
+      "expected_bytes": "80 30 02 03 02 05 00 00 00 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "V322",
+      "action": "massage",
+      "inputs": {
+        "kind": "massage",
+        "basic": true,
+        "toggle": 32768,
+        "effect": 3,
+        "speed": 3,
+        "zone1": 2,
+        "zone2": 5,
+        "timer": 0
+      },
+      "expected_bytes": "80 30 03 03 02 05 00 00 00 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "V323",
+      "action": "massage",
+      "inputs": {
+        "kind": "massage",
+        "basic": true,
+        "toggle": 32768,
+        "effect": 4,
+        "speed": 3,
+        "zone1": 2,
+        "zone2": 5,
+        "timer": 0
+      },
+      "expected_bytes": "80 30 04 03 02 05 00 00 00 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-12-00",
+      "action": "mood palette0 remote12",
+      "inputs": {
+        "palette_index": 0,
+        "signed_ARGB": -16741888,
+        "basic": true,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "00 77 01 00 00 8a 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-12-01",
+      "action": "mood palette1 remote12",
+      "inputs": {
+        "palette_index": 1,
+        "signed_ARGB": -16733271,
+        "basic": true,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "00 77 01 00 00 aa a8",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-12-02",
+      "action": "mood palette2 remote12",
+      "inputs": {
+        "palette_index": 2,
+        "signed_ARGB": -14966302,
+        "basic": true,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "00 77 01 00 1a a1 e2",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-12-03",
+      "action": "mood palette3 remote12",
+      "inputs": {
+        "palette_index": 3,
+        "signed_ARGB": -16756497,
+        "basic": true,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "00 77 01 00 00 50 ee",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-12-04",
+      "action": "mood palette4 remote12",
+      "inputs": {
+        "palette_index": 4,
+        "signed_ARGB": -9830145,
+        "basic": true,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "00 77 01 00 6a 00 ff",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-12-05",
+      "action": "mood palette5 remote12",
+      "inputs": {
+        "palette_index": 5,
+        "signed_ARGB": -5635841,
+        "basic": true,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "00 77 01 00 aa 00 ff",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-12-06",
+      "action": "mood palette6 remote12",
+      "inputs": {
+        "palette_index": 6,
+        "signed_ARGB": -757040,
+        "basic": true,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "00 77 01 00 f4 72 d0",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-12-07",
+      "action": "mood palette7 remote12",
+      "inputs": {
+        "palette_index": 7,
+        "signed_ARGB": -2621325,
+        "basic": true,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "00 77 01 00 d8 00 73",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-12-08",
+      "action": "mood palette8 remote12",
+      "inputs": {
+        "palette_index": 8,
+        "signed_ARGB": -6160347,
+        "basic": true,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "00 77 01 00 a2 00 24",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-12-09",
+      "action": "mood palette9 remote12",
+      "inputs": {
+        "palette_index": 9,
+        "signed_ARGB": -1764352,
+        "basic": true,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "00 77 01 00 e5 13 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-12-10",
+      "action": "mood palette10 remote12",
+      "inputs": {
+        "palette_index": 10,
+        "signed_ARGB": -366592,
+        "basic": true,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "00 77 01 00 fa 68 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-12-11",
+      "action": "mood palette11 remote12",
+      "inputs": {
+        "palette_index": 11,
+        "signed_ARGB": -1006838,
+        "basic": true,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "00 77 01 00 ef a2 09",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-12-12",
+      "action": "mood palette12 remote12",
+      "inputs": {
+        "palette_index": 12,
+        "signed_ARGB": -1849344,
+        "basic": true,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "00 77 01 00 e3 c8 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-12-13",
+      "action": "mood palette13 remote12",
+      "inputs": {
+        "palette_index": 13,
+        "signed_ARGB": -8234452,
+        "basic": true,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "00 77 01 00 82 5a 2c",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-12-14",
+      "action": "mood palette14 remote12",
+      "inputs": {
+        "palette_index": 14,
+        "signed_ARGB": -9599132,
+        "basic": true,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "00 77 01 00 6d 87 64",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-12-15",
+      "action": "mood palette15 remote12",
+      "inputs": {
+        "palette_index": 15,
+        "signed_ARGB": -10193273,
+        "basic": true,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "00 77 01 00 64 76 87",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-12-16",
+      "action": "mood palette16 remote12",
+      "inputs": {
+        "palette_index": 16,
+        "signed_ARGB": -9015158,
+        "basic": true,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "00 77 01 00 76 70 8a",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-12-17",
+      "action": "mood palette17 remote12",
+      "inputs": {
+        "palette_index": 17,
+        "signed_ARGB": -1,
+        "basic": true,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "00 77 01 00 ff ff ff",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-13-00",
+      "action": "mood palette0 remote13",
+      "inputs": {
+        "palette_index": 0,
+        "signed_ARGB": -16741888,
+        "basic": false,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "10 77 01 00 00 8a 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-13-01",
+      "action": "mood palette1 remote13",
+      "inputs": {
+        "palette_index": 1,
+        "signed_ARGB": -16733271,
+        "basic": false,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "10 77 01 00 00 aa a8",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-13-02",
+      "action": "mood palette2 remote13",
+      "inputs": {
+        "palette_index": 2,
+        "signed_ARGB": -14966302,
+        "basic": false,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "10 77 01 00 1a a1 e2",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-13-03",
+      "action": "mood palette3 remote13",
+      "inputs": {
+        "palette_index": 3,
+        "signed_ARGB": -16756497,
+        "basic": false,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "10 77 01 00 00 50 ee",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-13-04",
+      "action": "mood palette4 remote13",
+      "inputs": {
+        "palette_index": 4,
+        "signed_ARGB": -9830145,
+        "basic": false,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "10 77 01 00 6a 00 ff",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-13-05",
+      "action": "mood palette5 remote13",
+      "inputs": {
+        "palette_index": 5,
+        "signed_ARGB": -5635841,
+        "basic": false,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "10 77 01 00 aa 00 ff",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-13-06",
+      "action": "mood palette6 remote13",
+      "inputs": {
+        "palette_index": 6,
+        "signed_ARGB": -757040,
+        "basic": false,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "10 77 01 00 f4 72 d0",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-13-07",
+      "action": "mood palette7 remote13",
+      "inputs": {
+        "palette_index": 7,
+        "signed_ARGB": -2621325,
+        "basic": false,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "10 77 01 00 d8 00 73",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-13-08",
+      "action": "mood palette8 remote13",
+      "inputs": {
+        "palette_index": 8,
+        "signed_ARGB": -6160347,
+        "basic": false,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "10 77 01 00 a2 00 24",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-13-09",
+      "action": "mood palette9 remote13",
+      "inputs": {
+        "palette_index": 9,
+        "signed_ARGB": -1764352,
+        "basic": false,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "10 77 01 00 e5 13 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-13-10",
+      "action": "mood palette10 remote13",
+      "inputs": {
+        "palette_index": 10,
+        "signed_ARGB": -366592,
+        "basic": false,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "10 77 01 00 fa 68 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-13-11",
+      "action": "mood palette11 remote13",
+      "inputs": {
+        "palette_index": 11,
+        "signed_ARGB": -1006838,
+        "basic": false,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "10 77 01 00 ef a2 09",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-13-12",
+      "action": "mood palette12 remote13",
+      "inputs": {
+        "palette_index": 12,
+        "signed_ARGB": -1849344,
+        "basic": false,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "10 77 01 00 e3 c8 00",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-13-13",
+      "action": "mood palette13 remote13",
+      "inputs": {
+        "palette_index": 13,
+        "signed_ARGB": -8234452,
+        "basic": false,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "10 77 01 00 82 5a 2c",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-13-14",
+      "action": "mood palette14 remote13",
+      "inputs": {
+        "palette_index": 14,
+        "signed_ARGB": -9599132,
+        "basic": false,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "10 77 01 00 6d 87 64",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-13-15",
+      "action": "mood palette15 remote13",
+      "inputs": {
+        "palette_index": 15,
+        "signed_ARGB": -10193273,
+        "basic": false,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "10 77 01 00 64 76 87",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-13-16",
+      "action": "mood palette16 remote13",
+      "inputs": {
+        "palette_index": 16,
+        "signed_ARGB": -9015158,
+        "basic": false,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "10 77 01 00 76 70 8a",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "UI-color-13-17",
+      "action": "mood palette17 remote13",
+      "inputs": {
+        "palette_index": 17,
+        "signed_ARGB": -1,
+        "basic": false,
+        "T": 0,
+        "brightness": 100
+      },
+      "expected_bytes": "10 77 01 00 ff ff ff",
+      "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "id": "INIT-0",
+      "action": "XMC_STATUS",
+      "inputs": {
+        "onboarding_stage": "XMC_STATUS"
+      },
+      "expected_bytes": "01 b3 4c 01"
+    },
+    {
+      "id": "INIT-1",
+      "action": "OPMODE",
+      "inputs": {
+        "onboarding_stage": "OPMODE"
+      },
+      "expected_bytes": "01 b3 f4 01"
+    },
+    {
+      "id": "INIT-2",
+      "action": "INFO_ID_ARTIKEL",
+      "inputs": {
+        "onboarding_stage": "INFO_ID_ARTIKEL"
+      },
+      "expected_bytes": "01 a0 c8"
+    },
+    {
+      "id": "INIT-3",
+      "action": "INFO_ID_NAME",
+      "inputs": {
+        "onboarding_stage": "INFO_ID_NAME"
+      },
+      "expected_bytes": "01 a0 c9"
+    },
+    {
+      "id": "INIT-4",
+      "action": "REV_ID",
+      "inputs": {
+        "onboarding_stage": "REV_ID"
+      },
+      "expected_bytes": "01 a0 ca 00"
+    },
+    {
+      "id": "INIT-5",
+      "action": "REV_STRING",
+      "inputs": {
+        "onboarding_stage": "REV_STRING"
+      },
+      "expected_bytes": "01 a0 ca"
+    },
+    {
+      "id": "INIT-6",
+      "action": "VARIANT",
+      "inputs": {
+        "onboarding_stage": "VARIANT"
+      },
+      "expected_bytes": "01 a0 cc"
+    }
+  ],
+  "parsers": {
+    "manufacturer": [
+      {
+        "input": "b0 03 ba be 01 02",
+        "expected": [
+          944,
+          47806,
+          3,
+          0,
+          1,
+          0,
+          1,
+          2
+        ]
+      },
+      {
+        "input": "b0 03 00 00 80 fe",
+        "expected": [
+          944,
+          0,
+          4,
+          8,
+          1,
+          1,
+          0,
+          -2
+        ]
+      },
+      {
+        "input": "b0 03 10 00 00 02",
+        "expected": [
+          944,
+          1,
+          5,
+          0,
+          1,
+          0,
+          0,
+          2
+        ]
+      },
+      {
+        "input": "ff ff ba be 10 01",
+        "expected": [
+          65535,
+          47806,
+          3,
+          16,
+          1,
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "input": "12 34 00 00 00 00",
+        "expected": [
+          13330,
+          0,
+          -1,
+          -1,
+          0,
+          0,
+          -1,
+          -1
+        ]
+      }
+    ],
+    "save_sequences": [
+      {
+        "slot": 1,
+        "toggle": 0,
+        "frames": [
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0e"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          }
+        ]
+      },
+      {
+        "slot": 2,
+        "toggle": 0,
+        "frames": [
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0f"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          }
+        ]
+      },
+      {
+        "slot": 3,
+        "toggle": 0,
+        "frames": [
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0c"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          }
+        ]
+      },
+      {
+        "slot": 4,
+        "toggle": 0,
+        "frames": [
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 1a"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          }
+        ]
+      },
+      {
+        "slot": 5,
+        "toggle": 0,
+        "frames": [
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 1b"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          }
+        ]
+      },
+      {
+        "slot": 6,
+        "toggle": 0,
+        "frames": [
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 1c"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          }
+        ]
+      },
+      {
+        "slot": 1,
+        "toggle": 32768,
+        "frames": [
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0e"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          }
+        ]
+      },
+      {
+        "slot": 2,
+        "toggle": 32768,
+        "frames": [
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0f"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          }
+        ]
+      },
+      {
+        "slot": 3,
+        "toggle": 32768,
+        "frames": [
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0c"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          }
+        ]
+      },
+      {
+        "slot": 4,
+        "toggle": 32768,
+        "frames": [
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 1a"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          }
+        ]
+      },
+      {
+        "slot": 5,
+        "toggle": 32768,
+        "frames": [
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 1b"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          }
+        ]
+      },
+      {
+        "slot": 6,
+        "toggle": 32768,
+        "frames": [
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "80 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 0d"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 1c"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          },
+          {
+            "characteristic": "00001550-9f03-0de5-96c5-b8f4f3081186",
+            "bytes": "00 ff"
+          }
+        ]
+      }
+    ],
+    "manufacturer_raw": [
+      {
+        "id": "RAW-AD-00",
+        "raw_scan_hex": "07ffb003000080fe00",
+        "expected": {
+          "payload_hex": "b003000080fe",
+          "fields": [
+            944,
+            0,
+            4,
+            8,
+            1,
+            1,
+            0,
+            -2
+          ],
+          "customer_id": 65535
+        }
+      },
+      {
+        "id": "RAW-AD-01",
+        "raw_scan_hex": "03ffb00305ff000080fe00",
+        "expected": {
+          "payload_hex": "b003000080fe",
+          "fields": [
+            944,
+            0,
+            4,
+            8,
+            1,
+            1,
+            0,
+            -2
+          ],
+          "customer_id": 65535
+        }
+      },
+      {
+        "id": "RAW-AD-02",
+        "raw_scan_hex": "00",
+        "expected": {
+          "payload_hex": null,
+          "fields": [
+            -1,
+            -1,
+            -1,
+            -1,
+            0,
+            0,
+            -1,
+            -1
+          ],
+          "customer_id": -1
+        }
+      },
+      {
+        "id": "RAW-AD-03",
+        "raw_scan_hex": "01",
+        "expected": {
+          "exception": "ArrayIndexOutOfBoundsException"
+        }
+      },
+      {
+        "id": "RAW-AD-04",
+        "raw_scan_hex": "07ffb003",
+        "expected": {
+          "payload_hex": "b00300000000",
+          "fields": [
+            944,
+            0,
+            4,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "customer_id": 65535
+        }
+      },
+      {
+        "id": "RAW-AD-05",
+        "raw_scan_hex": "80ff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "expected": {
+          "exception": "IllegalArgumentException"
+        }
+      },
+      {
+        "id": "RAW-AD-06",
+        "raw_scan_hex": "07ffb003000080fe06ff010212340000",
+        "expected": {
+          "payload_hex": "b003000080fe0102123400",
+          "fields": [
+            944,
+            0,
+            4,
+            8,
+            1,
+            1,
+            0,
+            -2
+          ],
+          "customer_id": 4660
+        }
+      },
+      {
+        "id": "RAW-AD-07",
+        "raw_scan_hex": "0bffb003000080fe0102123400",
+        "expected": {
+          "payload_hex": "b003000080fe01021234",
+          "fields": [
+            944,
+            0,
+            4,
+            8,
+            1,
+            1,
+            0,
+            -2
+          ],
+          "customer_id": 4660
+        }
+      },
+      {
+        "id": "RAW-AD-08",
+        "raw_scan_hex": "01ff00",
+        "expected": {
+          "payload_hex": "",
+          "fields": [
+            -1,
+            -1,
+            -1,
+            -1,
+            0,
+            0,
+            -1,
+            -1
+          ],
+          "customer_id": 65535
+        }
+      },
+      {
+        "id": "RAW-AD-09",
+        "raw_scan_hex": "02010600",
+        "expected": {
+          "payload_hex": null,
+          "fields": [
+            -1,
+            -1,
+            -1,
+            -1,
+            0,
+            0,
+            -1,
+            -1
+          ],
+          "customer_id": -1
+        }
+      },
+      {
+        "id": "RAW-AD-10",
+        "raw_scan_hex": "00ffb003",
+        "expected": {
+          "payload_hex": null,
+          "fields": [
+            -1,
+            -1,
+            -1,
+            -1,
+            0,
+            0,
+            -1,
+            -1
+          ],
+          "customer_id": -1
+        }
+      },
+      {
+        "id": "RAW-AD-11",
+        "raw_scan_hex": "ff00",
+        "expected": {
+          "behavior": "NONTERMINATING_SIGNED_LENGTH_LOOP"
+        }
+      },
+      {
+        "id": "RAW-AD-12",
+        "raw_scan_hex": "",
+        "expected": {
+          "payload_hex": null,
+          "fields": [
+            -1,
+            -1,
+            -1,
+            -1,
+            0,
+            0,
+            -1,
+            -1
+          ],
+          "customer_id": -1
+        }
+      }
+    ]
+  },
+  "scope": "Durable selected packet/parser inputs for actual controller tests. The full 379-vector accepted inventory and other frozen parser evidence remain machine-local."
+}

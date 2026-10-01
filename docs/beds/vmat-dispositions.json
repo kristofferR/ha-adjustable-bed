@@ -1,0 +1,4098 @@
+{
+  "package": "de.vibradorm.vmat",
+  "version": "1.11 (49)",
+  "accepted_report_sha256": "b25b5fc1d55f593d5b10bd3fab4a53bb56538bb57b9031531a996a9f532a8944",
+  "artifact_set_sha256": "48b29a6b8c9c784c04bb9de4cee0e8d8f9cae9d04bac916425302186e8ecf4c5",
+  "source_comparison_sha256": "620c2de4a2418d91fcdd22aa0669e2da5a4bfe1725f336a81106ce9fe44653af",
+  "status": "IMPLEMENTED_INDEPENDENTLY_VERIFIED",
+  "implementation_semantics": "Each IMPLEMENTED item uses the exact code and executed tests in its group. All platform/safety exclusions and item-specific residual references are explicit.",
+  "counts": {
+    "total": 282,
+    "IMPLEMENTED": 240,
+    "ALREADY_IMPLEMENTED": 0,
+    "EXCLUDED": 42
+  },
+  "hardware": "Unverified; physical validation belongs to users after beta/release.",
+  "proof_groups": {
+    "PROFILE": {
+      "code": [
+        "vibradorm_vmat_profiles.py:VMAT_REMOTES",
+        "beds/vibradorm_app.py:validate_vibradorm_app_profile",
+        "config_flow.py:_vibradorm_app_data"
+      ],
+      "executed_proof": [
+        "test_vibradorm_vmat.py:test_remote_contract_and_no_guessed_capabilities",
+        "test_vibradorm_vmat_config.py:test_normalization_uses_remote_not_submitted_capability_flags",
+        "test_vibradorm_vmat_config.py:test_public_options_switch_from_vmat_removes_remote_before_factory",
+        "test_vibradorm_vmat_config.py:test_separate_address_options_preserve_each_vmat_remote"
+      ]
+    },
+    "DISCOVERY": {
+      "code": [
+        "vibradorm_vmat_discovery.py:parse_vmat_manufacturer",
+        "vibradorm_vmat_discovery.py:extract_vmat_raw_ad",
+        "vibradorm_vmat_discovery.py:VmatOnboardingReports",
+        "diagnostics.py:async_get_config_entry_diagnostics"
+      ],
+      "executed_proof": [
+        "test_vibradorm_vmat_discovery.py:test_complete_manufacturer_formulas",
+        "test_vibradorm_vmat_discovery.py:test_raw_order_repeated_records_and_safe_malformed_exclusions",
+        "test_vibradorm_vmat_discovery.py:test_missing_flags_are_not_silently_replaced_with_zero",
+        "test_vibradorm_vmat_discovery.py:test_independent_company_identifier_and_eligibility_getters",
+        "test_vibradorm_vmat_discovery.py:test_unknown_revision_can_reach_third_eligible_report_without_profile_inference",
+        "test_vibradorm_vmat_discovery.py:test_known_raw_absent_flags_use_sdk_default_and_first_payload_byte"
+      ]
+    },
+    "SESSION": {
+      "code": [
+        "vibradorm_vmat_setup.py:validate_vmat_roles",
+        "vibradorm_vmat_setup.py:async_prepare_vmat_pairing",
+        "config_flow.py:_attempt_pairing_with_capture",
+        "coordinator.py:_async_pair_on_live_link",
+        "coordinator.py:_async_pair_vibradorm_app"
+      ],
+      "executed_proof": [
+        "test_vibradorm_vmat_setup.py:test_three_dis_reads_then_seven_distinct_serial_stages",
+        "test_vibradorm_vmat_config.py:test_real_setup_stages_then_pair_proof_close_disconnect_and_metadata_retention",
+        "test_coordinator_vibradorm_vmat.py:test_runtime_first_bond_always_closes_setup_and_unproven_rpc_is_not_a_marker",
+        "test_coordinator_vibradorm_vmat.py:test_vmat_runtime_uses_own_45_second_budget_including_retained_native_observation",
+        "test_vibradorm_vmat_setup.py:test_public_setup_classification_preserves_original_when_unsubscribe_fails",
+        "test_vibradorm_vmat_config.py:test_public_setup_accepts_native_closure_after_disconnect_rpc_error",
+        "test_vibradorm_vmat_setup.py:test_transport_write_timeout_aborts_information_stage",
+        "test_vibradorm_vmat_config.py:test_public_setup_transport_write_timeout_never_pairs",
+        "test_vibradorm_vmat_config.py:test_public_prebonded_setup_validates_ordinary_profile_roles"
+      ]
+    },
+    "PACKET": {
+      "code": [
+        "beds/vibradorm_app.py:_header",
+        "beds/vibradorm_app.py:_write",
+        "beds/vibradorm_app.py:hold_control",
+        "beds/vibradorm_app.py:program_memory"
+      ],
+      "executed_proof": [
+        "test_vibradorm_vmat.py:test_every_reachable_held_control_releases",
+        "test_vibradorm_vmat.py:test_complete_nine_frame_save_sequence",
+        "test_vibradorm_vmat.py:test_full_massage_state_packets_from_frozen_builder_vectors"
+      ]
+    },
+    "MOTOR_MEMORY": {
+      "code": [
+        "beds/vibradorm_app.py:hold_control",
+        "beds/vibradorm_app.py:program_memory",
+        "beds/vibradorm_app.py:_release"
+      ],
+      "executed_proof": [
+        "test_vibradorm_vmat.py:test_every_reachable_held_control_releases",
+        "test_vibradorm_vmat.py:test_complete_nine_frame_save_sequence",
+        "test_vibradorm_vmat.py:test_disabled_actions_fail_without_a_write"
+      ]
+    },
+    "LIGHT": {
+      "code": [
+        "beds/vibradorm_app.py:_floor",
+        "beds/vibradorm_app.py:_mood",
+        "vibradorm_vmat_profiles.py:VMAT_MOOD_PALETTE",
+        "beds/vibradorm_app.py:set_pending_floor_timer"
+      ],
+      "executed_proof": [
+        "test_vibradorm_vmat.py:test_floor_delivery_full_shipped_range",
+        "test_vibradorm_vmat.py:test_all_shipped_palette_packets",
+        "test_vibradorm_vmat.py:test_all_mood_speed_positions",
+        "test_vibradorm_vmat.py:test_floor_failure_rolls_back_current_and_remembered_intent"
+      ]
+    },
+    "MASSAGE": {
+      "code": [
+        "vibradorm_app_state.py:VibradormAppMassageIntent",
+        "beds/vibradorm_app.py:_plan_massage_mode",
+        "beds/vibradorm_app.py:_write_massage_packets"
+      ],
+      "executed_proof": [
+        "test_vibradorm_vmat.py:test_full_massage_state_packets_from_frozen_builder_vectors",
+        "test_vibradorm_vmat.py:test_automatic_individual_restore_clamps_and_exact_off_restore_order",
+        "test_vibradorm_vmat.py:test_accessory_failure_does_not_publish_or_change_local_intent"
+      ]
+    },
+    "NOTIFY_SYNC": {
+      "code": [
+        "beds/vibradorm_app.py:_notification",
+        "beds/vibradorm_app.py:start_notify",
+        "beds/vibradorm_app.py:stop_notify",
+        "beds/vibradorm_app.py:parse_sync",
+        "beds/vibradorm_app.py:hold_control",
+        "vibradorm_vmat_setup.py:parse_stage_response"
+      ],
+      "executed_proof": [
+        "test_vibradorm_vmat.py:test_sync_only_streams_while_response_is_pending_and_held",
+        "test_vibradorm_vmat.py:test_registered_notifications_are_bound_to_live_role_and_generation",
+        "test_vibradorm_vmat_setup.py:test_guarded_stage_parser_preserves_signed_and_utf8_contract",
+        "test_vibradorm_vmat_setup.py:test_empty_string_stages_complete_and_overwrite_prior_metadata",
+        "test_vibradorm_vmat.py:test_normal_session_reads_dis_without_any_onboarding_query_or_position_poll"
+      ]
+    },
+    "LIFECYCLE": {
+      "code": [
+        "beds/vibradorm_app.py:_write",
+        "beds/vibradorm_app.py:_release",
+        "beds/vibradorm_app.py:start_notify",
+        "beds/vibradorm_app.py:stop_notify",
+        "coordinator.py:_async_pair_on_live_link",
+        "vibradorm_app_state.py:get_vibradorm_app_session_intent",
+        "config_flow.py:_create_selected_app_entry",
+        "coordinator.py:_vmat_unready_link_pending",
+        "coordinator.py:_async_cleanup_failed_connection",
+        "coordinator.py:_async_connect_attempts_locked",
+        "coordinator.py:_async_disconnect_locked",
+        "coordinator.py:async_ensure_connected",
+        "paired_coordinator.py:async_connect",
+        "address_lock.py:retain_setup_client",
+        "address_lock.py:async_release_setup_client",
+        "address_lock.py:_acquire",
+        "setup_operation.py:async_begin_operation",
+        "setup_operation.py:async_track_client",
+        "setup_operation.py:async_retain_failed_setup_client",
+        "setup_operation.py:_async_guarded_worker",
+        "setup_operation.py:_async_release_client",
+        "setup_operation.py:async_remove"
+      ],
+      "executed_proof": [
+        "test_vibradorm_vmat.py:test_single_shots_wait_after_success_completion_and_stop_bypasses_delay",
+        "test_vibradorm_vmat_setup.py:test_cancel_pending_stage_stops_notifications_without_later_queries",
+        "test_vibradorm_vmat.py:test_registered_notifications_are_bound_to_live_role_and_generation",
+        "test_vibradorm_vmat_config.py:test_reconnect_retains_all_accessory_intent_but_another_remote_does_not",
+        "test_vibradorm_vmat_config.py:test_selected_vmat_entry_discards_previous_app_selection_intent",
+        "test_coordinator_vibradorm_vmat.py:test_public_connect_retains_failed_setup_and_denies_reuse_replacement_and_shutdown",
+        "test_coordinator_vibradorm_vmat.py:test_vmat_half_initialized_link_cannot_be_overwritten_before_observed_close",
+        "test_vibradorm_vmat_config.py:test_public_progress_worker_retains_failed_setup_across_retry_removal_and_replacement",
+        "test_vibradorm_vmat_config.py:test_vmat_pre_stage_failure_retains_native_owner",
+        "test_coordinator_vibradorm_vmat.py:test_public_stop_reconnects_vmat_with_its_own_startup_cancellation",
+        "test_vibradorm_vmat.py:test_ordinary_notification_startup_remains_cancellable"
+      ]
+    },
+    "UI_STATE": {
+      "code": [
+        "beds/vibradorm_app.py:controller_button_specs",
+        "beds/vibradorm_app.py:controller_select_specs",
+        "beds/vibradorm_app.py:controller_number_specs",
+        "beds/vibradorm_app.py:controller_state_sensor_specs"
+      ],
+      "executed_proof": [
+        "test_vibradorm_vmat_config.py:test_profile_exposes_only_bounded_public_controls",
+        "test_vibradorm_vmat_config.py:test_actual_entity_factories_follow_remote_gates",
+        "test_vibradorm_vmat_config.py:test_remote_change_clears_metadata_even_when_control_type_is_unchanged"
+      ]
+    }
+  },
+  "rows": [
+    {
+      "id": "command/P1/000",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/0",
+      "artifact_evidence": [
+        "E-motor",
+        "E-state",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/001",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/1",
+      "artifact_evidence": [
+        "E-motor",
+        "E-state",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/002",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/2",
+      "artifact_evidence": [
+        "E-motor",
+        "E-state",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/003",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/3",
+      "artifact_evidence": [
+        "E-motor",
+        "E-state",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/004",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/4",
+      "artifact_evidence": [
+        "E-motor",
+        "E-state",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/005",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/5",
+      "artifact_evidence": [
+        "E-motor",
+        "E-state",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/006",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/6",
+      "artifact_evidence": [
+        "E-motor",
+        "E-state",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/007",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/7",
+      "artifact_evidence": [
+        "E-motor",
+        "E-state",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/008",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/8",
+      "artifact_evidence": [
+        "E-motor",
+        "E-state",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/009",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/9",
+      "artifact_evidence": [
+        "E-motor",
+        "E-state",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/010",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/10",
+      "artifact_evidence": [
+        "E-motor",
+        "E-memory",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/011",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/11",
+      "artifact_evidence": [
+        "E-memory",
+        "E-state",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/012",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/12",
+      "artifact_evidence": [
+        "E-memory",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/013",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/13",
+      "artifact_evidence": [
+        "E-memory",
+        "E-state",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/014",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/14",
+      "artifact_evidence": [
+        "E-memory",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/015",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/15",
+      "artifact_evidence": [
+        "E-memory",
+        "E-state",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/016",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/16",
+      "artifact_evidence": [
+        "E-memory",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/017",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/17",
+      "artifact_evidence": [
+        "E-memory",
+        "E-state",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/018",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/18",
+      "artifact_evidence": [
+        "E-memory",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/019",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/19",
+      "artifact_evidence": [
+        "E-memory",
+        "E-state",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/020",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/20",
+      "artifact_evidence": [
+        "E-memory",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/021",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/21",
+      "artifact_evidence": [
+        "E-memory",
+        "E-state",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/022",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/22",
+      "artifact_evidence": [
+        "E-memory",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/023",
+      "group": "NOTIFY_SYNC",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/23",
+      "artifact_evidence": [
+        "E-motor",
+        "E-notify",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_PARSE",
+        "decision/SAFE_CANCEL"
+      ]
+    },
+    {
+      "id": "command/P1/024",
+      "group": "NOTIFY_SYNC",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/24",
+      "artifact_evidence": [
+        "E-motor",
+        "E-notify",
+        "E-state",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_PARSE",
+        "decision/SAFE_CANCEL"
+      ]
+    },
+    {
+      "id": "command/P1/025",
+      "group": "NOTIFY_SYNC",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/25",
+      "artifact_evidence": [
+        "E-motor",
+        "E-notify",
+        "E-state",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_PARSE",
+        "decision/SAFE_CANCEL"
+      ]
+    },
+    {
+      "id": "command/P1/026",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/26",
+      "artifact_evidence": [
+        "E-light",
+        "E-state",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/027",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/27",
+      "artifact_evidence": [
+        "E-light",
+        "E-state",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/028",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/28",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/029",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/29",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/030",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/30",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/031",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/31",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/032",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/32",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/033",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/33",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/034",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/34",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/035",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/35",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/036",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/36",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/037",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/37",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/038",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/38",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/039",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/39",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/040",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/40",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/041",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/41",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/042",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/42",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/043",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/43",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/044",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/44",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/045",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/45",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/046",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/46",
+      "artifact_evidence": [
+        "E-light",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/047",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/47",
+      "artifact_evidence": [
+        "E-light",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/048",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/48",
+      "artifact_evidence": [
+        "E-light",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/049",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/49",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/050",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/50",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/051",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/51",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/052",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/52",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/053",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/53",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/054",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/54",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/055",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/55",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/056",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/56",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/057",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/57",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/058",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/58",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/059",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/59",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/060",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/60",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/061",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/61",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/062",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/62",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/063",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/63",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/064",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/64",
+      "artifact_evidence": [
+        "E-massage",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/065",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/65",
+      "artifact_evidence": [
+        "E-massage",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/066",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/66",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/067",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/67",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/068",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/68",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/069",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/69",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/070",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/70",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/071",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/71",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/072",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/72",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/073",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/73",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/074",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/74",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/075",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/75",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/076",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/76",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/077",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/77",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/078",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/78",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/079",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/79",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/080",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/80",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/081",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/81",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/082",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/82",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/083",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/83",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/084",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/84",
+      "artifact_evidence": [
+        "E-light",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/085",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/85",
+      "artifact_evidence": [
+        "E-light",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/086",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/86",
+      "artifact_evidence": [
+        "E-light",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/087",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/87",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/088",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/88",
+      "artifact_evidence": [
+        "E-light",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/089",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/89",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/090",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/90",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/091",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/91",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/092",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/92",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/093",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/93",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/094",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/94",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/095",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/95",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/096",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/96",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/097",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/97",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/098",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/98",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/099",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/99",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/100",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/100",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/101",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/101",
+      "artifact_evidence": [
+        "E-massage",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/102",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/102",
+      "artifact_evidence": [
+        "E-massage",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/103",
+      "group": "MASSAGE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/103",
+      "artifact_evidence": [
+        "E-massage",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/104",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/104",
+      "artifact_evidence": [
+        "E-session",
+        "E-notify",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/105",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/105",
+      "artifact_evidence": [
+        "E-session",
+        "E-notify",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/106",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/106",
+      "artifact_evidence": [
+        "E-session",
+        "E-notify",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/107",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/107",
+      "artifact_evidence": [
+        "E-session",
+        "E-notify",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/108",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/108",
+      "artifact_evidence": [
+        "E-session",
+        "E-notify",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/109",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/109",
+      "artifact_evidence": [
+        "E-session",
+        "E-notify",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/110",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/110",
+      "artifact_evidence": [
+        "E-session",
+        "E-notify",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P1/111",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/commands/111",
+      "artifact_evidence": [
+        "E-session",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P2/000",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/1/commands/0",
+      "artifact_evidence": [
+        "E-motor",
+        "E-state",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P2/001",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/1/commands/1",
+      "artifact_evidence": [
+        "E-motor",
+        "E-state",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P2/002",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/1/commands/2",
+      "artifact_evidence": [
+        "E-motor",
+        "E-state",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P2/003",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/1/commands/3",
+      "artifact_evidence": [
+        "E-motor",
+        "E-state",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P2/004",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/1/commands/4",
+      "artifact_evidence": [
+        "E-motor",
+        "E-state",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P2/005",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/1/commands/5",
+      "artifact_evidence": [
+        "E-motor",
+        "E-state",
+        "E-boundary",
+        "E-queue"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P2/006",
+      "group": "MOTOR_MEMORY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/1/commands/6",
+      "artifact_evidence": [
+        "E-motor",
+        "E-memory",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/SAFE_CANCEL",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P2/007",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/1/commands/7",
+      "artifact_evidence": [
+        "E-light",
+        "E-state",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "command/P2/008",
+      "group": "LIGHT",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/1/commands/8",
+      "artifact_evidence": [
+        "E-light",
+        "E-state",
+        "E-queue",
+        "E-boundary"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/selectors/0",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/selectors/0",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/selectors/1",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/selectors/1",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/selectors/2",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/selectors/2",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/discovery_rules/local_name_rules",
+      "group": "DISCOVERY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/discovery_rules/local_name_rules",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_AD",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/discovery_rules/advertised_services",
+      "group": "DISCOVERY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/discovery_rules/advertised_services",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_AD",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/discovery_rules/onboarding/company_id",
+      "group": "DISCOVERY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/discovery_rules/onboarding/company_id",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_AD",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/discovery_rules/onboarding/manufacturer_fields",
+      "group": "DISCOVERY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/discovery_rules/onboarding/manufacturer_fields",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_AD",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/discovery_rules/onboarding/revision",
+      "group": "DISCOVERY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/discovery_rules/onboarding/revision",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_AD",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/discovery_rules/onboarding/flags",
+      "group": "DISCOVERY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/discovery_rules/onboarding/flags",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_AD",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/discovery_rules/onboarding/acceptance",
+      "group": "DISCOVERY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/discovery_rules/onboarding/acceptance",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_AD",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/discovery_rules/onboarding/selection",
+      "group": "DISCOVERY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/discovery_rules/onboarding/selection",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_AD",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/discovery_rules/onboarding/mask",
+      "group": "DISCOVERY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/discovery_rules/onboarding/mask",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_AD",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/discovery_rules/onboarding/GID",
+      "group": "DISCOVERY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/discovery_rules/onboarding/GID",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_AD",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/discovery_rules/onboarding/SGID",
+      "group": "DISCOVERY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/discovery_rules/onboarding/SGID",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_AD",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/discovery_rules/onboarding/customer_id",
+      "group": "DISCOVERY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/discovery_rules/onboarding/customer_id",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_AD",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/discovery_rules/onboarding/raw_parser_behavior",
+      "group": "DISCOVERY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/discovery_rules/onboarding/raw_parser_behavior",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_AD",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/discovery_rules/reconnect/selector",
+      "group": "DISCOVERY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/discovery_rules/reconnect/selector",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_AD",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/discovery_rules/reconnect/manufacturer_check",
+      "group": "DISCOVERY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/discovery_rules/reconnect/manufacturer_check",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_AD",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/discovery_rules/reconnect/timeout_ms",
+      "group": "DISCOVERY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/discovery_rules/reconnect/timeout_ms",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_AD",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/discovery_rules/scan_settings/legacy",
+      "group": "DISCOVERY",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/protocols/0/discovery_rules/scan_settings/legacy",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "reason": "Android scanner configuration API, not a bed wire setting. HA owns shared host/proxy scanning; artifact manufacturer/address semantics remain in DISCOVERY rows."
+    },
+    {
+      "id": "fact/discovery_rules/scan_settings/scan_mode",
+      "group": "DISCOVERY",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/protocols/0/discovery_rules/scan_settings/scan_mode",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "reason": "Android scanner configuration API, not a bed wire setting. HA owns shared host/proxy scanning; artifact manufacturer/address semantics remain in DISCOVERY rows."
+    },
+    {
+      "id": "fact/discovery_rules/scan_settings/report_delay_ms",
+      "group": "DISCOVERY",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/protocols/0/discovery_rules/scan_settings/report_delay_ms",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "reason": "Android scanner configuration API, not a bed wire setting. HA owns shared host/proxy scanning; artifact manufacturer/address semantics remain in DISCOVERY rows."
+    },
+    {
+      "id": "fact/discovery_rules/scan_settings/hardware_batching",
+      "group": "DISCOVERY",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/protocols/0/discovery_rules/scan_settings/hardware_batching",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "reason": "Android scanner configuration API, not a bed wire setting. HA owns shared host/proxy scanning; artifact manufacturer/address semantics remain in DISCOVERY rows."
+    },
+    {
+      "id": "fact/discovery_rules/availability_prerequisites/startup_permission_matrix",
+      "group": "DISCOVERY",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/protocols/0/discovery_rules/availability_prerequisites/startup_permission_matrix",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "reason": "Android permission/manifest/demo/platform grant flow is outside HA BLE integration. Host availability, readiness, actual bond/address proof remain separately IMPLEMENTED; physical validation is deferred, not an implementation exclusion."
+    },
+    {
+      "id": "fact/discovery_rules/availability_prerequisites/permission_flow",
+      "group": "DISCOVERY",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/protocols/0/discovery_rules/availability_prerequisites/permission_flow",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "reason": "Android permission/manifest/demo/platform grant flow is outside HA BLE integration. Host availability, readiness, actual bond/address proof remain separately IMPLEMENTED; physical validation is deferred, not an implementation exclusion."
+    },
+    {
+      "id": "fact/discovery_rules/availability_prerequisites/bluetooth_flow",
+      "group": "DISCOVERY",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/discovery_rules/availability_prerequisites/bluetooth_flow",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_AD",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/discovery_rules/availability_prerequisites/main_resume_predicate",
+      "group": "DISCOVERY",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/protocols/0/discovery_rules/availability_prerequisites/main_resume_predicate",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "reason": "Android permission/manifest/demo/platform grant flow is outside HA BLE integration. Host availability, readiness, actual bond/address proof remain separately IMPLEMENTED; physical validation is deferred, not an implementation exclusion."
+    },
+    {
+      "id": "fact/discovery_rules/availability_prerequisites/demo_effect",
+      "group": "DISCOVERY",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/protocols/0/discovery_rules/availability_prerequisites/demo_effect",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "reason": "Android permission/manifest/demo/platform grant flow is outside HA BLE integration. Host availability, readiness, actual bond/address proof remain separately IMPLEMENTED; physical validation is deferred, not an implementation exclusion."
+    },
+    {
+      "id": "fact/discovery_rules/availability_prerequisites/manifest",
+      "group": "DISCOVERY",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/protocols/0/discovery_rules/availability_prerequisites/manifest",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "reason": "Android permission/manifest/demo/platform grant flow is outside HA BLE integration. Host availability, readiness, actual bond/address proof remain separately IMPLEMENTED; physical validation is deferred, not an implementation exclusion."
+    },
+    {
+      "id": "fact/gatt/service",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/gatt/service",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/gatt/service_aliases",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/gatt/service_aliases",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/gatt/write",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/gatt/write",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/gatt/notify",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/gatt/notify",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/gatt/DIS",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/gatt/DIS",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/gatt/onboarding_management",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/gatt/onboarding_management",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/gatt/optional_service_changed",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/gatt/optional_service_changed",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/gatt/mtu",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/gatt/mtu",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/gatt/selection",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/gatt/selection",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/gatt/required",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/gatt/required",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/gatt/cache_behavior",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/gatt/cache_behavior",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/gatt/connection_priority",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/gatt/connection_priority",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/session_sequence/0",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/session_sequence/0",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/session_sequence/1",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/session_sequence/1",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/session_sequence/2",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/session_sequence/2",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/session_sequence/3",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/session_sequence/3",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/session_sequence/4",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/session_sequence/4",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/session_sequence/5",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/session_sequence/5",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/session_sequence/6",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/session_sequence/6",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/session_sequence/7",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/session_sequence/7",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/session_sequence/8",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/session_sequence/8",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/packet_format/endianness",
+      "group": "PACKET",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/packet_format/endianness",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning"
+      ]
+    },
+    {
+      "id": "fact/packet_format/framing",
+      "group": "PACKET",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/packet_format/framing",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning"
+      ]
+    },
+    {
+      "id": "fact/packet_format/toggle",
+      "group": "PACKET",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/packet_format/toggle",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning"
+      ]
+    },
+    {
+      "id": "fact/packet_format/checksum",
+      "group": "PACKET",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/packet_format/checksum",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning"
+      ]
+    },
+    {
+      "id": "fact/packet_format/encryption",
+      "group": "PACKET",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/packet_format/encryption",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning"
+      ]
+    },
+    {
+      "id": "fact/packet_format/fragmentation",
+      "group": "PACKET",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/packet_format/fragmentation",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning"
+      ]
+    },
+    {
+      "id": "fact/packet_format/P1_layout",
+      "group": "PACKET",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/packet_format/P1_layout",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning"
+      ]
+    },
+    {
+      "id": "fact/packet_format/P2_layout",
+      "group": "PACKET",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/packet_format/P2_layout",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "fact/packet_format/shared_static_warning"
+      ]
+    },
+    {
+      "id": "fact/packet_format/shared_static_warning",
+      "group": "PACKET",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/protocols/0/packet_format/shared_static_warning",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "reason": "Safety: queued command overwrite and sticky shared motor OR state can deliver the wrong movement. Use immutable selected-action payloads; preserve supported isolated packets and legitimate global toggle side effects in PACKET rows."
+    },
+    {
+      "id": "fact/notifications/0",
+      "group": "NOTIFY_SYNC",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/notifications/0",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_PARSE",
+        "decision/SAFE_CANCEL"
+      ]
+    },
+    {
+      "id": "fact/notifications/1",
+      "group": "NOTIFY_SYNC",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/notifications/1",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_PARSE",
+        "decision/SAFE_CANCEL"
+      ]
+    },
+    {
+      "id": "fact/notifications/2",
+      "group": "NOTIFY_SYNC",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/notifications/2",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_PARSE",
+        "decision/SAFE_CANCEL"
+      ]
+    },
+    {
+      "id": "fact/notifications/3",
+      "group": "NOTIFY_SYNC",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/notifications/3",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_PARSE",
+        "decision/SAFE_CANCEL"
+      ]
+    },
+    {
+      "id": "fact/notifications/4",
+      "group": "NOTIFY_SYNC",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/notifications/4",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_PARSE",
+        "decision/SAFE_CANCEL"
+      ]
+    },
+    {
+      "id": "fact/notifications/5",
+      "group": "NOTIFY_SYNC",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/notifications/5",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_PARSE",
+        "decision/SAFE_CANCEL"
+      ]
+    },
+    {
+      "id": "fact/notifications/6",
+      "group": "NOTIFY_SYNC",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/notifications/6",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_PARSE",
+        "decision/SAFE_CANCEL"
+      ]
+    },
+    {
+      "id": "fact/notifications/7",
+      "group": "NOTIFY_SYNC",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/notifications/7",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_PARSE",
+        "decision/SAFE_CANCEL"
+      ]
+    },
+    {
+      "id": "fact/notifications/8",
+      "group": "NOTIFY_SYNC",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/notifications/8",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_PARSE",
+        "decision/SAFE_CANCEL"
+      ]
+    },
+    {
+      "id": "fact/notifications/9",
+      "group": "NOTIFY_SYNC",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/notifications/9",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_PARSE",
+        "decision/SAFE_CANCEL"
+      ]
+    },
+    {
+      "id": "fact/notifications/10",
+      "group": "NOTIFY_SYNC",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/notifications/10",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_PARSE",
+        "decision/SAFE_CANCEL"
+      ]
+    },
+    {
+      "id": "fact/capabilities/selection",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/capabilities/selection",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/capabilities/motors",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/capabilities/motors",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/capabilities/memory",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/capabilities/memory",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/capabilities/massage",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/capabilities/massage",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/capabilities/light",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/capabilities/light",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/capabilities/sync",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/capabilities/sync",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/capabilities/XMCSTATUS",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/capabilities/XMCSTATUS",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/capabilities/OPMODE",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/capabilities/OPMODE",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/capabilities/authentication",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/capabilities/authentication",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/capabilities/measured_position",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/capabilities/measured_position",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/capabilities/built_in_presets",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/capabilities/built_in_presets",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/capabilities/firmware_OTA",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/capabilities/firmware_OTA",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/capabilities/settings_writes",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/capabilities/settings_writes",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/capabilities/other_features",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/capabilities/other_features",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/timing/queue",
+      "group": "LIFECYCLE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/timing/queue",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_CANCEL",
+        "decision/ANDROID_BOND_HACK",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/timing/single_shot",
+      "group": "LIFECYCLE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/timing/single_shot",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_CANCEL",
+        "decision/ANDROID_BOND_HACK",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/timing/scan_timeout_ms",
+      "group": "LIFECYCLE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/timing/scan_timeout_ms",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_CANCEL",
+        "decision/ANDROID_BOND_HACK",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/timing/normal_connect_timeout_ms",
+      "group": "LIFECYCLE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/timing/normal_connect_timeout_ms",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_CANCEL",
+        "decision/ANDROID_BOND_HACK",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/timing/onboarding_connect_timeout_ms",
+      "group": "LIFECYCLE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/timing/onboarding_connect_timeout_ms",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_CANCEL",
+        "decision/ANDROID_BOND_HACK",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/timing/connect_retry",
+      "group": "LIFECYCLE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/timing/connect_retry",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_CANCEL",
+        "decision/ANDROID_BOND_HACK",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/timing/disconnect_reconnect",
+      "group": "LIFECYCLE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/timing/disconnect_reconnect",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_CANCEL",
+        "decision/ANDROID_BOND_HACK",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/timing/onboarding",
+      "group": "LIFECYCLE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/timing/onboarding",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_CANCEL",
+        "decision/ANDROID_BOND_HACK",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/timing/lifecycle",
+      "group": "LIFECYCLE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/timing/lifecycle",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_CANCEL",
+        "decision/ANDROID_BOND_HACK",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/timing/ui_only_ms",
+      "group": "LIFECYCLE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/protocols/0/timing/ui_only_ms",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "reason": "Phone indicator blink/overlay/reset presentation timing does not alter bed protocol or any HA bed action."
+    },
+    {
+      "id": "fact/timing/multi_device",
+      "group": "LIFECYCLE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/timing/multi_device",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_CANCEL",
+        "decision/ANDROID_BOND_HACK",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/release_behavior/movement",
+      "group": "LIFECYCLE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/release_behavior/movement",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_CANCEL",
+        "decision/ANDROID_BOND_HACK",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/release_behavior/accessory",
+      "group": "LIFECYCLE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/release_behavior/accessory",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_CANCEL",
+        "decision/ANDROID_BOND_HACK",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/release_behavior/memory_save",
+      "group": "LIFECYCLE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/release_behavior/memory_save",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_CANCEL",
+        "decision/ANDROID_BOND_HACK",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/release_behavior/emergency_stop",
+      "group": "LIFECYCLE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0/release_behavior/emergency_stop",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/SAFE_CANCEL",
+        "decision/ANDROID_BOND_HACK",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/selectors/0/P2",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/1/selectors/0",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "fact/selectors/1/P2",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/1/selectors/1",
+      "artifact_evidence": [
+        "E-select",
+        "E-boundary",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/chair_layout/00",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/0",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: Requires control 11/12/13; no selectable assignment in this artifact. Ordered branch; duplicate layout names are preserved as distinct selector paths."
+    },
+    {
+      "id": "variant/chair_layout/01",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/1",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: Requires control 11/12/13; no selectable assignment in this artifact. Ordered branch; duplicate layout names are preserved as distinct selector paths."
+    },
+    {
+      "id": "variant/chair_layout/02",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/2",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: Requires control 11/12/13; no selectable assignment in this artifact. Ordered branch; duplicate layout names are preserved as distinct selector paths."
+    },
+    {
+      "id": "variant/chair_layout/03",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/3",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: Requires control 11/12/13; no selectable assignment in this artifact. Ordered branch; duplicate layout names are preserved as distinct selector paths."
+    },
+    {
+      "id": "variant/chair_layout/04",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/4",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: Requires control 11/12/13; no selectable assignment in this artifact. Ordered branch; duplicate layout names are preserved as distinct selector paths."
+    },
+    {
+      "id": "variant/chair_layout/05",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/5",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: Requires control 11/12/13; no selectable assignment in this artifact. Ordered branch; duplicate layout names are preserved as distinct selector paths."
+    },
+    {
+      "id": "variant/chair_layout/06",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/6",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: Requires control 11/12/13; no selectable assignment in this artifact. Ordered branch; duplicate layout names are preserved as distinct selector paths."
+    },
+    {
+      "id": "variant/chair_layout/07",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/7",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: Requires control 11/12/13; no selectable assignment in this artifact. Ordered branch; duplicate layout names are preserved as distinct selector paths."
+    },
+    {
+      "id": "variant/chair_layout/08",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/8",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: Requires control 11/12/13; no selectable assignment in this artifact. Ordered branch; duplicate layout names are preserved as distinct selector paths."
+    },
+    {
+      "id": "variant/chair_layout/09",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/9",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: Requires control 11/12/13; no selectable assignment in this artifact. Ordered branch; duplicate layout names are preserved as distinct selector paths."
+    },
+    {
+      "id": "variant/chair_layout/10",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/10",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: Requires control 11/12/13; no selectable assignment in this artifact. Ordered branch; duplicate layout names are preserved as distinct selector paths."
+    },
+    {
+      "id": "variant/chair_layout/11",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/11",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: Requires control 11/12/13; no selectable assignment in this artifact. Ordered branch; duplicate layout names are preserved as distinct selector paths."
+    },
+    {
+      "id": "variant/chair_layout/12",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/12",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: Requires control 11/12/13; no selectable assignment in this artifact. Ordered branch; duplicate layout names are preserved as distinct selector paths."
+    },
+    {
+      "id": "variant/configuration/CLEAR_CONTROL_ENABLED",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/13",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: Unused setter/getter; no selectable caller"
+    },
+    {
+      "id": "variant/configuration/LORDOSE_ENABLED",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/14",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: Unused setter/getter; no selectable caller"
+    },
+    {
+      "id": "variant/configuration/MASSAGE_ENABLED",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/15",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/configuration/NLB_ENABLED",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/16",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/configuration/OPMODE",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/17",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/configuration/RGB_ENABLED",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/18",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/configuration/XMCSTATUS",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/19",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/configuration/XT_BOX_ENABLED",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/20",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/control/-1/CONTROL_UNKNOWN",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/21",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: No assignment from any shipped selection path; external preference injection/restoration not established. Default 0 exists before configuration, but normal onboarding resets it to 1."
+    },
+    {
+      "id": "variant/control/00/CONTROL_MC2",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/22",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: No assignment from any shipped selection path; external preference injection/restoration not established. Default 0 exists before configuration, but normal onboarding resets it to 1."
+    },
+    {
+      "id": "variant/control/01/CONTROL_MC4",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/23",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/control/02/CONTROL_VMAT",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/24",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/control/03/CONTROL_SESSEL",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/25",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: No assignment from any shipped selection path; external preference injection/restoration not established. Default 0 exists before configuration, but normal onboarding resets it to 1."
+    },
+    {
+      "id": "variant/control/04/CONTROL_MC3",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/26",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: No assignment from any shipped selection path; external preference injection/restoration not established. Default 0 exists before configuration, but normal onboarding resets it to 1."
+    },
+    {
+      "id": "variant/control/05/CONTROL_VMAT13000_2M",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/27",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: No assignment from any shipped selection path; external preference injection/restoration not established. Default 0 exists before configuration, but normal onboarding resets it to 1."
+    },
+    {
+      "id": "variant/control/06/CONTROL_VMAT13000_3M",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/28",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: No assignment from any shipped selection path; external preference injection/restoration not established. Default 0 exists before configuration, but normal onboarding resets it to 1."
+    },
+    {
+      "id": "variant/control/07/CONTROL_VMAT13000_4M",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/29",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: No assignment from any shipped selection path; external preference injection/restoration not established. Default 0 exists before configuration, but normal onboarding resets it to 1."
+    },
+    {
+      "id": "variant/control/08/CONTROL_VMAT_MEMORY_2M",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/30",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/control/09/CONTROL_VMAT_MEMORY_3M",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/31",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/control/10/CONTROL_VMAT_MEMORY_4M",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/32",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: No assignment from any shipped selection path; external preference injection/restoration not established. Default 0 exists before configuration, but normal onboarding resets it to 1."
+    },
+    {
+      "id": "variant/control/11/CONTROL_SESSEL_3T",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/33",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: No assignment from any shipped selection path; external preference injection/restoration not established. Default 0 exists before configuration, but normal onboarding resets it to 1."
+    },
+    {
+      "id": "variant/control/12/CONTROL_SESSEL_4T",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/34",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: No assignment from any shipped selection path; external preference injection/restoration not established. Default 0 exists before configuration, but normal onboarding resets it to 1."
+    },
+    {
+      "id": "variant/control/13/CONTROL_SESSEL_5T",
+      "group": "PROFILE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/variant_inventory/35",
+      "artifact_evidence": [],
+      "reason": "Unreachable artifact selector: No assignment from any shipped selection path; external preference injection/restoration not established. Default 0 exists before configuration, but normal onboarding resets it to 1."
+    },
+    {
+      "id": "variant/implementation/CBI",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/36",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/implementation/VMATBasic",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/37",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/remote/00",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/38",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/remote/01",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/39",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/remote/02",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/40",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/remote/03",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/41",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/remote/04",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/42",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/remote/05",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/43",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/remote/06",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/44",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/remote/07",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/45",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/remote/08",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/46",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/remote/09",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/47",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/remote/10",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/48",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/remote/11",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/49",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/remote/12",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/50",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "variant/remote/13",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/variant_inventory/51",
+      "artifact_evidence": [],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "decision/SAFE_AD",
+      "group": "DISCOVERY",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/protocols/0",
+      "artifact_evidence": [
+        "E-IA001-03"
+      ],
+      "reason": "Safety: reject malformed raw AD with bounded work and explicit short-data handling instead of reproducing nontermination/crashes. Accepted raw valid packet decoding remains implemented."
+    },
+    {
+      "id": "decision/SAFE_CANCEL",
+      "group": "LIFECYCLE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/protocols/0",
+      "artifact_evidence": [
+        "E-queue",
+        "E-motor"
+      ],
+      "reason": "Safety: send exact route STOP on interrupted held action, preempt pending noncleanup traffic and cancel owned pending work. Never reproduce omitted/delayed cleanup or stale reconnect operations."
+    },
+    {
+      "id": "decision/SAFE_PARSE",
+      "group": "NOTIFY_SYNC",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/protocols/0",
+      "artifact_evidence": [
+        "E-IA001-01",
+        "E-notify"
+      ],
+      "reason": "Safety: guard lengths/stage, match expected response before resolving; retain exact valid signed/unsigned/UTF8 parser and shipped one-stage callback ordering. Counterfactual immediate multi-stage dispatch is not shipped behavior."
+    },
+    {
+      "id": "decision/ANDROID_BOND_HACK",
+      "group": "SESSION",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/protocols/0",
+      "artifact_evidence": [
+        "E-session"
+      ],
+      "reason": "Android platform workarounds are outside HA transport. Implement actual bond verification/setup and supported service-change invalidation; no silent bond removal or shared adapter discovery toggle."
+    },
+    {
+      "id": "decision/PHONE_UI",
+      "group": "UI_STATE",
+      "disposition": "EXCLUDED",
+      "source_pointer": "/protocols/0",
+      "artifact_evidence": [
+        "E-select",
+        "E-legacy"
+      ],
+      "reason": "Local Android presentation and app preference management are unrelated to BLE bed functionality. Remote selection, saved bed-affecting accessory state, metadata and local reset NOT being a BLE reset remain implemented/documented."
+    },
+    {
+      "id": "decision/MEMORY_STATE",
+      "group": "UI_STATE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0",
+      "artifact_evidence": [
+        "E-light",
+        "E-massage",
+        "E-state",
+        "E-select"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "decision/AVAILABILITY",
+      "group": "SESSION",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0",
+      "artifact_evidence": [
+        "E-IA001-04",
+        "E-session"
+      ],
+      "excluded_residual_semantics": [
+        "decision/ANDROID_BOND_HACK",
+        "decision/SAFE_PARSE",
+        "decision/PHONE_UI"
+      ]
+    },
+    {
+      "id": "decision/NO_INFERRED_CAPS",
+      "group": "PROFILE",
+      "disposition": "IMPLEMENTED",
+      "source_pointer": "/protocols/0",
+      "artifact_evidence": [
+        "E-legacy",
+        "E-select",
+        "E-notify"
+      ],
+      "excluded_residual_semantics": [
+        "decision/PHONE_UI"
+      ]
+    }
+  ]
+}

@@ -53,6 +53,7 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import UnknownFlow
 
+from .address_lock import async_get_connect_lock
 from .bluetooth_transport import ConnectionPath, PathPrediction, TransportClass
 
 if TYPE_CHECKING:
@@ -202,6 +203,8 @@ class BluetoothOperationMixin:
     _operation: SetupOperationState | None = None
     _operation_task: asyncio.Task[OperationResult] | None = None
     _operation_client: BleakClient | None = None
+    _retained_operation_client: BleakClient | None = None
+    _retained_operation_address: str | None = None
 
     if TYPE_CHECKING:
         # Supplied by the flow handler this is mixed into. Declared rather than
@@ -251,7 +254,10 @@ class BluetoothOperationMixin:
         # would orphan both, so tear the old one down first.
         if self._operation_task is not None and not self._operation_task.done():
             self._operation_task.cancel()
-        if self._operation_client is not None:
+        retained = self._retained_client_is_live()
+        if retained:
+            self.hass.async_create_task(self._async_release_client())
+        elif self._operation_client is not None:
             stray, self._operation_client = self._operation_client, None
             hass = getattr(self, "hass", None)
             if hass is not None:
@@ -265,7 +271,8 @@ class BluetoothOperationMixin:
             placeholders=dict(placeholders or {}),
         )
         self._operation_task = None
-        self._operation_client = None
+        if not retained:
+            self._operation_client = None
         return self._operation
 
     # -- progress reporting (called from inside the worker) -------------------
@@ -313,7 +320,21 @@ class BluetoothOperationMixin:
     @callback
     def async_track_client(self, client: BleakClient | None) -> None:
         """Remember the client an operation opened so cancellation can close it."""
+        if self._retained_client_is_live() and client is not self._retained_operation_client:
+            raise ConnectionError("A failed setup connection is still connected")
         self._operation_client = client
+
+    def _retained_client_is_live(self) -> bool:
+        client = self._retained_operation_client
+        return client is not None and client.is_connected
+
+    @callback
+    def async_retain_failed_setup_client(self, client: BleakClient, address: str) -> None:
+        """Keep a terminal failed client owned after this flow is removed."""
+        async_get_connect_lock(self.hass, address).retain_setup_client(client)
+        self.async_track_client(client)
+        self._retained_operation_client = client
+        self._retained_operation_address = address
 
     # -- refresh driver ------------------------------------------------------
 
@@ -435,6 +456,13 @@ class BluetoothOperationMixin:
     async def _async_guarded_worker(self, worker: OperationWorker) -> OperationResult:
         """Run a worker, guaranteeing the BLE client is released afterwards."""
         try:
+            if self._retained_client_is_live():
+                await self._async_release_client()
+                if self._retained_client_is_live():
+                    return OperationResult(
+                        outcome=OperationOutcome.CONNECTION_FAILED,
+                        detail="setup_connection_still_connected",
+                    )
             return await worker()
         finally:
             await self._async_release_client()
@@ -447,9 +475,19 @@ class BluetoothOperationMixin:
         coordinator and the physical remote.
         """
         client = self._operation_client
-        self._operation_client = None
         if client is None:
             return
+        if client is self._retained_operation_client:
+            assert self._retained_operation_address is not None
+            lock = async_get_connect_lock(self.hass, self._retained_operation_address)
+            with contextlib.suppress(Exception):
+                await asyncio.shield(lock.async_release_setup_client())
+            if not client.is_connected and self._operation_client is client:
+                self._operation_client = None
+                self._retained_operation_client = None
+                self._retained_operation_address = None
+            return
+        self._operation_client = None
         with contextlib.suppress(Exception):
             await asyncio.shield(client.disconnect())
 
@@ -476,13 +514,17 @@ class BluetoothOperationMixin:
             task.cancel()
 
         client = self._operation_client
-        self._operation_client = None
+        retained = self._retained_client_is_live()
+        if not retained:
+            self._operation_client = None
         if client is not None:
             hass = getattr(self, "hass", None)
             if hass is not None:
                 # async_remove is a callback and cannot await, so the disconnect
                 # is handed to a task of its own.
-                hass.async_create_task(_async_disconnect_quietly(client))
+                hass.async_create_task(
+                    self._async_release_client() if retained else _async_disconnect_quietly(client)
+                )
 
 
 async def _async_disconnect_quietly(client: BleakClient) -> None:
