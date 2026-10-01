@@ -1089,9 +1089,6 @@ LINAK_NAME_PATTERNS: Final = ("bed ",)
 # - ORE-XXXXXXXXXXX (e.g., ORE-ac2170000d) - Dynasty, INNOVA beds (use ORE variant)
 # - smart_dfu - Beautyrest Baselogic Platinum (Keeson MC232FD, KSBT04C protocol)
 KEESON_NAME_PATTERNS: Final = ("base-i4.", "base-i5.", "ksbt", "ore-", "smart_dfu")
-# Adjustable Lite (com.keeson.adjustablelite) scans for names that contain its
-# KSBT01C/KSBT03C product identity anywhere, not only at the start.
-KEESON_NAME_SUBSTRINGS: Final = ("ksbt01c", "ksbt03c")
 
 # BetterLiving / related OKIN app naming that uses Keeson-Sino packet format (E5 FE 16, big-endian)
 # Source: com.ore.betterliving2 app disassembly

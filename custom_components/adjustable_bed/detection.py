@@ -117,7 +117,6 @@ from .const import (
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_JSON_SERVICE_UUID,
     KEESON_NAME_PATTERNS,
-    KEESON_NAME_SUBSTRINGS,
     KEESON_SINO_NAME_PATTERNS,
     LEGGETT_GEN2_MANUFACTURER_PREFIXES,
     LEGGETT_GEN2_SERVICE_UUID,
@@ -2140,9 +2139,7 @@ def _detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detect
 
     # Check for Keeson by name patterns (e.g., base-i4.XXXX, base-i5.XXXX, KSBTXXXX)
     # This catches devices that may not advertise the specific service UUID
-    if any(device_name.startswith(pattern) for pattern in KEESON_NAME_PATTERNS) or any(
-        token in device_name for token in KEESON_NAME_SUBSTRINGS
-    ):
+    if any(device_name.startswith(pattern) for pattern in KEESON_NAME_PATTERNS):
         signals.append("name:keeson")
         _LOGGER.info(
             "Detected Keeson bed at %s (name: %s) by name pattern",

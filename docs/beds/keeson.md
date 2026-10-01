@@ -255,6 +255,13 @@ checksum checks:
 | 12 | `1` lights the bulb icon; anything else is off | **Light** binary sensor |
 | 3-4 (KSBT03C) | Big-endian value; above 1200, 600 or 0 shows the 30, 20 or 10 minute timer image, otherwise none | **Massage timer** sensor (0/10/20/30 min, raw value as attribute) |
 
+Both states exist only while Home Assistant holds the connection. With the
+default **Disconnect After Command** handoff, the link closes about a second
+after each command, so Light and Massage timer are usually unknown and update
+only briefly after a command. Turn the handoff off to keep them current until
+the idle timeout, at the cost of holding the bed's Bluetooth connection, which
+keeps the phone app out meanwhile.
+
 The app does not decode whether the light button toggles, how the timer
 button cycles, massage level limits, or the unit of the raw timer value. Those
 remain to be confirmed on hardware.
@@ -405,6 +412,7 @@ Unique service UUID auto-detection:
 | `ksbt03cr` | Nordic UART with 7-byte packets (KSBT03CR variant) |
 | `EH` | Mattress variant (E0FF service) |
 
-Names that contain `KSBT01C` or `KSBT03C` later in the name are also detected
-as Keeson and use the KSBT profile, matching the Adjustable Lite scan. Discovery
-also matches name-only `KSBT01C*` and `KSBT03C*` advertisements.
+Discovery also matches name-only `KSBT01C*` and `KSBT03C*` advertisements.
+The Adjustable Lite app also accepts the identity in the middle of a name. Auto
+stays prefix-based so existing entries keep their frames; such beds can be added
+manually with the Adjustable Lite profile, which selects its remote the same way.

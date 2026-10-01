@@ -125,7 +125,6 @@ from .const import (
     KEESON_BETTERLIVING_SERVICE_UUIDS,
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_JSON_SERVICE_UUID,
-    KEESON_NAME_SUBSTRINGS,
     KEESON_SINO_NAME_PATTERNS,
     # Variants and UUIDs
     KEESON_VARIANT_ADJUSTABLE_LITE,
@@ -1006,9 +1005,7 @@ async def create_controller(
                     device_name,
                 )
                 keeson_variant = KEESON_VARIANT_KSBT04C
-            elif normalized_name.startswith("ksbt") or any(
-                token in normalized_name for token in KEESON_NAME_SUBSTRINGS
-            ):
+            elif normalized_name.startswith("ksbt"):
                 keeson_variant = KEESON_VARIANT_KSBT
 
         # Use configured variant or default to base

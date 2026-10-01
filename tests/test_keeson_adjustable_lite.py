@@ -351,16 +351,23 @@ async def test_profile_is_selected_only_explicitly(coordinator):
     assert explicit.supports_preset_anti_snore
 
 
-async def test_auto_routes_embedded_identity_to_six_byte_frames(coordinator):
+@pytest.mark.parametrize("name", ["Bed KSBT01C000015046", "XKSBT03CR00015046"])
+async def test_auto_keeps_legacy_routing_for_embedded_identities(coordinator, name):
+    """Upgrade safety: Auto still routes only KSBT-prefixed names to KSBT frames.
+
+    A mid-name KSBT03CR must never get six-byte 0x04 frames, and existing Auto
+    entries whose names never matched keep their Base frames. Users of the app
+    with such names select the explicit profile.
+    """
     controller = await create_controller(
         coordinator=coordinator,
         bed_type=BED_TYPE_KEESON,
         protocol_variant="auto",
         client=coordinator.client,
-        device_name="Bed KSBT01C000015046",
+        device_name=name,
     )
     assert isinstance(controller, KeesonController)
-    assert controller._variant == KEESON_VARIANT_KSBT
+    assert controller._variant == "base"
 
 
 async def test_unknown_memory_slot_sends_nothing(coordinator, mock_bleak_client: MagicMock):
@@ -447,4 +454,129 @@ async def test_setup_exposes_only_the_app_surface(
     assert exists("sensor", STATE_ADJUSTABLE_LITE_MASSAGE_TIMER)
 
     assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+
+
+def _keeson_entry(
+    hass: HomeAssistant, address: str, name: str, variant: str, motor_count: int
+) -> MockConfigEntry:
+    from custom_components.adjustable_bed.const import CONF_PROTOCOL_VARIANT
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title=name,
+        data={
+            CONF_ADDRESS: address,
+            CONF_NAME: name,
+            CONF_BED_TYPE: BED_TYPE_KEESON,
+            CONF_PROTOCOL_VARIANT: variant,
+            CONF_MOTOR_COUNT: motor_count,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PREFERRED_ADAPTER: "auto",
+        },
+        unique_id=address,
+        entry_id=f"keeson_{address.replace(':', '')}",
+    )
+    entry.add_to_hass(hass)
+    return entry
+
+
+async def _switch_variant(hass: HomeAssistant, entry: MockConfigEntry, variant: str) -> None:
+    from custom_components.adjustable_bed.const import CONF_PROTOCOL_VARIANT
+
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_PROTOCOL_VARIANT: variant}
+    )
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+
+
+def _exists(hass: HomeAssistant, address: str, platform: str, key: str) -> bool:
+    from homeassistant.helpers import entity_registry as er
+
+    registry = er.async_get(hass)
+    return registry.async_get_entity_id(platform, DOMAIN, f"{address}_{key}") is not None
+
+
+async def test_switching_to_the_profile_removes_generic_ksbt_entities(
+    hass: HomeAssistant,
+    mock_coordinator_connected,
+    mock_async_ble_device_from_address: MagicMock,
+    enable_custom_integrations,
+):
+    mock_async_ble_device_from_address.return_value.name = KSBT01C
+    address = "AA:BB:CC:DD:EE:53"
+    entry = _keeson_entry(hass, address, KSBT01C, KEESON_VARIANT_KSBT, 4)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    for platform, key in (
+        ("cover", "tilt"),
+        ("cover", "lumbar"),
+        ("button", "preset_lounge"),
+        ("button", "preset_tv"),
+    ):
+        assert _exists(hass, address, platform, key), key
+
+    await _switch_variant(hass, entry, KEESON_VARIANT_ADJUSTABLE_LITE)
+
+    for platform, key in (
+        ("cover", "tilt"),
+        ("cover", "lumbar"),
+        ("button", "preset_lounge"),
+        ("button", "preset_tv"),
+    ):
+        assert not _exists(hass, address, platform, key), key
+    assert _exists(hass, address, "binary_sensor", STATE_ADJUSTABLE_LITE_LIGHT)
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+
+
+async def test_switching_away_from_the_profile_removes_its_state_entities(
+    hass: HomeAssistant,
+    mock_coordinator_connected,
+    mock_async_ble_device_from_address: MagicMock,
+    enable_custom_integrations,
+):
+    mock_async_ble_device_from_address.return_value.name = KSBT03C
+    address = "AA:BB:CC:DD:EE:54"
+    entry = _keeson_entry(hass, address, KSBT03C, KEESON_VARIANT_ADJUSTABLE_LITE, 2)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert _exists(hass, address, "binary_sensor", STATE_ADJUSTABLE_LITE_LIGHT)
+    assert _exists(hass, address, "sensor", STATE_ADJUSTABLE_LITE_MASSAGE_TIMER)
+
+    await _switch_variant(hass, entry, KEESON_VARIANT_KSBT)
+
+    assert not _exists(hass, address, "binary_sensor", STATE_ADJUSTABLE_LITE_LIGHT)
+    assert not _exists(hass, address, "sensor", STATE_ADJUSTABLE_LITE_MASSAGE_TIMER)
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+
+
+async def test_other_bed_types_remove_adjustable_lite_state_entities(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_coordinator_connected,
+    enable_custom_integrations,
+):
+    """Changing bed type off Keeson must not strand the profile's state entities."""
+    from homeassistant.helpers import entity_registry as er
+
+    registry = er.async_get(hass)
+    address = mock_config_entry.data[CONF_ADDRESS]
+    for platform, key in (
+        ("binary_sensor", STATE_ADJUSTABLE_LITE_LIGHT),
+        ("sensor", STATE_ADJUSTABLE_LITE_MASSAGE_TIMER),
+    ):
+        registry.async_get_or_create(
+            platform, DOMAIN, f"{address}_{key}", config_entry=mock_config_entry
+        )
+
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert not _exists(hass, address, "binary_sensor", STATE_ADJUSTABLE_LITE_LIGHT)
+    assert not _exists(hass, address, "sensor", STATE_ADJUSTABLE_LITE_MASSAGE_TIMER)
+    assert await hass.config_entries.async_unload(mock_config_entry.entry_id)
     await hass.async_block_till_done()

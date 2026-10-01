@@ -791,10 +791,10 @@ class TestDetectBedTypeByNamePattern:
         )
         assert detect_bed_type(service_info) == BED_TYPE_KEESON
 
-    def test_detect_adjustable_lite_identity_anywhere_in_name(self):
-        """The app's scan matches names containing its product identity."""
+    def test_mid_name_ksbt_identity_keeps_legacy_detection(self):
+        """Upgrade safety: only KSBT-prefixed names are detected as Keeson by name."""
         service_info = _make_service_info(name="Bed KSBT03C000015046")
-        assert detect_bed_type(service_info) == BED_TYPE_KEESON
+        assert detect_bed_type(service_info) != BED_TYPE_KEESON
 
     def test_detect_keeson_by_name_ore(self):
         """Test Keeson detection by ORE- prefix (Dynasty/INNOVA beds)."""
