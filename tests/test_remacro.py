@@ -1169,7 +1169,8 @@ async def test_unload_drops_the_session(
     assert not any(key[0] == "AA:BB:CC:DD:EE:70" for key in sessions)
 
 
-async def test_combined_options_refuse_an_app_change_when_sides_differ(hass: HomeAssistant) -> None:
+@pytest.mark.parametrize("variants", [("the_brick", "jeromes"), ("jeromes", "jeromes")])
+async def test_combined_options_refuse_any_app_change(hass: HomeAssistant, variants) -> None:
     from homeassistant.data_entry_flow import FlowResultType
 
     from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
@@ -1177,8 +1178,7 @@ async def test_combined_options_refuse_an_app_change_when_sides_differ(hass: Hom
 
     entry, _children = _remacro_pair(hass, 50, 50)
     children = [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]]
-    children[0][CONF_PROTOCOL_VARIANT] = "the_brick"
-    children[1][CONF_PROTOCOL_VARIANT] = "jeromes"
+    children[0][CONF_PROTOCOL_VARIANT], children[1][CONF_PROTOCOL_VARIANT] = variants
     hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_PAIR_CHILDREN: children})
     flow = AdjustableBedOptionsFlow(entry)
     flow.handler = entry.entry_id
@@ -1187,8 +1187,8 @@ async def test_combined_options_refuse_an_app_change_when_sides_differ(hass: Hom
         result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: "slumberland"})
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {CONF_PROTOCOL_VARIANT: "remacro_app_unpair_first"}
-    variants = [child[CONF_PROTOCOL_VARIANT] for child in entry.data[CONF_PAIR_CHILDREN]]
-    assert variants == ["the_brick", "jeromes"]
+    stored = [child[CONF_PROTOCOL_VARIANT] for child in entry.data[CONF_PAIR_CHILDREN]]
+    assert stored == list(variants)
 
 
 async def test_removing_an_entry_clears_its_remacro_issues(
@@ -1214,3 +1214,32 @@ async def test_removing_an_entry_clears_its_remacro_issues(
     assert issues.async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:71") is not None
     await hass.config_entries.async_remove(restored.entry_id)
     assert issues.async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:71") is None
+
+
+async def test_pair_loads_when_one_side_has_an_unmapped_model(
+    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
+) -> None:
+    from homeassistant.helpers import issue_registry as ir
+
+    left, right = "AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72"
+    entry, _children = _remacro_pair(hass, 50, 50)
+    registry = er.async_get(hass)
+    for address in (left, right):
+        registry.async_get_or_create("cover", DOMAIN, f"{address}_back", config_entry=entry)
+    adverts = {
+        left: MagicMock(manufacturer_data={50: b""}),
+        right: MagicMock(manufacturer_data={13: b""}),
+    }
+    with patch(_HISTORY, side_effect=lambda _hass, address, connectable: adverts[address]):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        assert entry.state is ConfigEntryState.LOADED
+        good = registry.async_get_entity_id("cover", DOMAIN, f"{left}_back")
+        assert good is not None
+        state = hass.states.get(good)
+        assert state is not None and state.state != "unavailable"
+        assert registry.async_get_entity_id("cover", DOMAIN, f"{right}_back") is None
+        issues = ir.async_get(hass)
+        assert issues.async_get_issue(DOMAIN, f"remacro_model_{right}") is not None
+        assert issues.async_get_issue(DOMAIN, f"remacro_model_{left}") is None
+        await hass.config_entries.async_unload(entry.entry_id)

@@ -47,6 +47,7 @@ from .adapter import (
     select_adapter,
 )
 from .address_lock import async_get_connect_lock
+from .beds.remacro_protocol import ModelProblem
 from .ble_auth import is_ble_authentication_error, is_ble_pairing_auth_failure
 from .bluetooth_diagnostics import connection_reachability
 from .bluetooth_transport import (
@@ -1155,9 +1156,12 @@ class AdjustableBedCoordinator:
             bed_type == BED_TYPE_LINAK and self._protocol_variant == LINAK_VARIANT_PERFORMANCE
         )
         # A stored Remacro model selects the same screen offline; a live
-        # advertisement still wins when the side connects.
-        stored_remacro_model = bed_type == BED_TYPE_REMACRO and isinstance(
-            self.entry.data.get(CONF_REMACRO_MODEL), int
+        # advertisement still wins when the side connects. A side the app would
+        # refuse gets no controls, only its Repairs issue.
+        stored_remacro_model = (
+            bed_type == BED_TYPE_REMACRO
+            and isinstance(self.entry.data.get(CONF_REMACRO_MODEL), int)
+            and not self.remacro_model_rejected
         )
         statically_mintable = bed_type in OFFLINE_CAPABILITY_SAFE_BED_TYPES and (
             bed_type != BED_TYPE_SOLACE
@@ -2784,6 +2788,23 @@ class AdjustableBedCoordinator:
         async with self._lock:
             return await self._async_connect_locked()
 
+    def _remacro_model_problem(self) -> tuple[ModelProblem | None, dict[str, str]]:
+        return remacro_entry_problem(
+            {
+                CONF_PROTOCOL_VARIANT: self._protocol_variant,
+                CONF_REMACRO_MODEL: self.entry.data.get(CONF_REMACRO_MODEL),
+            },
+            remacro_manufacturer_data(self.hass, self._address),
+        )
+
+    @property
+    def remacro_model_rejected(self) -> bool:
+        """Whether the selected app would refuse this Remacro bed's model."""
+        return self._bed_type == BED_TYPE_REMACRO and self._remacro_model_problem()[0] in (
+            "unmapped",
+            "not_in_app",
+        )
+
     def _remacro_model_blocks_connection(self) -> bool:
         """Refuse to connect a Remacro bed whose model the selected app would not list.
 
@@ -2792,13 +2813,7 @@ class AdjustableBedCoordinator:
         """
         if self._bed_type != BED_TYPE_REMACRO:
             return False
-        problem, placeholders = remacro_entry_problem(
-            {
-                CONF_PROTOCOL_VARIANT: self._protocol_variant,
-                CONF_REMACRO_MODEL: self.entry.data.get(CONF_REMACRO_MODEL),
-            },
-            remacro_manufacturer_data(self.hass, self._address),
-        )
+        problem, placeholders = self._remacro_model_problem()
         update_remacro_model_issue(self.hass, self._address, self._name, problem, placeholders)
         if problem is None:
             return False

@@ -6933,19 +6933,12 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     data_schema=vol.Schema(schema_dict),
                     errors={CONF_PROTOCOL_VARIANT: unpair_error},
                 )
-            # Each physical side keeps its own Remacro app; a combined edit would
-            # overwrite the other side's profile.
+            # Each physical receiver keeps its own Remacro app; a combined edit
+            # would write one side's profile into the other side's descriptor.
             if (
                 separate_address_pair
                 and bed_type == BED_TYPE_REMACRO
                 and CONF_PROTOCOL_VARIANT in paired_changes
-                and len(
-                    {
-                        child.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
-                        for child in iter_children(self.config_entry.data)
-                    }
-                )
-                > 1
             ):
                 return self.async_show_form(
                     step_id=step_id,

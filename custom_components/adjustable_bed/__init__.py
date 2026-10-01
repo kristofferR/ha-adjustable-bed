@@ -76,6 +76,7 @@ from .paired_devices import async_register_children
 from .paired_registry import (
     _async_rehome_absorbed_singles,
     async_has_side_controller_entities,
+    async_remove_side_controller_entities,
 )
 from .paired_registry import (
     async_unpair_entry as async_unpair_entry,
@@ -699,6 +700,11 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
         try:
             for child in children.values():
                 if not async_has_side_controller_entities(hass, entry, child.address):
+                    continue
+                if child.remacro_model_rejected:
+                    # The app would refuse this side; its Repairs issue explains
+                    # why. Retire its controls instead of failing the whole pair.
+                    async_remove_side_controller_entities(hass, entry, child.address)
                     continue
                 await child.async_prime_offline_controller()
                 capability_controller = child.capability_controller

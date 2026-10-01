@@ -35,13 +35,13 @@ The model is checked before any connection attempt:
 - No model seen yet: setup retries with "model is unknown" until the bed advertises.
 - A company ID no app lists, or one the selected app does not list (for example 54 or
   55 with Jerome's): setup fails with that reason and does not retry.
-- On a combined bed, such a side is not connected and gets a Repairs issue; the other
-  side keeps working.
+- On a combined bed, such a side is not connected, gets a Repairs issue and loses its
+  controls; the other side loads and keeps working.
 - Setup aborts for a company ID no app lists. When the chosen app does not list the
   model, the setup form shows that as an error on the protocol variant field.
 - The options form refuses an app that does not list the stored model. Saving a fix in
   the options reloads an entry that failed or is retrying, so it applies at once.
-- On a combined bed whose sides use different apps, the combined options refuse an app
+- Each side of a combined bed keeps its own app, so the combined options refuse any app
   change; unpair and change each side. Removing an entry clears its Repairs issues
   unless another entry still owns that bed.
 
