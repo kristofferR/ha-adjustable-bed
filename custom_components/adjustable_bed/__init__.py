@@ -765,6 +765,12 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     }
     for side in retained_sides:
         await coordinator.async_remove_child(side)
+    # The absorb just moved a refused Remacro side's old controls onto the pair.
+    # Retire them only now that the transfer committed; a rolled-back side keeps
+    # its rows under its surviving original entry, which this never touches.
+    for child in coordinator.children.values():
+        if isinstance(child, AdjustableBedCoordinator) and child.remacro_model_rejected:
+            async_remove_side_controller_entities(hass, entry, child.address)
     if not coordinator.children:
         hass.data[DOMAIN].pop(entry.entry_id, None)
         await coordinator.async_shutdown()

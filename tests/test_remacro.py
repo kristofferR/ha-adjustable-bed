@@ -1243,3 +1243,78 @@ async def test_pair_loads_when_one_side_has_an_unmapped_model(
         assert issues.async_get_issue(DOMAIN, f"remacro_model_{right}") is not None
         assert issues.async_get_issue(DOMAIN, f"remacro_model_{left}") is None
         await hass.config_entries.async_unload(entry.entry_id)
+
+
+def _absorbing_pair(hass: HomeAssistant):
+    """A pair whose sides still have their original standalone entries."""
+    from custom_components.adjustable_bed.const import CONF_PAIR_CHILDREN
+    from custom_components.adjustable_bed.pairing import KEY_ABSORBED_ENTRY_ID
+
+    left, right = "AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72"
+    registry = er.async_get(hass)
+    originals = {}
+    for address in (left, right):
+        single = _remacro_entry(hass, address, **{CONF_REMACRO_MODEL: 50})
+        for domain, key in (("cover", "back"), ("button", "preset_flat")):
+            registry.async_get_or_create(domain, DOMAIN, f"{address}_{key}", config_entry=single)
+        originals[address] = single
+    entry, _children = _remacro_pair(hass, 50, 50)
+    children = [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]]
+    for child in children:
+        child[KEY_ABSORBED_ENTRY_ID] = originals[child[CONF_ADDRESS]].entry_id
+    hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_PAIR_CHILDREN: children})
+    adverts = {
+        left: MagicMock(manufacturer_data={50: b""}),
+        right: MagicMock(manufacturer_data={13: b""}),
+    }
+    history = patch(_HISTORY, side_effect=lambda _hass, address, connectable: adverts[address])
+    return entry, originals, left, right, history
+
+
+async def test_absorbing_a_refused_side_leaves_no_stale_controls(
+    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
+) -> None:
+    entry, originals, left, right, history = _absorbing_pair(hass)
+    registry = er.async_get(hass)
+    good_cover = registry.async_get_entity_id("cover", DOMAIN, f"{left}_back")
+    with history:
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        assert entry.state is ConfigEntryState.LOADED
+        assert all(
+            hass.config_entries.async_get_entry(o.entry_id) is None for o in originals.values()
+        )
+        # The good side keeps its entity ID, now owned by the pair.
+        row = registry.async_get(good_cover)
+        assert row is not None and row.config_entry_id == entry.entry_id
+        # Only the side's connection diagnostics remain; its old controls are gone.
+        right_keys = {
+            r.unique_id.removeprefix(f"{right}_")
+            for r in registry.entities.values()
+            if r.unique_id.startswith(f"{right}_")
+        }
+        assert right_keys <= {"ble_connection", "connect", "disconnect"}
+        await hass.config_entries.async_unload(entry.entry_id)
+
+
+async def test_refused_side_rollback_keeps_its_original_controls(
+    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
+) -> None:
+    entry, originals, left, right, history = _absorbing_pair(hass)
+    registry = er.async_get(hass)
+    refused = originals[right]
+    real_remove = hass.config_entries.async_remove
+
+    async def remove(entry_id: str):
+        if entry_id == refused.entry_id:
+            raise RuntimeError("simulated removal failure")
+        return await real_remove(entry_id)
+
+    with history, patch.object(hass.config_entries, "async_remove", side_effect=remove):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+    assert hass.config_entries.async_get_entry(refused.entry_id) is not None
+    rows = [r for r in registry.entities.values() if r.unique_id.startswith(f"{right}_")]
+    assert {r.unique_id.removeprefix(f"{right}_") for r in rows} == {"back", "preset_flat"}
+    assert {r.config_entry_id for r in rows} == {refused.entry_id}
+    await hass.config_entries.async_unload(entry.entry_id)
