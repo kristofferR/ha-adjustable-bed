@@ -528,7 +528,7 @@
         }
       },
       "vibradorm_app": {
-        "title": "Caresse / Werkmeister controls",
+        "title": "Caresse / Werkmeister / VMAT controls",
         "description": "Select the app and its existing control layout. These choices determine which controls are available. Each physical side keeps its own settings.",
         "data": {
           "vibradorm_app_profile": "Bed app",
@@ -538,13 +538,15 @@
           "vibradorm_floor_default": "Remembered floor brightness",
           "vibradorm_rgb": "Retained mood lighting",
           "vibradorm_massage": "Retained massage controls",
-          "vibradorm_light_extension": "Retained lighting extension"
+          "vibradorm_light_extension": "Retained lighting extension",
+          "vibradorm_vmat_remote": "VMAT remote"
         },
         "data_description": {
           "vibradorm_app_profile": "Choose the app used with this bed. Bluetooth identifiers cannot identify the app or its controls.",
           "vibradorm_restored": "Advanced: match settings already saved by the Caresse app. Standard controls match a fresh app setup. Retained controls and feature flags do not verify your bed model.",
           "vibradorm_control_type": "Choose the control layout already used in your app. Each choice defines the available movement groups and memory controls.",
-          "vibradorm_floor_default": "Advanced: the floor-light level remembered by your app (1–8). This is a local setting, not a measured light state. A retained level of 8 is valid even when the lighting extension limits the level slider to 6."
+          "vibradorm_floor_default": "Advanced: the floor-light level remembered by your app (1–8). This is a local setting, not a measured light state. A retained level of 8 is valid even when the lighting extension limits the level slider to 6.",
+          "vibradorm_vmat_remote": "Choose the same remote ordinal shown in VMAT. This sets its controls and features; Bluetooth metadata cannot identify the remote."
         }
       }
     },
@@ -610,7 +612,8 @@
       "furnimove_remote_required": "Choose a captured FurniMove handset ID. An unknown ID requires its exact app table; the receiver label cannot choose one.",
       "vibradorm_app_required": "Choose the bed app.",
       "vibradorm_app_invalid": "Choose a supported app control layout and retained feature settings.",
-      "vibradorm_app_unpair_first": "Unpair these entries before changing app settings. Each physical side keeps its own app controls."
+      "vibradorm_app_unpair_first": "Unpair these entries before changing app settings. Each physical side keeps its own app controls.",
+      "vmat_bond_required": "VMAT setup requires verified native pairing for this exact Bluetooth address. Use a supported host Bluetooth adapter and retry; an unverified proxy pairing request cannot finish setup."
     }
   },
   "options": {
@@ -680,7 +683,8 @@
           "vibradorm_rgb": "Retained mood lighting",
           "vibradorm_massage": "Retained massage controls",
           "vibradorm_light_extension": "Retained lighting extension",
-          "vibradorm_floor_default": "Remembered floor brightness"
+          "vibradorm_floor_default": "Remembered floor brightness",
+          "vibradorm_vmat_remote": "VMAT remote"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -727,7 +731,8 @@
           "vibradorm_app_profile": "Choose the app used with this bed. Bluetooth identifiers cannot identify the app or its controls.",
           "vibradorm_restored": "Advanced: match settings already saved by the Caresse app. Standard controls match a fresh app setup. Retained controls and feature flags do not verify your bed model.",
           "vibradorm_control_type": "Choose the control layout already used in your app. Each choice defines the available movement groups and memory controls.",
-          "vibradorm_floor_default": "Advanced: the floor-light level remembered by your app (1–8). This is a local setting, not a measured light state. A retained level of 8 is valid even when the lighting extension limits the level slider to 6."
+          "vibradorm_floor_default": "Advanced: the floor-light level remembered by your app (1–8). This is a local setting, not a measured light state. A retained level of 8 is valid even when the lighting extension limits the level slider to 6.",
+          "vibradorm_vmat_remote": "Choose the same remote ordinal shown in VMAT. This sets its controls and features; Bluetooth metadata cannot identify the remote."
         }
       },
       "remove_bond": {
@@ -801,7 +806,8 @@
       "furnimove_unpair_first": "Separate the paired entries before changing to FurniMove, then select each side’s own handset layout.",
       "vibradorm_app_required": "Choose the bed app.",
       "vibradorm_app_invalid": "Choose a supported app control layout and retained feature settings.",
-      "vibradorm_app_unpair_first": "Unpair these entries before changing app settings. Each physical side keeps its own app controls."
+      "vibradorm_app_unpair_first": "Unpair these entries before changing app settings. Each physical side keeps its own app controls.",
+      "vmat_bond_required": "VMAT setup requires verified native pairing for this exact Bluetooth address. Use a supported host Bluetooth adapter and retry; an unverified proxy pairing request cannot finish setup."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -2229,9 +2235,7 @@
       "furnimove_massage_intensity": {
         "name": "FurniMove local massage intensity"
       },
-      "furnimove_massage_program": {
-        "name": "FurniMove local massage program"
-      },
+      "furnimove_massage_program": {"name": "FurniMove massage program", "description": "Select program 1, 2, 3 or 4 (Wave) using the handset’s captured massage queue.", "fields": {"program": {"name": "Program"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}},
       "furnimove_massage_timer_minutes": {
         "name": "FurniMove advisory massage duration"
       },
@@ -2313,6 +2317,78 @@
           "on": "On",
           "off": "Off"
         }
+      },
+      "vibradorm_app_xmc_status": {
+        "name": "Onboarding status"
+      },
+      "vibradorm_app_xmc_status_left": {
+        "name": "Onboarding status Left"
+      },
+      "vibradorm_app_xmc_status_right": {
+        "name": "Onboarding status Right"
+      },
+      "vibradorm_app_xmc_status_both": {
+        "name": "Onboarding status Both"
+      },
+      "vibradorm_app_opmode": {
+        "name": "Onboarding operating mode"
+      },
+      "vibradorm_app_opmode_left": {
+        "name": "Onboarding operating mode Left"
+      },
+      "vibradorm_app_opmode_right": {
+        "name": "Onboarding operating mode Right"
+      },
+      "vibradorm_app_opmode_both": {
+        "name": "Onboarding operating mode Both"
+      },
+      "vibradorm_app_device_name": {
+        "name": "App device name"
+      },
+      "vibradorm_app_device_name_left": {
+        "name": "App device name Left"
+      },
+      "vibradorm_app_device_name_right": {
+        "name": "App device name Right"
+      },
+      "vibradorm_app_device_name_both": {
+        "name": "App device name Both"
+      },
+      "vibradorm_app_revision_id": {
+        "name": "Revision ID"
+      },
+      "vibradorm_app_revision_id_left": {
+        "name": "Revision ID Left"
+      },
+      "vibradorm_app_revision_id_right": {
+        "name": "Revision ID Right"
+      },
+      "vibradorm_app_revision_id_both": {
+        "name": "Revision ID Both"
+      },
+      "vibradorm_app_revision_string": {
+        "name": "Revision string"
+      },
+      "vibradorm_app_revision_string_left": {
+        "name": "Revision string Left"
+      },
+      "vibradorm_app_revision_string_right": {
+        "name": "Revision string Right"
+      },
+      "vibradorm_app_revision_string_both": {
+        "name": "Revision string Both"
+      },
+      "vibradorm_app_variant": {
+        "name": "App variant"
+      },
+      "vibradorm_app_variant_left": {
+        "name": "App variant Left"
+      },
+      "vibradorm_app_variant_right": {
+        "name": "App variant Right"
+      },
+      "vibradorm_app_variant_both": {
+        "name": "App variant Both"
       }
     },
     "light": {
@@ -3253,16 +3329,30 @@
     },
     "furnimove_action": {"name": "FurniMove handset action", "description": "Execute an ordered action row from the selected handset. Find row indexes in controller diagnostics. The widget consumer uses the app’s separate fixed timing.", "fields": {"row_index": {"name": "Action row index"}, "duration": {"name": "Hold duration", "description": "Optional seconds for held actions. Other actions use their captured row timing."}, "consumer": {"name": "Consumer"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}},
     "furnimove_rename": {"name": "Rename FurniMove receiver", "description": "Rename one receiver using a unique name, with up to 18 UTF-16 units after trimming. The original text is sent to the receiver.", "fields": {"name": {"name": "New name"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}},
-    "furnimove_massage_program": {"name": "FurniMove massage program", "description": "Select program 1, 2, 3 or 4 (Wave) using the handset’s captured massage queue.", "fields": {"program": {"name": "Program"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}},
+    "furnimove_massage_program": {
+      "name": "FurniMove massage program",
+      "description": "Select program 1, 2, 3 or 4 (Wave) using the handset’s captured massage queue.",
+      "fields": {
+        "program": {
+          "name": "Program"
+        },
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
     "furnimove_massage_duration": {"name": "FurniMove advisory massage duration", "description": "Set the local app duration preference. This does not program a hardware timer or stop massage when time expires.", "fields": {"minutes": {"name": "Advisory duration"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}},
     "furnimove_move_simultaneously": {"name": "Move two FurniMove motors", "description": "Hold two supported axes with the app’s combined command and release cleanup.", "fields": {"first_motor": {"name": "First motor"}, "second_motor": {"name": "Second motor"}, "first_direction": {"name": "First direction"}, "second_direction": {"name": "Second direction"}, "duration_ms": {"name": "Duration in milliseconds"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}},
     "vibradorm_hold_control": {
-      "name": "Hold Caresse / Werkmeister control",
+      "name": "Hold Caresse / Werkmeister / VMAT control",
       "description": "Hold a control supported by the selected app profile, then send its release command.",
       "fields": {
         "device_id": {
           "name": "Device",
-          "description": "Beds configured with an explicit Caresse or Werkmeister app profile."
+          "description": "Beds configured with an explicit Caresse, Werkmeister or VMAT app profile."
         },
         "control": {
           "name": "Control",

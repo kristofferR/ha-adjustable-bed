@@ -154,6 +154,7 @@ from .const import (
     CONF_VIBRADORM_FLOOR_DEFAULT,
     CONF_VIBRADORM_LIGHT_EXTENSION,
     CONF_VIBRADORM_RESTORED,
+    CONF_VIBRADORM_VMAT_REMOTE,
     CONNECTION_PROFILES,
     DEFAULT_BACK_MAX_ANGLE,
     DEFAULT_CONNECTION_PROFILE,
@@ -186,6 +187,7 @@ from .const import (
     SOLACE_VARIANT_WOOSA,
     VARIANT_AUTO,
     VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS,
+    VIBRADORM_VMAT_ONBOARDING_TIMEOUT_SECONDS,
     bed_type_has_position_feedback,
     connection_gated_by_bond,
     get_motor_pulse_defaults,
@@ -431,6 +433,8 @@ class AdjustableBedCoordinator:
         self._retry_base_delay: float = profile_settings.retry_base_delay
         self._retry_jitter: float = profile_settings.retry_jitter
         self._connection_timeout: float = profile_settings.connection_timeout
+        if entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat":
+            self._connection_timeout = 10.0
         self._post_connect_delay: float = profile_settings.post_connect_delay
 
         # Get bed-type-specific motor pulse defaults, falling back to global defaults
@@ -1176,11 +1180,12 @@ class AdjustableBedCoordinator:
             raise ValueError("Invalid retained Vibradorm control type")
         app_profile = self.entry.data[CONF_VIBRADORM_APP_PROFILE]
         fallback = 6
-        if app_profile == "caresse" and self.entry.data.get(CONF_VIBRADORM_RESTORED) is True:
+        if app_profile == "caresse" and self.entry.data.get(CONF_VIBRADORM_RESTORED) is True or app_profile == "vmat":
             fallback = 6 if self.entry.data.get(CONF_VIBRADORM_LIGHT_EXTENSION) else 8
         return get_vibradorm_app_session_intent(
             self.hass, self._address, app_profile=app_profile, control_type=control_type,
             remembered_floor_default=self.entry.data.get(CONF_VIBRADORM_FLOOR_DEFAULT, fallback),
+            remote=self.entry.data.get(CONF_VIBRADORM_VMAT_REMOTE),
         )
 
     def remember_vibradorm_app_floor_default(self, level: int) -> None:
@@ -1714,6 +1719,7 @@ class AdjustableBedCoordinator:
             return False
         if self._bed_type == BED_TYPE_VIBRADORM_APP:
             metadata_progress: dict[str, str] = {}
+            pairing_details.pop("vmat_setup_started", None)
             try:
                 return await self._async_pair_vibradorm_app(
                     client, pairing_details, onboarding_deadline=onboarding_deadline,
@@ -1729,6 +1735,20 @@ class AdjustableBedCoordinator:
                         ),
                     )
                 raise
+            finally:
+                if self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat" and pairing_details.get("vmat_setup_started"):
+                    from .vibradorm_vmat_setup import async_close_vmat_setup
+
+                    self._intentional_disconnect = True
+                    try:
+                        if client.is_connected:
+                            with contextlib.suppress(Exception):
+                                await async_close_vmat_setup(client)
+                            await client.disconnect()
+                    finally:
+                        if self._client is client:
+                            self._client = None
+                        self._intentional_disconnect = False
         advisory = grants_one_connection_per_pairing_window(self._bed_type, self._protocol_variant)
         try:
             _LOGGER.info("BLE backend pairing starting for %s on the discovered link", self._address)
@@ -1803,7 +1823,10 @@ class AdjustableBedCoordinator:
         """Preserve completed fields; omitted values mean not read, never clear."""
         stored = self.entry.data.get(CONF_VIBRADORM_APP_METADATA)
         merged: dict[str, str | None] = {}
-        for field in ("model", "firmware", "software", "main_firmware_article"):
+        fields = ("model", "firmware", "software", "main_firmware_article")
+        if self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat":
+            fields += ("xmc_status", "opmode", "device_name", "revision_id", "revision_string", "variant")
+        for field in fields:
             old = stored.get(field) if isinstance(stored, dict) else None
             if isinstance(old, str):
                 merged[field] = old
@@ -1816,6 +1839,10 @@ class AdjustableBedCoordinator:
         if self._bed_type != BED_TYPE_VIBRADORM_APP:
             raise ValueError("App metadata requires an explicit Vibradorm app profile")
         fields = {"model", "firmware", "software", "main_firmware_article"}
+        if self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat":
+            from .vibradorm_vmat_profiles import VMAT_METADATA_FIELDS
+
+            fields.update(VMAT_METADATA_FIELDS)
         if any(field not in fields or not isinstance(value, str) for field, value in progress.items()):
             raise ValueError("App metadata must contain completed string fields")
         if not progress:
@@ -1875,9 +1902,14 @@ class AdjustableBedCoordinator:
                 f"vibradorm_app_{field}": value for field, value in completed.items()
             })
 
+        onboarding_timeout = (
+            VIBRADORM_VMAT_ONBOARDING_TIMEOUT_SECONDS
+            if self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat"
+            else VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS
+        )
         deadline = onboarding_deadline
         if deadline is None:
-            deadline = asyncio.get_running_loop().time() + VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS
+            deadline = asyncio.get_running_loop().time() + onboarding_timeout
         source = self._connection_path.source if self._connection_path is not None else None
         retained_context = (
             not force_pairing and self._ble_bond_established
@@ -1886,7 +1918,7 @@ class AdjustableBedCoordinator:
         if not retained_context and deadline <= asyncio.get_running_loop().time():
             raise TimeoutError("App onboarding budget expired during connection")
         observation_deadline = (
-            asyncio.get_running_loop().time() + VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS
+            asyncio.get_running_loop().time() + onboarding_timeout
             if retained_context else deadline
         )
         async with asyncio.timeout_at(observation_deadline) as budget:
@@ -1931,15 +1963,20 @@ class AdjustableBedCoordinator:
                 control_type = int(stored_control)
             else:
                 raise ValueError("Invalid retained Vibradorm control type")
+            if self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat":
+                pairing_details["vmat_setup_started"] = True
             metadata = await async_prepare_vibradorm_app_pairing(
                 client, self.entry.data[CONF_VIBRADORM_APP_PROFILE],
                 control_type,
                 deadline=deadline, cancel_event=cancel_event, metadata_progress=record_metadata,
+                remote=self.entry.data.get(CONF_VIBRADORM_VMAT_REMOTE),
             )
             completed_metadata = {
                 "model": metadata.model, "firmware": metadata.firmware,
                 "software": metadata.software,
             }
+            if self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat":
+                completed_metadata.update(metadata_progress)
             if isinstance(metadata.main_firmware_article, str):
                 completed_metadata["main_firmware_article"] = metadata.main_firmware_article
             stored_metadata = self._merged_vibradorm_app_metadata(completed_metadata)
@@ -1968,6 +2005,12 @@ class AdjustableBedCoordinator:
             ):
                 pairing_details["native_pairing"] = "not_stored"
                 self._persist_bond_flags(established=False, profile_metadata=stored_metadata)
+                await self._async_raise_pairing_issue()
+                return False
+            if self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat":
+                self._persist_bond_flags(established=False, profile_metadata=stored_metadata)
+                self._record_bond_verification("unverified")
+                pairing_details["native_pairing"] = "unverified"
                 await self._async_raise_pairing_issue()
                 return False
             # A successful RPC is only an attempted marker, scoped to this live
@@ -3315,7 +3358,11 @@ class AdjustableBedCoordinator:
                     # see live services to confirm the bond instead of looping.
                     disable_cache = bed_requires_pairing
                     onboarding_deadline = (
-                        asyncio.get_running_loop().time() + VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS
+                        asyncio.get_running_loop().time() + (
+                            VIBRADORM_VMAT_ONBOARDING_TIMEOUT_SECONDS
+                            if self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat"
+                            else VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS
+                        )
                         if self._bed_type == BED_TYPE_VIBRADORM_APP else None
                     )
                     connection_deadline = (
@@ -3333,7 +3380,10 @@ class AdjustableBedCoordinator:
                                 self._name,
                                 disconnected_callback=self._on_disconnect,
                                 max_attempts=1,
-                                timeout=self._connection_timeout,
+                                timeout=(
+                                    5.0 if self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat"
+                                    and not self._ble_bond_established else self._connection_timeout
+                                ),
                                 ble_device_callback=ble_device_callback,
                                 pair=use_pairing and not pair_after_service_discovery,
                                 use_services_cache=not disable_cache,
@@ -3363,6 +3413,23 @@ class AdjustableBedCoordinator:
                                 )
                             else:
                                 bond_created = await self._async_pair_on_live_link(pairing_details)
+                            if self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat":
+                                if not bond_created:
+                                    raise ConnectionError("VMAT requires verified native bond/address proof before control")
+                                if pairing_details.get("vmat_setup_started"):
+                                    # Setup closes its link. Start a distinct ordinary
+                                    # control session and verify the route actually used.
+                                    self._client = await establish_connection(
+                                        BleakClient, device, self._name,
+                                        disconnected_callback=self._on_disconnect,
+                                        max_attempts=1, timeout=10.0,
+                                        ble_device_callback=ble_device_callback,
+                                        use_services_cache=False,
+                                    )
+                                    actual_source = client_source(self._client) or "unknown"
+                                    self._connection_path = async_path_for_source(self.hass, actual_source)
+                                    if not await self._async_observe_native_bond(pairing_details):
+                                        raise ConnectionError("VMAT control link has no verified native bond/address proof")
                         # If we get here with pairing enabled, mark it as supported
                         if self._bed_type == BED_TYPE_VIBRADORM_APP:
                             pairing_details["adapter_pairing_supported"] = self._pairing_supported

@@ -1234,7 +1234,7 @@ customatic_move_simultaneously:
           options: [both, left, right]
 
 vibradorm_hold_control:
-  name: Hold Caresse / Werkmeister control
+  name: Hold Caresse / Werkmeister / VMAT control
   description: Hold a control supported by the selected app profile, then send its release command.
   fields:
     device_id:

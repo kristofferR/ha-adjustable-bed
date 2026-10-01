@@ -11,13 +11,18 @@ import logging
 import math
 import sys
 from collections.abc import Callable, Coroutine, Mapping
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from typing import TYPE_CHECKING, Any, Final, Literal, TypedDict
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from ..vibradorm_app_state import VibradormAppFloorIntent, VibradormAppTimerIntent
+from ..vibradorm_app_state import (
+    VibradormAppFloorIntent,
+    VibradormAppMassageIntent,
+    VibradormAppTimerIntent,
+)
+from ..vibradorm_vmat_profiles import VMAT_MOOD_PALETTE, get_vmat_remote
 from .base import (
     POSITION_AXIS_COMMANDS,
     BedController,
@@ -27,6 +32,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
+    PositionNumberSpec,
     SideBoundController,
 )
 
@@ -100,6 +106,7 @@ class VibradormAppProfile:
     groups: tuple[str, ...]
     basic: bool
     memory_slots: int
+    remote: str | None = None
 
     @property
     def article_requests(self) -> bool:
@@ -107,7 +114,10 @@ class VibradormAppProfile:
 
     @property
     def sync(self) -> bool:
-        return self.app_profile == "werkmeister" and self.control_type == 7
+        return (
+            self.app_profile == "werkmeister" and self.control_type == 7
+            or self.app_profile == "vmat" and self.control_type in (8, 9)
+        )
 
 
 def validate_vibradorm_app_profile(
@@ -119,8 +129,27 @@ def validate_vibradorm_app_profile(
     rgb: bool = False,
     massage: bool = False,
     light_extension: bool = False,
+    remote: str | None = None,
 ) -> VibradormAppProfile:
     """Validate an explicit app layout without consulting BLE or generic options."""
+    if app_profile == "vmat":
+        selected = get_vmat_remote(remote)
+        if (
+            isinstance(control_type, bool) or control_type != selected.control_type
+            or restored is not False
+            or floor_light is not selected.floor_light
+            or rgb is not selected.rgb or massage is not selected.massage
+            or light_extension is not selected.light_extension
+        ):
+            raise ValueError("VMAT flags and controls must match the selected remote")
+        return VibradormAppProfile(
+            app_profile, selected.control_type, False, selected.floor_light,
+            selected.rgb, selected.massage, selected.light_extension,
+            selected.groups, selected.control_type == 2,
+            0 if selected.control_type == 2 else 6, remote,
+        )
+    if remote is not None:
+        raise ValueError("Remote ordinals belong only to the VMAT app")
     if app_profile not in ("caresse", "werkmeister"):
         raise ValueError("App profile must be caresse or werkmeister")
     if isinstance(control_type, bool) or (
@@ -178,6 +207,12 @@ class VibradormAppMetadataProgress(TypedDict, total=False):
     firmware: str
     software: str
     main_firmware_article: str
+    xmc_status: str
+    opmode: str
+    device_name: str
+    revision_id: str
+    revision_string: str
+    variant: str
 
 
 def _characteristic(client: BleakClient, uuid: str, operation: str) -> BleakGATTCharacteristic:
@@ -293,6 +328,10 @@ async def _information_transaction(
     values: dict[str, str] = {}
     article: str | None = None
     async with asyncio.timeout_at(deadline):
+        if profile.app_profile == "vmat":
+            from ..vibradorm_vmat_setup import async_read_vmat_dis
+
+            return await async_read_vmat_dis(client, cancel_event, metadata_progress)
         for field, uuid in INFO_FIELDS:
             char = _characteristic(client, uuid, "read")
             raw = await _cancellable(client.read_gatt_char(char), cancel_event)
@@ -333,8 +372,19 @@ async def async_prepare_vibradorm_app_pairing(
     deadline: float,
     cancel_event: asyncio.Event | None = None,
     metadata_progress: Callable[[VibradormAppMetadataProgress], None] | None = None,
+    remote: str | None = None,
 ) -> VibradormAppMetadata:
     """Read app information before native pairing; the caller owns native proof."""
+    if app_profile == "vmat":
+        from ..vibradorm_vmat_setup import async_prepare_vmat_pairing
+
+        selected = get_vmat_remote(remote)
+        if isinstance(control_type, bool) or control_type != selected.control_type:
+            raise ValueError("VMAT control type must match the selected remote")
+        return await async_prepare_vmat_pairing(
+            client, basic=selected.control_type == 2, deadline=deadline,
+            cancel_event=cancel_event, metadata_progress=metadata_progress,
+        )
     profile = validate_vibradorm_app_profile(
         app_profile,
         control_type,
@@ -408,84 +458,7 @@ async def _shield_cleanup(operation: Coroutine[Any, Any, None]) -> None:
         raise asyncio.CancelledError
 
 
-@dataclass(slots=True)
-class _Massage:
-    effect: int = 0
-    speed: int = 1
-    zones: tuple[int, int] = (0, 0)
-    saved_zones: tuple[int, int] = (3, 3)
-    saved_effect: int = 1
-    saved_speed: int = 1
-    flags: tuple[bool, bool] = (False, False)
-    saved_flags: tuple[bool, bool] = (False, False)
-    automatic: int = 8
-    individual: int = 10
-    zone_states: tuple[int, int] = (8, 8)
-    wave: int = 8
 
-    def indicators(self) -> None:
-        if all(self.zones):
-            if self.effect:
-                self.automatic, self.wave, self.individual, self.zone_states = 7, 7, 10, (8, 8)
-            else:
-                self.individual, self.zone_states = 9, (7, 7)
-        if not any(self.zones):
-            self.wave, self.zone_states = 8, (8, 8)
-        states = list(self.zone_states)
-        for index, flag in enumerate(self.flags):
-            if flag:
-                self.individual, states[index] = 9, 7
-        self.zone_states = (states[0], states[1])
-        self.wave = 7 if self.effect else 8
-
-    def callback(self, code: int) -> bool:
-        """Mutate the distinct saved settings/flags; return whether OFF is written."""
-        zones, saved = list(self.zones), list(self.saved_zones)
-        flags, saved_flags = list(self.flags), list(self.saved_flags)
-        if code in (1, 2, 3, 4):
-            index = 0 if code < 3 else 1
-            zones[index] = (
-                min(5, zones[index] + 1)
-                if code in (1, 3)
-                else max(1 if self.effect else 0, zones[index] - 1)
-            )
-        elif code in (5, 6):
-            index = code - 5
-            if not zones[index]:
-                zones[index], flags[index] = saved[index] or 3, True
-            else:
-                saved[index], saved_flags[index], zones[index], flags[index] = (
-                    zones[index],
-                    flags[index],
-                    0,
-                    False,
-                )
-        elif code == 7:
-            self.effect, self.speed = self.saved_effect, self.saved_speed
-            zones = saved.copy()
-            if not any(zones):
-                zones = [3, 3]
-        elif code == 8:
-            saved, zones = zones.copy(), [0, 0]
-            self.saved_effect, self.saved_speed, self.effect, self.speed = (
-                self.effect,
-                self.speed,
-                0,
-                1,
-            )
-        elif code == 9:
-            flags = saved_flags.copy()
-            for index, flag in enumerate(flags):
-                if flag:
-                    zones[index] = saved[index] or 3
-        elif code == 10:
-            saved_flags, flags = flags.copy(), [False, False]
-            for index, flag in enumerate(saved_flags):
-                if flag:
-                    saved[index], zones[index] = zones[index], 0
-        self.zones, self.saved_zones = (zones[0], zones[1]), (saved[0], saved[1])
-        self.flags, self.saved_flags = (flags[0], flags[1]), (saved_flags[0], saved_flags[1])
-        return code in (8, 10)
 
 
 def _button(action: str) -> MotorCommandCallable:
@@ -529,6 +502,9 @@ class VibradormAppController(BedController):
         light_extension: bool = False,
         floor_intent: VibradormAppFloorIntent | None = None,
         timer_intent: VibradormAppTimerIntent | None = None,
+        remote: str | None = None,
+        massage_intent: VibradormAppMassageIntent | None = None,
+        mood_intent: dict[str, str | int] | None = None,
     ) -> None:
         super().__init__(coordinator)
         self.profile = validate_vibradorm_app_profile(
@@ -539,9 +515,13 @@ class VibradormAppController(BedController):
             rgb=rgb,
             massage=massage,
             light_extension=light_extension,
+            remote=remote,
         )
         self._toggle = 0
-        self._floor_intent = floor_intent or VibradormAppFloorIntent(level=0, default_level=6)
+        self._next_write_at = 0.0
+        self._floor_intent = floor_intent or VibradormAppFloorIntent(
+            level=0, default_level=8 if app_profile == "vmat" and not light_extension else 6,
+        )
         self._timer_intent = timer_intent or VibradormAppTimerIntent(enabled=False, minutes=0)
         if not isinstance(self._floor_intent, VibradormAppFloorIntent) or not isinstance(
             self._timer_intent, VibradormAppTimerIntent
@@ -552,14 +532,16 @@ class VibradormAppController(BedController):
         _integer(self._timer_intent.minutes, 0, 60, "Local pending timer")
         if type(self._timer_intent.enabled) is not bool:
             raise ValueError("Local timer enable must be boolean")
-        self._massage = _Massage()
-        self._mood_intent: dict[str, str | int] = {}
+        self._massage = massage_intent or VibradormAppMassageIntent()
+        self._committed_massage = replace(self._massage)
+        self._mood_intent: dict[str, str | int] = mood_intent if mood_intent is not None else {}
         self._metadata: VibradormAppMetadata | None = None
         self._metadata_values: VibradormAppMetadataProgress = {}
         self._metadata_progress_pending: VibradormAppMetadataProgress | None = None
         self._subscribed = False
         self._notify_client: BleakClient | None = None
         self._notify_characteristic: BleakGATTCharacteristic | None = None
+        self._notify_generation = 0
         self._article_reply: asyncio.Future[str] | None = None
         self._sync_reply: asyncio.Future[bool] | None = None
         self._sync_observed: bool | None = None
@@ -593,6 +575,22 @@ class VibradormAppController(BedController):
                     cached.get("main_firmware_article"),
                 )
             self._publish_metadata()
+        if self.profile.app_profile == "vmat":
+            from typing import cast
+
+            from ..vibradorm_vmat_profiles import VMAT_METADATA_FIELDS
+
+            if isinstance(cached, Mapping):
+                self._metadata_values.update(cast(VibradormAppMetadataProgress, {
+                    field: cached[field] for field in VMAT_METADATA_FIELDS
+                    if isinstance(cached.get(field), str)
+                }))
+                self._publish_metadata()
+            self._publish_floor()
+            if self.profile.massage:
+                self._publish_massage()
+            for key, value in self._mood_intent.items():
+                self.forward_controller_state_update(f"vibradorm_app_mood_{key}", value)
 
     @property
     def _floor_level(self) -> int:
@@ -644,8 +642,14 @@ class VibradormAppController(BedController):
         return False
 
     @property
+    def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
+        if self.profile.app_profile == "vmat":
+            return ()
+        return super().position_number_specs
+
+    @property
     def requires_notification_channel(self) -> bool:
-        return not self.profile.basic
+        return self.profile.app_profile == "vmat" or not self.profile.basic
 
     @property
     def supports_preset_flat(self) -> bool:
@@ -685,7 +689,7 @@ class VibradormAppController(BedController):
 
     @property
     def light_level_max(self) -> int:
-        return 6 if self.profile.light_extension else 8
+        return 6 if self.profile.light_extension and self.profile.app_profile != "vmat" else 8
 
     @property
     def supports_light_timer(self) -> bool:
@@ -773,7 +777,7 @@ class VibradormAppController(BedController):
                     "vibradorm_app_mood_palette",
                     "vibradorm_app_mood_palette",
                     "vibradorm_app_mood_palette",
-                    tuple(MOOD_PALETTE),
+                    tuple(self.mood_palette),
                     lambda c, v: c.set_mood_palette(v),
                 ),
                 ControllerSelectSpec(
@@ -841,8 +845,14 @@ class VibradormAppController(BedController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         fields = ("model", "firmware", "software") + (
-            ("main_firmware_article",) if self.profile.article_requests else ()
+            ("main_firmware_article",)
+            if self.profile.article_requests or self.profile.app_profile == "vmat"
+            else ()
         ) + (("sync_observed",) if self.profile.sync else ())
+        if self.profile.app_profile == "vmat":
+            from ..vibradorm_vmat_profiles import VMAT_METADATA_FIELDS
+
+            fields += VMAT_METADATA_FIELDS
         return tuple(
             ControllerStateSensorSpec(
                 f"vibradorm_app_{field}",
@@ -887,11 +897,21 @@ class VibradormAppController(BedController):
         async with self._ble_lock:
             if effective_event.is_set():
                 raise asyncio.CancelledError
+            if self.profile.app_profile == "vmat" and packet not in (b"\xff", b"\x00\xff"):
+                delay = self._next_write_at - asyncio.get_running_loop().time()
+                if delay > 0:
+                    await _cancellable(asyncio.sleep(delay), effective_event)
             client = self.client
             if client is None or not client.is_connected:
                 raise ConnectionError("Not connected")
-            char = _characteristic(client, uuid, "write")
-            response = "write" in char.properties
+            if self.profile.app_profile == "vmat":
+                from ..vibradorm_vmat_setup import vmat_characteristic
+
+                response = uuid != CBI
+                char = vmat_characteristic(client, uuid, "write" if response else "write-without-response")
+            else:
+                char = _characteristic(client, uuid, "write")
+                response = "write" in char.properties
             if advance_at_execution:
                 self._consume_toggle()  # CmdLightCBI.execute begins after lane admission.
             payload = self._format_command_trace_payload(packet)
@@ -907,6 +927,8 @@ class VibradormAppController(BedController):
                     controller_class=type(self).__name__,
                 )
             await client.write_gatt_char(char, packet, response=response)
+            if self.profile.app_profile == "vmat":
+                self._next_write_at = asyncio.get_running_loop().time() + 0.1
 
     async def write_command(
         self,
@@ -932,6 +954,11 @@ class VibradormAppController(BedController):
         client = self.client
         if client is None:
             raise ConnectionError("Not connected")
+        if self.profile.app_profile == "vmat":
+            from ..vibradorm_vmat_setup import validate_vmat_roles
+
+            validate_vmat_roles(client, basic=self.profile.basic)
+            return
         _characteristic(client, self.control_characteristic_uuid, "write")
         if self.requires_notification_channel:
             _characteristic(client, RESPONSE, "notify")
@@ -956,18 +983,43 @@ class VibradormAppController(BedController):
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         self._notify_callback = callback
-        if self.profile.basic or self._subscribed:
+        if self.profile.app_profile == "vmat" and self._subscribed and self.client is not self._notify_client:
+            await self.stop_notify()
+        if not self.requires_notification_channel or self._subscribed:
             return
         client = self.client
         if client is None:
             raise ConnectionError("Not connected")
-        char = _characteristic(client, RESPONSE, "notify")
-        await client.start_notify(char, self._notification)
+        if self.profile.app_profile == "vmat":
+            from ..vibradorm_vmat_setup import vmat_characteristic
+
+            await _cancellable(asyncio.sleep(0.5), self._coordinator.cancel_command)
+            char = vmat_characteristic(client, RESPONSE, "notify")
+            self._notify_generation += 1
+            generation = self._notify_generation
+
+            def notification(sender: BleakGATTCharacteristic, data: bytearray) -> None:
+                if (
+                    generation == self._notify_generation and self._subscribed
+                    and self.client is client and client.is_connected
+                    and self._notify_client is client and self._notify_characteristic is char
+                    and sender.uuid.lower() == char.uuid.lower() and sender.handle == char.handle
+                ):
+                    self._notification(sender, data)
+
+            await client.start_notify(char, notification)
+            if generation != self._notify_generation or self.client is not client:
+                await client.stop_notify(char)
+                return
+        else:
+            char = _characteristic(client, RESPONSE, "notify")
+            await client.start_notify(char, self._notification)
         self._notify_client = client
         self._notify_characteristic = char
         self._subscribed = True
 
     async def stop_notify(self) -> None:
+        self._notify_generation += 1
         self._notify_callback = None
         self._clear_waiters()
         if self._subscribed:
@@ -1238,8 +1290,11 @@ class VibradormAppController(BedController):
             return
         if toggle:
             self._consume_toggle()
-        self._floor_level = level
-        raw = level if self.profile.light_extension else level * 32 if level * 32 <= 255 else 200
+        if self.profile.app_profile != "vmat":
+            self._floor_level = level
+        raw = level if self.profile.light_extension else level * 32 if level * 32 <= 255 else (
+            250 if self.profile.app_profile == "vmat" else 200
+        )
         timer = self._timer_minutes if self._timer_enabled else 0
         if self.profile.basic and not self.profile.light_extension:
             await self._write(LIGHT, bytes((raw, 0, timer)))
@@ -1250,6 +1305,8 @@ class VibradormAppController(BedController):
             if self._coordinator.cancel_command.is_set():
                 return
             await self._write(CBI, packet, advance_at_execution=True)
+        if self.profile.app_profile == "vmat":
+            self._floor_level = level
         self._publish_floor()
 
     async def set_light_level(self, level: int) -> None:
@@ -1264,30 +1321,43 @@ class VibradormAppController(BedController):
     async def lights_off(self) -> None:
         if self._coordinator.cancel_command.is_set():
             return
-        if self._floor_level:
-            self._floor_default = self._floor_level
+        previous = self._floor_level
+        if previous and self.profile.app_profile != "vmat":
+            self._floor_default = previous
         await self._floor(0, toggle=True)
+        if previous and self.profile.app_profile == "vmat" and not self._coordinator.cancel_command.is_set():
+            self._floor_default = previous
 
     async def lights_toggle(self) -> None:
         if self._coordinator.cancel_command.is_set():
             return
         if self._floor_level:
-            self._floor_default = self._floor_level
+            previous = self._floor_level
+            if self.profile.app_profile != "vmat":
+                self._floor_default = previous
             await self._floor(0, toggle=True)
+            if self.profile.app_profile == "vmat" and not self._coordinator.cancel_command.is_set():
+                self._floor_default = previous
         else:
             await self._floor(self._floor_default or 1, toggle=True)
 
     async def _mood(self, parameters: bytes, key: str, value: str | int) -> None:
         if not self.profile.rgb:
             raise ValueError("This profile has no mood-light route")
-        self._mood_intent[key] = value
+        if self.profile.app_profile != "vmat":
+            self._mood_intent[key] = value
         await self._write(CBI, self._header(0x77 if self.profile.basic else 0x1077) + parameters)
+        self._mood_intent[key] = value
         self.forward_controller_state_update(f"vibradorm_app_mood_{key}", value)
 
+    @property
+    def mood_palette(self) -> dict[str, tuple[int, int, int]]:
+        return VMAT_MOOD_PALETTE if self.profile.app_profile == "vmat" else MOOD_PALETTE
+
     async def set_mood_palette(self, option: str) -> None:
-        if option not in MOOD_PALETTE:
+        if option not in self.mood_palette:
             raise ValueError("Choose a shipped mood option")
-        await self._mood(b"\x01\x00" + bytes(MOOD_PALETTE[option]), "palette", option)
+        await self._mood(b"\x01\x00" + bytes(self.mood_palette[option]), "palette", option)
 
     async def set_mood_effect(self, option: str) -> None:
         if option not in MOOD_EFFECTS:
@@ -1330,17 +1400,30 @@ class VibradormAppController(BedController):
     async def _massage_callback(self, code: int) -> None:
         if not self.profile.massage:
             raise ValueError("This profile has no massage route")
-        await self._write(CBI, self._plan_massage_callback(code))
-        self._publish_massage()
+        await self._write_massage_packets([self._plan_massage_callback(code)])
 
     async def _send_massage(self) -> None:
         packet = self._massage_packet()
         self._massage.indicators()
-        await self._write(CBI, packet)
+        await self._write_massage_packets([packet])
+
+    async def _write_massage_packets(self, packets: list[bytes]) -> None:
+        try:
+            for index, packet in enumerate(packets):
+                if index:
+                    await _cancellable(asyncio.sleep(0.1), self._coordinator.cancel_command)
+                await self._write(CBI, packet)
+        except BaseException:
+            if self.profile.app_profile == "vmat":
+                # Preserve the shared reconnect holder, including saved flags.
+                for field, value in asdict(self._committed_massage).items():
+                    setattr(self._massage, field, value)
+            raise
         self._publish_massage()
 
     def _publish_massage(self) -> None:
         m = self._massage
+        self._committed_massage = replace(m)
         self.forward_controller_state_updates(
             {
                 "vibradorm_app_massage_wave": str(m.effect) if m.effect else None,
@@ -1381,11 +1464,7 @@ class VibradormAppController(BedController):
     async def _massage_mode(self, automatic: bool) -> None:
         if not self.profile.massage:
             raise ValueError("This profile has no massage route")
-        for index, packet in enumerate(self._plan_massage_mode(automatic)):
-            if index:
-                await _cancellable(asyncio.sleep(0.1), self._coordinator.cancel_command)
-            await self._write(CBI, packet)
-        self._publish_massage()
+        await self._write_massage_packets(self._plan_massage_mode(automatic))
 
     async def _massage_zone(self, index: int, delta: int = 0) -> None:
         m = self._massage

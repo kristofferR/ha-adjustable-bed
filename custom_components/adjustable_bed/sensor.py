@@ -247,6 +247,9 @@ def _sensor_entities_for(
                 "vibradorm_app_model", "vibradorm_app_firmware",
                 "vibradorm_app_software", "vibradorm_app_main_firmware_article",
                 "vibradorm_app_sync_observed",
+                "vibradorm_app_xmc_status", "vibradorm_app_opmode",
+                "vibradorm_app_device_name", "vibradorm_app_revision_id",
+                "vibradorm_app_revision_string", "vibradorm_app_variant",
             } - active_keys
         )
         _async_remove_stale_sensor_entities(

@@ -1,5 +1,10 @@
 # Vibradorm app profiles: Caresse and Werkmeister
 
+The independently verified [VMAT app profile](vmat.md) shares the explicit app
+configuration entry point, with its own remote table, setup stages, GATT rules
+and accessory conversion values. It does not inherit these apps' protocol
+defaults merely because transport identifiers match.
+
 The accepted static protocol/profile behavior is implemented with concrete code and executed-test bindings in the [row031 disposition ledger](../apk-analysis/row031-dispositions.md). Existing generic Vibradorm entries retain their current controller and position behavior.
 
 | Accepted artifact | Version | APK SHA-256 |
