@@ -17,7 +17,7 @@ motor channels rather than assigning unproven physical axes or angle units.
 
 Four reversal flags are independent local settings. Lamp and massage selections
 change the available controls, not measured hardware state. Enabling a feature
-changes the local layout. Disabling a previously selected lamp or massage feature
+changes the local layout without opening a Bluetooth link. Disabling a previously selected lamp or massage feature
 first sends ten source OFF commands, then saves the selection. Failed OFF writes
 leave the saved selection unchanged. The settings action supports the same
 transaction. For paired or multi-target service calls, every selected OFF burst
@@ -35,7 +35,9 @@ button or cover activation holds its action for **one second**, a Home Assistant
 policy separate from the app's refresh cadence. All actions on a physical receiver
 share the global motor resource. STOP releases that receiver's active control.
 Two-address pairs retain independent profiles, reversal flags, features and
-memories per child. This profile has no single-address side selector.
+memories per child. Select each receiver’s profile before pairing; unpair first
+to change those profiles. Shared paired options do not replace child settings.
+This profile has no single-address side selector.
 
 `adjustable_bed.limoss_remote_hold_control` accepts one currently rendered control
 and a duration from 0.1 to 60 seconds, with millisecond precision. Available names
@@ -152,9 +154,11 @@ clears it on reconnect, and never combines bytes from different receivers.
 Hardware/software versions use the source signed-byte string concatenation.
 Position replies `10`, `20`, `30`, `40` and serial `06` retain signed big-endian
 32-bit values. Position sensors are explicitly **raw**, have no physical unit,
-and do not create angle sliders or estimated bed positions. Only a matching active
-save query can contribute to a local memory transaction. Idle or late position
-replies may update raw diagnostics but cannot overwrite memories or issue queries.
+and do not create angle sliders or estimated bed positions. A save query accepts matching replies only after its write reaches ATT, after
+waiting for the BLE lane and 80 ms spacing. Pre-query and idle replies can update
+raw diagnostics but cannot contribute to memory capture or issue queries. There
+is no native request ID: a delayed same-opcode reply arriving after emission is
+indistinguishable from the current query’s reply.
 
 Diagnostics expose raw capability fields, chosen product, exact layout, visible
 opcodes, reversal flags, theme preference, local memories and the app sequence.

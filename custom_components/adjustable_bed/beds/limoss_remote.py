@@ -154,6 +154,7 @@ class LimossRemoteController(BedController):
         self._notify_char: BleakGATTCharacteristic | None = None
         self._notify_generation = 0
         self._request_reply: tuple[int, asyncio.Future[bytes]] | None = None
+        self._request_active: asyncio.Future[bytes] | None = None
         self._progress: dict[str, object] | None = None
         self._last_write_started = float("-inf")
         self._publish_metadata()
@@ -320,10 +321,16 @@ class LimossRemoteController(BedController):
             raise ValueError("Logical command needs five bytes")
         return format_command(payload, self.sequence.take())
 
-    async def _write(self, payload: bytes, event: asyncio.Event | None = None) -> None:
-        await self._send(self._construct(payload, event), event)
+    async def _write(
+        self, payload: bytes, event: asyncio.Event | None = None, *,
+        reply: tuple[int, asyncio.Future[bytes]] | None = None,
+    ) -> None:
+        await self._send(self._construct(payload, event), event, reply=reply)
 
-    async def _send(self, packet: bytes, event: asyncio.Event | None = None) -> None:
+    async def _send(
+        self, packet: bytes, event: asyncio.Event | None = None, *,
+        reply: tuple[int, asyncio.Future[bytes]] | None = None,
+    ) -> None:
         event = event if event is not None else self._coordinator.cancel_command
         async with self._ble_lock:
             wait = self._last_write_started + 0.08 - asyncio.get_running_loop().time()
@@ -349,6 +356,12 @@ class LimossRemoteController(BedController):
             )
             # Host deadline prevents a stalled ATT call retaining the command lane.
             async with asyncio.timeout(2):
+                # Pre-query frames cannot satisfy a request waiting for the lane/pacing.
+                # After emission, same-opcode replies have no native correlation ID.
+                if reply is not None:
+                    if reply[1].done():
+                        reply[1].result()  # Teardown can fail a reserved, not-yet-emitted query.
+                    self._request_reply = reply
                 await client.write_gatt_char(char, packet, response=response)
 
     async def write_command(
@@ -435,8 +448,9 @@ class LimossRemoteController(BedController):
         self._notify_generation += 1
         self._notify_client, self._notify_char = None, None
         self._parser.clear()
-        if self._request_reply is not None and not self._request_reply[1].done():
-            self._request_reply[1].set_exception(
+        pending = self._request_active or (self._request_reply[1] if self._request_reply else None)
+        if pending is not None and not pending.done():
+            pending.set_exception(
                 ConnectionError("App notification channel stopped")
             )
         return client, char
@@ -520,13 +534,14 @@ class LimossRemoteController(BedController):
     async def _request(
         self, opcode: int, payload: bytes, *, retry_capabilities: bool = False
     ) -> bytes:
-        if self._request_reply is not None:
+        if self._request_active or self._request_reply is not None:
             raise RuntimeError("Another app information transaction is active")
         future = asyncio.get_running_loop().create_future()
-        self._request_reply = (opcode, future)
+        self._request_active = future
         try:
             while True:
-                await self._write(payload)
+                self._request_reply = None
+                await self._write(payload, reply=(opcode, future))
                 try:
                     return await self._reply(future, 1 if retry_capabilities else 10)
                 except TimeoutError:
@@ -534,6 +549,7 @@ class LimossRemoteController(BedController):
                         raise
         finally:
             self._request_reply = None
+            self._request_active = None
             if not future.done():
                 future.cancel()
             elif not future.cancelled():
@@ -727,7 +743,7 @@ class LimossRemoteController(BedController):
             raise ValueError("Action is unavailable in this profile")
 
     async def read_positions(self, motor_count: int = 2) -> None:
-        # Save uses correlated fresh queries; there is no idle telemetry poll.
+        # Save gates matching replies at query emission; there is no idle telemetry poll.
         return
 
     async def preset_flat(self) -> None:

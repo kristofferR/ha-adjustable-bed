@@ -662,7 +662,8 @@
       "starcode_app_unpair_first": "Unpair these entries before changing app selectors. Each physical side retains its own app controls.",
       "limoss_remote_product_required": "Select bed or chair for this app profile.",
       "limoss_remote_feature_update_failed": "The feature OFF commands could not complete. Settings were not saved.",
-      "limoss_remote_invalid": "Select valid Limoss Remote app settings."
+      "limoss_remote_invalid": "Select valid Limoss Remote app settings.",
+      "limoss_remote_pair_settings": "Unpair first, then select each physical receiver’s Limoss Remote app profile before combining them again."
     }
   },
   "options": {

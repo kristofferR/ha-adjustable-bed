@@ -83,7 +83,7 @@ async def test_public_actions_dispatch_live_controller(
     setattr(controller, method, action)
     await hass.services.async_call(DOMAIN, service, {"device_id": "app", **data}, blocking=True)
     action.assert_awaited_once_with(*args, **kwargs)
-    if service == "limoss_remote_rename_memory":
+    if service in ("limoss_remote_rename_memory", "limoss_remote_features"):
         coordinator.async_execute_controller_command.assert_not_awaited()
     else:
         assert coordinator.async_execute_controller_command.await_args.kwargs["cancel_running"] is True

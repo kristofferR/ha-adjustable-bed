@@ -6734,6 +6734,15 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 user_input = {**user_input, CONF_MOTOR_COUNT: int(user_input[CONF_MOTOR_COUNT])}
             requested_bed_type = user_input.get(CONF_BED_TYPE, bed_type)
             requested_route = user_input.get(CONF_PROTOCOL_VARIANT, form_variant)
+            if separate_address_pair and (
+                (requested_bed_type == BED_TYPE_LIMOSS_REMOTE and requested_bed_type != bed_type)
+                or any(key in user_input for key in LIMOSS_REMOTE_CONFIG_KEYS)
+            ):
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={"base": "limoss_remote_pair_settings"},
+                )
             if (
                 separate_address_pair
                 and requested_bed_type == BED_TYPE_FURNIMOVE

@@ -1936,6 +1936,30 @@ async def handle_limoss_remote_features(call: ServiceCall) -> None:
     light, massage = call.data["underbed_light"], call.data["massage"]
     targets = _limoss_remote_targets(call)
     touched: list[tuple[LimossRemoteController, bool, bool]] = []
+    online: list[tuple[BedTarget, str]] = []
+    local: list[BedChild] = []
+    for coordinator, side in targets:
+        physical_targets = _command_targets(coordinator, side)
+        disabling: list[BedChild] = []
+        for target in physical_targets:
+            cached = target.capability_controller
+            if cached is None:
+                raise ServiceValidationError("This receiver has no cached app profile")
+            selected = _limoss_remote_controller(cached)
+            physical = selected._controller if isinstance(selected, SideBoundController) else selected
+            assert isinstance(physical, LimossRemoteController)
+            if (physical.underbed_light and not light) or (physical.massage and not massage):
+                disabling.append(target)
+            else:
+                local.append(target)
+        if len(disabling) == len(physical_targets):
+            online.append((coordinator, side))
+        elif isinstance(coordinator, PairedBedCoordinator):
+            online.extend(
+                (coordinator, child_side)
+                for child_side, child in coordinator.children.items()
+                if child in disabling
+            )
 
     async def apply(controller: LimossRemoteController | SideBoundController) -> None:
         physical = controller._controller if isinstance(controller, SideBoundController) else controller
@@ -1944,7 +1968,9 @@ async def handle_limoss_remote_features(call: ServiceCall) -> None:
         await controller.set_optional_features(light, massage, persist=False)
 
     try:
-        await _execute_limoss_remote(call, lambda ctrl: None, apply, targets=targets)
+        # Only disabling an enabled feature has native OFF frames to deliver.
+        if online:
+            await _execute_limoss_remote(call, lambda ctrl: None, apply, targets=online)
         async with contextlib.AsyncExitStack() as stack:
             # Shared guards use one process-local order across multi-target calls.
             owners = {id(coordinator): coordinator for coordinator, _ in targets}
@@ -1955,6 +1981,16 @@ async def handle_limoss_remote_features(call: ServiceCall) -> None:
                     else coordinator.async_command_operation_guard()
                 )
                 await stack.enter_async_context(guard)
+            for target in local:
+                cached = target.capability_controller
+                if cached is None:
+                    raise ServiceValidationError("This receiver has no cached app profile")
+                selected = _limoss_remote_controller(cached)
+                physical = selected._controller if isinstance(selected, SideBoundController) else selected
+                assert isinstance(physical, LimossRemoteController)
+                if (physical.underbed_light and not light) or (physical.massage and not massage):
+                    raise ServiceValidationError("The local feature selection changed; retry the action")
+                await apply(selected)
             for controller, _, _ in touched:
                 controller._coordinator.remember_limoss_remote_features(light, massage)
     except (Exception, asyncio.CancelledError):
