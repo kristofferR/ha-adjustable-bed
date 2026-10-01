@@ -75,6 +75,10 @@ class MotionBedController(BedController):
         self._active_module: str | None = None
         self._audio_preference = False
         self._held_session: _HeldSession | None = None
+        self._module_generation = 0
+        self._thermal_task: asyncio.Task[None] | None = None
+        self._network_generation = 0
+        self._network_task: asyncio.Task[None] | None = None
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -242,10 +246,17 @@ class MotionBedController(BedController):
         if getattr(self._state, surface + "_module_present") is not True:
             raise ValueError("This hub has not reported the selected module")
         if self._active_module != surface:
-            self._active_module = surface
+            self._select_module(surface)
             self._started_modules.discard(surface)
             self._publish()
             self._spawn(self._start_present_modules)
+
+    def _select_module(self, module: str | None) -> None:
+        self._module_generation += 1
+        if self._thermal_task is not None:
+            self._thermal_task.cancel()
+            self._thermal_task = None
+        self._active_module = module
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
@@ -434,11 +445,15 @@ class MotionBedController(BedController):
             self._notify_callback = None
 
     def _cancel_background(self) -> None:
+        self._module_generation += 1
+        self._network_generation += 1
         for task in self._tasks:
             task.cancel()
         self._tasks.clear()
+        self._thermal_task = None
+        self._network_task = None
 
-    def _spawn(self, operation: Callable[[], Coroutine[object, object, None]]) -> None:
+    def _spawn(self, operation: Callable[[], Coroutine[object, object, None]]) -> asyncio.Task[None]:
         # Coroutine functions below own session/generation checks before each write.
         generation = self._generation
         async def run() -> None:
@@ -452,8 +467,12 @@ class MotionBedController(BedController):
         task = self._coordinator.hass.async_create_task(run())
         self._tasks.add(task)
         task.add_done_callback(self._tasks.discard)
+        return task
 
     def _activate(self, context: MotionBedContext, seconds: float = 30) -> None:
+        if context in ("day_report", "month_report", "sleep_report"):
+            for previous in ("day_report", "month_report", "sleep_report"):
+                self._context_expiry.pop(previous, None)
         self._context_expiry[context] = asyncio.get_running_loop().time() + seconds
 
     def _handle_notification(self, data: bytes) -> None:
@@ -479,15 +498,27 @@ class MotionBedController(BedController):
         self._publish()
         if self.selection.surface == "hub":
             self._spawn(self._start_present_modules)
-        for effect in result.effects:
+        effects = result.effects
+        if ("module_deleted" in result.receipts and "module_change" in contexts
+                and not any(effect.action == "module_status_query" for effect in effects)):
+            # The delete receiver clears inventory; refresh it using the proven query.
+            effects += (MotionBedFollowup("module_status_query"),)
+        for effect in effects:
             if effect.action == "network_status_query" and self._network_poll_active and effect.delay_ms:
                 continue
-            self._spawn(lambda effect=effect: self._followup(effect))
+            network_generation = self._network_generation
+            self._spawn(lambda effect=effect, network_generation=network_generation:
+                        self._followup(effect, network_generation=network_generation))
 
-    async def _followup(self, effect: MotionBedFollowup) -> None:
+    async def _followup(self, effect: MotionBedFollowup, *, network_generation: int | None = None) -> None:
         generation = self._generation
+        attempt = self._network_generation if network_generation is None else network_generation
+        def current() -> bool:
+            return self._owned_session_current(generation) and (
+                effect.action != "network_status_query" or attempt == self._network_generation
+            )
         await asyncio.sleep(effect.delay_ms / 1000)
-        if not self._owned_session_current(generation):
+        if not current():
             return
         key = {
             "module_status_query": "main_mcu_activity_module_status",
@@ -496,14 +527,14 @@ class MotionBedController(BedController):
             "network_status_query": "network_activity_network_status",
         }[effect.action]
         async def execute(controller: BedController) -> None:
-            if controller is not self or not self._owned_session_current(generation):
+            if controller is not self or not current():
                 return
             if effect.action == "network_status_query":
                 await self._bounded_network_query()
             else:
                 await controller.async_execute_motion_bed_internal_query(key)
         await self._coordinator.async_execute_controller_query(execute, cancel_running=False, skip_disconnect=True,
-                                                                     run_if=lambda: self._owned_session_current(generation))
+                                                                     run_if=current)
 
     async def async_execute_motion_bed_internal_query(self, key: str) -> None:
         action = ACTION_BY_KEY[key]
@@ -549,13 +580,16 @@ class MotionBedController(BedController):
 
     async def _module_startup(self, module: str) -> None:
         from datetime import datetime
+        module_generation = self._module_generation
+        def current() -> bool:
+            return module_generation == self._module_generation and self._module_is_active(module)
         await asyncio.sleep(0.2)
-        if not self._module_is_active(module):
+        if not current():
             return
         if module == "motor":
             await self.write_command(SOURCE_COMMANDS["DiandongFragment:319"])
             await asyncio.sleep(0.2)
-            if not self._module_is_active(module):
+            if not current():
                 return
             await self.write_command(build_clock(datetime.now().astimezone()))
         elif module == "air":
@@ -563,42 +597,60 @@ class MotionBedController(BedController):
         elif module == "thermal":
             await self.write_command(SOURCE_COMMANDS["LengnuanFragment:183"])
             await asyncio.sleep(0.2)
-            if not self._module_is_active(module):
+            if not current():
                 return
             await self.write_command(build_thermal_clock(datetime.now().astimezone()))
-            self._spawn(self._thermal_poll)
+            if not current():
+                return
+            if self._thermal_task is not None:
+                self._thermal_task.cancel()
+            self._thermal_task = self._spawn(lambda: self._thermal_poll(module_generation=module_generation))
 
     async def _start_present_modules(self) -> None:
         present = tuple(module for module in ("motor", "air", "thermal")
                         if getattr(self._state, module + "_module_present") is True)
         self._started_modules.intersection_update(present)
         if self._active_module not in present:
-            self._active_module = present[0] if present else None
+            self._select_module(present[0] if present else None)
             self._publish()
         module = self._active_module
         if module is None or module in self._started_modules:
             return
         self._started_modules.add(module)
         generation = self._generation
+        module_generation = self._module_generation
+        completed = False
         async def prepare(controller: BedController) -> None:
+            nonlocal completed
             if (controller is not self or not self._owned_session_current(generation) or self._active_module != module
+                    or module_generation != self._module_generation
                     or getattr(self._state, module + "_module_present") is not True):
-                self._started_modules.discard(module)
+                if module_generation == self._module_generation:
+                    self._started_modules.discard(module)
                 return
             await self._module_startup(module)
-        await self._coordinator.async_execute_controller_query(prepare, cancel_running=False, skip_disconnect=True,
-                                                                     run_if=lambda: self._owned_session_current(generation))
+            completed = module_generation == self._module_generation and self._module_is_active(module)
+        try:
+            await self._coordinator.async_execute_controller_query(prepare, cancel_running=False, skip_disconnect=True,
+                                                                     run_if=lambda: self._owned_session_current(generation) and module_generation == self._module_generation)
+        finally:
+            if not completed and module_generation == self._module_generation:
+                self._started_modules.discard(module)
 
-    async def _thermal_poll(self) -> None:
+    async def _thermal_poll(self, *, module_generation: int | None = None) -> None:
         generation = self._generation
+        if module_generation is None:
+            module_generation = self._module_generation
+        def current() -> bool:
+            return self._owned_session_current(generation) and module_generation == self._module_generation and self._module_is_active("thermal")
         await asyncio.sleep(2)
-        while generation == self._generation and (self.selection.surface == "thermal" or (self._state.thermal_module_present is True and self._active_module == "thermal")):
+        while current():
             async def query(controller: BedController) -> None:
-                if controller is not self or not self._owned_session_current(generation) or (self.selection.surface == "hub" and (self._state.thermal_module_present is not True or self._active_module != "thermal")):
+                if controller is not self or not current():
                     return
                 await self.write_command(SOURCE_COMMANDS["LengnuanFragment:58"])
             await self._coordinator.async_execute_controller_query(query, cancel_running=False, skip_disconnect=True,
-                                                                         run_if=lambda: self._owned_session_current(generation))
+                                                                         run_if=current)
             await asyncio.sleep(5)
 
     def validate_motion_bed_action(self, key: str, *, branch: str = "app",
@@ -716,6 +768,13 @@ class MotionBedController(BedController):
         self.validate_motion_bed_write(request)
         token = self._operation_generation.set(self._generation)
         try:
+            if request.network_poll:
+                self._network_generation += 1
+                if self._network_task is not None:
+                    self._network_task.cancel()
+                    self._network_task = None
+                self._network_queries = 0
+                self._network_poll_active = False
             if self.selection.surface == "hub":
                 module = "thermal" if request.context in ("thermal", "thermal_schedule") else "air" if request.name in ("air_setting", "pressure") else "motor" if request.name in ("alarm", "audio", "clock") else None
                 if module is not None:
@@ -748,7 +807,7 @@ class MotionBedController(BedController):
                 self._network_poll_active = True
                 self._state = replace(self._state, network_poll_attempts=0, provisioning_status="waiting")
                 self._publish()
-                self._spawn(self._network_poll)
+                self._network_task = self._spawn(self._network_poll)
         finally:
             self._operation_generation.reset(token)
 
@@ -760,30 +819,34 @@ class MotionBedController(BedController):
 
     async def _network_poll(self) -> None:
         generation = self._generation
+        attempt = self._network_generation
+        def current() -> bool:
+            return self._owned_session_current(generation) and attempt == self._network_generation
         try:
             for _ in range(10):
                 await asyncio.sleep(6)
-                if generation != self._generation or self._state.provisioning_status in ("failed", "success"):
+                if not current() or self._state.provisioning_status in ("failed", "success"):
                     return
                 async def query(controller: BedController) -> None:
-                    if controller is self and self._owned_session_current(generation):
+                    if controller is self and current():
                         await self._bounded_network_query()
                 await self._coordinator.async_execute_controller_query(query, cancel_running=False, skip_disconnect=True,
-                                                                         run_if=lambda: self._owned_session_current(generation))
-            if generation == self._generation and self._state.provisioning_status == "waiting":
+                                                                         run_if=current)
+            if current() and self._state.provisioning_status == "waiting":
                 self._state = replace(self._state, provisioning_status="timed_out")
                 self._publish()
         finally:
-            if generation == self._generation:
+            if current():
                 self._network_poll_active = False
 
     async def _send_stop(self) -> None:
         await self.write_command(STOP, cancel_event=asyncio.Event())
 
     async def stop_all(self) -> None:
-        if self.selection.surface == "air":
+        surface = self._active_module if self.selection.surface == "hub" else self.selection.surface
+        if surface == "air":
             await self.write_command(SOURCE_COMMANDS["QinangFragment:302"], cancel_event=asyncio.Event())
-        elif self.selection.surface == "thermal":
+        elif surface == "thermal":
             from ..motion_bed_protocol import build_thermal_gear
             await self.write_command(build_thermal_gear(4), cancel_event=asyncio.Event())
         else:

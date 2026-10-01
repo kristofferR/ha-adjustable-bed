@@ -20,6 +20,12 @@ Binding a module does not open another connection. The Active hub module select
 chooses among reported modules and controls which surface owns startup and
 thermal polling. All reported module controls remain available.
 
+Switching modules retires the prior thermal poller and pending startup work.
+A failed module initialization can retry on the next inventory reply. Deletion
+acknowledgements refresh the hub inventory; existing buttons publish changes to
+their reported module/audio availability. The hub Stop action uses its active
+module's proven motor STOP, air-stop or thermal-off command.
+
 Auto layout follows the original app name, including its saved-title character
 replacement. Advanced retained preset/movement choices apply only to the same
 physical target and cannot cross between ordinary beds and modular products.
@@ -73,6 +79,13 @@ acknowledges the write without proving that heating is active.
 
 Sleep day/window state separates trustworthy decoded windows from the app's
 faulty historical-window assignment. A new report clears prior aggregation.
+Only the newest report receiver context remains active. Provisioning retries
+retire the previous polling task and deadline before sending the new sequence.
+The artifact supplies no request identifier for these replies: host ownership
+prevents superseded work and overlapping report receivers, but cannot identify
+a delayed reply that has the same wire shape as the latest request. Report
+route flags and provisioning feedback therefore belong to the current request;
+they do not prove which indistinguishable attempt produced a reply.
 Malformed or short notifications leave state unchanged and record a diagnostic
 rejection. Fault replies are parsed passively; hidden fault-request controls
 remain excluded.

@@ -361,25 +361,27 @@ async def test_hub_modules_are_inactive_until_present_and_then_gated_individuall
 
 
 @pytest.mark.asyncio
-async def test_present_hub_thermal_starts_owned_polling_once() -> None:
+async def test_present_hub_thermal_starts_owned_polling_once(monkeypatch) -> None:
     rig = rig_for("TL-Q")
     await rig.controller.async_discover_capabilities()
     rig.controller._spawn = MagicMock()
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", AsyncMock())
     status = bytes.fromhex("FFFFFFFF01002714000000000000000C")
     rig.controller._handle_notification(status)
     await rig.controller._start_present_modules()
     operations = [call.args[0] for call in rig.controller._spawn.call_args_list]
-    assert any(getattr(operation, "__name__", "") == "_thermal_poll" for operation in operations)
-    first_count = sum(
-        getattr(operation, "__name__", "") == "_thermal_poll" for operation in operations
-    )
+    poll = AsyncMock()
+    rig.controller._thermal_poll = poll
+    for operation in operations:
+        await operation()
+    poll.assert_awaited_once_with(module_generation=rig.controller._module_generation)
+    first_count = len(operations)
     rig.controller._handle_notification(status)
     await rig.controller._start_present_modules()
     operations = [call.args[0] for call in rig.controller._spawn.call_args_list]
-    assert (
-        sum(getattr(operation, "__name__", "") == "_thermal_poll" for operation in operations)
-        == first_count
-    )
+    for operation in operations[first_count:]:
+        await operation()
+    poll.assert_awaited_once_with(module_generation=rig.controller._module_generation)
 
 
 @pytest.mark.asyncio

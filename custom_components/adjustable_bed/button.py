@@ -720,6 +720,7 @@ def _async_follow_motion_bed_module_actions(
     # A Motion Bed hub discovers each module after subscribing to status replies.
     # Keep entity identities stable while adding newly reported module controls.
     created = {entity.unique_id for entity in initial}
+    actions = {entity.unique_id: entity for entity in initial if isinstance(entity, ControllerActionButton)}
     def add_motion_bed_module_actions(updates: dict[str, object]) -> None:
         additions: list[ButtonEntity] = []
         for runtime in entity_runtimes(coordinator):
@@ -730,7 +731,12 @@ def _async_follow_motion_bed_module_actions(
                 identity = runtime.entity_unique_id(spec.key)
                 if identity not in created:
                     created.add(identity)
-                    additions.append(ControllerActionButton(runtime, spec))
+                    entity = ControllerActionButton(runtime, spec)
+                    actions[identity] = entity
+                    additions.append(entity)
+        for entity in actions.values():
+            if getattr(entity, "hass", None) is not None and entity.entity_id:
+                entity.async_write_ha_state()
         if additions:
             async_add_entities(additions)
     for runtime in entity_runtimes(coordinator):
