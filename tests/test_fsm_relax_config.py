@@ -82,6 +82,7 @@ def test_profile_fields_schema_and_exact_options_validation():
     schema = {}
     _add_fsm_relax_schema_fields(schema, data())
     result = vol.Schema(schema)({})
+    assert isinstance(result, dict)
     assert result[const.CONF_FSM_RELAX_LAYOUT] == "bed"
     assert result[const.CONF_FSM_RELAX_MEMORY_NAMES][0] == "Sleep"
     assert _fsm_relax_errors(data()) == {}
