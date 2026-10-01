@@ -1,0 +1,1994 @@
+[
+  {
+    "id": "P1-C001",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "head_up",
+    "vector": "05 02 00 00 00 01 00",
+    "source_count": -1
+  },
+  {
+    "id": "P1-C002",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "head_down",
+    "vector": "05 02 00 00 00 02 00",
+    "source_count": -1
+  },
+  {
+    "id": "P1-C003",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "foot_up",
+    "vector": "05 02 00 00 00 04 00",
+    "source_count": -1
+  },
+  {
+    "id": "P1-C004",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "foot_down",
+    "vector": "05 02 00 00 00 08 00",
+    "source_count": -1
+  },
+  {
+    "id": "P1-C005",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "lumbar_up",
+    "vector": "05 02 00 00 00 10 00",
+    "source_count": -1
+  },
+  {
+    "id": "P1-C006",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "lumbar_down",
+    "vector": "05 02 00 00 00 20 00",
+    "source_count": -1
+  },
+  {
+    "id": "P1-C007",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "union_up",
+    "vector": "05 02 00 00 00 05 00",
+    "source_count": -1
+  },
+  {
+    "id": "P1-C008",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "union_down",
+    "vector": "05 02 00 00 00 0a 00",
+    "source_count": -1
+  },
+  {
+    "id": "P1-C009",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "stop",
+    "vector": "05 02 00 00 00 00 00",
+    "source_count": 1
+  },
+  {
+    "id": "P1-C010",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "interrupt",
+    "vector": "05 02 00 00 00 00 00",
+    "source_count": 1
+  },
+  {
+    "id": "P1-C011",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "flat",
+    "vector": "05 02 08 00 00 00 00 ; 05 02 08 00 00 00 00 ; 05 02 08 00 00 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P1-C012",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "tv",
+    "vector": "05 02 00 00 40 00 00 ; 05 02 00 00 40 00 00 ; 05 02 00 00 40 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P1-C013",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "zero_g",
+    "vector": "05 02 00 00 10 00 00 ; 05 02 00 00 10 00 00 ; 05 02 00 00 10 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P1-C014",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "anti_snore",
+    "vector": "05 02 00 00 80 00 00 ; 05 02 00 00 80 00 00 ; 05 02 00 00 80 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P1-C015",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "lounge",
+    "vector": "05 02 00 00 20 00 00 ; 05 02 00 00 20 00 00 ; 05 02 00 00 20 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P1-C016",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "memory_1",
+    "vector": "05 02 00 01 00 00 00 ; 05 02 00 01 00 00 00 ; 05 02 00 01 00 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P1-C017",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "memory_2",
+    "vector": "05 02 00 04 00 00 00 ; 05 02 00 04 00 00 00 ; 05 02 00 04 00 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P1-C018",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "save_tv",
+    "vector": "05 02 08 00 40 00 00",
+    "source_count": 55
+  },
+  {
+    "id": "P1-C019",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "save_zero_g",
+    "vector": "05 02 08 00 10 00 00",
+    "source_count": 55
+  },
+  {
+    "id": "P1-C020",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "save_lounge",
+    "vector": "05 02 08 00 20 00 00",
+    "source_count": 55
+  },
+  {
+    "id": "P1-C021",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "save_memory_1",
+    "vector": "05 02 08 01 00 00 00",
+    "source_count": 55
+  },
+  {
+    "id": "P1-C022",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "save_memory_2",
+    "vector": "05 02 08 04 00 00 00",
+    "source_count": 55
+  },
+  {
+    "id": "P1-C023",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "reset",
+    "vector": "05 02 88 00 00 00 00",
+    "source_count": 55
+  },
+  {
+    "id": "P1-C024",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "massage_head_up",
+    "vector": "05 02 00 00 08 00 00",
+    "source_count": -1
+  },
+  {
+    "id": "P1-C025",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "massage_head_down",
+    "vector": "05 02 00 80 00 00 00",
+    "source_count": -1
+  },
+  {
+    "id": "P1-C026",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "massage_foot_up",
+    "vector": "05 02 00 00 04 00 00",
+    "source_count": -1
+  },
+  {
+    "id": "P1-C027",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "massage_foot_down",
+    "vector": "05 02 01 00 00 00 00",
+    "source_count": -1
+  },
+  {
+    "id": "P1-C028",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "massage_wave_up",
+    "vector": "05 02 10 00 00 00 00",
+    "source_count": -1
+  },
+  {
+    "id": "P1-C029",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "massage_wave_down",
+    "vector": "05 02 04 00 00 00 00",
+    "source_count": -1
+  },
+  {
+    "id": "P1-C030",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "massage_toggle",
+    "vector": "05 02 00 00 01 00 00 ; 05 02 00 00 01 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 3
+  },
+  {
+    "id": "P1-C031",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "massage_off",
+    "vector": "05 02 02 00 00 00 00 ; 05 02 02 00 00 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 3
+  },
+  {
+    "id": "P1-C032",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "timer10",
+    "vector": "04 e0 07 01 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 2
+  },
+  {
+    "id": "P1-C033",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "timer20",
+    "vector": "04 e0 07 02 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 2
+  },
+  {
+    "id": "P1-C034",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "timer30",
+    "vector": "04 e0 07 03 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 2
+  },
+  {
+    "id": "P1-C035",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "light_on",
+    "vector": "08 02 00 00 00 00 00 00 00 40 ; 08 02 00 00 00 00 00 00 00 40 ; 05 02 00 00 00 00 00",
+    "source_count": 3
+  },
+  {
+    "id": "P1-C036",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "light_off",
+    "vector": "08 02 00 00 00 00 00 00 00 80 ; 08 02 00 00 00 00 00 00 00 80 ; 05 02 00 00 00 00 00",
+    "source_count": 3
+  },
+  {
+    "id": "P1-C037",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "light_cycle",
+    "vector": "05 02 00 04 00 00 00 ; 05 02 00 04 00 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 3
+  },
+  {
+    "id": "P1-C038",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "brightness",
+    "vector": "04 e0 00 (v&ff) 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 2
+  },
+  {
+    "id": "P1-C039",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "color",
+    "vector": "04 e0 01 (v&ff) 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 2
+  },
+  {
+    "id": "P1-C040",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "query",
+    "vector": "00 b0",
+    "source_count": 1
+  },
+  {
+    "id": "P1-C041",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "mode_special",
+    "vector": "05 02 00 02 00 04 00",
+    "source_count": 35
+  },
+  {
+    "id": "P1-C042",
+    "profile": "cb25",
+    "dialect": "legacy",
+    "action": "mode_other",
+    "vector": "5a 01 03 10 30 8a a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P2-C001",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "head_up",
+    "vector": "5a 01 03 10 30 00 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P2-C002",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "head_down",
+    "vector": "5a 01 03 10 30 01 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P2-C003",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "foot_up",
+    "vector": "5a 01 03 10 30 02 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P2-C004",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "foot_down",
+    "vector": "5a 01 03 10 30 03 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P2-C005",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "lumbar_up",
+    "vector": "5a 01 03 10 30 04 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P2-C006",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "lumbar_down",
+    "vector": "5a 01 03 10 30 05 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P2-C007",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "union_up",
+    "vector": "5a 01 03 10 30 0c a5",
+    "source_count": -1
+  },
+  {
+    "id": "P2-C008",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "union_down",
+    "vector": "5a 01 03 10 30 0d a5",
+    "source_count": -1
+  },
+  {
+    "id": "P2-C009",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "stop",
+    "vector": "5a 01 03 10 30 0f a5",
+    "source_count": 1
+  },
+  {
+    "id": "P2-C010",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "interrupt",
+    "vector": "5a 01 03 10 30 1f a5",
+    "source_count": 1
+  },
+  {
+    "id": "P2-C011",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "flat",
+    "vector": "5a 01 03 10 30 10 a5 ; 5a 01 03 10 30 10 a5 ; 5a 01 03 10 30 10 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P2-C012",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "tv",
+    "vector": "5a 01 03 10 30 11 a5 ; 5a 01 03 10 30 11 a5 ; 5a 01 03 10 30 11 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P2-C013",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "zero_g",
+    "vector": "5a 01 03 10 30 13 a5 ; 5a 01 03 10 30 13 a5 ; 5a 01 03 10 30 13 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P2-C014",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "anti_snore",
+    "vector": "5a 01 03 10 30 16 a5 ; 5a 01 03 10 30 16 a5 ; 5a 01 03 10 30 16 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P2-C015",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "lounge",
+    "vector": "5a 01 03 10 30 17 a5 ; 5a 01 03 10 30 17 a5 ; 5a 01 03 10 30 17 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P2-C016",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "memory_1",
+    "vector": "5a 01 03 10 30 1a a5 ; 5a 01 03 10 30 1a a5 ; 5a 01 03 10 30 1a a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P2-C017",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "memory_2",
+    "vector": "5a 01 03 10 30 1b a5 ; 5a 01 03 10 30 1b a5 ; 5a 01 03 10 30 1b a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P2-C018",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "save_tv",
+    "vector": "5a 01 03 10 30 92 a5",
+    "source_count": 55
+  },
+  {
+    "id": "P2-C019",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "save_zero_g",
+    "vector": "5a 01 03 10 30 90 a5",
+    "source_count": 55
+  },
+  {
+    "id": "P2-C020",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "save_lounge",
+    "vector": "5a 01 03 10 30 91 a5",
+    "source_count": 55
+  },
+  {
+    "id": "P2-C021",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "save_memory_1",
+    "vector": "5a 01 03 10 30 94 a5",
+    "source_count": 55
+  },
+  {
+    "id": "P2-C022",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "save_memory_2",
+    "vector": "5a 01 03 10 30 95 a5",
+    "source_count": 55
+  },
+  {
+    "id": "P2-C023",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "reset",
+    "vector": "5a 01 03 10 30 96 a5",
+    "source_count": 55
+  },
+  {
+    "id": "P2-C024",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "massage_head_up",
+    "vector": "5a 01 03 10 30 66 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P2-C025",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "massage_head_down",
+    "vector": "5a 01 03 10 30 67 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P2-C026",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "massage_foot_up",
+    "vector": "5a 01 03 10 30 68 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P2-C027",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "massage_foot_down",
+    "vector": "5a 01 03 10 30 69 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P2-C028",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "massage_wave_up",
+    "vector": "5a 01 03 10 30 58 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P2-C029",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "massage_wave_down",
+    "vector": "5a 01 03 10 30 59 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P2-C030",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "massage_toggle",
+    "vector": "5a 01 03 10 30 5a a5 ; 5a 01 03 10 30 5a a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 3
+  },
+  {
+    "id": "P2-C031",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "massage_off",
+    "vector": "5a 01 03 10 30 6f a5 ; 5a 01 03 10 30 6f a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 3
+  },
+  {
+    "id": "P2-C032",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "timer10",
+    "vector": "5a e0 04 07 01 00 00 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P2-C033",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "timer20",
+    "vector": "5a e0 04 07 02 00 00 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P2-C034",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "timer30",
+    "vector": "5a e0 04 07 03 00 00 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P2-C035",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "light_on",
+    "vector": "5a 01 03 10 30 73 a5 ; 5a 01 03 10 30 73 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 3
+  },
+  {
+    "id": "P2-C036",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "light_off",
+    "vector": "5a 01 03 10 30 74 a5 ; 5a 01 03 10 30 74 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 3
+  },
+  {
+    "id": "P2-C037",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "light_cycle",
+    "vector": "5a 01 03 10 30 70 a5 ; 5a 01 03 10 30 70 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 3
+  },
+  {
+    "id": "P2-C038",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "brightness",
+    "vector": "5a e0 04 00 (v&ff) 00 00 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P2-C039",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "color",
+    "vector": "5a e0 04 01 (v&ff) 00 00 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P2-C040",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "query",
+    "vector": "5a b0 00 a5",
+    "source_count": 1
+  },
+  {
+    "id": "P2-C041",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "mode_special",
+    "vector": "5a 01 03 10 30 7a a5",
+    "source_count": 35
+  },
+  {
+    "id": "P2-C042",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "mode_other",
+    "vector": "5a 01 03 10 30 8a a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P2-C043",
+    "profile": "cb25",
+    "dialect": "star",
+    "action": "initialize",
+    "vector": "5a 0b 00 a5",
+    "source_count": 1
+  },
+  {
+    "id": "P3-C001",
+    "profile": "elevate",
+    "dialect": "star",
+    "action": "union_up",
+    "vector": "5a 01 03 10 30 44 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P3-C002",
+    "profile": "elevate",
+    "dialect": "star",
+    "action": "union_down",
+    "vector": "5a 01 03 10 30 45 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P3-C003",
+    "profile": "elevate",
+    "dialect": "star",
+    "action": "stop",
+    "vector": "5a 01 03 10 30 0f a5",
+    "source_count": 1
+  },
+  {
+    "id": "P3-C004",
+    "profile": "elevate",
+    "dialect": "star",
+    "action": "interrupt",
+    "vector": "5a 01 03 10 30 4f a5",
+    "source_count": 1
+  },
+  {
+    "id": "P3-C005",
+    "profile": "elevate",
+    "dialect": "star",
+    "action": "initialize",
+    "vector": "5a 0b 00 a5",
+    "source_count": 1
+  },
+  {
+    "id": "P3-C006",
+    "profile": "elevate",
+    "dialect": "star",
+    "action": "head_up",
+    "vector": "5a 01 03 10 30 40 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P3-C007",
+    "profile": "elevate",
+    "dialect": "star",
+    "action": "head_down",
+    "vector": "5a 01 03 10 30 41 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P3-C008",
+    "profile": "elevate",
+    "dialect": "star",
+    "action": "foot_up",
+    "vector": "5a 01 03 10 30 42 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P3-C009",
+    "profile": "elevate",
+    "dialect": "star",
+    "action": "foot_down",
+    "vector": "5a 01 03 10 30 43 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P3-C010",
+    "profile": "elevate",
+    "dialect": "star",
+    "action": "flat",
+    "vector": "5a 01 03 10 30 46 a5",
+    "source_count": 1
+  },
+  {
+    "id": "P4-C001",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "light_on",
+    "vector": "5a 01 03 10 30 73 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P4-C002",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "light_off",
+    "vector": "5a 01 03 10 30 74 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P4-C003",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "light_cycle",
+    "vector": "5a 01 03 10 30 70 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P4-C004",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "mode_other",
+    "vector": "5a 01 03 10 30 8a a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P4-C005",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "brightness",
+    "vector": "5a e0 04 00 (v&ff) 00 00 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P4-C006",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "color",
+    "vector": "5a e0 04 01 (v&ff) 00 00 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P4-C007",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "query",
+    "vector": "5a b0 00 a5",
+    "source_count": 1
+  },
+  {
+    "id": "P4-C008",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "initialize_clock",
+    "vector": "5a 14 07 (local_year-2000) month day hour minute second weekday a5",
+    "source_count": 1
+  },
+  {
+    "id": "P5-C001",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "light_on",
+    "vector": "5a 01 03 10 30 73 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P5-C002",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "light_off",
+    "vector": "5a 01 03 10 30 74 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P5-C003",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "light_cycle",
+    "vector": "5a 01 03 10 30 70 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P5-C004",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "mode_other",
+    "vector": "5a 01 03 10 30 8a a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P5-C005",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "brightness",
+    "vector": "5a e0 04 00 (v&ff) 00 00 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P5-C006",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "color",
+    "vector": "5a e0 04 01 (v&ff) 00 00 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P5-C007",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "query",
+    "vector": "5a b0 00 a5",
+    "source_count": 1
+  },
+  {
+    "id": "P5-C008",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "initialize_clock",
+    "vector": "5a 14 07 (local_year-2000) month day hour minute second weekday a5",
+    "source_count": 1
+  },
+  {
+    "id": "P4-P1-C001",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "head_up",
+    "vector": "05 02 00 00 00 01 00",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P1-C002",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "head_down",
+    "vector": "05 02 00 00 00 02 00",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P1-C003",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "foot_up",
+    "vector": "05 02 00 00 00 04 00",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P1-C004",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "foot_down",
+    "vector": "05 02 00 00 00 08 00",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P1-C005",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "lumbar_up",
+    "vector": "05 02 00 00 00 10 00",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P1-C006",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "lumbar_down",
+    "vector": "05 02 00 00 00 20 00",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P1-C007",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "union_up",
+    "vector": "05 02 00 00 00 05 00",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P1-C008",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "union_down",
+    "vector": "05 02 00 00 00 0a 00",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P1-C009",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "stop",
+    "vector": "05 02 00 00 00 00 00",
+    "source_count": 1
+  },
+  {
+    "id": "P4-P1-C010",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "interrupt",
+    "vector": "05 02 00 00 00 00 00",
+    "source_count": 1
+  },
+  {
+    "id": "P4-P1-C011",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "flat",
+    "vector": "05 02 08 00 00 00 00 ; 05 02 08 00 00 00 00 ; 05 02 08 00 00 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P4-P1-C012",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "tv",
+    "vector": "05 02 00 00 40 00 00 ; 05 02 00 00 40 00 00 ; 05 02 00 00 40 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P4-P1-C013",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "zero_g",
+    "vector": "05 02 00 00 10 00 00 ; 05 02 00 00 10 00 00 ; 05 02 00 00 10 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P4-P1-C014",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "anti_snore",
+    "vector": "05 02 00 00 80 00 00 ; 05 02 00 00 80 00 00 ; 05 02 00 00 80 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P4-P1-C015",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "lounge",
+    "vector": "05 02 00 00 20 00 00 ; 05 02 00 00 20 00 00 ; 05 02 00 00 20 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P4-P1-C016",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "memory_1",
+    "vector": "05 02 00 01 00 00 00 ; 05 02 00 01 00 00 00 ; 05 02 00 01 00 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P4-P1-C017",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "memory_2",
+    "vector": "05 02 00 04 00 00 00 ; 05 02 00 04 00 00 00 ; 05 02 00 04 00 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P4-P1-C018",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "save_tv",
+    "vector": "05 02 08 00 40 00 00",
+    "source_count": 55
+  },
+  {
+    "id": "P4-P1-C019",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "save_zero_g",
+    "vector": "05 02 08 00 10 00 00",
+    "source_count": 55
+  },
+  {
+    "id": "P4-P1-C020",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "save_lounge",
+    "vector": "05 02 08 00 20 00 00",
+    "source_count": 55
+  },
+  {
+    "id": "P4-P1-C021",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "save_memory_1",
+    "vector": "05 02 08 01 00 00 00",
+    "source_count": 55
+  },
+  {
+    "id": "P4-P1-C022",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "save_memory_2",
+    "vector": "05 02 08 04 00 00 00",
+    "source_count": 55
+  },
+  {
+    "id": "P4-P1-C023",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "reset",
+    "vector": "05 02 88 00 00 00 00",
+    "source_count": 55
+  },
+  {
+    "id": "P4-P1-C024",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "massage_head_up",
+    "vector": "05 02 00 00 08 00 00",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P1-C025",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "massage_head_down",
+    "vector": "05 02 00 80 00 00 00",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P1-C026",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "massage_foot_up",
+    "vector": "05 02 00 00 04 00 00",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P1-C027",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "massage_foot_down",
+    "vector": "05 02 01 00 00 00 00",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P1-C028",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "massage_wave_up",
+    "vector": "05 02 10 00 00 00 00",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P1-C029",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "massage_wave_down",
+    "vector": "05 02 04 00 00 00 00",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P1-C030",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "massage_toggle",
+    "vector": "05 02 00 00 01 00 00 ; 05 02 00 00 01 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 3
+  },
+  {
+    "id": "P4-P1-C031",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "massage_off",
+    "vector": "05 02 02 00 00 00 00 ; 05 02 02 00 00 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 3
+  },
+  {
+    "id": "P4-P1-C032",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "timer10",
+    "vector": "04 e0 07 01 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 2
+  },
+  {
+    "id": "P4-P1-C033",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "timer20",
+    "vector": "04 e0 07 02 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 2
+  },
+  {
+    "id": "P4-P1-C034",
+    "profile": "f23",
+    "dialect": "legacy",
+    "action": "timer30",
+    "vector": "04 e0 07 03 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 2
+  },
+  {
+    "id": "P4-P2-C001",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "head_up",
+    "vector": "5a 01 03 10 30 00 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P2-C002",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "head_down",
+    "vector": "5a 01 03 10 30 01 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P2-C003",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "foot_up",
+    "vector": "5a 01 03 10 30 02 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P2-C004",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "foot_down",
+    "vector": "5a 01 03 10 30 03 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P2-C005",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "lumbar_up",
+    "vector": "5a 01 03 10 30 04 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P2-C006",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "lumbar_down",
+    "vector": "5a 01 03 10 30 05 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P2-C007",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "union_up",
+    "vector": "5a 01 03 10 30 0c a5",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P2-C008",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "union_down",
+    "vector": "5a 01 03 10 30 0d a5",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P2-C009",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "stop",
+    "vector": "5a 01 03 10 30 0f a5",
+    "source_count": 1
+  },
+  {
+    "id": "P4-P2-C010",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "interrupt",
+    "vector": "5a 01 03 10 30 1f a5",
+    "source_count": 1
+  },
+  {
+    "id": "P4-P2-C011",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "flat",
+    "vector": "5a 01 03 10 30 10 a5 ; 5a 01 03 10 30 10 a5 ; 5a 01 03 10 30 10 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P4-P2-C012",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "tv",
+    "vector": "5a 01 03 10 30 11 a5 ; 5a 01 03 10 30 11 a5 ; 5a 01 03 10 30 11 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P4-P2-C013",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "zero_g",
+    "vector": "5a 01 03 10 30 13 a5 ; 5a 01 03 10 30 13 a5 ; 5a 01 03 10 30 13 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P4-P2-C014",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "anti_snore",
+    "vector": "5a 01 03 10 30 16 a5 ; 5a 01 03 10 30 16 a5 ; 5a 01 03 10 30 16 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P4-P2-C015",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "lounge",
+    "vector": "5a 01 03 10 30 17 a5 ; 5a 01 03 10 30 17 a5 ; 5a 01 03 10 30 17 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P4-P2-C016",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "memory_1",
+    "vector": "5a 01 03 10 30 1a a5 ; 5a 01 03 10 30 1a a5 ; 5a 01 03 10 30 1a a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P4-P2-C017",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "memory_2",
+    "vector": "5a 01 03 10 30 1b a5 ; 5a 01 03 10 30 1b a5 ; 5a 01 03 10 30 1b a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P4-P2-C018",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "save_tv",
+    "vector": "5a 01 03 10 30 92 a5",
+    "source_count": 55
+  },
+  {
+    "id": "P4-P2-C019",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "save_zero_g",
+    "vector": "5a 01 03 10 30 90 a5",
+    "source_count": 55
+  },
+  {
+    "id": "P4-P2-C020",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "save_lounge",
+    "vector": "5a 01 03 10 30 91 a5",
+    "source_count": 55
+  },
+  {
+    "id": "P4-P2-C021",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "save_memory_1",
+    "vector": "5a 01 03 10 30 94 a5",
+    "source_count": 55
+  },
+  {
+    "id": "P4-P2-C022",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "save_memory_2",
+    "vector": "5a 01 03 10 30 95 a5",
+    "source_count": 55
+  },
+  {
+    "id": "P4-P2-C023",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "reset",
+    "vector": "5a 01 03 10 30 96 a5",
+    "source_count": 55
+  },
+  {
+    "id": "P4-P2-C024",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "massage_head_up",
+    "vector": "5a 01 03 10 30 66 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P2-C025",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "massage_head_down",
+    "vector": "5a 01 03 10 30 67 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P2-C026",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "massage_foot_up",
+    "vector": "5a 01 03 10 30 68 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P2-C027",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "massage_foot_down",
+    "vector": "5a 01 03 10 30 69 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P2-C028",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "massage_wave_up",
+    "vector": "5a 01 03 10 30 58 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P2-C029",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "massage_wave_down",
+    "vector": "5a 01 03 10 30 59 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P4-P2-C030",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "massage_toggle",
+    "vector": "5a 01 03 10 30 5a a5 ; 5a 01 03 10 30 5a a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 3
+  },
+  {
+    "id": "P4-P2-C031",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "massage_off",
+    "vector": "5a 01 03 10 30 6f a5 ; 5a 01 03 10 30 6f a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 3
+  },
+  {
+    "id": "P4-P2-C032",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "timer10",
+    "vector": "5a e0 04 07 01 00 00 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P4-P2-C033",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "timer20",
+    "vector": "5a e0 04 07 02 00 00 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P4-P2-C034",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "timer30",
+    "vector": "5a e0 04 07 03 00 00 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P4-P2-C043",
+    "profile": "f23",
+    "dialect": "star",
+    "action": "initialize",
+    "vector": "5a 0b 00 a5",
+    "source_count": 1
+  },
+  {
+    "id": "P5-P1-C001",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "head_up",
+    "vector": "05 02 00 00 00 01 00",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P1-C002",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "head_down",
+    "vector": "05 02 00 00 00 02 00",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P1-C003",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "foot_up",
+    "vector": "05 02 00 00 00 04 00",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P1-C004",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "foot_down",
+    "vector": "05 02 00 00 00 08 00",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P1-C005",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "lumbar_up",
+    "vector": "05 02 00 00 00 10 00",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P1-C006",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "lumbar_down",
+    "vector": "05 02 00 00 00 20 00",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P1-C007",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "union_up",
+    "vector": "05 02 00 00 00 05 00",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P1-C008",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "union_down",
+    "vector": "05 02 00 00 00 0a 00",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P1-C009",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "stop",
+    "vector": "05 02 00 00 00 00 00",
+    "source_count": 1
+  },
+  {
+    "id": "P5-P1-C010",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "interrupt",
+    "vector": "05 02 00 00 00 00 00",
+    "source_count": 1
+  },
+  {
+    "id": "P5-P1-C011",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "flat",
+    "vector": "05 02 08 00 00 00 00 ; 05 02 08 00 00 00 00 ; 05 02 08 00 00 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P5-P1-C012",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "tv",
+    "vector": "05 02 00 00 40 00 00 ; 05 02 00 00 40 00 00 ; 05 02 00 00 40 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P5-P1-C013",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "zero_g",
+    "vector": "05 02 00 00 10 00 00 ; 05 02 00 00 10 00 00 ; 05 02 00 00 10 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P5-P1-C014",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "anti_snore",
+    "vector": "05 02 00 00 80 00 00 ; 05 02 00 00 80 00 00 ; 05 02 00 00 80 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P5-P1-C015",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "lounge",
+    "vector": "05 02 00 00 20 00 00 ; 05 02 00 00 20 00 00 ; 05 02 00 00 20 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P5-P1-C016",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "memory_1",
+    "vector": "05 02 00 01 00 00 00 ; 05 02 00 01 00 00 00 ; 05 02 00 01 00 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P5-P1-C017",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "memory_2",
+    "vector": "05 02 00 04 00 00 00 ; 05 02 00 04 00 00 00 ; 05 02 00 04 00 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 4
+  },
+  {
+    "id": "P5-P1-C018",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "save_tv",
+    "vector": "05 02 08 00 40 00 00",
+    "source_count": 55
+  },
+  {
+    "id": "P5-P1-C019",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "save_zero_g",
+    "vector": "05 02 08 00 10 00 00",
+    "source_count": 55
+  },
+  {
+    "id": "P5-P1-C020",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "save_lounge",
+    "vector": "05 02 08 00 20 00 00",
+    "source_count": 55
+  },
+  {
+    "id": "P5-P1-C021",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "save_memory_1",
+    "vector": "05 02 08 01 00 00 00",
+    "source_count": 55
+  },
+  {
+    "id": "P5-P1-C022",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "save_memory_2",
+    "vector": "05 02 08 04 00 00 00",
+    "source_count": 55
+  },
+  {
+    "id": "P5-P1-C023",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "reset",
+    "vector": "05 02 88 00 00 00 00",
+    "source_count": 55
+  },
+  {
+    "id": "P5-P1-C024",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "massage_head_up",
+    "vector": "05 02 00 00 08 00 00",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P1-C025",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "massage_head_down",
+    "vector": "05 02 00 80 00 00 00",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P1-C026",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "massage_foot_up",
+    "vector": "05 02 00 00 04 00 00",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P1-C027",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "massage_foot_down",
+    "vector": "05 02 01 00 00 00 00",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P1-C028",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "massage_wave_up",
+    "vector": "05 02 10 00 00 00 00",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P1-C029",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "massage_wave_down",
+    "vector": "05 02 04 00 00 00 00",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P1-C030",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "massage_toggle",
+    "vector": "05 02 00 00 01 00 00 ; 05 02 00 00 01 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 3
+  },
+  {
+    "id": "P5-P1-C031",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "massage_off",
+    "vector": "05 02 02 00 00 00 00 ; 05 02 02 00 00 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 3
+  },
+  {
+    "id": "P5-P1-C032",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "timer10",
+    "vector": "04 e0 07 01 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 2
+  },
+  {
+    "id": "P5-P1-C033",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "timer20",
+    "vector": "04 e0 07 02 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 2
+  },
+  {
+    "id": "P5-P1-C034",
+    "profile": "kneading",
+    "dialect": "legacy",
+    "action": "timer30",
+    "vector": "04 e0 07 03 00 00 ; 05 02 00 00 00 00 00",
+    "source_count": 2
+  },
+  {
+    "id": "P5-P2-C001",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "head_up",
+    "vector": "5a 01 03 10 30 00 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P2-C002",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "head_down",
+    "vector": "5a 01 03 10 30 01 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P2-C003",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "foot_up",
+    "vector": "5a 01 03 10 30 02 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P2-C004",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "foot_down",
+    "vector": "5a 01 03 10 30 03 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P2-C005",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "lumbar_up",
+    "vector": "5a 01 03 10 30 04 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P2-C006",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "lumbar_down",
+    "vector": "5a 01 03 10 30 05 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P2-C007",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "union_up",
+    "vector": "5a 01 03 10 30 0c a5",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P2-C008",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "union_down",
+    "vector": "5a 01 03 10 30 0d a5",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P2-C009",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "stop",
+    "vector": "5a 01 03 10 30 0f a5",
+    "source_count": 1
+  },
+  {
+    "id": "P5-P2-C010",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "interrupt",
+    "vector": "5a 01 03 10 30 1f a5",
+    "source_count": 1
+  },
+  {
+    "id": "P5-P2-C011",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "flat",
+    "vector": "5a 01 03 10 30 10 a5 ; 5a 01 03 10 30 10 a5 ; 5a 01 03 10 30 10 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P5-P2-C012",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "tv",
+    "vector": "5a 01 03 10 30 11 a5 ; 5a 01 03 10 30 11 a5 ; 5a 01 03 10 30 11 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P5-P2-C013",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "zero_g",
+    "vector": "5a 01 03 10 30 13 a5 ; 5a 01 03 10 30 13 a5 ; 5a 01 03 10 30 13 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P5-P2-C014",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "anti_snore",
+    "vector": "5a 01 03 10 30 16 a5 ; 5a 01 03 10 30 16 a5 ; 5a 01 03 10 30 16 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P5-P2-C015",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "lounge",
+    "vector": "5a 01 03 10 30 17 a5 ; 5a 01 03 10 30 17 a5 ; 5a 01 03 10 30 17 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P5-P2-C016",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "memory_1",
+    "vector": "5a 01 03 10 30 1a a5 ; 5a 01 03 10 30 1a a5 ; 5a 01 03 10 30 1a a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P5-P2-C017",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "memory_2",
+    "vector": "5a 01 03 10 30 1b a5 ; 5a 01 03 10 30 1b a5 ; 5a 01 03 10 30 1b a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 4
+  },
+  {
+    "id": "P5-P2-C018",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "save_tv",
+    "vector": "5a 01 03 10 30 92 a5",
+    "source_count": 55
+  },
+  {
+    "id": "P5-P2-C019",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "save_zero_g",
+    "vector": "5a 01 03 10 30 90 a5",
+    "source_count": 55
+  },
+  {
+    "id": "P5-P2-C020",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "save_lounge",
+    "vector": "5a 01 03 10 30 91 a5",
+    "source_count": 55
+  },
+  {
+    "id": "P5-P2-C021",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "save_memory_1",
+    "vector": "5a 01 03 10 30 94 a5",
+    "source_count": 55
+  },
+  {
+    "id": "P5-P2-C022",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "save_memory_2",
+    "vector": "5a 01 03 10 30 95 a5",
+    "source_count": 55
+  },
+  {
+    "id": "P5-P2-C023",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "reset",
+    "vector": "5a 01 03 10 30 96 a5",
+    "source_count": 55
+  },
+  {
+    "id": "P5-P2-C024",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "massage_head_up",
+    "vector": "5a 01 03 10 30 66 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P2-C025",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "massage_head_down",
+    "vector": "5a 01 03 10 30 67 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P2-C026",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "massage_foot_up",
+    "vector": "5a 01 03 10 30 68 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P2-C027",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "massage_foot_down",
+    "vector": "5a 01 03 10 30 69 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P2-C028",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "massage_wave_up",
+    "vector": "5a 01 03 10 30 58 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P2-C029",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "massage_wave_down",
+    "vector": "5a 01 03 10 30 59 a5",
+    "source_count": -1
+  },
+  {
+    "id": "P5-P2-C030",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "massage_toggle",
+    "vector": "5a 01 03 10 30 5a a5 ; 5a 01 03 10 30 5a a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 3
+  },
+  {
+    "id": "P5-P2-C031",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "massage_off",
+    "vector": "5a 01 03 10 30 6f a5 ; 5a 01 03 10 30 6f a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 3
+  },
+  {
+    "id": "P5-P2-C032",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "timer10",
+    "vector": "5a e0 04 07 01 00 00 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P5-P2-C033",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "timer20",
+    "vector": "5a e0 04 07 02 00 00 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P5-P2-C034",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "timer30",
+    "vector": "5a e0 04 07 03 00 00 a5 ; 5a 01 03 10 30 0f a5",
+    "source_count": 2
+  },
+  {
+    "id": "P5-P2-C043",
+    "profile": "kneading",
+    "dialect": "star",
+    "action": "initialize",
+    "vector": "5a 0b 00 a5",
+    "source_count": 1
+  }
+]

@@ -113,6 +113,8 @@ class _FactoryCoordinator(SimpleNamespace):
                     const.CONF_MALOUF_APP_PROFILE: "malouf",
                     const.CONF_MALOUF_APP_MODEL: "L600",
                     const.CONF_MALOUF_APP_TRANSPORT: "okin_new",
+                    const.CONF_STARCODE_M5X5_PROFILE: "cb25",
+                    const.CONF_STARCODE_DEVICE_NAME: "STAR252201123456",
                     const.CONF_VIBRADORM_APP_PROFILE: "caresse",
                     const.CONF_VIBRADORM_CONTROL_TYPE: "2",
                     const.CONF_VMATBASIC_PROFILE: "basic",

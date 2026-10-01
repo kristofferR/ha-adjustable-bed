@@ -351,3 +351,7 @@ Sleepy's Elite beds are auto-detected by name plus BLE services:
 - **[DewertOkin](dewertokin.md)** - Different command format, uses handle writes
 - **[Okin 64-bit](okin-64bit.md)** - Similar service UUID but different packet format
 - **[Keeson](keeson.md)** - Same FFE5 service but different command encoding
+
+## AdjustableM5X5
+
+Beds controlled by AdjustableM5X5 1.2.3 use the dedicated [app profile](starcode-m5x5.md). Its exact manufacturer selector, lumbar/massage keys, RGB overrides, feedback and accessory grouping differ from the generic BOX25 route. Select the app and confirmed CB25, F23 or kneading class explicitly.

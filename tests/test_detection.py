@@ -53,6 +53,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
     BED_TYPE_TIMOTION_AHF,
@@ -452,15 +453,38 @@ class TestDetectBedTypeByServiceUUID:
         assert result.ambiguous_types == [BED_TYPE_STARCODE_ABM5_4]
 
     def test_detect_star_elevate_by_name_and_nordic_uart(self):
-        """ELEVATE must use its dedicated controller, never BOX25 by NUS alone."""
+        """An exact Elevate name still requires explicit app selection."""
         service_info = _make_service_info(
             name="ELEVATE-01",
             service_uuids=[NORDIC_UART_SERVICE_UUID],
         )
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type == BED_TYPE_STAR_ELEVATE
-        assert result.confidence == 0.95
-        assert result.signals == ["name:star_elevate", "uuid:nordic_uart"]
+        assert result.confidence == 0.65
+        assert result.ambiguous_types == [BED_TYPE_STARCODE_M5X5]
+        assert result.signals == ["name:starcode_bedding_app_choices"]
+
+    @pytest.mark.parametrize("service_uuids", [[], [NORDIC_UART_SERVICE_UUID]])
+    @pytest.mark.parametrize(
+        ("name", "legacy_type", "other_app"),
+        [
+            ("ELEVATE123456", BED_TYPE_STAR_ELEVATE, None),
+            ("STAR252201123456", BED_TYPE_SLEEPYS_BOX25, BED_TYPE_STARCODE_ABM5_4),
+            ("STAR254205123456", BED_TYPE_SLEEPYS_BOX25, BED_TYPE_STARCODE_ABM5_4),
+            ("STAR255402123456", BED_TYPE_SLEEPYS_BOX25, BED_TYPE_STARCODE_ABM5_4),
+        ],
+    )
+    def test_starcode_exact_names_require_app_choice(self, name, legacy_type, other_app, service_uuids):
+        """Name or shared UART transport does not identify the owning app."""
+        result = detect_bed_type_detailed(
+            _make_service_info(name=name, service_uuids=service_uuids)
+        )
+        assert result.bed_type == legacy_type
+        assert result.confidence == 0.65
+        assert result.ambiguous_types == [BED_TYPE_STARCODE_M5X5] + ([other_app] if other_app else [])
+        assert result.signals == ["name:starcode_bedding_app_choices"] + (
+            ["name:starcode_abm5_4_app_candidate"] if other_app else []
+        )
 
     @pytest.mark.parametrize("name", ["FLX_AUDIO", "FLX_RUSH"])
     def test_shared_nordic_uart_does_not_imply_sleepys_or_elevate(self, name: str):

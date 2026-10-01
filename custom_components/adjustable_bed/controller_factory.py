@@ -75,6 +75,7 @@ from .const import (
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
     BED_TYPE_TIMOTION_AHF,
@@ -105,6 +106,8 @@ from .const import (
     CONF_MALOUF_APP_PROFILE,
     CONF_MALOUF_APP_TRANSPORT,
     CONF_STARCODE_COMMAND_SELECTOR,
+    CONF_STARCODE_DEVICE_NAME,
+    CONF_STARCODE_M5X5_PROFILE,
     CONF_STARCODE_TRANSPORT_SELECTOR,
     CONF_STARCODE_UI_SELECTOR,
     CONF_VIBRADORM_APP_PROFILE,
@@ -621,6 +624,18 @@ async def create_controller(
             command_selector=data.get(CONF_STARCODE_COMMAND_SELECTOR, "none"),
             ui_selector=data.get(CONF_STARCODE_UI_SELECTOR),
             transport_selector=data.get(CONF_STARCODE_TRANSPORT_SELECTOR),
+        )
+
+    if bed_type == BED_TYPE_STARCODE_M5X5:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.starcode_m5x5", __package__
+        )
+        from .beds.starcode_m5x5 import StarcodeM5X5Controller
+
+        return StarcodeM5X5Controller(
+            coordinator,
+            profile=coordinator.entry.data[CONF_STARCODE_M5X5_PROFILE],
+            device_name=coordinator.entry.data[CONF_STARCODE_DEVICE_NAME],
         )
 
     if bed_type == BED_TYPE_VIBRADORM_APP:
