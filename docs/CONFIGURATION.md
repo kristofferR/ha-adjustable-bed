@@ -352,6 +352,7 @@ retain their legacy profile unless you explicitly change it.
 | Customatic apps | Explicit Clarity, Jerome's C or Remedy bed type; fixed two, two or three motor layout | [Customatic app profiles](beds/customatic.md) |
 | FurniMove / OKIN Smart Remote app | Required exact handset ID; table-derived motors and massage, fixed 100 ms refresh | [FurniMove](beds/furnimove.md) |
 | Jordan's Serenity app | Explicit app selection; two named axes and literal remote selectors 4/5, fixed 100 ms refresh | [Serenity](beds/serenity.md) |
+| AdjustableM5X4 app | Explicit saved command/parser selector and optional Bluetooth transport; retained UI selector remains address-owned | [AdjustableM5X4](beds/starcode-abm5-4.md) |
 | Caresse / Werkmeister apps | Explicit app and remote profile; Caresse retained settings and feature flags | [Caresse / Werkmeister](beds/vibradorm_app.md) |
 | VMAT app | Explicit app and exact shipped remote ordinal; remote-derived features | [VMAT](beds/vmat.md) |
 | V-MAT Basic app | Explicit Basic, CBI or CBI with XT-Box product; per-receiver floor settings | [V-MAT Basic](beds/vmatbasic.md) |
@@ -383,6 +384,10 @@ in integration options. Paired repairs change only their own physical side.
 ### Jordan's Serenity app profile
 
 Select **Jordan's Serenity app** explicitly for the accepted `com.okin.bedding.serenity` 1.0.1 (2) application profile. Shared OKIN discovery and GATT UUIDs do not identify this app profile. The two named main axes use Head and Feet; additional actuator controls retain literal selector 4/5 names because app touch and voice labels disagree. Setup hides motor-count and pulse-delay fields: the app proves two named axes, additional literal selectors, and a fixed 100 ms refresh interval. The internal named-axis count does not claim a physical actuator count. Status notifications remain active when angle sensing is disabled; this profile reports no motor position.
+
+### AdjustableM5X4 app selectors
+
+Choose the AdjustableM5X4 app profile explicitly. Star names offer this app as a candidate, while existing receiver detection remains available. The original Bluetooth name chooses transport independently of the saved command/parser selector. Manufacturer classification can update the command selector without changing the retained UI selector. “Use detected transport profile” copies the current transport into both app selectors while retaining this physical bed’s observed timer/light/massage state. Single-address side control is unsupported; two-address pairs retain each child’s settings. See the [complete selector and capability contract](beds/starcode-abm5-4.md).
 
 ### Caresse / Werkmeister app profiles
 

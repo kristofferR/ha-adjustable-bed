@@ -1139,7 +1139,7 @@ export class AdjustableBedCard extends LitElement {
     const l = bed.lights;
     const main = l.light ?? l.switch;
     if (!hasLightingControls(l) && !l.state) return nothing;
-    const floor = main || l.state || l.level || l.timer || l.toggle || l.cycle || l.timerMinutes || l.timerToggle;
+    const floor = main || l.state || l.level || l.timer || l.toggle || l.cycle || l.timerMinutes || l.timerToggle || l.buttons?.length;
     return html`
       ${this._heading("section.lighting")}
       ${l.mood && floor ? this._subheading("lighting.floor") : nothing}
@@ -1152,11 +1152,12 @@ export class AdjustableBedCard extends LitElement {
         ? html`<div class="hint">${localize(this.hass, "lighting.timer_pending")}</div>`
         : nothing}
       ${
-        l.toggle || l.cycle || l.timerToggle
+        l.toggle || l.cycle || l.timerToggle || l.buttons?.length
           ? html`<div class="tiles">
               ${l.toggle ? this._tile(l.toggle, () => this._press(l.toggle!)) : nothing}
               ${l.cycle ? this._tile(l.cycle, () => this._press(l.cycle!)) : nothing}
               ${l.timerToggle ? this._tile(l.timerToggle, () => this._press(l.timerToggle!)) : nothing}
+              ${l.buttons?.map((id) => this._tile(id, () => this._press(id)))}
             </div>`
           : nothing
       }
@@ -1426,6 +1427,7 @@ export class AdjustableBedCard extends LitElement {
     ].forEach((x) => x && ids.add(x));
     bed.firmness.forEach((x) => ids.add(x));
     bed.massage.buttons.forEach((x) => ids.add(x));
+    bed.lights.buttons?.forEach((x) => ids.add(x));
     bed.massage.numbers.forEach((x) => ids.add(x));
     bed.massage.selects?.forEach((x) => ids.add(x));
     bed.lights.mood?.selects.forEach((x) => ids.add(x));

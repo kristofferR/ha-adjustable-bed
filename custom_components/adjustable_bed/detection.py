@@ -82,6 +82,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
+    BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
     BED_TYPE_TIMOTION_AHF,
@@ -566,6 +567,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_VIBRADORM: "Vibradorm (VMAT)",
     BED_TYPE_VIBRADORM_APP: "Caresse Diamant / Werkmeister apps",
     BED_TYPE_VMATBASIC: "V-MAT Basic app (explicit product profile)",
+    BED_TYPE_STARCODE_ABM5_4: "AdjustableM5X4 app (explicit profile)",
     # Diagnostic
     BED_TYPE_DIAGNOSTIC: "Diagnostic (unknown bed)",
 }
@@ -1005,6 +1007,20 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
 
 
 def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> DetectionResult:
+    """Keep existing receiver detection while offering an explicit app candidate."""
+    from .beds.starcode_abm5_4_profiles import scan_matches
+
+    result = _detect_bed_type_detailed(service_info)
+    if result.bed_type is not None and scan_matches(service_info.name):
+        candidates = list(result.ambiguous_types or ())
+        if BED_TYPE_STARCODE_ABM5_4 not in candidates:
+            candidates.append(BED_TYPE_STARCODE_ABM5_4)
+        result.ambiguous_types = candidates
+        result.signals.append("name:starcode_abm5_4_app_candidate")
+    return result
+
+
+def _detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> DetectionResult:
     """Detect bed type from service info with detailed confidence scoring.
 
     Returns:

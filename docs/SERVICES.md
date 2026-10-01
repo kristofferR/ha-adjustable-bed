@@ -160,6 +160,7 @@ enable additional commands.
 | Customatic Clarity / Remedy | `customatic_hold_memory` (all 31 memory combinations), `customatic_move_simultaneously` (safe motor combinations) | [Customatic](beds/customatic.md) |
 | Customatic Jerome's C | `customatic_move_simultaneously` (back and legs) | [Customatic](beds/customatic.md) |
 | Jordan's Serenity app | `serenity_hold_control` (one of 31 literal app actions) | [Serenity](beds/serenity.md) |
+| AdjustableM5X4 app | `starcode_abm5_4_hold_control` (literal held movement, preset, save or massage controls) | [AdjustableM5X4](beds/starcode-abm5-4.md) |
 | Caresse / Werkmeister apps | `vibradorm_hold_control` (profile-specific movement, memory recall or sync) | [Caresse / Werkmeister](beds/vibradorm_app.md) |
 | V-MAT Basic app | `vmatbasic_hold_control`, `vmatbasic_rename` | [V-MAT Basic](beds/vmatbasic.md) |
 | LOGICDATA app profiles | `logicdata_set_alarm`, `logicdata_rename`, `logicdata_hold_preset` | [LOGICDATA](beds/logicdata-app.md) |
@@ -219,3 +220,9 @@ Ordered action indexes come from diagnostics and the selected handset.
 Hold overrides accept 0.1–60 seconds; widgets use their separate fixed timing.
 All targets validate before movement starts. The advisory massage duration is
 local state, sends no timer packet and does not stop the receiver on expiry.
+
+### `starcode_abm5_4_hold_control`
+
+Hold one exact app action. Flat runs 600 ms; save and reset run the six-second local confirmation interval. No device acknowledgement is inferred.
+
+Target one or more physical devices with `device_id`, an exact supported `control`, `duration` in seconds (0.1–60), and optional paired `side`. Every target’s profile and observed-state gate is checked before any write. Movement and memory refresh every 100 ms with immediate STOP; presets release according to the retained UI selector. Flat runs 600 ms after activation; save/reset stream through the six-second local confirmation interval regardless of the duration field. Positive massage controls require observed active state; this profile has no massage timer Off command. [The protocol document](beds/starcode-abm5-4.md) lists all controls, exact capability gates and exclusions.

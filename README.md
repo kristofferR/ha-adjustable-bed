@@ -121,6 +121,7 @@ The entries below identify motor/actuator manufacturers or supported app profile
 | ✅ [BedTech](docs/beds/bedtech.md) | BedTech |
 | ✅ [Sleep Number](docs/beds/sleep_number.md) | Climate 360, FlexFit, FlexFit Smart, i8 / 360 FlexFit 2 |
 | ✅ [Sleepy's Elite](docs/beds/sleepys.md) | Sleepy's |
+| 🧪 [AdjustableM5X4 app](docs/beds/starcode-abm5-4.md) | Explicit independent command/transport/UI selectors; artifact-verified, hardware unverified |
 | ✅ [SleepSpa S9000AI](docs/beds/sleepstar.md) | SleepSpa S9000AI (`SLEEPSTAR`) |
 | ✅ [Vibradorm](docs/beds/vibradorm.md) | Vibradorm |
 | 🧪 [Caresse / Werkmeister app profiles](docs/beds/vibradorm_app.md) | Explicit Caresse or Werkmeister app and remote selection; artifact-verified, hardware unverified |

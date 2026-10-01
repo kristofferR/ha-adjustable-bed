@@ -92,6 +92,7 @@ class _FactoryCoordinator(SimpleNamespace):
 
     def __init__(self) -> None:
         super().__init__(
+            starcode_app_retained_state=None,
             hass=SimpleNamespace(
                 data={},
                 async_add_import_executor_job=_RecordingImportExecutor(),

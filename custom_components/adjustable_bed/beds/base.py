@@ -397,6 +397,11 @@ class BedController(ABC):
         return self._coordinator.client
 
     @property
+    def supports_single_address_pairing(self) -> bool:
+        """Whether this profile supports a one-address side selector."""
+        return True
+
+    @property
     def auto_stops_on_idle(self) -> bool:
         """Return True if motors auto-stop when commands stop arriving.
 

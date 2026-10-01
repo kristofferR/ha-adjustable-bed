@@ -43,6 +43,7 @@ from .const import (
     BED_TYPE_SERENITY,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
+    BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     CONF_BED_TYPE,
@@ -97,6 +98,7 @@ SERVICE_FURNIMOVE_MOVE_SIMULTANEOUSLY = "furnimove_move_simultaneously"
 SERVICE_VIBRADORM_HOLD_CONTROL = "vibradorm_hold_control"
 SERVICE_VMATBASIC_HOLD_CONTROL = "vmatbasic_hold_control"
 SERVICE_VMATBASIC_RENAME = "vmatbasic_rename"
+SERVICE_STARCODE_HOLD_CONTROL = "starcode_abm5_4_hold_control"
 SERVICE_CUSTOMATIC_HOLD_MEMORY = "customatic_hold_memory"
 SERVICE_CUSTOMATIC_MOVE_SIMULTANEOUSLY = "customatic_move_simultaneously"
 SERVICE_LOGICDATA_SET_ALARM = "logicdata_set_alarm"
@@ -1894,8 +1896,40 @@ async def handle_vmatbasic_rename(call: ServiceCall) -> None:
         raise
 
 
+async def handle_starcode_hold_control(call: ServiceCall) -> None:
+    """Preflight each physical app target, including its observed-state gate."""
+    from .beds.base import SideBoundController
+    from .beds.starcode_abm5_4 import StarcodeAbm5_4Controller
+
+    duration_ms = int(_leggett_hold_seconds(call.data[ATTR_DURATION]) * 1000)
+
+    def validate(controller: BedController | SideBoundController) -> None:
+        target = (
+            controller._controller if isinstance(controller, SideBoundController) else controller
+        )
+        if not isinstance(target, StarcodeAbm5_4Controller) or controller.command_side is not None:
+            raise ServiceValidationError("Requires a physical AdjustableM5X4 profile")
+        try:
+            target.validate_hold_control(call.data[ATTR_CONTROL], duration_ms)
+        except ValueError as err:
+            raise ServiceValidationError(str(err)) from err
+
+    await _handle_customatic_hold(
+        call,
+        call.data[ATTR_CONTROL],
+        {BED_TYPE_STARCODE_ABM5_4},
+        label="AdjustableM5X4",
+        validate_extra=validate,
+    )
+
+
 async def _handle_customatic_hold(
-    call: ServiceCall, control: str, bed_types: set[str], *, label: str = "Customatic"
+    call: ServiceCall,
+    control: str,
+    bed_types: set[str],
+    *,
+    label: str = "Customatic",
+    validate_extra: Callable[[BedController | SideBoundController], None] | None = None,
 ) -> None:
     """Preflight the whole selection before starting any held write sequence."""
     duration_ms = int(_leggett_hold_seconds(call.data[ATTR_DURATION]) * 1000)
@@ -1916,6 +1950,9 @@ async def _handle_customatic_hold(
             raise ServiceValidationError(
                 f"The selected profile does not support combination '{control}'"
             )
+
+        if validate_extra is not None:
+            validate_extra(controller)
 
     preflighted = await _preflight_capability(
         targets, "supports_held_control", f"{label} held controls", validate
@@ -2832,6 +2869,19 @@ async def async_register_services(hass: HomeAssistant) -> None:
             vol.Required(ATTR_NAME): cv.string,
             **SIDE_FIELD,
         }),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_STARCODE_HOLD_CONTROL,
+        handle_starcode_hold_control,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_CONTROL): cv.string,
+                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
+                **SIDE_FIELD,
+            }
+        ),
     )
     hass.services.async_register(
         DOMAIN,

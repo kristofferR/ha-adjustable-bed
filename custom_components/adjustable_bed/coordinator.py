@@ -116,6 +116,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SOLACE,
+    BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
@@ -191,6 +192,7 @@ from .const import (
     RICHMAT_REMOTE_AUTO,
     RUNTIME_BOND_KEYS,
     SOLACE_VARIANT_WOOSA,
+    STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
     VARIANT_AUTO,
     VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS,
     VIBRADORM_VMAT_ONBOARDING_TIMEOUT_SECONDS,
@@ -242,6 +244,7 @@ from .vibradorm_app_state import (
 
 if TYPE_CHECKING:
     from .beds.base import BedController, SideBoundController
+    from .beds.starcode_abm5_4_profiles import RetainedAppState
 
 T = TypeVar("T")
 _LOGGER = logging.getLogger(__name__)
@@ -438,7 +441,11 @@ class AdjustableBedCoordinator:
         self._max_retries: int = profile_settings.max_retries
         self._retry_base_delay: float = profile_settings.retry_base_delay
         self._retry_jitter: float = profile_settings.retry_jitter
-        self._connection_timeout: float = profile_settings.connection_timeout
+        self._connection_timeout: float = (
+            STARCODE_APP_CONNECTION_TIMEOUT_SECONDS
+            if self._bed_type == BED_TYPE_STARCODE_ABM5_4
+            else profile_settings.connection_timeout
+        )
         if entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat":
             self._connection_timeout = 10.0
         self._post_connect_delay: float = profile_settings.post_connect_delay
@@ -508,6 +515,7 @@ class AdjustableBedCoordinator:
         # CB35 autonomous presets can outlive the connection-scoped controller.
         self.okin_cb35_preset_started_at: float | None = None
         self._controller_state: dict[str, Any] = {}
+        self.starcode_app_retained_state: RetainedAppState | None = None
         self._furnimove_state_store: Store[dict[str, int | str | bool]] | None = None
         self._furnimove_local_state: dict[str, int | str | bool] = {}
         self._furnimove_state_loaded = False

@@ -52,6 +52,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
+    BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
     BED_TYPE_TIMOTION_AHF,
@@ -435,7 +436,7 @@ class TestDetectBedTypeByServiceUUID:
         assert result.confidence == 0.95
         assert "uuid:nordic_uart" in result.signals
         assert "star_digits:35" in result.signals
-        assert not result.ambiguous_types
+        assert result.ambiguous_types == [BED_TYPE_STARCODE_ABM5_4]
 
     def test_detect_sleepys_box25_by_star25_name_and_nordic_uart(self):
         """Star25* plus Nordic UART should detect as BOX25 with high confidence."""
@@ -448,7 +449,7 @@ class TestDetectBedTypeByServiceUUID:
         assert result.confidence == 0.95
         assert "uuid:nordic_uart" in result.signals
         assert "star_digits:25" in result.signals
-        assert not result.ambiguous_types
+        assert result.ambiguous_types == [BED_TYPE_STARCODE_ABM5_4]
 
     def test_detect_star_elevate_by_name_and_nordic_uart(self):
         """ELEVATE must use its dedicated controller, never BOX25 by NUS alone."""
@@ -546,7 +547,7 @@ class TestDetectBedTypeByServiceUUID:
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type == BED_TYPE_OKIN_CB35
         assert result.confidence == 0.65
-        assert result.ambiguous_types == [BED_TYPE_SLEEPYS_BOX25]
+        assert result.ambiguous_types == [BED_TYPE_SLEEPYS_BOX25, BED_TYPE_STARCODE_ABM5_4]
 
     def test_detect_suta_by_fff0_uuid_and_name(self):
         """Test SUTA detection by FFF0 UUID + SUTA name pattern."""
@@ -690,7 +691,11 @@ class TestDetectBedTypeByNamePattern:
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type == BED_TYPE_OKIN_CB35
         assert result.confidence == 0.3
-        assert result.ambiguous_types == [BED_TYPE_SLEEPYS_BOX25, BED_TYPE_OCTO]
+        assert result.ambiguous_types == [
+            BED_TYPE_SLEEPYS_BOX25,
+            BED_TYPE_OCTO,
+            BED_TYPE_STARCODE_ABM5_4,
+        ]
 
     def test_detect_star_short_name_is_ambiguous(self):
         """Short Star name (no digits to parse) should be ambiguous."""
@@ -701,7 +706,7 @@ class TestDetectBedTypeByNamePattern:
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type == BED_TYPE_OKIN_CB35
         assert result.confidence == 0.65
-        assert result.ambiguous_types == [BED_TYPE_SLEEPYS_BOX25]
+        assert result.ambiguous_types == [BED_TYPE_SLEEPYS_BOX25, BED_TYPE_STARCODE_ABM5_4]
 
     def test_detect_timotion_ahf_by_name(self):
         """Test TiMOTION AHF detection by AHF prefix."""

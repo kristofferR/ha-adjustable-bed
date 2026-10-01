@@ -50,6 +50,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
+    BED_TYPE_STARCODE_ABM5_4,
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_PURPLE,
@@ -82,6 +83,18 @@ class ActuatorGroup(TypedDict):
 
 # Groups are in alphabetical order by key
 ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
+    "starcode_abm5_4": {
+        "display": "AdjustableM5X4 app",
+        "description": "Explicit app profile with independent command and Bluetooth selectors",
+        "variants": [
+            {
+                "type": BED_TYPE_STARCODE_ABM5_4,
+                "label": "AdjustableM5X4",
+                "description": "Two control axes, one memory and app-specific massage/light controls",
+                "hint": "Choose the app profile explicitly; shared Bluetooth names do not identify it.",
+            }
+        ],
+    },
     "bedtech": {
         "display": "BedTech",
         "description": "BedTech adjustable bases",

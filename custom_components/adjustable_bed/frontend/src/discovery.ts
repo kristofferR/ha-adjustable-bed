@@ -156,7 +156,7 @@ export function bedEntitiesForDevice(
           motor(`${split.key.slice(0, -9)}_${split.side}`).position = id;
         else if (key.startsWith("massage_") && key.endsWith("_intensity"))
           bed.massage.numbers.push(id);
-        else if (key === "light_level" || key === "vmatbasic_floor_level") bed.lights.level = id;
+        else if (key === "light_level" || key === "vmatbasic_floor_level" || key === "starcode_abm5_4_light_level") bed.lights.level = id;
         else if (key === "vmatbasic_floor_minutes") {
           bed.lights.timerMinutes = id;
           bed.lights.timerAppliesImmediately = true;
@@ -197,6 +197,12 @@ export function bedEntitiesForDevice(
           bed.massage.buttons.push(id);
         } else if (key === "vibradorm_app_floor_timer_toggle") {
           bed.lights.timerToggle = id;
+        } else if (key === "starcode_abm5_4_light_plus" || key === "starcode_abm5_4_light_minus") {
+          (bed.lights.buttons ??= []).push(id);
+        } else if (key === "starcode_abm5_4_massage_release") {
+          bed.massage.buttons.push(id);
+        } else if (key.startsWith("starcode_abm5_4_")) {
+          bed.utility.push(id);
         } else if (
           key === "vibradorm_app_massage_automatic" ||
           key === "vibradorm_app_massage_individual"
@@ -249,7 +255,7 @@ export function bedEntitiesForDevice(
           mood().selects.push(id);
         else if (key === "vibradorm_app_massage_wave")
           (bed.massage.selects ??= []).push(id);
-        else if (key === "massage_timer") bed.massage.timer = id;
+        else if ((key === "massage_timer" || key === "starcode_abm5_4_massage_timer")) bed.massage.timer = id;
         else if (/thermal|footwarming|foundation/.test(key))
           bed.climate.selects.push(id);
         break;
@@ -377,7 +383,7 @@ export function bedIsEmpty(bed: BedEntities): boolean {
 export function hasLightingControls(lights: LightEntities): boolean {
   return !!(
     lights.light || lights.switch || lights.level || lights.toggle ||
-    lights.cycle || lights.timer || lights.timerMinutes || lights.timerToggle ||
+    lights.buttons?.length || lights.cycle || lights.timer || lights.timerMinutes || lights.timerToggle ||
     lights.mood?.toggle || lights.mood?.selects.length || lights.mood?.numbers.length || lights.mood?.buttons?.length
   );
 }

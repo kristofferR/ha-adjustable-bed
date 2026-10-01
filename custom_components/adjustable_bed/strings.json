@@ -562,6 +562,18 @@
           "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0–255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1–6. This is not measured brightness.",
           "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting."
         }
+      },
+      "starcode_app": {
+        "title": "AdjustableM5X4 app profile",
+        "description": "Choose the selector saved by your app. The original Bluetooth device name selects transport independently; shared identifiers cannot identify this app. Each physical side retains its own settings.",
+        "data": {
+          "starcode_abm5_4_command_selector": "Saved command/parser selector",
+          "starcode_abm5_4_transport_selector": "Bluetooth transport selector"
+        },
+        "data_description": {
+          "starcode_abm5_4_command_selector": "Match the saved command/parser selector. The app initially saves none; manufacturer classification may update it without changing its UI selector.",
+          "starcode_abm5_4_transport_selector": "Use the original Bluetooth device name unless matching a proven app transport explicitly."
+        }
       }
     },
     "progress": {
@@ -631,7 +643,9 @@
       "vmatbasic_invalid": "Enter a whole number within the selected product range.",
       "vmatbasic_link_profile": "Combine only CBI or CBI with XT-Box receivers. The Basic profile has no linked control.",
       "vmatbasic_unpair_first": "Unpair these entries before changing product settings; each receiver retains its own profile.",
-      "vmatbasic_required": "Choose the V-MAT Basic product profile."
+      "vmatbasic_required": "Choose the V-MAT Basic product profile.",
+      "starcode_app_invalid": "Choose a supported app selector and a live Bluetooth transport.",
+      "starcode_app_unpair_first": "Unpair these entries before changing app selectors. Each physical side retains its own app controls."
     }
   },
   "options": {
@@ -705,7 +719,9 @@
           "vibradorm_vmat_remote": "VMAT remote",
           "vmatbasic_floor_level": "Saved floor brightness",
           "vmatbasic_floor_minutes": "Saved floor timer (minutes)",
-          "vmatbasic_profile": "V-MAT Basic product profile"
+          "vmatbasic_profile": "V-MAT Basic product profile",
+          "starcode_abm5_4_command_selector": "Saved command/parser selector",
+          "starcode_abm5_4_transport_selector": "Bluetooth transport selector"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -764,7 +780,9 @@
         "description": "This removes the Bluetooth bond that **{name}** ({address}) has with this Home Assistant host.\n\n**Bond stored on:** {transport}{provenance}\n\nHome Assistant will disconnect from the bed first. Afterwards the bed will need pairing again before it can be controlled, and you may need to put it back into pairing mode to do that.\n\nThis does **not** delete the Adjustable Bed device or its settings. Select **Submit** to remove the bond, or go back to leave it alone.",
         "data": {
           "outcome_removed": "Removal confirmed",
-          "outcome_failed": "Removal failed"
+          "outcome_failed": "Removal failed",
+          "starcode_abm5_4_command_selector": "Saved command/parser selector",
+          "starcode_abm5_4_transport_selector": "Bluetooth transport selector"
         },
         "data_description": {
           "outcome_removed": "✅ The Bluetooth bond was removed and the removal was confirmed.",
@@ -775,7 +793,9 @@
         "title": "Choose a bed side",
         "description": "A combined bed has a separate Bluetooth bond for each physical side. Choose the side whose bond you want to remove.",
         "data": {
-          "side": "Bed side"
+          "side": "Bed side",
+          "starcode_abm5_4_command_selector": "Saved command/parser selector",
+          "starcode_abm5_4_transport_selector": "Bluetooth transport selector"
         }
       },
       "remove_bond_result": {
@@ -786,21 +806,27 @@
         "title": "Split paired bed",
         "description": "Restore the Left and Right sides as separate Adjustable Bed entries. Side entities keep their entity IDs, history, names, and areas. Combined controls are removed.",
         "data": {
-          "confirm": "Split this paired bed"
+          "confirm": "Split this paired bed",
+          "starcode_abm5_4_command_selector": "Saved command/parser selector",
+          "starcode_abm5_4_transport_selector": "Bluetooth transport selector"
         }
       },
       "pair_sides": {
         "title": "Enable paired-side controls",
         "description": "Expose Left, Right, and Both controls for this bed while keeping its existing Bluetooth address and config entry. This is reversible. Existing standalone behavior is restored if you revert it later.",
         "data": {
-          "confirm": "Enable Left / Right / Both controls"
+          "confirm": "Enable Left / Right / Both controls",
+          "starcode_abm5_4_command_selector": "Saved command/parser selector",
+          "starcode_abm5_4_transport_selector": "Bluetooth transport selector"
         }
       },
       "revert_sides": {
         "title": "Restore standalone controls",
         "description": "Remove the Left, Right, and Both surface and restore this config entry exactly as it was before paired-side controls were enabled. Existing standalone entity IDs and history are preserved.",
         "data": {
-          "confirm": "Restore standalone controls"
+          "confirm": "Restore standalone controls",
+          "starcode_abm5_4_command_selector": "Saved command/parser selector",
+          "starcode_abm5_4_transport_selector": "Bluetooth transport selector"
         }
       }
     },
@@ -835,7 +861,9 @@
       "vmatbasic_invalid": "Enter a whole number within the selected product range.",
       "vmatbasic_link_profile": "Combine only CBI or CBI with XT-Box receivers. The Basic profile has no linked control.",
       "vmatbasic_unpair_first": "Unpair these entries before changing product settings; each receiver retains its own profile.",
-      "vmatbasic_required": "Choose the V-MAT Basic product profile."
+      "vmatbasic_required": "Choose the V-MAT Basic product profile.",
+      "starcode_app_invalid": "Choose a supported app selector and a live Bluetooth transport.",
+      "starcode_app_unpair_first": "Unpair these entries before changing app selectors. Each physical side retains its own app controls."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -1835,6 +1863,45 @@
       },
       "vmatbasic_massage_program_3": {
         "name": "Massage program 3"
+      },
+      "starcode_abm5_4_wake": {
+        "name": "Wake controller"
+      },
+      "starcode_abm5_4_refresh": {
+        "name": "Refresh app state"
+      },
+      "starcode_abm5_4_firmware": {
+        "name": "Read firmware version"
+      },
+      "starcode_abm5_4_use_detected_profile": {
+        "name": "Use detected transport profile"
+      },
+      "starcode_abm5_4_massage_release": {
+        "name": "Release massage control"
+      },
+      "starcode_abm5_4_union_up": {
+        "name": "Raise both control axes"
+      },
+      "starcode_abm5_4_union_down": {
+        "name": "Lower both control axes"
+      },
+      "starcode_abm5_4_light_plus": {
+        "name": "Increase floor light"
+      },
+      "starcode_abm5_4_light_minus": {
+        "name": "Decrease floor light"
+      },
+      "starcode_abm5_4_save_tv": {
+        "name": "Save TV position"
+      },
+      "starcode_abm5_4_save_lounge": {
+        "name": "Save lounge position"
+      },
+      "starcode_abm5_4_save_zero_g": {
+        "name": "Save zero-gravity position"
+      },
+      "starcode_abm5_4_reset": {
+        "name": "Reset stored positions"
       }
     },
     "cover": {
@@ -2479,6 +2546,93 @@
       },
       "vmatbasic_rssi": {
         "name": "Advertisement signal strength"
+      },
+      "starcode_abm5_4_command_selector": {
+        "name": "Command/parser selector"
+      },
+      "starcode_abm5_4_transport_selector": {
+        "name": "Bluetooth transport selector"
+      },
+      "starcode_abm5_4_ui_selector": {
+        "name": "Retained app UI selector"
+      },
+      "starcode_abm5_4_manufacturer": {
+        "name": "Manufacturer"
+      },
+      "starcode_abm5_4_firmware": {
+        "name": "Firmware version"
+      },
+      "starcode_abm5_4_massage_timer": {
+        "name": "Massage timer minutes"
+      },
+      "starcode_abm5_4_light_level": {
+        "name": "Floor light level"
+      },
+      "starcode_abm5_4_massage_on": {
+        "name": "App massage active"
+      },
+      "starcode_abm5_4_light_on": {
+        "name": "App floor light active"
+      },
+      "starcode_abm5_4_wave": {
+        "name": "App wave value"
+      },
+      "starcode_abm5_4_head_intensity": {
+        "name": "App displayed head intensity"
+      },
+      "starcode_abm5_4_low_4b": {
+        "name": "App field 4b value"
+      },
+      "starcode_abm5_4_automatic_white_flag": {
+        "name": "App automatic-white flag"
+      },
+      "starcode_abm5_4_raw_b": {
+        "name": "Raw app field b"
+      },
+      "starcode_abm5_4_raw_13": {
+        "name": "Raw app field 13"
+      },
+      "starcode_abm5_4_raw_1b": {
+        "name": "Raw app field 1b"
+      },
+      "starcode_abm5_4_raw_23": {
+        "name": "Raw app field 23"
+      },
+      "starcode_abm5_4_raw_2b": {
+        "name": "Raw app field 2b"
+      },
+      "starcode_abm5_4_raw_33": {
+        "name": "Raw app field 33"
+      },
+      "starcode_abm5_4_raw_3b": {
+        "name": "Raw app field 3b"
+      },
+      "starcode_abm5_4_raw_43": {
+        "name": "Raw app field 43"
+      },
+      "starcode_abm5_4_raw_47": {
+        "name": "Raw app field 47"
+      },
+      "starcode_abm5_4_raw_4b": {
+        "name": "Raw app field 4b"
+      },
+      "starcode_abm5_4_raw_53": {
+        "name": "Raw app field 53"
+      },
+      "starcode_abm5_4_raw_5f": {
+        "name": "Raw app field 5f"
+      },
+      "starcode_abm5_4_raw_67": {
+        "name": "Raw app field 67"
+      },
+      "starcode_abm5_4_raw_6f": {
+        "name": "Raw app field 6f"
+      },
+      "starcode_abm5_4_raw_77": {
+        "name": "Raw app field 77"
+      },
+      "starcode_abm5_4_raw_7f": {
+        "name": "Raw app field 7f"
       }
     },
     "light": {
@@ -2775,6 +2929,9 @@
       },
       "vmatbasic_mood_speed": {
         "name": "Mood effect speed"
+      },
+      "starcode_abm5_4_light_level": {
+        "name": "Floor light level"
       }
     },
     "select": {
@@ -2939,6 +3096,14 @@
       },
       "vmatbasic_mood_effect": {
         "name": "Mood effect"
+      },
+      "starcode_abm5_4_massage_timer": {
+        "name": "Massage timer",
+        "state": {
+          "10": "10 minutes",
+          "20": "20 minutes",
+          "30": "30 minutes"
+        }
       }
     },
     "climate": {
@@ -3603,6 +3768,26 @@
         },
         "duration": {
           "name": "Duration"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "starcode_abm5_4_hold_control": {
+      "name": "Hold AdjustableM5X4 control",
+      "description": "Hold one exact app action. Flat runs 600 ms; save and reset run the six-second local confirmation interval. No device acknowledgement is inferred.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "Exact supported control from the selected app profile."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold duration in seconds for movement, presets and wave controls."
         },
         "side": {
           "name": "Side"

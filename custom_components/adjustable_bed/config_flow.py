@@ -119,6 +119,7 @@ from .const import (
     BED_TYPE_SERENITY,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SOLACE,
+    BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_SVANE,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
@@ -179,6 +180,9 @@ from .const import (
     CONF_RICHMAT_REMOTE,
     CONF_RMCONTROL_PRODUCT,
     CONF_RMCONTROL_SIDE,
+    CONF_STARCODE_COMMAND_SELECTOR,
+    CONF_STARCODE_TRANSPORT_SELECTOR,
+    CONF_STARCODE_UI_SELECTOR,
     CONF_VIBRADORM_APP_METADATA,
     CONF_VIBRADORM_APP_PROFILE,
     CONF_VIBRADORM_CONTROL_TYPE,
@@ -240,6 +244,8 @@ from .const import (
     RICHMAT_VARIANT_WILINKE,
     RUNTIME_BOND_KEYS,
     SOLACE_VARIANT_WOOSA,
+    STARCODE_APP_CONFIG_KEYS,
+    STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
     SVANE_VARIANT_JENSEN_LINON,
     VARIANT_AUTO,
     VIBRADORM_APP_CONFIG_KEYS,
@@ -843,6 +849,43 @@ def _logicdata_app_errors(data: dict[str, Any]) -> dict[str, str]:
         data.get(CONF_LOGICDATA_APP_LAYOUT) == "middle"
     ):
         errors[CONF_LOGICDATA_APP_LAYOUT] = "logicdata_app_family_layout"
+    return errors
+
+
+def _add_starcode_app_schema_fields(schema: dict[vol.Marker, Any], data: dict[str, Any]) -> None:
+    from .beds.starcode_abm5_4_profiles import SELECTORS
+
+    schema[
+        vol.Required(
+            CONF_STARCODE_COMMAND_SELECTOR, default=data.get(CONF_STARCODE_COMMAND_SELECTOR, "none")
+        )
+    ] = vol.In(SELECTORS)
+    schema[
+        vol.Optional(
+            CONF_STARCODE_TRANSPORT_SELECTOR,
+            default=(data.get(CONF_STARCODE_TRANSPORT_SELECTOR) or "auto"),
+        )
+    ] = vol.In(
+        {
+            "auto": "From original Bluetooth device name",
+            "BOX1220": "BLE / 1000 service",
+            "BOX3633": "62741523 service",
+            "BOX25": "Star / Nordic UART",
+            "BOX25_STAR": "Exact star manufacturer / Nordic UART",
+        }
+    )
+
+
+def _starcode_app_errors(data: dict[str, Any]) -> dict[str, str]:
+    from .beds.starcode_abm5_4_profiles import SELECTORS, TRANSPORTS
+
+    errors: dict[str, str] = {}
+    if data.get(CONF_STARCODE_COMMAND_SELECTOR, "none") not in SELECTORS:
+        errors[CONF_STARCODE_COMMAND_SELECTOR] = "starcode_app_invalid"
+    if (data.get(CONF_STARCODE_TRANSPORT_SELECTOR) or "auto") not in (*TRANSPORTS, "auto"):
+        errors[CONF_STARCODE_TRANSPORT_SELECTOR] = "starcode_app_invalid"
+    if CONF_STARCODE_UI_SELECTOR in data and data[CONF_STARCODE_UI_SELECTOR] not in SELECTORS:
+        errors[CONF_STARCODE_COMMAND_SELECTOR] = "starcode_app_invalid"
     return errors
 
 
@@ -1605,6 +1648,31 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             step_id="vmatbasic", data_schema=vol.Schema(schema), errors=errors
         )
 
+    async def async_step_starcode_app(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Explicit AdjustableM5X4 provenance; a shared UART is not app identity."""
+        assert self._manual_data is not None
+        data = {**self._manual_data, **(user_input or {})}
+        errors = _starcode_app_errors(data) if user_input is not None else {}
+        if user_input is not None and not errors:
+            data[CONF_STARCODE_COMMAND_SELECTOR] = data.get(CONF_STARCODE_COMMAND_SELECTOR, "none")
+            data[CONF_STARCODE_UI_SELECTOR] = data[CONF_STARCODE_COMMAND_SELECTOR]
+            if data.get(CONF_STARCODE_TRANSPORT_SELECTOR) == "auto":
+                data.pop(CONF_STARCODE_TRANSPORT_SELECTOR, None)
+            data[CONF_MOTOR_COUNT] = 2
+            data[CONF_HAS_MASSAGE] = True
+            data[CONF_DISABLE_ANGLE_SENSING] = True
+            self._manual_data = data
+            if self._starcode_bluetooth_pairing:
+                return await self.async_step_bluetooth_pairing()
+            return await self.async_step_manual_pairing()
+        schema: dict[vol.Marker, Any] = {}
+        _add_starcode_app_schema_fields(schema, data)
+        return self.async_show_form(
+            step_id="starcode_app", data_schema=vol.Schema(schema), errors=errors
+        )
+
     async def async_step_vibradorm_app(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -1677,6 +1745,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._manual_data: dict[str, Any] | None = None
         self._leggett_app_pairing_step = "manual_pairing"
         self._vibradorm_app_bluetooth_pairing = False
+        self._starcode_bluetooth_pairing = False
         # For two-tier actuator selection
         self._selected_actuator: str | None = None
         self._selected_bed_type: str | None = None
@@ -2502,6 +2571,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 if selected_bed_type == BED_TYPE_JIECANG_APP:
                     self._manual_data = entry_data
                     return await self.async_step_jiecang_app()
+                if selected_bed_type == BED_TYPE_STARCODE_ABM5_4:
+                    self._manual_data = entry_data
+                    self._starcode_bluetooth_pairing = True
+                    return await self.async_step_starcode_app()
                 if selected_bed_type == BED_TYPE_VIBRADORM_APP:
                     self._manual_data = entry_data
                     self._vibradorm_app_bluetooth_pairing = True
@@ -3440,6 +3513,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 if bed_type == BED_TYPE_JIECANG_APP:
                     self._manual_data = entry_data
                     return await self.async_step_jiecang_app()
+                if bed_type == BED_TYPE_STARCODE_ABM5_4:
+                    self._manual_data = entry_data
+                    self._starcode_bluetooth_pairing = False
+                    return await self.async_step_starcode_app()
                 if bed_type == BED_TYPE_VIBRADORM_APP:
                     self._manual_data = entry_data
                     return await self.async_step_vibradorm_app()
@@ -3743,6 +3820,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     if bed_type == BED_TYPE_JIECANG_APP:
                         self._manual_data = entry_data
                         return await self.async_step_jiecang_app()
+                    if bed_type == BED_TYPE_STARCODE_ABM5_4:
+                        self._manual_data = entry_data
+                        self._starcode_bluetooth_pairing = False
+                        return await self.async_step_starcode_app()
                     if bed_type == BED_TYPE_VIBRADORM_APP:
                         self._manual_data = entry_data
                         return await self.async_step_vibradorm_app()
@@ -4961,7 +5042,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 address,
                 max_attempts=1,
                 timeout=(
-                    5.0 if request_bond and self._manual_data is not None
+                    STARCODE_APP_CONNECTION_TIMEOUT_SECONDS
+                    if bed_type == BED_TYPE_STARCODE_ABM5_4
+                    else 5.0
+                    if request_bond and self._manual_data is not None
                     and self._manual_data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat"
                     else CONNECTION_PROFILES[DEFAULT_CONNECTION_PROFILE].connection_timeout
                 ),
@@ -5405,7 +5489,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         device,
                         address,
                         max_attempts=1,
-                        timeout=_PROBE_TIMEOUT_SECONDS,
+                        timeout=(
+                            STARCODE_APP_CONNECTION_TIMEOUT_SECONDS
+                            if bed_type == BED_TYPE_STARCODE_ABM5_4
+                            else _PROBE_TIMEOUT_SECONDS
+                        ),
                     )
                     if client_tracker is not None:
                         # Registered before anything else can fail or be
@@ -5917,6 +6005,9 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 CONF_JIECANG_APP_HAS_LIGHT,
             ):
                 data.pop(key, None)
+        if bed_type != BED_TYPE_STARCODE_ABM5_4:
+            for key in STARCODE_APP_CONFIG_KEYS:
+                data.pop(key, None)
         if bed_type != BED_TYPE_VIBRADORM_APP:
             for key in VIBRADORM_APP_CONFIG_KEYS:
                 data.pop(key, None)
@@ -6292,7 +6383,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             ): bool,
         }
 
-        if bed_type in {BED_TYPE_SERENITY, BED_TYPE_FURNIMOVE}:
+        if bed_type in {BED_TYPE_SERENITY, BED_TYPE_FURNIMOVE, BED_TYPE_STARCODE_ABM5_4}:
             schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
             schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
         if bed_type == BED_TYPE_FURNIMOVE:
@@ -6391,6 +6482,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             _add_logicdata_app_schema_fields(schema_dict, current_data)
         if bed_type == BED_TYPE_JIECANG_APP and not separate_address_pair:
             _add_jiecang_app_schema_fields(schema_dict, current_data)
+        if bed_type == BED_TYPE_STARCODE_ABM5_4 and not separate_address_pair:
+            _add_starcode_app_schema_fields(schema_dict, current_data)
         if bed_type == BED_TYPE_VIBRADORM_APP and not separate_address_pair:
             _add_vibradorm_app_schema_fields(schema_dict, current_data)
         if bed_type == BED_TYPE_VMATBASIC and not separate_address_pair:
@@ -6481,6 +6574,15 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     step_id=step_id,
                     data_schema=vol.Schema(schema_dict),
                     errors={CONF_BED_TYPE: "logicdata_app_unpair_first"},
+                )
+            if separate_address_pair and (
+                (requested_bed_type == BED_TYPE_STARCODE_ABM5_4 and requested_bed_type != bed_type)
+                or any(key in user_input for key in STARCODE_APP_CONFIG_KEYS)
+            ):
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={"base": "starcode_app_unpair_first"},
                 )
             if separate_address_pair and (
                 (requested_bed_type == BED_TYPE_VIBRADORM_APP and requested_bed_type != bed_type)
@@ -6746,6 +6848,27 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     return self.async_show_form(
                         step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
                     )
+                user_input[CONF_DISABLE_ANGLE_SENSING] = True
+            if bed_type == BED_TYPE_STARCODE_ABM5_4 and not separate_address_pair:
+                from .beds.starcode_abm5_4_profiles import SELECTORS
+
+                app_data = {**current_data, **user_input}
+                if CONF_STARCODE_COMMAND_SELECTOR in user_input and (
+                    user_input[CONF_STARCODE_COMMAND_SELECTOR]
+                    != current_data.get(CONF_STARCODE_COMMAND_SELECTOR)
+                    or app_data.get(CONF_STARCODE_UI_SELECTOR, "none") not in SELECTORS
+                ):
+                    user_input[CONF_STARCODE_UI_SELECTOR] = app_data[CONF_STARCODE_COMMAND_SELECTOR]
+                    app_data[CONF_STARCODE_UI_SELECTOR] = user_input[CONF_STARCODE_UI_SELECTOR]
+                app_errors = _starcode_app_errors(app_data)
+                if app_errors:
+                    return self.async_show_form(
+                        step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
+                    )
+                if app_data.get(CONF_STARCODE_TRANSPORT_SELECTOR) == "auto":
+                    user_input[CONF_STARCODE_TRANSPORT_SELECTOR] = None
+                user_input[CONF_MOTOR_COUNT] = 2
+                user_input[CONF_HAS_MASSAGE] = True
                 user_input[CONF_DISABLE_ANGLE_SENSING] = True
             if bed_type == BED_TYPE_VIBRADORM_APP and not separate_address_pair:
                 app_data = _vibradorm_app_data(current_data, user_input)
