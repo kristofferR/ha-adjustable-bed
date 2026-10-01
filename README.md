@@ -123,6 +123,7 @@ The entries below identify motor/actuator manufacturers or supported app profile
 | ✅ [Sleepy's Elite](docs/beds/sleepys.md) | Sleepy's |
 | ✅ [SleepSpa S9000AI](docs/beds/sleepstar.md) | SleepSpa S9000AI (`SLEEPSTAR`) |
 | ✅ [Vibradorm](docs/beds/vibradorm.md) | Vibradorm |
+| 🧪 [Caresse / Werkmeister app profiles](docs/beds/vibradorm_app.md) | Explicit Caresse or Werkmeister app and remote selection; artifact-verified, hardware unverified |
 | ✅ [SUTA Smart Home](docs/beds/suta.md) | SUTA |
 | ✅ [TiMOTION AHF](docs/beds/timotion-ahf.md) | TiMOTION |
 | ✅ [Rondure](docs/beds/rondure.md) | 1500 Tilt Base |

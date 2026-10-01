@@ -76,6 +76,104 @@ test("read-only light state is visible independently of light controls", () => {
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
+test("exact app controls separate floor, bounded mood and massage surfaces", () => {
+  const hass = hassWith([
+    entry("light.floor", "under_bed_lights"),
+    entry("number.floor_level", "light_level"),
+    entry("select.floor_timer", "light_timer"),
+    entry("number.floor_minutes", "vibradorm_app_floor_timer_minutes"),
+    entry("button.floor_timer", "vibradorm_app_floor_timer_toggle"),
+    entry("select.palette", "vibradorm_app_mood_palette"),
+    entry("select.effect", "vibradorm_app_mood_effect"),
+    entry("number.mood_speed", "vibradorm_app_mood_speed"),
+    entry("button.mood_toggle", "vibradorm_app_mood_toggle"),
+    entry("button.automatic", "vibradorm_app_massage_automatic"),
+    entry("button.individual", "vibradorm_app_massage_individual"),
+    entry("select.wave", "vibradorm_app_massage_wave"),
+    entry("number.massage_speed", "vibradorm_app_massage_speed"),
+    entry("number.head_intensity", "massage_head_intensity"),
+    entry("button.refresh", "vibradorm_app_refresh_info"),
+    entry("button.all_up", "vibradorm_app_all_up"),
+    entry("button.all_down", "vibradorm_app_all_down"),
+    entry("button.sync", "vibradorm_app_sync"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.lights.light).toBe("light.floor");
+  expect(bed.lights.level).toBe("number.floor_level");
+  expect(bed.lights.timer).toBe("select.floor_timer");
+  expect(bed.lights.timerMinutes).toBe("number.floor_minutes");
+  expect(bed.lights.timerToggle).toBe("button.floor_timer");
+  expect(bed.lights.mood).toEqual({
+    selects: ["select.palette", "select.effect"],
+    numbers: ["number.mood_speed"],
+    toggle: "button.mood_toggle",
+  });
+  expect(bed.massage.buttons).toEqual(["button.automatic", "button.individual"]);
+  expect(bed.massage.selects).toEqual(["select.wave"]);
+  expect(bed.massage.numbers).toEqual(["number.massage_speed", "number.head_intensity"]);
+  expect(bed.massage.timer).toBeUndefined();
+  expect(bed.utility).toEqual(["button.refresh", "button.all_up", "button.all_down", "button.sync"]);
+  expect(bed.motors).toEqual([]);
+});
+
+test("bounded mood or massage selectors alone are renderable controls", () => {
+  for (const [id, key] of [
+    ["select.palette", "vibradorm_app_mood_palette"],
+    ["number.mood_speed", "vibradorm_app_mood_speed"],
+    ["button.mood", "vibradorm_app_mood_toggle"],
+    ["select.wave", "vibradorm_app_massage_wave"],
+    ["number.massage_speed", "vibradorm_app_massage_speed"],
+    ["number.floor_minutes", "vibradorm_app_floor_timer_minutes"],
+  ]) {
+    const bed = bedEntitiesForDevice(hassWith([entry(id, key)]), "dev1");
+    expect(bedIsEmpty(bed)).toBe(false);
+    expect(bed.lights.light).toBeUndefined();
+    expect(bed.lights.level).toBeUndefined();
+  }
+});
+
+test("two-address profile controls keep independent child state and parent actions", () => {
+  const hass = hassWith([
+    entry("select.left_palette", "vibradorm_app_mood_palette_left", "left"),
+    entry("number.left_speed", "vibradorm_app_mood_speed", "left"),
+    entry("button.left_mood", "vibradorm_app_mood_toggle", "left"),
+    entry("select.right_wave", "vibradorm_app_massage_wave_right", "right"),
+    entry("number.right_timer", "vibradorm_app_floor_timer_minutes", "right"),
+    entry("light.right_floor", "under_bed_lights", "right"),
+    entry("button.stop", "stop_both", "parent"),
+    entry("button.flat", "preset_flat", "parent"),
+  ]);
+  hass.devices = {
+    parent: { id: "parent", name: "Pair" },
+    left: { id: "left", name: "Left", parent_device_id: "parent" },
+    right: { id: "right", name: "Right", parent_device_id: "parent" },
+  };
+  for (const [id, state, attributes] of [
+    ["select.left_palette", "palette_3", { bed_side: "left", options: ["palette_3", "palette_4"] }],
+    ["number.left_speed", "2", { bed_side: "left", min: 0, max: 8 }],
+    ["select.right_wave", "wave_2", { bed_side: "right", options: ["wave_1", "wave_2"] }],
+    ["number.right_timer", "45", { bed_side: "right", min: 1, max: 60 }],
+  ] as const) {
+    hass.states[id] = { entity_id: id, state, attributes: { ...attributes }, last_changed: "", last_updated: "" };
+  }
+  expect(pairedChildDeviceIds(hass, "parent")).toEqual(["left", "right"]);
+  const left = bedEntitiesForDevice(hass, "left");
+  const right = bedEntitiesForDevice(hass, "right");
+  const parent = bedEntitiesForDevice(hass, "parent");
+  expect(left.lights.mood?.selects).toEqual(["select.left_palette"]);
+  expect(left.lights.mood?.numbers).toEqual(["number.left_speed"]);
+  expect(left.lights.timerMinutes).toBeUndefined();
+  expect(right.lights.mood).toBeUndefined();
+  expect(right.massage.selects).toEqual(["select.right_wave"]);
+  expect(right.lights.timerMinutes).toBe("number.right_timer");
+  expect(hass.states[left.lights.mood!.selects[0]].state).toBe("palette_3");
+  expect(hass.states[right.lights.timerMinutes!].state).toBe("45");
+  expect(parent.stop).toBe("button.stop");
+  expect(parent.presets).toEqual(["button.flat"]);
+  expect(parent.lights).toEqual({});
+  expect(parent.massage.selects).toBeUndefined();
+});
+
 test("standalone MCR sides keep percentage sliders with their motor covers", () => {
   const hass = hassWith([
     entry("cover.b_back_left", "back_left"),

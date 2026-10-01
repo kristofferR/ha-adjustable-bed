@@ -65,6 +65,7 @@ if TYPE_CHECKING:
     from .svane import SvaneController as SvaneController
     from .timotion_ahf import TiMOTIONAhfController as TiMOTIONAhfController
     from .vibradorm import VibradormController as VibradormController
+    from .vibradorm_app import VibradormAppController as VibradormAppController
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
@@ -119,6 +120,7 @@ _EXPORT_MODULES = {
     "SvaneController": "svane",
     "TiMOTIONAhfController": "timotion_ahf",
     "VibradormController": "vibradorm",
+    "VibradormAppController": "vibradorm_app",
     "WoosaController": "woosa",
 }
 
@@ -174,6 +176,7 @@ __all__ = [
     "SutaController",
     "TiMOTIONAhfController",
     "VibradormController",
+    "VibradormAppController",
     "WoosaController",
 ]
 

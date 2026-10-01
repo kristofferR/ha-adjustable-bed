@@ -51,6 +51,38 @@ class ConnectionProfileSettings:
 CONF_BED_TYPE: Final = "bed_type"
 CONF_PROTOCOL_VARIANT: Final = "protocol_variant"
 CONF_MOTOR_COUNT: Final = "motor_count"
+CONF_VIBRADORM_APP_PROFILE: Final = "vibradorm_app_profile"
+CONF_VIBRADORM_APP_METADATA: Final = "vibradorm_app_metadata"
+CONF_VIBRADORM_CONTROL_TYPE: Final = "vibradorm_control_type"
+CONF_VIBRADORM_RESTORED: Final = "vibradorm_restored"
+CONF_VIBRADORM_FLOOR_LIGHT: Final = "vibradorm_floor_light"
+CONF_VIBRADORM_FLOOR_DEFAULT: Final = "vibradorm_floor_default"
+CONF_VIBRADORM_RGB: Final = "vibradorm_rgb"
+CONF_VIBRADORM_MASSAGE: Final = "vibradorm_massage"
+CONF_VIBRADORM_LIGHT_EXTENSION: Final = "vibradorm_light_extension"
+VIBRADORM_APP_PROFILES: Final = {"caresse": "Caresse Diamant", "werkmeister": "Werkmeister"}
+VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS: Final = 10.0
+VIBRADORM_WERKMEISTER_CONTROLS: Final = {
+    "5": "BF 11/21/374 VI remote (back and legs)",
+    "7": "CF 17/21/382 VI remote (head, back, legs and feet)",
+}
+VIBRADORM_RESTORED_CONTROLS: Final = {
+    "2": "Standard controls (retained type 2)",
+    "3": "Seat controls (retained type 3)",
+    "0": "Back and legs (retained type 0)",
+    "5": "Back and legs (retained type 5)",
+    "4": "Head, back and legs (retained type 4)",
+    "6": "Head, back and legs (retained type 6)",
+    "-1": "Head, back, legs and feet (retained type -1)",
+    "1": "Head, back, legs and feet (retained type 1)",
+    "7": "Head, back, legs and feet (retained type 7)",
+    "other": "Memory and optional features, without motor controls",
+}
+VIBRADORM_APP_CONFIG_KEYS: Final = frozenset({
+    CONF_VIBRADORM_APP_PROFILE, CONF_VIBRADORM_CONTROL_TYPE, CONF_VIBRADORM_RESTORED,
+    CONF_VIBRADORM_FLOOR_LIGHT, CONF_VIBRADORM_RGB, CONF_VIBRADORM_MASSAGE,
+    CONF_VIBRADORM_LIGHT_EXTENSION, CONF_VIBRADORM_FLOOR_DEFAULT,
+})
 CONF_LEGGETT_APP_PROFILE: Final = "leggett_app_profile"
 LEGGETT_APP_DEFAULT_PROFILE: Final = "prodigy4"
 LEGGETT_APP_PROFILES: Final = {
@@ -365,6 +397,7 @@ BED_TYPE_SLEEPSTAR: Final = "sleepstar"  # SleepSpa S9000AI / SLEEPSTAR transpar
 BED_TYPE_STAR_ELEVATE: Final = "star_elevate"  # ELEVATE two-actuator StarCode accessory
 BED_TYPE_SVANE: Final = "svane"  # Svane LinonPI multi-service protocol
 BED_TYPE_VIBRADORM: Final = "vibradorm"  # Vibradorm VMAT protocol
+BED_TYPE_VIBRADORM_APP: Final = "vibradorm_app"
 BED_TYPE_RONDURE: Final = "rondure"  # 1500 Tilt Base / Rondure Hump (8/9-byte FurniBus protocol)
 BED_TYPE_REMACRO: Final = (
     "remacro"  # Remacro protocol (CheersSleep/Jeromes/Slumberland/The Brick, 8-byte SynData)
@@ -457,6 +490,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SVANE,
     # Vibradorm
     BED_TYPE_VIBRADORM,
+    BED_TYPE_VIBRADORM_APP,
     # Rondure / 1500 Tilt Base
     BED_TYPE_RONDURE,
     # Remacro (CheersSleep / Jeromes / Slumberland / The Brick)
@@ -526,6 +560,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_SUTA,
         BED_TYPE_TIMOTION_AHF,
         BED_TYPE_LOGICDATA,
+        BED_TYPE_VIBRADORM_APP,
     }
 )
 
@@ -2234,8 +2269,8 @@ ALL_PROTOCOL_VARIANTS: Final = [
     RONDURE_VARIANT_SIDE_B,
 ]
 
-# Bed types that require BLE pairing before they can be controlled
-# These beds use encrypted connections and must be paired at the OS level.
+# Protocols whose setup requests OS-level BLE pairing. This policy alone does
+# not prove that a successful connection or metadata read is authenticated.
 #
 # Sleep Number 5.4.11 explicitly bonds after GATT discovery, then reads its
 # session Auth UUID before subscribing. Do not use connect(pair=True) for it:
@@ -2249,6 +2284,7 @@ BEDS_REQUIRING_PAIRING: Final[set[str]] = {
     BED_TYPE_OKIMAT,
     BED_TYPE_VIBRADORM,
     BED_TYPE_LOGICDATA,
+    BED_TYPE_VIBRADORM_APP,
     # Leggett & Platt Gen2 (LP Comfort Connect, 209-M001): LP Control calls
     # createBond() for an unbonded Gen2 device after service discovery. Issue
     # #385 shows repeated unbonded BlueZ connection timeouts while the box keeps
@@ -2294,7 +2330,7 @@ def requires_pairing_after_service_discovery(
     bonding API. BlueZ's usual ``pair=True`` path instead invokes
     ``Device1.Pair`` without first making the ordinary unbonded GATT connection.
     """
-    if bed_type in (BED_TYPE_LEGGETT_GEN2, BED_TYPE_SLEEP_NUMBER):
+    if bed_type in (BED_TYPE_LEGGETT_GEN2, BED_TYPE_SLEEP_NUMBER, BED_TYPE_VIBRADORM_APP):
         return True
     return bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant == LEGGETT_VARIANT_GEN2
 
@@ -2409,6 +2445,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_LOGICDATA_APP,
         BED_TYPE_JIECANG_APP,
         BED_TYPE_LEGGETT_LP_LEGACY,
+        BED_TYPE_VIBRADORM_APP,
         BED_TYPE_OKIN_CST,
         BED_TYPE_OKIN_RF_ECO_BT,
     }
@@ -2498,6 +2535,7 @@ BEDS_WITH_DISCONNECT_AFTER_COMMAND_DEFAULT_DISABLED: Final = (
             BED_TYPE_SUTA,
             BED_TYPE_SVANE,
             BED_TYPE_VIBRADORM,
+            BED_TYPE_VIBRADORM_APP,
         }
     )
 )

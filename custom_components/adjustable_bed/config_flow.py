@@ -84,6 +84,7 @@ from .bond_verification import (
     BondOwner,
     BondVerificationStatus,
     async_verify_authenticated_access,
+    async_verify_native_bond,
     bond_owner_from_entry,
     build_bond_context,
 )
@@ -117,6 +118,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SOLACE,
     BED_TYPE_SVANE,
+    BED_TYPE_VIBRADORM_APP,
     BEDS_WITH_PERCENTAGE_POSITIONS,
     BEDS_WITH_POSITION_FEEDBACK,
     CB24_BED_SELECTION_A,
@@ -174,6 +176,15 @@ from .const import (
     CONF_RICHMAT_REMOTE,
     CONF_RMCONTROL_PRODUCT,
     CONF_RMCONTROL_SIDE,
+    CONF_VIBRADORM_APP_METADATA,
+    CONF_VIBRADORM_APP_PROFILE,
+    CONF_VIBRADORM_CONTROL_TYPE,
+    CONF_VIBRADORM_FLOOR_DEFAULT,
+    CONF_VIBRADORM_FLOOR_LIGHT,
+    CONF_VIBRADORM_LIGHT_EXTENSION,
+    CONF_VIBRADORM_MASSAGE,
+    CONF_VIBRADORM_RESTORED,
+    CONF_VIBRADORM_RGB,
     CONNECTION_PROFILE_BALANCED,
     CONNECTION_PROFILE_RELIABLE,
     CONNECTION_PROFILES,
@@ -224,6 +235,11 @@ from .const import (
     SOLACE_VARIANT_WOOSA,
     SVANE_VARIANT_JENSEN_LINON,
     VARIANT_AUTO,
+    VIBRADORM_APP_CONFIG_KEYS,
+    VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS,
+    VIBRADORM_APP_PROFILES,
+    VIBRADORM_RESTORED_CONTROLS,
+    VIBRADORM_WERKMEISTER_CONTROLS,
     DetectionResult,
     bed_type_has_position_feedback,
     disconnect_after_command_default_enabled,
@@ -418,6 +434,12 @@ _BOND_STATE_FALLBACKS: Final[dict[str, str]] = {
 # English fallbacks for the pairing result. The shipped text lives in
 # strings.json; these only apply when a translation is missing.
 _PAIRING_OUTCOME_FALLBACKS: Final[dict[str, str]] = {
+    "native_verified_local": "A stored bond was confirmed on this Home Assistant adapter ({transport}).",
+    "native_absent": (
+        "❌ No stored bond was found for this bed on this Home Assistant adapter "
+        "({transport}). Put the bed back into Bluetooth pairing mode and select "
+        "**Try again**."
+    ),
     "no_run": "❌ Pairing did not run. Select **Try again**.",
     "verified_local": (
         "✅ Paired, and the bond was confirmed. It is stored on this Home "
@@ -812,6 +834,136 @@ def _logicdata_app_errors(data: dict[str, Any]) -> dict[str, str]:
     ):
         errors[CONF_LOGICDATA_APP_LAYOUT] = "logicdata_app_family_layout"
     return errors
+
+
+def _add_vibradorm_app_schema_fields(
+    schema: dict[vol.Marker, Any], current_data: dict[str, Any] | None = None
+) -> None:
+    """Collect explicit app controls, never infer them from Bluetooth metadata."""
+    data = current_data or {}
+    app = data.get(CONF_VIBRADORM_APP_PROFILE)
+    schema[vol.Required(
+        CONF_VIBRADORM_APP_PROFILE, default=app or vol.UNDEFINED
+    )] = vol.In(VIBRADORM_APP_PROFILES)
+    if app == "werkmeister":
+        schema[vol.Required(
+            CONF_VIBRADORM_CONTROL_TYPE,
+            default=data.get(CONF_VIBRADORM_CONTROL_TYPE, "5"),
+        )] = vol.In(VIBRADORM_WERKMEISTER_CONTROLS)
+    elif app == "caresse":
+        schema[vol.Optional(
+            CONF_VIBRADORM_RESTORED, default=data.get(CONF_VIBRADORM_RESTORED, False)
+        )] = bool
+        if data.get(CONF_VIBRADORM_RESTORED, False):
+            schema[vol.Required(
+                CONF_VIBRADORM_CONTROL_TYPE,
+                default=data.get(CONF_VIBRADORM_CONTROL_TYPE, "2"),
+            )] = vol.In(VIBRADORM_RESTORED_CONTROLS)
+            for key in (
+                CONF_VIBRADORM_FLOOR_LIGHT, CONF_VIBRADORM_RGB,
+                CONF_VIBRADORM_MASSAGE, CONF_VIBRADORM_LIGHT_EXTENSION,
+            ):
+                schema[vol.Optional(key, default=data.get(key, False))] = bool
+            schema[vol.Optional(
+                CONF_VIBRADORM_FLOOR_DEFAULT,
+                default=data.get(CONF_VIBRADORM_FLOOR_DEFAULT, 6 if data.get(CONF_VIBRADORM_LIGHT_EXTENSION) else 8),
+            )] = vol.All(int, vol.Range(min=1, max=8))
+
+
+def _vibradorm_app_form_changed(
+    previous: Mapping[str, Any], submitted: Mapping[str, Any]
+) -> bool:
+    """Rebuild dependent fields after the app or retained-settings choice changes."""
+    return any(
+        key in submitted and submitted[key] != previous.get(key)
+        for key in (CONF_VIBRADORM_APP_PROFILE, CONF_VIBRADORM_RESTORED)
+    )
+
+
+def _vibradorm_app_data(
+    previous: Mapping[str, Any], submitted: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Normalize explicit fresh defaults and clear incompatible retained state."""
+    data = dict(previous)
+    updates = dict(submitted)
+    if (
+        CONF_VIBRADORM_APP_PROFILE in submitted
+        and submitted[CONF_VIBRADORM_APP_PROFILE] != previous.get(CONF_VIBRADORM_APP_PROFILE)
+    ):
+        for key in VIBRADORM_APP_CONFIG_KEYS - {CONF_VIBRADORM_APP_PROFILE}:
+            data.pop(key, None)
+            updates.pop(key, None)
+        data.pop(CONF_VIBRADORM_APP_METADATA, None)
+        updates.pop(CONF_VIBRADORM_APP_METADATA, None)
+    data.update(updates)
+    app = data.get(CONF_VIBRADORM_APP_PROFILE)
+    restored = data.get(CONF_VIBRADORM_RESTORED, False) if app == "caresse" else False
+    data[CONF_VIBRADORM_RESTORED] = restored
+    if not restored:
+        data[CONF_VIBRADORM_CONTROL_TYPE] = (
+            data.get(CONF_VIBRADORM_CONTROL_TYPE, "5") if app == "werkmeister" else "2"
+        )
+        data[CONF_VIBRADORM_FLOOR_LIGHT] = app == "werkmeister"
+        for key in (CONF_VIBRADORM_RGB, CONF_VIBRADORM_MASSAGE, CONF_VIBRADORM_LIGHT_EXTENSION):
+            data[key] = False
+        data[CONF_VIBRADORM_FLOOR_DEFAULT] = 6
+    else:
+        if not previous.get(CONF_VIBRADORM_RESTORED, False):
+            # The fresh profile's hidden default is not a retained preference.
+            data.pop(CONF_VIBRADORM_FLOOR_DEFAULT, None)
+        data.setdefault(CONF_VIBRADORM_CONTROL_TYPE, "2")
+        for key in (
+            CONF_VIBRADORM_FLOOR_LIGHT, CONF_VIBRADORM_RGB,
+            CONF_VIBRADORM_MASSAGE, CONF_VIBRADORM_LIGHT_EXTENSION,
+        ):
+            data.setdefault(key, False)
+        data.setdefault(CONF_VIBRADORM_FLOOR_DEFAULT, 6 if data[CONF_VIBRADORM_LIGHT_EXTENSION] else 8)
+    return data
+
+
+def _vibradorm_app_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    """Validate the controller's immutable profile before making any BLE request."""
+    from .beds.vibradorm_app import validate_vibradorm_app_profile
+
+    if data.get(CONF_VIBRADORM_APP_PROFILE) not in VIBRADORM_APP_PROFILES:
+        return {CONF_VIBRADORM_APP_PROFILE: "vibradorm_app_required"}
+    stored_control = data.get(CONF_VIBRADORM_CONTROL_TYPE)
+    choices = (
+        VIBRADORM_WERKMEISTER_CONTROLS
+        if data[CONF_VIBRADORM_APP_PROFILE] == "werkmeister"
+        else VIBRADORM_RESTORED_CONTROLS
+    )
+    if stored_control not in choices:
+        return {CONF_VIBRADORM_CONTROL_TYPE: "vibradorm_app_invalid"}
+    floor_default = data.get(CONF_VIBRADORM_FLOOR_DEFAULT)
+    if isinstance(floor_default, bool) or not isinstance(floor_default, int) or not 1 <= floor_default <= 8:
+        return {CONF_VIBRADORM_FLOOR_DEFAULT: "vibradorm_app_invalid"}
+    try:
+        validate_vibradorm_app_profile(
+            data[CONF_VIBRADORM_APP_PROFILE],
+            "other" if stored_control == "other" else int(stored_control),
+            restored=data.get(CONF_VIBRADORM_RESTORED, False),
+            floor_light=data.get(CONF_VIBRADORM_FLOOR_LIGHT),
+            rgb=data.get(CONF_VIBRADORM_RGB, False),
+            massage=data.get(CONF_VIBRADORM_MASSAGE, False),
+            light_extension=data.get(CONF_VIBRADORM_LIGHT_EXTENSION, False),
+        )
+    except (TypeError, ValueError):
+        return {"base": "vibradorm_app_invalid"}
+    return {}
+
+
+def _hide_vibradorm_generic_fields(schema: dict[vol.Marker, Any], bed_type: str | None) -> None:
+    """App profiles define controls and held behavior independently of generic options."""
+    if bed_type != BED_TYPE_VIBRADORM_APP:
+        return
+    hidden = {
+        CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING,
+        CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS, CONF_PROTOCOL_VARIANT,
+    }
+    for marker in tuple(schema):
+        if marker.schema in hidden:
+            del schema[marker]
 
 
 def _add_jiecang_app_schema_fields(
@@ -1290,6 +1442,40 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             step_id="jiecang_app", data_schema=vol.Schema(schema), errors=errors
         )
 
+    async def async_step_vibradorm_app(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Select the app's exact controls before its information/bond transaction."""
+        assert self._manual_data is not None
+        previous = dict(self._manual_data)
+        data = _vibradorm_app_data(previous, user_input or {})
+        changed = user_input is not None and _vibradorm_app_form_changed(previous, user_input)
+        errors = _vibradorm_app_errors(data) if user_input is not None and not changed else {}
+        self._manual_data = data
+        if user_input is not None and not changed and not errors:
+            from .beds.vibradorm_app import validate_vibradorm_app_profile
+
+            control = data[CONF_VIBRADORM_CONTROL_TYPE]
+            profile = validate_vibradorm_app_profile(
+                data[CONF_VIBRADORM_APP_PROFILE], "other" if control == "other" else int(control),
+                restored=data[CONF_VIBRADORM_RESTORED],
+                floor_light=data[CONF_VIBRADORM_FLOOR_LIGHT],
+                rgb=data[CONF_VIBRADORM_RGB], massage=data[CONF_VIBRADORM_MASSAGE],
+                light_extension=data[CONF_VIBRADORM_LIGHT_EXTENSION],
+            )
+            data[CONF_MOTOR_COUNT] = max(2, len(profile.groups))
+            data[CONF_HAS_MASSAGE] = profile.massage
+            data[CONF_DISABLE_ANGLE_SENSING] = True
+            data[CONF_MOTOR_PULSE_USER_SET] = False
+            if self._vibradorm_app_bluetooth_pairing:
+                return await self.async_step_bluetooth_pairing()
+            return await self.async_step_manual_pairing()
+        schema: dict[vol.Marker, Any] = {}
+        _add_vibradorm_app_schema_fields(schema, data)
+        return self.async_show_form(
+            step_id="vibradorm_app", data_schema=vol.Schema(schema), errors=errors
+        )
+
     async def async_step_malouf_app(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -1326,6 +1512,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._all_ble_devices: dict[str, BluetoothServiceInfoBleak] = {}
         self._manual_data: dict[str, Any] | None = None
         self._leggett_app_pairing_step = "manual_pairing"
+        self._vibradorm_app_bluetooth_pairing = False
         # For two-tier actuator selection
         self._selected_actuator: str | None = None
         self._selected_bed_type: str | None = None
@@ -2155,6 +2342,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 if selected_bed_type == BED_TYPE_JIECANG_APP:
                     self._manual_data = entry_data
                     return await self.async_step_jiecang_app()
+                if selected_bed_type == BED_TYPE_VIBRADORM_APP:
+                    self._manual_data = entry_data
+                    self._vibradorm_app_bluetooth_pairing = True
+                    return await self.async_step_vibradorm_app()
                 if selected_bed_type == BED_TYPE_MALOUF_APP:
                     self._manual_data = entry_data
                     return await self.async_step_malouf_app()
@@ -2439,6 +2630,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             f"Wrong device, or not a bed? [Report a misidentified device]({report_url})"
         )
 
+        _hide_vibradorm_generic_fields(schema_dict, bed_type)
         return self.async_show_form(
             step_id="bluetooth_confirm",
             data_schema=vol.Schema(schema_dict),
@@ -3080,6 +3272,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 if bed_type == BED_TYPE_JIECANG_APP:
                     self._manual_data = entry_data
                     return await self.async_step_jiecang_app()
+                if bed_type == BED_TYPE_VIBRADORM_APP:
+                    self._manual_data = entry_data
+                    return await self.async_step_vibradorm_app()
                 if bed_type == BED_TYPE_MALOUF_APP:
                     self._manual_data = entry_data
                     return await self.async_step_malouf_app()
@@ -3230,6 +3425,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if defaults_bed_type == BED_TYPE_OKIN_CB24:
             _add_cb24_side_schema_field(schema_dict)
 
+        _hide_vibradorm_generic_fields(schema_dict, defaults_bed_type)
         return self.async_show_form(
             step_id="manual_config",
             data_schema=vol.Schema(schema_dict),
@@ -3376,6 +3572,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     if bed_type == BED_TYPE_JIECANG_APP:
                         self._manual_data = entry_data
                         return await self.async_step_jiecang_app()
+                    if bed_type == BED_TYPE_VIBRADORM_APP:
+                        self._manual_data = entry_data
+                        return await self.async_step_vibradorm_app()
                     if bed_type == BED_TYPE_MALOUF_APP:
                         self._manual_data = entry_data
                         return await self.async_step_malouf_app()
@@ -3496,6 +3695,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             schema_dict.pop(vol.Optional(CONF_HAS_MASSAGE), None)
             schema_dict.pop(vol.Optional(CONF_PROTOCOL_VARIANT), None)
 
+        _hide_vibradorm_generic_fields(
+            schema_dict, (user_input or {}).get(CONF_BED_TYPE, preselected_bed_type)
+        )
         typed_address = (user_input or {}).get(CONF_ADDRESS, "")
         return self.async_show_form(
             step_id="manual_entry",
@@ -4224,9 +4426,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 detail=str(err) or err.__class__.__name__,
             )
 
-        if evidence.status is BondVerificationStatus.AUTH_FAILED:
-            # The link came up but is still unauthenticated, which is the one
-            # outcome that says the bond really did not form.
+        if (
+            evidence.status is BondVerificationStatus.AUTH_FAILED
+            or evidence.proves_native_bond_absent
+        ):
+            # Authentication failure or exact host absence contradicts a
+            # successful bond, even when the pairing RPC returned normally.
             return OperationResult(
                 outcome=OperationOutcome.BOND_VERIFICATION_FAILED,
                 detail=evidence.error,
@@ -4319,7 +4524,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     entry_data = self._mark_ble_bond_established(entry_data)
                     entry_data[CONF_BLE_BOND_ATTEMPTED_SOURCE] = attempted_source
                 entry_data.pop(CONF_BLE_BOND_CONTEXT, None)
-            return self.async_create_entry(
+            return self._create_selected_app_entry(
                 title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
                 data=entry_data,
             )
@@ -4354,6 +4559,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if (
             result.outcome is OperationOutcome.BOND_VERIFICATION_FAILED
             and isinstance(evidence, BondEvidence)
+            and evidence.proves_native_bond_absent
+        ):
+            where = evidence.owner.source or evidence.owner.adapter or "unknown"
+            return (await self._pairing_text("native_absent")).format(transport=where)
+
+        if (
+            result.outcome is OperationOutcome.BOND_VERIFICATION_FAILED
+            and isinstance(evidence, BondEvidence)
             and evidence.status is BondVerificationStatus.AUTH_FAILED
             and evidence.owner.transport is TransportClass.PROXY
         ):
@@ -4372,6 +4585,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 return await self._pairing_text("unproven")
             owner = evidence.owner
             where = owner.source or str(owner.transport)
+            if evidence.status is BondVerificationStatus.NATIVE_OS_STATE:
+                return (await self._pairing_text("native_verified_local")).format(transport=where)
             if owner.transport is TransportClass.PROXY:
                 key = "verified_proxy"
             elif owner.transport is TransportClass.LOCAL:
@@ -4532,7 +4747,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # caller's connect attempt, where bleak's cleanup can abort it. Keeping
         # it all in this one task is also required, because the lock is
         # reentrant per task rather than per caller.
-        async with async_get_connect_lock(self.hass, address):
+        async with async_get_connect_lock(self.hass, address), contextlib.AsyncExitStack() as budget:
+            onboarding_deadline: float | None = None
+            if bed_type == BED_TYPE_VIBRADORM_APP and request_bond:
+                onboarding_deadline = (
+                    asyncio.get_running_loop().time() + VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS
+                )
+                await budget.enter_async_context(asyncio.timeout_at(onboarding_deadline))
             self.async_report_action(SetupAction.CONNECTING)
             connect_kwargs: dict[str, Any] = {
                 "use_services_cache": not pair_after_service_discovery,
@@ -4587,8 +4808,55 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         f"{self._pairing_retry_source}"
                     )
 
+                native_existing: BondEvidence | None = None
+                if bed_type == BED_TYPE_VIBRADORM_APP:
+                    native_existing = await async_verify_native_bond(
+                        address, path=path, operation="vibradorm_existing_native_bond"
+                    )
                 pair_error: Exception | None = None
-                if pair_after_service_discovery:
+                if pair_after_service_discovery and not (
+                    native_existing is not None and native_existing.proves_bond
+                ):
+                    if bed_type == BED_TYPE_VIBRADORM_APP:
+                        from .beds.vibradorm_app import (
+                            VibradormAppMetadataProgress,
+                            async_prepare_vibradorm_app_pairing,
+                        )
+
+                        assert self._manual_data is not None
+                        assert onboarding_deadline is not None
+                        stored_control = self._manual_data[CONF_VIBRADORM_CONTROL_TYPE]
+
+                        def retain_metadata(delta: VibradormAppMetadataProgress) -> None:
+                            assert self._manual_data is not None
+                            cached = self._manual_data.get(CONF_VIBRADORM_APP_METADATA)
+                            retained: dict[str, str | None] = {}
+                            if isinstance(cached, dict):
+                                retained = {
+                                    key: value for key, value in cached.items()
+                                    if key in ("model", "firmware", "software", "main_firmware_article")
+                                    and (isinstance(value, str) or key == "main_firmware_article" and value is None)
+                                }
+                            retained.update(
+                                (field, value) for field, value in delta.items()
+                                if isinstance(value, str)
+                            )
+                            self._manual_data[CONF_VIBRADORM_APP_METADATA] = retained
+
+                        metadata = await async_prepare_vibradorm_app_pairing(
+                            client, self._manual_data[CONF_VIBRADORM_APP_PROFILE],
+                            "other" if stored_control == "other" else int(stored_control),
+                            deadline=onboarding_deadline,
+                            metadata_progress=retain_metadata,
+                        )
+                        completed: VibradormAppMetadataProgress = {
+                            "model": metadata.model,
+                            "firmware": metadata.firmware,
+                            "software": metadata.software,
+                        }
+                        if metadata.main_firmware_article is not None:
+                            completed["main_firmware_article"] = metadata.main_firmware_article
+                        retain_metadata(completed)
                     _LOGGER.info(
                         "Connected to %s and discovered services; creating the BLE bond now",
                         address,
@@ -4611,19 +4879,27 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         _LOGGER.info("BLE backend pairing completed for %s via %s; verifying Auth next", address, actual_source)
 
                 self.async_report_action(SetupAction.VERIFYING_BOND)
-                evidence = await async_verify_authenticated_access(
-                    client,
-                    bed_type=bed_type,
-                    protocol_variant=protocol_variant,
-                    path=path,
-                    operation=("setup_pairing" if request_bond else "verify_existing_bond"),
-                )
+                if bed_type == BED_TYPE_VIBRADORM_APP:
+                    evidence = await async_verify_native_bond(
+                        address, path=path,
+                        operation="setup_native_pairing" if request_bond else "verify_existing_native_bond",
+                    )
+                else:
+                    evidence = await async_verify_authenticated_access(
+                        client,
+                        bed_type=bed_type,
+                        protocol_variant=protocol_variant,
+                        path=path,
+                        operation=("setup_pairing" if request_bond else "verify_existing_bond"),
+                    )
                 if (
                     pair_after_service_discovery
                     and pair_error is not None
+                    and not evidence.proves_native_bond_absent
                     and evidence.status
                     not in (
                         BondVerificationStatus.VERIFIED,
+                        BondVerificationStatus.NATIVE_OS_STATE,
                         BondVerificationStatus.AUTH_FAILED,
                     )
                 ):
@@ -4660,6 +4936,26 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         except Exception:  # noqa: BLE001 - absence of scanners must not break setup
             return False
 
+    def _create_selected_app_entry(self, *, title: str, data: dict[str, Any]) -> ConfigFlowResult:
+        """Retain first-selection intent only in this running Home Assistant session."""
+        if data.get(CONF_BED_TYPE) == BED_TYPE_VIBRADORM_APP:
+            from .vibradorm_app_state import (
+                clear_vibradorm_app_session_intent,
+                mark_vibradorm_app_selection,
+            )
+
+            if data.get(CONF_VIBRADORM_RESTORED, False):
+                clear_vibradorm_app_session_intent(self.hass, data[CONF_ADDRESS])
+            else:
+                control = data[CONF_VIBRADORM_CONTROL_TYPE]
+                mark_vibradorm_app_selection(
+                    self.hass, data[CONF_ADDRESS],
+                    app_profile=data[CONF_VIBRADORM_APP_PROFILE],
+                    control_type="other" if control == "other" else int(control),
+                    remembered_floor_default=data.get(CONF_VIBRADORM_FLOOR_DEFAULT, 6),
+                )
+        return self.async_create_entry(title=title, data=data)
+
     async def _finish_with_verify(self, entry_data: dict[str, Any], title: str) -> ConfigFlowResult:
         """Stash the finalized entry and route through the verify_connection step.
 
@@ -4689,7 +4985,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         ) or _skips_setup_connection_probe(
             entry_data.get(CONF_BED_TYPE), entry_data.get(CONF_PROTOCOL_VARIANT)
         ):
-            return self.async_create_entry(title=title, data=entry_data)
+            return self._create_selected_app_entry(title=title, data=entry_data)
         self._pending_entry = entry_data
         self._pending_title = title
         self._octo_pin_form_shown = False
@@ -5068,7 +5364,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 self._verify_form_shown = False
                 self._async_start_probe_operation()
                 return await self.async_step_setup_progress()
-            return self.async_create_entry(
+            return self._create_selected_app_entry(
                 title=self._pending_title or self._pending_entry.get(CONF_NAME, "Adjustable Bed"),
                 data=self._pending_entry,
             )
@@ -5385,6 +5681,10 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 CONF_JIECANG_APP_HAS_LIGHT,
             ):
                 data.pop(key, None)
+        if bed_type != BED_TYPE_VIBRADORM_APP:
+            for key in VIBRADORM_APP_CONFIG_KEYS:
+                data.pop(key, None)
+            data.pop(CONF_VIBRADORM_APP_METADATA, None)
         if bed_type != BED_TYPE_MALOUF_APP:
             for key in (
                 CONF_MALOUF_APP_PROFILE,
@@ -5846,6 +6146,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             _add_logicdata_app_schema_fields(schema_dict, current_data)
         if bed_type == BED_TYPE_JIECANG_APP and not separate_address_pair:
             _add_jiecang_app_schema_fields(schema_dict, current_data)
+        if bed_type == BED_TYPE_VIBRADORM_APP and not separate_address_pair:
+            _add_vibradorm_app_schema_fields(schema_dict, current_data)
         if bed_type == BED_TYPE_MALOUF_APP and not separate_address_pair:
             _add_malouf_app_schema_fields(
                 schema_dict, current_data, persisted_data=self.config_entry.data
@@ -5902,6 +6204,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 )
             ] = TextSelector(TextSelectorConfig())
 
+        _hide_vibradorm_generic_fields(schema_dict, bed_type)
         if user_input is not None:
             # HA's select control uses string values; keep persisted counts numeric.
             if CONF_MOTOR_COUNT in user_input:
@@ -5935,6 +6238,14 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     step_id=step_id,
                     data_schema=vol.Schema(schema_dict),
                     errors={CONF_BED_TYPE: "logicdata_app_unpair_first"},
+                )
+            if separate_address_pair and (
+                (requested_bed_type == BED_TYPE_VIBRADORM_APP and requested_bed_type != bed_type)
+                or any(key in user_input for key in VIBRADORM_APP_CONFIG_KEYS)
+            ):
+                return self.async_show_form(
+                    step_id=step_id, data_schema=vol.Schema(schema_dict),
+                    errors={"base": "vibradorm_app_unpair_first"},
                 )
             if separate_address_pair and requested_bed_type == BED_TYPE_JIECANG_APP and requested_bed_type != bed_type:
                 return self.async_show_form(
@@ -6176,6 +6487,36 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                         step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
                     )
                 user_input[CONF_DISABLE_ANGLE_SENSING] = True
+            if bed_type == BED_TYPE_VIBRADORM_APP and not separate_address_pair:
+                app_data = _vibradorm_app_data(current_data, user_input)
+                if _vibradorm_app_form_changed(current_data, user_input):
+                    self._remember_pending_changes(schema_dict, user_input)
+                    self._pending_data.update({
+                        key: app_data[key] for key in VIBRADORM_APP_CONFIG_KEYS if key in app_data
+                    })
+                    if discovery_disabled_input is not None:
+                        self._pending_data[CONF_DISABLE_DISCOVERY] = discovery_disabled_input
+                    return await self._async_options_form(None, step_id=step_id)
+                app_errors = _vibradorm_app_errors(app_data)
+                if app_errors:
+                    return self.async_show_form(
+                        step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
+                    )
+                from .beds.vibradorm_app import validate_vibradorm_app_profile
+
+                control = app_data[CONF_VIBRADORM_CONTROL_TYPE]
+                profile = validate_vibradorm_app_profile(
+                    app_data[CONF_VIBRADORM_APP_PROFILE], "other" if control == "other" else int(control),
+                    restored=app_data[CONF_VIBRADORM_RESTORED],
+                    floor_light=app_data[CONF_VIBRADORM_FLOOR_LIGHT],
+                    rgb=app_data[CONF_VIBRADORM_RGB], massage=app_data[CONF_VIBRADORM_MASSAGE],
+                    light_extension=app_data[CONF_VIBRADORM_LIGHT_EXTENSION],
+                )
+                user_input.update({key: app_data[key] for key in VIBRADORM_APP_CONFIG_KEYS})
+                user_input[CONF_MOTOR_COUNT] = max(2, len(profile.groups))
+                user_input[CONF_HAS_MASSAGE] = profile.massage
+                user_input[CONF_DISABLE_ANGLE_SENSING] = True
+                user_input[CONF_MOTOR_PULSE_USER_SET] = False
             if bed_type == BED_TYPE_MALOUF_APP and not separate_address_pair:
                 requested_app = user_input.get(CONF_MALOUF_APP_PROFILE)
                 if requested_app in MALOUF_APP_PROFILES and requested_app != current_data.get(
@@ -6357,6 +6698,39 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 if pulse_user_set:
                     new_data[CONF_MOTOR_PULSE_USER_SET] = True
             self._apply_bed_type_change_cleanup(new_data, bed_type, requested_variant)
+            if bed_type == BED_TYPE_VIBRADORM_APP and any(
+                new_data.get(key) != self.config_entry.data.get(key)
+                for key in (CONF_VIBRADORM_APP_PROFILE, CONF_VIBRADORM_CONTROL_TYPE)
+            ):
+                new_data.pop(CONF_VIBRADORM_APP_METADATA, None)
+            if not separate_address_pair and (
+                bed_type == BED_TYPE_VIBRADORM_APP
+                or self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_VIBRADORM_APP
+            ):
+                selection_changed = any(
+                    new_data.get(key) != self.config_entry.data.get(key)
+                    for key in (CONF_BED_TYPE, CONF_VIBRADORM_APP_PROFILE, CONF_VIBRADORM_CONTROL_TYPE)
+                ) or (
+                    new_data.get(CONF_VIBRADORM_RESTORED, False)
+                    != self.config_entry.data.get(CONF_VIBRADORM_RESTORED, False)
+                )
+                if selection_changed:
+                    from .vibradorm_app_state import (
+                        clear_vibradorm_app_session_intent,
+                        mark_vibradorm_app_selection,
+                    )
+
+                    address = new_data.get(CONF_ADDRESS)
+                    if isinstance(address, str):
+                        clear_vibradorm_app_session_intent(self.hass, address)
+                        if bed_type == BED_TYPE_VIBRADORM_APP and not new_data.get(CONF_VIBRADORM_RESTORED, False):
+                            control = new_data[CONF_VIBRADORM_CONTROL_TYPE]
+                            mark_vibradorm_app_selection(
+                                self.hass, address,
+                                app_profile=new_data[CONF_VIBRADORM_APP_PROFILE],
+                                control_type="other" if control == "other" else int(control),
+                                remembered_floor_default=new_data[CONF_VIBRADORM_FLOOR_DEFAULT],
+                            )
             self.hass.config_entries.async_update_entry(
                 self.config_entry,
                 data=new_data,

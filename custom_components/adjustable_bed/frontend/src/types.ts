@@ -122,6 +122,13 @@ export interface LightEntities {
   toggle?: string; // button.* toggle_light
   cycle?: string; // button.* light_cycle
   timer?: string; // select.* light_timer
+  timerMinutes?: string; // number.* pending floor timer duration
+  timerToggle?: string; // button.* enable/disable the pending floor timer
+  mood?: {
+    selects: string[]; // bounded palette and effect choices
+    numbers: string[]; // effect speed, without an arbitrary RGB/brightness control
+    toggle?: string;
+  };
 }
 
 export interface BedEntities {
@@ -136,7 +143,7 @@ export interface BedEntities {
   connectivity?: string; // binary_sensor.* ble_connection
   presence: string[]; // binary_sensor.* bed_presence*
   lights: LightEntities;
-  massage: { buttons: string[]; numbers: string[]; timer?: string };
+  massage: { buttons: string[]; numbers: string[]; selects?: string[]; timer?: string };
   climate: { entities: string[]; selects: string[]; numbers: string[] }; // numbers: fan_level
   utility: string[]; // button.* sync_positions / child_lock_toggle
 }

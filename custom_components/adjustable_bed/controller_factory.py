@@ -7,7 +7,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from importlib import import_module
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 from .adapter import discover_services
 from .const import (
@@ -78,6 +78,7 @@ from .const import (
     BED_TYPE_SVANE,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
+    BED_TYPE_VIBRADORM_APP,
     CB1322_MANUFACTURER_MARKERS,
     CONF_FURNIMOVE_REMOTE,
     CONF_HAS_MASSAGE,
@@ -101,6 +102,14 @@ from .const import (
     CONF_MALOUF_APP_PRIMARY,
     CONF_MALOUF_APP_PROFILE,
     CONF_MALOUF_APP_TRANSPORT,
+    CONF_VIBRADORM_APP_PROFILE,
+    CONF_VIBRADORM_CONTROL_TYPE,
+    CONF_VIBRADORM_FLOOR_DEFAULT,
+    CONF_VIBRADORM_FLOOR_LIGHT,
+    CONF_VIBRADORM_LIGHT_EXTENSION,
+    CONF_VIBRADORM_MASSAGE,
+    CONF_VIBRADORM_RESTORED,
+    CONF_VIBRADORM_RGB,
     DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
     DEWERTOKIN_RF_GATEWAY_MODEL,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
@@ -571,6 +580,44 @@ async def create_controller(
             transport=entry_data.get(CONF_LOGICDATA_APP_TRANSPORT, "auto"),
             has_light=entry_data.get(CONF_LOGICDATA_APP_HAS_LIGHT, True),
             has_massage=entry_data.get(CONF_HAS_MASSAGE, False),
+        )
+
+    if bed_type == BED_TYPE_VIBRADORM_APP:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.vibradorm_app", __package__
+        )
+        from .beds.vibradorm_app import VibradormAppController
+        from .vibradorm_app_state import get_vibradorm_app_session_intent
+
+        entry_data = coordinator.entry.data
+        stored_control = entry_data[CONF_VIBRADORM_CONTROL_TYPE]
+        control_type: int | Literal["other"]
+        if stored_control == "other":
+            control_type = "other"
+        elif isinstance(stored_control, int) and not isinstance(stored_control, bool):
+            control_type = stored_control
+        elif isinstance(stored_control, str):
+            control_type = int(stored_control)
+        else:
+            raise ValueError("Invalid retained Vibradorm control type")
+        restored = entry_data.get(CONF_VIBRADORM_RESTORED, False)
+        missing_default = 6 if not restored or entry_data.get(CONF_VIBRADORM_LIGHT_EXTENSION) else 8
+        intent = get_vibradorm_app_session_intent(
+            coordinator.hass, coordinator.address,
+            app_profile=entry_data[CONF_VIBRADORM_APP_PROFILE], control_type=control_type,
+            remembered_floor_default=entry_data.get(CONF_VIBRADORM_FLOOR_DEFAULT, missing_default),
+        )
+        return VibradormAppController(
+            coordinator,
+            app_profile=entry_data[CONF_VIBRADORM_APP_PROFILE],
+            control_type=control_type,
+            restored=entry_data.get(CONF_VIBRADORM_RESTORED, False),
+            floor_light=entry_data.get(CONF_VIBRADORM_FLOOR_LIGHT),
+            rgb=entry_data.get(CONF_VIBRADORM_RGB, False),
+            massage=entry_data.get(CONF_VIBRADORM_MASSAGE, False),
+            light_extension=entry_data.get(CONF_VIBRADORM_LIGHT_EXTENSION, False),
+            floor_intent=intent.floor,
+            timer_intent=intent.timer,
         )
 
     if bed_type == BED_TYPE_JIECANG_APP:

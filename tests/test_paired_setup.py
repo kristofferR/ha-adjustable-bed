@@ -47,6 +47,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
     BED_TYPE_VIBRADORM,
+    BED_TYPE_VIBRADORM_APP,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
     CONF_DISABLE_ANGLE_SENSING,
@@ -69,6 +70,8 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     CONF_SIDE,
+    CONF_VIBRADORM_APP_PROFILE,
+    CONF_VIBRADORM_CONTROL_TYPE,
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
     KAIDI_VARIANT_SEAT_1_2,
@@ -3698,6 +3701,11 @@ class TestOfflineSafeBedTypes:
                 child[CONF_BLE_DEVICE_NAME] = "SealyMF Base"
             elif bed_type == "furnimove":
                 child["furnimove_remote"] = "00000"
+            elif bed_type == BED_TYPE_VIBRADORM_APP:
+                child.update({
+                    CONF_VIBRADORM_APP_PROFILE: "caresse",
+                    CONF_VIBRADORM_CONTROL_TYPE: "2",
+                })
             elif bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
                 child.update(
                     {

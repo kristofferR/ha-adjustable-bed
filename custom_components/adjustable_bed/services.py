@@ -43,6 +43,7 @@ from .const import (
     BED_TYPE_SERENITY,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
+    BED_TYPE_VIBRADORM_APP,
     CONF_BED_TYPE,
     CONF_MOTOR_COUNT,
     CONF_PROTOCOL_VARIANT,
@@ -92,6 +93,7 @@ SERVICE_FURNIMOVE_RENAME = "furnimove_rename"
 SERVICE_FURNIMOVE_MASSAGE_PROGRAM = "furnimove_massage_program"
 SERVICE_FURNIMOVE_MASSAGE_DURATION = "furnimove_massage_duration"
 SERVICE_FURNIMOVE_MOVE_SIMULTANEOUSLY = "furnimove_move_simultaneously"
+SERVICE_VIBRADORM_HOLD_CONTROL = "vibradorm_hold_control"
 SERVICE_CUSTOMATIC_HOLD_MEMORY = "customatic_hold_memory"
 SERVICE_CUSTOMATIC_MOVE_SIMULTANEOUSLY = "customatic_move_simultaneously"
 SERVICE_LOGICDATA_SET_ALARM = "logicdata_set_alarm"
@@ -1824,6 +1826,13 @@ async def handle_serenity_hold_control(call: ServiceCall) -> None:
     )
 
 
+async def handle_vibradorm_hold_control(call: ServiceCall) -> None:
+    """Hold a selected app control with explicit duration and profile release."""
+    await _handle_customatic_hold(
+        call, call.data[ATTR_CONTROL], {BED_TYPE_VIBRADORM_APP}, label="Caresse/Werkmeister"
+    )
+
+
 async def _handle_customatic_hold(
     call: ServiceCall, control: str, bed_types: set[str], *, label: str = "Customatic"
 ) -> None:
@@ -2724,6 +2733,19 @@ async def async_register_services(hass: HomeAssistant) -> None:
         DOMAIN,
         SERVICE_SERENITY_HOLD_CONTROL,
         handle_serenity_hold_control,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_CONTROL): cv.string,
+                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_VIBRADORM_HOLD_CONTROL,
+        handle_vibradorm_hold_control,
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),

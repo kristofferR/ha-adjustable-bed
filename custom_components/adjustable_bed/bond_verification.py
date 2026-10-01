@@ -14,7 +14,7 @@ The second is answered by the transport that carried that read. A bond made over
 an ESPHome proxy lives on the proxy; a bond made over a host adapter lives in the
 host's BlueZ. Recording which is why a later unpair can be safe (issue #459).
 
-The verifier is deliberately four-valued. "Not an authentication error" is not
+The authenticated verifier is deliberately four-valued. "Not an authentication error" is not
 the same as "verified": a missing characteristic, a timeout or a generic GATT
 error prove nothing either way, and treating them as success is how an entry ends
 up marked bonded while the bed is still refusing every write.
@@ -22,19 +22,23 @@ up marked bonded while the bed is still refusing every write.
 Runtime behaviour for beds already configured is untouched. The coordinator
 keeps its existing lenient handling, which exists because real hardware answers
 this probe inconsistently. What changes is that a *new* bond marker, and any
-destructive recovery, now requires a positive ``VERIFIED``.
+destructive recovery, now requires positive evidence. Exact host-native stored
+bond state is separate from authenticated access and never proves encryption or
+authorizes stale-bond recovery by itself.
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 from .ble_auth import is_ble_authentication_error
+from .bluetooth_bond import BondSelectionStatus, async_read_local_bonds, select_local_bond
 from .bluetooth_transport import ConnectionPath, TransportClass
 from .const import (
     BED_TYPE_OKIMAT,
@@ -59,9 +63,18 @@ class BondVerificationStatus(StrEnum):
     """How much a verification attempt actually established."""
 
     VERIFIED = "verified"
+    NATIVE_OS_STATE = "native_os_state"
+    NATIVE_ABSENT = "native_absent"
     AUTH_FAILED = "auth_failed"
     INCONCLUSIVE = "inconclusive"
     UNSUPPORTED = "unsupported"
+
+
+class BondEvidenceKind(StrEnum):
+    """Distinguish authenticated access from the host's stored native state."""
+
+    AUTHENTICATED_ACCESS = "authenticated_access"
+    NATIVE_OS_STATE = "native_os_state"
 
 
 @dataclass(frozen=True, slots=True)
@@ -102,10 +115,16 @@ class BondEvidence:
     operation: str
     observed_at: str
     error: str | None = None
+    kind: BondEvidenceKind = BondEvidenceKind.AUTHENTICATED_ACCESS
 
     @property
     def proves_bond(self) -> bool:
         """Return True only for a positively verified bond."""
+        if self.kind is BondEvidenceKind.NATIVE_OS_STATE:
+            return (
+                self.status is BondVerificationStatus.NATIVE_OS_STATE
+                and self.owner.is_host
+            )
         return self.status is BondVerificationStatus.VERIFIED
 
     @property
@@ -117,7 +136,20 @@ class BondEvidence:
         nothing about the host's BlueZ, and acting on it would delete a bond
         that was never involved (issue #459).
         """
-        return self.status is BondVerificationStatus.AUTH_FAILED and self.owner.is_host
+        return (
+            self.kind is BondEvidenceKind.AUTHENTICATED_ACCESS
+            and self.status is BondVerificationStatus.AUTH_FAILED
+            and self.owner.is_host
+        )
+
+    @property
+    def proves_native_bond_absent(self) -> bool:
+        """Distinguish readable absence from an unavailable native inventory."""
+        return (
+            self.kind is BondEvidenceKind.NATIVE_OS_STATE
+            and self.status is BondVerificationStatus.NATIVE_ABSENT
+            and self.owner.is_host
+        )
 
     def as_dict(self) -> dict[str, Any]:
         """Return a JSON-friendly view for diagnostics."""
@@ -127,11 +159,84 @@ class BondEvidence:
             "operation": self.operation,
             "observed_at": self.observed_at,
             "error": self.error,
+            "kind": str(self.kind),
         }
 
 
 def _now() -> str:
     return datetime.now(UTC).isoformat()
+
+
+async def async_verify_native_bond(
+    address: str,
+    *,
+    path: ConnectionPath | None,
+    operation: str,
+) -> BondEvidence:
+    """Confirm an exact stored bond on the actual local transport.
+
+    Native state does not authenticate a GATT operation. ``paired=True`` with
+    ``bonded=False`` may describe transient pairing and is not positive stored
+    bond proof. Proxy/unknown paths cannot be checked through host BlueZ.
+    """
+    owner = BondOwner.from_path(path)
+
+    def result(status: BondVerificationStatus, error: str | None = None) -> BondEvidence:
+        return BondEvidence(
+            status=status,
+            owner=owner,
+            operation=operation,
+            observed_at=_now(),
+            error=error,
+            kind=BondEvidenceKind.NATIVE_OS_STATE,
+        )
+
+    if path is None or path.transport is not TransportClass.LOCAL:
+        return result(BondVerificationStatus.UNSUPPORTED, "native_state_not_local")
+
+    target = address.upper()
+    source = path.source.upper()
+    mac_pattern = r"(?:[0-9A-F]{2}:){5}[0-9A-F]{2}"
+    if not re.fullmatch(mac_pattern, target) or not re.fullmatch(mac_pattern, source):
+        return result(BondVerificationStatus.INCONCLUSIVE, "native_identity_unknown")
+    if path.adapter is not None and not re.fullmatch(r"hci[0-9]+", path.adapter):
+        return result(BondVerificationStatus.INCONCLUSIVE, "native_adapter_unknown")
+
+    try:
+        inventory = await async_read_local_bonds(target)
+    except Exception as err:  # noqa: BLE001 - unavailable inventory is not proof
+        return result(BondVerificationStatus.INCONCLUSIVE, str(err))
+
+    selection = select_local_bond(
+        inventory, owner_source=path.source, owner_adapter=path.adapter
+    )
+    record = selection.record
+    if not selection.is_exact or record is None:
+        return result(
+            BondVerificationStatus.NATIVE_ABSENT
+            if selection.status is BondSelectionStatus.NO_BOND
+            else BondVerificationStatus.INCONCLUSIVE,
+            f"native_bond_{selection.status}",
+        )
+
+    # The shared selector also serves legacy removal flows with looser fallback
+    # rules. Native proof must independently bind every identity to this path.
+    if (
+        record.address.upper() != target
+        or (record.adapter_address or "").upper() != source
+        or not re.fullmatch(r"/org/bluez/hci[0-9]+", record.adapter_path)
+        or (
+            path.adapter is not None
+            and record.adapter_path != f"/org/bluez/{path.adapter}"
+        )
+        or record.device_path
+        != f"{record.adapter_path}/dev_{target.replace(':', '_')}"
+    ):
+        return result(BondVerificationStatus.INCONCLUSIVE, "native_identity_mismatch")
+    if not record.bonded:
+        return result(BondVerificationStatus.NATIVE_ABSENT, "native_bond_not_stored")
+
+    return result(BondVerificationStatus.NATIVE_OS_STATE)
 
 
 def has_evidence_backed_verifier(bed_type: str | None, protocol_variant: str | None) -> bool:
@@ -239,7 +344,7 @@ def build_bond_context(evidence: BondEvidence) -> dict[str, Any]:
         raise ValueError(
             f"refusing to record bond provenance from {evidence.status} evidence"
         )
-    return {
+    context = {
         "version": BOND_CONTEXT_VERSION,
         "transport": str(evidence.owner.transport),
         "source": evidence.owner.source,
@@ -247,6 +352,9 @@ def build_bond_context(evidence: BondEvidence) -> dict[str, Any]:
         "verification": evidence.operation,
         "verified_at": evidence.observed_at,
     }
+    if evidence.kind is BondEvidenceKind.NATIVE_OS_STATE:
+        context["evidence_kind"] = str(evidence.kind)
+    return context
 
 
 def bond_owner_from_entry(entry_data: dict[str, Any] | Any) -> BondOwner:

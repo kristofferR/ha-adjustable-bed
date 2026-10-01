@@ -93,6 +93,7 @@ class _FactoryCoordinator(SimpleNamespace):
     def __init__(self) -> None:
         super().__init__(
             hass=SimpleNamespace(
+                data={},
                 async_add_import_executor_job=_RecordingImportExecutor(),
                 async_add_executor_job=_RecordingImportExecutor(),
             ),
@@ -111,6 +112,8 @@ class _FactoryCoordinator(SimpleNamespace):
                     const.CONF_MALOUF_APP_PROFILE: "malouf",
                     const.CONF_MALOUF_APP_MODEL: "L600",
                     const.CONF_MALOUF_APP_TRANSPORT: "okin_new",
+                    const.CONF_VIBRADORM_APP_PROFILE: "caresse",
+                    const.CONF_VIBRADORM_CONTROL_TYPE: "2",
                 }
             ),
             cancel_command=asyncio.Event(),

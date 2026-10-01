@@ -86,6 +86,7 @@ from .const import (
     BED_TYPE_SVANE,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
+    BED_TYPE_VIBRADORM_APP,
     # Detection constants
     BEDTECH_MANUFACTURER_ID,
     BEDTECH_NAME_PATTERNS,
@@ -562,6 +563,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SVANE: "Svane / Jensen LinOn",
     BED_TYPE_TIMOTION_AHF: "TiMOTION AHF",
     BED_TYPE_VIBRADORM: "Vibradorm (VMAT)",
+    BED_TYPE_VIBRADORM_APP: "Caresse Diamant / Werkmeister apps",
     # Diagnostic
     BED_TYPE_DIAGNOSTIC: "Diagnostic (unknown bed)",
 }

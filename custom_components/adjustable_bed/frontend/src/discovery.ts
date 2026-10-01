@@ -7,6 +7,7 @@ import type {
   BedEntities,
   EntityRegistryDisplayEntry,
   HomeAssistant,
+  LightEntities,
   MemorySlot,
   MotorEntity,
 } from "./types";
@@ -94,6 +95,7 @@ export function bedEntitiesForDevice(
 ): BedEntities {
   const bed = emptyBed();
   if (!deviceId || !hass?.entities) return bed;
+  const mood = () => bed.lights.mood ??= { selects: [], numbers: [] };
 
   const nativePair = hass.devices?.[deviceId]?.parent_device_id ||
     Object.values(hass.devices ?? {}).some((device) => device.parent_device_id === deviceId);
@@ -155,6 +157,9 @@ export function bedEntitiesForDevice(
         else if (key.startsWith("massage_") && key.endsWith("_intensity"))
           bed.massage.numbers.push(id);
         else if (key === "light_level") bed.lights.level = id;
+        else if (key === "vibradorm_app_floor_timer_minutes") bed.lights.timerMinutes = id;
+        else if (key === "vibradorm_app_mood_speed") mood().numbers.push(id);
+        else if (key === "vibradorm_app_massage_speed") bed.massage.numbers.push(id);
         else if (key === "fan_level") bed.climate.numbers.push(id);
         else if (key.startsWith("sleep_number_setting")) bed.firmness.push(id);
         break;
@@ -177,6 +182,15 @@ export function bedEntitiesForDevice(
           bed.lights.toggle = id;
         } else if (key === "light_cycle") {
           bed.lights.cycle = id;
+        } else if (key === "vibradorm_app_mood_toggle") {
+          mood().toggle = id;
+        } else if (key === "vibradorm_app_floor_timer_toggle") {
+          bed.lights.timerToggle = id;
+        } else if (
+          key === "vibradorm_app_massage_automatic" ||
+          key === "vibradorm_app_massage_individual"
+        ) {
+          bed.massage.buttons.push(id);
         } else if (
           key === "sync_positions" ||
           key === "child_lock_toggle" ||
@@ -186,7 +200,11 @@ export function bedEntitiesForDevice(
           key === "solace_music_off" ||
           key === "wake_controller" ||
           key === "reset_defaults" ||
-          key === "factory_reset"
+          key === "factory_reset" ||
+          key === "vibradorm_app_all_up" ||
+          key === "vibradorm_app_all_down" ||
+          key === "vibradorm_app_sync" ||
+          key === "vibradorm_app_refresh_info"
         ) {
           bed.utility.push(id);
         } else if (key.startsWith("massage_")) {
@@ -215,6 +233,10 @@ export function bedEntitiesForDevice(
 
       case "select":
         if (key === "light_timer") bed.lights.timer = id;
+        else if (key === "vibradorm_app_mood_palette" || key === "vibradorm_app_mood_effect")
+          mood().selects.push(id);
+        else if (key === "vibradorm_app_massage_wave")
+          (bed.massage.selects ??= []).push(id);
         else if (key === "massage_timer") bed.massage.timer = id;
         else if (/thermal|footwarming|foundation/.test(key))
           bed.climate.selects.push(id);
@@ -327,19 +349,23 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     !bed.connect &&
     !bed.disconnect &&
     !bed.connectivity &&
-    !l.light &&
-    !l.switch &&
+    !hasLightingControls(l) &&
     !l.state &&
-    !l.level &&
-    !l.toggle &&
-    !l.cycle &&
-    !l.timer &&
     bed.massage.buttons.length === 0 &&
     bed.massage.numbers.length === 0 &&
+    !bed.massage.selects?.length &&
     !bed.massage.timer &&
     bed.climate.entities.length === 0 &&
     bed.climate.selects.length === 0 &&
     bed.climate.numbers.length === 0 &&
     bed.utility.length === 0
+  );
+}
+
+export function hasLightingControls(lights: LightEntities): boolean {
+  return !!(
+    lights.light || lights.switch || lights.level || lights.toggle ||
+    lights.cycle || lights.timer || lights.timerMinutes || lights.timerToggle ||
+    lights.mood?.toggle || lights.mood?.selects.length || lights.mood?.numbers.length
   );
 }

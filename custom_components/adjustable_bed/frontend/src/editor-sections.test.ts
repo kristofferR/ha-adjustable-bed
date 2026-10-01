@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { bedEntitiesForDevice, hasLightingControls } from "./discovery";
 import { presentSections } from "./editor-sections";
 import type { BedEntities, HassEntity, HomeAssistant } from "./types";
 
@@ -27,6 +28,48 @@ test("visual editor exposes utility controls", () => {
   bed.utility.push("button.bed_wake");
 
   expect(presentSections(bed, { states: {} } as HomeAssistant).utility).toBe(true);
+});
+
+test("visual editor offers lighting for a discovered state-only bed", () => {
+  const entityId = "binary_sensor.bed_under_bed_lights";
+  const hass: HomeAssistant = {
+    entities: {
+      [entityId]: {
+        entity_id: entityId,
+        translation_key: "under_bed_lights",
+        device_id: "bed",
+        platform: "adjustable_bed",
+      },
+    },
+    states: {},
+    devices: {},
+    locale: { language: "en" },
+    language: "en",
+    themes: {},
+    callService: async () => undefined,
+  };
+  const bed = bedEntitiesForDevice(hass, "bed");
+
+  expect(bed.lights.state).toBe(entityId);
+  expect(hasLightingControls(bed.lights)).toBe(false);
+  expect(presentSections(bed, hass).lighting).toBe(true);
+  expect(presentSections(bedEntitiesForDevice(hass, "other"), hass).lighting).toBe(
+    false,
+  );
+});
+
+test("visual editor offers bounded mood, pending floor timer and massage-only sections", () => {
+  const hass = { states: {} } as HomeAssistant;
+  const bed = emptyBed();
+  bed.lights.mood = { selects: ["select.palette"], numbers: [] };
+  expect(presentSections(bed, hass).lighting).toBe(true);
+  expect(presentSections(bed, hass).massage).toBe(false);
+  bed.lights = { timerMinutes: "number.timer", timerToggle: "button.timer" };
+  expect(presentSections(bed, hass).lighting).toBe(true);
+  bed.lights = {};
+  bed.massage.selects = ["select.wave"];
+  expect(presentSections(bed, hass).lighting).toBe(false);
+  expect(presentSections(bed, hass).massage).toBe(true);
 });
 
 test("visual editor offers the graphic only for two degree panel groups", () => {

@@ -1233,6 +1233,40 @@ customatic_move_simultaneously:
         select:
           options: [both, left, right]
 
+vibradorm_hold_control:
+  name: Hold Caresse / Werkmeister control
+  description: Hold a control supported by the selected app profile, then send its release command.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    control:
+      name: Control
+      description: Each target must support this control in its selected app and remote profile.
+      required: true
+      selector:
+        select:
+          options: [head_up, head_down, back_up, back_down, legs_up, legs_down, feet_up, feet_down, all_up, all_down, memory_1, memory_2, memory_3, memory_4, memory_5, memory_6, sync]
+    duration:
+      name: Duration
+      description: Hold time in seconds. This host limit does not change the app's refresh interval.
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.1
+          unit_of_measurement: s
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
+
 serenity_hold_control:
   name: Hold Serenity control
   description: Hold one supported Serenity app action, then release it. Save actions can change stored positions.
