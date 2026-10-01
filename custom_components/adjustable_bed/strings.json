@@ -1935,6 +1935,27 @@
       },
       "starcode_abm5_4_reset": {
         "name": "Reset stored positions"
+      },
+      "coolbase_star": {
+        "name": "Star button"
+      },
+      "coolbase_head_massage": {
+        "name": "Head massage"
+      },
+      "coolbase_massage_mode": {
+        "name": "Massage mode"
+      },
+      "coolbase_foot_massage": {
+        "name": "Foot massage"
+      },
+      "coolbase_right_fan": {
+        "name": "Right fan"
+      },
+      "coolbase_fan_sync": {
+        "name": "Fan sync"
+      },
+      "coolbase_left_fan": {
+        "name": "Left fan"
       }
     },
     "cover": {
@@ -4286,6 +4307,15 @@
       },
       "motion_bed_alarm_flag_right": {
         "name": "Alarm flag (right)"
+      },
+      "coolbase_right_fan_level": {
+        "name": "Right fan level"
+      },
+      "coolbase_massage_mode": {
+        "name": "Massage mode"
+      },
+      "coolbase_left_fan_level": {
+        "name": "Left fan level"
       }
     },
     "light": {
