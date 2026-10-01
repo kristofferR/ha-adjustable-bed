@@ -119,7 +119,7 @@ def _binary_sensor_entities_for(
                 "leggett_alarm_indicator", "leggett_sleep_timer_indicator", "under_bed_lights",
                 "furnimove_ubl", "furnimove_sync", "furnimove_child_lock",
                 "furnimove_massage_running",
-                "vmatbasic_ed",
+                "vmatbasic_ed", "adjustable_lite_light",
             } - active_keys
         )
         _async_remove_stale_controller_state_binary_sensor_entities(
