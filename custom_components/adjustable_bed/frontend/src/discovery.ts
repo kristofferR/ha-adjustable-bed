@@ -259,7 +259,7 @@ export function bedEntitiesForDevice(
 
       case "binary_sensor":
         if (key === "ble_connection") bed.connectivity = id;
-        else if (key === "under_bed_lights") bed.lights.state = id;
+        else if (key === "under_bed_lights" || key === "adjustable_lite_light") bed.lights.state = id;
         else if (key.startsWith("bed_presence")) bed.presence.push(id);
         break;
 
