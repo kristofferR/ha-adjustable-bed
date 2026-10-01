@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -326,6 +327,7 @@ async def test_alarm_preserves_disabled_map_repeat_and_modular_first_switch(
 async def test_wifi_credentials_are_redacted_from_trace_and_never_persisted(
     hass: HomeAssistant, caplog: pytest.LogCaptureFixture
 ) -> None:
+    caplog.set_level(logging.DEBUG, logger="custom_components.adjustable_bed")
     target = make_target(hass)
     entry_before = dict(target.entry.data)
     with patch.object(target.controller, "_spawn"):
@@ -336,10 +338,18 @@ async def test_wifi_credentials_are_redacted_from_trace_and_never_persisted(
     ]
     assert all(payload["hex"] == "**REDACTED**" for payload in traces)
     diagnostics = json.dumps(target.controller.protocol_diagnostics, default=str)
+    # HA core can log original service data before this integration's handler.
+    integration_logs = "\n".join(
+        caplog.handler.format(record)
+        for record in caplog.records
+        if record.name.startswith("custom_components.adjustable_bed")
+    )
     for secret in ("TEST_PRIVATE_NETWORK", "TEST_PRIVATE_PASSWORD"):
-        assert secret not in caplog.text
+        assert secret not in integration_logs
         assert secret not in diagnostics
+        assert secret not in json.dumps(traces)
         assert secret.encode().hex() not in json.dumps(traces)
+        assert secret not in json.dumps(target.controller.motion_bed_local_state)
     assert dict(target.entry.data) == entry_before
 
 

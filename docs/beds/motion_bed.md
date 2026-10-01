@@ -119,9 +119,13 @@ changing the active hub module or tearing down the session cancels polling.
 Wi-Fi provisioning uses Android UTF-8 encoding, source truncation/padding to
 32 SSID bytes and 16 password bytes, and big-endian coordinate floats. Seven
 frames are spaced by 300 ms. Status polling shares one budget of at most ten
-queries six seconds apart. Credentials are redacted from command traces and
-never saved in entry data or diagnostics. Cloud WebView content is outside this
-BLE integration.
+queries six seconds apart. Credentials are redacted from integration command
+traces and never saved in entry data, local preferences or diagnostics.
+Home Assistant core can log the original action data, including SSID and
+password, before the integration handler runs when `homeassistant.core` DEBUG
+logging is enabled. Keep that core logger's DEBUG logging off while provisioning;
+the integration cannot redact these upstream service-event logs.
+Cloud WebView content is outside this BLE integration.
 
 ## Transport and encoding
 
