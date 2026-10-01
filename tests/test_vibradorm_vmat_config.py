@@ -299,12 +299,18 @@ async def test_public_options_switch_from_vmat_removes_remote_before_factory(has
     flow.handler = entry.entry_id
     flow.hass = hass
     initial = await flow.async_step_settings()
-    submission = initial["data_schema"]({})
+    schema = initial["data_schema"]
+    assert callable(schema)
+    submission = schema({})
+    assert isinstance(submission, dict)
     submission[const.CONF_VIBRADORM_APP_PROFILE] = app
     rebuilt = await flow.async_step_settings(submission)
     assert rebuilt["type"] == FlowResultType.FORM
     assert not rebuilt["errors"]
-    defaults = rebuilt["data_schema"]({})
+    schema = rebuilt["data_schema"]
+    assert callable(schema)
+    defaults = schema({})
+    assert isinstance(defaults, dict)
     assert const.CONF_VIBRADORM_VMAT_REMOTE not in defaults
     finished = await flow.async_step_settings(defaults)
     assert finished["type"] == FlowResultType.CREATE_ENTRY
@@ -410,11 +416,132 @@ async def test_separate_address_options_preserve_each_vmat_remote(hass):
     flow.handler = entry.entry_id
     flow.hass = hass
     rendered = await flow.async_step_settings()
-    submission = rendered["data_schema"]({})
+    schema = rendered["data_schema"]
+    assert callable(schema)
+    submission = schema({})
+    assert isinstance(submission, dict)
     submission[const.CONF_IDLE_DISCONNECT_SECONDS] = 55
     assert (await flow.async_step_settings(submission))["type"] == FlowResultType.CREATE_ENTRY
     assert [child[const.CONF_VIBRADORM_VMAT_REMOTE] for child in entry.data[const.CONF_PAIR_CHILDREN]] == ["07", "13"]
     assert all(child[const.CONF_VIBRADORM_APP_PROFILE] == "vmat" for child in entry.data[const.CONF_PAIR_CHILDREN])
+
+
+@pytest.mark.parametrize(("remote", "missing"), [("00", None), ("00", "command"), ("00", "light"), ("07", None), ("07", "cbi")])
+async def test_public_prebonded_setup_validates_ordinary_profile_roles(hass, remote, missing):
+    from contextlib import AsyncExitStack
+
+    from bleak.backends.device import BLEDevice
+
+    from custom_components.adjustable_bed.beds.vibradorm_app import CBI, COMMAND, LIGHT
+    from custom_components.adjustable_bed.bluetooth_transport import (
+        ConnectionPath,
+        PathPrediction,
+        TransportClass,
+    )
+    from custom_components.adjustable_bed.bond_verification import (
+        BondEvidence,
+        BondEvidenceKind,
+        BondOwner,
+        BondVerificationStatus,
+    )
+
+    address, source = "11:22:33:44:55:66", "AA:BB:CC:DD:EE:FF"
+    path = ConnectionPath(source, transport=TransportClass.LOCAL, adapter="hci0")
+    flow = AdjustableBedConfigFlow()
+    flow.context, flow.hass = {}, hass
+    flow._manual_data = _vibradorm_app_data({
+        CONF_ADDRESS: address, const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM_APP,
+        const.CONF_VIBRADORM_APP_PROFILE: "vmat",
+    }, {const.CONF_VIBRADORM_VMAT_REMOTE: remote})
+    c = make_vmat(remote)
+    if missing is not None:
+        uuid = {"command": COMMAND, "light": LIGHT, "cbi": CBI}[missing]
+        for service in c.client.services:
+            service.characteristics = [char for char in service.characteristics if char.uuid != uuid]
+    c.client.pair = AsyncMock()
+
+    async def disconnect():
+        c.client.is_connected = False
+
+    c.client.disconnect = AsyncMock(side_effect=disconnect)
+    native = BondEvidence(BondVerificationStatus.NATIVE_OS_STATE, BondOwner.from_path(path), "native", "now", kind=BondEvidenceKind.NATIVE_OS_STATE)
+    module = "custom_components.adjustable_bed.config_flow."
+    with (
+        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+        patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=c.client)),
+        patch(module + "async_predict_path", return_value=PathPrediction(path, (path,))),
+        patch(module + "client_source", return_value=source),
+        patch(module + "async_path_for_source", return_value=path),
+        patch(module + "async_verify_native_bond", new=AsyncMock(return_value=native)),
+    ):
+        async def worker():
+            return await flow._async_pair_and_classify(address, "pair", BLEDevice(address, "Bed", {}))
+
+        assert (await flow._async_guarded_worker(worker)).succeeded is (missing is None)
+    c.client.write_gatt_char.assert_not_awaited()
+    c.client.start_notify.assert_not_awaited()
+    c.client.pair.assert_not_awaited()
+    assert not c.client.is_connected
+
+
+@pytest.mark.parametrize("mode", ["pair", "replace_local"])
+async def test_public_setup_transport_write_timeout_never_pairs(hass, mode):
+    from contextlib import AsyncExitStack
+
+    from bleak.backends.device import BLEDevice
+
+    from custom_components.adjustable_bed.bluetooth_transport import (
+        ConnectionPath,
+        PathPrediction,
+        TransportClass,
+    )
+    from custom_components.adjustable_bed.bond_verification import (
+        BondEvidence,
+        BondOwner,
+        BondVerificationStatus,
+    )
+    from custom_components.adjustable_bed.setup_operation import OperationOutcome
+    from custom_components.adjustable_bed.vibradorm_vmat_setup import QUERY_STAGES
+
+    address, source = "11:22:33:44:55:66", "AA:BB:CC:DD:EE:FF"
+    path = ConnectionPath(source, transport=TransportClass.LOCAL, adapter="hci0")
+    flow = AdjustableBedConfigFlow()
+    flow.context, flow.hass = {}, hass
+    flow._manual_data = _vibradorm_app_data({
+        CONF_ADDRESS: address, const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM_APP,
+        const.CONF_VIBRADORM_APP_PROFILE: "vmat",
+    }, {const.CONF_VIBRADORM_VMAT_REMOTE: "07"})
+    c = make_vmat("07")
+    c.client.pair = AsyncMock()
+
+    async def write(_char, packet, **kwargs):
+        if packet != bytes.fromhex("01a7"):
+            assert packet == QUERY_STAGES[0][1]
+            raise TimeoutError("query transport delivery timed out")
+
+    async def disconnect():
+        c.client.is_connected = False
+
+    c.client.write_gatt_char.side_effect = write
+    c.client.disconnect = AsyncMock(side_effect=disconnect)
+    unknown = BondEvidence(BondVerificationStatus.INCONCLUSIVE, BondOwner.from_path(path), "native", "now")
+    module = "custom_components.adjustable_bed.config_flow."
+    with (
+        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+        patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=c.client)),
+        patch(module + "async_predict_path", return_value=PathPrediction(path, (path,))),
+        patch(module + "client_source", return_value=source),
+        patch(module + "async_path_for_source", return_value=path),
+        patch(module + "async_verify_native_bond", new=AsyncMock(return_value=unknown)),
+    ):
+        async def worker():
+            return await flow._async_pair_and_classify(address, mode, BLEDevice(address, "Bed", {}))
+
+        assert (await flow._async_guarded_worker(worker)).outcome is OperationOutcome.TIMEOUT
+    assert [call.args[1] for call in c.client.write_gatt_char.call_args_list] == [QUERY_STAGES[0][1], bytes.fromhex("01a7")]
+    c.client.pair.assert_not_awaited()
+    c.client.stop_notify.assert_awaited_once()
+    assert not c.client.is_connected
 
 
 @pytest.mark.asyncio

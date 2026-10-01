@@ -65,11 +65,14 @@ the three DIS fields, then serially issues seven CBI stages:
 The first response timeout is 2 seconds and the others 1 second. Each
 notification can complete one current stage; the two CA stages stay separate.
 Missing replies advance after timeout without a fabricated acknowledgment.
+Transport write timeouts abort onboarding before native pairing.
 Short/mismatched replies are guarded. UTF-8 retains whitespace and NULs.
 After native pairing/proof, setup sends `01 a7` and disconnects. Runtime
 onboarding also closes its link before a separate control connection, whose
 actual route must prove the bond. Normal sessions issue no onboarding queries
 or position polls. Explicit information refresh reads only three DIS fields.
+An existing native bond skips onboarding and pairing, while setup still validates
+the selected remote's ordinary GATT roles before accepting the address.
 Disconnect still runs if setup close fails or is cancelled. Cancellation
 propagates, and a failed or interrupted disconnect retains the live client
 owner for cleanup rather than dropping its tracking or runtime pointer.
@@ -78,7 +81,7 @@ into a failure. An earlier setup error or cancellation still propagates.
 Notification cleanup preserves an earlier setup error or cancellation. A
 cleanup failure after successful reads still fails setup before native pairing.
 The physical BLE connection remains visible until it actually closes. A
-failed config setup link stays owned by Home Assistant's exact address lock
+failed config or runtime setup link stays owned by Home Assistant's exact address lock
 after the progress worker or flow ends, including local bond replacement.
 Retry, another flow, runtime and diagnostic capture cannot open a second link
 until native closure is observed. Cleanup retries only that retained client's

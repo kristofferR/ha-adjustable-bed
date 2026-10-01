@@ -57,7 +57,10 @@
         "test_coordinator_vibradorm_vmat.py:test_runtime_first_bond_always_closes_setup_and_unproven_rpc_is_not_a_marker",
         "test_coordinator_vibradorm_vmat.py:test_vmat_runtime_uses_own_45_second_budget_including_retained_native_observation",
         "test_vibradorm_vmat_setup.py:test_public_setup_classification_preserves_original_when_unsubscribe_fails",
-        "test_vibradorm_vmat_config.py:test_public_setup_accepts_native_closure_after_disconnect_rpc_error"
+        "test_vibradorm_vmat_config.py:test_public_setup_accepts_native_closure_after_disconnect_rpc_error",
+        "test_vibradorm_vmat_setup.py:test_transport_write_timeout_aborts_information_stage",
+        "test_vibradorm_vmat_config.py:test_public_setup_transport_write_timeout_never_pairs",
+        "test_vibradorm_vmat_config.py:test_public_prebonded_setup_validates_ordinary_profile_roles"
       ]
     },
     "PACKET": {
@@ -162,7 +165,9 @@
         "test_coordinator_vibradorm_vmat.py:test_public_connect_retains_failed_setup_and_denies_reuse_replacement_and_shutdown",
         "test_coordinator_vibradorm_vmat.py:test_vmat_half_initialized_link_cannot_be_overwritten_before_observed_close",
         "test_vibradorm_vmat_config.py:test_public_progress_worker_retains_failed_setup_across_retry_removal_and_replacement",
-        "test_vibradorm_vmat_config.py:test_vmat_pre_stage_failure_retains_native_owner"
+        "test_vibradorm_vmat_config.py:test_vmat_pre_stage_failure_retains_native_owner",
+        "test_coordinator_vibradorm_vmat.py:test_public_stop_reconnects_vmat_with_its_own_startup_cancellation",
+        "test_vibradorm_vmat.py:test_ordinary_notification_startup_remains_cancellable"
       ]
     },
     "UI_STATE": {

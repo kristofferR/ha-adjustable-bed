@@ -219,6 +219,34 @@ async def test_public_connect_retains_failed_setup_and_denies_reuse_replacement_
             establish.assert_awaited_once()
             assert coordinator.client is c.client
             assert coordinator.is_connected
+            from contextlib import AsyncExitStack
+
+            from custom_components.adjustable_bed.address_lock import async_get_connect_lock
+            from custom_components.adjustable_bed.ble_diagnostics import BLEDiagnosticRunner
+            from custom_components.adjustable_bed.bluetooth_transport import PathPrediction
+            from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+
+            assert async_get_connect_lock(hass, address).retained_setup_client is c.client
+            if not cancels:
+                flow = AdjustableBedConfigFlow()
+                flow.context, flow.hass, flow._manual_data = {}, hass, dict(data)
+                config_module = "custom_components.adjustable_bed.config_flow."
+                diagnostic_module = "custom_components.adjustable_bed.ble_diagnostics."
+                with (
+                    patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+                    patch("bleak_retry_connector.establish_connection", new=AsyncMock()) as config_connect,
+                    patch(config_module + "async_predict_path", return_value=PathPrediction(path, (path,))),
+                    patch(diagnostic_module + "select_adapter", new=AsyncMock(return_value=adapter)),
+                    patch(diagnostic_module + "establish_connection", new=AsyncMock()) as diagnostic_connect,
+                ):
+                    async def config_worker():
+                        return await flow._async_pair_and_classify(address, "pair", device)
+
+                    assert not (await flow._async_guarded_worker(config_worker)).succeeded
+                    config_connect.assert_not_awaited()
+                    with pytest.raises(ConnectionError):
+                        await BLEDiagnosticRunner(hass, address)._connect()
+                    diagnostic_connect.assert_not_awaited()
             # A stale callback without observed closure cannot release ownership.
             coordinator._on_disconnect(c.client)
             assert coordinator.client is c.client
@@ -282,6 +310,47 @@ async def test_public_connect_retains_failed_setup_and_denies_reuse_replacement_
         await coordinator.async_disconnect()
     assert coordinator.client is None
     assert coordinator._vmat_unready_client is None
+
+
+async def test_public_stop_reconnects_vmat_with_its_own_startup_cancellation(hass):
+    address, source = "11:22:33:44:55:66", "AA:BB:CC:DD:EE:FF"
+    path = ConnectionPath(source, transport=TransportClass.LOCAL, adapter="hci0")
+    data = _vibradorm_app_data({
+        CONF_ADDRESS: address, const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM_APP,
+        const.CONF_VIBRADORM_APP_PROFILE: "vmat",
+    }, {const.CONF_VIBRADORM_VMAT_REMOTE: "07"})
+    entry = MockConfigEntry(domain=const.DOMAIN, data=data)
+    entry.add_to_hass(hass)
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    coordinator._max_retries = 1
+    c = make_vmat("07")
+
+    async def disconnect():
+        c.client.is_connected = False
+
+    c.client.disconnect = AsyncMock(side_effect=disconnect)
+    device = BLEDevice(address, "Bed", {"source": source})
+    adapter = AdapterSelectionResult(device, source, -50, True, [source])
+    native = BondEvidence(BondVerificationStatus.NATIVE_OS_STATE, BondOwner.from_path(path), "native", "now", kind=BondEvidenceKind.NATIVE_OS_STATE)
+    module = "custom_components.adjustable_bed.coordinator."
+    try:
+        with (
+            patch(module + "select_adapter", return_value=adapter),
+            patch(module + "async_connection_paths", return_value=()),
+            patch(module + "establish_connection", new=AsyncMock(return_value=c.client)) as establish,
+            patch(module + "client_source", return_value=source),
+            patch(module + "async_path_for_source", return_value=path),
+            patch(module + "async_verify_native_bond", new=AsyncMock(return_value=native)),
+            patch(module + "close_stale_connections_by_address", new=AsyncMock()),
+            patch(module + "connection_reachability", return_value=None),
+        ):
+            await coordinator.async_stop_command()
+            establish.assert_awaited_once()
+            c.client.start_notify.assert_awaited_once()
+            assert coordinator.cancel_command.is_set()
+            assert [call.args[1].hex() for call in c.client.write_gatt_char.call_args_list] == ["00ff"]
+    finally:
+        await coordinator.async_shutdown()
 
 
 @pytest.mark.parametrize("disconnect_kind", ["noop", "error", "cancel"])

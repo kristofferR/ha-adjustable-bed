@@ -1769,6 +1769,8 @@ class AdjustableBedCoordinator:
                                     if not disconnected and pending_failure is None:
                                         raise ConnectionError("VMAT setup connection did not disconnect")
                     finally:
+                        if client.is_connected:
+                            async_get_connect_lock(self.hass, self._address).retain_setup_client(client)
                         if self._client is client and (disconnected or not client.is_connected):
                             self._client = None
                             if self._vmat_unready_client is client:
@@ -2960,8 +2962,16 @@ class AdjustableBedCoordinator:
             # could land inside a competing caller's connect and abort it —
             # the same hazard the lock was added to prevent (issue #385).
             # Reentrant, so a caller that still holds it is unaffected.
-            async with async_get_connect_lock(self.hass, self._address):
-                await client.disconnect()
+            connect_lock = async_get_connect_lock(self.hass, self._address)
+            if connect_lock.retained_setup_client is client:
+                await connect_lock.async_release_setup_client()
+            else:
+                async with connect_lock:
+                    try:
+                        await client.disconnect()
+                    finally:
+                        if self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat" and client.is_connected:
+                            connect_lock.retain_setup_client(client)
             _LOGGER.debug("Disconnect cleanup successful")
         except Exception as disconnect_err:
             _LOGGER.debug(
@@ -4999,7 +5009,11 @@ class AdjustableBedCoordinator:
                         await self._controller.stop_notify()
                     except Exception as err:
                         _LOGGER.debug("Error stopping notifications: %s", err)
-                await client.disconnect()
+                connect_lock = async_get_connect_lock(self.hass, self._address)
+                if connect_lock.retained_setup_client is client:
+                    await connect_lock.async_release_setup_client()
+                else:
+                    await client.disconnect()
                 _LOGGER.debug("Successfully disconnected from %s", self._address)
             except BleakError as err:
                 _LOGGER.debug("Error during disconnect from %s: %s", self._address, err)

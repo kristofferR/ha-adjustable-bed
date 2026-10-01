@@ -67,6 +67,32 @@ def frames(c: VibradormAppController) -> list[str]:
     return [call.args[1].hex() for call in c.client.write_gatt_char.call_args_list]
 
 
+@pytest.mark.parametrize("cancel_kind", ["event", "task"])
+async def test_ordinary_notification_startup_remains_cancellable(cancel_kind):
+    c = make_vmat("07")
+    if cancel_kind == "event":
+        c._coordinator.cancel_command.set()
+        with pytest.raises(asyncio.CancelledError):
+            await c.start_notify()
+    else:
+        settling = asyncio.Event()
+        hold = asyncio.Event()
+
+        async def sleep(delay):
+            assert delay == 0.5
+            settling.set()
+            await hold.wait()
+
+        with patch("custom_components.adjustable_bed.beds.vibradorm_app.asyncio.sleep", side_effect=sleep):
+            startup = asyncio.create_task(c.start_notify())
+            await settling.wait()
+            startup.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await startup
+    c.client.start_notify.assert_not_awaited()
+    assert not c._subscribed
+
+
 @pytest.mark.parametrize("remote", VMAT_REMOTES)
 def test_remote_contract_and_no_guessed_capabilities(remote):
     c = make_vmat(remote)

@@ -144,14 +144,16 @@ async def async_prepare_vmat_pairing(
                     async def receive(pending: asyncio.Future[str] = reply) -> str:
                         return await pending
 
-                    async with asyncio.timeout(timeout):
-                        value = await _cancellable(receive(), cancel_event)
-                    if metadata_progress is not None:
-                        metadata_progress(cast(VibradormAppMetadataProgress, {field: value}))
-                    if field == "main_firmware_article":
-                        article = value
-                except TimeoutError:
-                    pass  # Missing replies do not create an acknowledgment.
+                    try:
+                        async with asyncio.timeout(timeout):
+                            value = await _cancellable(receive(), cancel_event)
+                    except TimeoutError:
+                        pass  # Missing replies do not create an acknowledgment.
+                    else:
+                        if metadata_progress is not None:
+                            metadata_progress(cast(VibradormAppMetadataProgress, {field: value}))
+                        if field == "main_firmware_article":
+                            article = value
                 finally:
                     current = None
                     if not reply.done():

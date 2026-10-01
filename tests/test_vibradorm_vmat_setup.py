@@ -212,6 +212,34 @@ async def test_close_is_exact_no_response_before_caller_disconnect():
     assert c.client.write_gatt_char.call_args.kwargs["response"] is False
 
 
+@pytest.mark.parametrize("failed_stage", range(7))
+async def test_transport_write_timeout_aborts_information_stage(failed_stage):
+    c = make_vmat("07")
+    completed = {}
+    attempted = 0
+
+    async def write(characteristic, packet, *, response):
+        nonlocal attempted
+        index = attempted
+        attempted += 1
+        field, expected, prefix, _ = QUERY_STAGES[index]
+        assert packet == expected
+        if index == failed_stage:
+            raise TimeoutError("query transport delivery timed out")
+        c.client.start_notify.call_args.args[1](characteristic, bytearray(prefix + b"A"))
+
+    c.client.write_gatt_char.side_effect = write
+    with pytest.raises(TimeoutError, match="query transport delivery timed out"):
+        await async_prepare_vibradorm_app_pairing(
+            c.client, "vmat", 8, remote="07", deadline=asyncio.get_running_loop().time() + 45,
+            metadata_progress=completed.update,
+        )
+    assert attempted == failed_stage + 1
+    assert QUERY_STAGES[failed_stage][0] not in completed
+    assert all(stage[0] in completed for stage in QUERY_STAGES[:failed_stage])
+    c.client.stop_notify.assert_awaited_once()
+
+
 @pytest.mark.parametrize(("field", "prefix", "raw", "expected"), [
     ("xmc_status", "21b3", "21b3ff", "255"),
     ("opmode", "21b3", "21b3ff", "-1"),

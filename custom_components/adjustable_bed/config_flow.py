@@ -4876,6 +4876,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     )
 
                 native_existing: BondEvidence | None = None
+                if vmat_profile:
+                    from .vibradorm_vmat_profiles import VMAT_REMOTES
+                    from .vibradorm_vmat_setup import validate_vmat_roles
+
+                    assert self._manual_data is not None
+                    remote = VMAT_REMOTES[self._manual_data[CONF_VIBRADORM_VMAT_REMOTE]]
+                    validate_vmat_roles(client, basic=remote.control_type == 2)
                 if bed_type == BED_TYPE_VIBRADORM_APP:
                     native_existing = await async_verify_native_bond(
                         address, path=path, operation="vibradorm_existing_native_bond"
