@@ -1821,7 +1821,11 @@ motion_bed_calibration:
       name: Flat
       required: true
       selector:
-        object: {}
+        number:
+          mode: box
+          min: 0
+          max: 2147483647
+          step: 1
     side_position:
       name: Side position
       required: true

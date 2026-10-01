@@ -271,3 +271,203 @@ async def test_inventory_churn_during_final_clock_cannot_start_replacement_poll(
         await controller.stop_notify()
         await asyncio.gather(*tasks, return_exceptions=True)
         await coord.async_shutdown()
+
+
+@pytest.mark.parametrize("service,data", [
+    ("motion_bed_clock", {"timestamp": "2026-10-01T07:45:00"}),
+    ("motion_bed_air_setting", {"mode": 3, "gear": 8, "timer": 2, "confirmed": True}),
+    ("motion_bed_thermal_schedule", {"hour": 21, "minute": 30, "mode": 1, "gear": 4, "confirmed": True}),
+])
+async def test_idle_hub_inventory_preflight_and_replacement_dispatch(hass, monkeypatch, service, data):
+    from tests.test_motion_bed_controller import characteristic, client_for
+    coord = await real_coordinator(hass, "TL-Q")
+    old = coord.controller
+    old._spawn = MagicMock()
+    frame = bytearray.fromhex("FFFFFFFF010027140000000000000000")
+    frame[9], frame[12], frame[15] = 10, 11, 12
+    old._handle_notification(bytes(frame))
+    coord.cache_capability_controller()
+    coord.client.is_connected = False
+    coord._on_disconnect(coord.client)
+    assert coord.controller is None and coord.capability_controller is old
+    assert old.protocol_diagnostics["motor_module_present"] is None
+    replacement = None
+    async def reconnect(**kwargs):
+        nonlocal replacement
+        client = client_for(characteristic(79))
+        coord._client = client
+        replacement = MotionBedController(coord, selection=select_motion_bed("TL-Q"))
+        coord._controller = replacement
+        replacement._spawn = MagicMock()
+        await replacement.start_notify()
+        return True
+    coord.async_ensure_connected = AsyncMock(side_effect=reconnect)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", AsyncMock())
+    await async_register_services(hass)
+    try:
+        with patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=([(coord, SIDE_BOTH)], [])):
+            await hass.services.async_call(DOMAIN, service, {"device_id": "bed", **data}, blocking=True)
+        assert replacement is coord.controller and replacement is not old
+        assert coord.client.write_gatt_char.await_args_list[-1].args[1] == build_motion_bed_request(service, data).frames[-1]
+        # A definite new inventory overrides the retained capability on this target.
+        replacement._handle_notification(bytes.fromhex("FFFFFFFF010027140000000000000000"))
+        with pytest.raises(ValueError):
+            replacement.validate_motion_bed_write(build_motion_bed_request(service, data))
+    finally:
+        coord._cancel_disconnect_timer()
+        current = coord.capability_controller
+        if current is not None:
+            await current.stop_notify()
+        await coord._command_scheduler.async_shutdown()
+
+
+async def test_provisioning_public_service_holds_quick_disconnect_until_final_result(hass, monkeypatch):
+    coord = await real_coordinator(hass, "QMS-IQ")
+    controller = coord.controller
+    coord._disconnect_after_command = True
+    real_sleep, real_wait_for = asyncio.sleep, asyncio.wait_for
+    tick = asyncio.Event()
+    entered = asyncio.Event()
+    async def sleep(delay):
+        if delay == 6:
+            entered.set()
+            await tick.wait()
+        else:
+            await real_sleep(0)
+    async def wait_for(awaitable, timeout):
+        if timeout == 0.3:
+            awaitable.close()
+            raise TimeoutError
+        return await real_wait_for(awaitable, timeout)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.wait_for", wait_for)
+    await async_register_services(hass)
+    try:
+        with patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=([(coord, SIDE_BOTH)], [])):
+            await hass.services.async_call(DOMAIN, "motion_bed_provision_wifi", {"device_id": "bed", "ssid": "BED", "password": "password", "longitude": 0, "latitude": 0, "confirmed": True}, blocking=True)
+        await entered.wait()
+        assert coord._command_connection_holds == 1 and coord._disconnect_timer is None
+        await coord._async_idle_disconnect()
+        assert coord.is_connected
+        tick.set()
+        task = controller._network_task
+        assert task is not None
+        await task
+        assert controller._network_queries == 10
+        assert len(coord.client.write_gatt_char.await_args_list) == 17
+        assert controller.protocol_diagnostics["provisioning_status"] == "timed_out"
+        assert coord._command_connection_holds == 0 and coord._disconnect_timer is not None
+    finally:
+        tasks = tuple(controller._tasks)
+        await controller.stop_notify()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        coord._cancel_disconnect_timer()
+        await coord._command_scheduler.async_shutdown()
+
+
+async def test_calibration_editor_metadata_accepts_the_registered_integer(enable_custom_integrations, hass):
+    import voluptuous as vol
+    from homeassistant.helpers.selector import NumberSelector
+    from homeassistant.helpers.service import async_get_all_descriptions
+    await async_register_services(hass)
+    descriptions = await async_get_all_descriptions(hass)
+    selector = descriptions[DOMAIN]["motion_bed_calibration"]["fields"]["flat"]["selector"]
+    assert "number" in selector and "object" not in selector
+    selected = vol.Schema(NumberSelector(selector["number"]))(10)
+    assert selected == 10
+    coord = await real_coordinator(hass, "QMS4")
+    try:
+        with patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=([(coord, SIDE_BOTH)], [])):
+            await hass.services.async_call(DOMAIN, "motion_bed_calibration", {"device_id": "bed", "flat": int(selected), "side_position": 140, "confirmed": True}, blocking=True)
+        assert coord.client.write_gatt_char.await_args.args[1] == build_motion_bed_request("motion_bed_calibration", {"flat": 10, "side_position": 140, "confirmed": True}).frames[0]
+    finally:
+        coord._cancel_disconnect_timer()
+        await coord.controller.stop_notify()
+        await coord._command_scheduler.async_shutdown()
+
+
+@pytest.mark.parametrize("ending", ["success", "failed", "cancel", "disconnect", "replacement", "write_failure", "query_failure"])
+async def test_provisioning_connection_hold_cleanup_boundaries(hass, monkeypatch, ending):
+    from tests.test_motion_bed_controller import characteristic, client_for
+    coord = await real_coordinator(hass, "QMS-IQ")
+    controller = coord.controller
+    coord._disconnect_after_command = True
+    real_sleep = asyncio.sleep
+    tick, entered = asyncio.Event(), asyncio.Event()
+    async def sleep(delay):
+        if delay == 6:
+            entered.set()
+            await tick.wait()
+        else:
+            await real_sleep(0)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    request = MotionBedWrite("provision_wifi", (STOP,), "network", persistent=True, confirmed=True, network_poll=True)
+    try:
+        if ending == "write_failure":
+            coord.client.write_gatt_char.side_effect = ConnectionError("write failed")
+            with pytest.raises(ConnectionError):
+                await controller.async_execute_motion_bed_write(request)
+            assert controller._network_task is None
+        else:
+            await controller.async_execute_motion_bed_write(request)
+            await entered.wait()
+            task = controller._network_task
+            assert task is not None and coord._command_connection_holds == 1
+            if ending in ("success", "failed"):
+                controller._spawn = MagicMock()
+                controller._handle_notification(bytes.fromhex("FFFFFFFF02001913000F" if ending == "success" else "FFFFFFFF020019130000"))
+                tick.set()
+            elif ending == "cancel":
+                task.cancel()
+            elif ending == "disconnect":
+                coord.client.is_connected = False
+                coord._on_disconnect(coord.client)
+            elif ending == "replacement":
+                coord._client = client_for(characteristic(89))
+                await controller.async_discover_capabilities()
+            else:
+                coord.client.write_gatt_char.side_effect = ConnectionError("query failed")
+                tick.set()
+            result, = await asyncio.gather(task, return_exceptions=True)
+            if ending == "query_failure":
+                assert isinstance(result, ConnectionError)
+            assert not controller._network_poll_active
+        assert coord._command_connection_holds == 0
+        assert controller._network_connection_hold is None
+    finally:
+        tasks = tuple(controller._tasks)
+        await controller.stop_notify()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        coord._cancel_disconnect_timer()
+        await coord._command_scheduler.async_shutdown()
+
+
+async def test_hub_snapshot_never_admits_unknown_absent_deleted_or_other_target(hass):
+    from tests.test_motion_bed_services import invoke, make_target
+    target = make_target(hass, "TL-Q")
+    target.controller._state = replace(target.controller._state, motor_module_present=None, air_module_present=None, thermal_module_present=None)
+    data = {"mode": 3, "gear": 8, "timer": 2, "confirmed": True}
+    request = build_motion_bed_request("motion_bed_air_setting", data)
+    with pytest.raises(ValueError):
+        target.controller.validate_motion_bed_write(request)
+    frame = bytearray.fromhex("FFFFFFFF010027140000000000000000")
+    frame[12] = 11
+    target.controller._spawn = MagicMock()
+    target.controller._handle_notification(bytes(frame))
+    target.controller.on_disconnect()
+    target.controller.validate_motion_bed_write(request)
+    target.coordinator.address = "AA:BB:CC:DD:EE:99"
+    with pytest.raises(ValueError):
+        target.controller.validate_motion_bed_write(request)
+    target.coordinator.address = target.controller._target_address
+    target.controller._activate("module_change")
+    target.controller._handle_notification(bytes.fromhex("FFFFFFFF0100281400"))
+    with pytest.raises(ValueError):
+        target.controller.validate_motion_bed_write(request)
+    # A definitely absent later target prevents the earlier admitted target's write.
+    earlier = make_target(hass, "TL-Q", address="AA:BB:CC:DD:EE:01")
+    from homeassistant.exceptions import ServiceValidationError
+    with pytest.raises(ServiceValidationError):
+        await invoke(hass, [earlier, target], "motion_bed_air_setting", data)
+    earlier.client.write_gatt_char.assert_not_awaited()
+    target.client.write_gatt_char.assert_not_awaited()

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable, Coroutine, Mapping
+from contextlib import ExitStack
 from contextvars import ContextVar
 from dataclasses import dataclass, fields, replace
 from typing import TYPE_CHECKING
@@ -79,6 +80,24 @@ class MotionBedController(BedController):
         self._thermal_task: asyncio.Task[None] | None = None
         self._network_generation = 0
         self._network_task: asyncio.Task[None] | None = None
+        self._network_connection_hold: ExitStack | None = None
+        self._module_capabilities: dict[str, bool] = {}
+        previous = coordinator.capability_controller
+        if (isinstance(previous, MotionBedController) and previous.selection == selection
+                and previous._target_address == coordinator.address):
+            self._module_capabilities = dict(previous._module_capabilities)
+
+    def _remember_module_capabilities(self) -> None:
+        for module in ("motor", "air", "thermal"):
+            present = getattr(self._state, module + "_module_present")
+            if isinstance(present, bool):
+                self._module_capabilities[module] = present
+
+    def _module_present(self, module: str) -> bool:
+        if self._target_address != self._coordinator.address:
+            return False
+        present = getattr(self._state, module + "_module_present")
+        return present if isinstance(present, bool) else self._module_capabilities.get(module, False)
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -148,6 +167,7 @@ class MotionBedController(BedController):
             "hardware_verified": False,
             "active_module": self._active_module,
             "remembered_audio_available": self._audio_preference,
+            "remembered_module_capabilities": dict(self._module_capabilities),
             "actions": [{"key": action.key, "name": action.name, "kind": action.kind}
                         for action in self.actions],
             **self._state.to_updates(),
@@ -165,9 +185,9 @@ class MotionBedController(BedController):
             })
         if self.selection.surface == "hub":
             owners.update({"MainMcuActivity", "ChangeDeviceActivity", "ConnectMcuActivity"})
-        motor = self.selection.surface == "motor" or (self.selection.surface == "hub" and self._state.motor_module_present is True)
-        air = self.selection.surface == "air" or (self.selection.surface == "hub" and self._state.air_module_present is True)
-        thermal = self.selection.surface == "thermal" or (self.selection.surface == "hub" and self._state.thermal_module_present is True)
+        motor = self.selection.surface == "motor" or (self.selection.surface == "hub" and self._module_present("motor"))
+        air = self.selection.surface == "air" or (self.selection.surface == "hub" and self._module_present("air"))
+        thermal = self.selection.surface == "thermal" or (self.selection.surface == "hub" and self._module_present("thermal"))
         if motor:
             owners.update({"DiandongFragment", "DianDongSetActivity", "AlarmActivity"})
         if air:
@@ -243,7 +263,7 @@ class MotionBedController(BedController):
     async def set_motion_bed_surface(self, surface: str) -> None:
         if self.selection.surface != "hub" or surface not in ("motor", "air", "thermal"):
             raise ValueError("Choose a reported Motion Bed hub module")
-        if getattr(self._state, surface + "_module_present") is not True:
+        if not self._module_present(surface):
             raise ValueError("This hub has not reported the selected module")
         if self._active_module != surface:
             self._select_module(surface)
@@ -309,6 +329,9 @@ class MotionBedController(BedController):
         if self._notifying and binding_changed:
             await self.stop_notify()
         if binding_changed:
+            self._remember_module_capabilities()
+            if self._target_address != self._coordinator.address:
+                self._module_capabilities.clear()
             self._generation += 1
             if self._held_session is not None:
                 await self._release_held_session(self._held_session)
@@ -383,6 +406,7 @@ class MotionBedController(BedController):
             self._operation_generation.reset(token)
 
     def on_disconnect(self) -> None:
+        self._remember_module_capabilities()
         self._generation += 1
         self._cancel_background()
         self._notifying = False
@@ -423,6 +447,7 @@ class MotionBedController(BedController):
             await session.client.write_gatt_char(session.characteristic, STOP, response=response)
 
     async def stop_notify(self) -> None:
+        self._remember_module_capabilities()
         self._generation += 1
         self._cancel_background()
         try:
@@ -452,6 +477,9 @@ class MotionBedController(BedController):
         self._tasks.clear()
         self._thermal_task = None
         self._network_task = None
+        if self._network_connection_hold is not None:
+            self._network_connection_hold.close()
+            self._network_connection_hold = None
 
     def _spawn(self, operation: Callable[[], Coroutine[object, object, None]]) -> asyncio.Task[None]:
         # Coroutine functions below own session/generation checks before each write.
@@ -492,6 +520,10 @@ class MotionBedController(BedController):
         result = parse_motion_bed_notification(data, route, self._state)
         self._diagnostic_rejection = result.rejection
         self._state = result.state
+        if "module_deleted" in result.receipts:
+            self._module_capabilities.clear()
+        else:
+            self._remember_module_capabilities()
         if isinstance(self._state.audio_available, bool):
             self._audio_preference = self._state.audio_available
         self._receipts = result.receipts
@@ -735,11 +767,11 @@ class MotionBedController(BedController):
             available.update({"clock", "alarm", "sleep_angles", "calibration", "sleep_timer", "sleep_report", "provision_wifi"})
             if self.selection.preset == "K2M":
                 available.add("audio")
-        if surface == "motor" or (surface == "hub" and self._state.motor_module_present is True):
+        if surface == "motor" or (surface == "hub" and self._module_present("motor")):
             available.update({"clock", "alarm", "audio"})
-        if surface == "air" or (surface == "hub" and self._state.air_module_present is True):
+        if surface == "air" or (surface == "hub" and self._module_present("air")):
             available.update({"air_setting", "pressure"})
-        if surface == "thermal" or (surface == "hub" and self._state.thermal_module_present is True):
+        if surface == "thermal" or (surface == "hub" and self._module_present("thermal")):
             available.update({"clock", "thermal_schedule"})
         if surface == "hub":
             available.add("module")
@@ -748,9 +780,9 @@ class MotionBedController(BedController):
         if request.name == "clock":
             thermal = request.context == "thermal"
             if thermal:
-                if not (surface == "thermal" or (surface == "hub" and self._state.thermal_module_present is True)):
+                if not (surface == "thermal" or (surface == "hub" and self._module_present("thermal"))):
                     raise ValueError("Thermal clock requires the thermal module/profile")
-            elif not (surface in ("home", "motor") or (surface == "hub" and self._state.motor_module_present is True)):
+            elif not (surface in ("home", "motor") or (surface == "hub" and self._module_present("motor"))):
                 raise ValueError("P1 clock requires a motor/home profile")
         if request.name == "alarm":
             if request.alarm_audio != self._has_audio:
@@ -767,12 +799,19 @@ class MotionBedController(BedController):
     async def async_execute_motion_bed_write(self, request: MotionBedWrite) -> None:
         self.validate_motion_bed_write(request)
         token = self._operation_generation.set(self._generation)
+        network_hold: ExitStack | None = None
+        hold_transferred = False
         try:
             if request.network_poll:
                 self._network_generation += 1
                 if self._network_task is not None:
                     self._network_task.cancel()
                     self._network_task = None
+                if self._network_connection_hold is not None:
+                    self._network_connection_hold.close()
+                network_hold = ExitStack()
+                network_hold.enter_context(self._coordinator.hold_command_connection())
+                self._network_connection_hold = network_hold
                 self._network_queries = 0
                 self._network_poll_active = False
             if self.selection.surface == "hub":
@@ -807,8 +846,14 @@ class MotionBedController(BedController):
                 self._network_poll_active = True
                 self._state = replace(self._state, network_poll_attempts=0, provisioning_status="waiting")
                 self._publish()
-                self._network_task = self._spawn(self._network_poll)
+                self._current_session()
+                self._network_task = self._spawn(lambda: self._network_poll(connection_hold=network_hold))
+                hold_transferred = True
         finally:
+            if network_hold is not None and not hold_transferred:
+                network_hold.close()
+                if self._network_connection_hold is network_hold:
+                    self._network_connection_hold = None
             self._operation_generation.reset(token)
 
     async def _bounded_network_query(self) -> None:
@@ -817,7 +862,7 @@ class MotionBedController(BedController):
         self._network_queries += 1
         await self.async_execute_motion_bed_internal_query("network_activity_network_status")
 
-    async def _network_poll(self) -> None:
+    async def _network_poll(self, *, connection_hold: ExitStack | None = None) -> None:
         generation = self._generation
         attempt = self._network_generation
         def current() -> bool:
@@ -836,6 +881,10 @@ class MotionBedController(BedController):
                 self._state = replace(self._state, provisioning_status="timed_out")
                 self._publish()
         finally:
+            if connection_hold is not None:
+                connection_hold.close()
+                if self._network_connection_hold is connection_hold:
+                    self._network_connection_hold = None
             if current():
                 self._network_poll_active = False
 

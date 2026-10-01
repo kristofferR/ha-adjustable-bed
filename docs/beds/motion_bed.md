@@ -20,6 +20,14 @@ Binding a module does not open another connection. The Active hub module select
 chooses among reported modules and controls which surface owns startup and
 thermal polling. All reported module controls remain available.
 
+Idle disconnect clears live module observations, while a separate process-local
+capability snapshot keeps the last validated hub controls available for
+preflight and reconnection to the same address and exact profile. It is neither
+persisted nor published as fresh inventory. A new definite absence overrides
+the snapshot; deletion clears it pending the inventory reply, and changing the
+physical target discards it. An unknown hub with no validated inventory still
+rejects module controls, including all-target preflight before any write.
+
 Switching modules retires the prior thermal poller and pending startup work.
 A failed module initialization can retry on the next inventory reply. Deletion
 acknowledgements refresh the hub inventory; existing buttons publish changes to
@@ -102,7 +110,7 @@ changes require `confirmed: true`.
 | `motion_bed_alarm` | `enabled`, `hour`, `minute`, weekdays 1–7, `repeat`, modes 1–6, `massage`, `sound`, current target's `audio`; modular initial `switch` 00/01/A1 |
 | `motion_bed_clock` | ISO `timestamp`, `thermal` to select the thermal clock |
 | `motion_bed_sleep_angles` | page 2/3/4, four `flat` and four `side_positions` raw values |
-| `motion_bed_calibration` | `flat`, `side_position`; the serializer retains source scaling and rejects invalid encodings |
+| `motion_bed_calibration` | integer `flat`, `side_position`; the serializer retains source scaling and rejects invalid encodings. The flat editor accepts the proven nonnegative Java-int domain, with odd-width encodings still rejected before I/O |
 | `motion_bed_sleep_timer` | bedtime slot 0–8 or `fall: true` slot 0–4 |
 | `motion_bed_sleep_report` | month/real/timer/day, historical day `offset` 0–29, separate graph `window_offset` 0–4 |
 | `motion_bed_module` | query/bind/delete, module type 10/11/12 (motor/air/thermal), colon-separated module MAC for bind |
@@ -132,7 +140,11 @@ changing the active hub module or tearing down the session cancels polling.
 Wi-Fi provisioning uses Android UTF-8 encoding, source truncation/padding to
 32 SSID bytes and 16 password bytes, and big-endian coordinate floats. Seven
 frames are spaced by 300 ms. Status polling shares one budget of at most ten
-queries six seconds apart. Credentials are redacted from integration command
+queries six seconds apart. A typed command-connection hold spans the complete
+provisioning attempt, including poll sleeps, so a one-second handoff cannot
+interrupt it. Completion, cancellation, write/query failure and session
+replacement release that hold; a new attempt retires the old hold and poll
+before acquiring its own. Credentials are redacted from integration command
 traces and never saved in entry data, local preferences or diagnostics.
 Home Assistant core can log the original action data, including SSID and
 password, before the integration handler runs when `homeassistant.core` DEBUG
