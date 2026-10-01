@@ -2122,8 +2122,8 @@ def _detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detect
 
     # Check for Cool Base - name pattern detection (before Keeson since same UUID)
     # Cool Base is a Keeson BaseI5 variant with additional fan control
-    # Device names start with "base-i5" (from BleConnect.java: limitedDevice = "base-i5")
-    if any(device_name.startswith(pattern) for pattern in COOLBASE_NAME_PATTERNS):
+    # The Cool Base app accepts any scan name containing "base-i5"
+    if any(pattern in device_name for pattern in COOLBASE_NAME_PATTERNS):
         signals.append("name:coolbase")
         _LOGGER.info(
             "Detected Cool Base bed at %s (name: %s) by name pattern",

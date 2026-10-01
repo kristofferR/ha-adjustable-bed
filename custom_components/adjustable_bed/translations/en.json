@@ -1944,6 +1944,27 @@
       },
       "program_memory_8": {
         "name": "Save Memory 8"
+      },
+      "coolbase_left_fan": {
+        "name": "Left fan"
+      },
+      "coolbase_right_fan": {
+        "name": "Right fan"
+      },
+      "coolbase_fan_sync": {
+        "name": "Fan sync"
+      },
+      "coolbase_head_massage": {
+        "name": "Head massage"
+      },
+      "coolbase_foot_massage": {
+        "name": "Foot massage"
+      },
+      "coolbase_massage_mode": {
+        "name": "Massage mode"
+      },
+      "coolbase_star": {
+        "name": "Star button"
       }
     },
     "cover": {
@@ -2717,6 +2738,15 @@
       },
       "fsm_relax_motor_4_raw": {
         "name": "FSM Relax motor 4 raw"
+      },
+      "coolbase_left_fan_level": {
+        "name": "Left fan level"
+      },
+      "coolbase_right_fan_level": {
+        "name": "Right fan level"
+      },
+      "coolbase_massage_mode": {
+        "name": "Massage mode"
       }
     },
     "light": {
