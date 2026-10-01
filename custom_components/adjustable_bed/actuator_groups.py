@@ -52,6 +52,7 @@ from .const import (
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_STARCODE_M5X5,
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_PURPLE,
@@ -352,6 +353,12 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "label": "Smart Remote / RF ECO BT single actuator",
                 "description": "Elda BTH, MEGAMAT MBZ, RF ECO BT staircase actuator",
                 "hint": "Device may advertise as OKIN-* with 62741525/90311625 GATT characteristics",
+            },
+            {
+                "type": BED_TYPE_STARCODE_M5X5,
+                "label": "AdjustableM5X5 app",
+                "description": "CB25, F23, kneading and Elevate with independently addressed lifts",
+                "hint": "Select the app class and exact Bluetooth name in the next step",
             },
             {
                 "type": BED_TYPE_STAR_ELEVATE,

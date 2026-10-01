@@ -118,6 +118,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SOLACE,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_STARCODE_M5X5,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
@@ -5847,6 +5848,7 @@ class AdjustableBedCoordinator:
             pulse_count=pulse_count,
             pulse_delay_ms=pulse_delay_ms,
             group_id=group_id,
+            controller_command=command_fn,
         )
 
     async def _async_schedule_command_operation(
@@ -5860,6 +5862,7 @@ class AdjustableBedCoordinator:
         pulse_count: int | None = None,
         pulse_delay_ms: int | None = None,
         group_id: str | None = None,
+        controller_command: Callable[[BedController], Awaitable[None]] | None = None,
     ) -> None:
         """Schedule an operation, or run inline inside this scheduler's reservation."""
         context = current_command_context()
@@ -5876,6 +5879,11 @@ class AdjustableBedCoordinator:
                 context.pulse_count = previous_pulse_count
                 context.pulse_delay_ms = previous_pulse_delay_ms
             return
+
+        if self._bed_type == BED_TYPE_STARCODE_M5X5:
+            from .starcode_accessory_group import prepare_individual_command
+
+            await prepare_individual_command(self, controller_command)
 
         intent = self._build_command_intent(
             operation,

@@ -1,0 +1,162 @@
+[
+  {
+    "id": "A01-V01",
+    "function": "_legacy_normal",
+    "arguments": [
+      1
+    ],
+    "vector": "05020000000100"
+  },
+  {
+    "id": "A01-V02",
+    "function": "_legacy_normal",
+    "arguments": [
+      2
+    ],
+    "vector": "05020000000200"
+  },
+  {
+    "id": "A01-V05",
+    "function": "_legacy_normal",
+    "arguments": [
+      134217728
+    ],
+    "vector": "05020800000000"
+  },
+  {
+    "id": "A01-V07",
+    "function": "_legacy_normal",
+    "arguments": [
+      65536
+    ],
+    "vector": "05020001000000"
+  },
+  {
+    "id": "A01-V09",
+    "function": "_legacy_normal",
+    "arguments": [
+      134479872
+    ],
+    "vector": "05020804000000"
+  },
+  {
+    "id": "A01-V11",
+    "function": "_legacy_extended",
+    "arguments": [
+      0,
+      6
+    ],
+    "vector": "04e000060000"
+  },
+  {
+    "id": "A02-V03",
+    "function": "_star_command",
+    "arguments": [
+      0,
+      48
+    ],
+    "vector": "5a0103103000a5"
+  },
+  {
+    "id": "A02-V04",
+    "function": "_star_command",
+    "arguments": [
+      1,
+      48
+    ],
+    "vector": "5a0103103001a5"
+  },
+  {
+    "id": "A02-V06",
+    "function": "_star_command",
+    "arguments": [
+      16,
+      48
+    ],
+    "vector": "5a0103103010a5"
+  },
+  {
+    "id": "A02-V08",
+    "function": "_star_command",
+    "arguments": [
+      26,
+      48
+    ],
+    "vector": "5a010310301aa5"
+  },
+  {
+    "id": "A02-V10",
+    "function": "_star_command",
+    "arguments": [
+      149,
+      48
+    ],
+    "vector": "5a0103103095a5"
+  },
+  {
+    "id": "A02-V12",
+    "function": "_star_extended",
+    "arguments": [
+      0,
+      6
+    ],
+    "vector": "5ae00400060000a5"
+  },
+  {
+    "id": "A02-V13",
+    "function": "_star_extended",
+    "arguments": [
+      7,
+      3
+    ],
+    "vector": "5ae00407030000a5"
+  },
+  {
+    "id": "A03-V15",
+    "function": "_elevate_command",
+    "arguments": [
+      68
+    ],
+    "vector": "5a0103103044a5"
+  },
+  {
+    "id": "A03-V22",
+    "function": "_elevate_command",
+    "arguments": [
+      64
+    ],
+    "vector": "5a0103103040a5"
+  },
+  {
+    "id": "A03-V23",
+    "function": "_elevate_command",
+    "arguments": [
+      65
+    ],
+    "vector": "5a0103103041a5"
+  },
+  {
+    "id": "A03-V24",
+    "function": "_elevate_command",
+    "arguments": [
+      66
+    ],
+    "vector": "5a0103103042a5"
+  },
+  {
+    "id": "A03-V25",
+    "function": "_elevate_command",
+    "arguments": [
+      67
+    ],
+    "vector": "5a0103103043a5"
+  },
+  {
+    "id": "A03-V26",
+    "function": "_elevate_command",
+    "arguments": [
+      70
+    ],
+    "vector": "5a0103103046a5"
+  }
+]

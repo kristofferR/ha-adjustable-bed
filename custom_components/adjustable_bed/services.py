@@ -2723,6 +2723,9 @@ async def async_register_services(hass: HomeAssistant) -> None:
     async_register_rmcontrol_services(hass)
     async_register_sleep_number_services(hass)
 
+    from .starcode_accessory_group import register_group_services
+
+    register_group_services(hass)
     hass.services.async_register(
         DOMAIN,
         SERVICE_GOTO_PRESET,
