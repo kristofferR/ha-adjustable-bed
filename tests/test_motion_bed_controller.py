@@ -676,3 +676,43 @@ async def test_module_removed_during_startup_delay_never_receives_following_cloc
     await rig.controller._module_startup("thermal")
     assert rig.writes == [SOURCE_COMMANDS["LengnuanFragment:183"]]
     await rig.controller.stop_notify()
+
+
+@pytest.mark.parametrize("cancelled", [False, True])
+async def test_calibration_debug_has_ten_two_second_samples_or_cancels_before_first(monkeypatch, cancelled):
+    rig = rig_for()
+    await rig.controller.async_discover_capabilities()
+    intervals = []
+    async def wait_for(awaitable, timeout):
+        awaitable.close()
+        intervals.append(timeout)
+        if not cancelled:
+            raise TimeoutError
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.wait_for", wait_for)
+    key = "sleep_data_entry_activity_capture_debug"
+    await rig.controller.async_execute_motion_bed_action(key)
+    selected = ACTION_BY_KEY[key].select(rig.controller._state, False)
+    frames = list(dict.fromkeys(SOURCE_COMMANDS[source] for source in selected))
+    assert rig.writes == ([] if cancelled else frames * 10)
+    assert intervals == ([2] if cancelled else [2] * 10)
+    await rig.controller.stop_notify()
+
+
+@pytest.mark.parametrize("cancelled", [False, True])
+async def test_pressure_live_quiet_delay_is_bound_to_request_and_cancelled_before_io(monkeypatch, cancelled):
+    from custom_components.adjustable_bed.motion_bed_protocol import build_pressure_live
+    rig = rig_for("TL-A")
+    await rig.controller.async_discover_capabilities()
+    intervals = []
+    async def wait_for(awaitable, timeout):
+        awaitable.close()
+        intervals.append(timeout)
+        if not cancelled:
+            raise TimeoutError
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.wait_for", wait_for)
+    frame = build_pressure_live(11,9)
+    request = MotionBedWrite("pressure", (frame,), "pressure_settings", initial_delay_ms=2500)
+    await rig.controller.async_execute_motion_bed_write(request)
+    assert intervals == [2.5]
+    assert rig.writes == ([] if cancelled else [frame])
+    await rig.controller.stop_notify()

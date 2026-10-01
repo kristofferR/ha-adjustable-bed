@@ -334,3 +334,9 @@ def test_wifi_utf8_truncates_raw_bytes_without_reencoding_or_logging() -> None:
 def test_invalid_builder_domains_are_rejected_before_io(build: Callable[[], bytes]) -> None:
     with pytest.raises(ValueError):
         build()
+
+
+@pytest.mark.parametrize("vector", [v for v in _FIXTURE["vectors"] if v["function"] == "addsum"], ids=lambda vector: vector["id"])
+def test_existing_additive_helper_matches_all_accepted_vectors(vector: Vector) -> None:
+    from custom_components.adjustable_bed.beds.solace import _with_additive_checksum
+    assert _with_additive_checksum(bytes.fromhex(vector["inputs"]["s"])) == bytes.fromhex(vector["expected"])
