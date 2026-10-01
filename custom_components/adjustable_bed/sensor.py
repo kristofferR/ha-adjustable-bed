@@ -258,6 +258,7 @@ def _sensor_entities_for(
                 "vmatbasic_floor_percent_observed", "vmatbasic_rssi",
                 "svane_head_raw", "svane_feet_raw", "svane_position_raw",
                 "svane_firmware", "svane_hardware", "svane_manufacturer",
+                "coolbase_left_fan_level", "coolbase_right_fan_level", "coolbase_massage_mode",
             } - active_keys
         )
         _async_remove_stale_sensor_entities(

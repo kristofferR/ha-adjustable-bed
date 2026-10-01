@@ -9,28 +9,52 @@ Unique features:
 - Left/Right fan control with 3 speed levels (0-3)
 - Sync fan mode for both sides
 - DewertOKIN OKIN-BLE compatibility profile with a second memory slot
+
+The Cool Base profile follows the accepted com.keeson.coolbase 1.0.0 audit
+(docs/apk-analysis/dispositions/row047-coolbase.md): every app frame carries a
+literal trailer that the builder below reproduces, release ends the 100 ms
+refresh without a distinct STOP frame, and fan/massage/light state arrives only
+in 28-byte replies to the all-zero status query.
 """
 
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
+from homeassistant.exceptions import HomeAssistantError
 
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
+    KEESON_BASE_SERVICE_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
 )
-from .base import BedController
+from .base import BedController, ControllerButtonSpec, ControllerStateSensorSpec
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+# App timing (RemoteFragment): each tapped control is followed by three status
+# queries, each preceded by a 200 ms sleep; a connected idle screen queries
+# every 3000 ms.
+_CLICK_QUERY_COUNT = 3
+_CLICK_QUERY_DELAY = 0.2
+STATUS_POLL_INTERVAL = 3.0
+STATUS_REPLY_LENGTH = 28
+# How long an on/off light request waits for a reply to its own status query.
+_LIGHT_STATE_WAIT = 1.0
+
+STATE_LEFT_FAN = "coolbase_left_fan_level"
+STATE_RIGHT_FAN = "coolbase_right_fan_level"
+STATE_MASSAGE_MODE = "coolbase_massage_mode"
+STATE_LIGHT = "coolbase_light_on"
 
 
 class CoolBaseCommands:
@@ -57,6 +81,9 @@ class CoolBaseCommands:
     MASSAGE_HEAD = 0x00000800  # cmd1=0x08
     MASSAGE_FOOT = 0x00000400  # cmd1=0x04
     MASSAGE_LEVEL = 0x04000000  # cmd3=0x04
+
+    # Star artwork button (cmd2=0x01); the app gives it no memory semantics
+    STAR = 0x00010000
 
     # Fan/Wind commands (cmd2/cmd3 bytes) - Unique to Cool Base
     FAN_LEFT = 0x00400000  # cmd2=0x40 - cycles through levels 0-3
@@ -85,11 +112,14 @@ class CoolBaseController(BedController):
         self._notify_callback: Callable[[str, float], None] | None = None
         self._motor_state: dict[str, bool | None] = {}
 
-        # Fan state from notifications
-        self._left_fan_level: int = 0
-        self._right_fan_level: int = 0
-        self._massage_level: int = 0
-        self._light_on: bool = False
+        # State from 28-byte status replies; None until a reply reports it
+        self._left_fan_level: int | None = None
+        self._right_fan_level: int | None = None
+        self._massage_level: int | None = None
+        self._light_on: bool | None = None
+        self._status_received = asyncio.Event()
+        self._write_mode_initialized = False
+        self._write_char: BleakGATTCharacteristic | None = None
 
         self._char_uuid = KEESON_BASE_WRITE_CHAR_UUID
         self._notify_char_uuid = KEESON_BASE_NOTIFY_CHAR_UUID
@@ -108,7 +138,9 @@ class CoolBaseController(BedController):
 
     @property
     def supports_preset_lounge(self) -> bool:
-        return True
+        # The Cool Base app has no lounge preset; the DewertOKIN profile keeps
+        # its historical Memory 1 alias.
+        return self._dewert_okin_profile
 
     @property
     def supports_preset_tv(self) -> bool:
@@ -120,11 +152,13 @@ class CoolBaseController(BedController):
 
     @property
     def supports_memory_presets(self) -> bool:
-        return True
+        # The Cool Base app's star frame has no proven memory meaning; it is
+        # exposed as its own app-labelled button instead.
+        return self._dewert_okin_profile
 
     @property
     def memory_slot_count(self) -> int:
-        return 2 if self._dewert_okin_profile else 1
+        return 2 if self._dewert_okin_profile else 0
 
     @property
     def supports_memory_programming(self) -> bool:
@@ -137,6 +171,11 @@ class CoolBaseController(BedController):
     @property
     def supports_discrete_light_control(self) -> bool:
         return False  # Toggle only
+
+    @property
+    def supports_light_state_feedback(self) -> bool:
+        """Cool Base replies report the light flag; on/off uses it to toggle."""
+        return not self._dewert_okin_profile
 
     @property
     def supports_stop_all(self) -> bool:
@@ -152,15 +191,101 @@ class CoolBaseController(BedController):
         """Return maximum fan level (0-3 scale)."""
         return 3
 
+    @property
+    def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        """App-labelled Cool Base controls with no inferred axis or memory meaning."""
+        if self._dewert_okin_profile:
+            return ()
+        actions = (
+            ("left_fan", "mdi:fan", CoolBaseCommands.FAN_LEFT, False),
+            ("right_fan", "mdi:fan", CoolBaseCommands.FAN_RIGHT, False),
+            ("fan_sync", "mdi:fan-plus", CoolBaseCommands.FAN_SYNC, False),
+            ("head_massage", "mdi:vibrate", CoolBaseCommands.MASSAGE_HEAD, False),
+            ("foot_massage", "mdi:vibrate", CoolBaseCommands.MASSAGE_FOOT, False),
+            ("massage_mode", "mdi:sine-wave", CoolBaseCommands.MASSAGE_LEVEL, False),
+            ("star", "mdi:star", CoolBaseCommands.STAR, True),
+        )
+        return tuple(
+            ControllerButtonSpec(
+                f"coolbase_{action}",
+                action.replace("_", " ").capitalize(),
+                lambda ctrl, value=value: cast(CoolBaseController, ctrl).tap(value),
+                icon,
+                translation_key=f"coolbase_{action}",
+                cancel_movement=cancel_movement,
+            )
+            for action, icon, value, cancel_movement in actions
+        )
+
+    # The Cool Base profile exposes the app's massage taps as named buttons;
+    # the generic toggle/up/down controls would duplicate the same frames.
+    @property
+    def supports_massage_toggle_control(self) -> bool:
+        return self._dewert_okin_profile
+
+    @property
+    def supports_head_massage_intensity_step_control(self) -> bool:
+        return self._dewert_okin_profile
+
+    @property
+    def supports_foot_massage_intensity_step_control(self) -> bool:
+        return self._dewert_okin_profile
+
+    @property
+    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
+        """Fan and massage-mode levels reported by the 28-byte status reply."""
+        if self._dewert_okin_profile:
+            return ()
+        return (
+            ControllerStateSensorSpec(STATE_LEFT_FAN, STATE_LEFT_FAN, STATE_LEFT_FAN, "mdi:fan"),
+            ControllerStateSensorSpec(STATE_RIGHT_FAN, STATE_RIGHT_FAN, STATE_RIGHT_FAN, "mdi:fan"),
+            ControllerStateSensorSpec(
+                STATE_MASSAGE_MODE, STATE_MASSAGE_MODE, STATE_MASSAGE_MODE, "mdi:sine-wave"
+            ),
+        )
+
+    @property
+    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
+        """Drop Cool Base state sensors if the entry resolves to the DewertOKIN profile."""
+        if not self._dewert_okin_profile:
+            return frozenset()
+        return frozenset({STATE_LEFT_FAN, STATE_RIGHT_FAN, STATE_MASSAGE_MODE})
+
+    @property
+    def requires_notification_channel(self) -> bool:
+        """Status replies to the app query arrive as notifications, even without angles."""
+        return not self._dewert_okin_profile
+
+    @property
+    def diagnostic_poll_interval(self) -> float | None:
+        """Mirror the app's 3000 ms status query on an already live connection."""
+        return None if self._dewert_okin_profile else STATUS_POLL_INTERVAL
+
+    async def async_refresh_diagnostics(self) -> None:
+        """Send one app status query; the reply arrives as a notification."""
+        await self._send_status_query()
+
+    def invalidate_diagnostics(self) -> None:
+        """Forget reported state and the discovered write instance when the BLE session ends."""
+        self._write_char = None
+        self._write_mode_initialized = False
+        self._left_fan_level = self._right_fan_level = self._massage_level = None
+        self._light_on = None
+        self._status_received.clear()
+        if not self._dewert_okin_profile:
+            self.forward_controller_state_updates(
+                {STATE_LEFT_FAN: None, STATE_RIGHT_FAN: None, STATE_MASSAGE_MODE: None, STATE_LIGHT: None}
+            )
+
     def _build_command(self, cmd0: int = 0, cmd1: int = 0, cmd2: int = 0, cmd3: int = 0) -> bytes:
         """Build an 8-byte command packet.
 
-        Format: [0xE5, 0xFE, 0x16, cmd0, cmd1, cmd2, cmd3, checksum]
-        Checksum: XOR of header and command bytes, then XOR with 0xFF
+        Format: [0xE5, 0xFE, 0x16, cmd0, cmd1, cmd2, cmd3, trailer]
+        The Cool Base app sends the trailer as a literal; this formula reproduces
+        every literal it ships (tests pin all of them).
         """
         header = [0xE5, 0xFE, 0x16]
         data = header + [cmd0, cmd1, cmd2, cmd3]
-        # XOR checksum (differs from Scott Living's inverted sum)
         checksum = sum(data) ^ 0xFF
         data.append(checksum & 0xFF)
         return bytes(data)
@@ -187,13 +312,53 @@ class CoolBaseController(BedController):
             repeat_count,
             repeat_delay_ms,
         )
+        self._init_write_mode()
         await self._write_gatt_with_retry(
             self._char_uuid,
             command,
             repeat_count=repeat_count,
             repeat_delay_ms=repeat_delay_ms,
             cancel_event=cancel_event,
+            response=self._write_with_response,
+            characteristic=self._write_char,
         )
+
+    def _init_write_mode(self) -> None:
+        """Mirror Android's default write type, which the Cool Base app never changes.
+
+        Android starts a characteristic that advertises write-without-response in
+        WRITE_TYPE_NO_RESPONSE; otherwise it writes with response.
+        """
+        if self._write_mode_initialized or self._dewert_okin_profile:
+            return
+        client = self.client
+        if client is None or not client.is_connected:
+            return
+        for service in client.services:
+            # The app's dead alternate writer uses the same characteristic UUID
+            # under FFE0; only the FFE5 instance is the live destination.
+            if service.uuid.lower() != KEESON_BASE_SERVICE_UUID:
+                continue
+            for char in service.characteristics:
+                if char.uuid.lower() == self._char_uuid:
+                    props = {prop.lower() for prop in char.properties}
+                    self._write_with_response = "write-without-response" not in props
+                    self._write_char = char
+                    self._write_mode_initialized = True
+                    return
+
+    async def _send_status_query(self) -> None:
+        """Send the app's all-zero status query frame."""
+        await self.write_command(self._build_command(), cancel_event=asyncio.Event())
+
+    async def tap(self, command_value: int) -> None:
+        """Send one tapped app control, then the app's three follow-up status queries."""
+        await self.write_command(self._build_command_from_value(command_value))
+        if self._dewert_okin_profile:
+            return
+        for _ in range(_CLICK_QUERY_COUNT):
+            await asyncio.sleep(_CLICK_QUERY_DELAY)
+            await self._send_status_query()
 
     async def start_notify(
         self, callback: Callable[[str, float], None] | None = None
@@ -212,6 +377,9 @@ class CoolBaseController(BedController):
             )
             _LOGGER.debug("Started notifications for Cool Base bed")
         except BleakError:
+            if self.requires_notification_channel:
+                # Status replies only arrive here; fail the connect so it retries.
+                raise
             _LOGGER.warning("Failed to start notifications")
 
     def _on_notification(self, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
@@ -221,34 +389,37 @@ class CoolBaseController(BedController):
         self._parse_notification(bytes(data))
 
     def _parse_notification(self, data: bytes) -> None:
-        """Parse notification data from the bed.
+        """Parse a status reply exactly as the Cool Base app does.
 
-        Expected format: 28 bytes with state information.
-        Key positions:
-        - Byte 13 (high bits): Light status (bit 6)
-        - Byte 19: Massage level (0-3)
-        - Byte 20: Left wind level (0-3)
-        - Byte 21: Right wind level (0-3)
+        Only exact 28-byte replies are used. Byte 13 ``(b & 0xF0) >> 6`` is the
+        light flag (0 off, 1 on); byte 19 is the massage mode and bytes 20/21 the
+        left/right fan levels (0-3). Any other value leaves that field unchanged.
         """
-        if len(data) < 22:
+        if len(data) != STATUS_REPLY_LENGTH:
             return
 
-        # Light status - bit 6 of byte 13
-        if len(data) > 13:
-            self._light_on = (data[13] >> 6) & 0x01 == 1
-
-        # Massage level
-        if len(data) > 19:
-            self._massage_level = data[19] & 0x03
-
-        # Fan levels
-        if len(data) > 20:
-            self._left_fan_level = data[20] & 0x03
-        if len(data) > 21:
-            self._right_fan_level = data[21] & 0x03
+        light = (data[13] & 0xF0) >> 6
+        if light in (0, 1):
+            self._light_on = light == 1
+        if data[19] <= 3:
+            self._massage_level = data[19]
+        if data[20] <= 3:
+            self._left_fan_level = data[20]
+        if data[21] <= 3:
+            self._right_fan_level = data[21]
+        self._status_received.set()
+        if not self._dewert_okin_profile:
+            self.forward_controller_state_updates(
+                {
+                    STATE_LEFT_FAN: self._left_fan_level,
+                    STATE_RIGHT_FAN: self._right_fan_level,
+                    STATE_MASSAGE_MODE: self._massage_level,
+                    STATE_LIGHT: self._light_on,
+                }
+            )
 
         _LOGGER.debug(
-            "Cool Base state: light=%s, massage=%d, left_fan=%d, right_fan=%d",
+            "Cool Base state: light=%s, massage=%s, left_fan=%s, right_fan=%s",
             self._light_on,
             self._massage_level,
             self._left_fan_level,
@@ -270,7 +441,12 @@ class CoolBaseController(BedController):
         """Read current position data (not supported on Cool Base)."""
 
     async def _move_motor(self, motor: str, direction: bool | None) -> None:
-        """Move a motor in a direction or stop it, always sending STOP at the end."""
+        """Move a motor, then send the all-zero frame.
+
+        The app releases a hold by ending its 100 ms refresh and sends no
+        distinct STOP. The trailing all-zero frame is the app's own status
+        query, so it adds no invented command and requests fresh state.
+        """
         self._motor_state[motor] = direction
         cmd0 = 0
 
@@ -293,7 +469,6 @@ class CoolBaseController(BedController):
                     repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
                 )
         finally:
-            # Always send stop
             self._motor_state = {}
             try:
                 await self.write_command(
@@ -353,7 +528,7 @@ class CoolBaseController(BedController):
         await self._move_motor("feet", None)
 
     async def stop_all(self) -> None:
-        """Stop all motors."""
+        """End movement and send the all-zero (status query) frame."""
         self._motor_state = {}
         await self.write_command(
             self._build_command(),  # All zeros = stop
@@ -363,13 +538,13 @@ class CoolBaseController(BedController):
     # Preset methods
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        await self.write_command(self._build_command_from_value(CoolBaseCommands.PRESET_FLAT))
+        await self.tap(CoolBaseCommands.PRESET_FLAT)
 
     async def preset_memory(self, memory_num: int) -> None:
-        """Go to memory preset."""
-        commands = {1: CoolBaseCommands.PRESET_MEMORY_1}
+        """Go to memory preset (DewertOKIN profile only)."""
+        commands: dict[int, int] = {}
         if self._dewert_okin_profile:
-            commands[2] = CoolBaseCommands.PRESET_MEMORY_2
+            commands = {1: CoolBaseCommands.PRESET_MEMORY_1, 2: CoolBaseCommands.PRESET_MEMORY_2}
 
         if command := commands.get(memory_num):
             await self.write_command(self._build_command_from_value(command))
@@ -386,7 +561,7 @@ class CoolBaseController(BedController):
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
-        await self.write_command(self._build_command_from_value(CoolBaseCommands.PRESET_ZERO_G))
+        await self.tap(CoolBaseCommands.PRESET_ZERO_G)
 
     async def preset_lounge(self) -> None:
         """Go to lounge position (same as Memory 1)."""
@@ -394,33 +569,54 @@ class CoolBaseController(BedController):
 
     async def preset_tv(self) -> None:
         """Go to TV position."""
-        await self.write_command(self._build_command_from_value(CoolBaseCommands.PRESET_TV))
+        await self.tap(CoolBaseCommands.PRESET_TV)
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position."""
-        await self.write_command(self._build_command_from_value(CoolBaseCommands.PRESET_ANTI_SNORE))
+        await self.tap(CoolBaseCommands.PRESET_ANTI_SNORE)
 
     # Light methods
     async def lights_on(self) -> None:
-        """Turn on lights (toggle)."""
-        await self.lights_toggle()
+        """Turn on lights, toggling only when the reported state is off."""
+        await self._set_light_state(True)
 
     async def lights_off(self) -> None:
-        """Turn off lights (toggle)."""
-        await self.lights_toggle()
+        """Turn off lights, toggling only when the reported state is on."""
+        await self._set_light_state(False)
+
+    async def _set_light_state(self, is_on: bool) -> None:
+        if self._dewert_okin_profile:
+            await self.lights_toggle()
+            return
+        if self._light_on is None:
+            self._status_received.clear()
+            await self._send_status_query()
+            with contextlib.suppress(TimeoutError):
+                async with asyncio.timeout(_LIGHT_STATE_WAIT):
+                    await self._status_received.wait()
+        if self._light_on is None:
+            raise HomeAssistantError(
+                "Cool Base light state is unknown; no status reply was received."
+            )
+        if self._light_on != is_on:
+            await self.lights_toggle()
 
     async def lights_toggle(self) -> None:
         """Toggle lights."""
-        await self.write_command(self._build_command_from_value(CoolBaseCommands.TOGGLE_LIGHT))
+        await self.tap(CoolBaseCommands.TOGGLE_LIGHT)
+
+    def get_light_state(self) -> dict[str, Any]:
+        """Return the light flag from the latest status reply."""
+        return {"is_on": self._light_on}
 
     # Massage methods
     async def massage_toggle(self) -> None:
         """Toggle massage (cycles through levels)."""
-        await self.write_command(self._build_command_from_value(CoolBaseCommands.MASSAGE_LEVEL))
+        await self.tap(CoolBaseCommands.MASSAGE_LEVEL)
 
     async def massage_head_up(self) -> None:
         """Increase head massage."""
-        await self.write_command(self._build_command_from_value(CoolBaseCommands.MASSAGE_HEAD))
+        await self.tap(CoolBaseCommands.MASSAGE_HEAD)
 
     async def massage_head_down(self) -> None:
         """Decrease head massage (not directly supported, use toggle)."""
@@ -428,7 +624,7 @@ class CoolBaseController(BedController):
 
     async def massage_foot_up(self) -> None:
         """Increase foot massage."""
-        await self.write_command(self._build_command_from_value(CoolBaseCommands.MASSAGE_FOOT))
+        await self.tap(CoolBaseCommands.MASSAGE_FOOT)
 
     async def massage_foot_down(self) -> None:
         """Decrease foot massage (not directly supported, use toggle)."""
@@ -437,32 +633,32 @@ class CoolBaseController(BedController):
     # Fan control methods (unique to Cool Base)
     async def fan_left_cycle(self) -> None:
         """Cycle left fan through levels 0-3."""
-        await self.write_command(self._build_command_from_value(CoolBaseCommands.FAN_LEFT))
+        await self.tap(CoolBaseCommands.FAN_LEFT)
 
     async def fan_right_cycle(self) -> None:
         """Cycle right fan through levels 0-3."""
-        await self.write_command(self._build_command_from_value(CoolBaseCommands.FAN_RIGHT))
+        await self.tap(CoolBaseCommands.FAN_RIGHT)
 
     async def fan_sync_cycle(self) -> None:
         """Cycle both fans together through levels 0-3."""
-        await self.write_command(self._build_command_from_value(CoolBaseCommands.FAN_SYNC))
+        await self.tap(CoolBaseCommands.FAN_SYNC)
 
     @property
-    def left_fan_level(self) -> int:
-        """Get current left fan level (0-3)."""
+    def left_fan_level(self) -> int | None:
+        """Get the last reported left fan level (0-3)."""
         return self._left_fan_level
 
     @property
-    def right_fan_level(self) -> int:
-        """Get current right fan level (0-3)."""
+    def right_fan_level(self) -> int | None:
+        """Get the last reported right fan level (0-3)."""
         return self._right_fan_level
 
     @property
-    def led_on(self) -> bool:
-        """Check if LED is on."""
+    def led_on(self) -> bool | None:
+        """Get the last reported light flag."""
         return self._light_on
 
     @property
-    def massage_level(self) -> int:
-        """Get current massage level (0-3)."""
+    def massage_level(self) -> int | None:
+        """Get the last reported massage mode (0-3)."""
         return self._massage_level
