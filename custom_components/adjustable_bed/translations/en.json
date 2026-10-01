@@ -2425,6 +2425,42 @@
       "serenity_alarm_type": {
         "name": "App alarm state"
       },
+      "tranquil_manufacturer": {
+        "name": "Manufacturer"
+      },
+      "tranquil_status_code": {
+        "name": "App status code"
+      },
+      "tranquil_massage_timer_code": {
+        "name": "Massage timer code"
+      },
+      "tranquil_massage_timer_minutes": {
+        "name": "Massage timer"
+      },
+      "tranquil_save_event_code": {
+        "name": "Local memory save event"
+      },
+      "tranquil_alarm_type": {
+        "name": "App alarm state"
+      },
+      "zseries_manufacturer": {
+        "name": "Manufacturer"
+      },
+      "zseries_status_code": {
+        "name": "App status code"
+      },
+      "zseries_massage_timer_code": {
+        "name": "Massage timer code"
+      },
+      "zseries_massage_timer_minutes": {
+        "name": "Massage timer"
+      },
+      "zseries_save_event_code": {
+        "name": "Local memory save event"
+      },
+      "zseries_alarm_type": {
+        "name": "App alarm state"
+      },
       "furnimove_model": {
         "name": "FurniMove model"
       },
@@ -3366,6 +3402,81 @@
         "duration": {
           "name": "Duration",
           "description": "Hold time in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "tranquil_hold_control": {
+      "name": "Hold Tranquil control",
+      "description": "Hold one supported Tranquil app action, then release it. Save actions can change stored positions.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "Literal action from the selected Tranquil profile held-control options."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "zseries_hold_control": {
+      "name": "Hold Z-Series control",
+      "description": "Hold one supported Z-Series app action, then release it. Save actions can change stored positions.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "Literal action from the selected Z-Series profile held-control options."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "zseries_set_alarm": {
+      "name": "Set Z-Series alarm",
+      "description": "Set or clear the Customatic Z-Series app alarm. The bed clock is set to Home Assistant local time first.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Alarm time",
+          "description": "Minute precision. The app sets today, or tomorrow if the time has passed."
+        },
+        "wake_mode": {
+          "name": "Wake mode",
+          "description": "Required when enabling the alarm."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "zseries_sync_clock": {
+      "name": "Synchronize Z-Series clock",
+      "description": "Set the Customatic Z-Series controller clock to the current Home Assistant local time.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
         },
         "side": {
           "name": "Side"

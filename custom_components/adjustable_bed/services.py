@@ -44,8 +44,11 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
+    BED_TYPE_ZSERIES_Z230,
+    BED_TYPE_ZSERIES_Z280,
     CONF_BED_TYPE,
     CONF_MOTOR_COUNT,
     CONF_PROTOCOL_VARIANT,
@@ -90,6 +93,10 @@ SERVICE_LEGGETT_SLEEP_TIMER = "leggett_sleep_timer"
 SERVICE_LEGGETT_ALARM_TIMER = "leggett_alarm_timer"
 SERVICE_LEGGETT_HOLD_CONTROL = "leggett_hold_control"
 SERVICE_SERENITY_HOLD_CONTROL = "serenity_hold_control"
+SERVICE_TRANQUIL_HOLD_CONTROL = "tranquil_hold_control"
+SERVICE_ZSERIES_HOLD_CONTROL = "zseries_hold_control"
+SERVICE_ZSERIES_SET_ALARM = "zseries_set_alarm"
+SERVICE_ZSERIES_SYNC_CLOCK = "zseries_sync_clock"
 SERVICE_FURNIMOVE_ACTION = "furnimove_action"
 SERVICE_FURNIMOVE_RENAME = "furnimove_rename"
 SERVICE_FURNIMOVE_MASSAGE_PROGRAM = "furnimove_massage_program"
@@ -147,6 +154,8 @@ ATTR_MINUTES = "minutes"
 ATTR_CONTROL = "control"
 ATTR_HEAD_LEVEL = "head_level"
 ATTR_FOOT_LEVEL = "foot_level"
+ATTR_WAKE_MODE = "wake_mode"
+ZSERIES_BED_TYPES = frozenset({BED_TYPE_ZSERIES_Z230, BED_TYPE_ZSERIES_Z280})
 
 LINAK_MOTOR_OPTIONS = ("base", "feet", "head", "legs", "back")
 MALOUF_ALARM_PRESETS = ("zero_g", "lounge", "tv", "anti_snore", "memory_1", "memory_2")
@@ -1831,6 +1840,79 @@ async def handle_serenity_hold_control(call: ServiceCall) -> None:
     )
 
 
+async def handle_tranquil_hold_control(call: ServiceCall) -> None:
+    """Hold one literal Tranquil action, then send its proven release sequence."""
+    await _handle_customatic_hold(
+        call, call.data[ATTR_CONTROL], {BED_TYPE_TRANQUIL}, label="Tranquil"
+    )
+
+
+async def handle_zseries_hold_control(call: ServiceCall) -> None:
+    """Hold one literal Z-Series action, then send its proven release sequence."""
+    await _handle_customatic_hold(
+        call, call.data[ATTR_CONTROL], ZSERIES_BED_TYPES, label="Z-Series"
+    )
+
+
+async def _execute_zseries_alarm(
+    call: ServiceCall,
+    label: str,
+    command: Callable[[BedController | SideBoundController], Coroutine[Any, Any, None]],
+) -> None:
+    """Preflight every physical Z-Series target before any alarm or clock write."""
+    targets, missing = _resolve_sided_targets(
+        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    for coordinator, side in targets:
+        for target in _command_targets(coordinator, side):
+            if target.bed_type not in ZSERIES_BED_TYPES:
+                raise ServiceValidationError(
+                    f"Device '{target.name}' is not a Customatic Z-Series app controller"
+                )
+    # The alarm page exists only after an exact CST13/CST14 manufacturer read.
+    preflighted = await _preflight_capability(targets, "supports_clock_alarm", label)
+    try:
+        for coordinator, side in targets:
+            # The app cancels the running stream first; HA also releases it safely.
+            await _execute_sided(coordinator, side, command)
+    except BaseException:
+        await _release_preflighted(preflighted)
+        raise
+
+
+async def handle_zseries_set_alarm(call: ServiceCall) -> None:
+    """Set or clear the Z-Series app alarm, using Home Assistant's local time."""
+    alarm_time = call.data[ATTR_TIME]
+    if alarm_time.second or alarm_time.microsecond:
+        raise ServiceValidationError("Z-Series alarms use minute precision")
+    wake_mode = call.data.get(ATTR_WAKE_MODE)
+    if call.data[ATTR_ENABLED] and wake_mode is None:
+        # The app refuses to enable an alarm until a wake-up mode is chosen.
+        raise ServiceValidationError("Choose a wake-up mode")
+
+    async def program(controller: BedController | SideBoundController) -> None:
+        await controller.configure_clock_alarm(
+            enabled=call.data[ATTR_ENABLED],
+            weekdays=(),
+            hour=alarm_time.hour,
+            minute=alarm_time.minute,
+            preset=wake_mode or "massage",  # Ignored when clearing the alarm.
+        )
+
+    await _execute_zseries_alarm(call, "Z-Series app alarms", program)
+
+
+async def handle_zseries_sync_clock(call: ServiceCall) -> None:
+    """Send the Z-Series alarm page's local clock frame and status queries."""
+
+    async def sync(controller: BedController | SideBoundController) -> None:
+        await controller.sync_clock()
+
+    await _execute_zseries_alarm(call, "Z-Series clock synchronization", sync)
+
+
 async def handle_vibradorm_hold_control(call: ServiceCall) -> None:
     """Hold a selected app control with explicit duration and profile release."""
     await _handle_customatic_hold(
@@ -1926,7 +2008,7 @@ async def handle_starcode_hold_control(call: ServiceCall) -> None:
 async def _handle_customatic_hold(
     call: ServiceCall,
     control: str,
-    bed_types: set[str],
+    bed_types: Collection[str],
     *,
     label: str = "Customatic",
     validate_extra: Callable[[BedController | SideBoundController], None] | None = None,
@@ -2839,6 +2921,48 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
                 vol.Required(ATTR_CONTROL): cv.string,
                 vol.Required(ATTR_DURATION): _leggett_hold_seconds,
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    for service, handler in (
+        (SERVICE_TRANQUIL_HOLD_CONTROL, handle_tranquil_hold_control),
+        (SERVICE_ZSERIES_HOLD_CONTROL, handle_zseries_hold_control),
+    ):
+        hass.services.async_register(
+            DOMAIN,
+            service,
+            handler,
+            schema=vol.Schema(
+                {
+                    vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                    vol.Required(ATTR_CONTROL): cv.string,
+                    vol.Required(ATTR_DURATION): _leggett_hold_seconds,
+                    **SIDE_FIELD,
+                }
+            ),
+        )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_ZSERIES_SET_ALARM,
+        handle_zseries_set_alarm,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_ENABLED): cv.boolean,
+                vol.Optional(ATTR_TIME, default="00:00:00"): cv.time,
+                vol.Optional(ATTR_WAKE_MODE): vol.In(("massage", "memory_1")),
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_ZSERIES_SYNC_CLOCK,
+        handle_zseries_sync_clock,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
                 **SIDE_FIELD,
             }
         ),

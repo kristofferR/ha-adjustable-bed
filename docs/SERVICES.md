@@ -160,6 +160,8 @@ enable additional commands.
 | Customatic Clarity / Remedy | `customatic_hold_memory` (all 31 memory combinations), `customatic_move_simultaneously` (safe motor combinations) | [Customatic](beds/customatic.md) |
 | Customatic Jerome's C | `customatic_move_simultaneously` (back and legs) | [Customatic](beds/customatic.md) |
 | Jordan's Serenity app | `serenity_hold_control` (one of 31 literal app actions) | [Serenity](beds/serenity.md) |
+| Jordan's Tranquil app | `tranquil_hold_control` (one of 30 literal app actions) | [Tranquil](beds/tranquil.md) |
+| Customatic Z-Series app | `zseries_hold_control` (literal Z-230 or Z-280 actions), `zseries_set_alarm`, `zseries_sync_clock` | [Z-Series](beds/customatic-z-series.md) |
 | AdjustableM5X4 app | `starcode_abm5_4_hold_control` (literal held movement, preset, save or massage controls) | [AdjustableM5X4](beds/starcode-abm5-4.md) |
 | Caresse / Werkmeister apps | `vibradorm_hold_control` (profile-specific movement, memory recall or sync) | [Caresse / Werkmeister](beds/vibradorm_app.md) |
 | V-MAT Basic app | `vmatbasic_hold_control`, `vmatbasic_rename` | [V-MAT Basic](beds/vmatbasic.md) |
@@ -175,6 +177,14 @@ renaming an HA entity or device is a separate operation.
 ### `serenity_hold_control`
 
 Hold one literal control from the explicit Jordan's Serenity profile for `duration` seconds (0.1–60), then send its two-frame release sequence. Supply `device_id`, `control`, `duration` and optional `side`. The [Serenity control catalog](beds/serenity.md#reachable-commands) lists the literal action names. The controller validates supported action names before dispatch; arbitrary combinations are rejected. Save controls can change stored positions. This action uses all-target capability preflight and the shared command lock.
+
+### `tranquil_hold_control` and `zseries_hold_control`
+
+These work like `serenity_hold_control` for the explicit Tranquil and Z-Series profiles. Each controller accepts only its own literal actions; a Z-230 rejects Z-280-only actions and the reverse. See the [Tranquil](beds/tranquil.md#reachable-commands) and [Z-Series](beds/customatic-z-series.md#reachable-commands) catalogs.
+
+### `zseries_set_alarm` and `zseries_sync_clock`
+
+Available only when the controller's Device Information manufacturer string is exactly `CST13` or `CST14`; that string is what makes the app show its alarm page. `zseries_set_alarm` takes `device_id`, `enabled`, `time` (minute precision, Home Assistant time zone), `wake_mode` (`massage` or `memory_1`, required when enabling) and optional `side`. Like the app, it targets today's weekday, or tomorrow's when the time has already passed; there is no weekday choice. It first sends the clock, then the alarm frame, then two status queries. `zseries_sync_clock` sends the clock frame and the same queries. Alarm replies update the **App alarm state** sensor.
 
 ### `vibradorm_hold_control`
 
