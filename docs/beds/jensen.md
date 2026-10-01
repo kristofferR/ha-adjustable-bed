@@ -83,8 +83,9 @@ With angle sensing disabled, the frame is sent without waiting.
 The bed pushes reports roughly every half second while it moves, but it can go
 quiet for about two seconds while still travelling
 ([#631](https://github.com/kristofferR/ha-adjustable-bed/issues/631)). So the
-command then queries the position once a second until two replies agree, for at
-most 10 seconds. Those queries do not interrupt the move.
+command then queries the position once a second until two replies agree. A full
+head sweep takes about 20 seconds, so these queries share the 90-second bound
+rather than having their own. They do not interrupt the move.
 
 ## Protocol Details
 
