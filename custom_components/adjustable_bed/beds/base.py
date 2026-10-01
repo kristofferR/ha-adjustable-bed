@@ -808,6 +808,9 @@ class BedController(ABC):
         """Return discovered capabilities safe to persist across connections."""
         return None
 
+    def on_disconnect(self) -> None:  # noqa: B027
+        """Invalidate connection-owned work immediately when the BLE link drops."""
+
     async def stop_notify(self) -> None:
         """Stop listening for position notifications.
 
@@ -1729,6 +1732,11 @@ class BedController(ABC):
         have no concept of a named slot.
         """
         return ()
+
+    def validate_memory_recall(self, memory_num: int) -> None:
+        """Preflight local recall requirements before any target starts moving."""
+        if not self.supports_memory_presets or not 1 <= memory_num <= self.memory_slot_count:
+            raise ValueError("This memory slot is unavailable")
 
     def is_memory_slot_programmable(self, memory_num: int) -> bool:
         """Return whether a specific 1-based memory slot can be overwritten.

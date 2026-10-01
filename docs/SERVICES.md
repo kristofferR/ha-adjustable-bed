@@ -70,7 +70,7 @@ without cancelling active movement. Hardware behavior remains unverified.
 
 | Action | Required fields besides `device_id` | Behavior |
 |--------|------------------------------------|----------|
-| `goto_preset` | `preset` | Recall a memory slot, 1–6 where supported |
+| `goto_preset` | `preset` | Recall a memory slot, 1–8 where supported |
 | `save_preset` | `preset` | Overwrite a supported memory slot with the current position |
 | `stop_all` | None | Cancel pending/active movement and perform the controller's STOP or release cleanup |
 | `set_position` | `motor`, `position` | Move one supported axis to a target |
@@ -226,3 +226,7 @@ local state, sends no timer packet and does not stop the receiver on expiry.
 Hold one exact app action. Flat runs 600 ms; save and reset run the six-second local confirmation interval. No device acknowledgement is inferred.
 
 Target one or more physical devices with `device_id`, an exact supported `control`, `duration` in seconds (0.1–60), and optional paired `side`. Every target’s profile and observed-state gate is checked before any write. Movement and memory refresh every 100 ms with immediate STOP; presets release according to the retained UI selector. Flat runs 600 ms after activation; save/reset stream through the six-second local confirmation interval regardless of the duration field. Positive massage controls require observed active state; this profile has no massage timer Off command. [The protocol document](beds/starcode-abm5-4.md) lists all controls, exact capability gates and exclusions.
+
+## Limoss Remote app
+
+The explicit [Limoss Remote app profile](beds/limoss-remote.md) adds `limoss_remote_hold_control`, `limoss_remote_recall_memory`, `limoss_remote_rename_memory`, `limoss_remote_calibrate` and `limoss_remote_features`. Holds accept 0.1–60 seconds. Calibration requires `confirmed: true`. Memory actions accept slots 1–8 within the live capacity; `save_preset` and `goto_preset` expose the same local slots. Rename permits an empty name. All selected targets are validated before writes; paired child targets and `side` retain their physical-target settings.

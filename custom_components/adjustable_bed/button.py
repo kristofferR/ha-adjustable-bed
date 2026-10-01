@@ -13,9 +13,11 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.typing import UndefinedType
 
 from .beds.base import ProductButtonSpec, SideBoundController
 from .const import (
+    BED_TYPE_LIMOSS_REMOTE,
     DOMAIN,
     SIDE_BOTH,
 )
@@ -52,7 +54,7 @@ class AdjustableBedButtonEntityDescription(ButtonEntityDescription):
     cancel_movement: bool = False  # If True, cancels any running motor command
     # Capability property name to check on controller (e.g., "supports_preset_zero_g")
     required_capability: str | None = None
-    # Memory slot number for memory preset/program buttons (1-6). Used to check memory_slot_count.
+    # Used to gate memory buttons by the controller's actual slot count.
     memory_slot: int | None = None
     # Whether this is a memory programming button (requires supports_memory_programming)
     is_program_button: bool = False
@@ -113,6 +115,24 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         cancel_movement=True,
         required_capability="supports_memory_presets",
         memory_slot=6,
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="preset_memory_7",
+        translation_key="preset_memory_7",
+        icon="mdi:numeric-7-box",
+        press_fn=lambda ctrl: ctrl.preset_memory(7),
+        cancel_movement=True,
+        required_capability="supports_memory_presets",
+        memory_slot=7,
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="preset_memory_8",
+        translation_key="preset_memory_8",
+        icon="mdi:numeric-8-box",
+        press_fn=lambda ctrl: ctrl.preset_memory(8),
+        cancel_movement=True,
+        required_capability="supports_memory_presets",
+        memory_slot=8,
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_flat",
@@ -275,6 +295,26 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         press_fn=lambda ctrl: ctrl.program_memory(6),
         required_capability="supports_memory_presets",
         memory_slot=6,
+        is_program_button=True,
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="program_memory_7",
+        translation_key="program_memory_7",
+        icon="mdi:content-save",
+        entity_category=EntityCategory.CONFIG,
+        press_fn=lambda ctrl: ctrl.program_memory(7),
+        required_capability="supports_memory_presets",
+        memory_slot=7,
+        is_program_button=True,
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="program_memory_8",
+        translation_key="program_memory_8",
+        icon="mdi:content-save",
+        entity_category=EntityCategory.CONFIG,
+        press_fn=lambda ctrl: ctrl.program_memory(8),
+        required_capability="supports_memory_presets",
+        memory_slot=8,
         is_program_button=True,
     ),
     AdjustableBedButtonEntityDescription(
@@ -746,7 +786,7 @@ def _button_entities_for(
                 registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
         # Named app actions disappear when their profile or transport changes.
-        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_"):
+        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "limoss_remote_"):
             desired_actions = {
                 coordinator.entity_unique_id(spec.key)
                 for spec in controller.controller_button_specs
@@ -1029,7 +1069,8 @@ def _discovered_memory_slot_name(
         return None
 
     name = names[slot - 1]
-    if not name:
+    # The app permits explicit blank names; preserve other profiles' prior fallback.
+    if name is None or (not name and coordinator.bed_type != BED_TYPE_LIMOSS_REMOTE):
         return None
     return f"Save {name}" if description.is_program_button else name
 
@@ -1057,6 +1098,12 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
     """Button entity for Adjustable Bed."""
 
     entity_description: AdjustableBedButtonEntityDescription
+
+    @property
+    def name(self) -> str | UndefinedType | None:
+        """Keep editable local memory names current without rebuilding the entity."""
+        slot_name = _discovered_memory_slot_name(self._coordinator, self.entity_description)
+        return slot_name if slot_name is not None else super().name
 
     def __init__(
         self,

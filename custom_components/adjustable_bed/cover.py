@@ -280,6 +280,7 @@ def _async_remove_stale_cover_entities(
     } | {
         "both", "right_back", "right_legs", "both_backs", "both_legs",
         "malouf_tilt_head", "malouf_full_tilt",
+        "motor_1", "motor_2", "motor_3", "motor_4",
     }
 
     for key in stale_keys:

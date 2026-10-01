@@ -25,6 +25,7 @@ from .const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LIMOSS,
+    BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_APP,
@@ -228,7 +229,10 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
     "limoss": {
         "display": "Limoss / Stawett",
         "description": "Limoss and Stawett bases (TEA-encrypted protocol)",
-        "variants": None,  # Single protocol
+        "variants": [
+            {"type": BED_TYPE_LIMOSS, "label": "Legacy Limoss / Stawett", "description": "Existing generic controls", "hint": "Keep this choice for an existing working device."},
+            {"type": BED_TYPE_LIMOSS_REMOTE, "label": "Limoss Remote app", "description": "App bed/chair layouts and eight local memories", "hint": "Select this explicitly for the Limoss Remote Android app."},
+        ],
     },
     "malouf": {
         "display": "Malouf / Lucid",
@@ -419,7 +423,6 @@ SINGLE_TYPE_GROUPS: Final[dict[str, str]] = {
     "jensen": BED_TYPE_JENSEN,
     "kaidi": BED_TYPE_KAIDI,
     "linak": BED_TYPE_LINAK,
-    "limoss": BED_TYPE_LIMOSS,
     "motosleep": BED_TYPE_MOTOSLEEP,
     "octo": BED_TYPE_OCTO,
     "richmat": BED_TYPE_RICHMAT,

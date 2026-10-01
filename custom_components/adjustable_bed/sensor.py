@@ -256,6 +256,12 @@ def _sensor_entities_for(
                 "vmatbasic_model", "vmatbasic_firmware", "vmatbasic_temperature",
                 "vmatbasic_floor_level_observed", "vmatbasic_floor_minutes_observed",
                 "vmatbasic_floor_percent_observed", "vmatbasic_rssi",
+                "limoss_remote_hardware_version", "limoss_remote_software_version",
+                "limoss_remote_serial", "limoss_remote_key_count", "limoss_remote_motor_count",
+                "limoss_remote_configuration", "limoss_remote_memory_slots",
+                "limoss_remote_reported_entry", "limoss_remote_calibration_result",
+                "limoss_remote_motor_1_position_raw", "limoss_remote_motor_2_position_raw",
+                "limoss_remote_motor_3_position_raw", "limoss_remote_motor_4_position_raw",
             } - active_keys
         )
         _async_remove_stale_sensor_entities(

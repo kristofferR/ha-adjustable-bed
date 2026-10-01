@@ -24,6 +24,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 from .const import (
     BED_TYPE_KAIDI,
+    BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
@@ -34,6 +35,7 @@ from .const import (
     CONF_BLE_DEVICE_NAME,
     CONF_CB24_BED_SELECTION,
     CONF_KAIDI_RESOLVED_VARIANT,
+    CONF_LIMOSS_REMOTE_STATE,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
@@ -45,6 +47,7 @@ from .const import (
     KAIDI_VARIANT_SEAT_1,
     KAIDI_VARIANT_SEAT_1_2,
     KAIDI_VARIANT_SEAT_2,
+    LIMOSS_REMOTE_CONFIG_KEYS,
     OKIN_CB24_VARIANT_CB27NEW,
     OKIN_CB24_VARIANT_NEW,
     PAIR_MODE_SEPARATE_ADDRESS,
@@ -87,6 +90,15 @@ class ChildDescriptor(TypedDict, total=False):
     vmatbasic_profile: str
     vmatbasic_floor_level: int
     vmatbasic_floor_minutes: int
+    limoss_remote_product: str
+    limoss_remote_light: bool
+    limoss_remote_massage: bool
+    limoss_remote_theme: str
+    limoss_remote_reverse_1: bool
+    limoss_remote_reverse_2: bool
+    limoss_remote_reverse_3: bool
+    limoss_remote_reverse_4: bool
+    limoss_remote_state: dict[str, Any]
     # Set once a BLE bond is established, so future connects skip pairing.
     ble_bond_established: bool
     ble_bond_marker_unreliable: bool
@@ -199,6 +211,8 @@ CHILD_INHERITANCE_EXCLUDED_KEYS: Final = frozenset(
         CONF_PAIR_CONNECTION_MODE,
         *RUNTIME_BOND_KEYS,
         *VMATBASIC_CONFIG_KEYS,
+        *LIMOSS_REMOTE_CONFIG_KEYS,
+        CONF_LIMOSS_REMOTE_STATE,
     }
 )
 
@@ -363,10 +377,13 @@ def single_data_from_child(descriptor: Mapping[str, Any]) -> dict[str, Any]:
     origin_data = descriptor.get(KEY_ORIGIN_DATA)
     if isinstance(origin_data, Mapping):
         data = dict(origin_data)
-        for key in (*RUNTIME_BOND_KEYS, CONF_BLE_DEVICE_NAME):
+        live_keys = {*RUNTIME_BOND_KEYS, CONF_BLE_DEVICE_NAME, CONF_LIMOSS_REMOTE_STATE}
+        if data.get(CONF_BED_TYPE) == BED_TYPE_LIMOSS_REMOTE:
+            live_keys.update(LIMOSS_REMOTE_CONFIG_KEYS)
+        for key in live_keys:
             if key in descriptor:
                 data[key] = descriptor[key]
-            elif key in RUNTIME_BOND_KEYS:
+            elif key in RUNTIME_BOND_KEYS or key in LIMOSS_REMOTE_CONFIG_KEYS:
                 data.pop(key, None)
         return data
 

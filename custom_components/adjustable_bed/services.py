@@ -37,6 +37,7 @@ from .const import (
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_OKIN,
+    BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
@@ -63,6 +64,7 @@ from .pairing import is_paired, iter_children, pair_member_addresses
 
 if TYPE_CHECKING:
     from .beds.base import BedController, SideBoundController
+    from .beds.limoss_remote import LimossRemoteController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -99,6 +101,11 @@ SERVICE_VIBRADORM_HOLD_CONTROL = "vibradorm_hold_control"
 SERVICE_VMATBASIC_HOLD_CONTROL = "vmatbasic_hold_control"
 SERVICE_VMATBASIC_RENAME = "vmatbasic_rename"
 SERVICE_STARCODE_HOLD_CONTROL = "starcode_abm5_4_hold_control"
+SERVICE_LIMOSS_REMOTE_HOLD_CONTROL = "limoss_remote_hold_control"
+SERVICE_LIMOSS_REMOTE_RECALL_MEMORY = "limoss_remote_recall_memory"
+SERVICE_LIMOSS_REMOTE_RENAME_MEMORY = "limoss_remote_rename_memory"
+SERVICE_LIMOSS_REMOTE_CALIBRATE = "limoss_remote_calibrate"
+SERVICE_LIMOSS_REMOTE_FEATURES = "limoss_remote_features"
 SERVICE_CUSTOMATIC_HOLD_MEMORY = "customatic_hold_memory"
 SERVICE_CUSTOMATIC_MOVE_SIMULTANEOUSLY = "customatic_move_simultaneously"
 SERVICE_LOGICDATA_SET_ALARM = "logicdata_set_alarm"
@@ -581,6 +588,10 @@ async def handle_goto_preset(call: ServiceCall) -> None:
                             "requested_preset": str(preset),
                         },
                     )
+                try:
+                    controller.validate_memory_recall(preset)
+                except ValueError as error:
+                    raise ServiceValidationError(str(error)) from error
     except ServiceValidationError:
         await _release_preflighted(preflighted)
         raise
@@ -1831,6 +1842,76 @@ async def handle_serenity_hold_control(call: ServiceCall) -> None:
     )
 
 
+def _limoss_boolean(value: object) -> bool:
+    if type(value) is not bool:
+        raise vol.Invalid("Select true or false")
+    return value
+
+
+async def handle_limoss_remote_hold_control(call: ServiceCall) -> None:
+    """Hold a rendered literal app action using its five-frame release."""
+    await _handle_customatic_hold(call, call.data[ATTR_CONTROL], {BED_TYPE_LIMOSS_REMOTE}, label="Limoss Remote")
+
+
+def _limoss_remote_controller(controller: BedController | SideBoundController) -> LimossRemoteController | SideBoundController:
+    from .beds.base import SideBoundController
+    from .beds.limoss_remote import LimossRemoteController
+
+    if isinstance(controller, LimossRemoteController):
+        return controller
+    if isinstance(controller, SideBoundController) and isinstance(controller._controller, LimossRemoteController):
+        return controller
+    raise ServiceValidationError("This action requires the explicit Limoss Remote profile")
+
+
+async def _execute_limoss_remote(
+    call: ServiceCall,
+    validate: Callable[[LimossRemoteController | SideBoundController], object],
+    execute: Callable[[LimossRemoteController | SideBoundController], Coroutine[Any, Any, None]],
+) -> None:
+    targets, missing = _resolve_sided_targets(call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE))
+    if missing:
+        raise _missing_device_error(missing[0])
+    for coordinator, side in targets:
+        if any(target.bed_type != BED_TYPE_LIMOSS_REMOTE for target in _command_targets(coordinator, side)):
+            raise ServiceValidationError("This action requires the explicit Limoss Remote profile")
+    def check(controller: BedController | SideBoundController) -> None:
+        try:
+            validate(_limoss_remote_controller(controller))
+        except ValueError as error:
+            raise ServiceValidationError(str(error)) from error
+    preflighted = await _preflight_capability(targets, "requires_notification_channel", "Limoss Remote", check)
+    async def run(controller: BedController | SideBoundController) -> None:
+        await execute(_limoss_remote_controller(controller))
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(coordinator, side, run, cancel_running=True)
+    except (Exception, asyncio.CancelledError):
+        await _release_preflighted(preflighted)
+        raise
+
+
+async def handle_limoss_remote_recall_memory(call: ServiceCall) -> None:
+    slot, duration = call.data[ATTR_PRESET], int(call.data[ATTR_DURATION] * 1000)
+    await _execute_limoss_remote(call, lambda ctrl: ctrl.validate_memory_recall(slot), lambda ctrl: ctrl.hold_memory(slot, duration))
+
+
+async def handle_limoss_remote_rename_memory(call: ServiceCall) -> None:
+    slot, name = call.data[ATTR_PRESET], call.data[ATTR_NAME]
+    await _execute_limoss_remote(call, lambda ctrl: ctrl._slot(slot), lambda ctrl: ctrl.rename_memory(slot, name))
+
+
+async def handle_limoss_remote_calibrate(call: ServiceCall) -> None:
+    def validate(controller: LimossRemoteController | SideBoundController) -> None:
+        if call.data["confirmed"] is not True or controller.memory_slot_count == 0:
+            raise ValueError("Calibration requires explicit confirmation and a memory-capable profile")
+    await _execute_limoss_remote(call, validate, lambda ctrl: ctrl.hold_calibration(int(call.data[ATTR_DURATION] * 1000), confirmed=True))
+
+
+async def handle_limoss_remote_features(call: ServiceCall) -> None:
+    await _execute_limoss_remote(call, lambda ctrl: None, lambda ctrl: ctrl.set_optional_features(call.data["underbed_light"], call.data["massage"]))
+
+
 async def handle_vibradorm_hold_control(call: ServiceCall) -> None:
     """Hold a selected app control with explicit duration and profile release."""
     await _handle_customatic_hold(
@@ -2787,6 +2868,26 @@ async def async_register_services(hass: HomeAssistant) -> None:
         vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
         **SIDE_FIELD,
     }
+    hass.services.async_register(
+        DOMAIN, SERVICE_LIMOSS_REMOTE_HOLD_CONTROL, handle_limoss_remote_hold_control,
+        schema=vol.Schema({**device_fields, vol.Required(ATTR_CONTROL): cv.string, vol.Required(ATTR_DURATION): _leggett_hold_seconds}),
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_LIMOSS_REMOTE_RECALL_MEMORY, handle_limoss_remote_recall_memory,
+        schema=vol.Schema({**device_fields, vol.Required(ATTR_PRESET): vol.All(_leggett_integer, vol.Range(min=1, max=8)), vol.Required(ATTR_DURATION): _leggett_hold_seconds}),
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_LIMOSS_REMOTE_RENAME_MEMORY, handle_limoss_remote_rename_memory,
+        schema=vol.Schema({**device_fields, vol.Required(ATTR_PRESET): vol.All(_leggett_integer, vol.Range(min=1, max=8)), vol.Required(ATTR_NAME): cv.string}),
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_LIMOSS_REMOTE_CALIBRATE, handle_limoss_remote_calibrate,
+        schema=vol.Schema({**device_fields, vol.Required("confirmed"): _limoss_boolean, vol.Required(ATTR_DURATION): _leggett_hold_seconds}),
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_LIMOSS_REMOTE_FEATURES, handle_limoss_remote_features,
+        schema=vol.Schema({**device_fields, vol.Required("underbed_light"): _limoss_boolean, vol.Required("massage"): _limoss_boolean}),
+    )
     hass.services.async_register(
         DOMAIN, SERVICE_FURNIMOVE_ACTION, handle_furnimove_action,
         schema=vol.Schema({
