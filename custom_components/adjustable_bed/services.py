@@ -1875,16 +1875,23 @@ async def handle_vmatbasic_rename(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
     physical = [target for coordinator, side in targets for target in _command_targets(coordinator, side)]
-    if len(physical) != 1 or not isinstance(physical[0], AdjustableBedCoordinator) or physical[0].bed_type != BED_TYPE_VMATBASIC:
+    if len(physical) != 1:
+        raise ServiceValidationError("Rename one physical V-MAT Basic receiver at a time")
+    receiver = physical[0]
+    if not isinstance(receiver, AdjustableBedCoordinator) or receiver.bed_type != BED_TYPE_VMATBASIC:
         raise ServiceValidationError("Rename one physical V-MAT Basic receiver at a time")
     preflighted = await _preflight_capability(targets, "supports_device_rename", "V-MAT Basic rename")
     name = packet.decode("utf-8")
+
+    async def rename_and_remember(controller: BedController) -> None:
+        await controller.rename_device(name)
+        receiver.remember_vmatbasic_name(name)
+
     try:
-        await _execute_sided(targets[0][0], targets[0][1], lambda controller: controller.rename_device(name), resource="configuration")
+        await _execute_sided(targets[0][0], targets[0][1], rename_and_remember, resource="configuration")
     except BaseException:
         await _release_preflighted(preflighted)
         raise
-    physical[0].remember_vmatbasic_name(name)
 
 
 async def _handle_customatic_hold(

@@ -1088,9 +1088,10 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     mfr_bed_type, mfr_confidence, mfr_id = _check_manufacturer_data(service_info.manufacturer_data)
     # A host-map record is a candidate hint, not proof of the source's first
     # raw manufacturer AD field or an exact one of its three product profiles.
+    # The complete payload predicate ignores company ID, even a known family ID.
     from .beds.vmatbasic_protocol import manufacturer_payload_matches
 
-    if mfr_bed_type in {None, BED_TYPE_VIBRADORM} and len(service_info.manufacturer_data or {}) == 1:
+    if len(service_info.manufacturer_data or {}) == 1:
         company, payload = next(iter(service_info.manufacturer_data.items()))
         if manufacturer_payload_matches(payload):
             return DetectionResult(

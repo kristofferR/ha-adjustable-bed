@@ -6926,10 +6926,11 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             # Update the config entry with new options
             # Record that the stored cadence is the user's choice rather than a
             # value the flow generated, so protocol migrations leave it alone.
-            # The pulse fields are always present in this form, so saving it at
-            # all means the user saw and accepted the values.
-            pulse_user_set = (
-                CONF_MOTOR_PULSE_COUNT in user_input or CONF_MOTOR_PULSE_DELAY_MS in user_input
+            # Only displayed pulse fields count; app profiles can inject their
+            # fixed cadence into user_input without offering a user override.
+            pulse_user_set = any(
+                field in user_input and vol.Optional(field) in schema_dict
+                for field in (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS)
             )
             if is_paired(self.config_entry.data):
                 # For a paired bed, ONLY the keys the user actually changed go
