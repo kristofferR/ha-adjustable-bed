@@ -217,6 +217,20 @@ class CoolBaseController(BedController):
             for action, icon, value, cancel_movement in actions
         )
 
+    # The Cool Base profile exposes the app's massage taps as named buttons;
+    # the generic toggle/up/down controls would duplicate the same frames.
+    @property
+    def supports_massage_toggle_control(self) -> bool:
+        return self._dewert_okin_profile
+
+    @property
+    def supports_head_massage_intensity_step_control(self) -> bool:
+        return self._dewert_okin_profile
+
+    @property
+    def supports_foot_massage_intensity_step_control(self) -> bool:
+        return self._dewert_okin_profile
+
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         """Fan and massage-mode levels reported by the 28-byte status reply."""

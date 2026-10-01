@@ -556,6 +556,18 @@ class TestCoolBaseAppVectors:
                 first = controller.write_command.await_args_list[0].args[0]
                 assert first.hex() == APP_FRAMES[frame][1]
 
+    @pytest.mark.parametrize("dewert_okin_profile", [False, True])
+    def test_generic_massage_controls_do_not_duplicate_app_buttons(
+        self, dewert_okin_profile: bool
+    ) -> None:
+        controller = _controller(dewert_okin_profile=dewert_okin_profile)
+        generic = (
+            controller.supports_massage_toggle_control,
+            controller.supports_head_massage_intensity_step_control,
+            controller.supports_foot_massage_intensity_step_control,
+        )
+        assert generic == (dewert_okin_profile,) * 3
+
     def test_dewert_okin_profile_keeps_its_own_surface(self) -> None:
         controller = _controller(dewert_okin_profile=True)
         assert controller.controller_button_specs == ()
