@@ -1148,7 +1148,7 @@ export class AdjustableBedCard extends LitElement {
       ${l.level ? this._moreInfoRow(l.level) : nothing}
       ${l.timer ? this._moreInfoRow(l.timer) : nothing}
       ${l.timerMinutes ? this._moreInfoRow(l.timerMinutes) : nothing}
-      ${l.timerMinutes || l.timerToggle
+      ${!l.timerAppliesImmediately && (l.timerMinutes || l.timerToggle)
         ? html`<div class="hint">${localize(this.hass, "lighting.timer_pending")}</div>`
         : nothing}
       ${
@@ -1164,8 +1164,9 @@ export class AdjustableBedCard extends LitElement {
         ${this._subheading("lighting.mood")}
         ${l.mood.selects.map((id) => this._moreInfoRow(id))}
         ${l.mood.numbers.map((id) => this._moreInfoRow(id))}
-        ${l.mood.toggle ? html`<div class="tiles">
-          ${this._tile(l.mood.toggle, () => this._press(l.mood!.toggle!))}
+        ${l.mood.toggle || l.mood.buttons?.length ? html`<div class="tiles">
+          ${l.mood.toggle ? this._tile(l.mood.toggle, () => this._press(l.mood!.toggle!)) : nothing}
+          ${l.mood.buttons?.map((id) => this._tile(id, () => this._press(id)))}
         </div>` : nothing}
       ` : nothing}
     `;
@@ -1429,6 +1430,7 @@ export class AdjustableBedCard extends LitElement {
     bed.massage.selects?.forEach((x) => ids.add(x));
     bed.lights.mood?.selects.forEach((x) => ids.add(x));
     bed.lights.mood?.numbers.forEach((x) => ids.add(x));
+    bed.lights.mood?.buttons?.forEach((x) => ids.add(x));
     bed.utility.forEach((x) => ids.add(x));
     bed.climate.entities.forEach((x) => ids.add(x));
     bed.climate.selects.forEach((x) => ids.add(x));

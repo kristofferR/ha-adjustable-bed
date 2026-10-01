@@ -161,6 +161,7 @@ enable additional commands.
 | Customatic Jerome's C | `customatic_move_simultaneously` (back and legs) | [Customatic](beds/customatic.md) |
 | Jordan's Serenity app | `serenity_hold_control` (one of 31 literal app actions) | [Serenity](beds/serenity.md) |
 | Caresse / Werkmeister apps | `vibradorm_hold_control` (profile-specific movement, memory recall or sync) | [Caresse / Werkmeister](beds/vibradorm_app.md) |
+| V-MAT Basic app | `vmatbasic_hold_control`, `vmatbasic_rename` | [V-MAT Basic](beds/vmatbasic.md) |
 | LOGICDATA app profiles | `logicdata_set_alarm`, `logicdata_rename`, `logicdata_hold_preset` | [LOGICDATA](beds/logicdata-app.md) |
 | Jiecang app profiles | `jiecang_set_alarm`, `jiecang_wake`, `jiecang_stop_wake`, `jiecang_rename` | [Jiecang](beds/jiecang-app.md) |
 | Richmat RMControl products | `rmcontrol_alarm`, `rmcontrol_anti_snore` | [RMControl](beds/rmcontrol.md) |
@@ -185,6 +186,12 @@ buttons use a bounded one-second hold; this action lets an automation choose
 the hold duration. Both paths retain the app's completion-gated refresh and
 send a fresh release command on completion or cancellation. Memory storage
 uses the separate Save memory buttons, not this action.
+
+### `vmatbasic_hold_control` and `vmatbasic_rename`
+
+Hold accepts `device_id`, `control`, `duration` (0.1–60 seconds in whole milliseconds), and optional `side`. Controls are `all_up`, `all_down`, `back_up`, `back_down`, `legs_up`, `legs_down`, and XT-only `floor_hold`. Admitted movement ends with a fresh `ff` release; floor hold ends its refresh without an invented release. Movement on both sides requires two concurrently ready physical receivers. Floor hold targets one physical receiver only.
+
+Rename accepts `device_id`, `name`, and optional `side`, for one physical receiver. It applies Java-style trim and the ten UTF-16-unit limit, including empty names, with a 20-byte UTF-8 safety limit. The retained name changes only after a successful write. Other floor, mood and massage controls use their named child buttons/selects/numbers; accessory commands do not automatically mirror across linked receivers.
 
 ## Support Bundle
 

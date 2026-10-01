@@ -132,6 +132,40 @@ test("bounded mood or massage selectors alone are renderable controls", () => {
   }
 });
 
+test("V-MAT Basic keeps immediate floor settings, mood and literal massage actions separate", () => {
+  const hass = hassWith([
+    entry("number.floor", "vmatbasic_floor_level"),
+    entry("number.timer", "vmatbasic_floor_minutes"),
+    entry("button.floor", "vmatbasic_floor_hold"),
+    entry("select.palette", "vmatbasic_mood_palette"),
+    entry("select.effect", "vmatbasic_mood_effect"),
+    entry("number.brightness", "vmatbasic_mood_brightness"),
+    entry("number.speed", "vmatbasic_mood_speed"),
+    entry("button.toggle", "vmatbasic_mood_toggle"),
+    entry("button.nightlight", "vmatbasic_mood_nightlight"),
+    ...["back", "legs", "off", "program_1", "program_2", "program_3"].map((action) =>
+      entry(`button.${action}`, `vmatbasic_massage_${action}`)),
+    entry("button.refresh", "vmatbasic_refresh_info"),
+    entry("button.all_up", "vmatbasic_all_up"),
+    entry("button.all_down", "vmatbasic_all_down"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.lights.level).toBe("number.floor");
+  expect(bed.lights.timerMinutes).toBe("number.timer");
+  expect(bed.lights.timerAppliesImmediately).toBe(true);
+  expect(bed.lights.toggle).toBe("button.floor");
+  expect(bed.lights.mood).toEqual({
+    selects: ["select.palette", "select.effect"],
+    numbers: ["number.brightness", "number.speed"],
+    toggle: "button.toggle",
+    buttons: ["button.nightlight"],
+  });
+  expect(bed.massage.buttons).toHaveLength(6);
+  expect(bed.utility).toEqual(["button.refresh", "button.all_up", "button.all_down"]);
+  expect(bed.motors).toEqual([]);
+  expect(bed.memory).toEqual([]);
+});
+
 test("two-address profile controls keep independent child state and parent actions", () => {
   const hass = hassWith([
     entry("select.left_palette", "vibradorm_app_mood_palette_left", "left"),

@@ -52,6 +52,21 @@ CONF_BED_TYPE: Final = "bed_type"
 CONF_PROTOCOL_VARIANT: Final = "protocol_variant"
 CONF_MOTOR_COUNT: Final = "motor_count"
 CONF_VIBRADORM_APP_PROFILE: Final = "vibradorm_app_profile"
+CONF_VMATBASIC_PROFILE: Final = "vmatbasic_profile"
+CONF_VMATBASIC_FLOOR_LEVEL: Final = "vmatbasic_floor_level"
+CONF_VMATBASIC_FLOOR_MINUTES: Final = "vmatbasic_floor_minutes"
+VMATBASIC_PROFILES: Final = {
+    "basic": "V-MAT-BASIC-RF",
+    "cbi": "V-MAT-BASIC-RF-CBI",
+    "xtbox": "V-MAT-BASIC-RF-CBI with XT-Box",
+}
+VMATBASIC_CONFIG_KEYS: Final = frozenset(
+    {
+        CONF_VMATBASIC_PROFILE,
+        CONF_VMATBASIC_FLOOR_LEVEL,
+        CONF_VMATBASIC_FLOOR_MINUTES,
+    }
+)
 CONF_VIBRADORM_APP_METADATA: Final = "vibradorm_app_metadata"
 CONF_VIBRADORM_CONTROL_TYPE: Final = "vibradorm_control_type"
 CONF_VIBRADORM_VMAT_REMOTE: Final = "vibradorm_vmat_remote"
@@ -405,6 +420,7 @@ BED_TYPE_STAR_ELEVATE: Final = "star_elevate"  # ELEVATE two-actuator StarCode a
 BED_TYPE_SVANE: Final = "svane"  # Svane LinonPI multi-service protocol
 BED_TYPE_VIBRADORM: Final = "vibradorm"  # Vibradorm VMAT protocol
 BED_TYPE_VIBRADORM_APP: Final = "vibradorm_app"
+BED_TYPE_VMATBASIC: Final = "vmatbasic"
 BED_TYPE_RONDURE: Final = "rondure"  # 1500 Tilt Base / Rondure Hump (8/9-byte FurniBus protocol)
 BED_TYPE_REMACRO: Final = (
     "remacro"  # Remacro protocol (CheersSleep/Jeromes/Slumberland/The Brick, 8-byte SynData)
@@ -498,6 +514,7 @@ SUPPORTED_BED_TYPES: Final = [
     # Vibradorm
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
+    BED_TYPE_VMATBASIC,
     # Rondure / 1500 Tilt Base
     BED_TYPE_RONDURE,
     # Remacro (CheersSleep / Jeromes / Slumberland / The Brick)
@@ -568,6 +585,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_TIMOTION_AHF,
         BED_TYPE_LOGICDATA,
         BED_TYPE_VIBRADORM_APP,
+        BED_TYPE_VMATBASIC,
     }
 )
 
@@ -2453,6 +2471,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_JIECANG_APP,
         BED_TYPE_LEGGETT_LP_LEGACY,
         BED_TYPE_VIBRADORM_APP,
+        BED_TYPE_VMATBASIC,
         BED_TYPE_OKIN_CST,
         BED_TYPE_OKIN_RF_ECO_BT,
     }
@@ -2543,6 +2562,7 @@ BEDS_WITH_DISCONNECT_AFTER_COMMAND_DEFAULT_DISABLED: Final = (
             BED_TYPE_SVANE,
             BED_TYPE_VIBRADORM,
             BED_TYPE_VIBRADORM_APP,
+            BED_TYPE_VMATBASIC,
         }
     )
 )
@@ -2709,6 +2729,8 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Vibradorm: 100ms delay → 10 repeats = 1.0s total
     # Source: de.vibradorm.vra APK analysis (CmdMotorVMAT uses 100ms intervals)
     BED_TYPE_VIBRADORM: (10, 100),
+    # APK held-command attempts every 30 ms; 34 pulses bound HA's ordinary tap.
+    BED_TYPE_VMATBASIC: (34, 30),
     # Rondure: 50ms delay → 25 repeats = 1.25s total
     # Source: com.sfd.rondure_hump ANALYSIS.md
     BED_TYPE_RONDURE: (25, 50),

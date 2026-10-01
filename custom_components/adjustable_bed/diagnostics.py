@@ -15,6 +15,7 @@ from .adapter import find_service_info_by_address
 from .bluetooth_diagnostics import connection_reachability
 from .const import (
     BED_TYPE_VIBRADORM_APP,
+    BED_TYPE_VMATBASIC,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
@@ -41,6 +42,7 @@ from .paired_coordinator import PairedBedCoordinator
 from .redaction import redact_data
 from .vibradorm_app_discovery import manufacturer_discovery_diagnostics
 from .vibradorm_vmat_discovery import vmat_manufacturer_diagnostics
+from .vmatbasic_discovery import manufacturer_diagnostics as vmatbasic_manufacturer_diagnostics
 
 
 def _normalize_ble_address(value: Any) -> str | None:
@@ -85,15 +87,17 @@ async def _async_paired_diagnostics(
             "command_timing": child.command_timing,
             "config": dict(child.entry.data),
         }
-        if child.bed_type == BED_TYPE_VIBRADORM_APP:
+        if child.bed_type in {BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC}:
             service_info, connectable = find_service_info_by_address(
                 hass, child.address, allow_non_connectable=True
             )
+            discovery_key = "vmatbasic_discovery" if child.bed_type == BED_TYPE_VMATBASIC else "vibradorm_app_discovery"
+            discovery_parser = vmatbasic_manufacturer_diagnostics if child.bed_type == BED_TYPE_VMATBASIC else manufacturer_discovery_diagnostics
             sides[side]["advertisement"] = {
                 "available": service_info is not None,
                 "connectable": connectable,
                 "service_uuids": list(service_info.service_uuids) if service_info else [],
-                "vibradorm_app_discovery": manufacturer_discovery_diagnostics(
+                discovery_key: discovery_parser(
                     service_info.manufacturer_data if service_info else {}
                 ),
             }
@@ -239,6 +243,11 @@ async def async_get_config_entry_diagnostics(
             advertisement_info["vmat_discovery"] = vmat_manufacturer_diagnostics(
                 service_info.manufacturer_data if service_info else {}
             )
+    if coordinator.bed_type == BED_TYPE_VMATBASIC:
+        advertisement_info["vmatbasic_discovery"] = vmatbasic_manufacturer_diagnostics(
+            service_info.manufacturer_data if service_info else {}
+        )
+        advertisement_info["available"] = service_info is not None
 
     # Include only auto-detections tied to this config entry. The backing log is
     # global, so exposing it wholesale would leak unrelated nearby BLE devices.

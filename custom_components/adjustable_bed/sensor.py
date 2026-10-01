@@ -250,6 +250,9 @@ def _sensor_entities_for(
                 "vibradorm_app_xmc_status", "vibradorm_app_opmode",
                 "vibradorm_app_device_name", "vibradorm_app_revision_id",
                 "vibradorm_app_revision_string", "vibradorm_app_variant",
+                "vmatbasic_model", "vmatbasic_firmware", "vmatbasic_temperature",
+                "vmatbasic_floor_level_observed", "vmatbasic_floor_minutes_observed",
+                "vmatbasic_floor_percent_observed", "vmatbasic_rssi",
             } - active_keys
         )
         _async_remove_stale_sensor_entities(

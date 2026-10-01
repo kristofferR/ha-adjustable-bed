@@ -124,10 +124,12 @@ export interface LightEntities {
   timer?: string; // select.* light_timer
   timerMinutes?: string; // number.* pending floor timer duration
   timerToggle?: string; // button.* enable/disable the pending floor timer
+  timerAppliesImmediately?: boolean;
   mood?: {
     selects: string[]; // bounded palette and effect choices
     numbers: string[]; // effect speed, without an arbitrary RGB/brightness control
     toggle?: string;
+    buttons?: string[];
   };
 }
 

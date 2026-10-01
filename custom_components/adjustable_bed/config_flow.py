@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
+import math
 import sys
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
@@ -120,6 +121,7 @@ from .const import (
     BED_TYPE_SOLACE,
     BED_TYPE_SVANE,
     BED_TYPE_VIBRADORM_APP,
+    BED_TYPE_VMATBASIC,
     BEDS_WITH_PERCENTAGE_POSITIONS,
     BEDS_WITH_POSITION_FEEDBACK,
     CB24_BED_SELECTION_A,
@@ -187,6 +189,9 @@ from .const import (
     CONF_VIBRADORM_RESTORED,
     CONF_VIBRADORM_RGB,
     CONF_VIBRADORM_VMAT_REMOTE,
+    CONF_VMATBASIC_FLOOR_LEVEL,
+    CONF_VMATBASIC_FLOOR_MINUTES,
+    CONF_VMATBASIC_PROFILE,
     CONNECTION_PROFILE_BALANCED,
     CONNECTION_PROFILE_RELIABLE,
     CONNECTION_PROFILES,
@@ -243,6 +248,8 @@ from .const import (
     VIBRADORM_RESTORED_CONTROLS,
     VIBRADORM_VMAT_ONBOARDING_TIMEOUT_SECONDS,
     VIBRADORM_WERKMEISTER_CONTROLS,
+    VMATBASIC_CONFIG_KEYS,
+    VMATBASIC_PROFILES,
     DetectionResult,
     bed_type_has_position_feedback,
     disconnect_after_command_default_enabled,
@@ -995,13 +1002,102 @@ def _vibradorm_app_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {}
 
 
+def _vmatbasic_integer(value: object) -> int:
+    """Keep whole numeric form values without silently truncating fractions."""
+    if isinstance(value, str):
+        try:
+            return int(value)
+        except ValueError as error:
+            raise vol.Invalid("Expected a whole number") from error
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise vol.Invalid("Expected a whole number")
+    if not math.isfinite(value) or value != int(value):
+        raise vol.Invalid("Expected a whole number")
+    return int(value)
+
+
+def _add_vmatbasic_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[str, Any]) -> None:
+    schema[
+        vol.Required(
+            CONF_VMATBASIC_PROFILE, default=data.get(CONF_VMATBASIC_PROFILE, vol.UNDEFINED)
+        )
+    ] = vol.In(VMATBASIC_PROFILES)
+    profile = data.get(CONF_VMATBASIC_PROFILE)
+    if profile in {"cbi", "xtbox"}:
+        schema[
+            vol.Optional(
+                CONF_VMATBASIC_FLOOR_LEVEL,
+                default=data.get(CONF_VMATBASIC_FLOOR_LEVEL, vol.UNDEFINED),
+            )
+        ] = vol.All(
+            _vmatbasic_integer,
+            vol.Range(min=1 if profile == "xtbox" else 0, max=6 if profile == "xtbox" else 255),
+        )
+        schema[
+            vol.Optional(
+                CONF_VMATBASIC_FLOOR_MINUTES, default=data.get(CONF_VMATBASIC_FLOOR_MINUTES, 0)
+            )
+        ] = vol.All(_vmatbasic_integer, vol.Range(min=0, max=255 if profile == "xtbox" else 1439))
+
+
+def _vmatbasic_data(previous: Mapping[str, Any], submitted: Mapping[str, Any]) -> dict[str, Any]:
+    data, updates = dict(previous), dict(submitted)
+    if CONF_VMATBASIC_PROFILE in submitted and submitted[CONF_VMATBASIC_PROFILE] != previous.get(
+        CONF_VMATBASIC_PROFILE
+    ):
+        for key in VMATBASIC_CONFIG_KEYS - {CONF_VMATBASIC_PROFILE}:
+            data.pop(key, None)
+            updates.pop(key, None)
+    data.update(updates)
+    if data.get(CONF_VMATBASIC_PROFILE) == "basic":
+        for key in VMATBASIC_CONFIG_KEYS - {CONF_VMATBASIC_PROFILE}:
+            data.pop(key, None)
+    data.update(
+        {
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_COUNT: 34,
+            CONF_MOTOR_PULSE_DELAY_MS: 30,
+            CONF_MOTOR_PULSE_USER_SET: False,
+        }
+    )
+    return data
+
+
+def _vmatbasic_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .beds.vmatbasic_protocol import integer
+
+    profile = data.get(CONF_VMATBASIC_PROFILE)
+    if not isinstance(profile, str) or profile not in VMATBASIC_PROFILES:
+        return {CONF_VMATBASIC_PROFILE: "vmatbasic_required"}
+    for key, minimum, maximum in (
+        (
+            CONF_VMATBASIC_FLOOR_LEVEL,
+            1 if profile == "xtbox" else 0,
+            6 if profile == "xtbox" else 255,
+        ),
+        (CONF_VMATBASIC_FLOOR_MINUTES, 0, 255 if profile == "xtbox" else 1439),
+    ):
+        if key in data:
+            try:
+                integer(data[key], minimum, maximum)
+            except ValueError:
+                return {key: "vmatbasic_invalid"}
+    return {}
+
+
 def _hide_vibradorm_generic_fields(schema: dict[vol.Marker, Any], bed_type: str | None) -> None:
     """App profiles define controls and held behavior independently of generic options."""
-    if bed_type != BED_TYPE_VIBRADORM_APP:
+    if bed_type not in {BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC}:
         return
     hidden = {
-        CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING,
-        CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS, CONF_PROTOCOL_VARIANT,
+        CONF_MOTOR_COUNT,
+        CONF_HAS_MASSAGE,
+        CONF_DISABLE_ANGLE_SENSING,
+        CONF_MOTOR_PULSE_COUNT,
+        CONF_MOTOR_PULSE_DELAY_MS,
+        CONF_PROTOCOL_VARIANT,
     }
     for marker in tuple(schema):
         if marker.schema in hidden:
@@ -1482,6 +1578,31 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         _add_jiecang_app_schema_fields(schema, user_input)
         return self.async_show_form(
             step_id="jiecang_app", data_schema=vol.Schema(schema), errors=errors
+        )
+
+    async def async_step_vmatbasic(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Require explicit app/product selection without inferring or requiring a bond."""
+        assert self._manual_data is not None
+        previous = self._manual_data
+        data = _vmatbasic_data(previous, user_input or {})
+        changed = user_input is not None and data.get(CONF_VMATBASIC_PROFILE) != previous.get(
+            CONF_VMATBASIC_PROFILE
+        )
+        errors = _vmatbasic_errors(data) if user_input is not None else {}
+        self._manual_data = data
+        if (
+            user_input is not None
+            and not errors
+            and (not changed or data[CONF_VMATBASIC_PROFILE] == "basic")
+        ):
+            return await self._finish_with_verify(data, data.get(CONF_NAME, "Adjustable Bed"))
+        schema: dict[vol.Marker, Any] = {}
+        _add_vmatbasic_schema_fields(schema, data)
+        return self.async_show_form(
+            step_id="vmatbasic", data_schema=vol.Schema(schema), errors=errors
         )
 
     async def async_step_vibradorm_app(
@@ -2161,7 +2282,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if user_input is None:
             return None
         requested = user_input.get(CONF_BED_TYPE, shown_bed_type)
-        if requested == shown_bed_type or BED_TYPE_SERENITY not in (shown_bed_type, requested):
+        if requested == shown_bed_type or not {BED_TYPE_SERENITY, BED_TYPE_VMATBASIC}.intersection(
+            (shown_bed_type, requested)
+        ):
             return None
         self._selected_bed_type = None if requested == BED_TYPE_AUTO_DETECT else requested
         self._selected_protocol_variant = None
@@ -2179,9 +2302,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 requested, suggestions.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
             ):
                 suggestions.pop(CONF_PROTOCOL_VARIANT, None)
-            result["data_schema"] = self.add_suggested_values_to_schema(
-                schema, suggestions
-            )
+            result["data_schema"] = self.add_suggested_values_to_schema(schema, suggestions)
         return result
 
     async def async_step_bluetooth_confirm(
@@ -2225,9 +2346,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 or _confident_auto_detect(detection_result)
                 or BED_TYPE_AUTO_DETECT
             )
-        defaults_bed_type = (
-            None if bed_type_default == BED_TYPE_AUTO_DETECT else bed_type_default
-        )
+        defaults_bed_type = None if bed_type_default == BED_TYPE_AUTO_DETECT else bed_type_default
         if rebuilt := await self._async_rebuild_changed_serenity_form(
             user_input, bed_type_default, "bluetooth_confirm"
         ):
@@ -2329,9 +2448,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     )
                 _LOGGER.info(
                     "User confirmed bed setup: name=%s, type=%s (detected: %s), variant=%s, address=%s, motors=%s, massage=%s, disable_angle_sensing=%s, adapter=%s, pulse_count=%s, pulse_delay=%s",
-                    user_input.get(
-                        CONF_NAME, self._discovery_info.name or "Adjustable Bed"
-                    ),
+                    user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
                     selected_bed_type,
                     detected_bed_type,
                     protocol_variant,
@@ -2389,6 +2506,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     self._manual_data = entry_data
                     self._vibradorm_app_bluetooth_pairing = True
                     return await self.async_step_vibradorm_app()
+                if selected_bed_type == BED_TYPE_VMATBASIC:
+                    self._manual_data = entry_data
+                    return await self.async_step_vmatbasic()
                 if selected_bed_type == BED_TYPE_MALOUF_APP:
                     self._manual_data = entry_data
                     return await self.async_step_malouf_app()
@@ -2924,6 +3044,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 # umbrella type matches — and would otherwise be stored as mismatched
                 # concrete child types by _resolved_pair_side_data below.
                 errors["base"] = "mismatched_bed_types"
+            elif self._offline_safe_bed_type(left) == BED_TYPE_VMATBASIC and any(
+                entry.data.get(CONF_VMATBASIC_PROFILE) not in {"cbi", "xtbox"}
+                for entry in (left, right)
+            ):
+                errors["base"] = "vmatbasic_link_profile"
             elif self._offline_safe_bed_type(left) == BED_TYPE_OCTO and (
                 self._is_octo_one_motor_lift(left) or self._is_octo_one_motor_lift(right)
             ):
@@ -3318,6 +3443,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 if bed_type == BED_TYPE_VIBRADORM_APP:
                     self._manual_data = entry_data
                     return await self.async_step_vibradorm_app()
+                if bed_type == BED_TYPE_VMATBASIC:
+                    self._manual_data = entry_data
+                    return await self.async_step_vmatbasic()
                 if bed_type == BED_TYPE_MALOUF_APP:
                     self._manual_data = entry_data
                     return await self.async_step_malouf_app()
@@ -3618,6 +3746,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     if bed_type == BED_TYPE_VIBRADORM_APP:
                         self._manual_data = entry_data
                         return await self.async_step_vibradorm_app()
+                    if bed_type == BED_TYPE_VMATBASIC:
+                        self._manual_data = entry_data
+                        return await self.async_step_vmatbasic()
                     if bed_type == BED_TYPE_MALOUF_APP:
                         self._manual_data = entry_data
                         return await self.async_step_malouf_app()
@@ -3723,9 +3854,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             }
         )
         schema_dict[
-            vol.Optional(
-                CONF_DISCONNECT_AFTER_COMMAND, default=default_disconnect_after_command
-            )
+            vol.Optional(CONF_DISCONNECT_AFTER_COMMAND, default=default_disconnect_after_command)
         ] = bool
         if preselected_bed_type in MALOUF_BED_TYPES:
             _add_malouf_schema_fields(schema_dict)
@@ -5773,8 +5902,10 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             data.pop(CONF_FURNIMOVE_REMOTE, None)
         if bed_type != BED_TYPE_LOGICDATA_APP:
             for key in (
-                CONF_LOGICDATA_APP_PROFILE, CONF_LOGICDATA_APP_FAMILY,
-                CONF_LOGICDATA_APP_LAYOUT, CONF_LOGICDATA_APP_TRANSPORT,
+                CONF_LOGICDATA_APP_PROFILE,
+                CONF_LOGICDATA_APP_FAMILY,
+                CONF_LOGICDATA_APP_LAYOUT,
+                CONF_LOGICDATA_APP_TRANSPORT,
                 CONF_LOGICDATA_APP_HAS_LIGHT,
             ):
                 data.pop(key, None)
@@ -5790,6 +5921,9 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             for key in VIBRADORM_APP_CONFIG_KEYS:
                 data.pop(key, None)
             data.pop(CONF_VIBRADORM_APP_METADATA, None)
+        if bed_type != BED_TYPE_VMATBASIC:
+            for key in VMATBASIC_CONFIG_KEYS:
+                data.pop(key, None)
         if bed_type != BED_TYPE_MALOUF_APP:
             for key in (
                 CONF_MALOUF_APP_PROFILE,
@@ -6040,8 +6174,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         # Get current values from config entry
         current_data: dict[str, Any] = dict(self.config_entry.data)
         separate_address_pair = (
-            is_paired(current_data)
-            and current_data.get(CONF_PAIR_MODE) != PAIR_MODE_SINGLE_ADDRESS
+            is_paired(current_data) and current_data.get(CONF_PAIR_MODE) != PAIR_MODE_SINGLE_ADDRESS
         )
         if separate_address_pair:
             # Per-side settings (motor count, massage, adapter, angle limits)
@@ -6055,6 +6188,12 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         # Pending values preserve edits while the form is rebuilt to show the
         # fields that belong to a newly selected bed type. They are applied last
         # so a pending edit wins over the stored (or per-side) value it replaces.
+        if (
+            CONF_VMATBASIC_PROFILE in self._pending_data
+            and self._pending_data[CONF_VMATBASIC_PROFILE] != current_data.get(CONF_VMATBASIC_PROFILE)
+        ):
+            for key in VMATBASIC_CONFIG_KEYS - {CONF_VMATBASIC_PROFILE}:
+                current_data.pop(key, None)
         current_data = {**current_data, **self._pending_data}
         bed_type = current_data.get(CONF_BED_TYPE)
         if bed_type is None:
@@ -6076,7 +6215,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         motor_count_options = _motor_count_options_for_all_variants(bed_type)
         try:
             form_motor_count = int(current_data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT))
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             form_motor_count = DEFAULT_MOTOR_COUNT
         if form_motor_count not in motor_count_options:
             form_motor_count = _default_motor_count(
@@ -6228,9 +6367,10 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         if bed_type == BED_TYPE_RICHMAT:
             # Exact product and side belong to each physical controller. A
             # separate-address pair must not propagate the first child's values.
-            if not is_paired(self.config_entry.data) or self.config_entry.data.get(
-                CONF_PAIR_MODE
-            ) == PAIR_MODE_SINGLE_ADDRESS:
+            if (
+                not is_paired(self.config_entry.data)
+                or self.config_entry.data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS
+            ):
                 schema_dict.update(_rmcontrol_schema_fields(current_data).items())
             current_remote = current_data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
             remote_options = dict(RICHMAT_REMOTES)
@@ -6253,6 +6393,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             _add_jiecang_app_schema_fields(schema_dict, current_data)
         if bed_type == BED_TYPE_VIBRADORM_APP and not separate_address_pair:
             _add_vibradorm_app_schema_fields(schema_dict, current_data)
+        if bed_type == BED_TYPE_VMATBASIC and not separate_address_pair:
+            _add_vmatbasic_schema_fields(schema_dict, current_data)
         if bed_type == BED_TYPE_MALOUF_APP and not separate_address_pair:
             _add_malouf_app_schema_fields(
                 schema_dict, current_data, persisted_data=self.config_entry.data
@@ -6276,9 +6418,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             schema_dict[
                 vol.Optional(
                     CONF_CB24_BED_SELECTION,
-                    default=current_data.get(
-                        CONF_CB24_BED_SELECTION, CB24_BED_SELECTION_DEFAULT
-                    ),
+                    default=current_data.get(CONF_CB24_BED_SELECTION, CB24_BED_SELECTION_DEFAULT),
                 )
             ] = vol.In(
                 {
@@ -6291,11 +6431,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         # Add angle limit fields for beds that use angle-based positions
         # (not percentage-based beds like Keeson/Ergomotion/Serta/Jensen)
         # Only show for beds that actually support position feedback
-        if (
-            bed_type
-            and bed_type not in BEDS_WITH_PERCENTAGE_POSITIONS
-            and has_position_feedback
-        ):
+        if bed_type and bed_type not in BEDS_WITH_PERCENTAGE_POSITIONS and has_position_feedback:
             schema_dict[
                 vol.Optional(
                     CONF_BACK_MAX_ANGLE,
@@ -6322,7 +6458,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 and requested_bed_type != bed_type
             ):
                 return self.async_show_form(
-                    step_id=step_id, data_schema=vol.Schema(schema_dict),
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
                     errors={CONF_BED_TYPE: "furnimove_unpair_first"},
                 )
             if (
@@ -6331,7 +6468,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 and not _is_leggett_app_type(bed_type, form_variant)
             ):
                 return self.async_show_form(
-                    step_id=step_id, data_schema=vol.Schema(schema_dict),
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
                     errors={CONF_BED_TYPE: "leggett_app_unpair_first"},
                 )
             if (
@@ -6349,10 +6487,24 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 or any(key in user_input for key in VIBRADORM_APP_CONFIG_KEYS)
             ):
                 return self.async_show_form(
-                    step_id=step_id, data_schema=vol.Schema(schema_dict),
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
                     errors={"base": "vibradorm_app_unpair_first"},
                 )
-            if separate_address_pair and requested_bed_type == BED_TYPE_JIECANG_APP and requested_bed_type != bed_type:
+            if separate_address_pair and (
+                (requested_bed_type == BED_TYPE_VMATBASIC and requested_bed_type != bed_type)
+                or any(key in user_input for key in VMATBASIC_CONFIG_KEYS)
+            ):
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={"base": "vmatbasic_unpair_first"},
+                )
+            if (
+                separate_address_pair
+                and requested_bed_type == BED_TYPE_JIECANG_APP
+                and requested_bed_type != bed_type
+            ):
                 return self.async_show_form(
                     step_id=step_id,
                     data_schema=vol.Schema(schema_dict),
@@ -6497,7 +6649,9 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             if incompatible_child or (
                 bed_type == BED_TYPE_RICHMAT
                 and not _is_valid_rmcontrol_variant(
-                    user_input.get(CONF_RMCONTROL_PRODUCT, current_data.get(CONF_RMCONTROL_PRODUCT)),
+                    user_input.get(
+                        CONF_RMCONTROL_PRODUCT, current_data.get(CONF_RMCONTROL_PRODUCT)
+                    ),
                     requested_variant,
                 )
             ):
@@ -6506,9 +6660,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     data_schema=vol.Schema(schema_dict),
                     errors={CONF_PROTOCOL_VARIANT: "invalid_variant_for_bed_type"},
                 )
-            if (
-                _is_leggett_app_type(bed_type, requested_variant)
-                and not _is_leggett_app_type(bed_type, form_variant)
+            if _is_leggett_app_type(bed_type, requested_variant) and not _is_leggett_app_type(
+                bed_type, form_variant
             ):
                 self._remember_pending_changes(schema_dict, user_input)
                 self._pending_data = {**self._pending_data, **user_input}
@@ -6567,7 +6720,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 if profile is not None:
                     if profile not in LEGGETT_APP_PROFILES:
                         return self.async_show_form(
-                            step_id=step_id, data_schema=vol.Schema(schema_dict),
+                            step_id=step_id,
+                            data_schema=vol.Schema(schema_dict),
                             errors={CONF_LEGGETT_APP_PROFILE: "leggett_app_invalid_profile"},
                         )
                     user_input[CONF_MOTOR_COUNT] = LEGGETT_APP_MOTOR_COUNTS[profile]
@@ -6597,9 +6751,9 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 app_data = _vibradorm_app_data(current_data, user_input)
                 if _vibradorm_app_form_changed(current_data, user_input):
                     self._remember_pending_changes(schema_dict, user_input)
-                    self._pending_data.update({
-                        key: app_data[key] for key in VIBRADORM_APP_CONFIG_KEYS if key in app_data
-                    })
+                    self._pending_data.update(
+                        {key: app_data[key] for key in VIBRADORM_APP_CONFIG_KEYS if key in app_data}
+                    )
                     if discovery_disabled_input is not None:
                         self._pending_data[CONF_DISABLE_DISCOVERY] = discovery_disabled_input
                     return await self._async_options_form(None, step_id=step_id)
@@ -6612,10 +6766,12 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
 
                 control = app_data[CONF_VIBRADORM_CONTROL_TYPE]
                 profile = validate_vibradorm_app_profile(
-                    app_data[CONF_VIBRADORM_APP_PROFILE], "other" if control == "other" else int(control),
+                    app_data[CONF_VIBRADORM_APP_PROFILE],
+                    "other" if control == "other" else int(control),
                     restored=app_data[CONF_VIBRADORM_RESTORED],
                     floor_light=app_data[CONF_VIBRADORM_FLOOR_LIGHT],
-                    rgb=app_data[CONF_VIBRADORM_RGB], massage=app_data[CONF_VIBRADORM_MASSAGE],
+                    rgb=app_data[CONF_VIBRADORM_RGB],
+                    massage=app_data[CONF_VIBRADORM_MASSAGE],
                     light_extension=app_data[CONF_VIBRADORM_LIGHT_EXTENSION],
                     remote=app_data.get(CONF_VIBRADORM_VMAT_REMOTE),
                 )
@@ -6625,6 +6781,33 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 user_input[CONF_HAS_MASSAGE] = profile.massage
                 user_input[CONF_DISABLE_ANGLE_SENSING] = True
                 user_input[CONF_MOTOR_PULSE_USER_SET] = False
+            if bed_type == BED_TYPE_VMATBASIC and not separate_address_pair:
+                app_data = _vmatbasic_data(current_data, user_input)
+                if app_data.get(CONF_VMATBASIC_PROFILE) != current_data.get(CONF_VMATBASIC_PROFILE):
+                    for key in VMATBASIC_CONFIG_KEYS:
+                        self._pending_data.pop(key, None)
+                        self._pending_changed_data.pop(key, None)
+                        user_input.pop(key, None)
+                    self._pending_data.update(app_data)
+                    return await self._async_options_form(None, step_id=step_id)
+                app_errors = _vmatbasic_errors(app_data)
+                if app_errors:
+                    return self.async_show_form(
+                        step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
+                    )
+                user_input.update(
+                    {key: app_data[key] for key in VMATBASIC_CONFIG_KEYS if key in app_data}
+                )
+                user_input.update(
+                    {
+                        CONF_MOTOR_COUNT: 2,
+                        CONF_HAS_MASSAGE: False,
+                        CONF_DISABLE_ANGLE_SENSING: True,
+                        CONF_MOTOR_PULSE_COUNT: 34,
+                        CONF_MOTOR_PULSE_DELAY_MS: 30,
+                        CONF_MOTOR_PULSE_USER_SET: False,
+                    }
+                )
             if bed_type == BED_TYPE_MALOUF_APP and not separate_address_pair:
                 requested_app = user_input.get(CONF_MALOUF_APP_PROFILE)
                 if requested_app in MALOUF_APP_PROFILES and requested_app != current_data.get(
@@ -6668,21 +6851,15 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                         errors={CONF_OCTO_PIN: "invalid_pin"},
                     )
                 user_input[CONF_OCTO_PIN] = octo_pin
-            if (
-                self.config_entry.data.get(CONF_PAIR_MODE)
-                == PAIR_MODE_SINGLE_ADDRESS
-                and not supports_single_address_pairing(
-                    bed_type,
-                    user_input.get(
-                        CONF_PROTOCOL_VARIANT,
-                        current_data.get(
-                            CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT
-                        ),
-                    ),
-                    resolved_variant=current_data.get(
-                        CONF_KAIDI_RESOLVED_VARIANT
-                    ),
-                )
+            if self.config_entry.data.get(
+                CONF_PAIR_MODE
+            ) == PAIR_MODE_SINGLE_ADDRESS and not supports_single_address_pairing(
+                bed_type,
+                user_input.get(
+                    CONF_PROTOCOL_VARIANT,
+                    current_data.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT),
+                ),
+                resolved_variant=current_data.get(CONF_KAIDI_RESOLVED_VARIANT),
             ):
                 return self.async_show_form(
                     step_id=step_id,
@@ -6773,10 +6950,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 new_data = {**self.config_entry.data, **changed}
                 if pulse_user_set:
                     new_data[CONF_MOTOR_PULSE_USER_SET] = True
-                if (
-                    self.config_entry.data.get(CONF_PAIR_MODE)
-                    == PAIR_MODE_SINGLE_ADDRESS
-                ):
+                if self.config_entry.data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS:
                     self._apply_bed_type_change_cleanup(new_data, bed_type, requested_variant)
                     for key in stale_vibradorm_keys:
                         new_data.pop(key, None)
@@ -6810,6 +6984,13 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             self._apply_bed_type_change_cleanup(new_data, bed_type, requested_variant)
             for key in stale_vibradorm_keys:
                 new_data.pop(key, None)
+            if bed_type == BED_TYPE_VMATBASIC and not separate_address_pair:
+                # Rebuild from the selected profile so removed optional fields cannot
+                # return from the original entry during the final options merge.
+                for key in VMATBASIC_CONFIG_KEYS:
+                    new_data.pop(key, None)
+                selected_data = _vmatbasic_data(current_data, user_input)
+                new_data.update({key: selected_data[key] for key in VMATBASIC_CONFIG_KEYS if key in selected_data})
             if bed_type == BED_TYPE_VIBRADORM_APP and any(
                 new_data.get(key) != self.config_entry.data.get(key)
                 for key in (CONF_VIBRADORM_APP_PROFILE, CONF_VIBRADORM_CONTROL_TYPE, CONF_VIBRADORM_VMAT_REMOTE)
@@ -6842,7 +7023,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                         ):
                             control = new_data[CONF_VIBRADORM_CONTROL_TYPE]
                             mark_vibradorm_app_selection(
-                                self.hass, address,
+                                self.hass,
+                                address,
                                 app_profile=new_data[CONF_VIBRADORM_APP_PROFILE],
                                 control_type="other" if control == "other" else int(control),
                                 remembered_floor_default=new_data[CONF_VIBRADORM_FLOOR_DEFAULT],

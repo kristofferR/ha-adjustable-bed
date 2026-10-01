@@ -114,6 +114,7 @@ class _FactoryCoordinator(SimpleNamespace):
                     const.CONF_MALOUF_APP_TRANSPORT: "okin_new",
                     const.CONF_VIBRADORM_APP_PROFILE: "caresse",
                     const.CONF_VIBRADORM_CONTROL_TYPE: "2",
+                    const.CONF_VMATBASIC_PROFILE: "basic",
                 }
             ),
             cancel_command=asyncio.Event(),
@@ -125,6 +126,7 @@ class _FactoryCoordinator(SimpleNamespace):
             motor_count=2,
             has_massage=False,
             disable_angle_sensing=True,
+            remember_vmatbasic_settings=lambda settings: None,
             malouf_layout=MALOUF_LAYOUT_AUTO,
             malouf_memory_slots=MALOUF_MEMORY_SLOTS_AUTO,
         )

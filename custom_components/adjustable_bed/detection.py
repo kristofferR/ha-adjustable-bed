@@ -87,6 +87,7 @@ from .const import (
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
+    BED_TYPE_VMATBASIC,
     # Detection constants
     BEDTECH_MANUFACTURER_ID,
     BEDTECH_NAME_PATTERNS,
@@ -564,6 +565,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_TIMOTION_AHF: "TiMOTION AHF",
     BED_TYPE_VIBRADORM: "Vibradorm (VMAT)",
     BED_TYPE_VIBRADORM_APP: "Caresse Diamant / Werkmeister apps",
+    BED_TYPE_VMATBASIC: "V-MAT Basic app (explicit product profile)",
     # Diagnostic
     BED_TYPE_DIAGNOSTIC: "Diagnostic (unknown bed)",
 }
@@ -1084,6 +1086,20 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
 
     # Priority 1: Check manufacturer data (highest confidence, unique signal)
     mfr_bed_type, mfr_confidence, mfr_id = _check_manufacturer_data(service_info.manufacturer_data)
+    # A host-map record is a candidate hint, not proof of the source's first
+    # raw manufacturer AD field or an exact one of its three product profiles.
+    from .beds.vmatbasic_protocol import manufacturer_payload_matches
+
+    if mfr_bed_type in {None, BED_TYPE_VIBRADORM} and len(service_info.manufacturer_data or {}) == 1:
+        company, payload = next(iter(service_info.manufacturer_data.items()))
+        if manufacturer_payload_matches(payload):
+            return DetectionResult(
+                bed_type=BED_TYPE_VMATBASIC, confidence=0.6,
+                signals=["manufacturer:vmatbasic_conditional_record", "raw_first_ad_order:unknown"],
+                manufacturer_id=company,
+                requires_characteristic_check=True,
+            )
+
     if mfr_bed_type:
         signals.append(f"manufacturer_id:{mfr_id}")
         _LOGGER.info(

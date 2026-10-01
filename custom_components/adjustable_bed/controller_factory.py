@@ -79,6 +79,7 @@ from .const import (
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
+    BED_TYPE_VMATBASIC,
     CB1322_MANUFACTURER_MARKERS,
     CONF_FURNIMOVE_REMOTE,
     CONF_HAS_MASSAGE,
@@ -111,6 +112,9 @@ from .const import (
     CONF_VIBRADORM_RESTORED,
     CONF_VIBRADORM_RGB,
     CONF_VIBRADORM_VMAT_REMOTE,
+    CONF_VMATBASIC_FLOOR_LEVEL,
+    CONF_VMATBASIC_FLOOR_MINUTES,
+    CONF_VMATBASIC_PROFILE,
     DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
     DEWERTOKIN_RF_GATEWAY_MODEL,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
@@ -581,6 +585,25 @@ async def create_controller(
             transport=entry_data.get(CONF_LOGICDATA_APP_TRANSPORT, "auto"),
             has_light=entry_data.get(CONF_LOGICDATA_APP_HAS_LIGHT, True),
             has_massage=entry_data.get(CONF_HAS_MASSAGE, False),
+        )
+
+    if bed_type == BED_TYPE_VMATBASIC:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.vmatbasic", __package__
+        )
+        from .beds.vmatbasic import VMatBasicController
+        from .vmatbasic_state import get_vmatbasic_session_intent
+
+        data = coordinator.entry.data
+        return VMatBasicController(
+            coordinator,
+            profile=data[CONF_VMATBASIC_PROFILE],
+            floor_level=data.get(CONF_VMATBASIC_FLOOR_LEVEL),
+            floor_minutes=data.get(CONF_VMATBASIC_FLOOR_MINUTES, 0),
+            remember_settings=coordinator.remember_vmatbasic_settings,
+            session_intent=get_vmatbasic_session_intent(
+                coordinator.hass, coordinator.address, data[CONF_VMATBASIC_PROFILE]
+            ),
         )
 
     if bed_type == BED_TYPE_VIBRADORM_APP:
