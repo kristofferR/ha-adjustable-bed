@@ -137,6 +137,7 @@ The entries below identify motor/actuator manufacturers or supported app profile
 | ✅ [Logicdata](docs/beds/logicdata.md) | SILVERmotion, SimplicityFrame |
 | 🧪 [LOGICDATA app profiles](docs/beds/logicdata-app.md) | MOTIONrelax phone and tablet apps, explicit standard/middle layouts |
 | ✅ [Okin CB35](docs/beds/okin-cb35.md) | Sealy Posturematic |
+| 🧪 [AdjustableM5X5 app](docs/beds/starcode-m5x5.md) | Explicit CB25, F23, kneading or Elevate profile; main plus three independently addressed lifts; hardware unverified |
 | ✅ [DewertOkin ELEVATE](docs/beds/star-elevate.md) | ELEVATE two-actuator lift accessory |
 | ✅ [Okin CST](docs/beds/okin-cst.md) | Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; Nectar Motion |
 | 🧪 [FurniMove / OKIN Smart Remote app](docs/beds/furnimove.md) | Explicit handset layouts, including RF ECO BT adjustable-bed receivers; hardware unverified |

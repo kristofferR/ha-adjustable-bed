@@ -156,7 +156,7 @@ export function bedEntitiesForDevice(
           motor(`${split.key.slice(0, -9)}_${split.side}`).position = id;
         else if (key.startsWith("massage_") && key.endsWith("_intensity"))
           bed.massage.numbers.push(id);
-        else if (key === "light_level" || key === "vmatbasic_floor_level" || key === "starcode_abm5_4_light_level") bed.lights.level = id;
+        else if (key === "light_level" || key === "starcode_brightness" || key === "vmatbasic_floor_level" || key === "starcode_abm5_4_light_level") bed.lights.level = id;
         else if (key === "vmatbasic_floor_minutes") {
           bed.lights.timerMinutes = id;
           bed.lights.timerAppliesImmediately = true;
@@ -185,7 +185,7 @@ export function bedEntitiesForDevice(
           bed.disconnect = id;
         } else if (key === "toggle_light") {
           bed.lights.toggle = id;
-        } else if (key === "light_cycle") {
+        } else if (key === "light_cycle" || key === "starcode_light_cycle") {
           bed.lights.cycle = id;
         } else if (key === "vibradorm_app_mood_toggle" || key === "vmatbasic_mood_toggle") {
           mood().toggle = id;
@@ -229,7 +229,11 @@ export function bedEntitiesForDevice(
           key === "vibradorm_app_all_down" ||
           key === "vibradorm_app_sync" ||
           key === "vibradorm_app_refresh_info" ||
-          key === "vmatbasic_all_up" || key === "vmatbasic_all_down" || key === "vmatbasic_refresh_info"
+          key === "vmatbasic_all_up" || key === "vmatbasic_all_down" || key === "vmatbasic_refresh_info" ||
+          key.startsWith("starcode_save_") ||
+          key === "starcode_reset" ||
+          key === "starcode_query" ||
+          key === "starcode_light_mode"
         ) {
           bed.utility.push(id);
         } else if (key.startsWith("massage_")) {
@@ -260,6 +264,7 @@ export function bedEntitiesForDevice(
         if (key === "light_timer") bed.lights.timer = id;
         // A split bed's local left/right selector routes the motor controls.
         else if (key === "remacro_control_side") bed.controlSide = id;
+        else if (key === "starcode_color") mood().selects.push(id);
         else if (key === "vibradorm_app_mood_palette" || key === "vibradorm_app_mood_effect" || key === "vmatbasic_mood_palette" || key === "vmatbasic_mood_effect")
           mood().selects.push(id);
         else if (key === "vibradorm_app_massage_wave")
