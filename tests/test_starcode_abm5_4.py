@@ -380,7 +380,15 @@ async def test_connection_actual_roles_subscription_wake_retry_and_delays(device
     sleep = AsyncMock()
     with patch("custom_components.adjustable_bed.beds.starcode_abm5_4.asyncio.sleep", sleep):
         await c.start_notify()
-        assert c._ready and len(pending) == 2
+        assert c._ready
+        assert [operation.__name__ for operation in pending] == (
+            ["connected_reads"] if wake else ["classify", "connected_reads"]
+        )
+        if wake:
+            assert c._classification_complete
+            assert (
+                c.client.read_gatt_char.call_args.args[0] is c.client.services[1].characteristics[0]
+            )
         if subscribe:
             sleep.assert_awaited_once_with(2)
         assert c.client.start_notify.call_count == (2 if subscribe else 0)
@@ -388,8 +396,10 @@ async def test_connection_actual_roles_subscription_wake_retry_and_delays(device
         for call in c.client.write_gatt_char.call_args_list:
             assert call.args[0] is c.client.services[0].characteristics[0]
             assert call.args[1] == bytes.fromhex("5a0b00a5") and call.kwargs["response"] is True
-        assert len(pending) == 2
-        await pending[1]()
+        connected_reads = next(
+            operation for operation in pending if operation.__name__ == "connected_reads"
+        )
+        await connected_reads()
         assert [x.args[0] for x in sleep.call_args_list][-2:] == [0.5, 1]
         assert c.client.read_gatt_char.call_args.args[0] is c.client.services[1].characteristics[1]
     await c.stop_notify()

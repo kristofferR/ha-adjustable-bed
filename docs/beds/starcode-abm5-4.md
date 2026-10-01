@@ -42,7 +42,9 @@ Scanning applies `platformName.toLowerCase().startsWith("star")`. Constructors
 instead use case-sensitive `Star` for D8, `BLE` for D3 and otherwise D7. Thus a
 lowercase `star` name can scan successfully and construct D7. The manufacturer
 characteristic's exact string `star` selects C/D9; another result selects C/D8 in
-the UART classification path. This callback does not update U. No service or
+the UART classification path. Both D choices retain the same UART role pair
+and write mode, so the callback changes D without reopening a different channel.
+This callback does not update U. No service or
 manufacturer-data acceptance filter is supplied to scanning; company key 89 is
 printed as a diagnostic. Remembered reconnection uses the stored identity/name.
 
@@ -119,13 +121,16 @@ fallbacks; equal on/off frames in some variants remain distinct app actions.
 | Massage strength step | Single shot | Relative head/foot increase/decrease only |
 | Massage wave step | 100 ms stream while held | Bounded directional operation |
 | Massage release | STOP at 100 ms, query at 300 ms | Same-owner delayed cleanup; obsolete callbacks cannot stop a new action |
-| Automatic white | Changed U8/9-consumed field47=true while connected starts captured C frames every 100 ms, ceasing after 5 s without STOP | Keep valid same-owner behavior; invalidate replacement-owner callbacks |
+| Automatic white | Changed U8/9-consumed field 47=true while connected starts captured C frames every 100 ms, ceasing after 5 s without STOP | Queue behind active user commands without preemption; invalidate replacement-owner callbacks |
 
 The six-second success toast does not prove EEPROM persistence or delivery.
 Three-packet commitment, 110-packet storage and arbitrary generic program frames
 from another app must not be imported. The shared app debounce accepts only
 elapsed sampled integer milliseconds **strictly greater than 500 ms** across floor-light plus/minus,
-brightness, and native on/off/toggle actions. A suppressed brightness change
+brightness, and native on/off/toggle actions. Plus/minus computes a bounded request from the observed or retained level and
+does not advance that level locally, including on the non-subscribing BOX3633
+route. Native feedback or the separate slider change updates local level; a
+successful write does not prove physical brightness. A suppressed brightness change
 does not update local state; a rejected value does not consume the shared gate.
 
 ## Massage and floor light gates
@@ -153,12 +158,24 @@ the eight observed Home UI fields and the shared light timestamp in the
 coordinator's process-local state. Reconstructed raw models keep fresh parser
 defaults; raw diagnostics stay unknown until a valid callback. The retained
 head intensity, wave, low4b and white flag remain last-observed UI values,
-separate from the new raw parser model.
+separate from the new raw parser model. Internal capability reloads hand this
+state to the matching entry and physical address, including a controller built
+later. Fresh consumed native state or a newly accepted light intent takes
+precedence over the old snapshot.
 Rehydration does not replay callbacks or restart automatic white lighting.
+A changed notification with a modern U runs the native whole-model Home
+consumer, even for a partial diagnostic frame, so fresh model defaults can
+replace retained UI fields. An unchanged frame or legacy U does not run that
+consumer.
 A native test across all
 C/U combinations is a branch probe, not proof that every combination has a live
 application writer. An old modern automatic-white stream retargeted to another
 bed is a safety exclusion, not a fresh C3/7 automatic-white control.
+
+Standard preset buttons expose Flat, Zero G, Anti-snore, TV, Lounge and Memory A.
+The `goto_preset` action accepts only slot 1; the named presets also remain
+available through the profile-specific held action. Native C/U release gates apply
+to every route.
 
 The controller-specific entities include a 10/20/30 timer select,
 raw 1–6 light-level number where reachable, union and light-step buttons, named
@@ -173,6 +190,9 @@ fixed entity catalog. An omitted transport selector requires the stored original
 BLE name; a display alias cannot supply that identity. BOX1220/BOX3633 transports do not reclassify C. UART
 transports can restore offline when C is already BOX1220, BOX3633, BOX25 or
 BOX25_STAR, since either manufacturer result keeps the same C-gated controls.
+UART command admission waits for optional manufacturer classification to finish
+(or prove unavailable), alongside required wake/subscription initialization.
+Its query/read cadence stays parallel, and stale sessions cannot publish readiness.
 UART with another C must connect and finish classification before its complete
 catalog is known. U remains independent. Offline capabilities do not create
 observed feedback or permission for state-gated timer/light/massage commands.
@@ -189,7 +209,10 @@ Do not use another application's held-command catalog.
 
 The `starcode_abm5_4_use_detected_profile` button cancels and cleans up
 the current owner's work before adopting D into C/U. It retains own-address
-state and invalidates old callbacks. Consumed-state diagnostics include
+state and invalidates old callbacks. Crossing the C-gated entity boundary
+defers a capability reload until the owned connection is released; unchanged
+catalogs do not trigger reload loops. Each paired child persists its own selectors
+and rebuilds under the parent registry guard. Consumed-state diagnostics include
 `starcode_abm5_4_massage_on`, `starcode_abm5_4_light_on`,
 `starcode_abm5_4_wave`, `starcode_abm5_4_head_intensity`,
 `starcode_abm5_4_low_4b` and `starcode_abm5_4_automatic_white_flag`, alongside
@@ -209,21 +232,21 @@ public-domain rejection tests; no accepted evidence or exclusion is rewritten.
 The parsers assign raw model fields. They do not prove calibrated motor positions,
 angles, percent, fault codes or physical actuator count. The app proves two control
 axes; no extra neck/lumbar/motion/voice/alarm/RGB control follows from raw slots.
-Initial fields47 and5f are true in the app model, separately from physical state.
+Initial fields 47 and 5f are true in the app model, separately from physical state.
 
 | Parser | Recognition and sufficient length | Important formulas |
 |---|---|---|
-| Modern C8/9 | `a5/0b`, at least 16 bytes | Time `(b[4]<<8)\|b[5]` maps 1–600→1, 601–1200→2, 1201–1800→3, otherwise0. Wave is byte6 low nibble; both intensity slots use byte7 low nibble. Brightness/index are byte14 high/low nibble; light on is low nibble>0; field47 is byte15 high nibble==1. |
-| Modern C8/9 | `a5/0d`, at least 19 bytes | Fields2b/33/3b clamp bytes4/6/8 to100; field5f is byte17==0. These remain raw diagnostics. |
-| All non-BOX15 C | `a5/0c`, at least 8 bytes | Fields67/7f/6f use bytes6/4/7. Field77 maps byte5=5→17,6→19,otherwise9. No alarm interpretation is inferred. |
-| Legacy BOX24 formulas | `a5/0b`, byte2=14, at least 9 bytes | Timer index multiplied by10; wave=byte6−1, including−1. Intensity scale is `v//3 + v%3 + int(v>1)` on byte7 low nibble and byte8. |
-| BOX15 special | `ed/80`, at least 7 bytes | Fields67/7f/6f/77 use bytes3/5/4/6. |
-| BOX15 fallback | Non-special length23 | Timer `b[19]&15`, head `remap(b[11]&7)`, foot `remap(b[12])`, wave `b[21]`. |
-| BOX15 fallback | Non-special length16 | Timer `b[14]&15`, head `remap(b[7])`, foot `remap(b[8])`, wave `b[14]>>4`. |
-| BOX15 fallback | Non-special length10 | Timer `b[8]&15`, head/foot0, wave1. |
-| BOX15 fallback | Other non-special length | Timer/head/foot0, wave1. |
+| Modern C8/9 | `a5/0b`, at least 16 bytes | Time `(b[4]<<8)\|b[5]` maps 1–600→1, 601–1200→2, 1201–1800→3, otherwise 0. Wave is byte 6 low nibble; both intensity slots use byte 7 low nibble. Brightness/index are byte 14 high/low nibble; light on is low nibble>0; field 47 is byte 15 high nibble==1. |
+| Modern C8/9 | `a5/0d`, at least 19 bytes | Fields 2b/33/3b clamp bytes 4/6/8 to 100; field 5f is byte 17==0. These remain raw diagnostics. |
+| All non-BOX15 C | `a5/0c`, at least 8 bytes | Fields 67/7f/6f use bytes 6/4/7. Field 77 maps byte 5=5→17,6→19,otherwise 9. No alarm interpretation is inferred. |
+| Legacy BOX24 formulas | `a5/0b`, byte 2=14, at least 9 bytes | Timer index multiplied by 10; wave=byte 6−1, including −1. Intensity scale is `v//3 + v%3 + int(v>1)` on byte 7 low nibble and byte 8. |
+| BOX15 special | `ed/80`, at least 7 bytes | Fields 67/7f/6f/77 use bytes 3/5/4/6. |
+| BOX15 fallback | Non-special length 23 | Timer `b[19]&15`, head `remap(b[11]&7)`, foot `remap(b[12])`, wave `b[21]`. |
+| BOX15 fallback | Non-special length 16 | Timer `b[14]&15`, head `remap(b[7])`, foot `remap(b[8])`, wave `b[14]>>4`. |
+| BOX15 fallback | Non-special length 10 | Timer `b[8]&15`, head/foot 0, wave 1. |
+| BOX15 fallback | Other non-special length | Timer/head/foot 0, wave 1. |
 
-Here `remap` maps3→2 and6→3, passing other values through. BOX15 fallback
+Here `remap` maps 3→2 and 6→3, passing other values through. BOX15 fallback
 overwrites those four fields without adding header/checksum validation. A short
 recognized special `ed/80` frame of 4–6 bytes is rejected safely rather than falling through and
 overwriting fallback state.
@@ -231,10 +254,10 @@ overwriting fallback state.
 Only U8/9 consumes modern parsed state for its positive gates and public light/
 massage state. Its head intensity is `max(field13−1,0)`, timer is `field_b`,
 wave is `field23`, and massage-on is **timer>0**. Light-on is `field43`, level
-is `field53`, low 4b is `field4b`, and automatic-white flag is `field47`.
-The flag starts white only while connected. Raw67/6f/77/7f have no other app
-consumer or proved error/model mapping; raw2b/33/3b have no measurement UI or
-unit conversion. Field5f supplies diagnostic stopped text, not STOP or a control
+is `field53`, low 4b is `field4b`, and automatic-white flag is `field 47`.
+The flag starts white only while connected. Raw 67/6f/77/7f have no other app
+consumer or proved error/model mapping; raw 2b/33/3b have no measurement UI or
+unit conversion. Field 5f supplies diagnostic stopped text, not STOP or a control
 gate. All assigned raw fields remain diagnostic. Identical parsed
 model updates preserve the artifact's equality suppression; valid changed
 updates must retain exact formulas. The unreachable D1 fragment accumulator is

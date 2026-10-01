@@ -719,6 +719,21 @@ class AdjustableBedCoordinator:
         finally:
             self._capability_reload_scheduled = False
 
+    def _starcode_reload_coordinators(self, loaded: object) -> tuple[AdjustableBedCoordinator, ...]:
+        """Find the exact standalone or physical children of this loaded entry."""
+        from .paired_coordinator import PairedBedCoordinator
+
+        if isinstance(loaded, AdjustableBedCoordinator):
+            return (loaded,) if loaded.entry.entry_id == self.entry.entry_id else ()
+        if isinstance(loaded, PairedBedCoordinator):
+            return tuple(
+                child
+                for child in loaded.children.values()
+                if isinstance(child, AdjustableBedCoordinator)
+                and child.entry.entry_id == self.entry.entry_id
+            )
+        return ()
+
     async def _async_reload_if_capability_changed(self) -> None:
         """Reload if this disconnected coordinator still owns the loaded entry."""
         if (
@@ -737,8 +752,35 @@ class AdjustableBedCoordinator:
             owns_loaded_child = callable(child_for_side) and child_for_side(side) is self
         if loaded is not self and not owns_loaded_child:
             return
+        from .beds.starcode_abm5_4 import StarcodeAbm5_4Controller
+        from .beds.starcode_abm5_4_profiles import RetainedAppState
+
+        retained_states = {
+            (child.entry.entry_id, child.address): child.starcode_app_retained_state
+            for child in self._starcode_reload_coordinators(loaded)
+            if child.bed_type == BED_TYPE_STARCODE_ABM5_4
+            and isinstance(child.starcode_app_retained_state, RetainedAppState)
+            and child.starcode_app_retained_state.address == child.address
+        }
         self._pending_capability_reload = False
-        await self.hass.config_entries.async_reload(self.entry.entry_id)
+        if not await self.hass.config_entries.async_reload(self.entry.entry_id):
+            return
+        reloaded = self.hass.data.get(DOMAIN, {}).get(self.entry.entry_id)
+        for child in self._starcode_reload_coordinators(reloaded):
+            retained = retained_states.get((child.entry.entry_id, child.address))
+            fresh = child.starcode_app_retained_state
+            if (
+                retained is None
+                or child.bed_type != BED_TYPE_STARCODE_ABM5_4
+                or isinstance(fresh, RetainedAppState)
+                and (fresh.observed or fresh.last_light_time_ms is not None)
+            ):
+                continue
+            child.starcode_app_retained_state = retained
+            controllers = (child._controller, child._offline_controller)
+            for controller in controllers:
+                if isinstance(controller, StarcodeAbm5_4Controller):
+                    controller.restore_retained_app_state(retained)
 
     @contextlib.asynccontextmanager
     async def async_command_operation_guard(self) -> AsyncIterator[None]:

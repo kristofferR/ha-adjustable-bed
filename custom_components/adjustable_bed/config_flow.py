@@ -731,13 +731,15 @@ def _default_motor_count(
 def _confident_auto_detect(result: DetectionResult) -> str | None:
     """Return the detected bed type only for a high-confidence, unambiguous match.
 
-    Used by the manual Auto-detect path so a low-confidence or ambiguous
-    detection does not become a silent default/auto-resolution.
+    An explicit app hint does not defeat a private receiver's high confidence.
+    Shared app transports stay below the threshold and require a choice.
     """
     if (
         result.bed_type is not None
         and result.confidence >= _AUTO_DETECT_MIN_CONFIDENCE
-        and not result.ambiguous_types
+        and not any(
+            candidate != BED_TYPE_STARCODE_ABM5_4 for candidate in (result.ambiguous_types or ())
+        )
     ):
         return result.bed_type
     return None

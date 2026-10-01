@@ -163,6 +163,28 @@ class StarcodeAbm5_4Controller(BedController):
             self._automatic_white_flag = retained.automatic_white_flag
             self._last_light_time_ms = retained.last_light_time_ms
 
+    def restore_retained_app_state(self, retained: RetainedAppState) -> bool:
+        """Retain this owner's Home fields across an internal entity rebuild."""
+        if (
+            retained.address != self._owner_address
+            or self._coordinator.address != self._owner_address
+            or self._ui_state_observed
+            or self._last_light_time_ms is not None
+        ):
+            return False
+        self._ui_state_observed = retained.observed
+        self._massage_on = retained.massage_on
+        self._light_on = retained.light_on
+        self._level = retained.level
+        self._timer_index = retained.timer_index
+        self._head_intensity = retained.head_intensity
+        self._wave = retained.wave
+        self._low_4b = retained.low_4b
+        self._automatic_white_flag = retained.automatic_white_flag
+        self._last_light_time_ms = retained.last_light_time_ms
+        self._publish()
+        return True
+
     @property
     def supports_single_address_pairing(self) -> bool:
         return False
@@ -267,6 +289,26 @@ class StarcodeAbm5_4Controller(BedController):
     @property
     def memory_slot_count(self) -> int:
         return 1
+
+    @property
+    def supports_memory_presets(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_zero_g(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_anti_snore(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_tv(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_lounge(self) -> bool:
+        return True
 
     @property
     def supports_memory_programming(self) -> bool:
@@ -602,7 +644,7 @@ class StarcodeAbm5_4Controller(BedController):
     async def set_app_timer(self, option: str) -> None:
         self._require_positive()
         if option not in ("10", "20", "30"):
-            raise ValueError("App timer has only10/20/30 minutes, no Off frame")
+            raise ValueError("App timer has only 10/20/30 minutes, no Off frame")
         await self._once("changeMassageTime", int(option) // 10, massage_release=True)
 
     async def set_app_brightness(self, value: float) -> None:
@@ -615,7 +657,7 @@ class StarcodeAbm5_4Controller(BedController):
         ):
             raise ValueError("Brightness is an exact integer app level")
         if not 1 <= value <= 6:
-            raise ValueError("Brightness is outside1..6")
+            raise ValueError("Brightness is outside 1..6")
         if not self._accept_light_action():
             return
         self._level = int(value)
@@ -857,7 +899,9 @@ class StarcodeAbm5_4Controller(BedController):
                         ):
                             await self._stream("change2White", 5000, release="none")
 
-                    await self._coordinator.async_execute_controller_command(action)
+                    await self._coordinator.async_execute_controller_command(
+                        action, cancel_running=False
+                    )
 
                 self._spawn(white)
         self._publish()
@@ -891,10 +935,12 @@ class StarcodeAbm5_4Controller(BedController):
             self._firmware = data.decode("utf-8", errors="replace")
             self._publish()
 
-    def _persist_selectors(self) -> None:
+    def _persist_selectors(self, *, capabilities_changed: bool = False) -> None:
         data = dict(self._coordinator.entry.data)
         data["starcode_abm5_4_command_selector"] = self.command_selector
         data["starcode_abm5_4_ui_selector"] = self.ui_selector
+        if data == dict(self._coordinator.entry.data):
+            return
         from ..const import (
             CONF_BLE_BOND_ESTABLISHED,
             CONF_STARCODE_COMMAND_SELECTOR,
@@ -904,9 +950,14 @@ class StarcodeAbm5_4Controller(BedController):
         self._coordinator._begin_internal_entry_update(
             bool(data.get(CONF_BLE_BOND_ESTABLISHED, False))
         )
+        if capabilities_changed and self._coordinator._pending_internal_bond_marker is not None:
+            self._coordinator._pending_capability_reload = True
+            self._coordinator._offline_controller = self
         self._coordinator._async_persist_config(
             data, keys={CONF_STARCODE_COMMAND_SELECTOR, CONF_STARCODE_UI_SELECTOR}
         )
+        if capabilities_changed:
+            self._coordinator._schedule_pending_capability_reload()
 
     async def adopt_transport_profile(self) -> None:
         """App AddDevice copies D into C/U, retaining this address's UI state."""
@@ -914,9 +965,13 @@ class StarcodeAbm5_4Controller(BedController):
             raise ValueError("Cannot move observed state to another physical bed")
         await self._cleanup_active()
         self._operation_generation += 1
+        had_positive_controls = self.command_selector in _POSITIVE_SELECTORS
         self.command_selector = self.transport_selector
         self.ui_selector = self.transport_selector
-        self._persist_selectors()
+        self._persist_selectors(
+            capabilities_changed=had_positive_controls
+            != (self.command_selector in _POSITIVE_SELECTORS)
+        )
         self._publish()
 
     @property
@@ -942,9 +997,14 @@ class StarcodeAbm5_4Controller(BedController):
             return
         self._manufacturer = data.decode("utf-8", errors="replace")
         if self._transport.wake:
+            had_positive_controls = self.command_selector in _POSITIVE_SELECTORS
             self.command_selector = manufacturer_selector(self._manufacturer)
+            # Both manufacturer choices keep the same UART roles; D changes independently of U.
             self.transport_selector = self.command_selector
-            self._persist_selectors()
+            self._persist_selectors(
+                capabilities_changed=had_positive_controls
+                != (self.command_selector in _POSITIVE_SELECTORS)
+            )
         self._publish()
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
@@ -1031,7 +1091,13 @@ class StarcodeAbm5_4Controller(BedController):
                 self._classification_complete = True
                 self._publish()
 
-        self._spawn(classify)
+        classification_task: asyncio.Task[None] | None = None
+        if self._transport.wake:
+            classification_task = asyncio.create_task(classify())
+            self._tasks.add(classification_task)
+            classification_task.add_done_callback(self._tasks.discard)
+        else:
+            self._spawn(classify)
 
         async def connected_reads() -> None:
             await asyncio.sleep(0.5)
@@ -1051,11 +1117,16 @@ class StarcodeAbm5_4Controller(BedController):
         try:
             notify = self._role(client, self._transport.notify)
             await initialize_roles()
+            if classification_task is not None:
+                await classification_task
             if not self._session_valid(client, session):
                 raise ConnectionError("App target changed during initialization")
             self._ready = True
             self._publish()
         except Exception, asyncio.CancelledError:
+            if classification_task is not None:
+                classification_task.cancel()
+                await asyncio.gather(classification_task, return_exceptions=True)
             if session == self._session_generation and self._notify_client is client:
                 await self.stop_notify()
             # Also undo a partially-completed backend subscription. Initialization

@@ -231,3 +231,119 @@ async def test_runtime_selected_app_connects_without_bond_support(
         assert connect.await_args.kwargs["pair"] is False
         mock_bleak_client.pair.assert_not_awaited()
         await coordinator.async_shutdown()
+
+
+@pytest.mark.parametrize("route", ["manual", "bluetooth_full_list"])
+async def test_private_star2_auto_preserves_receiver_and_pulse_defaults(
+    hass: HomeAssistant, enable_custom_integrations, mock_bluetooth_service_info, route: str
+) -> None:
+    mock_bluetooth_service_info.name = "Star2 Bed"
+    mock_bluetooth_service_info.service_uuids = [const.OCTO_STAR2_SERVICE_UUID]
+    with patch(
+        "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+        return_value=[mock_bluetooth_service_info],
+    ):
+        if route == "manual":
+            result = await hass.config_entries.flow.async_init(
+                const.DOMAIN, context={"source": SOURCE_USER}
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], user_input={CONF_ADDRESS: "manual"}
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], user_input={CONF_ADDRESS: mock_bluetooth_service_info.address}
+            )
+            assert result["step_id"] == "manual_config"
+        else:
+            # Preserve a full-list choice while the scanner gains the private service.
+            mock_bluetooth_service_info.service_uuids = []
+            result = await hass.config_entries.flow.async_init(
+                const.DOMAIN,
+                context={"source": SOURCE_BLUETOOTH},
+                data=mock_bluetooth_service_info,
+            )
+            assert result["step_id"] == "bluetooth_disambiguate"
+            mock_bluetooth_service_info.service_uuids = [const.OCTO_STAR2_SERVICE_UUID]
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], user_input={"bed_type_choice": "show_all"}
+            )
+            assert result["step_id"] == "bluetooth_confirm"
+        schema = result["data_schema"]
+        assert schema is not None
+        defaults = schema({})
+        assert isinstance(defaults, dict)
+        assert defaults[const.CONF_BED_TYPE] == const.BED_TYPE_OCTO
+        assert defaults[const.CONF_MOTOR_PULSE_COUNT] == "3"
+        assert defaults[const.CONF_MOTOR_PULSE_DELAY_MS] == "50"
+        with (
+            patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False),
+            patch(
+                "homeassistant.config_entries.ConfigEntries.async_setup",
+                new=AsyncMock(return_value=True),
+            ),
+        ):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={
+                    const.CONF_BED_TYPE: BED_TYPE_AUTO_DETECT,
+                    const.CONF_PROTOCOL_VARIANT: const.OCTO_VARIANT_STAR2,
+                    const.CONF_DISCONNECT_AFTER_COMMAND: False,
+                },
+            )
+            if route == "manual":
+                assert result["step_id"] == "manual_octo"
+                result = await hass.config_entries.flow.async_configure(
+                    result["flow_id"], user_input={}
+                )
+            assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["data"][const.CONF_BED_TYPE] == const.BED_TYPE_OCTO
+        assert result["data"][const.CONF_MOTOR_PULSE_COUNT] == 3
+        assert result["data"][const.CONF_MOTOR_PULSE_DELAY_MS] == 50
+
+
+@pytest.mark.parametrize("name", ["Star254202079996", "Star352201011800"])
+async def test_shared_star_uart_manual_auto_requires_explicit_choice(
+    hass: HomeAssistant, enable_custom_integrations, mock_bluetooth_service_info, name: str
+) -> None:
+    mock_bluetooth_service_info.name = name
+    mock_bluetooth_service_info.service_uuids = [const.NORDIC_UART_SERVICE_UUID]
+    with patch(
+        "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+        return_value=[mock_bluetooth_service_info],
+    ):
+        result = await hass.config_entries.flow.async_init(
+            const.DOMAIN, context={"source": SOURCE_USER}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={CONF_ADDRESS: "manual"}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={CONF_ADDRESS: mock_bluetooth_service_info.address}
+        )
+    assert result["step_id"] == "manual_config"
+    schema = result["data_schema"]
+    assert schema is not None
+    defaults = schema({})
+    assert isinstance(defaults, dict)
+    assert defaults[const.CONF_BED_TYPE] == BED_TYPE_AUTO_DETECT
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], user_input={const.CONF_BED_TYPE: BED_TYPE_AUTO_DETECT}
+    )
+    assert result["step_id"] == "manual_config"
+    assert result["errors"] == {"base": "auto_detect_failed"}
+    hass.config_entries.flow.async_abort(result["flow_id"])
+
+
+@pytest.mark.parametrize("other_ambiguity", [None, const.BED_TYPE_LINAK])
+def test_confident_receiver_app_hint_preserves_other_ambiguities(
+    other_ambiguity: str | None,
+) -> None:
+    from custom_components.adjustable_bed.config_flow import _confident_auto_detect
+
+    alternatives = [const.BED_TYPE_STARCODE_ABM5_4]
+    if other_ambiguity:
+        alternatives.append(other_ambiguity)
+    result = const.DetectionResult(
+        bed_type=const.BED_TYPE_OCTO, confidence=1.0, signals=[], ambiguous_types=alternatives
+    )
+    assert _confident_auto_detect(result) == (None if other_ambiguity else const.BED_TYPE_OCTO)
