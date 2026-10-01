@@ -620,6 +620,7 @@
       "wrong_variant": "Failed to communicate with bed. Try selecting a different protocol variant.",
       "device_busy": "The bed is busy or another device is connected. Try disconnecting other controllers first.",
       "invalid_number": "Please enter valid numbers for motor pulse count and delay.",
+      "invalid_pulse_count_range": "For this app profile, the motor pulse count must be between 1 and 600.",
       "invalid_pin": "PIN must be empty or exactly 4 digits.",
       "invalid_variant_for_bed_type": "The selected protocol variant is not compatible with the selected bed type.",
       "invalid_motor_count_for_bed_type": "One motor is supported only for Standard OCTO TV lift controllers.",
@@ -855,6 +856,7 @@
     },
     "error": {
       "invalid_number": "Please enter valid numbers for motor pulse count and delay.",
+      "invalid_pulse_count_range": "For this app profile, the motor pulse count must be between 1 and 600.",
       "invalid_pin": "PIN must be empty or exactly 4 digits.",
       "invalid_motor_count_for_bed_type": "One motor is supported only for Standard OCTO TV lift controllers.",
       "invalid_angle": "Angle must be a positive number between 0 and 180 degrees.",
@@ -3466,7 +3468,7 @@
         },
         "time": {
           "name": "Alarm time",
-          "description": "Minute precision. The app sets today, or tomorrow if the time has passed."
+          "description": "Required when enabling. Minute precision; the app sets today, or tomorrow if the time has passed."
         },
         "wake_mode": {
           "name": "Wake mode",
@@ -4186,6 +4188,12 @@
     },
     "side_not_available": {
       "message": "This bed has no {side} side."
+    },
+    "zseries_alarm_time_required": {
+      "message": "Choose an alarm time to enable the Z-Series alarm."
+    },
+    "zseries_alarm_wake_mode_required": {
+      "message": "Choose a wake-up mode to enable the Z-Series alarm."
     },
     "service_not_supported_for_paired": {
       "message": "{device_name} is a paired bed; {service} is not yet supported on paired beds."

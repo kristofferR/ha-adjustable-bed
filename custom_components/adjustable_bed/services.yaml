@@ -1548,7 +1548,7 @@ zseries_set_alarm:
         boolean:
     time:
       name: Local alarm time
-      description: Time to the nearest minute. The app sets today's weekday, or tomorrow's if the time has passed.
+      description: Required when enabling. Time to the nearest minute; the app sets today's weekday, or tomorrow's if the time has passed.
       selector:
         time:
     wake_mode:

@@ -260,6 +260,8 @@ from .const import (
     VIBRADORM_WERKMEISTER_CONTROLS,
     VMATBASIC_CONFIG_KEYS,
     VMATBASIC_PROFILES,
+    ZSERIES_BED_TYPES,
+    ZSERIES_PULSE_COUNT_RANGE,
     DetectionResult,
     bed_type_has_position_feedback,
     disconnect_after_command_default_enabled,
@@ -706,6 +708,12 @@ def _is_valid_motor_count(
 ) -> bool:
     """Return whether a motor count is valid for the selected protocol."""
     return motor_count in _motor_count_options(bed_type, protocol_variant)
+
+
+def _invalid_pulse_count(bed_type: str | None, pulse_count: int) -> bool:
+    """Reject counts whose Z-Series press would fall outside the 0.1-60 s hold window."""
+    low, high = ZSERIES_PULSE_COUNT_RANGE
+    return bed_type in ZSERIES_BED_TYPES and not low <= pulse_count <= high
 
 
 def _normalize_fixed_motor_count(
@@ -2613,6 +2621,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     motor_pulse_count = pulse_defaults[0]
             else:
                 motor_pulse_count = pulse_defaults[0]
+            if _invalid_pulse_count(selected_bed_type, motor_pulse_count):
+                errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
             # Validate motor pulse delay
             pulse_delay_input = user_input.get(CONF_MOTOR_PULSE_DELAY_MS)
             if pulse_delay_input is not None and pulse_delay_input != "":
@@ -3577,6 +3587,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 )
             except ValueError, TypeError:
                 errors["base"] = "invalid_number"
+            if not errors and _invalid_pulse_count(bed_type, motor_pulse_count):
+                errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
 
             if not errors:
                 disconnect_after_command = self._disconnect_after_command_choice(
@@ -3872,6 +3884,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     )
                 except ValueError, TypeError:
                     errors["base"] = "invalid_number"
+                if not errors and _invalid_pulse_count(bed_type, motor_pulse_count):
+                    errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
 
                 if not errors:
                     disconnect_after_command = self._disconnect_after_command_choice(
@@ -7249,6 +7263,14 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     step_id=step_id,
                     data_schema=vol.Schema(schema_dict),
                     errors={"base": "invalid_number"},
+                )
+            if _invalid_pulse_count(
+                bed_type, user_input.get(CONF_MOTOR_PULSE_COUNT, pulse_defaults[0])
+            ):
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={CONF_MOTOR_PULSE_COUNT: "invalid_pulse_count_range"},
                 )
             # Convert angle limit values to floats with field-specific error handling
             if CONF_BACK_MAX_ANGLE in user_input:

@@ -302,3 +302,87 @@ async def test_options_switch_from_generic_okin_profile_applies_fixed_defaults(h
     assert entry.data[CONF_MOTOR_COUNT] == 2
     assert (entry.data[CONF_MOTOR_PULSE_COUNT], entry.data[CONF_MOTOR_PULSE_DELAY_MS]) == (10, 100)
     assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+
+
+@pytest.mark.parametrize(("count", "error"), [("0", True), ("601", True), ("1", False), ("600", False)])
+async def test_zseries_pulse_count_range_is_validated_in_setup_and_options(hass, count, error):
+    from homeassistant.const import CONF_ADDRESS, CONF_NAME
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.config_flow import (
+        AdjustableBedConfigFlow,
+        AdjustableBedOptionsFlow,
+        _invalid_pulse_count,
+    )
+    from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_MOTOR_PULSE_COUNT
+
+    assert _invalid_pulse_count(BED_TYPE_ZSERIES_Z230, int(count)) is error
+    assert not _invalid_pulse_count(BED_TYPE_TRANQUIL, int(count))  # Other profiles unchanged.
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass = hass
+    flow.context = {}
+    flow._selected_bed_type = BED_TYPE_ZSERIES_Z230
+    flow._disambiguated_bed_type = BED_TYPE_ZSERIES_Z230
+    info = MagicMock()
+    info.name = "OKIN-003444"
+    info.address = "AA:BB:CC:DD:EE:FF"
+    info.service_uuids = ["62741523-52f9-8864-b1ab-3b3a8d65950b"]
+    info.manufacturer_data = {}
+    info.source = "auto"
+    flow._discovery_info = info
+    flow._async_transport_note = AsyncMock(return_value="")
+    if error:
+        form = await flow.async_step_bluetooth_confirm(
+            {CONF_BED_TYPE: BED_TYPE_ZSERIES_Z230, CONF_NAME: "Bed", CONF_MOTOR_PULSE_COUNT: count}
+        )
+        assert form["type"] == "form"
+        assert form["errors"][CONF_MOTOR_PULSE_COUNT] == "invalid_pulse_count_range"
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_ZSERIES_Z230},
+    )
+    entry.add_to_hass(hass)
+    options = AdjustableBedOptionsFlow(entry)
+    options.hass = hass
+    options.handler = entry.entry_id
+    result = await options._async_options_form(
+        {CONF_BED_TYPE: BED_TYPE_ZSERIES_Z230, CONF_MOTOR_PULSE_COUNT: count}, step_id="settings"
+    )
+    if error:
+        assert result["errors"] == {CONF_MOTOR_PULSE_COUNT: "invalid_pulse_count_range"}
+    else:
+        assert result["type"] == "create_entry"
+        assert entry.data[CONF_MOTOR_PULSE_COUNT] == int(count)
+
+
+async def test_enabling_alarm_requires_time_and_clearing_does_not(hass):
+    await async_register_services(hass)
+    controller = zseries("z230")
+    controller._alarm_available = True
+    coordinator = _target(BED_TYPE_ZSERIES_Z230, controller)
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(coordinator, SIDE_BOTH)], []),
+        ),
+        patch("asyncio.sleep", new=AsyncMock()),
+        patch(
+            "custom_components.adjustable_bed.beds.serenity.dt_util.now",
+            return_value=datetime(2026, 10, 1, 13, 47, 59),
+        ),
+    ):
+        with pytest.raises(ServiceValidationError) as raised:
+            await hass.services.async_call(
+                DOMAIN,
+                "zseries_set_alarm",
+                {"device_id": "bed", "enabled": True, "wake_mode": "massage"},
+                blocking=True,
+            )
+        assert raised.value.translation_key == "zseries_alarm_time_required"
+        assert written(controller) == []
+        await hass.services.async_call(
+            DOMAIN, "zseries_set_alarm", {"device_id": "bed", "enabled": False}, blocking=True
+        )
+    assert written(controller) == ["07061a0a01040d2f3b", "070500000000000001", "00c0", "00c0"]

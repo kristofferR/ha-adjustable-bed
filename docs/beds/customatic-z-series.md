@@ -37,7 +37,7 @@ Numbered memory: Z-230 has M1, Z-280 has M1 and M2. **Save Zero Gravity** and **
 
 ## Timing and cleanup
 
-Touch controls repeat every 100 ms until release, then two zero frames are attempted at +100 and +200 ms. Remote and massage releases both end in that global STOP in HA. The app defines no deadline for a touched button, so HA bounds ordinary buttons and presets by the configured motor pulse count at the app's 100 ms cadence (default 10, so one second). Save buttons hold five seconds, matching the app help. The app has no save timer or storage acknowledgement. `zseries_hold_control` holds any literal action for 0.1 to 60 seconds.
+Touch controls repeat every 100 ms until release, then two zero frames are attempted at +100 and +200 ms. Remote and massage releases both end in that global STOP in HA. The app defines no deadline for a touched button, so HA bounds ordinary buttons and presets by the configured motor pulse count at the app's 100 ms cadence (default 10, so one second). Setup accepts 1 to 600 pulses for these profiles, and a stored value outside that range is clamped. Save buttons hold five seconds, matching the app help. The app has no save timer or storage acknowledgement. `zseries_hold_control` holds any literal action for 0.1 to 60 seconds.
 
 ## Alarm
 
@@ -52,7 +52,7 @@ The app shows its alarm page only when the Device Information manufacturer strin
 
 `repeat` is today's weekday bit (Sunday = bit 0). If the time is earlier than the current hour and minute, the next day's bit is used, wrapping Saturday to Sunday. `wake` is 1 for massage and 2 for M1. The final byte is the app's stored bed selection, which defaults to 1 and has no setter.
 
-`zseries_set_alarm` mirrors opening the alarm page and tapping its switch: clock frame, alarm frame, then two queries at +500 and +800 ms. `zseries_sync_clock` sends the clock frame and the same queries. Times use Home Assistant's time zone. The app's other wake-type mappings, the `-128` repeat sentinel and the checksum clock-adjust builder are unreachable and are not implemented.
+`zseries_set_alarm` mirrors opening the alarm page and tapping its switch: clock frame, alarm frame, then two queries at +500 and +800 ms. Enabling requires both a time and a wake mode. In the app the clock is sent when the page opens and the alarm only after a later user tap; HA sends the two frames back-to-back, a host choice that hardware validation should confirm. `zseries_sync_clock` sends the clock frame and the same queries. Times use Home Assistant's time zone. The app's other wake-type mappings, the `-128` repeat sentinel and the checksum clock-adjust builder are unreachable and are not implemented.
 
 ## Notifications and diagnostic state
 
@@ -60,4 +60,4 @@ Same parser as [Tranquil](tranquil.md#notifications-and-diagnostic-state), with 
 
 ## Exclusions and deferred validation
 
-Excluded: remote touch-mask replay, delayed stops overlapping newer commands, streams surviving disconnect or device changes, the dead voice handler (including its head-up-before-stop branch), unused legacy pages and helpers, and alarm writes queued while disconnected. For real users after a release: selector and combined-motor mapping, ATT write mode, STOP arrival, save persistence, alarm behavior and notification contents.
+Excluded: remote touch-mask replay, delayed stops overlapping newer commands, streams surviving disconnect or device changes, the dead voice handler (including its head-up-before-stop branch), unused legacy pages and helpers, and alarm writes queued while disconnected. For real users after a release: selector and combined-motor mapping, ATT write mode, STOP arrival, save persistence, alarm behavior (including acceptance of the back-to-back clock and alarm frames) and notification contents.

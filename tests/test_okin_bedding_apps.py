@@ -466,3 +466,11 @@ async def test_inherited_routes_use_only_reachable_frames() -> None:
         "0c02000001000000000000000000",
         "0c02000200000000000000000000",
     ]
+
+
+@pytest.mark.parametrize(("pulse_count", "expected_ms"), [(0, 100), (-5, 100), (600, 60000), (700, 60000)])
+async def test_zseries_press_clamps_out_of_range_pulse_count(pulse_count, expected_ms) -> None:
+    controller = zseries("z230", pulse_count=pulse_count)
+    controller.hold_control = AsyncMock()
+    await controller.preset_zero_g()
+    controller.hold_control.assert_awaited_once_with("zero_g", expected_ms)

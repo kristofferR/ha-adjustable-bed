@@ -47,8 +47,6 @@ from .const import (
     BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
-    BED_TYPE_ZSERIES_Z230,
-    BED_TYPE_ZSERIES_Z280,
     CONF_BED_TYPE,
     CONF_MOTOR_COUNT,
     CONF_PROTOCOL_VARIANT,
@@ -57,6 +55,7 @@ from .const import (
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
+    ZSERIES_BED_TYPES,
     bed_type_has_position_feedback,
     resolve_explicit_bed_type,
 )
@@ -155,7 +154,6 @@ ATTR_CONTROL = "control"
 ATTR_HEAD_LEVEL = "head_level"
 ATTR_FOOT_LEVEL = "foot_level"
 ATTR_WAKE_MODE = "wake_mode"
-ZSERIES_BED_TYPES = frozenset({BED_TYPE_ZSERIES_Z230, BED_TYPE_ZSERIES_Z280})
 
 LINAK_MOTOR_OPTIONS = ("base", "feet", "head", "legs", "back")
 MALOUF_ALARM_PRESETS = ("zero_g", "lounge", "tv", "anti_snore", "memory_1", "memory_2")
@@ -1884,20 +1882,32 @@ async def _execute_zseries_alarm(
 
 async def handle_zseries_set_alarm(call: ServiceCall) -> None:
     """Set or clear the Z-Series app alarm, using Home Assistant's local time."""
-    alarm_time = call.data[ATTR_TIME]
-    if alarm_time.second or alarm_time.microsecond:
-        raise ServiceValidationError("Z-Series alarms use minute precision")
+    enabled = call.data[ATTR_ENABLED]
+    alarm_time = call.data.get(ATTR_TIME)
     wake_mode = call.data.get(ATTR_WAKE_MODE)
-    if call.data[ATTR_ENABLED] and wake_mode is None:
+    if enabled and alarm_time is None:
+        raise ServiceValidationError(
+            "Choose an alarm time",
+            translation_domain=DOMAIN,
+            translation_key="zseries_alarm_time_required",
+        )
+    if enabled and wake_mode is None:
         # The app refuses to enable an alarm until a wake-up mode is chosen.
-        raise ServiceValidationError("Choose a wake-up mode")
+        raise ServiceValidationError(
+            "Choose a wake-up mode",
+            translation_domain=DOMAIN,
+            translation_key="zseries_alarm_wake_mode_required",
+        )
+    if alarm_time is not None and (alarm_time.second or alarm_time.microsecond):
+        raise ServiceValidationError("Z-Series alarms use minute precision")
+    hour, minute = (alarm_time.hour, alarm_time.minute) if alarm_time is not None else (0, 0)
 
     async def program(controller: BedController | SideBoundController) -> None:
         await controller.configure_clock_alarm(
-            enabled=call.data[ATTR_ENABLED],
+            enabled=enabled,
             weekdays=(),
-            hour=alarm_time.hour,
-            minute=alarm_time.minute,
+            hour=hour,
+            minute=minute,
             preset=wake_mode or "massage",  # Ignored when clearing the alarm.
         )
 
@@ -2950,7 +2960,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
             {
                 vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
                 vol.Required(ATTR_ENABLED): cv.boolean,
-                vol.Optional(ATTR_TIME, default="00:00:00"): cv.time,
+                vol.Optional(ATTR_TIME): cv.time,
                 vol.Optional(ATTR_WAKE_MODE): vol.In(("massage", "memory_1")),
                 **SIDE_FIELD,
             }

@@ -412,6 +412,9 @@ BED_TYPE_ZSERIES_Z280: Final = "customatic_z280"
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
     {BED_TYPE_SERENITY, BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES_Z230, BED_TYPE_ZSERIES_Z280}
 )
+ZSERIES_BED_TYPES: Final = frozenset({BED_TYPE_ZSERIES_Z230, BED_TYPE_ZSERIES_Z280})
+# A Z-Series button press holds pulse_count x 100 ms, within the 60 s hold limit.
+ZSERIES_PULSE_COUNT_RANGE: Final = (1, 600)
 BED_TYPE_CUSTOMATIC_CLARITY: Final = "customatic_clarity"
 BED_TYPE_CUSTOMATIC_JEROMES: Final = "customatic_jeromes"
 BED_TYPE_CUSTOMATIC_REMEDY: Final = "customatic_remedy"

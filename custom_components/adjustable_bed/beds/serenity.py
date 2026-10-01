@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Final, Literal
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ..const import ZSERIES_PULSE_COUNT_RANGE
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -695,8 +696,10 @@ class ZSeriesController(OkinBeddingAppController):
         if action in self._app.save_codes:
             return _SAVE_HOLD_MS  # This app's save help also says five seconds.
         # Touch controls stream until release and voice is unbound, so the app
-        # defines no deadline. HA bounds a press with the configured pulse count.
-        return self._coordinator.motor_pulse_count * 100
+        # defines no deadline. HA bounds a press with the configured pulse count,
+        # clamped so a stored out-of-range count still yields a valid hold.
+        low, high = ZSERIES_PULSE_COUNT_RANGE
+        return min(max(int(self._coordinator.motor_pulse_count), low), high) * 100
 
     def _manufacturer_read(self, manufacturer: str) -> None:
         # Exact, case-sensitive comparison; anything else removes the alarm page.
