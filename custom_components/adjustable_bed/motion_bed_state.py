@@ -52,6 +52,7 @@ class MotionBedRoute:
     )
     historical_day: bool = False
     day_window_offset: int = 0
+    audio_excluded: bool = False
 
     def __post_init__(self) -> None:
         if self.day_window_offset not in range(5):
@@ -428,7 +429,7 @@ def parse_motion_bed_notification(
                     state,
                     audio_available=(
                         flag not in ((0x0F, 0xAF) if has_alarm else (0,))
-                        and not (route.alternate_identity and "motor" not in contexts)
+                        and not (route.audio_excluded and alarm_contexts == {"home"})
                     ),
                     alarm_flag=flag,
                     alarm_enabled=has_alarm and flag in (0x0F, 0x1F),

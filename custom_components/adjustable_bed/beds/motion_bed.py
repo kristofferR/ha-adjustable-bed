@@ -137,6 +137,7 @@ class MotionBedController(BedController):
             "preset_layout": self.selection.preset,
             "movement_layout": self.selection.movement,
             "alternate_identity": self.selection.alternate_identity,
+            "audio_excluded": self.selection.audio_excluded,
             "write_policy_origin": "host: prefer write property, otherwise write-without-response",
             "last_notification_rejection": self._diagnostic_rejection,
             "receipts": self._receipts,

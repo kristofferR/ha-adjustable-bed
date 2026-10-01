@@ -46,6 +46,7 @@ class MotionBedSelection:
     movement: MovementLayout
     saved_title: str
     alternate_identity: bool = False
+    audio_excluded: bool = False
 
     @property
     def route(self) -> MotionBedRoute:
@@ -57,7 +58,7 @@ class MotionBedSelection:
             contexts = frozenset({"module_startup", "fault_settings"})
         else:
             contexts = frozenset({self.surface, "fault_settings"})
-        return MotionBedRoute(self.preset, self.alternate_identity, contexts)
+        return MotionBedRoute(self.preset, self.alternate_identity, contexts, audio_excluded=self.audio_excluded)
 
 
 def select_motion_bed(
@@ -126,4 +127,5 @@ def select_motion_bed(
         raise ValueError("Standalone modules and hubs require their modular layout")
     if surface == "home" and (preset == "modular" or movement == "modular"):
         raise ValueError("Home retained layouts cannot cross into modular surfaces")
-    return MotionBedSelection(surface, preset, movement, title, alternate)
+    return MotionBedSelection(surface, preset, movement, title, alternate,
+                              audio_excluded="QMS3-N93-327" in raw_name.upper())

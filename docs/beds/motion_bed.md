@@ -53,6 +53,11 @@ long programming uses each preset's own field. K5 preserves split and coupled
 memory flags. K3's app-labelled Flat action sends the shipped anti-snore custom
 recall, so it is not advertised as a generic guaranteed-flat preset.
 
+The QMS-MQ, QMS2, S3-2 and QMS3 preset-query identity is independent of audio
+capability. Only the exact QMS3-N93-327 substring, compared in uppercase as in
+the app, overrides positive Home audio feedback. Modular receivers retain
+their own flag-based audio decision.
+
 Audio availability is remembered per physical target and explicit app profile,
 as in the app. Fresh feedback overrides the preference; restored preferences
 never turn unknown live sensors into reported feedback.

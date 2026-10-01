@@ -22,11 +22,13 @@ def parse(
     state: MotionBedState | None = None,
     variant: PresetVariant = "K1",
     alternate: bool = False,
+    audio_excluded: bool = False,
 ):
     return parse_motion_bed_notification(
         bytes.fromhex(raw),
         MotionBedRoute(
-            preset_variant=variant, alternate_identity=alternate, contexts=frozenset(contexts)
+            preset_variant=variant, alternate_identity=alternate, contexts=frozenset(contexts),
+            audio_excluded=audio_excluded
         ),
         state or MotionBedState(),
     )
@@ -226,7 +228,8 @@ def test_all_alarm_receivers_modes(
 def test_no_alarm_audio_override_and_sync() -> None:
     assert not parse("FFFFFFFF0100030B00", "home").state.audio_available
     assert parse("FFFFFFFF0100030B01", "home").state.audio_available
-    assert not parse("FFFFFFFF0100030B01", "home", alternate=True).state.audio_available
+    assert parse("FFFFFFFF0100030B01", "home", alternate=True).state.audio_available
+    assert not parse("FFFFFFFF0100030B01", "home", audio_excluded=True).state.audio_available
     assert parse("FFFFFFFF0100030B00", "motor").state.first_modular_alarm
     assert parse("FFFFFFFF0100030B01", "motor").state == MotionBedState()
     for opcode in (9, 10):
