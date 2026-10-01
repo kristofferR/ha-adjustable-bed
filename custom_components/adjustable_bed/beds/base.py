@@ -1746,6 +1746,11 @@ class BedController(ABC):
         """
         return ()
 
+    def validate_memory_recall(self, memory_num: int) -> None:
+        """Preflight local recall requirements before any target starts moving."""
+        if not self.supports_memory_presets or not 1 <= memory_num <= self.memory_slot_count:
+            raise ValueError("This memory slot is unavailable")
+
     def is_memory_slot_programmable(self, memory_num: int) -> bool:
         """Return whether a specific 1-based memory slot can be overwritten.
 

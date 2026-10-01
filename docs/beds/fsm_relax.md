@@ -66,6 +66,11 @@ Use `adjustable_bed.fsm_relax_recall_memory` with `preset:1..8` and an explicit
 queued targets. Cancellation preempts unsent targets and still attempts all five
 memory-release frames.
 
+Both recall actions validate every target's stored motor-zero row, signed raw
+values and quarantine before any bed moves. Valid persisted targets can be
+validated while offline; execution still requires a fresh live capability
+subscription. A connected controller without that readiness fails preflight.
+
 There is no proven echoed request ID or counter correlation. Local expected-opcode
 and connection guards do **not** guarantee a reply is fresh. After timeout,
 cancellation or an uncertain memory write, HA retains prior slots and quarantines

@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from bleak.exc import BleakError
 
-from ..fsm_relax_state import FsmRelaxState
+from ..fsm_relax_state import FsmRelaxState, validate_positions
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -605,6 +605,23 @@ class FsmRelaxController(BedController):
         self._buffer.clear()
         self._publish({"memory_quarantined": True})
 
+    def validate_memory_recall(self, memory_num: int) -> None:
+        """Check local targets before fan-out, without connecting an offline bed."""
+        if type(memory_num) is not int:
+            raise ValueError("Selected memory slot is unavailable")
+        super().validate_memory_recall(memory_num)
+        positions = self.local.slots.get(memory_num)
+        if positions is None or 0 not in positions:
+            raise ValueError("Memory has no motor-zero target")
+        validate_positions(positions)
+        if self._quarantined or self._quarantine_client is not None:
+            raise ValueError("Memory operations quarantined until disconnect and fresh subscription")
+        client = self.client
+        if client is not None and client.is_connected and (
+            not self._subscribed or not self._live_capabilities
+        ):
+            raise ValueError("Fresh capability subscription required")
+
     async def program_memory(self, memory_num: int) -> None:
         async with self._memory_lock:
             self._validate_memory(memory_num)
@@ -623,9 +640,9 @@ class FsmRelaxController(BedController):
             raise ValueError("Explicit hold must be 1..120000 ms")
         async with self._memory_lock:
             self._validate_memory(slot)
+            self.validate_memory_recall(slot)
             positions = self.local.slots.get(slot)
-            if positions is None or 0 not in positions:
-                raise ValueError("Memory has no motor-zero target")
+            assert positions is not None
             loop = asyncio.get_running_loop()
             start = loop.time()
             event = self._coordinator.cancel_command

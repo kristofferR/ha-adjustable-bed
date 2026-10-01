@@ -582,6 +582,10 @@ async def handle_goto_preset(call: ServiceCall) -> None:
                             "requested_preset": str(preset),
                         },
                     )
+                try:
+                    controller.validate_memory_recall(preset)
+                except ValueError as error:
+                    raise ServiceValidationError(str(error)) from error
     except ServiceValidationError:
         await _release_preflighted(preflighted)
         raise
@@ -1842,8 +1846,8 @@ async def _fsm_relax_operation(call: ServiceCall, *, calibration: bool) -> None:
                 raise ServiceValidationError("This action requires the FSM Relax app profile")
     slot = call.data.get(ATTR_PRESET, 1)
     def validate(controller: BedController | SideBoundController) -> None:
-        if not calibration and not 1 <= slot <= controller.memory_slot_count:
-            raise ServiceValidationError("Memory slot is unavailable")
+        if not calibration:
+            controller.validate_memory_recall(slot)
     await _preflight_capability(targets, "supports_confirmed_calibration" if calibration else "supports_memory_presets", "FSM Relax local action", validate)
     async def execute(controller: BedController | SideBoundController) -> None:
         if calibration:
