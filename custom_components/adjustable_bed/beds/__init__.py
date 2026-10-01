@@ -60,6 +60,7 @@ if TYPE_CHECKING:
     from .sleepys_box25 import SleepysBox25Controller as SleepysBox25Controller
     from .sleepys_box25 import SleepysBox25LegacyController as SleepysBox25LegacyController
     from .solace import SolaceController as SolaceController
+    from .starcode_m5x5 import StarcodeM5X5Controller as StarcodeM5X5Controller
     from .star_elevate import StarElevateController as StarElevateController
     from .starcode_abm5_4 import StarcodeAbm5_4Controller as StarcodeAbm5_4Controller
     from .suta import SutaController as SutaController
@@ -71,6 +72,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "StarcodeM5X5Controller": "starcode_m5x5",
     "FurniMoveController": "furnimove",
     "SerenityController": "serenity",
     "CustomaticController": "customatic",

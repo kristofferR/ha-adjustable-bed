@@ -600,3 +600,24 @@ test("stateless native floor power buttons stay in the physical child's lighting
   expect(right.utility).toEqual([]);
   expect(bedIsEmpty(left)).toBe(false);
 });
+
+test("AdjustableM5X5 exposes palette, brightness, distinct cycle/mode and named saves", () => {
+  const hass = hassWith([
+    entry("cover.union", "starcode_union"),
+    entry("number.brightness", "starcode_brightness"),
+    entry("select.palette", "starcode_color"),
+    entry("button.cycle", "starcode_light_cycle"),
+    entry("button.mode", "starcode_light_mode"),
+    entry("button.save_tv", "starcode_save_tv"),
+    entry("button.save_zg", "starcode_save_zero_g"),
+    entry("button.save_lounge", "starcode_save_lounge"),
+    entry("button.reset", "starcode_reset"),
+    entry("button.query", "starcode_query"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.motors.map((m) => m.key)).toEqual(["starcode_union"]);
+  expect(bed.lights.level).toBe("number.brightness");
+  expect(bed.lights.mood?.selects).toEqual(["select.palette"]);
+  expect(bed.lights.cycle).toBe("button.cycle");
+  expect(bed.utility).toEqual(["button.mode", "button.save_tv", "button.save_zg", "button.save_lounge", "button.reset", "button.query"]);
+});
