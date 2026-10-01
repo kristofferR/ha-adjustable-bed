@@ -72,7 +72,13 @@ Disconnect still runs if setup close fails or is cancelled. Cancellation
 propagates, and a failed or interrupted disconnect retains the live client
 owner for cleanup rather than dropping its tracking or runtime pointer.
 The physical BLE connection remains visible until it actually closes. A
-retained setup or failed-startup link cannot serve commands or be replaced by
+failed config setup link stays owned by Home Assistant's exact address lock
+after the progress worker or flow ends, including local bond replacement.
+Retry, another flow, runtime and diagnostic capture cannot open a second link
+until native closure is observed. Cleanup retries only that retained client's
+disconnect; it supplies no bond proof and sends no additional protocol frame.
+Other addresses and ordinary setup flows retain their existing behavior.
+A retained setup or failed-startup link cannot serve commands or be replaced by
 retry/reconnect. Sequential paired verification must release it before opening
 the other side. Successful observed teardown restores normal connection admission.
 

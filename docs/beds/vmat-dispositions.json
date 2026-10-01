@@ -138,7 +138,16 @@
         "coordinator.py:_async_connect_attempts_locked",
         "coordinator.py:_async_disconnect_locked",
         "coordinator.py:async_ensure_connected",
-        "paired_coordinator.py:async_connect"
+        "paired_coordinator.py:async_connect",
+        "address_lock.py:retain_setup_client",
+        "address_lock.py:async_release_setup_client",
+        "address_lock.py:_acquire",
+        "setup_operation.py:async_begin_operation",
+        "setup_operation.py:async_track_client",
+        "setup_operation.py:async_retain_failed_setup_client",
+        "setup_operation.py:_async_guarded_worker",
+        "setup_operation.py:_async_release_client",
+        "setup_operation.py:async_remove"
       ],
       "executed_proof": [
         "test_vibradorm_vmat.py:test_single_shots_wait_after_success_completion_and_stop_bypasses_delay",
@@ -147,7 +156,9 @@
         "test_vibradorm_vmat_config.py:test_reconnect_retains_all_accessory_intent_but_another_remote_does_not",
         "test_vibradorm_vmat_config.py:test_selected_vmat_entry_discards_previous_app_selection_intent",
         "test_coordinator_vibradorm_vmat.py:test_public_connect_retains_failed_setup_and_denies_reuse_replacement_and_shutdown",
-        "test_coordinator_vibradorm_vmat.py:test_vmat_half_initialized_link_cannot_be_overwritten_before_observed_close"
+        "test_coordinator_vibradorm_vmat.py:test_vmat_half_initialized_link_cannot_be_overwritten_before_observed_close",
+        "test_vibradorm_vmat_config.py:test_public_progress_worker_retains_failed_setup_across_retry_removal_and_replacement",
+        "test_vibradorm_vmat_config.py:test_vmat_pre_stage_failure_retains_native_owner"
       ]
     },
     "UI_STATE": {

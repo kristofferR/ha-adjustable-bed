@@ -19,6 +19,250 @@ from custom_components.adjustable_bed.vibradorm_vmat_profiles import VMAT_REMOTE
 from tests.test_vibradorm_vmat import make_vmat
 
 
+@pytest.mark.parametrize("disconnect_kind", ["noop", "error", "cancel", "task_cancel"])
+@pytest.mark.parametrize("mode", ["pair", "replace_local"])
+@pytest.mark.parametrize("native_proved", [False, True])
+async def test_public_progress_worker_retains_failed_setup_across_retry_removal_and_replacement(
+    hass, disconnect_kind, mode, native_proved,
+):
+    from contextlib import AsyncExitStack
+
+    from bleak.backends.device import BLEDevice
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.adapter import AdapterSelectionResult
+    from custom_components.adjustable_bed.address_lock import async_get_connect_lock
+    from custom_components.adjustable_bed.ble_diagnostics import BLEDiagnosticRunner
+    from custom_components.adjustable_bed.bluetooth_transport import (
+        ConnectionPath,
+        PathPrediction,
+        TransportClass,
+    )
+    from custom_components.adjustable_bed.bond_verification import (
+        BondEvidence,
+        BondEvidenceKind,
+        BondOwner,
+        BondVerificationStatus,
+    )
+    from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+    from custom_components.adjustable_bed.vibradorm_vmat_setup import QUERY_STAGES
+
+    address, source = "11:22:33:44:55:66", "AA:BB:CC:DD:EE:FF"
+    path = ConnectionPath(source, transport=TransportClass.LOCAL, adapter="hci0")
+    data = _vibradorm_app_data({
+        CONF_ADDRESS: address, const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM_APP,
+        const.CONF_VIBRADORM_APP_PROFILE: "vmat",
+    }, {const.CONF_VIBRADORM_VMAT_REMOTE: "07"})
+
+    def new_flow():
+        flow = AdjustableBedConfigFlow()
+        flow.context = {}
+        flow.hass = hass
+        flow._manual_data = dict(data)
+        return flow
+
+    flow = new_flow()
+    c = make_vmat("07")
+    c.client.pair = AsyncMock()
+    queried = 0
+
+    async def write(char, packet, **kwargs):
+        nonlocal queried
+        if packet == bytes.fromhex("01a7"):
+            return
+        _, expected, prefix, _ = QUERY_STAGES[queried]
+        assert packet == expected
+        c.client.start_notify.call_args.args[1](char, bytearray(prefix + b"A"))
+        queried += 1
+
+    async def disconnect():
+        if disconnect_kind == "error":
+            raise BleakError("disconnect failed")
+        if disconnect_kind == "cancel":
+            raise asyncio.CancelledError
+        if disconnect_kind == "task_cancel":
+            task = asyncio.current_task()
+            assert task is not None
+            task.cancel()
+            await asyncio.sleep(0)
+
+    c.client.write_gatt_char.side_effect = write
+    c.client.disconnect = AsyncMock(side_effect=disconnect)
+    unknown = BondEvidence(BondVerificationStatus.INCONCLUSIVE, BondOwner.from_path(path), "native", "now")
+    native = BondEvidence(BondVerificationStatus.NATIVE_OS_STATE, BondOwner.from_path(path), "native", "now", kind=BondEvidenceKind.NATIVE_OS_STATE)
+    device = BLEDevice(address, "Bed", {"source": source})
+    module = "custom_components.adjustable_bed.config_flow."
+    lock = async_get_connect_lock(hass, address)
+    with (
+        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+        patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=c.client)) as establish,
+        patch(module + "async_predict_path", return_value=PathPrediction(path, (path,))),
+        patch(module + "client_source", return_value=source),
+        patch(module + "async_path_for_source", return_value=path),
+        patch(module + "async_verify_native_bond", new=AsyncMock(side_effect=[unknown, native if native_proved else unknown])),
+    ):
+        async def worker():
+            return await flow._async_pair_and_classify(address, mode, device)
+
+        if disconnect_kind in ("cancel", "task_cancel"):
+            with pytest.raises(asyncio.CancelledError):
+                await flow._async_guarded_worker(worker)
+        else:
+            assert not (await flow._async_guarded_worker(worker)).succeeded
+        assert queried == 7
+        establish.assert_awaited_once()
+        assert flow._operation_client is c.client
+        assert lock.retained_setup_client is c.client
+        # Stabilize cancellation variants for subsequent real retry/teardown calls.
+        c.client.disconnect.side_effect = None
+        with pytest.raises(ConnectionError):
+            flow.async_track_client(None)
+        with pytest.raises(ConnectionError):
+            flow.async_track_client(make_vmat("07").client)
+        flow.async_begin_operation(address=address)
+        await hass.async_block_till_done()
+        assert not (await flow._async_guarded_worker(worker)).succeeded
+        establish.assert_awaited_once()
+        flow.async_remove()
+        await hass.async_block_till_done()
+        assert flow._operation_client is c.client
+        # HA-owned address state survives the removed flow's terminal task.
+        replacement = new_flow()
+
+        async def replacement_worker():
+            return await replacement._async_pair_and_classify(address, mode, device)
+
+        assert not (await replacement._async_guarded_worker(replacement_worker)).succeeded
+        establish.assert_awaited_once()
+    assert lock.retained_setup_client is c.client
+    async with async_get_connect_lock(hass, "22:33:44:55:66:77"):
+        pass
+    # Configured runtime and standalone capture share this exact guarded lock.
+    entry = MockConfigEntry(domain=const.DOMAIN, data=data)
+    entry.add_to_hass(hass)
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    coordinator._max_retries = 1
+    coordinator._retry_base_delay = 0
+    runtime_module = "custom_components.adjustable_bed.coordinator."
+    with (
+        patch(runtime_module + "select_adapter", return_value=AdapterSelectionResult(device, source, -50, True, [source])),
+        patch(runtime_module + "async_connection_paths", return_value=()),
+        patch(runtime_module + "establish_connection", new=AsyncMock()) as runtime_connect,
+    ):
+        assert not await coordinator.async_connect()
+        runtime_connect.assert_not_awaited()
+    with pytest.raises(ConnectionError):
+        async with async_get_connect_lock(hass, address.lower()):
+            pytest.fail("capture/connection admission cannot bypass the retained link")
+    diagnostic_module = "custom_components.adjustable_bed.ble_diagnostics."
+    with (
+        patch(diagnostic_module + "select_adapter", new=AsyncMock(return_value=AdapterSelectionResult(device, source, -50, True, [source]))),
+        patch(diagnostic_module + "establish_connection", new=AsyncMock()) as diagnostic_connect,
+    ):
+        with pytest.raises(ConnectionError):
+            await BLEDiagnosticRunner(hass, address)._connect()
+        diagnostic_connect.assert_not_awaited()
+    # Observed closure, rather than an RPC return, permits the next real setup.
+    c.client.is_connected = False
+    assert lock.retained_setup_client is None
+    recovered = make_vmat("07")
+    recovered.client.pair = AsyncMock()
+    queried = 0
+
+    async def recovered_write(char, packet, **kwargs):
+        nonlocal queried
+        if packet == bytes.fromhex("01a7"):
+            return
+        _, expected, prefix, _ = QUERY_STAGES[queried]
+        assert packet == expected
+        recovered.client.start_notify.call_args.args[1](char, bytearray(prefix + b"A"))
+        queried += 1
+
+    async def close_recovered():
+        recovered.client.is_connected = False
+
+    recovered.client.write_gatt_char.side_effect = recovered_write
+    recovered.client.disconnect.side_effect = close_recovered
+    with (
+        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+        patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=recovered.client)) as establish,
+        patch(module + "async_predict_path", return_value=PathPrediction(path, (path,))),
+        patch(module + "client_source", return_value=source),
+        patch(module + "async_path_for_source", return_value=path),
+        patch(module + "async_verify_native_bond", new=AsyncMock(side_effect=[unknown, native])),
+    ):
+        assert (await replacement._async_guarded_worker(replacement_worker)).succeeded
+        assert queried == 7
+        establish.assert_awaited_once()
+        assert replacement._operation_client is None
+        assert lock.retained_setup_client is None
+    await coordinator.async_shutdown()
+
+
+@pytest.mark.parametrize("mode", ["pair", "replace_local"])
+@pytest.mark.parametrize("disconnect_kind", ["noop", "error"])
+@pytest.mark.parametrize("pre_stage", ["native_present", "route_mismatch"])
+async def test_vmat_pre_stage_failure_retains_native_owner(hass, mode, disconnect_kind, pre_stage):
+    from contextlib import AsyncExitStack
+
+    from bleak.backends.device import BLEDevice
+
+    from custom_components.adjustable_bed.address_lock import async_get_connect_lock
+    from custom_components.adjustable_bed.bluetooth_transport import (
+        ConnectionPath,
+        PathPrediction,
+        TransportClass,
+    )
+    from custom_components.adjustable_bed.bond_verification import (
+        BondEvidence,
+        BondEvidenceKind,
+        BondOwner,
+        BondVerificationStatus,
+    )
+
+    address, source = "11:22:33:44:55:66", "AA:BB:CC:DD:EE:FF"
+    path = ConnectionPath(source, transport=TransportClass.LOCAL, adapter="hci0")
+    flow = AdjustableBedConfigFlow()
+    flow.context = {}
+    flow.hass = hass
+    flow._manual_data = _vibradorm_app_data({
+        CONF_ADDRESS: address, const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM_APP,
+        const.CONF_VIBRADORM_APP_PROFILE: "vmat",
+    }, {const.CONF_VIBRADORM_VMAT_REMOTE: "07"})
+    if pre_stage == "route_mismatch":
+        flow._pairing_retry_source = "22:33:44:55:66:77"
+    c = make_vmat("07")
+    c.client.pair = AsyncMock()
+
+    async def disconnect():
+        if disconnect_kind == "error":
+            raise BleakError("disconnect failed")
+
+    c.client.disconnect = AsyncMock(side_effect=disconnect)
+    native = BondEvidence(BondVerificationStatus.NATIVE_OS_STATE, BondOwner.from_path(path), "native", "now", kind=BondEvidenceKind.NATIVE_OS_STATE)
+    module = "custom_components.adjustable_bed.config_flow."
+    with (
+        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+        patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=c.client)),
+        patch(module + "async_predict_path", return_value=PathPrediction(path, (path,))),
+        patch(module + "client_source", return_value=source),
+        patch(module + "async_path_for_source", return_value=path),
+        patch(module + "async_verify_native_bond", new=AsyncMock(return_value=native)),
+    ):
+        async def worker():
+            return await flow._async_pair_and_classify(address, mode, BLEDevice(address, "Bed", {}))
+
+        assert not (await flow._async_guarded_worker(worker)).succeeded
+        assert c.client.is_connected
+        assert flow._operation_client is c.client
+        assert async_get_connect_lock(hass, address).retained_setup_client is c.client
+        c.client.write_gatt_char.assert_not_awaited()
+        c.client.pair.assert_not_awaited()
+    c.client.is_connected = False
+    await flow._async_release_client()
+    assert flow._operation_client is None
+
+
 @pytest.mark.parametrize("remote", VMAT_REMOTES)
 def test_normalization_uses_remote_not_submitted_capability_flags(remote):
     profile = VMAT_REMOTES[remote]

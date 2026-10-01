@@ -4796,7 +4796,15 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # caller's connect attempt, where bleak's cleanup can abort it. Keeping
         # it all in this one task is also required, because the lock is
         # reentrant per task rather than per caller.
-        async with async_get_connect_lock(self.hass, address), contextlib.AsyncExitStack() as budget:
+        vmat_profile = (
+            bed_type == BED_TYPE_VIBRADORM_APP and self._manual_data is not None
+            and self._manual_data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat"
+        )
+        connect_lock = async_get_connect_lock(self.hass, address)
+        if connect_lock.retained_setup_client is not None:
+            with contextlib.suppress(Exception):
+                await connect_lock.async_release_setup_client()
+        async with connect_lock, contextlib.AsyncExitStack() as budget:
             onboarding_deadline: float | None = None
             if bed_type == BED_TYPE_VIBRADORM_APP and request_bond:
                 onboarding_deadline = (
@@ -4993,16 +5001,21 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     try:
                         await client.disconnect()
                     except Exception:  # noqa: BLE001 - cleanup must not mask the result
-                        if vmat_setup_started and pending_failure is None:
+                        if vmat_profile and pending_failure is None:
                             raise
                         _LOGGER.debug("Disconnect after pairing %s failed", address, exc_info=True)
                     else:
-                        if vmat_setup_started and client.is_connected:
+                        if vmat_profile and client.is_connected:
                             if pending_failure is None:
                                 raise ConnectionError("VMAT setup connection did not disconnect")
                         elif track_for_flow_cleanup:
                             # Only clear the client registered by this attempt.
                             self.async_track_client(None)
+                    finally:
+                        if vmat_profile and client.is_connected:
+                            # Replacement owns its task until terminal cleanup; only
+                            # then transfer a surviving native link to flow/HA ownership.
+                            self.async_retain_failed_setup_client(client, address)
 
     def _verification_possible(self) -> bool:
         """Return True only when a connectable scanner exists to probe through.
