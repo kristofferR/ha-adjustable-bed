@@ -755,6 +755,16 @@ class TestDetectBedTypeByNamePattern:
         service_info = _make_service_info(name="base-i4.00002574")
         assert detect_bed_type(service_info) == BED_TYPE_KEESON
 
+    def test_timotion_smart_move_desk_is_not_a_bed(self):
+        """Smart Move+ desks advertise Nordic UART; the shared UUID must not make them Richmat."""
+        service_info = _make_service_info(
+            name="stand UP-1234",
+            service_uuids=["6e400001-b5a3-f393-e0a9-e50e24dcca9e"],
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type is None
+        assert result.signals == ["excluded:stand up-"]
+
     def test_detect_coolbase_by_name_base_i5(self):
         """Test Cool Base detection by base-i5 prefix.
 
