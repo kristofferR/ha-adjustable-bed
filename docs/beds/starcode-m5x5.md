@@ -76,7 +76,7 @@ Normal massage active uses OR of the encoded level nibbles; sonic active uses AN
 
 RGB palette values are white, red, orange, yellow, green, blue and purple. Wire indices 0–7 map through `max(index-1,0)`; larger nibbles use bytes 16–18 as direct RGB and select the nearest palette by RGB distance. Diagnostics expose the original/direct branch, RGB value, light mode and raw index. The physical meaning of index 7 still requires real-user validation.
 
-Changed notifications are processed even within 200 ms. Short frames cannot publish a partial domain or crash. F23 receives base motor/normal state and independently applies sonic, advanced alarm and EQ handlers; kneading adds its own handler. It does not inherit the sibling CB25 main-alarm layout. No optimistic requested setting replaces received state.
+Changed notifications are processed even within 200 ms. Short frames cannot publish a partial domain or crash. F23 receives base motor/normal state and independently applies sonic, advanced alarm and EQ handlers; kneading adds its own handler. It does not inherit the sibling CB25 main-alarm layout. No optimistic requested setting replaces received state. One feedback light owns on/off control, without a duplicate under-bed-light switch. Toggle uses the last observed state to choose the exact discrete on/off command; unknown or disconnected feedback requires an explicit turn-on or turn-off action. Native toggle packets from other app profiles retain their own behavior.
 
 The Flutter Home page's RGB listener can request mode 1 from the currently selected main controller. HA replaces that page-selection behavior with the explicit **Light mode 1** action, preserving its exact builders and repeat counts. Received light state remains feedback; an old emitter cannot retarget a replacement controller or trigger a write merely because a page used to be visible. Startup checks session ownership after every read and initialization await, so a disposed or replaced session cannot revive the sender.
 
@@ -86,7 +86,7 @@ Read results stay local until ownership is checked before publication. Queued wr
 
 Configure up to three other AdjustableM5X5 entries on the main entry. This supports **four physical targets**, one main plus three lifts, each with its own BLE coordinator. Use `adjustable_bed.starcode_move_lifts` with `up`, `down`, `flat` or `stop`. Each lift may be any of the four bedding classes; lift fanout uses only native union movement, STOP/interrupt and flat. Individual Elevate actuator controls remain available when restored in a main slot.
 
-All selected targets must be ready before group writes. Main movement interrupts lifts; lift movement interrupts main. Composite flat interrupts the group, sends main flat, waits **1600 ms**, then sends lift flat. Every target's connection is held through dispatch, delay and cleanup, including with Disconnect After Command enabled. STOP, changed selection, lost transport, replacement coordinator/controller/client/session or unload cancels delayed writes. Failure/cancellation cleans every admitted target. Successful Elevate flat receives no invented immediate STOP. Grouping does not transfer entity/device ownership into the Left/Right paired registry, and never fans out RGB, massage, programming or firmware updates.
+All selected targets must be ready before group writes. Main movement interrupts lifts; lift movement interrupts main. Composite flat interrupts the group, sends main flat, waits **1600 ms**, then sends lift flat. Every target's connection is held through dispatch, delay and cleanup, including with Disconnect After Command enabled. STOP, changed selection, lost transport, replacement coordinator/controller/client/session or unload cancels delayed writes. Failure/cancellation cleans every admitted target. Group STOP first cancels retained delayed operations and attempts STOP on every reachable configured member, even if the main or another lift is unavailable. It reports missing members or transport errors after attempting the remaining targets. Movement admission still requires the complete selection to be ready. Successful Elevate flat receives no invented immediate STOP. Grouping does not transfer entity/device ownership into the Left/Right paired registry, and never fans out RGB, massage, programming or firmware updates.
 
 ## Evidence and deferred validation
 
@@ -99,6 +99,13 @@ Real users after beta/release can validate five physical domains: movement/relea
 A configured main and its selected lifts retain their standalone entry IDs.
 Remove the lift selection before combining any group member into a Dual Bed.
 The pairing picker rechecks this ownership when a previous selection is submitted.
+
+A replacement group action waits for prior commands and their native STOP
+cleanup on every shared member before claiming its targets. Cancelling a waiting
+replacement leaves that cleanup running and admits no new writes. Explicit group
+or individual STOP also invalidates pending admission, including during connection
+preflight. Changed selection or unloaded members are rechecked before scheduled
+actions; internal cleanup STOP does not invalidate the intended replacement.
 
 Group-command suppression applies only while the exact scheduled group action
 runs. A later ordinary command on the same scheduler still interrupts the group,

@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Awaitable, Callable, Iterator, Mapping, Sequence
 from contextlib import ExitStack, contextmanager
 from contextvars import ContextVar
+from dataclasses import dataclass
+from functools import wraps
 from typing import cast
 
 import voluptuous as vol
@@ -32,12 +34,31 @@ _GROUP_DISPATCH: ContextVar[bool] = ContextVar("starcode_group_dispatch", defaul
 type GroupTasks = dict[str, set[asyncio.Task[object]]]
 
 
-def _tasks(hass: HomeAssistant) -> GroupTasks:
-    return cast(GroupTasks, hass.data.setdefault(_OPERATIONS, {}))
+@dataclass
+class _CleanupStopScope:
+    active: bool = True
 
 
-def cancel_group_operations(hass: HomeAssistant, entry_id: str) -> None:
+_GROUP_CLEANUP: ContextVar[_CleanupStopScope | None] = ContextVar("starcode_group_cleanup", default=None)
+
+
+def _tasks(hass: HomeAssistant, *, cleanup: bool = False) -> GroupTasks:
+    key = f"{_OPERATIONS}_cleanup" if cleanup else _OPERATIONS
+    return cast(GroupTasks, hass.data.setdefault(key, {}))
+
+
+def _stop_epochs(hass: HomeAssistant) -> dict[str, int]:
+    return cast(dict[str, int], hass.data.setdefault(f"{_OPERATIONS}_stop_epochs", {}))
+
+
+def cancel_group_operations(
+    hass: HomeAssistant, entry_id: str, *, invalidate_admission: bool = True
+) -> None:
     """Cancel retained delayed writes on STOP, unload and configuration edits."""
+    cleanup_scope = _GROUP_CLEANUP.get()
+    if invalidate_admission and (cleanup_scope is None or not cleanup_scope.active):
+        epochs = _stop_epochs(hass)
+        epochs[entry_id] = epochs.get(entry_id, 0) + 1
     current = asyncio.current_task()
     for task in tuple(_tasks(hass).get(entry_id, ())):
         if task is not current and not task.done():
@@ -146,10 +167,18 @@ async def _preflight(
         _controller(target.controller)
 
 
-async def _stop(targets: Sequence[AdjustableBedCoordinator]) -> None:
-    results = await asyncio.gather(
-        *(target.async_stop_command() for target in targets), return_exceptions=True
-    )
+async def _stop(targets: Sequence[AdjustableBedCoordinator], *, cleanup: bool = False) -> None:
+    # Safety STOP tasks inherit this invocation's context, unlike retained command workers.
+    scope = _CleanupStopScope() if cleanup else None
+    token = _GROUP_CLEANUP.set(scope)
+    try:
+        results = await asyncio.gather(
+            *(target.async_stop_command() for target in targets), return_exceptions=True
+        )
+    finally:
+        if scope is not None:
+            scope.active = False
+        _GROUP_CLEANUP.reset(token)
     failures = [result for result in results if isinstance(result, Exception)]
     if failures:
         raise ExceptionGroup("Some AdjustableM5X5 targets could not stop", failures)
@@ -186,11 +215,70 @@ async def interrupt_conflicting_group(source: AdjustableBedCoordinator) -> None:
         raise
 
 
+async def _stop_configured_group(
+    hass: HomeAssistant, main_entry_id: str, lift_entries: object
+) -> None:
+    """Cancel first, then attempt every reachable target before reporting failures."""
+    failures: list[Exception] = []
+    ids = [main_entry_id]
+    if isinstance(lift_entries, (tuple, list)):
+        for entry_id in lift_entries:
+            if isinstance(entry_id, str):
+                if entry_id not in ids:
+                    ids.append(entry_id)
+            else:
+                failures.append(ServiceValidationError("A configured lift ID is invalid"))
+    else:
+        failures.append(ServiceValidationError("The configured lift selection is invalid"))
+    epochs = _stop_epochs(hass)
+    for entry_id in ids:
+        epochs[entry_id] = epochs.get(entry_id, 0) + 1
+        cancel_group_operations(hass, entry_id)
+    reachable: list[AdjustableBedCoordinator] = []
+    for entry_id in ids:
+        try:
+            reachable.append(_resolve(hass, entry_id))
+        except ServiceValidationError as error:
+            failures.append(error)
+    try:
+        await _stop(reachable)
+    except Exception as error:
+        failures.append(error)
+    if failures:
+        raise ExceptionGroup("Some AdjustableM5X5 targets could not stop", failures)
+
+
+async def _settle_previous_groups(hass: HomeAssistant, ids: Sequence[str]) -> None:
+    """Drain prior cleanup without letting a cancelled waiter cancel its STOPs."""
+    current = asyncio.current_task()
+    while True:
+        prior = {
+            task
+            for cleanup in (False, True)
+            for entry_id in ids
+            for task in _tasks(hass, cleanup=cleanup).get(entry_id, ())
+            if task is not current and not task.done()
+        }
+        if not prior:
+            return
+        for entry_id in ids:
+            cancel_group_operations(hass, entry_id, invalidate_admission=False)
+        results = await asyncio.shield(asyncio.gather(*prior, return_exceptions=True))
+        failures = [result for result in results if isinstance(result, Exception)]
+        if failures:
+            raise ExceptionGroup("Previous AdjustableM5X5 group cleanup failed", failures)
+
+
 async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
     """Preflight all four possible addresses before admitting any group writes."""
     if action not in ("up", "down", "flat", "stop"):
         raise ValueError("Use up, down, flat or stop")
     hass = main.hass
+    if action == "stop":
+        await _stop_configured_group(
+            hass, main.entry.entry_id, main.entry.data.get(CONF_STARCODE_LIFT_ENTRIES, [])
+        )
+        return
     ids = validate_lift_entries(
         hass,
         main.entry.data,
@@ -201,11 +289,30 @@ async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
         raise ServiceValidationError("Configure at least one lift on the main bed")
     lifts = tuple(_resolve(hass, entry_id) for entry_id in ids)
     targets = (main, *lifts)
-    for target in targets:
-        cancel_group_operations(hass, target.entry.entry_id)
-    if action == "stop":
-        await _stop(targets)
-        return
+    target_ids = (main.entry.entry_id, *ids)
+    epochs = tuple(_stop_epochs(hass).get(entry_id, 0) for entry_id in target_ids)
+
+    def require_admission() -> None:
+        if epochs != tuple(_stop_epochs(hass).get(entry_id, 0) for entry_id in target_ids):
+            raise asyncio.CancelledError("An AdjustableM5X5 STOP cancelled admission")
+        if ids != validate_lift_entries(
+            hass,
+            main.entry.data,
+            main.entry.data.get(CONF_STARCODE_LIFT_ENTRIES, []),
+            main_entry_id=main.entry.entry_id,
+        ) or any(hass.data.get(DOMAIN, {}).get(t.entry.entry_id) is not t for t in targets):
+            raise asyncio.CancelledError("The AdjustableM5X5 selection changed before admission")
+
+    def owned(command: Callable[[BedController], Awaitable[None]]):
+        @wraps(command)
+        async def dispatch(controller: BedController) -> None:
+            require_admission()
+            await command(controller)
+
+        return dispatch
+
+    await _settle_previous_groups(hass, target_ids)
+    require_admission()
     task = asyncio.current_task()
     if task is None:
         raise RuntimeError("Group operations require a retained task")
@@ -219,6 +326,7 @@ async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
         for target in targets:
             connections.enter_context(target.hold_command_connection())
         await _preflight(targets, admitted)
+        require_admission()
         sessions = tuple(
             (
                 _controller(target.controller),
@@ -230,11 +338,14 @@ async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
         # Interruption is distinct from a held operation's release/STOP frame.
         for target in targets:
             await target.async_execute_controller_command(
-                _interrupt, read_positions_after_operation=False
+                owned(_interrupt), read_positions_after_operation=False
             )
         if action == "flat":
-            await main.async_execute_controller_command(_flat, read_positions_after_operation=False)
+            await main.async_execute_controller_command(
+                owned(_flat), read_positions_after_operation=False
+            )
             await asyncio.sleep(1.6)
+            require_admission()
             current = validate_lift_entries(
                 hass,
                 main.entry.data,
@@ -261,12 +372,13 @@ async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
             for target in lifts:
                 running.create_task(
                     target.async_execute_controller_command(
-                        command, read_positions_after_operation=False
+                        owned(command), read_positions_after_operation=False
                     )
                 )
         completed = True
     finally:
         for target in targets:
+            _tasks(hass, cleanup=True).setdefault(target.entry.entry_id, set()).add(retained)
             members = _tasks(hass).get(target.entry.entry_id)
             if members is not None:
                 members.discard(retained)
@@ -274,13 +386,24 @@ async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
                     _tasks(hass).pop(target.entry.entry_id, None)
         try:
             if not completed or action != "flat":
-                await _stop(admitted)
+                await _stop(admitted, cleanup=True)
         finally:
             connections.close()
+            for target in targets:
+                members = _tasks(hass, cleanup=True).get(target.entry.entry_id)
+                if members is not None:
+                    members.discard(retained)
+                    if not members:
+                        _tasks(hass, cleanup=True).pop(target.entry.entry_id, None)
 
 
 async def handle_group(call: ServiceCall) -> None:
     _, entry = async_get_device_and_config_entry(call.hass, DOMAIN, call.data[CONF_DEVICE_ID])
+    if call.data["action"] == "stop":
+        await _stop_configured_group(
+            call.hass, entry.entry_id, entry.data.get(CONF_STARCODE_LIFT_ENTRIES, [])
+        )
+        return
     await run_group(_resolve(call.hass, entry.entry_id), call.data["action"])
 
 
