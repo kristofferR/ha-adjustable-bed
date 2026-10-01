@@ -85,6 +85,7 @@ from .const import (
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
@@ -1154,6 +1155,9 @@ class AdjustableBedCoordinator:
         )
         mintable = (
             statically_mintable
+            # FSM Relax factory loads only its exact persisted capability body.
+            # With no snapshot its action/memory descriptors remain empty.
+            or bed_type == BED_TYPE_FSM_RELAX
             or (bed_type == BED_TYPE_OCTO and (octo_snapshot is not None or is_octo_star2))
             or (bed_type == BED_TYPE_LINAK and (linak_snapshot is not None or is_linak_performance))
             or (bed_type == BED_TYPE_JENSEN and jensen_snapshot is not None)
@@ -4366,6 +4370,11 @@ class AdjustableBedCoordinator:
         if self._furnimove_bond_task is not None:
             self._furnimove_bond_task.cancel()
 
+        # Invalidate connection-owned work even during Bleak initialization retries.
+        controller = self._controller
+        if controller is not None:
+            controller.on_disconnect()
+
         # If we're in the middle of connecting, this is likely bleak's internal retry
         # for le-connection-abort-by-local - don't log warnings or clear references
         if self._connecting:
@@ -4385,8 +4394,6 @@ class AdjustableBedCoordinator:
             self._last_disconnect_reason = "unexpected"
 
         # Stop keepalive task before clearing controller to prevent task leak
-        # Capture controller reference before clearing to avoid race condition
-        controller = self._controller
         if controller is not None and hasattr(controller, "stop_keepalive"):
             self._stop_keepalive_task = self.entry.async_create_background_task(
                 self.hass,
