@@ -621,6 +621,67 @@ class SimmonsController(BedController):
             raise ValueError("The bed did not report its alarm records; try Refresh Alarms")
         return first, second
 
+    async def check_simmons_alarm(
+        self,
+        *,
+        slot: int,
+        enabled: bool,
+        hour: int = 0,
+        minute: int = 0,
+        weekdays: Sequence[int] = (),
+        mode: str | None = None,
+        confirm_custom_mode: bool = False,
+    ) -> None:
+        """Validate an alarm against this bed's reported records without programming it.
+
+        Multi-bed actions run this on every bed first, so a conflict or a bed
+        that does not report its records changes no bed. Only the app's own
+        alarm query is sent, and only when the records are not yet known.
+        """
+        await self._plan_alarm(slot, enabled, hour, minute, weekdays, mode, confirm_custom_mode)
+
+    async def _plan_alarm(
+        self,
+        slot: int,
+        enabled: bool,
+        hour: int,
+        minute: int,
+        weekdays: Sequence[int],
+        mode: str | None,
+        confirm_custom_mode: bool,
+    ) -> tuple[int, AlarmSlot, bytes]:
+        """Return the slot index, its new local record and the frame to write."""
+        self.validate_simmons_alarm(
+            slot=slot, enabled=enabled, mode=mode, confirm_custom_mode=confirm_custom_mode
+        )
+        if enabled and not (0 <= hour <= 23 and 0 <= minute <= 59):
+            raise ValueError("Invalid alarm time")
+        if any(isinstance(day, bool) or not 0 <= day <= 6 for day in weekdays):
+            raise ValueError("Alarm weekdays use Monday=0 through Sunday=6")
+        slots = list(await self._ensure_alarm_state())
+        index, peer = slot - 1, slots[2 - slot]
+        local = slots[index]
+        if not enabled:
+            # Selected weekday and type are cleared; hours and minutes stay.
+            selected = [local.hour, local.minute, 0, 0]
+            frame = (
+                p2_disable_frame(slot)
+                if self._protocol == "smartbed"
+                else self._p1_frame(index, selected, peer)
+            )
+            return index, replace(local, enabled=False), frame
+        wire_type = alarm_type(self._protocol, mode or "")
+        if peer.enabled and ((peer.hour, peer.minute) == (hour, minute) or peer.type == wire_type):
+            raise ValueError(PEER_CONFLICT_ERROR)
+        mask = repeat_mask(weekdays)
+        weekday = gain_weekday(mask, hour, minute, dt_util.now())
+        frame = (
+            p2_alarm_frame(slot, weekday, wire_type, hour, minute)
+            if self._protocol == "smartbed"
+            else self._p1_frame(index, [hour, minute, weekday, wire_type], peer)
+        )
+        return index, AlarmSlot(hour, minute, mask, wire_type, True), frame
+
     async def configure_simmons_alarm(
         self,
         *,
@@ -636,39 +697,12 @@ class SimmonsController(BedController):
         self.validate_simmons_alarm(
             slot=slot, enabled=enabled, mode=mode, confirm_custom_mode=confirm_custom_mode
         )
-        if enabled and not (0 <= hour <= 23 and 0 <= minute <= 59):
-            raise ValueError("Invalid alarm time")
-        if any(isinstance(day, bool) or not 0 <= day <= 6 for day in weekdays):
-            raise ValueError("Alarm weekdays use Monday=0 through Sunday=6")
         if not self._clock_synced:
             # Alarms fire on the bed's clock, so this session must have set it.
             await self.sync_clock()
-        slots = list(await self._ensure_alarm_state())
-        index, peer = slot - 1, slots[2 - slot]
-        local = slots[index]
-        if not enabled:
-            # Selected weekday and type are cleared; hours and minutes stay.
-            selected = [local.hour, local.minute, 0, 0]
-            updated = replace(local, enabled=False)
-            frame = (
-                p2_disable_frame(slot)
-                if self._protocol == "smartbed"
-                else self._p1_frame(index, selected, peer)
-            )
-        else:
-            wire_type = alarm_type(self._protocol, mode or "")
-            if peer.enabled and (
-                (peer.hour, peer.minute) == (hour, minute) or peer.type == wire_type
-            ):
-                raise ValueError(PEER_CONFLICT_ERROR)
-            mask = repeat_mask(weekdays)
-            weekday = gain_weekday(mask, hour, minute, dt_util.now())
-            updated = AlarmSlot(hour, minute, mask, wire_type, True)
-            frame = (
-                p2_alarm_frame(slot, weekday, wire_type, hour, minute)
-                if self._protocol == "smartbed"
-                else self._p1_frame(index, [hour, minute, weekday, wire_type], peer)
-            )
+        index, updated, frame = await self._plan_alarm(
+            slot, enabled, hour, minute, weekdays, mode, confirm_custom_mode
+        )
         await self._configure_write(frame)
         # Local state follows only a successful write, so a failed write cannot
         # change the overlays applied to later replies.

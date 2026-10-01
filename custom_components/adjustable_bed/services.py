@@ -1882,17 +1882,28 @@ async def handle_simmons_set_alarm(call: ServiceCall) -> None:
         lambda controller: simmons(controller).validate_simmons_alarm(**options),
     )
 
+    fields = {**options, "hour": alarm_time.hour, "minute": alarm_time.minute, "weekdays": weekdays}
+
+    async def check(controller: BedController | SideBoundController) -> None:
+        await simmons(controller).check_simmons_alarm(**fields)
+
     async def program(controller: BedController | SideBoundController) -> None:
-        await simmons(controller).configure_simmons_alarm(
-            **options, hour=alarm_time.hour, minute=alarm_time.minute, weekdays=weekdays
-        )
+        await simmons(controller).configure_simmons_alarm(**fields)
 
     try:
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator, side, program, cancel_running=False, resource="configuration"
-            )
-    except Exception:
+        # All-or-nothing: every bed reports its records and passes the peer
+        # rules before the first bed is programmed.
+        for step in (check, program):
+            for coordinator, side in targets:
+                await _execute_sided(
+                    coordinator, side, step, cancel_running=False, resource="configuration"
+                )
+    except ValueError as err:
+        await _release_preflighted(preflighted)
+        raise ServiceValidationError(str(err)) from err
+    except BaseException:
+        # Includes cancellation: beds connected only for preflight still need
+        # their normal idle disconnect.
         await _release_preflighted(preflighted)
         raise
 
