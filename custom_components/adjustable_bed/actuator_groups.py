@@ -52,6 +52,7 @@ from .const import (
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M5X5,
+    KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_PURPLE,
@@ -180,6 +181,13 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "label": "KSBT (Nordic UART)",
                 "description": "KSBT Nordic UART beds, including some Ergomotion Sync models",
                 "hint": "Device name starts with 'KSBT03' or 'KSBT04'",
+            },
+            {
+                "type": BED_TYPE_KEESON,
+                "variant": KEESON_VARIANT_ADJUSTABLE_LITE,
+                "label": "Adjustable Lite app",
+                "description": "KSBT01C and KSBT03C remotes from the Adjustable Lite app",
+                "hint": "Choose this if you control the bed with the Adjustable Lite app",
             },
             {
                 "type": BED_TYPE_KEESON,

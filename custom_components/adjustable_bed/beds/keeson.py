@@ -6,6 +6,7 @@ Keeson beds (Member's Mark, Purple, Ergomotion, GhostBed, Beautyrest) have sever
 protocol variants:
 - KSBT: Simple 6-byte commands [0x04, 0x02, ...int_to_bytes(command)]
 - KSBT04C: 7-byte with NOT-checksum [0x04, 0x02, ...int_to_bytes(command), checksum]
+- Adjustable Lite: the KSBT 6-byte frames with that app's memory, cadence and status
 - BaseI4: 8-byte commands with XOR checksum
 - BaseI5: Same as BaseI4 with notification support
 - Ergomotion: Same as BaseI4/I5 but with position feedback via BLE notifications
@@ -37,6 +38,7 @@ from ..const import (
     KEESON_KSBT_CHAR_UUID,
     KEESON_KSBT_FALLBACK_GATT_PAIRS,
     KEESON_KSBT_SERVICE_UUID,
+    KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_JSON,
@@ -48,10 +50,13 @@ from ..const import (
     KEESON_VARIANT_SERTA,
     KEESON_VARIANT_SINO,
     KEESON_VARIANT_SLEEP_HARMONY,
+    NORDIC_UART_READ_CHAR_UUID,
 )
 from .base import (
     POSITION_UNIT_PERCENT,
     BedController,
+    ControllerStateBinarySensorSpec,
+    ControllerStateSensorSpec,
     MotorControlSpec,
     PositionNumberSpec,
     build_position_number_spec,
@@ -79,6 +84,8 @@ _APP_MOTOR_PULSE_DEFAULTS: dict[str, tuple[int, int]] = {
     KEESON_VARIANT_SERTA: (10, 100),
     KEESON_VARIANT_SINO: (10, 100),
     KEESON_VARIANT_PURPLE: (10, 100),
+    # Adjustable Lite schedules held movement at 0 ms then every 300 ms.
+    KEESON_VARIANT_ADJUSTABLE_LITE: (4, 300),
 }
 
 _THREE_MOTOR_BETTERLIVING_PULSES = (5, 200)
@@ -98,6 +105,17 @@ _PURPLE_RELEASE_COMMAND = bytes.fromhex("04020000000000")
 _PURPLE_MEMORY_PROGRAM_COUNT = 26
 _PURPLE_MEMORY_PROGRAM_DELAY_SECONDS = 0.2
 
+# Adjustable Lite 1.0.2 (com.keeson.adjustablelite). The app shows its KSBT03C
+# remote when the product identity contains this case-sensitive token and its
+# KSBT01C remote otherwise. Both remotes poll the 00 B0 status query every 500 ms
+# while connected and read notifications longer than 12 bytes.
+_ADJUSTABLE_LITE_KSBT03C_TOKEN = "KSBT03C"
+_ADJUSTABLE_LITE_STATUS_POLL_SECONDS = 0.5
+_ADJUSTABLE_LITE_STATUS_MIN_LENGTH = 13
+STATE_ADJUSTABLE_LITE_LIGHT = "adjustable_lite_light"
+STATE_ADJUSTABLE_LITE_MASSAGE_TIMER = "adjustable_lite_massage_timer"
+STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW = "adjustable_lite_massage_timer_raw"
+
 _SLEEP_HARMONY_BASE_I5_PREFIX = "base-i5."
 _SLEEP_HARMONY_RELEASE_DELAY_SECONDS = 0.2
 
@@ -113,6 +131,26 @@ def is_ksbt03c_name(name: str | None) -> bool:
     """
     normalized = (name or "").strip().lower()
     return normalized.startswith("ksbt03c") and not normalized.startswith("ksbt03cr")
+
+
+def parse_adjustable_lite_status(data: bytes, *, massage_timer: bool) -> dict[str, Any] | None:
+    """Decode an Adjustable Lite notification exactly as the app does.
+
+    Any payload longer than 12 bytes is used, with no header or checksum check.
+    Byte 12 equal to 1 lights the bulb icon. The KSBT03C remote also reads a
+    big-endian value from bytes 3-4 and shows the 30, 20 or 10 minute timer
+    image above 1200, 600 or 0. The app declares no unit for the raw value.
+    """
+    if len(data) < _ADJUSTABLE_LITE_STATUS_MIN_LENGTH:
+        return None
+    state: dict[str, Any] = {STATE_ADJUSTABLE_LITE_LIGHT: data[12] == 1}
+    if massage_timer:
+        raw = (data[3] << 8) | data[4]
+        state[STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW] = raw
+        state[STATE_ADJUSTABLE_LITE_MASSAGE_TIMER] = (
+            30 if raw > 1200 else 20 if raw > 600 else 10 if raw > 0 else 0
+        )
+    return state
 
 
 class KeesonCommands:
@@ -269,6 +307,11 @@ class KeesonController(BedController):
         resolved_device_name = device_name or getattr(coordinator, "name", None)
         self._is_ksbt03c = variant == KEESON_VARIANT_KSBT and is_ksbt03c_name(resolved_device_name)
         self._is_sleep_harmony = variant == KEESON_VARIANT_SLEEP_HARMONY
+        self._is_adjustable_lite = variant == KEESON_VARIANT_ADJUSTABLE_LITE
+        self._is_adjustable_lite_ksbt03c = (
+            self._is_adjustable_lite
+            and _ADJUSTABLE_LITE_KSBT03C_TOKEN in (resolved_device_name or "")
+        )
         self._is_sleep_harmony_base_i5 = self._is_sleep_harmony and (
             resolved_device_name or ""
         ).strip().lower().startswith(_SLEEP_HARMONY_BASE_I5_PREFIX)
@@ -295,6 +338,9 @@ class KeesonController(BedController):
         # Determine the characteristic UUID
         if char_uuid:
             self._char_uuid = char_uuid
+        elif self._is_adjustable_lite:
+            # The app writes only to this fixed characteristic; it has no fallback.
+            self._char_uuid = KEESON_KSBT_CHAR_UUID
         elif self._is_sleep_harmony_base_i5:
             self._char_uuid = self._detect_characteristic_uuid()
         elif self._is_purple_plus:
@@ -314,11 +360,12 @@ class KeesonController(BedController):
             self._char_uuid = self._detect_characteristic_uuid()
 
         # Notify characteristic for variants with BLE feedback.
-        self._notify_char_uuid = (
-            KEESON_JSON_NOTIFY_CHAR_UUID
-            if variant == KEESON_VARIANT_JSON
-            else KEESON_BASE_NOTIFY_CHAR_UUID
-        )
+        if variant == KEESON_VARIANT_JSON:
+            self._notify_char_uuid = KEESON_JSON_NOTIFY_CHAR_UUID
+        elif self._is_adjustable_lite:
+            self._notify_char_uuid = NORDIC_UART_READ_CHAR_UUID
+        else:
+            self._notify_char_uuid = KEESON_BASE_NOTIFY_CHAR_UUID
 
         _LOGGER.debug(
             "KeesonController initialized (variant: %s, purple_plus: %s, "
@@ -528,6 +575,7 @@ class KeesonController(BedController):
             self._is_ksbt
             or self._is_json_variant
             or self._betterliving_presets
+            or self._is_adjustable_lite_ksbt03c
             or self._variant in {"ergomotion", KEESON_VARIANT_PURPLE}
         )
 
@@ -549,9 +597,12 @@ class KeesonController(BedController):
         Ergomotion: 4 slots (needs verification)
         JSON/A00A: Quest proves slots 1-4; other remotes reuse some addresses
         Purple: 2 slots for premium base, 3 slot for plus. Slot 1 is mapped to the standard slot 4
+        Adjustable Lite: MI/MII/MIII recall buttons on both remotes
         """
         if self._is_json_variant:
             return 4
+        if self._is_adjustable_lite:
+            return 3
         if self._betterliving_presets or self._cb1322_presets:
             return 2  # BetterLiving and CB1322 both have Memory 1 and Memory 2
         if self._variant in {
@@ -619,14 +670,15 @@ class KeesonController(BedController):
 
         KSBT03C control boxes (e.g. Ergomotion RIO 5.0) have no tilt motor:
         the Ergomotion Sync app's KSBT03C remote exposes only head, feet and
-        lumbar movement. Other Keeson variants keep tilt control.
+        lumbar movement. Adjustable Lite exposes only head/back and leg/foot.
+        Other Keeson variants keep tilt control.
         """
-        return not self._is_ksbt03c
+        return not self._is_ksbt03c and not self._is_adjustable_lite
 
     @property
     def has_lumbar_support(self) -> bool:
-        """Return True - Keeson beds have lumbar motor control."""
-        return True
+        """Return True unless the selected app exposes no lumbar control."""
+        return not self._is_adjustable_lite
 
     @property
     def supports_stop_all(self) -> bool:
@@ -747,6 +799,47 @@ class KeesonController(BedController):
         """
         return frozenset({"tilt", "lumbar"})
 
+    # Adjustable Lite's KSBT03C remote has only head/leg increase/decrease and
+    # one timer button; its KSBT01C remote has no massage at all.
+    @property
+    def auto_enable_massage(self) -> bool:
+        """Expose massage without opt-in when the app's KSBT03C remote shows it."""
+        return self._is_adjustable_lite_ksbt03c
+
+    @property
+    def supports_massage_toggle_control(self) -> bool:
+        return not self._is_adjustable_lite and super().supports_massage_toggle_control
+
+    @property
+    def supports_massage_intensity_step_control(self) -> bool:
+        return not self._is_adjustable_lite and super().supports_massage_intensity_step_control
+
+    @property
+    def supports_head_massage_toggle_control(self) -> bool:
+        return not self._is_adjustable_lite and super().supports_head_massage_toggle_control
+
+    @property
+    def supports_foot_massage_toggle_control(self) -> bool:
+        return not self._is_adjustable_lite and super().supports_foot_massage_toggle_control
+
+    @property
+    def supports_head_massage_intensity_step_control(self) -> bool:
+        if self._is_adjustable_lite:
+            return self._is_adjustable_lite_ksbt03c
+        return super().supports_head_massage_intensity_step_control
+
+    @property
+    def supports_foot_massage_intensity_step_control(self) -> bool:
+        if self._is_adjustable_lite:
+            return self._is_adjustable_lite_ksbt03c
+        return super().supports_foot_massage_intensity_step_control
+
+    @property
+    def supports_massage_mode_step_control(self) -> bool:
+        if self._is_adjustable_lite:
+            return self._is_adjustable_lite_ksbt03c
+        return super().supports_massage_mode_step_control
+
     # Massage timer - Keeson only has step command, no direct timer set
     # We cannot reliably emulate stepping without knowing current state
     @property
@@ -808,13 +901,16 @@ class KeesonController(BedController):
                     continue
 
                 props = {prop.lower() for prop in getattr(char, "properties", [])}
-                if self._is_ksbt03c and "write-without-response" in props:
+                if (
+                    self._is_ksbt03c or self._is_adjustable_lite
+                ) and "write-without-response" in props:
                     # Ergomotion Sync leaves the Android characteristic write
                     # type unchanged. Android initializes dual-mode
                     # characteristics to WRITE_TYPE_NO_RESPONSE, so mirror that
                     # behavior for the identified KSBT03C profile. Waiting for
                     # an acknowledgement here stretches every 300 ms refresh by
                     # a full BLE/proxy round trip and makes motion stutter.
+                    # Adjustable Lite likewise never sets a write type.
                     self._write_with_response = False
                 elif "write" in props:
                     self._write_with_response = True
@@ -879,7 +975,7 @@ class KeesonController(BedController):
         if self._is_purple_plus:
             # Purple Premium Plus P2: [0x04, 0x02, command_be32, 0x00].
             return bytes([0x04, 0x02] + int_to_bytes(command_value) + [0x00])
-        if self._variant == "ksbt":
+        if self._variant in {KEESON_VARIANT_KSBT, KEESON_VARIANT_ADJUSTABLE_LITE}:
             # KSBT: [0x04, 0x02, ...int_to_bytes(command)]
             return bytes([0x04, 0x02] + int_to_bytes(command_value))
         elif self._variant == KEESON_VARIANT_KSBT_CR:
@@ -941,11 +1037,88 @@ class KeesonController(BedController):
             response=self._write_with_response,
         )
 
+    @property
+    def protocol_diagnostics(self) -> dict[str, Any]:
+        """Record which Adjustable Lite remote the device name selected."""
+        if not self._is_adjustable_lite:
+            return {}
+        return {"adjustable_lite_remote": "KSBT03C" if self._is_adjustable_lite_ksbt03c else "KSBT01C"}
+
+    @property
+    def requires_notification_channel(self) -> bool:
+        """Adjustable Lite status replies arrive as notifications, angles or not."""
+        return self._is_adjustable_lite
+
+    @property
+    def diagnostic_poll_interval(self) -> float | None:
+        """Mirror Adjustable Lite's 500 ms status query on a live connection."""
+        return _ADJUSTABLE_LITE_STATUS_POLL_SECONDS if self._is_adjustable_lite else None
+
+    async def async_refresh_diagnostics(self) -> None:
+        """Send one Adjustable Lite status query; the reply is a notification."""
+        if self._is_adjustable_lite:
+            await self.write_command(_KSBT_RELEASE_QUERY, cancel_event=asyncio.Event())
+
+    def invalidate_diagnostics(self) -> None:
+        """Forget Adjustable Lite reported state when the BLE session ends."""
+        if self._is_adjustable_lite:
+            self.forward_controller_state_updates(
+                dict.fromkeys(
+                    (
+                        STATE_ADJUSTABLE_LITE_LIGHT,
+                        STATE_ADJUSTABLE_LITE_MASSAGE_TIMER,
+                        STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW,
+                    )
+                )
+            )
+
+    @property
+    def controller_state_binary_sensor_specs(
+        self,
+    ) -> tuple[ControllerStateBinarySensorSpec, ...]:
+        """The app's bulb icon, driven by notification byte 12."""
+        if not self._is_adjustable_lite:
+            return ()
+        return (
+            ControllerStateBinarySensorSpec(
+                key=STATE_ADJUSTABLE_LITE_LIGHT,
+                translation_key=STATE_ADJUSTABLE_LITE_LIGHT,
+                state_key=STATE_ADJUSTABLE_LITE_LIGHT,
+                icon="mdi:lightbulb",
+            ),
+        )
+
+    @property
+    def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
+        return frozenset() if self._is_adjustable_lite else frozenset({STATE_ADJUSTABLE_LITE_LIGHT})
+
+    @property
+    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
+        """The KSBT03C remote's 10/20/30 minute massage timer indicator."""
+        if not self._is_adjustable_lite_ksbt03c:
+            return ()
+        return (
+            ControllerStateSensorSpec(
+                key=STATE_ADJUSTABLE_LITE_MASSAGE_TIMER,
+                translation_key=STATE_ADJUSTABLE_LITE_MASSAGE_TIMER,
+                state_key=STATE_ADJUSTABLE_LITE_MASSAGE_TIMER,
+                icon="mdi:timer-outline",
+                native_unit_of_measurement="min",
+                attribute_keys=(STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW,),
+            ),
+        )
+
+    @property
+    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
+        if self._is_adjustable_lite_ksbt03c:
+            return frozenset()
+        return frozenset({STATE_ADJUSTABLE_LITE_MASSAGE_TIMER})
+
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
-        """Start listening for position notifications (ergomotion variant only)."""
+        """Start position (Ergomotion) or status (Adjustable Lite) notifications."""
         self._notify_callback = callback
 
-        if self._variant != KEESON_VARIANT_ERGOMOTION:
+        if self._variant not in {KEESON_VARIANT_ERGOMOTION, KEESON_VARIANT_ADJUSTABLE_LITE}:
             _LOGGER.debug(
                 "Keeson beds don't support position notifications (variant: %s)", self._variant
             )
@@ -960,14 +1133,22 @@ class KeesonController(BedController):
                 self._notify_char_uuid,
                 self._on_notification,
             )
-            _LOGGER.debug("Started position notifications for Keeson/Ergomotion bed")
+            _LOGGER.debug("Started notifications for Keeson bed (variant: %s)", self._variant)
         except BleakError:
+            # Adjustable Lite controls never wait for the subscription either.
             _LOGGER.warning("Failed to start notifications")
 
     def _on_notification(self, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
-        """Handle incoming BLE notifications (ergomotion variant)."""
+        """Handle incoming BLE notifications (ergomotion and Adjustable Lite)."""
         _LOGGER.debug("Received notification: %s", data.hex())
         self.forward_raw_notification(self._notify_char_uuid, bytes(data))
+        if self._is_adjustable_lite:
+            state = parse_adjustable_lite_status(
+                bytes(data), massage_timer=self._is_adjustable_lite_ksbt03c
+            )
+            if state is not None:
+                self.forward_controller_state_updates(state)
+            return
         self._parse_notification(bytes(data))
 
     def _parse_notification(self, data: bytes) -> None:
@@ -1055,7 +1236,7 @@ class KeesonController(BedController):
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
-        if self._variant != KEESON_VARIANT_ERGOMOTION:
+        if self._variant not in {KEESON_VARIANT_ERGOMOTION, KEESON_VARIANT_ADJUSTABLE_LITE}:
             return
 
         if self.client is None or not self.client.is_connected:
@@ -1200,6 +1381,10 @@ class KeesonController(BedController):
         ``00 B0`` at +300, +600, and +900 ms. Other variants retain their
         explicit zero frame, whose packet format is specific to that family.
         """
+        if self._is_adjustable_lite:
+            # Release only cancels the app's 300 ms movement timer; no frame exists.
+            return
+
         cancel_event = asyncio.Event()
         if self._variant == KEESON_VARIANT_PURPLE:
             await self.write_command(
@@ -1412,6 +1597,23 @@ class KeesonController(BedController):
                 )
             return
 
+        if self._is_adjustable_lite:
+            # Shipped MI/MII/MIII labels, despite the app's internal m/read/tv names.
+            commands = {
+                1: KeesonCommands.PRESET_MEMORY_4,
+                2: KeesonCommands.PRESET_MEMORY_1,
+                3: KeesonCommands.PRESET_MEMORY_2,
+            }
+            if command := commands.get(memory_num):
+                await self._write_single_shot(self._build_command(command))
+            else:
+                _LOGGER.warning(
+                    "Adjustable Lite memory %d not supported (valid: %s)",
+                    memory_num,
+                    sorted(commands.keys()),
+                )
+            return
+
         if self._variant == KEESON_VARIANT_PURPLE:
             commands = (
                 {
@@ -1585,7 +1787,7 @@ class KeesonController(BedController):
 
     async def preset_tv(self) -> None:
         """Go to TV position (KSBT/Ergomotion only)."""
-        if self._variant in ["base", KEESON_VARIANT_PURPLE]:
+        if self._variant in ["base", KEESON_VARIANT_PURPLE, KEESON_VARIANT_ADJUSTABLE_LITE]:
             _LOGGER.warning("TV preset is not available on %s beds", self._variant)
             return
         await self._write_single_shot(self._build_command(KeesonCommands.PRESET_TV))
@@ -1597,11 +1799,7 @@ class KeesonController(BedController):
                 self._build_command(BetterLivingCommands.PRESET_ANTI_SNORE)
             )
             return
-        if (
-            not self._is_ksbt
-            and not self._is_json_variant
-            and self._variant not in {"ergomotion", KEESON_VARIANT_PURPLE}
-        ):
+        if not self.supports_preset_anti_snore:
             _LOGGER.warning("Anti-snore preset is not available on %s beds", self._variant)
             return
         await self._write_single_shot(self._build_command(KeesonCommands.PRESET_ANTI_SNORE))
