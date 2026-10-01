@@ -427,6 +427,9 @@ EXCLUDED_DEVICE_PATTERNS: tuple[str, ...] = (
     # advertise Nordic UART but are chairs, not adjustable-bed control boxes.
     "flx_audio",
     "flx_rush",
+    # TiMOTION Smart Move+ height-adjustable desks (com.timotion.smartmove).
+    # The app accepts only names starting "stand UP-" on Nordic UART.
+    "stand up-",
     # Mobility devices
     "scooter",
     "ninebot",
