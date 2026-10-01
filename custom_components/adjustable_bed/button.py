@@ -1058,7 +1058,7 @@ def _discovered_memory_slot_name(
 ) -> str | None:
     """Return the bed-reported name for a memory button, if there is one."""
     slot = description.memory_slot
-    controller = coordinator.controller
+    controller = coordinator.controller or coordinator.capability_controller
     if slot is None or controller is None:
         return None
 

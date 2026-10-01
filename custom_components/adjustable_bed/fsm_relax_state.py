@@ -205,19 +205,19 @@ async def async_remove_unowned_states(hass: HomeAssistant, entry: object) -> Non
     from homeassistant.config_entries import ConfigEntry
     from homeassistant.const import CONF_ADDRESS
 
-    from .const import BED_TYPE_FSM_RELAX, CONF_BED_TYPE, DOMAIN
+    from .const import DOMAIN
     from .pairing import iter_children
 
     if not isinstance(entry, ConfigEntry):
         return
 
     def addresses(candidate: ConfigEntry) -> set[str]:
+        # Physical ownership survives changes to the selected protocol.
         records = [candidate.data, *iter_children(candidate.data)]
         return {
             address.upper()
             for record in records
-            if record.get(CONF_BED_TYPE) == BED_TYPE_FSM_RELAX
-            and isinstance(address := record.get(CONF_ADDRESS), str)
+            if isinstance(address := record.get(CONF_ADDRESS), str)
         }
 
     retained: set[str] = set()

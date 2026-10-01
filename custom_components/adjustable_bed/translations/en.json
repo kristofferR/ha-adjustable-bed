@@ -887,7 +887,8 @@
       "vmatbasic_required": "Choose the V-MAT Basic product profile.",
       "starcode_app_invalid": "Choose a supported app selector and a live Bluetooth transport.",
       "starcode_app_unpair_first": "Unpair these entries before changing app selectors. Each physical side retains its own app controls.",
-      "fsm_relax_unpair_first": "Unpair the beds first, configure each physical FSM Relax profile, then combine them again."
+      "fsm_relax_unpair_first": "Unpair the beds first, configure each physical FSM Relax profile, then combine them again.",
+      "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each)."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
