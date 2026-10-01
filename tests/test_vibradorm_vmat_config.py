@@ -1,8 +1,11 @@
 """Explicit VMAT configuration, process state and public entity capabilities."""
 
-from unittest.mock import AsyncMock, patch
+import asyncio
+from contextlib import nullcontext
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS
 
 from custom_components.adjustable_bed import const
@@ -172,7 +175,8 @@ async def test_unverified_native_bond_cannot_save_a_configured_vmat_address(hass
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("absent", [False, True])
-async def test_real_setup_stages_then_pair_proof_close_disconnect_and_metadata_retention(hass, absent):
+@pytest.mark.parametrize("cleanup", ["normal", "close_error", "close_cancel", "task_cancel", "disconnect_error", "disconnect_cancel", "disconnect_noop", "disconnect_error_without_close_cancel", "disconnect_cancel_without_close_cancel", "disconnect_noop_after_close_cancel"])
+async def test_real_setup_stages_then_pair_proof_close_disconnect_and_metadata_retention(hass, absent, cleanup):
     from bleak.backends.device import BLEDevice
 
     from custom_components.adjustable_bed.bluetooth_transport import (
@@ -211,6 +215,15 @@ async def test_real_setup_stages_then_pair_proof_close_disconnect_and_metadata_r
         nonlocal queries
         if packet == bytes.fromhex("01a7"):
             events.append("close")
+            if cleanup == "close_error":
+                raise BleakError("close failed")
+            if cleanup == "task_cancel":
+                task = asyncio.current_task()
+                assert task is not None
+                task.cancel()
+                await asyncio.sleep(0)
+            if cleanup in ("close_cancel", "disconnect_error", "disconnect_cancel", "disconnect_noop_after_close_cancel"):
+                raise asyncio.CancelledError
             return
         field, expected, prefix, _ = QUERY_STAGES[queries]
         assert packet == expected
@@ -230,31 +243,49 @@ async def test_real_setup_stages_then_pair_proof_close_disconnect_and_metadata_r
 
     async def disconnect():
         events.append("disconnect")
+        if cleanup.startswith("disconnect_error"):
+            raise BleakError("disconnect failed")
+        if cleanup.startswith("disconnect_cancel"):
+            raise asyncio.CancelledError
+        if not cleanup.startswith("disconnect_noop"):
+            c.client.is_connected = False
 
     c.client.write_gatt_char.side_effect = write
     c.client.pair = AsyncMock(side_effect=pair)
     c.client.disconnect = AsyncMock(side_effect=disconnect)
     prefix = "custom_components.adjustable_bed.config_flow."
+    expected_error = (
+        ConnectionError if cleanup == "disconnect_noop"
+        else BleakError if cleanup == "disconnect_error_without_close_cancel"
+        else asyncio.CancelledError if cleanup not in ("normal", "close_error")
+        else None
+    )
     with (
         patch("bleak_retry_connector.establish_connection", side_effect=connect),
         patch(prefix + "async_predict_path", return_value=PathPrediction(path, (path,))),
         patch(prefix + "client_source", return_value=source),
         patch(prefix + "async_path_for_source", return_value=path),
         patch(prefix + "async_verify_native_bond", new=AsyncMock(side_effect=[unknown, native_absent if absent else native])),
+        patch.object(flow, "async_track_client", new=MagicMock()) as track,
+        (pytest.raises(expected_error) if expected_error is not None else nullcontext()),
     ):
         result = await flow._attempt_pairing_with_capture(
-            address, request_bond=True, track_for_flow_cleanup=False,
+            address, request_bond=True, track_for_flow_cleanup=True,
             device=BLEDevice(address, "Bed", {}), preferred_adapter="auto",
         )
-    assert result.proves_bond is not absent
-    if absent:
-        from custom_components.adjustable_bed.setup_operation import OperationOutcome
+        assert result.proves_bond is not absent
+        if absent:
+            from custom_components.adjustable_bed.setup_operation import OperationOutcome
 
-        assert result.proves_native_bond_absent
-        with patch.object(flow, "_attempt_pairing", new=AsyncMock(return_value=result)):
-            classified = await flow._async_pair_and_classify(address, "pair")
-        assert classified.outcome is OperationOutcome.BOND_VERIFICATION_FAILED
-        assert classified.payload is result
+            assert result.proves_native_bond_absent
+            with patch.object(flow, "_attempt_pairing", new=AsyncMock(return_value=result)):
+                classified = await flow._async_pair_and_classify(address, "pair")
+            assert classified.outcome is OperationOutcome.BOND_VERIFICATION_FAILED
+            assert classified.payload is result
+    assert track.call_args_list[0].args == (c.client,)
+    assert track.call_args_list[-1].args == (
+        c.client if cleanup.startswith("disconnect_") else None,
+    )
     assert events == ["connect", "pair", "close", "disconnect"]
     assert flow._manual_data[const.CONF_VIBRADORM_APP_METADATA]["opmode"] == "-127"
     assert flow._manual_data[const.CONF_VIBRADORM_APP_METADATA]["xmc_status"] == "129"

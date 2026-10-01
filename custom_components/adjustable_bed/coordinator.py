@@ -8,6 +8,7 @@ import inspect
 import logging
 import random
 import secrets
+import sys
 import time
 import traceback
 from collections import deque
@@ -1740,13 +1741,27 @@ class AdjustableBedCoordinator:
                     from .vibradorm_vmat_setup import async_close_vmat_setup
 
                     self._intentional_disconnect = True
+                    disconnected = not client.is_connected
                     try:
                         if client.is_connected:
-                            with contextlib.suppress(Exception):
-                                await async_close_vmat_setup(client)
-                            await client.disconnect()
+                            try:
+                                with contextlib.suppress(Exception):
+                                    await async_close_vmat_setup(client)
+                            finally:
+                                # Secondary teardown failure must not replace cancellation.
+                                pending_failure = sys.exception()
+                                try:
+                                    await client.disconnect()
+                                except Exception:
+                                    if pending_failure is None:
+                                        raise
+                                    _LOGGER.debug("VMAT disconnect failed during setup cleanup", exc_info=True)
+                                else:
+                                    disconnected = not client.is_connected
+                                    if not disconnected and pending_failure is None:
+                                        raise ConnectionError("VMAT setup connection did not disconnect")
                     finally:
-                        if self._client is client:
+                        if self._client is client and (disconnected or not client.is_connected):
                             self._client = None
                         self._intentional_disconnect = False
         advisory = grants_one_connection_per_pairing_window(self._bed_type, self._protocol_variant)

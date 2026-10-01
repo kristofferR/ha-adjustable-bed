@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
+import sys
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -4973,29 +4974,35 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 return evidence
             finally:
                 self.async_report_action(SetupAction.DISCONNECTING)
-                if (
-                    bed_type == BED_TYPE_VIBRADORM_APP
-                    and vmat_setup_started
-                    and self._manual_data is not None
-                    and self._manual_data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat"
-                    and client.is_connected
-                ):
-                    from .vibradorm_vmat_setup import async_close_vmat_setup
-
-                    try:
-                        await async_close_vmat_setup(client)
-                    except Exception:  # noqa: BLE001 - always disconnect the setup-owned client
-                        _LOGGER.debug("VMAT setup close failed", exc_info=True)
                 try:
-                    await client.disconnect()
-                except Exception:  # noqa: BLE001 - cleanup must not mask the result
-                    _LOGGER.debug("Disconnect after pairing %s failed", address, exc_info=True)
-                else:
-                    # Only clear what this attempt registered: the shielded
-                    # replacement never tracks its client, so untracking here
-                    # would drop a client it does not own.
-                    if track_for_flow_cleanup:
-                        self.async_track_client(None)
+                    if (
+                        bed_type == BED_TYPE_VIBRADORM_APP
+                        and vmat_setup_started
+                        and self._manual_data is not None
+                        and self._manual_data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat"
+                        and client.is_connected
+                    ):
+                        from .vibradorm_vmat_setup import async_close_vmat_setup
+
+                        try:
+                            await async_close_vmat_setup(client)
+                        except Exception:  # noqa: BLE001 - always disconnect the setup-owned client
+                            _LOGGER.debug("VMAT setup close failed", exc_info=True)
+                finally:
+                    pending_failure = sys.exception()
+                    try:
+                        await client.disconnect()
+                    except Exception:  # noqa: BLE001 - cleanup must not mask the result
+                        if vmat_setup_started and pending_failure is None:
+                            raise
+                        _LOGGER.debug("Disconnect after pairing %s failed", address, exc_info=True)
+                    else:
+                        if vmat_setup_started and client.is_connected:
+                            if pending_failure is None:
+                                raise ConnectionError("VMAT setup connection did not disconnect")
+                        elif track_for_flow_cleanup:
+                            # Only clear the client registered by this attempt.
+                            self.async_track_client(None)
 
     def _verification_possible(self) -> bool:
         """Return True only when a connectable scanner exists to probe through.
