@@ -55,8 +55,8 @@ async def test_vmat_runtime_uses_own_45_second_budget_including_retained_native_
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("verified", [False, True])
-async def test_runtime_first_bond_always_closes_setup_and_unproven_rpc_is_not_a_marker(hass, verified):
+@pytest.mark.parametrize(("verified", "absent"), [(False, False), (False, True), (True, False)])
+async def test_runtime_first_bond_always_closes_setup_and_unproven_rpc_is_not_a_marker(hass, verified, absent):
     address, source = "11:22:33:44:55:66", "AA:BB:CC:DD:EE:FF"
     path = ConnectionPath(source, transport=TransportClass.LOCAL, adapter="hci0")
     data = _vibradorm_app_data({
@@ -86,9 +86,13 @@ async def test_runtime_first_bond_always_closes_setup_and_unproven_rpc_is_not_a_
     c.client.write_gatt_char.side_effect = write
     unknown = BondEvidence(BondVerificationStatus.INCONCLUSIVE, BondOwner.from_path(path), "native", "now")
     native = BondEvidence(BondVerificationStatus.NATIVE_OS_STATE, BondOwner.from_path(path), "native", "now", kind=BondEvidenceKind.NATIVE_OS_STATE)
+    native_absent = BondEvidence(
+        BondVerificationStatus.NATIVE_ABSENT, BondOwner.from_path(path), "native", "now",
+        kind=BondEvidenceKind.NATIVE_OS_STATE, error="native_bond_not_stored",
+    )
     details = {}
     with (
-        patch("custom_components.adjustable_bed.coordinator.async_verify_native_bond", new=AsyncMock(side_effect=[unknown, native if verified else unknown])),
+        patch("custom_components.adjustable_bed.coordinator.async_verify_native_bond", new=AsyncMock(side_effect=[unknown, native if verified else native_absent if absent else unknown])),
         patch.object(coordinator, "_async_raise_pairing_issue", new=AsyncMock()),
     ):
         result = await coordinator._async_pair_on_live_link(
@@ -102,4 +106,7 @@ async def test_runtime_first_bond_always_closes_setup_and_unproven_rpc_is_not_a_
     assert details["vmat_setup_started"] is True
     assert bool(entry.data.get(const.CONF_BLE_BOND_ESTABLISHED)) is verified
     assert const.CONF_BLE_BOND_ATTEMPTED_SOURCE not in entry.data
+    if absent:
+        assert details["native_pairing"] == "not_stored"
+        assert coordinator.last_bond_evidence.proves_native_bond_absent
     assert entry.data[const.CONF_VIBRADORM_APP_METADATA]["revision_string"] == "A"

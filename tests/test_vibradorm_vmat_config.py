@@ -171,7 +171,8 @@ async def test_unverified_native_bond_cannot_save_a_configured_vmat_address(hass
 
 
 @pytest.mark.asyncio
-async def test_real_setup_stages_then_pair_proof_close_disconnect_and_metadata_retention(hass):
+@pytest.mark.parametrize("absent", [False, True])
+async def test_real_setup_stages_then_pair_proof_close_disconnect_and_metadata_retention(hass, absent):
     from bleak.backends.device import BLEDevice
 
     from custom_components.adjustable_bed.bluetooth_transport import (
@@ -192,6 +193,10 @@ async def test_real_setup_stages_then_pair_proof_close_disconnect_and_metadata_r
     path = ConnectionPath(source, transport=TransportClass.LOCAL, adapter="hci0")
     unknown = BondEvidence(BondVerificationStatus.INCONCLUSIVE, BondOwner.from_path(path), "native", "now")
     native = BondEvidence(BondVerificationStatus.NATIVE_OS_STATE, BondOwner.from_path(path), "native", "now", kind=BondEvidenceKind.NATIVE_OS_STATE)
+    native_absent = BondEvidence(
+        BondVerificationStatus.NATIVE_ABSENT, BondOwner.from_path(path), "native", "now",
+        kind=BondEvidenceKind.NATIVE_OS_STATE, error="native_bond_not_stored",
+    )
     flow = AdjustableBedConfigFlow()
     flow.context, flow.hass = {}, hass
     flow._manual_data = _vibradorm_app_data(
@@ -235,13 +240,21 @@ async def test_real_setup_stages_then_pair_proof_close_disconnect_and_metadata_r
         patch(prefix + "async_predict_path", return_value=PathPrediction(path, (path,))),
         patch(prefix + "client_source", return_value=source),
         patch(prefix + "async_path_for_source", return_value=path),
-        patch(prefix + "async_verify_native_bond", new=AsyncMock(side_effect=[unknown, native])),
+        patch(prefix + "async_verify_native_bond", new=AsyncMock(side_effect=[unknown, native_absent if absent else native])),
     ):
         result = await flow._attempt_pairing_with_capture(
             address, request_bond=True, track_for_flow_cleanup=False,
             device=BLEDevice(address, "Bed", {}), preferred_adapter="auto",
         )
-    assert result.proves_bond
+    assert result.proves_bond is not absent
+    if absent:
+        from custom_components.adjustable_bed.setup_operation import OperationOutcome
+
+        assert result.proves_native_bond_absent
+        with patch.object(flow, "_attempt_pairing", new=AsyncMock(return_value=result)):
+            classified = await flow._async_pair_and_classify(address, "pair")
+        assert classified.outcome is OperationOutcome.BOND_VERIFICATION_FAILED
+        assert classified.payload is result
     assert events == ["connect", "pair", "close", "disconnect"]
     assert flow._manual_data[const.CONF_VIBRADORM_APP_METADATA]["opmode"] == "-127"
     assert flow._manual_data[const.CONF_VIBRADORM_APP_METADATA]["xmc_status"] == "129"
