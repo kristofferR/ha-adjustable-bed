@@ -4468,6 +4468,9 @@
       },
       "starcode_kneading_time_raw": {
         "name": "Kneading time raw"
+      },
+      "adjustable_lite_massage_timer": {
+        "name": "Massage timer"
       }
     },
     "light": {
@@ -5056,6 +5059,9 @@
       },
       "starcode_firmware_read_ok": {
         "name": "Firmware read ok"
+      },
+      "adjustable_lite_light": {
+        "name": "Light"
       }
     },
     "number": {

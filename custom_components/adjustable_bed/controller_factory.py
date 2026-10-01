@@ -135,6 +135,7 @@ from .const import (
     KEESON_JSON_SERVICE_UUID,
     KEESON_SINO_NAME_PATTERNS,
     # Variants and UUIDs
+    KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_JSON,
     KEESON_VARIANT_KSBT,
@@ -1065,6 +1066,13 @@ async def create_controller(
             return KeesonController(
                 coordinator,
                 variant=KEESON_VARIANT_SLEEP_HARMONY,
+                device_name=device_name,
+            )
+        elif keeson_variant == KEESON_VARIANT_ADJUSTABLE_LITE:
+            _LOGGER.debug("Using explicit Adjustable Lite Keeson variant")
+            return KeesonController(
+                coordinator,
+                variant=KEESON_VARIANT_ADJUSTABLE_LITE,
                 device_name=device_name,
             )
         elif keeson_variant == KEESON_VARIANT_ERGOMOTION:
