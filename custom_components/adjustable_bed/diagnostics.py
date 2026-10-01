@@ -14,6 +14,7 @@ from homeassistant.loader import async_get_integration
 from .adapter import find_service_info_by_address
 from .bluetooth_diagnostics import connection_reachability
 from .const import (
+    BED_TYPE_VIBRADORM_APP,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
@@ -38,6 +39,7 @@ from .discovery_settings import async_is_discovery_disabled
 from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
 from .paired_coordinator import PairedBedCoordinator
 from .redaction import redact_data
+from .vibradorm_app_discovery import manufacturer_discovery_diagnostics
 
 
 def _normalize_ble_address(value: Any) -> str | None:
@@ -82,6 +84,18 @@ async def _async_paired_diagnostics(
             "command_timing": child.command_timing,
             "config": dict(child.entry.data),
         }
+        if child.bed_type == BED_TYPE_VIBRADORM_APP:
+            service_info, connectable = find_service_info_by_address(
+                hass, child.address, allow_non_connectable=True
+            )
+            sides[side]["advertisement"] = {
+                "available": service_info is not None,
+                "connectable": connectable,
+                "service_uuids": list(service_info.service_uuids) if service_info else [],
+                "vibradorm_app_discovery": manufacturer_discovery_diagnostics(
+                    service_info.manufacturer_data if service_info else {}
+                ),
+            }
 
     data: dict[str, Any] = {
         "integration_version": integration.version,
@@ -210,6 +224,12 @@ async def async_get_config_entry_diagnostics(
             advertisement_info["kaidi"] = kaidi_advertisement_to_dict(kaidi_advertisement)
         if hasattr(service_info, "source"):
             advertisement_info["source"] = service_info.source
+
+    if coordinator.bed_type == BED_TYPE_VIBRADORM_APP:
+        advertisement_info["vibradorm_app_discovery"] = manufacturer_discovery_diagnostics(
+            service_info.manufacturer_data if service_info else {}
+        )
+        advertisement_info["available"] = service_info is not None
 
     # Include only auto-detections tied to this config entry. The backing log is
     # global, so exposing it wholesale would leak unrelated nearby BLE devices.

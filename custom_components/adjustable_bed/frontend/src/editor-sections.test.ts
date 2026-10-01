@@ -29,6 +29,20 @@ test("visual editor exposes utility controls", () => {
   expect(presentSections(bed, { states: {} } as HomeAssistant).utility).toBe(true);
 });
 
+test("visual editor offers bounded mood, pending floor timer and massage-only sections", () => {
+  const hass = { states: {} } as HomeAssistant;
+  const bed = emptyBed();
+  bed.lights.mood = { selects: ["select.palette"], numbers: [] };
+  expect(presentSections(bed, hass).lighting).toBe(true);
+  expect(presentSections(bed, hass).massage).toBe(false);
+  bed.lights = { timerMinutes: "number.timer", timerToggle: "button.timer" };
+  expect(presentSections(bed, hass).lighting).toBe(true);
+  bed.lights = {};
+  bed.massage.selects = ["select.wave"];
+  expect(presentSections(bed, hass).lighting).toBe(false);
+  expect(presentSections(bed, hass).massage).toBe(true);
+});
+
 test("visual editor offers the graphic only for two degree panel groups", () => {
   const bed = emptyBed();
   bed.motors = [

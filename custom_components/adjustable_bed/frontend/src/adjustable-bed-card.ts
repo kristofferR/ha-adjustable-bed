@@ -24,6 +24,7 @@ import {
   SECTION_ORDER,
   bedEntitiesForDevice,
   bedIsEmpty,
+  hasLightingControls,
   isSingleAddressPairedDevice,
   pairedChildDeviceIds,
   resolvePairedParentId,
@@ -830,15 +831,7 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _hasLighting(bed: BedEntities): boolean {
-    const lights = bed.lights;
-    return !!(
-      lights.light ||
-      lights.switch ||
-      lights.level ||
-      lights.timer ||
-      lights.toggle ||
-      lights.cycle
-    );
+    return hasLightingControls(bed.lights);
   }
 
   private _deviceLabel(id: string): string {
@@ -1145,27 +1138,42 @@ export class AdjustableBedCard extends LitElement {
   private _lighting(bed: BedEntities): typeof nothing | TemplateResult {
     const l = bed.lights;
     const main = l.light ?? l.switch;
-    if (!main && !l.state && !l.level && !l.timer && !l.toggle && !l.cycle) return nothing;
+    if (!hasLightingControls(l) && !l.state) return nothing;
+    const floor = main || l.state || l.level || l.timer || l.toggle || l.cycle || l.timerMinutes || l.timerToggle;
     return html`
       ${this._heading("section.lighting")}
+      ${l.mood && floor ? this._subheading("lighting.floor") : nothing}
       ${main ? this._toggleRow(main) : nothing}
       ${l.state ? this._moreInfoRow(l.state) : nothing}
       ${l.level ? this._moreInfoRow(l.level) : nothing}
       ${l.timer ? this._moreInfoRow(l.timer) : nothing}
+      ${l.timerMinutes ? this._moreInfoRow(l.timerMinutes) : nothing}
+      ${l.timerMinutes || l.timerToggle
+        ? html`<div class="hint">${localize(this.hass, "lighting.timer_pending")}</div>`
+        : nothing}
       ${
-        l.toggle || l.cycle
+        l.toggle || l.cycle || l.timerToggle
           ? html`<div class="tiles">
               ${l.toggle ? this._tile(l.toggle, () => this._press(l.toggle!)) : nothing}
               ${l.cycle ? this._tile(l.cycle, () => this._press(l.cycle!)) : nothing}
+              ${l.timerToggle ? this._tile(l.timerToggle, () => this._press(l.timerToggle!)) : nothing}
             </div>`
           : nothing
       }
+      ${l.mood ? html`
+        ${this._subheading("lighting.mood")}
+        ${l.mood.selects.map((id) => this._moreInfoRow(id))}
+        ${l.mood.numbers.map((id) => this._moreInfoRow(id))}
+        ${l.mood.toggle ? html`<div class="tiles">
+          ${this._tile(l.mood.toggle, () => this._press(l.mood!.toggle!))}
+        </div>` : nothing}
+      ` : nothing}
     `;
   }
 
   private _massage(bed: BedEntities): typeof nothing | TemplateResult {
     const m = bed.massage;
-    if (m.buttons.length === 0 && m.numbers.length === 0 && !m.timer)
+    if (m.buttons.length === 0 && m.numbers.length === 0 && !m.selects?.length && !m.timer)
       return nothing;
     return html`
       ${this._heading("section.massage")}
@@ -1177,6 +1185,7 @@ export class AdjustableBedCard extends LitElement {
           : nothing
       }
       ${m.numbers.map((id) => this._moreInfoRow(id))}
+      ${m.selects?.map((id) => this._moreInfoRow(id))}
       ${m.timer ? this._moreInfoRow(m.timer) : nothing}
     `;
   }
@@ -1205,6 +1214,10 @@ export class AdjustableBedCard extends LitElement {
 
   private _heading(key: string): TemplateResult {
     return html`<div class="section-heading">${localize(this.hass, key)}</div>`;
+  }
+
+  private _subheading(key: string): TemplateResult {
+    return html`<div class="lighting-heading">${localize(this.hass, key)}</div>`;
   }
 
   private _tile(
@@ -1405,11 +1418,17 @@ export class AdjustableBedCard extends LitElement {
       bed.lights.toggle,
       bed.lights.cycle,
       bed.lights.timer,
+      bed.lights.timerMinutes,
+      bed.lights.timerToggle,
+      bed.lights.mood?.toggle,
       bed.massage.timer,
     ].forEach((x) => x && ids.add(x));
     bed.firmness.forEach((x) => ids.add(x));
     bed.massage.buttons.forEach((x) => ids.add(x));
     bed.massage.numbers.forEach((x) => ids.add(x));
+    bed.massage.selects?.forEach((x) => ids.add(x));
+    bed.lights.mood?.selects.forEach((x) => ids.add(x));
+    bed.lights.mood?.numbers.forEach((x) => ids.add(x));
     bed.utility.forEach((x) => ids.add(x));
     bed.climate.entities.forEach((x) => ids.add(x));
     bed.climate.selects.forEach((x) => ids.add(x));
@@ -1698,6 +1717,12 @@ export class AdjustableBedCard extends LitElement {
       text-transform: uppercase;
       color: var(--secondary-text-color);
       padding: 14px 4px 8px;
+    }
+    .lighting-heading {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--secondary-text-color);
+      padding: 12px 4px 4px;
     }
     .pane-tabs {
       display: grid;

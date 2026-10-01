@@ -352,6 +352,7 @@ retain their legacy profile unless you explicitly change it.
 | Customatic apps | Explicit Clarity, Jerome's C or Remedy bed type; fixed two, two or three motor layout | [Customatic app profiles](beds/customatic.md) |
 | FurniMove / OKIN Smart Remote app | Required exact handset ID; table-derived motors and massage, fixed 100 ms refresh | [FurniMove](beds/furnimove.md) |
 | Jordan's Serenity app | Explicit app selection; two named axes and literal remote selectors 4/5, fixed 100 ms refresh | [Serenity](beds/serenity.md) |
+| Caresse / Werkmeister apps | Explicit app and remote profile; Caresse retained settings and feature flags | [Caresse / Werkmeister](beds/vibradorm_app.md) |
 | Legacy OKIN CB24 | Both sides (default), Side A / Left, or Side B / Right | [Single-address controls](#single-address-left--right-controls) |
 
 For two-address pairs, device-specific app/product selections belong to each
@@ -376,6 +377,30 @@ in integration options. Paired repairs change only their own physical side.
 ### Jordan's Serenity app profile
 
 Select **Jordan's Serenity app** explicitly for the accepted `com.okin.bedding.serenity` 1.0.1 (2) application profile. Shared OKIN discovery and GATT UUIDs do not identify this app profile. The two named main axes use Head and Feet; additional actuator controls retain literal selector 4/5 names because app touch and voice labels disagree. Setup hides motor-count and pulse-delay fields: the app proves two named axes, additional literal selectors, and a fixed 100 ms refresh interval. The internal named-axis count does not claim a physical actuator count. Status notifications remain active when angle sensing is disabled; this profile reports no motor position.
+
+### Caresse / Werkmeister app profiles
+
+Select **Caresse / Werkmeister apps** explicitly, then choose the app. Existing
+generic Vibradorm entries keep their original route. Bluetooth identifiers do
+not select an app or remote layout. Werkmeister offers its two proven remote
+layouts. Fresh Caresse uses its basic two-axis layout; enable retained settings
+only when you know the app's saved remote type and independent floor-light,
+mood-light, massage and light-extension settings. The `other` retained type has
+memory controls but no motor axes. No profile reports positions.
+
+Retained Caresse settings also accept a remembered floor brightness from 1 to 8.
+The light-extension slider stops at 6, but a previously remembered 7 or 8 remains
+valid. Floor brightness and pending timer choices are local command intent,
+not measured bed state. Reconnecting or reloading preserves that intent during
+the same Home Assistant process; restarting clears current brightness and the
+pending timer while retaining the remembered brightness.
+
+Setup hides generic motor-count and pulse settings. Controls use the selected
+profile's fixed refresh and release behavior. First onboarding shares one
+10-second connection, information and native pairing deadline. Local stored
+bonds require exact-adapter BlueZ evidence; a successful proxy pairing request
+remains unverified. App metadata is diagnostic information, not bond proof.
+Configure each physical side separately before combining a two-address pair.
 
 ### Octo PIN
 

@@ -244,6 +244,9 @@ def _sensor_entities_for(
                 "furnimove_firmware", "furnimove_control_mode", "furnimove_massage_type",
                 "furnimove_massage_intensity", "furnimove_massage_program",
                 "furnimove_massage_timer_minutes", "furnimove_function_result",
+                "vibradorm_app_model", "vibradorm_app_firmware",
+                "vibradorm_app_software", "vibradorm_app_main_firmware_article",
+                "vibradorm_app_sync_observed",
             } - active_keys
         )
         _async_remove_stale_sensor_entities(

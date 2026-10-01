@@ -11,7 +11,7 @@ import asyncio
 import inspect
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Collection, Coroutine, Mapping, Sequence
+from collections.abc import Awaitable, Callable, Collection, Coroutine, Mapping, Sequence
 from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, Literal
@@ -96,6 +96,32 @@ class ControllerButtonSpec:
     name: str
     press_fn: MotorCommandCallable
     icon: str = "mdi:gesture-tap"
+    translation_key: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ControllerSelectSpec:
+    """An immutable controller-declared option control backed by published state."""
+
+    key: str
+    translation_key: str
+    state_key: str
+    options: tuple[str, ...]
+    select_fn: Callable[[BedController, str], Awaitable[None]]
+
+
+@dataclass(frozen=True, slots=True)
+class ControllerNumberSpec:
+    """An immutable controller-declared numeric control backed by published state."""
+
+    key: str
+    translation_key: str
+    state_key: str
+    native_min_value: float
+    native_max_value: float
+    native_step: float
+    set_fn: Callable[[BedController, float], Awaitable[None]]
+    native_unit_of_measurement: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -1263,6 +1289,36 @@ class BedController(ABC):
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         """Return additional, product-gated actions for the button platform."""
         return ()
+
+    @property
+    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
+        """Return product controls with immutable options for the selected profile."""
+        return ()
+
+    @property
+    def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
+        """Return product controls with immutable ranges for the selected profile."""
+        return ()
+
+    async def set_mood_palette(self, option: str) -> None:
+        """Select a controller-declared mood palette entry."""
+        raise NotImplementedError("Mood palette selection is not supported")
+
+    async def set_mood_effect(self, option: str) -> None:
+        """Select a controller-declared mood effect."""
+        raise NotImplementedError("Mood effect selection is not supported")
+
+    async def set_mood_speed(self, value: float) -> None:
+        """Set the controller-declared mood speed scale."""
+        raise NotImplementedError("Mood speed control is not supported")
+
+    async def set_massage_wave(self, option: str) -> None:
+        """Select a controller-declared massage wave."""
+        raise NotImplementedError("Massage wave selection is not supported")
+
+    async def set_massage_speed(self, value: float) -> None:
+        """Set the controller-declared massage speed scale."""
+        raise NotImplementedError("Massage speed control is not supported")
 
     @property
     def supports_rmcontrol_alarm(self) -> bool:
@@ -2572,6 +2628,11 @@ class BedController(ABC):
         just toggle. This enables number entity sliders for light level.
         """
         return False
+
+    @property
+    def light_level_min(self) -> int:
+        """Return the slider minimum; a separate off action may lie below it."""
+        return 0
 
     @property
     def light_level_max(self) -> int:

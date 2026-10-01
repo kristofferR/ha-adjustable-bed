@@ -14,7 +14,13 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import BED_TYPE_LINAK, BED_TYPE_SERENITY, BED_TYPE_SLEEP_NUMBER_MCR, DOMAIN
+from .const import (
+    BED_TYPE_LINAK,
+    BED_TYPE_SERENITY,
+    BED_TYPE_SLEEP_NUMBER_MCR,
+    BED_TYPE_VIBRADORM_APP,
+    DOMAIN,
+)
 from .entity import AdjustableBedEntity
 from .entity_runtime import EntityRuntime
 from .paired_coordinator import entity_runtimes
@@ -172,11 +178,19 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         self.entity_description = description
         self._set_sided_translation_key(description.translation_key, description.key)
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
+        self._app_floor_intent = (
+            description.key == "under_bed_lights" and coordinator.bed_type == BED_TYPE_VIBRADORM_APP
+        )
         if description.state_key is None:
             self._attr_is_on = False
             if description.key == "under_bed_lights" and coordinator.bed_type == BED_TYPE_SERENITY:
                 # This app has on/off commands but no physical state response.
                 self._attr_is_on = None
+                self._attr_assumed_state = True
+            elif self._app_floor_intent:
+                # The selected app publishes intended level, never physical readback.
+                level = coordinator.controller_state.get("light_level")
+                self._attr_is_on = level > 0 if type(level) is int and level >= 0 else None
                 self._attr_assumed_state = True
         else:
             initial_state = coordinator.controller_state.get(description.state_key)
@@ -213,8 +227,14 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
     @callback
     def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
         """Update the switch when the controller publishes light state."""
-        state_key = self.entity_description.state_key or "under_bed_lights_on"
+        state_key = (
+            "light_level"
+            if self._app_floor_intent
+            else self.entity_description.state_key or "under_bed_lights_on"
+        )
         if state_key not in state:
+            return
+        if self._app_floor_intent and (type(state[state_key]) is not int or state[state_key] < 0):
             return
         self._attr_is_on = bool(state[state_key])
         if self.entity_description.key != "under_bed_lights":

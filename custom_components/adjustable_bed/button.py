@@ -738,6 +738,7 @@ def _button_entities_for(
         for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
             if (
                 row.domain == "button"
+                and row.platform == DOMAIN
                 and row.unique_id.startswith(prefix)
                 and row.unique_id.endswith(suffix)
                 and row.unique_id not in desired
@@ -745,7 +746,7 @@ def _button_entities_for(
                 registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
         # Named app actions disappear when their profile or transport changes.
-        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "furnimove_"):
+        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_"):
             desired_actions = {
                 coordinator.entity_unique_id(spec.key)
                 for spec in controller.controller_button_specs
@@ -760,6 +761,7 @@ def _button_entities_for(
             ):
                 if (
                     row.domain == "button"
+                    and row.platform == DOMAIN
                     and row.unique_id.startswith(action_prefix)
                     and row.unique_id.endswith(action_suffix)
                     and row.unique_id not in desired_actions
@@ -1148,6 +1150,9 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         self._attr_unique_id = coordinator.entity_unique_id(spec.key)
         self._attr_name = spec.name
         self._attr_icon = spec.icon
+        if spec.translation_key is not None:
+            self._attr_translation_key = coordinator.entity_translation_key(spec.translation_key)
+            self._attr_name = None
 
     async def async_press(self) -> None:
         """Cancel the previous action and execute against the current controller."""

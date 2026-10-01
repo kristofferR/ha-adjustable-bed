@@ -160,6 +160,7 @@ enable additional commands.
 | Customatic Clarity / Remedy | `customatic_hold_memory` (all 31 memory combinations), `customatic_move_simultaneously` (safe motor combinations) | [Customatic](beds/customatic.md) |
 | Customatic Jerome's C | `customatic_move_simultaneously` (back and legs) | [Customatic](beds/customatic.md) |
 | Jordan's Serenity app | `serenity_hold_control` (one of 31 literal app actions) | [Serenity](beds/serenity.md) |
+| Caresse / Werkmeister apps | `vibradorm_hold_control` (profile-specific movement, memory recall or sync) | [Caresse / Werkmeister](beds/vibradorm_app.md) |
 | LOGICDATA app profiles | `logicdata_set_alarm`, `logicdata_rename`, `logicdata_hold_preset` | [LOGICDATA](beds/logicdata-app.md) |
 | Jiecang app profiles | `jiecang_set_alarm`, `jiecang_wake`, `jiecang_stop_wake`, `jiecang_rename` | [Jiecang](beds/jiecang-app.md) |
 | Richmat RMControl products | `rmcontrol_alarm`, `rmcontrol_anti_snore` | [RMControl](beds/rmcontrol.md) |
@@ -172,6 +173,18 @@ renaming an HA entity or device is a separate operation.
 ### `serenity_hold_control`
 
 Hold one literal control from the explicit Jordan's Serenity profile for `duration` seconds (0.1–60), then send its two-frame release sequence. Supply `device_id`, `control`, `duration` and optional `side`. The [Serenity control catalog](beds/serenity.md#reachable-commands) lists the literal action names. The controller validates supported action names before dispatch; arbitrary combinations are rejected. Save controls can change stored positions. This action uses all-target capability preflight and the shared command lock.
+
+### `vibradorm_hold_control`
+
+Supply `device_id`, `control`, `duration` in seconds (0.1–60), and optional
+`side`. Every target is checked against its explicit app and remote profile
+before dispatch. Supported controls include its motor directions, all-up and
+all-down, memory recall slots, and Werkmeister four-axis sync. All-down is a
+held direction, not an automatic flat preset. Ordinary movement and recall
+buttons use a bounded one-second hold; this action lets an automation choose
+the hold duration. Both paths retain the app's completion-gated refresh and
+send a fresh release command on completion or cancellation. Memory storage
+uses the separate Save memory buttons, not this action.
 
 ## Support Bundle
 

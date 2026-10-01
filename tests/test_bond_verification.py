@@ -2,12 +2,19 @@
 
 from __future__ import annotations
 
+import asyncio
+from dataclasses import replace
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bleak.exc import BleakError
 
+from custom_components.adjustable_bed.bluetooth_bond import (
+    BluezReadStatus,
+    LocalBondInventory,
+    LocalBondRecord,
+)
 from custom_components.adjustable_bed.bluetooth_transport import (
     ConnectionPath,
     TransportClass,
@@ -15,9 +22,11 @@ from custom_components.adjustable_bed.bluetooth_transport import (
 from custom_components.adjustable_bed.bond_verification import (
     CONF_BLE_BOND_CONTEXT,
     BondEvidence,
+    BondEvidenceKind,
     BondOwner,
     BondVerificationStatus,
     async_verify_authenticated_access,
+    async_verify_native_bond,
     bond_context_matches,
     bond_owner_from_entry,
     build_bond_context,
@@ -31,11 +40,24 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_UUID,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
+    BED_TYPE_VIBRADORM,
+    BED_TYPE_VIBRADORM_APP,
     SLEEP_NUMBER_AUTH_CHAR_UUID,
 )
 
 _LOCAL = ConnectionPath(source="hci0", transport=TransportClass.LOCAL, adapter="hci0")
 _PROXY = ConnectionPath(source="proxy", transport=TransportClass.PROXY)
+_TARGET = "AA:BB:CC:DD:EE:FF"
+_NATIVE_PATH = ConnectionPath(
+    source="11:22:33:44:55:66", transport=TransportClass.LOCAL, adapter="hci0"
+)
+_NATIVE_RECORD = LocalBondRecord(
+    address=_TARGET,
+    device_path="/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF",
+    adapter_path="/org/bluez/hci0",
+    adapter_address=_NATIVE_PATH.source,
+    bonded=True,
+)
 
 
 def _client(read: Any = None) -> MagicMock:
@@ -78,6 +100,206 @@ class TestVerifierApplicability:
         assert evidence.status is BondVerificationStatus.UNSUPPORTED
         assert not evidence.proves_bond
         client.read_gatt_char.assert_not_called()
+
+    @pytest.mark.parametrize("bed_type", [BED_TYPE_VIBRADORM, BED_TYPE_VIBRADORM_APP])
+    async def test_native_profiles_do_not_expand_authenticated_whitelist(
+        self, bed_type: str, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        inventory_read = AsyncMock()
+        monkeypatch.setattr(
+            "custom_components.adjustable_bed.bond_verification.async_read_local_bonds",
+            inventory_read,
+        )
+        client = _client()
+        evidence = await async_verify_authenticated_access(
+            client, bed_type=bed_type, protocol_variant=None,
+            path=_NATIVE_PATH, operation="setup_pairing",
+        )
+        assert evidence.kind is BondEvidenceKind.AUTHENTICATED_ACCESS
+        assert evidence.status is BondVerificationStatus.UNSUPPORTED
+        assert not has_evidence_backed_verifier(bed_type, None)
+        client.read_gatt_char.assert_not_called()
+        inventory_read.assert_not_called()
+
+
+class TestNativeBondVerification:
+    """Native proof binds stored state to the exact live host path, never GATT auth."""
+
+    @pytest.fixture
+    def inventory_read(self, monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
+        read = AsyncMock(return_value=LocalBondInventory(BluezReadStatus.OK, (_NATIVE_RECORD,)))
+        monkeypatch.setattr(
+            "custom_components.adjustable_bed.bond_verification.async_read_local_bonds", read
+        )
+        return read
+
+    @pytest.mark.parametrize("adapter", ["hci0", None])
+    async def test_exact_native_state_preserves_owner_without_claiming_authentication(
+        self, inventory_read: AsyncMock, adapter: str | None
+    ) -> None:
+        path = replace(_NATIVE_PATH, source=_NATIVE_PATH.source.lower(), adapter=adapter)
+        inventory_read.return_value = LocalBondInventory(
+            BluezReadStatus.OK,
+            (replace(_NATIVE_RECORD, address=_TARGET.lower(),
+                     adapter_address=_NATIVE_PATH.source.lower()),),
+        )
+        evidence = await async_verify_native_bond(
+            _TARGET.lower(), path=path, operation="native_pairing_completion"
+        )
+        assert evidence.status is BondVerificationStatus.NATIVE_OS_STATE
+        assert evidence.status is not BondVerificationStatus.VERIFIED
+        assert evidence.kind is BondEvidenceKind.NATIVE_OS_STATE
+        assert evidence.owner == BondOwner.from_path(path)
+        assert evidence.proves_bond
+        assert not evidence.proves_stale_host_bond
+        inventory_read.assert_awaited_once_with(_TARGET)
+        context = build_bond_context(evidence)
+        assert context["evidence_kind"] == "native_os_state"
+        assert context["source"] == path.source
+        assert context["adapter"] == adapter
+        assert context["verification"] == "native_pairing_completion"
+        assert bond_owner_from_entry({CONF_BLE_BOND_CONTEXT: context}) == evidence.owner
+        assert evidence.as_dict()["kind"] == "native_os_state"
+
+    @pytest.mark.parametrize("path", [None, _PROXY, ConnectionPath(source="unknown")])
+    async def test_nonlocal_paths_never_query_host_inventory(
+        self, inventory_read: AsyncMock, path: ConnectionPath | None
+    ) -> None:
+        evidence = await async_verify_native_bond(_TARGET, path=path, operation="pairing")
+        assert evidence.status is BondVerificationStatus.UNSUPPORTED
+        assert evidence.kind is BondEvidenceKind.NATIVE_OS_STATE
+        assert not evidence.proves_bond
+        assert not evidence.proves_stale_host_bond
+        inventory_read.assert_not_called()
+
+    @pytest.mark.parametrize(
+        ("address", "path"),
+        [
+            (_TARGET, _LOCAL),
+            (_TARGET, replace(_NATIVE_PATH, source="")),
+            (_TARGET, replace(_NATIVE_PATH, adapter="/org/bluez/hci0")),
+            ("not-a-mac", _NATIVE_PATH),
+        ],
+    )
+    async def test_unknown_identity_never_uses_sole_bond_fallback(
+        self, inventory_read: AsyncMock, address: str, path: ConnectionPath
+    ) -> None:
+        evidence = await async_verify_native_bond(address, path=path, operation="pairing")
+        assert evidence.status is BondVerificationStatus.INCONCLUSIVE
+        assert not evidence.proves_bond
+        inventory_read.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "record",
+        [
+            replace(_NATIVE_RECORD, address="AA:BB:CC:DD:EE:00"),
+            replace(_NATIVE_RECORD, adapter_address="11:22:33:44:55:00"),
+            replace(_NATIVE_RECORD, adapter_address=None),
+            replace(_NATIVE_RECORD, adapter_path="/org/bluez/hci1",
+                    device_path="/org/bluez/hci1/dev_AA_BB_CC_DD_EE_FF"),
+            replace(_NATIVE_RECORD, adapter_path="/not/bluez/hci0"),
+            replace(_NATIVE_RECORD, device_path="/org/bluez/hci0/dev_AA_BB_CC_DD_EE_00"),
+        ],
+    )
+    async def test_address_adapter_and_actual_object_must_all_match(
+        self, inventory_read: AsyncMock, record: LocalBondRecord
+    ) -> None:
+        inventory_read.return_value = LocalBondInventory(BluezReadStatus.OK, (record,))
+        evidence = await async_verify_native_bond(_TARGET, path=_NATIVE_PATH, operation="pairing")
+        assert evidence.status is BondVerificationStatus.INCONCLUSIVE
+        assert not evidence.proves_bond
+        assert not evidence.proves_stale_host_bond
+        with pytest.raises(ValueError):
+            build_bond_context(evidence)
+
+    async def test_two_adapters_select_only_the_live_source(self, inventory_read: AsyncMock) -> None:
+        unrelated = replace(
+            _NATIVE_RECORD, adapter_address="11:22:33:44:55:00",
+            adapter_path="/org/bluez/hci1", device_path="/org/bluez/hci1/dev_AA_BB_CC_DD_EE_FF",
+        )
+        inventory_read.return_value = LocalBondInventory(
+            BluezReadStatus.OK, (unrelated, _NATIVE_RECORD)
+        )
+        evidence = await async_verify_native_bond(_TARGET, path=_NATIVE_PATH, operation="pairing")
+        assert evidence.proves_bond
+        assert evidence.owner.source == _NATIVE_PATH.source
+
+    @pytest.mark.parametrize(
+        "inventory",
+        [
+            LocalBondInventory(BluezReadStatus.UNAVAILABLE, (_NATIVE_RECORD,)),
+            LocalBondInventory(BluezReadStatus.OK),
+            LocalBondInventory(BluezReadStatus.OK, (_NATIVE_RECORD, _NATIVE_RECORD)),
+            LocalBondInventory(BluezReadStatus.OK, (replace(_NATIVE_RECORD, bonded=False),)),
+        ],
+    )
+    async def test_unreadable_absent_duplicate_and_negative_state_are_not_proof(
+        self, inventory_read: AsyncMock, inventory: LocalBondInventory
+    ) -> None:
+        inventory_read.return_value = inventory
+        evidence = await async_verify_native_bond(_TARGET, path=_NATIVE_PATH, operation="pairing")
+        assert evidence.status is BondVerificationStatus.INCONCLUSIVE
+        assert not evidence.proves_bond
+        assert not evidence.proves_stale_host_bond
+
+    async def test_paired_without_bonded_is_not_positive_stored_bond_proof(
+        self, inventory_read: AsyncMock
+    ) -> None:
+        transient = replace(_NATIVE_RECORD, paired=True, bonded=False)
+        assert transient.has_bond  # The shared legacy inventory semantics remain unchanged.
+        inventory_read.return_value = LocalBondInventory(BluezReadStatus.OK, (transient,))
+        evidence = await async_verify_native_bond(_TARGET, path=_NATIVE_PATH, operation="pairing")
+        assert evidence.status is BondVerificationStatus.INCONCLUSIVE
+        assert evidence.error == "native_bond_not_stored"
+        assert not evidence.proves_bond
+        assert not evidence.proves_stale_host_bond
+
+    async def test_read_failure_is_inconclusive_and_cancellation_propagates(
+        self, inventory_read: AsyncMock
+    ) -> None:
+        inventory_read.side_effect = OSError("BlueZ unavailable")
+        evidence = await async_verify_native_bond(_TARGET, path=_NATIVE_PATH, operation="pairing")
+        assert evidence.status is BondVerificationStatus.INCONCLUSIVE
+        assert not evidence.proves_stale_host_bond
+        inventory_read.side_effect = asyncio.CancelledError
+        with pytest.raises(asyncio.CancelledError):
+            await async_verify_native_bond(_TARGET, path=_NATIVE_PATH, operation="pairing")
+
+    @pytest.mark.parametrize(
+        ("status", "kind", "path"),
+        [
+            (BondVerificationStatus.AUTH_FAILED, BondEvidenceKind.NATIVE_OS_STATE, _NATIVE_PATH),
+            (BondVerificationStatus.VERIFIED, BondEvidenceKind.NATIVE_OS_STATE, _NATIVE_PATH),
+            (BondVerificationStatus.NATIVE_OS_STATE, BondEvidenceKind.AUTHENTICATED_ACCESS,
+             _NATIVE_PATH),
+            (BondVerificationStatus.NATIVE_OS_STATE, BondEvidenceKind.NATIVE_OS_STATE, _PROXY),
+        ],
+    )
+    def test_mixed_kinds_cannot_manufacture_proof_or_authorize_stale_recovery(
+        self, status: BondVerificationStatus, kind: BondEvidenceKind, path: ConnectionPath
+    ) -> None:
+        evidence = BondEvidence(status, BondOwner.from_path(path), "pairing", "now", kind=kind)
+        assert not evidence.proves_bond
+        assert not evidence.proves_stale_host_bond
+        with pytest.raises(ValueError):
+            build_bond_context(evidence)
+
+    def test_authenticated_context_shape_and_owner_matching_remain_unchanged(self) -> None:
+        evidence = BondEvidence(
+            BondVerificationStatus.VERIFIED, BondOwner.from_path(_NATIVE_PATH), "auth_read", "now"
+        )
+        assert evidence.kind is BondEvidenceKind.AUTHENTICATED_ACCESS
+        context = build_bond_context(evidence)
+        assert context == {
+            "version": 1, "transport": "local", "source": _NATIVE_PATH.source,
+            "adapter": "hci0", "verification": "auth_read", "verified_at": "now",
+        }
+        native = build_bond_context(replace(
+            evidence, status=BondVerificationStatus.NATIVE_OS_STATE,
+            kind=BondEvidenceKind.NATIVE_OS_STATE,
+        ))
+        assert bond_context_matches(context, native)
+        assert not bond_context_matches(context, {**native, "source": "11:22:33:44:55:00"})
 
 
 class TestVerificationOutcomes:

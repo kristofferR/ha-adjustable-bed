@@ -59,6 +59,7 @@ from .bond_verification import (
     BondEvidence,
     BondOwner,
     BondVerificationStatus,
+    async_verify_native_bond,
     bond_context_matches,
     bond_owner_from_entry,
     build_bond_context,
@@ -114,6 +115,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SOLACE,
     BED_TYPE_VIBRADORM,
+    BED_TYPE_VIBRADORM_APP,
     BEDS_WITH_POSITION_FEEDBACK,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
@@ -146,6 +148,12 @@ from .const import (
     CONF_RMCONTROL_SIDE,
     CONF_SIDE,
     CONF_SLEEP_NUMBER_MCR_CLIENT_ID,
+    CONF_VIBRADORM_APP_METADATA,
+    CONF_VIBRADORM_APP_PROFILE,
+    CONF_VIBRADORM_CONTROL_TYPE,
+    CONF_VIBRADORM_FLOOR_DEFAULT,
+    CONF_VIBRADORM_LIGHT_EXTENSION,
+    CONF_VIBRADORM_RESTORED,
     CONNECTION_PROFILES,
     DEFAULT_BACK_MAX_ANGLE,
     DEFAULT_CONNECTION_PROFILE,
@@ -177,6 +185,7 @@ from .const import (
     RUNTIME_BOND_KEYS,
     SOLACE_VARIANT_WOOSA,
     VARIANT_AUTO,
+    VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS,
     bed_type_has_position_feedback,
     connection_gated_by_bond,
     get_motor_pulse_defaults,
@@ -216,6 +225,11 @@ from .unsupported import (
     create_pairing_required_issue,
     delete_pairing_required_issue,
     update_octo_pin_required_issue,
+)
+from .vibradorm_app_state import (
+    ControlType,
+    VibradormAppSessionIntent,
+    get_vibradorm_app_session_intent,
 )
 
 if TYPE_CHECKING:
@@ -1146,6 +1160,41 @@ class AdjustableBedCoordinator:
         return self._controller_state
 
     @property
+    def vibradorm_app_session_intent(self) -> VibradormAppSessionIntent:
+        """Return this exact physical target's process-local app intentions."""
+        if self._bed_type != BED_TYPE_VIBRADORM_APP:
+            raise ValueError("App intent requires an explicit Vibradorm app profile")
+        stored_control = self.entry.data[CONF_VIBRADORM_CONTROL_TYPE]
+        control_type: ControlType
+        if stored_control == "other":
+            control_type = "other"
+        elif isinstance(stored_control, int) and not isinstance(stored_control, bool):
+            control_type = stored_control
+        elif isinstance(stored_control, str):
+            control_type = int(stored_control)
+        else:
+            raise ValueError("Invalid retained Vibradorm control type")
+        app_profile = self.entry.data[CONF_VIBRADORM_APP_PROFILE]
+        fallback = 6
+        if app_profile == "caresse" and self.entry.data.get(CONF_VIBRADORM_RESTORED) is True:
+            fallback = 6 if self.entry.data.get(CONF_VIBRADORM_LIGHT_EXTENSION) else 8
+        return get_vibradorm_app_session_intent(
+            self.hass, self._address, app_profile=app_profile, control_type=control_type,
+            remembered_floor_default=self.entry.data.get(CONF_VIBRADORM_FLOOR_DEFAULT, fallback),
+        )
+
+    def remember_vibradorm_app_floor_default(self, level: int) -> None:
+        """Remember local brightness intent without claiming a hardware response."""
+        if isinstance(level, bool) or not isinstance(level, int) or not 1 <= level <= 8:
+            raise ValueError("Remembered brightness must be an integer from one to eight")
+        intent = self.vibradorm_app_session_intent
+        intent.floor.default_level = level
+        if self.entry.data.get(CONF_VIBRADORM_FLOOR_DEFAULT) == level:
+            return
+        self._begin_internal_entry_update(self._ble_bond_established)
+        self._async_persist_config({**self.entry.data, CONF_VIBRADORM_FLOOR_DEFAULT: level})
+
+    @property
     def is_connected(self) -> bool:
         """Return whether we are currently connected to the bed."""
         return self._client is not None and self._client.is_connected
@@ -1200,6 +1249,9 @@ class AdjustableBedCoordinator:
 
     def _device_reports_existing_bond(self, device: BLEDevice | None = None) -> bool:
         """Return True when HA/BlueZ reports this bed as already paired or bonded."""
+        if self._bed_type == BED_TYPE_VIBRADORM_APP:
+            # Cached discovery flags do not bind a stored bond to the live source.
+            return False
         return any(
             state.get("paired") is True or state.get("bonded") is True
             for state in self._device_pairing_states(device)
@@ -1253,7 +1305,7 @@ class AdjustableBedCoordinator:
         error: BaseException | None = None,
         attempt_details: dict[str, Any] | None = None,
     ) -> None:
-        """Record the latest auth-gated bond probe outcome for diagnostics."""
+        """Record the latest bond observation outcome for diagnostics."""
         result = {
             "status": status,
             "timestamp": datetime.now(UTC).isoformat(),
@@ -1328,6 +1380,7 @@ class AdjustableBedCoordinator:
         established: bool | None = None,
         unreliable: bool | None = None,
         context: dict[str, Any] | None = None,
+        profile_metadata: dict[str, str | None] | None = None,
     ) -> None:
         """Apply bond-state changes to runtime state and entry data in ONE write.
 
@@ -1339,6 +1392,8 @@ class AdjustableBedCoordinator:
         just decided to keep (issue #385).
         """
         data = dict(self.entry.data)
+        if profile_metadata is not None:
+            data[CONF_VIBRADORM_APP_METADATA] = profile_metadata
         if established is not None:
             self._ble_bond_established = established
             # Only persist False where a True is actually stored: writing the
@@ -1629,7 +1684,10 @@ class AdjustableBedCoordinator:
                 exc_info=True,
             )
 
-    async def _async_pair_on_live_link(self, pairing_details: dict[str, Any]) -> bool:
+    async def _async_pair_on_live_link(
+        self, pairing_details: dict[str, Any], *,
+        onboarding_deadline: float | None = None, force_pairing: bool = False,
+    ) -> bool:
         """Create the BLE bond on an already-connected, service-discovered link.
 
         Returns True when the bond was created, False when it failed and the bed
@@ -1654,6 +1712,23 @@ class AdjustableBedCoordinator:
         client = self._client
         if client is None:
             return False
+        if self._bed_type == BED_TYPE_VIBRADORM_APP:
+            metadata_progress: dict[str, str] = {}
+            try:
+                return await self._async_pair_vibradorm_app(
+                    client, pairing_details, onboarding_deadline=onboarding_deadline,
+                    force_pairing=force_pairing, metadata_progress=metadata_progress,
+                )
+            except (Exception, asyncio.CancelledError):
+                if not self._ble_bond_established:
+                    self._persist_bond_flags(
+                        established=False,
+                        profile_metadata=(
+                            self._merged_vibradorm_app_metadata(metadata_progress)
+                            if metadata_progress else None
+                        ),
+                    )
+                raise
         advisory = grants_one_connection_per_pairing_window(self._bed_type, self._protocol_variant)
         try:
             _LOGGER.info("BLE backend pairing starting for %s on the discovered link", self._address)
@@ -1724,6 +1799,175 @@ class AdjustableBedCoordinator:
             return False
         return True
 
+    def _merged_vibradorm_app_metadata(self, progress: Mapping[str, str]) -> dict[str, str | None]:
+        """Preserve completed fields; omitted values mean not read, never clear."""
+        stored = self.entry.data.get(CONF_VIBRADORM_APP_METADATA)
+        merged: dict[str, str | None] = {}
+        for field in ("model", "firmware", "software", "main_firmware_article"):
+            old = stored.get(field) if isinstance(stored, dict) else None
+            if isinstance(old, str):
+                merged[field] = old
+            if field in progress:
+                merged[field] = progress[field]
+        return merged
+
+    def remember_vibradorm_app_metadata(self, progress: Mapping[str, str]) -> None:
+        """Batch completed diagnostic fields without changing native bond proof."""
+        if self._bed_type != BED_TYPE_VIBRADORM_APP:
+            raise ValueError("App metadata requires an explicit Vibradorm app profile")
+        fields = {"model", "firmware", "software", "main_firmware_article"}
+        if any(field not in fields or not isinstance(value, str) for field, value in progress.items()):
+            raise ValueError("App metadata must contain completed string fields")
+        if not progress:
+            return
+        metadata = self._merged_vibradorm_app_metadata(progress)
+        if self.entry.data.get(CONF_VIBRADORM_APP_METADATA) == metadata:
+            return
+        self._begin_internal_entry_update(self._ble_bond_established)
+        self._async_persist_config({**self.entry.data, CONF_VIBRADORM_APP_METADATA: metadata})
+
+    async def _async_observe_native_bond(
+        self, pairing_details: dict[str, Any], *,
+        metadata: dict[str, str | None] | None = None,
+    ) -> bool:
+        """Persist exact native proof without claiming authenticated GATT access."""
+        evidence = await async_verify_native_bond(
+            self._address, path=self._connection_path, operation="runtime_native_bond_state"
+        )
+        self._last_bond_evidence = evidence
+        self._record_bond_verification(str(evidence.status))
+        pairing_details["bond_evidence"] = evidence.as_dict()
+        if not evidence.proves_bond:
+            return False
+        context = build_bond_context(evidence)
+        stored = self.entry.data.get(CONF_BLE_BOND_CONTEXT)
+        if (
+            not self._ble_bond_established or self._ble_bond_marker_unreliable
+            or not bond_context_matches(stored, context)
+            or not isinstance(stored, dict)
+            or stored.get("evidence_kind") != context["evidence_kind"]
+            or CONF_BLE_BOND_ATTEMPTED_SOURCE in self.entry.data
+            or (metadata is not None and self.entry.data.get(CONF_VIBRADORM_APP_METADATA) != metadata)
+        ):
+            self._persist_bond_flags(
+                established=True, unreliable=False, context=context, profile_metadata=metadata
+            )
+        await delete_pairing_required_issue(self.hass, self._address)
+        return True
+
+    async def _async_pair_vibradorm_app(
+        self, client: BleakClient, pairing_details: dict[str, Any], *,
+        onboarding_deadline: float | None, force_pairing: bool,
+        metadata_progress: dict[str, str],
+    ) -> bool:
+        """Run first-bond information and native pairing in one absolute budget."""
+        from .beds.vibradorm_app import (
+            VibradormAppMetadataProgress,
+            async_prepare_vibradorm_app_pairing,
+        )
+
+        def record_metadata(progress: VibradormAppMetadataProgress) -> None:
+            # Completed fields remain useful diagnostics if a later stage fails.
+            # Entry persistence waits for the terminal bond/attempt observation.
+            completed = {field: value for field, value in progress.items() if isinstance(value, str)}
+            metadata_progress.update(completed)
+            self.handle_controller_state_updates({
+                f"vibradorm_app_{field}": value for field, value in completed.items()
+            })
+
+        deadline = onboarding_deadline
+        if deadline is None:
+            deadline = asyncio.get_running_loop().time() + VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS
+        async with asyncio.timeout_at(deadline):
+            if await self._async_observe_native_bond(pairing_details):
+                pairing_details["native_pairing"] = "already_stored"
+                pairing_details["requested"] = False
+                self._attempt_used_pairing = False
+                return True
+            source = self._connection_path.source if self._connection_path is not None else None
+            if (
+                not force_pairing and self._ble_bond_established and source
+                and source == self.entry.data.get(CONF_BLE_BOND_ATTEMPTED_SOURCE)
+            ):
+                pairing_details["native_pairing"] = "unverified_attempt_on_same_source"
+                pairing_details["requested"] = False
+                self._attempt_used_pairing = False
+                self._record_bond_verification("unverified")
+                return False
+            # Defer the entry write until the terminal observation, so its
+            # one-shot internal-update guard covers the whole transition.
+            self._ble_bond_established = False
+            if not force_pairing and self._pairing_supported is False:
+                pairing_details["native_pairing"] = "unsupported_link_retained"
+                self._persist_bond_flags(established=False)
+                return False
+            command_context = current_command_context()
+            cancel_event = (
+                self.cancel_command
+                if command_context is not None
+                and command_context.scheduler_token is self._command_scheduler.token
+                else None
+            )
+            stored_control = self.entry.data[CONF_VIBRADORM_CONTROL_TYPE]
+            control_type: ControlType
+            if stored_control == "other":
+                control_type = "other"
+            elif isinstance(stored_control, int) and not isinstance(stored_control, bool):
+                control_type = stored_control
+            elif isinstance(stored_control, str):
+                control_type = int(stored_control)
+            else:
+                raise ValueError("Invalid retained Vibradorm control type")
+            metadata = await async_prepare_vibradorm_app_pairing(
+                client, self.entry.data[CONF_VIBRADORM_APP_PROFILE],
+                control_type,
+                deadline=deadline, cancel_event=cancel_event, metadata_progress=record_metadata,
+            )
+            completed_metadata = {
+                "model": metadata.model, "firmware": metadata.firmware,
+                "software": metadata.software,
+            }
+            if isinstance(metadata.main_firmware_article, str):
+                completed_metadata["main_firmware_article"] = metadata.main_firmware_article
+            stored_metadata = self._merged_vibradorm_app_metadata(completed_metadata)
+            self.handle_controller_state_updates({
+                f"vibradorm_app_{field}": value for field, value in stored_metadata.items()
+            })
+            try:
+                pairing_details["requested"] = True
+                pairing_details["ordering"] = "connect_info_then_pair"
+                self._attempt_used_pairing = True
+                await client.pair()
+            except (NotImplementedError, TypeError, BleakError, OSError) as err:
+                self._pairing_supported = not isinstance(err, (NotImplementedError, TypeError))
+                pairing_details.update(error=str(err), error_type=type(err).__name__)
+                pairing_details["native_pairing"] = "failed_link_retained"
+                self._persist_bond_flags(established=False, profile_metadata=stored_metadata)
+                await self._async_raise_pairing_issue()
+                return False
+            self._pairing_supported = True
+            if await self._async_observe_native_bond(pairing_details, metadata=stored_metadata):
+                pairing_details["native_pairing"] = "stored"
+                return True
+            # A successful RPC is only an attempted marker, scoped to this live
+            # source. It avoids proxy re-pair storms without inventing proof.
+            if source and source != "unknown":
+                data = dict(self.entry.data)
+                data[CONF_BLE_BOND_ESTABLISHED] = True
+                data[CONF_BLE_BOND_ATTEMPTED_SOURCE] = source
+                data[CONF_VIBRADORM_APP_METADATA] = stored_metadata
+                data.pop(CONF_BLE_BOND_CONTEXT, None)
+                self._ble_bond_established = True
+                if data != dict(self.entry.data):
+                    self._begin_internal_entry_update(True)
+                    self._async_persist_config(data)
+            else:
+                self._persist_bond_flags(established=False, profile_metadata=stored_metadata)
+            self._record_bond_verification("unverified")
+            pairing_details["native_pairing"] = "unverified"
+            await self._async_raise_pairing_issue()
+            return False
+
     async def async_pair_now(self) -> bool:
         """Re-run BLE pairing on demand and report whether the bond is live.
 
@@ -1747,7 +1991,12 @@ class AdjustableBedCoordinator:
                     self._address,
                 )
                 return False
-            self._clear_ble_bond_established()
+            if self._bed_type == BED_TYPE_VIBRADORM_APP:
+                # Native proof and its replacement context commit together;
+                # an intermediate entry write would spend the one-shot guard.
+                self._ble_bond_established = False
+            else:
+                self._clear_ble_bond_established()
             self._skip_pair_next_attempt = False
             self._bond_probe_timed_out = False
             # A repair persists the owner this attempt proves. Pairing a live
@@ -1768,12 +2017,18 @@ class AdjustableBedCoordinator:
                 return await self._async_pair_live_and_verify()
 
             if not await self._async_connect_locked():
+                if self._bed_type == BED_TYPE_VIBRADORM_APP:
+                    self._persist_bond_flags(established=False)
                 return False
+            if self._bed_type == BED_TYPE_VIBRADORM_APP:
+                return self._last_bond_evidence is not None and self._last_bond_evidence.proves_bond
             return self._ble_bond_established
 
     async def _async_pair_live_and_verify(self) -> bool:
         """Pair and verify the live link while the coordinator lock is held."""
         pairing_details: dict[str, Any] = {}
+        if self._bed_type == BED_TYPE_VIBRADORM_APP:
+            return await self._async_pair_on_live_link(pairing_details, force_pairing=True)
         if await self._async_pair_on_live_link(pairing_details):
             if self._bed_type == BED_TYPE_SLEEP_NUMBER:
                 return await self._async_verify_bonded() and self._ble_bond_established
@@ -1807,6 +2062,20 @@ class AdjustableBedCoordinator:
         client = self._client
         if client is None or not client.is_connected:
             self._record_bond_verification("skipped_not_connected", attempt_details=attempt_details)
+            return True
+
+        if self._bed_type == BED_TYPE_VIBRADORM_APP:
+            pairing_details = attempt_details.setdefault("pairing", {}) if attempt_details is not None else {}
+            if await self._async_observe_native_bond(pairing_details):
+                return True
+            source = self._connection_path.source if self._connection_path is not None else None
+            attempted_here = bool(source) and source == self.entry.data.get(CONF_BLE_BOND_ATTEMPTED_SOURCE)
+            if not attempted_here:
+                self._persist_bond_flags(established=False)
+            if not defer_pairing_issue:
+                await self._async_raise_pairing_issue()
+            # Native state cannot prove authentication failure. Keep the usable
+            # link; explicit repair still reports False unless native proof exists.
             return True
 
         if self._bond_probe_timed_out:
@@ -2400,6 +2669,12 @@ class AdjustableBedCoordinator:
         it on an unbonded route cannot be retried within the attempt.
         """
         attempted = self.entry.data.get(CONF_BLE_BOND_ATTEMPTED_SOURCE)
+        if self._bed_type == BED_TYPE_VIBRADORM_APP:
+            owner = bond_owner_from_entry(self.entry.data)
+            return bool(source) and (
+                source == attempted
+                or (owner.transport is not TransportClass.UNKNOWN and source == owner.source)
+            )
         if not attempted:
             # No scope recorded: either the bond was proven (and carries
             # provenance instead) or the entry predates scoping. Unchanged.
@@ -3012,37 +3287,56 @@ class AdjustableBedCoordinator:
                     # no-pair verify retry after a failed pair attempt, which must
                     # see live services to confirm the bond instead of looping.
                     disable_cache = bed_requires_pairing
+                    onboarding_deadline = (
+                        asyncio.get_running_loop().time() + VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS
+                        if self._bed_type == BED_TYPE_VIBRADORM_APP else None
+                    )
                     try:
                         await self._async_cancel_furnimove_bond_request()
-                        self._client = await establish_connection(
-                            BleakClient,
-                            device,
-                            self._name,
-                            disconnected_callback=self._on_disconnect,
-                            max_attempts=1,
-                            timeout=self._connection_timeout,
-                            ble_device_callback=ble_device_callback,
-                            pair=use_pairing and not pair_after_service_discovery,
-                            use_services_cache=not disable_cache,
-                        )
+                        async with asyncio.timeout_at(onboarding_deadline):
+                            self._client = await establish_connection(
+                                BleakClient,
+                                device,
+                                self._name,
+                                disconnected_callback=self._on_disconnect,
+                                max_attempts=1,
+                                timeout=self._connection_timeout,
+                                ble_device_callback=ble_device_callback,
+                                pair=use_pairing and not pair_after_service_discovery,
+                                use_services_cache=not disable_cache,
+                            )
                         self._start_furnimove_bond_request(device)
+                        if self._bed_type == BED_TYPE_VIBRADORM_APP:
+                            # Pairing must use the path actually selected by HA,
+                            # including a reroute away from the planned scanner.
+                            actual_source = client_source(self._client) or "unknown"
+                            self._connection_path = async_path_for_source(self.hass, actual_source)
+                            self._last_bond_evidence = None
                         # LP Control and Sleep Number request the bond after the
                         # unbonded GATT link has reported SERVICES_DISCOVERED.
                         # establish_connection() returns after Bleak has loaded
                         # the service collection, so pairing here preserves that
                         # proven application ordering on BlueZ as well.
                         bond_created = True
-                        if pair_after_service_discovery:
+                        if pair_after_service_discovery or self._bed_type == BED_TYPE_VIBRADORM_APP:
                             _LOGGER.info(
                                 "Connected to %s and discovered services; "
                                 "creating the BLE bond now",
                                 self._address,
                             )
-                            bond_created = await self._async_pair_on_live_link(pairing_details)
+                            if self._bed_type == BED_TYPE_VIBRADORM_APP:
+                                bond_created = await self._async_pair_on_live_link(
+                                    pairing_details, onboarding_deadline=onboarding_deadline
+                                )
+                            else:
+                                bond_created = await self._async_pair_on_live_link(pairing_details)
                         # If we get here with pairing enabled, mark it as supported
-                        if use_pairing and bond_created:
+                        if self._bed_type == BED_TYPE_VIBRADORM_APP:
+                            pairing_details["adapter_pairing_supported"] = self._pairing_supported
+                            pairing_details["connection_result"] = pairing_details["native_pairing"]
+                        elif use_pairing and bond_created:
                             self._pairing_supported = True
-                            if self._bed_type != BED_TYPE_SLEEP_NUMBER:
+                            if self._bed_type not in (BED_TYPE_SLEEP_NUMBER, BED_TYPE_VIBRADORM_APP):
                                 self._mark_ble_bond_established()
                             pairing_details["adapter_pairing_supported"] = True
                             pairing_details["connection_result"] = "pairing_connection_succeeded"
@@ -3191,6 +3485,7 @@ class AdjustableBedCoordinator:
                     BED_TYPE_SLEEP_NUMBER_MCR,
                     BED_TYPE_SLEEP_NUMBER,
                     BED_TYPE_JENSEN,
+                    BED_TYPE_VIBRADORM_APP,
                 }:
                     await asyncio.sleep(self._post_connect_delay)
 
@@ -3261,6 +3556,7 @@ class AdjustableBedCoordinator:
                         BED_TYPE_SLEEP_NUMBER,
                         BED_TYPE_SLEEP_NUMBER_MCR,
                         BED_TYPE_JENSEN,
+                        BED_TYPE_VIBRADORM_APP,
                     )
                     and not await self._async_verify_bonded(
                         attempt_details, defer_pairing_issue=True
@@ -3291,7 +3587,7 @@ class AdjustableBedCoordinator:
                 ble_manufacturer: str | None = None
                 ble_model: str | None = None
 
-                if not _defer_device_info:
+                if not _defer_device_info and self._bed_type != BED_TYPE_VIBRADORM_APP:
                     if self._device_info_read_done:
                         ble_manufacturer = self._ble_manufacturer
                         ble_model = self._ble_model

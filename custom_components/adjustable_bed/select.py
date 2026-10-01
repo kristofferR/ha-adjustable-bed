@@ -11,9 +11,11 @@ from typing import TYPE_CHECKING, Any, cast
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .beds.base import ControllerSelectSpec
 from .const import (
     DOMAIN,
 )
@@ -312,7 +314,84 @@ def _select_entities_for(
                 )
             )
 
+    if controller is not None:
+        specs = controller.controller_select_specs
+        if controller.controller_entity_discovery_complete:
+            _async_remove_stale_controller_selects(hass, coordinator, specs)
+        entities.extend(AdjustableBedControllerSelect(coordinator, spec) for spec in specs)
+
     return entities
+
+
+def _async_remove_stale_controller_selects(
+    hass: HomeAssistant, coordinator: EntityRuntime, specs: tuple[ControllerSelectSpec, ...]
+) -> None:
+    """Remove only this runtime's retired controller-declared selects."""
+    desired = {coordinator.entity_unique_id(f"controller_select_{spec.key}") for spec in specs}
+    prefix, suffix = coordinator.entity_unique_id("controller_select_").split(
+        "controller_select_", 1
+    )
+    prefix += "controller_select_"
+    registry = er.async_get(hass)
+    for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
+        if (
+            row.domain == "select"
+            and row.platform == DOMAIN
+            and row.unique_id.startswith(prefix)
+            and row.unique_id.endswith(suffix)
+            and row.unique_id not in desired
+        ):
+            registry.async_remove(row.entity_id)
+
+
+class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
+    """A declared product option, unknown until the controller publishes state."""
+
+    def __init__(self, coordinator: EntityRuntime, spec: ControllerSelectSpec) -> None:
+        super().__init__(coordinator)
+        self._spec = spec
+        self.entity_description = SelectEntityDescription(
+            key=f"controller_select_{spec.key}", translation_key=spec.translation_key
+        )
+        self._attr_unique_id = coordinator.entity_unique_id(self.entity_description.key)
+        self._set_sided_translation_key(spec.translation_key, spec.key)
+        self._attr_options = list(spec.options)
+        self._unregister_callback: Callable[[], None] | None = None
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self._unregister_callback = self._coordinator.register_controller_state_callback(
+            self._handle_controller_state_update
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        if self._unregister_callback is not None:
+            self._unregister_callback()
+        await super().async_will_remove_from_hass()
+
+    @callback
+    def _handle_controller_state_update(self, state: dict[str, object]) -> None:
+        if self._spec.state_key in state:
+            self.async_write_ha_state()
+
+    @property
+    def current_option(self) -> str | None:
+        value = self._coordinator.controller_state.get(self._spec.state_key)
+        return value if isinstance(value, str) and value in self._spec.options else None
+
+    async def async_select_option(self, option: str) -> None:
+        if option not in self._spec.options:
+            raise ServiceValidationError("Option is not supported by this controller")
+
+        async def select(ctrl: BedController) -> None:
+            live = next(
+                (spec for spec in ctrl.controller_select_specs if spec.key == self._spec.key), None
+            )
+            if live is None or option not in live.options:
+                raise ServiceValidationError("Controller no longer supports this option")
+            await live.select_fn(ctrl, option)
+
+        await self._coordinator.async_execute_controller_command(select)
 
 
 def _async_remove_stale_select_entity(

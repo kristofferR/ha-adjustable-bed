@@ -405,7 +405,8 @@
           "outcome_connection_failed": "❌ Could not pair. Another app or the bed's own remote may be holding the bed's connection, or it may be out of range. Select **Try again**.",
           "outcome_route_mismatch": "❌ Home Assistant connected through a different Bluetooth path. No new pairing was attempted. Check that the selected adapter or proxy can reach the bed, then select **Try again**.",
           "outcome_removal_unconfirmed": "⚠️ Home Assistant could not confirm what happened to the existing bond, so pairing was not attempted and the bond may still be in place. Check the host's Bluetooth settings, then select **Try again**.",
-          "outcome_auth_failed_proxy": "❌ The bed connected through Bluetooth proxy **{transport}**, but authentication failed. Close the bed's phone app, put the bed back into Bluetooth pairing mode, and select **Try again** using the same proxy.\n\nIf the same authentication error returns, saved pairing keys on the proxy may be stale. Follow the [step-by-step recovery guide]({recovery_url}). A normal wireless firmware update does not erase these keys. A full flash erase is a last resort: it removes the proxy's settings and ALL Bluetooth pairings, so save its configuration first."
+          "outcome_auth_failed_proxy": "❌ The bed connected through Bluetooth proxy **{transport}**, but authentication failed. Close the bed's phone app, put the bed back into Bluetooth pairing mode, and select **Try again** using the same proxy.\n\nIf the same authentication error returns, saved pairing keys on the proxy may be stale. Follow the [step-by-step recovery guide]({recovery_url}). A normal wireless firmware update does not erase these keys. A full flash erase is a last resort: it removes the proxy's settings and ALL Bluetooth pairings, so save its configuration first.",
+          "outcome_native_verified_local": "A stored bond was confirmed on this Home Assistant adapter ({transport})."
         }
       },
       "pairing_replace_confirm": {
@@ -522,6 +523,26 @@
         "data": {
           "furnimove_remote": "Handset ID"
         }
+      },
+      "vibradorm_app": {
+        "title": "Caresse / Werkmeister controls",
+        "description": "Select the app and its existing control layout. These choices determine which controls are available. Each physical side keeps its own settings.",
+        "data": {
+          "vibradorm_app_profile": "Bed app",
+          "vibradorm_control_type": "Saved app control layout",
+          "vibradorm_restored": "Use retained Caresse settings",
+          "vibradorm_floor_light": "Retained floor lighting",
+          "vibradorm_floor_default": "Remembered floor brightness",
+          "vibradorm_rgb": "Retained mood lighting",
+          "vibradorm_massage": "Retained massage controls",
+          "vibradorm_light_extension": "Retained lighting extension"
+        },
+        "data_description": {
+          "vibradorm_app_profile": "Choose the app used with this bed. Bluetooth identifiers cannot identify the app or its controls.",
+          "vibradorm_restored": "Advanced: match settings already saved by the Caresse app. Standard controls match a fresh app setup. Retained controls and feature flags do not verify your bed model.",
+          "vibradorm_control_type": "Choose the control layout already used in your app. Each choice defines the available movement groups and memory controls.",
+          "vibradorm_floor_default": "Advanced: the floor-light level remembered by your app (1–8). This is a local setting, not a measured light state. A retained level of 8 is valid even when the lighting extension limits the level slider to 6."
+        }
       }
     },
     "progress": {
@@ -583,7 +604,10 @@
       "octo_pin_inconclusive": "PIN access has not been verified.",
       "malouf_app_required": "Select the Android app and exact bed model.",
       "malouf_app_pair_settings": "Unpair first, then select each physical bed’s app profile before combining them again.",
-      "furnimove_remote_required": "Choose a captured FurniMove handset ID. An unknown ID requires its exact app table; the receiver label cannot choose one."
+      "furnimove_remote_required": "Choose a captured FurniMove handset ID. An unknown ID requires its exact app table; the receiver label cannot choose one.",
+      "vibradorm_app_required": "Choose the bed app.",
+      "vibradorm_app_invalid": "Choose a supported app control layout and retained feature settings.",
+      "vibradorm_app_unpair_first": "Unpair these entries before changing app settings. Each physical side keeps its own app controls."
     }
   },
   "options": {
@@ -645,7 +669,15 @@
           "malouf_app_model": "Bed model",
           "malouf_app_transport": "Bluetooth transport",
           "malouf_app_primary": "Primary bed in the app",
-          "furnimove_remote": "FurniMove handset ID"
+          "furnimove_remote": "FurniMove handset ID",
+          "vibradorm_app_profile": "Bed app",
+          "vibradorm_control_type": "Saved app control layout",
+          "vibradorm_restored": "Use retained Caresse settings",
+          "vibradorm_floor_light": "Retained floor lighting",
+          "vibradorm_rgb": "Retained mood lighting",
+          "vibradorm_massage": "Retained massage controls",
+          "vibradorm_light_extension": "Retained lighting extension",
+          "vibradorm_floor_default": "Remembered floor brightness"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -688,7 +720,11 @@
           "malouf_app_profile": "Choose the app you use with this bed. Shared Bluetooth identifiers do not identify an app.",
           "malouf_app_model": "Choose the exact model selected in the app. Model controls are independent of the Bluetooth transport.",
           "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous.",
-          "malouf_app_primary": "Match the physical primary/secondary setting in the app. Home Assistant Left/Right labels do not change this role."
+          "malouf_app_primary": "Match the physical primary/secondary setting in the app. Home Assistant Left/Right labels do not change this role.",
+          "vibradorm_app_profile": "Choose the app used with this bed. Bluetooth identifiers cannot identify the app or its controls.",
+          "vibradorm_restored": "Advanced: match settings already saved by the Caresse app. Standard controls match a fresh app setup. Retained controls and feature flags do not verify your bed model.",
+          "vibradorm_control_type": "Choose the control layout already used in your app. Each choice defines the available movement groups and memory controls.",
+          "vibradorm_floor_default": "Advanced: the floor-light level remembered by your app (1–8). This is a local setting, not a measured light state. A retained level of 8 is valid even when the lighting extension limits the level slider to 6."
         }
       },
       "remove_bond": {
@@ -759,7 +795,10 @@
       "malouf_app_required": "Select the Android app and exact bed model.",
       "malouf_app_pair_settings": "Unpair first, then select each physical bed’s app profile before combining them again.",
       "furnimove_remote_required": "Choose a captured FurniMove handset ID. An unknown ID requires its exact app table; the receiver label cannot choose one.",
-      "furnimove_unpair_first": "Separate the paired entries before changing to FurniMove, then select each side’s own handset layout."
+      "furnimove_unpair_first": "Separate the paired entries before changing to FurniMove, then select each side’s own handset layout.",
+      "vibradorm_app_required": "Choose the bed app.",
+      "vibradorm_app_invalid": "Choose a supported app control layout and retained feature settings.",
+      "vibradorm_app_unpair_first": "Unpair these entries before changing app settings. Each physical side keeps its own app controls."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -1624,6 +1663,102 @@
       },
       "remote_action": {
         "name": "Remote action"
+      },
+      "vibradorm_app_mood_toggle": {
+        "name": "Toggle mood light"
+      },
+      "vibradorm_app_mood_toggle_left": {
+        "name": "Toggle mood light (left)"
+      },
+      "vibradorm_app_mood_toggle_right": {
+        "name": "Toggle mood light (right)"
+      },
+      "vibradorm_app_mood_toggle_both": {
+        "name": "Toggle mood light (both)"
+      },
+      "vibradorm_app_floor_timer_toggle": {
+        "name": "Toggle pending floor light timer"
+      },
+      "vibradorm_app_floor_timer_toggle_left": {
+        "name": "Toggle pending floor light timer (left)"
+      },
+      "vibradorm_app_floor_timer_toggle_right": {
+        "name": "Toggle pending floor light timer (right)"
+      },
+      "vibradorm_app_floor_timer_toggle_both": {
+        "name": "Toggle pending floor light timer (both)"
+      },
+      "vibradorm_app_massage_automatic": {
+        "name": "Toggle automatic massage"
+      },
+      "vibradorm_app_massage_automatic_left": {
+        "name": "Toggle automatic massage (left)"
+      },
+      "vibradorm_app_massage_automatic_right": {
+        "name": "Toggle automatic massage (right)"
+      },
+      "vibradorm_app_massage_automatic_both": {
+        "name": "Toggle automatic massage (both)"
+      },
+      "vibradorm_app_massage_individual": {
+        "name": "Toggle individual massage"
+      },
+      "vibradorm_app_massage_individual_left": {
+        "name": "Toggle individual massage (left)"
+      },
+      "vibradorm_app_massage_individual_right": {
+        "name": "Toggle individual massage (right)"
+      },
+      "vibradorm_app_massage_individual_both": {
+        "name": "Toggle individual massage (both)"
+      },
+      "vibradorm_app_all_up": {
+        "name": "Hold all controls up"
+      },
+      "vibradorm_app_all_up_left": {
+        "name": "Hold all controls up (left)"
+      },
+      "vibradorm_app_all_up_right": {
+        "name": "Hold all controls up (right)"
+      },
+      "vibradorm_app_all_up_both": {
+        "name": "Hold all controls up (both)"
+      },
+      "vibradorm_app_all_down": {
+        "name": "Hold all controls down"
+      },
+      "vibradorm_app_all_down_left": {
+        "name": "Hold all controls down (left)"
+      },
+      "vibradorm_app_all_down_right": {
+        "name": "Hold all controls down (right)"
+      },
+      "vibradorm_app_all_down_both": {
+        "name": "Hold all controls down (both)"
+      },
+      "vibradorm_app_sync": {
+        "name": "Hold synchronization control"
+      },
+      "vibradorm_app_sync_left": {
+        "name": "Hold synchronization control (left)"
+      },
+      "vibradorm_app_sync_right": {
+        "name": "Hold synchronization control (right)"
+      },
+      "vibradorm_app_sync_both": {
+        "name": "Hold synchronization control (both)"
+      },
+      "vibradorm_app_refresh_info": {
+        "name": "Refresh device information"
+      },
+      "vibradorm_app_refresh_info_left": {
+        "name": "Refresh device information (left)"
+      },
+      "vibradorm_app_refresh_info_right": {
+        "name": "Refresh device information (right)"
+      },
+      "vibradorm_app_refresh_info_both": {
+        "name": "Refresh device information (both)"
       }
     },
     "cover": {
@@ -2099,6 +2234,82 @@
       },
       "furnimove_function_result": {
         "name": "FurniMove function feedback result"
+      },
+      "vibradorm_app_model": {
+        "name": "App model metadata"
+      },
+      "vibradorm_app_model_left": {
+        "name": "App model metadata (left)"
+      },
+      "vibradorm_app_model_right": {
+        "name": "App model metadata (right)"
+      },
+      "vibradorm_app_model_both": {
+        "name": "App model metadata (both)"
+      },
+      "vibradorm_app_firmware": {
+        "name": "App firmware metadata"
+      },
+      "vibradorm_app_firmware_left": {
+        "name": "App firmware metadata (left)"
+      },
+      "vibradorm_app_firmware_right": {
+        "name": "App firmware metadata (right)"
+      },
+      "vibradorm_app_firmware_both": {
+        "name": "App firmware metadata (both)"
+      },
+      "vibradorm_app_software": {
+        "name": "App software metadata"
+      },
+      "vibradorm_app_software_left": {
+        "name": "App software metadata (left)"
+      },
+      "vibradorm_app_software_right": {
+        "name": "App software metadata (right)"
+      },
+      "vibradorm_app_software_both": {
+        "name": "App software metadata (both)"
+      },
+      "vibradorm_app_main_firmware_article": {
+        "name": "App firmware article"
+      },
+      "vibradorm_app_main_firmware_article_left": {
+        "name": "App firmware article (left)"
+      },
+      "vibradorm_app_main_firmware_article_right": {
+        "name": "App firmware article (right)"
+      },
+      "vibradorm_app_main_firmware_article_both": {
+        "name": "App firmware article (both)"
+      },
+      "vibradorm_app_sync_observed": {
+        "name": "Observed synchronization",
+        "state": {
+          "True": "On",
+          "False": "Off"
+        }
+      },
+      "vibradorm_app_sync_observed_left": {
+        "name": "Observed synchronization (left)",
+        "state": {
+          "True": "On",
+          "False": "Off"
+        }
+      },
+      "vibradorm_app_sync_observed_right": {
+        "name": "Observed synchronization (right)",
+        "state": {
+          "True": "On",
+          "False": "Off"
+        }
+      },
+      "vibradorm_app_sync_observed_both": {
+        "name": "Observed synchronization (both)",
+        "state": {
+          "True": "On",
+          "False": "Off"
+        }
       }
     },
     "light": {
@@ -2344,6 +2555,42 @@
       },
       "massage_right_intensity": {
         "name": "Right massage intensity"
+      },
+      "vibradorm_app_mood_speed": {
+        "name": "Mood light speed"
+      },
+      "vibradorm_app_mood_speed_left": {
+        "name": "Mood light speed (left)"
+      },
+      "vibradorm_app_mood_speed_right": {
+        "name": "Mood light speed (right)"
+      },
+      "vibradorm_app_mood_speed_both": {
+        "name": "Mood light speed (both)"
+      },
+      "vibradorm_app_massage_speed": {
+        "name": "Massage speed"
+      },
+      "vibradorm_app_massage_speed_left": {
+        "name": "Massage speed (left)"
+      },
+      "vibradorm_app_massage_speed_right": {
+        "name": "Massage speed (right)"
+      },
+      "vibradorm_app_massage_speed_both": {
+        "name": "Massage speed (both)"
+      },
+      "vibradorm_app_floor_timer_minutes": {
+        "name": "Floor light timer minutes"
+      },
+      "vibradorm_app_floor_timer_minutes_left": {
+        "name": "Floor light timer minutes (left)"
+      },
+      "vibradorm_app_floor_timer_minutes_right": {
+        "name": "Floor light timer minutes (right)"
+      },
+      "vibradorm_app_floor_timer_minutes_both": {
+        "name": "Floor light timer minutes (both)"
       }
     },
     "select": {
@@ -2400,6 +2647,86 @@
       },
       "footwarming_timer_both": {
         "name": "Both sides: Footwarming Timer"
+      },
+      "vibradorm_app_mood_palette": {
+        "name": "Mood light palette"
+      },
+      "vibradorm_app_mood_palette_left": {
+        "name": "Mood light palette (left)"
+      },
+      "vibradorm_app_mood_palette_right": {
+        "name": "Mood light palette (right)"
+      },
+      "vibradorm_app_mood_palette_both": {
+        "name": "Mood light palette (both)"
+      },
+      "vibradorm_app_mood_effect": {
+        "name": "Mood light effect",
+        "state": {
+          "sunrise": "Sunrise",
+          "rainbow": "Rainbow",
+          "disco": "Disco"
+        }
+      },
+      "vibradorm_app_mood_effect_left": {
+        "name": "Mood light effect (left)",
+        "state": {
+          "sunrise": "Sunrise",
+          "rainbow": "Rainbow",
+          "disco": "Disco"
+        }
+      },
+      "vibradorm_app_mood_effect_right": {
+        "name": "Mood light effect (right)",
+        "state": {
+          "sunrise": "Sunrise",
+          "rainbow": "Rainbow",
+          "disco": "Disco"
+        }
+      },
+      "vibradorm_app_mood_effect_both": {
+        "name": "Mood light effect (both)",
+        "state": {
+          "sunrise": "Sunrise",
+          "rainbow": "Rainbow",
+          "disco": "Disco"
+        }
+      },
+      "vibradorm_app_massage_wave": {
+        "name": "Massage wave",
+        "state": {
+          "1": "Wave 1",
+          "2": "Wave 2",
+          "3": "Wave 3",
+          "4": "Wave 4"
+        }
+      },
+      "vibradorm_app_massage_wave_left": {
+        "name": "Massage wave (left)",
+        "state": {
+          "1": "Wave 1",
+          "2": "Wave 2",
+          "3": "Wave 3",
+          "4": "Wave 4"
+        }
+      },
+      "vibradorm_app_massage_wave_right": {
+        "name": "Massage wave (right)",
+        "state": {
+          "1": "Wave 1",
+          "2": "Wave 2",
+          "3": "Wave 3",
+          "4": "Wave 4"
+        }
+      },
+      "vibradorm_app_massage_wave_both": {
+        "name": "Massage wave (both)",
+        "state": {
+          "1": "Wave 1",
+          "2": "Wave 2",
+          "3": "Wave 3",
+          "4": "Wave 4"
+        }
       }
     },
     "climate": {
@@ -2454,26 +2781,63 @@
       "name": "RMControl alarm",
       "description": "Configure a supported product's countdown or repeating alarm using its exact action catalog.",
       "fields": {
-        "device_id": {"name": "Device"},
-        "operation": {"name": "Operation"},
-        "minutes": {"name": "Countdown minutes", "description": "Required for single alarms."},
-        "action": {"name": "Product action", "description": "Exact alarm action name from the selected product's diagnostics."},
-        "alarm_id": {"name": "Alarm slot", "description": "Required for repeat and delete. Updating a slot replaces that alarm."},
-        "time": {"name": "Local alarm time", "description": "Required for repeating alarms. Minute precision."},
-        "weekdays": {"name": "Repeat on", "description": "Required for repeating alarms."},
-        "side": {"name": "Side", "description": "Target side of a paired bed. A standalone bed uses its configured RMControl side."}
+        "device_id": {
+          "name": "Device"
+        },
+        "operation": {
+          "name": "Operation"
+        },
+        "minutes": {
+          "name": "Countdown minutes",
+          "description": "Required for single alarms."
+        },
+        "action": {
+          "name": "Product action",
+          "description": "Exact alarm action name from the selected product's diagnostics."
+        },
+        "alarm_id": {
+          "name": "Alarm slot",
+          "description": "Required for repeat and delete. Updating a slot replaces that alarm."
+        },
+        "time": {
+          "name": "Local alarm time",
+          "description": "Required for repeating alarms. Minute precision."
+        },
+        "weekdays": {
+          "name": "Repeat on",
+          "description": "Required for repeating alarms."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Target side of a paired bed. A standalone bed uses its configured RMControl side."
+        }
       }
     },
     "rmcontrol_anti_snore": {
       "name": "RMControl snore intervention",
       "description": "Enable, configure or query supported automatic snore intervention, separate from the position preset.",
       "fields": {
-        "device_id": {"name": "Device"},
-        "operation": {"name": "Operation"},
-        "enabled": {"name": "Enabled", "description": "Required for switch."},
-        "mode": {"name": "Configuration mode", "description": "Required for configure."},
-        "value": {"name": "Intervention value", "description": "Required for configure. Uses the selected mode's app value; physical interpretation is hardware unverified."},
-        "side": {"name": "Side"}
+        "device_id": {
+          "name": "Device"
+        },
+        "operation": {
+          "name": "Operation"
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Required for switch."
+        },
+        "mode": {
+          "name": "Configuration mode",
+          "description": "Required for configure."
+        },
+        "value": {
+          "name": "Intervention value",
+          "description": "Required for configure. Uses the selected mode's app value; physical interpretation is hardware unverified."
+        },
+        "side": {
+          "name": "Side"
+        }
       }
     },
     "goto_preset": {
@@ -2888,7 +3252,29 @@
     "furnimove_rename": {"name": "Rename FurniMove receiver", "description": "Rename one receiver using a unique name, with up to 18 UTF-16 units after trimming. The original text is sent to the receiver.", "fields": {"name": {"name": "New name"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}},
     "furnimove_massage_program": {"name": "FurniMove massage program", "description": "Select program 1, 2, 3 or 4 (Wave) using the handset’s captured massage queue.", "fields": {"program": {"name": "Program"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}},
     "furnimove_massage_duration": {"name": "FurniMove advisory massage duration", "description": "Set the local app duration preference. This does not program a hardware timer or stop massage when time expires.", "fields": {"minutes": {"name": "Advisory duration"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}},
-    "furnimove_move_simultaneously": {"name": "Move two FurniMove motors", "description": "Hold two supported axes with the app’s combined command and release cleanup.", "fields": {"first_motor": {"name": "First motor"}, "second_motor": {"name": "Second motor"}, "first_direction": {"name": "First direction"}, "second_direction": {"name": "Second direction"}, "duration_ms": {"name": "Duration in milliseconds"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}}
+    "furnimove_move_simultaneously": {"name": "Move two FurniMove motors", "description": "Hold two supported axes with the app’s combined command and release cleanup.", "fields": {"first_motor": {"name": "First motor"}, "second_motor": {"name": "Second motor"}, "first_direction": {"name": "First direction"}, "second_direction": {"name": "Second direction"}, "duration_ms": {"name": "Duration in milliseconds"}, "device_id": {"name": "Device"}, "side": {"name": "Side"}}},
+    "vibradorm_hold_control": {
+      "name": "Hold Caresse / Werkmeister control",
+      "description": "Hold a control supported by the selected app profile, then send its release command.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Beds configured with an explicit Caresse or Werkmeister app profile."
+        },
+        "control": {
+          "name": "Control",
+          "description": "Every target must support this control in its app and remote profile."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds. This host limit does not change the app's refresh interval."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Physical side to control for a paired bed."
+        }
+      }
+    }
   },
   "exceptions": {
     "memory_presets_not_supported": {

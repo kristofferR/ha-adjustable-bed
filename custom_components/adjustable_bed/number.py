@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable, Coroutine, Sequence
 from dataclasses import dataclass, replace
+from functools import partial
+from math import isclose, isfinite
 from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.components.number import (
@@ -14,10 +16,11 @@ from homeassistant.components.number import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .beds.base import PositionNumberSpec
+from .beds.base import ControllerNumberSpec, PositionNumberSpec
 from .const import (
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG_APP,
@@ -36,6 +39,7 @@ from .const import (
     bed_type_has_position_feedback,
 )
 from .entity import AdjustableBedEntity
+from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .paired_coordinator import (
     PairedBedCoordinator,
@@ -215,7 +219,7 @@ MASSAGE_NUMBER_DESCRIPTIONS: tuple[AdjustableBedMassageNumberEntityDescription, 
 
 @dataclass(frozen=True, kw_only=True)
 class AdjustableBedLevelNumberEntityDescription(NumberEntityDescription):
-    """Describes a 0-to-max level slider backed by controller state."""
+    """Describes a level slider backed by controller state."""
 
     state_key: str
     set_fn: Callable[[BedController, int], Coroutine[Any, Any, None]]
@@ -315,25 +319,19 @@ async def async_setup_entry(
 ) -> None:
     """Set up Adjustable Bed number entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
+    for runtime in entity_runtimes(coordinator):
+        async_setup_dynamic_entities(
+            entry, runtime, async_add_entities, partial(_number_entities_for, hass, runtime)
+        )
     if isinstance(coordinator, PairedBedCoordinator):
         paired_entities: list[NumberEntity] = []
         children = list(coordinator.children.values())
-        for runtime in entity_runtimes(coordinator):
-            paired_entities.extend(
-                _number_entities_for(
-                    hass,
-                    runtime,
-                )
-            )
         # Combined sliders on the parent device drive both sides to one target.
         # They read the raw children's positions and seek via the parent (side=both).
         paired_entities.extend(_combined_position_entities_for(coordinator, children))
         _async_remove_stale_combined_number_entities(hass, coordinator, children, paired_entities)
         if paired_entities:
             async_add_entities(paired_entities)
-        return
-    async_add_entities([entity for runtime in entity_runtimes(coordinator)
-                        for entity in _number_entities_for(hass, runtime)])
 
 
 def _number_entities_for(
@@ -460,7 +458,12 @@ def _number_entities_for(
         )
         entities.append(
             AdjustableBedLevelNumber(
-                coordinator, replace(LIGHT_LEVEL_DESCRIPTION, native_max_value=max_level)
+                coordinator,
+                replace(
+                    LIGHT_LEVEL_DESCRIPTION,
+                    native_min_value=controller.light_level_min,
+                    native_max_value=max_level,
+                )
             )
         )
     elif (
@@ -528,7 +531,103 @@ def _number_entities_for(
             )
         )
 
+    if controller is not None:
+        specs = controller.controller_number_specs
+        if controller.controller_entity_discovery_complete:
+            _async_remove_stale_controller_numbers(hass, coordinator, specs)
+        entities.extend(AdjustableBedControllerNumber(coordinator, spec) for spec in specs)
+
     return entities
+
+
+def _valid_controller_number_value(spec: ControllerNumberSpec, value: float) -> bool:
+    """Accept finite values on the declared numeric grid without changing them."""
+    if isinstance(value, bool) or not isfinite(value):
+        return False
+    if not spec.native_min_value <= value <= spec.native_max_value:
+        return False
+    if not isfinite(spec.native_step) or spec.native_step <= 0:
+        return False
+    steps = (value - spec.native_min_value) / spec.native_step
+    return isfinite(steps) and isclose(steps, round(steps), rel_tol=0, abs_tol=1e-8)
+
+
+def _async_remove_stale_controller_numbers(
+    hass: HomeAssistant, coordinator: EntityRuntime, specs: tuple[ControllerNumberSpec, ...]
+) -> None:
+    """Remove only this runtime's retired controller-declared numbers."""
+    desired = {coordinator.entity_unique_id(f"controller_number_{spec.key}") for spec in specs}
+    prefix, suffix = coordinator.entity_unique_id("controller_number_").split(
+        "controller_number_", 1
+    )
+    prefix += "controller_number_"
+    registry = er.async_get(hass)
+    for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
+        if (
+            row.domain == "number"
+            and row.platform == DOMAIN
+            and row.unique_id.startswith(prefix)
+            and row.unique_id.endswith(suffix)
+            and row.unique_id not in desired
+        ):
+            registry.async_remove(row.entity_id)
+
+
+class AdjustableBedControllerNumber(AdjustableBedEntity, NumberEntity):
+    """A declared product value, unknown until the controller publishes state."""
+
+    def __init__(self, coordinator: EntityRuntime, spec: ControllerNumberSpec) -> None:
+        super().__init__(coordinator)
+        self._spec = spec
+        self.entity_description = NumberEntityDescription(
+            key=f"controller_number_{spec.key}",
+            translation_key=spec.translation_key,
+            native_min_value=spec.native_min_value,
+            native_max_value=spec.native_max_value,
+            native_step=spec.native_step,
+            native_unit_of_measurement=spec.native_unit_of_measurement,
+            mode=NumberMode.SLIDER,
+        )
+        self._attr_unique_id = coordinator.entity_unique_id(self.entity_description.key)
+        self._set_sided_translation_key(spec.translation_key, spec.key)
+        self._unregister_callback: Callable[[], None] | None = None
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self._unregister_callback = self._coordinator.register_controller_state_callback(
+            self._handle_controller_state_update
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        if self._unregister_callback is not None:
+            self._unregister_callback()
+        await super().async_will_remove_from_hass()
+
+    @callback
+    def _handle_controller_state_update(self, state: dict[str, object]) -> None:
+        if self._spec.state_key in state:
+            self.async_write_ha_state()
+
+    @property
+    def native_value(self) -> float | None:
+        value = self._coordinator.controller_state.get(self._spec.state_key)
+        if isinstance(value, (int, float)) and _valid_controller_number_value(self._spec, value):
+            return float(value)
+        return None
+
+    async def async_set_native_value(self, value: float) -> None:
+        if not _valid_controller_number_value(self._spec, value):
+            raise ServiceValidationError("Value is outside this controller's range or step")
+
+        async def set_value(ctrl: BedController) -> None:
+            live = next(
+                (spec for spec in ctrl.controller_number_specs if spec.key == self._spec.key), None
+            )
+            if live is None or not _valid_controller_number_value(live, value):
+                raise ServiceValidationError("Controller no longer supports this value")
+            await live.set_fn(ctrl, value)
+
+        await self._coordinator.async_execute_controller_command(set_value)
 
 
 def _position_number_specs(
@@ -978,6 +1077,14 @@ class AdjustableBedLevelNumber(AdjustableBedEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the level."""
+        if (
+            self.entity_description.key == "light_level"
+            and self.native_min_value > 0
+            and not _valid_positive_light_level(
+                value, self.native_min_value, self.native_max_value,
+            )
+        ):
+            raise ServiceValidationError("Value is outside this light slider's integer range")
         level = round(value)
 
         _LOGGER.info(
@@ -988,9 +1095,25 @@ class AdjustableBedLevelNumber(AdjustableBedEntity, NumberEntity):
         )
 
         async def _set_level(ctrl: BedController) -> None:
+            if (
+                self.entity_description.key == "light_level"
+                and ctrl.light_level_min > 0
+                and not _valid_positive_light_level(value, ctrl.light_level_min, ctrl.light_level_max)
+            ):
+                raise ServiceValidationError("Value is outside the current light slider's range")
             await self.entity_description.set_fn(ctrl, level)
 
         await self._coordinator.async_execute_controller_command(_set_level)
+
+
+def _valid_positive_light_level(value: float, minimum: float, maximum: float) -> bool:
+    """A positive slider keeps off separate and does not round into another command."""
+    return (
+        not isinstance(value, bool)
+        and isfinite(value)
+        and minimum <= value <= maximum
+        and value == round(value)
+    )
 
 
 class AdjustableBedSleepNumberSettingNumber(AdjustableBedEntity, NumberEntity):

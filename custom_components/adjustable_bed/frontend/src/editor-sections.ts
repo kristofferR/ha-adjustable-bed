@@ -1,4 +1,5 @@
 import { bedHasGraphicFeedback } from "./bed-graphic-state";
+import { hasLightingControls } from "./discovery";
 import type { BedEntities, HomeAssistant } from "./types";
 
 export function presentSections(
@@ -14,17 +15,11 @@ export function presentSections(
     firmness: bed.firmness.length > 0,
     presets: bed.presets.length > 0,
     memory: bed.memory.length > 0,
-    lighting: !!(
-      bed.lights.light ||
-      bed.lights.switch ||
-      bed.lights.level ||
-      bed.lights.toggle ||
-      bed.lights.cycle ||
-      bed.lights.timer
-    ),
+    lighting: hasLightingControls(bed.lights),
     massage:
       bed.massage.buttons.length > 0 ||
       bed.massage.numbers.length > 0 ||
+      !!bed.massage.selects?.length ||
       !!bed.massage.timer,
     utility: bed.utility.length > 0,
     climate:
