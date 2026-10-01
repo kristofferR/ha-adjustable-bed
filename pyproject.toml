@@ -31,6 +31,7 @@ pythonpath = ["."]
 addopts = "-n auto --dist loadgroup"
 markers = [
     "integration: marks tests as integration tests (require full HA setup)",
+    "real_connect_delays: keep the connection profile's retry and settle delays in tests",
 ]
 
 [tool.ruff]
