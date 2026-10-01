@@ -1469,6 +1469,7 @@ KEESON_VARIANT_SINO: Final = "sino"
 KEESON_VARIANT_PURPLE: Final = "purple"
 KEESON_VARIANT_KSBT04C: Final = "ksbt04c"
 KEESON_VARIANT_SLEEP_HARMONY: Final = "sleep_harmony"
+KEESON_VARIANT_ADJUSTABLE_LITE: Final = "adjustable_lite"
 # Deprecated alias kept for compatibility with older references.
 KEESON_VARIANT_ORE: Final = KEESON_VARIANT_SINO
 KEESON_VARIANTS: Final = {
@@ -1479,6 +1480,7 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_KSBT_CR: "KSBT03CR (7-byte, 0x05 prefix)",
     KEESON_VARIANT_KSBT04C: "KSBT04C (generic 7-byte checksum)",
     KEESON_VARIANT_SLEEP_HARMONY: "Sleep Harmony (KSBT04C / base-i5)",
+    KEESON_VARIANT_ADJUSTABLE_LITE: "Adjustable Lite app (KSBT01C / KSBT03C)",
     KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
     KEESON_VARIANT_OKIN: "OKIN FFE (OKIN 13/15 series, 0xE6 prefix)",
     KEESON_VARIANT_SERTA: "Serta (Serta MP Remote)",
@@ -2279,6 +2281,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_SLEEP_HARMONY,
+    KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_SERTA,

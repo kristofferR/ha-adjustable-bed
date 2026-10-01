@@ -807,6 +807,19 @@ class TestDetectBedTypeByNamePattern:
         service_info = _make_service_info(name="KSBT03C000015046")
         assert detect_bed_type(service_info) == BED_TYPE_KEESON
 
+    def test_detect_adjustable_lite_ksbt01c_name_with_nordic_uart(self):
+        """Adjustable Lite's KSBT01C remote is Keeson, not a probable Richmat."""
+        service_info = _make_service_info(
+            name="KSBT01C000015046",
+            service_uuids=["6e400001-b5a3-f393-e0a9-e50e24dcca9e"],
+        )
+        assert detect_bed_type(service_info) == BED_TYPE_KEESON
+
+    def test_mid_name_ksbt_identity_keeps_legacy_detection(self):
+        """Upgrade safety: only KSBT-prefixed names are detected as Keeson by name."""
+        service_info = _make_service_info(name="Bed KSBT03C000015046")
+        assert detect_bed_type(service_info) != BED_TYPE_KEESON
+
     def test_detect_keeson_by_name_ore(self):
         """Test Keeson detection by ORE- prefix (Dynasty/INNOVA beds)."""
         service_info = _make_service_info(name="ORE-ac2170000d")
