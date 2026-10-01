@@ -610,3 +610,19 @@ test("stateless native floor power buttons stay in the physical child's lighting
   expect(right.utility).toEqual([]);
   expect(bedIsEmpty(left)).toBe(false);
 });
+
+test("Cool Base app-labelled controls land in massage and utility sections", () => {
+  const hass = hassWith([
+    entry("button.cb_left_fan", "coolbase_left_fan"),
+    entry("button.cb_right_fan", "coolbase_right_fan"),
+    entry("button.cb_fan_sync", "coolbase_fan_sync"),
+    entry("button.cb_head", "coolbase_head_massage"),
+    entry("button.cb_foot", "coolbase_foot_massage"),
+    entry("button.cb_mode", "coolbase_massage_mode"),
+    entry("button.cb_star", "coolbase_star"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.massage.buttons).toEqual(["button.cb_head", "button.cb_foot", "button.cb_mode"]);
+  expect(bed.utility).toEqual(["button.cb_left_fan", "button.cb_right_fan", "button.cb_fan_sync", "button.cb_star"]);
+  expect(bed.memory).toEqual([]);
+});
