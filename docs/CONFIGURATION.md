@@ -204,7 +204,7 @@ timing; these settings do not replace it. Use the matching [protocol guide](SUPP
 | Sleepy's BOX24 | 10 | 100ms |
 | SleepSpa S9000AI / SLEEPSTAR | 10 | 100ms |
 | Jensen | 4 | 300ms |
-| Svane | 10 | 100ms |
+| Svane Remote app profiles | Held duration, not a configurable repeat count | Source 100ms, feet/separate fallback adds 100ms |
 | Vibradorm | 10 | 100ms |
 | Rondure | 25 | 50ms |
 | Remacro | 10 | 100ms |
@@ -342,7 +342,7 @@ retain their legacy profile unless you explicitly change it.
 | Profile | Settings | Reference |
 |---------|----------|-----------|
 | Solace / Woosa Sleep | Protocol variant **`woosa`** (Woosa Sleep) for beds using that app; `auto` retains conservative name-based routing | [Woosa](beds/woosa.md) |
-| Svane / Jensen LinOn | Protocol variant **`jensen_linon`** (Jensen Adjustable Sleep) for LinOn beds, set by Bluetooth setup for "Adjustable Bed"/"Jensen Bed" names; `auto` is the Svane app | [Jensen LinOn](beds/jensen.md#linon) |
+| Svane Remote / Jensen LinOn | **`svane_remote_multi`**, **`svane_remote_jmc`** (explicit JMC400 app choice), or separate **`jensen_linon`**. Older `auto` stays Svane multi-service. Two named axes, opaque memory, no numeric position feedback or PIN. | [Svane Remote](beds/svane.md), [Jensen LinOn](beds/jensen.md#linon) |
 | Richmat RMControl | Exact product code (empty keeps legacy Richmat), side (`left`, `right`, `both`; default `left`) | [RMControl](beds/rmcontrol.md) |
 | Leggett Okin | Prodigy / U Series app profile | [Leggett app profiles](beds/leggett-okin.md) |
 | L&P legacy app | Model code, protocol mode, confirmed write UUID, optional notification UUID | [L&P legacy](beds/lp-legacy.md) |

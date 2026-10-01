@@ -117,6 +117,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SOLACE,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_SVANE,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
@@ -1292,6 +1293,18 @@ class AdjustableBedCoordinator:
             self._begin_internal_entry_update(self._ble_bond_established)
             self._async_persist_config({**self.entry.data, CONF_NAME: name})
         self._name = name
+
+    def remember_svane_preferences(self, preferences: dict[str, object]) -> None:
+        """Guard one changed target-local preference batch without bond inference."""
+        from .svane_state import CONF_SVANE_PREFERENCES, svane_preferences
+
+        if self._bed_type != BED_TYPE_SVANE:
+            raise ValueError("Svane preferences require the explicit bed profile")
+        svane_preferences(preferences)
+        if self.entry.data.get(CONF_SVANE_PREFERENCES) == preferences:
+            return
+        self._begin_internal_entry_update(self._ble_bond_established)
+        self._async_persist_config({**self.entry.data, CONF_SVANE_PREFERENCES: preferences}, keys={CONF_SVANE_PREFERENCES})
 
     @property
     def is_connected(self) -> bool:
@@ -4365,6 +4378,11 @@ class AdjustableBedCoordinator:
         if self._furnimove_bond_task is not None:
             self._furnimove_bond_task.cancel()
 
+        # Invalidate connection-owned work even during Bleak initialization retries.
+        controller = self._controller
+        if controller is not None:
+            controller.on_disconnect()
+
         # If we're in the middle of connecting, this is likely bleak's internal retry
         # for le-connection-abort-by-local - don't log warnings or clear references
         if self._connecting:
@@ -4384,8 +4402,6 @@ class AdjustableBedCoordinator:
             self._last_disconnect_reason = "unexpected"
 
         # Stop keepalive task before clearing controller to prevent task leak
-        # Capture controller reference before clearing to avoid race condition
-        controller = self._controller
         if controller is not None and hasattr(controller, "stop_keepalive"):
             self._stop_keepalive_task = self.entry.async_create_background_task(
                 self.hass,
@@ -5531,6 +5547,7 @@ class AdjustableBedCoordinator:
         raise_on_cancel: bool,
     ) -> T | None:
         """Wait for a controller operation or cancel it when preempted."""
+        caller_task = asyncio.current_task()
         cancel_wait_task = asyncio.create_task(cancel_event.wait())
         try:
             done, pending = await asyncio.wait(
@@ -5541,8 +5558,11 @@ class AdjustableBedCoordinator:
             for task in pending:
                 task.cancel()
             for task in pending:
-                with contextlib.suppress(asyncio.CancelledError):
+                try:
                     await task
+                except asyncio.CancelledError:
+                    if caller_task is not None and caller_task.cancelling():
+                        raise
 
             if cancel_wait_task in done:
                 _LOGGER.debug("Controller %s cancelled during execution", operation_name)
@@ -5551,19 +5571,26 @@ class AdjustableBedCoordinator:
                 try:
                     await operation_task
                 except asyncio.CancelledError:
-                    pass
+                    if caller_task is not None and caller_task.cancelling():
+                        raise
                 if raise_on_cancel:
                     raise asyncio.CancelledError
                 return None
 
             return operation_task.result()
         finally:
+            # Cancel both children before draining either, even if the caller exits.
+            for task in (operation_task, cancel_wait_task):
+                if not task.done():
+                    task.cancel()
             for task in (operation_task, cancel_wait_task):
                 if task.done():
                     continue
-                task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
+                try:
                     await task
+                except asyncio.CancelledError:
+                    if caller_task is not None and caller_task.cancelling():
+                        raise
 
     async def _async_execute_controller_operation(
         self,

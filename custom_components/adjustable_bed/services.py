@@ -44,6 +44,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_SVANE,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     CONF_BED_TYPE,
@@ -90,6 +91,8 @@ SERVICE_LEGGETT_SLEEP_TIMER = "leggett_sleep_timer"
 SERVICE_LEGGETT_ALARM_TIMER = "leggett_alarm_timer"
 SERVICE_LEGGETT_HOLD_CONTROL = "leggett_hold_control"
 SERVICE_SERENITY_HOLD_CONTROL = "serenity_hold_control"
+SERVICE_SVANE_HOLD_CONTROL = "svane_hold_control"
+SERVICE_SVANE_RELEASE_AXIS = "svane_release_axis"
 SERVICE_FURNIMOVE_ACTION = "furnimove_action"
 SERVICE_FURNIMOVE_RENAME = "furnimove_rename"
 SERVICE_FURNIMOVE_MASSAGE_PROGRAM = "furnimove_massage_program"
@@ -365,8 +368,7 @@ def _get_support_bundle_target_from_device(
             # sides; a bundle is per-address, so make the user pick one
             # side's device instead of silently capturing only the first.
             raise ServiceValidationError(
-                f"{entry.title} is a paired bed; target one side's device "
-                "for the support bundle.",
+                f"{entry.title} is a paired bed; target one side's device for the support bundle.",
                 translation_domain=DOMAIN,
                 translation_key="bundle_needs_side_for_paired",
                 translation_placeholders={"device_name": entry.title},
@@ -581,6 +583,10 @@ async def handle_goto_preset(call: ServiceCall) -> None:
                             "requested_preset": str(preset),
                         },
                     )
+                try:
+                    controller.validate_memory_recall(preset)
+                except ValueError as error:
+                    raise ServiceValidationError(str(error)) from error
     except ServiceValidationError:
         await _release_preflighted(preflighted)
         raise
@@ -752,6 +758,7 @@ async def _set_position_plan(
             BED_TYPE_KEESON,
             BED_TYPE_ERGOMOTION,
             BED_TYPE_SLEEPYS_BOX25,
+            BED_TYPE_SVANE,
             BED_TYPE_SLEEP_NUMBER_MCR,
         ) or (bed_type == BED_TYPE_KAIDI and supports_direct_position_control)
 
@@ -1824,6 +1831,82 @@ async def handle_furnimove_move_simultaneously(call: ServiceCall) -> None:
     await _execute_furnimove(call, validate, execute)
 
 
+async def _svane_live_targets(
+    call: ServiceCall,
+) -> tuple[list[tuple[BedTarget, str]], PreflightedSides]:
+    """Validate profile and connect every selected target before motion begins."""
+    targets, missing = _resolve_sided_targets(
+        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    # Reject unrelated profiles without contacting their devices.
+    for parent, side in targets:
+        for target in _command_targets(parent, side):
+            controller = target.capability_controller
+            if (
+                target.bed_type != BED_TYPE_SVANE
+                or controller is None
+                or not controller.supports_held_control
+            ):
+                raise ServiceValidationError("Select a Svane Remote app profile")
+    preflighted: PreflightedSides = []
+    try:
+        for parent, side in targets:
+            for target in _command_targets(parent, side):
+                await _get_controller_for_service(target)
+                preflighted.append((parent, target))
+    except Exception, asyncio.CancelledError:
+        await _release_preflighted(preflighted)
+        raise
+    return targets, preflighted
+
+
+async def handle_svane_hold_control(call: ServiceCall) -> None:
+    """Preflight exact roles on all sides before serialized source held writes."""
+    targets, preflighted = await _svane_live_targets(call)
+    control = call.data[ATTR_CONTROL]
+    duration_ms = int(_leggett_hold_seconds(call.data[ATTR_DURATION]) * 1000)
+    try:
+        for parent, side in targets:
+            for target in _command_targets(parent, side):
+                controller = await _get_controller_for_service(target)
+                controller.validate_svane_hold_control(control, duration_ms)
+
+        async def hold(controller: BedController | SideBoundController) -> None:
+            await controller.hold_control(control, duration_ms)
+
+        for parent, side in targets:
+            await _execute_sided(parent, side, hold, cancel_running=True)
+    except (Exception, asyncio.CancelledError) as error:
+        await _release_preflighted(preflighted)
+        if isinstance(error, ValueError):
+            raise ServiceValidationError(str(error)) from error
+        raise
+
+
+async def handle_svane_release_axis(call: ServiceCall) -> None:
+    """Signal only the active writer, allowing the other held axis to continue."""
+    targets, missing = _resolve_sided_targets(
+        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    controllers: list[BedController | SideBoundController] = []
+    for parent, side in targets:
+        for target in _command_targets(parent, side):
+            controller = target.controller
+            if (
+                target.bed_type != BED_TYPE_SVANE
+                or controller is None
+                or not controller.supports_held_control
+            ):
+                raise ServiceValidationError("Select an active Svane Remote app profile")
+            controllers.append(controller)
+    for controller in controllers:
+        controller.request_svane_axis_release(call.data[ATTR_MOTOR])
+
+
 async def handle_serenity_hold_control(call: ServiceCall) -> None:
     """Hold one literal Serenity action, then send its proven release sequence."""
     await _handle_customatic_hold(
@@ -2819,13 +2902,37 @@ async def async_register_services(hass: HomeAssistant) -> None:
         }),
     )
     hass.services.async_register(
-        DOMAIN, SERVICE_FURNIMOVE_MASSAGE_DURATION, handle_furnimove_massage_duration,
-        schema=vol.Schema({
-            **device_fields,
-            vol.Required("minutes"): vol.All(
-                vol.In((10, 15, 20, 30, "10", "15", "20", "30")), vol.Coerce(int)
-            ),
-        }),
+        DOMAIN,
+        SERVICE_FURNIMOVE_MASSAGE_DURATION,
+        handle_furnimove_massage_duration,
+        schema=vol.Schema(
+            {
+                **device_fields,
+                vol.Required("minutes"): vol.All(
+                    vol.In((10, 15, 20, 30, "10", "15", "20", "30")), vol.Coerce(int)
+                ),
+            }
+        ),
+    )
+    from .beds.svane import MOTIONS
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SVANE_HOLD_CONTROL,
+        handle_svane_hold_control,
+        schema=vol.Schema(
+            {
+                **device_fields,
+                vol.Required(ATTR_CONTROL): vol.In((*MOTIONS, "light_adjust")),
+                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SVANE_RELEASE_AXIS,
+        handle_svane_release_axis,
+        schema=vol.Schema({**device_fields, vol.Required(ATTR_MOTOR): vol.In(("head", "feet"))}),
     )
     hass.services.async_register(
         DOMAIN,

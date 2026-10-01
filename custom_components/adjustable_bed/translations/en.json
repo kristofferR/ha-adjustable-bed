@@ -2153,6 +2153,24 @@
       }
     },
     "sensor": {
+      "svane_head_raw": {
+        "name": "Observed head bytes"
+      },
+      "svane_feet_raw": {
+        "name": "Observed feet bytes"
+      },
+      "svane_position_raw": {
+        "name": "Observed position bytes"
+      },
+      "svane_firmware": {
+        "name": "Observed firmware"
+      },
+      "svane_hardware": {
+        "name": "Observed hardware"
+      },
+      "svane_manufacturer": {
+        "name": "Observed manufacturer"
+      },
       "rmcontrol_protocol_version": {
         "name": "RMControl protocol version"
       },
@@ -2762,6 +2780,9 @@
       }
     },
     "number": {
+      "svane_intensity": {
+        "name": "Lamp intensity"
+      },
       "back_position": {
         "name": "Back Position"
       },
@@ -3140,6 +3161,40 @@
     }
   },
   "services": {
+    "svane_hold_control": {
+      "name": "Hold Svane Remote control",
+      "description": "Hold selected axes or adjust the lamp. Movement releases use the selected app profile.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control"
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Bounded host duration in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "svane_release_axis": {
+      "name": "Release Svane Remote axis",
+      "description": "Signal the active writer to release one axis while the other continues.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "motor": {
+          "name": "Axis"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
     "serenity_hold_control": {
       "name": "Hold Serenity control",
       "description": "Hold one supported Serenity app action, then release it. Save actions can change stored positions.",

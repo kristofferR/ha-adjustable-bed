@@ -247,6 +247,8 @@ from .const import (
     STARCODE_APP_CONFIG_KEYS,
     STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
     SVANE_VARIANT_JENSEN_LINON,
+    SVANE_VARIANT_JMC,
+    SVANE_VARIANTS,
     VARIANT_AUTO,
     VIBRADORM_APP_CONFIG_KEYS,
     VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS,
@@ -662,6 +664,8 @@ def _motor_count_options(
     protocol_variant: str = DEFAULT_PROTOCOL_VARIANT,
 ) -> list[int]:
     """Return motor counts supported by the selected protocol."""
+    if bed_type == BED_TYPE_SVANE and protocol_variant != SVANE_VARIANT_JENSEN_LINON:
+        return [2]
     if bed_type == BED_TYPE_OKIN_RF_ECO_BT:
         return [1]
     if bed_type == BED_TYPE_FURNIMOVE:
@@ -1156,6 +1160,34 @@ def _vmatbasic_errors(data: Mapping[str, Any]) -> dict[str, str]:
             except ValueError:
                 return {key: "vmatbasic_invalid"}
     return {}
+
+def _add_svane_schema_fields(schema: dict[vol.Marker, Any], bed_type: str | None) -> None:
+    """Explicit app transport selection; host axes do not imply motor count."""
+    if bed_type != BED_TYPE_SVANE:
+        return
+    variant_marker = next((m for m in schema if m.schema == CONF_PROTOCOL_VARIANT), None)
+    variant = (
+        variant_marker.default()
+        if isinstance(variant_marker, (vol.Optional, vol.Required)) and callable(variant_marker.default)
+        else VARIANT_AUTO
+    )
+    if variant not in SVANE_VARIANTS:
+        variant = VARIANT_AUTO
+    if variant_marker is not None:
+        del schema[variant_marker]
+    schema[vol.Optional(CONF_PROTOCOL_VARIANT, default=variant)] = vol.In(SVANE_VARIANTS)
+    if variant == SVANE_VARIANT_JENSEN_LINON:
+        return
+    hidden = {
+        CONF_MOTOR_COUNT,
+        CONF_HAS_MASSAGE,
+        CONF_DISABLE_ANGLE_SENSING,
+        CONF_MOTOR_PULSE_COUNT,
+        CONF_MOTOR_PULSE_DELAY_MS,
+    }
+    for marker in tuple(schema):
+        if marker.schema in hidden:
+            del schema[marker]
 
 
 def _hide_vibradorm_generic_fields(schema: dict[vol.Marker, Any], bed_type: str | None) -> None:
@@ -2399,7 +2431,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if user_input is None:
             return None
         requested = user_input.get(CONF_BED_TYPE, shown_bed_type)
-        if requested == shown_bed_type or not {BED_TYPE_SERENITY, BED_TYPE_VMATBASIC}.intersection(
+        if requested == shown_bed_type or not {BED_TYPE_SERENITY, BED_TYPE_VMATBASIC, BED_TYPE_SVANE}.intersection(
             (shown_bed_type, requested)
         ):
             return None
@@ -2606,9 +2638,15 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 if (
                     selected_bed_type == BED_TYPE_SVANE
                     and protocol_variant == VARIANT_AUTO
+                    and self._discovery_info.name != "Svane Bed"
                     and is_jensen_linon_name(self._discovery_info.name)
                 ):
                     entry_data[CONF_PROTOCOL_VARIANT] = SVANE_VARIANT_JENSEN_LINON
+                if selected_bed_type == BED_TYPE_SVANE and protocol_variant == VARIANT_AUTO:
+                    from .svane_state import svane_profile_for_selected_name
+
+                    if svane_profile_for_selected_name(self._discovery_info.name) == "jmc":
+                        entry_data[CONF_PROTOCOL_VARIANT] = SVANE_VARIANT_JMC
                 if _is_leggett_app_type(selected_bed_type, protocol_variant):
                     self._manual_data = entry_data
                     self._leggett_app_pairing_step = "bluetooth_pairing"
@@ -2914,6 +2952,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         )
 
         _hide_vibradorm_generic_fields(schema_dict, bed_type)
+        _add_svane_schema_fields(schema_dict, bed_type)
         return self.async_show_form(
             step_id="bluetooth_confirm",
             data_schema=vol.Schema(schema_dict),
@@ -3467,6 +3506,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, str(discovery_source))
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
+            if bed_type == BED_TYPE_SVANE and protocol_variant == VARIANT_AUTO:
+                from .svane_state import svane_profile_for_selected_name
+
+                if svane_profile_for_selected_name(self._discovery_info.name) == "jmc":
+                    protocol_variant = SVANE_VARIANT_JMC
+
 
             motor_count = _normalize_fixed_motor_count(
                 bed_type,
@@ -3720,6 +3765,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             _add_cb24_side_schema_field(schema_dict)
 
         _hide_vibradorm_generic_fields(schema_dict, defaults_bed_type)
+        _add_svane_schema_fields(schema_dict, defaults_bed_type)
         return self.async_show_form(
             step_id="manual_config",
             data_schema=vol.Schema(schema_dict),
@@ -3994,6 +4040,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             schema_dict.pop(vol.Optional(CONF_PROTOCOL_VARIANT), None)
 
         _hide_vibradorm_generic_fields(
+            schema_dict, (user_input or {}).get(CONF_BED_TYPE, preselected_bed_type)
+        )
+        _add_svane_schema_fields(
             schema_dict, (user_input or {}).get(CONF_BED_TYPE, preselected_bed_type)
         )
         typed_address = (user_input or {}).get(CONF_ADDRESS, "")
@@ -5317,6 +5366,19 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     control_type="other" if control == "other" else int(control),
                     remembered_floor_default=data.get(CONF_VIBRADORM_FLOOR_DEFAULT, 6),
                 )
+        if data.get(CONF_BED_TYPE) == BED_TYPE_SVANE:
+            variant = data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
+            if variant not in SVANE_VARIANTS:
+                raise ValueError("Unknown Svane Remote profile")
+            if variant != SVANE_VARIANT_JENSEN_LINON:
+                data.update(
+                    {
+                        CONF_MOTOR_COUNT: 2,
+                        CONF_HAS_MASSAGE: False,
+                        CONF_DISABLE_ANGLE_SENSING: True,
+                        CONF_MOTOR_PULSE_USER_SET: False,
+                    }
+                )
         return self.async_create_entry(title=title, data=data)
 
     async def _finish_with_verify(self, entry_data: dict[str, Any], title: str) -> ConfigFlowResult:
@@ -5327,6 +5389,19 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         beds whose single connection must be left for setup (issue #385). Standard
         Octo must verify PIN requirements even when no scanner is available yet.
         """
+        if entry_data.get(CONF_BED_TYPE) == BED_TYPE_SVANE:
+            variant = entry_data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
+            if variant not in SVANE_VARIANTS:
+                raise ValueError("Unknown Svane Remote profile")
+            if variant != SVANE_VARIANT_JENSEN_LINON:
+                entry_data.update(
+                    {
+                        CONF_MOTOR_COUNT: 2,
+                        CONF_HAS_MASSAGE: False,
+                        CONF_DISABLE_ANGLE_SENSING: True,
+                        CONF_MOTOR_PULSE_USER_SET: False,
+                    }
+                )
         if entry_data.get(CONF_BED_TYPE) == BED_TYPE_OKIN_RF_ECO_BT:
             from .furnimove_repair import CONF_STAIRCASE_LAYOUT_CONFIRMED
 
@@ -6658,6 +6733,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             ] = TextSelector(TextSelectorConfig())
 
         _hide_vibradorm_generic_fields(schema_dict, bed_type)
+        _add_svane_schema_fields(schema_dict, bed_type)
         if user_input is not None:
             # HA's select control uses string values; keep persisted counts numeric.
             if CONF_MOTOR_COUNT in user_input:
@@ -7071,6 +7147,26 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                         CONF_MOTOR_PULSE_USER_SET: False,
                     }
                 )
+
+            if bed_type == BED_TYPE_SVANE:
+                svane_variant = user_input.get(
+                    CONF_PROTOCOL_VARIANT, current_data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
+                )
+                if svane_variant not in SVANE_VARIANTS:
+                    return self.async_show_form(
+                        step_id=step_id,
+                        data_schema=vol.Schema(schema_dict),
+                        errors={"base": "invalid_variant"},
+                    )
+                if svane_variant != SVANE_VARIANT_JENSEN_LINON:
+                    user_input.update(
+                        {
+                            CONF_MOTOR_COUNT: 2,
+                            CONF_HAS_MASSAGE: False,
+                            CONF_DISABLE_ANGLE_SENSING: True,
+                            CONF_MOTOR_PULSE_USER_SET: False,
+                        }
+                    )
             if bed_type == BED_TYPE_MALOUF_APP and not separate_address_pair:
                 requested_app = user_input.get(CONF_MALOUF_APP_PROFILE)
                 if requested_app in MALOUF_APP_PROFILES and requested_app != current_data.get(
@@ -7293,6 +7389,14 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                                 control_type="other" if control == "other" else int(control),
                                 remembered_floor_default=new_data[CONF_VIBRADORM_FLOOR_DEFAULT],
                             )
+            if not separate_address_pair and (
+                bed_type == BED_TYPE_SVANE or self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_SVANE
+            ) and any(new_data.get(key) != self.config_entry.data.get(key) for key in (CONF_BED_TYPE, CONF_PROTOCOL_VARIANT)):
+                from .svane_state import clear_svane_session
+
+                address = new_data.get(CONF_ADDRESS)
+                if isinstance(address, str):
+                    clear_svane_session(self.hass, address)
             self.hass.config_entries.async_update_entry(
                 self.config_entry,
                 data=new_data,

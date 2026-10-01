@@ -1,0 +1,463 @@
+"""Literal normal BLE destinations from accepted Svane Remote Version 1.8 vectors.
+
+Fixture memory bytes are opaque examples, not captured physical positions.
+Classic and firmware-update vectors are excluded in the disposition document.
+"""
+
+from __future__ import annotations
+
+from unittest.mock import AsyncMock
+
+import pytest
+
+from custom_components.adjustable_bed.beds.svane import SvaneCommands
+from tests.test_svane import make_controller, written
+
+ROWS = (
+    (
+        "P1-HEAD_UP",
+        "multi",
+        "HEAD_UP",
+        "none",
+        "0100",
+        "0000abcb-0000-1000-8000-00805f9b34fb",
+        "000001ac-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-HEAD_DOWN",
+        "multi",
+        "HEAD_DOWN",
+        "none",
+        "0100",
+        "0000abcb-0000-1000-8000-00805f9b34fb",
+        "0000bae9-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-FEET_UP",
+        "multi",
+        "FEET_UP",
+        "none",
+        "0100",
+        "0000c258-0000-1000-8000-00805f9b34fb",
+        "000001ac-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-FEET_DOWN",
+        "multi",
+        "FEET_DOWN",
+        "none",
+        "0100",
+        "0000c258-0000-1000-8000-00805f9b34fb",
+        "0000bae9-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-LIGHT_ON_OFF",
+        "multi",
+        "LIGHT_ON_OFF",
+        "false",
+        "130200000000",
+        "0000d07b-0000-1000-8000-00805f9b34fb",
+        "0000a8e0-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-LIGHT_INTENSITY",
+        "multi",
+        "LIGHT_INTENSITY",
+        "90",
+        "13025a010064",
+        "0000d07b-0000-1000-8000-00805f9b34fb",
+        "0000a8e0-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-LIGHT_INCREASE",
+        "multi",
+        "LIGHT_INCREASE",
+        "90",
+        "13025a010064",
+        "0000d07b-0000-1000-8000-00805f9b34fb",
+        "0000b5e9-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-LIGHT_DECREASE",
+        "multi",
+        "LIGHT_DECREASE",
+        "90",
+        "13025a010064",
+        "0000d07b-0000-1000-8000-00805f9b34fb",
+        "00003fb2-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-STOP_FEET_UP",
+        "multi",
+        "STOP_FEET_UP",
+        "none",
+        "0000",
+        "0000c258-0000-1000-8000-00805f9b34fb",
+        "000001ac-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-STOP_FEET_DOWN",
+        "multi",
+        "STOP_FEET_DOWN",
+        "none",
+        "0000",
+        "0000c258-0000-1000-8000-00805f9b34fb",
+        "0000bae9-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-STOP_HEAD_UP",
+        "multi",
+        "STOP_HEAD_UP",
+        "none",
+        "0000",
+        "0000abcb-0000-1000-8000-00805f9b34fb",
+        "000001ac-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-STOP_HEAD_DOWN",
+        "multi",
+        "STOP_HEAD_DOWN",
+        "none",
+        "0000",
+        "0000abcb-0000-1000-8000-00805f9b34fb",
+        "0000bae9-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-SVANE_POSITION",
+        "multi",
+        "SVANE_POSITION",
+        "none",
+        "0300",
+        "0000abcb-0000-1000-8000-00805f9b34fb",
+        "0000fb6e-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-GOTO_SAVED_POSITION_HEAD",
+        "multi",
+        "GOTO_SAVED_POSITION_HEAD",
+        "0",
+        "8138",
+        "0000abcb-0000-1000-8000-00805f9b34fb",
+        "0000143d-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-GOTO_SAVED_POSITION_FEET",
+        "multi",
+        "GOTO_SAVED_POSITION_FEET",
+        "0",
+        "8113",
+        "0000c258-0000-1000-8000-00805f9b34fb",
+        "0000143d-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-light5",
+        "multi",
+        "LIGHT_INTENSITY",
+        "5",
+        "130205010064",
+        "0000d07b-0000-1000-8000-00805f9b34fb",
+        "0000a8e0-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-light10",
+        "multi",
+        "LIGHT_INTENSITY",
+        "10",
+        "13020a010064",
+        "0000d07b-0000-1000-8000-00805f9b34fb",
+        "0000a8e0-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-light95",
+        "multi",
+        "LIGHT_INTENSITY",
+        "95",
+        "13025f010064",
+        "0000d07b-0000-1000-8000-00805f9b34fb",
+        "0000a8e0-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-light100",
+        "multi",
+        "LIGHT_INTENSITY",
+        "100",
+        "130264010064",
+        "0000d07b-0000-1000-8000-00805f9b34fb",
+        "0000a8e0-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-light256",
+        "multi",
+        "LIGHT_INTENSITY",
+        "256",
+        "130200010064",
+        "0000d07b-0000-1000-8000-00805f9b34fb",
+        "0000a8e0-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-light-1",
+        "multi",
+        "LIGHT_INTENSITY",
+        "-1",
+        "1302ff010064",
+        "0000d07b-0000-1000-8000-00805f9b34fb",
+        "0000a8e0-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P1-software",
+        "multi",
+        "SOFTWARE_QUERY",
+        "none",
+        "040000000000",
+        "0000f92a-0000-1000-8000-00805f9b34fb",
+        "0000a592-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-HEAD_UP",
+        "jmc",
+        "HEAD_UP",
+        "none",
+        "100100000000",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-HEAD_DOWN",
+        "jmc",
+        "HEAD_DOWN",
+        "none",
+        "100200000000",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-FEET_UP",
+        "jmc",
+        "FEET_UP",
+        "none",
+        "101000000000",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-FEET_DOWN",
+        "jmc",
+        "FEET_DOWN",
+        "none",
+        "102000000000",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-HEAD_UP_FEET_UP",
+        "jmc",
+        "HEAD_UP_FEET_UP",
+        "none",
+        "101100000000",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-HEAD_UP_FEET_DOWN",
+        "jmc",
+        "HEAD_UP_FEET_DOWN",
+        "none",
+        "102100000000",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-HEAD_DOWN_FEET_UP",
+        "jmc",
+        "HEAD_DOWN_FEET_UP",
+        "none",
+        "101200000000",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-HEAD_DOWN_FEET_DOWN",
+        "jmc",
+        "HEAD_DOWN_FEET_DOWN",
+        "none",
+        "102200000000",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-LIGHT_ON_OFF",
+        "jmc",
+        "LIGHT_ON_OFF",
+        "false",
+        "130200000000",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-LIGHT_INTENSITY",
+        "jmc",
+        "LIGHT_INTENSITY",
+        "90",
+        "13025a010064",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-LIGHT_INCREASE",
+        "jmc",
+        "LIGHT_INCREASE",
+        "90",
+        "13025a010064",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-LIGHT_DECREASE",
+        "jmc",
+        "LIGHT_DECREASE",
+        "90",
+        "13025a010064",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-STOP_ALL",
+        "jmc",
+        "STOP_ALL",
+        "none",
+        "100000000000",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-SVANE_POSITION",
+        "jmc",
+        "SVANE_POSITION",
+        "none",
+        "108100000000",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-GOTO_SAVED_POSITION",
+        "jmc",
+        "GOTO_SAVED_POSITION",
+        "0",
+        "100481388113",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-memory0",
+        "jmc",
+        "GOTO_SAVED_POSITION",
+        "0",
+        "100481388113",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-memory1",
+        "jmc",
+        "GOTO_SAVED_POSITION",
+        "1",
+        "100482738204",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-light5",
+        "jmc",
+        "LIGHT_INTENSITY",
+        "5",
+        "130205010064",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-light10",
+        "jmc",
+        "LIGHT_INTENSITY",
+        "10",
+        "13020a010064",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-light95",
+        "jmc",
+        "LIGHT_INTENSITY",
+        "95",
+        "13025f010064",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-light100",
+        "jmc",
+        "LIGHT_INTENSITY",
+        "100",
+        "130264010064",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-light256",
+        "jmc",
+        "LIGHT_INTENSITY",
+        "256",
+        "130200010064",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-light-1",
+        "jmc",
+        "LIGHT_INTENSITY",
+        "-1",
+        "1302ff010064",
+        "00001234-0000-1000-8000-00805f9b34fb",
+        "00001111-0000-1000-8000-00805f9b34fb",
+    ),
+    (
+        "P2-software",
+        "jmc",
+        "SOFTWARE_QUERY",
+        "none",
+        "040000000000",
+        "0000f92a-0000-1000-8000-00805f9b34fb",
+        "0000a592-0000-1000-8000-00805f9b34fb",
+    ),
+)
+
+
+@pytest.mark.parametrize(
+    "vector_id,profile,action,parameter,expected,service,char", ROWS, ids=[r[0] for r in ROWS]
+)
+async def test_artifact_literal_destination(
+    vector_id, profile, action, parameter, expected, service, char
+):
+    controller = make_controller(profile)
+    controller._wait = AsyncMock(return_value=True)
+    if (
+        action in controller.held_control_options
+        or action.lower() in controller.held_control_options
+    ):
+        await controller.hold_control(action.lower(), 130)
+    elif action.startswith("STOP_"):
+        controller._started.add((service, char))
+        await controller.stop_all()
+    elif action == "SVANE_POSITION":
+        await controller.execute_app_control("position")
+    elif action.startswith("GOTO_SAVED_POSITION"):
+        controller.session.multi_slots[1] = (bytes.fromhex("8138"), bytes.fromhex("8113"))
+        await controller.preset_memory(int(parameter) + 1)
+    elif action == "LIGHT_ON_OFF":
+        await controller.lights_off()
+    elif action.startswith("LIGHT_"):
+        await controller._light(int(parameter), char[4:8])
+    elif action == "SOFTWARE_QUERY":
+        await controller._write(service, char, SvaneCommands.SOFTWARE_QUERY)
+    else:
+        raise AssertionError(f"Unbound literal vector {vector_id}")
+    assert (service, char, expected) in written(controller)

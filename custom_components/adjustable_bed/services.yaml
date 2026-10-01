@@ -1598,3 +1598,60 @@ starcode_abm5_4_hold_control:
       selector:
         select:
           options: [both, left, right]
+
+svane_hold_control:
+  name: Hold Svane Remote control
+  description: Hold selected axes or adjust the lamp until the bounded duration ends. Source-specific release runs after movement.
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    control:
+      required: true
+      selector:
+        select:
+          options:
+            - head_up
+            - head_down
+            - feet_up
+            - feet_down
+            - head_up_feet_up
+            - head_up_feet_down
+            - head_down_feet_up
+            - head_down_feet_down
+            - light_adjust
+    duration:
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.1
+          unit_of_measurement: s
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+
+svane_release_axis:
+  name: Release Svane Remote axis
+  description: Release one axis during an active Svane hold while the other axis continues. This signals the serialized writer.
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    motor:
+      required: true
+      selector:
+        select:
+          options: [head, feet]
+    side:
+      selector:
+        select:
+          options: [both, left, right]

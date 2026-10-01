@@ -808,6 +808,9 @@ class BedController(ABC):
         """Return discovered capabilities safe to persist across connections."""
         return None
 
+    def on_disconnect(self) -> None:  # noqa: B027
+        """Invalidate connection-owned work immediately when the BLE link drops."""
+
     async def stop_notify(self) -> None:
         """Stop listening for position notifications.
 
@@ -1506,6 +1509,14 @@ class BedController(ABC):
         """Return True when held controls are available."""
         return bool(self.held_control_options)
 
+    def validate_svane_hold_control(self, control: str, duration_ms: int) -> None:
+        """Validate exact live Svane roles before any target starts motion."""
+        raise ValueError("This profile does not support Svane held actions")
+
+    def request_svane_axis_release(self, axis: str) -> None:
+        """Signal an active Svane writer without doing BLE I/O."""
+        raise ValueError("This profile does not support Svane axis release")
+
     @property
     def requires_linked_live_readiness(self) -> bool:
         """Require both physical GATT sessions ready before a linked command starts."""
@@ -1729,6 +1740,11 @@ class BedController(ABC):
         have no concept of a named slot.
         """
         return ()
+
+    def validate_memory_recall(self, memory_num: int) -> None:
+        """Preflight local recall requirements before any target starts moving."""
+        if not self.supports_memory_presets or not 1 <= memory_num <= self.memory_slot_count:
+            raise ValueError("This memory slot is unavailable")
 
     def is_memory_slot_programmable(self, memory_num: int) -> bool:
         """Return whether a specific 1-based memory slot can be overwritten.

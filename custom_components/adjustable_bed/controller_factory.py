@@ -173,6 +173,8 @@ from .const import (
     SLEEPYS_BOX25_VARIANT_STAR,
     SOLACE_VARIANT_WOOSA,
     SVANE_VARIANT_JENSEN_LINON,
+    SVANE_VARIANT_JMC,
+    SVANE_VARIANT_MULTI,
     VARIANT_AUTO,
 )
 from .kaidi_protocol import extract_kaidi_advertisement
@@ -471,8 +473,18 @@ async def create_controller(
             import_module, ".beds.svane", __package__
         )
         from .beds.svane import SvaneController
+        from .svane_state import CONF_SVANE_PREFERENCES, get_svane_session
 
-        return SvaneController(coordinator)
+        if protocol_variant not in (None, VARIANT_AUTO, SVANE_VARIANT_MULTI, SVANE_VARIANT_JMC):
+            raise ValueError("Unknown Svane Remote profile")
+        profile = "jmc" if protocol_variant == SVANE_VARIANT_JMC else "multi"
+        session = get_svane_session(
+            coordinator.hass,
+            coordinator.address,
+            profile,
+            coordinator.entry.data.get(CONF_SVANE_PREFERENCES),
+        )
+        return SvaneController(coordinator, profile=profile, session=session)
 
     if bed_type == BED_TYPE_SLEEP_NUMBER_MCR:
         await coordinator.hass.async_add_import_executor_job(

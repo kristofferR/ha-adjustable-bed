@@ -256,6 +256,8 @@ def _sensor_entities_for(
                 "vmatbasic_model", "vmatbasic_firmware", "vmatbasic_temperature",
                 "vmatbasic_floor_level_observed", "vmatbasic_floor_minutes_observed",
                 "vmatbasic_floor_percent_observed", "vmatbasic_rssi",
+                "svane_head_raw", "svane_feet_raw", "svane_position_raw",
+                "svane_firmware", "svane_hardware", "svane_manufacturer",
             } - active_keys
         )
         _async_remove_stale_sensor_entities(
