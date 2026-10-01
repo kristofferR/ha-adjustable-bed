@@ -142,7 +142,6 @@ async def test_public_progress_worker_retains_failed_setup_across_retry_removal_
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)
     coordinator._max_retries = 1
-    coordinator._retry_base_delay = 0
     runtime_module = "custom_components.adjustable_bed.coordinator."
     with (
         patch(runtime_module + "select_adapter", return_value=AdapterSelectionResult(device, source, -50, True, [source])),

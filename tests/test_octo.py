@@ -54,12 +54,6 @@ from custom_components.adjustable_bed.light import LIGHT_DESCRIPTION, Adjustable
 
 
 @pytest.fixture
-def _shorten_mocked_feature_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Keep mocked feature-discovery timeouts from dominating unit tests."""
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.octo.OCTO_FEATURE_TIMEOUT", 0.01)
-
-
-@pytest.fixture
 def mock_octo_config_entry_data() -> dict:
     """Return mock config entry data for an Octo bed."""
     return {
@@ -81,7 +75,6 @@ def mock_octo_config_entry_data() -> dict:
 def mock_octo_config_entry(
     hass: HomeAssistant,
     mock_octo_config_entry_data: dict,
-    _shorten_mocked_feature_timeout: None,
 ) -> MockConfigEntry:
     """Return a mock config entry for an Octo bed."""
     entry = MockConfigEntry(
@@ -108,7 +101,6 @@ def mock_octo_star2_config_entry_data(mock_octo_config_entry_data: dict) -> dict
 def mock_octo_star2_config_entry(
     hass: HomeAssistant,
     mock_octo_star2_config_entry_data: dict,
-    _shorten_mocked_feature_timeout: None,
 ) -> MockConfigEntry:
     """Return a mock config entry for an Octo Star2 bed."""
     entry = MockConfigEntry(
@@ -1458,7 +1450,6 @@ class TestOctoPinLockDiagnostics:
         mock_octo_config_entry_data: dict,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
-        _shorten_mocked_feature_timeout: None,
     ):
         """Connecting to a locked receiver with no PIN must be user-visible."""
         from homeassistant.helpers import issue_registry as ir
@@ -1519,7 +1510,6 @@ class TestOctoPinLockDiagnostics:
         hass: HomeAssistant,
         mock_octo_config_entry,
         mock_coordinator_connected,
-        _shorten_mocked_feature_timeout: None,
     ):
         """A timeout must not report a configured-PIN guess as device state."""
         coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
@@ -1870,7 +1860,9 @@ class TestOctoMemoryInfoAndCombinedStep:
         controller._memory_count = 4
         mock_bleak_client.write_gatt_char.reset_mock()
 
-        await controller.preset_memory(2)
+        # Skip the real 350ms gaps; the frame count is what matters.
+        with patch("custom_components.adjustable_bed.beds.base.asyncio.sleep", new=AsyncMock()):
+            await controller.preset_memory(2)
 
         written = [c[0][1] for c in mock_bleak_client.write_gatt_char.call_args_list]
         recall = controller._build_packet([0x02, 0x72], [0x01])  # 0-based slot
@@ -2044,7 +2036,9 @@ class TestOctoMemoryInfoAndCombinedStep:
         controller._pin_locked = True
         mock_bleak_client.write_gatt_char.reset_mock()
 
-        await controller.preset_memory(1)
+        # Skip the real 350ms gaps; the frame count is what matters.
+        with patch("custom_components.adjustable_bed.beds.base.asyncio.sleep", new=AsyncMock()):
+            await controller.preset_memory(1)
 
         written = [c[0][1] for c in mock_bleak_client.write_gatt_char.call_args_list]
         pin_packet = controller._build_packet([0x20, 0x43], [1, 2, 3, 4])

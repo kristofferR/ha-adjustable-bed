@@ -347,13 +347,17 @@ uv run --no-sync pytest
 ```
 
 Use `--no-sync` after installing the HA-managed pins so resolution does not
-replace them. Automatic worker selection
-detects the available CPUs but is capped at four workers; explicit numeric
-overrides remain available.
+replace them. Automatic worker selection uses one worker per physical core,
+bounded by free memory (512 MiB per worker); `PYTEST_XDIST_AUTO_NUM_WORKERS`
+or an explicit `-n` overrides it.
 Use `uv run --no-sync pytest -n 0 <test-path>` for focused or debug runs. Agents must not
 run multiple full suites concurrently, since the worker cap applies to each
-pytest process. On a suitably powerful desktop, one full-suite run may override
-the automatic selection explicitly, for example: `uv run --no-sync pytest -n 8`.
+pytest process.
+
+Tests must not wait on real protocol timers. `tests/conftest.py` zeroes the
+coordinator's connection retry and post-connect delays (opt out with
+`@pytest.mark.real_connect_delays`) and shortens discovery probes that mocked
+beds never answer. Patch any other long protocol wait in the test that hits it.
 
 ### Testing in Home Assistant
 

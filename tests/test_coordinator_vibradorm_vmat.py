@@ -165,7 +165,6 @@ async def test_public_connect_retains_failed_setup_and_denies_reuse_replacement_
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)
     coordinator._max_retries = max_retries
-    coordinator._retry_base_delay = 0
     c = make_vmat("07")
     c.client.pair = AsyncMock()
     queried = 0

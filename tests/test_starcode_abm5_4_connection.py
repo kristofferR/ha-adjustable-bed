@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
 
+@pytest.mark.real_connect_delays
 @pytest.mark.parametrize("profile", list(const.CONNECTION_PROFILES))
 @pytest.mark.parametrize("bed_type", [const.BED_TYPE_STARCODE_ABM5_4, const.BED_TYPE_LINAK])
 @pytest.mark.parametrize("transport", ["BOX1220", "BOX3633", "BOX25", "BOX25_STAR"])

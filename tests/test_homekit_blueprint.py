@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import os
+import tempfile
 from collections.abc import AsyncIterator
 from pathlib import Path
 from unittest.mock import AsyncMock
@@ -27,7 +29,13 @@ def installed_blueprint(hass: HomeAssistant) -> None:
     """Install the shipped file where HA's blueprint loader will import it."""
     destination = Path(hass.config.path("blueprints/script", BLUEPRINT_PATH))
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(BLUEPRINT_SOURCE.read_text())
+    # The test config dir is shared by every xdist worker. Replace the file
+    # atomically so a parallel test never loads it half-written.
+    with tempfile.NamedTemporaryFile(
+        "w", dir=destination.parent, suffix=".tmp", delete=False
+    ) as staged:
+        staged.write(BLUEPRINT_SOURCE.read_text())
+    os.replace(staged.name, destination)
 
 
 def script_config(section: str, action: str) -> dict:

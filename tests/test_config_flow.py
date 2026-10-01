@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
+from collections.abc import AsyncGenerator
 from copy import copy
 from dataclasses import replace
 from types import SimpleNamespace
@@ -3240,6 +3241,12 @@ class TestUserFlow:
 
 class TestOptionsFlow:
     """Test options flow."""
+
+    @pytest.fixture(autouse=True)
+    async def _finish_options_reload(self, hass: HomeAssistant) -> AsyncGenerator[None]:
+        """Saving options reloads the entry; let it finish before HA stops."""
+        yield
+        await hass.async_block_till_done()
 
     @pytest.mark.parametrize(
         ("initial_variant", "initial_count", "requested_variant", "expected_count"),
