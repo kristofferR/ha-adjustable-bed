@@ -205,6 +205,11 @@ export function bedEntitiesForDevice(
           bed.massage.buttons.push(id);
         } else if (key.startsWith("starcode_abm5_4_")) {
           bed.utility.push(id);
+        } else if (key === "coolbase_head_massage" || key === "coolbase_foot_massage" || key === "coolbase_massage_mode") {
+          bed.massage.buttons.push(id);
+        } else if (key.startsWith("coolbase_")) {
+          // Fan and star controls are app-labelled taps with no axis or memory meaning.
+          bed.utility.push(id);
         } else if (
           key === "vibradorm_app_massage_automatic" ||
           key === "vibradorm_app_massage_individual"

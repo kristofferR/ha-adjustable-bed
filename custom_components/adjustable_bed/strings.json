@@ -1916,6 +1916,27 @@
       },
       "remacro_led_brightness_save": {
         "name": "Save light level"
+      },
+      "coolbase_left_fan": {
+        "name": "Left fan"
+      },
+      "coolbase_right_fan": {
+        "name": "Right fan"
+      },
+      "coolbase_fan_sync": {
+        "name": "Fan sync"
+      },
+      "coolbase_head_massage": {
+        "name": "Head massage"
+      },
+      "coolbase_foot_massage": {
+        "name": "Foot massage"
+      },
+      "coolbase_massage_mode": {
+        "name": "Massage mode"
+      },
+      "coolbase_star": {
+        "name": "Star button"
       }
     },
     "cover": {
@@ -2650,6 +2671,15 @@
       },
       "starcode_abm5_4_raw_7f": {
         "name": "Raw app field 7f"
+      },
+      "coolbase_left_fan_level": {
+        "name": "Left fan level"
+      },
+      "coolbase_right_fan_level": {
+        "name": "Right fan level"
+      },
+      "coolbase_massage_mode": {
+        "name": "Massage mode"
       }
     },
     "light": {
