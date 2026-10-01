@@ -448,7 +448,8 @@ class SvaneController(BedController):
         self._notification_tokens.clear()
         try:
             if client is not None and client.is_connected:
-                await self.stop_all()
+                if self._started:
+                    await self.stop_all()
             else:
                 self._started.clear()
         finally:
@@ -616,6 +617,8 @@ class SvaneController(BedController):
 
     async def stop_all(self) -> None:
         self._active_head = self._active_feet = None
+        if self.profile == "jmc":
+            self._started.add((OLD, OLD_CHAR))
         await self._release(tuple(self._started))
 
     async def move_head_up(self) -> None:
