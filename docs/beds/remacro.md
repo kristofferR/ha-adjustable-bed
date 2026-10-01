@@ -121,7 +121,8 @@ The STOP is always sent, including when a movement is cancelled. The apps send n
 STOP for a cancelled touch or a closed screen; that behavior is not copied.
 
 Split beds (51, 52) have a **Control side** select that mirrors the app's
-left/right toggle. It starts on the left and sends nothing by itself.
+left/right toggle. It starts on the left, sends nothing and changes without connecting
+to the bed.
 
 The frame counter, side, active preset, massage and wave counters and the LED
 slider level are kept for as long as the entry is loaded, across command handoffs and
@@ -173,7 +174,9 @@ they never send the zone off code then. Jerome's wraps to off.
 
 ## Lights
 
-The light switch sends `0x0501` with parameter 0 for on and `0x0500` for off. The
+The light switch sends `0x0501` with parameter 0 for on and `0x0500` for off. The bed
+never reports its light, so the switch starts unknown and shows the commanded state as
+assumed. The
 LED light setting sends `0x0501` with parameter `0xFFFFFF00 | level` 150 ms after a
 change, and **Save light level** sends `0x050F` with the current level 500 ms after
 the press. Each save stores the level in the entry (`remacro_led_level`) under the

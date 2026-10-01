@@ -1318,3 +1318,70 @@ async def test_refused_side_rollback_keeps_its_original_controls(
     assert {r.unique_id.removeprefix(f"{right}_") for r in rows} == {"back", "preset_flat"}
     assert {r.config_entry_id for r in rows} == {refused.entry_id}
     await hass.config_entries.async_unload(entry.entry_id)
+
+
+async def test_leaving_remacro_clears_its_model_issues(hass: HomeAssistant) -> None:
+    from homeassistant.helpers import issue_registry as ir
+
+    from custom_components.adjustable_bed import (
+        _async_prepare_remacro_entry,
+        _maybe_cache_paired_remacro_models,
+    )
+    from custom_components.adjustable_bed.const import CONF_PAIR_CHILDREN
+    from custom_components.adjustable_bed.remacro_discovery import update_remacro_model_issue
+
+    placeholders = {"company_id": "13", "app": "Slumberland"}
+    for address in ("AA:BB:CC:DD:EE:80", "AA:BB:CC:DD:EE:81"):
+        update_remacro_model_issue(hass, address, "Bed", "unmapped", placeholders)
+    standalone = _remacro_entry(hass, "AA:BB:CC:DD:EE:80", **{CONF_BED_TYPE: "linak"})
+    _async_prepare_remacro_entry(hass, standalone)
+    pair = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_BED_TYPE: "linak",
+            CONF_PAIR_CHILDREN: [{"side": "left", CONF_ADDRESS: "AA:BB:CC:DD:EE:81"}],
+        },
+    )
+    pair.add_to_hass(hass)
+    _maybe_cache_paired_remacro_models(hass, pair)
+    issues = ir.async_get(hass)
+    assert issues.async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:80") is None
+    assert issues.async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:81") is None
+
+
+async def test_light_switch_starts_unknown_and_side_select_needs_no_link(
+    hass: HomeAssistant,
+    mock_coordinator_connected,
+    mock_establish_connection,
+    enable_custom_integrations,
+) -> None:
+    address = "AA:BB:CC:DD:EE:82"
+    entry = _remacro_entry(hass, address)
+    registry = er.async_get(hass)
+    with patch(_HISTORY, return_value=MagicMock(manufacturer_data={51: b""})):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        switch = registry.async_get_entity_id("switch", DOMAIN, f"{address}_under_bed_lights")
+        assert switch is not None
+        state = hass.states.get(switch)
+        # The bed never reports its light, so there is no definitive off.
+        assert state is not None and state.state == "unknown"
+        assert state.attributes.get("assumed_state") is True
+
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        await coordinator.async_disconnect()
+        assert not coordinator.is_connected
+        mock_establish_connection.reset_mock()
+        side = registry.async_get_entity_id(
+            "select", DOMAIN, f"{address}_controller_select_remacro_control_side"
+        )
+        assert side is not None
+        await hass.services.async_call(
+            "select", "select_option", {"entity_id": side, "option": "right"}, blocking=True
+        )
+        await hass.async_block_till_done()
+        mock_establish_connection.assert_not_awaited()
+        assert hass.states.get(side).state == "right"
+        sessions = hass.data[DOMAIN]["remacro_sessions"]
+        assert [s.side for key, s in sessions.items() if key[0] == address] == ["right"]
+        await hass.config_entries.async_unload(entry.entry_id)

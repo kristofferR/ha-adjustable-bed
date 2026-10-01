@@ -351,6 +351,8 @@ def _async_prepare_remacro_entry(hass: HomeAssistant, entry: ConfigEntry) -> Non
     entry fails permanently instead of reconnecting forever.
     """
     if entry.data.get(CONF_BED_TYPE) != BED_TYPE_REMACRO:
+        # An earlier Remacro setup may have raised a model issue for this bed.
+        clear_remacro_model_issues(hass, _entry_addresses(entry))
         return
     manufacturer_data = remacro_manufacturer_data(hass, entry.data[CONF_ADDRESS])
     new_data = add_remacro_model(entry.data, manufacturer_data)
@@ -391,6 +393,9 @@ def _maybe_cache_paired_remacro_models(hass: HomeAssistant, entry: ConfigEntry) 
             child = add_remacro_model(
                 child, remacro_manufacturer_data(hass, child[CONF_ADDRESS])
             )
+        elif isinstance(child, dict) and isinstance(child.get(CONF_ADDRESS), str):
+            # A side that is no longer Remacro must not keep a Remacro model issue.
+            clear_remacro_model_issues(hass, [child[CONF_ADDRESS]])
         updated.append(child)
     if updated != children:
         hass.config_entries.async_update_entry(

@@ -310,6 +310,7 @@ class RemacroController(BedController):
                 state_key=SIDE_STATE_KEY,
                 options=("left", "right"),
                 select_fn=_select_side,
+                local_select_fn=self.select_control_side,
             ),
         )
 
@@ -546,12 +547,19 @@ class RemacroController(BedController):
         frame = self._main(MOTOR_STOP) if self._codes.presets else self._serial.hold(MOTOR_STOP)
         await self.write_command(frame, cancel_event=asyncio.Event())
 
-    async def set_control_side(self, option: str) -> None:
-        """Mirror the split screens' local left/right toggle (no write)."""
+    def select_control_side(self, option: str) -> None:
+        """Mirror the split screens' local left/right toggle (no write).
+
+        Only the shared session and the coordinator's state change, so this is
+        safe on an offline or since-rebuilt controller.
+        """
         if not self._model.screen.split or option not in ("left", "right"):
             raise ValueError(f"Unsupported control side: {option}")
         self._session.side = option
         self.forward_controller_state_update(SIDE_STATE_KEY, option)
+
+    async def set_control_side(self, option: str) -> None:
+        self.select_control_side(option)
 
     # ------------------------------------------------------------------
     # Presets and memory
