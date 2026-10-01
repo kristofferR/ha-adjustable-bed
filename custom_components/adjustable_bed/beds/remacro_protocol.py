@@ -77,17 +77,31 @@ class SynDataSerial:
 
 @dataclass(slots=True)
 class RemacroSession:
-    """State that outlives one BLE connection.
+    """App state for one bed for the life of its config entry runtime.
 
-    ``serial`` matches the app: ``CommandUtils.i`` and its cache are static, so
-    they survive reconnects. ``side`` deliberately deviates: in the app the
-    left/right toggle is a screen field that resets when the screen reopens, but
-    Home Assistant reconnects silently after an idle disconnect, and resetting
-    there would move the other side without warning.
+    ``serial`` matches the app: ``CommandUtils.i`` and its cache are static. The
+    rest are screen fields in the app (side toggle, highlighted preset, massage
+    and wave counters, LED slider), which reset when the screen reopens. Home
+    Assistant has no screen lifecycle: it drops and rebuilds the controller after
+    every command handoff or idle disconnect. Keeping them here is a deliberate
+    deviation, so that a reconnect cannot restart the massage cycle, lose the
+    preset re-press STOP, save a stale LED level or move the other side.
     """
 
     serial: SynDataSerial
     side: str = "left"
+    active_preset: str | None = None
+    head_level: int = 0
+    foot_level: int = 0
+    wave: int = 0
+    # Seeded from the committed level when the session starts.
+    led_brightness: int | None = None
+
+
+def drop_sessions(cache: dict[tuple[str, str, int], RemacroSession], address: str) -> None:
+    """Forget every session for a bed when its entry runtime ends."""
+    for key in [key for key in cache if key[0] == address.upper()]:
+        del cache[key]
 
 
 def session_for(

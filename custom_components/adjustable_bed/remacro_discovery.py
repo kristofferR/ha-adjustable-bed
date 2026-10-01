@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from typing import Any
 
 from homeassistant.components import bluetooth
@@ -39,6 +39,17 @@ def remacro_entry_problem(
     return problem, {"company_id": str(company_id), "app": APP_LABELS[app]}
 
 
+def remacro_issue_id(address: str) -> str:
+    """Return the Repairs issue ID for one physical Remacro bed."""
+    return f"remacro_model_{address.upper()}"
+
+
+def clear_remacro_model_issues(hass: HomeAssistant, addresses: Iterable[str]) -> None:
+    """Delete the Remacro model issues for beds no remaining entry owns."""
+    for address in addresses:
+        async_delete_issue(hass, DOMAIN, remacro_issue_id(address))
+
+
 def update_remacro_model_issue(
     hass: HomeAssistant,
     address: str,
@@ -47,7 +58,7 @@ def update_remacro_model_issue(
     placeholders: Mapping[str, str],
 ) -> None:
     """Raise or clear the Repairs issue for a model the selected app refuses."""
-    issue_id = f"remacro_model_{address.upper()}"
+    issue_id = remacro_issue_id(address)
     if problem not in ("unmapped", "not_in_app"):
         async_delete_issue(hass, DOMAIN, issue_id)
         return

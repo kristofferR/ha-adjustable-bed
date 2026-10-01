@@ -105,34 +105,35 @@ class RemacroController(BedController):
         super().__init__(coordinator)
         self._app: RemacroApp = app
         self._model = model
-        # The counter (static in the app) and the side survive reconnects.
+        # All app state lives in the session so controller rebuilds after a
+        # command handoff or idle disconnect do not reset it (see RemacroSession).
         self._session = session or RemacroSession(
             SynDataSerial(cache_hold_serial=app == APP_JEROMES)
         )
         self._serial = self._session.serial
-        # Screen fields, as on reopening the app screen: no highlighted preset,
-        # massage counters at zero, LED slider at the committed level.
-        self._active_preset: str | None = None
-        self._head_level = 0
-        self._foot_level = 0
-        self._wave = 0
-        self._led_brightness = (
-            led_level
-            if isinstance(led_level, int)
-            and not isinstance(led_level, bool)
-            and 0 <= led_level <= 255
-            else LED_DEFAULT_BRIGHTNESS
-        )
+        if self._session.led_brightness is None:
+            self._session.led_brightness = (
+                led_level
+                if isinstance(led_level, int)
+                and not isinstance(led_level, bool)
+                and 0 <= led_level <= 255
+                else LED_DEFAULT_BRIGHTNESS
+            )
         updates: dict[str, Any] = {}
         if self._model.screen.split:
             updates[SIDE_STATE_KEY] = self._session.side
         if self.supports_led_brightness:
-            updates[LED_STATE_KEY] = self._led_brightness
+            updates[LED_STATE_KEY] = self._led_level
         self.forward_controller_state_updates(updates)
 
     # ------------------------------------------------------------------
     # Profile
     # ------------------------------------------------------------------
+
+    @property
+    def _led_level(self) -> int:
+        level = self._session.led_brightness
+        return LED_DEFAULT_BRIGHTNESS if level is None else level
 
     @property
     def app(self) -> RemacroApp:
@@ -541,7 +542,7 @@ class RemacroController(BedController):
         """Send the screens' global motor STOP; NineActivity defines none."""
         if not self._model.screen.has_global_stop:
             return
-        self._active_preset = None
+        self._session.active_preset = None
         frame = self._main(MOTOR_STOP) if self._codes.presets else self._serial.hold(MOTOR_STOP)
         await self.write_command(frame, cancel_event=asyncio.Event())
 
@@ -564,11 +565,11 @@ class RemacroController(BedController):
         if code is None:
             raise NotImplementedError(f"{self._model.name} has no {name} preset")
         # Tapping the highlighted preset again stops the motors instead.
-        if self._active_preset == name:
-            self._active_preset = None
+        if self._session.active_preset == name:
+            self._session.active_preset = None
             await self.write_command(self._main(MOTOR_STOP))
             return
-        self._active_preset = name
+        self._session.active_preset = name
         await self.write_command(self._main(code))
 
     async def preset_anti_snore(self) -> None:
@@ -607,7 +608,7 @@ class RemacroController(BedController):
         level += 1
         if level > 3:
             # Slumberland and The Brick skip "off" while a wave is running.
-            level = 1 if self._wave and self._app != APP_JEROMES else 0
+            level = 1 if self._session.wave and self._app != APP_JEROMES else 0
         return level
 
     def _zone_code(
@@ -615,35 +616,35 @@ class RemacroController(BedController):
     ) -> int:
         if level == 0:
             return off
-        return (wave_levels if self._wave else levels)[level - 1]
+        return (wave_levels if self._session.wave else levels)[level - 1]
 
     async def massage_head_toggle(self) -> None:
         massage = self._massage()
-        self._head_level = self._next_level(self._head_level)
+        self._session.head_level = self._next_level(self._session.head_level)
         await self.write_command(
             self._main(
-                self._zone_code(massage.head, massage.head_wave, massage.head_off, self._head_level)
+                self._zone_code(massage.head, massage.head_wave, massage.head_off, self._session.head_level)
             )
         )
 
     async def massage_foot_toggle(self) -> None:
         massage = self._massage()
-        self._foot_level = self._next_level(self._foot_level)
+        self._session.foot_level = self._next_level(self._session.foot_level)
         await self.write_command(
             self._main(
-                self._zone_code(massage.foot, massage.foot_wave, massage.foot_off, self._foot_level)
+                self._zone_code(massage.foot, massage.foot_wave, massage.foot_off, self._session.foot_level)
             )
         )
 
     async def massage_mode_step(self) -> None:
         """Advance the wave button: wave 1, wave 2, then off."""
         massage = self._massage()
-        self._wave = (self._wave + 1) % 3
-        if self._wave == 0:
-            self._head_level = self._foot_level = 0
+        self._session.wave = (self._session.wave + 1) % 3
+        if self._session.wave == 0:
+            self._session.head_level = self._session.foot_level = 0
             code = massage.wave_off
-        elif self._wave == 1:
-            self._head_level = self._foot_level = 1
+        elif self._session.wave == 1:
+            self._session.head_level = self._session.foot_level = 1
             code = massage.wave[0]
         else:
             code = massage.wave[1]
@@ -669,7 +670,7 @@ class RemacroController(BedController):
             raise NotImplementedError("This app hides the LED light setting for this model")
         if isinstance(brightness, bool) or not 0 <= brightness <= 255:
             raise ValueError("Light level must be 0-255")
-        self._led_brightness = brightness
+        self._session.led_brightness = brightness
         self.forward_controller_state_update(LED_STATE_KEY, brightness)
         await self._sleep(LED_PREVIEW_DELAY_S)
         await self.write_command(self._serial.tap(LIGHT_RGBV, LED_WHITE | brightness))
@@ -680,10 +681,11 @@ class RemacroController(BedController):
             raise NotImplementedError("This app hides the LED light setting for this model")
         # The app persists the slider value before scheduling the write; it seeds
         # the slider and the next commit when the screen reopens.
-        self._coordinator.remember_remacro_led_level(self._model.model_id, self._led_brightness)
+        level = self._led_level
+        self._coordinator.remember_remacro_led_level(self._model.model_id, level)
         await self._sleep(LED_SAVE_DELAY_S)
         await self.write_command(
-            self._serial.tap(LIGHT_RGBV_SAVE, LED_WHITE | self._led_brightness)
+            self._serial.tap(LIGHT_RGBV_SAVE, LED_WHITE | level)
         )
 
 

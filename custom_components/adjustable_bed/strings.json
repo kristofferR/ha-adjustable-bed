@@ -868,7 +868,8 @@
       "starcode_app_invalid": "Choose a supported app selector and a live Bluetooth transport.",
       "starcode_app_unpair_first": "Unpair these entries before changing app selectors. Each physical side retains its own app controls.",
       "remacro_model_unmapped": "This bed advertises a company ID that no Remacro app lists.",
-      "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses."
+      "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses.",
+      "remacro_app_unpair_first": "The two sides use different Remacro apps. Unpair the beds and change each side's protocol variant separately."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",

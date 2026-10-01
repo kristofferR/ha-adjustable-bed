@@ -41,6 +41,9 @@ The model is checked before any connection attempt:
   model, the setup form shows that as an error on the protocol variant field.
 - The options form refuses an app that does not list the stored model. Saving a fix in
   the options reloads an entry that failed or is retrying, so it applies at once.
+- On a combined bed whose sides use different apps, the combined options refuse an app
+  change; unpair and change each side. Removing an entry clears its Repairs issues
+  unless another entry still owns that bed.
 
 | Company ID | App label | Screen | Controls |
 |-----------|-----------|--------|----------|
@@ -120,12 +123,14 @@ STOP for a cancelled touch or a closed screen; that behavior is not copied.
 Split beds (51, 52) have a **Control side** select that mirrors the app's
 left/right toggle. It starts on the left and sends nothing by itself.
 
-The frame counter survives Bluetooth reconnects, as the app's static counter does.
-The side also survives reconnects, which deliberately differs from the app (there it
-resets when the screen reopens): Home Assistant reconnects silently after an idle
-disconnect, and resetting would move the other side without warning. Both reset when
-Home Assistant restarts or the app profile or model changes. The active preset and
-the massage counters reset on every new connection, as on reopening the app screen.
+The frame counter, side, active preset, massage and wave counters and the LED
+slider level are kept for as long as the entry is loaded, across command handoffs and
+reconnects. In the app only the counter is static; the rest are screen fields that
+reset when the screen reopens. Home Assistant has no app screen and rebuilds its
+controller after every command when Disconnect After Command is on, so resetting them
+would restart the massage cycle, lose the preset re-press STOP, save an old LED level
+or move the other side. This is a deliberate deviation. The state resets when the
+entry reloads or Home Assistant restarts, and when the app profile or model changes.
 
 ## Presets, memory and stop
 
@@ -173,7 +178,7 @@ LED light setting sends `0x0501` with parameter `0xFFFFFF00 | level` 150 ms afte
 change, and **Save light level** sends `0x050F` with the current level 500 ms after
 the press. Each save stores the level in the entry (`remacro_led_level`) under the
 model's company ID, like the app's preference keyed by model and address, and the
-slider starts there on the next connection. A model without a saved level, including
+slider starts there when the entry loads. A model without a saved level, including
 one the bed newly advertises, starts at 255, the app's default.
 
 ## Not implemented

@@ -268,6 +268,7 @@ def make_controller(
     *,
     pulse: tuple[int, int] = (10, 25),
     led_level: int | None = None,
+    session: protocol.RemacroSession | None = None,
 ) -> tuple[RemacroController, Clock, list[tuple[int, str]]]:
     coordinator = MagicMock()
     coordinator.address = "AA:BB:CC:DD:EE:FF"
@@ -291,7 +292,11 @@ def make_controller(
     coordinator.client.start_notify = AsyncMock()
     coordinator.client.stop_notify = AsyncMock()
     controller = RemacroController(
-        coordinator, app=app, model=protocol.MODELS[model_id], led_level=led_level
+        coordinator,
+        app=app,
+        model=protocol.MODELS[model_id],
+        led_level=led_level,
+        session=session,
     )
 
     async def sleep(seconds: float) -> None:
@@ -663,12 +668,11 @@ async def test_factory_resolves_app_and_model() -> None:
     assert (live.app, live.model.model_id) == (BRICK, 51)
     assert (offline.app, offline.model.model_id) == (SLUMBER, 46)
 
-    # A reconnect keeps the static counter and (deliberately) the side, but
-    # resets screen fields as reopening the app screen does.
+    # A rebuild (handoff or reconnect) keeps every app field in the session.
     await live.set_control_side("right")
     live._serial.hold(0x0101)
-    live._active_preset = "tv"
-    live._head_level = 2
+    live._session.active_preset = "tv"
+    live._session.head_level = 2
     coordinator.entry.data[CONF_REMACRO_LED_LEVEL] = {"51": 9, "46": 7}
     again = await create_controller(
         coordinator, BED_TYPE_REMACRO, "the_brick", None, manufacturer_data={51: b""}
@@ -676,7 +680,8 @@ async def test_factory_resolves_app_and_model() -> None:
     assert isinstance(again, RemacroController)
     assert again.control_side == "right"
     assert again._serial.hold(0x0100)[0] == 3
-    assert (again._active_preset, again._head_level, again._led_brightness) == (None, 0, 9)
+    session = again._session
+    assert (session.active_preset, session.head_level, session.led_brightness) == ("tv", 2, 255)
     assert "remacro_sessions" in coordinator.hass.data[DOMAIN]
     other_app = await create_controller(
         coordinator, BED_TYPE_REMACRO, "jeromes", None, manufacturer_data={51: b""}
@@ -684,12 +689,15 @@ async def test_factory_resolves_app_and_model() -> None:
     assert isinstance(other_app, RemacroController)
     assert other_app.control_side == "left"
     # "LV" is keyed by model: a model without a committed level starts at 255.
-    coordinator.entry.data[CONF_REMACRO_LED_LEVEL] = {"46": 7}
-    changed = await create_controller(
-        coordinator, BED_TYPE_REMACRO, "the_brick", None, manufacturer_data={51: b""}
+    coordinator.entry.data[CONF_REMACRO_LED_LEVEL] = {"46": 7, "50": 33}
+    seeded = await create_controller(
+        coordinator, BED_TYPE_REMACRO, "the_brick", None, manufacturer_data={50: b""}
     )
-    assert isinstance(changed, RemacroController)
-    assert changed._led_brightness == 255
+    changed = await create_controller(
+        coordinator, BED_TYPE_REMACRO, "the_brick", None, manufacturer_data={52: b""}
+    )
+    assert isinstance(seeded, RemacroController) and isinstance(changed, RemacroController)
+    assert (seeded._led_level, changed._led_level) == (33, 255)
 
 
 # -----------------------------------------------------------------------------
@@ -1118,3 +1126,91 @@ async def test_paired_offline_minting_needs_a_stored_model(hass: HomeAssistant) 
     minted = children["left"].capability_controller
     assert isinstance(minted, RemacroController) and minted.model.model_id == 51
     assert children["right"].capability_controller is None
+
+
+@pytest.mark.parametrize("app", [SLUMBER, JEROMES])
+async def test_app_state_survives_controller_rebuilds(app) -> None:
+    """Disconnect After Command rebuilds the controller after every action."""
+    session = protocol.RemacroSession(protocol.SynDataSerial(cache_hold_serial=app == JEROMES))
+    frames: list[str] = []
+    for action in ("massage_head_toggle", "massage_head_toggle", "massage_mode_step"):
+        controller, _, writes = make_controller(app, 50, session=session)
+        await getattr(controller, action)()
+        frames += [frame for _, frame in writes]
+    assert [frame[6:11] for frame in frames] == ["01 02", "02 02", "30 02"]
+
+    preset_session = protocol.RemacroSession(protocol.SynDataSerial(cache_hold_serial=False))
+    codes = []
+    for _ in range(2):
+        controller, _, writes = make_controller(SLUMBER, 49, session=preset_session)
+        await controller.preset_zero_g()
+        codes += [frame[6:11] for _, frame in writes]
+    assert codes == ["03 03", "01 00"]  # The re-press after a rebuild still stops.
+
+    led_session = protocol.RemacroSession(protocol.SynDataSerial(cache_hold_serial=False))
+    controller, _, _ = make_controller(SLUMBER, 50, session=led_session, led_level=200)
+    await controller.set_led_brightness(10)
+    controller, _, writes = make_controller(SLUMBER, 50, session=led_session, led_level=200)
+    await controller.save_led_brightness()
+    assert writes[-1][1][6:] == "0f 05 0a ff ff ff"  # The slider value, not the stored 200.
+    controller._coordinator.remember_remacro_led_level.assert_called_once_with(50, 10)
+
+
+async def test_unload_drops_the_session(
+    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
+) -> None:
+    entry = _remacro_entry(hass, "AA:BB:CC:DD:EE:70")
+    with patch(_HISTORY, return_value=MagicMock(manufacturer_data={50: b""})):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+    sessions = hass.data[DOMAIN]["remacro_sessions"]
+    assert any(key[0] == "AA:BB:CC:DD:EE:70" for key in sessions)
+    await hass.config_entries.async_unload(entry.entry_id)
+    assert not any(key[0] == "AA:BB:CC:DD:EE:70" for key in sessions)
+
+
+async def test_combined_options_refuse_an_app_change_when_sides_differ(hass: HomeAssistant) -> None:
+    from homeassistant.data_entry_flow import FlowResultType
+
+    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
+    from custom_components.adjustable_bed.const import CONF_PAIR_CHILDREN
+
+    entry, _children = _remacro_pair(hass, 50, 50)
+    children = [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]]
+    children[0][CONF_PROTOCOL_VARIANT] = "the_brick"
+    children[1][CONF_PROTOCOL_VARIANT] = "jeromes"
+    hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_PAIR_CHILDREN: children})
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.handler = entry.entry_id
+    flow.hass = hass
+    with patch(_HISTORY, return_value=None):
+        result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: "slumberland"})
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "remacro_app_unpair_first"}
+    variants = [child[CONF_PROTOCOL_VARIANT] for child in entry.data[CONF_PAIR_CHILDREN]]
+    assert variants == ["the_brick", "jeromes"]
+
+
+async def test_removing_an_entry_clears_its_remacro_issues(
+    hass: HomeAssistant, enable_custom_integrations
+) -> None:
+    from homeassistant.helpers import issue_registry as ir
+
+    from custom_components.adjustable_bed.remacro_discovery import update_remacro_model_issue
+
+    pair, _children = _remacro_pair(hass, 50, 50)
+    standalone = _remacro_entry(hass, "AA:BB:CC:DD:EE:73")
+    # A restored single for the left side owns that address after unpair.
+    restored = _remacro_entry(hass, "AA:BB:CC:DD:EE:71")
+    for address in ("AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72", "AA:BB:CC:DD:EE:73"):
+        update_remacro_model_issue(
+            hass, address, "Bed", "unmapped", {"company_id": "13", "app": "Slumberland"}
+        )
+    issues = ir.async_get(hass)
+    await hass.config_entries.async_remove(pair.entry_id)
+    await hass.config_entries.async_remove(standalone.entry_id)
+    assert issues.async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:72") is None
+    assert issues.async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:73") is None
+    assert issues.async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:71") is not None
+    await hass.config_entries.async_remove(restored.entry_id)
+    assert issues.async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:71") is None

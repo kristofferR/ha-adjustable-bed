@@ -19,7 +19,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.typing import ConfigType
 
-from .beds.remacro_protocol import add_remacro_model
+from .beds.remacro_protocol import add_remacro_model, drop_sessions
 from .combine_suggestion import async_load_dismissal
 from .const import (
     BED_TYPE_BEDTECH,
@@ -90,7 +90,12 @@ from .pairing import (
     pair_member_addresses,
     with_updated_child,
 )
-from .remacro_discovery import remacro_entry_problem, remacro_manufacturer_data
+from .remacro_discovery import (
+    clear_remacro_model_issues,
+    remacro_entry_problem,
+    remacro_manufacturer_data,
+    update_remacro_model_issue,
+)
 from .repairs import (
     async_refresh_combine_beds_issue,
     async_setup_combine_beds_issue,
@@ -351,6 +356,9 @@ def _async_prepare_remacro_entry(hass: HomeAssistant, entry: ConfigEntry) -> Non
     if new_data != dict(entry.data):
         hass.config_entries.async_update_entry(entry, data=new_data)
     problem, placeholders = remacro_entry_problem(entry.data, manufacturer_data)
+    update_remacro_model_issue(
+        hass, entry.data[CONF_ADDRESS], entry.title, problem, placeholders
+    )
     if problem == "unknown":
         raise ConfigEntryNotReady(
             translation_domain=DOMAIN, translation_key="remacro_model_unknown"
@@ -1117,6 +1125,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
         _LOGGER.debug("Disconnecting from bed...")
         await coordinator.async_shutdown()
+        # Remacro app state lives for the entry runtime only.
+        sessions = hass.data[DOMAIN].get("remacro_sessions")
+        if isinstance(sessions, dict):
+            for address in _entry_addresses(entry):
+                drop_sessions(sessions, address)
         _LOGGER.info("Successfully unloaded Adjustable Bed integration for %s", entry.title)
 
     return unload_ok
@@ -1128,7 +1141,25 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     address = entry.data.get(CONF_ADDRESS)
     if address:
         clear_octo_pin_required_issue(hass, address)
+    # Unpair and combine restore other entries for the same beds first; their
+    # setup refreshes the issue, so only addresses nobody else owns are cleared.
+    owned = {
+        owned_address
+        for other in hass.config_entries.async_entries(DOMAIN)
+        if other.entry_id != entry.entry_id
+        for owned_address in _entry_addresses(other)
+    }
+    clear_remacro_model_issues(hass, set(_entry_addresses(entry)) - owned)
     hass.loop.call_soon(async_refresh_combine_beds_issue, hass)
+
+
+def _entry_addresses(entry: ConfigEntry) -> list[str]:
+    """Return every physical bed address a standalone or paired entry owns."""
+    addresses = list(pair_member_addresses(entry.data)) if is_paired(entry.data) else []
+    address = entry.data.get(CONF_ADDRESS)
+    if isinstance(address, str):
+        addresses.append(address.upper())
+    return addresses
 
 
 def _async_clear_stale_octo_pin_issue(hass: HomeAssistant, entry: ConfigEntry) -> None:
