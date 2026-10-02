@@ -23,6 +23,8 @@ from collections.abc import (
     Mapping,
 )
 from datetime import UTC, datetime
+from hashlib import sha256
+from json import dumps
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 from uuid import uuid4
 
@@ -102,6 +104,7 @@ from .const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MATTRESSFIRM,
+    BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
@@ -148,6 +151,10 @@ from .const import (
     CONF_LIMOSS_REMOTE_STATE,
     CONF_MALOUF_LAYOUT,
     CONF_MALOUF_MEMORY_SLOTS,
+    CONF_MOTION_BED_MOVEMENT,
+    CONF_MOTION_BED_NAME,
+    CONF_MOTION_BED_PRESET,
+    CONF_MOTION_BED_RESTORED,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
@@ -548,6 +555,19 @@ class AdjustableBedCoordinator:
                 1,
                 f"{DOMAIN}.furnimove_{self._address.replace(':', '_').lower()}_"
                 f"{entry.data.get(CONF_FURNIMOVE_REMOTE, 'unset')}",
+            )
+        self._motion_bed_state_store: Store[dict[str, bool]] | None = None
+        self._motion_bed_local_state: dict[str, bool] = {}
+        self._motion_bed_state_loaded = False
+        self._motion_bed_state_restoring = False
+        if self._bed_type == BED_TYPE_MOTION_BED:
+            profile = {key: entry.data.get(key) for key in (
+                CONF_MOTION_BED_NAME, CONF_MOTION_BED_PRESET,
+                CONF_MOTION_BED_MOVEMENT, CONF_MOTION_BED_RESTORED,
+            )}
+            profile_key = sha256(dumps(profile, sort_keys=True).encode()).hexdigest()[:16]
+            self._motion_bed_state_store = Store(
+                hass, 1, f"{DOMAIN}.motion_bed_{self._address.replace(':', '_').lower()}_{profile_key}"
             )
         self._controller_state_callbacks: set[Callable[[dict[str, Any]], None]] = set()
         self._controller_state_refresh_task: asyncio.Task[None] | None = None
@@ -1246,6 +1266,7 @@ class AdjustableBedCoordinator:
                 capability_snapshot=octo_snapshot or linak_snapshot or jensen_snapshot,
             )
             await self._async_restore_furnimove_local_state()
+            await self._async_restore_motion_bed_local_state()
         except ConnectionError:
             # Auto-detected variant: needs a live client to resolve. Leave the
             # offline controller unset (this side behaves as today until connect).
@@ -4196,6 +4217,7 @@ class AdjustableBedCoordinator:
                     capability_snapshot=stored_capability_snapshot,
                 )
                 await self._async_restore_furnimove_local_state()
+                await self._async_restore_motion_bed_local_state()
                 discovery_result = cast(Any, self._controller).async_discover_capabilities()
                 if inspect.isawaitable(discovery_result):
                     await discovery_result
@@ -5086,6 +5108,8 @@ class AdjustableBedCoordinator:
                 finally:
                     if self._furnimove_state_store is not None and self._furnimove_state_loaded:
                         await self._furnimove_state_store.async_save(self._furnimove_local_state)
+                    if self._motion_bed_state_store is not None and self._motion_bed_state_loaded:
+                        await self._motion_bed_state_store.async_save(self._motion_bed_local_state)
 
     async def async_disconnect(
         self,
@@ -6776,6 +6800,28 @@ class AdjustableBedCoordinator:
         finally:
             self._furnimove_state_restoring = False
 
+    async def _async_restore_motion_bed_local_state(self) -> None:
+        """Restore the per-target audio preference without restoring live feedback."""
+        store = self._motion_bed_state_store
+        controller = self.capability_controller
+        if store is None or controller is None:
+            return
+        if not self._motion_bed_state_loaded:
+            stored = await store.async_load()
+            self._motion_bed_local_state = stored if isinstance(stored, dict) else {}
+            self._motion_bed_state_loaded = True
+        self._motion_bed_state_restoring = True
+        try:
+            try:
+                controller.restore_motion_bed_local_state(self._motion_bed_local_state)
+            except (ValueError, TypeError):
+                _LOGGER.warning("Ignoring invalid local Motion Bed preferences for %s", self._address)
+                self._motion_bed_local_state = {}
+                controller.restore_motion_bed_local_state({})
+            self._motion_bed_local_state = controller.motion_bed_local_state
+        finally:
+            self._motion_bed_state_restoring = False
+
     @callback
     def handle_controller_state_updates(self, updates: dict[str, Any]) -> None:
         """Store controller state values and notify listeners."""
@@ -6794,6 +6840,16 @@ class AdjustableBedCoordinator:
             if snapshot != self._furnimove_local_state:
                 self._furnimove_local_state = snapshot
                 self._furnimove_state_store.async_delay_save(lambda: self._furnimove_local_state, 1)
+        if (
+            self._motion_bed_state_store is not None
+            and self._motion_bed_state_loaded
+            and not self._motion_bed_state_restoring
+            and controller is not None
+        ):
+            snapshot = controller.motion_bed_local_state
+            if snapshot != self._motion_bed_local_state:
+                self._motion_bed_local_state = snapshot
+                self._motion_bed_state_store.async_delay_save(lambda: self._motion_bed_local_state, 1)
         for callback_fn in list(self._controller_state_callbacks):
             try:
                 callback_fn(self._controller_state)

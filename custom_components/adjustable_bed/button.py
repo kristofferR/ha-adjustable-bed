@@ -18,6 +18,7 @@ from homeassistant.helpers.typing import UndefinedType
 from .beds.base import ProductButtonSpec, SideBoundController
 from .const import (
     BED_TYPE_LIMOSS_REMOTE,
+    BED_TYPE_MOTION_BED,
     DOMAIN,
     SIDE_BOTH,
 )
@@ -32,6 +33,7 @@ from .remacro_discovery import remacro_side_lacks_global_stop, remacro_side_reje
 
 if TYPE_CHECKING:
     from .beds.base import BedController, ControllerButtonSpec, MotorControlSpec
+    from .coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -743,10 +745,46 @@ async def async_setup_entry(
         entities.extend(_combined_button_entities_for(coordinator, children))
         _async_remove_stale_combined_button_entities(hass, coordinator, children, entities)
         async_add_entities(entities)
+        _async_follow_motion_bed_module_actions(hass, entry, coordinator, async_add_entities, entities)
         return
 
-    async_add_entities([entity for runtime in entity_runtimes(coordinator)
-                        for entity in _button_entities_for(hass, runtime)])
+    initial = [entity for runtime in entity_runtimes(coordinator)
+               for entity in _button_entities_for(hass, runtime)]
+    async_add_entities(initial)
+    _async_follow_motion_bed_module_actions(hass, entry, coordinator, async_add_entities, initial)
+
+def _async_follow_motion_bed_module_actions(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    coordinator: AdjustableBedCoordinator | PairedBedCoordinator,
+    async_add_entities: AddEntitiesCallback,
+    initial: list[ButtonEntity],
+) -> None:
+    # A Motion Bed hub discovers each module after subscribing to status replies.
+    # Keep entity identities stable while adding newly reported module controls.
+    created = {entity.unique_id for entity in initial}
+    actions = {entity.unique_id: entity for entity in initial if isinstance(entity, ControllerActionButton)}
+    def add_motion_bed_module_actions(updates: dict[str, object]) -> None:
+        additions: list[ButtonEntity] = []
+        for runtime in entity_runtimes(coordinator):
+            controller = runtime.capability_controller
+            if controller is None or not controller.supports_motion_bed_actions:
+                continue
+            for spec in controller.controller_button_specs:
+                identity = runtime.entity_unique_id(spec.key)
+                if identity not in created:
+                    created.add(identity)
+                    entity = ControllerActionButton(runtime, spec)
+                    actions[identity] = entity
+                    additions.append(entity)
+        for entity in actions.values():
+            if getattr(entity, "hass", None) is not None and entity.entity_id:
+                entity.async_write_ha_state()
+        if additions:
+            async_add_entities(additions)
+    for runtime in entity_runtimes(coordinator):
+        if runtime.bed_type == BED_TYPE_MOTION_BED:
+            entry.async_on_unload(runtime.register_controller_state_callback(add_motion_bed_module_actions))
 
 
 def _button_entities_for(
@@ -789,12 +827,34 @@ def _button_entities_for(
                 registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
         # Named app actions disappear when their profile or transport changes.
-        for namespace in ('woosa_', 'malouf_', 'customatic_', 'serenity_', 'fsm_relax_', 'furnimove_', 'vibradorm_app_', 'vmatbasic_', 'starcode_abm5_4_', 'svane_', 'starcode_', 'limoss_remote_', 'coolbase_', 'simmons_', 'tranquil_', 'zseries_', 'adjustable_lumbar_', 'remacro_', 'logicdata_app_', 'logicdata_air_pump_'):
+        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "fsm_relax_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "svane_", "motion_bed_", "starcode_", "limoss_remote_", "coolbase_", "remacro_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_"):
             desired_actions = {
                 coordinator.entity_unique_id(spec.key)
                 for spec in controller.controller_button_specs
                 if spec.key.startswith(namespace)
             }
+            if (
+                namespace == "motion_bed_"
+                and coordinator.bed_type == BED_TYPE_MOTION_BED
+                and any(spec.key == "motion_bed_active_module" for spec in controller.controller_select_specs)
+            ):
+                from .motion_bed_actions import MOTION_BED_ACTIONS
+
+                # Keep possible hub identities while inventory is unknown, but
+                # retire controls that only belong to the former home profile.
+                owners = {
+                    "Setting2Activity", "MainMcuActivity", "ChangeDeviceActivity", "ConnectMcuActivity",
+                    "DiandongFragment", "DianDongSetActivity", "AlarmActivity",
+                    "QinangFragment", "AnmoSetActivity", "PressSetActivity",
+                    "LengnuanFragment", "TimeSettingActivity",
+                }
+                desired_actions.update(
+                    coordinator.entity_unique_id("motion_bed_" + action.key)
+                    for action in MOTION_BED_ACTIONS
+                    if action.owner in owners
+                    and (action.kind in ("press", "stop")
+                         or (action.kind == "held" and action.owner == "DiandongFragment"))
+                )
             action_prefix, action_suffix = coordinator.entity_unique_id(namespace).split(
                 namespace, 1
             )
@@ -1221,6 +1281,13 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         if spec.translation_key is not None:
             self._attr_translation_key = coordinator.entity_translation_key(spec.translation_key)
             self._attr_name = None
+
+    @property
+    def available(self) -> bool:
+        controller = self._coordinator.capability_controller
+        return super().available and (
+            controller is None or controller.controller_button_available(self._spec.key)
+        )
 
     async def async_press(self) -> None:
         """Execute the named action with its declared replacement policy."""

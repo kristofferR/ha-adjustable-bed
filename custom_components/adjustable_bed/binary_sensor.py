@@ -132,6 +132,19 @@ def _binary_sensor_entities_for(
             for spec in specs
         )
 
+    if controller is not None:
+        # Retire this runtime's app telemetry after a protocol/profile change.
+        namespace = "motion_bed_"
+        prefix, suffix = coordinator.entity_unique_id(namespace).split(namespace, 1)
+        prefix += namespace
+        desired = {coordinator.entity_unique_id(spec.key) for spec in controller.controller_state_binary_sensor_specs}
+        registry = er.async_get(hass)
+        for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
+            if (row.domain == "binary_sensor" and row.platform == DOMAIN
+                    and row.unique_id.startswith(prefix) and row.unique_id.endswith(suffix)
+                    and row.unique_id not in desired):
+                registry.async_remove(row.entity_id)
+
     return entities
 
 

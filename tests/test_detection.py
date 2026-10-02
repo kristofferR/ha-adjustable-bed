@@ -1994,10 +1994,14 @@ class TestFFE0UUIDDisambiguation:
         )
         assert detect_bed_type(service_info) == BED_TYPE_SOLACE
 
-    def test_arbitrarily_prefixed_qms_name_is_not_auto_discovered(self):
-        """Keep detector routes aligned with manifest-safe local-name prefixes."""
+    def test_interior_app_name_requires_explicit_profile_selection(self):
+        """Accepted interior names are candidates, not automatic app selection."""
+        from custom_components.adjustable_bed.const import BED_TYPE_MOTION_BED
+
         service_info = _make_service_info(name="Bedroom QMS2 Base", service_uuids=[])
-        assert detect_bed_type(service_info) is None
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_MOTION_BED
+        assert result.confidence < 0.7
 
     def test_broad_s_series_no_longer_routes_to_solace(self):
         """The pending Motion Bed APK cannot justify broad S-series matching."""

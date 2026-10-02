@@ -52,6 +52,7 @@ from .const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MATTRESSFIRM,
+    BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
@@ -593,6 +594,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_VIBRADORM_APP: "Caresse Diamant / Werkmeister apps",
     BED_TYPE_VMATBASIC: "V-MAT Basic app (explicit product profile)",
     BED_TYPE_STARCODE_ABM5_4: "AdjustableM5X4 app (explicit profile)",
+    BED_TYPE_MOTION_BED: "Motion Bed app",
     # Diagnostic
     BED_TYPE_DIAGNOSTIC: "Diagnostic (unknown bed)",
 }
@@ -1958,21 +1960,35 @@ def _detect_bed_type_detailed(
         )
         return DetectionResult(bed_type=BED_TYPE_OCTO, confidence=0.9, signals=signals)
 
+    from .motion_bed_models import accepts_motion_bed_name
+
+    motion_name = accepts_motion_bed_name(service_info.name or "")
+
     # Home Assistant's Bluetooth index requires three literal leading characters,
     # so automatic discovery is limited to the accepted prefixes represented in
-    # the manifest. Exact S4-Y retains its hardware-confirmed legacy route.
+    # the manifest. Shared accepted app names require an explicit profile choice.
     if any(device_name.startswith(pattern) for pattern in SOLACE_NAME_PATTERNS) or (
         device_name.startswith("my qms2")
     ) or (
         SOLACE_NAME_PATTERN.fullmatch(device_name)
     ):
+        motion_overlap = motion_name
         signals.append("name:solace")
+        if motion_overlap:
+            signals.append("name:motion_bed")
         _LOGGER.info(
             "Detected Solace bed at %s (name: %s) by accepted name route",
             service_info.address,
             service_info.name,
         )
-        return DetectionResult(bed_type=BED_TYPE_SOLACE, confidence=0.9, signals=signals)
+        # Hardware-confirmed Solace names keep their confidence; Motion Bed is
+        # offered as an alternative rather than forcing a chooser.
+        return DetectionResult(
+            bed_type=BED_TYPE_SOLACE,
+            confidence=0.9,
+            signals=signals,
+            ambiguous_types=[BED_TYPE_MOTION_BED] if motion_overlap else None,
+        )
 
     # Check for Solace/Octo/MotoSleep disambiguation (FFE0 UUID)
     # MUST be before Richmat WiLinke since FFE0 is in RICHMAT_WILINKE_SERVICE_UUIDS as W3
@@ -2014,7 +2030,10 @@ def _detect_bed_type_detailed(
             bed_type=BED_TYPE_OCTO,
             confidence=0.5,
             signals=signals,
-            ambiguous_types=[BED_TYPE_SOLACE, BED_TYPE_MOTOSLEEP],
+            ambiguous_types=[
+                BED_TYPE_SOLACE, BED_TYPE_MOTOSLEEP,
+                *([BED_TYPE_MOTION_BED] if motion_name else []),
+            ],
         )
 
     # BetterLiving / related OKIN-BLE names use Keeson-Sino packet format on
@@ -2418,6 +2437,16 @@ def _detect_bed_type_detailed(
             confidence=0.7,  # Lower confidence as fallback
             signals=signals,
             manufacturer_id=MANUFACTURER_ID_OKIN,
+        )
+
+    if motion_name and SOLACE_SERVICE_UUID.lower() not in service_uuids:
+        # The app's case-sensitive contains match also hits short interior
+        # markers (TL-A, S3-2), so it only applies when no other route claimed
+        # the device. The setup chooser still requires an explicit selection.
+        return DetectionResult(
+            bed_type=BED_TYPE_MOTION_BED,
+            confidence=0.6,
+            signals=[*signals, "name:motion_bed"],
         )
 
     _LOGGER.debug("Device %s does not match any known bed types", service_info.address)

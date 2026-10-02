@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
     from ..coordinator import AdjustableBedCoordinator
+    from ..motion_bed_requests import MotionBedWrite
 
 from ..const import (
     POSITION_CHECK_INTERVAL,
@@ -1341,6 +1342,10 @@ class BedController(ABC):
         """Whether setup has finished discovering controller-gated entities."""
         return True
 
+    def controller_button_available(self, key: str) -> bool:
+        """Whether a named action remains valid for current discovered capabilities."""
+        return True
+
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         """Return additional, product-gated actions for the button platform."""
@@ -2227,6 +2232,39 @@ class BedController(ABC):
     ) -> None:
         """Program a Solace alarm."""
         raise NotImplementedError("Solace alarm programming not supported on this bed")
+
+    def validate_motion_bed_write(self, request: MotionBedWrite) -> None:
+        raise NotImplementedError("Motion Bed configuration unavailable")
+
+    async def async_execute_motion_bed_write(self, request: MotionBedWrite) -> None:
+        raise NotImplementedError("Motion Bed configuration unavailable")
+
+    @property
+    def supports_motion_bed_actions(self) -> bool:
+        """Whether the explicit Motion Bed app action surface is available."""
+        return False
+
+    async def set_motion_bed_surface(self, surface: str) -> None:
+        raise NotImplementedError("Motion Bed hub module selection unavailable")
+
+    def validate_motion_bed_action(self, key: str, *, branch: str = "app",
+                                  duration: float = 1, confirmed: bool = False) -> None:
+        raise NotImplementedError("Motion Bed actions unavailable")
+
+    async def async_execute_motion_bed_action(self, key: str, *, branch: str = "app",
+                                             duration: float = 1, confirmed: bool = False) -> None:
+        raise NotImplementedError("Motion Bed actions unavailable")
+
+    async def async_execute_motion_bed_internal_query(self, key: str) -> None:
+        raise NotImplementedError("Motion Bed callback queries unavailable")
+
+    @property
+    def motion_bed_local_state(self) -> dict[str, bool]:
+        """Return remembered app preferences, separate from live feedback."""
+        return {}
+
+    def restore_motion_bed_local_state(self, state: Mapping[str, bool]) -> None:
+        raise NotImplementedError("Motion Bed preferences unavailable")
 
     @property
     def furnimove_action_specs(self) -> tuple[ControllerActionSpec, ...]:

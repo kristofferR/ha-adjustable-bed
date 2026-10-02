@@ -148,6 +148,7 @@ The entries below identify motor/actuator manufacturers or supported app profile
 | 🧪 [AdjustableM5X5 app](docs/beds/starcode-m5x5.md) | Explicit CB25, F23, kneading or Elevate profile; main plus three independently addressed lifts; hardware unverified |
 | ✅ [DewertOkin ELEVATE](docs/beds/star-elevate.md) | ELEVATE two-actuator lift accessory |
 | ✅ [Okin CST](docs/beds/okin-cst.md) | Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; Nectar Motion |
+| 🧪 [Motion Bed app](docs/beds/motion_bed.md) | Explicit QMS/SealyMF and TL motor/air/thermal/hub app profiles; hardware unverified |
 | 🧪 [FurniMove / OKIN Smart Remote app](docs/beds/furnimove.md) | Explicit handset layouts, including RF ECO BT adjustable-bed receivers; hardware unverified |
 | ✅ [OKIN Smart Remote / RF ECO BT](docs/beds/okin-rf-eco-bt.md) | Elda BTH / MEGAMAT staircase actuator |
 | ✅ [Okin DOT](docs/beds/okin-dot.md) | DewertOkin RF1058/RF34/RF6707 handset beds |

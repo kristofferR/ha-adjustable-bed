@@ -250,6 +250,10 @@ Hold one exact app action. Flat runs 600 ms; save and reset run the six-second l
 
 Target one or more physical devices with `device_id`, an exact supported `control`, `duration` in seconds (0.1–60), and optional paired `side`. Every target’s profile and observed-state gate is checked before any write. Movement and memory refresh every 100 ms with immediate STOP; presets release according to the retained UI selector. Flat runs 600 ms after activation; save/reset stream through the six-second local confirmation interval regardless of the duration field. Positive massage controls require observed active state; this profile has no massage timer Off command. [The protocol document](beds/starcode-abm5-4.md) lists all controls, exact capability gates and exclusions.
 
+
+## Motion Bed app actions
+
+The [Motion Bed action index](beds/motion_bed.md#actions) covers all 12 typed app actions, including alarms, sleep calibration/reporting, hub modules, pressure, thermal schedules and audio. Named action keys are listed in controller diagnostics. Persistent changes require confirmation; every target is validated before writes, and native paired child targets retain their side.
 ### Svane Remote held controls
 
 `svane_hold_control` holds a selected head/feet axis or combination for `duration` seconds (0.1–60). Feet-only actions and P1 combinations require more than 0.1 seconds to allow the source's 100 ms feet delay; shorter requests are rejected before any target moves. If awaited delivery consumes the remaining budget before feet start, the action fails explicitly and releases any started axis. Its literal dropdown also offers `light_adjust`, which runs the app's triangular lamp preference loop after the source's 200 ms threshold. All physical targets are checked before movement.

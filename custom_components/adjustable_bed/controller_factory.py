@@ -44,6 +44,7 @@ from .const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MATTRESSFIRM,
+    BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
@@ -123,6 +124,10 @@ from .const import (
     CONF_MALOUF_APP_PRIMARY,
     CONF_MALOUF_APP_PROFILE,
     CONF_MALOUF_APP_TRANSPORT,
+    CONF_MOTION_BED_MOVEMENT,
+    CONF_MOTION_BED_NAME,
+    CONF_MOTION_BED_PRESET,
+    CONF_MOTION_BED_RESTORED,
     CONF_REMACRO_MODEL,
     CONF_STARCODE_COMMAND_SELECTOR,
     CONF_STARCODE_DEVICE_NAME,
@@ -725,6 +730,20 @@ async def create_controller(
             transport_selector=data.get(CONF_STARCODE_TRANSPORT_SELECTOR),
         )
 
+    if bed_type == BED_TYPE_MOTION_BED:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.motion_bed", __package__
+        )
+        from .beds.motion_bed import MotionBedController
+        from .motion_bed_models import select_motion_bed
+
+        data = coordinator.entry.data
+        selection = select_motion_bed(
+            data.get(CONF_MOTION_BED_NAME, data.get("name", "")), restored=data.get(CONF_MOTION_BED_RESTORED, False),
+            preset_override=data.get(CONF_MOTION_BED_PRESET),
+            movement_override=data.get(CONF_MOTION_BED_MOVEMENT),
+        )
+        return MotionBedController(coordinator, selection=selection)
 
     if bed_type == BED_TYPE_LIMOSS_REMOTE:
         await coordinator.hass.async_add_import_executor_job(

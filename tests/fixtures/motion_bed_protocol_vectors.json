@@ -1,0 +1,3105 @@
+{
+  "package": "com.sn.blackdianqi",
+  "version": "1.24 (34)",
+  "vectors": [
+    {
+      "id": "sum-literal:AlarmActivity:296",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF0100130B81"
+      },
+      "expected": "FFFFFFFF0100130B819C04"
+    },
+    {
+      "id": "sum-literal:AlarmActivity:300",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF0100130B82"
+      },
+      "expected": "FFFFFFFF0100130B829D04"
+    },
+    {
+      "id": "sum-literal:AlarmActivity:304",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF0100130B83"
+      },
+      "expected": "FFFFFFFF0100130B839E04"
+    },
+    {
+      "id": "sum-literal:AlarmActivity:306",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF0100130B84"
+      },
+      "expected": "FFFFFFFF0100130B849F04"
+    },
+    {
+      "id": "sum-literal:AlarmActivity:308",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF0100130B85"
+      },
+      "expected": "FFFFFFFF0100130B85A004"
+    },
+    {
+      "id": "sum-literal:AlarmActivity:314",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF0100130B00"
+      },
+      "expected": "FFFFFFFF0100130B001B04"
+    },
+    {
+      "id": "sum-literal:ChangeDeviceActivity:96",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF010026140F000000000000000000"
+      },
+      "expected": "FFFFFFFF010026140F0000000000000000004604"
+    },
+    {
+      "id": "sum-literal:ChangeDeviceActivity:213",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF010028140A000000000000000100"
+      },
+      "expected": "FFFFFFFF010028140A0000000000000001004404"
+    },
+    {
+      "id": "sum-literal:ChangeDeviceActivity:219",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF010028140C000000000000000100"
+      },
+      "expected": "FFFFFFFF010028140C0000000000000001004604"
+    },
+    {
+      "id": "sum-literal:ChangeDeviceActivity:225",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF010028140B000000000000000100"
+      },
+      "expected": "FFFFFFFF010028140B0000000000000001004504"
+    },
+    {
+      "id": "literal:DianDongSetActivity:270",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000015"
+      },
+      "expected": "FFFFFFFF050000001516CF"
+    },
+    {
+      "id": "literal:DianDongSetActivity:275",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000014"
+      },
+      "expected": "FFFFFFFF0500000014D70F"
+    },
+    {
+      "id": "literal:DianDongSetActivity:281",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000011"
+      },
+      "expected": "FFFFFFFF0500000011170C"
+    },
+    {
+      "id": "literal:DianDongSetActivity:286",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000010"
+      },
+      "expected": "FFFFFFFF0500000010D6CC"
+    },
+    {
+      "id": "literal:DianDongSetActivity:292",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000013"
+      },
+      "expected": "FFFFFFFF050000001396CD"
+    },
+    {
+      "id": "literal:DianDongSetActivity:297",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000012"
+      },
+      "expected": "FFFFFFFF0500000012570D"
+    },
+    {
+      "id": "sum-literal:DianDongSetActivity:515",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF01001C1401000000000000000000"
+      },
+      "expected": "FFFFFFFF01001C14010000000000000000002E04"
+    },
+    {
+      "id": "sum-literal:DianDongSetActivity:522",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF01001C1403000000000000000000"
+      },
+      "expected": "FFFFFFFF01001C14030000000000000000003004"
+    },
+    {
+      "id": "literal:DianDongSetActivity:525",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000019"
+      },
+      "expected": "FFFFFFFF050000001916CA"
+    },
+    {
+      "id": "literal:DianDongSetActivity:535",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000001B"
+      },
+      "expected": "FFFFFFFF050000001B970B"
+    },
+    {
+      "id": "literal:DianDongSetActivity:545",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000001A"
+      },
+      "expected": "FFFFFFFF050000001A56CB"
+    },
+    {
+      "id": "literal:DianDongSetActivity:557",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000001C"
+      },
+      "expected": "FFFFFFFF050000001CD6C9"
+    },
+    {
+      "id": "literal:DianDongSetActivity:559",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000016"
+      },
+      "expected": "FFFFFFFF050000001656CE"
+    },
+    {
+      "id": "literal:DianDongSetActivity:571",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000017"
+      },
+      "expected": "FFFFFFFF0500000017970E"
+    },
+    {
+      "id": "literal:DianDongSetActivity:583",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000018"
+      },
+      "expected": "FFFFFFFF0500000018D70A"
+    },
+    {
+      "id": "sum-literal:DianDongSetActivity:629",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF01001C1402000000000000000000"
+      },
+      "expected": "FFFFFFFF01001C14020000000000000000002F04"
+    },
+    {
+      "id": "sum-literal:DianDongSetActivity:631",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF01001C1404000000000000000000"
+      },
+      "expected": "FFFFFFFF01001C14040000000000000000003104"
+    },
+    {
+      "id": "sum-literal:HomeActivity:142",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF01000A0B0F"
+      },
+      "expected": "FFFFFFFF01000A0B0F2104"
+    },
+    {
+      "id": "sum-literal:HomeActivity:321",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF02000E0B00"
+      },
+      "expected": "FFFFFFFF02000E0B001704"
+    },
+    {
+      "id": "literal:HomeActivity:455",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050005FF23"
+      },
+      "expected": "FFFFFFFF050005FF23C728"
+    },
+    {
+      "id": "sum-literal:HomeActivity:463",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF02000A0A"
+      },
+      "expected": "FFFFFFFF02000A0A1204"
+    },
+    {
+      "id": "sum-literal:SleepAdjustActivity:165",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF0200100B00"
+      },
+      "expected": "FFFFFFFF0200100B001904"
+    },
+    {
+      "id": "literal:SleepAdjustActivity:251",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000000"
+      },
+      "expected": "FFFFFFFF0500000000D700"
+    },
+    {
+      "id": "sum-literal:SleepAdjustActivity:255",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF02000F0B00"
+      },
+      "expected": "FFFFFFFF02000F0B001804"
+    },
+    {
+      "id": "literal:SleepDataEntryActivity:189",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000208"
+      },
+      "expected": "FFFFFFFF0500000208D7A6"
+    },
+    {
+      "id": "sum-literal:SleepDataEntryActivity:248",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF0200090D010000"
+      },
+      "expected": "FFFFFFFF0200090D0100001504"
+    },
+    {
+      "id": "sum-literal:SleepDataEntryActivity:253",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF0200090D020000"
+      },
+      "expected": "FFFFFFFF0200090D0200001604"
+    },
+    {
+      "id": "sum-literal:SleepDataEntryActivity:268",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF0200120C0A46"
+      },
+      "expected": "FFFFFFFF0200120C0A466C04"
+    },
+    {
+      "id": "sum-literal:SleepDataEntryActivity:293",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF0200090F0300000000"
+      },
+      "expected": "FFFFFFFF0200090F03000000001904"
+    },
+    {
+      "id": "sum-literal:AnmoFragment:88",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF0100090B00"
+      },
+      "expected": "FFFFFFFF0100090B001104"
+    },
+    {
+      "id": "sum-literal:AnmoFragment:90",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF0100090B01"
+      },
+      "expected": "FFFFFFFF0100090B011204"
+    },
+    {
+      "id": "sum-literal:DiandongFragment:135",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF01000C0B0F"
+      },
+      "expected": "FFFFFFFF01000C0B0F2304"
+    },
+    {
+      "id": "sum-literal:DiandongFragment:319",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF01002A1400000000000000000000"
+      },
+      "expected": "FFFFFFFF01002A14000000000000000000003B04"
+    },
+    {
+      "id": "literal:DiandongFragment:380",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000003"
+      },
+      "expected": "FFFFFFFF05000000039701"
+    },
+    {
+      "id": "literal:DiandongFragment:392",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000004"
+      },
+      "expected": "FFFFFFFF0500000004D6C3"
+    },
+    {
+      "id": "literal:DiandongFragment:405",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000006"
+      },
+      "expected": "FFFFFFFF05000000065702"
+    },
+    {
+      "id": "literal:DiandongFragment:417",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000007"
+      },
+      "expected": "FFFFFFFF050000000796C2"
+    },
+    {
+      "id": "literal:DiandongFragment:452",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000004A"
+      },
+      "expected": "FFFFFFFF050000004A56F7"
+    },
+    {
+      "id": "literal:DiandongFragment:454",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000004B"
+      },
+      "expected": "FFFFFFFF050000004B9737"
+    },
+    {
+      "id": "literal:DiandongFragment:464",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000011C"
+      },
+      "expected": "FFFFFFFF050000011CD759"
+    },
+    {
+      "id": "literal:DiandongFragment:566",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000008"
+      },
+      "expected": "FFFFFFFF0500000008D6C6"
+    },
+    {
+      "id": "literal:DiandongFragment:578",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000A10A"
+      },
+      "expected": "FFFFFFFF050000A10A2E97"
+    },
+    {
+      "id": "literal:DiandongFragment:580",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000000A"
+      },
+      "expected": "FFFFFFFF050000000A5707"
+    },
+    {
+      "id": "literal:DiandongFragment:594",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000B10B"
+      },
+      "expected": "FFFFFFFF050000B10BE297"
+    },
+    {
+      "id": "literal:DiandongFragment:596",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000000B"
+      },
+      "expected": "FFFFFFFF050000000B96C7"
+    },
+    {
+      "id": "literal:DiandongFragment:610",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500005105"
+      },
+      "expected": "FFFFFFFF05000051052A93"
+    },
+    {
+      "id": "literal:DiandongFragment:612",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000005"
+      },
+      "expected": "FFFFFFFF05000000051703"
+    },
+    {
+      "id": "literal:DiandongFragment:626",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500009109"
+      },
+      "expected": "FFFFFFFF05000091097A96"
+    },
+    {
+      "id": "literal:DiandongFragment:628",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000009"
+      },
+      "expected": "FFFFFFFF05000000091706"
+    },
+    {
+      "id": "literal:DiandongFragment:636",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000006A"
+      },
+      "expected": "FFFFFFFF050000006A572F"
+    },
+    {
+      "id": "literal:DiandongFragment:648",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000F10F"
+      },
+      "expected": "FFFFFFFF050000F10FD294"
+    },
+    {
+      "id": "literal:DiandongFragment:650",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000000F"
+      },
+      "expected": "FFFFFFFF050000000F9704"
+    },
+    {
+      "id": "literal:DiandongFragment:663",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500009F09"
+      },
+      "expected": "FFFFFFFF0500009F097EF6"
+    },
+    {
+      "id": "literal:DiandongFragment:665",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500009009"
+      },
+      "expected": "FFFFFFFF05000090097B06"
+    },
+    {
+      "id": "literal:DiandongFragment:672",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000FF0F"
+      },
+      "expected": "FFFFFFFF050000FF0FD6F4"
+    },
+    {
+      "id": "literal:DiandongFragment:674",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000F00F"
+      },
+      "expected": "FFFFFFFF050000F00FD304"
+    },
+    {
+      "id": "literal:DiandongFragment:681",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500005F05"
+      },
+      "expected": "FFFFFFFF0500005F052EF3"
+    },
+    {
+      "id": "literal:DiandongFragment:683",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500005005"
+      },
+      "expected": "FFFFFFFF05000050052B03"
+    },
+    {
+      "id": "literal:DiandongFragment:690",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000BF0B"
+      },
+      "expected": "FFFFFFFF050000BF0BE6F7"
+    },
+    {
+      "id": "literal:DiandongFragment:692",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000B00B"
+      },
+      "expected": "FFFFFFFF050000B00BE307"
+    },
+    {
+      "id": "literal:DiandongFragment:699",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000AF0A"
+      },
+      "expected": "FFFFFFFF050000AF0A2AF7"
+    },
+    {
+      "id": "literal:DiandongFragment:701",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000A00A"
+      },
+      "expected": "FFFFFFFF050000A00A2F07"
+    },
+    {
+      "id": "literal:KuaijieK11Fragment:232",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000029"
+      },
+      "expected": "FFFFFFFF050000002916DE"
+    },
+    {
+      "id": "literal:KuaijieK11Fragment:295",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000028"
+      },
+      "expected": "FFFFFFFF0500000028D71E"
+    },
+    {
+      "id": "literal:KuaijieK11Fragment:301",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000002A"
+      },
+      "expected": "FFFFFFFF050000002A56DF"
+    },
+    {
+      "id": "literal:KuaijieK11Fragment:307",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000021"
+      },
+      "expected": "FFFFFFFF05000000211718"
+    },
+    {
+      "id": "literal:KuaijieK11Fragment:313",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000022"
+      },
+      "expected": "FFFFFFFF05000000225719"
+    },
+    {
+      "id": "literal:KuaijieK1Fragment:289",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF05000500E4"
+      },
+      "expected": "FFFFFFFF05000500E4C74A"
+    },
+    {
+      "id": "literal:KuaijieK1Fragment:307",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF05000500E6"
+      },
+      "expected": "FFFFFFFF05000500E6468B"
+    },
+    {
+      "id": "literal:KuaijieK1Fragment:313",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000004E"
+      },
+      "expected": "FFFFFFFF050000004E5734"
+    },
+    {
+      "id": "sum-literal:KuaijieK2MFragment:373",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF0100130BFF"
+      },
+      "expected": "FFFFFFFF0100130BFF1A05"
+    },
+    {
+      "id": "sum-literal:KuaijieK2MFragment:466",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF0100150B00"
+      },
+      "expected": "FFFFFFFF0100150B001D04"
+    },
+    {
+      "id": "literal:KuaijieK3Fragment:204",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000002E"
+      },
+      "expected": "FFFFFFFF050000002E571C"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:211",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000039"
+      },
+      "expected": "FFFFFFFF05000000391712"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:217",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000003A"
+      },
+      "expected": "FFFFFFFF050000003A5713"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:229",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500001131"
+      },
+      "expected": "FFFFFFFF05000011311A84"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:231",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000031"
+      },
+      "expected": "FFFFFFFF050000003116D4"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:245",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500002132"
+      },
+      "expected": "FFFFFFFF05000021324E85"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:247",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000032"
+      },
+      "expected": "FFFFFFFF050000003256D5"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:261",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500003133"
+      },
+      "expected": "FFFFFFFF05000031338285"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:263",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000033"
+      },
+      "expected": "FFFFFFFF05000000339715"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:277",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500004134"
+      },
+      "expected": "FFFFFFFF0500004134E687"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:279",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000034"
+      },
+      "expected": "FFFFFFFF0500000034D6D7"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:295",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000003B"
+      },
+      "expected": "FFFFFFFF050000003B96D3"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:301",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000003C"
+      },
+      "expected": "FFFFFFFF050000003CD711"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:307",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000003D"
+      },
+      "expected": "FFFFFFFF050000003D16D1"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:332",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500001F31"
+      },
+      "expected": "FFFFFFFF0500001F311EE4"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:334",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500001031"
+      },
+      "expected": "FFFFFFFF05000010311B14"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:341",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500002F32"
+      },
+      "expected": "FFFFFFFF0500002F324AE5"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:343",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500002032"
+      },
+      "expected": "FFFFFFFF05000020324F15"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:350",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500003F33"
+      },
+      "expected": "FFFFFFFF0500003F3386E5"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:352",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500003033"
+      },
+      "expected": "FFFFFFFF05000030338315"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:359",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500004F34"
+      },
+      "expected": "FFFFFFFF0500004F34E2E7"
+    },
+    {
+      "id": "literal:KuaijieK4Fragment:361",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500004034"
+      },
+      "expected": "FFFFFFFF0500004034E717"
+    },
+    {
+      "id": "literal:KuaijieK5Fragment:319",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050005003E"
+      },
+      "expected": "FFFFFFFF050005003E46D1"
+    },
+    {
+      "id": "literal:KuaijieK8Fragment:206",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000020"
+      },
+      "expected": "FFFFFFFF0500000020D6D8"
+    },
+    {
+      "id": "literal:KuaijieK8Fragment:275",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000000E"
+      },
+      "expected": "FFFFFFFF050000000E56C4"
+    },
+    {
+      "id": "literal:KuaijieK8Fragment:281",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000000D"
+      },
+      "expected": "FFFFFFFF050000000D16C5"
+    },
+    {
+      "id": "literal:SmartSleepFragment:144",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000F03F"
+      },
+      "expected": "FFFFFFFF050000F03FD310"
+    },
+    {
+      "id": "literal:SmartSleepFragment:147",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000003F"
+      },
+      "expected": "FFFFFFFF050000003F9710"
+    },
+    {
+      "id": "sum-literal:SmartSleepFragment:156",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF0200110B00"
+      },
+      "expected": "FFFFFFFF0200110B001A04"
+    },
+    {
+      "id": "sum-literal:SmartSleepFragment:159",
+      "function": "addsum",
+      "inputs": {
+        "s": "FFFFFFFF0200110B01"
+      },
+      "expected": "FFFFFFFF0200110B011B04"
+    },
+    {
+      "id": "literal:WeitiaoW10Fragment:88",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000001"
+      },
+      "expected": "FFFFFFFF050000000116C0"
+    },
+    {
+      "id": "literal:WeitiaoW10Fragment:101",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000002"
+      },
+      "expected": "FFFFFFFF050000000256C1"
+    },
+    {
+      "id": "literal:WeitiaoW13Fragment:310",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF05000500E3"
+      },
+      "expected": "FFFFFFFF05000500E38688"
+    },
+    {
+      "id": "literal:WeitiaoW13Fragment:316",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF05000500E5"
+      },
+      "expected": "FFFFFFFF05000500E5068A"
+    },
+    {
+      "id": "literal:WeitiaoW3Fragment:121",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050005002B"
+      },
+      "expected": "FFFFFFFF050005002B871E"
+    },
+    {
+      "id": "literal:WeitiaoW3Fragment:134",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050005002C"
+      },
+      "expected": "FFFFFFFF050005002CC6DC"
+    },
+    {
+      "id": "literal:WeitiaoW3Fragment:249",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF05000500E8"
+      },
+      "expected": "FFFFFFFF05000500E8C74F"
+    },
+    {
+      "id": "literal:WeitiaoW7Fragment:197",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000035"
+      },
+      "expected": "FFFFFFFF05000000351717"
+    },
+    {
+      "id": "literal:WeitiaoW7Fragment:210",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000036"
+      },
+      "expected": "FFFFFFFF05000000365716"
+    },
+    {
+      "id": "literal:WeitiaoW7Fragment:224",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000037"
+      },
+      "expected": "FFFFFFFF050000003796D6"
+    },
+    {
+      "id": "literal:WeitiaoW7Fragment:237",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000038"
+      },
+      "expected": "FFFFFFFF0500000038D6D2"
+    },
+    {
+      "id": "pressure-0-0",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 0,
+        "value": 0
+      },
+      "expected": "FFFFFFFFFF0F011701000000002D77"
+    },
+    {
+      "id": "pressure-0-9",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 0,
+        "value": 9
+      },
+      "expected": "FFFFFFFFFF0F011701005A00000D64"
+    },
+    {
+      "id": "pressure-1-0",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 1,
+        "value": 0
+      },
+      "expected": "FFFFFFFFFF0F011702000000006977"
+    },
+    {
+      "id": "pressure-1-9",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 1,
+        "value": 9
+      },
+      "expected": "FFFFFFFFFF0F011702005A00004964"
+    },
+    {
+      "id": "pressure-2-0",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 2,
+        "value": 0
+      },
+      "expected": "FFFFFFFFFF0F01170400000000E177"
+    },
+    {
+      "id": "pressure-2-9",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 2,
+        "value": 9
+      },
+      "expected": "FFFFFFFFFF0F011704005A0000C164"
+    },
+    {
+      "id": "pressure-3-0",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 3,
+        "value": 0
+      },
+      "expected": "FFFFFFFFFF0F01170800000000F176"
+    },
+    {
+      "id": "pressure-3-9",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 3,
+        "value": 9
+      },
+      "expected": "FFFFFFFFFF0F011708005A0000D165"
+    },
+    {
+      "id": "pressure-4-0",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 4,
+        "value": 0
+      },
+      "expected": "FFFFFFFFFF0F01171000000000D174"
+    },
+    {
+      "id": "pressure-4-9",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 4,
+        "value": 9
+      },
+      "expected": "FFFFFFFFFF0F011710005A0000F167"
+    },
+    {
+      "id": "pressure-5-0",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 5,
+        "value": 0
+      },
+      "expected": "FFFFFFFFFF0F011720000000009170"
+    },
+    {
+      "id": "pressure-5-9",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 5,
+        "value": 9
+      },
+      "expected": "FFFFFFFFFF0F011720005A0000B163"
+    },
+    {
+      "id": "pressure-6-0",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 6,
+        "value": 0
+      },
+      "expected": "FFFFFFFFFF0F011740000000001178"
+    },
+    {
+      "id": "pressure-6-9",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 6,
+        "value": 9
+      },
+      "expected": "FFFFFFFFFF0F011740005A0000316B"
+    },
+    {
+      "id": "pressure-7-0",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 7,
+        "value": 0
+      },
+      "expected": "FFFFFFFFFF0F011780000000001169"
+    },
+    {
+      "id": "pressure-7-9",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 7,
+        "value": 9
+      },
+      "expected": "FFFFFFFFFF0F011780005A0000317A"
+    },
+    {
+      "id": "pressure-8-0",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 8,
+        "value": 0
+      },
+      "expected": "FFFFFFFFFF0F01170001000000114B"
+    },
+    {
+      "id": "pressure-8-9",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 8,
+        "value": 9
+      },
+      "expected": "FFFFFFFFFF0F011700015A00003158"
+    },
+    {
+      "id": "pressure-9-0",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 9,
+        "value": 0
+      },
+      "expected": "FFFFFFFFFF0F01170002000000110F"
+    },
+    {
+      "id": "pressure-9-9",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 9,
+        "value": 9
+      },
+      "expected": "FFFFFFFFFF0F011700025A0000311C"
+    },
+    {
+      "id": "pressure-10-0",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 10,
+        "value": 0
+      },
+      "expected": "FFFFFFFFFF0F011700040000001187"
+    },
+    {
+      "id": "pressure-10-9",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 10,
+        "value": 9
+      },
+      "expected": "FFFFFFFFFF0F011700045A00003194"
+    },
+    {
+      "id": "pressure-11-0",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 11,
+        "value": 0
+      },
+      "expected": "FFFFFFFFFF0F0117000800000012D7"
+    },
+    {
+      "id": "pressure-11-9",
+      "function": "pressure_live",
+      "inputs": {
+        "index": 11,
+        "value": 9
+      },
+      "expected": "FFFFFFFFFF0F011700085A000032C4"
+    },
+    {
+      "id": "pressure-save-0:case-1",
+      "function": "pressure_save",
+      "inputs": {
+        "values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "expected": "FFFFFFFFFF2F0305000100000100000100000100000100000100000100000100000100000100000100000100006422"
+    },
+    {
+      "id": "pressure-save-0:case-2",
+      "function": "pressure_save",
+      "inputs": {
+        "values": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          1,
+          2
+        ]
+      },
+      "expected": "FFFFFFFFFF2F030500010000010A00011400011E00012800013200013C00014600015000015A00010A000114006D21"
+    },
+    {
+      "id": "air-query-03",
+      "function": "air_query",
+      "inputs": {
+        "mode": "03"
+      },
+      "expected": "FFFFFFFFFF0D02080003007FB2"
+    },
+    {
+      "id": "air-save-03-1-00",
+      "function": "air_save",
+      "inputs": {
+        "mode": "03",
+        "level": 1,
+        "timer": "00"
+      },
+      "expected": "FFFFFFFFFF14030E00030A00000000000000D578"
+    },
+    {
+      "id": "air-save-03-8-02",
+      "function": "air_save",
+      "inputs": {
+        "mode": "03",
+        "level": 8,
+        "timer": "02"
+      },
+      "expected": "FFFFFFFFFF14030E000350000000020000005183"
+    },
+    {
+      "id": "air-save-03-1-",
+      "function": "air_save",
+      "inputs": {
+        "mode": "03",
+        "level": 1,
+        "timer": ""
+      },
+      "expected": "FFFFFFFFFF14030E00030A000000000000A0D5"
+    },
+    {
+      "id": "air-query-12",
+      "function": "air_query",
+      "inputs": {
+        "mode": "12"
+      },
+      "expected": "FFFFFFFFFF0D020800120073E2"
+    },
+    {
+      "id": "air-save-12-1-00",
+      "function": "air_save",
+      "inputs": {
+        "mode": "12",
+        "level": 1,
+        "timer": "00"
+      },
+      "expected": "FFFFFFFFFF14030E00120A000000000000001528"
+    },
+    {
+      "id": "air-save-12-8-02",
+      "function": "air_save",
+      "inputs": {
+        "mode": "12",
+        "level": 8,
+        "timer": "02"
+      },
+      "expected": "FFFFFFFFFF14030E0012500000000200000091D3"
+    },
+    {
+      "id": "air-save-12-1-",
+      "function": "air_save",
+      "inputs": {
+        "mode": "12",
+        "level": 1,
+        "timer": ""
+      },
+      "expected": "FFFFFFFFFF14030E00120A0000000000006015"
+    },
+    {
+      "id": "air-query-04",
+      "function": "air_query",
+      "inputs": {
+        "mode": "04"
+      },
+      "expected": "FFFFFFFFFF0D02080004007D82"
+    },
+    {
+      "id": "air-save-04-1-00",
+      "function": "air_save",
+      "inputs": {
+        "mode": "04",
+        "level": 1,
+        "timer": "00"
+      },
+      "expected": "FFFFFFFFFF14030E00040A00000000000000F348"
+    },
+    {
+      "id": "air-save-04-8-02",
+      "function": "air_save",
+      "inputs": {
+        "mode": "04",
+        "level": 8,
+        "timer": "02"
+      },
+      "expected": "FFFFFFFFFF14030E0004500000000200000077B3"
+    },
+    {
+      "id": "air-save-04-1-",
+      "function": "air_save",
+      "inputs": {
+        "mode": "04",
+        "level": 1,
+        "timer": ""
+      },
+      "expected": "FFFFFFFFFF14030E00040A000000000000E133"
+    },
+    {
+      "id": "air-query-05",
+      "function": "air_query",
+      "inputs": {
+        "mode": "05"
+      },
+      "expected": "FFFFFFFFFF0D02080005007C12"
+    },
+    {
+      "id": "air-save-05-1-00",
+      "function": "air_save",
+      "inputs": {
+        "mode": "05",
+        "level": 1,
+        "timer": "00"
+      },
+      "expected": "FFFFFFFFFF14030E00050A00000000000000FED8"
+    },
+    {
+      "id": "air-save-05-8-02",
+      "function": "air_save",
+      "inputs": {
+        "mode": "05",
+        "level": 8,
+        "timer": "02"
+      },
+      "expected": "FFFFFFFFFF14030E000550000000020000007A23"
+    },
+    {
+      "id": "air-save-05-1-",
+      "function": "air_save",
+      "inputs": {
+        "mode": "05",
+        "level": 1,
+        "timer": ""
+      },
+      "expected": "FFFFFFFFFF14030E00050A00000000000020FF"
+    },
+    {
+      "id": "air-query-0C",
+      "function": "air_query",
+      "inputs": {
+        "mode": "0C"
+      },
+      "expected": "FFFFFFFFFF0D0208000C007A42"
+    },
+    {
+      "id": "air-save-0C-1-00",
+      "function": "air_save",
+      "inputs": {
+        "mode": "0C",
+        "level": 1,
+        "timer": "00"
+      },
+      "expected": "FFFFFFFFFF14030E000C0A000000000000009488"
+    },
+    {
+      "id": "air-save-0C-8-02",
+      "function": "air_save",
+      "inputs": {
+        "mode": "0C",
+        "level": 8,
+        "timer": "02"
+      },
+      "expected": "FFFFFFFFFF14030E000C50000000020000001073"
+    },
+    {
+      "id": "air-save-0C-1-",
+      "function": "air_save",
+      "inputs": {
+        "mode": "0C",
+        "level": 1,
+        "timer": ""
+      },
+      "expected": "FFFFFFFFFF14030E000C0A000000000000E095"
+    },
+    {
+      "id": "bind-0A",
+      "function": "bind_module",
+      "inputs": {
+        "module": "0A",
+        "address": "01:23:45:67:89:AB"
+      },
+      "expected": "FFFFFFFF010028140A0123456789AB0000004706"
+    },
+    {
+      "id": "bind-0B",
+      "function": "bind_module",
+      "inputs": {
+        "module": "0B",
+        "address": "01:23:45:67:89:AB"
+      },
+      "expected": "FFFFFFFF010028140B0123456789AB0000004806"
+    },
+    {
+      "id": "bind-0C",
+      "function": "bind_module",
+      "inputs": {
+        "module": "0C",
+        "address": "01:23:45:67:89:AB"
+      },
+      "expected": "FFFFFFFF010028140C0123456789AB0000004906"
+    },
+    {
+      "id": "clock-0",
+      "function": "clock",
+      "inputs": {
+        "year": 2026,
+        "month": 9,
+        "day": 30,
+        "hour": 7,
+        "minute": 45,
+        "second": 0,
+        "weekday": 3
+      },
+      "expected": "FFFFFFFF0100011107450003260930BD04"
+    },
+    {
+      "id": "clock-59",
+      "function": "clock",
+      "inputs": {
+        "year": 2026,
+        "month": 9,
+        "day": 30,
+        "hour": 7,
+        "minute": 45,
+        "second": 59,
+        "weekday": 3
+      },
+      "expected": "FFFFFFFF01000111074559032609301605"
+    },
+    {
+      "id": "thermal_clock-0",
+      "function": "thermal_clock",
+      "inputs": {
+        "year": 2026,
+        "month": 9,
+        "day": 30,
+        "hour": 7,
+        "minute": 45,
+        "second": 0,
+        "weekday": 3
+      },
+      "expected": "FFFFFFFFFE14000700002609300745000300D550"
+    },
+    {
+      "id": "thermal_clock-59",
+      "function": "thermal_clock",
+      "inputs": {
+        "year": 2026,
+        "month": 9,
+        "day": 30,
+        "hour": 7,
+        "minute": 45,
+        "second": 59,
+        "weekday": 3
+      },
+      "expected": "FFFFFFFFFE140007000026093007455903000543"
+    },
+    {
+      "id": "angles-02",
+      "function": "sleep_angles",
+      "inputs": {
+        "page_type": "02",
+        "flat": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "side": [
+          5,
+          6,
+          7,
+          8
+        ]
+      },
+      "expected": "FFFFFFFF0200101200020300000607003204"
+    },
+    {
+      "id": "angles-03",
+      "function": "sleep_angles",
+      "inputs": {
+        "page_type": "03",
+        "flat": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "side": [
+          5,
+          6,
+          7,
+          8
+        ]
+      },
+      "expected": "FFFFFFFF0200101200020304000607083E04"
+    },
+    {
+      "id": "angles-04",
+      "function": "sleep_angles",
+      "inputs": {
+        "page_type": "04",
+        "flat": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "side": [
+          5,
+          6,
+          7,
+          8
+        ]
+      },
+      "expected": "FFFFFFFF0200101201020304050607084404"
+    },
+    {
+      "id": "calibration-10",
+      "function": "sleep_calibration",
+      "inputs": {
+        "flat": 10,
+        "side": 140
+      },
+      "expected": "FFFFFFFF0200120C0A466C04"
+    },
+    {
+      "id": "calibration-175",
+      "function": "sleep_calibration",
+      "inputs": {
+        "flat": 175,
+        "side": 191
+      },
+      "expected": "FFFFFFFF0200120CAF5F2A05"
+    },
+    {
+      "id": "sleep-timer-False-0",
+      "function": "sleep_timer",
+      "inputs": {
+        "slot": 0,
+        "fall": false
+      },
+      "expected": "FFFFFFFF02000D0B001604"
+    },
+    {
+      "id": "sleep-timer-False-1",
+      "function": "sleep_timer",
+      "inputs": {
+        "slot": 1,
+        "fall": false
+      },
+      "expected": "FFFFFFFF02000D0B011704"
+    },
+    {
+      "id": "sleep-timer-False-8",
+      "function": "sleep_timer",
+      "inputs": {
+        "slot": 8,
+        "fall": false
+      },
+      "expected": "FFFFFFFF02000D0B081E04"
+    },
+    {
+      "id": "sleep-timer-True-0",
+      "function": "sleep_timer",
+      "inputs": {
+        "slot": 0,
+        "fall": true
+      },
+      "expected": "FFFFFFFF0200150B001E04"
+    },
+    {
+      "id": "sleep-timer-True-1",
+      "function": "sleep_timer",
+      "inputs": {
+        "slot": 1,
+        "fall": true
+      },
+      "expected": "FFFFFFFF0200150B011F04"
+    },
+    {
+      "id": "sleep-timer-True-4",
+      "function": "sleep_timer",
+      "inputs": {
+        "slot": 4,
+        "fall": true
+      },
+      "expected": "FFFFFFFF0200150B042204"
+    },
+    {
+      "id": "report-month-0",
+      "function": "sleep_report",
+      "inputs": {
+        "kind": "month",
+        "offset": 0
+      },
+      "expected": "FFFFFFFF0200030B1E2A04"
+    },
+    {
+      "id": "report-real-0",
+      "function": "sleep_report",
+      "inputs": {
+        "kind": "real",
+        "offset": 0
+      },
+      "expected": "FFFFFFFF0200030B010D04"
+    },
+    {
+      "id": "report-timer-0",
+      "function": "sleep_report",
+      "inputs": {
+        "kind": "timer",
+        "offset": 0
+      },
+      "expected": "FFFFFFFF0200160B001F04"
+    },
+    {
+      "id": "report-day-0",
+      "function": "sleep_report",
+      "inputs": {
+        "kind": "day",
+        "offset": 0
+      },
+      "expected": "FFFFFFFF0200130B001C04"
+    },
+    {
+      "id": "report-day-29",
+      "function": "sleep_report",
+      "inputs": {
+        "kind": "day",
+        "offset": 29
+      },
+      "expected": "FFFFFFFF0200130B1D3904"
+    },
+    {
+      "id": "alarm-True-{}",
+      "function": "alarm",
+      "inputs": {
+        "enabled": true,
+        "hour": 6,
+        "minute": 30,
+        "week_map": {},
+        "mode": "01",
+        "massage": true,
+        "music": "11"
+      },
+      "expected": "FFFFFFFF010002130106300000000101115C04"
+    },
+    {
+      "id": "alarm-False-{'1': True, '7': True}",
+      "function": "alarm",
+      "inputs": {
+        "enabled": false,
+        "hour": 6,
+        "minute": 30,
+        "week_map": {
+          "1": true,
+          "7": true
+        },
+        "mode": "01",
+        "massage": true,
+        "music": "11"
+      },
+      "expected": "FFFFFFFF01000213A106300082010101117F05"
+    },
+    {
+      "id": "alarm-True-{'1': False}",
+      "function": "alarm",
+      "inputs": {
+        "enabled": true,
+        "hour": 6,
+        "minute": 30,
+        "week_map": {
+          "1": false
+        },
+        "mode": "01",
+        "massage": true,
+        "music": "11"
+      },
+      "expected": "FFFFFFFF010002130106300000010101115D04"
+    },
+    {
+      "id": "thermal-timer-01-1",
+      "function": "thermal_timer",
+      "inputs": {
+        "hour": 21,
+        "minute": 30,
+        "mode": "01",
+        "gear": 1
+      },
+      "expected": "FFFFFFFFFE14000200002130000101000000B589"
+    },
+    {
+      "id": "thermal-timer-01-4",
+      "function": "thermal_timer",
+      "inputs": {
+        "hour": 21,
+        "minute": 30,
+        "mode": "01",
+        "gear": 4
+      },
+      "expected": "FFFFFFFFFE14000200002130000104000000B545"
+    },
+    {
+      "id": "thermal-timer-02-1",
+      "function": "thermal_timer",
+      "inputs": {
+        "hour": 21,
+        "minute": 30,
+        "mode": "02",
+        "gear": 1
+      },
+      "expected": "FFFFFFFFFE14000200002130000201000000F189"
+    },
+    {
+      "id": "thermal-timer-02-4",
+      "function": "thermal_timer",
+      "inputs": {
+        "hour": 21,
+        "minute": 30,
+        "mode": "02",
+        "gear": 4
+      },
+      "expected": "FFFFFFFFFE14000200002130000204000000F145"
+    },
+    {
+      "id": "hex-ff00af",
+      "function": "hex_decode",
+      "inputs": {
+        "s": "ff00af"
+      },
+      "expected": "FF00AF"
+    },
+    {
+      "id": "hex-F",
+      "function": "hex_decode",
+      "inputs": {
+        "s": "F"
+      },
+      "expected": null
+    },
+    {
+      "id": "hex-GG",
+      "function": "hex_decode",
+      "inputs": {
+        "s": "GG"
+      },
+      "expected": null
+    },
+    {
+      "id": "hex- FF ",
+      "function": "hex_decode",
+      "inputs": {
+        "s": " FF "
+      },
+      "expected": "FF"
+    },
+    {
+      "id": "final-literal:DianDongSetActivity:385:level 0",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000023"
+      },
+      "expected": "FFFFFFFF050000002396D9"
+    },
+    {
+      "id": "final-literal:DianDongSetActivity:385:level 1",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000123"
+      },
+      "expected": "FFFFFFFF05000001239749"
+    },
+    {
+      "id": "final-literal:DianDongSetActivity:385:level 2",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000223"
+      },
+      "expected": "FFFFFFFF050000022397B9"
+    },
+    {
+      "id": "final-literal:DianDongSetActivity:385:level 3",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000323"
+      },
+      "expected": "FFFFFFFF05000003239629"
+    },
+    {
+      "id": "final-literal:DianDongSetActivity:385:level 4",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000423"
+      },
+      "expected": "FFFFFFFF05000004239419"
+    },
+    {
+      "id": "final-literal:DianDongSetActivity:385:level 5",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000523"
+      },
+      "expected": "FFFFFFFF05000005239589"
+    },
+    {
+      "id": "final-literal:DianDongSetActivity:385:level 6",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000623"
+      },
+      "expected": "FFFFFFFF05000006239579"
+    },
+    {
+      "id": "final-literal:DianDongSetActivity:385:level 7",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000723"
+      },
+      "expected": "FFFFFFFF050000072394E9"
+    },
+    {
+      "id": "final-literal:DianDongSetActivity:385:level 8",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000823"
+      },
+      "expected": "FFFFFFFF05000008239119"
+    },
+    {
+      "id": "final-literal:DianDongSetActivity:385:level 9",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000923"
+      },
+      "expected": "FFFFFFFF05000009239089"
+    },
+    {
+      "id": "final-literal:DianDongSetActivity:385:level 10",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000A23"
+      },
+      "expected": "FFFFFFFF0500000A239079"
+    },
+    {
+      "id": "final-literal:PressSetActivity:224",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFF0B020400"
+      },
+      "expected": "FFFFFFFFFF0B020400AE30"
+    },
+    {
+      "id": "final-literal:SleepAdjustActivity:243:caller line 188",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000203"
+      },
+      "expected": "FFFFFFFF05000002039661"
+    },
+    {
+      "id": "final-literal:SleepAdjustActivity:243:caller line 204",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000201"
+      },
+      "expected": "FFFFFFFF050000020117A0"
+    },
+    {
+      "id": "final-literal:SleepAdjustActivity:243:caller line 218",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000206"
+      },
+      "expected": "FFFFFFFF05000002065662"
+    },
+    {
+      "id": "final-literal:SleepAdjustActivity:243:caller line 232",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000020D"
+      },
+      "expected": "FFFFFFFF050000020D17A5"
+    },
+    {
+      "id": "final-literal:SleepAdjustActivity:261:caller line 181",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000204"
+      },
+      "expected": "FFFFFFFF0500000204D7A3"
+    },
+    {
+      "id": "final-literal:SleepAdjustActivity:261:caller line 197",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000202"
+      },
+      "expected": "FFFFFFFF050000020257A1"
+    },
+    {
+      "id": "final-literal:SleepAdjustActivity:261:caller line 211",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0500000207"
+      },
+      "expected": "FFFFFFFF050000020797A2"
+    },
+    {
+      "id": "final-literal:SleepAdjustActivity:261:caller line 225",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF050000020E"
+      },
+      "expected": "FFFFFFFF050000020E57A4"
+    },
+    {
+      "id": "final-literal:KuaijieK11Fragment:203",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0300280009"
+      },
+      "expected": "FFFFFFFF03002800091F0E"
+    },
+    {
+      "id": "final-literal:KuaijieK11Fragment:205",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0300310009"
+      },
+      "expected": "FFFFFFFF0300310009CEC9"
+    },
+    {
+      "id": "final-literal:KuaijieK11Fragment:207",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0300160009"
+      },
+      "expected": "FFFFFFFF03001600097EC2"
+    },
+    {
+      "id": "final-literal:KuaijieK11Fragment:209",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF03001F0009"
+      },
+      "expected": "FFFFFFFF03001F0009AEC0"
+    },
+    {
+      "id": "final-literal:KuaijieK11Fragment:211",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF03003A0009"
+      },
+      "expected": "FFFFFFFF03003A0009BF0B"
+    },
+    {
+      "id": "final-literal:KuaijieK2Fragment:213",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0300280003"
+      },
+      "expected": "FFFFFFFF03002800039F09"
+    },
+    {
+      "id": "final-literal:KuaijieK2Fragment:215",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0300300003"
+      },
+      "expected": "FFFFFFFF03003000031F0E"
+    },
+    {
+      "id": "final-literal:KuaijieK2Fragment:217",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0300180003"
+      },
+      "expected": "FFFFFFFF03001800039F06"
+    },
+    {
+      "id": "final-literal:KuaijieK2Fragment:219",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0300200003"
+      },
+      "expected": "FFFFFFFF03002000031ECB"
+    },
+    {
+      "id": "final-literal:KuaijieK2Fragment:221",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0300380003"
+      },
+      "expected": "FFFFFFFF03003800039ECC"
+    },
+    {
+      "id": "final-literal:KuaijieK3Fragment:183",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0300240003"
+      },
+      "expected": "FFFFFFFF03002400035F0A"
+    },
+    {
+      "id": "final-literal:KuaijieK3Fragment:185",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF03002C0003"
+      },
+      "expected": "FFFFFFFF03002C0003DEC8"
+    },
+    {
+      "id": "final-literal:KuaijieK3Fragment:187",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0300140003"
+      },
+      "expected": "FFFFFFFF03001400035F05"
+    },
+    {
+      "id": "final-literal:KuaijieK3Fragment:189",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF03001C0003"
+      },
+      "expected": "FFFFFFFF03001C0003DEC7"
+    },
+    {
+      "id": "final-literal:KuaijieK4Fragment:182",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0300640009"
+      },
+      "expected": "FFFFFFFF0300640009DED9"
+    },
+    {
+      "id": "final-literal:KuaijieK4Fragment:184",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF03006D0009"
+      },
+      "expected": "FFFFFFFF03006D00090EDB"
+    },
+    {
+      "id": "final-literal:KuaijieK4Fragment:186",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF0300760009"
+      },
+      "expected": "FFFFFFFF03007600097EDC"
+    },
+    {
+      "id": "final-literal:KuaijieK4Fragment:188",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFF03007F0009"
+      },
+      "expected": "FFFFFFFF03007F0009AEDE"
+    },
+    {
+      "id": "final-literal:LengnuanFragment:58",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFE1000010000000000AA"
+      },
+      "expected": "FFFFFFFFFE1000010000000000AA5D4B"
+    },
+    {
+      "id": "final-literal:LengnuanFragment:183",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFE1000000000000000AA"
+      },
+      "expected": "FFFFFFFFFE1000000000000000AA4D8B"
+    },
+    {
+      "id": "final-literal:LengnuanFragment:279:thermal slider table index 0",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFE1000050000040000AA"
+      },
+      "expected": "FFFFFFFFFE1000050000040000AA19BB"
+    },
+    {
+      "id": "final-literal:LengnuanFragment:279:thermal slider table index 1",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFE1000050000030000AA"
+      },
+      "expected": "FFFFFFFFFE1000050000030000AA18CF"
+    },
+    {
+      "id": "final-literal:LengnuanFragment:279:thermal slider table index 2",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFE1000050000020000AA"
+      },
+      "expected": "FFFFFFFFFE1000050000020000AA1933"
+    },
+    {
+      "id": "final-literal:LengnuanFragment:279:thermal slider table index 3",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFE1000050000010000AA"
+      },
+      "expected": "FFFFFFFFFE1000050000010000AA1977"
+    },
+    {
+      "id": "final-literal:LengnuanFragment:279:thermal slider table index 4",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFE1000060000000000AA"
+      },
+      "expected": "FFFFFFFFFE1000060000000000AA2B8B"
+    },
+    {
+      "id": "final-literal:LengnuanFragment:279:thermal slider table index 5",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFE1000040000010000AA"
+      },
+      "expected": "FFFFFFFFFE1000040000010000AA09B7"
+    },
+    {
+      "id": "final-literal:LengnuanFragment:279:thermal slider table index 6",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFE1000040000020000AA"
+      },
+      "expected": "FFFFFFFFFE1000040000020000AA09F3"
+    },
+    {
+      "id": "final-literal:LengnuanFragment:279:thermal slider table index 7",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFE1000040000030000AA"
+      },
+      "expected": "FFFFFFFFFE1000040000030000AA080F"
+    },
+    {
+      "id": "final-literal:LengnuanFragment:279:thermal slider table index 8",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFE1000040000040000AA"
+      },
+      "expected": "FFFFFFFFFE1000040000040000AA097B"
+    },
+    {
+      "id": "final-literal:LengnuanFragment:294",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFE1000030000010000AA"
+      },
+      "expected": "FFFFFFFFFE1000030000010000AA7F77"
+    },
+    {
+      "id": "final-literal:LengnuanFragment:296",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFE1000030000000000AA"
+      },
+      "expected": "FFFFFFFFFE1000030000000000AA7E8B"
+    },
+    {
+      "id": "final-literal:QinangFragment:133",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFF14020900000000000000000000"
+      },
+      "expected": "FFFFFFFFFF14020900000000000000000000A640"
+    },
+    {
+      "id": "final-literal:QinangFragment:172",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFF0D030C000100"
+      },
+      "expected": "FFFFFFFFFF0D030C0001004222"
+    },
+    {
+      "id": "final-literal:QinangFragment:174",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFF0D030C000000"
+      },
+      "expected": "FFFFFFFFFF0D030C00000043B2"
+    },
+    {
+      "id": "final-literal:QinangFragment:184",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFF14030D00000300000000000000"
+      },
+      "expected": "FFFFFFFFFF14030D000003000000000000000EA6"
+    },
+    {
+      "id": "final-literal:QinangFragment:186",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFF14030D00010300000000000000"
+      },
+      "expected": "FFFFFFFFFF14030D000103000000000000000336"
+    },
+    {
+      "id": "final-literal:QinangFragment:193",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFF14030D00001200000000000000"
+      },
+      "expected": "FFFFFFFFFF14030D00001200000000000000CE66"
+    },
+    {
+      "id": "final-literal:QinangFragment:195",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFF14030D00011200000000000000"
+      },
+      "expected": "FFFFFFFFFF14030D00011200000000000000C3F6"
+    },
+    {
+      "id": "final-literal:QinangFragment:302",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFF0B010000"
+      },
+      "expected": "FFFFFFFFFF0B0100005CF0"
+    },
+    {
+      "id": "final-literal:QinangFragment:313",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFF0B011200"
+      },
+      "expected": "FFFFFFFFFF0B0112005050"
+    },
+    {
+      "id": "final-literal:QinangFragment:320",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFF0B010600"
+      },
+      "expected": "FFFFFFFFFF0B0106005F50"
+    },
+    {
+      "id": "final-literal:QinangFragment:326",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFF0B010400"
+      },
+      "expected": "FFFFFFFFFF0B0104005E30"
+    },
+    {
+      "id": "final-literal:QinangFragment:342",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFF0B010300"
+      },
+      "expected": "FFFFFFFFFF0B0103005C00"
+    },
+    {
+      "id": "final-literal:QinangFragment:349",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFF0B010900"
+      },
+      "expected": "FFFFFFFFFF0B0109005AA0"
+    },
+    {
+      "id": "final-literal:QinangFragment:355",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFF0B010500"
+      },
+      "expected": "FFFFFFFFFF0B0105005FA0"
+    },
+    {
+      "id": "final-literal:QinangFragment:361",
+      "function": "addcrc",
+      "inputs": {
+        "s": "FFFFFFFFFF0B010C00"
+      },
+      "expected": "FFFFFFFFFF0B010C0059F0"
+    },
+    {
+      "id": "java-hex-field-0",
+      "function": "hx",
+      "inputs": {
+        "n": 0
+      },
+      "expected": "00"
+    },
+    {
+      "id": "java-hex-field-255",
+      "function": "hx",
+      "inputs": {
+        "n": 255
+      },
+      "expected": "FF"
+    },
+    {
+      "id": "java-hex-field-256",
+      "function": "hx",
+      "inputs": {
+        "n": 256
+      },
+      "expected": "100"
+    },
+    {
+      "id": "java-hex-field--1",
+      "function": "hx",
+      "inputs": {
+        "n": -1
+      },
+      "expected": "06"
+    },
+    {
+      "id": "java-hex-field--16",
+      "function": "hx",
+      "inputs": {
+        "n": -16
+      },
+      "expected": "60"
+    }
+  ],
+  "literal_commands": {
+    "AlarmActivity:296": "FFFFFFFF0100130B819C04",
+    "AlarmActivity:300": "FFFFFFFF0100130B829D04",
+    "AlarmActivity:304": "FFFFFFFF0100130B839E04",
+    "AlarmActivity:306": "FFFFFFFF0100130B849F04",
+    "AlarmActivity:308": "FFFFFFFF0100130B85A004",
+    "AlarmActivity:314": "FFFFFFFF0100130B001B04",
+    "AnmoSetActivity:260": "FFFFFFFFFF0D02080003007FB2",
+    "ChangeDeviceActivity:96": "FFFFFFFF010026140F0000000000000000004604",
+    "ChangeDeviceActivity:213": "FFFFFFFF010028140A0000000000000001004404",
+    "ChangeDeviceActivity:219": "FFFFFFFF010028140C0000000000000001004604",
+    "ChangeDeviceActivity:225": "FFFFFFFF010028140B0000000000000001004504",
+    "ConnectMcuActivity:311": "FFFFFFFF010026140F0000000000000000004604",
+    "DianDongSetActivity:270": "FFFFFFFF050000001516CF",
+    "DianDongSetActivity:275": "FFFFFFFF0500000014D70F",
+    "DianDongSetActivity:281": "FFFFFFFF0500000011170C",
+    "DianDongSetActivity:286": "FFFFFFFF0500000010D6CC",
+    "DianDongSetActivity:292": "FFFFFFFF050000001396CD",
+    "DianDongSetActivity:297": "FFFFFFFF0500000012570D",
+    "DianDongSetActivity:385:level 0": "FFFFFFFF050000002396D9",
+    "DianDongSetActivity:385:level 1": "FFFFFFFF05000001239749",
+    "DianDongSetActivity:385:level 2": "FFFFFFFF050000022397B9",
+    "DianDongSetActivity:385:level 3": "FFFFFFFF05000003239629",
+    "DianDongSetActivity:385:level 4": "FFFFFFFF05000004239419",
+    "DianDongSetActivity:385:level 5": "FFFFFFFF05000005239589",
+    "DianDongSetActivity:385:level 6": "FFFFFFFF05000006239579",
+    "DianDongSetActivity:385:level 7": "FFFFFFFF050000072394E9",
+    "DianDongSetActivity:385:level 8": "FFFFFFFF05000008239119",
+    "DianDongSetActivity:385:level 9": "FFFFFFFF05000009239089",
+    "DianDongSetActivity:385:level 10": "FFFFFFFF0500000A239079",
+    "DianDongSetActivity:490": "FFFFFFFF0100130B819C04",
+    "DianDongSetActivity:494": "FFFFFFFF0100130B829D04",
+    "DianDongSetActivity:498": "FFFFFFFF0100130B839E04",
+    "DianDongSetActivity:500": "FFFFFFFF0100130B849F04",
+    "DianDongSetActivity:502": "FFFFFFFF0100130B85A004",
+    "DianDongSetActivity:508": "FFFFFFFF0100130B001B04",
+    "DianDongSetActivity:515": "FFFFFFFF01001C14010000000000000000002E04",
+    "DianDongSetActivity:522": "FFFFFFFF01001C14030000000000000000003004",
+    "DianDongSetActivity:525": "FFFFFFFF050000001916CA",
+    "DianDongSetActivity:535": "FFFFFFFF050000001B970B",
+    "DianDongSetActivity:545": "FFFFFFFF050000001A56CB",
+    "DianDongSetActivity:557": "FFFFFFFF050000001CD6C9",
+    "DianDongSetActivity:559": "FFFFFFFF050000001656CE",
+    "DianDongSetActivity:569": "FFFFFFFF050000001CD6C9",
+    "DianDongSetActivity:571": "FFFFFFFF0500000017970E",
+    "DianDongSetActivity:581": "FFFFFFFF050000001CD6C9",
+    "DianDongSetActivity:583": "FFFFFFFF0500000018D70A",
+    "DianDongSetActivity:629": "FFFFFFFF01001C14020000000000000000002F04",
+    "DianDongSetActivity:631": "FFFFFFFF01001C14040000000000000000003104",
+    "HomeActivity:142": "FFFFFFFF01000A0B0F2104",
+    "HomeActivity:311": "FFFFFFFF01000A0B0F2104",
+    "HomeActivity:321": "FFFFFFFF02000E0B001704",
+    "HomeActivity:455": "FFFFFFFF050005FF23C728",
+    "HomeActivity:465": "FFFFFFFF02000E0B001704",
+    "MainMcuActivity:182": "FFFFFFFF010026140F0000000000000000004604",
+    "PressSetActivity:224": "FFFFFFFFFF0B020400AE30",
+    "Setting2Activity:238": "FFFFFFFF010026140F0000000000000000004604",
+    "SleepAdjustActivity:102": "FFFFFFFF02000A0A1204",
+    "SleepAdjustActivity:165": "FFFFFFFF0200100B001904",
+    "SleepAdjustActivity:243:caller line 188": "FFFFFFFF05000002039661",
+    "SleepAdjustActivity:243:caller line 204": "FFFFFFFF050000020117A0",
+    "SleepAdjustActivity:243:caller line 218": "FFFFFFFF05000002065662",
+    "SleepAdjustActivity:243:caller line 232": "FFFFFFFF050000020D17A5",
+    "SleepAdjustActivity:251": "FFFFFFFF0500000000D700",
+    "SleepAdjustActivity:255": "FFFFFFFF02000F0B001804",
+    "SleepAdjustActivity:261:caller line 181": "FFFFFFFF0500000204D7A3",
+    "SleepAdjustActivity:261:caller line 197": "FFFFFFFF050000020257A1",
+    "SleepAdjustActivity:261:caller line 211": "FFFFFFFF050000020797A2",
+    "SleepAdjustActivity:261:caller line 225": "FFFFFFFF050000020E57A4",
+    "SleepAdjustActivity:269": "FFFFFFFF0500000000D700",
+    "SleepAdjustActivity:273": "FFFFFFFF02000F0B001804",
+    "SleepAdjustActivity:281": "FFFFFFFF02000F0B001804",
+    "SleepAdjustActivity:289": "FFFFFFFF02000F0B001804",
+    "SleepAdjustActivity:411": "FFFFFFFF02000F0B001804",
+    "SleepDataEntryActivity:105": "FFFFFFFF02000A0A1204",
+    "SleepDataEntryActivity:126": "FFFFFFFF02000A0A1204",
+    "SleepDataEntryActivity:189": "FFFFFFFF0500000208D7A6",
+    "SleepDataEntryActivity:202": "FFFFFFFF02000A0A1204",
+    "SleepDataEntryActivity:248": "FFFFFFFF0200090D0100001504",
+    "SleepDataEntryActivity:253": "FFFFFFFF0200090D0200001604",
+    "SleepDataEntryActivity:268": "FFFFFFFF0200120C0A466C04",
+    "SleepDataEntryActivity:293": "FFFFFFFF0200090F03000000001904",
+    "SleepDayReportActivity:88": "FFFFFFFF02000A0A1204",
+    "AnmoFragment:88": "FFFFFFFF0100090B001104",
+    "AnmoFragment:90": "FFFFFFFF0100090B011204",
+    "AnmoFragment:100": "FFFFFFFF050000001516CF",
+    "AnmoFragment:105": "FFFFFFFF0500000014D70F",
+    "AnmoFragment:111": "FFFFFFFF0500000011170C",
+    "AnmoFragment:116": "FFFFFFFF0500000010D6CC",
+    "AnmoFragment:122": "FFFFFFFF050000001396CD",
+    "AnmoFragment:127": "FFFFFFFF0500000012570D",
+    "AnmoFragment:165": "FFFFFFFF050000001CD6C9",
+    "AnmoFragment:167": "FFFFFFFF050000001656CE",
+    "AnmoFragment:177": "FFFFFFFF050000001CD6C9",
+    "AnmoFragment:179": "FFFFFFFF0500000017970E",
+    "AnmoFragment:189": "FFFFFFFF050000001CD6C9",
+    "AnmoFragment:191": "FFFFFFFF0500000018D70A",
+    "DengguangFragment:99": "FFFFFFFF0100090B001104",
+    "DengguangFragment:101": "FFFFFFFF0100090B011204",
+    "DengguangFragment:176:level 0": "FFFFFFFF050000002396D9",
+    "DengguangFragment:176:level 1": "FFFFFFFF05000001239749",
+    "DengguangFragment:176:level 2": "FFFFFFFF050000022397B9",
+    "DengguangFragment:176:level 3": "FFFFFFFF05000003239629",
+    "DengguangFragment:176:level 4": "FFFFFFFF05000004239419",
+    "DengguangFragment:176:level 5": "FFFFFFFF05000005239589",
+    "DengguangFragment:176:level 6": "FFFFFFFF05000006239579",
+    "DengguangFragment:176:level 7": "FFFFFFFF050000072394E9",
+    "DengguangFragment:176:level 8": "FFFFFFFF05000008239119",
+    "DengguangFragment:176:level 9": "FFFFFFFF05000009239089",
+    "DengguangFragment:176:level 10": "FFFFFFFF0500000A239079",
+    "DengguangFragment:181": "FFFFFFFF050005FF23C728",
+    "DengguangFragment:208": "FFFFFFFF050000001916CA",
+    "DengguangFragment:218": "FFFFFFFF050000001B970B",
+    "DengguangFragment:228": "FFFFFFFF050000001A56CB",
+    "DiandongFragment:135": "FFFFFFFF01000C0B0F2304",
+    "DiandongFragment:319": "FFFFFFFF01002A14000000000000000000003B04",
+    "DiandongFragment:349": "FFFFFFFF0500000000D700",
+    "DiandongFragment:387": "FFFFFFFF0500000000D700",
+    "DiandongFragment:392": "FFFFFFFF0500000004D6C3",
+    "DiandongFragment:412": "FFFFFFFF0500000000D700",
+    "DiandongFragment:417": "FFFFFFFF050000000796C2",
+    "DiandongFragment:452": "FFFFFFFF050000004A56F7",
+    "DiandongFragment:454": "FFFFFFFF050000004B9737",
+    "DiandongFragment:464": "FFFFFFFF050000011CD759",
+    "DiandongFragment:466": "FFFFFFFF050000001CD6C9",
+    "DiandongFragment:566": "FFFFFFFF0500000008D6C6",
+    "DiandongFragment:578": "FFFFFFFF050000A10A2E97",
+    "DiandongFragment:580": "FFFFFFFF050000000A5707",
+    "DiandongFragment:594": "FFFFFFFF050000B10BE297",
+    "DiandongFragment:596": "FFFFFFFF050000000B96C7",
+    "DiandongFragment:610": "FFFFFFFF05000051052A93",
+    "DiandongFragment:612": "FFFFFFFF05000000051703",
+    "DiandongFragment:626": "FFFFFFFF05000091097A96",
+    "DiandongFragment:628": "FFFFFFFF05000000091706",
+    "DiandongFragment:636": "FFFFFFFF050000006A572F",
+    "DiandongFragment:648": "FFFFFFFF050000F10FD294",
+    "DiandongFragment:650": "FFFFFFFF050000000F9704",
+    "DiandongFragment:663": "FFFFFFFF0500009F097EF6",
+    "DiandongFragment:665": "FFFFFFFF05000090097B06",
+    "DiandongFragment:672": "FFFFFFFF050000FF0FD6F4",
+    "DiandongFragment:674": "FFFFFFFF050000F00FD304",
+    "DiandongFragment:681": "FFFFFFFF0500005F052EF3",
+    "DiandongFragment:683": "FFFFFFFF05000050052B03",
+    "DiandongFragment:690": "FFFFFFFF050000BF0BE6F7",
+    "DiandongFragment:692": "FFFFFFFF050000B00BE307",
+    "DiandongFragment:699": "FFFFFFFF050000AF0A2AF7",
+    "DiandongFragment:701": "FFFFFFFF050000A00A2F07",
+    "KuaijieK11Fragment:50": "FFFFFFFF0100090B001104",
+    "KuaijieK11Fragment:52": "FFFFFFFF0100090B011204",
+    "KuaijieK11Fragment:93": "FFFFFFFF0500000000D700",
+    "KuaijieK11Fragment:136": "FFFFFFFF050000BF0BE6F7",
+    "KuaijieK11Fragment:138": "FFFFFFFF050000B00BE307",
+    "KuaijieK11Fragment:145": "FFFFFFFF050000AF0A2AF7",
+    "KuaijieK11Fragment:147": "FFFFFFFF050000A00A2F07",
+    "KuaijieK11Fragment:203": "FFFFFFFF03002800091F0E",
+    "KuaijieK11Fragment:205": "FFFFFFFF0300310009CEC9",
+    "KuaijieK11Fragment:207": "FFFFFFFF03001600097EC2",
+    "KuaijieK11Fragment:209": "FFFFFFFF03001F0009AEC0",
+    "KuaijieK11Fragment:211": "FFFFFFFF03003A0009BF0B",
+    "KuaijieK11Fragment:226": "FFFFFFFF0500000008D6C6",
+    "KuaijieK11Fragment:232": "FFFFFFFF050000002916DE",
+    "KuaijieK11Fragment:243": "FFFFFFFF050000A10A2E97",
+    "KuaijieK11Fragment:255": "FFFFFFFF050000B10BE297",
+    "KuaijieK11Fragment:268": "FFFFFFFF05000051052A93",
+    "KuaijieK11Fragment:270": "FFFFFFFF05000000051703",
+    "KuaijieK11Fragment:285": "FFFFFFFF05000091097A96",
+    "KuaijieK11Fragment:287": "FFFFFFFF05000000091706",
+    "KuaijieK11Fragment:295": "FFFFFFFF0500000028D71E",
+    "KuaijieK11Fragment:301": "FFFFFFFF050000002A56DF",
+    "KuaijieK11Fragment:307": "FFFFFFFF05000000211718",
+    "KuaijieK11Fragment:313": "FFFFFFFF05000000225719",
+    "KuaijieK11Fragment:326": "FFFFFFFF050000F10FD294",
+    "KuaijieK11Fragment:328": "FFFFFFFF050000000F9704",
+    "KuaijieK11Fragment:341": "FFFFFFFF0500009F097EF6",
+    "KuaijieK11Fragment:343": "FFFFFFFF05000090097B06",
+    "KuaijieK11Fragment:350": "FFFFFFFF050000FF0FD6F4",
+    "KuaijieK11Fragment:352": "FFFFFFFF050000F00FD304",
+    "KuaijieK11Fragment:359": "FFFFFFFF0500005F052EF3",
+    "KuaijieK11Fragment:361": "FFFFFFFF05000050052B03",
+    "KuaijieK1Fragment:50": "FFFFFFFF0100090B001104",
+    "KuaijieK1Fragment:52": "FFFFFFFF0100090B011204",
+    "KuaijieK1Fragment:93": "FFFFFFFF0500000000D700",
+    "KuaijieK1Fragment:136": "FFFFFFFF050000BF0BE6F7",
+    "KuaijieK1Fragment:138": "FFFFFFFF050000B00BE307",
+    "KuaijieK1Fragment:145": "FFFFFFFF050000AF0A2AF7",
+    "KuaijieK1Fragment:147": "FFFFFFFF050000A00A2F07",
+    "KuaijieK1Fragment:203": "FFFFFFFF03002800091F0E",
+    "KuaijieK1Fragment:205": "FFFFFFFF0300310009CEC9",
+    "KuaijieK1Fragment:207": "FFFFFFFF03001600097EC2",
+    "KuaijieK1Fragment:209": "FFFFFFFF03001F0009AEC0",
+    "KuaijieK1Fragment:211": "FFFFFFFF03003A0009BF0B",
+    "KuaijieK1Fragment:226": "FFFFFFFF0500000008D6C6",
+    "KuaijieK1Fragment:237": "FFFFFFFF050000A10A2E97",
+    "KuaijieK1Fragment:249": "FFFFFFFF050000B10BE297",
+    "KuaijieK1Fragment:262": "FFFFFFFF05000051052A93",
+    "KuaijieK1Fragment:264": "FFFFFFFF05000000051703",
+    "KuaijieK1Fragment:279": "FFFFFFFF05000091097A96",
+    "KuaijieK1Fragment:281": "FFFFFFFF05000000091706",
+    "KuaijieK1Fragment:289": "FFFFFFFF05000500E4C74A",
+    "KuaijieK1Fragment:295": "FFFFFFFF0500000028D71E",
+    "KuaijieK1Fragment:301": "FFFFFFFF050000002916DE",
+    "KuaijieK1Fragment:307": "FFFFFFFF05000500E6468B",
+    "KuaijieK1Fragment:313": "FFFFFFFF050000004E5734",
+    "KuaijieK1Fragment:326": "FFFFFFFF050000F10FD294",
+    "KuaijieK1Fragment:328": "FFFFFFFF050000000F9704",
+    "KuaijieK1Fragment:341": "FFFFFFFF0500009F097EF6",
+    "KuaijieK1Fragment:343": "FFFFFFFF05000090097B06",
+    "KuaijieK1Fragment:350": "FFFFFFFF050000FF0FD6F4",
+    "KuaijieK1Fragment:352": "FFFFFFFF050000F00FD304",
+    "KuaijieK1Fragment:359": "FFFFFFFF0500005F052EF3",
+    "KuaijieK1Fragment:361": "FFFFFFFF05000050052B03",
+    "KuaijieK2Fragment:46": "FFFFFFFF0100090B001104",
+    "KuaijieK2Fragment:48": "FFFFFFFF0100090B011204",
+    "KuaijieK2Fragment:89": "FFFFFFFF0500000000D700",
+    "KuaijieK2Fragment:127": "FFFFFFFF050000BF0BE6F7",
+    "KuaijieK2Fragment:129": "FFFFFFFF050000B00BE307",
+    "KuaijieK2Fragment:136": "FFFFFFFF050000AF0A2AF7",
+    "KuaijieK2Fragment:138": "FFFFFFFF050000A00A2F07",
+    "KuaijieK2Fragment:213": "FFFFFFFF03002800039F09",
+    "KuaijieK2Fragment:215": "FFFFFFFF03003000031F0E",
+    "KuaijieK2Fragment:217": "FFFFFFFF03001800039F06",
+    "KuaijieK2Fragment:219": "FFFFFFFF03002000031ECB",
+    "KuaijieK2Fragment:221": "FFFFFFFF03003800039ECC",
+    "KuaijieK2Fragment:223": "FFFFFFFF03002800091F0E",
+    "KuaijieK2Fragment:225": "FFFFFFFF0300310009CEC9",
+    "KuaijieK2Fragment:227": "FFFFFFFF03001600097EC2",
+    "KuaijieK2Fragment:229": "FFFFFFFF03001F0009AEC0",
+    "KuaijieK2Fragment:231": "FFFFFFFF03003A0009BF0B",
+    "KuaijieK2Fragment:247": "FFFFFFFF0500000008D6C6",
+    "KuaijieK2Fragment:258": "FFFFFFFF050000A10A2E97",
+    "KuaijieK2Fragment:270": "FFFFFFFF050000B10BE297",
+    "KuaijieK2Fragment:283": "FFFFFFFF05000051052A93",
+    "KuaijieK2Fragment:285": "FFFFFFFF05000000051703",
+    "KuaijieK2Fragment:300": "FFFFFFFF05000091097A96",
+    "KuaijieK2Fragment:302": "FFFFFFFF05000000091706",
+    "KuaijieK2Fragment:317": "FFFFFFFF050000F10FD294",
+    "KuaijieK2Fragment:319": "FFFFFFFF050000000F9704",
+    "KuaijieK2Fragment:332": "FFFFFFFF0500009F097EF6",
+    "KuaijieK2Fragment:334": "FFFFFFFF05000090097B06",
+    "KuaijieK2Fragment:341": "FFFFFFFF050000FF0FD6F4",
+    "KuaijieK2Fragment:343": "FFFFFFFF050000F00FD304",
+    "KuaijieK2Fragment:350": "FFFFFFFF0500005F052EF3",
+    "KuaijieK2Fragment:352": "FFFFFFFF05000050052B03",
+    "KuaijieK2MFragment:64": "FFFFFFFF0100090B001104",
+    "KuaijieK2MFragment:66": "FFFFFFFF0100090B011204",
+    "KuaijieK2MFragment:107": "FFFFFFFF0500000000D700",
+    "KuaijieK2MFragment:166": "FFFFFFFF050000BF0BE6F7",
+    "KuaijieK2MFragment:168": "FFFFFFFF050000B00BE307",
+    "KuaijieK2MFragment:175": "FFFFFFFF050000AF0A2AF7",
+    "KuaijieK2MFragment:177": "FFFFFFFF050000A00A2F07",
+    "KuaijieK2MFragment:266": "FFFFFFFF03002800039F09",
+    "KuaijieK2MFragment:268": "FFFFFFFF03003000031F0E",
+    "KuaijieK2MFragment:270": "FFFFFFFF03001800039F06",
+    "KuaijieK2MFragment:272": "FFFFFFFF03002000031ECB",
+    "KuaijieK2MFragment:274": "FFFFFFFF03003800039ECC",
+    "KuaijieK2MFragment:276": "FFFFFFFF03002800091F0E",
+    "KuaijieK2MFragment:278": "FFFFFFFF0300310009CEC9",
+    "KuaijieK2MFragment:280": "FFFFFFFF03001600097EC2",
+    "KuaijieK2MFragment:282": "FFFFFFFF03001F0009AEC0",
+    "KuaijieK2MFragment:284": "FFFFFFFF03003A0009BF0B",
+    "KuaijieK2MFragment:300": "FFFFFFFF050000006A572F",
+    "KuaijieK2MFragment:306": "FFFFFFFF0500000008D6C6",
+    "KuaijieK2MFragment:317": "FFFFFFFF050000A10A2E97",
+    "KuaijieK2MFragment:329": "FFFFFFFF050000B10BE297",
+    "KuaijieK2MFragment:342": "FFFFFFFF05000051052A93",
+    "KuaijieK2MFragment:344": "FFFFFFFF05000000051703",
+    "KuaijieK2MFragment:359": "FFFFFFFF05000091097A96",
+    "KuaijieK2MFragment:361": "FFFFFFFF05000000091706",
+    "KuaijieK2MFragment:373": "FFFFFFFF0100130BFF1A05",
+    "KuaijieK2MFragment:375": "FFFFFFFF0100130B001B04",
+    "KuaijieK2MFragment:389": "FFFFFFFF050000F10FD294",
+    "KuaijieK2MFragment:391": "FFFFFFFF050000000F9704",
+    "KuaijieK2MFragment:404": "FFFFFFFF0500009F097EF6",
+    "KuaijieK2MFragment:406": "FFFFFFFF05000090097B06",
+    "KuaijieK2MFragment:413": "FFFFFFFF050000FF0FD6F4",
+    "KuaijieK2MFragment:415": "FFFFFFFF050000F00FD304",
+    "KuaijieK2MFragment:422": "FFFFFFFF0500005F052EF3",
+    "KuaijieK2MFragment:424": "FFFFFFFF05000050052B03",
+    "KuaijieK2MFragment:457": "FFFFFFFF0100130B001B04",
+    "KuaijieK2MFragment:466": "FFFFFFFF0100150B001D04",
+    "KuaijieK3Fragment:46": "FFFFFFFF0100090B001104",
+    "KuaijieK3Fragment:48": "FFFFFFFF0100090B011204",
+    "KuaijieK3Fragment:85": "FFFFFFFF0500000000D700",
+    "KuaijieK3Fragment:125": "FFFFFFFF050000BF0BE6F7",
+    "KuaijieK3Fragment:127": "FFFFFFFF050000B00BE307",
+    "KuaijieK3Fragment:134": "FFFFFFFF050000AF0A2AF7",
+    "KuaijieK3Fragment:136": "FFFFFFFF050000A00A2F07",
+    "KuaijieK3Fragment:183": "FFFFFFFF03002400035F0A",
+    "KuaijieK3Fragment:185": "FFFFFFFF03002C0003DEC8",
+    "KuaijieK3Fragment:187": "FFFFFFFF03001400035F05",
+    "KuaijieK3Fragment:189": "FFFFFFFF03001C0003DEC7",
+    "KuaijieK3Fragment:204": "FFFFFFFF050000002E571C",
+    "KuaijieK3Fragment:210": "FFFFFFFF050000F10FD294",
+    "KuaijieK3Fragment:221": "FFFFFFFF050000A10A2E97",
+    "KuaijieK3Fragment:233": "FFFFFFFF050000B10BE297",
+    "KuaijieK3Fragment:246": "FFFFFFFF05000051052A93",
+    "KuaijieK3Fragment:248": "FFFFFFFF05000000051703",
+    "KuaijieK3Fragment:263": "FFFFFFFF05000091097A96",
+    "KuaijieK3Fragment:265": "FFFFFFFF05000000091706",
+    "KuaijieK3Fragment:273": "FFFFFFFF050000000796C2",
+    "KuaijieK3Fragment:279": "FFFFFFFF05000000065702",
+    "KuaijieK3Fragment:290": "FFFFFFFF0500009F097EF6",
+    "KuaijieK3Fragment:292": "FFFFFFFF05000090097B06",
+    "KuaijieK3Fragment:299": "FFFFFFFF0500005F052EF3",
+    "KuaijieK3Fragment:301": "FFFFFFFF05000050052B03",
+    "KuaijieK4Fragment:55": "FFFFFFFF0100090B001104",
+    "KuaijieK4Fragment:57": "FFFFFFFF0100090B011204",
+    "KuaijieK4Fragment:99": "FFFFFFFF0500000000D700",
+    "KuaijieK4Fragment:182": "FFFFFFFF0300640009DED9",
+    "KuaijieK4Fragment:184": "FFFFFFFF03006D00090EDB",
+    "KuaijieK4Fragment:186": "FFFFFFFF03007600097EDC",
+    "KuaijieK4Fragment:188": "FFFFFFFF03007F0009AEDE",
+    "KuaijieK4Fragment:211": "FFFFFFFF05000000391712",
+    "KuaijieK4Fragment:217": "FFFFFFFF050000003A5713",
+    "KuaijieK4Fragment:229": "FFFFFFFF05000011311A84",
+    "KuaijieK4Fragment:231": "FFFFFFFF050000003116D4",
+    "KuaijieK4Fragment:245": "FFFFFFFF05000021324E85",
+    "KuaijieK4Fragment:247": "FFFFFFFF050000003256D5",
+    "KuaijieK4Fragment:261": "FFFFFFFF05000031338285",
+    "KuaijieK4Fragment:263": "FFFFFFFF05000000339715",
+    "KuaijieK4Fragment:277": "FFFFFFFF0500004134E687",
+    "KuaijieK4Fragment:279": "FFFFFFFF0500000034D6D7",
+    "KuaijieK4Fragment:295": "FFFFFFFF050000003B96D3",
+    "KuaijieK4Fragment:301": "FFFFFFFF050000003CD711",
+    "KuaijieK4Fragment:307": "FFFFFFFF050000003D16D1",
+    "KuaijieK4Fragment:332": "FFFFFFFF0500001F311EE4",
+    "KuaijieK4Fragment:334": "FFFFFFFF05000010311B14",
+    "KuaijieK4Fragment:341": "FFFFFFFF0500002F324AE5",
+    "KuaijieK4Fragment:343": "FFFFFFFF05000020324F15",
+    "KuaijieK4Fragment:350": "FFFFFFFF0500003F3386E5",
+    "KuaijieK4Fragment:352": "FFFFFFFF05000030338315",
+    "KuaijieK4Fragment:359": "FFFFFFFF0500004F34E2E7",
+    "KuaijieK4Fragment:361": "FFFFFFFF0500004034E717",
+    "KuaijieK5Fragment:57": "FFFFFFFF0100090B001104",
+    "KuaijieK5Fragment:59": "FFFFFFFF0100090B011204",
+    "KuaijieK5Fragment:107": "FFFFFFFF0500000000D700",
+    "KuaijieK5Fragment:170": "FFFFFFFF0300640009DED9",
+    "KuaijieK5Fragment:172": "FFFFFFFF03006D00090EDB",
+    "KuaijieK5Fragment:174": "FFFFFFFF03007600097EDC",
+    "KuaijieK5Fragment:176": "FFFFFFFF03007F0009AEDE",
+    "KuaijieK5Fragment:192": "FFFFFFFF0500000008D6C6",
+    "KuaijieK5Fragment:204": "FFFFFFFF05000031338285",
+    "KuaijieK5Fragment:216": "FFFFFFFF0500004134E687",
+    "KuaijieK5Fragment:229": "FFFFFFFF05000011311A84",
+    "KuaijieK5Fragment:231": "FFFFFFFF050000003116D4",
+    "KuaijieK5Fragment:245": "FFFFFFFF05000021324E85",
+    "KuaijieK5Fragment:247": "FFFFFFFF050000003256D5",
+    "KuaijieK5Fragment:261": "FFFFFFFF05000031338285",
+    "KuaijieK5Fragment:263": "FFFFFFFF05000000339715",
+    "KuaijieK5Fragment:277": "FFFFFFFF0500004134E687",
+    "KuaijieK5Fragment:279": "FFFFFFFF0500000034D6D7",
+    "KuaijieK5Fragment:289": "FFFFFFFF050000003B96D3",
+    "KuaijieK5Fragment:300": "FFFFFFFF05000031338285",
+    "KuaijieK5Fragment:312": "FFFFFFFF0500004134E687",
+    "KuaijieK5Fragment:319": "FFFFFFFF050005003E46D1",
+    "KuaijieK5Fragment:357": "FFFFFFFF0500001F311EE4",
+    "KuaijieK5Fragment:360": "FFFFFFFF05000010311B14",
+    "KuaijieK5Fragment:368": "FFFFFFFF0500002F324AE5",
+    "KuaijieK5Fragment:371": "FFFFFFFF05000020324F15",
+    "KuaijieK5Fragment:379": "FFFFFFFF0500003F3386E5",
+    "KuaijieK5Fragment:382": "FFFFFFFF05000030338315",
+    "KuaijieK5Fragment:390": "FFFFFFFF0500003F3386E5",
+    "KuaijieK5Fragment:393": "FFFFFFFF05000030338315",
+    "KuaijieK5Fragment:401": "FFFFFFFF0500004F34E2E7",
+    "KuaijieK5Fragment:404": "FFFFFFFF0500004034E717",
+    "KuaijieK5Fragment:412": "FFFFFFFF0500004F34E2E7",
+    "KuaijieK5Fragment:415": "FFFFFFFF0500004034E717",
+    "KuaijieK8Fragment:46": "FFFFFFFF0100090B001104",
+    "KuaijieK8Fragment:48": "FFFFFFFF0100090B011204",
+    "KuaijieK8Fragment:85": "FFFFFFFF0500000000D700",
+    "KuaijieK8Fragment:125": "FFFFFFFF050000BF0BE6F7",
+    "KuaijieK8Fragment:127": "FFFFFFFF050000B00BE307",
+    "KuaijieK8Fragment:134": "FFFFFFFF050000AF0A2AF7",
+    "KuaijieK8Fragment:136": "FFFFFFFF050000A00A2F07",
+    "KuaijieK8Fragment:183": "FFFFFFFF03002800039F09",
+    "KuaijieK8Fragment:185": "FFFFFFFF03003000031F0E",
+    "KuaijieK8Fragment:187": "FFFFFFFF03001800039F06",
+    "KuaijieK8Fragment:189": "FFFFFFFF03002000031ECB",
+    "KuaijieK8Fragment:191": "FFFFFFFF03003800039ECC",
+    "KuaijieK8Fragment:206": "FFFFFFFF0500000020D6D8",
+    "KuaijieK8Fragment:212": "FFFFFFFF0500000008D6C6",
+    "KuaijieK8Fragment:223": "FFFFFFFF050000A10A2E97",
+    "KuaijieK8Fragment:235": "FFFFFFFF050000B10BE297",
+    "KuaijieK8Fragment:248": "FFFFFFFF05000051052A93",
+    "KuaijieK8Fragment:250": "FFFFFFFF05000000051703",
+    "KuaijieK8Fragment:265": "FFFFFFFF05000091097A96",
+    "KuaijieK8Fragment:267": "FFFFFFFF05000000091706",
+    "KuaijieK8Fragment:275": "FFFFFFFF050000000E56C4",
+    "KuaijieK8Fragment:281": "FFFFFFFF050000000D16C5",
+    "KuaijieK8Fragment:292": "FFFFFFFF0500009F097EF6",
+    "KuaijieK8Fragment:294": "FFFFFFFF05000090097B06",
+    "KuaijieK8Fragment:301": "FFFFFFFF0500005F052EF3",
+    "KuaijieK8Fragment:303": "FFFFFFFF05000050052B03",
+    "KuaijieK9Fragment:47": "FFFFFFFF0100090B001104",
+    "KuaijieK9Fragment:49": "FFFFFFFF0100090B011204",
+    "KuaijieK9Fragment:86": "FFFFFFFF0500000000D700",
+    "KuaijieK9Fragment:126": "FFFFFFFF050000BF0BE6F7",
+    "KuaijieK9Fragment:128": "FFFFFFFF050000B00BE307",
+    "KuaijieK9Fragment:135": "FFFFFFFF050000AF0A2AF7",
+    "KuaijieK9Fragment:137": "FFFFFFFF050000A00A2F07",
+    "KuaijieK9Fragment:193": "FFFFFFFF03002800039F09",
+    "KuaijieK9Fragment:195": "FFFFFFFF03003000031F0E",
+    "KuaijieK9Fragment:197": "FFFFFFFF03001800039F06",
+    "KuaijieK9Fragment:199": "FFFFFFFF03002000031ECB",
+    "KuaijieK9Fragment:201": "FFFFFFFF03003800039ECC",
+    "KuaijieK9Fragment:216": "FFFFFFFF0500000008D6C6",
+    "KuaijieK9Fragment:227": "FFFFFFFF050000A10A2E97",
+    "KuaijieK9Fragment:239": "FFFFFFFF050000B10BE297",
+    "KuaijieK9Fragment:252": "FFFFFFFF05000051052A93",
+    "KuaijieK9Fragment:254": "FFFFFFFF05000000051703",
+    "KuaijieK9Fragment:269": "FFFFFFFF05000091097A96",
+    "KuaijieK9Fragment:271": "FFFFFFFF05000000091706",
+    "KuaijieK9Fragment:279": "FFFFFFFF050000000E56C4",
+    "KuaijieK9Fragment:285": "FFFFFFFF050000000D16C5",
+    "KuaijieK9Fragment:298": "FFFFFFFF050000F10FD294",
+    "KuaijieK9Fragment:300": "FFFFFFFF050000000F9704",
+    "KuaijieK9Fragment:313": "FFFFFFFF0500009F097EF6",
+    "KuaijieK9Fragment:315": "FFFFFFFF05000090097B06",
+    "KuaijieK9Fragment:322": "FFFFFFFF0500005F052EF3",
+    "KuaijieK9Fragment:324": "FFFFFFFF05000050052B03",
+    "LengnuanFragment:58": "FFFFFFFFFE1000010000000000AA5D4B",
+    "LengnuanFragment:183": "FFFFFFFFFE1000000000000000AA4D8B",
+    "LengnuanFragment:279:thermal slider table index 0": "FFFFFFFFFE1000050000040000AA19BB",
+    "LengnuanFragment:279:thermal slider table index 1": "FFFFFFFFFE1000050000030000AA18CF",
+    "LengnuanFragment:279:thermal slider table index 2": "FFFFFFFFFE1000050000020000AA1933",
+    "LengnuanFragment:279:thermal slider table index 3": "FFFFFFFFFE1000050000010000AA1977",
+    "LengnuanFragment:279:thermal slider table index 4": "FFFFFFFFFE1000060000000000AA2B8B",
+    "LengnuanFragment:279:thermal slider table index 5": "FFFFFFFFFE1000040000010000AA09B7",
+    "LengnuanFragment:279:thermal slider table index 6": "FFFFFFFFFE1000040000020000AA09F3",
+    "LengnuanFragment:279:thermal slider table index 7": "FFFFFFFFFE1000040000030000AA080F",
+    "LengnuanFragment:279:thermal slider table index 8": "FFFFFFFFFE1000040000040000AA097B",
+    "LengnuanFragment:294": "FFFFFFFFFE1000030000010000AA7F77",
+    "LengnuanFragment:296": "FFFFFFFFFE1000030000000000AA7E8B",
+    "QinangFragment:133": "FFFFFFFFFF14020900000000000000000000A640",
+    "QinangFragment:172": "FFFFFFFFFF0D030C0001004222",
+    "QinangFragment:174": "FFFFFFFFFF0D030C00000043B2",
+    "QinangFragment:184": "FFFFFFFFFF14030D000003000000000000000EA6",
+    "QinangFragment:186": "FFFFFFFFFF14030D000103000000000000000336",
+    "QinangFragment:193": "FFFFFFFFFF14030D00001200000000000000CE66",
+    "QinangFragment:195": "FFFFFFFFFF14030D00011200000000000000C3F6",
+    "QinangFragment:302": "FFFFFFFFFF0B0100005CF0",
+    "QinangFragment:313": "FFFFFFFFFF0B0112005050",
+    "QinangFragment:320": "FFFFFFFFFF0B0106005F50",
+    "QinangFragment:326": "FFFFFFFFFF0B0104005E30",
+    "QinangFragment:342": "FFFFFFFFFF0B0103005C00",
+    "QinangFragment:349": "FFFFFFFFFF0B0109005AA0",
+    "QinangFragment:355": "FFFFFFFFFF0B0105005FA0",
+    "QinangFragment:361": "FFFFFFFFFF0B010C0059F0",
+    "SmartSleepFragment:144": "FFFFFFFF050000F03FD310",
+    "SmartSleepFragment:147": "FFFFFFFF050000003F9710",
+    "SmartSleepFragment:156": "FFFFFFFF0200110B001A04",
+    "SmartSleepFragment:159": "FFFFFFFF0200110B011B04",
+    "WeitiaoW10Fragment:50": "FFFFFFFF0100090B001104",
+    "WeitiaoW10Fragment:52": "FFFFFFFF0100090B011204",
+    "WeitiaoW10Fragment:61": "FFFFFFFF05000000039701",
+    "WeitiaoW10Fragment:65": "FFFFFFFF0500000000D700",
+    "WeitiaoW10Fragment:74": "FFFFFFFF0500000004D6C3",
+    "WeitiaoW10Fragment:78": "FFFFFFFF0500000000D700",
+    "WeitiaoW10Fragment:88": "FFFFFFFF050000000116C0",
+    "WeitiaoW10Fragment:92": "FFFFFFFF0500000000D700",
+    "WeitiaoW10Fragment:101": "FFFFFFFF050000000256C1",
+    "WeitiaoW10Fragment:105": "FFFFFFFF0500000000D700",
+    "WeitiaoW10Fragment:115": "FFFFFFFF05000000065702",
+    "WeitiaoW10Fragment:119": "FFFFFFFF0500000000D700",
+    "WeitiaoW10Fragment:128": "FFFFFFFF050000000796C2",
+    "WeitiaoW10Fragment:132": "FFFFFFFF0500000000D700",
+    "WeitiaoW11Fragment:50": "FFFFFFFF0100090B001104",
+    "WeitiaoW11Fragment:52": "FFFFFFFF0100090B011204",
+    "WeitiaoW11Fragment:61": "FFFFFFFF05000000039701",
+    "WeitiaoW11Fragment:65": "FFFFFFFF0500000000D700",
+    "WeitiaoW11Fragment:74": "FFFFFFFF0500000004D6C3",
+    "WeitiaoW11Fragment:78": "FFFFFFFF0500000000D700",
+    "WeitiaoW11Fragment:88": "FFFFFFFF050000000D16C5",
+    "WeitiaoW11Fragment:92": "FFFFFFFF0500000000D700",
+    "WeitiaoW11Fragment:101": "FFFFFFFF050000000E56C4",
+    "WeitiaoW11Fragment:105": "FFFFFFFF0500000000D700",
+    "WeitiaoW11Fragment:115": "FFFFFFFF05000000065702",
+    "WeitiaoW11Fragment:119": "FFFFFFFF0500000000D700",
+    "WeitiaoW11Fragment:128": "FFFFFFFF050000000796C2",
+    "WeitiaoW11Fragment:132": "FFFFFFFF0500000000D700",
+    "WeitiaoW12Fragment:49": "FFFFFFFF0100090B001104",
+    "WeitiaoW12Fragment:51": "FFFFFFFF0100090B011204",
+    "WeitiaoW12Fragment:60": "FFFFFFFF05000000039701",
+    "WeitiaoW12Fragment:64": "FFFFFFFF0500000000D700",
+    "WeitiaoW12Fragment:73": "FFFFFFFF0500000004D6C3",
+    "WeitiaoW12Fragment:77": "FFFFFFFF0500000000D700",
+    "WeitiaoW12Fragment:87": "FFFFFFFF05000000065702",
+    "WeitiaoW12Fragment:91": "FFFFFFFF0500000000D700",
+    "WeitiaoW12Fragment:100": "FFFFFFFF050000000796C2",
+    "WeitiaoW12Fragment:104": "FFFFFFFF0500000000D700",
+    "WeitiaoW12Fragment:114": "FFFFFFFF05000000211718",
+    "WeitiaoW12Fragment:118": "FFFFFFFF0500000000D700",
+    "WeitiaoW12Fragment:127": "FFFFFFFF05000000225719",
+    "WeitiaoW12Fragment:131": "FFFFFFFF0500000000D700",
+    "WeitiaoW12Fragment:141": "FFFFFFFF0500000028D71E",
+    "WeitiaoW12Fragment:144": "FFFFFFFF0500000000D700",
+    "WeitiaoW12Fragment:153": "FFFFFFFF050000002916DE",
+    "WeitiaoW12Fragment:156": "FFFFFFFF0500000000D700",
+    "WeitiaoW13Fragment:80": "FFFFFFFF0100090B001104",
+    "WeitiaoW13Fragment:82": "FFFFFFFF0100090B011204",
+    "WeitiaoW13Fragment:96": "FFFFFFFF05000000039701",
+    "WeitiaoW13Fragment:100": "FFFFFFFF0500000000D700",
+    "WeitiaoW13Fragment:109": "FFFFFFFF0500000004D6C3",
+    "WeitiaoW13Fragment:113": "FFFFFFFF0500000000D700",
+    "WeitiaoW13Fragment:123": "FFFFFFFF050000000D16C5",
+    "WeitiaoW13Fragment:127": "FFFFFFFF0500000000D700",
+    "WeitiaoW13Fragment:136": "FFFFFFFF050000000E56C4",
+    "WeitiaoW13Fragment:140": "FFFFFFFF0500000000D700",
+    "WeitiaoW13Fragment:150": "FFFFFFFF050000000116C0",
+    "WeitiaoW13Fragment:154": "FFFFFFFF0500000000D700",
+    "WeitiaoW13Fragment:163": "FFFFFFFF050000000256C1",
+    "WeitiaoW13Fragment:167": "FFFFFFFF0500000000D700",
+    "WeitiaoW13Fragment:177": "FFFFFFFF05000000065702",
+    "WeitiaoW13Fragment:181": "FFFFFFFF0500000000D700",
+    "WeitiaoW13Fragment:190": "FFFFFFFF050000000796C2",
+    "WeitiaoW13Fragment:194": "FFFFFFFF0500000000D700",
+    "WeitiaoW13Fragment:204": "FFFFFFFF05000000211718",
+    "WeitiaoW13Fragment:208": "FFFFFFFF0500000000D700",
+    "WeitiaoW13Fragment:217": "FFFFFFFF05000000225719",
+    "WeitiaoW13Fragment:221": "FFFFFFFF0500000000D700",
+    "WeitiaoW13Fragment:231": "FFFFFFFF0500000028D71E",
+    "WeitiaoW13Fragment:234": "FFFFFFFF0500000000D700",
+    "WeitiaoW13Fragment:243": "FFFFFFFF050000002916DE",
+    "WeitiaoW13Fragment:246": "FFFFFFFF0500000000D700",
+    "WeitiaoW13Fragment:304": "FFFFFFFF05000500E4C74A",
+    "WeitiaoW13Fragment:310": "FFFFFFFF05000500E38688",
+    "WeitiaoW13Fragment:316": "FFFFFFFF05000500E5068A",
+    "WeitiaoW13Fragment:322": "FFFFFFFF05000500E6468B",
+    "WeitiaoW14Fragment:80": "FFFFFFFF0100090B001104",
+    "WeitiaoW14Fragment:82": "FFFFFFFF0100090B011204",
+    "WeitiaoW14Fragment:96": "FFFFFFFF05000000039701",
+    "WeitiaoW14Fragment:100": "FFFFFFFF0500000000D700",
+    "WeitiaoW14Fragment:109": "FFFFFFFF0500000004D6C3",
+    "WeitiaoW14Fragment:113": "FFFFFFFF0500000000D700",
+    "WeitiaoW14Fragment:123": "FFFFFFFF050000000D16C5",
+    "WeitiaoW14Fragment:127": "FFFFFFFF0500000000D700",
+    "WeitiaoW14Fragment:136": "FFFFFFFF050000000E56C4",
+    "WeitiaoW14Fragment:140": "FFFFFFFF0500000000D700",
+    "WeitiaoW14Fragment:150": "FFFFFFFF050000000116C0",
+    "WeitiaoW14Fragment:154": "FFFFFFFF0500000000D700",
+    "WeitiaoW14Fragment:163": "FFFFFFFF050000000256C1",
+    "WeitiaoW14Fragment:167": "FFFFFFFF0500000000D700",
+    "WeitiaoW14Fragment:177": "FFFFFFFF05000000065702",
+    "WeitiaoW14Fragment:181": "FFFFFFFF0500000000D700",
+    "WeitiaoW14Fragment:190": "FFFFFFFF050000000796C2",
+    "WeitiaoW14Fragment:194": "FFFFFFFF0500000000D700",
+    "WeitiaoW14Fragment:204": "FFFFFFFF05000000211718",
+    "WeitiaoW14Fragment:208": "FFFFFFFF0500000000D700",
+    "WeitiaoW14Fragment:217": "FFFFFFFF05000000225719",
+    "WeitiaoW14Fragment:221": "FFFFFFFF0500000000D700",
+    "WeitiaoW14Fragment:231": "FFFFFFFF0500000028D71E",
+    "WeitiaoW14Fragment:234": "FFFFFFFF0500000000D700",
+    "WeitiaoW14Fragment:243": "FFFFFFFF050000002916DE",
+    "WeitiaoW14Fragment:246": "FFFFFFFF0500000000D700",
+    "WeitiaoW14Fragment:304": "FFFFFFFF05000500E4C74A",
+    "WeitiaoW14Fragment:310": "FFFFFFFF05000500E38688",
+    "WeitiaoW14Fragment:316": "FFFFFFFF05000500E5068A",
+    "WeitiaoW14Fragment:322": "FFFFFFFF05000500E6468B",
+    "WeitiaoW18Fragment:78": "FFFFFFFF0100090B001104",
+    "WeitiaoW18Fragment:80": "FFFFFFFF0100090B011204",
+    "WeitiaoW18Fragment:94": "FFFFFFFF05000000039701",
+    "WeitiaoW18Fragment:98": "FFFFFFFF0500000000D700",
+    "WeitiaoW18Fragment:107": "FFFFFFFF0500000004D6C3",
+    "WeitiaoW18Fragment:111": "FFFFFFFF0500000000D700",
+    "WeitiaoW18Fragment:121": "FFFFFFFF050000000D16C5",
+    "WeitiaoW18Fragment:125": "FFFFFFFF0500000000D700",
+    "WeitiaoW18Fragment:134": "FFFFFFFF050000000E56C4",
+    "WeitiaoW18Fragment:138": "FFFFFFFF0500000000D700",
+    "WeitiaoW18Fragment:148": "FFFFFFFF050000000116C0",
+    "WeitiaoW18Fragment:152": "FFFFFFFF0500000000D700",
+    "WeitiaoW18Fragment:161": "FFFFFFFF050000000256C1",
+    "WeitiaoW18Fragment:165": "FFFFFFFF0500000000D700",
+    "WeitiaoW18Fragment:175": "FFFFFFFF05000000065702",
+    "WeitiaoW18Fragment:179": "FFFFFFFF0500000000D700",
+    "WeitiaoW18Fragment:188": "FFFFFFFF050000000796C2",
+    "WeitiaoW18Fragment:192": "FFFFFFFF0500000000D700",
+    "WeitiaoW18Fragment:250": "FFFFFFFF05000500E4C74A",
+    "WeitiaoW18Fragment:256": "FFFFFFFF05000500E38688",
+    "WeitiaoW18Fragment:262": "FFFFFFFF05000500E5068A",
+    "WeitiaoW18Fragment:268": "FFFFFFFF05000500E6468B",
+    "WeitiaoW1Fragment:78": "FFFFFFFF0100090B001104",
+    "WeitiaoW1Fragment:80": "FFFFFFFF0100090B011204",
+    "WeitiaoW1Fragment:94": "FFFFFFFF05000000039701",
+    "WeitiaoW1Fragment:98": "FFFFFFFF0500000000D700",
+    "WeitiaoW1Fragment:107": "FFFFFFFF0500000004D6C3",
+    "WeitiaoW1Fragment:111": "FFFFFFFF0500000000D700",
+    "WeitiaoW1Fragment:121": "FFFFFFFF050000000D16C5",
+    "WeitiaoW1Fragment:125": "FFFFFFFF0500000000D700",
+    "WeitiaoW1Fragment:134": "FFFFFFFF050000000E56C4",
+    "WeitiaoW1Fragment:138": "FFFFFFFF0500000000D700",
+    "WeitiaoW1Fragment:148": "FFFFFFFF050000000116C0",
+    "WeitiaoW1Fragment:152": "FFFFFFFF0500000000D700",
+    "WeitiaoW1Fragment:161": "FFFFFFFF050000000256C1",
+    "WeitiaoW1Fragment:165": "FFFFFFFF0500000000D700",
+    "WeitiaoW1Fragment:175": "FFFFFFFF05000000065702",
+    "WeitiaoW1Fragment:179": "FFFFFFFF0500000000D700",
+    "WeitiaoW1Fragment:188": "FFFFFFFF050000000796C2",
+    "WeitiaoW1Fragment:192": "FFFFFFFF0500000000D700",
+    "WeitiaoW1Fragment:250": "FFFFFFFF05000500E4C74A",
+    "WeitiaoW1Fragment:256": "FFFFFFFF05000500E38688",
+    "WeitiaoW1Fragment:262": "FFFFFFFF05000500E5068A",
+    "WeitiaoW1Fragment:268": "FFFFFFFF05000500E6468B",
+    "WeitiaoW2Fragment:78": "FFFFFFFF0100090B001104",
+    "WeitiaoW2Fragment:80": "FFFFFFFF0100090B011204",
+    "WeitiaoW2Fragment:94": "FFFFFFFF05000000039701",
+    "WeitiaoW2Fragment:98": "FFFFFFFF0500000000D700",
+    "WeitiaoW2Fragment:107": "FFFFFFFF0500000004D6C3",
+    "WeitiaoW2Fragment:111": "FFFFFFFF0500000000D700",
+    "WeitiaoW2Fragment:121": "FFFFFFFF050000000D16C5",
+    "WeitiaoW2Fragment:125": "FFFFFFFF0500000000D700",
+    "WeitiaoW2Fragment:134": "FFFFFFFF050000000E56C4",
+    "WeitiaoW2Fragment:138": "FFFFFFFF0500000000D700",
+    "WeitiaoW2Fragment:148": "FFFFFFFF050000000116C0",
+    "WeitiaoW2Fragment:152": "FFFFFFFF0500000000D700",
+    "WeitiaoW2Fragment:161": "FFFFFFFF050000000256C1",
+    "WeitiaoW2Fragment:165": "FFFFFFFF0500000000D700",
+    "WeitiaoW2Fragment:175": "FFFFFFFF05000000065702",
+    "WeitiaoW2Fragment:179": "FFFFFFFF0500000000D700",
+    "WeitiaoW2Fragment:188": "FFFFFFFF050000000796C2",
+    "WeitiaoW2Fragment:192": "FFFFFFFF0500000000D700",
+    "WeitiaoW2Fragment:250": "FFFFFFFF05000500E4C74A",
+    "WeitiaoW2Fragment:256": "FFFFFFFF05000500E38688",
+    "WeitiaoW2Fragment:262": "FFFFFFFF05000500E5068A",
+    "WeitiaoW2Fragment:268": "FFFFFFFF05000500E6468B",
+    "WeitiaoW3Fragment:78": "FFFFFFFF0100090B001104",
+    "WeitiaoW3Fragment:80": "FFFFFFFF0100090B011204",
+    "WeitiaoW3Fragment:94": "FFFFFFFF05000000039701",
+    "WeitiaoW3Fragment:98": "FFFFFFFF0500000000D700",
+    "WeitiaoW3Fragment:107": "FFFFFFFF0500000004D6C3",
+    "WeitiaoW3Fragment:111": "FFFFFFFF0500000000D700",
+    "WeitiaoW3Fragment:121": "FFFFFFFF050005002B871E",
+    "WeitiaoW3Fragment:125": "FFFFFFFF0500000000D700",
+    "WeitiaoW3Fragment:134": "FFFFFFFF050005002CC6DC",
+    "WeitiaoW3Fragment:138": "FFFFFFFF0500000000D700",
+    "WeitiaoW3Fragment:148": "FFFFFFFF050000000D16C5",
+    "WeitiaoW3Fragment:152": "FFFFFFFF0500000000D700",
+    "WeitiaoW3Fragment:161": "FFFFFFFF050000000E56C4",
+    "WeitiaoW3Fragment:165": "FFFFFFFF0500000000D700",
+    "WeitiaoW3Fragment:175": "FFFFFFFF05000000065702",
+    "WeitiaoW3Fragment:179": "FFFFFFFF0500000000D700",
+    "WeitiaoW3Fragment:188": "FFFFFFFF050000000796C2",
+    "WeitiaoW3Fragment:192": "FFFFFFFF0500000000D700",
+    "WeitiaoW3Fragment:249": "FFFFFFFF05000500E8C74F",
+    "WeitiaoW3Fragment:255": "FFFFFFFF05000500E4C74A",
+    "WeitiaoW3Fragment:261": "FFFFFFFF05000500E5068A",
+    "WeitiaoW3Fragment:267": "FFFFFFFF05000500E6468B",
+    "WeitiaoW4Fragment:47": "FFFFFFFF0100090B001104",
+    "WeitiaoW4Fragment:49": "FFFFFFFF0100090B011204",
+    "WeitiaoW4Fragment:58": "FFFFFFFF05000000039701",
+    "WeitiaoW4Fragment:62": "FFFFFFFF0500000000D700",
+    "WeitiaoW4Fragment:71": "FFFFFFFF0500000004D6C3",
+    "WeitiaoW4Fragment:75": "FFFFFFFF0500000000D700",
+    "WeitiaoW4Fragment:85": "FFFFFFFF05000000065702",
+    "WeitiaoW4Fragment:89": "FFFFFFFF0500000000D700",
+    "WeitiaoW4Fragment:98": "FFFFFFFF050000000796C2",
+    "WeitiaoW4Fragment:102": "FFFFFFFF0500000000D700",
+    "WeitiaoW6Fragment:47": "FFFFFFFF0100090B001104",
+    "WeitiaoW6Fragment:49": "FFFFFFFF0100090B011204",
+    "WeitiaoW6Fragment:58": "FFFFFFFF05000000039701",
+    "WeitiaoW6Fragment:62": "FFFFFFFF0500000000D700",
+    "WeitiaoW6Fragment:71": "FFFFFFFF0500000004D6C3",
+    "WeitiaoW6Fragment:75": "FFFFFFFF0500000000D700",
+    "WeitiaoW6Fragment:85": "FFFFFFFF05000000065702",
+    "WeitiaoW6Fragment:89": "FFFFFFFF0500000000D700",
+    "WeitiaoW6Fragment:98": "FFFFFFFF050000000796C2",
+    "WeitiaoW6Fragment:102": "FFFFFFFF0500000000D700",
+    "WeitiaoW7Fragment:76": "FFFFFFFF0100090B001104",
+    "WeitiaoW7Fragment:78": "FFFFFFFF0100090B011204",
+    "WeitiaoW7Fragment:89": "FFFFFFFF05000000039701",
+    "WeitiaoW7Fragment:93": "FFFFFFFF0500000000D700",
+    "WeitiaoW7Fragment:102": "FFFFFFFF0500000004D6C3",
+    "WeitiaoW7Fragment:106": "FFFFFFFF0500000000D700",
+    "WeitiaoW7Fragment:116": "FFFFFFFF050000000D16C5",
+    "WeitiaoW7Fragment:120": "FFFFFFFF0500000000D700",
+    "WeitiaoW7Fragment:129": "FFFFFFFF050000000E56C4",
+    "WeitiaoW7Fragment:133": "FFFFFFFF0500000000D700",
+    "WeitiaoW7Fragment:143": "FFFFFFFF050000000116C0",
+    "WeitiaoW7Fragment:147": "FFFFFFFF0500000000D700",
+    "WeitiaoW7Fragment:156": "FFFFFFFF050000000256C1",
+    "WeitiaoW7Fragment:160": "FFFFFFFF0500000000D700",
+    "WeitiaoW7Fragment:170": "FFFFFFFF05000000065702",
+    "WeitiaoW7Fragment:174": "FFFFFFFF0500000000D700",
+    "WeitiaoW7Fragment:183": "FFFFFFFF050000000796C2",
+    "WeitiaoW7Fragment:187": "FFFFFFFF0500000000D700",
+    "WeitiaoW7Fragment:197": "FFFFFFFF05000000351717",
+    "WeitiaoW7Fragment:201": "FFFFFFFF0500000000D700",
+    "WeitiaoW7Fragment:210": "FFFFFFFF05000000365716",
+    "WeitiaoW7Fragment:214": "FFFFFFFF0500000000D700",
+    "WeitiaoW7Fragment:224": "FFFFFFFF050000003796D6",
+    "WeitiaoW7Fragment:228": "FFFFFFFF0500000000D700",
+    "WeitiaoW7Fragment:237": "FFFFFFFF0500000038D6D2",
+    "WeitiaoW7Fragment:241": "FFFFFFFF0500000000D700",
+    "WeitiaoW8Fragment:75": "FFFFFFFF0100090B001104",
+    "WeitiaoW8Fragment:77": "FFFFFFFF0100090B011204",
+    "WeitiaoW8Fragment:88": "FFFFFFFF05000000039701",
+    "WeitiaoW8Fragment:92": "FFFFFFFF0500000000D700",
+    "WeitiaoW8Fragment:101": "FFFFFFFF0500000004D6C3",
+    "WeitiaoW8Fragment:105": "FFFFFFFF0500000000D700",
+    "WeitiaoW8Fragment:115": "FFFFFFFF050000000D16C5",
+    "WeitiaoW8Fragment:119": "FFFFFFFF0500000000D700",
+    "WeitiaoW8Fragment:128": "FFFFFFFF050000000E56C4",
+    "WeitiaoW8Fragment:132": "FFFFFFFF0500000000D700",
+    "WeitiaoW8Fragment:142": "FFFFFFFF05000000065702",
+    "WeitiaoW8Fragment:146": "FFFFFFFF0500000000D700",
+    "WeitiaoW8Fragment:155": "FFFFFFFF050000000796C2",
+    "WeitiaoW8Fragment:159": "FFFFFFFF0500000000D700",
+    "WeitiaoW8Fragment:169": "FFFFFFFF05000000351717",
+    "WeitiaoW8Fragment:173": "FFFFFFFF0500000000D700",
+    "WeitiaoW8Fragment:182": "FFFFFFFF05000000365716",
+    "WeitiaoW8Fragment:186": "FFFFFFFF0500000000D700",
+    "WeitiaoW8Fragment:196": "FFFFFFFF05000000065702",
+    "WeitiaoW8Fragment:200": "FFFFFFFF0500000000D700",
+    "WeitiaoW8Fragment:209": "FFFFFFFF050000000796C2",
+    "WeitiaoW8Fragment:213": "FFFFFFFF0500000000D700",
+    "HomeActivity:463": "FFFFFFFF02000A0A1204"
+  }
+}

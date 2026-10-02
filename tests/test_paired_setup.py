@@ -41,6 +41,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA_APP,
+    BED_TYPE_MOTION_BED,
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
     BED_TYPE_SBI,
@@ -61,6 +62,7 @@ from custom_components.adjustable_bed.const import (
     CONF_LP_LEGACY_MODE,
     CONF_LP_LEGACY_MODEL,
     CONF_LP_LEGACY_WRITE_UUID,
+    CONF_MOTION_BED_NAME,
     CONF_MOTOR_COUNT,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_CONNECTION_MODE,
@@ -3724,6 +3726,10 @@ class TestOfflineSafeBedTypes:
                     "starcode_abm5_4_ui_selector": "none",
                     "starcode_abm5_4_transport_selector": "BOX3633",
                 })
+            elif bed_type == BED_TYPE_MOTION_BED:
+                child[CONF_MOTION_BED_NAME] = (
+                    "QMS4-left" if child[CONF_SIDE] == SIDE_LEFT else "SealyMF-right"
+                )
             elif bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
                 child.update(
                     {
@@ -3745,6 +3751,17 @@ class TestOfflineSafeBedTypes:
 
         await left.async_prime_offline_controller()
         assert left.capability_controller is not None, bed_type
+        if bed_type == BED_TYPE_MOTION_BED:
+            from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
+
+            right = children[SIDE_RIGHT]
+            await right.async_prime_offline_controller()
+            assert isinstance(left.capability_controller, MotionBedController)
+            assert isinstance(right.capability_controller, MotionBedController)
+            assert left.capability_controller.selection.movement == "W2"
+            assert right.capability_controller.selection.movement == "W4"
+            assert left.client is None and right.client is None
+            assert left.controller is None and right.controller is None
 
     async def test_logicdata_auto_transport_caches_discovered_rename_capability(
         self, hass: HomeAssistant

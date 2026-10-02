@@ -94,6 +94,7 @@ class _FactoryCoordinator(SimpleNamespace):
         from custom_components.adjustable_bed.limoss_remote_state import LimossRemoteMemoryStore
 
         super().__init__(
+            capability_controller=None,
             starcode_app_retained_state=None,
             hass=SimpleNamespace(
                 data={},
@@ -106,6 +107,7 @@ class _FactoryCoordinator(SimpleNamespace):
             entry=SimpleNamespace(
                 data={
                     const.CONF_FURNIMOVE_REMOTE: "00000",
+                    const.CONF_MOTION_BED_NAME: "QMS-IQ",
                     const.CONF_LOGICDATA_APP_PROFILE: "phone",
                     const.CONF_LOGICDATA_APP_FAMILY: "p1",
                     const.CONF_LOGICDATA_APP_LAYOUT: "standard_2",

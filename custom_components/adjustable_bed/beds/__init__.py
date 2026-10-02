@@ -38,6 +38,7 @@ if TYPE_CHECKING:
     from .logicdata_air_pump import LogicdataAirPumpController as LogicdataAirPumpController
     from .logicdata_app import LogicdataAppController as LogicdataAppController
     from .malouf_app import MaloufAppController as MaloufAppController
+    from .motion_bed import MotionBedController as MotionBedController
     from .motosleep import MotoSleepController as MotoSleepController
     from .octo import OctoController as OctoController
     from .okin_7byte import Okin7ByteController as Okin7ByteController
@@ -108,6 +109,7 @@ _EXPORT_MODULES = {
     "LogicdataAppController": "logicdata_app",
     "LogicdataAirPumpController": "logicdata_air_pump",
     "MaloufAppController": "malouf_app",
+    "MotionBedController": "motion_bed",
     "MotoSleepController": "motosleep",
     "OctoController": "octo",
     "Okin7ByteController": "okin_7byte",

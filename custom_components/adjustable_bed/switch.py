@@ -188,8 +188,8 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
             self._attr_is_on = False
             if description.key == "under_bed_lights" and coordinator.bed_type in {
                 *OKIN_BEDDING_APP_BED_TYPES,
-                BED_TYPE_SVANE,
                 BED_TYPE_REMACRO,
+                BED_TYPE_SVANE,
             }:
                 # These apps have on/off commands but no physical state response.
                 self._attr_is_on = None

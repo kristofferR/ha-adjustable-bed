@@ -681,6 +681,10 @@ the other side automatically if one side fails.
 - **Want to learn about your bed's protocol?** See [Supported Actuators](SUPPORTED_ACTUATORS.md)
 - **Setting up Bluetooth?** See [Connection Guide](CONNECTION_GUIDE.md)
 
+
+### Motion Bed app
+
+Select the explicit **Motion Bed app** route and the original case-sensitive Bluetooth name. Auto chooses the app’s ordered layout; retained overrides belong to the same physical target. FFE1 alone does not identify this app. Two-address pairs preserve each side’s settings and require unpairing before profile changes. See [Motion Bed setup and controls](beds/motion_bed.md).
 ### Limoss Remote app
 
 Select **Limoss Remote app** manually under Limoss. Choose bed/chair, local lamp and massage controls, four reversal flags and an optional app artwork preference. Live replies select the rendered key layout and memory capacity. These settings belong to each physical receiver, including paired children. Disabling a selected feature sends its ten OFF frames before saving; enabling only changes the local layout. Generic pulse, angle and motor-count settings are hidden for this profile. See [the protocol page](beds/limoss-remote.md).
