@@ -30,7 +30,6 @@ MotionBedContext = Literal[
     "day_report",
     "month_report",
     "sleep_report",
-    "network",
     "module_binding",
     "module_settings",
     "module_change",
@@ -63,7 +62,7 @@ class MotionBedRoute:
 class MotionBedFollowup:
     """Source callback traffic, scheduled by the current-target controller."""
 
-    action: Literal["module_status_query", "sensor_query", "position_query", "network_status_query"]
+    action: Literal["module_status_query", "sensor_query", "position_query"]
     delay_ms: int = 0
 
 
@@ -110,10 +109,6 @@ class MotionBedState:
     first_modular_alarm: bool = False
     sensor_present: bool | None = None
     sensor_mac: str | None = None
-    network_code: int | None = None
-    network_status: str | None = None
-    provisioning_status: str | None = None
-    network_poll_attempts: int = 0
     sleep_enabled: bool | None = None
     night_light_enabled: bool | None = None
     sleep_timer: int | None = None
@@ -706,10 +701,10 @@ def parse_motion_bed_notification(
             matched("TimeSettingActivity:handleReceiveData")
             receipts.append("thermal_schedule_received")
 
-        if contexts & {"home", "smart_sleep", "calibration", "network"}:
-            status_contexts = contexts & {"smart_sleep", "calibration", "network"}
+        if contexts & {"home", "smart_sleep", "calibration"}:
+            status_contexts = contexts & {"smart_sleep", "calibration"}
             status_minimum = min(
-                (minimum for context, minimum in (("smart_sleep", 19), ("network", 15), ("calibration", 12))
+                (minimum for context, minimum in (("smart_sleep", 19), ("calibration", 12))
                  if context in status_contexts),
                 default=12,
             )
@@ -722,54 +717,12 @@ def parse_motion_bed_notification(
                 if "calibration" in contexts and len(data) >= 12:
                     matched("SleepDataEntryActivity:handleReceiveData")
                     state = replace(state, calibration_flat=data[10], calibration_side=data[11] * 2)
-                if "network" in contexts and len(data) >= 15:
-                    matched("XinLvDaiActivity:handleReceiveData")
-                    code = data[14]
-                    statuses = {
-                        0: "not_configured",
-                        1: "not_connected",
-                        10: "unstable",
-                        15: "connected",
-                    }
-                    state = replace(
-                        state,
-                        network_code=code,
-                        network_status=statuses.get(code, state.network_status),
-                    )
-                    matched("NetworkActivity:handleReceiveData")
-                    if code in (0, 1):
-                        if state.network_poll_attempts >= 10:
-                            state = replace(state, provisioning_status="failed")
-                        else:
-                            state = replace(
-                                state, network_poll_attempts=state.network_poll_attempts + 1
-                            )
-                            effects.append(MotionBedFollowup("network_status_query", 6000))
-                    elif code == 15:
-                        state = replace(state, provisioning_status="success")
             if ("home" in contexts or "smart_sleep" in contexts) and prefix("FFFFFFFF02000E0B", 10):
                 if "home" in contexts:
                     matched("HomeActivity:handleReceiveData")
                 if "smart_sleep" in contexts:
                     matched("SmartSleepFragment:handleReceiveData")
                 state = replace(state, sleep_timer=data[8])
-        if "network" in contexts and prefix("FFFFFFFF02001913", 10):
-            matched("NetworkActivity:handleReceiveData")
-            if data[9] != 1:
-                if data[9] in (0, 15):
-                    state = replace(
-                        state, provisioning_status="failed" if data[9] == 0 else "success"
-                    )
-                effects.append(MotionBedFollowup("network_status_query"))
-            elif data[9] == 1 and state.network_poll_attempts < 10:
-                state = replace(
-                    state,
-                    provisioning_status="waiting",
-                    network_poll_attempts=state.network_poll_attempts + 1,
-                )
-                effects.append(MotionBedFollowup("network_status_query", 6000))
-            else:
-                state = replace(state, provisioning_status="failed")
         if "sleep_adjust" in contexts:
             if prefix("FFFFFFFF02000F0E", 12):
                 matched("SleepAdjustActivity:handleReceiveData")

@@ -95,8 +95,8 @@ as in the app. Fresh feedback overrides the preference; restored preferences
 never turn unknown live sensors into reported feedback.
 
 State sensors include raw positions A–D, alarm fields, programmed presets,
-module presence/features, pressure, sleep/calibration/report values, network
-state, thermal state/water and passive bed faults. Raw positions have unknown
+module presence/features, pressure, sleep/calibration/report values,
+thermal state/water and passive bed faults. Raw positions have unknown
 physical units and do not become degree or percentage sliders. Air lower
 pressure is readback only. Thermal gears are cooling 4–1, off, and heating 1–4;
 the app's slider labels do not establish thermostat setpoints. Temperature and
@@ -105,12 +105,11 @@ acknowledges the write without proving that heating is active.
 
 Sleep day/window state separates trustworthy decoded windows from the app's
 faulty historical-window assignment. A new report clears prior aggregation.
-Only the newest report receiver context remains active. Provisioning retries
-retire the previous polling task and deadline before sending the new sequence.
+Only the newest report receiver context remains active.
 The artifact supplies no request identifier for these replies: host ownership
 prevents superseded work and overlapping report receivers, but cannot identify
 a delayed reply that has the same wire shape as the latest request. Report
-route flags and provisioning feedback therefore belong to the current request;
+route flags therefore belong to the current request;
 they do not prove which indistinguishable attempt produced a reply.
 Malformed or short notifications leave state unchanged and record a diagnostic
 rejection. Fault replies are parsed passively; hidden fault-request controls
@@ -136,7 +135,6 @@ changes require `confirmed: true`.
 | `motion_bed_pressure` | live channel 0–11 and value 0–9, or save twelve `values` |
 | `motion_bed_thermal_schedule` | `hour`, `minute`, mode 1 heat/2 cool, gear 1–4 |
 | `motion_bed_audio` | track/volume, `value` 1–5, optional track `preview`; requires reported audio support |
-| `motion_bed_provision_wifi` | SSID, password, longitude, latitude; seven BLE frames and finite status polling |
 
 A nonempty saved weekday map can enable repetition even when no day is selected;
 use `repeat: true` with an empty weekday list to preserve that source state.
@@ -155,20 +153,10 @@ STOP and queries after 100 ms. Thermal status polls first after two seconds,
 then every five seconds while its thermal surface is active and present;
 changing the active hub module or tearing down the session cancels polling.
 
-Wi-Fi provisioning uses Android UTF-8 encoding, source truncation/padding to
-32 SSID bytes and 16 password bytes, and big-endian coordinate floats. Seven
-frames are spaced by 300 ms. Status polling shares one budget of at most ten
-queries six seconds apart. A typed command-connection hold spans the complete
-provisioning attempt, including poll sleeps, so a one-second handoff cannot
-interrupt it. Completion, cancellation, write/query failure and session
-replacement release that hold; a new attempt retires the old hold and poll
-before acquiring its own. Credentials are redacted from integration command
-traces and never saved in entry data, local preferences or diagnostics.
-Home Assistant core can log the original action data, including SSID and
-password, before the integration handler runs when `homeassistant.core` DEBUG
-logging is enabled. Keep that core logger's DEBUG logging off while provisioning;
-the integration cannot redact these upstream service-event logs.
-Cloud WebView content is outside this BLE integration.
+This integration controls BLE bed functions only. Bed Wi-Fi provisioning,
+SSID/password configuration, bed network management and cloud controls are
+outside the product boundary, including when their app commands travel over BLE.
+The disposition ledger records these discoveries explicitly as excluded.
 
 ## Transport and encoding
 
@@ -192,7 +180,7 @@ Physical users can validate behavior after a beta or release. Lack of maintainer
 hardware does not defer statically proved controls or configuration writes.
 
 Shared status replies are delivered to each active receiver whose own frame is
-complete: calibration requires 12 bytes, network 15 and smart sleep 19. A complete
+complete: calibration requires 12 bytes and smart sleep 19. A complete
 shorter receiver is retained even while a longer receiver is active. A truncated
 standalone reply still rejects atomically without updating state.
 
@@ -202,10 +190,10 @@ Existing valid Motion Bed pairs retain their side names when changing common opt
 
 Layout changes retire obsolete Motion movement covers while retaining active entity identities and customization. The same namespace cleanup runs when switching to another protocol and stays scoped to the config entry and paired side.
 
-A current thermal poll retains its connection hold after command preemption or a transient status-query failure, then tries again at the existing five-second interval. Cancelling the poll or replacing its session stops it and releases the hold. Wi-Fi provisioning initializes its pending state before writing frames, preserves replies received during those writes, and starts the bounded poll only if the same attempt remains current and nonterminal.
+A current thermal poll retains its connection hold after command preemption or a transient status-query failure, then tries again at the existing five-second interval. Cancelling the poll or replacing its session stops it and releases the hold. 
 
-Startup clock synchronization uses Home Assistant's configured time zone. During Wi-Fi provisioning, one attempt owns delayed acknowledgements from the first frame through its poll. Pending acknowledgements do not start a second six-second poller. Expected transient query errors retain the current attempt's connection hold and continue within the existing ten six-second observation windows; a still-pending attempt reaches the existing timeout. Explicit cancellation or a retired session stops the poll and releases its hold.
+Startup clock synchronization uses Home Assistant's configured time zone.
 
-Profile changes retire only that physical side's obsolete Motion Bed sensor and binary-sensor registry entries. Active entities retain custom names and disabled settings while module inventory is unknown. Interrupted provisioning before its poll begins ends the current waiting attempt as failed and releases its hold; already received terminal replies and replacement attempts retain their own state. Hub STOP retains the selected module only for the same physical address and complete app profile across reconnects. A fresh definite absence or an unknown route rejects STOP instead of sending a guessed motor release.
+Profile changes retire only that physical side's obsolete Motion Bed sensor and binary-sensor registry entries. Active entities retain custom names and disabled settings while module inventory is unknown. Hub STOP retains the selected module only for the same physical address and complete app profile across reconnects. A fresh definite absence or an unknown route rejects STOP instead of sending a guessed motor release.
 
-Switching from a home profile to a TL-Q hub removes home-only action buttons while preserving identities that can belong to a hub module, including shared alarm controls, even when inventory is temporarily unknown. Once a provisioning attempt succeeds, fails or times out, later replies cannot restart that attempt or change its outcome. Explicit network-status queries still update network telemetry through the unchanged native decoder. Starting a new provisioning attempt resets the outcome and opens its own polling lifetime.
+Switching from a home profile to a TL-Q hub removes home-only action buttons while preserving identities that can belong to a hub module, including shared alarm controls, even when inventory is temporarily unknown.

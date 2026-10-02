@@ -1786,44 +1786,6 @@
       "expected": "FFFFFFFFFE14000200002130000204000000F145"
     },
     {
-      "id": "wifi-BED",
-      "function": "wifi_frames",
-      "inputs": {
-        "ssid": "BED",
-        "password": "password",
-        "longitude": 10.5,
-        "latitude": 59.0
-      },
-      "expected": [
-        "FFFFFFFF0200181301424544FFFFFFFFFFF009",
-        "FFFFFFFF0200181302FFFFFFFFFFFFFFFF230C",
-        "FFFFFFFF0200181303FFFFFFFFFFFFFFFF240C",
-        "FFFFFFFF0200181304FFFFFFFFFFFFFFFF250C",
-        "FFFFFFFF020018130570617373776F7264A107",
-        "FFFFFFFF0200181306FFFFFFFFFFFFFFFF270C",
-        "FFFFFFFF020018130741280000426C00004705"
-      ]
-    },
-    {
-      "id": "wifi-AAA",
-      "function": "wifi_frames",
-      "inputs": {
-        "ssid": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        "password": "BBBBBBBBBBBBBBBBBBBB",
-        "longitude": 0,
-        "latitude": 0
-      },
-      "expected": [
-        "FFFFFFFF020018130141414141414141413206",
-        "FFFFFFFF020018130241414141414141413306",
-        "FFFFFFFF020018130341414141414141413406",
-        "FFFFFFFF020018130441414141414141413506",
-        "FFFFFFFF020018130542424242424242423E06",
-        "FFFFFFFF020018130642424242424242423F06",
-        "FFFFFFFF020018130700000000000000003004"
-      ]
-    },
-    {
       "id": "hex-ff00af",
       "function": "hex_decode",
       "inputs": {
@@ -2477,10 +2439,8 @@
     "HomeActivity:311": "FFFFFFFF01000A0B0F2104",
     "HomeActivity:321": "FFFFFFFF02000E0B001704",
     "HomeActivity:455": "FFFFFFFF050005FF23C728",
-    "HomeActivity:463": "FFFFFFFF02000A0A1204",
     "HomeActivity:465": "FFFFFFFF02000E0B001704",
     "MainMcuActivity:182": "FFFFFFFF010026140F0000000000000000004604",
-    "NetworkActivity:333": "FFFFFFFF02000A0A1204",
     "PressSetActivity:224": "FFFFFFFFFF0B020400AE30",
     "Setting2Activity:238": "FFFFFFFF010026140F0000000000000000004604",
     "SleepAdjustActivity:102": "FFFFFFFF02000A0A1204",
@@ -2509,7 +2469,6 @@
     "SleepDataEntryActivity:268": "FFFFFFFF0200120C0A466C04",
     "SleepDataEntryActivity:293": "FFFFFFFF0200090F03000000001904",
     "SleepDayReportActivity:88": "FFFFFFFF02000A0A1204",
-    "XinLvDaiActivity:175": "FFFFFFFF02000A0A1204",
     "AnmoFragment:88": "FFFFFFFF0100090B001104",
     "AnmoFragment:90": "FFFFFFFF0100090B011204",
     "AnmoFragment:100": "FFFFFFFF050000001516CF",
@@ -3140,6 +3099,7 @@
     "WeitiaoW8Fragment:196": "FFFFFFFF05000000065702",
     "WeitiaoW8Fragment:200": "FFFFFFFF0500000000D700",
     "WeitiaoW8Fragment:209": "FFFFFFFF050000000796C2",
-    "WeitiaoW8Fragment:213": "FFFFFFFF0500000000D700"
+    "WeitiaoW8Fragment:213": "FFFFFFFF0500000000D700",
+    "HomeActivity:463": "FFFFFFFF02000A0A1204"
   }
 }

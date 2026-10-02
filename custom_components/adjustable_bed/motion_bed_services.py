@@ -39,7 +39,6 @@ from .motion_bed_protocol import (
     build_sleep_timer,
     build_thermal_clock,
     build_thermal_schedule,
-    build_wifi_frames,
 )
 from .motion_bed_requests import MotionBedWrite
 
@@ -72,11 +71,6 @@ def _integers(data: Mapping[str, object], key: str) -> tuple[int, ...]:
     return tuple(value)
 
 
-def _number(data: Mapping[str, object], key: str) -> float:
-    value = data[key]
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise ValueError(f"{key} must be a number")
-    return float(value)
 
 
 def build_motion_bed_request(service: str, data: Mapping[str, object]) -> MotionBedWrite:
@@ -149,9 +143,6 @@ def build_motion_bed_request(service: str, data: Mapping[str, object]) -> Motion
         else:
             raise ValueError("Audio operation must be track or volume")
         return MotionBedWrite("audio", (frame,), "preset")
-    if service == "motion_bed_provision_wifi":
-        frames = build_wifi_frames(_text(data, "ssid"), _text(data, "password"), _number(data, "longitude"), _number(data, "latitude"))
-        return MotionBedWrite("provision_wifi", frames, "network", spacing_ms=300, confirmed=confirm, persistent=True, network_poll=True)
     raise ValueError("Unknown Motion Bed configuration action")
 
 
@@ -236,7 +227,6 @@ def async_register_motion_bed_services(hass: HomeAssistant) -> None:
         "motion_bed_pressure": {required("operation"): vol.In(("live", "save")), optional("channel"): int, optional("value"): int, optional("values"): integer_list},
         "motion_bed_thermal_schedule": {required("hour"): int, required("minute"): int, required("mode"): int, required("gear"): int},
         "motion_bed_audio": {required("operation"): vol.In(("track", "volume")), required("value"): int, optional("preview",default=False): bool},
-        "motion_bed_provision_wifi": {required("ssid"): str, required("password"): str, required("longitude"): vol.All(_reject_boolean, vol.Coerce(float)), required("latitude"): vol.All(_reject_boolean, vol.Coerce(float))},
     }
     for name, schema in schemas.items():
         hass.services.async_register(DOMAIN, name,

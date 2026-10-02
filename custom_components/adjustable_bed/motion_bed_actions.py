@@ -197,7 +197,7 @@ MOTION_BED_ACTIONS: tuple[MotionBedAction, ...] = (
     MotionBedAction('home_activity_brightness_status', 'Brightness status', 'HomeActivity', 'home', 'query', (
         MotionBedPacket('HomeActivity:455', None, True, None, ''),
     )),
-    MotionBedAction('home_activity_network_status', 'Network status', 'HomeActivity', 'home', 'query', (
+    MotionBedAction('home_activity_smart_sleep_status', 'Sleep configuration status', 'HomeActivity', 'smart_sleep', 'query', (
         MotionBedPacket('HomeActivity:463', None, True, None, ''),
     )),
     MotionBedAction('home_activity_sleep_timer_status', 'Sleep timer status', 'HomeActivity', 'home', 'query', (
@@ -205,9 +205,6 @@ MOTION_BED_ACTIONS: tuple[MotionBedAction, ...] = (
     )),
     MotionBedAction('main_mcu_activity_module_status', 'Module status', 'MainMcuActivity', 'module_startup', 'query', (
         MotionBedPacket('MainMcuActivity:182', None, True, None, ''),
-    )),
-    MotionBedAction('network_activity_network_status', 'Network status', 'NetworkActivity', 'network', 'query', (
-        MotionBedPacket('NetworkActivity:333', None, True, None, ''),
     )),
     MotionBedAction('press_set_activity_pressure_status', 'Pressure status', 'PressSetActivity', 'pressure_settings', 'query', (
         MotionBedPacket('PressSetActivity:224', None, True, None, ''),
@@ -282,9 +279,6 @@ MOTION_BED_ACTIONS: tuple[MotionBedAction, ...] = (
     )),
     MotionBedAction('sleep_day_report_activity_exit_status', 'Exit report status', 'SleepDayReportActivity', 'day_report', 'query', (
         MotionBedPacket('SleepDayReportActivity:88', None, True, None, ''),
-    )),
-    MotionBedAction('xin_lv_dai_activity_sensor_status', 'Sensor status', 'XinLvDaiActivity', 'smart_sleep', 'query', (
-        MotionBedPacket('XinLvDaiActivity:175', None, True, None, ''),
     )),
     MotionBedAction('massage_fragment_sync', 'Sync', 'AnmoFragment', 'massage', 'press', (
         MotionBedPacket('AnmoFragment:88', 'sync_enabled', True, None, 'selected'),

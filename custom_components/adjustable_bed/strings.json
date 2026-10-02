@@ -3652,9 +3652,6 @@
       "motion_bed_day_flat_right": {
         "name": "Day flat (right)"
       },
-      "motion_bed_provisioning_status": {
-        "name": "Provisioning status"
-      },
       "motion_bed_alarm_weekdays": {
         "name": "Alarm weekdays"
       },
@@ -3699,9 +3696,6 @@
       },
       "motion_bed_day_segment": {
         "name": "Day segment"
-      },
-      "motion_bed_network_status": {
-        "name": "Network status"
       },
       "motion_bed_air_setting_mode": {
         "name": "Air setting mode"
@@ -3787,9 +3781,6 @@
       "motion_bed_light_timer_right": {
         "name": "Light timer (right)"
       },
-      "motion_bed_network_status_right": {
-        "name": "Network status (right)"
-      },
       "motion_bed_calibration_kk": {
         "name": "Calibration kk"
       },
@@ -3862,9 +3853,6 @@
       "motion_bed_day_received_segments_right": {
         "name": "Day received segments (right)"
       },
-      "motion_bed_network_status_both": {
-        "name": "Network status (both)"
-      },
       "motion_bed_audio_volume_both": {
         "name": "Audio volume (both)"
       },
@@ -3880,9 +3868,6 @@
       "motion_bed_massage_timer_raw_left": {
         "name": "Massage timer raw (left)"
       },
-      "motion_bed_provisioning_status_right": {
-        "name": "Provisioning status (right)"
-      },
       "motion_bed_alarm_flag_both": {
         "name": "Alarm flag (both)"
       },
@@ -3891,9 +3876,6 @@
       },
       "motion_bed_day_rolls_left": {
         "name": "Day rolls (left)"
-      },
-      "motion_bed_network_code_both": {
-        "name": "Network code (both)"
       },
       "motion_bed_motor_programmed_bits": {
         "name": "Motor programmed bits"
@@ -3982,9 +3964,6 @@
       "motion_bed_day_unit_left": {
         "name": "Day unit (left)"
       },
-      "motion_bed_network_code_left": {
-        "name": "Network code (left)"
-      },
       "motion_bed_day_slots_left": {
         "name": "Day slots (left)"
       },
@@ -3993,9 +3972,6 @@
       },
       "motion_bed_upper_massage_left": {
         "name": "Upper massage (left)"
-      },
-      "motion_bed_network_poll_attempts_both": {
-        "name": "Network poll attempts (both)"
       },
       "motion_bed_month_flat": {
         "name": "Month flat"
@@ -4092,12 +4068,6 @@
       },
       "motion_bed_air_upper_gear_both": {
         "name": "Air upper gear (both)"
-      },
-      "motion_bed_provisioning_status_left": {
-        "name": "Provisioning status (left)"
-      },
-      "motion_bed_provisioning_status_both": {
-        "name": "Provisioning status (both)"
       },
       "motion_bed_thermal_timer_minute": {
         "name": "Thermal timer minute"
@@ -4285,14 +4255,8 @@
       "motion_bed_air_upper_raw_right": {
         "name": "Air upper raw (right)"
       },
-      "motion_bed_network_code_right": {
-        "name": "Network code (right)"
-      },
       "motion_bed_thermal_temperature_display_left": {
         "name": "Thermal temperature display (left)"
-      },
-      "motion_bed_network_poll_attempts_right": {
-        "name": "Network poll attempts (right)"
       },
       "motion_bed_month_maximum_rolls_right": {
         "name": "Month maximum rolls (right)"
@@ -4362,9 +4326,6 @@
       },
       "motion_bed_fault_code_raw": {
         "name": "Fault code raw"
-      },
-      "motion_bed_network_code": {
-        "name": "Network code"
       },
       "motion_bed_month_side_right": {
         "name": "Month side (right)"
@@ -4453,9 +4414,6 @@
       "motion_bed_thermal_water_both": {
         "name": "Thermal water (both)"
       },
-      "motion_bed_network_poll_attempts": {
-        "name": "Network poll attempts"
-      },
       "motion_bed_calibration_flat_left": {
         "name": "Calibration flat (left)"
       },
@@ -4506,9 +4464,6 @@
       },
       "motion_bed_fault_left": {
         "name": "Fault (left)"
-      },
-      "motion_bed_network_status_left": {
-        "name": "Network status (left)"
       },
       "motion_bed_pressure_triplet_tags_right": {
         "name": "Pressure triplet tags (right)"
@@ -4575,9 +4530,6 @@
       },
       "motion_bed_fault_right": {
         "name": "Fault (right)"
-      },
-      "motion_bed_network_poll_attempts_left": {
-        "name": "Network poll attempts (left)"
       },
       "motion_bed_month_maximum_rolls": {
         "name": "Month maximum rolls"

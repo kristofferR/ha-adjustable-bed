@@ -1,6 +1,5 @@
 """Source-anchored Motion Bed parser vectors and semantic branch checks."""
 
-from dataclasses import replace
 
 import pytest
 
@@ -434,12 +433,9 @@ def test_thermal_invalid_decimal_handling_and_source_temperature_branches() -> N
 
 def test_sleep_positions_calibration_and_switches() -> None:
     raw = "FFFFFFFF02000A1400000A0B00000F00010100"
-    result = parse(raw, "smart_sleep", "calibration", "network")
+    result = parse(raw, "smart_sleep", "calibration")
     assert result.state.sleep_enabled and result.state.night_light_enabled
     assert result.state.calibration_flat == 10 and result.state.calibration_side == 22
-    assert (
-        result.state.network_status == "connected" and result.state.provisioning_status == "success"
-    )
     assert parse("FFFFFFFF02000E0B0300", "home", "smart_sleep").state.sleep_timer == 3
     positions = parse("FFFFFFFF02000F0EAFBF0102", "sleep_adjust")
     assert positions.state.raw_positions == (175, 191, 1, 2)
@@ -456,27 +452,6 @@ def test_sleep_positions_calibration_and_switches() -> None:
     assert parse("FFFFFFFF0200160B04", "sleep_report").state.fall_timer == 4
 
 
-@pytest.mark.parametrize(
-    "status,expected",
-    [(0, "not_configured"), (1, "not_connected"), (10, "unstable"), (15, "connected")],
-)
-def test_sensor_network_status_and_finite_polling(status: int, expected: str) -> None:
-    raw = "FFFFFFFF02000A14000000000000" + f"{status:02X}"
-    result = parse(raw, "network")
-    assert result.state.network_status == expected
-    assert bool(result.effects) == (status in (0, 1))
-    if result.effects:
-        assert result.effects[0] == MotionBedFollowup("network_status_query", 6000)
-    exhausted = parse(raw, "network", state=MotionBedState(network_poll_attempts=10))
-    assert not exhausted.effects
-    if status in (0, 1):
-        assert exhausted.state.provisioning_status == "failed"
-    for reply, outcome in ((0, "failed"), (1, "waiting"), (15, "success")):
-        result = parse(f"FFFFFFFF0200191300{reply:02X}", "network")
-        assert result.state.provisioning_status == outcome
-        assert result.effects == (
-            MotionBedFollowup("network_status_query", 6000 if reply == 1 else 0),
-        )
 
 
 @pytest.mark.parametrize("operation", [4, 5, 20])
@@ -572,7 +547,6 @@ def test_month_report_all_fields_broad_source_recognition() -> None:
         ("sleep_adjust", "FFFFFFFF020010120001020304050607"),
         ("calibration", "FFFFFFFF0200090D010102"),
         ("calibration_capture", "FFFFFFFF0200090F0301020304"),
-        ("network", "FFFFFFFF020019130001"),
         ("day_report", "FFFFFFFF02000414010A1403010203040506"),
         ("month_report", "FFFFFFFF02009914010A141E0203042832"),
     ],
@@ -1782,17 +1756,6 @@ def test_unrecognized_air_settings_retain_selected_state_but_keep_raw_limits() -
     assert parse("FFFFFFFFFF14030D010100", "air").state == MotionBedState()
 
 
-def test_network_unknown_reply_keeps_status_and_source_followup() -> None:
-    old = MotionBedState(provisioning_status="waiting", network_status="connected")
-    result = parse("FFFFFFFF0200191300AA", "network", state=old)
-    assert result.state == old
-    assert result.effects == (MotionBedFollowup("network_status_query"),)
-    exhausted = parse(
-        "FFFFFFFF020019130001", "network", state=replace(old, network_poll_attempts=10)
-    )
-    assert exhausted.state.provisioning_status == "failed" and not exhausted.effects
-    unknown = parse("FFFFFFFF02000A14000000000000AA", "network", state=old)
-    assert unknown.state.network_code == 170 and unknown.state.network_status == "connected"
 
 
 def test_day_raw_unit_and_app_label_persistence_are_distinct() -> None:

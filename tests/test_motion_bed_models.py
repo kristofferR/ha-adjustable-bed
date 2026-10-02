@@ -377,7 +377,7 @@ _ONE_SHOT_WEITIAO_IDS: tuple[str, ...] = (
 def test_complete_source_bindings_without_duplication() -> None:
     counts = Counter(packet.source_id for action in MOTION_BED_ACTIONS for packet in action.packets)
     assert set(counts) == set(_SOURCE_IDS) == set(SOURCE_COMMANDS)
-    assert len(counts) == 716
+    assert len(counts) == 714
     assert all(count == 1 for count in counts.values())
     assert len({action.key for action in MOTION_BED_ACTIONS}) == len(MOTION_BED_ACTIONS)
 

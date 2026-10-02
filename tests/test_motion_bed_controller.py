@@ -18,7 +18,7 @@ from custom_components.adjustable_bed.beds.motion_bed import (
 )
 from custom_components.adjustable_bed.motion_bed_actions import ACTION_BY_KEY
 from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
-from custom_components.adjustable_bed.motion_bed_protocol import SOURCE_COMMANDS, build_wifi_frames
+from custom_components.adjustable_bed.motion_bed_protocol import SOURCE_COMMANDS
 from custom_components.adjustable_bed.motion_bed_requests import MotionBedWrite
 from custom_components.adjustable_bed.motion_bed_state import MotionBedFollowup
 
@@ -459,17 +459,6 @@ async def test_failed_startup_cleans_notification_session_and_background_work() 
     rig.client.stop_notify.assert_awaited_once_with(rig.last)
 
 
-@pytest.mark.asyncio
-async def test_write_trace_redacts_credentials_but_retains_transport_evidence() -> None:
-    rig = rig_for()
-    await rig.controller.async_discover_capabilities()
-    command = build_wifi_frames("private ssid", "private password", 0, 0)[0]
-    await rig.controller.write_command(command)
-    trace = rig.coordinator.record_command_trace.call_args.kwargs
-    assert trace["payload"]["hex"] == "**REDACTED**"
-    assert trace["characteristic_handle"] == rig.last.handle
-    assert trace["response"] is True
-    assert command == rig.writes[0]
 
 
 @pytest.mark.asyncio
@@ -479,7 +468,6 @@ async def test_write_trace_redacts_credentials_but_retains_transport_evidence() 
         (MotionBedFollowup("position_query", 100), "SleepAdjustActivity:255"),
         (MotionBedFollowup("sensor_query", 200), "DiandongFragment:135"),
         (MotionBedFollowup("module_status_query"), "MainMcuActivity:182"),
-        (MotionBedFollowup("network_status_query", 6000), "NetworkActivity:333"),
     ],
 )
 async def test_followup_packet_and_delay_match_source(
@@ -594,46 +582,6 @@ async def test_multi_frame_configuration_cannot_continue_on_replacement_target()
     replacement.write_gatt_char.assert_not_awaited()
 
 
-@pytest.mark.asyncio
-async def test_network_poll_and_reply_followups_share_one_finite_query_budget(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    rig = rig_for()
-    await rig.controller.async_discover_capabilities()
-    real_sleep = asyncio.sleep
-    query = SOURCE_COMMANDS["NetworkActivity:333"]
-    waiting_reply = bytes.fromhex("FFFFFFFF02000A140000000000000100000000")
-
-    async def sleep(_delay: float) -> None:
-        await real_sleep(0)
-
-    async def write(_characteristic: object, frame: bytes, **_kwargs: object) -> None:
-        if frame == query:
-            rig.controller._handle_notification(waiting_reply)
-
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
-    rig.client.write_gatt_char.side_effect = write
-    request = MotionBedWrite(
-        "provision_wifi",
-        build_wifi_frames("ssid", "password", 0, 0),
-        "network",
-        confirmed=True,
-        persistent=True,
-        network_poll=True,
-    )
-    try:
-        await rig.controller.async_execute_motion_bed_write(request)
-        for _ in range(100):
-            await real_sleep(0)
-            if not rig.controller._tasks:
-                break
-        queries = [frame for frame in rig.writes if frame == query]
-        assert len(queries) == 10
-        assert not rig.controller._tasks
-    finally:
-        tasks = tuple(rig.controller._tasks)
-        await rig.controller.stop_notify()
-        await asyncio.gather(*tasks, return_exceptions=True)
 
 
 @pytest.mark.asyncio

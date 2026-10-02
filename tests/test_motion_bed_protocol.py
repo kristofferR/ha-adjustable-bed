@@ -43,10 +43,6 @@ class VectorInputs(TypedDict):
     massage: NotRequired[bool]
     music: NotRequired[str]
     gear: NotRequired[int]
-    ssid: NotRequired[str]
-    password: NotRequired[str]
-    longitude: NotRequired[float]
-    latitude: NotRequired[float]
 
 
 class Vector(TypedDict):
@@ -143,13 +139,6 @@ def _run(vector: Vector) -> str | list[str] | None:
             protocol.ThermalMode(int(inputs["mode"], 16)),
             inputs["gear"],
         )
-    elif function == "wifi_frames":
-        return [
-            frame.hex().upper()
-            for frame in protocol.build_wifi_frames(
-                inputs["ssid"], inputs["password"], inputs["longitude"], inputs["latitude"]
-            )
-        ]
     else:
         pytest.fail(f"Unbound accepted packet vector: {vector['id']}")
     return result.hex().upper()
@@ -166,7 +155,7 @@ def test_every_literal_source_callsite(source_id: str, expected: str) -> None:
 
 
 def test_literal_catalogue_is_complete_and_immutable() -> None:
-    assert len(protocol.SOURCE_COMMANDS) == 716
+    assert len(protocol.SOURCE_COMMANDS) == 714
     assert set(protocol.SOURCE_COMMANDS) == set(_FIXTURE["literal_commands"])
     with pytest.raises(TypeError):
         protocol.SOURCE_COMMANDS["injected"] = b""  # type: ignore[index]
@@ -297,14 +286,6 @@ def test_alarm_sound_requires_the_matching_audio_capability() -> None:
         protocol.build_alarm(enabled=True, hour=7, minute=0, weekdays={0: True})
 
 
-def test_wifi_utf8_truncates_raw_bytes_without_reencoding_or_logging() -> None:
-    frames = protocol.build_wifi_frames("a" * 31 + "ø", "b" * 15 + "ø", 10.5, 59.0)
-    assert b"".join(frame[9:17] for frame in frames[:4]) == b"a" * 31 + b"\xc3"
-    assert b"".join(frame[9:17] for frame in frames[4:6]) == b"b" * 15 + b"\xc3"
-    assert frames[6][9:17] == bytes.fromhex("41280000426C0000")
-    for longitude, latitude in ((float("nan"), 0), (0, float("inf")), (181, 0), (0, -91)):
-        with pytest.raises(ValueError):
-            protocol.build_wifi_frames("", "", longitude, latitude)
 
 
 @pytest.mark.parametrize(

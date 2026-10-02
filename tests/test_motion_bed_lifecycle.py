@@ -34,7 +34,7 @@ async def real_coordinator(hass, name):
 
 
 @pytest.mark.parametrize("intentional", [False, True])
-@pytest.mark.parametrize("family", ["followup", "thermal", "network", "module"])
+@pytest.mark.parametrize("family", ["followup", "thermal", "module"])
 async def test_actual_disconnect_invalidates_each_owned_family_before_reference_clear(hass, intentional, family):
     coord = await real_coordinator(hass, "TL-Q" if family == "module" else "TL-W" if family == "thermal" else "QMS-IQ")
     controller = coord.controller
@@ -49,9 +49,6 @@ async def test_actual_disconnect_invalidates_each_owned_family_before_reference_
             await controller._followup(MotionBedFollowup("position_query", 25))
     elif family == "thermal":
         operation = controller._thermal_poll
-    elif family == "network":
-        controller._state = replace(controller._state, provisioning_status="waiting")
-        operation = controller._network_poll
     else:
         controller._state = replace(controller._state, thermal_module_present=True)
         operation = controller._start_present_modules
@@ -97,7 +94,7 @@ async def test_query_queued_before_actual_disconnect_is_rejected_before_reconnec
     client.write_gatt_char.assert_not_awaited()
 
 
-@pytest.mark.parametrize("family", ["followup", "thermal", "network", "module"])
+@pytest.mark.parametrize("family", ["followup", "thermal", "module"])
 async def test_every_owned_query_has_admission_gate_and_rejects_replacement_callback(monkeypatch, family):
     old = rig_for("TL-Q" if family == "module" else "TL-W" if family == "thermal" else "QMS-IQ")
     replacement = rig_for()
@@ -118,9 +115,6 @@ async def test_every_owned_query_has_admission_gate_and_rejects_replacement_call
         await old.controller._followup(MotionBedFollowup("position_query"))
     elif family == "thermal":
         await old.controller._thermal_poll()
-    elif family == "network":
-        old.controller._state = replace(old.controller._state, provisioning_status="waiting")
-        await old.controller._network_poll()
     else:
         old.controller._state = replace(old.controller._state, thermal_module_present=True)
         await old.controller._start_present_modules()

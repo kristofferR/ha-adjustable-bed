@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -139,17 +138,6 @@ _VALID_PUBLIC_CASES: tuple[tuple[str, str, dict[str, object]], ...] = (
         {"hour": 21, "minute": 30, "mode": 1, "gear": 4, "confirmed": True},
     ),
     ("motion_bed_audio", "QMS4", {"operation": "track", "value": 5}),
-    (
-        "motion_bed_provision_wifi",
-        "QMS4",
-        {
-            "ssid": "TEST_PRIVATE_NETWORK",
-            "password": "TEST_PRIVATE_PASSWORD",
-            "longitude": 10.5,
-            "latitude": 59.0,
-            "confirmed": True,
-        },
-    ),
 )
 
 
@@ -165,7 +153,7 @@ async def test_every_registered_public_action_validates_and_dispatches(
     assert target.coordinator.async_execute_controller_command.await_args.kwargs["resource"] == "*"
 
 
-async def test_exact_thirteen_schemas_are_registered(hass: HomeAssistant) -> None:
+async def test_exact_ble_action_schemas_are_registered(hass: HomeAssistant) -> None:
     await async_register_services(hass)
     registered = hass.services.async_services()[DOMAIN]
     assert {name for name in registered if name.startswith("motion_bed_")} == {
@@ -241,21 +229,6 @@ async def test_module_rebinding_and_deletion_are_confirmed(
         ("motion_bed_pressure", "TL-A", {"operation": "live", "channel": 0, "value": 10}),
         ("motion_bed_thermal_schedule", "TL-W", {"hour": 0, "minute": 0, "mode": 1, "gear": 5}),
         ("motion_bed_audio", "QMS4", {"operation": "volume", "value": 6}),
-        (
-            "motion_bed_provision_wifi",
-            "QMS4",
-            {"ssid": "TEST", "password": "TEST", "longitude": float("nan"), "latitude": 0},
-        ),
-        (
-            "motion_bed_provision_wifi",
-            "QMS4",
-            {"ssid": "TEST", "password": "TEST", "longitude": 181, "latitude": 0},
-        ),
-        (
-            "motion_bed_provision_wifi",
-            "QMS4",
-            {"ssid": "TEST", "password": "TEST", "longitude": True, "latitude": 0},
-        ),
     ),
 )
 async def test_invalid_public_domains_fail_before_connection_or_write(
@@ -324,33 +297,6 @@ async def test_alarm_preserves_disabled_map_repeat_and_modular_first_switch(
     assert motor.writes[0][8] == 0
 
 
-async def test_wifi_credentials_are_redacted_from_trace_and_never_persisted(
-    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
-) -> None:
-    caplog.set_level(logging.DEBUG, logger="custom_components.adjustable_bed")
-    target = make_target(hass)
-    entry_before = dict(target.entry.data)
-    with patch.object(target.controller, "_spawn"):
-        await invoke(hass, [target], "motion_bed_provision_wifi", _VALID_PUBLIC_CASES[-1][2])
-    assert len(target.writes) == 7
-    traces = [
-        call.kwargs["payload"] for call in target.coordinator.record_command_trace.call_args_list
-    ]
-    assert all(payload["hex"] == "**REDACTED**" for payload in traces)
-    diagnostics = json.dumps(target.controller.protocol_diagnostics, default=str)
-    # HA core can log original service data before this integration's handler.
-    integration_logs = "\n".join(
-        caplog.handler.format(record)
-        for record in caplog.records
-        if record.name.startswith("custom_components.adjustable_bed")
-    )
-    for secret in ("TEST_PRIVATE_NETWORK", "TEST_PRIVATE_PASSWORD"):
-        assert secret not in integration_logs
-        assert secret not in diagnostics
-        assert secret not in json.dumps(traces)
-        assert secret.encode().hex() not in json.dumps(traces)
-        assert secret not in json.dumps(target.controller.motion_bed_local_state)
-    assert dict(target.entry.data) == entry_before
 
 
 @pytest.mark.parametrize("service, profile, data", _VALID_PUBLIC_CASES)
@@ -617,55 +563,6 @@ _DYNAMIC_SOURCE_ROUTES: tuple[tuple[str, str, dict[str, object], str, int | None
         None,
     ),
     (
-        "NetworkActivity:313",
-        "motion_bed_provision_wifi",
-        {"ssid": "BED", "password": "password", "longitude": 10.5, "latitude": 59.0},
-        "wifi-BED",
-        0,
-    ),
-    (
-        "NetworkActivity:315",
-        "motion_bed_provision_wifi",
-        {"ssid": "BED", "password": "password", "longitude": 10.5, "latitude": 59.0},
-        "wifi-BED",
-        1,
-    ),
-    (
-        "NetworkActivity:317",
-        "motion_bed_provision_wifi",
-        {"ssid": "BED", "password": "password", "longitude": 10.5, "latitude": 59.0},
-        "wifi-BED",
-        2,
-    ),
-    (
-        "NetworkActivity:319",
-        "motion_bed_provision_wifi",
-        {"ssid": "BED", "password": "password", "longitude": 10.5, "latitude": 59.0},
-        "wifi-BED",
-        3,
-    ),
-    (
-        "NetworkActivity:321",
-        "motion_bed_provision_wifi",
-        {"ssid": "BED", "password": "password", "longitude": 10.5, "latitude": 59.0},
-        "wifi-BED",
-        4,
-    ),
-    (
-        "NetworkActivity:323",
-        "motion_bed_provision_wifi",
-        {"ssid": "BED", "password": "password", "longitude": 10.5, "latitude": 59.0},
-        "wifi-BED",
-        5,
-    ),
-    (
-        "NetworkActivity:325",
-        "motion_bed_provision_wifi",
-        {"ssid": "BED", "password": "password", "longitude": 10.5, "latitude": 59.0},
-        "wifi-BED",
-        6,
-    ),
-    (
         "PressSetActivity:59",
         "motion_bed_pressure",
         {"operation": "live", "channel": 0, "value": 0},
@@ -804,12 +701,9 @@ async def test_every_dynamic_source_builder_is_bound_to_public_request(
         assert isinstance(expected, str)
         assert request.frames[0].hex().upper() == expected
     assert source_id
-    if service == "motion_bed_provision_wifi":
-        assert len(request.frames) == 7 and request.spacing_ms == 300
-        assert request.network_poll and request.persistent
     if service == "motion_bed_pressure" and data["operation"] == "live":
         assert request.initial_delay_ms == 2500
 
 
-def test_all_thirty_three_dynamic_source_rows_are_covered() -> None:
-    assert len(_DYNAMIC_SOURCE_ROUTES) == len({row[0] for row in _DYNAMIC_SOURCE_ROUTES}) == 33
+def test_all_ble_dynamic_source_rows_are_covered() -> None:
+    assert len(_DYNAMIC_SOURCE_ROUTES) == len({row[0] for row in _DYNAMIC_SOURCE_ROUTES}) == 26

@@ -1,7 +1,6 @@
 """Registry retirement and current-owner polling across public command boundaries."""
 import asyncio
 from dataclasses import replace
-from unittest.mock import patch
 
 import pytest
 from bleak.exc import BleakError
@@ -10,16 +9,14 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
 from custom_components.adjustable_bed.beds.solace import SolaceController
-from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH
+from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.cover import (
     _async_remove_stale_cover_entities,
     _cover_entities_for,
 )
 from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
 from custom_components.adjustable_bed.motion_bed_protocol import SOURCE_COMMANDS
-from custom_components.adjustable_bed.motion_bed_services import build_motion_bed_request
 from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
-from custom_components.adjustable_bed.services import async_register_services
 from tests.test_motion_bed_lifecycle import real_coordinator
 from tests.test_paired_setup import _paired_entry
 
@@ -163,57 +160,3 @@ async def test_thermal_poll_terminal_owner_loss_does_not_retry(hass, monkeypatch
     await coord._command_scheduler.async_shutdown()
 
 
-@pytest.mark.parametrize("code,expected", [(15, "success"), (0, "failed"), (1, "waiting")])
-async def test_provisioning_reply_during_last_att_preserves_state_and_hold_ownership(hass, monkeypatch, code, expected):
-    coord = await real_coordinator(hass, "QMS-IQ")
-    controller = coord.controller
-    await controller.start_notify()
-    data = {"ssid": "BED", "password": "password", "longitude": 0, "latitude": 0, "confirmed": True}
-    request = build_motion_bed_request("motion_bed_provision_wifi", data)
-    assert len(request.frames) == 7
-    callback = coord.client.start_notify.call_args.args[1]
-    characteristic = coord.client.start_notify.call_args.args[0]
-    real_sleep, real_wait = asyncio.sleep, asyncio.wait_for
-    witnessed = []
-
-    async def sleep(delay):
-        if delay == 6:
-            await asyncio.Event().wait()
-        else:
-            await real_sleep(0)
-
-    async def wait_for(awaitable, timeout):
-        if timeout == 0.3:
-            awaitable.close()
-            raise TimeoutError
-        return await real_wait(awaitable, timeout)
-
-    async def write(char, frame, **kwargs):
-        if frame == request.frames[-1]:
-            callback(characteristic, bytearray(bytes.fromhex("FFFFFFFF0200191300") + bytes([code])))
-            witnessed.append(controller.protocol_diagnostics["provisioning_status"])
-            await real_sleep(0)
-
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.wait_for", wait_for)
-    coord.client.write_gatt_char.side_effect = write
-    await async_register_services(hass)
-    try:
-        with patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=([(coord, SIDE_BOTH)], [])):
-            await hass.services.async_call(DOMAIN, "motion_bed_provision_wifi", {"device_id": "bed", **data}, blocking=True)
-        assert witnessed == [expected]
-        assert controller.protocol_diagnostics["provisioning_status"] == expected
-        if expected == "waiting":
-            assert controller.protocol_diagnostics["network_poll_attempts"] == 1
-            assert controller._network_poll_active and controller._network_task is not None
-            assert coord._command_connection_holds == 1
-        else:
-            assert not controller._network_poll_active and controller._network_task is None
-            assert coord._command_connection_holds == 0 and controller._network_connection_hold is None
-        assert [call.args[1] for call in coord.client.write_gatt_char.await_args_list][:7] == list(request.frames)
-    finally:
-        tasks = tuple(controller._tasks)
-        await controller.stop_notify()
-        await asyncio.gather(*tasks, return_exceptions=True)
-        coord._cancel_disconnect_timer()
-        await coord._command_scheduler.async_shutdown()

@@ -8,7 +8,7 @@ from .motion_bed_state import MotionBedContext
 
 RequestName = Literal[
     "alarm", "clock", "sleep_angles", "calibration", "sleep_timer", "sleep_report",
-    "module", "air_setting", "pressure", "thermal_schedule", "audio", "provision_wifi",
+    "module", "air_setting", "pressure", "thermal_schedule", "audio",
 ]
 
 @dataclass(frozen=True, slots=True)
@@ -16,12 +16,10 @@ class MotionBedWrite:
     name: RequestName
     frames: tuple[bytes, ...]
     context: MotionBedContext
-    spacing_ms: int = 0
     confirmed: bool = False
     persistent: bool = False
     initial_delay_ms: int = 0
     report_offset: int = 0
     historical_day: bool = False
-    network_poll: bool = False
     alarm_audio: bool | None = None
     alarm_switch: int | None = None

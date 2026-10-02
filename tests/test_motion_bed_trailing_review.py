@@ -146,14 +146,11 @@ async def test_valid_motion_pair_common_options_preserve_independent_names(hass)
 
 @pytest.mark.parametrize("contexts", [
     frozenset({"smart_sleep", "calibration"}),
-    frozenset({"smart_sleep", "calibration", "network"}),
 ])
 @pytest.mark.parametrize("raw,field,value", [
     ("FFFFFFFF02000A1400000A46", "calibration_side", 140),
-    ("FFFFFFFF02000A140000000000000F", "network_status", "connected"),
 ])
 def test_each_complete_shared_status_receiver_survives_shorter_reply(contexts, raw, field, value):
-    contexts = contexts | frozenset({"network"}) if field == "network_status" else contexts
     result = parse_motion_bed_notification(bytes.fromhex(raw), MotionBedRoute(contexts=contexts), MotionBedState())
     assert result.rejection is None
     assert getattr(result.state, field) == value
@@ -164,17 +161,15 @@ def test_each_complete_shared_status_receiver_survives_shorter_reply(contexts, r
 @pytest.mark.parametrize("context,raw", [
     ("smart_sleep", "FFFFFFFF02000A140000000000000F00010100"),
     ("calibration", "FFFFFFFF02000A1400000A46"),
-    ("network", "FFFFFFFF02000A140000000000000F"),
 ])
 def test_single_status_receiver_preserves_its_underlength_rejection(context: MotionBedContext, raw):
-    state = MotionBedState(calibration_side=12, network_status="connected", sleep_enabled=True)
+    state = MotionBedState(calibration_side=12, sleep_enabled=True)
     result = parse_motion_bed_notification(bytes.fromhex(raw)[:-1], MotionBedRoute(contexts=frozenset({context})), state)
     assert result.rejection == "underlength" and result.state == state
 
 
 @pytest.mark.parametrize("context,raw,field,value", [
     ("calibration", "FFFFFFFF02000A1400000A46", "calibration_side", 140),
-    ("network", "FFFFFFFF02000A140000000000000F", "network_status", "connected"),
 ])
 async def test_real_home_notify_keeps_complete_extra_status_context(hass, context: MotionBedContext, raw, field, value):
     coord = await real_coordinator(hass, "QMS-IQ")

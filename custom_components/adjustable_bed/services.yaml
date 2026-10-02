@@ -2492,58 +2492,6 @@ motion_bed_audio:
       name: Preview
       selector:
         boolean: {}
-motion_bed_provision_wifi:
-  name: Motion Bed sensor Wi-Fi provisioning
-  description: Send seven BLE configuration frames, then poll status at most ten times.
-    Credentials are redacted and never stored in the entry.
-  fields:
-    device_id:
-      name: Device
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    side:
-      name: Side
-      selector:
-        select:
-          options:
-          - left
-          - right
-          - both
-    confirmed:
-      name: Confirm persistent change
-      default: false
-      selector:
-        boolean: {}
-    ssid:
-      name: Ssid
-      required: true
-      selector:
-        text: {}
-    password:
-      name: Password
-      required: true
-      selector:
-        text:
-          type: password
-    longitude:
-      name: Longitude
-      required: true
-      selector:
-        number:
-          mode: box
-          min: -180
-          max: 180
-    latitude:
-      name: Latitude
-      required: true
-      selector:
-        number:
-          mode: box
-          min: -90
-          max: 90
 svane_hold_control:
   name: Hold Svane Remote control
   description: Hold selected axes or adjust the lamp until the bounded duration ends. Source-specific release runs after movement.

@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable, Coroutine, Mapping
-from contextlib import ExitStack
 from contextvars import ContextVar
 from dataclasses import dataclass, fields, replace
 from typing import TYPE_CHECKING
@@ -74,16 +73,11 @@ class MotionBedController(BedController):
         self._receipts: tuple[str, ...] = ()
         self._operation_generation: ContextVar[int | None] = ContextVar("motion_bed_operation", default=None)
         self._started_modules: set[str] = set()
-        self._network_queries = 0
-        self._network_poll_active = False
         self._active_module: str | None = None
         self._audio_preference = False
         self._held_session: _HeldSession | None = None
         self._module_generation = 0
         self._thermal_task: asyncio.Task[None] | None = None
-        self._network_generation = 0
-        self._network_task: asyncio.Task[None] | None = None
-        self._network_connection_hold: ExitStack | None = None
         self._module_capabilities: dict[str, bool] = {}
         self._remembered_module: str | None = None
         previous = coordinator.capability_controller
@@ -188,7 +182,7 @@ class MotionBedController(BedController):
                 "HomeActivity", "AnmoFragment", "DengguangFragment", "SmartSleepFragment",
                 "AlarmActivity", "SleepAdjustActivity", "SleepDataEntryActivity",
                 "SleepDayReportActivity", "SleepFallTimerSelectActivity", "SleepMonthReportActivity",
-                "SleepReportMainActivity", "SleepTimerSelectActivity", "NetworkActivity", "XinLvDaiActivity",
+                "SleepReportMainActivity", "SleepTimerSelectActivity",
             })
         if self.selection.surface == "hub":
             owners.update({"MainMcuActivity", "ChangeDeviceActivity", "ConnectMcuActivity"})
@@ -296,7 +290,7 @@ class MotionBedController(BedController):
                 state_key="motion_bed_" + item.name, icon="mdi:bed-outline",
                 entity_registry_enabled_default=item.name in {
                     "brightness", "upper_massage", "lower_massage", "massage_timer", "thermal_temperature",
-                    "thermal_water", "network_status", "fault", "fault_part", "raw_positions",
+                    "thermal_water", "fault", "fault_part", "raw_positions",
                 },
             )
             for item in fields(self._state)
@@ -349,8 +343,6 @@ class MotionBedController(BedController):
             self._cancel_background()
             self._context_expiry.clear()
             self._started_modules.clear()
-            self._network_queries = 0
-            self._network_poll_active = False
             self._active_module = None
             self._state = MotionBedState()
             self._route = self.selection.route
@@ -366,10 +358,6 @@ class MotionBedController(BedController):
             raise ConnectionError("Motion Bed target/session changed")
         return client, characteristic
 
-    def _format_command_trace_payload(self, command: bytes) -> dict[str, object]:
-        if command.startswith(bytes.fromhex("FFFFFFFF02001813")):
-            return {"hex": "**REDACTED**", "reason": "Motion Bed Wi-Fi provisioning"}
-        return {"hex": command.hex()}
 
     async def write_command(self, command: bytes, repeat_count: int = 1,
                             repeat_delay_ms: int = 100,
@@ -383,7 +371,7 @@ class MotionBedController(BedController):
                 return
             response = "write" in characteristic.properties
             self._coordinator.record_command_trace(
-                payload=self._format_command_trace_payload(command),
+                payload={"hex": command.hex()},
                 characteristic_uuid=CHARACTERISTIC, characteristic_handle=characteristic.handle,
                 response=response, repeat_count=1, repeat_delay_ms=0,
                 command_origin="motion_bed_current_target", controller_class=type(self).__name__,
@@ -426,7 +414,6 @@ class MotionBedController(BedController):
         self._notify_callback = None
         self._context_expiry.clear()
         self._started_modules.clear()
-        self._network_poll_active = False
         self._active_module = None
         self._state = MotionBedState()
         self._publish()
@@ -474,23 +461,16 @@ class MotionBedController(BedController):
             self._characteristic = None
             self._context_expiry.clear()
             self._started_modules.clear()
-            self._network_queries = 0
-            self._network_poll_active = False
             self._state = MotionBedState()
             self._publish()
             self._notify_callback = None
 
     def _cancel_background(self) -> None:
         self._module_generation += 1
-        self._network_generation += 1
         for task in self._tasks:
             task.cancel()
         self._tasks.clear()
         self._thermal_task = None
-        self._network_task = None
-        if self._network_connection_hold is not None:
-            self._network_connection_hold.close()
-            self._network_connection_hold = None
 
     def _spawn(self, operation: Callable[[], Coroutine[object, object, None]]) -> asyncio.Task[None]:
         # Coroutine functions below own session/generation checks before each write.
@@ -529,16 +509,6 @@ class MotionBedController(BedController):
                 contexts |= frozenset({"thermal"})
         route = replace(self._route, contexts=contexts)
         result = parse_motion_bed_notification(data, route, self._state)
-        if self._state.provisioning_status in ("success", "failed", "timed_out"):
-            # A completed attempt stays terminal; status queries still update
-            # network telemetry through the unchanged native decoder.
-            result = replace(
-                result,
-                state=replace(result.state, provisioning_status=self._state.provisioning_status,
-                              network_poll_attempts=self._state.network_poll_attempts),
-                effects=tuple(effect for effect in result.effects
-                              if effect.action != "network_status_query"),
-            )
         self._diagnostic_rejection = result.rejection
         self._state = result.state
         if "module_deleted" in result.receipts:
@@ -558,19 +528,12 @@ class MotionBedController(BedController):
             # The delete receiver clears inventory; refresh it using the proven query.
             effects += (MotionBedFollowup("module_status_query"),)
         for effect in effects:
-            if effect.action == "network_status_query" and self._network_poll_active and effect.delay_ms:
-                continue
-            network_generation = self._network_generation
-            self._spawn(lambda effect=effect, network_generation=network_generation:
-                        self._followup(effect, network_generation=network_generation))
+            self._spawn(lambda effect=effect: self._followup(effect))
 
-    async def _followup(self, effect: MotionBedFollowup, *, network_generation: int | None = None) -> None:
+    async def _followup(self, effect: MotionBedFollowup) -> None:
         generation = self._generation
-        attempt = self._network_generation if network_generation is None else network_generation
         def current() -> bool:
-            return self._owned_session_current(generation) and (
-                effect.action != "network_status_query" or attempt == self._network_generation
-            )
+            return self._owned_session_current(generation)
         await asyncio.sleep(effect.delay_ms / 1000)
         if not current():
             return
@@ -578,14 +541,9 @@ class MotionBedController(BedController):
             "module_status_query": "main_mcu_activity_module_status",
             "sensor_query": "diandong_fragment_sensor_status",
             "position_query": "sleep_adjust_activity_raw_positions",
-            "network_status_query": "network_activity_network_status",
         }[effect.action]
         async def execute(controller: BedController) -> None:
-            if controller is not self or not current():
-                return
-            if effect.action == "network_status_query":
-                await self._bounded_network_query()
-            else:
+            if controller is self and current():
                 await controller.async_execute_motion_bed_internal_query(key)
         await self._coordinator.async_execute_controller_query(execute, cancel_running=False, skip_disconnect=True,
                                                                      run_if=current)
@@ -801,7 +759,7 @@ class MotionBedController(BedController):
         available: set[str] = set()
         surface = self.selection.surface
         if surface == "home":
-            available.update({"clock", "alarm", "sleep_angles", "calibration", "sleep_timer", "sleep_report", "provision_wifi"})
+            available.update({"clock", "alarm", "sleep_angles", "calibration", "sleep_timer", "sleep_report"})
             if self.selection.preset == "K2M":
                 available.add("audio")
         if surface == "motor" or (surface == "hub" and self._module_present("motor")):
@@ -836,33 +794,12 @@ class MotionBedController(BedController):
     async def async_execute_motion_bed_write(self, request: MotionBedWrite) -> None:
         self.validate_motion_bed_write(request)
         token = self._operation_generation.set(self._generation)
-        network_hold: ExitStack | None = None
-        hold_transferred = False
-        generation = self._generation
-        network_generation = self._network_generation
         try:
-            if request.network_poll:
-                self._network_generation += 1
-                network_generation = self._network_generation
-                if self._network_task is not None:
-                    self._network_task.cancel()
-                    self._network_task = None
-                if self._network_connection_hold is not None:
-                    self._network_connection_hold.close()
-                network_hold = ExitStack()
-                network_hold.enter_context(self._coordinator.hold_command_connection())
-                self._network_connection_hold = network_hold
-                self._network_queries = 0
-                # This attempt owns delayed acknowledgements even before its poll starts.
-                self._network_poll_active = True
-                # Replies may arrive while any provisioning frame is awaiting ATT.
-                self._state = replace(self._state, network_poll_attempts=0, provisioning_status="waiting")
-                self._publish()
             if self.selection.surface == "hub":
                 module = "thermal" if request.context in ("thermal", "thermal_schedule") else "air" if request.name in ("air_setting", "pressure") else "motor" if request.name in ("alarm", "audio", "clock") else None
                 if module is not None:
                     await self.set_motion_bed_surface(module)
-            self._activate(request.context, 75 if request.network_poll else 30)
+            self._activate(request.context)
             if request.name == "sleep_report":
                 fresh = MotionBedState()
                 clean = {item.name: getattr(fresh, item.name) for item in fields(fresh)
@@ -877,79 +814,12 @@ class MotionBedController(BedController):
                     return
                 except TimeoutError:
                     pass
-            for index, frame in enumerate(request.frames):
+            for frame in request.frames:
                 if self._coordinator.cancel_command.is_set():
                     return
-                if index and request.spacing_ms:
-                    try:
-                        await asyncio.wait_for(self._coordinator.cancel_command.wait(), request.spacing_ms / 1000)
-                        return
-                    except TimeoutError:
-                        pass
                 await self.write_command(frame)
-            if (request.network_poll and network_generation == self._network_generation
-                    and self._network_connection_hold is network_hold
-                    and self._owned_session_current(generation)
-                    and not self._coordinator.cancel_command.is_set()
-                    and self._state.provisioning_status not in ("failed", "success")):
-                self._network_poll_active = True
-                self._network_task = self._spawn(lambda: self._network_poll(connection_hold=network_hold))
-                hold_transferred = True
         finally:
-            if network_hold is not None and not hold_transferred:
-                network_hold.close()
-                if self._network_connection_hold is network_hold:
-                    self._network_connection_hold = None
-                    self._network_poll_active = False
-                    if (network_generation == self._network_generation
-                            and self._owned_session_current(generation)
-                            and self._state.provisioning_status == "waiting"):
-                        self._context_expiry.pop(request.context, None)
-                        self._state = replace(self._state, provisioning_status="failed")
-                        self._publish()
             self._operation_generation.reset(token)
-
-    async def _bounded_network_query(self) -> None:
-        if self._network_queries >= 10:
-            return
-        self._network_queries += 1
-        await self.async_execute_motion_bed_internal_query("network_activity_network_status")
-
-    async def _network_poll(self, *, connection_hold: ExitStack | None = None) -> None:
-        generation = self._generation
-        attempt = self._network_generation
-        def current() -> bool:
-            return self._owned_session_current(generation) and attempt == self._network_generation
-        try:
-            for _ in range(10):
-                await asyncio.sleep(6)
-                if not current() or self._state.provisioning_status in ("failed", "success"):
-                    return
-                async def query(controller: BedController) -> None:
-                    if controller is self and current():
-                        await self._bounded_network_query()
-                try:
-                    await self._coordinator.async_execute_controller_query(query, cancel_running=False, skip_disconnect=True,
-                                                                         run_if=current)
-                except asyncio.CancelledError:
-                    task = asyncio.current_task()
-                    if task is None or task.cancelling() or not current():
-                        raise
-                except (BleakError, ConnectionError, TimeoutError):
-                    if not current():
-                        return
-                if not current():
-                    return
-            if current() and self._state.provisioning_status == "waiting":
-                self._state = replace(self._state, provisioning_status="timed_out")
-                self._publish()
-        finally:
-            if connection_hold is not None:
-                connection_hold.close()
-                if self._network_connection_hold is connection_hold:
-                    self._network_connection_hold = None
-            if current():
-                self._network_poll_active = False
 
     async def _send_stop(self) -> None:
         await self.write_command(STOP, cancel_event=asyncio.Event())

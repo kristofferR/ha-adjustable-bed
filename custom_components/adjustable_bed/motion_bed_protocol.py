@@ -8,9 +8,7 @@ its model, action and state predicate before sending it.
 
 from __future__ import annotations
 
-import math
 import re
-import struct
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from enum import IntEnum, StrEnum
@@ -355,22 +353,6 @@ def build_audio_volume(volume: int) -> bytes:
     )
 
 
-def build_wifi_frames(
-    ssid: str, password: str, longitude: float, latitude: float
-) -> tuple[bytes, ...]:
-    """Android UTF-8 bytes are truncated and FF padded, including mid-codepoint."""
-    for value, bound, name in ((longitude, 180, "longitude"), (latitude, 90, "latitude")):
-        if isinstance(value, bool) or not math.isfinite(value) or not -bound <= value <= bound:
-            raise ValueError(f"{name} must be finite and within ±{bound}")
-    network = ssid.encode("utf-8")[:32].ljust(32, b"\xff") + password.encode("utf-8")[:16].ljust(
-        16, b"\xff"
-    )
-    chunks = [network[index : index + 8] for index in range(0, 48, 8)]
-    chunks.append(struct.pack(">ff", longitude, latitude))
-    return tuple(
-        additive_checksum(bytes.fromhex("FFFFFFFF02001813") + bytes((index,)) + data)
-        for index, data in enumerate(chunks, 1)
-    )
 
 
 SOURCE_COMMANDS: Final[Mapping[str, bytes]] = MappingProxyType(
@@ -430,7 +412,6 @@ SOURCE_COMMANDS: Final[Mapping[str, bytes]] = MappingProxyType(
         "HomeActivity:463": bytes.fromhex("FFFFFFFF02000A0A1204"),
         "HomeActivity:465": bytes.fromhex("FFFFFFFF02000E0B001704"),
         "MainMcuActivity:182": bytes.fromhex("FFFFFFFF010026140F0000000000000000004604"),
-        "NetworkActivity:333": bytes.fromhex("FFFFFFFF02000A0A1204"),
         "PressSetActivity:224": bytes.fromhex("FFFFFFFFFF0B020400AE30"),
         "Setting2Activity:238": bytes.fromhex("FFFFFFFF010026140F0000000000000000004604"),
         "SleepAdjustActivity:102": bytes.fromhex("FFFFFFFF02000A0A1204"),
@@ -459,7 +440,6 @@ SOURCE_COMMANDS: Final[Mapping[str, bytes]] = MappingProxyType(
         "SleepDataEntryActivity:268": bytes.fromhex("FFFFFFFF0200120C0A466C04"),
         "SleepDataEntryActivity:293": bytes.fromhex("FFFFFFFF0200090F03000000001904"),
         "SleepDayReportActivity:88": bytes.fromhex("FFFFFFFF02000A0A1204"),
-        "XinLvDaiActivity:175": bytes.fromhex("FFFFFFFF02000A0A1204"),
         "AnmoFragment:88": bytes.fromhex("FFFFFFFF0100090B001104"),
         "AnmoFragment:90": bytes.fromhex("FFFFFFFF0100090B011204"),
         "AnmoFragment:100": bytes.fromhex("FFFFFFFF050000001516CF"),

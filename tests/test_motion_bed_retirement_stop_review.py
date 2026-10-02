@@ -1,4 +1,4 @@
-"""Current-attempt provisioning retirement and physical hub STOP routing."""
+"""Physical hub STOP routing and profile registry retirement."""
 
 import asyncio
 from unittest.mock import AsyncMock, patch
@@ -47,56 +47,6 @@ def inventory(ctrl, client):
     client.start_notify.call_args.args[1](client.start_notify.call_args.args[0], frame)
 
 
-async def test_public_provision_interframe_preemption_has_terminal_status(hass):
-    coord = await real_coordinator(hass, "QMS-IQ")
-    ctrl = coord.controller
-    await ctrl.start_notify()
-    await async_register_services(hass)
-    first = asyncio.Event()
-    replacement = asyncio.Event()
-
-    async def write(char, frame, **kwargs):
-        first.set()
-
-    coord.client.write_gatt_char.side_effect = write
-
-    async def competing(c):
-        replacement.set()
-
-    task = asyncio.create_task(
-        call(
-            hass,
-            coord,
-            "motion_bed_provision_wifi",
-            {
-                "ssid": "BED",
-                "password": "password",
-                "longitude": 0,
-                "latitude": 0,
-                "confirmed": True,
-            },
-        )
-    )
-    try:
-        await first.wait()
-        await asyncio.sleep(0)
-        await coord.async_execute_controller_command(competing)
-        await task
-        observed = {
-            "status": ctrl.protocol_diagnostics["provisioning_status"],
-            "poll_active": ctrl._network_poll_active,
-            "poll_task": ctrl._network_task is not None,
-            "connection_holds": coord._command_connection_holds,
-            "writes": len(coord.client.write_gatt_char.await_args_list),
-            "replacement_ran": replacement.is_set(),
-        }
-        assert replacement.is_set() and observed["writes"] < 7
-        assert observed["status"] != "waiting", observed
-    finally:
-        if not task.done():
-            task.cancel()
-        await asyncio.gather(task, return_exceptions=True)
-        await cleanup(coord, ctrl)
 
 
 @pytest.mark.parametrize("stage", ["same_session", "pending_inventory", "fresh_inventory"])
@@ -212,67 +162,6 @@ async def test_telemetry_retirement_preserves_active_customization_and_other_run
         await cleanup(coord, ctrl)
 
 
-@pytest.mark.parametrize(
-    "ending", ["task_cancel", "write_failure", "early_success", "early_failed"]
-)
-async def test_interrupted_provisioning_retains_only_owned_terminal_state(hass, ending):
-    from bleak.exc import BleakError
-
-    coord = await real_coordinator(hass, "QMS-IQ")
-    ctrl = coord.controller
-    await ctrl.start_notify()
-    await async_register_services(hass)
-    callback = coord.client.start_notify.call_args.args[1]
-    char = coord.client.start_notify.call_args.args[0]
-
-    async def write(characteristic, frame, **kwargs):
-        if ending == "early_success":
-            callback(char, bytearray.fromhex("FFFFFFFF02001913000F"))
-        elif ending == "early_failed":
-            callback(char, bytearray.fromhex("FFFFFFFF020019130000"))
-        if ending == "task_cancel":
-            asyncio.current_task().cancel()
-            await asyncio.sleep(0)
-        else:
-            raise BleakError("frame interrupted")
-
-    coord.client.write_gatt_char.side_effect = write
-    try:
-        if ending == "task_cancel":
-            await call(
-                hass,
-                coord,
-                "motion_bed_provision_wifi",
-                {
-                    "ssid": "BED",
-                    "password": "password",
-                    "longitude": 0,
-                    "latitude": 0,
-                    "confirmed": True,
-                },
-            )
-        else:
-            with pytest.raises(BleakError):
-                await call(
-                    hass,
-                    coord,
-                    "motion_bed_provision_wifi",
-                    {
-                        "ssid": "BED",
-                        "password": "password",
-                        "longitude": 0,
-                        "latitude": 0,
-                        "confirmed": True,
-                    },
-                )
-        expected = "success" if ending == "early_success" else "failed"
-        assert ctrl.protocol_diagnostics["provisioning_status"] == expected
-        assert not ctrl._network_poll_active and ctrl._network_task is None
-        assert coord._command_connection_holds == 0 and ctrl._network_connection_hold is None
-        if ending not in ("early_success", "early_failed"):
-            assert "network" not in ctrl._context_expiry
-    finally:
-        await cleanup(coord, ctrl)
 
 
 @pytest.mark.parametrize("change", ["address", "profile", "absent", "unknown"])
@@ -384,58 +273,3 @@ async def test_absent_selected_module_does_not_invent_a_default_motor_stop(
         await cleanup(coord, ctrl)
 
 
-async def test_replacement_during_att_cannot_publish_old_failed_into_current_state(hass):
-    from bleak.exc import BleakError
-
-    await async_register_services(hass)
-    coord = await real_coordinator(hass, "QMS-IQ")
-    old = coord.controller
-    await old.start_notify()
-    entered = asyncio.Event()
-    release = asyncio.Event()
-
-    async def delayed_failure(*args, **kwargs):
-        entered.set()
-        await release.wait()
-        raise BleakError("old ATT write failed after replacement")
-
-    coord.client.write_gatt_char.side_effect = delayed_failure
-    task = asyncio.create_task(
-        call(
-            hass,
-            coord,
-            "motion_bed_provision_wifi",
-            {
-                "ssid": "BED",
-                "password": "password",
-                "longitude": 0,
-                "latitude": 0,
-                "confirmed": True,
-            },
-        )
-    )
-    current = None
-    try:
-        await entered.wait()
-        coord._client = client_for(characteristic(79))
-        current = await create_controller(coord, BED_TYPE_MOTION_BED, None, coord.client)
-        coord._controller = current
-        current._startup = AsyncMock()
-        await current.start_notify()
-        before = coord.controller_state["motion_bed_provisioning_status"]
-        release.set()
-        with pytest.raises(BleakError):
-            await task
-        witness = {
-            "before": before,
-            "after": coord.controller_state["motion_bed_provisioning_status"],
-            "new_state": current.protocol_diagnostics["provisioning_status"],
-            "old_state": old.protocol_diagnostics["provisioning_status"],
-            "old_owned_current": old._owned_session_current(old._generation),
-            "holds": coord._command_connection_holds,
-        }
-        assert witness["after"] == before, witness
-    finally:
-        release.set()
-        await asyncio.gather(task, return_exceptions=True)
-        await cleanup(coord, *({old, current} if current else {old}))

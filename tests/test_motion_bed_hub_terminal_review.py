@@ -1,8 +1,6 @@
-"""Possible hub registry identities and terminal-attempt network telemetry."""
+"""Possible hub registry identities and profile changes."""
 
-import asyncio
 from dataclasses import replace
-from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.helpers import entity_registry as er
@@ -13,162 +11,10 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTION_BED,
     CONF_MOTION_BED_NAME,
     DOMAIN,
-    SIDE_BOTH,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.motion_bed_actions import ACTION_BY_KEY
-from custom_components.adjustable_bed.motion_bed_services import build_motion_bed_request
-from custom_components.adjustable_bed.services import async_register_services
-from tests.test_motion_bed_controller import characteristic, client_for
 from tests.test_motion_bed_lifecycle import real_coordinator
-
-
-@pytest.mark.parametrize(
-    "code,action",
-    [
-        (15, "pending"),
-        (0, "pending"),
-        (15, "duplicate_terminal"),
-        (15, "new_attempt"),
-        (15, "old_session"),
-        (15, "telemetry_query"),
-        (0, "telemetry_query"),
-        (None, "pending"),
-    ],
-)
-async def test_terminal_attempt_stability_and_attempt_session_controls(
-    hass, monkeypatch, code, action
-):
-    coord = await real_coordinator(hass, "QMS-IQ")
-    old = coord.controller
-    ctrl = old
-    await old.start_notify()
-    await async_register_services(hass)
-    data = {"ssid": "BED", "password": "password", "longitude": 0, "latitude": 0, "confirmed": True}
-    request = build_motion_bed_request("motion_bed_provision_wifi", data)
-    callback = coord.client.start_notify.call_args.args[1]
-    char = coord.client.start_notify.call_args.args[0]
-    real_sleep, real_wait = asyncio.sleep, asyncio.wait_for
-    hold_six = False
-
-    async def sleep(delay):
-        if delay == 6 and hold_six:
-            await asyncio.Event().wait()
-        else:
-            await real_sleep(0)
-
-    async def wait_for(awaitable, timeout):
-        if timeout == 0.3:
-            awaitable.close()
-            raise TimeoutError
-        return await real_wait(awaitable, timeout)
-
-    async def write(c, frame, **kwargs):
-        if code is not None and frame == request.frames[-1]:
-            callback(char, bytearray.fromhex("FFFFFFFF0200191300") + bytes([code]))
-
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
-    monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.motion_bed.asyncio.wait_for", wait_for
-    )
-    coord.client.write_gatt_char.side_effect = write
-
-    async def provision():
-        with patch(
-            "custom_components.adjustable_bed.services._resolve_sided_targets",
-            return_value=([(coord, SIDE_BOTH)], []),
-        ):
-            await hass.services.async_call(
-                DOMAIN, "motion_bed_provision_wifi", {"device_id": "bed", **data}, blocking=True
-            )
-
-    async def drain():
-        for _ in range(30):
-            await real_sleep(0)
-        for task in tuple(ctrl._tasks):
-            if task.done():
-                await task
-
-    try:
-        await provision()
-        if code is None:
-            await ctrl._network_task
-        await drain()
-        before = ctrl.protocol_diagnostics["provisioning_status"]
-        assert before == ("success" if code == 15 else "timed_out" if code is None else "failed")
-        assert (
-            not ctrl._network_poll_active
-            and (ctrl._network_task is None or ctrl._network_task.done())
-            and coord._command_connection_holds == 0
-        )
-        if action == "new_attempt":
-            hold_six = True
-            coord.client.write_gatt_char.side_effect = None
-            await provision()
-            await real_sleep(0)
-            expected = "waiting"
-        elif action == "telemetry_query":
-            from custom_components.adjustable_bed.motion_bed_protocol import SOURCE_COMMANDS
-
-            async def network_reply(c, frame, **kwargs):
-                if frame == SOURCE_COMMANDS["NetworkActivity:333"]:
-                    data = bytearray.fromhex("FFFFFFFF02000A14") + bytearray(7)
-                    data[14] = 1
-                    callback(char, data)
-
-            coord.client.write_gatt_char.side_effect = network_reply
-            with patch(
-                "custom_components.adjustable_bed.services._resolve_sided_targets",
-                return_value=([(coord, SIDE_BOTH)], []),
-            ):
-                await hass.services.async_call(
-                    DOMAIN,
-                    "motion_bed_action",
-                    {"device_id": "bed", "action": "network_activity_network_status"},
-                    blocking=True,
-                )
-            await drain()
-            assert ctrl.protocol_diagnostics["network_code"] == 1
-            assert ctrl.protocol_diagnostics["network_status"] == "not_connected"
-            expected = before
-        elif action == "old_session":
-            oldclient = coord.client
-            oldclient.is_connected = False
-            coord._on_disconnect(oldclient)
-            coord._client = client_for(characteristic(79))
-            ctrl = await create_controller(coord, BED_TYPE_MOTION_BED, None, coord.client)
-            coord._controller = ctrl
-            ctrl._startup = AsyncMock()
-            await ctrl.start_notify()
-            callback(char, bytearray.fromhex("FFFFFFFF020019130001"))
-            await drain()
-            expected = None
-        else:
-            reply = 1 if action == "pending" else code
-            callback(char, bytearray.fromhex("FFFFFFFF0200191300") + bytes([reply]))
-            await drain()
-            expected = before
-        observed = {
-            "before": before,
-            "after": ctrl.protocol_diagnostics["provisioning_status"],
-            "public_after": coord.controller_state.get("motion_bed_provisioning_status"),
-            "poll_active": ctrl._network_poll_active,
-            "network_task": ctrl._network_task is not None,
-            "owned_tasks_remaining": len(ctrl._tasks),
-            "holds": coord._command_connection_holds,
-            "action": action,
-            "terminal_code": code,
-        }
-        if action == "new_attempt":
-            assert observed["poll_active"] and observed["network_task"] and observed["holds"] == 1
-        assert observed["after"] == expected, observed
-    finally:
-        for controller in {old, ctrl}:
-            tasks = tuple(controller._tasks)
-            await controller.stop_notify()
-            await asyncio.gather(*tasks, return_exceptions=True)
-        coord._cancel_disconnect_timer()
-        await coord._command_scheduler.async_shutdown()
 
 
 async def test_public_home_to_hub_prunes_home_only_registry_control(hass):
