@@ -94,6 +94,27 @@ async def test_legacy_page_entities(hass) -> None:
     assert "bed_richmat_mh_smart_set_lock_left" in binary
 
 
+@pytest.mark.parametrize(("app", "model", "snapshot"), [
+    ("revive", "dtrm", vers0("dtrm", led=True)),
+    ("idealbed", "cerm", vers1("cerm", led=True)),
+])
+async def test_light_page_without_an_on_off_path_is_not_a_light(hass, app, model, snapshot) -> None:
+    """The light pages write only colour and timeout; without the motor-page toggle
+    there is no proven on/off, so colour is an action instead of a broken light."""
+    controller = make(app, f"{model.upper()}0001", snapshot=snapshot)
+    runtime = configure_entity_runtime(hass, controller, f"richmat_{app}")
+    assert _light_entities_for(hass, runtime) == []
+    assert controller.supports_richmat_mh_light_color
+    assert not (controller.supports_light_color_control or controller.supports_light_toggle_control)
+    numbers = {e.unique_id for e in _number_entities_for(hass, runtime)}
+    assert "bed_controller_number_richmat_mh_light_timer_left" in numbers
+    await controller.async_discover_capabilities()
+    await controller.set_light_color((1, 2, 3))
+    assert bytes(controller.client.write_gatt_char.call_args.args[1]).hex() == (
+        protocol.rgb_frame(1, 2, 3).hex()
+    )
+
+
 async def test_ver1_page_entities(hass) -> None:
     controller = make(snapshot=vers1("7irm", alarm=True))
     runtime = configure_entity_runtime(hass, controller, "richmat_revive")
@@ -257,3 +278,46 @@ async def test_two_address_pair_refuses_a_combined_model_change(hass) -> None:
     assert result["errors"] == {CONF_PROTOCOL_VARIANT: "richmat_mh_unpair_first"}
     stored = [c[CONF_PROTOCOL_VARIANT] for c in entry.data[CONF_PAIR_CHILDREN]]
     assert stored == ["model_vorm", "model_vorm"]
+
+
+@pytest.mark.parametrize(
+    ("snapshot", "minted"),
+    [
+        (vers1("7irm", alarm=True, led=True), True),
+        (None, False),  # never connected: the pages are unknown
+        (vers1("cfrm", led=True), False),  # another model's replies
+    ],
+)
+async def test_offline_side_mints_from_the_stored_snapshot(hass, snapshot, minted) -> None:
+    """A paired side unreachable at reload keeps its catalog and page-gated entities."""
+    from homeassistant.const import CONF_ADDRESS, CONF_NAME
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.const import (
+        CONF_BED_TYPE,
+        CONF_DISABLE_ANGLE_SENSING,
+        CONF_MOTOR_COUNT,
+        CONF_PREFERRED_ADAPTER,
+        CONF_PROTOCOL_VARIANT,
+        DOMAIN,
+    )
+    from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+    data = {
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:91", CONF_NAME: "Revive", CONF_BED_TYPE: "richmat_revive",
+        CONF_MOTOR_COUNT: 2, CONF_DISABLE_ANGLE_SENSING: True, CONF_PREFERRED_ADAPTER: "auto",
+        CONF_PROTOCOL_VARIANT: VARIANT_AUTO, CONF_BLE_DEVICE_NAME: "7IRM0001",
+    }
+    if snapshot is not None:
+        data["capabilities"] = {"richmat_mh": snapshot}
+    entry = MockConfigEntry(domain=DOMAIN, data=data, unique_id="AA:BB:CC:DD:EE:91")
+    entry.add_to_hass(hass)
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    await coordinator.async_prime_offline_controller()
+    controller = coordinator.capability_controller
+    if not minted:
+        assert controller is None
+        return
+    assert controller is not None and controller.supports_richmat_mh_alarm
+    keys = {spec.key for spec in controller.controller_number_specs}
+    assert {"richmat_mh_back_angle", "richmat_mh_light_timer"} <= keys

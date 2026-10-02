@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 from custom_components.adjustable_bed.richmat_mh_services import (
     SERVICE_RICHMAT_MH_ALARM,
     SERVICE_RICHMAT_MH_AROMA,
+    SERVICE_RICHMAT_MH_LIGHT_COLOR,
     SERVICE_RICHMAT_MH_WAIST_ALARM,
 )
 from custom_components.adjustable_bed.services import async_register_services
@@ -30,6 +31,8 @@ def _target(name: str = "Bed") -> tuple[MagicMock, SimpleNamespace]:
         supports_richmat_mh_alarm=True,
         supports_richmat_mh_aroma=True,
         supports_richmat_mh_waist_alarm=True,
+        supports_richmat_mh_light_color=True,
+        set_light_color=AsyncMock(),
         richmat_mh_waist_alarm=AsyncMock(),
         validate_richmat_mh_alarm=MagicMock(),
         richmat_mh_alarm=AsyncMock(),
@@ -146,6 +149,7 @@ def test_service_descriptions_and_translations_cover_the_schema() -> None:
                                     "mode3_pause_hours", "side"}),
         (SERVICE_RICHMAT_MH_WAIST_ALARM, {"device_id", "enabled", "waist_side", "time", "repeat",
                                           "intensity", "side"}),
+        (SERVICE_RICHMAT_MH_LIGHT_COLOR, {"device_id", "rgb_color", "side"}),
     ):
         assert set(services[name]["fields"]) == fields
         for filename in ("strings.json", "translations/en.json"):
@@ -165,3 +169,51 @@ async def test_waist_alarm_sends_the_current_local_time(hass, targets) -> None:
         enabled=True, waist_side="both", hour=6, minute=45, now_hour=23, now_minute=59,
         repeat="once", intensity=2,
     )
+
+
+@pytest.mark.parametrize("service", [SERVICE_RICHMAT_MH_ALARM, SERVICE_RICHMAT_MH_WAIST_ALARM])
+async def test_each_target_reads_the_clock_after_preflight(hass, targets, service) -> None:
+    """A reconnect in preflight or an earlier target can cross a minute boundary."""
+    (first, first_ctrl), (_, second_ctrl) = targets
+    from custom_components.adjustable_bed import richmat_mh_services
+
+    clock = [datetime(2026, 10, 2, 6, 40)]
+    real_preflight = richmat_mh_services._preflight_capability
+
+    async def slow_preflight(*args, **kwargs):
+        clock[0] = datetime(2026, 10, 2, 6, 41)  # the preflight reconnect took a while
+        return await real_preflight(*args, **kwargs)
+
+    async def execute_first(command, **kwargs):
+        await command(first_ctrl)
+        clock[0] = datetime(2026, 10, 2, 6, 42)  # the first target's write took a while
+
+    first.async_execute_controller_command.side_effect = execute_first
+    data = {"device_id": ["a", "b"], "enabled": True, "time": "06:45:00"}
+    data |= {"position": "tv"} if service == SERVICE_RICHMAT_MH_ALARM else {"waist_side": "both"}
+    with (
+        patch.object(richmat_mh_services, "_preflight_capability", slow_preflight),
+        patch.object(richmat_mh_services.dt_util, "now", side_effect=lambda: clock[0]),
+    ):
+        await hass.services.async_call(DOMAIN, service, data, blocking=True)
+    if service == SERVICE_RICHMAT_MH_ALARM:
+        assert first_ctrl.richmat_mh_alarm.await_args.kwargs["minutes"] == 4
+        assert second_ctrl.richmat_mh_alarm.await_args.kwargs["minutes"] == 3
+    else:
+        assert first_ctrl.richmat_mh_waist_alarm.await_args.kwargs["now_minute"] == 41
+        assert second_ctrl.richmat_mh_waist_alarm.await_args.kwargs["now_minute"] == 42
+
+
+async def test_light_colour_action_writes_every_target_with_a_light_page(hass, targets) -> None:
+    (_, first_ctrl), (second, second_ctrl) = targets
+    await hass.services.async_call(DOMAIN, SERVICE_RICHMAT_MH_LIGHT_COLOR, {
+        "device_id": "bed", "rgb_color": [1, 2, 3],
+    }, blocking=True)
+    first_ctrl.set_light_color.assert_awaited_once_with((1, 2, 3))
+    second_ctrl.set_light_color.assert_awaited_once_with((1, 2, 3))
+    second_ctrl.supports_richmat_mh_light_color = False
+    with pytest.raises(ServiceValidationError, match="does not support"):
+        await hass.services.async_call(DOMAIN, SERVICE_RICHMAT_MH_LIGHT_COLOR, {
+            "device_id": "bed", "rgb_color": [1, 2, 3],
+        }, blocking=True)
+    assert second.async_execute_controller_command.await_count == 1

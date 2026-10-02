@@ -1,12 +1,21 @@
 """Generate the Richmat MH app catalogs from the accepted row055 cluster inventories.
 
-Usage: uv run python tools/generate_richmat_mh_catalog.py [--check]
+Usage::
+
+    uv run --no-sync python tools/generate_richmat_mh_catalog.py [--check] [--phase4-dir DIR]
 
 Reads the five frozen package inventories owned by the accepted cluster-020
-reconciliation (machine-local, never committed) and writes the compact
-``custom_components/adjustable_bed/richmat_mh_catalog.py``. ``--check`` verifies
-that the committed module matches the inventories. Inventory hashes are pinned
-to the accepted reconciliation so a superseded extraction cannot be used.
+reconciliation and the accepted Idealbed report's CmdKey/entity tables, then
+writes the compact ``custom_components/adjustable_bed/richmat_mh_catalog.py``.
+``--check`` verifies that the committed module matches the inputs. Every input
+is pinned to the hash its accepted report or reconciliation records, so a
+superseded extraction cannot be used.
+
+The inputs are machine-local APK Protocol Audit reports (never committed). They
+are read from ``DIR`` (``--phase4-dir``), else ``$ADJUSTABLE_BED_PHASE4_DIR``,
+else ``disassembly/output/phase4-early`` in this checkout, else the same path in
+the main checkout of a linked git worktree. Without them the script exits with
+a message naming the directory it looked in.
 
 Every per-model control comes from the package's own resolved command rows
 (Revive: its per-model binding rows). Nothing is inferred across packages.
@@ -18,22 +27,74 @@ import argparse
 import collections
 import hashlib
 import json
+import os
 import re
+import subprocess
 import sys
 from functools import cache
 from pathlib import Path
 from typing import Any, NamedTuple
 
-RECONCILIATION = Path(
-    "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/"
+ROOT = Path(__file__).resolve().parents[1]
+PHASE4_ENV = "ADJUSTABLE_BED_PHASE4_DIR"
+PHASE4_RELATIVE = Path("disassembly/output/phase4-early")
+RECONCILIATION_REPORT = Path(
     "cluster-020-reconciliation-2026-10-02-queue-e0bb6807-20261001-055-002/report"
 )
 # The accepted Idealbed report's CmdKey constant table (resolves setter expressions).
-IDEALBED_COMMAND_KEYS = Path(
-    "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/"
-    "com.richmat.idealbed-2.4.2-2026-10-02-queue-e0bb6807-20261001-055-003/report/COMMAND_KEYS.json"
-)
-IDEALBED_ENTITY_CONTROLS = IDEALBED_COMMAND_KEYS.with_name("ENTITY_CONTROLS.json")
+IDEALBED_REPORT = Path("com.richmat.idealbed-2.4.2-2026-10-02-queue-e0bb6807-20261001-055-003/report")
+_phase4_override: list[Path] = []
+
+
+class InputsMissing(SystemExit):
+    """The machine-local frozen reports are not available."""
+
+
+def _main_checkout() -> Path | None:
+    """The main working tree of a linked worktree (reports live beside it)."""
+    try:
+        common = subprocess.run(
+            ["git", "-C", str(ROOT), "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            capture_output=True, text=True, check=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return Path(common).parent if common else None
+
+
+@cache
+def phase4_dir() -> Path:
+    """Directory holding the frozen APK Protocol Audit runs."""
+    if _phase4_override:
+        candidates = [_phase4_override[0]]
+    elif env := os.environ.get(PHASE4_ENV):
+        candidates = [Path(env)]
+    else:
+        candidates = [ROOT / PHASE4_RELATIVE]
+        if (main := _main_checkout()) is not None and main != ROOT:
+            candidates.append(main / PHASE4_RELATIVE)
+    for candidate in candidates:
+        if (candidate / RECONCILIATION_REPORT).is_dir():
+            return candidate
+    looked = ", ".join(str(c) for c in candidates)
+    raise InputsMissing(
+        f"The machine-local frozen reports are missing (looked in {looked}). The committed "
+        f"catalog cannot be regenerated or checked here; pass --phase4-dir or set {PHASE4_ENV}."
+    )
+
+
+def reconciliation_dir() -> Path:
+    return phase4_dir() / RECONCILIATION_REPORT
+
+
+def idealbed_command_keys_path() -> Path:
+    return phase4_dir() / IDEALBED_REPORT / "COMMAND_KEYS.json"
+
+
+def idealbed_entity_controls_path() -> Path:
+    return phase4_dir() / IDEALBED_REPORT / "ENTITY_CONTROLS.json"
+
+
 # Pinned to the accepted Idealbed report's REPORT.SHA256.
 REPORT_SHA256 = {
     "COMMAND_KEYS.json": "32976c563eaf919c076592a2060d1f3136be39e235b279011639bf850c89742e",
@@ -41,7 +102,7 @@ REPORT_SHA256 = {
 }
 # Intensity sliders by their entity opcode (MSG_HEAD/FOOT_INTENSITY_INC).
 INTENSITY_ZONES = {"4C": "head", "4E": "foot"}
-TARGET = Path(__file__).resolve().parents[1] / "custom_components/adjustable_bed/richmat_mh_catalog.py"
+TARGET = ROOT / "custom_components/adjustable_bed/richmat_mh_catalog.py"
 INVENTORY_SHA256 = {
     "representative": "4aa852c4cb31545748d5bbf8425327599f78c4e66f3d494f66966ef8ef7314e9",
     "sibling-1": "193e0c8515a42773926224e4ca3e80031a4dbe809983e001c62dd2029a82f2d5",
@@ -122,7 +183,7 @@ class Control(NamedTuple):
 
 @cache
 def inventory(pkg: str) -> dict[str, Any]:
-    path = RECONCILIATION / "inventories" / f"{pkg}.json"
+    path = reconciliation_dir() / "inventories" / f"{pkg}.json"
     data = path.read_bytes()
     digest = hashlib.sha256(data).hexdigest()
     if digest != INVENTORY_SHA256[pkg]:
@@ -519,13 +580,13 @@ def _pinned(path: Path) -> bytes:
 
 @cache
 def _idealbed_command_keys() -> dict[str, str]:
-    table = json.loads(_pinned(IDEALBED_COMMAND_KEYS))
+    table = json.loads(_pinned(idealbed_command_keys_path()))
     return {k: v["value"].upper() for k, v in table.items()}
 
 
 @cache
 def _idealbed_entity_controls() -> tuple[dict[str, Any], ...]:
-    return tuple(json.loads(_pinned(IDEALBED_ENTITY_CONTROLS)))
+    return tuple(json.loads(_pinned(idealbed_entity_controls_path())))
 
 
 def _idealbed_entities(variant: str) -> list[dict[str, Any]]:
@@ -823,10 +884,17 @@ def _features_tuple(f: dict[str, Any]) -> tuple:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--check", action="store_true")
+    parser = argparse.ArgumentParser(description="Generate the Richmat MH app catalogs.")
+    parser.add_argument("--check", action="store_true", help="verify the committed catalog")
+    parser.add_argument("--phase4-dir", type=Path, help="directory of the frozen report runs")
     args = parser.parse_args()
-    text = render(build())
+    if args.phase4_dir is not None:
+        _phase4_override.append(args.phase4_dir)
+    try:
+        text = render(build())
+    except InputsMissing as err:
+        print(err, file=sys.stderr)
+        return 2
     if args.check:
         if TARGET.read_text() != text:
             print(f"{TARGET} is stale; regenerate it", file=sys.stderr)

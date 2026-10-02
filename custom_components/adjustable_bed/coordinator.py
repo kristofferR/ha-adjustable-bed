@@ -1169,6 +1169,13 @@ class AdjustableBedCoordinator:
             if bed_type == BED_TYPE_JENSEN and isinstance(capabilities, dict)
             else None
         )
+        # A Richmat MH side's pages come from its model catalog plus the stored
+        # session replies; with that snapshot it can be minted offline.
+        richmat_mh_snapshot = (
+            capabilities.get("richmat_mh")
+            if bed_type in RICHMAT_MH_BED_TYPES and isinstance(capabilities, dict)
+            else None
+        )
         # Octo Remote Star2 is a different protocol with FIXED capabilities and no
         # PIN/snapshot, so it IS statically offline-mintable (like Linak) — its
         # controller builds without a client.
@@ -1198,6 +1205,7 @@ class AdjustableBedCoordinator:
             or (bed_type == BED_TYPE_OCTO and (octo_snapshot is not None or is_octo_star2))
             or (bed_type == BED_TYPE_LINAK and (linak_snapshot is not None or is_linak_performance))
             or (bed_type == BED_TYPE_JENSEN and jensen_snapshot is not None)
+            or (bed_type in RICHMAT_MH_BED_TYPES and isinstance(richmat_mh_snapshot, dict))
         )
         if not mintable:
             # Only beds whose entity-gating capabilities are fully determined by
@@ -1224,6 +1232,12 @@ class AdjustableBedCoordinator:
                 capability_snapshot=octo_snapshot or linak_snapshot or jensen_snapshot,
             )
             await self._async_restore_furnimove_local_state()
+            if bed_type in RICHMAT_MH_BED_TYPES and not getattr(
+                self._offline_controller, "has_stored_capabilities", False
+            ):
+                # The snapshot belongs to another model (the variant changed):
+                # its pages are unknown until the side connects again.
+                self._offline_controller = None
         except ConnectionError:
             # Auto-detected variant: needs a live client to resolve. Leave the
             # offline controller unset (this side behaves as today until connect).

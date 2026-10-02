@@ -406,7 +406,6 @@ class RichmatMhController(BedController):
         self._write_char: BleakGATTCharacteristic | None = None
         self._notify_chars: list[BleakGATTCharacteristic] = []
         self._init_task: asyncio.Task[None] | None = None
-        self._init_complete = asyncio.Event()
         self._motor_mode: str | None = None
         # Slider progress the app keeps between writes; RangeEntity starts at 0.
         self._intensity: dict[str, int] = {"head": 0, "foot": 0}
@@ -417,6 +416,11 @@ class RichmatMhController(BedController):
     @property
     def app(self) -> str:
         return self._app
+
+    @property
+    def has_stored_capabilities(self) -> bool:
+        """Whether a stored session snapshot for this model gates the pages offline."""
+        return self._model is not None and bool(self._stored_snapshot)
 
     @property
     def model(self) -> Model | None:
@@ -743,12 +747,19 @@ class RichmatMhController(BedController):
 
     @property
     def supports_light_color_control(self) -> bool:
-        # The LED and button-light pages both write the 10-byte colour frame.
-        return self._light_page() is not None
+        # A Home Assistant light needs on and off. The light pages only write colour
+        # and timeout, so only the motor-page light toggle makes this a light; a
+        # page without it offers colour through the richmat_mh_light_color action.
+        return self._light_page() is not None and self._light_toggle() is not None
 
     @property
     def supported_color_mode(self) -> str | None:
-        return "rgb" if self._light_page() is not None else None
+        return "rgb" if self.supports_light_color_control else None
+
+    @property
+    def supports_richmat_mh_light_color(self) -> bool:
+        # The LED and button-light pages both write the 10-byte colour frame.
+        return self._light_page() is not None
 
     @property
     def supports_stop_all(self) -> bool:
@@ -1183,7 +1194,17 @@ class RichmatMhController(BedController):
         for char in self._notify_chars:
             async with self._ble_lock:
                 await client.start_notify(char, self._handle_notification)
-        self._start_session()
+        # The coordinator subscribes inside its connect lock, and every command
+        # waits for that lock, so awaiting the session here keeps the link up
+        # until the snapshot is stored and keeps user frames out of the queries.
+        task = self._start_session()
+        try:
+            await task
+        except asyncio.CancelledError:
+            current = asyncio.current_task()
+            if current is not None and current.cancelling():
+                raise
+            # A disconnect or stop_notify abandoned the session; the link is gone.
 
     async def stop_notify(self) -> None:
         self._notify_callback = None
@@ -1198,10 +1219,10 @@ class RichmatMhController(BedController):
     def on_disconnect(self) -> None:
         self._cancel_session()
 
-    def _start_session(self) -> None:
+    def _start_session(self) -> asyncio.Task[None]:
         self._cancel_session()
-        self._init_complete = asyncio.Event()
-        self._init_task = asyncio.get_running_loop().create_task(self._run_session_setup())
+        task = self._init_task = asyncio.get_running_loop().create_task(self._run_session_setup())
+        return task
 
     def _cancel_session(self) -> None:
         task, self._init_task = self._init_task, None
@@ -1245,7 +1266,6 @@ class RichmatMhController(BedController):
         self._dev = pending.dev
         self._detection = pending.detection
         self._waist = pending.waist
-        self._init_complete.set()
         self._persist_snapshot()
 
     def _pending_alarm_call_page(self, pending: SessionFlags) -> bool:

@@ -4695,6 +4695,23 @@
           "description": "Target side of a paired bed."
         }
       }
+    },
+    "richmat_mh_light_color": {
+      "name": "Richmat app light colour",
+      "description": "Write the LED or button-light page colour of a Richmat MH app profile.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "rgb_color": {
+          "name": "Colour",
+          "description": "Red, green and blue, 0 to 255."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Target side of a paired bed."
+        }
+      }
     }
   },
   "exceptions": {

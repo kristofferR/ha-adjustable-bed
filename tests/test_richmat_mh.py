@@ -791,17 +791,43 @@ async def test_stored_pages_stay_published_while_the_session_runs() -> None:
 
     controller.client.write_gatt_char.side_effect = write
     keys = {s.key for s in controller.controller_number_specs}
-    await controller.start_notify()
-    await asyncio.sleep(0)
-    # Mid-session: the same entities, and VER1 commands still work.
+    starting = asyncio.create_task(controller.start_notify())
+    for _ in range(3):
+        await asyncio.sleep(0)
+    # Mid-session: the stored pages and entities stay in effect.
+    assert not starting.done()
     assert {s.key for s in controller.controller_number_specs} == keys
     assert "richmat_mh_back_angle" in keys and controller.motor_mode_options
     assert controller.supports_light_color_control and controller.supports_richmat_mh_alarm
-    controller.client.write_gatt_char.side_effect = None
-    await controller.write_massage_intensity("head", 2)
-    assert frames(controller)[-1] == protocol.massage_intensity_frame(2, 0).hex()
-    controller._cancel_session()
+    controller.on_disconnect()  # the link drops mid-session
+    await starting  # start_notify returns without raising
     assert controller._pending is None and controller.route == "C"
+
+
+async def test_start_notify_returns_only_after_the_session_persists(sleeps) -> None:
+    """Connection setup owns the session: no command can interleave and the link stays up."""
+    controller = make()
+    await controller.async_discover_capabilities()
+    controller.client.write_gatt_char.side_effect = lambda char, data, response: (
+        controller._handle_notification(char, bytearray.fromhex("6e900001ff"))
+        if bytes(data).hex() == "6e9a000008" else None
+    )
+    await controller.start_notify()
+    assert controller._init_task is not None and controller._init_task.done()
+    assert len(frames(controller)) == 1 + len(protocol.INIT_VER1)
+    controller._coordinator.remember_richmat_mh_snapshot.assert_called_once()
+
+
+async def test_cancelling_connection_setup_cancels_the_session() -> None:
+    controller = make()
+    await controller.async_discover_capabilities()
+    starting = asyncio.create_task(controller.start_notify())
+    await asyncio.sleep(0)
+    starting.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await starting
+    assert controller._init_task is not None and controller._init_task.cancelled()
+    controller._coordinator.remember_richmat_mh_snapshot.assert_not_called()
 
 
 async def test_failed_session_keeps_the_stored_snapshot(sleeps) -> None:
@@ -840,3 +866,19 @@ async def test_completed_session_publishes_all_replies_at_once(sleeps) -> None:
     # but the dev flags appear only after the last query.
     assert controller._dev == {"led": True, "snore": True}
     controller._coordinator.remember_richmat_mh_snapshot.assert_called_once()
+
+
+def test_catalog_generator_reports_missing_frozen_inputs(tmp_path, monkeypatch, capsys) -> None:
+    """Without the machine-local reports --check explains itself instead of a traceback."""
+    import importlib.util
+    from pathlib import Path
+
+    path = Path(__file__).parents[1] / "tools" / "generate_richmat_mh_catalog.py"
+    spec = importlib.util.spec_from_file_location("generate_richmat_mh_catalog", path)
+    assert spec is not None and spec.loader is not None
+    generator = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(generator)
+    monkeypatch.setattr("sys.argv", ["generate", "--check", "--phase4-dir", str(tmp_path)])
+    assert generator.main() == 2
+    err = capsys.readouterr().err
+    assert str(tmp_path) in err and generator.PHASE4_ENV in err

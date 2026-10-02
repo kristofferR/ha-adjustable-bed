@@ -1479,6 +1479,11 @@ class BedController(ABC):
         raise NotImplementedError("Richmat MH waist mattress alarms are not supported")
 
     @property
+    def supports_richmat_mh_light_color(self) -> bool:
+        """Whether a Richmat MH app profile shows an LED or button-light colour page."""
+        return False
+
+    @property
     def supports_richmat_mh_aroma(self) -> bool:
         """Whether a Richmat MH app profile currently shows its aroma page."""
         return False

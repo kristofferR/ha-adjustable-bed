@@ -64,8 +64,8 @@ on the version reply.
 |---------|----------|--------|
 | Motors | Covers (KEEP at the control's interval, then STOP 120 ms after release) | `6e 01 M C SUM`, STOP `6e 01 M 6e SUM` |
 | Presets, memories, massage, motor-page buttons | Standard presets and memory slots, app-labelled buttons | Tap: one frame, STOP 120 ms later |
-| LED page | RGB light, light timeout 0–300 s (0 = always on) | `6e0c ff R s 6e0d G B s`, `6e 0b HH LL` |
-| Button-light page | RGB light, timeout (Blvd Home: 0–15 min); **Button light off** only in Revive Control and Best Mattress, the apps with an emitting OFF button | as above, OFF `75` |
+| LED page | Colour (RGB light when the motor page has the light toggle, else the colour action), light timeout 0–300 s (0 = always on) | `6e0c ff R s 6e0d G B s`, `6e 0b HH LL` |
+| Button-light page | Colour as above, timeout (Blvd Home: 0–15 min); **Button light off** only in Revive Control and Best Mattress, the apps with an emitting OFF button | as above, OFF `75` |
 | Smart set lock | **Toggle smart set lock** button, **Smart set lock** state | `6e 01 M 84` once |
 | Snore intervention | Select: off, anti-snore, zero gravity (the model's list) | `6e 13 M code` |
 | Detection | Start/stop buttons, **Detection** sensor with per-device results | `6e88c210c8`, `6e88c220d8` |
@@ -75,9 +75,12 @@ on the version reply.
 | VER1 memory arrival | **Reached position** sensor | `6e904` reply |
 | Waist mattress | Mode select, per-side heat, pressure and duration selects, per-side alarm sensors | `5e 03 cmd value SUM` |
 
-The light toggle on the motor page stays the light's on/off control. The
+The light pages write only colour and timeout. The motor page's light toggle is
+the only on/off the apps send, so a model with it gets an RGB light (on/off is
+the toggle) and a model without it sets the colour with
+`richmat_mh_light_color` instead of a light that could not turn off. The
 light-page lock switch state is shown as **Smart light lock**; these apps never
-send its command. Alarm, aroma and waist alarms are actions (below).
+send its command. Alarm, aroma, waist alarms and light colour are actions (below).
 
 ## Actions
 
@@ -92,8 +95,23 @@ send its command. Alarm, aroma and waist alarms are actions (below).
 - `adjustable_bed.richmat_mh_waist_alarm`: `waist_side`, `enabled`, `time`,
   `repeat` (once/daily), `intensity` (1–3). Saving includes Home Assistant's
   current local time, as the app does.
+- `adjustable_bed.richmat_mh_light_color`: `rgb_color`, written as the light
+  page's 10-byte colour frame. Available when the LED or button-light page is
+  shown.
+
+Alarm countdowns and the waist alarm's current time are read per bed, right
+before its frames are built. Connection setup (version query and initialization
+list) finishes before any command runs or a sequential pair releases the link.
 
 See [Actions](../SERVICES.md).
+
+## Regenerating the catalog
+
+`tools/generate_richmat_mh_catalog.py` builds `richmat_mh_catalog.py` from the
+machine-local frozen reports (hash-pinned). It reads them from `--phase4-dir`,
+`$ADJUSTABLE_BED_PHASE4_DIR`, `disassembly/output/phase4-early` in the checkout,
+or the main checkout of a linked worktree; `--check` verifies the committed file
+and reports missing inputs instead of failing with a traceback.
 
 ## Not implemented
 

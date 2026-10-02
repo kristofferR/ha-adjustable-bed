@@ -2181,3 +2181,27 @@ richmat_mh_waist_alarm:
       selector:
         select:
           options: [both, left, right]
+
+richmat_mh_light_color:
+  name: Richmat app light colour
+  description: Write the LED or button-light page colour of a Richmat MH app profile.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    rgb_color:
+      name: Colour
+      description: Red, green and blue, 0 to 255.
+      required: true
+      selector:
+        color_rgb:
+    side:
+      name: Side
+      description: Target side of a paired bed.
+      selector:
+        select:
+          options: [both, left, right]

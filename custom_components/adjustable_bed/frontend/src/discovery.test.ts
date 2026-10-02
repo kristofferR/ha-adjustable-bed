@@ -732,4 +732,26 @@ test("Richmat MH app-labelled buttons, sliders and selectors land in their secti
   expect(bed.lights.light).toBe("light.led");
   // Utility tiles press buttons; sliders, selectors and state stay as HA entities.
   expect(bed.utility).toEqual(["button.save_read", "button.reset", "button.lock"]);
+  expect(bed.motors.find((m) => m.key === "back")?.position).toBe("number.back_angle");
+});
+
+test("Richmat MH VER1 angle targets join their motors and the LED timeout is lighting", () => {
+  const hass = hassWith([
+    entry("cover.back", "back"),
+    entry("cover.feet", "feet"),
+    entry("cover.pillow", "pillow"),
+    entry("number.back_angle", "richmat_mh_back_angle"),
+    entry("number.foot_angle", "richmat_mh_foot_angle"),
+    entry("number.pillow_angle", "richmat_mh_pillow_angle"),
+    entry("number.led_timer", "richmat_mh_light_timer"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  const position = Object.fromEntries(bed.motors.map((m) => [m.key, m.position]));
+  expect(position).toEqual({
+    back: "number.back_angle",
+    feet: "number.foot_angle",
+    pillow: "number.pillow_angle",
+  });
+  expect(bed.motors.every((m) => m.cover)).toBe(true);
+  expect(bed.lights.timer).toBe("number.led_timer");
 });

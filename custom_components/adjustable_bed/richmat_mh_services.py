@@ -1,4 +1,4 @@
-"""Richmat MH app alarm and aroma actions (Revive, Best Mattress, Blvd Home, HARMONY, Idealbed)."""
+"""Richmat MH app alarm, aroma and light colour actions (Revive, Best Mattress, Blvd Home, HARMONY, Idealbed)."""
 
 from __future__ import annotations
 
@@ -27,6 +27,7 @@ from .services import (
 SERVICE_RICHMAT_MH_ALARM = "richmat_mh_alarm"
 SERVICE_RICHMAT_MH_AROMA = "richmat_mh_aroma"
 SERVICE_RICHMAT_MH_WAIST_ALARM = "richmat_mh_waist_alarm"
+SERVICE_RICHMAT_MH_LIGHT_COLOR = "richmat_mh_light_color"
 _OPTIONS = tuple(ALARM_OPTION_CODES)
 
 _ALARM_FIELDS: dict[vol.Marker, object] = {
@@ -57,6 +58,14 @@ _WAIST_ALARM_FIELDS: dict[vol.Marker, object] = {
 }
 _WAIST_ALARM_FIELDS.update(SIDE_FIELD.items())
 WAIST_ALARM_SCHEMA = vol.Schema(_WAIST_ALARM_FIELDS)
+_LIGHT_COLOR_FIELDS: dict[vol.Marker, object] = {
+    vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+    vol.Required("rgb_color"): vol.All(
+        vol.ExactSequence((cv.byte, cv.byte, cv.byte)), vol.Coerce(tuple)
+    ),
+}
+_LIGHT_COLOR_FIELDS.update(SIDE_FIELD.items())
+LIGHT_COLOR_SCHEMA = vol.Schema(_LIGHT_COLOR_FIELDS)
 
 
 async def _execute(
@@ -97,16 +106,12 @@ async def handle_richmat_mh_alarm(call: ServiceCall) -> None:
     position: str | None = call.data.get("position")
     massage: list[str] = call.data["massage"]
     slot: int | None = call.data.get("slot")
-    minutes = 0
+    when = call.data.get("time")
     if enabled:
-        when = call.data.get("time")
         if when is None:
             raise ServiceValidationError("Setting an alarm requires a time")
         if when.second or when.microsecond:
             raise ServiceValidationError("Richmat MH alarms use minute precision")
-        now = dt_util.now()
-        # The app sends the minutes from now until the next occurrence.
-        minutes = alarm_countdown_minutes(when.hour * 60 + when.minute, now.hour * 60 + now.minute)
 
     def validate(controller: BedController | SideBoundController) -> None:
         controller.validate_richmat_mh_alarm(
@@ -114,6 +119,14 @@ async def handle_richmat_mh_alarm(call: ServiceCall) -> None:
         )
 
     async def program(controller: BedController) -> None:
+        minutes = 0
+        if enabled and when is not None:
+            # The app sends the minutes from now until the next occurrence; read the
+            # clock per target, after any connection the preflight needed.
+            now = dt_util.now()
+            minutes = alarm_countdown_minutes(
+                when.hour * 60 + when.minute, now.hour * 60 + now.minute
+            )
         await controller.richmat_mh_alarm(
             enabled=enabled, minutes=minutes, position=position, massage=massage, slot=slot
         )
@@ -142,9 +155,9 @@ async def handle_richmat_mh_waist_alarm(call: ServiceCall) -> None:
         raise ServiceValidationError("Setting an alarm requires a time")
     if when is not None and (when.second or when.microsecond):
         raise ServiceValidationError("Richmat MH alarms use minute precision")
-    now = dt_util.now()
 
     async def program(controller: BedController) -> None:
+        now = dt_util.now()  # The phone's time when this target's frames are built.
         await controller.richmat_mh_waist_alarm(
             enabled=enabled,
             waist_side=call.data["waist_side"],
@@ -161,6 +174,16 @@ async def handle_richmat_mh_waist_alarm(call: ServiceCall) -> None:
     )
 
 
+async def handle_richmat_mh_light_color(call: ServiceCall) -> None:
+    """Write the LED or button-light page's colour (one 10-byte frame)."""
+    rgb: tuple[int, int, int] = call.data["rgb_color"]
+
+    async def program(controller: BedController) -> None:
+        await controller.set_light_color(rgb)
+
+    await _execute(call, "supports_richmat_mh_light_color", "Richmat MH light colour", program)
+
+
 def async_register_richmat_mh_services(hass: HomeAssistant) -> None:
     """Register the Richmat MH configuration actions."""
     hass.services.async_register(
@@ -172,4 +195,8 @@ def async_register_richmat_mh_services(hass: HomeAssistant) -> None:
     hass.services.async_register(
         DOMAIN, SERVICE_RICHMAT_MH_WAIST_ALARM, handle_richmat_mh_waist_alarm,
         schema=WAIST_ALARM_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_RICHMAT_MH_LIGHT_COLOR, handle_richmat_mh_light_color,
+        schema=LIGHT_COLOR_SCHEMA,
     )
