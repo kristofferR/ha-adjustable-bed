@@ -27,6 +27,12 @@ from custom_components.adjustable_bed.beds.keeson import (
     RESTONIC_ZZZ_BUTTON_KEY,
     KeesonController,
 )
+from custom_components.adjustable_bed.command_scheduler import (
+    CommandIntent,
+    CommandOutcome,
+    DeviceCommandScheduler,
+    command_resources,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KEESON,
     CONF_BED_TYPE,
@@ -45,10 +51,12 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.detection import detect_bed_type
 from custom_components.adjustable_bed.services import async_register_services
 
 NAME = "base-i4.00002574"
 ZERO = "e5fe160000000006"
+_REAL_HOLD_WAIT = keeson._wait_unless_cancelled
 
 Action = Callable[[KeesonController], Awaitable[None]]
 
@@ -104,6 +112,14 @@ async def coordinator(
     return coordinator
 
 
+@pytest.fixture(autouse=True)
+def release_wait(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
+    """Replace the interruptible hold/release wait so no test waits on a real timer."""
+    wait = AsyncMock()
+    monkeypatch.setattr(keeson, "_wait_unless_cancelled", wait)
+    return wait
+
+
 @pytest.fixture
 def no_sleep(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
     sleep = AsyncMock()
@@ -125,20 +141,22 @@ def _frame(hex_bytes: str, response: bool = True):
     ids=["remoteA", "remoteB"],
 )
 async def test_every_app_control_sends_its_literal_frame_then_the_delayed_zero(
-    coordinator, mock_bleak_client: MagicMock, no_sleep, variant, vectors
+    coordinator, mock_bleak_client: MagicMock, no_sleep, release_wait, variant, vectors
 ):
     """Held controls refresh every 100 ms; every control releases with one zero frame +100 ms."""
     controller = _restonic(coordinator, variant)
     for action, ui_id, frame, repeats in vectors:
         mock_bleak_client.write_gatt_char.reset_mock()
         no_sleep.reset_mock()
+        release_wait.reset_mock()
         await action(controller)
         writes = 10 if repeats else 1
         assert mock_bleak_client.write_gatt_char.await_args_list == (
             [_frame(frame)] * writes + [_frame(ZERO)]
         ), ui_id
-        # 100 ms between refreshes, then the 100 ms release delay.
-        assert no_sleep.await_args_list == [call(0.1)] * writes, ui_id
+        # 100 ms between refreshes, then the interruptible 100 ms release delay.
+        assert no_sleep.await_args_list == [call(0.1)] * (writes - 1), ui_id
+        assert release_wait.await_args_list == [call(coordinator.cancel_command, 0.1)], ui_id
 
 
 @pytest.mark.parametrize(
@@ -157,17 +175,34 @@ async def test_builder_boundary_vectors(coordinator, command, frame):
 
 
 async def test_safety_stop_sends_the_zero_frame_immediately(
-    coordinator, mock_bleak_client: MagicMock, no_sleep
+    coordinator, mock_bleak_client: MagicMock, no_sleep, release_wait
 ):
     await _restonic(coordinator, KEESON_VARIANT_RESTONIC_B).stop_all()
     assert mock_bleak_client.write_gatt_char.await_args_list == [_frame(ZERO)]
     no_sleep.assert_not_awaited()
+    release_wait.assert_not_awaited()
 
 
-async def test_cancellation_ends_the_refresh_and_still_releases(
-    coordinator, mock_bleak_client: MagicMock, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize(
+    "stop", [lambda c: c.move_head_stop(), lambda c: c.move_back_legs_stop()], ids=["head", "back_legs"]
+)
+async def test_cover_stop_function_releases_without_the_delay(
+    coordinator, mock_bleak_client: MagicMock, no_sleep, release_wait, stop
 ):
-    async def cancel(_delay: float) -> None:
+    await stop(_restonic(coordinator, KEESON_VARIANT_RESTONIC_B))
+    assert mock_bleak_client.write_gatt_char.await_args_list == [_frame(ZERO)]
+    release_wait.assert_not_awaited()
+
+
+async def test_stop_during_the_refresh_releases_at_once(
+    coordinator, mock_bleak_client: MagicMock, release_wait, monkeypatch: pytest.MonkeyPatch
+):
+    """A STOP or replacement seen mid-hold sends the zero frame without the 100 ms wait."""
+
+    sleeps: list[float] = []
+
+    async def cancel(delay: float) -> None:
+        sleeps.append(delay)
         coordinator.cancel_command.set()
 
     monkeypatch.setattr("custom_components.adjustable_bed.beds.base.asyncio.sleep", cancel)
@@ -176,6 +211,98 @@ async def test_cancellation_ends_the_refresh_and_still_releases(
         _frame("e5fe160100000005"),
         _frame(ZERO),
     ]
+    # Only the refresh interval that observed STOP; no release delay of any kind.
+    assert sleeps == [0.1]
+    release_wait.assert_not_awaited()
+
+
+async def test_caller_cancellation_mid_hold_releases_at_once_and_propagates(
+    coordinator, mock_bleak_client: MagicMock, release_wait
+):
+    mock_bleak_client.write_gatt_char.side_effect = [asyncio.CancelledError(), None]
+    with pytest.raises(asyncio.CancelledError):
+        await _restonic(coordinator, KEESON_VARIANT_RESTONIC_B).move_back_legs_up()
+    assert mock_bleak_client.write_gatt_char.await_args_list == [
+        _frame("e5fe160500000001"),
+        _frame(ZERO),
+    ]
+    release_wait.assert_not_awaited()
+
+
+async def test_cancellation_during_the_release_wait_still_writes_the_zero_frame(
+    coordinator, mock_bleak_client: MagicMock, no_sleep, release_wait
+):
+    release_wait.side_effect = asyncio.CancelledError()
+    with pytest.raises(asyncio.CancelledError):
+        await _restonic(coordinator, KEESON_VARIANT_RESTONIC_B).preset_flat()
+    assert mock_bleak_client.write_gatt_char.await_args_list == [
+        _frame("e5fe1600000008fe"),
+        _frame(ZERO),
+    ]
+
+
+async def test_cancelling_the_caller_never_aborts_the_zero_frame_write(
+    coordinator, mock_bleak_client: MagicMock
+):
+    started = asyncio.Event()
+    gate = asyncio.Event()
+    written: list[bytes] = []
+
+    async def slow_write(_uuid, data, **_kwargs) -> None:
+        started.set()
+        await gate.wait()
+        written.append(bytes(data))
+
+    mock_bleak_client.write_gatt_char.side_effect = slow_write
+    task = asyncio.create_task(_restonic(coordinator, KEESON_VARIANT_RESTONIC_A).stop_all())
+    await started.wait()
+    task.cancel()
+    await asyncio.sleep(0)
+    gate.set()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert written == [bytes.fromhex(ZERO)]
+
+
+@pytest.mark.parametrize("axis_key", ["head", "feet"])
+async def test_combined_cover_is_preempted_by_either_axis(coordinator, axis_key):
+    """Back + Legs overlaps the head and foot cover resources, so their move or Stop replaces it."""
+    coordinator._motor_count = 2
+    specs = {
+        spec.key: spec for spec in _restonic(coordinator, KEESON_VARIANT_RESTONIC_B).motor_control_specs
+    }
+    combined = specs["back_legs"].scheduler_resource
+    assert combined == "motor:*"
+    spec = specs[axis_key]
+    axis = spec.scheduler_resource or f"motor:{spec.position_key or spec.key}"
+    scheduler = DeviceCommandScheduler(f"restonic-{axis}")
+    started = asyncio.Event()
+
+    async def combined_move(context) -> None:
+        started.set()
+        await context.cancel_event.wait()
+
+    async def axis_move(_context) -> None:
+        return None
+
+    active = asyncio.create_task(
+        scheduler.execute(
+            CommandIntent(combined_move, resources=command_resources(combined), replacement_key=combined)
+        )
+    )
+    await asyncio.wait_for(started.wait(), 1)
+    await asyncio.wait_for(
+        scheduler.execute(
+            CommandIntent(axis_move, resources=command_resources(axis), replacement_key=axis)
+        ),
+        1,
+    )
+    await asyncio.wait_for(active, 1)
+    assert [record.outcome for record in scheduler.recent_records] == [
+        CommandOutcome.REPLACED,
+        CommandOutcome.COMPLETED,
+    ]
+    await scheduler.async_shutdown()
 
 
 async def test_cadence_defaults_to_the_app_and_keeps_custom_settings(coordinator):
@@ -307,8 +434,12 @@ async def test_hold_follows_the_touch_lifecycle(
     assert mock_bleak_client.write_gatt_char.await_args_list == (
         [_frame(frame)] * writes + [_frame(ZERO)]
     )
-    assert hold_wait.await_args_list == [call(coordinator.cancel_command, pytest.approx(wait))]
-    assert no_sleep.await_args_list == [call(0.1)] * writes
+    # The rest of the hold, then the 100 ms release delay; both end early on STOP.
+    assert hold_wait.await_args_list == [
+        call(coordinator.cancel_command, pytest.approx(wait)),
+        call(coordinator.cancel_command, 0.1),
+    ]
+    assert no_sleep.await_args_list == [call(0.1)] * (writes - 1)
 
 
 @pytest.mark.parametrize(
@@ -332,11 +463,34 @@ async def test_hold_rejects_controls_and_durations_outside_the_remote(
 async def test_hold_wait_ends_at_stop_without_a_real_timer():
     event = asyncio.Event()
     event.set()
-    await asyncio.wait_for(keeson._wait_unless_cancelled(event, 60), 1)
+    await asyncio.wait_for(_REAL_HOLD_WAIT(event, 60), 1)
 
     pending = asyncio.Event()
     asyncio.get_running_loop().call_soon(pending.set)
-    await asyncio.wait_for(keeson._wait_unless_cancelled(pending, 60), 1)
+    await asyncio.wait_for(_REAL_HOLD_WAIT(pending, 60), 1)
+
+
+@pytest.mark.parametrize(
+    ("name", "services", "expected"),
+    [
+        ("base-i4", [], BED_TYPE_KEESON),
+        ("base-i4X0001", [], BED_TYPE_KEESON),
+        ("base-i4X0001", ["6e400001-b5a3-f393-e0a9-e50e24dcca9e"], BED_TYPE_KEESON),
+        ("base-i4.00002574", [], BED_TYPE_KEESON),
+        ("base-i5", [], "coolbase"),
+        ("base-i5.00000682", ["0000ffe5-0000-1000-8000-00805f9b34fb"], "coolbase"),
+        ("base-i3", [], None),
+    ],
+)
+def test_any_base_i4_name_is_offered_as_generic_keeson(name, services, expected):
+    """The app's startsWith("base-i4") rule reaches Keeson; Cool Base keeps base-i5."""
+    info = MagicMock()
+    info.name = name
+    info.address = "AA:BB:CC:DD:EE:FF"
+    info.service_uuids = services
+    info.manufacturer_data = {}
+    info.service_data = {}
+    assert detect_bed_type(info) == expected
 
 
 async def test_profiles_are_selected_only_explicitly(coordinator):

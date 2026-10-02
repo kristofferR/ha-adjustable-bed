@@ -283,9 +283,8 @@ different cadences, releases or frames. How discovery offers such a bed:
 
 | Advertised name | Offered as | What a Restonic BT user does |
 |-----------------|------------|------------------------------|
-| `base-i4.…` | Keeson, Auto (Base profile) | Choose the `restonic_a` or `restonic_b` protocol variant |
+| `base-i4…` (with or without a dot) | Keeson, Auto (Base profile) | Choose the `restonic_a` or `restonic_b` protocol variant |
 | `base-i5…` (any) | Cool Base | Change the bed type to Keeson, then choose `restonic_a` or `restonic_b` |
-| `base-i4` without the dot | Not offered (not a recognised bed) | Add the bed manually as Keeson with `restonic_a` or `restonic_b` |
 
 Both styles write the Base frame `E5 FE 16 + command_le32 + checksum`, where
 the checksum is `(~sum(bytes 0-6)) & 0xFF`, to FFE5 / FFE9 only. The app never
@@ -308,8 +307,11 @@ Held controls write at once and then every 100 ms. Once controls write a single
 frame when the button is pressed. Releasing any control writes the zero frame
 100 ms later. In Home Assistant, a cover or held Zero G button press holds for
 the motor pulse settings (10 x 100 ms by default), one-shot buttons press once,
-and `restonic_hold_control` holds any control for a chosen duration. The safety
-Stop path writes the zero frame without the delay.
+and `restonic_hold_control` holds any control for a chosen duration. A Stop,
+a cover's stop, or a command that replaces a running hold writes the zero frame
+at once instead of after 100 ms, and a Stop during that 100 ms ends the wait.
+The Back + Legs cover shares its scheduler lane with the head and foot covers,
+so moving or stopping either of them interrupts it.
 
 Remote B's back-up and back-down glyphs appear as a **Back + Legs** cover. The
 app sends the same light frame on every press and tracks no state, so the light
@@ -474,7 +476,7 @@ stays prefix-based so existing entries keep their frames; such beds can be added
 manually with the Adjustable Lite profile, which selects its remote the same way.
 
 Discovery likewise matches name-only `base-i4*` and `base-i5*` advertisements,
-the names the Restonic BT Remote app accepts. Detection is unchanged: a
-`base-i4.` name is offered as Keeson (Auto keeps Base), any `base-i5` name is
-offered as Cool Base, and a `base-i4` name without the dot is not offered. See
+the names the Restonic BT Remote app accepts. Any name starting with `base-i4`,
+with or without the dot, is detected as Keeson (Auto keeps Base); any `base-i5`
+name is still offered as Cool Base. See
 [Restonic BT profiles](#restonic-bt-profiles) for switching to the profile.

@@ -867,6 +867,9 @@ class KeesonController(BedController):
                     open_fn=lambda ctrl: cast(KeesonController, ctrl).move_back_legs_up(),
                     close_fn=lambda ctrl: cast(KeesonController, ctrl).move_back_legs_down(),
                     stop_fn=lambda ctrl: cast(KeesonController, ctrl).move_back_legs_stop(),
+                    # Drives both axes: a head or foot cover, reversal or Stop
+                    # must preempt it, so it overlaps every motor resource.
+                    scheduler_resource="motor:*",
                 )
             )
 
@@ -1447,6 +1450,7 @@ class KeesonController(BedController):
         self._motor_state[motor] = direction
         command = self._get_move_command()
         repeat_count, repeat_delay_ms = self.motor_pulse_settings()
+        completed = False
 
         try:
             if command:
@@ -1462,11 +1466,16 @@ class KeesonController(BedController):
                         repeat_count=repeat_count,
                         repeat_delay_ms=repeat_delay_ms,
                     )
+            completed = True
         finally:
             # Release writes use a fresh event so cancellation cannot suppress them.
             # KSBT03C has no release write; ending the cancellable refresh is its stop.
             self._motor_state = {}
-            await self._release_motion()
+            if self._is_restonic:
+                # A stop function (no direction) or an interrupted hold releases at once.
+                await self._restonic_release(delay=completed and bool(command))
+            else:
+                await self._release_motion()
 
     async def _release_motion(self, *, delay: bool = True) -> None:
         """Send the protocol-specific motor release sequence.
@@ -1483,13 +1492,11 @@ class KeesonController(BedController):
             # Release only cancels the app's 300 ms movement timer; no frame exists.
             return
 
-        cancel_event = asyncio.Event()
         if self._is_restonic:
-            # Touch-up posts one zero frame 100 ms later; the safety stop is immediate.
-            if delay:
-                await asyncio.sleep(_RESTONIC_RELEASE_DELAY_SECONDS)
-            await self.write_command(self._build_command(0), cancel_event=cancel_event)
+            await self._restonic_release(delay=delay)
             return
+
+        cancel_event = asyncio.Event()
 
         if self._variant == KEESON_VARIANT_PURPLE:
             await self.write_command(
@@ -1529,25 +1536,57 @@ class KeesonController(BedController):
             cancel_event=cancel_event,
         )
 
+    async def _restonic_release(self, *, delay: bool) -> None:
+        """Write the Restonic BT zero frame after a touch-up.
+
+        An ordinary release waits the app's 100 ms first. A stop, a replacement
+        or an interrupted hold sends it at once, and a STOP arriving during the
+        wait ends it early. The write runs with a fresh event in a shielded task,
+        so cancelling the caller can never suppress or abort it.
+        """
+        stop_requested = self._coordinator.cancel_command
+        interrupted: asyncio.CancelledError | None = None
+        if delay and not stop_requested.is_set():
+            try:
+                await _wait_unless_cancelled(stop_requested, _RESTONIC_RELEASE_DELAY_SECONDS)
+            except asyncio.CancelledError as err:
+                interrupted = err
+        release = asyncio.create_task(
+            self.write_command(self._build_command(0), cancel_event=asyncio.Event())
+        )
+        try:
+            await asyncio.shield(release)
+        except asyncio.CancelledError:
+            await release
+            raise
+        if interrupted is not None:
+            raise interrupted
+
     async def _write_single_shot(self, command: bytes) -> None:
         """Write a one-shot action and perform any app-specific release."""
+        completed = False
         try:
             await self.write_command(command, repeat_count=self._single_shot_count)
+            completed = True
         finally:
-            if self._is_restonic or self._variant in {
+            if self._is_restonic:
+                await self._restonic_release(delay=completed)
+            elif self._variant in {
                 KEESON_VARIANT_PURPLE,
                 KEESON_VARIANT_SLEEP_HARMONY,
             }:
                 await self._release_motion()
 
     async def _write_held(self, command: bytes, repeat_count: int, repeat_delay_ms: int) -> None:
-        """Refresh a held control, then perform the profile-specific release."""
+        """Refresh a held Restonic BT control, then release it."""
+        completed = False
         try:
             await self.write_command(
                 command, repeat_count=repeat_count, repeat_delay_ms=repeat_delay_ms
             )
+            completed = True
         finally:
-            await self._release_motion()
+            await self._restonic_release(delay=completed)
 
     async def _write_json_motion_command(
         self,
@@ -2053,6 +2092,7 @@ class KeesonController(BedController):
         if cancel_event.is_set():
             return
         writes = -(-duration_ms // _RESTONIC_REPEAT_MS) if repeats else 1
+        completed = False
         try:
             await self.write_command(
                 self._build_command(value),
@@ -2063,8 +2103,9 @@ class KeesonController(BedController):
             await _wait_unless_cancelled(
                 cancel_event, (duration_ms - (writes - 1) * _RESTONIC_REPEAT_MS) / 1000
             )
+            completed = True
         finally:
-            await self._release_motion()
+            await self._restonic_release(delay=completed)
 
     # Massage methods
     async def massage_toggle(self) -> None:
