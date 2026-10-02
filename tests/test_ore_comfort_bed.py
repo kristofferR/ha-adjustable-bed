@@ -45,7 +45,7 @@ APPS = (KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_DYNASTY_BASES)
 ADDRESS = "AA:BB:CC:DD:05:60"
 STOP_FRAME = "e5fe160000000006"
 STORE_KEY = f"{DOMAIN}.app_state_{ADDRESS.replace(':', '_').lower()}"
-SLOT = "keeson:maxcoil_una:"
+SLOT = "keeson:maxcoil_una"
 
 # The 34 unique payload vectors both reports publish (word -> final bytes).
 REPORT_VECTORS = {
@@ -148,12 +148,14 @@ def _services(*chars: _Char) -> list[SimpleNamespace]:
     return [SimpleNamespace(uuid="0000ffe5-0000-1000-8000-00805f9b34fb", characteristics=list(chars))]
 
 
-def _entry(hass: HomeAssistant, variant: str, motor_count: int) -> MockConfigEntry:
+def _entry(
+    hass: HomeAssistant, variant: str, motor_count: int, address: str = ADDRESS
+) -> MockConfigEntry:
     entry = MockConfigEntry(
         domain=DOMAIN,
         title="ORE bed",
         data={
-            CONF_ADDRESS: ADDRESS,
+            CONF_ADDRESS: address,
             CONF_NAME: "ORE bed",
             CONF_BED_TYPE: BED_TYPE_KEESON,
             CONF_PROTOCOL_VARIANT: variant,
@@ -162,8 +164,8 @@ def _entry(hass: HomeAssistant, variant: str, motor_count: int) -> MockConfigEnt
             CONF_DISABLE_ANGLE_SENSING: True,
             CONF_PREFERRED_ADAPTER: "auto",
         },
-        unique_id=ADDRESS,
-        entry_id=f"ore_{variant}_{motor_count}",
+        unique_id=address,
+        entry_id=f"ore_{variant}_{motor_count}_{address}",
     )
     entry.add_to_hass(hass)
     return entry
@@ -445,6 +447,75 @@ async def test_removing_the_entry_deletes_its_stored_levels(
     readded = AdjustableBedCoordinator(hass, _entry(hass, KEESON_VARIANT_MAXCOIL_UNA, 2))
     await readded.async_connect()
     assert readded.controller.persisted_app_state == {"wave": 1, "head": 1, "foot": 1}
+
+
+async def test_removal_keeps_levels_another_entry_still_owns(
+    hass: HomeAssistant, hass_storage: dict, enable_custom_integrations,
+) -> None:
+    hass_storage[STORE_KEY] = {"version": 1, "key": STORE_KEY, "data": {SLOT: {"wave": 3, "head": 1, "foot": 1}}}
+    first = _entry(hass, KEESON_VARIANT_MAXCOIL_UNA, 2)
+    duplicate = _entry(hass, KEESON_VARIANT_DYNASTY_BASES, 2, ADDRESS.lower())
+
+    assert await hass.config_entries.async_remove(first.entry_id)
+    await hass.async_block_till_done()
+    assert hass_storage[STORE_KEY]["data"][SLOT]["wave"] == 3
+
+    assert await hass.config_entries.async_remove(duplicate.entry_id)
+    await hass.async_block_till_done()
+    assert STORE_KEY not in hass_storage
+
+
+async def test_profiles_sharing_an_address_keep_separate_slots(
+    hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
+    sleeps: AsyncMock, hass_storage: dict,
+) -> None:
+    maxcoil = await _controller(hass, mock_bleak_client, KEESON_VARIANT_MAXCOIL_UNA)
+    dynasty_coordinator = AdjustableBedCoordinator(
+        hass, _entry(hass, KEESON_VARIANT_DYNASTY_BASES, 2, ADDRESS.lower())
+    )
+    await dynasty_coordinator.async_connect()
+    dynasty = dynasty_coordinator.controller
+    assert isinstance(dynasty, OreComfortBedController)
+
+    await maxcoil.set_massage_level("head", 3)
+    await dynasty.set_massage_level("foot", 0)
+    await maxcoil._coordinator.async_shutdown()
+    await dynasty_coordinator.async_shutdown()
+
+    assert hass_storage[STORE_KEY]["data"] == {
+        "keeson:maxcoil_una": {"wave": 1, "head": 3, "foot": 1},
+        "keeson:dynasty_bases": {"wave": 1, "head": 1, "foot": 0},
+    }
+
+
+async def test_a_removed_store_ignores_later_saves(hass: HomeAssistant, hass_storage: dict) -> None:
+    from custom_components.adjustable_bed.app_state_store import (
+        app_state_store,
+        async_remove_app_states,
+    )
+
+    store = app_state_store(hass, ADDRESS)
+    assert await store.async_slot(SLOT) == {}
+    store.update(SLOT, {"wave": 2})
+    await async_remove_app_states(hass, [ADDRESS])
+    store.update(SLOT, {"wave": 3})
+    await store.async_save()
+    await hass.async_block_till_done()
+    assert STORE_KEY not in hass_storage
+
+
+async def test_failed_store_deletion_does_not_block_entry_removal(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch, enable_custom_integrations,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    from custom_components.adjustable_bed import app_state_store
+
+    monkeypatch.setattr(app_state_store, "async_remove_app_states", AsyncMock(side_effect=OSError("busy")))
+    entry = _entry(hass, KEESON_VARIANT_MAXCOIL_UNA, 2)
+    assert await hass.config_entries.async_remove(entry.entry_id)
+    await hass.async_block_till_done()
+    assert hass.config_entries.async_get_entry(entry.entry_id) is None
+    assert "Could not delete stored app preferences" in caplog.text
 
 
 async def test_setup_exposes_the_app_surface(

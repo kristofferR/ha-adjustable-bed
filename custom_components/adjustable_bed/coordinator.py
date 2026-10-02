@@ -574,9 +574,7 @@ class AdjustableBedCoordinator:
             )
         # Generic app-local preferences (BedController.persisted_app_state).
         self._app_state_store: AppStateStore | None = None
-        self._app_state_slot = app_state_slot(
-            self._bed_type, self._protocol_variant, self.entry.data.get(CONF_SIDE)
-        )
+        self._app_state_slot = ""
         self._app_state_restoring = False
         self._controller_state_callbacks: set[Callable[[dict[str, Any]], None]] = set()
         self._controller_state_refresh_task: asyncio.Task[None] | None = None
@@ -6962,6 +6960,7 @@ class AdjustableBedCoordinator:
         if controller is None or controller.persisted_app_state is None:
             return
         if self._app_state_store is None:
+            self._app_state_slot = app_state_slot(self._bed_type, self._protocol_variant)
             self._app_state_store = app_state_store(self.hass, self._address)
         stored = await self._app_state_store.async_slot(self._app_state_slot)
         self._app_state_restoring = True

@@ -1,9 +1,10 @@
 """Per-bed storage for app-local preferences (``BedController.persisted_app_state``).
 
-One Home Assistant Store per physical address holds a slot for each bed type,
-protocol variant and side, so a profile change or a single-address side never
-reads another profile's preferences. Coordinators sharing an address share one
-instance, so their saves never overwrite each other's slot.
+One Home Assistant Store per physical address holds a slot for each bed type
+and protocol variant, so a profile change never reads another profile's
+preferences. The address already separates the sides of a two-address pair.
+Coordinators sharing an address share one instance, so their saves never
+overwrite each other's slot.
 """
 
 from __future__ import annotations
@@ -25,9 +26,9 @@ def app_state_storage_key(address: str) -> str:
     return f"{DOMAIN}.app_state_{address.replace(':', '_').lower()}"
 
 
-def app_state_slot(bed_type: str | None, variant: str | None, side: str | None) -> str:
-    """Return the slot of one profile and side within an address's store."""
-    return f"{bed_type}:{variant or 'auto'}:{side or ''}"
+def app_state_slot(bed_type: str | None, variant: str | None) -> str:
+    """Return the slot of one profile within an address's store."""
+    return f"{bed_type}:{variant or 'auto'}"
 
 
 class AppStateStore:
@@ -63,7 +64,8 @@ class AppStateStore:
             await self._store.async_save(self._snapshot())
 
     async def async_remove(self) -> None:
-        """Delete the stored file and cancel pending writes."""
+        """Delete the stored file, cancel pending writes and make later saves no-ops."""
+        self._data = None
         await self._store.async_remove()
 
     def _snapshot(self) -> dict[str, dict[str, Any]]:

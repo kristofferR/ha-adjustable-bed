@@ -1368,9 +1368,11 @@ class BedController(ABC):
         """App-local preferences the phone app keeps across restarts, or None.
 
         The coordinator stores a non-None mapping per physical address, bed
-        type, protocol variant and side (see ``app_state_store``), hands it back
-        to ``restore_persisted_app_state`` whenever a controller is created, and
-        deletes it when no config entry owns the address any more.
+        type and protocol variant (see ``app_state_store``), hands it back to
+        ``restore_persisted_app_state`` whenever a controller is created, and
+        deletes it when no config entry owns the address any more. The address
+        separates the sides of a two-address pair; a profile that offers
+        single-address side controls would need the side in the slot too.
         """
         return None
 
