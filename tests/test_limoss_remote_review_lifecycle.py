@@ -52,7 +52,10 @@ async def live_controller(coordinator):
         assert controller.capabilities is not None
         caps = controller.capabilities
         payload = {
-            2: bytes((2, caps.key_count, caps.system, caps.vibration, caps.memory_count)),
+            2: bytes((
+                2, caps.key_count, caps.system, caps.vibration,
+                (caps.configuration << 4) | caps.memory_count,
+            )),
             0: bytes.fromhex("0001020304"), 1: bytes.fromhex("0101020304"),
         }[opcode]
         client.start_notify.call_args.args[1](char, bytearray(format_command(payload, 0)))
