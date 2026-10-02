@@ -110,7 +110,10 @@ async def test_first_cold_registered_timed_move_keeps_query_after_native_STOP(
                     continue
                 ctrl = co.controller
                 assert isinstance(ctrl, StarcodeAbm5_4Controller)
-                await asyncio.wait_for(asyncio.gather(*tuple(ctrl._tasks)), 3)
+                async with asyncio.timeout(3):
+                    while ctrl._tasks:
+                        await asyncio.gather(*tuple(ctrl._tasks))
+                        await asyncio.sleep(0)
                 frames = [packet for _, packet in writes[key]]
                 movement = [t for t, p in writes[key] if p == literal_frame("BOX3633", "headUp")]
                 assert len(movement) >= 7 and movement[-1] - movement[0] >= 0.58

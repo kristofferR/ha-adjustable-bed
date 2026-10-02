@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from .leggett_okin import LeggettOkinController as LeggettOkinController
     from .leggett_wilinke import LeggettWilinkeController as LeggettWilinkeController
     from .limoss import LimossController as LimossController
+    from .limoss_remote import LimossRemoteController as LimossRemoteController
     from .linak import LinakController as LinakController
     from .logicdata import LogicdataController as LogicdataController
     from .logicdata_air_pump import LogicdataAirPumpController as LogicdataAirPumpController
@@ -101,6 +102,7 @@ _EXPORT_MODULES = {
     "LeggettOkinController": "leggett_okin",
     "LeggettWilinkeController": "leggett_wilinke",
     "LimossController": "limoss",
+    "LimossRemoteController": "limoss_remote",
     "LinakController": "linak",
     "LogicdataController": "logicdata",
     "LogicdataAppController": "logicdata_app",

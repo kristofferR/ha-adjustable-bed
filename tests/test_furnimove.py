@@ -144,10 +144,15 @@ async def test_light_exposure_is_toggle_and_unpublished_initial_boolean() -> Non
     assert controller.stale_motor_entity_keys == frozenset({"stair"})
 
 
-async def test_axes_main_release_tail_and_offline_no_stop_frame() -> None:
+async def test_axes_main_release_tail_and_offline_no_stop_frame(monkeypatch) -> None:
     controller = await fast_controller("93558")
     assert controller.simultaneous_movement_axes == ("head", "feet")
-    await controller.move_head_up()
+    # The mocked pauses do not advance time, so fix the release deadline's clock too.
+    loop = asyncio.get_running_loop()
+    started = loop.time()
+    with monkeypatch.context() as clock:
+        clock.setattr(loop, "time", lambda: started)
+        await controller.move_head_up()
     assert written(controller) == ["040200000001"] * 2 + ["040200000000"] * 2
     assert [entry.args[0] for entry in controller._pause.call_args_list[-2:]] == [100, 100]
     with pytest.raises(ValueError):
