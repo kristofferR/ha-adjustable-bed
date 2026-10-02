@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Final, TypedDict
 
 from .const import (
+    BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_CUSTOMATIC_CLARITY,
@@ -367,6 +368,12 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "label": "SIMMONS app",
                 "description": "SIMMONS app controls, Custom Mode memory and two alarms",
                 "hint": "Choose the app shown on your phone; OKIN/SmartBed names are shared.",
+            },
+            {
+                "type": BED_TYPE_ADJUSTABLE_LUMBAR,
+                "label": "Adjustable bed (Lumbar) app",
+                "description": "Head, foot and lumbar, four presets with saves, light and massage",
+                "hint": "Choose the app shown on your phone; OKIN/Star names are shared.",
             },
             {
                 "type": BED_TYPE_OKIN_FFE,

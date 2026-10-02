@@ -902,7 +902,7 @@
       "malouf_app_pair_settings": "Unpair first, then select each physical bed\u2019s app profile before combining them again.",
       "furnimove_remote_required": "Choose a captured FurniMove handset ID. An unknown ID requires its exact app table; the receiver label cannot choose one.",
       "furnimove_unpair_first": "Separate the paired entries before changing to FurniMove, then select each side\u2019s own handset layout.",
-      "okin_bedding_app_unpair_first": "Separate the paired entries before changing to or from the Tranquil or Z-Series app, then select each side\u2019s own app profile.",
+      "okin_bedding_app_unpair_first": "Separate the paired entries before changing to or from the Tranquil, Z-Series or Adjustable bed (Lumbar) app, then select each side\u2019s own app profile.",
       "vibradorm_app_required": "Choose the bed app.",
       "vibradorm_app_invalid": "Choose a supported app control layout and retained feature settings.",
       "vibradorm_app_unpair_first": "Unpair these entries before changing app settings. Each physical side keeps its own app controls.",
@@ -918,7 +918,8 @@
       "starcode_profile_mismatch": "Choose the bed class matching the exact case-sensitive Bluetooth name.",
       "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 entries with different Bluetooth addresses.",
       "starcode_unpair_first": "Use standalone entries for this independently addressed accessory group.",
-      "simmons_unpair_first": "Unpair the beds and configure each side separately before changing the SIMMONS bed type or protocol."
+      "simmons_unpair_first": "Unpair the beds and configure each side separately before changing the SIMMONS bed type or protocol.",
+      "adjustable_lumbar_unpair_first": "Unpair the beds and configure each side separately before changing the Adjustable bed (Lumbar) protocol."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond\u2026",
@@ -2032,6 +2033,33 @@
       },
       "simmons_refresh_alarms": {
         "name": "Refresh alarms"
+      },
+      "adjustable_lumbar_save_zero_g": {
+        "name": "Save zero gravity"
+      },
+      "adjustable_lumbar_save_lounge": {
+        "name": "Save lounge"
+      },
+      "adjustable_lumbar_save_incline": {
+        "name": "Save incline"
+      },
+      "adjustable_lumbar_save_anti_snore": {
+        "name": "Save anti-snore"
+      },
+      "adjustable_lumbar_wave_1": {
+        "name": "Massage wave 1"
+      },
+      "adjustable_lumbar_wave_2": {
+        "name": "Massage wave 2"
+      },
+      "adjustable_lumbar_wave_3": {
+        "name": "Massage wave 3"
+      },
+      "adjustable_lumbar_massage_on": {
+        "name": "Massage on"
+      },
+      "adjustable_lumbar_check_massage": {
+        "name": "Check massage"
       }
     },
     "cover": {
@@ -4257,6 +4285,26 @@
         "control": {
           "name": "Control",
           "description": "Zero-gravity, TV and anti-snore exist only on a regular bed; the inclined controls only on an inclined bed."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "adjustable_lumbar_hold_control": {
+      "name": "Hold Adjustable bed (Lumbar) control",
+      "description": "Hold one Adjustable bed (Lumbar) app control, repeating it every 100 ms, then send STOP immediately and again after 300 ms. Saving a preset holds Flat with that preset; the app reports it after 6 seconds, and the save on the bed is unverified.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "A motor direction, preset, preset save, light, massage wave or massage intensity control."
         },
         "duration": {
           "name": "Duration",

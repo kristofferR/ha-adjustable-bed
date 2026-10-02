@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from .base import BedController
 
 if TYPE_CHECKING:
+    from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
     from .coolbase import CoolBaseController as CoolBaseController
     from .customatic import CustomaticController as CustomaticController
     from .dewertokin_rf_gateway import (
@@ -83,6 +84,7 @@ _EXPORT_MODULES = {
     "TranquilController": "serenity",
     "ZSeriesController": "serenity",
     "SimmonsController": "simmons",
+    "AdjustableLumbarController": "adjustable_lumbar",
     "CustomaticController": "customatic",
     "CoolBaseController": "coolbase",
     "DewertOkinRfGatewayController": "dewertokin_rf_gateway",
