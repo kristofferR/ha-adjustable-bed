@@ -647,3 +647,17 @@ test("Cool Base app-labelled controls land in massage and utility sections", () 
   expect(bed.utility).toEqual(["button.cb_left_fan", "button.cb_right_fan", "button.cb_fan_sync", "button.cb_star"]);
   expect(bed.memory).toEqual([]);
 });
+
+test("SIMMONS inclined controls join presets and clock/alarm actions land in utility", () => {
+  const hass = hassWith([
+    entry("button.s_flat", "preset_flat"),
+    entry("button.s_right", "simmons_inclined_right"),
+    entry("button.s_left", "simmons_inclined_left"),
+    entry("button.s_middle", "simmons_inclined_middle"),
+    entry("button.s_clock", "simmons_sync_clock"),
+    entry("button.s_alarms", "simmons_refresh_alarms"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.presets).toEqual(["button.s_flat", "button.s_left", "button.s_middle", "button.s_right"]);
+  expect(bed.utility).toEqual(["button.s_clock", "button.s_alarms"]);
+});
