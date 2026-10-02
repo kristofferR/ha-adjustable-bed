@@ -1935,19 +1935,29 @@ def _detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detect
 
     # Home Assistant's Bluetooth index requires three literal leading characters,
     # so automatic discovery is limited to the accepted prefixes represented in
-    # the manifest. Exact S4-Y retains its hardware-confirmed legacy route.
+    # the manifest. Shared accepted app names require an explicit profile choice.
     if any(device_name.startswith(pattern) for pattern in SOLACE_NAME_PATTERNS) or (
         device_name.startswith("my qms2")
     ) or (
         SOLACE_NAME_PATTERN.fullmatch(device_name)
     ):
+        from .motion_bed_models import accepts_motion_bed_name
+
+        motion_overlap = accepts_motion_bed_name(service_info.name or "")
         signals.append("name:solace")
+        if motion_overlap:
+            signals.append("name:motion_bed")
         _LOGGER.info(
             "Detected Solace bed at %s (name: %s) by accepted name route",
             service_info.address,
             service_info.name,
         )
-        return DetectionResult(bed_type=BED_TYPE_SOLACE, confidence=0.9, signals=signals)
+        return DetectionResult(
+            bed_type=BED_TYPE_SOLACE,
+            confidence=0.6 if motion_overlap else 0.9,
+            signals=signals,
+            ambiguous_types=[BED_TYPE_MOTION_BED] if motion_overlap else None,
+        )
 
     # Check for Solace/Octo/MotoSleep disambiguation (FFE0 UUID)
     # MUST be before Richmat WiLinke since FFE0 is in RICHMAT_WILINKE_SERVICE_UUIDS as W3

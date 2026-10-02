@@ -259,7 +259,8 @@ export function bedEntitiesForDevice(
         break;
 
       case "select":
-        if (key === "light_timer") bed.lights.timer = id;
+        if (key === "motion_bed_active_module") (bed.utilitySelects ??= []).push(id);
+        else if (key === "light_timer") bed.lights.timer = id;
         else if (key === "starcode_color") mood().selects.push(id);
         else if (key === "vibradorm_app_mood_palette" || key === "vibradorm_app_mood_effect" || key === "vmatbasic_mood_palette" || key === "vmatbasic_mood_effect")
           mood().selects.push(id);
@@ -386,7 +387,8 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     bed.climate.entities.length === 0 &&
     bed.climate.selects.length === 0 &&
     bed.climate.numbers.length === 0 &&
-    bed.utility.length === 0
+    bed.utility.length === 0 &&
+    !bed.utilitySelects?.length
   );
 }
 

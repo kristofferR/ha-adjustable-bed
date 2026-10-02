@@ -33,6 +33,27 @@ function hassWith(entries: EntityRegistryDisplayEntry[]): HomeAssistant {
   };
 }
 
+test("Motion hub module selector is a nonempty utility control", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("select.hub_module", "motion_bed_active_module"),
+  ]), "dev1");
+  expect(bed.utilitySelects).toEqual(["select.hub_module"]);
+  expect(bed.utility).toEqual([]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
+test("Motion hub selector follows native child and single-address side scoping", () => {
+  const hass = hassWith([
+    entry("select.left_module", "motion_bed_active_module_left"),
+    entry("select.right_module", "motion_bed_active_module_right"),
+  ]);
+  expect(bedEntitiesForDevice(hass, "dev1", "left").utilitySelects).toEqual(["select.left_module"]);
+  expect(bedEntitiesForDevice(hass, "dev1", "right").utilitySelects).toEqual(["select.right_module"]);
+  hass.devices.dev1 = { id: "dev1", parent_device_id: "parent" };
+  hass.entities["select.right_module"].device_id = "dev2";
+  expect(bedEntitiesForDevice(hass, "dev1").utilitySelects).toEqual(["select.left_module"]);
+});
+
 test("2-motor bed with light switch and no massage/climate", () => {
   const hass = hassWith([
     entry("cover.seng_back", "back"),

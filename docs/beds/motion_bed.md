@@ -12,6 +12,11 @@ Existing Solace and other app profiles remain separate.
 
 Select **Motion Bed app** in setup and enter the original Bluetooth name used
 by that app, preserving case. Shared FFE1 transport does not select this app.
+When an advertised name matches both the existing Solace detector and the
+Motion Bed app's exact case-sensitive whitelist, setup asks which app profile
+to use. Neither the discovery chooser nor manual Auto-detect silently chooses
+Solace for that overlap. Explicit Solace and Motion Bed choices retain their
+separate factories; legacy names outside the Motion whitelist keep their route.
 The source uses 48 case-sensitive substring markers. Ordinary QMS, SealyMF and
 S-series names select their ordered preset and movement layouts. TL-B selects
 the motor module, TL-A air massage, TL-W thermal control, and TL-Q one hub.
@@ -19,6 +24,11 @@ The hub discovers motor, air and thermal modules through the same BLE address.
 Binding a module does not open another connection. The Active hub module select
 chooses among reported modules and controls which surface owns startup and
 thermal polling. All reported module controls remain available.
+The native card exposes this select in its utility section, including paired
+side views. Open its normal Home Assistant entity row to choose the module.
+Hub button registry identities survive unknown and temporarily absent inventory,
+preserving custom names and disabled settings. Capability checks still prevent
+absent-module actions. Changing away from the hub profile prunes stale identities.
 
 Idle disconnect clears live module observations, while a separate process-local
 capability snapshot keeps the last validated hub controls available for

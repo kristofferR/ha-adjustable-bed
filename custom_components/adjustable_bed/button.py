@@ -825,6 +825,14 @@ def _button_entities_for(
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
         # Named app actions disappear when their profile or transport changes.
         for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "fsm_relax_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "svane_", "motion_bed_", "starcode_", "limoss_remote_", "coolbase_"):
+            if (
+                namespace == "motion_bed_"
+                and coordinator.bed_type == BED_TYPE_MOTION_BED
+                and any(spec.key == "motion_bed_active_module" for spec in controller.controller_select_specs)
+            ):
+                # Hub inventory can be unknown or temporarily absent. Keep its
+                # registry identities; current capabilities still gate actions.
+                continue
             desired_actions = {
                 coordinator.entity_unique_id(spec.key)
                 for spec in controller.controller_button_specs
