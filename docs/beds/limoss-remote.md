@@ -135,7 +135,13 @@ send ten `71` and `66` frames respectively with four zero bytes and no STOP tail
 
 After notification subscription, the information transaction requests `02`,
 retries that capability query at one-second intervals, then requests hardware `00`
-and software `01` in reply order. The host bounds this transaction to ten seconds.
+and software `01` in reply order. The host bounds this transaction to ten seconds,
+including lane, pacing and write waits. A fresh `02` reply is required even when
+capabilities are cached. The app opens controls on that reply, so missing optional
+hardware/software replies may exhaust the remaining host budget without blocking
+startup. A write failure or timeout, cancellation or disconnect still fails the
+transaction; cached capabilities never substitute for a missing fresh reply.
+An explicit information refresh remains strict and reports incomplete metadata.
 Completed diagnostic fields survive later failures and reconstruction. Changed
 capability snapshots refresh the offline layout and request an entity
 reload after the link and paired command lanes are released. There are
