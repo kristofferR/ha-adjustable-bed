@@ -74,10 +74,12 @@ class LogicdataAppController(BedController):
         self._has_massage = has_massage and (command_family == "p1" or profile == "sleep_smart")
         self._subscribed: list[str] = []
         self._clock_task: asyncio.Task[None] | None = None
+        self._clock_requests = 0
         self._initialized = False
         self._discovered = False
         self._has_startup_profile = False
         self._candidates: tuple[protocol.TransportProfile, ...] = ()
+        self._notify_roles: tuple[protocol.TransportProfile, ...] = ()
         self._name_roles: frozenset[protocol.TransportProfile] = frozenset()
         self._family_matches: bool | None = None
         self._massage_state: dict[str, int] = {}
@@ -329,12 +331,15 @@ class LogicdataAppController(BedController):
         if client is None or not client.is_connected:
             raise ConnectionError("Not connected to bed")
         candidates = []
+        notify_roles = []
         name_roles = set()
         for key, transport in protocol.TRANSPORTS.items():
             service = client.services.get_service(transport.service_uuid)
             if service is None:
                 continue
             uuids = {char.uuid.lower() for char in service.characteristics}
+            if transport.notify_uuid in uuids:
+                notify_roles.append(key)
             required = {transport.write_uuid, transport.notify_uuid}
             if transport.rename_uuid and transport.rename_uuid in uuids:
                 name_roles.add(key)
@@ -355,6 +360,7 @@ class LogicdataAppController(BedController):
         self._get_characteristic(self.control_characteristic_uuid)
         self._has_startup_profile = any(key in ("t1", "t3") for key in candidates)
         self._candidates = tuple(candidates)
+        self._notify_roles = tuple(notify_roles)
         self._name_roles = frozenset(name_roles)
         self._discovered = True
 
@@ -727,9 +733,13 @@ class LogicdataAppController(BedController):
             async with self._ble_lock:
                 await client.start_notify(transport.notify_uuid, self._notification_handler)
             self._subscribed.append(transport.notify_uuid)
+            # Every other data notify role the app finds is subscribed too.
+            for key in self._notify_roles:
+                if key not in (self._transport_id, "t3"):
+                    await self._subscribe_optional(protocol.TRANSPORTS[key].notify_uuid)
             ready = False
             t3 = protocol.TRANSPORTS["t3"]
-            if "t3" in self._candidates and "t3" in self._name_roles and t3.rename_uuid:
+            if "t3" in self._notify_roles and "t3" in self._name_roles and t3.rename_uuid:
                 data_ready = self._transport_id == "t3" or await self._subscribe_optional(
                     t3.notify_uuid
                 )
@@ -775,8 +785,19 @@ class LogicdataAppController(BedController):
             updates["logicdata_app_alarm_config"] = asdict(notification.alarm)
         if updates:
             self.forward_controller_state_updates(updates)
-        if notification.clock_requested and (self._clock_task is None or self._clock_task.done()):
-            self._clock_task = asyncio.create_task(self._respond_to_clock_request())
+        if notification.clock_requested:
+            idle = self._clock_task is None or self._clock_task.done()
+            # Sleep Smart answers every request; MOTIONrelax drops one that
+            # arrives while an earlier request is still being answered.
+            if idle or self._sleep_smart:
+                self._clock_requests += 1
+            if idle:
+                self._clock_task = asyncio.create_task(self._answer_clock_requests())
+
+    async def _answer_clock_requests(self) -> None:
+        while self._clock_requests:
+            self._clock_requests -= 1
+            await self._respond_to_clock_request()
 
     async def _respond_to_clock_request(self) -> None:
         async def send(controller: BedController) -> None:
@@ -795,6 +816,7 @@ class LogicdataAppController(BedController):
             self._clock_task.cancel()
             await asyncio.gather(self._clock_task, return_exceptions=True)
             self._clock_task = None
+        self._clock_requests = 0
         client = self.client
         try:
             if client is not None and client.is_connected:

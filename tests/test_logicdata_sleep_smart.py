@@ -315,6 +315,8 @@ async def test_t3_ready_event_runs_both_startup_handlers(coordinator, instant):
     await controller.start_notify()
     assert [call.args[0] for call in coordinator.client.start_notify.call_args_list] == [
         T3.notify_uuid,
+        T1.notify_uuid,
+        T2.notify_uuid,
         T3.rename_uuid,
     ]
     assert writes(coordinator) == [
@@ -342,11 +344,24 @@ async def test_copresent_t3_readiness_initializes_the_selected_write_role(coordi
     await controller.start_notify()
     assert [call.args[0] for call in coordinator.client.start_notify.call_args_list] == [
         T2.notify_uuid,
+        T1.notify_uuid,
         T3.notify_uuid,
         T3.rename_uuid,
     ]
     assert {uuid for uuid, _ in writes(coordinator)} == {T2.write_uuid}
     assert len(packets(coordinator)) == 15
+
+
+async def test_every_discovered_notify_role_is_subscribed(coordinator, instant):
+    _client(coordinator, (T1, T2))
+    controller = bed(coordinator, transport="t1")
+    await controller.async_discover_capabilities()
+    await controller.start_notify()
+    assert [call.args[0] for call in coordinator.client.start_notify.call_args_list] == [
+        T1.notify_uuid,
+        T2.notify_uuid,
+    ]
+    assert packets(coordinator) == []  # No T3, so the app never becomes ready.
 
 
 async def test_failed_name_subscription_skips_queries_but_keeps_the_link(coordinator, instant):
@@ -359,7 +374,7 @@ async def test_failed_name_subscription_skips_queries_but_keeps_the_link(coordin
     await controller.async_discover_capabilities()
     await controller.start_notify()
     assert packets(coordinator) == []
-    assert controller._subscribed == [T3.notify_uuid]
+    assert controller._subscribed == [T3.notify_uuid, T1.notify_uuid, T2.notify_uuid]
     assert controller._initialized
 
 
@@ -423,6 +438,16 @@ async def test_notifications_publish_state_and_answer_clock_requests(coordinator
     ):
         await send(controller)
     assert writes(coordinator) == [(T3.write_uuid, "f1f15007380a01040c2238047e")]
+
+
+async def test_every_clock_request_gets_its_own_answer(coordinator):
+    controller = bed(coordinator)
+    sender = MagicMock(uuid=T3.notify_uuid)
+    for _ in range(3):
+        controller._notification_handler(sender, bytearray.fromhex("f2f250"))
+    assert controller._clock_task is not None
+    await controller._clock_task
+    assert coordinator.async_execute_controller_command.await_count == 3
 
 
 def test_capabilities_follow_the_profile(coordinator):
