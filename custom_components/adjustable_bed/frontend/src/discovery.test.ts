@@ -702,6 +702,17 @@ test("SIMMONS inclined controls join presets and clock/alarm actions land in uti
   expect(bed.utility).toEqual(["button.s_clock", "button.s_alarms"]);
 });
 
+test("Svane lamp intensity is exposed with its under-bed-light switch", () => {
+  const hass = hassWith([
+    entry("switch.svane_lamp", "under_bed_lights"),
+    entry("number.svane_intensity", "svane_intensity"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.lights.switch).toBe("switch.svane_lamp");
+  expect(bed.lights.level).toBe("number.svane_intensity");
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
 test("Sleep Smart pump taps land in utility and its pressure with firmness", () => {
   const hass = hassWith([
     entry("button.p_inflate", "logicdata_air_pump_inflate"),

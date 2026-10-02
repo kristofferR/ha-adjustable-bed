@@ -263,6 +263,8 @@ def _sensor_entities_for(
                 "vmatbasic_model", "vmatbasic_firmware", "vmatbasic_temperature",
                 "vmatbasic_floor_level_observed", "vmatbasic_floor_minutes_observed",
                 "vmatbasic_floor_percent_observed", "vmatbasic_rssi",
+                "svane_head_raw", "svane_feet_raw", "svane_position_raw",
+                "svane_firmware", "svane_hardware", "svane_manufacturer",
                 "limoss_remote_hardware_version", "limoss_remote_software_version",
                 "limoss_remote_serial", "limoss_remote_key_count", "limoss_remote_motor_count",
                 "limoss_remote_configuration", "limoss_remote_memory_slots",

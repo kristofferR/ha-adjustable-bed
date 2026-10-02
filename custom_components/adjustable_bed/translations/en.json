@@ -575,18 +575,18 @@
           "starcode_abm5_4_transport_selector": "Use the original Bluetooth device name unless matching a proven app transport explicitly."
         }
       },
-      "fsm_relax": {
-        "title": "FSM Relax app profile",
-        "description": "Select the app layout and optional controls explicitly. Raw memories have no known physical units. Shared Bluetooth advertisements do not identify this app profile.",
+      "limoss_remote": {
+        "title": "Limoss Remote App Controls",
+        "description": "Select the product and local controls used in the Limoss Remote app. The connected device supplies its key layout and memory capacity. These settings do not measure hardware state.",
         "data": {
-          "fsm_relax_layout": "App layout",
-          "fsm_relax_light": "Expose app light controls",
-          "fsm_relax_massage": "Expose app massage controls",
-          "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
-          "fsm_relax_reverse_1": "Reverse actuator flag 1",
-          "fsm_relax_reverse_2": "Reverse actuator flag 2",
-          "fsm_relax_reverse_3": "Reverse actuator flag 3",
-          "fsm_relax_reverse_4": "Reverse actuator flag 4"
+          "limoss_remote_product": "App product",
+          "limoss_remote_light": "Show held lamp control",
+          "limoss_remote_massage": "Show massage controls",
+          "limoss_remote_theme": "App artwork theme",
+          "limoss_remote_reverse_1": "Reverse motor channel 1",
+          "limoss_remote_reverse_2": "Reverse motor channel 2",
+          "limoss_remote_reverse_3": "Reverse motor channel 3",
+          "limoss_remote_reverse_4": "Reverse motor channel 4"
         }
       },
       "starcode_m5x5": {
@@ -603,18 +603,18 @@
           "starcode_lift_entries": "Choose up to three other configured AdjustableM5X5 entries. This main and the three lifts keep separate Bluetooth addresses and controls."
         }
       },
-      "limoss_remote": {
-        "title": "Limoss Remote App Controls",
-        "description": "Select the product and local controls used in the Limoss Remote app. The connected device supplies its key layout and memory capacity. These settings do not measure hardware state.",
+      "fsm_relax": {
+        "title": "FSM Relax app profile",
+        "description": "Select the app layout and optional controls explicitly. Raw memories have no known physical units. Shared Bluetooth advertisements do not identify this app profile.",
         "data": {
-          "limoss_remote_product": "App product",
-          "limoss_remote_light": "Show held lamp control",
-          "limoss_remote_massage": "Show massage controls",
-          "limoss_remote_theme": "App artwork theme",
-          "limoss_remote_reverse_1": "Reverse motor channel 1",
-          "limoss_remote_reverse_2": "Reverse motor channel 2",
-          "limoss_remote_reverse_3": "Reverse motor channel 3",
-          "limoss_remote_reverse_4": "Reverse motor channel 4"
+          "fsm_relax_layout": "App layout",
+          "fsm_relax_light": "Expose app light controls",
+          "fsm_relax_massage": "Expose app massage controls",
+          "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
+          "fsm_relax_reverse_1": "Reverse actuator flag 1",
+          "fsm_relax_reverse_2": "Reverse actuator flag 2",
+          "fsm_relax_reverse_3": "Reverse actuator flag 3",
+          "fsm_relax_reverse_4": "Reverse actuator flag 4"
         }
       }
     },
@@ -650,7 +650,6 @@
       "wrong_variant": "Failed to communicate with bed. Try selecting a different protocol variant.",
       "device_busy": "The bed is busy or another device is connected. Try disconnecting other controllers first.",
       "invalid_number": "Please enter valid numbers for motor pulse count and delay.",
-      "invalid_pulse_count_range": "For this app profile, the motor pulse count must be between 1 and 600.",
       "invalid_pin": "PIN must be empty or exactly 4 digits.",
       "invalid_variant_for_bed_type": "The selected protocol variant is not compatible with the selected bed type.",
       "invalid_motor_count_for_bed_type": "One motor is supported only for Standard OCTO TV lift controllers.",
@@ -691,15 +690,16 @@
       "vmatbasic_required": "Choose the V-MAT Basic product profile.",
       "starcode_app_invalid": "Choose a supported app selector and a live Bluetooth transport.",
       "starcode_app_unpair_first": "Unpair these entries before changing app selectors. Each physical side retains its own app controls.",
-      "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each).",
-      "starcode_profile_mismatch": "Choose the bed class matching the exact case-sensitive Bluetooth name.",
-      "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 entries with different Bluetooth addresses.",
-      "starcode_unpair_first": "Use standalone entries for this independently addressed accessory group.",
-      "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses.",
       "limoss_remote_product_required": "Select bed or chair for this app profile.",
       "limoss_remote_feature_update_failed": "The feature OFF commands could not complete. Settings were not saved.",
       "limoss_remote_invalid": "Select valid Limoss Remote app settings.",
       "limoss_remote_pair_settings": "Unpair first, then select each physical receiver’s Limoss Remote app profile before combining them again.",
+      "starcode_profile_mismatch": "Choose the bed class matching the exact case-sensitive Bluetooth name.",
+      "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 entries with different Bluetooth addresses.",
+      "starcode_unpair_first": "Use standalone entries for this independently addressed accessory group.",
+      "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each).",
+      "invalid_pulse_count_range": "For this app profile, the motor pulse count must be between 1 and 600.",
+      "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses.",
       "logicdata_app_sleep_smart_layout": "Sleep Smart beds use the two-motor standard or split-series layout."
     }
   },
@@ -909,7 +909,6 @@
     },
     "error": {
       "invalid_number": "Please enter valid numbers for motor pulse count and delay.",
-      "invalid_pulse_count_range": "For this app profile, the motor pulse count must be between 1 and 600.",
       "invalid_pin": "PIN must be empty or exactly 4 digits.",
       "invalid_motor_count_for_bed_type": "One motor is supported only for Standard OCTO TV lift controllers.",
       "invalid_angle": "Angle must be a positive number between 0 and 180 degrees.",
@@ -922,6 +921,7 @@
       "logicdata_app_unpair_first": "Unpair the beds and configure each side separately before choosing Logicdata bed apps.",
       "woosa_unpair_first": "Unpair the beds and configure each side separately before changing the Woosa Sleep profile.",
       "jensen_linon_unpair_first": "Unpair the beds and configure each side separately before changing the Jensen LinOn profile.",
+      "svane_unpair_first": "Unpair the beds and configure each side separately before changing a Svane Remote profile.",
       "jiecang_app_required": "Choose the bed app and physical actuator layout.",
       "jiecang_app_pair_settings": "Restore the standalone beds, configure each side's app profile and actuator layout, then combine them again.",
       "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
@@ -932,7 +932,6 @@
       "malouf_app_pair_settings": "Unpair first, then select each physical bed’s app profile before combining them again.",
       "furnimove_remote_required": "Choose a captured FurniMove handset ID. An unknown ID requires its exact app table; the receiver label cannot choose one.",
       "furnimove_unpair_first": "Separate the paired entries before changing to FurniMove, then select each side’s own handset layout.",
-      "okin_bedding_app_unpair_first": "Separate the paired entries before changing to or from the Tranquil, Z-Series or Adjustable bed (Lumbar) app, then select each side’s own app profile.",
       "vibradorm_app_required": "Choose the bed app.",
       "vibradorm_app_invalid": "Choose a supported app control layout and retained feature settings.",
       "vibradorm_app_unpair_first": "Unpair these entries before changing app settings. Each physical side keeps its own app controls.",
@@ -949,6 +948,8 @@
       "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 entries with different Bluetooth addresses.",
       "starcode_unpair_first": "Use standalone entries for this independently addressed accessory group.",
       "simmons_unpair_first": "Unpair the beds and configure each side separately before changing the SIMMONS bed type or protocol.",
+      "invalid_pulse_count_range": "For this app profile, the motor pulse count must be between 1 and 600.",
+      "okin_bedding_app_unpair_first": "Separate the paired entries before changing to or from the Tranquil, Z-Series or Adjustable bed (Lumbar) app, then select each side’s own app profile.",
       "adjustable_lumbar_unpair_first": "Unpair the beds and configure each side separately before changing the Adjustable bed (Lumbar) protocol.",
       "remacro_model_unmapped": "This bed advertises a company ID that no Remacro app lists.",
       "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses.",
@@ -1999,6 +2000,42 @@
       "starcode_abm5_4_reset": {
         "name": "Reset stored positions"
       },
+      "program_memory_7_left": {
+        "name": "Left: Save Memory 7"
+      },
+      "program_memory_8_both": {
+        "name": "Both sides: Save Memory 8"
+      },
+      "preset_memory_7_left": {
+        "name": "Left: Memory 7"
+      },
+      "program_memory_7_right": {
+        "name": "Right: Save Memory 7"
+      },
+      "preset_memory_8_both": {
+        "name": "Both sides: Memory 8"
+      },
+      "program_memory_8_right": {
+        "name": "Right: Save Memory 8"
+      },
+      "program_memory_7_both": {
+        "name": "Both sides: Save Memory 7"
+      },
+      "preset_memory_7_right": {
+        "name": "Right: Memory 7"
+      },
+      "preset_memory_8_left": {
+        "name": "Left: Memory 8"
+      },
+      "preset_memory_7_both": {
+        "name": "Both sides: Memory 7"
+      },
+      "preset_memory_8_right": {
+        "name": "Right: Memory 8"
+      },
+      "program_memory_8_left": {
+        "name": "Left: Save Memory 8"
+      },
       "preset_memory_7": {
         "name": "Memory 7"
       },
@@ -2097,42 +2134,6 @@
       },
       "remacro_led_brightness_save": {
         "name": "Save light level"
-      },
-      "program_memory_7_left": {
-        "name": "Left: Save Memory 7"
-      },
-      "program_memory_8_both": {
-        "name": "Both sides: Save Memory 8"
-      },
-      "preset_memory_7_left": {
-        "name": "Left: Memory 7"
-      },
-      "program_memory_7_right": {
-        "name": "Right: Save Memory 7"
-      },
-      "preset_memory_8_both": {
-        "name": "Both sides: Memory 8"
-      },
-      "program_memory_8_right": {
-        "name": "Right: Save Memory 8"
-      },
-      "program_memory_7_both": {
-        "name": "Both sides: Save Memory 7"
-      },
-      "preset_memory_7_right": {
-        "name": "Right: Memory 7"
-      },
-      "preset_memory_8_left": {
-        "name": "Left: Memory 8"
-      },
-      "preset_memory_7_both": {
-        "name": "Both sides: Memory 7"
-      },
-      "preset_memory_8_right": {
-        "name": "Right: Memory 8"
-      },
-      "program_memory_8_left": {
-        "name": "Left: Save Memory 8"
       },
       "logicdata_app_query_massage": {
         "name": "Refresh massage state"
@@ -2394,9 +2395,6 @@
       "malouf_full_tilt": {
         "name": "Full tilt"
       },
-      "starcode_union": {
-        "name": "Head and foot together"
-      },
       "limoss_remote_motor_4_right": {
         "name": "Right: Motor channel 4"
       },
@@ -2445,11 +2443,32 @@
       "limoss_remote_motor_1_right": {
         "name": "Right: Motor channel 1"
       },
+      "starcode_union": {
+        "name": "Head and foot together"
+      },
       "all_motors": {
         "name": "All motors"
       }
     },
     "sensor": {
+      "svane_head_raw": {
+        "name": "Observed head bytes"
+      },
+      "svane_feet_raw": {
+        "name": "Observed feet bytes"
+      },
+      "svane_position_raw": {
+        "name": "Observed position bytes"
+      },
+      "svane_firmware": {
+        "name": "Observed firmware"
+      },
+      "svane_hardware": {
+        "name": "Observed hardware"
+      },
+      "svane_manufacturer": {
+        "name": "Observed manufacturer"
+      },
       "rmcontrol_protocol_version": {
         "name": "RMControl protocol version"
       },
@@ -2649,42 +2668,6 @@
         "name": "Local memory save event"
       },
       "serenity_alarm_type": {
-        "name": "App alarm state"
-      },
-      "tranquil_manufacturer": {
-        "name": "Manufacturer"
-      },
-      "tranquil_status_code": {
-        "name": "App status code"
-      },
-      "tranquil_massage_timer_code": {
-        "name": "Massage timer code"
-      },
-      "tranquil_massage_timer_minutes": {
-        "name": "Massage timer"
-      },
-      "tranquil_save_event_code": {
-        "name": "Local memory save event"
-      },
-      "tranquil_alarm_type": {
-        "name": "App alarm state"
-      },
-      "zseries_manufacturer": {
-        "name": "Manufacturer"
-      },
-      "zseries_status_code": {
-        "name": "App status code"
-      },
-      "zseries_massage_timer_code": {
-        "name": "Massage timer code"
-      },
-      "zseries_massage_timer_minutes": {
-        "name": "Massage timer"
-      },
-      "zseries_save_event_code": {
-        "name": "Local memory save event"
-      },
-      "zseries_alarm_type": {
         "name": "App alarm state"
       },
       "furnimove_model": {
@@ -2973,47 +2956,44 @@
       "starcode_abm5_4_raw_7f": {
         "name": "Raw app field 7f"
       },
-      "fsm_relax_key_count": {
-        "name": "FSM Relax key count"
+      "limoss_remote_motor_2_position_raw": {
+        "name": "Motor 2 Raw Position"
       },
-      "fsm_relax_vibration_count": {
-        "name": "FSM Relax vibration count"
+      "limoss_remote_hardware_version": {
+        "name": "App Hardware Version"
       },
-      "fsm_relax_reported_memory_count": {
-        "name": "FSM Relax reported memory count"
+      "limoss_remote_reported_entry": {
+        "name": "Reported App Product"
       },
-      "fsm_relax_hardware_version": {
-        "name": "FSM Relax hardware version"
+      "limoss_remote_motor_3_position_raw": {
+        "name": "Motor 3 Raw Position"
       },
-      "fsm_relax_software_version": {
-        "name": "FSM Relax software version"
+      "limoss_remote_motor_count": {
+        "name": "Reported Motor Count"
       },
-      "fsm_relax_serial": {
-        "name": "FSM Relax serial"
+      "limoss_remote_configuration": {
+        "name": "App Configuration Code"
       },
-      "fsm_relax_acknowledgement": {
-        "name": "FSM Relax acknowledgement"
+      "limoss_remote_software_version": {
+        "name": "App Software Version"
       },
-      "fsm_relax_calibration_observed": {
-        "name": "FSM Relax calibration observed"
+      "limoss_remote_memory_slots": {
+        "name": "Reported Memory Slots"
       },
-      "fsm_relax_memory_quarantined": {
-        "name": "FSM Relax memory quarantined"
+      "limoss_remote_key_count": {
+        "name": "Reported App Keys"
       },
-      "fsm_relax_optional_information": {
-        "name": "FSM Relax optional information"
+      "limoss_remote_calibration_result": {
+        "name": "Calibration Reply"
       },
-      "fsm_relax_motor_1_raw": {
-        "name": "FSM Relax motor 1 raw"
+      "limoss_remote_serial": {
+        "name": "App Serial Value"
       },
-      "fsm_relax_motor_2_raw": {
-        "name": "FSM Relax motor 2 raw"
+      "limoss_remote_motor_4_position_raw": {
+        "name": "Motor 4 Raw Position"
       },
-      "fsm_relax_motor_3_raw": {
-        "name": "FSM Relax motor 3 raw"
-      },
-      "fsm_relax_motor_4_raw": {
-        "name": "FSM Relax motor 4 raw"
+      "limoss_remote_motor_1_position_raw": {
+        "name": "Motor 1 Raw Position"
       },
       "coolbase_left_fan_level": {
         "name": "Left fan level"
@@ -3129,50 +3109,89 @@
       "adjustable_lite_massage_timer": {
         "name": "Massage timer"
       },
+      "fsm_relax_key_count": {
+        "name": "FSM Relax key count"
+      },
+      "fsm_relax_vibration_count": {
+        "name": "FSM Relax vibration count"
+      },
+      "fsm_relax_reported_memory_count": {
+        "name": "FSM Relax reported memory count"
+      },
+      "fsm_relax_hardware_version": {
+        "name": "FSM Relax hardware version"
+      },
+      "fsm_relax_software_version": {
+        "name": "FSM Relax software version"
+      },
+      "fsm_relax_serial": {
+        "name": "FSM Relax serial"
+      },
+      "fsm_relax_acknowledgement": {
+        "name": "FSM Relax acknowledgement"
+      },
+      "fsm_relax_calibration_observed": {
+        "name": "FSM Relax calibration observed"
+      },
+      "fsm_relax_memory_quarantined": {
+        "name": "FSM Relax memory quarantined"
+      },
+      "fsm_relax_optional_information": {
+        "name": "FSM Relax optional information"
+      },
+      "fsm_relax_motor_1_raw": {
+        "name": "FSM Relax motor 1 raw"
+      },
+      "fsm_relax_motor_2_raw": {
+        "name": "FSM Relax motor 2 raw"
+      },
+      "fsm_relax_motor_3_raw": {
+        "name": "FSM Relax motor 3 raw"
+      },
+      "fsm_relax_motor_4_raw": {
+        "name": "FSM Relax motor 4 raw"
+      },
       "simmons_alarm_1": {
         "name": "Alarm 1"
       },
       "simmons_alarm_2": {
         "name": "Alarm 2"
       },
-      "limoss_remote_motor_2_position_raw": {
-        "name": "Motor 2 Raw Position"
+      "tranquil_manufacturer": {
+        "name": "Manufacturer"
       },
-      "limoss_remote_hardware_version": {
-        "name": "App Hardware Version"
+      "tranquil_status_code": {
+        "name": "App status code"
       },
-      "limoss_remote_reported_entry": {
-        "name": "Reported App Product"
+      "tranquil_massage_timer_code": {
+        "name": "Massage timer code"
       },
-      "limoss_remote_motor_3_position_raw": {
-        "name": "Motor 3 Raw Position"
+      "tranquil_massage_timer_minutes": {
+        "name": "Massage timer"
       },
-      "limoss_remote_motor_count": {
-        "name": "Reported Motor Count"
+      "tranquil_save_event_code": {
+        "name": "Local memory save event"
       },
-      "limoss_remote_configuration": {
-        "name": "App Configuration Code"
+      "tranquil_alarm_type": {
+        "name": "App alarm state"
       },
-      "limoss_remote_software_version": {
-        "name": "App Software Version"
+      "zseries_manufacturer": {
+        "name": "Manufacturer"
       },
-      "limoss_remote_memory_slots": {
-        "name": "Reported Memory Slots"
+      "zseries_status_code": {
+        "name": "App status code"
       },
-      "limoss_remote_key_count": {
-        "name": "Reported App Keys"
+      "zseries_massage_timer_code": {
+        "name": "Massage timer code"
       },
-      "limoss_remote_calibration_result": {
-        "name": "Calibration Reply"
+      "zseries_massage_timer_minutes": {
+        "name": "Massage timer"
       },
-      "limoss_remote_serial": {
-        "name": "App Serial Value"
+      "zseries_save_event_code": {
+        "name": "Local memory save event"
       },
-      "limoss_remote_motor_4_position_raw": {
-        "name": "Motor 4 Raw Position"
-      },
-      "limoss_remote_motor_1_position_raw": {
-        "name": "Motor 1 Raw Position"
+      "zseries_alarm_type": {
+        "name": "App alarm state"
       },
       "logicdata_app_massage_mode": {
         "name": "Massage mode"
@@ -3720,6 +3739,40 @@
     }
   },
   "services": {
+    "svane_hold_control": {
+      "name": "Hold Svane Remote control",
+      "description": "Hold selected axes or adjust the lamp. Movement releases use the selected app profile.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control"
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Bounded host duration in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "svane_release_axis": {
+      "name": "Release Svane Remote axis",
+      "description": "Signal the active writer to release one axis while the other continues.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "motor": {
+          "name": "Axis"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
     "serenity_hold_control": {
       "name": "Hold Serenity control",
       "description": "Hold one supported Serenity app action, then release it. Save actions can change stored positions.",
@@ -3734,81 +3787,6 @@
         "duration": {
           "name": "Duration",
           "description": "Hold time in seconds, from 0.1 to 60."
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
-    },
-    "tranquil_hold_control": {
-      "name": "Hold Tranquil control",
-      "description": "Hold one supported Tranquil app action, then release it. Save actions can change stored positions.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
-        },
-        "control": {
-          "name": "Control",
-          "description": "Literal action from the selected Tranquil profile held-control options."
-        },
-        "duration": {
-          "name": "Duration",
-          "description": "Hold time in seconds, from 0.1 to 60."
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
-    },
-    "zseries_hold_control": {
-      "name": "Hold Z-Series control",
-      "description": "Hold one supported Z-Series app action, then release it. Save actions can change stored positions.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
-        },
-        "control": {
-          "name": "Control",
-          "description": "Literal action from the selected Z-Series profile held-control options."
-        },
-        "duration": {
-          "name": "Duration",
-          "description": "Hold time in seconds, from 0.1 to 60."
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
-    },
-    "zseries_set_alarm": {
-      "name": "Set Z-Series alarm",
-      "description": "Set or clear the Customatic Z-Series app alarm. The bed clock is set to Home Assistant local time first.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
-        },
-        "enabled": {
-          "name": "Enabled"
-        },
-        "time": {
-          "name": "Alarm time",
-          "description": "Required when enabling. Minute precision; the app sets today, or tomorrow if the time has passed."
-        },
-        "wake_mode": {
-          "name": "Wake mode",
-          "description": "Required when enabling the alarm."
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
-    },
-    "zseries_sync_clock": {
-      "name": "Synchronize Z-Series clock",
-      "description": "Set the Customatic Z-Series controller clock to the current Home Assistant local time.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
         },
         "side": {
           "name": "Side"
@@ -4455,95 +4433,6 @@
         }
       }
     },
-    "starcode_move_lifts": {
-      "name": "Control AdjustableM5X5 lifts",
-      "description": "Control the independently addressed accessories configured on one main bed. Flat moves the main before the delayed lift action.",
-      "fields": {
-        "device_id": {
-          "name": "Main bed",
-          "description": "An AdjustableM5X5 main entry with selected lift entries."
-        },
-        "action": {
-          "name": "Action",
-          "description": "Up, down, composite flat or STOP."
-        }
-      }
-    },
-    "simmons_hold_control": {
-      "name": "Hold SIMMONS control",
-      "description": "Hold one SIMMONS app control, repeating it every 300 ms, then send its release stops. The app's help says holding Custom Mode for 5 seconds saves the current position; the save on the bed is unverified.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
-        },
-        "control": {
-          "name": "Control",
-          "description": "Zero-gravity, TV and anti-snore exist only on a regular bed; the inclined controls only on an inclined bed."
-        },
-        "duration": {
-          "name": "Duration",
-          "description": "Hold time in seconds, from 0.1 to 60."
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
-    },
-    "adjustable_lumbar_hold_control": {
-      "name": "Hold Adjustable bed (Lumbar) control",
-      "description": "Hold one Adjustable bed (Lumbar) app control, repeating it every 100 ms, then send STOP immediately and again after 300 ms. Saving a preset holds Flat with that preset; the app reports it after 6 seconds, and the save on the bed is unverified.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
-        },
-        "control": {
-          "name": "Control",
-          "description": "A motor direction, preset, preset save, light, massage wave or massage intensity control."
-        },
-        "duration": {
-          "name": "Duration",
-          "description": "Hold time in seconds, from 0.1 to 60."
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
-    },
-    "simmons_set_alarm": {
-      "name": "Set SIMMONS alarm",
-      "description": "Program or turn off alarm 1 or 2 of a SIMMONS app bed. The two enabled alarms cannot share a time or a mode.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
-        },
-        "slot": {
-          "name": "Alarm"
-        },
-        "enabled": {
-          "name": "Enabled",
-          "description": "Turn off to disable this alarm."
-        },
-        "time": {
-          "name": "Local alarm time",
-          "description": "Minute precision, in the Home Assistant time zone."
-        },
-        "weekdays": {
-          "name": "Repeat on",
-          "description": "Leave empty for the next occurrence of the selected time."
-        },
-        "mode": {
-          "name": "Mode",
-          "description": "Required when enabling. Anti-snore is available on a regular bed only."
-        },
-        "confirm_custom_mode": {
-          "name": "Confirm Custom Mode",
-          "description": "Required for Custom Mode. Check the saved back/foot angles first; extreme custom angles can cause injury."
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
-    },
     "limoss_remote_features": {
       "name": "Configure Limoss Remote Controls",
       "description": "Set local layout selections. Disabling a selected feature sends its ten OFF commands before saving.",
@@ -4651,6 +4540,170 @@
         "duration": {
           "name": "Duration",
           "description": "Hold time in seconds, 0.1–60."
+        }
+      }
+    },
+    "starcode_move_lifts": {
+      "name": "Control AdjustableM5X5 lifts",
+      "description": "Control the independently addressed accessories configured on one main bed. Flat moves the main before the delayed lift action.",
+      "fields": {
+        "device_id": {
+          "name": "Main bed",
+          "description": "An AdjustableM5X5 main entry with selected lift entries."
+        },
+        "action": {
+          "name": "Action",
+          "description": "Up, down, composite flat or STOP."
+        }
+      }
+    },
+    "simmons_hold_control": {
+      "name": "Hold SIMMONS control",
+      "description": "Hold one SIMMONS app control, repeating it every 300 ms, then send its release stops. The app's help says holding Custom Mode for 5 seconds saves the current position; the save on the bed is unverified.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "Zero-gravity, TV and anti-snore exist only on a regular bed; the inclined controls only on an inclined bed."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "simmons_set_alarm": {
+      "name": "Set SIMMONS alarm",
+      "description": "Program or turn off alarm 1 or 2 of a SIMMONS app bed. The two enabled alarms cannot share a time or a mode.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "slot": {
+          "name": "Alarm"
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Turn off to disable this alarm."
+        },
+        "time": {
+          "name": "Local alarm time",
+          "description": "Minute precision, in the Home Assistant time zone."
+        },
+        "weekdays": {
+          "name": "Repeat on",
+          "description": "Leave empty for the next occurrence of the selected time."
+        },
+        "mode": {
+          "name": "Mode",
+          "description": "Required when enabling. Anti-snore is available on a regular bed only."
+        },
+        "confirm_custom_mode": {
+          "name": "Confirm Custom Mode",
+          "description": "Required for Custom Mode. Check the saved back/foot angles first; extreme custom angles can cause injury."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "tranquil_hold_control": {
+      "name": "Hold Tranquil control",
+      "description": "Hold one supported Tranquil app action, then release it. Save actions can change stored positions.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "Literal action from the selected Tranquil profile held-control options."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "zseries_hold_control": {
+      "name": "Hold Z-Series control",
+      "description": "Hold one supported Z-Series app action, then release it. Save actions can change stored positions.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "Literal action from the selected Z-Series profile held-control options."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "zseries_set_alarm": {
+      "name": "Set Z-Series alarm",
+      "description": "Set or clear the Customatic Z-Series app alarm. The bed clock is set to Home Assistant local time first.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Alarm time",
+          "description": "Required when enabling. Minute precision; the app sets today, or tomorrow if the time has passed."
+        },
+        "wake_mode": {
+          "name": "Wake mode",
+          "description": "Required when enabling the alarm."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "zseries_sync_clock": {
+      "name": "Synchronize Z-Series clock",
+      "description": "Set the Customatic Z-Series controller clock to the current Home Assistant local time.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "adjustable_lumbar_hold_control": {
+      "name": "Hold Adjustable bed (Lumbar) control",
+      "description": "Hold one Adjustable bed (Lumbar) app control, repeating it every 100 ms, then send STOP immediately and again after 300 ms. Saving a preset holds Flat with that preset; the app reports it after 6 seconds, and the save on the bed is unverified.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "A motor direction, preset, preset save, light, massage wave or massage intensity control."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
         }
       }
     }

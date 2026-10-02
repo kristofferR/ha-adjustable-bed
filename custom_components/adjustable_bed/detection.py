@@ -197,6 +197,7 @@ from .const import (
 )
 from .fsm_relax_discovery import matches_fsm_relax_candidate
 from .kaidi_protocol import extract_kaidi_advertisement
+from .svane_state import is_svane_discovery_name
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1371,7 +1372,11 @@ def _detect_bed_type_detailed(
         )
 
     # Check for Svane / Jensen LinOn by name pattern
-    if any(pattern in device_name for pattern in SVANE_NAME_PATTERNS):
+    # The app's exact scan names are a subset; keep the established substring
+    # match so renamed beds (e.g. "Svane Bed 2") still detect as before.
+    if is_svane_discovery_name(service_info.name) or any(
+        pattern in device_name for pattern in SVANE_NAME_PATTERNS
+    ):
         signals.append("name:svane")
         _LOGGER.info(
             "Detected Svane bed at %s (name: %s) by name pattern",

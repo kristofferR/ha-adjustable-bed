@@ -789,7 +789,7 @@ def _button_entities_for(
                 registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
         # Named app actions disappear when their profile or transport changes.
-        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_", "limoss_remote_", "remacro_", "fsm_relax_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_"):
+        for namespace in ('woosa_', 'malouf_', 'customatic_', 'serenity_', 'fsm_relax_', 'furnimove_', 'vibradorm_app_', 'vmatbasic_', 'starcode_abm5_4_', 'svane_', 'starcode_', 'limoss_remote_', 'coolbase_', 'simmons_', 'tranquil_', 'zseries_', 'adjustable_lumbar_', 'remacro_', 'logicdata_app_', 'logicdata_air_pump_'):
             desired_actions = {
                 coordinator.entity_unique_id(spec.key)
                 for spec in controller.controller_button_specs
@@ -1319,6 +1319,13 @@ class PairedBedCombinedButton(ButtonEntity):
             description.key,
             self._coordinator.name,
         )
+        if description.memory_slot is not None and not description.is_program_button:
+            # Validate every physical slot before dispatching either recall.
+            for child in self._coordinator.children.values():
+                controller = child.capability_controller
+                if controller is None:
+                    raise ValueError(f"Cannot validate memory for unavailable device '{child.name}'")
+                controller.validate_memory_recall(description.memory_slot)
         await self._coordinator.async_execute_controller_command(
             description.press_fn,
             side=SIDE_BOTH,

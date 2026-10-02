@@ -123,6 +123,7 @@ from .const import (
     BED_TYPE_SOLACE,
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M5X5,
+    BED_TYPE_SVANE,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
@@ -1375,6 +1376,18 @@ class AdjustableBedCoordinator:
             self._begin_internal_entry_update(self._ble_bond_established)
             self._async_persist_config({**self.entry.data, CONF_NAME: name})
         self._name = name
+
+    def remember_svane_preferences(self, preferences: dict[str, object]) -> None:
+        """Guard one changed target-local preference batch without bond inference."""
+        from .svane_state import CONF_SVANE_PREFERENCES, svane_preferences
+
+        if self._bed_type != BED_TYPE_SVANE:
+            raise ValueError("Svane preferences require the explicit bed profile")
+        svane_preferences(preferences)
+        if self.entry.data.get(CONF_SVANE_PREFERENCES) == preferences:
+            return
+        self._begin_internal_entry_update(self._ble_bond_established)
+        self._async_persist_config({**self.entry.data, CONF_SVANE_PREFERENCES: preferences}, keys={CONF_SVANE_PREFERENCES})
 
     @property
     def is_connected(self) -> bool:

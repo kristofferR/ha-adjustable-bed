@@ -1439,9 +1439,13 @@ SOLACE_VARIANTS: Final = {
     VARIANT_AUTO: "Auto (conservative device-name profile)",
     SOLACE_VARIANT_WOOSA: "Woosa Sleep app (select explicitly)",
 }
+SVANE_VARIANT_MULTI: Final = "svane_remote_multi"
+SVANE_VARIANT_JMC: Final = "svane_remote_jmc"
 SVANE_VARIANT_JENSEN_LINON: Final = "jensen_linon"
 SVANE_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto (Svane app)",
+    VARIANT_AUTO: "Svane Remote (multi-service, existing entries)",
+    SVANE_VARIANT_MULTI: "Svane Remote (multi-service)",
+    SVANE_VARIANT_JMC: "Svane Remote (JMC400, select explicitly)",
     SVANE_VARIANT_JENSEN_LINON: "Jensen Adjustable Sleep app (LinOn)",
 }
 # Remacro app profiles. Company IDs select the model, never the app, so auto
@@ -2358,6 +2362,8 @@ ALL_PROTOCOL_VARIANTS: Final = [
     VARIANT_AUTO,
     SOLACE_VARIANT_WOOSA,
     SVANE_VARIANT_JENSEN_LINON,
+    SVANE_VARIANT_MULTI,
+    SVANE_VARIANT_JMC,
     REMACRO_VARIANT_SLUMBERLAND,
     REMACRO_VARIANT_THE_BRICK,
     REMACRO_VARIANT_JEROMES,
@@ -2574,6 +2580,8 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
     feedback must all agree, so they share this single predicate.
     """
     if not bed_type:
+        return False
+    if bed_type == BED_TYPE_SVANE and protocol_variant != SVANE_VARIANT_JENSEN_LINON:
         return False
     if bed_type in BEDS_WITH_POSITION_FEEDBACK:
         return True

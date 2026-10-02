@@ -49,6 +49,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_SVANE,
     BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
@@ -72,6 +73,7 @@ if TYPE_CHECKING:
     from .beds.base import BedController, SideBoundController
     from .beds.limoss_remote import LimossRemoteController
     from .beds.serenity import ZSeriesController
+    from .beds.svane import SvaneHoldAdmission
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -99,6 +101,9 @@ SERVICE_LEGGETT_SLEEP_TIMER = "leggett_sleep_timer"
 SERVICE_LEGGETT_ALARM_TIMER = "leggett_alarm_timer"
 SERVICE_LEGGETT_HOLD_CONTROL = "leggett_hold_control"
 SERVICE_SERENITY_HOLD_CONTROL = "serenity_hold_control"
+SERVICE_SVANE_HOLD_CONTROL = "svane_hold_control"
+SERVICE_SVANE_RELEASE_AXIS = "svane_release_axis"
+
 SERVICE_TRANQUIL_HOLD_CONTROL = "tranquil_hold_control"
 SERVICE_ZSERIES_HOLD_CONTROL = "zseries_hold_control"
 SERVICE_ZSERIES_SET_ALARM = "zseries_set_alarm"
@@ -391,8 +396,7 @@ def _get_support_bundle_target_from_device(
             # sides; a bundle is per-address, so make the user pick one
             # side's device instead of silently capturing only the first.
             raise ServiceValidationError(
-                f"{entry.title} is a paired bed; target one side's device "
-                "for the support bundle.",
+                f"{entry.title} is a paired bed; target one side's device for the support bundle.",
                 translation_domain=DOMAIN,
                 translation_key="bundle_needs_side_for_paired",
                 translation_placeholders={"device_name": entry.title},
@@ -792,6 +796,7 @@ async def _set_position_plan(
             BED_TYPE_KEESON,
             BED_TYPE_ERGOMOTION,
             BED_TYPE_SLEEPYS_BOX25,
+            BED_TYPE_SVANE,
             BED_TYPE_SLEEP_NUMBER_MCR,
         ) or (bed_type == BED_TYPE_KAIDI and supports_direct_position_control)
 
@@ -1078,6 +1083,7 @@ async def _timed_move_plan(
     motor: str,
     direction: str,
     duration_ms: int,
+    svane_admission: SvaneHoldAdmission | None = None,
 ) -> tuple[Callable[[BedController], Coroutine[Any, Any, None]], int, int, str]:
     """Validate one physical side and build its timed command."""
     async with _release_idle_on_validation_failure(coordinator):
@@ -1105,6 +1111,21 @@ async def _timed_move_plan(
             )
 
         spec = motor_specs[motor]
+        try:
+            controller.validate_timed_movement(motor, direction, duration_ms)
+        except ValueError as err:
+            raise ServiceValidationError(str(err)) from err
+
+        from .beds.svane import SvaneController
+
+        if coordinator.bed_type == BED_TYPE_SVANE and isinstance(controller, SvaneController):
+            svane_admission = svane_admission or controller.prepare_svane_hold_admission()
+            if (parent, coordinator) not in preflighted:
+                preflighted.append((parent, coordinator))
+            await _preflight_live_svane(
+                parent, coordinator, svane_admission,
+                f"{'head' if motor == 'back' else 'feet'}_{direction}", duration_ms,
+            )
 
         # Get the appropriate move function based on direction
         move_fn = spec.open_fn if direction == "up" else spec.close_fn
@@ -1139,31 +1160,34 @@ async def _timed_move_plan(
             _stop_fn: Callable[..., Coroutine[Any, Any, None]] = stop_fn,
         ) -> None:
             """Execute movement for specified duration, always sending stop."""
-            controller_timed_out = False
-            try:
-                await ctrl.prepare_for_movement()
-                deadline = asyncio.timeout(duration_ms / 1000)
+            with contextlib.ExitStack() as admission_scope:
+                if svane_admission is not None:
+                    admission_scope.enter_context(svane_admission.activate(ctrl))
+                controller_timed_out = False
                 try:
-                    async with deadline:
-                        try:
-                            await _move_fn(ctrl)
-                        except TimeoutError:
-                            # Controller cleanup can time out while responding
-                            # to our cancellation; that is still a real failure.
-                            controller_timed_out = True
+                    await ctrl.prepare_for_movement()
+                    deadline = asyncio.timeout(duration_ms / 1000)
+                    try:
+                        async with deadline:
+                            try:
+                                await _move_fn(ctrl)
+                            except TimeoutError:
+                                # Controller cleanup can time out while responding
+                                # to our cancellation; that is still a real failure.
+                                controller_timed_out = True
+                                raise
+                    except TimeoutError:
+                        if controller_timed_out or not deadline.expired():
                             raise
-                except TimeoutError:
-                    if controller_timed_out or not deadline.expired():
+                finally:
+                    # Release is outside the movement ceiling. Keep the wire lane
+                    # until it settles even if the caller is cancelled during STOP.
+                    stop_task = asyncio.create_task(_stop_fn(ctrl))
+                    try:
+                        await asyncio.shield(stop_task)
+                    except asyncio.CancelledError:
+                        await stop_task
                         raise
-            finally:
-                # Release is outside the movement ceiling. Keep the wire lane
-                # until it settles even if the caller is cancelled during STOP.
-                stop_task = asyncio.create_task(_stop_fn(ctrl))
-                try:
-                    await asyncio.shield(stop_task)
-                except asyncio.CancelledError:
-                    await stop_task
-                    raise
 
         return (
             timed_movement,
@@ -1193,6 +1217,15 @@ async def handle_timed_move(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
+    from .beds.svane import SvaneController
+
+    admissions = {
+        _plan_key(target): controller.prepare_svane_hold_admission()
+        for parent, side in targets
+        for target in _command_targets(parent, side)
+        if target.bed_type == BED_TYPE_SVANE
+        and isinstance(controller := target.capability_controller, SvaneController)
+    }
     preflighted: PreflightedSides = []
     plans: dict[
         int,
@@ -1202,9 +1235,10 @@ async def handle_timed_move(call: ServiceCall) -> None:
         for coordinator, side in targets:
             for target in _command_targets(coordinator, side):
                 plans[_plan_key(target)] = await _timed_move_plan(
-                    coordinator, target, preflighted, motor, direction, duration_ms
+                    coordinator, target, preflighted, motor, direction, duration_ms,
+                    admissions.get(_plan_key(target)),
                 )
-    except ServiceValidationError:
+    except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
         raise
 
@@ -1232,7 +1266,7 @@ async def handle_timed_move(call: ServiceCall) -> None:
                 )
             else:
                 await move(coordinator)
-    except Exception:
+    except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
         raise
 
@@ -1862,6 +1896,133 @@ async def handle_furnimove_move_simultaneously(call: ServiceCall) -> None:
         await controller.move_simultaneously(first, first_up, second, second_up, duration_ms)
 
     await _execute_furnimove(call, validate, execute)
+
+
+async def _preflight_live_svane(
+    parent: BedTarget,
+    target: BedChild,
+    admission: SvaneHoldAdmission,
+    control: str,
+    duration_ms: int,
+) -> None:
+    """Validate the live role through the pair's guarded connection lane."""
+    from .beds.svane import SvaneController
+
+    validated = False
+
+    async def inspect(child: BedChild) -> None:
+        nonlocal validated
+        controller = await _get_controller_for_service(child)
+        if not isinstance(controller, SvaneController) or controller.session is not admission.session:
+            raise ServiceValidationError("Svane physical session changed during preflight")
+        try:
+            controller.validate_svane_hold_control(control, duration_ms)
+        except ValueError as err:
+            raise ServiceValidationError(str(err)) from err
+        validated = True
+
+    if isinstance(parent, PairedBedCoordinator):
+        side = next(key for key, child in parent.children.items() if child is target)
+        await parent.async_run_child_operation(
+            "Svane live preflight", inspect, side=side, cancel_running=False,
+        )
+    else:
+        await inspect(target)
+    if not validated:
+        raise ServiceValidationError("Svane live preflight was interrupted")
+
+
+async def _svane_live_targets(
+    call: ServiceCall,
+    control: str,
+    duration_ms: int,
+) -> tuple[list[tuple[BedTarget, str]], PreflightedSides, dict[int, SvaneHoldAdmission]]:
+    """Capture all release boundaries, then validate each guarded live link."""
+    targets, missing = _resolve_sided_targets(
+        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    from .beds.svane import SvaneController
+
+    admissions: dict[int, SvaneHoldAdmission] = {}
+    for parent, side in targets:
+        for target in _command_targets(parent, side):
+            controller = target.capability_controller
+            if (
+                target.bed_type != BED_TYPE_SVANE
+                or controller is None
+                or not isinstance(controller, SvaneController)
+            ):
+                raise ServiceValidationError("Select a Svane Remote app profile")
+            try:
+                controller.validate_svane_hold_constraints(control, duration_ms)
+            except ValueError as err:
+                raise ServiceValidationError(str(err)) from err
+            admissions[id(controller.session)] = controller.prepare_svane_hold_admission()
+    preflighted: PreflightedSides = []
+    try:
+        for parent, side in targets:
+            for target in _command_targets(parent, side):
+                preflighted.append((parent, target))
+                controller = target.capability_controller
+                if not isinstance(controller, SvaneController) or id(controller.session) not in admissions:
+                    raise ServiceValidationError("Svane physical session changed during preflight")
+                await _preflight_live_svane(
+                    parent, target, admissions[id(controller.session)], control, duration_ms,
+                )
+    except Exception, asyncio.CancelledError:
+        await _release_preflighted(preflighted)
+        raise
+    return targets, preflighted, admissions
+
+
+async def handle_svane_hold_control(call: ServiceCall) -> None:
+    """Preflight exact roles on all sides before serialized source held writes."""
+    control = call.data[ATTR_CONTROL]
+    duration_ms = int(_leggett_hold_seconds(call.data[ATTR_DURATION]) * 1000)
+    targets, preflighted, admissions = await _svane_live_targets(call, control, duration_ms)
+    try:
+        async def hold(controller: BedController | SideBoundController) -> None:
+            from .beds.svane import SvaneController
+
+            if not isinstance(controller, SvaneController):
+                raise ValueError("Svane controller changed before held command admission")
+            admission = admissions.get(id(controller.session))
+            if admission is None:
+                raise ValueError("Svane physical session changed before held command admission")
+            with admission.activate(controller):
+                await controller.hold_control(control, duration_ms)
+
+        for parent, side in targets:
+            await _execute_sided(parent, side, hold, cancel_running=True)
+    except (Exception, asyncio.CancelledError) as error:
+        await _release_preflighted(preflighted)
+        if isinstance(error, ValueError):
+            raise ServiceValidationError(str(error)) from error
+        raise
+
+
+async def handle_svane_release_axis(call: ServiceCall) -> None:
+    """Signal only the active writer, allowing the other held axis to continue."""
+    targets, missing = _resolve_sided_targets(
+        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    controllers: list[BedController | SideBoundController] = []
+    for parent, side in targets:
+        for target in _command_targets(parent, side):
+            if target.bed_type != BED_TYPE_SVANE:
+                raise ServiceValidationError("Select an active Svane Remote app profile")
+            controller = target.controller or target.capability_controller
+            if controller is None:
+                continue
+            if not controller.supports_held_control:
+                raise ServiceValidationError("Select an active Svane Remote app profile")
+            controllers.append(controller)
+    for controller in controllers:
+        controller.request_svane_axis_release(call.data[ATTR_MOTOR])
 
 
 async def handle_fsm_relax_hold_control(call: ServiceCall) -> None:
@@ -3408,13 +3569,37 @@ async def async_register_services(hass: HomeAssistant) -> None:
         }),
     )
     hass.services.async_register(
-        DOMAIN, SERVICE_FURNIMOVE_MASSAGE_DURATION, handle_furnimove_massage_duration,
-        schema=vol.Schema({
-            **device_fields,
-            vol.Required("minutes"): vol.All(
-                vol.In((10, 15, 20, 30, "10", "15", "20", "30")), vol.Coerce(int)
-            ),
-        }),
+        DOMAIN,
+        SERVICE_FURNIMOVE_MASSAGE_DURATION,
+        handle_furnimove_massage_duration,
+        schema=vol.Schema(
+            {
+                **device_fields,
+                vol.Required("minutes"): vol.All(
+                    vol.In((10, 15, 20, 30, "10", "15", "20", "30")), vol.Coerce(int)
+                ),
+            }
+        ),
+    )
+    from .beds.svane import MOTIONS
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SVANE_HOLD_CONTROL,
+        handle_svane_hold_control,
+        schema=vol.Schema(
+            {
+                **device_fields,
+                vol.Required(ATTR_CONTROL): vol.In((*MOTIONS, "light_adjust")),
+                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SVANE_RELEASE_AXIS,
+        handle_svane_release_axis,
+        schema=vol.Schema({**device_fields, vol.Required(ATTR_MOTOR): vol.In(("head", "feet"))}),
     )
     hass.services.async_register(DOMAIN, "fsm_relax_hold_control", handle_fsm_relax_hold_control,
         schema=vol.Schema({vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
