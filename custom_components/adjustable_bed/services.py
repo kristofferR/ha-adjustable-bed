@@ -73,6 +73,7 @@ if TYPE_CHECKING:
     from .beds.base import BedController, SideBoundController
     from .beds.limoss_remote import LimossRemoteController
     from .beds.serenity import ZSeriesController
+    from .beds.svane import SvaneHoldAdmission
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1072,6 +1073,7 @@ async def _timed_move_plan(
     motor: str,
     direction: str,
     duration_ms: int,
+    svane_admission: SvaneHoldAdmission | None = None,
 ) -> tuple[Callable[[BedController], Coroutine[Any, Any, None]], int, int, str]:
     """Validate one physical side and build its timed command."""
     async with _release_idle_on_validation_failure(coordinator):
@@ -1103,6 +1105,24 @@ async def _timed_move_plan(
             controller.validate_timed_movement(motor, direction, duration_ms)
         except ValueError as err:
             raise ServiceValidationError(str(err)) from err
+
+        if coordinator.bed_type == BED_TYPE_SVANE:
+            from .beds.svane import SvaneController
+
+            if not isinstance(controller, SvaneController):
+                raise ServiceValidationError("Select a Svane Remote app profile")
+            svane_admission = svane_admission or controller.prepare_svane_hold_admission()
+            if (parent, coordinator) not in preflighted:
+                preflighted.append((parent, coordinator))
+            live = await _get_controller_for_service(coordinator)
+            if not isinstance(live, SvaneController) or live.session is not svane_admission.session:
+                raise ServiceValidationError("Svane physical session changed during preflight")
+            try:
+                live.validate_svane_hold_control(
+                    f"{'head' if motor == 'back' else 'feet'}_{direction}", duration_ms
+                )
+            except ValueError as err:
+                raise ServiceValidationError(str(err)) from err
 
         # Get the appropriate move function based on direction
         move_fn = spec.open_fn if direction == "up" else spec.close_fn
@@ -1137,31 +1157,34 @@ async def _timed_move_plan(
             _stop_fn: Callable[..., Coroutine[Any, Any, None]] = stop_fn,
         ) -> None:
             """Execute movement for specified duration, always sending stop."""
-            controller_timed_out = False
-            try:
-                await ctrl.prepare_for_movement()
-                deadline = asyncio.timeout(duration_ms / 1000)
+            with contextlib.ExitStack() as admission_scope:
+                if svane_admission is not None:
+                    admission_scope.enter_context(svane_admission.activate(ctrl))
+                controller_timed_out = False
                 try:
-                    async with deadline:
-                        try:
-                            await _move_fn(ctrl)
-                        except TimeoutError:
-                            # Controller cleanup can time out while responding
-                            # to our cancellation; that is still a real failure.
-                            controller_timed_out = True
+                    await ctrl.prepare_for_movement()
+                    deadline = asyncio.timeout(duration_ms / 1000)
+                    try:
+                        async with deadline:
+                            try:
+                                await _move_fn(ctrl)
+                            except TimeoutError:
+                                # Controller cleanup can time out while responding
+                                # to our cancellation; that is still a real failure.
+                                controller_timed_out = True
+                                raise
+                    except TimeoutError:
+                        if controller_timed_out or not deadline.expired():
                             raise
-                except TimeoutError:
-                    if controller_timed_out or not deadline.expired():
+                finally:
+                    # Release is outside the movement ceiling. Keep the wire lane
+                    # until it settles even if the caller is cancelled during STOP.
+                    stop_task = asyncio.create_task(_stop_fn(ctrl))
+                    try:
+                        await asyncio.shield(stop_task)
+                    except asyncio.CancelledError:
+                        await stop_task
                         raise
-            finally:
-                # Release is outside the movement ceiling. Keep the wire lane
-                # until it settles even if the caller is cancelled during STOP.
-                stop_task = asyncio.create_task(_stop_fn(ctrl))
-                try:
-                    await asyncio.shield(stop_task)
-                except asyncio.CancelledError:
-                    await stop_task
-                    raise
 
         return (
             timed_movement,
@@ -1191,6 +1214,15 @@ async def handle_timed_move(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
+    from .beds.svane import SvaneController
+
+    admissions = {
+        _plan_key(target): controller.prepare_svane_hold_admission()
+        for parent, side in targets
+        for target in _command_targets(parent, side)
+        if target.bed_type == BED_TYPE_SVANE
+        and isinstance(controller := target.capability_controller, SvaneController)
+    }
     preflighted: PreflightedSides = []
     plans: dict[
         int,
@@ -1200,9 +1232,10 @@ async def handle_timed_move(call: ServiceCall) -> None:
         for coordinator, side in targets:
             for target in _command_targets(coordinator, side):
                 plans[_plan_key(target)] = await _timed_move_plan(
-                    coordinator, target, preflighted, motor, direction, duration_ms
+                    coordinator, target, preflighted, motor, direction, duration_ms,
+                    admissions.get(_plan_key(target)),
                 )
-    except ServiceValidationError:
+    except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
         raise
 
@@ -1230,7 +1263,7 @@ async def handle_timed_move(call: ServiceCall) -> None:
                 )
             else:
                 await move(coordinator)
-    except Exception:
+    except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
         raise
 
@@ -1864,13 +1897,16 @@ async def handle_furnimove_move_simultaneously(call: ServiceCall) -> None:
 
 async def _svane_live_targets(
     call: ServiceCall,
-) -> tuple[list[tuple[BedTarget, str]], PreflightedSides]:
-    """Validate profile and connect every selected target before motion begins."""
+) -> tuple[list[tuple[BedTarget, str]], PreflightedSides, dict[int, SvaneHoldAdmission]]:
+    """Capture release ownership, then connect every target before motion."""
     targets, missing = _resolve_sided_targets(
         call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
     )
     if missing:
         raise _missing_device_error(missing[0])
+    from .beds.svane import SvaneController
+
+    admissions: dict[int, SvaneHoldAdmission] = {}
     # Reject unrelated profiles without contacting their devices.
     for parent, side in targets:
         for target in _command_targets(parent, side):
@@ -1878,34 +1914,47 @@ async def _svane_live_targets(
             if (
                 target.bed_type != BED_TYPE_SVANE
                 or controller is None
-                or not controller.supports_held_control
+                or not isinstance(controller, SvaneController)
             ):
                 raise ServiceValidationError("Select a Svane Remote app profile")
+            admissions[id(controller.session)] = controller.prepare_svane_hold_admission()
     preflighted: PreflightedSides = []
     try:
         for parent, side in targets:
             for target in _command_targets(parent, side):
-                await _get_controller_for_service(target)
                 preflighted.append((parent, target))
+                await _get_controller_for_service(target)
     except Exception, asyncio.CancelledError:
         await _release_preflighted(preflighted)
         raise
-    return targets, preflighted
+    return targets, preflighted, admissions
 
 
 async def handle_svane_hold_control(call: ServiceCall) -> None:
     """Preflight exact roles on all sides before serialized source held writes."""
-    targets, preflighted = await _svane_live_targets(call)
+    targets, preflighted, admissions = await _svane_live_targets(call)
     control = call.data[ATTR_CONTROL]
     duration_ms = int(_leggett_hold_seconds(call.data[ATTR_DURATION]) * 1000)
     try:
         for parent, side in targets:
             for target in _command_targets(parent, side):
+                from .beds.svane import SvaneController
+
                 controller = await _get_controller_for_service(target)
+                if not isinstance(controller, SvaneController) or id(controller.session) not in admissions:
+                    raise ValueError("Svane physical session changed during preflight")
                 controller.validate_svane_hold_control(control, duration_ms)
 
         async def hold(controller: BedController | SideBoundController) -> None:
-            await controller.hold_control(control, duration_ms)
+            from .beds.svane import SvaneController
+
+            if not isinstance(controller, SvaneController):
+                raise ValueError("Svane controller changed before held command admission")
+            admission = admissions.get(id(controller.session))
+            if admission is None:
+                raise ValueError("Svane physical session changed before held command admission")
+            with admission.activate(controller):
+                await controller.hold_control(control, duration_ms)
 
         for parent, side in targets:
             await _execute_sided(parent, side, hold, cancel_running=True)

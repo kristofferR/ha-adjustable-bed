@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
@@ -91,6 +94,29 @@ async def _intensity(controller: BedController, value: float) -> None:
     if not isinstance(controller, SvaneController) or not float(value).is_integer():
         raise ValueError("Svane intensity requires a whole source step")
     await controller.set_light_level(int(value))
+
+
+@dataclass(frozen=True, slots=True)
+class SvaneHoldAdmission:
+    """A physical session's release boundary before public preflight/admission."""
+
+    session: SvaneSession
+    release_epochs: tuple[int, int]
+
+    @contextmanager
+    def activate(self, controller: BedController) -> Iterator[None]:
+        if not isinstance(controller, SvaneController) or controller.session is not self.session:
+            raise ValueError("Svane physical session changed before held command admission")
+        token = _hold_admission.set(self)
+        try:
+            yield
+        finally:
+            _hold_admission.reset(token)
+
+
+_hold_admission: ContextVar[SvaneHoldAdmission | None] = ContextVar(
+    "svane_hold_admission", default=None
+)
 
 
 class SvaneController(BedController):
@@ -471,7 +497,8 @@ class SvaneController(BedController):
             if direction is not None
         )
 
-    def validate_svane_hold_control(self, control: str, duration_ms: int) -> None:
+    def validate_svane_hold_constraints(self, control: str, duration_ms: int) -> None:
+        """Validate profile/local intent/duration without requiring a BLE client."""
         integer(duration_ms, 1, 60000)
         if control not in self.held_control_options:
             raise ValueError("Unknown Svane held control")
@@ -484,6 +511,8 @@ class SvaneController(BedController):
             delayed_feet = feet is not None and not (self.profile == "jmc" and head is not None)
             if delayed_feet and duration_ms <= 100:
                 raise ValueError("Feet controls require a hold longer than 100 ms (0.1 seconds)")
+    def validate_svane_hold_control(self, control: str, duration_ms: int) -> None:
+        self.validate_svane_hold_constraints(control, duration_ms)
         roles = (
             ((LIGHT, uuid("b5e9")), (LIGHT, uuid("3fb2")))
             if control == "light_adjust"
@@ -496,10 +525,19 @@ class SvaneController(BedController):
             if role is None or not set(role.properties) & {"write", "write-without-response"}:
                 raise ValueError("Svane held control role is unavailable")
 
+    def prepare_svane_hold_admission(self) -> SvaneHoldAdmission:
+        return SvaneHoldAdmission(
+            self.session, (self.session.head_release_epoch, self.session.feet_release_epoch)
+        )
+
     def request_svane_axis_release(self, axis: str) -> None:
         """Signal the active command writer; this synchronous method does no I/O."""
         if axis not in ("head", "feet"):
             raise ValueError("Unknown Svane axis")
+        if axis == "head":
+            self.session.head_release_epoch += 1
+        else:
+            self.session.feet_release_epoch += 1
         self._pending_release.add(axis)
         self._wake.set()
 
@@ -553,7 +591,15 @@ class SvaneController(BedController):
                     return
             return
         self._active_head, self._active_feet = MOTIONS[control]
-        self._pending_release.clear()
+        admission = _hold_admission.get() or self.prepare_svane_hold_admission()
+        self._pending_release = {
+            axis
+            for axis, current, baseline in (
+                ("head", self.session.head_release_epoch, admission.release_epochs[0]),
+                ("feet", self.session.feet_release_epoch, admission.release_epochs[1]),
+            )
+            if current > baseline
+        }
         self._wake.clear()
         feet_started = False
         try:
@@ -631,7 +677,7 @@ class SvaneController(BedController):
 
     def validate_timed_movement(self, motor: str, direction: str, duration_ms: int) -> None:
         axis = "head" if motor == "back" else "feet"
-        self.validate_svane_hold_control(f"{axis}_{direction}", duration_ms)
+        self.validate_svane_hold_constraints(f"{axis}_{direction}", duration_ms)
 
     def _motor_hold_duration_ms(self) -> int:
         context = current_command_context()

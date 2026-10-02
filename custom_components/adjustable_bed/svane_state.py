@@ -57,6 +57,8 @@ class SvaneSession:
     observations: dict[str, str] = field(default_factory=dict)
     multi_slots: dict[int, tuple[bytes, bytes]] = field(default_factory=dict)
     jmc_slots: tuple[bytes, bytes] = _DEFAULT_SLOTS
+    head_release_epoch: int = 0
+    feet_release_epoch: int = 0
 
     def preferences(self) -> dict[str, object]:
         return {"intensity": self.intensity, "slots": [raw.hex() for raw in self.jmc_slots]}
