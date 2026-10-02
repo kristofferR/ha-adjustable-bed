@@ -102,6 +102,8 @@ def test_manifest_discovers_restonic_bt_name_only_advertisements() -> None:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     patterns = [entry["local_name"] for entry in manifest["bluetooth"] if "local_name" in entry]
 
-    for name in ("base-i4.00002574", "base-i5.00000682", "base-i4"):
+    # A bare "base-i4" also matches, but detection does not recognise it, so
+    # discovery aborts (not_supported); only real Keeson/Cool Base names are offered.
+    for name in ("base-i4.00002574", "base-i5.00000682"):
         assert any(fnmatchcase(name, pattern) for pattern in patterns)
     assert not any(fnmatchcase("BASE-I4.00002574", pattern) for pattern in patterns)

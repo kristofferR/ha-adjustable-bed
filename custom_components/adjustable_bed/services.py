@@ -2475,7 +2475,11 @@ async def handle_adjustable_lumbar_hold_control(call: ServiceCall) -> None:
 async def handle_restonic_hold_control(call: ServiceCall) -> None:
     """Hold one Restonic BT remote control, then send its delayed zero frame."""
     await _handle_customatic_hold(
-        call, call.data[ATTR_CONTROL], {BED_TYPE_KEESON}, label="Restonic BT"
+        call,
+        call.data[ATTR_CONTROL],
+        {BED_TYPE_KEESON},
+        label="Restonic BT",
+        control_noun="control",
     )
 
 
@@ -2642,6 +2646,7 @@ async def _handle_customatic_hold(
     *,
     label: str = "Customatic",
     validate_extra: Callable[[BedController | SideBoundController], None] | None = None,
+    control_noun: str = "combination",
 ) -> None:
     """Preflight the whole selection before starting any held write sequence."""
     duration_ms = int(_leggett_hold_seconds(call.data[ATTR_DURATION]) * 1000)
@@ -2660,7 +2665,7 @@ async def _handle_customatic_hold(
     def validate(controller: BedController | SideBoundController) -> None:
         if control not in controller.held_control_options:
             raise ServiceValidationError(
-                f"The selected profile does not support combination '{control}'"
+                f"The selected profile does not support {control_noun} '{control}'"
             )
 
         if validate_extra is not None:

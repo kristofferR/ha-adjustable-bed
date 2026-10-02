@@ -396,7 +396,7 @@ def _service_target(coordinator: AdjustableBedCoordinator, variant: str):
     [
         (KEESON_VARIANT_RESTONIC_A, "zero_g", None),
         (KEESON_VARIANT_RESTONIC_B, "zzz", None),
-        (KEESON_VARIANT_RESTONIC_A, "zzz", "combination"),
+        (KEESON_VARIANT_RESTONIC_A, "zzz", "does not support control 'zzz'"),
         (KEESON_VARIANT_BASE, "flat", "Restonic BT"),
     ],
 )

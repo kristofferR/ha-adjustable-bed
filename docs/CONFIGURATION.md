@@ -363,7 +363,7 @@ retain their legacy profile unless you explicitly change it.
 | Caresse / Werkmeister apps | Explicit app and remote profile; Caresse retained settings and feature flags | [Caresse / Werkmeister](beds/vibradorm_app.md) |
 | VMAT app | Explicit app and exact shipped remote ordinal; remote-derived features | [VMAT](beds/vmat.md) |
 | Adjustable Lite app | Keeson protocol variant **`adjustable_lite`**; the device name picks the KSBT01C or KSBT03C remote; `auto` keeps the generic KSBT profile | [Keeson Adjustable Lite](beds/keeson.md#adjustable-lite-profile) |
-| Restonic BT Remote app | Keeson protocol variant **`restonic_a`** or **`restonic_b`**, matching the app's remote style setting; `auto` keeps the Base profile | [Keeson Restonic BT](beds/keeson.md#restonic-bt-profiles) |
+| Restonic BT Remote app | Keeson protocol variant **`restonic_a`** or **`restonic_b`**, matching the app's remote style setting; never chosen automatically (a `base-i5` bed is offered as Cool Base, so switch its bed type to Keeson first) | [Keeson Restonic BT](beds/keeson.md#restonic-bt-profiles) |
 | V-MAT Basic app | Explicit Basic, CBI or CBI with XT-Box product; per-receiver floor settings | [V-MAT Basic](beds/vmatbasic.md) |
 | SIMMONS app | Protocol variant: regular or inclined bed, with the packet format from the Bluetooth name or fixed | [SIMMONS](beds/simmons.md) |
 | Adjustable bed (Lumbar) app | Protocol variant: command table from the Bluetooth name, or fixed OKIN or Star branch | [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md) |

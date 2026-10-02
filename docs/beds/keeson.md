@@ -276,10 +276,16 @@ complete; hardware is unverified. See the
 The app has two remote styles, chosen by the user in its settings (A is the
 default). Select the matching protocol variant: `restonic_a` (`Restonic BT
 app, remote A (6 buttons)`) or `restonic_b` (`Restonic BT app, remote B (10
-buttons)`). Auto keeps the Base profile: the app accepts any device name that
-starts with `base-i4` or `base-i5` (case-sensitive), and those names are shared
-with Member's Mark, Purple, Sleep Harmony and Cool Base, which use different
-cadences, releases or frames.
+buttons)`). Neither is ever chosen automatically: the app accepts any device
+name that starts with `base-i4` or `base-i5` (case-sensitive), and those names
+are shared with Member's Mark, Purple, Sleep Harmony and Cool Base, which use
+different cadences, releases or frames. How discovery offers such a bed:
+
+| Advertised name | Offered as | What a Restonic BT user does |
+|-----------------|------------|------------------------------|
+| `base-i4.…` | Keeson, Auto (Base profile) | Choose the `restonic_a` or `restonic_b` protocol variant |
+| `base-i5…` (any) | Cool Base | Change the bed type to Keeson, then choose `restonic_a` or `restonic_b` |
+| `base-i4` without the dot | Not offered (not a recognised bed) | Add the bed manually as Keeson with `restonic_a` or `restonic_b` |
 
 Both styles write the Base frame `E5 FE 16 + command_le32 + checksum`, where
 the checksum is `(~sum(bytes 0-6)) & 0xFF`, to FFE5 / FFE9 only. The app never
@@ -468,6 +474,7 @@ stays prefix-based so existing entries keep their frames; such beds can be added
 manually with the Adjustable Lite profile, which selects its remote the same way.
 
 Discovery likewise matches name-only `base-i4*` and `base-i5*` advertisements,
-the names the Restonic BT Remote app accepts. This only surfaces the bed;
-detection and Auto routing are unchanged, so select the Restonic BT profile
-explicitly.
+the names the Restonic BT Remote app accepts. Detection is unchanged: a
+`base-i4.` name is offered as Keeson (Auto keeps Base), any `base-i5` name is
+offered as Cool Base, and a `base-i4` name without the dot is not offered. See
+[Restonic BT profiles](#restonic-bt-profiles) for switching to the profile.
