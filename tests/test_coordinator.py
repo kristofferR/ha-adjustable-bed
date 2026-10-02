@@ -3160,13 +3160,7 @@ class TestBondMarkerReliability:
         coordinator._mark_ble_bond_established()
         assert coordinator._ble_bond_established is True
 
-    async def test_auth_failure_clears_esphome_gatt_cache_before_disconnect(
-        self,
-        hass: HomeAssistant,
-    ):
-        """Issue #660: the retry must rediscover handles, not reuse the proxy's."""
-        coordinator = self._make_bonded_coordinator(hass)
-        calls: list[str] = []
+    def _esphome_link(self, coordinator: AdjustableBedCoordinator, calls: list[str]) -> MagicMock:
         client = MagicMock()
         client.is_connected = True
         client.clear_cache = AsyncMock(side_effect=lambda: calls.append("clear") or True)
@@ -3176,6 +3170,17 @@ class TestBondMarkerReliability:
             transport=TransportClass.PROXY,
             source_domain="esphome",
         )
+        return client
+
+    async def test_stale_proxy_cache_gets_one_retry_before_repairing(
+        self,
+        hass: HomeAssistant,
+    ):
+        """Issue #660: rediscover handles first, re-pair only if that also fails."""
+        coordinator = self._make_bonded_coordinator(hass)
+        calls: list[str] = []
+        self._esphome_link(coordinator, calls)
+        error = BleakError("handle=23 error=15 description=Insufficient encryption")
 
         async def disconnect(*, reason: str) -> None:
             calls.append("disconnect")
@@ -3184,16 +3189,52 @@ class TestBondMarkerReliability:
             patch(
                 "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
                 new_callable=AsyncMock,
-            ),
+            ) as issue,
             patch.object(coordinator, "async_disconnect", side_effect=disconnect),
         ):
+            await coordinator._async_handle_ble_authentication_error(error)
+
+            assert calls == ["clear", "disconnect"]
+            assert coordinator._last_bond_evidence is not None
+            assert coordinator._last_bond_evidence.gatt_cache_cleared is True
+            assert coordinator._ble_bond_established is True
+            assert coordinator._skip_pair_next_attempt is True
+            issue.assert_not_awaited()
+
+            self._esphome_link(coordinator, calls)
+            await coordinator._async_handle_ble_authentication_error(error)
+
+            assert coordinator._ble_bond_established is False
+            issue.assert_awaited_once()
+
+    async def test_retained_link_keeps_its_discovered_services(
+        self,
+        hass: HomeAssistant,
+    ):
+        """A one-connection bed runs startup on the retained link's services."""
+        coordinator = self._make_bonded_coordinator(hass)
+        calls: list[str] = []
+        client = self._esphome_link(coordinator, calls)
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator."
+                "grants_one_connection_per_pairing_window",
+                return_value=True,
+            ),
+        ):
             await coordinator._async_handle_ble_authentication_error(
-                BleakError("handle=23 error=15 description=Insufficient encryption")
+                BleakError("error=15 description=Insufficient encryption"),
+                retain_link=True,
             )
 
-        assert calls == ["clear", "disconnect"]
+        client.clear_cache.assert_not_awaited()
         assert coordinator._last_bond_evidence is not None
-        assert coordinator._last_bond_evidence.gatt_cache_cleared is True
+        assert coordinator._last_bond_evidence.gatt_cache_cleared is False
 
 
 class TestDisconnectCommandSerialization:

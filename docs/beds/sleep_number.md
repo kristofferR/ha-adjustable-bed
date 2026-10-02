@@ -61,8 +61,11 @@ discovered after the user erased the proxy, so the bond itself was intact. The
 empty Auth value in #574 fits the same cause. `use_services_cache=False` does
 not bypass either the proxy's cache or Home Assistant's copy of it, so an
 authentication failure through an ESPHome proxy now clears both while the link
-is still up. The coordinator's next attempt and the setup flow's single retry
-then discover the real layout.
+is still up. The next coordinator attempt and the setup flow's retry discover
+the real layout and verify the existing bond without pairing again, because
+re-pairing a bonded ESPHome device can fail with error 82. Only a second
+authentication failure clears the bond marker and requests pairing. A link that
+a one-connection bed must retain keeps its services and is not cleared.
 
 Earlier documentation incorrectly stated that Fuzion never bonds. The 5.4.11
 application explicitly bonds after service discovery. This ordering matters for

@@ -953,9 +953,20 @@ class TestPairingPersistence:
 class TestStaleProxyGattCache:
     """Issue #660: stale proxy handles fail like a lost bond."""
 
-    @pytest.mark.parametrize("cleared", [True, False])
-    async def test_pairing_retries_once_after_clearing_the_proxy_cache(
-        self, hass: HomeAssistant, cleared: bool
+    @pytest.mark.parametrize(
+        ("cleared", "verify_proves_bond", "bond_requests"),
+        [
+            (False, False, [True]),
+            (True, True, [True, False]),
+            (True, False, [True, False, True]),
+        ],
+    )
+    async def test_cleared_cache_verifies_before_pairing_again(
+        self,
+        hass: HomeAssistant,
+        cleared: bool,
+        verify_proves_bond: bool,
+        bond_requests: list[bool],
     ) -> None:
         flow = TestPairingPersistence._new_pairing_flow(hass)
         failed = BondEvidence(
@@ -968,7 +979,8 @@ class TestStaleProxyGattCache:
         verified = replace(
             failed, status=BondVerificationStatus.VERIFIED, gatt_cache_cleared=False
         )
-        attempt = AsyncMock(side_effect=[failed, verified])
+        retry = verified if verify_proves_bond else replace(failed, gatt_cache_cleared=True)
+        attempt = AsyncMock(side_effect=[failed, retry, verified])
         with (
             patch(
                 "custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs",
@@ -978,8 +990,8 @@ class TestStaleProxyGattCache:
         ):
             evidence = await flow._attempt_pairing("AA:BB:CC:DD:EE:01")
 
-        assert evidence is (verified if cleared else failed)
-        assert attempt.await_count == (2 if cleared else 1)
+        assert [call.kwargs["request_bond"] for call in attempt.await_args_list] == bond_requests
+        assert evidence.proves_bond is cleared
 
 
 class TestDetectBedType:

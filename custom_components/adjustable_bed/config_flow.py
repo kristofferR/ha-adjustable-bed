@@ -5465,16 +5465,25 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             )
             if evidence.gatt_cache_cleared:
                 # The failure may only have been the proxy's stale handles, which
-                # the verifier has just dropped. One rediscovered attempt tells a
-                # bed that reorders its GATT table apart from a real bond problem.
-                _LOGGER.info("Retrying %s once with rediscovered GATT services", address)
+                # the verifier has just dropped (issue #660). Verify the existing
+                # bond on rediscovered handles first: re-pairing a bonded ESPHome
+                # device can fail with error 82 or wedge the proxy.
+                _LOGGER.info("Verifying %s once with rediscovered GATT services", address)
                 evidence = await self._attempt_pairing_with_capture(
                     address,
-                    request_bond=request_bond,
+                    request_bond=False,
                     track_for_flow_cleanup=track_for_flow_cleanup,
                     device=None,
                     preferred_adapter=preferred_adapter,
                 )
+                if request_bond and not evidence.proves_bond:
+                    evidence = await self._attempt_pairing_with_capture(
+                        address,
+                        request_bond=True,
+                        track_for_flow_cleanup=track_for_flow_cleanup,
+                        device=None,
+                        preferred_adapter=preferred_adapter,
+                    )
             return evidence
 
     async def _attempt_pairing_with_capture(

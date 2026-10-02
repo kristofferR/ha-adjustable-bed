@@ -604,6 +604,9 @@ class AdjustableBedCoordinator:
         self._device_info_read_done: bool = False
         self._device_info_read_attempts: int = 0
         self._bond_probe_timed_out: bool = False
+        # Set once an auth failure has cleared a stale proxy GATT cache, so only
+        # the first such failure skips re-pairing (issue #660).
+        self._stale_gatt_retry_spent: bool = False
 
         # Track if pairing is supported by the Bluetooth adapter (None = unknown)
         self._pairing_supported: bool | None = None
@@ -1866,12 +1869,36 @@ class AdjustableBedCoordinator:
         if not requires_pairing(self._bed_type, self._protocol_variant):
             return
 
-        _LOGGER.warning(
-            "BLE link on %s is not authenticated: %s. "
-            "Clearing the cached bond marker so the next connection can request pairing.",
-            self._address,
-            err,
+        keep_link = retain_link and grants_one_connection_per_pairing_window(
+            self._bed_type, self._protocol_variant
         )
+        # Stale proxy handles fail exactly like a missing bond (issue #660).
+        # A retained link keeps running on its discovered services, so only a
+        # link being dropped may clear them.
+        cache_cleared = not keep_link and await async_clear_proxy_gatt_cache(
+            self._client, self._connection_path
+        )
+        # The first time, assume the bond is fine and retry on rediscovered
+        # handles without pairing: re-pairing a bonded ESPHome device can fail
+        # with error 82 or wedge the proxy. A repeat failure is a real one.
+        stale_cache_retry = cache_cleared and not self._stale_gatt_retry_spent
+        if stale_cache_retry:
+            self._stale_gatt_retry_spent = True
+            self._skip_pair_next_attempt = True
+            _LOGGER.warning(
+                "BLE link on %s is not authenticated: %s. The proxy's cached GATT "
+                "services may be stale; retrying with rediscovered services "
+                "before requesting pairing.",
+                self._address,
+                err,
+            )
+        else:
+            _LOGGER.warning(
+                "BLE link on %s is not authenticated: %s. "
+                "Clearing the cached bond marker so the next connection can request pairing.",
+                self._address,
+                err,
+            )
         self._record_bond_verification("authentication_failed", err, attempt_details)
         # Attribute the failure to a transport. A host bond and a proxy bond are
         # separate state, so evidence carried by one says nothing about the
@@ -1884,31 +1911,26 @@ class AdjustableBedCoordinator:
             operation="runtime_gatt_access",
             observed_at=datetime.now(UTC).isoformat(),
             error=str(err),
-            # Stale proxy handles fail exactly like a missing bond, so the
-            # retry must not reuse them (issue #660).
-            gatt_cache_cleared=await async_clear_proxy_gatt_cache(
-                self._client, self._connection_path
-            ),
+            gatt_cache_cleared=cache_cleared,
         )
         # A definitive authentication failure invalidates any earlier decision
         # to skip a probe that timed out. The next paired connection should
         # verify the fresh bond again.
         self._bond_probe_timed_out = False
-        latch = self._attempt_trusted_bond_marker and not self._ble_bond_marker_unreliable
-        if latch:
-            self._log_bond_marker_unreliable()
-        self._persist_bond_flags(
-            established=False,
-            unreliable=True if latch else None,
-        )
+        if not stale_cache_retry:
+            latch = self._attempt_trusted_bond_marker and not self._ble_bond_marker_unreliable
+            if latch:
+                self._log_bond_marker_unreliable()
+            self._persist_bond_flags(
+                established=False,
+                unreliable=True if latch else None,
+            )
 
-        if not defer_pairing_issue:
-            await self._async_raise_pairing_issue()
+            if not defer_pairing_issue:
+                await self._async_raise_pairing_issue()
 
         if self._client is not None and self._client.is_connected:
-            if retain_link and grants_one_connection_per_pairing_window(
-                self._bed_type, self._protocol_variant
-            ):
+            if keep_link:
                 # Disconnecting would cost us the box's single connection and
                 # the reconnect that "fixes" the bond can never happen. Leave
                 # the link up; the repair tells the user to re-pair.
@@ -2584,6 +2606,7 @@ class AdjustableBedCoordinator:
                         self._latched_pairing_successes,
                     )
         self._skip_pair_next_attempt = False
+        self._stale_gatt_retry_spent = False
         if release_latch:
             self._latched_pairing_successes = 0
             self._persist_bond_flags(established=True, unreliable=False)
