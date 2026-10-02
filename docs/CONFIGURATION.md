@@ -671,3 +671,11 @@ Select **AdjustableM5X5** (`starcode_m5x5`) and enter the exact Bluetooth name, 
 On the main entry, select up to **three other configured AdjustableM5X5 entries** as lifts. This supports four independent Bluetooth addresses: one main and three lifts. All four bedding classes can occupy either slot. Duplicate addresses and unrelated products are rejected. This group keeps each device's existing coordinator and entities. It does not convert them into Left/Right paired devices.
 
 Use `adjustable_bed.starcode_move_lifts` for native lift-union movement, STOP or composite flat. A profile or group-selection edit cancels retained delayed writes. Individual controls remain on each physical device. See [protocol and control details](beds/starcode-m5x5.md).
+
+### FSM Relax app
+
+Select the explicit FSM Relax app bed type, then choose chair/bed layout, optional
+light/massage controls and four reversal flags. These settings are local app
+configuration, not inferred hardware identity. Options include eight local memory
+names, with blank names resetting M1–M8. Raw memory values have no known units.
+See [FSM Relax](beds/fsm_relax.md) for exact controls, quarantine and calibration.

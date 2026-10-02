@@ -29,6 +29,7 @@ from .const import (
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
@@ -187,6 +188,7 @@ from .const import (
     # Detection result type
     DetectionResult,
 )
+from .fsm_relax_discovery import matches_fsm_relax_candidate
 from .kaidi_protocol import extract_kaidi_advertisement
 
 _LOGGER = logging.getLogger(__name__)
@@ -507,6 +509,9 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # are NOT included here - they're only kept for backward compatibility with
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+
+    BED_TYPE_FSM_RELAX: "FSM Relax app (explicit chair/bed profile)",
+
     BED_TYPE_STARCODE_M5X5: "AdjustableM5X5 app (CB25 / F23 / kneading / Elevate)",
     BED_TYPE_FURNIMOVE: "FurniMove / OKIN Smart Remote (choose handset ID)",
     BED_TYPE_SERENITY: "Jordan's Serenity app",
@@ -1952,7 +1957,12 @@ def _detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detect
                 service_info.address,
                 service_info.name,
             )
-            return DetectionResult(bed_type=BED_TYPE_LIMOSS, confidence=0.9, signals=signals)
+            return DetectionResult(
+                bed_type=BED_TYPE_LIMOSS,
+                confidence=0.6 if matches_fsm_relax_candidate(service_info.name) else 0.9,
+                signals=signals,
+                ambiguous_types=[BED_TYPE_FSM_RELAX] if matches_fsm_relax_candidate(service_info.name) else [],
+            )
 
         # MotoSleep and Power Bob use HHC names; the current MotoSleep app also
         # routes exact 28-character MOTO model names to its binary bed protocol.
@@ -2090,7 +2100,10 @@ def _detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detect
             service_info.address,
             service_info.name,
         )
-        return DetectionResult(bed_type=BED_TYPE_LIMOSS, confidence=confidence, signals=signals)
+        return DetectionResult(
+            bed_type=BED_TYPE_LIMOSS, confidence=confidence, signals=signals,
+            ambiguous_types=[BED_TYPE_FSM_RELAX] if matches_fsm_relax_candidate(service_info.name) else [],
+        )
 
     # Check for Ergomotion - name-based detection (before Keeson since same UUID)
     # Includes "serta-i" prefix for Serta-branded ErgoMotion beds (e.g., Serta-i490350)
