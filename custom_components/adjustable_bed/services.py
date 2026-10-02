@@ -1114,11 +1114,9 @@ async def _timed_move_plan(
         except ValueError as err:
             raise ServiceValidationError(str(err)) from err
 
-        if coordinator.bed_type == BED_TYPE_SVANE:
-            from .beds.svane import SvaneController
+        from .beds.svane import SvaneController
 
-            if not isinstance(controller, SvaneController):
-                raise ServiceValidationError("Select a Svane Remote app profile")
+        if coordinator.bed_type == BED_TYPE_SVANE and isinstance(controller, SvaneController):
             svane_admission = svane_admission or controller.prepare_svane_hold_admission()
             if (parent, coordinator) not in preflighted:
                 preflighted.append((parent, coordinator))

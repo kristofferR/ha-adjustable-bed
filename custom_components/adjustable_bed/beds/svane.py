@@ -617,6 +617,8 @@ class SvaneController(BedController):
                 if self.profile == "jmc" and head is not None:
                     self._started.add((OLD, OLD_CHAR))
                     await self._write(OLD, OLD_CHAR, SvaneCommands.motion(head, feet))
+                    if feet is not None:
+                        feet_started = True
                 else:
                     if head is not None:
                         self._started.add((HEAD, UP if head else DOWN))
