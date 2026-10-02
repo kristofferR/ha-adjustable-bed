@@ -61,7 +61,7 @@ Physical-side caches survive paired parent ownership migration and separation. A
 
 ## Lamp and observations
 
-Cold local lamp intent is off, remembered intensity is 90 and adjustment direction starts +5. The literal toggle sends remembered intensity on, or `130200000000` off. Explicit HA ON/OFF resends its requested branch. The switch starts unknown and marks subsequent optimistic values as assumed; there is no native physical lamp-state feedback.
+Cold app-local lamp intent is off, remembered intensity is 90 and adjustment direction starts +5. The literal toggle sends remembered intensity on, or `130200000000` off. Explicit HA ON/OFF resends its requested branch. The switch remains unknown until an explicit lamp command, including attempted failed or cancelled delivery; that knowledge is process-local and survives same-target/profile reloads, while cold restart or profile reset loses it. Subsequent optimistic values are assumed; there is no native physical lamp-state feedback.
 
 Lamp intensity is a persisted local preference, exposed from 5 to 100 in steps of five and included in the card's lighting section, which opens Home Assistant's number slider. Setting intensity commands the lamp on; action buttons, the intensity number and the assumed-state switch share that local intent. Intent is published before delivery and remains local command intent after a failed or cancelled write, not physical readback. The source builder is `13 02 (JavaInt & ff) 01 00 64`; it is not clamped to 100. Full signed-32-bit boundary vectors test that builder, while the public control accepts the source user-step domain. P1 increase/decrease uses `b5e9`/`3fb2`; intensity and on/off use `a8e0`. P2 always uses `1111`.
 

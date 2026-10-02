@@ -19,6 +19,7 @@ runtime = svane_runtime
 async def test_public_lamp_hold_persists_final_intent_once(hass, runtime, monkeypatch, termination):
     coordinator, controller = runtime
     controller.session.light_on = True
+    controller.session.light_intent_known = True  # A known warm lamp session.
     coordinator.remember_svane_preferences(controller.session.preferences())
     client = controller.client
     clock = [0.0]
@@ -92,6 +93,7 @@ async def test_public_lamp_hold_persists_final_intent_once(hass, runtime, monkey
 async def test_unchanged_public_lamp_hold_does_not_persist(hass, runtime, reason):
     coordinator, controller = runtime
     controller.session.light_on = reason != "off"
+    controller.session.light_intent_known = reason != "off"
 
     async def wait_without_step(seconds):
         if reason == "cancelled":

@@ -426,7 +426,9 @@ async def test_top_defaults_light_on_off_and_no_extra_stop(profile):
 async def test_lamp_triangle_updates_intent_before_failure_and_no_release_frame(
     initial, step, expected, characteristic
 ):
-    session = SvaneSession(intensity=initial, light_on=True, light_step=step)
+    session = SvaneSession(
+        intensity=initial, light_on=True, light_step=step, light_intent_known=True
+    )
     controller = make_controller(session=session)
     controller._wait = AsyncMock(return_value=True)
     controller.client.write_gatt_char.side_effect = BleakError("failed lamp write")
@@ -443,6 +445,7 @@ async def test_lamp_hold_off_or_short_no_io():
     controller = make_controller()
     await controller.hold_control("light_adjust", 100)
     controller.session.light_on = True
+    controller.session.light_intent_known = True
     await controller.hold_control("light_adjust", 200)
     controller.client.write_gatt_char.assert_not_awaited()
 
