@@ -376,11 +376,14 @@ class CoolBaseController(BedController):
                 self._on_notification,
             )
             _LOGGER.debug("Started notifications for Cool Base bed")
-        except BleakError:
-            if self.requires_notification_channel:
-                # Status replies only arrive here; fail the connect so it retries.
-                raise
-            _LOGGER.warning("Failed to start notifications")
+        except BleakError as err:
+            # Status replies only arrive here, but motors do not need them: a
+            # proxy without a free notify slot must not take away motor control.
+            _LOGGER.warning(
+                "Failed to start Cool Base notifications; fan, massage and light "
+                "state will stay unknown until the next connection: %s",
+                err,
+            )
 
     def _on_notification(self, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
         """Handle incoming BLE notifications."""

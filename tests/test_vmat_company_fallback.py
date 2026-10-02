@@ -8,7 +8,9 @@ from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from custom_components.adjustable_bed.const import (
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_LOGICDATA,
+    BED_TYPE_VIBRADORM,
     BED_TYPE_VMATBASIC,
+    VIBRADORM_SERVICE_UUID,
 )
 from custom_components.adjustable_bed.detection import (
     detect_bed_type,
@@ -81,3 +83,13 @@ def test_multiple_records_preserve_company_fallback_without_guessing_raw_order(
 @pytest.mark.parametrize("payload", ["babe111100", "baff11110000", "babe10110000", "babe11020000"])
 def test_unknown_company_does_not_match_partial_predicate(payload: str) -> None:
     assert detect_bed_type(_advertisement({0x1234: bytes.fromhex(payload)})) is None
+
+
+def test_payload_does_not_override_a_bed_identified_by_service_uuid() -> None:
+    """Revision-3 VMAT hardware shares the BABE record; it stays on Vibradorm."""
+    info = _advertisement({0x03B0: bytes.fromhex("babe11110000")})
+    info.name = "VMAT 533"
+    info.service_uuids = [VIBRADORM_SERVICE_UUID]
+    result = detect_bed_type_detailed(info)
+    assert result.bed_type == BED_TYPE_VIBRADORM
+    assert result.ambiguous_types == [BED_TYPE_VMATBASIC]

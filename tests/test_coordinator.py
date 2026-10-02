@@ -3660,6 +3660,38 @@ class TestSleepNumberMcrCoordinatorLifecycle:
 
         assert coordinator._reconnect_timer is None
 
+    @pytest.mark.parametrize("command_running", [False, True])
+    async def test_auto_reconnect_ignores_stop_left_over_from_idle(
+        self, hass: HomeAssistant, command_running: bool
+    ):
+        """An idle STOP must not cancel the next auto-reconnect's initialization."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:70",
+                CONF_BED_TYPE: BED_TYPE_KEESON,
+                CONF_MOTOR_COUNT: 2,
+            },
+            unique_id="AA:BB:CC:DD:EE:70",
+        )
+        entry.add_to_hass(hass)
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        coordinator._cancel_command.set()
+        seen: list[bool] = []
+
+        async def _connect() -> bool:
+            seen.append(coordinator.cancel_command.is_set())
+            return True
+
+        coordinator.async_connect = _connect
+        if command_running:
+            async with coordinator._command_lock:
+                await coordinator._async_auto_reconnect()
+        else:
+            await coordinator._async_auto_reconnect()
+        # A running command still owns the event and its pending cancel.
+        assert seen == [command_running]
+
     async def test_sleep_number_mcr_keeps_connecting_guard_through_startup_disconnect(
         self,
         hass: HomeAssistant,

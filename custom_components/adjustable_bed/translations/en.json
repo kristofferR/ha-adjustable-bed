@@ -4836,7 +4836,7 @@
         "step": {
           "init": {
             "title": "Confirm your product",
-            "description": "Is **{name}** a single-actuator staircase or a bed controlled by FurniMove? Your existing device and matching entity IDs will be preserved.",
+            "description": "Is **{name}** a single-actuator staircase or a bed controlled by FurniMove? If it already works as expected, keep the current configuration. Your existing device and matching entity IDs will be preserved.",
             "data": {
               "layout": "Product"
             }
