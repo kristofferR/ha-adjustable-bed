@@ -217,8 +217,8 @@ async def test_cancelled_save_preserves_old_slots_and_completed_diagnostics(hass
 
     await async_register_services(hass)
     coordinator, controller = target(profile)
-    before = controller.session.preferences()
     controller.session.multi_slots[1] = (b"saved head", b"saved feet")
+    before = controller.session.preferences()
     multi_before = dict(controller.session.multi_slots)
     calls = 0
     original = controller.client.read_gatt_char.side_effect

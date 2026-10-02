@@ -178,7 +178,7 @@ class SvaneController(BedController):
             "light_step": self.session.light_step,
             "opaque_observations": dict(self.session.observations),
             "native_position_units": None,
-            "memory_scope": "process_session" if self.profile == "multi" else "target_preferences",
+            "memory_scope": "target_preferences",
             "descriptor_state": self._descriptor_state,
             "initialized": self._initialized,
         }
@@ -810,6 +810,7 @@ class SvaneController(BedController):
             if "head" not in fresh or "feet" not in fresh:
                 raise ValueError("Both fresh valid raw axes must be read for this target")
             self.session.multi_slots[memory_num] = (fresh["head"], fresh["feet"])
+            self._remember()
 
     async def _light(self, intensity: int, char: str = "a8e0") -> None:
         await self._write(
