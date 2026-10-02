@@ -46,6 +46,7 @@ from .const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
     BED_TYPE_SERENITY,
+    BED_TYPE_SIMMONS,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
@@ -343,6 +344,12 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "label": "Jordan's Serenity app",
                 "description": "Serenity app controls, M1/M2 and separate massage zones",
                 "hint": "Choose the app shown on your phone; a shared OKIN name is not enough.",
+            },
+            {
+                "type": BED_TYPE_SIMMONS,
+                "label": "SIMMONS app",
+                "description": "SIMMONS app controls, Custom Mode memory and two alarms",
+                "hint": "Choose the app shown on your phone; OKIN/SmartBed names are shared.",
             },
             {
                 "type": BED_TYPE_OKIN_FFE,

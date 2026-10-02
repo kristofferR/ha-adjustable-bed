@@ -1400,6 +1400,108 @@ serenity_hold_control:
             - left
             - right
 
+simmons_hold_control:
+  name: Hold SIMMONS control
+  description: Hold one SIMMONS app control, repeating it every 300 ms, then send its release stops. The app's help says holding Custom Mode for 5 seconds saves the current position; the save on the bed is unverified.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    control:
+      name: Control
+      description: Zero-gravity, TV and anti-snore exist only on a regular bed; the inclined controls only on an inclined bed.
+      required: true
+      selector:
+        select:
+          options:
+            - head_up
+            - head_down
+            - legs_up
+            - legs_down
+            - flat
+            - memory
+            - light
+            - zero_g
+            - tv
+            - anti_snore
+            - inclined_left
+            - inclined_middle
+            - inclined_right
+    duration:
+      name: Duration
+      description: Hold time in seconds.
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.1
+          unit_of_measurement: s
+    side:
+      name: Side
+      selector:
+        select:
+          options:
+            - both
+            - left
+            - right
+
+simmons_set_alarm:
+  name: Set SIMMONS alarm
+  description: Program or turn off alarm 1 or 2 of a SIMMONS app bed. The two enabled alarms cannot share a time or a mode.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    slot:
+      name: Alarm
+      required: true
+      selector:
+        select:
+          options: ["1", "2"]
+    enabled:
+      name: Enabled
+      description: Turn off to disable this alarm.
+      required: true
+      selector:
+        boolean:
+    time:
+      name: Local alarm time
+      description: Time to the nearest minute, using Home Assistant's configured time zone.
+      selector:
+        time:
+    weekdays:
+      name: Repeat on
+      description: Leave empty for the next occurrence of the selected time.
+      selector:
+        select:
+          multiple: true
+          options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+    mode:
+      name: Mode
+      description: Required when enabling. Anti-snore is available on a regular bed only.
+      selector:
+        select:
+          options: [custom_mode, flat, anti_snore]
+    confirm_custom_mode:
+      name: Confirm Custom Mode
+      description: Required for Custom Mode. Check the saved back/foot angles first; extreme custom angles can cause injury.
+      selector:
+        boolean:
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
+
 furnimove_action:
   name: FurniMove handset action
   description: Execute an ordered action row from the selected handset. Find row indexes
