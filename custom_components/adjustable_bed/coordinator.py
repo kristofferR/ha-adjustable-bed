@@ -607,6 +607,8 @@ class AdjustableBedCoordinator:
         # Proxies whose stale GATT cache an auth failure already cleared, so only
         # the first such failure per proxy skips re-pairing (issue #660).
         self._stale_gatt_retry_sources: set[str] = set()
+        # Set when the attempt that just failed cleared a stale proxy cache.
+        self._stale_gatt_retry_pending: bool = False
 
         # Track if pairing is supported by the Bluetooth adapter (None = unknown)
         self._pairing_supported: bool | None = None
@@ -1890,6 +1892,7 @@ class AdjustableBedCoordinator:
         if stale_cache_retry:
             self._stale_gatt_retry_sources.add(cleared_source)
             self._skip_pair_next_attempt = True
+            self._stale_gatt_retry_pending = True
             _LOGGER.warning(
                 "BLE link on %s is not authenticated: %s. The proxy's cached GATT "
                 "services may be stale; retrying with rediscovered services "
@@ -3461,7 +3464,17 @@ class AdjustableBedCoordinator:
 
         attempt = 0
         protocol_correction_pairing_retry_reserved = False
-        while attempt < attempt_limit:
+        stale_gatt_retry_reserved = False
+        self._stale_gatt_retry_pending = False
+        while True:
+            if attempt >= attempt_limit:
+                # A stale proxy cache cleared on the last attempt still gets the
+                # rediscovered, no-pair verification it was promised (#660).
+                if not self._stale_gatt_retry_pending or stale_gatt_retry_reserved:
+                    break
+                stale_gatt_retry_reserved = True
+                attempt_limit += 1
+            self._stale_gatt_retry_pending = False
             if self._vmat_unready_link_pending():
                 break
             attempt_index = attempt

@@ -961,7 +961,7 @@ class TestStaleProxyGattCache:
             (True, False, [True, False, True]),
         ],
     )
-    async def test_cleared_cache_verifies_before_pairing_again(
+    async def test_cleared_cache_verifies_on_that_proxy_before_pairing_again(
         self,
         hass: HomeAssistant,
         cleared: bool,
@@ -971,7 +971,7 @@ class TestStaleProxyGattCache:
         flow = TestPairingPersistence._new_pairing_flow(hass)
         failed = BondEvidence(
             status=BondVerificationStatus.AUTH_FAILED,
-            owner=BondOwner(),
+            owner=BondOwner(transport=TransportClass.PROXY, source="proxy-a"),
             operation="setup_pairing",
             observed_at="now",
             gatt_cache_cleared=cleared,
@@ -980,18 +980,35 @@ class TestStaleProxyGattCache:
             failed, status=BondVerificationStatus.VERIFIED, gatt_cache_cleared=False
         )
         retry = verified if verify_proves_bond else replace(failed, gatt_cache_cleared=True)
-        attempt = AsyncMock(side_effect=[failed, retry, verified])
+        results = iter([failed, retry, verified])
+        pinned: list[tuple[str | None, str | None]] = []
+
+        async def attempt(*_args: Any, **kwargs: Any) -> BondEvidence:
+            pinned.append(
+                (
+                    kwargs["preferred_adapter"],
+                    flow._pairing_verify_source
+                    if not kwargs["request_bond"]
+                    else flow._pairing_retry_source,
+                )
+            )
+            return next(results)
+
+        mock = AsyncMock(side_effect=attempt)
         with (
             patch(
                 "custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs",
                 return_value=contextlib.AsyncExitStack(),
             ),
-            patch.object(flow, "_attempt_pairing_with_capture", new=attempt),
+            patch.object(flow, "_attempt_pairing_with_capture", new=mock),
         ):
             evidence = await flow._attempt_pairing("AA:BB:CC:DD:EE:01")
 
-        assert [call.kwargs["request_bond"] for call in attempt.await_args_list] == bond_requests
+        assert [call.kwargs["request_bond"] for call in mock.await_args_list] == bond_requests
         assert evidence.proves_bond is cleared
+        assert pinned[1:] == [("proxy-a", "proxy-a")] * (len(bond_requests) - 1)
+        assert flow._pairing_verify_source is None
+        assert flow._pairing_retry_source is None
 
 
 class TestDetectBedType:

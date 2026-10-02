@@ -198,6 +198,54 @@ class TestCoordinatorConnection:
 
         assert coordinator._connection_attempt_count == 2
 
+    @pytest.mark.parametrize("bond_intact", [True, False])
+    async def test_stale_cache_clear_on_last_attempt_still_reconnects_once(
+        self, hass, mock_coordinator_connected, mock_bleak_client, bond_intact
+    ):
+        """Issue #660: the rediscovered verification is not lost to the attempt budget."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_OKIN,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_BLE_BOND_ESTABLISHED: True,
+            },
+            unique_id=TEST_ADDRESS,
+        )
+        entry.add_to_hass(hass)
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        coordinator._max_retries = 1
+        reads = 0
+
+        async def read_characteristic(_uuid):
+            nonlocal reads
+            reads += 1
+            if reads == 1 or not bond_intact:
+                raise BleakError("Insufficient encryption")
+            return b"Model"
+
+        mock_bleak_client.read_gatt_char.side_effect = read_characteristic
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ) as create_issue,
+            patch(
+                "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+                new=AsyncMock(return_value=("Leggett", "Model")),
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.async_clear_proxy_gatt_cache",
+                new=AsyncMock(return_value=True),
+            ),
+        ):
+            assert await coordinator.async_connect() is bond_intact
+
+        assert coordinator._connection_attempt_count == 2
+        assert create_issue.await_count == int(not bond_intact)
+
     async def test_connect_success(
         self,
         hass: HomeAssistant,

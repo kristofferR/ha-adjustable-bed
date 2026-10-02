@@ -5463,27 +5463,36 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 device=device,
                 preferred_adapter=preferred_adapter,
             )
-            if evidence.gatt_cache_cleared:
+            cleared_source = evidence.owner.source if evidence.gatt_cache_cleared else None
+            if cleared_source:
                 # The failure may only have been the proxy's stale handles, which
                 # the verifier has just dropped (issue #660). Verify the existing
                 # bond on rediscovered handles first: re-pairing a bonded ESPHome
-                # device can fail with error 82 or wedge the proxy.
+                # device can fail with error 82 or wedge the proxy. Both retries
+                # are pinned to that proxy, as the manual proxy retry is, so a
+                # reroute cannot judge or pair a different one.
                 _LOGGER.info("Verifying %s once with rediscovered GATT services", address)
-                evidence = await self._attempt_pairing_with_capture(
-                    address,
-                    request_bond=False,
-                    track_for_flow_cleanup=track_for_flow_cleanup,
-                    device=None,
-                    preferred_adapter=preferred_adapter,
-                )
-                if request_bond and not evidence.proves_bond:
+                saved_sources = (self._pairing_verify_source, self._pairing_retry_source)
+                self._pairing_verify_source = cleared_source
+                try:
                     evidence = await self._attempt_pairing_with_capture(
                         address,
-                        request_bond=True,
+                        request_bond=False,
                         track_for_flow_cleanup=track_for_flow_cleanup,
                         device=None,
-                        preferred_adapter=preferred_adapter,
+                        preferred_adapter=cleared_source,
                     )
+                    if request_bond and not evidence.proves_bond:
+                        self._pairing_retry_source = cleared_source
+                        evidence = await self._attempt_pairing_with_capture(
+                            address,
+                            request_bond=True,
+                            track_for_flow_cleanup=track_for_flow_cleanup,
+                            device=None,
+                            preferred_adapter=cleared_source,
+                        )
+                finally:
+                    self._pairing_verify_source, self._pairing_retry_source = saved_sources
             return evidence
 
     async def _attempt_pairing_with_capture(
