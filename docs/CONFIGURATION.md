@@ -345,6 +345,7 @@ retain their legacy profile unless you explicitly change it.
 | Solace / Woosa Sleep | Protocol variant **`woosa`** (Woosa Sleep) for beds using that app; `auto` retains conservative name-based routing | [Woosa](beds/woosa.md) |
 | Svane / Jensen LinOn | Protocol variant **`jensen_linon`** (Jensen Adjustable Sleep) for LinOn beds, set by Bluetooth setup for "Adjustable Bed"/"Jensen Bed" names; `auto` is the Svane app | [Jensen LinOn](beds/jensen.md#linon) |
 | Richmat RMControl | Exact product code (empty keeps legacy Richmat), side (`left`, `right`, `both`; default `left`) | [RMControl](beds/rmcontrol.md) |
+| Richmat app profiles | Explicit Revive Control, Best Mattress, Blvd Home, HARMONY or Idealbed bed type; protocol variant `auto` (name rule) or the app's `model_<id>` | [Richmat app profiles](#richmat-app-profiles) |
 | Leggett Okin | Prodigy / U Series app profile | [Leggett app profiles](beds/leggett-okin.md) |
 | L&P legacy app | Model code, protocol mode, confirmed write UUID, optional notification UUID | [L&P legacy](beds/lp-legacy.md) |
 | LOGICDATA app | Phone/tablet app, command family, layout, transport, under-bed light | [LOGICDATA app profiles](beds/logicdata-app.md) |
@@ -369,6 +370,10 @@ retain their legacy profile unless you explicitly change it.
 For two-address pairs, device-specific app/product selections belong to each
 physical bed. If the shared options form refuses a profile change, split the
 pair, configure each side, then combine them again.
+
+### Richmat app profiles
+
+Choose the app your phone uses, for example **Revive Control app (Richmat)**. Shared Richmat names and services never select these profiles. `auto` applies the app's name rule: the first four characters of the raw Bluetooth name, lowercased, select the model. Names starting with `QRRM` (and Idealbed names starting with `Cool Touch`) make the app ask, so choose the model variant (`model_<id>`, labelled as in the app's picker, wizard or manual list). The form reports a name the app cannot resolve. Motor count is fixed; the model's catalog decides the motors, and each control keeps the app's KEEP interval. The variant belongs to each physical bed: split a two-address pair before changing it. See [Richmat app profiles](beds/richmat-mh.md).
 
 ### SIMMONS app profile
 

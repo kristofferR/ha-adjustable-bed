@@ -197,6 +197,7 @@ from .const import (
     POSITION_FEEDBACK_TIMEOUT,
     POSITION_MODE_ACCURACY,
     REVERIE_BACK_MAX_ANGLE,
+    RICHMAT_MH_BED_TYPES,
     RICHMAT_REMOTE_AUTO,
     RUNTIME_BOND_KEYS,
     SOLACE_VARIANT_WOOSA,
@@ -1322,6 +1323,25 @@ class AdjustableBedCoordinator:
         self._async_persist_config(
             {**self.entry.data, CONF_REMACRO_LED_LEVEL: levels}, keys={CONF_REMACRO_LED_LEVEL}
         )
+
+    def remember_richmat_mh_snapshot(self, snapshot: Mapping[str, Any]) -> None:
+        """Persist a Richmat MH session's version and page replies.
+
+        The app rebuilds its pages from these replies on every connection; a
+        changed snapshot reloads the entities once this link is released.
+        """
+        if self._bed_type not in RICHMAT_MH_BED_TYPES:
+            raise ValueError("The capability snapshot belongs to the Richmat MH app profiles")
+        capabilities = dict(self.entry.data.get("capabilities") or {})
+        if capabilities.get("richmat_mh") == snapshot:
+            return
+        capabilities["richmat_mh"] = dict(snapshot)
+        self._begin_internal_entry_update(self._ble_bond_established)
+        if self._pending_internal_bond_marker is not None:
+            self._pending_capability_reload = True
+        self._async_persist_config({**self.entry.data, "capabilities": capabilities})
+        self._offline_controller = self._controller
+        self._schedule_pending_capability_reload()
 
     def remember_vmatbasic_settings(self, settings: dict[str, int]) -> None:
         """Persist this physical receiver's requested settings, never measured state."""

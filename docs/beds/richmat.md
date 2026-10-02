@@ -49,6 +49,11 @@ Brands using Richmat actuators:
 | ✅ | L&P Adjustable Base 2.2.1 (legacy) | `com.richmat.lp` |
 | ✅ | [LP Control](https://play.google.com/store/apps/details?id=com.leggett.android.universal) 2.9.0 | `com.leggett.android.universal` |
 | ✅ | [SVEN & SON](https://play.google.com/store/apps/details?id=com.richmat.svenson) | `com.richmat.svenson` |
+| ✅ | Revive Control 1.0.26 | `com.richmat.revive3` |
+| ✅ | Best Mattress 1.1.1 | `com.richmat.best_mattress` |
+| ✅ | Blvd Home 1.0.1 | `com.richmat.blvd_home` |
+| ✅ | HARMONY 1.0.0 | `com.richmat.harmony` |
+| ✅ | Idealbed 2.4.2 | `com.richmat.idealbed` |
 
 ### RMControl 21.3.7 opt-in profiles
 
@@ -57,6 +62,13 @@ gesture metadata and notification protocols. Select `rmcontrol_product` explicit
 to opt in; an empty selection keeps the existing Richmat behavior described below.
 Its source-derived features remain hardware unverified, and its specialized
 capability review is tracked separately from this page's tested legacy support.
+
+### Richmat app profiles
+
+Revive Control, Best Mattress, Blvd Home, HARMONY and Idealbed share one app
+library with per-model catalogs. Their [explicit app profiles](richmat-mh.md)
+are separate bed types; choosing one is opt-in and this page's Richmat
+behavior is unchanged.
 
 ## Features
 

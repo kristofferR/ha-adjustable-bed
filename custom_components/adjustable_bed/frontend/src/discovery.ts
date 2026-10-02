@@ -164,6 +164,12 @@ export function bedEntitiesForDevice(
           bed.lights.timerAppliesImmediately = true;
         }
         else if (key === "vibradorm_app_floor_timer_minutes") bed.lights.timerMinutes = id;
+        else if (key === "richmat_mh_light_timer_minutes") {
+          bed.lights.timerMinutes = id;
+          bed.lights.timerAppliesImmediately = true;
+        }
+        else if (key === "richmat_mh_head_massage_intensity" || key === "richmat_mh_foot_massage_intensity")
+          bed.massage.numbers.push(id);
         else if (key === "vibradorm_app_mood_speed") mood().numbers.push(id);
         else if (key === "vmatbasic_mood_speed" || key === "vmatbasic_mood_brightness") mood().numbers.push(id);
         else if (key === "vibradorm_app_massage_speed") bed.massage.numbers.push(id);
@@ -211,6 +217,14 @@ export function bedEntitiesForDevice(
           // Inclined-bed controls replace three presets; their physical roles are unverified.
           presetMap.set(key, id);
         } else if (key === "simmons_sync_clock" || key === "simmons_refresh_alarms") {
+          bed.utility.push(id);
+        } else if (key === "richmat_mh_massage") {
+          bed.massage.buttons.push(id);
+        } else if (key === "richmat_mh_preset") {
+          // App-labelled presets share one translation key; keep each entity.
+          presetMap.set(`${key}:${id}`, id);
+        } else if (key.startsWith("richmat_mh_")) {
+          // Saves, app actions, the smart set lock and detection controls.
           bed.utility.push(id);
         } else if (key.startsWith("adjustable_lumbar_wave_") || key === "adjustable_lumbar_massage_on") {
           bed.massage.buttons.push(id);

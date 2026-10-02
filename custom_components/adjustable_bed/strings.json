@@ -682,7 +682,10 @@
       "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 entries with different Bluetooth addresses.",
       "starcode_unpair_first": "Use standalone entries for this independently addressed accessory group.",
       "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses.",
-      "logicdata_app_sleep_smart_layout": "Sleep Smart beds use the two-motor standard or split-series layout."
+      "logicdata_app_sleep_smart_layout": "Sleep Smart beds use the two-motor standard or split-series layout.",
+      "richmat_mh_choose_model": "The app asks for the model for this Bluetooth name. Choose the model in the protocol variant.",
+      "richmat_mh_no_name": "The app selects the model from the Bluetooth name, which is unavailable. Choose the model in the protocol variant.",
+      "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant."
     }
   },
   "options": {
@@ -927,7 +930,11 @@
       "remacro_model_unmapped": "This bed advertises a company ID that no Remacro app lists.",
       "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses.",
       "remacro_app_unpair_first": "Each side keeps its own Remacro app. Unpair the beds and change each side's protocol variant separately.",
-      "logicdata_app_sleep_smart_layout": "Sleep Smart beds use the two-motor standard or split-series layout."
+      "logicdata_app_sleep_smart_layout": "Sleep Smart beds use the two-motor standard or split-series layout.",
+      "richmat_mh_unpair_first": "Unpair the beds and configure each side separately before changing the Richmat app model.",
+      "richmat_mh_choose_model": "The app asks for the model for this Bluetooth name. Choose the model in the protocol variant.",
+      "richmat_mh_no_name": "The app selects the model from the Bluetooth name, which is unavailable. Choose the model in the protocol variant.",
+      "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond\u2026",
@@ -2089,6 +2096,27 @@
       },
       "logicdata_air_pump_save_memory": {
         "name": "Save pressure memory"
+      },
+      "richmat_mh_massage": {
+        "name": "{action}"
+      },
+      "richmat_mh_preset": {
+        "name": "{action}"
+      },
+      "richmat_mh_save": {
+        "name": "{action}"
+      },
+      "richmat_mh_action": {
+        "name": "{action}"
+      },
+      "richmat_mh_toggle_smart_set_lock": {
+        "name": "Toggle smart set lock"
+      },
+      "richmat_mh_start_detection": {
+        "name": "Start detection"
+      },
+      "richmat_mh_stop_detection": {
+        "name": "Stop detection"
       }
     },
     "cover": {
@@ -2337,6 +2365,18 @@
       },
       "all_motors": {
         "name": "All motors"
+      },
+      "richmat_mh_motor_5": {
+        "name": "Motor 5"
+      },
+      "richmat_mh_motor_6": {
+        "name": "Motor 6"
+      },
+      "richmat_mh_lumbar_2": {
+        "name": "Lumbar 2"
+      },
+      "richmat_mh_pillow_lumbar": {
+        "name": "Pillow and lumbar"
       }
     },
     "sensor": {
@@ -3030,6 +3070,41 @@
       },
       "logicdata_air_pump_pressure": {
         "name": "Air pressure"
+      },
+      "richmat_mh_detection": {
+        "name": "Detection",
+        "state": {
+          "running": "Running",
+          "stopped": "Stopped"
+        }
+      },
+      "richmat_mh_alarm": {
+        "name": "Alarm",
+        "state": {
+          "set": "Set",
+          "cancelled": "Cancelled"
+        }
+      },
+      "richmat_mh_memory_arrival": {
+        "name": "Reached position"
+      },
+      "richmat_mh_waist_left_alarm": {
+        "name": "Waist left alarm",
+        "state": {
+          "off": "Off"
+        }
+      },
+      "richmat_mh_waist_right_alarm": {
+        "name": "Waist right alarm",
+        "state": {
+          "off": "Off"
+        }
+      },
+      "richmat_mh_waist_both_alarm": {
+        "name": "Waist both alarm",
+        "state": {
+          "off": "Off"
+        }
       }
     },
     "light": {
@@ -3177,6 +3252,12 @@
       },
       "starcode_firmware_read_ok": {
         "name": "Firmware read ok"
+      },
+      "richmat_mh_smart_set_lock": {
+        "name": "Smart set lock"
+      },
+      "richmat_mh_smart_light_lock": {
+        "name": "Smart light lock"
       }
     },
     "number": {
@@ -3359,6 +3440,27 @@
       },
       "starcode_brightness": {
         "name": "RGB brightness"
+      },
+      "richmat_mh_light_timer": {
+        "name": "Light timeout"
+      },
+      "richmat_mh_light_timer_minutes": {
+        "name": "Light timeout"
+      },
+      "richmat_mh_back_angle": {
+        "name": "Back angle"
+      },
+      "richmat_mh_foot_angle": {
+        "name": "Foot angle"
+      },
+      "richmat_mh_pillow_angle": {
+        "name": "Pillow angle"
+      },
+      "richmat_mh_head_massage_intensity": {
+        "name": "Head massage intensity"
+      },
+      "richmat_mh_foot_massage_intensity": {
+        "name": "Foot massage intensity"
       }
     },
     "select": {
@@ -3540,6 +3642,114 @@
         "state": {
           "left": "Left",
           "right": "Right"
+        }
+      },
+      "richmat_mh_motor_mode": {
+        "name": "Motor mode",
+        "state": {
+          "left": "Left",
+          "right": "Right",
+          "mode1": "Mode 1",
+          "mode2": "Mode 2",
+          "mode3": "Mode 3"
+        }
+      },
+      "richmat_mh_snore": {
+        "name": "Snore intervention",
+        "state": {
+          "off": "Off",
+          "zero_g": "Zero gravity",
+          "anti_snore": "Anti-snore"
+        }
+      },
+      "richmat_mh_waist_mode": {
+        "name": "Waist mattress mode",
+        "state": {
+          "off": "Off",
+          "left_relax": "Left relax",
+          "left_wake": "Left wake-up",
+          "left_decompress": "Left decompression",
+          "right_relax": "Right relax",
+          "right_wake": "Right wake-up",
+          "right_decompress": "Right decompression",
+          "both_relax": "Both relax",
+          "both_wake": "Both wake-up",
+          "both_decompress": "Both decompression"
+        }
+      },
+      "richmat_mh_waist_left_heat": {
+        "name": "Waist left heat",
+        "state": {
+          "off": "Off",
+          "2_hours": "2 hours",
+          "4_hours": "4 hours",
+          "8_hours": "8 hours"
+        }
+      },
+      "richmat_mh_waist_left_pressure": {
+        "name": "Waist left pressure",
+        "state": {
+          "level_1": "Level 1",
+          "level_2": "Level 2",
+          "level_3": "Level 3"
+        }
+      },
+      "richmat_mh_waist_left_duration": {
+        "name": "Waist left duration",
+        "state": {
+          "15_minutes": "15 minutes",
+          "20_minutes": "20 minutes",
+          "30_minutes": "30 minutes"
+        }
+      },
+      "richmat_mh_waist_right_heat": {
+        "name": "Waist right heat",
+        "state": {
+          "off": "Off",
+          "2_hours": "2 hours",
+          "4_hours": "4 hours",
+          "8_hours": "8 hours"
+        }
+      },
+      "richmat_mh_waist_right_pressure": {
+        "name": "Waist right pressure",
+        "state": {
+          "level_1": "Level 1",
+          "level_2": "Level 2",
+          "level_3": "Level 3"
+        }
+      },
+      "richmat_mh_waist_right_duration": {
+        "name": "Waist right duration",
+        "state": {
+          "15_minutes": "15 minutes",
+          "20_minutes": "20 minutes",
+          "30_minutes": "30 minutes"
+        }
+      },
+      "richmat_mh_waist_both_heat": {
+        "name": "Waist both heat",
+        "state": {
+          "off": "Off",
+          "2_hours": "2 hours",
+          "4_hours": "4 hours",
+          "8_hours": "8 hours"
+        }
+      },
+      "richmat_mh_waist_both_pressure": {
+        "name": "Waist both pressure",
+        "state": {
+          "level_1": "Level 1",
+          "level_2": "Level 2",
+          "level_3": "Level 3"
+        }
+      },
+      "richmat_mh_waist_both_duration": {
+        "name": "Waist both duration",
+        "state": {
+          "15_minutes": "15 minutes",
+          "20_minutes": "20 minutes",
+          "30_minutes": "30 minutes"
         }
       }
     },
@@ -4392,6 +4602,97 @@
         },
         "side": {
           "name": "Side"
+        }
+      }
+    },
+    "richmat_mh_alarm": {
+      "name": "Richmat app alarm",
+      "description": "Set or cancel the countdown alarm of a Richmat MH app profile (Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed).",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Turn off to cancel the alarm (or the selected slot)."
+        },
+        "time": {
+          "name": "Local alarm time",
+          "description": "Required when enabled. The bed receives the minutes until the next occurrence."
+        },
+        "position": {
+          "name": "Position",
+          "description": "A position from the model's alarm page."
+        },
+        "massage": {
+          "name": "Massage",
+          "description": "Massage choices from the model's legacy alarm page."
+        },
+        "slot": {
+          "name": "Alarm slot",
+          "description": "Required for models whose alarm page shows three slots."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Target side of a paired bed."
+        }
+      }
+    },
+    "richmat_mh_aroma": {
+      "name": "Richmat app aroma timing",
+      "description": "Write the three aroma timing sliders of a Richmat MH app profile.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "mode2_startup_minutes": {
+          "name": "Mode 2 startup",
+          "description": "Minutes, 1 to 60."
+        },
+        "mode3_startup_minutes": {
+          "name": "Mode 3 startup",
+          "description": "Minutes, 1 to 60."
+        },
+        "mode3_pause_hours": {
+          "name": "Mode 3 pause",
+          "description": "Hours, 1 to 12."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Target side of a paired bed."
+        }
+      }
+    },
+    "richmat_mh_waist_alarm": {
+      "name": "Richmat app waist mattress alarm",
+      "description": "Save or cancel one side's waist mattress alarm on a Richmat MH app profile.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Turn off to cancel the side's alarm."
+        },
+        "waist_side": {
+          "name": "Waist side",
+          "description": "The waist mattress side the app had selected."
+        },
+        "time": {
+          "name": "Local alarm time",
+          "description": "Required when enabled."
+        },
+        "repeat": {
+          "name": "Repeat",
+          "description": "Once or daily."
+        },
+        "intensity": {
+          "name": "Intensity",
+          "description": "1 (low) to 3 (high)."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Target side of a paired bed."
         }
       }
     }

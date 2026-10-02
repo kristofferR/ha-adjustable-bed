@@ -787,7 +787,7 @@ def _button_entities_for(
                 registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
         # Named app actions disappear when their profile or transport changes.
-        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_", "remacro_", "fsm_relax_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_"):
+        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_", "remacro_", "fsm_relax_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_", "richmat_mh_"):
             desired_actions = {
                 coordinator.entity_unique_id(spec.key)
                 for spec in controller.controller_button_specs
@@ -1198,6 +1198,8 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         if spec.translation_key is not None:
             self._attr_translation_key = coordinator.entity_translation_key(spec.translation_key)
             self._attr_name = None
+            if spec.translation_placeholders is not None:
+                self._attr_translation_placeholders = dict(spec.translation_placeholders)
 
     async def async_press(self) -> None:
         """Execute the named action with its declared replacement policy."""

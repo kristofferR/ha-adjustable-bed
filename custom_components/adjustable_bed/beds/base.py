@@ -99,6 +99,8 @@ class ControllerButtonSpec:
     translation_key: str | None = None
     cancel_movement: bool = field(default=True, kw_only=True)
     scheduler_resource: str | None = field(default=None, kw_only=True)
+    # Fills a translated name template, e.g. ``{action}``, with an app label.
+    translation_placeholders: Mapping[str, str] | None = field(default=None, kw_only=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -1427,6 +1429,65 @@ class BedController(ABC):
 
     async def rmcontrol_query_anti_snore(self) -> None:
         raise NotImplementedError("RMControl snore intervention is not supported")
+
+    @property
+    def supports_richmat_mh_alarm(self) -> bool:
+        """Whether a Richmat MH app profile currently shows its alarm page."""
+        return False
+
+    def validate_richmat_mh_alarm(
+        self,
+        *,
+        enabled: bool,
+        position: str | None,
+        massage: Sequence[str],
+        slot: int | None,
+    ) -> None:
+        """Validate a Richmat MH alarm request without writing to the bed."""
+        raise NotImplementedError("Richmat MH alarms are not supported")
+
+    async def richmat_mh_alarm(
+        self,
+        *,
+        enabled: bool,
+        minutes: int,
+        position: str | None,
+        massage: Sequence[str],
+        slot: int | None,
+    ) -> None:
+        """Program or cancel a Richmat MH countdown alarm."""
+        raise NotImplementedError("Richmat MH alarms are not supported")
+
+    @property
+    def supports_richmat_mh_waist_alarm(self) -> bool:
+        """Whether a Richmat MH app profile currently shows its waist mattress page."""
+        return False
+
+    async def richmat_mh_waist_alarm(
+        self,
+        *,
+        enabled: bool,
+        waist_side: str,
+        hour: int,
+        minute: int,
+        now_hour: int,
+        now_minute: int,
+        repeat: str,
+        intensity: int,
+    ) -> None:
+        """Save or cancel one side's Richmat MH waist mattress alarm."""
+        raise NotImplementedError("Richmat MH waist mattress alarms are not supported")
+
+    @property
+    def supports_richmat_mh_aroma(self) -> bool:
+        """Whether a Richmat MH app profile currently shows its aroma page."""
+        return False
+
+    async def richmat_mh_aroma(
+        self, mode2_startup_minutes: int, mode3_startup_minutes: int, mode3_pause_hours: int
+    ) -> None:
+        """Write the Richmat MH aroma timing triplet."""
+        raise NotImplementedError("Richmat MH aroma timing is not supported")
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:

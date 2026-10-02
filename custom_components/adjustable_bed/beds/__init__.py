@@ -53,6 +53,7 @@ if TYPE_CHECKING:
     from .reverie import ReverieController as ReverieController
     from .reverie_nightstand import ReverieNightstandController as ReverieNightstandController
     from .richmat import RichmatController as RichmatController
+    from .richmat_mh import RichmatMhController as RichmatMhController
     from .rondure import RondureController as RondureController
     from .sbi import SBIController as SBIController
     from .scott_living import ScottLivingController as ScottLivingController
@@ -86,6 +87,7 @@ _EXPORT_MODULES = {
     "ZSeriesController": "serenity",
     "SimmonsController": "simmons",
     "AdjustableLumbarController": "adjustable_lumbar",
+    "RichmatMhController": "richmat_mh",
     "CustomaticController": "customatic",
     "CoolBaseController": "coolbase",
     "DewertOkinRfGatewayController": "dewertokin_rf_gateway",
