@@ -63,7 +63,7 @@ async def test_actual_action_number_and_switch_publish_commanded_lamp_intent(has
     toggle = next(b for b in _button_entities_for(hass, coordinator)
                   if getattr(b, "_spec", None) and b._spec.key == "svane_light_toggle")
     intensity = next(n for n in _number_entities_for(hass, coordinator)
-                     if getattr(n, "_spec", None) and n._spec.key == "svane_intensity")
+                     if n.entity_description.key == "light_level")
     lamp.async_write_ha_state = MagicMock()
     unregister = coordinator.register_controller_state_callback(lamp._handle_controller_state_update)
     try:

@@ -68,6 +68,13 @@ def make_controller(profile="multi", *, properties=("write", "read", "notify"), 
 
     client.read_gatt_char = AsyncMock(side_effect=read)
     controller = SvaneController(coordinator, profile=profile, session=session)
+    coordinator.controller = controller
+
+    async def query(refresh, **kwargs):
+        if kwargs["run_if"]():
+            await refresh(controller)
+
+    coordinator.async_execute_controller_query = AsyncMock(side_effect=query)
     return controller
 
 
@@ -272,7 +279,7 @@ async def test_role_failure_precedes_any_movement(failure):
     controller.client.write_gatt_char.assert_not_awaited()
 
 
-async def test_initialization_exact_order_old_cccd_normal_query_and_every_read():
+async def test_initialization_order_keeps_device_information_off_the_connect_path():
     controller = make_controller()
     events = []
     original_read = controller.client.read_gatt_char.side_effect
@@ -297,7 +304,15 @@ async def test_initialization_exact_order_old_cccd_normal_query_and_every_read()
     controller._wait = wait
     await controller.start_notify()
     assert events[0] == ("wait", 0.1)
-    assert events[1:7] == [
+    assert events[1:3] == [("notify", OLD_CHAR), ("write", uuid("a592"), "040000000000")]
+    assert [r for kind, *tail in events[3:] if kind == "read" for r in tail] == [POSITION, OLD_CHAR]
+    assert controller.session.feet == b"\x81\x38"
+    assert controller.session.position == bytes.fromhex("81388113")
+    connected = len(events)
+    # The app's paced device-information reads follow in the background.
+    assert controller._device_info_task is not None
+    await controller._device_info_task
+    assert events[connected:] == [
         ("read", uuid("2a26")),
         ("wait", 1),
         ("read", uuid("2a27")),
@@ -305,15 +320,25 @@ async def test_initialization_exact_order_old_cccd_normal_query_and_every_read()
         ("read", uuid("2a29")),
         ("wait", 1),
     ]
-    assert events[7:9] == [("notify", OLD_CHAR), ("write", uuid("a592"), "040000000000")]
-    assert [r for kind, *tail in events[9:] if kind == "read" for r in tail] == [POSITION, OLD_CHAR]
-    assert controller.session.feet == b"\x81\x38"
-    assert controller.session.position == bytes.fromhex("81388113")
     before = len(events)
     await controller.start_notify()
     assert len(events) == before
     await controller.stop_notify()
     assert not controller._subscriptions
+
+
+async def test_failed_status_subscription_keeps_the_connection():
+    """A proxy without a free notify slot loses observations, not motor control."""
+    controller = make_controller()
+    controller.client.start_notify.side_effect = BleakError("no free notify slot")
+
+    async def wait(seconds):
+        return True
+
+    controller._wait = wait
+    await controller.start_notify()
+    assert controller._initialized
+    await controller.stop_notify()
 
 
 @pytest.mark.parametrize("state", [0, 1])
@@ -413,7 +438,8 @@ async def test_top_defaults_light_on_off_and_no_extra_stop(profile):
         ["0300"] if profile == "multi" else ["108100000000"]
     ) + ["13025a010064", "130200000000"]
     assert not controller.session.light_on
-    assert not controller.supports_preset_zero_g
+    # The app's Svane position keeps the button ID existing entries use.
+    assert controller.supports_preset_zero_g
     assert not controller.supports_preset_flat
     assert not controller.position_number_specs
     assert not controller.supports_massage
@@ -535,7 +561,7 @@ async def test_retired_notification_callback_cannot_forward_raw_or_state(retired
     controller._coordinator.handle_controller_state_updates.assert_not_called()
 
 
-async def test_initialization_cancel_stops_before_query_preserves_completed_metadata():
+async def test_device_information_cancel_preserves_completed_metadata():
     controller = make_controller()
 
     async def wait(seconds):
@@ -546,7 +572,53 @@ async def test_initialization_cancel_stops_before_query_preserves_completed_meta
 
     controller._wait = wait
     await controller.start_notify()
+    assert controller._device_info_task is not None
+    await controller._device_info_task
     assert controller.session.observations["svane_firmware"] == "firmware"
     assert "svane_hardware" not in controller.session.observations
-    controller.client.write_gatt_char.assert_not_awaited()
-    controller.client.start_notify.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    ("level", "written_level"), [(1, 5), (37, 35), (38, 40), (100, 100)]
+)
+async def test_light_slider_snaps_to_app_steps(level, written_level):
+    """The established 0-100 slider keeps working; levels snap to the app's steps."""
+    controller = make_controller()
+    await controller.set_light_level(level)
+    assert written(controller)[-1][2] == SvaneCommands.light_brightness(written_level).hex()
+    assert controller.session.intensity == written_level
+
+
+async def test_light_slider_zero_turns_the_lamp_off():
+    controller = make_controller()
+    await controller.set_light_level(0)
+    assert written(controller)[-1][2] == "130200000000"
+    assert not controller.session.light_on
+
+
+async def test_saved_p1_memory_is_persisted_and_survives_a_restart():
+    """Saved P1 slots are stored with the entry, so recall works after a restart (#152)."""
+    controller = make_controller()
+    await controller.program_memory(1)
+    preferences = controller._coordinator.remember_svane_preferences.call_args.args[0]
+    assert preferences["multi_slots"] == {"1": ["8138", "8138"]}
+    # A restart builds a fresh session from the persisted preferences.
+    from custom_components.adjustable_bed.svane_state import svane_multi_slots
+
+    restarted = make_controller(
+        session=SvaneSession(multi_slots=svane_multi_slots(preferences))
+    )
+    restarted._wait = AsyncMock(return_value=True)
+    await restarted.preset_memory(1)
+    assert written(restarted) == [(HEAD, POSITION, "8138"), (FEET, POSITION, "8138")]
+
+
+@pytest.mark.parametrize(
+    "multi_slots",
+    [{"3": ["81", "82"]}, {"1": ["81"]}, {"1": ["", "82"]}, {"1": ["8", "82"]}, ["81", "82"]],
+)
+def test_invalid_persisted_p1_memory_is_rejected(multi_slots):
+    from custom_components.adjustable_bed.svane_state import svane_preferences
+
+    with pytest.raises(ValueError):
+        svane_preferences({"intensity": 90, "multi_slots": multi_slots})

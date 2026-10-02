@@ -1120,15 +1120,10 @@ async def _timed_move_plan(
             svane_admission = svane_admission or controller.prepare_svane_hold_admission()
             if (parent, coordinator) not in preflighted:
                 preflighted.append((parent, coordinator))
-            live = await _get_controller_for_service(coordinator)
-            if not isinstance(live, SvaneController) or live.session is not svane_admission.session:
-                raise ServiceValidationError("Svane physical session changed during preflight")
-            try:
-                live.validate_svane_hold_control(
-                    f"{'head' if motor == 'back' else 'feet'}_{direction}", duration_ms
-                )
-            except ValueError as err:
-                raise ServiceValidationError(str(err)) from err
+            await _preflight_live_svane(
+                parent, coordinator, svane_admission,
+                f"{'head' if motor == 'back' else 'feet'}_{direction}", duration_ms,
+            )
 
         # Get the appropriate move function based on direction
         move_fn = spec.open_fn if direction == "up" else spec.close_fn
@@ -1901,10 +1896,46 @@ async def handle_furnimove_move_simultaneously(call: ServiceCall) -> None:
     await _execute_furnimove(call, validate, execute)
 
 
+async def _preflight_live_svane(
+    parent: BedTarget,
+    target: BedChild,
+    admission: SvaneHoldAdmission,
+    control: str,
+    duration_ms: int,
+) -> None:
+    """Validate the live role through the pair's guarded connection lane."""
+    from .beds.svane import SvaneController
+
+    validated = False
+
+    async def inspect(child: BedChild) -> None:
+        nonlocal validated
+        controller = await _get_controller_for_service(child)
+        if not isinstance(controller, SvaneController) or controller.session is not admission.session:
+            raise ServiceValidationError("Svane physical session changed during preflight")
+        try:
+            controller.validate_svane_hold_control(control, duration_ms)
+        except ValueError as err:
+            raise ServiceValidationError(str(err)) from err
+        validated = True
+
+    if isinstance(parent, PairedBedCoordinator):
+        side = next(key for key, child in parent.children.items() if child is target)
+        await parent.async_run_child_operation(
+            "Svane live preflight", inspect, side=side, cancel_running=False,
+        )
+    else:
+        await inspect(target)
+    if not validated:
+        raise ServiceValidationError("Svane live preflight was interrupted")
+
+
 async def _svane_live_targets(
     call: ServiceCall,
+    control: str,
+    duration_ms: int,
 ) -> tuple[list[tuple[BedTarget, str]], PreflightedSides, dict[int, SvaneHoldAdmission]]:
-    """Capture release ownership, then connect every target before motion."""
+    """Capture all release boundaries, then validate each guarded live link."""
     targets, missing = _resolve_sided_targets(
         call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
     )
@@ -1913,7 +1944,6 @@ async def _svane_live_targets(
     from .beds.svane import SvaneController
 
     admissions: dict[int, SvaneHoldAdmission] = {}
-    # Reject unrelated profiles without contacting their devices.
     for parent, side in targets:
         for target in _command_targets(parent, side):
             controller = target.capability_controller
@@ -1923,13 +1953,22 @@ async def _svane_live_targets(
                 or not isinstance(controller, SvaneController)
             ):
                 raise ServiceValidationError("Select a Svane Remote app profile")
+            try:
+                controller.validate_svane_hold_constraints(control, duration_ms)
+            except ValueError as err:
+                raise ServiceValidationError(str(err)) from err
             admissions[id(controller.session)] = controller.prepare_svane_hold_admission()
     preflighted: PreflightedSides = []
     try:
         for parent, side in targets:
             for target in _command_targets(parent, side):
                 preflighted.append((parent, target))
-                await _get_controller_for_service(target)
+                controller = target.capability_controller
+                if not isinstance(controller, SvaneController) or id(controller.session) not in admissions:
+                    raise ServiceValidationError("Svane physical session changed during preflight")
+                await _preflight_live_svane(
+                    parent, target, admissions[id(controller.session)], control, duration_ms,
+                )
     except Exception, asyncio.CancelledError:
         await _release_preflighted(preflighted)
         raise
@@ -1938,19 +1977,10 @@ async def _svane_live_targets(
 
 async def handle_svane_hold_control(call: ServiceCall) -> None:
     """Preflight exact roles on all sides before serialized source held writes."""
-    targets, preflighted, admissions = await _svane_live_targets(call)
     control = call.data[ATTR_CONTROL]
     duration_ms = int(_leggett_hold_seconds(call.data[ATTR_DURATION]) * 1000)
+    targets, preflighted, admissions = await _svane_live_targets(call, control, duration_ms)
     try:
-        for parent, side in targets:
-            for target in _command_targets(parent, side):
-                from .beds.svane import SvaneController
-
-                controller = await _get_controller_for_service(target)
-                if not isinstance(controller, SvaneController) or id(controller.session) not in admissions:
-                    raise ValueError("Svane physical session changed during preflight")
-                controller.validate_svane_hold_control(control, duration_ms)
-
         async def hold(controller: BedController | SideBoundController) -> None:
             from .beds.svane import SvaneController
 
@@ -1981,12 +2011,12 @@ async def handle_svane_release_axis(call: ServiceCall) -> None:
     controllers: list[BedController | SideBoundController] = []
     for parent, side in targets:
         for target in _command_targets(parent, side):
-            controller = target.controller
-            if (
-                target.bed_type != BED_TYPE_SVANE
-                or controller is None
-                or not controller.supports_held_control
-            ):
+            if target.bed_type != BED_TYPE_SVANE:
+                raise ServiceValidationError("Select an active Svane Remote app profile")
+            controller = target.controller or target.capability_controller
+            if controller is None:
+                continue
+            if not controller.supports_held_control:
                 raise ServiceValidationError("Select an active Svane Remote app profile")
             controllers.append(controller)
     for controller in controllers:

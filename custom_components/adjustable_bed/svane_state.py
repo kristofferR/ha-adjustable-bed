@@ -31,6 +31,7 @@ def svane_preferences(value: object) -> tuple[int, tuple[bytes, bytes]]:
     intensity = integer(value.get("intensity", 90), 5, 100)
     if intensity % 5:
         raise ValueError("Svane intensity uses steps of five")
+    svane_multi_slots(value)
     slots = value.get("slots")
     if slots is None:
         return intensity, _DEFAULT_SLOTS
@@ -42,6 +43,26 @@ def svane_preferences(value: object) -> tuple[int, tuple[bytes, bytes]]:
             raise ValueError("Svane JMC memory is four opaque bytes")
         result.append(bytes.fromhex(raw))
     return intensity, (result[0], result[1])
+
+
+def svane_multi_slots(value: object) -> dict[int, tuple[bytes, bytes]]:
+    """Validate persisted P1 slots: opaque head/feet bytes read from this bed."""
+    if not isinstance(value, Mapping) or value.get("multi_slots") is None:
+        return {}
+    stored = value["multi_slots"]
+    if not isinstance(stored, Mapping):
+        raise ValueError("Svane P1 memory must be an object")
+    result: dict[int, tuple[bytes, bytes]] = {}
+    for slot, axes in stored.items():
+        if slot not in ("1", "2") or not isinstance(axes, list) or len(axes) != 2:
+            raise ValueError("Svane P1 memory has two slots of head and feet bytes")
+        if any(
+            not isinstance(raw, str) or re.fullmatch(r"(?:[0-9a-fA-F]{2})+", raw) is None
+            for raw in axes
+        ):
+            raise ValueError("Svane P1 memory axes are nonempty opaque bytes")
+        result[int(slot)] = (bytes.fromhex(axes[0]), bytes.fromhex(axes[1]))
+    return result
 
 
 @dataclass(slots=True)
@@ -62,7 +83,17 @@ class SvaneSession:
     feet_release_epoch: int = 0
 
     def preferences(self) -> dict[str, object]:
-        return {"intensity": self.intensity, "slots": [raw.hex() for raw in self.jmc_slots]}
+        preferences: dict[str, object] = {
+            "intensity": self.intensity,
+            "slots": [raw.hex() for raw in self.jmc_slots],
+        }
+        if self.multi_slots:
+            # Saved P1 positions survive restarts, unlike the app's process memory.
+            preferences["multi_slots"] = {
+                str(slot): [head.hex(), feet.hex()]
+                for slot, (head, feet) in sorted(self.multi_slots.items())
+            }
+        return preferences
 
 
 @dataclass(slots=True)
@@ -93,7 +124,9 @@ def get_svane_session(
     key = (address, profile)
     session = cache.targets.get(key)
     if session is None:
-        session = SvaneSession(intensity=intensity, jmc_slots=slots)
+        session = SvaneSession(
+            intensity=intensity, jmc_slots=slots, multi_slots=svane_multi_slots(preferences)
+        )
         cache.targets[key] = session
     return session
 

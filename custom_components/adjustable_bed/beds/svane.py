@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -18,7 +19,6 @@ from ..svane_state import SvaneProfile, SvaneSession, integer
 from .base import (
     BedController,
     ControllerButtonSpec,
-    ControllerNumberSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
@@ -27,6 +27,8 @@ from .base import (
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def uuid(short: str) -> str:
@@ -90,12 +92,6 @@ def _action(name: str) -> MotorCommandCallable:
     return press
 
 
-async def _intensity(controller: BedController, value: float) -> None:
-    if not isinstance(controller, SvaneController) or not float(value).is_integer():
-        raise ValueError("Svane intensity requires a whole source step")
-    await controller.set_light_level(int(value))
-
-
 @dataclass(frozen=True, slots=True)
 class SvaneHoldAdmission:
     """A physical session's release boundary before public preflight/admission."""
@@ -143,6 +139,7 @@ class SvaneController(BedController):
         self._active_feet: bool | None = None
         self._pending_release: set[str] = set()
         self._wake = asyncio.Event()
+        self._device_info_task: asyncio.Task[None] | None = None
         self._publish_intent()
         self.forward_controller_state_updates(dict(self.session.observations))
 
@@ -181,7 +178,7 @@ class SvaneController(BedController):
             "light_step": self.session.light_step,
             "opaque_observations": dict(self.session.observations),
             "native_position_units": None,
-            "memory_scope": "process_session" if self.profile == "multi" else "target_preferences",
+            "memory_scope": "target_preferences",
             "descriptor_state": self._descriptor_state,
             "initialized": self._initialized,
         }
@@ -189,6 +186,11 @@ class SvaneController(BedController):
     @property
     def supports_preset_flat(self) -> bool:
         return False
+
+    @property
+    def supports_preset_zero_g(self) -> bool:
+        """Expose the app's Svane position under the button ID existing entries use."""
+        return True
 
     @property
     def supports_memory_presets(self) -> bool:
@@ -216,6 +218,15 @@ class SvaneController(BedController):
         return True
 
     @property
+    def supports_light_level_control(self) -> bool:
+        """Keep the established 0-100 light slider; the app steps it by five."""
+        return True
+
+    @property
+    def light_level_max(self) -> int:
+        return 100
+
+    @property
     def requires_notification_channel(self) -> bool:
         return True
 
@@ -232,20 +243,9 @@ class SvaneController(BedController):
         return tuple(
             ControllerButtonSpec(f"svane_{key}", label, _action(key))
             for key, label in (
-                ("position", "Svane position"),
-                ("read", "Read position"),
-                ("tv", "TV position"),
                 ("light_toggle", "Toggle light"),
                 ("refresh", "Refresh device information"),
             )
-        )
-
-    @property
-    def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
-        return (
-            ControllerNumberSpec(
-                "svane_intensity", "svane_intensity", "svane_intensity", 5, 100, 5, _intensity
-            ),
         )
 
     @property
@@ -283,6 +283,7 @@ class SvaneController(BedController):
         }
         if self.session.light_intent_known:
             state["under_bed_lights_on"] = self.session.light_on
+            state["light_level"] = self.session.intensity if self.session.light_on else 0
         self.forward_controller_state_updates(state)
 
     def _remember(self) -> None:
@@ -453,26 +454,52 @@ class SvaneController(BedController):
         try:
             if not await self._wait(0.1):
                 return
-            await self.refresh_device_information()
-            if self._coordinator.cancel_command.is_set():
-                return
-            if await self._subscribe(OLD, OLD_CHAR):
-                if self._role(SOFTWARE, uuid("a592")) is not None:
-                    await self._write(SOFTWARE, uuid("a592"), SvaneCommands.SOFTWARE_QUERY)
-                self._descriptor_state = 1
-                await self._read_state(1)
-                self.forward_controller_state_update("svane_initialization", "old_notify_ready")
-            else:
-                self.forward_controller_state_update(
-                    "svane_initialization", "old_notify_unavailable"
-                )
+            # Observations are optional for control: a failed subscribe or read
+            # (e.g. a proxy without a free notify slot) must not fail the
+            # connection and take away the motors (#152).
+            try:
+                if await self._subscribe(OLD, OLD_CHAR):
+                    if self._role(SOFTWARE, uuid("a592")) is not None:
+                        await self._write(SOFTWARE, uuid("a592"), SvaneCommands.SOFTWARE_QUERY)
+                    self._descriptor_state = 1
+                    await self._read_state(1)
+                    status = "old_notify_ready"
+                else:
+                    status = "old_notify_unavailable"
+            except BleakError as err:
+                _LOGGER.debug("Svane status subscription failed: %s", err)
+                status = "old_notify_failed"
+            self.forward_controller_state_update("svane_initialization", status)
             self._initialized = True
+            # The app's device-information reads wait a second after each one;
+            # serialize them as an idle query after the pending command.
+            if self._device_info_task is None or self._device_info_task.done():
+                self._device_info_task = asyncio.create_task(self._refresh_device_information_quietly())
         except BaseException:
             await self.stop_notify()
             raise
 
+    async def _refresh_device_information_quietly(self) -> None:
+        async def refresh(current: BedController) -> None:
+            if current is self:
+                await self.refresh_device_information()
+
+        try:
+            await self._coordinator.async_execute_controller_query(
+                refresh,
+                skip_disconnect=True,
+                preemptible=True,
+                preserve_idle_deadline=True,
+                run_if=lambda: self._initialized and self._coordinator.controller is self,
+            )
+        except (BleakError, ConnectionError, TimeoutError, ValueError) as err:
+            _LOGGER.debug("Svane device information read failed: %s", err)
+
     async def stop_notify(self) -> None:
         client = self.client
+        if self._device_info_task is not None:
+            self._device_info_task.cancel()
+            self._device_info_task = None
         self._notification_tokens.clear()
         try:
             if client is not None and client.is_connected:
@@ -795,6 +822,7 @@ class SvaneController(BedController):
             if "head" not in fresh or "feet" not in fresh:
                 raise ValueError("Both fresh valid raw axes must be read for this target")
             self.session.multi_slots[memory_num] = (fresh["head"], fresh["feet"])
+            self._remember()
 
     async def _light(self, intensity: int, char: str = "a8e0") -> None:
         await self._write(
@@ -826,14 +854,20 @@ class SvaneController(BedController):
             await self.lights_on()
 
     async def set_light_level(self, level: int) -> None:
-        integer(level, 5, 100)
-        if level % 5:
-            raise ValueError("Svane lamp intensity uses steps of five")
+        """Set the lamp from the 0-100 slider; 0 is off, others snap to the app's steps of five."""
+        integer(level, 0, 100)
+        if level == 0:
+            await self.lights_off()
+            return
+        level = min(100, max(5, 5 * round(level / 5)))
         self.session.intensity = level
         self.session.light_on = True
         self.session.light_intent_known = True
         self._remember()
         await self._light(level)
+
+    async def preset_zero_g(self) -> None:
+        await self.execute_app_control("position")
 
     async def execute_app_control(self, action: str) -> None:
         if action == "position":
@@ -844,8 +878,6 @@ class SvaneController(BedController):
                 if self.profile == "jmc"
                 else SvaneCommands.SVANE_POSITION,
             )
-        elif action in ("read", "tv"):
-            await self.preset_memory(1 if action == "read" else 2)
         elif action == "light_toggle":
             await self.lights_toggle()
         elif action == "refresh":
