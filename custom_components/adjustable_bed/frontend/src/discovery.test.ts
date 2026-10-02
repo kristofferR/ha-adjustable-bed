@@ -760,3 +760,52 @@ test("Adjustable Lumbar waves join massage; preset saves and the query land in u
   expect(bed.utility).toEqual(["button.l_save", "button.l_check"]);
   expect(bed.memory).toEqual([]);
 });
+
+test("Richmat MH app-labelled buttons, sliders and selectors land in their sections", () => {
+  const hass = hassWith([
+    entry("cover.back", "back"),
+    entry("button.flat", "preset_flat"),
+    entry("button.read", "richmat_mh_preset"),
+    entry("button.relax", "richmat_mh_preset"),
+    entry("button.wave", "richmat_mh_massage"),
+    entry("button.save_read", "richmat_mh_save"),
+    entry("button.reset", "richmat_mh_action"),
+    entry("button.lock", "richmat_mh_toggle_smart_set_lock"),
+    entry("binary_sensor.lock", "richmat_mh_smart_set_lock"),
+    entry("number.head", "richmat_mh_head_massage_intensity"),
+    entry("number.back_angle", "richmat_mh_back_angle"),
+    entry("number.timer", "richmat_mh_light_timer_minutes"),
+    entry("select.mode", "richmat_mh_motor_mode"),
+    entry("light.led", "light"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.presets).toEqual(["button.flat", "button.read", "button.relax"]);
+  expect(bed.massage.buttons).toEqual(["button.wave"]);
+  expect(bed.massage.numbers).toEqual(["number.head"]);
+  expect(bed.lights.timerMinutes).toBe("number.timer");
+  expect(bed.lights.light).toBe("light.led");
+  // Utility tiles press buttons; sliders, selectors and state stay as HA entities.
+  expect(bed.utility).toEqual(["button.save_read", "button.reset", "button.lock"]);
+  expect(bed.motors.find((m) => m.key === "back")?.position).toBe("number.back_angle");
+});
+
+test("Richmat MH VER1 angle targets join their motors and the LED timeout is lighting", () => {
+  const hass = hassWith([
+    entry("cover.back", "back"),
+    entry("cover.feet", "feet"),
+    entry("cover.pillow", "pillow"),
+    entry("number.back_angle", "richmat_mh_back_angle"),
+    entry("number.foot_angle", "richmat_mh_foot_angle"),
+    entry("number.pillow_angle", "richmat_mh_pillow_angle"),
+    entry("number.led_timer", "richmat_mh_light_timer"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  const position = Object.fromEntries(bed.motors.map((m) => [m.key, m.position]));
+  expect(position).toEqual({
+    back: "number.back_angle",
+    feet: "number.foot_angle",
+    pillow: "number.pillow_angle",
+  });
+  expect(bed.motors.every((m) => m.cover)).toBe(true);
+  expect(bed.lights.timer).toBe("number.led_timer");
+});

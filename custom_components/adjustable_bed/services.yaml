@@ -2809,3 +2809,173 @@ starcode_move_lifts:
             - down
             - flat
             - stop
+
+richmat_mh_alarm:
+  name: Richmat app alarm
+  description: Set or cancel the countdown alarm of a Richmat MH app profile (Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed). Only the positions and massages the model's alarm page lists are accepted.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    enabled:
+      name: Enabled
+      description: Turn off to cancel the alarm (or the selected slot).
+      required: true
+      selector:
+        boolean:
+    time:
+      name: Local alarm time
+      description: Required when enabled. The bed receives the minutes until the next occurrence.
+      selector:
+        time:
+    position:
+      name: Position
+      description: A position from the model's alarm page.
+      selector:
+        select:
+          options: [tv, zero_g, anti_snore, lounge, memory_1, memory_2, memory_3, memory_4, memory_5, yoga, alarm_mode_1, alarm_mode_2, head_massage, foot_massage, head_foot_massage, head_foot_massage_intensity, head_massage_intensity_down, heat, sleep_aid]
+    massage:
+      name: Massage
+      description: Massage choices from the model's legacy alarm page.
+      selector:
+        select:
+          multiple: true
+          options: [head_massage, foot_massage, head_foot_massage, head_foot_massage_intensity]
+    slot:
+      name: Alarm slot
+      description: Required for models whose alarm page shows three slots.
+      selector:
+        number:
+          min: 1
+          max: 3
+          mode: box
+    side:
+      name: Side
+      description: Target side of a paired bed.
+      selector:
+        select:
+          options: [both, left, right]
+
+richmat_mh_aroma:
+  name: Richmat app aroma timing
+  description: Write the three aroma timing sliders of a Richmat MH app profile.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    mode2_startup_minutes:
+      name: Mode 2 startup
+      description: Minutes, 1 to 60.
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 60
+          unit_of_measurement: min
+    mode3_startup_minutes:
+      name: Mode 3 startup
+      description: Minutes, 1 to 60.
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 60
+          unit_of_measurement: min
+    mode3_pause_hours:
+      name: Mode 3 pause
+      description: Hours, 1 to 12.
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 12
+          unit_of_measurement: h
+    side:
+      name: Side
+      description: Target side of a paired bed.
+      selector:
+        select:
+          options: [both, left, right]
+
+richmat_mh_waist_alarm:
+  name: Richmat app waist mattress alarm
+  description: Save or cancel one side's waist mattress alarm on a Richmat MH app profile. Saving sends Home Assistant's current local time with the alarm, as the app does.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    enabled:
+      name: Enabled
+      description: Turn off to cancel the side's alarm.
+      required: true
+      selector:
+        boolean:
+    waist_side:
+      name: Waist side
+      description: The waist mattress side the app had selected.
+      required: true
+      selector:
+        select:
+          options: [left, right, both]
+    time:
+      name: Local alarm time
+      description: Required when enabled.
+      selector:
+        time:
+    repeat:
+      name: Repeat
+      default: once
+      selector:
+        select:
+          options: [once, daily]
+    intensity:
+      name: Intensity
+      description: 1 (low) to 3 (high).
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 3
+          mode: box
+    side:
+      name: Side
+      description: Target side of a paired bed.
+      selector:
+        select:
+          options: [both, left, right]
+
+richmat_mh_light_color:
+  name: Richmat app light colour
+  description: Write the LED or button-light page colour of a Richmat MH app profile.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    rgb_color:
+      name: Colour
+      description: Red, green and blue, 0 to 255.
+      required: true
+      selector:
+        color_rgb:
+    side:
+      name: Side
+      description: Target side of a paired bed.
+      selector:
+        select:
+          options: [both, left, right]

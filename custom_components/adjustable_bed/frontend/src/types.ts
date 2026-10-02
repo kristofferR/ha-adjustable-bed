@@ -122,7 +122,7 @@ export interface LightEntities {
   level?: string; // number.* light_level (brightness)
   toggle?: string; // button.* toggle_light
   cycle?: string; // button.* light_cycle
-  timer?: string; // select.* light_timer
+  timer?: string; // select.* light_timer, or number.* timeout applied on release
   timerMinutes?: string; // number.* pending floor timer duration
   timerToggle?: string; // button.* enable/disable the pending floor timer
   timerAppliesImmediately?: boolean;

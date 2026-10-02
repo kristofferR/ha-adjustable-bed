@@ -11,6 +11,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Keeson](beds/keeson.md) | Position feedback (Ergomotion), 4 presets, massage, lights |
 | [Richmat](beds/richmat.md) | 1-5 memory presets, massage (discrete), RGB lights + timer, Controller Sync, motors 5-7 |
 | [RMControl products](beds/rmcontrol.md) | Explicit product catalogs, reported state, alarms and snore intervention |
+| [Richmat app profiles](beds/richmat-mh.md) | Revive Control, Best Mattress, Blvd Home, HARMONY and Idealbed model catalogs: covers, presets, memory, massage, light, alarms, aroma, snore, VER1 angles and the waist mattress |
 | [MotoSleep](beds/motosleep.md) | Model-dependent HHC/MOTO controls, memory, massage and lighting |
 | [Octo](beds/octo.md) | Two protocol variants, optional PIN auth, RGBW lights. Sold as bett1.de, Dunlopillo, Hüsler Nest, Swiss Sense, Velda, Werkmeister, sleepling and more ([known brand list](beds/octo.md#bed-brands-that-ship-octo-actuators)) |
 | [Solace](beds/solace.md) | Name-based profiles, named presets, optional massage/lights, exact S4-Y lift/tilt; explicit [Woosa Sleep](beds/woosa.md) profile with one Favourite memory |

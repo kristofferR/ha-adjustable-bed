@@ -271,6 +271,8 @@ from .const import (
     PAIR_SIDES,
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
+    RICHMAT_MH_APPS,
+    RICHMAT_MH_BED_TYPES,
     RICHMAT_REMOTE_AUTO,
     RICHMAT_REMOTES,
     RICHMAT_VARIANT_NORDIC,
@@ -733,6 +735,9 @@ def _motor_count_options(
         return [2]
     if bed_type in {BED_TYPE_CUSTOMATIC_REMEDY, BED_TYPE_ADJUSTABLE_LUMBAR}:
         return [3]
+    if bed_type in RICHMAT_MH_BED_TYPES:
+        # The selected app model's catalog fixes the axes; the count is unused.
+        return [2]
     if bed_type == BED_TYPE_OCTO and protocol_variant != OCTO_VARIANT_STAR2:
         return [1, 2, 3, 4]
     if bed_type == BED_TYPE_OKIN_CST:
@@ -765,10 +770,29 @@ def _is_valid_motor_count(
     return motor_count in _motor_count_options(bed_type, protocol_variant)
 
 
+def _richmat_mh_variant_error(
+    bed_type: str | None, protocol_variant: str | None, name: str | None
+) -> str | None:
+    """Return a form error when the Richmat MH app could not resolve the model."""
+    if bed_type not in RICHMAT_MH_APPS:
+        return None
+    from .beds.richmat_mh import resolve_model
+
+    name = None if is_mac_like_name(name) else name
+    _model, problem = resolve_model(RICHMAT_MH_APPS[bed_type], protocol_variant, name)
+    return f"richmat_mh_{problem}" if problem else None
+
+
 # App profiles that belong to one physical bed: a two-address pair must be
 # separated before either side moves to, from or between them.
 EXPLICIT_PAIR_APP_BED_TYPES: Final = frozenset(
-    {BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES_Z230, BED_TYPE_ZSERIES_Z280, BED_TYPE_ADJUSTABLE_LUMBAR}
+    {
+        BED_TYPE_TRANQUIL,
+        BED_TYPE_ZSERIES_Z230,
+        BED_TYPE_ZSERIES_Z280,
+        BED_TYPE_ADJUSTABLE_LUMBAR,
+        *RICHMAT_MH_BED_TYPES,
+    }
 )
 
 
@@ -2874,6 +2898,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 self._discovery_info.manufacturer_data,
             ):
                 errors[CONF_PROTOCOL_VARIANT] = variant_error
+            if variant_error := _richmat_mh_variant_error(
+                selected_bed_type, protocol_variant, self._discovery_info.name
+            ):
+                errors[CONF_PROTOCOL_VARIANT] = variant_error
 
             # Get bed-specific defaults for motor pulse settings
             pulse_defaults = get_motor_pulse_defaults(
@@ -3880,6 +3908,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 self._discovery_info.manufacturer_data,
             ):
                 errors[CONF_PROTOCOL_VARIANT] = variant_error
+            if variant_error := _richmat_mh_variant_error(
+                bed_type, protocol_variant, self._discovery_info.name
+            ):
+                errors[CONF_PROTOCOL_VARIANT] = variant_error
 
             # Get bed-specific defaults for motor pulse settings
             pulse_defaults = get_motor_pulse_defaults(
@@ -4199,6 +4231,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     errors[CONF_PROTOCOL_VARIANT] = "invalid_variant_for_bed_type"
                 if variant_error := self._remacro_variant_error(bed_type, protocol_variant, address):
                     errors[CONF_PROTOCOL_VARIANT] = variant_error
+                manual_info = bluetooth.async_last_service_info(self.hass, address, connectable=False)
+                if variant_error := _richmat_mh_variant_error(
+                    bed_type, protocol_variant, manual_info.name if manual_info else None
+                ):
+                    errors[CONF_PROTOCOL_VARIANT] = variant_error
 
                 # Get bed-specific defaults for motor pulse settings
                 pulse_defaults = get_motor_pulse_defaults(
@@ -4282,6 +4319,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
                         ),
                     }
+                    if bed_type in RICHMAT_MH_APPS and manual_info is not None:
+                        # The app's name rule reads the raw advertised name.
+                        entry_data.update(_name_rule_setup_name(bed_type, manual_info.name))
                     if _is_leggett_app_type(bed_type, protocol_variant):
                         self._manual_data = entry_data
                         self._leggett_app_pairing_step = "manual_pairing"
@@ -7449,6 +7489,17 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             if (
                 separate_address_pair
                 and CONF_PROTOCOL_VARIANT in paired_changes
+                and variant_owners & RICHMAT_MH_BED_TYPES
+            ):
+                # The Richmat MH variant is each physical bed's own app model.
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={CONF_PROTOCOL_VARIANT: "richmat_mh_unpair_first"},
+                )
+            if (
+                separate_address_pair
+                and CONF_PROTOCOL_VARIANT in paired_changes
                 and per_side_variant_type is not None
             ):
                 # These variants hold each receiver's own packet format (and the
@@ -7501,6 +7552,17 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     )
                     if problem not in (None, "unknown"):
                         remacro_error = f"remacro_model_{problem}"
+                        break
+            if remacro_error is None and bed_type in RICHMAT_MH_APPS:
+                # Each Richmat MH bed resolves its model from its stored raw name.
+                for target in [*iter_children(current_data)] or [current_data]:
+                    stored_name = target.get(CONF_BLE_DEVICE_NAME)
+                    remacro_error = _richmat_mh_variant_error(
+                        bed_type,
+                        requested_variant,
+                        stored_name if isinstance(stored_name, str) else None,
+                    )
+                    if remacro_error is not None:
                         break
             if remacro_error is not None:
                 return self.async_show_form(

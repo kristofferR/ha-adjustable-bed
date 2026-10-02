@@ -188,6 +188,7 @@ from .const import (
     OKIN_CB24_VARIANT_NEW,
     OKIN_CB24_VARIANT_OLD,
     OKIN_CST_VARIANTS,
+    RICHMAT_MH_APPS,
     RICHMAT_PROTOCOL_PREFIX55,
     RICHMAT_PROTOCOL_PREFIXAA,
     RICHMAT_VARIANT_NORDIC,
@@ -493,6 +494,21 @@ async def create_controller(
 
         return AdjustableLumbarController(
             coordinator,
+            protocol_variant=protocol_variant,
+            device_name=device_name if client is not None else None,
+        )
+
+    if bed_type in RICHMAT_MH_APPS:
+        # The app's name rule picks the model unless the variant fixes it;
+        # offline controllers must not read the display name.
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.richmat_mh", __package__
+        )
+        from .beds.richmat_mh import RichmatMhController
+
+        return RichmatMhController(
+            coordinator,
+            app=RICHMAT_MH_APPS[bed_type],
             protocol_variant=protocol_variant,
             device_name=device_name if client is not None else None,
         )

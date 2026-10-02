@@ -171,11 +171,23 @@ enable additional commands.
 | LOGICDATA Sleep Smart app | `logicdata_hold_preset` (flat, zero gravity, anti-snore, memory 1), `logicdata_rename` (bed and pump) | [Sleep Smart](beds/logicdata-sleep-smart.md) |
 | Jiecang app profiles | `jiecang_set_alarm`, `jiecang_wake`, `jiecang_stop_wake`, `jiecang_rename` | [Jiecang](beds/jiecang-app.md) |
 | Richmat RMControl products | `rmcontrol_alarm`, `rmcontrol_anti_snore` | [RMControl](beds/rmcontrol.md) |
+| Richmat app profiles | `richmat_mh_alarm`, `richmat_mh_aroma`, `richmat_mh_waist_alarm`, `richmat_mh_light_color` | [Richmat app profiles](beds/richmat-mh.md#actions) |
 | Sleep Number Fuzion / BAM-MCR | `sleep_number_command` | [Command and parameter reference](beds/sleep-number-services.md) |
 
 Controller alarm actions program the bed itself, rather than creating a Home
 Assistant automation. Rename actions change the controller's Bluetooth name;
 renaming an HA entity or device is a separate operation.
+
+### `richmat_mh_alarm`, `richmat_mh_aroma`, `richmat_mh_waist_alarm` and `richmat_mh_light_color`
+
+For the explicit Richmat app profiles. Each action checks every targeted bed before writing any of them and runs through the configuration lane without stopping motion.
+
+- `richmat_mh_alarm` takes `device_id`, `enabled`, `time` (local, minute precision, required when enabling), `position` and `massage` choices listed on the model's alarm page, `slot` (1–3, required on three-slot models) and optional `side`. The bed receives the minutes until the next occurrence of `time` (a time equal to now means 24 hours). A position with a massage sends the app's combined opcode, two massages become head-and-foot, and a combination the app cannot express is rejected. Disabling sends the app's cancel frames, or deletes the chosen slot.
+- `richmat_mh_aroma` takes `mode2_startup_minutes` and `mode3_startup_minutes` (1–60) and `mode3_pause_hours` (1–12) and sends the app's three timing frames 150 ms apart. It is available when the model's aroma page is shown.
+- `richmat_mh_waist_alarm` takes `waist_side` (`left`, `right`, `both`), `enabled`, `time`, `repeat` (`once`, `daily`) and `intensity` (1–3). Saving sends Home Assistant's current local time with the alarm, as the app does; disabling cancels that side.
+- `richmat_mh_light_color` takes `rgb_color` and writes the LED or button-light page's colour frame. Models whose motor page has no light toggle have no on/off command, so they get no Home Assistant light and set the colour with this action.
+
+Alarm countdowns and the waist alarm's current time are read for each bed just before its frames are built, after any reconnect.
 
 ### `serenity_hold_control`
 

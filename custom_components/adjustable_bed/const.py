@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from enum import IntFlag
 from typing import Final, overload
 
+from . import richmat_mh_catalog as _richmat_mh_catalog
+
 DOMAIN: Final = "adjustable_bed"
 
 
@@ -442,6 +444,20 @@ ZSERIES_PULSE_COUNT_RANGE: Final = (1, 600)
 BED_TYPE_SIMMONS: Final = "simmons"  # Explicit SIMMONS app profile (com.okin.simmons)
 # Explicit Adjustable bed (Lumbar) app profile (com.okin.bedding.adjustablelumbar)
 BED_TYPE_ADJUSTABLE_LUMBAR: Final = "adjustable_lumbar"
+# Explicit Richmat MH app profiles (row055): one shared library, five catalogs.
+BED_TYPE_RICHMAT_REVIVE: Final = "richmat_revive"  # com.richmat.revive3
+BED_TYPE_RICHMAT_BEST_MATTRESS: Final = "richmat_best_mattress"  # com.richmat.best_mattress
+BED_TYPE_RICHMAT_BLVD_HOME: Final = "richmat_blvd_home"  # com.richmat.blvd_home
+BED_TYPE_RICHMAT_HARMONY: Final = "richmat_harmony"  # com.richmat.harmony
+BED_TYPE_RICHMAT_IDEALBED: Final = "richmat_idealbed"  # com.richmat.idealbed
+RICHMAT_MH_APPS: Final[dict[str, str]] = {
+    BED_TYPE_RICHMAT_REVIVE: "revive",
+    BED_TYPE_RICHMAT_BEST_MATTRESS: "best_mattress",
+    BED_TYPE_RICHMAT_BLVD_HOME: "blvd_home",
+    BED_TYPE_RICHMAT_HARMONY: "harmony",
+    BED_TYPE_RICHMAT_IDEALBED: "idealbed",
+}
+RICHMAT_MH_BED_TYPES: Final = frozenset(RICHMAT_MH_APPS)
 BED_TYPE_CUSTOMATIC_CLARITY: Final = "customatic_clarity"
 BED_TYPE_CUSTOMATIC_JEROMES: Final = "customatic_jeromes"
 BED_TYPE_CUSTOMATIC_REMEDY: Final = "customatic_remedy"
@@ -536,6 +552,12 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_TRANQUIL,
     BED_TYPE_SIMMONS,
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    # Explicit Richmat MH app profiles
+    BED_TYPE_RICHMAT_REVIVE,
+    BED_TYPE_RICHMAT_BEST_MATTRESS,
+    BED_TYPE_RICHMAT_BLVD_HOME,
+    BED_TYPE_RICHMAT_HARMONY,
+    BED_TYPE_RICHMAT_IDEALBED,
     # Explicit Customatic app profiles
     BED_TYPE_ZSERIES_Z230,
     BED_TYPE_ZSERIES_Z280,
@@ -1438,10 +1460,40 @@ ADJUSTABLE_LUMBAR_VARIANTS: Final = {
     ADJUSTABLE_LUMBAR_VARIANT_OKIN: "OKIN-name table (OKIN service, with response)",
     ADJUSTABLE_LUMBAR_VARIANT_STAR: "Star-name tables (Nordic UART, chosen by manufacturer)",
 }
+# Richmat MH app model choices, from the generated catalog: each app's picker dialog
+# and setup wizard, Revive's six short manual identifiers, and every model for
+# Idealbed, whose manual dialog accepts any valid identifier. "auto" applies the
+# app's name rule: the first four characters of the raw Bluetooth name, lowercased,
+# name the model; QRRM asks for a choice.
+def _richmat_mh_model_choices(app: str) -> tuple[tuple[str, str], ...]:
+    catalog = _richmat_mh_catalog
+    choices: dict[str, str] = dict(catalog.PICKERS.get(app, ()))
+    manual = catalog.MANUAL_SHORT_IDS.get(app, ())
+    if app in catalog.MANUAL_ANY_MODEL:
+        manual = sorted(catalog.MODELS[app])
+    for model in manual:
+        choices.setdefault(model, model.upper())
+    return tuple(choices.items())
+
+
+RICHMAT_MH_MODEL_CHOICES: Final[dict[str, tuple[tuple[str, str], ...]]] = {
+    app: _richmat_mh_model_choices(app) for app in _richmat_mh_catalog.MODELS
+}
+RICHMAT_MH_VARIANTS_BY_APP: Final[dict[str, dict[str, str]]] = {
+    app: {
+        VARIANT_AUTO: "Model from the Bluetooth name (first four characters)",
+        **{
+            f"model_{model}": label if label == model.upper() else f"{label} ({model.upper()})"
+            for model, label in choices
+        },
+    }
+    for app, choices in RICHMAT_MH_MODEL_CHOICES.items()
+}
 # Explicit app bed types whose name rule reads the stored raw Bluetooth name.
 NAME_RULE_VARIANTS_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_SIMMONS: SIMMONS_NAME_RULE_VARIANTS,
     BED_TYPE_ADJUSTABLE_LUMBAR: frozenset({VARIANT_AUTO}),
+    **{bed_type: frozenset({VARIANT_AUTO}) for bed_type in RICHMAT_MH_APPS},
 }
 SOLACE_VARIANT_WOOSA: Final = "woosa"
 SOLACE_VARIANTS: Final = {
@@ -2431,6 +2483,12 @@ ALL_PROTOCOL_VARIANTS: Final = [
     *(_variant for _variant in SIMMONS_VARIANTS if _variant != VARIANT_AUTO),
     ADJUSTABLE_LUMBAR_VARIANT_OKIN,
     ADJUSTABLE_LUMBAR_VARIANT_STAR,
+    *dict.fromkeys(
+        variant
+        for variants in RICHMAT_MH_VARIANTS_BY_APP.values()
+        for variant in variants
+        if variant != VARIANT_AUTO
+    ),
 ]
 
 # Protocols whose setup requests OS-level BLE pairing. This policy alone does
@@ -2612,6 +2670,8 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_ZSERIES_Z280,
         BED_TYPE_SIMMONS,
         BED_TYPE_ADJUSTABLE_LUMBAR,
+        # VER1 angle replies feed the app's arc labels, not the shared angle axes.
+        *RICHMAT_MH_BED_TYPES,
         BED_TYPE_CUSTOMATIC_CLARITY,
         BED_TYPE_CUSTOMATIC_JEROMES,
         BED_TYPE_CUSTOMATIC_REMEDY,
@@ -2831,6 +2891,9 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_ZSERIES_Z280: (10, 100),
     BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
     BED_TYPE_ADJUSTABLE_LUMBAR: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement
+    # Richmat MH apps: KEEP repeats at each control's own interval (100 ms for
+    # every motor); the count bounds an HA hold.
+    **dict.fromkeys(RICHMAT_MH_APPS, (10, 100)),
     # Malouf New OKIN (Nordic): 100ms delay → 10 repeats = 1.0s total
     # Source: com.malouf.bedbase / com.lucid.bedbase ANALYSIS.md
     BED_TYPE_MALOUF_NEW_OKIN: (10, 100),

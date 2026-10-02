@@ -47,6 +47,11 @@ from .const import (
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
+    BED_TYPE_RICHMAT_BEST_MATTRESS,
+    BED_TYPE_RICHMAT_BLVD_HOME,
+    BED_TYPE_RICHMAT_HARMONY,
+    BED_TYPE_RICHMAT_IDEALBED,
+    BED_TYPE_RICHMAT_REVIVE,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEPYS_BOX15,
@@ -440,6 +445,42 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
         "display": "Richmat",
         "description": "Casper, MLILY, Avocado, Jerome's, SVEN & SON, and 50+ brands",
         "variants": None,  # Single protocol, variant detected automatically
+    },
+    "richmat_apps": {
+        "display": "Richmat app profiles",
+        "description": "Revive Control, Best Mattress, Blvd Home, HARMONY and Idealbed apps",
+        "variants": [
+            {
+                "type": BED_TYPE_RICHMAT_REVIVE,
+                "label": "Revive Control app",
+                "description": "The Revive Control model catalog and pages",
+                "hint": "Choose the app shown on your phone; Richmat names are shared.",
+            },
+            {
+                "type": BED_TYPE_RICHMAT_BEST_MATTRESS,
+                "label": "Best Mattress app",
+                "description": "The Best Mattress model catalog and pages",
+                "hint": "Choose the app shown on your phone; Richmat names are shared.",
+            },
+            {
+                "type": BED_TYPE_RICHMAT_BLVD_HOME,
+                "label": "Blvd Home app",
+                "description": "The Blvd Home model catalog and pages",
+                "hint": "Choose the app shown on your phone; Richmat names are shared.",
+            },
+            {
+                "type": BED_TYPE_RICHMAT_HARMONY,
+                "label": "HARMONY app",
+                "description": "The HARMONY model catalog and pages",
+                "hint": "Choose the app shown on your phone; Richmat names are shared.",
+            },
+            {
+                "type": BED_TYPE_RICHMAT_IDEALBED,
+                "label": "Idealbed app",
+                "description": "The Idealbed model catalog and pages",
+                "hint": "Choose the app shown on your phone; Richmat names are shared.",
+            },
+        ],
     },
     "sleepys": {
         "display": "Sleepy's",
