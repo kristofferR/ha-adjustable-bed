@@ -352,7 +352,6 @@ class LimossRemoteController(BedController):
                 raise ConnectionError("Not connected")
             char = _characteristic(client)
             response = "write" in char.properties
-            self._last_write_started = asyncio.get_running_loop().time()
             self._coordinator.record_command_trace(
                 payload={"hex": packet.hex(), "length": len(packet)},
                 characteristic_uuid=char.uuid,
@@ -371,6 +370,7 @@ class LimossRemoteController(BedController):
                     if reply[1].done():
                         reply[1].result()  # Teardown can fail a reserved, not-yet-emitted query.
                     self._request_reply = reply
+                self._last_write_started = asyncio.get_running_loop().time()
                 await client.write_gatt_char(char, packet, response=response)
 
     async def write_command(
