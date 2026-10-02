@@ -1688,6 +1688,53 @@ adjustable_lumbar_hold_control:
             - left
             - right
 
+restonic_hold_control:
+  name: Hold Restonic BT control
+  description: Hold one Restonic BT Remote app control for a Keeson bed on a Restonic BT profile. Motor directions and remote A's Zero G repeat every 100 ms; the other controls are sent once. Release sends one zero frame 100 ms after the hold ends.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    control:
+      name: Control
+      description: A control on the selected remote. Back + Legs, light and ZZZ exist only on remote B.
+      required: true
+      selector:
+        select:
+          options:
+            - head_up
+            - head_down
+            - feet_up
+            - feet_down
+            - flat
+            - zero_g
+            - back_legs_up
+            - back_legs_down
+            - light
+            - zzz
+    duration:
+      name: Duration
+      description: Hold time in seconds, from 0.1 to 60.
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.1
+          unit_of_measurement: s
+    side:
+      name: Side
+      selector:
+        select:
+          options:
+            - both
+            - left
+            - right
+
 simmons_set_alarm:
   name: Set SIMMONS alarm
   description: Program or turn off alarm 1 or 2 of a SIMMONS app bed. The two enabled alarms cannot share a time or a mode.

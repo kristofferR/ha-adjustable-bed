@@ -7,6 +7,7 @@ protocol variants:
 - KSBT: Simple 6-byte commands [0x04, 0x02, ...int_to_bytes(command)]
 - KSBT04C: 7-byte with NOT-checksum [0x04, 0x02, ...int_to_bytes(command), checksum]
 - Adjustable Lite: the KSBT 6-byte frames with that app's memory, cadence and status
+- Restonic BT: the BaseI4 8-byte frames with that app's two remote styles and release
 - BaseI4: 8-byte commands with XOR checksum
 - BaseI5: Same as BaseI4 with notification support
 - Ergomotion: Same as BaseI4/I5 but with position feedback via BLE notifications
@@ -17,10 +18,11 @@ All use 32-bit command values for motor and preset operations.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
@@ -47,6 +49,8 @@ from ..const import (
     KEESON_VARIANT_KSBT_CR,
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_PURPLE,
+    KEESON_VARIANT_RESTONIC_A,
+    KEESON_VARIANT_RESTONIC_B,
     KEESON_VARIANT_SERTA,
     KEESON_VARIANT_SINO,
     KEESON_VARIANT_SLEEP_HARMONY,
@@ -55,6 +59,7 @@ from ..const import (
 from .base import (
     POSITION_UNIT_PERCENT,
     BedController,
+    ControllerButtonSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
@@ -86,6 +91,9 @@ _APP_MOTOR_PULSE_DEFAULTS: dict[str, tuple[int, int]] = {
     KEESON_VARIANT_PURPLE: (10, 100),
     # Adjustable Lite schedules held movement at 0 ms then every 300 ms.
     KEESON_VARIANT_ADJUSTABLE_LITE: (4, 300),
+    # Restonic BT schedules held controls at 0 ms then every 100 ms.
+    KEESON_VARIANT_RESTONIC_A: (10, 100),
+    KEESON_VARIANT_RESTONIC_B: (10, 100),
 }
 
 _THREE_MOTOR_BETTERLIVING_PULSES = (5, 200)
@@ -118,6 +126,24 @@ STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW = "adjustable_lite_massage_timer_raw"
 
 _SLEEP_HARMONY_BASE_I5_PREFIX = "base-i5."
 _SLEEP_HARMONY_RELEASE_DELAY_SECONDS = 0.2
+
+# Restonic BT Remote 1.2.0 (com.keeson.restonicBT). Both remote styles write the
+# Base E5 FE 16 + command_le32 + complement-checksum frame to FFE5/FFE9 only.
+# Held controls write at once and then every 100 ms; touch release cancels that
+# refresh and writes one zero frame 100 ms later. One-shot controls write once on
+# touch-down and are released the same way.
+_RESTONIC_VARIANTS = frozenset({KEESON_VARIANT_RESTONIC_A, KEESON_VARIANT_RESTONIC_B})
+_RESTONIC_REPEAT_MS = 100
+_RESTONIC_RELEASE_DELAY_SECONDS = 0.1
+RESTONIC_ZZZ_BUTTON_KEY = "restonic_zzz"
+
+
+async def _wait_unless_cancelled(event: asyncio.Event, seconds: float) -> None:
+    """Wait out the rest of a hold, returning early when STOP is requested."""
+    if seconds <= 0 or event.is_set():
+        return
+    with contextlib.suppress(TimeoutError):
+        await asyncio.wait_for(event.wait(), seconds)
 
 
 def is_ksbt03c_name(name: str | None) -> bool:
@@ -272,6 +298,32 @@ class CB1322Commands:
     PRESET_MEMORY_2 = 0x00040000
 
 
+# Restonic BT app controls: name -> (32-bit command, repeats while held).
+_RESTONIC_COMMON_CONTROLS: dict[str, tuple[int, bool]] = {
+    "head_up": (KeesonCommands.MOTOR_HEAD_UP, True),
+    "head_down": (KeesonCommands.MOTOR_HEAD_DOWN, True),
+    "feet_up": (KeesonCommands.MOTOR_FEET_UP, True),
+    "feet_down": (KeesonCommands.MOTOR_FEET_DOWN, True),
+    "flat": (KeesonCommands.PRESET_FLAT, False),
+}
+# Remote A holds Zero G like a motor key.
+RESTONIC_A_CONTROLS: dict[str, tuple[int, bool]] = {
+    **_RESTONIC_COMMON_CONTROLS,
+    "zero_g": (KeesonCommands.PRESET_ZERO_G, True),
+}
+# Remote B adds the back-up/back-down glyphs (one combined head + foot command),
+# and taps Zero G, the bulb and the ZZZ button once. The app proves neither the
+# light's on/off semantics nor what ZZZ does, so ZZZ is not mapped to anti-snore.
+RESTONIC_B_CONTROLS: dict[str, tuple[int, bool]] = {
+    **_RESTONIC_COMMON_CONTROLS,
+    "back_legs_up": (KeesonCommands.MOTOR_HEAD_UP | KeesonCommands.MOTOR_FEET_UP, True),
+    "back_legs_down": (KeesonCommands.MOTOR_HEAD_DOWN | KeesonCommands.MOTOR_FEET_DOWN, True),
+    "zero_g": (KeesonCommands.PRESET_ZERO_G, False),
+    "light": (KeesonCommands.TOGGLE_SAFETY_LIGHTS, False),
+    "zzz": (KeesonCommands.PRESET_ANTI_SNORE, False),
+}
+
+
 class KeesonController(BedController):
     """Controller for Keeson beds (including Ergomotion variant with position feedback)."""
 
@@ -312,6 +364,15 @@ class KeesonController(BedController):
             self._is_adjustable_lite
             and _ADJUSTABLE_LITE_KSBT03C_TOKEN in (resolved_device_name or "")
         )
+        self._is_restonic = variant in _RESTONIC_VARIANTS
+        self._is_restonic_b = variant == KEESON_VARIANT_RESTONIC_B
+        self._restonic_controls = (
+            RESTONIC_B_CONTROLS
+            if self._is_restonic_b
+            else RESTONIC_A_CONTROLS
+            if self._is_restonic
+            else {}
+        )
         self._is_sleep_harmony_base_i5 = self._is_sleep_harmony and (
             resolved_device_name or ""
         ).strip().lower().startswith(_SLEEP_HARMONY_BASE_I5_PREFIX)
@@ -341,6 +402,9 @@ class KeesonController(BedController):
         elif self._is_adjustable_lite:
             # The app writes only to this fixed characteristic; it has no fallback.
             self._char_uuid = KEESON_KSBT_CHAR_UUID
+        elif self._is_restonic:
+            # Restonic BT looks up only FFE5/FFE9 at write time; it has no fallback.
+            self._char_uuid = KEESON_BASE_WRITE_CHAR_UUID
         elif self._is_sleep_harmony_base_i5:
             self._char_uuid = self._detect_characteristic_uuid()
         elif self._is_purple_plus:
@@ -581,8 +645,8 @@ class KeesonController(BedController):
 
     @property
     def supports_memory_presets(self) -> bool:
-        """Return True - Keeson beds support memory presets."""
-        return True
+        """Return True unless the selected app has no memory buttons (Restonic BT)."""
+        return not self._is_restonic
 
     @property
     def memory_slot_count(self) -> int:
@@ -601,6 +665,8 @@ class KeesonController(BedController):
         """
         if self._is_json_variant:
             return 4
+        if self._is_restonic:
+            return 0
         if self._is_adjustable_lite:
             return 3
         if self._betterliving_presets or self._cb1322_presets:
@@ -647,6 +713,9 @@ class KeesonController(BedController):
         if self._variant == KEESON_VARIANT_PURPLE:
             # Plus model has massage and lighting; Premium base has neither
             return self._is_purple_plus
+        if self._is_restonic:
+            # Only remote B has the bulb button.
+            return self._is_restonic_b
         return True
 
     @property
@@ -662,6 +731,8 @@ class KeesonController(BedController):
             KEESON_VARIANT_SLEEP_HARMONY,
         }:
             return False
+        if self._is_restonic:
+            return self._is_restonic_b
         return super().supports_light_toggle_control
 
     @property
@@ -673,12 +744,12 @@ class KeesonController(BedController):
         lumbar movement. Adjustable Lite exposes only head/back and leg/foot.
         Other Keeson variants keep tilt control.
         """
-        return not self._is_ksbt03c and not self._is_adjustable_lite
+        return not self._is_ksbt03c and not self._is_adjustable_lite and not self._is_restonic
 
     @property
     def has_lumbar_support(self) -> bool:
         """Return True unless the selected app exposes no lumbar control."""
-        return not self._is_adjustable_lite
+        return not self._is_adjustable_lite and not self._is_restonic
 
     @property
     def supports_stop_all(self) -> bool:
@@ -787,17 +858,29 @@ class KeesonController(BedController):
         extra_slots = max(0, self._coordinator.motor_count - 2)
         specs.extend(optional_specs[:extra_slots])
 
+        if self._is_restonic_b:
+            # Remote B's back-up/back-down glyphs drive head and foot together.
+            specs.append(
+                MotorControlSpec(
+                    key="back_legs",
+                    translation_key="back_legs",
+                    open_fn=lambda ctrl: cast(KeesonController, ctrl).move_back_legs_up(),
+                    close_fn=lambda ctrl: cast(KeesonController, ctrl).move_back_legs_down(),
+                    stop_fn=lambda ctrl: cast(KeesonController, ctrl).move_back_legs_stop(),
+                )
+            )
+
         return tuple(specs)
 
     @property
     def stale_motor_entity_keys(self) -> frozenset[str]:
         """Clean up optional motor covers that no longer apply.
 
-        Removes the phantom tilt cover on KSBT03C beds (no tilt motor) and
-        covers left behind when the configured motor count is reduced.
-        Active keys are skipped by the cleanup.
+        Removes the phantom tilt cover on KSBT03C beds (no tilt motor),
+        covers left behind when the configured motor count is reduced, and the
+        Restonic BT remote B combined cover. Active keys are skipped by the cleanup.
         """
-        return frozenset({"tilt", "lumbar"})
+        return frozenset({"tilt", "lumbar", "back_legs"})
 
     # Adjustable Lite's KSBT03C remote has only head/leg increase/decrease and
     # one timer button; its KSBT01C remote has no massage at all.
@@ -806,37 +889,51 @@ class KeesonController(BedController):
         """Expose massage without opt-in when the app's KSBT03C remote shows it."""
         return self._is_adjustable_lite_ksbt03c
 
+    # The Restonic BT app has no massage control on either remote style.
+    @property
+    def _app_without_generic_massage(self) -> bool:
+        return self._is_adjustable_lite or self._is_restonic
+
     @property
     def supports_massage_toggle_control(self) -> bool:
-        return not self._is_adjustable_lite and super().supports_massage_toggle_control
+        return not self._app_without_generic_massage and super().supports_massage_toggle_control
 
     @property
     def supports_massage_intensity_step_control(self) -> bool:
-        return not self._is_adjustable_lite and super().supports_massage_intensity_step_control
+        return (
+            not self._app_without_generic_massage
+            and super().supports_massage_intensity_step_control
+        )
 
     @property
     def supports_head_massage_toggle_control(self) -> bool:
-        return not self._is_adjustable_lite and super().supports_head_massage_toggle_control
+        return (
+            not self._app_without_generic_massage
+            and super().supports_head_massage_toggle_control
+        )
 
     @property
     def supports_foot_massage_toggle_control(self) -> bool:
-        return not self._is_adjustable_lite and super().supports_foot_massage_toggle_control
+        return (
+            not self._app_without_generic_massage
+            and super().supports_foot_massage_toggle_control
+        )
 
     @property
     def supports_head_massage_intensity_step_control(self) -> bool:
-        if self._is_adjustable_lite:
+        if self._app_without_generic_massage:
             return self._is_adjustable_lite_ksbt03c
         return super().supports_head_massage_intensity_step_control
 
     @property
     def supports_foot_massage_intensity_step_control(self) -> bool:
-        if self._is_adjustable_lite:
+        if self._app_without_generic_massage:
             return self._is_adjustable_lite_ksbt03c
         return super().supports_foot_massage_intensity_step_control
 
     @property
     def supports_massage_mode_step_control(self) -> bool:
-        if self._is_adjustable_lite:
+        if self._app_without_generic_massage:
             return self._is_adjustable_lite_ksbt03c
         return super().supports_massage_mode_step_control
 
@@ -902,7 +999,7 @@ class KeesonController(BedController):
 
                 props = {prop.lower() for prop in getattr(char, "properties", [])}
                 if (
-                    self._is_ksbt03c or self._is_adjustable_lite
+                    self._is_ksbt03c or self._is_adjustable_lite or self._is_restonic
                 ) and "write-without-response" in props:
                     # Ergomotion Sync leaves the Android characteristic write
                     # type unchanged. Android initializes dual-mode
@@ -910,7 +1007,8 @@ class KeesonController(BedController):
                     # behavior for the identified KSBT03C profile. Waiting for
                     # an acknowledgement here stretches every 300 ms refresh by
                     # a full BLE/proxy round trip and makes motion stutter.
-                    # Adjustable Lite likewise never sets a write type.
+                    # Adjustable Lite and Restonic BT likewise never set a
+                    # write type.
                     self._write_with_response = False
                 elif "write" in props:
                     self._write_with_response = True
@@ -1386,6 +1484,13 @@ class KeesonController(BedController):
             return
 
         cancel_event = asyncio.Event()
+        if self._is_restonic:
+            # Touch-up posts one zero frame 100 ms later; the safety stop is immediate.
+            if delay:
+                await asyncio.sleep(_RESTONIC_RELEASE_DELAY_SECONDS)
+            await self.write_command(self._build_command(0), cancel_event=cancel_event)
+            return
+
         if self._variant == KEESON_VARIANT_PURPLE:
             await self.write_command(
                 _PURPLE_RELEASE_COMMAND,
@@ -1429,11 +1534,20 @@ class KeesonController(BedController):
         try:
             await self.write_command(command, repeat_count=self._single_shot_count)
         finally:
-            if self._variant in {
+            if self._is_restonic or self._variant in {
                 KEESON_VARIANT_PURPLE,
                 KEESON_VARIANT_SLEEP_HARMONY,
             }:
                 await self._release_motion()
+
+    async def _write_held(self, command: bytes, repeat_count: int, repeat_delay_ms: int) -> None:
+        """Refresh a held control, then perform the profile-specific release."""
+        try:
+            await self.write_command(
+                command, repeat_count=repeat_count, repeat_delay_ms=repeat_delay_ms
+            )
+        finally:
+            await self._release_motion()
 
     async def _write_json_motion_command(
         self,
@@ -1512,6 +1626,25 @@ class KeesonController(BedController):
         """Stop feet motor."""
         await self._move_motor("feet", None)
 
+    async def move_back_legs_up(self) -> None:
+        """Restonic BT remote B back-up glyph: head and foot up together (0x05)."""
+        await self._move_back_legs(True)
+
+    async def move_back_legs_down(self) -> None:
+        """Restonic BT remote B back-down glyph: head and foot down together (0x0A)."""
+        await self._move_back_legs(False)
+
+    async def move_back_legs_stop(self) -> None:
+        """Release the combined Restonic BT remote B movement."""
+        await self._move_back_legs(None)
+
+    async def _move_back_legs(self, direction: bool | None) -> None:
+        if not self._is_restonic_b:
+            raise NotImplementedError("Combined head and foot movement needs Restonic BT remote B")
+        # The combined literal is exactly the head bit OR the foot bit.
+        self._motor_state["feet"] = direction
+        await self._move_motor("head", direction)
+
     async def stop_all(self) -> None:
         """Stop all motors."""
         self._motor_state = {}
@@ -1567,6 +1700,9 @@ class KeesonController(BedController):
         - Purple Premium Plus: Memory 1 (0x00010000), Memory 2 (0x00002000),
           Memory 3 (0x00004000)
         """
+        if self._is_restonic:
+            raise NotImplementedError("The Restonic BT app has no memory presets")
+
         if self._betterliving_presets:
             commands = {
                 1: BetterLivingCommands.PRESET_MEMORY_1,
@@ -1767,7 +1903,16 @@ class KeesonController(BedController):
         )
 
     async def preset_zero_g(self) -> None:
-        """Go to zero gravity position."""
+        """Go to zero gravity position.
+
+        Restonic BT remote A refreshes Zero G while held, so a press holds it for
+        the configured pulse count; remote B taps it once.
+        """
+        if self._variant == KEESON_VARIANT_RESTONIC_A:
+            await self._write_held(
+                self._build_command(KeesonCommands.PRESET_ZERO_G), *self.motor_pulse_settings()
+            )
+            return
         if self._betterliving_presets:
             await self._write_single_shot(self._build_command(BetterLivingCommands.PRESET_ZERO_G))
         else:
@@ -1787,7 +1932,11 @@ class KeesonController(BedController):
 
     async def preset_tv(self) -> None:
         """Go to TV position (KSBT/Ergomotion only)."""
-        if self._variant in ["base", KEESON_VARIANT_PURPLE, KEESON_VARIANT_ADJUSTABLE_LITE]:
+        if self._is_restonic or self._variant in [
+            "base",
+            KEESON_VARIANT_PURPLE,
+            KEESON_VARIANT_ADJUSTABLE_LITE,
+        ]:
             _LOGGER.warning("TV preset is not available on %s beds", self._variant)
             return
         await self._write_single_shot(self._build_command(KeesonCommands.PRESET_TV))
@@ -1841,6 +1990,8 @@ class KeesonController(BedController):
 
     async def lights_toggle(self) -> None:
         """Toggle safety lights."""
+        if self._is_restonic and not self._is_restonic_b:
+            raise NotImplementedError("Restonic BT remote A has no light button")
         if self._variant in {
             KEESON_VARIANT_KSBT04C,
             KEESON_VARIANT_SLEEP_HARMONY,
@@ -1857,6 +2008,63 @@ class KeesonController(BedController):
             await self._write_single_shot(
                 self._build_command(KeesonCommands.TOGGLE_SAFETY_LIGHTS)
             )
+
+    # Restonic BT app controls
+    @property
+    def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        """Remote B's ZZZ button, labelled as the app labels it."""
+        if not self._is_restonic_b:
+            return ()
+        return (
+            ControllerButtonSpec(
+                key=RESTONIC_ZZZ_BUTTON_KEY,
+                name="ZZZ",
+                translation_key=RESTONIC_ZZZ_BUTTON_KEY,
+                press_fn=lambda ctrl: cast(KeesonController, ctrl).restonic_zzz(),
+                icon="mdi:sleep",
+            ),
+        )
+
+    async def restonic_zzz(self) -> None:
+        """Tap remote B's ZZZ button (0x8000); its physical effect is unproven."""
+        if not self._is_restonic_b:
+            raise NotImplementedError("Only Restonic BT remote B has the ZZZ button")
+        await self._write_single_shot(self._build_command(RESTONIC_B_CONTROLS["zzz"][0]))
+
+    @property
+    def held_control_options(self) -> tuple[str, ...]:
+        """Every control on the selected Restonic BT remote can be held."""
+        return tuple(self._restonic_controls)
+
+    async def hold_control(self, control: str, duration_ms: int) -> None:
+        """Hold one Restonic BT control, then release it as the app's touch-up does.
+
+        Repeating controls write at once and every 100 ms while held; one-shot
+        controls write once on touch-down. Release writes one zero frame 100 ms
+        after the hold ends.
+        """
+        try:
+            value, repeats = self._restonic_controls[control]
+        except KeyError as err:
+            raise ValueError(f"Unsupported Restonic BT control: {control}") from err
+        if isinstance(duration_ms, bool) or not 100 <= duration_ms <= 60000:
+            raise ValueError("Hold duration must be 100..60000 milliseconds")
+        cancel_event = self._coordinator.cancel_command
+        if cancel_event.is_set():
+            return
+        writes = -(-duration_ms // _RESTONIC_REPEAT_MS) if repeats else 1
+        try:
+            await self.write_command(
+                self._build_command(value),
+                repeat_count=writes,
+                repeat_delay_ms=_RESTONIC_REPEAT_MS,
+                cancel_event=cancel_event,
+            )
+            await _wait_unless_cancelled(
+                cancel_event, (duration_ms - (writes - 1) * _RESTONIC_REPEAT_MS) / 1000
+            )
+        finally:
+            await self._release_motion()
 
     # Massage methods
     async def massage_toggle(self) -> None:

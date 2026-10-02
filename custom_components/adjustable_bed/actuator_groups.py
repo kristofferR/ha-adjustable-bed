@@ -68,6 +68,8 @@ from .const import (
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_PURPLE,
+    KEESON_VARIANT_RESTONIC_A,
+    KEESON_VARIANT_RESTONIC_B,
     KEESON_VARIANT_SERTA,
 )
 
@@ -200,6 +202,20 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "label": "Adjustable Lite app",
                 "description": "KSBT01C and KSBT03C remotes from the Adjustable Lite app",
                 "hint": "Choose this if you control the bed with the Adjustable Lite app",
+            },
+            {
+                "type": BED_TYPE_KEESON,
+                "variant": KEESON_VARIANT_RESTONIC_A,
+                "label": "Restonic BT app, remote A",
+                "description": "Head, foot, Flat and Zero G (6 buttons)",
+                "hint": "Choose this if the Restonic BT Remote app is set to remote style A",
+            },
+            {
+                "type": BED_TYPE_KEESON,
+                "variant": KEESON_VARIANT_RESTONIC_B,
+                "label": "Restonic BT app, remote B",
+                "description": "Adds Back + Legs, light and ZZZ buttons (10 buttons)",
+                "hint": "Choose this if the Restonic BT Remote app is set to remote style B",
             },
             {
                 "type": BED_TYPE_KEESON,

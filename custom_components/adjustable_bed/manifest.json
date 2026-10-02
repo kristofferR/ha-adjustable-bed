@@ -193,6 +193,14 @@
       "connectable": true
     },
     {
+      "local_name": "base-i4*",
+      "connectable": true
+    },
+    {
+      "local_name": "base-i5*",
+      "connectable": true
+    },
+    {
       "local_name": "KSBT01C*",
       "connectable": true
     },
