@@ -579,6 +579,8 @@ async def handle_goto_preset(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
+    await _preflight_live_limoss_remote(targets, lambda ctrl: ctrl.validate_memory_recall(preset))
+
     # Phase 1: validate the preset on EVERY targeted side before moving any
     # bed, so a multi-target call never half-executes.
     preflighted: PreflightedSides = []
@@ -642,6 +644,12 @@ async def handle_save_preset(call: ServiceCall) -> None:
     targets, missing = _resolve_sided_targets(hass, device_ids, explicit_side)
     if missing:
         raise _missing_device_error(missing[0])
+
+    def validate_remote_slot(controller: LimossRemoteController | SideBoundController) -> None:
+        if not controller.supports_memory_programming or not 1 <= preset <= controller.memory_slot_count:
+            raise ValueError("The fresh Limoss Remote profile cannot program this memory slot")
+
+    await _preflight_live_limoss_remote(targets, validate_remote_slot)
 
     # Phase 1: validate that every targeted side can program this slot before
     # programming any, so a multi-target call never half-executes.
@@ -1908,7 +1916,14 @@ def _limoss_boolean(value: object) -> bool:
 
 async def handle_limoss_remote_hold_control(call: ServiceCall) -> None:
     """Hold a rendered literal app action using its five-frame release."""
-    await _handle_customatic_hold(call, call.data[ATTR_CONTROL], {BED_TYPE_LIMOSS_REMOTE}, label="Limoss Remote")
+    control = call.data[ATTR_CONTROL]
+    duration = int(_leggett_hold_seconds(call.data[ATTR_DURATION]) * 1000)
+
+    def validate(controller: LimossRemoteController | SideBoundController) -> None:
+        if control not in controller.held_control_options:
+            raise ValueError(f"The selected profile does not support combination '{control}'")
+
+    await _execute_limoss_remote(call, validate, lambda ctrl: ctrl.hold_control(control, duration))
 
 
 def _limoss_remote_controller(controller: BedController | SideBoundController) -> LimossRemoteController | SideBoundController:
@@ -1920,6 +1935,49 @@ def _limoss_remote_controller(controller: BedController | SideBoundController) -
     if isinstance(controller, SideBoundController) and isinstance(controller._controller, LimossRemoteController):
         return controller
     raise ServiceValidationError("This action requires the explicit Limoss Remote profile")
+
+
+async def _preflight_live_limoss_remote(
+    targets: list[tuple[BedTarget, str]],
+    validate: Callable[[LimossRemoteController | SideBoundController], object],
+) -> None:
+    """Require each receiver's completed live startup before selected movement.
+
+    Cached layouts remain useful offline, but do not establish a new receiver
+    session. Paired routing releases each sequential validation link normally.
+    """
+    for coordinator, side in targets:
+        for target in _command_targets(coordinator, side):
+            if target.bed_type != BED_TYPE_LIMOSS_REMOTE:
+                continue
+            refreshed: list[LimossRemoteController | SideBoundController] = []
+
+            async def query(controller: BedController) -> LimossRemoteController | SideBoundController:
+                selected = _limoss_remote_controller(controller)
+                await selected.start_notify()
+                return selected
+
+            async def inspect(
+                child: BedChild,
+                results: list[LimossRemoteController | SideBoundController] = refreshed,
+            ) -> None:
+                selected = await child.async_execute_controller_query(query, cancel_running=False)
+                if selected is not None:
+                    results.append(selected)
+
+            if isinstance(coordinator, PairedBedCoordinator):
+                child_side = next(key for key, child in coordinator.children.items() if child is target)
+                await coordinator.async_run_child_operation(
+                    "Limoss Remote preflight", inspect, side=child_side, cancel_running=False,
+                )
+            else:
+                await inspect(target)
+            if not refreshed:
+                raise ServiceValidationError("Limoss Remote capability preflight was interrupted")
+            try:
+                validate(refreshed[0])
+            except ValueError as error:
+                raise ServiceValidationError(str(error)) from error
 
 
 async def _execute_limoss_remote(
@@ -1935,12 +1993,28 @@ async def _execute_limoss_remote(
             validate(_limoss_remote_controller(controller))
         except ValueError as error:
             raise ServiceValidationError(str(error)) from error
+    await _preflight_live_limoss_remote(targets, validate)
     preflighted = await _preflight_capability(targets, "requires_notification_channel", "Limoss Remote", check)
+    completed = 0
+
     async def run(controller: BedController | SideBoundController) -> None:
-        await execute(_limoss_remote_controller(controller))
+        from .beds.base import SideBoundController
+
+        nonlocal completed
+        selected = _limoss_remote_controller(controller)
+        check(selected)
+        await execute(selected)
+        physical = selected._controller if isinstance(selected, SideBoundController) else selected
+        if physical._coordinator.cancel_command.is_set():
+            raise asyncio.CancelledError
+        completed += 1
+
     try:
         for coordinator, side in targets:
+            before = completed
             await _execute_sided(coordinator, side, run, cancel_running=True)
+            if completed - before != len(_command_targets(coordinator, side)):
+                raise ServiceValidationError("Limoss Remote action was interrupted before completion")
     except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
         raise

@@ -45,6 +45,22 @@ async def live_controller(coordinator):
     assert isinstance(controller, LimossRemoteController)
     controller._sleep = AsyncMock()  # Literal wire frames, not host wall-clock pacing.
     coordinator.cache_capability_controller()
+    client = coordinator.client
+
+    def startup(char, packet, **kwargs):
+        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        assert controller.capabilities is not None
+        caps = controller.capabilities
+        payload = {
+            2: bytes((2, caps.key_count, caps.system, caps.vibration, caps.memory_count)),
+            0: bytes.fromhex("0001020304"), 1: bytes.fromhex("0101020304"),
+        }[opcode]
+        client.start_notify.call_args.args[1](char, bytearray(format_command(payload, 0)))
+
+    client.write_gatt_char.side_effect = startup
+    await coordinator.async_start_notify()
+    client.write_gatt_char.side_effect = None
+    client.write_gatt_char.reset_mock()
     return controller
 
 

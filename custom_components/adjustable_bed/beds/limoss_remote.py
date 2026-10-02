@@ -160,6 +160,8 @@ class LimossRemoteController(BedController):
         self._notify_client: BleakClient | None = None
         self._notify_char: BleakGATTCharacteristic | None = None
         self._notify_generation = 0
+        self._notify_ready: asyncio.Future[None] | None = None
+        self._notify_startup_done: asyncio.Future[None] | None = None
         self._request_reply: tuple[int, asyncio.Future[bytes]] | None = None
         self._request_active: asyncio.Future[bytes] | None = None
         self._progress: dict[str, object] | None = None
@@ -404,9 +406,39 @@ class LimossRemoteController(BedController):
             and self._notify_client is not None
             and self._notify_client.is_connected
             and self._notify_char is not None
+            and _characteristic(self._notify_client) is self._notify_char
+            and self._notify_ready is not None
         ):
+            # Notification admission precedes fresh capability completion.
+            # A cancelled waiter cannot cancel the shared startup generation.
+            ready, client, char, generation = (
+                self._notify_ready, self._notify_client, self._notify_char, self._notify_generation
+            )
+            await asyncio.shield(ready)
+            if (
+                self._notify_ready is not ready
+                or self._notify_generation != generation
+                or self.client is not client
+                or not client.is_connected
+                or self._notify_client is not client
+                or self._notify_char is not char
+                or _characteristic(client) is not char
+            ):
+                raise ConnectionError("App startup notification owner changed")
+            if self._coordinator.cancel_command.is_set():
+                raise asyncio.CancelledError
             return
         await self.stop_notify()
+        draining = self._notify_startup_done
+        if draining is not None and not draining.done():
+            # Retiring a subscription wakes its waiters immediately, but its
+            # ATT/request cleanup must finish before a new info transaction.
+            await asyncio.shield(draining)
+            await self.start_notify(callback)
+            return
+        if self._notify_ready is not None:
+            await self.start_notify(callback)
+            return
         client = self.client
         if client is None or not client.is_connected:
             raise ConnectionError("Not connected")
@@ -414,6 +446,11 @@ class LimossRemoteController(BedController):
         self._parser.clear()
         self._notify_client, self._notify_char = client, char
         generation = self._notify_generation
+        ready: asyncio.Future[None] = asyncio.get_running_loop().create_future()
+        self._notify_ready = ready
+        drained: asyncio.Future[None] = asyncio.get_running_loop().create_future()
+        self._notify_startup_done = drained
+        ready.add_done_callback(lambda result: None if result.cancelled() else result.exception())
 
         def notification(sender: BleakGATTCharacteristic, raw: bytearray) -> None:
             if (
@@ -436,8 +473,28 @@ class LimossRemoteController(BedController):
         try:
             await client.start_notify(char, notification)
             await self.refresh_device_info(allow_incomplete_versions=True)
-        except BaseException:
-            cleanup = asyncio.create_task(self.stop_notify())
+            if (
+                self._notify_generation != generation
+                or self._notify_ready is not ready
+                or self.client is not client
+                or not client.is_connected
+                or self._notify_client is not client
+                or self._notify_char is not char
+                or _characteristic(client) is not char
+            ):
+                raise ConnectionError("App startup notification owner changed")
+            if self._coordinator.cancel_command.is_set():
+                raise asyncio.CancelledError
+            ready.set_result(None)
+        except BaseException as error:
+            if not ready.done():
+                ready.set_exception(error)
+
+            async def cleanup_owner() -> None:
+                if self._notify_ready is ready and self._notify_client is client:
+                    await self.stop_notify()
+
+            cleanup = asyncio.create_task(cleanup_owner())
             while not cleanup.done():
                 try:
                     await asyncio.shield(cleanup)
@@ -450,6 +507,10 @@ class LimossRemoteController(BedController):
             except Exception:
                 _LOGGER.debug("Notification cleanup failed after startup error", exc_info=True)
             raise
+        finally:
+            drained.set_result(None)
+            if self._notify_startup_done is drained:
+                self._notify_startup_done = None
 
     def _invalidate_notification_channel(
         self,
@@ -457,6 +518,9 @@ class LimossRemoteController(BedController):
         client, char = self._notify_client, self._notify_char
         self._notify_generation += 1
         self._notify_client, self._notify_char = None, None
+        ready, self._notify_ready = self._notify_ready, None
+        if ready is not None and not ready.done():
+            ready.set_exception(ConnectionError("App notification startup stopped"))
         self._parser.clear()
         pending = self._request_active or (self._request_reply[1] if self._request_reply else None)
         if pending is not None and not pending.done():
