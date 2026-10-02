@@ -53,7 +53,7 @@ async def test_public_direct_intensity_then_hold_keeps_inward_step_or_reverses_o
     coordinator, controller = runtime
     controller.session.light_step = step
     number = next(n for n in _number_entities_for(hass, coordinator)
-                  if getattr(n, '_spec', None) and n._spec.key == 'svane_intensity')
+                  if n.entity_description.key == 'light_level')
     await number.async_set_native_value(initial)
     controller.client.write_gatt_char.reset_mock()
     virtual_hold(monkeypatch, controller)

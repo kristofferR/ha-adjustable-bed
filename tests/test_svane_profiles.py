@@ -152,14 +152,24 @@ async def test_options_explicit_jmc_persists_and_clears_changed_app_session(hass
     assert not get_svane_session(hass, entry.data[CONF_ADDRESS], "multi").light_on
 
 
-@pytest.mark.parametrize("name", ["svane bed", "Svane Bed extra", "SVANE BED", "JMC400", "jmc400"])
-def test_shared_or_nonexact_name_does_not_silently_select_svane_app(name):
+@pytest.mark.parametrize(
+    ("name", "is_svane"),
+    [
+        ("svane bed", True),
+        ("Svane Bed extra", True),
+        ("SVANE BED", True),
+        ("JMC400", False),
+        ("jmc400", False),
+    ],
+)
+def test_established_name_match_is_kept_and_jmc_stays_jensen(name, is_svane):
+    """Renamed Svane beds keep detecting as before; JMC400 remains Jensen."""
     info = MagicMock()
     info.name = name
     info.service_uuids = []
     info.manufacturer_data = {}
     info.address = "AA:BB:CC:DD:EE:FF"
-    assert detect_bed_type(info) != BED_TYPE_SVANE
+    assert (detect_bed_type(info) == BED_TYPE_SVANE) is is_svane
 
 
 async def test_native_entities_expose_literals_raw_records_and_unknown_assumed_lamp(hass):
@@ -172,24 +182,19 @@ async def test_native_entities_expose_literals_raw_records_and_unknown_assumed_l
 
     runtime.async_execute_controller_command = AsyncMock(side_effect=dispatch)
     buttons = _button_entities_for(hass, runtime)
-    literal = next(
-        b for b in buttons if getattr(b, "_spec", None) and b._spec.key == "svane_position"
-    )
-    assert literal.translation_key == "remote_action"
-    assert not any("zero_g" in b.unique_id or "flat" in b.unique_id for b in buttons)
+    # The app's Svane position keeps the preset_zero_g ID existing entries use.
+    literal = next(b for b in buttons if "preset_zero_g" in b.unique_id)
+    assert not any("svane_position" in b.unique_id or "flat" in b.unique_id for b in buttons)
     await literal.async_press()
     assert written(controller)[0][2] == "0300"
     covers = _cover_entities_for(hass, runtime)
     assert {c.unique_id for c in covers} == {"bed_back_left", "bed_legs_left"}
     numbers = _number_entities_for(hass, runtime)
+    # The established 0-100 light slider stays; levels snap to the app's steps.
     intensity = next(
-        n for n in numbers if getattr(n, "_spec", None) and n._spec.key == "svane_intensity"
+        n for n in numbers if n.entity_description.key == "light_level"
     )
-    assert (
-        intensity.native_min_value == 5
-        and intensity.native_max_value == 100
-        and intensity.native_step == 5
-    )
+    assert (intensity.native_min_value, intensity.native_max_value) == (0, 100)
     assert not any("position" in n.unique_id for n in numbers)
     assert _light_entities_for(hass, runtime) == []
     lamp = next(
