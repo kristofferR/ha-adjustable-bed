@@ -156,7 +156,9 @@ from .const import (
     KEESON_SINO_NAME_PATTERNS,
     # Variants and UUIDs
     KEESON_VARIANT_ADJUSTABLE_LITE,
+    KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_ERGOMOTION,
+    KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_JSON,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_KSBT04C,
@@ -1231,6 +1233,14 @@ async def create_controller(
                 variant=KEESON_VARIANT_ADJUSTABLE_LITE,
                 device_name=device_name,
             )
+        elif keeson_variant in (KEESON_VARIANT_BEDSENSE_BASES, KEESON_VARIANT_INNOVA):
+            _LOGGER.debug("Using explicit ORE SFM app profile %s", keeson_variant)
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.keeson_ore_sfm", __package__
+            )
+            from .beds.keeson_ore_sfm import OreSfmKeesonController
+
+            return OreSfmKeesonController(coordinator, variant=keeson_variant)
         elif keeson_variant == KEESON_VARIANT_ERGOMOTION:
             _LOGGER.debug("Using Ergomotion Keeson variant (with position feedback)")
             return KeesonController(coordinator, variant="ergomotion")

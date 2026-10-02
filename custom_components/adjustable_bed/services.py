@@ -136,6 +136,7 @@ SERVICE_JIECANG_SET_ALARM = "jiecang_set_alarm"
 SERVICE_JIECANG_WAKE = "jiecang_wake"
 SERVICE_JIECANG_STOP_WAKE = "jiecang_stop_wake"
 SERVICE_JIECANG_RENAME = "jiecang_rename"
+SERVICE_INNOVA_RENAME = "innova_rename"
 SERVICE_MALOUF_SET_ALARM = "malouf_set_alarm"
 SERVICE_MALOUF_SYNC_CLOCK = "malouf_sync_clock"
 
@@ -2838,6 +2839,44 @@ async def handle_logicdata_rename(call: ServiceCall) -> None:
         raise
 
 
+async def handle_innova_rename(call: ServiceCall) -> None:
+    """Rename beds using the INNOVA app profile with its EF 02 frame."""
+    targets, missing = _resolve_sided_targets(
+        call.hass,
+        call.data[CONF_DEVICE_ID],
+        call.data.get(ATTR_SIDE),
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    for coordinator, side in targets:
+        for target in _command_targets(coordinator, side):
+            if target.bed_type != BED_TYPE_KEESON:
+                raise ServiceValidationError(
+                    f"Device '{target.name}' does not use the INNOVA app profile"
+                )
+    name = call.data[ATTR_NAME]
+
+    def validate(controller: BedController | SideBoundController) -> None:
+        # Reject the name before any target writes.
+        controller.validate_device_rename(name)
+
+    preflighted = await _preflight_capability(
+        targets, "supports_device_rename", "INNOVA device rename", validate
+    )
+
+    async def rename(controller: BedController | SideBoundController) -> None:
+        await controller.rename_device(name)
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(
+                coordinator, side, rename, cancel_running=False, resource="configuration"
+            )
+    except (Exception, asyncio.CancelledError):
+        await _release_preflighted(preflighted)
+        raise
+
+
 def _preset_hold_duration_seconds(value: object) -> Decimal:
     """Accept bounded seconds that convert exactly to whole milliseconds."""
     try:
@@ -3803,6 +3842,19 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 vol.Optional(ATTR_FOOT_LEVEL, default=0): vol.All(
                     vol.Coerce(int), vol.Range(min=0, max=3)
                 ),
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_INNOVA_RENAME,
+        handle_innova_rename,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                # The controller applies the app's trim and 14-unit rule.
+                vol.Required(ATTR_NAME): cv.string,
                 **SIDE_FIELD,
             }
         ),

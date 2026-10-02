@@ -2330,6 +2330,18 @@
       "lumbar_both": {
         "name": "Both sides: Lumbar"
       },
+      "waist": {
+        "name": "Waist"
+      },
+      "waist_left": {
+        "name": "Left: Waist"
+      },
+      "waist_right": {
+        "name": "Right: Waist"
+      },
+      "waist_both": {
+        "name": "Both sides: Waist"
+      },
       "pillow_left": {
         "name": "Left: Pillow"
       },
@@ -4691,6 +4703,9 @@
       "adjustable_lite_massage_timer": {
         "name": "Massage timer"
       },
+      "innova_massage_timer": {
+        "name": "Massage timer"
+      },
       "fsm_relax_key_count": {
         "name": "FSM Relax key count"
       },
@@ -5462,6 +5477,9 @@
         "name": "Firmware read ok"
       },
       "adjustable_lite_light": {
+        "name": "Light"
+      },
+      "innova_light": {
         "name": "Light"
       },
       "richmat_mh_smart_set_lock": {
@@ -6435,6 +6453,23 @@
         "name": {
           "name": "Name",
           "description": "New Bluetooth name, using 1 to 20 ASCII letters or digits."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "innova_rename": {
+      "name": "Rename INNOVA bed",
+      "description": "Change the Bluetooth name of a bed using the INNOVA app profile.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A bed using the INNOVA app profile."
+        },
+        "name": {
+          "name": "Name",
+          "description": "New Bluetooth name, 1 to 14 characters after trimming spaces."
         },
         "side": {
           "name": "Side"

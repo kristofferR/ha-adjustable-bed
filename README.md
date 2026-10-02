@@ -94,6 +94,7 @@ The entries below identify motor/actuator manufacturers or supported app profile
 | ✅ [Linak](docs/beds/linak.md) | Tempur-Pedic, Bedre Nætter, Jensen |
 | ✅ [Keeson](docs/beds/keeson.md) | Ergomotion, Tempur, Beautyrest, King Koil, Member's Mark, Purple, GhostBed, ErgoSportive |
 | 🧪 [Adjustable Lite app profile](docs/beds/keeson.md#adjustable-lite-profile) | Explicit Keeson profile for the KSBT01C and KSBT03C remotes; artifact-verified, hardware unverified |
+| 🧪 [Bedsense Bases and INNOVA app profiles](docs/beds/keeson.md#bedsense-bases-and-innova-profiles) | Explicit Keeson profiles for the ORE SFM apps' 2M/3M/4M layouts; artifact-verified, hardware unverified |
 | ✅ [Richmat](docs/beds/richmat.md) | Casper, MLILY, Sven & Son, Avocado, Luuna, Jerome's |
 | 🧪 [RMControl product profiles](docs/beds/rmcontrol.md) | Explicit Richmat RMControl 21.3.7 product catalogs; hardware unverified |
 | 🧪 [Richmat app profiles](docs/beds/richmat-mh.md) | Explicit Revive Control, Best Mattress, Blvd Home, HARMONY and Idealbed model catalogs; hardware unverified |

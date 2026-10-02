@@ -57,6 +57,8 @@ for all 128 exclusions and exact accepted evidence.
 | ✅ | Juna Sleep | `com.keeson.junasleep` |
 | ✅ | [Purple Smart Base](https://play.google.com/store/apps/details?id=com.keeson.purpleBase) | `com.keeson.purpleBase` |
 | ✅ | [Adjustable Lite](https://play.google.com/store/apps/details?id=com.keeson.adjustablelite) | `com.keeson.adjustablelite` |
+| ✅ | [Bedsense Bases](https://play.google.com/store/apps/details?id=com.ore.sfmc2bedsence) | `com.ore.sfmc2bedsence` |
+| ✅ | INNOVA | `com.ore.sfm` |
 
 ## Features
 
@@ -266,7 +268,80 @@ The app does not decode whether the light button toggles, how the timer
 button cycles, massage level limits, or the unit of the raw timer value. Those
 remain to be confirmed on hardware.
 
-### Sino Variant (Dynasty, INNOVA, BetterLiving)
+### Bedsense Bases and INNOVA Profiles
+
+**Validation status:** clean-room analysis of Bedsense Bases 1.1 (3)
+(`com.ore.sfmc2bedsence`) and INNOVA 2.0 (3) (`com.ore.sfm`) is complete;
+hardware is unverified. See the
+[cluster disposition](../apk-analysis/dispositions/row059-ore-bedsense-innova.md).
+
+Select `bedsense_bases` (`Bedsense Bases app`) or `innova` (`INNOVA app`) as
+the protocol variant. Neither app filters its scan by name or service, so Auto
+never chooses them. Set the motor count to the layout picked in the app: 2
+(2M), 3 (3M) or 4 (4M).
+
+Both apps write `E5 FE 16 k0 k1 k2 k3 checksum` to `0000ffe9`, with the
+complemented byte sum as the checksum, and require `0000ffe4` to exist.
+Bedsense puts the 32-bit key in big-endian order and INNOVA in little-endian
+order. Neither app sets a write type, so the integration writes without
+response when the characteristic offers it, as Android does. Held controls
+write at 0 ms and every 100 ms; release cancels the refresh and sends the
+zero key `E5 FE 16 00 00 00 00 06` 100 ms later. One-shot controls also sleep
+100 ms before their write. The **Stop** button sends the zero key.
+
+| Control | Bedsense Bases key | INNOVA key | Exposed as |
+|---------|--------------------|------------|------------|
+| Back up / down | `0x00000001` / `0x00000002` | same | Back cover |
+| Legs up / down | `0x00000004` / `0x00000008` | same | Legs cover |
+| 2M combined up / down | `0x00000010` / `0x00000020` | `0x00000005` / `0x0000000A` | Back + Legs cover |
+| 3M third motor | head `0x00000010` / `0x00000020` | lumbar `0x00000040` / `0x00000080` | Head or Lumbar cover |
+| 4M waist | `0x00000010` / `0x00000020` | same | Waist cover |
+| 4M lumbar | `0x00000040` / `0x00000080` | same | Lumbar cover |
+| Zero G | `0x01000001` | `0x00001000` | Zero G button |
+| Flat | `0x01000002` | `0x08000000` | Flat button |
+| Memory A / B | `0x01000008` / `0x01000009` (one write) | `0x00002000` / `0x00004000` (held, then zero key) | Memory 1 / 2 |
+| Program Zero G / Flat | `0x20000001` / `0x20000002` | none | Program Zero G / Program Flat buttons |
+| Program Memory A / B | `0x20000008` / `0x20000009` | none | Save Memory 1 / 2 |
+| Light | on `0x31000001`, off `0x31000000` | toggle `0x00020000` | Light switch (Bedsense) or toggle (INNOVA) |
+
+**Bedsense massage** uses absolute levels. The app's 0-39 sliders send
+`floor(progress / 10)`, so each zone has levels 0-3: wave `0x10000020 + n`,
+head `0x10000010 + n` and foot `0x11000010 + n`. **Massage start** sends the
+current wave, head and foot levels in that order (the app defaults to level
+1). Massage off sends head and foot level 0. The timer select sends
+`0x10000030`, `0x10000031` or `0x10000032` for 10, 20 or 30 minutes; the app
+has no timer-off command. The app replies are 9-byte notifications whose bits
+it discards, so Bedsense neither subscribes nor reports state.
+
+**INNOVA massage** is relative: head `+0x00000800` / `-0x00800000`, foot
+`+0x00000400` / `-0x01000000`, **Massage level** `0x00000100` and
+**Massage: Timer** `0x00000200`. The memory page streams the same timer key
+while held, exposed as **Massage timer (memory page)**. INNOVA has no memory
+programming, so Memory A/B are held recall buttons; a press holds them for
+the configured motor pulse burst. The `innova_rename` action writes the
+app's 18-byte `EF 02` name frame (1-14 characters after trimming).
+
+INNOVA subscribes to `0000ffe4`. Only 16- and 19-byte notifications are read,
+without header or checksum checks:
+
+| Length | Flag byte | Timer byte |
+|--------|-----------|------------|
+| 16 | 13 | 14 |
+| 19 | 14 | 15 |
+
+Flag bit 5 (`0x20`) suppresses the update and bit 6 (`0x40`) is the lamp icon,
+shown as the **Light** binary sensor. The signed timer byte `-1` clears the
+**Massage timer** sensor and `1`/`2`/`3` show 10/20/30 minutes; other values
+leave it unchanged. Both states clear when the connection ends. The app shows
+the lamp only on its light page and the timer only on its other pages; Home
+Assistant shows both.
+
+Hardware still needs to confirm the physical actuator behind each key
+(INNOVA's 3M third motor uses lumbar IDs beside head artwork), the save
+behavior, whether held INNOVA memory recall needs a longer hold, massage
+level limits, and the meaning of the lamp bit.
+
+### Sino Variant (Dynasty, BetterLiving)
 **Primary Service UUID:** `0000ffe5-0000-1000-8000-00805f9b34fb`
 **Format:** 8 bytes `[0xE5, 0xFE, 0x16, b4, b5, b6, b7, checksum]` (big-endian byte order)
 
@@ -353,6 +428,7 @@ app/protocol family, not to the shared 32-bit command values:
 | KSBT03CR | SomosBeds | 300ms `Timer.schedule` | 4 writes, 300ms apart |
 | Sleep Harmony (`KSBT04C` / `base-i5.`) | Sleep Harmony | 300ms handler loop | 4 writes, 300ms apart |
 | Adjustable Lite (`KSBT01C` / `KSBT03C`) | Adjustable Lite | Immediate write plus 300ms `Timer.schedule`; release only cancels the timer | 4 writes, 300ms apart, with no release packet |
+| Bedsense Bases / INNOVA | Bedsense Bases / INNOVA | Immediate write, then every 100ms; release sends the zero key 100ms later | 10 writes, 100ms apart, then the zero key |
 | Ergomotion | Ergomotion / Ergomotion 4.0 / Tempur Zero G | 100ms handler loop | 10 writes, 100ms apart |
 | Serta | Serta MP Remote | 100ms handler loop | 10 writes, 100ms apart |
 | Sino / BetterLiving OKIN | BetterLiving | 100ms on the two-motor screen, 200ms on the three-motor screen | 10 x 100ms or 5 x 200ms |
