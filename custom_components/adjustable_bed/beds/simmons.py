@@ -669,8 +669,8 @@ class SimmonsController(BedController):
         weekdays: Sequence[int],
         mode: str | None,
         confirm_custom_mode: bool,
-    ) -> tuple[int, AlarmSlot, AlarmSlot, bytes]:
-        """Return the slot index, its new display and raw records, and the frame.
+    ) -> tuple[int, AlarmSlot, bytes]:
+        """Return the slot index, its new display record and the frame.
 
         The other slot's bytes are the bed's own report from this connection,
         so an OKIN two-slot write preserves the bed's current state.
@@ -694,7 +694,7 @@ class SimmonsController(BedController):
                 else self._p1_frame(index, selected, peer)
             )
             display = replace(self._slots[index] or current, enabled=False)
-            return index, display, AlarmSlot(current.hour, current.minute, 0, 0, False), frame
+            return index, display, frame
         wire_type = alarm_type(self._protocol, mode or "")
         if peer.enabled and ((peer.hour, peer.minute) == (hour, minute) or peer.type == wire_type):
             raise ValueError(PEER_CONFLICT_ERROR)
@@ -705,12 +705,7 @@ class SimmonsController(BedController):
             if self._protocol == "smartbed"
             else self._p1_frame(index, [hour, minute, weekday, wire_type], peer)
         )
-        return (
-            index,
-            AlarmSlot(hour, minute, mask, wire_type, True),
-            AlarmSlot(hour, minute, weekday, wire_type, True),
-            frame,
-        )
+        return index, AlarmSlot(hour, minute, mask, wire_type, True), frame
 
     async def configure_simmons_alarm(
         self,
@@ -730,7 +725,7 @@ class SimmonsController(BedController):
         if not self._clock_synced:
             # Alarms fire on the bed's clock, so this session must have set it.
             await self.sync_clock()
-        index, display, raw, frame = await self._plan_alarm(
+        index, display, frame = await self._plan_alarm(
             slot, enabled, hour, minute, weekdays, mode, confirm_custom_mode
         )
         await self._configure_write(frame)
@@ -742,7 +737,9 @@ class SimmonsController(BedController):
         else:
             self._awaiting[index] = True
         self._slots[index] = display
-        self._reported[index] = raw  # What the bed now holds for this slot.
+        # Unknown until the bed reports it: a later write on this connection
+        # re-queries rather than resend an unconfirmed value.
+        self._reported[index] = None
         self._publish_slots()
         await asyncio.sleep(QUERY_GAP_S)
         await self._query_once()

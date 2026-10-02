@@ -458,6 +458,16 @@ async def test_smartbed_program_and_disable_use_per_slot_frames():
     controller = make_controller(name="SmartBed1")
     await controller.async_discover_capabilities()
     _known(controller, AlarmSlot(0, 0, 0, 0, False), AlarmSlot(0, 0, 0, 0, False))
+    replies = {
+        b"\x00\xc0": "A5 0C 0E 00 00 00 00 00 00 00",
+        b"\x00\xd0": "A5 0D 0E 00 82 04 07 1E 00 01",  # Confirms the slot 2 write.
+    }
+
+    async def reply(_char: object, data: bytes, response: bool) -> None:
+        if data in replies:
+            notify(controller, replies[data])
+
+    controller.client.write_gatt_char.side_effect = reply
     with patch("asyncio.sleep", new=AsyncMock()):
         await controller.configure_simmons_alarm(
             slot=2, enabled=True, hour=7, minute=30, weekdays=[0], mode="anti_snore"
@@ -786,3 +796,44 @@ async def test_peer_bytes_come_from_the_raw_report_not_the_display_overlay():
         written(controller)[1]
         == p1_alarm_frame([7, 30, 130, 16], [8, 45, 0x88, 28]).hex(" ").upper()
     )
+
+
+async def test_unconfirmed_write_is_requeried_before_the_next_alarm_call():
+    controller = make_controller()
+    await controller.async_discover_capabilities()
+    _known(controller, AlarmSlot(6, 0, 0, 0, False), AlarmSlot(8, 45, 132, 28, False))
+    with (
+        patch("asyncio.sleep", new=AsyncMock()),
+        patch("custom_components.adjustable_bed.beds.simmons.ALARM_REPLY_TIMEOUT_S", 0),
+    ):
+        await controller.configure_simmons_alarm(
+            slot=1, enabled=True, hour=7, minute=30, mode="flat"
+        )
+        assert controller._slots[0].enabled  # Optimistic display state.
+        # No reply confirmed the write, so the next call queries and refuses.
+        with pytest.raises(ServiceValidationError):
+            await controller.configure_simmons_alarm(slot=2, enabled=False)
+    frames = written(controller)
+    assert frames[1:] == ["E1 80 03 9B", "E1 80 03 9B"]  # Post-write query, then the re-query.
+
+
+async def test_confirming_reply_lets_the_next_call_write_without_a_query():
+    controller = make_controller()
+    await controller.async_discover_capabilities()
+    _known(controller, AlarmSlot(6, 0, 0, 0, False), AlarmSlot(8, 45, 132, 28, False))
+
+    async def reply(_char: object, data: bytes, response: bool) -> None:
+        if data == bytes.fromhex("E1 80 03 9B"):
+            notify(controller, "ED 80 03 07 1E 82 1C 08 2D 00 1C")
+
+    controller.client.write_gatt_char.side_effect = reply
+    with patch("asyncio.sleep", new=AsyncMock()):
+        await controller.configure_simmons_alarm(
+            slot=1, enabled=True, hour=7, minute=30, weekdays=[0], mode="flat"
+        )
+        await controller.configure_simmons_alarm(slot=2, enabled=False)
+    frames = written(controller)
+    assert frames[1] == "E1 80 03 9B"
+    # The confirmed record feeds the second write directly, with no extra query.
+    assert frames[2] == p1_alarm_frame([7, 30, 130, 28], [8, 45, 0, 0]).hex(" ").upper()
+    assert frames[3] == "E1 80 03 9B"
