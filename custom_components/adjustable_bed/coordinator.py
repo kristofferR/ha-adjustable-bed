@@ -2803,6 +2803,11 @@ class AdjustableBedCoordinator:
         )
 
     @property
+    def remacro_model_unseen(self) -> bool:
+        """Whether this Remacro bed's model is not known yet (nothing advertised)."""
+        return self._bed_type == BED_TYPE_REMACRO and self._remacro_model_problem()[0] == "unknown"
+
+    @property
     def remacro_model_rejected(self) -> bool:
         """Whether the selected app would refuse this Remacro bed's model."""
         return self._bed_type == BED_TYPE_REMACRO and self._remacro_model_problem()[0] in (

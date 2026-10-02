@@ -426,10 +426,14 @@ def resolve_model(
 def add_remacro_model(
     entry_data: Mapping[str, Any], manufacturer_data: Mapping[int, bytes] | None
 ) -> dict[str, Any]:
-    """Return entry data remembering an advertised, app-listed model selector."""
+    """Return entry data remembering the advertised selector.
+
+    An unmapped ID is stored too, so a restart with no advertisement history
+    keeps refusing the bed instead of treating it as merely unseen.
+    """
     updated = dict(entry_data)
     model_id = advertised_model_id(manufacturer_data)
-    if model_id in MODELS:
+    if model_id is not None:
         updated[CONF_REMACRO_MODEL] = model_id
     return updated
 

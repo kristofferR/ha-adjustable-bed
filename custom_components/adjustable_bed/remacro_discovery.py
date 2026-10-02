@@ -14,7 +14,8 @@ from homeassistant.helpers.issue_registry import (
 )
 
 from .beds.remacro_protocol import APP_LABELS, ModelProblem, app_for_variant, model_problem
-from .const import CONF_PROTOCOL_VARIANT, CONF_REMACRO_MODEL, DOMAIN
+from .const import BED_TYPE_REMACRO, CONF_PROTOCOL_VARIANT, CONF_REMACRO_MODEL, DOMAIN
+from .entity_runtime import EntityRuntime
 
 
 def remacro_manufacturer_data(
@@ -71,3 +72,12 @@ def update_remacro_model_issue(
         translation_key=f"remacro_model_{problem}",
         translation_placeholders={**placeholders, "name": name, "address": address},
     )
+
+
+def remacro_side_lacks_global_stop(runtime: EntityRuntime) -> bool:
+    """Whether a known Remacro side's screen defines no global STOP (NineActivity)."""
+    # Checked first so other bed types (and minimal test runtimes) are untouched.
+    if getattr(runtime, "bed_type", None) != BED_TYPE_REMACRO:
+        return False
+    controller = runtime.capability_controller
+    return controller is not None and not controller.supports_stop_all

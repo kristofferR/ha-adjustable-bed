@@ -38,6 +38,10 @@ The model is checked before any connection attempt:
 - On a combined bed, such a side is not connected, gets a Repairs issue and loses its
   controls; the other side loads and keeps working. If every side is refused, setup
   fails without retrying; a side that has merely not been seen yet keeps it retrying.
+  When the pair loads without an unseen side, it reloads by itself once that side
+  advertises, adding its controls.
+- An observed company ID is remembered even when no app lists it, so the bed stays
+  refused after a restart while it is out of range.
 - Setup aborts for a company ID no app lists. When the chosen app does not list the
   model, the setup form shows that as an error on the protocol variant field.
 - The options form refuses an app that does not list the stored model. Saving a fix in
@@ -152,7 +156,8 @@ model changes.
 As in the apps, pressing the preset that is already active sends `0x0001` instead.
 The Stop button sends `0x0001` and clears the active preset. NineActivity defines no
 global STOP, so it has no Stop button; stopping a cover ends the running movement
-with its own release STOP.
+with its own release STOP. A combined bed gets its combined Stop only when a side has a
+global STOP; that Stop only cancels the running movement on a NineActivity side.
 
 ## Massage
 

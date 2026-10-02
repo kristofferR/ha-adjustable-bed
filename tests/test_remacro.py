@@ -241,7 +241,9 @@ def test_model_selection_uses_lowest_company_id() -> None:
     with pytest.raises(ValueError, match="unknown"):
         protocol.resolve_model(SLUMBER, {}, True)
     assert protocol.add_remacro_model({"a": 1}, {52: b""}) == {"a": 1, CONF_REMACRO_MODEL: 52}
-    assert protocol.add_remacro_model({"a": 1}, {99: b""}) == {"a": 1}
+    # An unmapped ID is remembered too, so it stays refused without history.
+    assert protocol.add_remacro_model({"a": 1}, {99: b""}) == {"a": 1, CONF_REMACRO_MODEL: 99}
+    assert protocol.add_remacro_model({"a": 1}, {}) == {"a": 1}
 
 
 def test_bed_needs_no_pairing() -> None:
@@ -1499,4 +1501,107 @@ async def test_absorbed_split_side_keeps_its_session_across_reconnects(
         ]
         # Right head up 0x6404 and its STOP 0x6403, not the left 0x6401/0x6400.
         assert codes == ["0464", "0364"]
+        await hass.config_entries.async_unload(entry.entry_id)
+
+
+async def test_unmapped_model_stays_refused_after_a_restart_without_history(
+    hass: HomeAssistant,
+    mock_coordinator_connected,
+    mock_establish_connection,
+    enable_custom_integrations,
+) -> None:
+    from homeassistant.helpers import issue_registry as ir
+
+    address = "AA:BB:CC:DD:EE:90"
+    entry = _remacro_entry(hass, address)
+    with patch(_HISTORY, return_value=MagicMock(manufacturer_data={13: b""})):
+        assert not await hass.config_entries.async_setup(entry.entry_id)
+    assert entry.data[CONF_REMACRO_MODEL] == 13
+    # Restart with the bed out of range: no history, only the stored selector.
+    with patch(_HISTORY, return_value=None):
+        await hass.config_entries.async_reload(entry.entry_id)
+        await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.SETUP_ERROR
+    assert ir.async_get(hass).async_get_issue(DOMAIN, f"remacro_model_{address}") is not None
+    mock_establish_connection.assert_not_awaited()
+
+
+@pytest.mark.parametrize(("left_company", "stop_button"), [(52, False), (51, True)])
+async def test_paired_stop_needs_a_side_with_global_stop(
+    hass: HomeAssistant,
+    mock_coordinator_connected,
+    enable_custom_integrations,
+    left_company,
+    stop_button,
+) -> None:
+    left, right = "AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72"
+    entry, _children = _remacro_pair(hass, left_company, 52)
+    adverts = {
+        left: MagicMock(manufacturer_data={left_company: b""}),
+        right: MagicMock(manufacturer_data={52: b""}),
+    }
+    registry = er.async_get(hass)
+    with patch(_HISTORY, side_effect=lambda _hass, address, connectable: adverts[address]):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        stop = next(
+            (
+                row.entity_id
+                for row in er.async_entries_for_config_entry(registry, entry.entry_id)
+                if row.domain == "button" and row.unique_id.endswith("stop_both")
+            ),
+            None,
+        )
+        assert (stop is not None) is stop_button
+        if stop is not None:
+            children = hass.data[DOMAIN][entry.entry_id].children
+            with (
+                patch.object(children["left"], "async_stop_command", AsyncMock()) as left_stop,
+                patch.object(children["right"], "async_stop_command", AsyncMock()) as right_stop,
+                patch.object(children["right"], "request_command_cancel") as right_cancel,
+            ):
+                await hass.services.async_call(
+                    "button", "press", {"entity_id": stop}, blocking=True
+                )
+            left_stop.assert_awaited_once()
+            # The NineActivity side only has its running movement cancelled.
+            right_stop.assert_not_awaited()
+            right_cancel.assert_called_once()
+        await hass.config_entries.async_unload(entry.entry_id)
+
+
+async def test_unseen_paired_side_gets_controls_when_it_advertises(
+    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
+) -> None:
+    left, right = "AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72"
+    entry, _children = _remacro_pair(hass, None, None)
+    adverts = {left: MagicMock(manufacturer_data={50: b""}), right: None}
+    callbacks = {}
+
+    def register(_hass, seen, matcher, _mode):
+        callbacks[matcher["address"]] = seen
+
+        def unsubscribe() -> None:
+            callbacks.pop(matcher["address"], None)
+
+        return unsubscribe
+
+    registry = er.async_get(hass)
+    with (
+        patch(_HISTORY, side_effect=lambda _hass, address, connectable: adverts[address]),
+        patch("homeassistant.components.bluetooth.async_register_callback", side_effect=register),
+    ):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        assert registry.async_get_entity_id("cover", DOMAIN, f"{left}_back") is not None
+        assert registry.async_get_entity_id("cover", DOMAIN, f"{right}_back") is None
+        assert set(callbacks) == {right}
+
+        adverts[right] = MagicMock(manufacturer_data={47: b""})
+        callbacks[right](MagicMock(address=right, manufacturer_data={47: b""}), None)
+        await hass.async_block_till_done()
+
+        assert entry.state is ConfigEntryState.LOADED
+        assert registry.async_get_entity_id("cover", DOMAIN, f"{right}_back") is not None
+        assert not callbacks  # The reload no longer watches a now-known side.
         await hass.config_entries.async_unload(entry.entry_id)

@@ -13,7 +13,7 @@ from homeassistant.config_entries import (
     ConfigEntry,
 )
 from homeassistant.const import CONF_ADDRESS, Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
@@ -838,8 +838,48 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
         if child.is_connected:
             child._schedule_position_hydration()
 
+    _async_watch_unseen_remacro_sides(hass, entry, coordinator)
     _LOGGER.info("Paired bed setup complete for %s", entry.title)
     return True
+
+
+def _async_watch_unseen_remacro_sides(
+    hass: HomeAssistant, entry: ConfigEntry, coordinator: PairedBedCoordinator
+) -> None:
+    """Reload the pair once a Remacro side whose model is unknown advertises.
+
+    The pair loads half-available without that side, which has no controls
+    until its model is known; the reload then caches the model and builds them.
+    """
+    for child in coordinator.children.values():
+        if not isinstance(child, AdjustableBedCoordinator) or not child.remacro_model_unseen:
+            continue
+
+        reload_requested = False
+
+        @callback
+        def _seen(
+            service_info: bluetooth.BluetoothServiceInfoBleak,
+            _change: bluetooth.BluetoothChange,
+        ) -> None:
+            nonlocal reload_requested
+            if service_info.manufacturer_data and not reload_requested:
+                reload_requested = True
+                _LOGGER.info(
+                    "Remacro side %s advertised; reloading %s to add its controls",
+                    service_info.address,
+                    entry.title,
+                )
+                hass.config_entries.async_schedule_reload(entry.entry_id)
+
+        entry.async_on_unload(
+            bluetooth.async_register_callback(
+                hass,
+                _seen,
+                bluetooth.BluetoothCallbackMatcher(address=child.address),
+                bluetooth.BluetoothScanningMode.PASSIVE,
+            )
+        )
 
 
 async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

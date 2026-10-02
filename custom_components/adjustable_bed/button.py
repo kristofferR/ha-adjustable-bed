@@ -26,6 +26,7 @@ from .paired_coordinator import (
     SingleAddressPairedCoordinator,
     entity_runtimes,
 )
+from .remacro_discovery import remacro_side_lacks_global_stop
 
 if TYPE_CHECKING:
     from .beds.base import BedController, ControllerButtonSpec, MotorControlSpec
@@ -732,7 +733,9 @@ async def async_setup_entry(
                     runtime,
                 )
             )
-        entities.append(PairedBedStopButton(coordinator))
+        # A pair whose every side lacks a global STOP frame gets no combined Stop.
+        if not all(remacro_side_lacks_global_stop(child) for child in children):
+            entities.append(PairedBedStopButton(coordinator))
         # Combined buttons read both children's live capabilities, so pass the
         # raw children (the button itself dispatches via the parent, side=both).
         entities.extend(_combined_button_entities_for(coordinator, children))
