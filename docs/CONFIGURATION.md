@@ -353,12 +353,15 @@ retain their legacy profile unless you explicitly change it.
 | Customatic apps | Explicit Clarity, Jerome's C or Remedy bed type; fixed two, two or three motor layout | [Customatic app profiles](beds/customatic.md) |
 | FurniMove / OKIN Smart Remote app | Required exact handset ID; table-derived motors and massage, fixed 100 ms refresh | [FurniMove](beds/furnimove.md) |
 | Jordan's Serenity app | Explicit app selection; two named axes and literal remote selectors 4/5, fixed 100 ms refresh | [Serenity](beds/serenity.md) |
+| Jordan's Tranquil app | Explicit app selection; two named axes and literal remote selectors 4/5, fixed 100 ms refresh | [Tranquil](beds/tranquil.md) |
+| Customatic Z-Series app | Explicit Z-230 or Z-280 bed type, matching the model chosen in the app; fixed 100 ms refresh | [Z-Series](beds/customatic-z-series.md) |
 | AdjustableM5X4 app | Explicit saved command/parser selector and optional Bluetooth transport; retained UI selector remains address-owned | [AdjustableM5X4](beds/starcode-abm5-4.md) |
 | Caresse / Werkmeister apps | Explicit app and remote profile; Caresse retained settings and feature flags | [Caresse / Werkmeister](beds/vibradorm_app.md) |
 | VMAT app | Explicit app and exact shipped remote ordinal; remote-derived features | [VMAT](beds/vmat.md) |
 | Adjustable Lite app | Keeson protocol variant **`adjustable_lite`**; the device name picks the KSBT01C or KSBT03C remote; `auto` keeps the generic KSBT profile | [Keeson Adjustable Lite](beds/keeson.md#adjustable-lite-profile) |
 | V-MAT Basic app | Explicit Basic, CBI or CBI with XT-Box product; per-receiver floor settings | [V-MAT Basic](beds/vmatbasic.md) |
 | SIMMONS app | Protocol variant: regular or inclined bed, with the packet format from the Bluetooth name or fixed | [SIMMONS](beds/simmons.md) |
+| Adjustable bed (Lumbar) app | Protocol variant: command table from the Bluetooth name, or fixed OKIN or Star branch | [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md) |
 | Legacy OKIN CB24 | Both sides (default), Side A / Left, or Side B / Right | [Single-address controls](#single-address-left--right-controls) |
 
 For two-address pairs, device-specific app/product selections belong to each
@@ -368,6 +371,10 @@ pair, configure each side, then combine them again.
 ### SIMMONS app profile
 
 Choose **SIMMONS app** manually. OKIN and SmartBed names and the shared Bluetooth services do not identify this app. The protocol variant selects the app's bed type (regular or inclined) and, optionally, the packet format. `auto` keeps a regular bed and applies the app's name rule: a name starting with `smartbed` or any unmatched name uses SmartBed frames, a name starting with `okin` uses OKIN frames. Motor count is fixed at two and the 300 ms refresh is fixed. The variant belongs to each physical bed: split a two-address pair before changing it. See [SIMMONS](beds/simmons.md).
+
+### Adjustable bed (Lumbar) app profile
+
+Choose **Adjustable bed (Lumbar) app** manually. OKIN and Star names and the shared services do not identify this app. `auto` applies the app's name rule: a name starting with `okin` uses the OKIN-service table; a name starting with `star` uses a Nordic UART table chosen by the Device Information manufacturer. Any other name needs a fixed variant. Head, foot and lumbar are fixed, as is the 100 ms refresh. The variant belongs to each physical bed: split a two-address pair before changing it. See [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md).
 
 ### V-MAT Basic app profiles
 
@@ -391,6 +398,10 @@ in integration options. Paired repairs change only their own physical side.
 ### Jordan's Serenity app profile
 
 Select **Jordan's Serenity app** explicitly for the accepted `com.okin.bedding.serenity` 1.0.1 (2) application profile. Shared OKIN discovery and GATT UUIDs do not identify this app profile. The two named main axes use Head and Feet; additional actuator controls retain literal selector 4/5 names because app touch and voice labels disagree. Setup hides motor-count and pulse-delay fields: the app proves two named axes, additional literal selectors, and a fixed 100 ms refresh interval. The internal named-axis count does not claim a physical actuator count. Status notifications remain active when angle sensing is disabled; this profile reports no motor position.
+
+### Jordan's Tranquil and Customatic Z-Series app profiles
+
+Select **Jordan's Tranquil app** for `com.okin.bedding.tranquil` 1.0.2 (3). For `com.okin.bedding.glory` 1.0.4 (5), select **Customatic Z-Series app (Z-230)** or **(Z-280)** to match the model chosen on the app's selection screen. These apps share OKIN discovery names and GATT UUIDs with other products, so none is detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields. The pulse count stays editable: on Z-Series profiles it also bounds an ordinary button press, because the app streams a touched control until release and defines no deadline of its own. Z-Series setup accepts 1 to 600 pulses (0.1 to 60 s). A two-address pair must be split before either side changes to, from or between these profiles. Notifications stay active when angle sensing is disabled; these profiles report no motor position.
 
 ### AdjustableM5X4 app selectors
 

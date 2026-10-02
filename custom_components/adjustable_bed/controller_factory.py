@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 
 from .adapter import discover_services
 from .const import (
+    BED_TYPE_ADJUSTABLE_LUMBAR,
     # Legacy/brand-specific bed types
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
@@ -83,9 +84,12 @@ from .const import (
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
     BED_TYPE_TIMOTION_AHF,
+    BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
+    BED_TYPE_ZSERIES_Z230,
+    BED_TYPE_ZSERIES_Z280,
     CB1322_MANUFACTURER_MARKERS,
     CONF_FSM_RELAX_LAYOUT,
     CONF_FSM_RELAX_LIGHT,
@@ -340,6 +344,13 @@ class _ControllerSpec:
 # class name fails the suite rather than a user's bed setup.
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_SERENITY: _ControllerSpec("serenity", "SerenityController"),
+    BED_TYPE_TRANQUIL: _ControllerSpec("serenity", "TranquilController"),
+    BED_TYPE_ZSERIES_Z230: _ControllerSpec(
+        "serenity", "ZSeriesController", MappingProxyType({"model": "z230"})
+    ),
+    BED_TYPE_ZSERIES_Z280: _ControllerSpec(
+        "serenity", "ZSeriesController", MappingProxyType({"model": "z280"})
+    ),
     BED_TYPE_CUSTOMATIC_CLARITY: _ControllerSpec(
         "customatic", "CustomaticController", MappingProxyType({"profile": "clarity"})
     ),
@@ -467,6 +478,20 @@ async def create_controller(
         ValueError: If bed_type is unknown
         ConnectionError: If auto-detection is needed but client is not connected
     """
+    if bed_type == BED_TYPE_ADJUSTABLE_LUMBAR:
+        # The app's name rule picks the table unless the variant fixes the
+        # branch; offline controllers must not read the display name.
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.adjustable_lumbar", __package__
+        )
+        from .beds.adjustable_lumbar import AdjustableLumbarController
+
+        return AdjustableLumbarController(
+            coordinator,
+            protocol_variant=protocol_variant,
+            device_name=device_name if client is not None else None,
+        )
+
     if bed_type == BED_TYPE_SIMMONS:
         # The app picks the packet format from the Bluetooth name unless the
         # stored variant fixes it, so pass both.

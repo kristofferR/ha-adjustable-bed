@@ -208,6 +208,11 @@ export function bedEntitiesForDevice(
           presetMap.set(key, id);
         } else if (key === "simmons_sync_clock" || key === "simmons_refresh_alarms") {
           bed.utility.push(id);
+        } else if (key.startsWith("adjustable_lumbar_wave_") || key === "adjustable_lumbar_massage_on") {
+          bed.massage.buttons.push(id);
+        } else if (key.startsWith("adjustable_lumbar_")) {
+          // Preset saves and the raw massage query have no memory slot or parsed reply.
+          bed.utility.push(id);
         } else if (key === "coolbase_head_massage" || key === "coolbase_foot_massage" || key === "coolbase_massage_mode") {
           bed.massage.buttons.push(id);
         } else if (key.startsWith("coolbase_")) {

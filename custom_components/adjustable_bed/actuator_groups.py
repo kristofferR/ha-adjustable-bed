@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Final, TypedDict
 
 from .const import (
+    BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_CUSTOMATIC_CLARITY,
@@ -54,6 +55,9 @@ from .const import (
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M5X5,
+    BED_TYPE_TRANQUIL,
+    BED_TYPE_ZSERIES_Z230,
+    BED_TYPE_ZSERIES_Z280,
     KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_KSBT,
@@ -346,10 +350,34 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "hint": "Choose the app shown on your phone; a shared OKIN name is not enough.",
             },
             {
+                "type": BED_TYPE_TRANQUIL,
+                "label": "Jordan's Tranquil app",
+                "description": "Tranquil app controls, Lounge, M1/M2 and separate massage zones",
+                "hint": "Choose the app shown on your phone; a shared OKIN name is not enough.",
+            },
+            {
+                "type": BED_TYPE_ZSERIES_Z230,
+                "label": "Customatic Z-Series app (Z-230)",
+                "description": "Z-230 page: combined head and foot, M1, ZG and TV saves",
+                "hint": "Choose the model selected in the Z-Series app; a shared OKIN name is not enough.",
+            },
+            {
+                "type": BED_TYPE_ZSERIES_Z280,
+                "label": "Customatic Z-Series app (Z-280)",
+                "description": "Z-280 page: extra selector, M1/M2 and separate massage zones",
+                "hint": "Choose the model selected in the Z-Series app; a shared OKIN name is not enough.",
+            },
+            {
                 "type": BED_TYPE_SIMMONS,
                 "label": "SIMMONS app",
                 "description": "SIMMONS app controls, Custom Mode memory and two alarms",
                 "hint": "Choose the app shown on your phone; OKIN/SmartBed names are shared.",
+            },
+            {
+                "type": BED_TYPE_ADJUSTABLE_LUMBAR,
+                "label": "Adjustable bed (Lumbar) app",
+                "description": "Head, foot and lumbar, four presets with saves, light and massage",
+                "hint": "Choose the app shown on your phone; OKIN/Star names are shared.",
             },
             {
                 "type": BED_TYPE_OKIN_FFE,

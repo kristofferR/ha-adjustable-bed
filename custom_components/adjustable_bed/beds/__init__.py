@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from .base import BedController
 
 if TYPE_CHECKING:
+    from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
     from .coolbase import CoolBaseController as CoolBaseController
     from .customatic import CustomaticController as CustomaticController
     from .dewertokin_rf_gateway import (
@@ -57,6 +58,8 @@ if TYPE_CHECKING:
     from .sbi import SBIController as SBIController
     from .scott_living import ScottLivingController as ScottLivingController
     from .serenity import SerenityController as SerenityController
+    from .serenity import TranquilController as TranquilController
+    from .serenity import ZSeriesController as ZSeriesController
     from .simmons import SimmonsController as SimmonsController
     from .sleep_number import SleepNumberController as SleepNumberController
     from .sleep_number_mcr import SleepNumberMcrController as SleepNumberMcrController
@@ -80,7 +83,10 @@ _EXPORT_MODULES = {
     "FurniMoveController": "furnimove",
     "FsmRelaxController": "fsm_relax",
     "SerenityController": "serenity",
+    "TranquilController": "serenity",
+    "ZSeriesController": "serenity",
     "SimmonsController": "simmons",
+    "AdjustableLumbarController": "adjustable_lumbar",
     "CustomaticController": "customatic",
     "CoolBaseController": "coolbase",
     "DewertOkinRfGatewayController": "dewertokin_rf_gateway",

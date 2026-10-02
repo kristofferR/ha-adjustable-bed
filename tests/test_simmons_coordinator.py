@@ -12,7 +12,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedOptionsFlow,
-    _simmons_setup_name,
+    _name_rule_setup_name,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SIMMONS,
@@ -146,10 +146,10 @@ async def test_observed_real_name_is_persisted_for_the_name_rule(
 
 
 def test_setup_stores_only_a_real_raw_name():
-    assert _simmons_setup_name(BED_TYPE_SIMMONS, "OKIN-1") == {CONF_BLE_DEVICE_NAME: "OKIN-1"}
-    assert _simmons_setup_name(BED_TYPE_SIMMONS, "AA:BB:CC:DD:EE:FF") == {}
-    assert _simmons_setup_name(BED_TYPE_SIMMONS, None) == {}
-    assert _simmons_setup_name("okin_ffe", "OKIN-1") == {}
+    assert _name_rule_setup_name(BED_TYPE_SIMMONS, "OKIN-1") == {CONF_BLE_DEVICE_NAME: "OKIN-1"}
+    assert _name_rule_setup_name(BED_TYPE_SIMMONS, "AA:BB:CC:DD:EE:FF") == {}
+    assert _name_rule_setup_name(BED_TYPE_SIMMONS, None) == {}
+    assert _name_rule_setup_name("okin_ffe", "OKIN-1") == {}
 
 
 def _side(address: str, variant: str) -> dict[str, object]:

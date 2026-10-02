@@ -2,6 +2,8 @@
 
 Select **Jordan's Serenity** manually when the bed uses Android package `com.okin.bedding.serenity`. Shared OKIN advertisements or GATT UUIDs do not identify this app. The implementation follows the independently accepted S01 FULL analysis of version 1.0.1/code 2, with four verified APK/split members. Artifact-set SHA-256: `b0729dc3a4eae2644cc5035b984a05ac116a658b79c886ab1b02eebdea584cc6`. Physical operation is unverified.
 
+[Jordan's Tranquil](tranquil.md) and the [Customatic Z-Series](customatic-z-series.md) apps share this controller core, with their own action tables.
+
 The app always selects CSTProtocol and the Z280 remote/massage screen pair. Persisted bed-type settings do not change that selection. Manufacturer values, including CST13/CST14, never select a protocol and always leave alarm controls disabled. Existing CST product profiles are separate.
 
 ## Transport and packets
