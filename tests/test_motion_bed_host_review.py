@@ -3,7 +3,6 @@ from dataclasses import replace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-import voluptuous as vol
 from homeassistant.const import CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import entity_registry as er
@@ -76,31 +75,28 @@ async def test_hub_reload_keeps_registry_customization_through_inventory_changes
 
 
 @pytest.mark.parametrize("name", ["QMS-IQ", "QMS4", "QMS3", "QMS-MQ", "SealyMF", "S4-Y-192-461000AD"])
-async def test_shared_name_discovery_requires_choice_before_any_default_next(hass, name):
+async def test_confirmed_solace_names_keep_solace_with_motion_bed_alternative(hass, name):
+    """Hardware-confirmed Solace names must not regress into a forced chooser."""
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow._discovery_info = _make_service_info(name=name)
     result = await flow.async_step_bluetooth_confirm()
-    assert result["step_id"] == "bluetooth_disambiguate"
-    assert flow._disambiguation_types == [BED_TYPE_SOLACE, BED_TYPE_MOTION_BED]
-    # The focused chooser has no implicit app selection.
-    schema = result["data_schema"]
-    assert isinstance(schema, vol.Schema)
-    with pytest.raises(vol.MultipleInvalid):
-        schema({})
-    assert (await flow.async_step_bluetooth_disambiguate({}))["step_id"] == "bluetooth_disambiguate"
+    assert result["step_id"] == "bluetooth_confirm"
+    detected = detect_bed_type_detailed(flow._discovery_info)
+    assert (detected.bed_type, detected.confidence) == (BED_TYPE_SOLACE, 0.9)
+    assert detected.ambiguous_types == [BED_TYPE_MOTION_BED]
 
 
 @pytest.mark.parametrize("name", ["QMS-IQ", "SealyMF"])
-async def test_manual_default_auto_detect_cannot_submit_a_shared_app_name(hass, name):
+async def test_manual_auto_detect_keeps_confirmed_solace_names(hass, name):
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow._discovery_info = _make_service_info(name=name)
     result = await flow.async_step_manual_config()
     marker = next(k for k in result["data_schema"].schema if k.schema == CONF_BED_TYPE)
-    assert marker.default() == BED_TYPE_AUTO_DETECT
+    assert marker.default() == BED_TYPE_SOLACE
     result = await flow.async_step_manual_config({CONF_BED_TYPE: BED_TYPE_AUTO_DETECT})
-    assert result["errors"] == {"base": "auto_detect_failed"}
+    assert not result.get("errors")
 
 
 @pytest.mark.parametrize("app", [BED_TYPE_MOTION_BED, BED_TYPE_SOLACE])
@@ -109,8 +105,8 @@ async def test_explicit_discovered_app_choice_reaches_its_real_factory(enable_cu
     flow.hass = hass
     flow._discovery_info = _make_service_info(name="QMS-IQ")
     flow._finish_with_verify = AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY})
-    assert (await flow.async_step_bluetooth_confirm())["step_id"] == "bluetooth_disambiguate"
-    assert (await flow.async_step_bluetooth_disambiguate({"bed_type_choice": app}))["step_id"] == "bluetooth_confirm"
+    # Solace stays preselected; Motion Bed is chosen on the same confirm form.
+    assert (await flow.async_step_bluetooth_confirm())["step_id"] == "bluetooth_confirm"
     result = await flow.async_step_bluetooth_confirm({CONF_BED_TYPE: app, CONF_NAME: "QMS-IQ", CONF_DISCONNECT_AFTER_COMMAND: False})
     if app == BED_TYPE_MOTION_BED:
         assert result["step_id"] == "motion_bed"
