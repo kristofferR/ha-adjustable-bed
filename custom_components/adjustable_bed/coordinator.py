@@ -607,8 +607,9 @@ class AdjustableBedCoordinator:
         # Proxies whose stale GATT cache an auth failure already cleared, so only
         # the first such failure per proxy skips re-pairing (issue #660).
         self._stale_gatt_retry_sources: set[str] = set()
-        # Set when the attempt that just failed cleared a stale proxy cache.
-        self._stale_gatt_retry_pending: bool = False
+        # The proxy whose stale cache the attempt that just failed cleared; the
+        # next attempt verifies there without pairing.
+        self._stale_gatt_retry_source: str | None = None
 
         # Track if pairing is supported by the Bluetooth adapter (None = unknown)
         self._pairing_supported: bool | None = None
@@ -1892,7 +1893,7 @@ class AdjustableBedCoordinator:
         if stale_cache_retry:
             self._stale_gatt_retry_sources.add(cleared_source)
             self._skip_pair_next_attempt = True
-            self._stale_gatt_retry_pending = True
+            self._stale_gatt_retry_source = cleared_source
             _LOGGER.warning(
                 "BLE link on %s is not authenticated: %s. The proxy's cached GATT "
                 "services may be stale; retrying with rediscovered services "
@@ -3464,17 +3465,27 @@ class AdjustableBedCoordinator:
 
         attempt = 0
         protocol_correction_pairing_retry_reserved = False
-        stale_gatt_retry_reserved = False
-        self._stale_gatt_retry_pending = False
+        stale_gatt_retry_extensions = 0
+        self._stale_gatt_retry_source = None
+        rerouted_stale_gatt_source: str | None = None
         while True:
+            if rerouted_stale_gatt_source and self._stale_gatt_retry_source is None:
+                # HA routed the verification through another path, and it did not
+                # succeed. The cleared proxy still deserves its no-pair check.
+                self._stale_gatt_retry_source = rerouted_stale_gatt_source
+                self._skip_pair_next_attempt = True
+            rerouted_stale_gatt_source = None
             if attempt >= attempt_limit:
                 # A stale proxy cache cleared on the last attempt still gets the
                 # rediscovered, no-pair verification it was promised (#660).
-                if not self._stale_gatt_retry_pending or stale_gatt_retry_reserved:
+                # Two extensions cover one reroute away from the cleared proxy
+                # while keeping the loop bounded.
+                if not self._stale_gatt_retry_source or stale_gatt_retry_extensions >= 2:
                     break
-                stale_gatt_retry_reserved = True
+                stale_gatt_retry_extensions += 1
                 attempt_limit += 1
-            self._stale_gatt_retry_pending = False
+            stale_gatt_retry_source = self._stale_gatt_retry_source
+            self._stale_gatt_retry_source = None
             if self._vmat_unready_link_pending():
                 break
             attempt_index = attempt
@@ -3545,7 +3556,9 @@ class AdjustableBedCoordinator:
                 adapter_result = await select_adapter(
                     self.hass,
                     self._address,
-                    self._preferred_adapter,
+                    # Steer a stale-cache verification to the proxy that was
+                    # cleared. HA can still reroute; that is handled below.
+                    stale_gatt_retry_source or self._preferred_adapter,
                     exclude_adapters=exhausted_adapters or None,
                 )
                 attempt_details["selected_source"] = adapter_result.source
@@ -3984,6 +3997,8 @@ class AdjustableBedCoordinator:
                 # verification runs before controller startup and must be able
                 # to attribute a failure to the transport that carried it.
                 actual_adapter = client_source(self._client) or "unknown"
+                if stale_gatt_retry_source and actual_adapter != stale_gatt_retry_source:
+                    rerouted_stale_gatt_source = stale_gatt_retry_source
 
                 # Track successful connection for diagnostics (issue #168)
                 self._connection_success_count += 1

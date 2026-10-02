@@ -240,11 +240,82 @@ class TestCoordinatorConnection:
                 "custom_components.adjustable_bed.coordinator.async_clear_proxy_gatt_cache",
                 new=AsyncMock(return_value=True),
             ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.client_source",
+                return_value="proxy-a",
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.async_path_for_source",
+                return_value=ConnectionPath(
+                    source="proxy-a", transport=TransportClass.PROXY, source_domain="esphome"
+                ),
+            ),
         ):
             assert await coordinator.async_connect() is bond_intact
 
         assert coordinator._connection_attempt_count == 2
         assert create_issue.await_count == int(not bond_intact)
+
+    async def test_rerouted_stale_cache_verification_returns_to_the_cleared_proxy(
+        self, hass, mock_coordinator_connected, mock_bleak_client
+    ):
+        """Issue #660: a reroute does not use up the cleared proxy's verification."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_OKIN,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_BLE_BOND_ESTABLISHED: True,
+            },
+            unique_id=TEST_ADDRESS,
+        )
+        entry.add_to_hass(hass)
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        coordinator._max_retries = 1
+
+        def route(_client):
+            return "proxy-b" if coordinator._connection_attempt_count == 2 else "proxy-a"
+
+        def path(_hass, source, **_kwargs):
+            return ConnectionPath(
+                source=source, transport=TransportClass.PROXY, source_domain="esphome"
+            )
+
+        async def read_characteristic(_uuid):
+            if coordinator._connection_attempt_count < 3:
+                raise BleakError("Insufficient encryption")
+            return b"Model"
+
+        mock_bleak_client.read_gatt_char.side_effect = read_characteristic
+        from custom_components.adjustable_bed import coordinator as coordinator_module
+
+        select = AsyncMock(side_effect=coordinator_module.select_adapter)
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+                new=AsyncMock(return_value=("Leggett", "Model")),
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.async_clear_proxy_gatt_cache",
+                new=AsyncMock(side_effect=[True, False]),
+            ),
+            patch("custom_components.adjustable_bed.coordinator.client_source", side_effect=route),
+            patch(
+                "custom_components.adjustable_bed.coordinator.async_path_for_source",
+                side_effect=path,
+            ),
+            patch("custom_components.adjustable_bed.coordinator.select_adapter", new=select),
+        ):
+            assert await coordinator.async_connect() is True
+
+        assert coordinator._connection_attempt_count == 3
+        assert [call.args[2] for call in select.await_args_list][1:] == ["proxy-a", "proxy-a"]
 
     async def test_connect_success(
         self,
