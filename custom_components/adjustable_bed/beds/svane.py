@@ -475,6 +475,10 @@ class SvaneController(BedController):
         integer(duration_ms, 1, 60000)
         if control not in self.held_control_options:
             raise ValueError("Unknown Svane held control")
+        if control == "light_adjust":
+            intensity = integer(self.session.intensity, 5, 100)
+            if intensity % 5:
+                raise ValueError("Svane lamp intensity uses steps of five")
         if control != "light_adjust":
             head, feet = MOTIONS[control]
             delayed_feet = feet is not None and not (self.profile == "jmc" and head is not None)
@@ -533,7 +537,9 @@ class SvaneController(BedController):
             if not self.session.light_on or duration_ms <= 200 or not await self._wait(0.2):
                 return
             while not cancel.is_set() and asyncio.get_running_loop().time() < deadline:
-                if self.session.intensity >= 100 or self.session.intensity <= 6:
+                if (self.session.intensity >= 100 and self.session.light_step > 0) or (
+                    self.session.intensity <= 5 and self.session.light_step < 0
+                ):
                     self.session.light_step *= -1
                 old = self.session.intensity
                 self.session.intensity += self.session.light_step
