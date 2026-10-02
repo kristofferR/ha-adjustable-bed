@@ -610,6 +610,8 @@ class AdjustableBedCoordinator:
         # The proxy whose stale cache the attempt that just failed cleared; the
         # next attempt verifies there without pairing.
         self._stale_gatt_retry_source: str | None = None
+        # The path whose authentication failed most recently in this attempt.
+        self._auth_failure_source: str | None = None
 
         # Track if pairing is supported by the Bluetooth adapter (None = unknown)
         self._pairing_supported: bool | None = None
@@ -1887,6 +1889,7 @@ class AdjustableBedCoordinator:
         # A clear implies a known proxy path; the retry is spent per proxy because
         # Home Assistant may reroute the next attempt through another one.
         cleared_source = self._connection_path.source if self._connection_path else ""
+        self._auth_failure_source = cleared_source
         stale_cache_retry = (
             cache_cleared and cleared_source not in self._stale_gatt_retry_sources
         )
@@ -3467,14 +3470,18 @@ class AdjustableBedCoordinator:
         protocol_correction_pairing_retry_reserved = False
         stale_gatt_retry_extensions = 0
         # A pending source may come from a runtime command failure. It stays
-        # pending until an attempt actually connects through that proxy.
+        # pending until authentication has actually been exercised on that proxy.
         unverified_stale_gatt_source: str | None = None
         while True:
-            if unverified_stale_gatt_source:
-                # The last attempt failed before reaching the cleared proxy: it
-                # never connected, or HA routed it elsewhere. That proxy still
-                # deserves its no-pair check, even if another path just cleared
-                # its own cache, because it holds the bond being recovered.
+            if (
+                unverified_stale_gatt_source
+                and self._auth_failure_source != unverified_stale_gatt_source
+            ):
+                # The last attempt failed without authenticating on the cleared
+                # proxy: it never connected, HA routed it elsewhere, or it broke
+                # before the probe. That proxy still deserves its no-pair check,
+                # even if another path just cleared its own cache, because it
+                # holds the bond being recovered.
                 self._stale_gatt_retry_source = unverified_stale_gatt_source
                 self._skip_pair_next_attempt = True
             unverified_stale_gatt_source = None
@@ -3490,6 +3497,7 @@ class AdjustableBedCoordinator:
             stale_gatt_retry_source = self._stale_gatt_retry_source
             self._stale_gatt_retry_source = None
             unverified_stale_gatt_source = stale_gatt_retry_source
+            self._auth_failure_source = None
             if self._vmat_unready_link_pending():
                 break
             attempt_index = attempt
@@ -4001,8 +4009,6 @@ class AdjustableBedCoordinator:
                 # verification runs before controller startup and must be able
                 # to attribute a failure to the transport that carried it.
                 actual_adapter = client_source(self._client) or "unknown"
-                if actual_adapter == stale_gatt_retry_source:
-                    unverified_stale_gatt_source = None
 
                 # Track successful connection for diagnostics (issue #168)
                 self._connection_success_count += 1
@@ -4482,6 +4488,9 @@ class AdjustableBedCoordinator:
                 self._schedule_position_hydration()
 
                 await self.async_clear_obsolete_pairing_state()
+                # A usable connection closes the stale-cache episode, even for
+                # beds whose bond probe is only ever inconclusive.
+                self._stale_gatt_retry_sources.clear()
 
                 return True
 

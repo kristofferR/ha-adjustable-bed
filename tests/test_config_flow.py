@@ -954,19 +954,22 @@ class TestStaleProxyGattCache:
     """Issue #660: stale proxy handles fail like a lost bond."""
 
     @pytest.mark.parametrize(
-        ("cleared", "verify_proves_bond", "bond_requests"),
+        ("cleared", "retry_status", "bond_requests", "proves_bond"),
         [
-            (False, False, [True]),
-            (True, True, [True, False]),
-            (True, False, [True, False, True]),
+            (False, BondVerificationStatus.VERIFIED, [True], False),
+            (True, BondVerificationStatus.VERIFIED, [True, False], True),
+            (True, BondVerificationStatus.AUTH_FAILED, [True, False, True], True),
+            # An inconclusive read never proves the bond absent.
+            (True, BondVerificationStatus.INCONCLUSIVE, [True, False], False),
         ],
     )
     async def test_cleared_cache_verifies_on_that_proxy_before_pairing_again(
         self,
         hass: HomeAssistant,
         cleared: bool,
-        verify_proves_bond: bool,
+        retry_status: BondVerificationStatus,
         bond_requests: list[bool],
+        proves_bond: bool,
     ) -> None:
         flow = TestPairingPersistence._new_pairing_flow(hass)
         failed = BondEvidence(
@@ -979,7 +982,7 @@ class TestStaleProxyGattCache:
         verified = replace(
             failed, status=BondVerificationStatus.VERIFIED, gatt_cache_cleared=False
         )
-        retry = verified if verify_proves_bond else replace(failed, gatt_cache_cleared=True)
+        retry = replace(failed, status=retry_status)
         results = iter([failed, retry, verified])
         pinned: list[tuple[str | None, str | None]] = []
 
@@ -1005,7 +1008,7 @@ class TestStaleProxyGattCache:
             evidence = await flow._attempt_pairing("AA:BB:CC:DD:EE:01")
 
         assert [call.kwargs["request_bond"] for call in mock.await_args_list] == bond_requests
-        assert evidence.proves_bond is cleared
+        assert evidence.proves_bond is proves_bond
         assert pinned[1:] == [("proxy-a", "proxy-a")] * (len(bond_requests) - 1)
         assert flow._pairing_verify_source is None
         assert flow._pairing_retry_source is None

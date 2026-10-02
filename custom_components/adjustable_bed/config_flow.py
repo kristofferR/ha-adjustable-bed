@@ -5482,7 +5482,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         device=None,
                         preferred_adapter=cleared_source,
                     )
-                    if request_bond and not evidence.proves_bond:
+                    # Only a definite failure justifies pairing over a bond that
+                    # may still be intact; an inconclusive read proves nothing.
+                    if (
+                        request_bond
+                        and evidence.status is BondVerificationStatus.AUTH_FAILED
+                    ):
                         self._pairing_retry_source = cleared_source
                         evidence = await self._attempt_pairing_with_capture(
                             address,

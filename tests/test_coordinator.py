@@ -255,6 +255,8 @@ class TestCoordinatorConnection:
 
         assert coordinator._connection_attempt_count == 2
         assert create_issue.await_count == int(not bond_intact)
+        # Recovery closes the episode, so a later outage gets a fresh retry.
+        assert coordinator._stale_gatt_retry_sources == (set() if bond_intact else {"proxy-a"})
 
     async def test_rerouted_stale_cache_verification_returns_to_the_cleared_proxy(
         self, hass, mock_coordinator_connected, mock_bleak_client
@@ -317,8 +319,10 @@ class TestCoordinatorConnection:
         assert coordinator._connection_attempt_count == 3
         assert [call.args[2] for call in select.await_args_list][1:] == ["proxy-a", "proxy-a"]
 
+    @pytest.mark.parametrize("failure", ["connect", "before_probe"])
     async def test_stale_cache_verification_survives_a_failed_reconnect(
-        self, hass, mock_coordinator_connected, mock_bleak_client, mock_establish_connection
+        self, hass, mock_coordinator_connected, mock_bleak_client, mock_establish_connection,
+        failure,
     ):
         """Issue #660: a reconnect that never reaches the proxy does not spend its check."""
         entry = MockConfigEntry(
@@ -339,9 +343,16 @@ class TestCoordinatorConnection:
         connect = mock_establish_connection.side_effect
 
         async def establish(*args, **kwargs):
-            if coordinator._connection_attempt_count == 2:
+            if failure == "connect" and coordinator._connection_attempt_count == 2:
                 raise TimeoutError("no answer")
             return await connect(*args, **kwargs)
+
+        verify = coordinator._async_verify_bonded
+
+        async def verify_bonded(*args, **kwargs):
+            if failure == "before_probe" and coordinator._connection_attempt_count == 2:
+                raise TimeoutError("link dropped before the probe")
+            return await verify(*args, **kwargs)
 
         async def read_characteristic(_uuid):
             nonlocal reads
@@ -379,6 +390,7 @@ class TestCoordinatorConnection:
                 ),
             ),
             patch("custom_components.adjustable_bed.coordinator.select_adapter", new=select),
+            patch.object(coordinator, "_async_verify_bonded", side_effect=verify_bonded),
         ):
             assert await coordinator.async_connect() is True
 
