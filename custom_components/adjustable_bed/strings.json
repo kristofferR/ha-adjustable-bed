@@ -435,7 +435,7 @@
         }
       },
       "logicdata_app": {
-        "title": "MotionRelax app and layout",
+        "title": "Logicdata bed app and layout",
         "description": "Choose the app, command family and physical controls that match this bed. SimplicityFrame entries keep their existing protocol.",
         "data": {
           "logicdata_app_profile": "Bed app",
@@ -445,9 +445,9 @@
           "logicdata_app_has_light": "Enable light controls"
         },
         "data_description": {
-          "logicdata_app_profile": "Choose the MotionRelax phone or tablet app used for this bed. Shared Bluetooth services do not identify the app.",
-          "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family.",
-          "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout.",
+          "logicdata_app_profile": "Choose the MotionRelax phone or tablet app, or the Sleep Smart Air Mattress app, used for this bed. Shared Bluetooth services do not identify the app.",
+          "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family. In Sleep Smart, P2 is the middle rail bed.",
+          "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout. Sleep Smart beds use the two-motor standard or split-series layout.",
           "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
           "logicdata_app_has_light": "Expose under-bed light controls when the selected standard layout has lighting."
         }
@@ -656,7 +656,7 @@
       "bond_removal_failed": "The existing Bluetooth bond could not be removed, so pairing was not attempted.",
       "leggett_app_invalid_profile": "Choose a supported Leggett app profile.",
       "logicdata_app_required": "Choose the bed app, command family and physical actuator layout.",
-      "logicdata_app_family_layout": "P2 requires the middle layout. All other layouts use P1.",
+      "logicdata_app_family_layout": "For MotionRelax apps, P2 requires the middle layout and all other layouts use P1.",
       "jiecang_app_required": "Choose the bed app and physical actuator layout.",
       "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
       "invalid_lp_legacy_mode": "Select Legacy or Framed explicitly.",
@@ -681,7 +681,8 @@
       "starcode_profile_mismatch": "Choose the bed class matching the exact case-sensitive Bluetooth name.",
       "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 entries with different Bluetooth addresses.",
       "starcode_unpair_first": "Use standalone entries for this independently addressed accessory group.",
-      "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses."
+      "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses.",
+      "logicdata_app_sleep_smart_layout": "Sleep Smart beds use the two-motor standard or split-series layout."
     }
   },
   "options": {
@@ -795,9 +796,9 @@
           "back_max_angle": "Maximum angle for back/head motors. Adjust if position readings don't match your bed's actual range.",
           "legs_max_angle": "Maximum angle for legs/feet motors. Adjust if position readings don't match your bed's actual range.",
           "leggett_app_profile": "Choose the app used with this bed. The app determines the actuator layout and supported controls. Prodigy 4 preserves the existing default; Bluetooth pairing requirements remain unchanged.",
-          "logicdata_app_profile": "Choose the MotionRelax phone or tablet app used for this bed. Shared Bluetooth services do not identify the app.",
-          "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family.",
-          "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout.",
+          "logicdata_app_profile": "Choose the MotionRelax phone or tablet app, or the Sleep Smart Air Mattress app, used for this bed. Shared Bluetooth services do not identify the app.",
+          "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family. In Sleep Smart, P2 is the middle rail bed.",
+          "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout. Sleep Smart beds use the two-motor standard or split-series layout.",
           "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
           "logicdata_app_has_light": "Expose under-bed light controls when the selected standard layout has lighting.",
           "jiecang_app_profile": "Select the app used to control this bed. Bluetooth UUIDs cannot identify the app profile.",
@@ -891,8 +892,8 @@
       "leggett_app_invalid_profile": "Choose a supported Leggett app profile.",
       "leggett_app_unpair_first": "Unpair the beds and configure each side separately before choosing a Leggett app profile.",
       "logicdata_app_required": "Choose the bed app, command family and physical actuator layout.",
-      "logicdata_app_family_layout": "P2 requires the middle layout. All other layouts use P1.",
-      "logicdata_app_unpair_first": "Unpair the beds and configure each side separately before choosing MotionRelax apps.",
+      "logicdata_app_family_layout": "For MotionRelax apps, P2 requires the middle layout and all other layouts use P1.",
+      "logicdata_app_unpair_first": "Unpair the beds and configure each side separately before choosing Logicdata bed apps.",
       "woosa_unpair_first": "Unpair the beds and configure each side separately before changing the Woosa Sleep profile.",
       "jensen_linon_unpair_first": "Unpair the beds and configure each side separately before changing the Jensen LinOn profile.",
       "jiecang_app_required": "Choose the bed app and physical actuator layout.",
@@ -925,7 +926,8 @@
       "adjustable_lumbar_unpair_first": "Unpair the beds and configure each side separately before changing the Adjustable bed (Lumbar) protocol.",
       "remacro_model_unmapped": "This bed advertises a company ID that no Remacro app lists.",
       "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses.",
-      "remacro_app_unpair_first": "Each side keeps its own Remacro app. Unpair the beds and change each side's protocol variant separately."
+      "remacro_app_unpair_first": "Each side keeps its own Remacro app. Unpair the beds and change each side's protocol variant separately.",
+      "logicdata_app_sleep_smart_layout": "Sleep Smart beds use the two-motor standard or split-series layout."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond\u2026",
@@ -2069,6 +2071,24 @@
       },
       "remacro_led_brightness_save": {
         "name": "Save light level"
+      },
+      "logicdata_app_query_massage": {
+        "name": "Refresh massage state"
+      },
+      "logicdata_air_pump_inflate": {
+        "name": "Inflate"
+      },
+      "logicdata_air_pump_deflate": {
+        "name": "Deflate"
+      },
+      "logicdata_air_pump_firmness_30": {
+        "name": "Firmness 30"
+      },
+      "logicdata_air_pump_recall_memory": {
+        "name": "Recall pressure memory"
+      },
+      "logicdata_air_pump_save_memory": {
+        "name": "Save pressure memory"
       }
     },
     "cover": {
@@ -3004,6 +3024,12 @@
       },
       "simmons_alarm_2": {
         "name": "Alarm 2"
+      },
+      "logicdata_app_massage_mode": {
+        "name": "Massage mode"
+      },
+      "logicdata_air_pump_pressure": {
+        "name": "Air pressure"
       }
     },
     "light": {
@@ -3890,15 +3916,15 @@
     },
     "logicdata_rename": {
       "name": "Rename Logicdata controller",
-      "description": "Change the Bluetooth name of a compatible Logicdata app controller.",
+      "description": "Change the Bluetooth name of a compatible Logicdata app controller or Sleep Smart air pump.",
       "fields": {
         "device_id": {
           "name": "Device",
-          "description": "A Logicdata app controller that supports device renaming."
+          "description": "A Logicdata app controller or Sleep Smart air pump that supports device renaming."
         },
         "name": {
           "name": "Name",
-          "description": "This service accepts 1 to 255 printable ASCII characters as a safe common input range for phone and tablet controllers."
+          "description": "MotionRelax phone and tablet controllers accept 1 to 255 printable ASCII characters. Sleep Smart beds and pumps accept 1 to 20 letters, digits, \u00e4, \u00f6, \u00fc or \u00df."
         },
         "side": {
           "name": "Side"
@@ -3907,11 +3933,11 @@
     },
     "logicdata_hold_preset": {
       "name": "Hold Logicdata preset recall",
-      "description": "Recall a middle-motor flat or memory position with repeated commands for a specified duration, then release.",
+      "description": "Hold a flat, preset or memory recall with repeated commands for a specified duration, then release.",
       "fields": {
         "device_id": {
           "name": "Device",
-          "description": "A Logicdata app controller using the middle-motor protocol. Standard controllers do not support held preset recall."
+          "description": "A MotionRelax controller using the middle-motor protocol (flat, memory 1 and 2), or a Sleep Smart bed (flat, zero gravity, anti-snore and memory 1)."
         },
         "preset": {
           "name": "Preset"

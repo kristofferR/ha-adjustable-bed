@@ -5,6 +5,9 @@ These explicit app profiles implement the accepted APK Protocol Audit cluster-00
 `com.logicdata.app.android.pad.bed` **1.0.4 (5)**.
 **Static verified, hardware unverified.**
 
+The Sleep Smart Air Mattress app uses the same bed type with app profile
+`sleep_smart`; see [Sleep Smart](logicdata-sleep-smart.md).
+
 ## Setup
 
 Select the LOGICDATA MOTIONrelax app option and choose the phone or tablet app,

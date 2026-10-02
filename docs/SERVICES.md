@@ -168,6 +168,7 @@ enable additional commands.
 | Caresse / Werkmeister apps | `vibradorm_hold_control` (profile-specific movement, memory recall or sync) | [Caresse / Werkmeister](beds/vibradorm_app.md) |
 | V-MAT Basic app | `vmatbasic_hold_control`, `vmatbasic_rename` | [V-MAT Basic](beds/vmatbasic.md) |
 | LOGICDATA app profiles | `logicdata_set_alarm`, `logicdata_rename`, `logicdata_hold_preset` | [LOGICDATA](beds/logicdata-app.md) |
+| LOGICDATA Sleep Smart app | `logicdata_hold_preset` (flat, zero gravity, anti-snore, memory 1), `logicdata_rename` (bed and pump) | [Sleep Smart](beds/logicdata-sleep-smart.md) |
 | Jiecang app profiles | `jiecang_set_alarm`, `jiecang_wake`, `jiecang_stop_wake`, `jiecang_rename` | [Jiecang](beds/jiecang-app.md) |
 | Richmat RMControl products | `rmcontrol_alarm`, `rmcontrol_anti_snore` | [RMControl](beds/rmcontrol.md) |
 | Sleep Number Fuzion / BAM-MCR | `sleep_number_command` | [Command and parameter reference](beds/sleep-number-services.md) |

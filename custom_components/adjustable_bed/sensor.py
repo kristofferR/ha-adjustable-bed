@@ -236,7 +236,8 @@ def _sensor_entities_for(
         stale_keys = (starcode_keys - active_keys) | controller.stale_controller_state_sensor_entity_keys | (
             {
                 "leggett_led_mask", "leggett_status", "logicdata_app_alarm",
-                "logicdata_app_family_match", "malouf_massage_remaining",
+                "logicdata_app_family_match", "logicdata_app_massage_mode",
+                "logicdata_air_pump_pressure", "malouf_massage_remaining",
                 "customatic_manufacturer", "customatic_hardware_revision",
                 "customatic_software_revision", "customatic_firmware_revision",
                 "customatic_model",

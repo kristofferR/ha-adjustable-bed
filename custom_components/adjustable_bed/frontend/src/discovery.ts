@@ -148,6 +148,8 @@ export function bedEntitiesForDevice(
 
       case "sensor":
         if (key.endsWith("_angle")) motor(key.slice(0, -6)).angle = id;
+        // The Sleep Smart pump's pressure reading sits with firmness controls.
+        else if (key === "logicdata_air_pump_pressure") bed.firmness.push(id);
         break;
 
       case "number":
@@ -214,6 +216,11 @@ export function bedEntitiesForDevice(
           bed.massage.buttons.push(id);
         } else if (key.startsWith("adjustable_lumbar_")) {
           // Preset saves and the raw massage query have no memory slot or parsed reply.
+          bed.utility.push(id);
+        } else if (key === "logicdata_app_query_massage") {
+          bed.massage.buttons.push(id);
+        } else if (key.startsWith("logicdata_air_pump_")) {
+          // Pump taps have no motor, preset or memory-slot meaning.
           bed.utility.push(id);
         } else if (key === "coolbase_head_massage" || key === "coolbase_foot_massage" || key === "coolbase_massage_mode") {
           bed.massage.buttons.push(id);
