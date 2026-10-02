@@ -67,6 +67,8 @@ HEAL_RELEASE_DELAY_S: Final = 0.1
 # Simon Li shows "Memory saved" after holding a memory key for 2100 ms; the
 # bytes are the same memory stream, so saving is holding it that long.
 SIMON_MEMORY_SAVE_HOLD_MS: Final = 2100
+# A recall press stays below that threshold whatever the pulse settings.
+SIMON_MEMORY_RECALL_MAX_MS: Final = 2000
 HOLD_MIN_MS: Final = 100
 HOLD_MAX_MS: Final = 60_000
 
@@ -132,6 +134,14 @@ STATE_HEAL_MASSAGE: Final[dict[str, str]] = {
     "wave": "okin_app_massage_wave",
 }
 SESSIONS_KEY: Final = "okin_app_sessions"
+
+
+def drop_okin_app_sessions(hass: Any, address: str) -> None:
+    """Forget a bed's Heal Every Night page state (entry removal or profile change)."""
+    sessions = hass.data.get(DOMAIN, {}).get(SESSIONS_KEY)
+    if isinstance(sessions, dict):
+        for key in [key for key in sessions if key[0] == address.upper()]:
+            del sessions[key]
 
 
 def okin_app_frame(key: int) -> bytes:
@@ -273,7 +283,7 @@ class OkinAppKeesonController(KeesonController):
             translation_key=translation_key,
             open_fn=_press("hold_app_control", up),
             close_fn=_press("hold_app_control", down),
-            stop_fn=lambda ctrl: ctrl.stop_all(),
+            stop_fn=_press("release_now"),
         )
 
     @property
@@ -383,9 +393,13 @@ class OkinAppKeesonController(KeesonController):
             raise asyncio.CancelledError
         task.result()
 
-    async def stop_all(self) -> None:
-        """Write the zero key at once; Heal also stops a selected preset."""
+    async def release_now(self) -> None:
+        """A motor stop: the app's movement release (zero key), written at once."""
         await self._release_motion(delay=False)
+
+    async def stop_all(self) -> None:
+        """Stop All: the zero key at once; Heal also stops a selected preset."""
+        await self.release_now()
         if self._is_heal and self._session.selected_preset is not None:
             # The app stops preset travel by re-tapping the selected preset.
             self._session.selected_preset = None
@@ -405,7 +419,7 @@ class OkinAppKeesonController(KeesonController):
         await self._seat_or_heal("back_down", "head_down")
 
     async def move_head_stop(self) -> None:
-        await self.stop_all()
+        await self.release_now()
 
     async def move_back_up(self) -> None:
         await self.move_head_up()
@@ -414,7 +428,7 @@ class OkinAppKeesonController(KeesonController):
         await self.move_head_down()
 
     async def move_back_stop(self) -> None:
-        await self.stop_all()
+        await self.release_now()
 
     async def move_feet_up(self) -> None:
         await self.hold_app_control("foot_up")
@@ -423,7 +437,7 @@ class OkinAppKeesonController(KeesonController):
         await self.hold_app_control("foot_down")
 
     async def move_feet_stop(self) -> None:
-        await self.stop_all()
+        await self.release_now()
 
     async def move_legs_up(self) -> None:
         await self.move_feet_up()
@@ -432,7 +446,7 @@ class OkinAppKeesonController(KeesonController):
         await self.move_feet_down()
 
     async def move_legs_stop(self) -> None:
-        await self.stop_all()
+        await self.release_now()
 
     async def move_tilt_up(self) -> None:
         await self.hold_app_control("tilt_up")
@@ -441,7 +455,7 @@ class OkinAppKeesonController(KeesonController):
         await self.hold_app_control("tilt_down")
 
     async def move_tilt_stop(self) -> None:
-        await self.stop_all()
+        await self.release_now()
 
     async def move_lumbar_up(self) -> None:
         await self.hold_app_control("lumbar_up")
@@ -450,7 +464,7 @@ class OkinAppKeesonController(KeesonController):
         await self.hold_app_control("lumbar_down")
 
     async def move_lumbar_stop(self) -> None:
-        await self.stop_all()
+        await self.release_now()
 
     # ------------------------------------------------------------ transport
     def _build_command(self, command_value: int) -> bytes:
@@ -621,7 +635,10 @@ class OkinAppKeesonController(KeesonController):
         if self._is_heal:
             await self._heal_preset(f"memory_{memory_num}")
         else:
-            await self.hold_app_control(f"memory_{memory_num}")
+            # Never reach the app's 2.1 s save threshold on a recall.
+            count, delay_ms = self.motor_pulse_settings()
+            writes = min(count, SIMON_MEMORY_RECALL_MAX_MS // max(delay_ms, 1) + 1)
+            await self._stream(SIMON_KEYS[f"memory_{memory_num}"], writes, delay_ms)
 
     async def program_memory(self, memory_num: int) -> None:
         if self._is_seating:
@@ -755,7 +772,8 @@ class OkinAppKeesonController(KeesonController):
         state: dict[str, Any] = {
             STATE_HEAL_MASSAGE["head"]: session.head,
             STATE_HEAL_MASSAGE["foot"]: session.foot,
-            STATE_HEAL_MASSAGE["wave"]: session.wave,
+            # Wave levels are 1..4; before the first timer the app has none.
+            STATE_HEAL_MASSAGE["wave"]: session.wave or None,
         }
         settings = self._settings()
         for setting, options in HEAL_SETTING_OPTIONS.items():
@@ -865,7 +883,7 @@ class OkinAppKeesonController(KeesonController):
         return {
             "head_intensity": session.head,
             "foot_intensity": session.foot,
-            "wave_intensity": session.wave,
+            "wave_intensity": session.wave or None,
             "timer_mode": str(session.timer_minutes) if session.timer_minutes else None,
         }
 

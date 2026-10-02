@@ -58,6 +58,9 @@ from .const import (
     CONF_PROTOCOL_VARIANT,
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
+    KEESON_VARIANT_HEAL_EVERY_NIGHT,
+    KEESON_VARIANT_OKIN_SEATING,
+    KEESON_VARIANT_SIMON_LI,
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
@@ -2474,6 +2477,23 @@ async def handle_adjustable_lumbar_hold_control(call: ServiceCall) -> None:
 
 async def handle_okin_app_hold_control(call: ServiceCall) -> None:
     """Hold one Simon Li, Heal Every Night or OKIN-Seating control, then release it."""
+    targets, missing = _resolve_sided_targets(
+        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    for coordinator, side in targets:
+        for target in _command_targets(coordinator, side):
+            if target.bed_type != BED_TYPE_KEESON or target.entry.data.get(
+                CONF_PROTOCOL_VARIANT
+            ) not in (
+                KEESON_VARIANT_SIMON_LI,
+                KEESON_VARIANT_HEAL_EVERY_NIGHT,
+                KEESON_VARIANT_OKIN_SEATING,
+            ):
+                raise ServiceValidationError(
+                    f"Device '{target.name}' does not use an Okin app profile"
+                )
     await _handle_customatic_hold(
         call, call.data[ATTR_CONTROL], {BED_TYPE_KEESON}, label="Okin app"
     )

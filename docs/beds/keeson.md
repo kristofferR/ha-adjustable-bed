@@ -290,7 +290,8 @@ initialization frame.
 Held keys write at 0 ms and then every 100 ms (10 x 100 ms per Home Assistant
 press by default). The release cancels the refresh and writes the zero key
 `E5 FE 16 00 00 00 00 06`: Simon Li and OKIN-Seating sleep 10 ms first, Heal
-Every Night 100 ms. **Stop All** writes it at once. The
+Every Night 100 ms. A cover stop or the end of a timed move writes it at once;
+**Stop All** does too. The
 `okin_app_hold_control` action holds any streamed control for 0.1-60 s.
 
 | Control | Simon Li | OKIN-Seating |
@@ -304,8 +305,9 @@ Every Night 100 ms. **Stop All** writes it at once. The
 Every control, including Home and memory, is a held key. Home keeps the app's
 neutral label: the apps do not show that it means flat. Simon Li has no save
 command: holding a memory key for 2.1 seconds shows "Memory saved", so
-**Save memory** holds the same key for 2.1 seconds. Whether the seat stores
-the position is unverified. OKIN-Seating's foot buttons carry the opposite
+**Save memory** holds the same key for 2.1 seconds, and a memory recall is
+capped at 2 seconds whatever the pulse settings, so it never saves. Whether
+the seat stores the position is unverified. OKIN-Seating's foot buttons carry the opposite
 "union" artwork; the integration follows the button identifiers. The motor
 count does not change these fixed controls.
 
@@ -330,7 +332,8 @@ Healing 7 and 8 both show tilt, lumbar and the light. Its keys:
 
 Presets are single writes. Pressing the selected preset again sends Preset
 STOP instead, as the app does, and selecting another preset moves the
-selection. **Stop All** also sends Preset STOP while a preset is selected.
+selection. **Stop All** also sends Preset STOP while a preset is selected; a
+cover stop does not, as the app's movement release does not.
 
 The massage page stays disabled until a timer is chosen. A timer turns zero
 levels into one, then writes the timer key, the wave, head and foot levels
@@ -338,11 +341,14 @@ levels into one, then writes the timer key, the wave, head and foot levels
 +/- buttons then write one frame each; +/- clamp but still write. **Massage:
 Off** (or the timer's Off) writes head 0 and foot 0 and disables the page
 again, keeping the levels. The light switch writes the explicit on/off key.
-Preset selection, light state and massage levels are kept for the life of the
-config entry, across reconnects.
+Preset selection, light state and massage levels are kept across reconnects
+until the entry is removed or its profile changes. Home Assistant allows
+massage Off and any timer at any time, while the app disables Off before a
+timer starts and disables the running timer's button.
 
-Three settings selects mirror the app's settings page. They send nothing and
-only change which key the head and foot controls write:
+Three settings selects mirror the app's settings page. They send nothing,
+only change which key the head and foot controls write, and are cleared when
+the profile changes:
 
 | Setting | Effect |
 |---------|--------|

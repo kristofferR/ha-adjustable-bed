@@ -19,6 +19,7 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -27,6 +28,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.adjustable_bed.beds.keeson import KeesonController
 from custom_components.adjustable_bed.beds.keeson_okin_apps import (
     OkinAppKeesonController,
+    drop_okin_app_sessions,
     heal_movement_key,
     java_uuid_order,
     okin_app_frame,
@@ -794,12 +796,108 @@ async def test_hold_service(
     assert _written(mock_bleak_client) == ["e5fe1600000016f0"] * 3 + [ZERO]
 
     await _reload(hass, entry, **{CONF_PROTOCOL_VARIANT: KEESON_VARIANT_BASE})
-    with pytest.raises(ServiceValidationError):
+    mock_bleak_client.write_gatt_char.reset_mock()
+    with pytest.raises(ServiceValidationError, match="Okin app profile"):
         await hass.services.async_call(
             DOMAIN,
             "okin_app_hold_control",
             {"device_id": [device.id], "control": "home", "duration": 1},
             blocking=True,
         )
+    mock_bleak_client.write_gatt_char.assert_not_awaited()
     assert await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
+
+
+async def test_motor_stops_send_only_the_zero_key(
+    coordinator, mock_bleak_client: MagicMock, no_sleep
+):
+    """Cover stops and timed-move ends are the app's movement release, not Stop All."""
+    controller = _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT, 4)
+    await controller.preset_flat()
+    mock_bleak_client.write_gatt_char.reset_mock()
+    for spec in controller.motor_control_specs:
+        await spec.stop_fn(controller)
+    for stop in ("head", "back", "feet", "legs", "tilt", "lumbar"):
+        await getattr(controller, f"move_{stop}_stop")()
+    assert _written(mock_bleak_client) == [ZERO] * 10
+    no_sleep.assert_not_awaited()  # Written at once, without the release delay.
+    # The preset stays selected: the next Flat press is the app's re-tap STOP.
+    mock_bleak_client.write_gatt_char.reset_mock()
+    await controller.preset_flat()
+    assert _written(mock_bleak_client) == ["e5fe160100000005"]
+
+
+@pytest.mark.parametrize(("pulses", "writes"), [((30, 100), 21), ((10, 250), 9), ((5, 100), 5)])
+async def test_simon_memory_recall_stays_below_the_save_threshold(
+    coordinator, mock_bleak_client: MagicMock, no_sleep, pulses, writes
+):
+    controller = _ctrl(coordinator, KEESON_VARIANT_SIMON_LI)
+    controller.motor_pulse_settings = lambda: pulses  # type: ignore[method-assign]
+    await controller.preset_memory(1)
+    assert _written(mock_bleak_client) == ["e5fe1600000040c6"] * writes + [ZERO]
+    assert (writes - 1) * pulses[1] < 2100
+
+
+async def test_heal_state_starts_without_a_wave_level_and_settings_are_heal_only(
+    coordinator,
+):
+    controller = _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT)
+    assert coordinator.controller_state["okin_app_massage_wave"] is None
+    assert controller.get_massage_state()["wave_intensity"] is None
+    with pytest.raises(ValueError):
+        coordinator.remember_okin_app_settings({"installation": True})  # Entry variant is auto.
+
+
+def test_drop_sessions_forgets_only_that_bed(hass: HomeAssistant):
+    sessions = hass.data.setdefault(DOMAIN, {}).setdefault("okin_app_sessions", {})
+    sessions[("AA:BB:CC:DD:EE:01", KEESON_VARIANT_HEAL_EVERY_NIGHT)] = object()
+    sessions[("AA:BB:CC:DD:EE:02", KEESON_VARIANT_HEAL_EVERY_NIGHT)] = object()
+    drop_okin_app_sessions(hass, "aa:bb:cc:dd:ee:01")
+    assert list(sessions) == [("AA:BB:CC:DD:EE:02", KEESON_VARIANT_HEAL_EVERY_NIGHT)]
+
+
+async def test_heal_session_and_settings_end_with_the_profile_or_entry(
+    hass: HomeAssistant,
+    mock_coordinator_connected,
+    mock_async_ble_device_from_address: MagicMock,
+    enable_custom_integrations,
+):
+    address = "AA:BB:CC:DD:EE:63"
+    key = (address, KEESON_VARIANT_HEAL_EVERY_NIGHT)
+    entry = _entry(hass, address, KEESON_VARIANT_HEAL_EVERY_NIGHT, 2)
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_OKIN_APP_SETTINGS: {"installation": True}}
+    )
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    sessions = hass.data[DOMAIN]["okin_app_sessions"]
+    assert key in sessions
+
+    # Changing the profile in the options flow drops the settings and the page state.
+    form = await hass.config_entries.options.async_init(entry.entry_id)
+    form = await hass.config_entries.options.async_configure(
+        form["flow_id"], user_input={"next_step_id": "settings"}
+    )
+    changes = {
+        CONF_BED_TYPE: BED_TYPE_KEESON,
+        CONF_MOTOR_COUNT: 2,
+        CONF_PROTOCOL_VARIANT: KEESON_VARIANT_SIMON_LI,
+    }
+    result = await hass.config_entries.options.async_configure(form["flow_id"], user_input=changes)
+    if result["type"] == FlowResultType.FORM:
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], user_input=changes
+        )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SIMON_LI
+    assert CONF_OKIN_APP_SETTINGS not in entry.data
+    assert key not in sessions
+
+    # A Heal entry's state also ends when the entry is removed.
+    await _reload(hass, entry, **{CONF_PROTOCOL_VARIANT: KEESON_VARIANT_HEAL_EVERY_NIGHT})
+    assert key in hass.data[DOMAIN]["okin_app_sessions"]
+    assert await hass.config_entries.async_remove(entry.entry_id)
+    await hass.async_block_till_done()
+    assert key not in hass.data[DOMAIN]["okin_app_sessions"]

@@ -198,6 +198,7 @@ from .const import (
     DEVICE_INFO_CHARS,
     DEVICE_INFO_READ_TIMEOUT,
     DOMAIN,
+    KEESON_VARIANT_HEAL_EVERY_NIGHT,
     LEGGETT_OKIN_SUPERSEDED_PULSE_DEFAULTS,
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_OKIN,
@@ -1444,7 +1445,10 @@ class AdjustableBedCoordinator:
 
     def remember_okin_app_settings(self, settings: Mapping[str, bool]) -> None:
         """Persist Heal Every Night's app-local movement settings for this address."""
-        if self._bed_type != BED_TYPE_KEESON:
+        if (
+            self._bed_type != BED_TYPE_KEESON
+            or self._protocol_variant != KEESON_VARIANT_HEAL_EVERY_NIGHT
+        ):
             raise ValueError("These settings belong to the Heal Every Night app profile")
         stored = {key: value is True for key, value in settings.items()}
         if self.entry.data.get(CONF_OKIN_APP_SETTINGS) == stored:

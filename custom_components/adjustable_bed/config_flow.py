@@ -104,6 +104,7 @@ from .const import (
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
+    BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
@@ -194,6 +195,7 @@ from .const import (
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_MOTOR_PULSE_USER_SET,
     CONF_OCTO_PIN,
+    CONF_OKIN_APP_SETTINGS,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
     CONF_PAIR_MODE,
@@ -243,6 +245,7 @@ from .const import (
     JIECANG_APP_LAYOUTS,
     JIECANG_APP_PROFILES,
     JIECANG_APP_TRANSPORTS,
+    KEESON_VARIANT_HEAL_EVERY_NIGHT,
     LEGGETT_APP_DEFAULT_PROFILE,
     LEGGETT_APP_MOTOR_COUNTS,
     LEGGETT_APP_PROFILES,
@@ -8155,6 +8158,23 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     address = self.config_entry.data.get(CONF_ADDRESS)
                     if isinstance(address, str):
                         clear_svane_session(self.hass, address)
+            old_okin_variant = self.config_entry.data.get(CONF_PROTOCOL_VARIANT)
+            if (
+                not separate_address_pair
+                and self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_KEESON
+                and old_okin_variant == KEESON_VARIANT_HEAL_EVERY_NIGHT
+                and (
+                    bed_type != BED_TYPE_KEESON
+                    or new_data.get(CONF_PROTOCOL_VARIANT) != old_okin_variant
+                )
+            ):
+                # Heal Every Night's settings and page state belong to that profile.
+                from .beds.keeson_okin_apps import drop_okin_app_sessions
+
+                new_data.pop(CONF_OKIN_APP_SETTINGS, None)
+                address = self.config_entry.data.get(CONF_ADDRESS)
+                if isinstance(address, str):
+                    drop_okin_app_sessions(self.hass, address)
             if any(new_data.get(key) != self.config_entry.data.get(key) for key in (CONF_STARCODE_M5X5_PROFILE, CONF_STARCODE_DEVICE_NAME, CONF_STARCODE_LIFT_ENTRIES)):
                 from .starcode_accessory_group import cancel_group_operations
                 cancel_group_operations(self.hass, self.config_entry.entry_id)
