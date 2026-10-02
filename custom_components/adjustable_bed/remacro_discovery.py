@@ -85,3 +85,10 @@ def remacro_side_lacks_global_stop(runtime: EntityRuntime) -> bool:
         return False
     controller = runtime.capability_controller
     return controller is None or not controller.supports_stop_all
+
+
+def remacro_side_rejected(runtime: EntityRuntime) -> bool:
+    """Whether a side is a Remacro bed its app permanently refuses."""
+    from .coordinator import AdjustableBedCoordinator
+
+    return isinstance(runtime, AdjustableBedCoordinator) and runtime.remacro_model_rejected

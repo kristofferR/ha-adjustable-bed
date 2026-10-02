@@ -1654,6 +1654,55 @@ async def test_unseen_paired_side_gets_controls_when_it_advertises(
         await hass.config_entries.async_unload(entry.entry_id)
 
 
+async def test_unseen_side_with_legacy_controls_loads_the_pair_half_available(
+    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
+) -> None:
+    left, right = "AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72"
+    entry, _children = _remacro_pair(hass, 50, None)
+    registry = er.async_get(hass)
+    # Left over from the generic controller this pair used before upgrading.
+    registry.async_get_or_create("cover", DOMAIN, f"{right}_back", config_entry=entry)
+    adverts = {left: MagicMock(manufacturer_data={50: b""}), right: None}
+    callbacks = {}
+
+    def register(_hass, seen, matcher, _mode):
+        callbacks[matcher["address"]] = seen
+        return lambda: callbacks.pop(matcher["address"], None)
+
+    with (
+        patch(_HISTORY, side_effect=lambda _hass, address, connectable: adverts[address]),
+        patch("homeassistant.components.bluetooth.async_register_callback", side_effect=register),
+    ):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        assert entry.state is ConfigEntryState.LOADED
+        assert set(callbacks) == {right}
+        # Kept for the reload that adopts it once the side advertises.
+        assert registry.async_get_entity_id("cover", DOMAIN, f"{right}_back") is not None
+        await hass.config_entries.async_unload(entry.entry_id)
+
+
+async def test_refused_side_retires_pair_level_combined_controls(
+    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
+) -> None:
+    left, right = "AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72"
+    entry, _children = _remacro_pair(hass, 50, 50)
+    registry = er.async_get(hass)
+    stale = registry.async_get_or_create(
+        "button", DOMAIN, "pair_remacro_preset_flat_both", config_entry=entry
+    ).entity_id
+    adverts = {
+        left: MagicMock(manufacturer_data={50: b""}),
+        right: MagicMock(manufacturer_data={13: b""}),
+    }
+    with patch(_HISTORY, side_effect=lambda _hass, address, connectable: adverts[address]):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        assert entry.state is ConfigEntryState.LOADED
+        assert registry.async_get(stale) is None
+        await hass.config_entries.async_unload(entry.entry_id)
+
+
 async def test_all_motors_yields_to_a_single_axis_stop(
     hass: HomeAssistant,
     mock_coordinator_connected,

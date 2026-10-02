@@ -722,6 +722,10 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                     # why. Retire its controls instead of failing the whole pair.
                     async_remove_side_controller_entities(hass, entry, child.address)
                     continue
+                if child.remacro_model_unseen:
+                    # Its controls wait, unavailable, for the reload that
+                    # _async_watch_unseen_remacro_sides schedules when it advertises.
+                    continue
                 await child.async_prime_offline_controller()
                 capability_controller = child.capability_controller
                 if (
