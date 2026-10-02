@@ -28,6 +28,7 @@ from homeassistant.helpers.service import async_get_device_and_config_entry
 
 from .beds.linak_protocol import LinakAlarmAction, LinakAlarmStep
 from .const import (
+    BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
@@ -100,6 +101,7 @@ SERVICE_ZSERIES_HOLD_CONTROL = "zseries_hold_control"
 SERVICE_ZSERIES_SET_ALARM = "zseries_set_alarm"
 SERVICE_ZSERIES_SYNC_CLOCK = "zseries_sync_clock"
 SERVICE_SIMMONS_HOLD_CONTROL = "simmons_hold_control"
+SERVICE_ADJUSTABLE_LUMBAR_HOLD_CONTROL = "adjustable_lumbar_hold_control"
 SERVICE_SIMMONS_SET_ALARM = "simmons_set_alarm"
 ATTR_SLOT = "slot"
 ATTR_MODE = "mode"
@@ -2030,6 +2032,16 @@ async def handle_simmons_hold_control(call: ServiceCall) -> None:
     )
 
 
+async def handle_adjustable_lumbar_hold_control(call: ServiceCall) -> None:
+    """Hold one Adjustable bed (Lumbar) control, then send its two release STOPs."""
+    await _handle_customatic_hold(
+        call,
+        call.data[ATTR_CONTROL],
+        {BED_TYPE_ADJUSTABLE_LUMBAR},
+        label="Adjustable bed (Lumbar)",
+    )
+
+
 async def handle_simmons_set_alarm(call: ServiceCall) -> None:
     """Program or disable one of the two SIMMONS alarms through the command queue."""
     from .beds.base import SideBoundController
@@ -3163,6 +3175,19 @@ async def async_register_services(hass: HomeAssistant) -> None:
         DOMAIN,
         SERVICE_SIMMONS_HOLD_CONTROL,
         handle_simmons_hold_control,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_CONTROL): cv.string,
+                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_ADJUSTABLE_LUMBAR_HOLD_CONTROL,
+        handle_adjustable_lumbar_hold_control,
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
