@@ -294,6 +294,7 @@ class LogicdataAirPumpController(BedController):
             _LOGGER.debug("Unable to unsubscribe air pump notifications", exc_info=True)
         finally:
             self._subscribed = False
+            self._next_query = None
             self._notify_callback = None
 
     async def async_refresh_diagnostics(self) -> None:
@@ -306,7 +307,8 @@ class LogicdataAirPumpController(BedController):
         await self._write(QUERY_PRESSURE, asyncio.Event())
 
     def invalidate_diagnostics(self) -> None:
-        self._next_query = None
+        # The coordinator also calls this when it (re)schedules polling right
+        # after start_notify, so keep the 800 ms anchor; stop_notify clears it.
         self._last_click = None
         self.forward_controller_state_updates({PRESSURE_STATE: None})
 

@@ -573,7 +573,10 @@ class LogicdataAppController(BedController):
     async def lights_toggle(self) -> None:
         if not self.supports_lights:
             raise NotImplementedError("The selected layout has no light control")
-        await self._action(protocol.light_command(self._family), "light")
+        # Sleep Smart sends the P1 toggle for every bed profile; its middle
+        # light helper is unused.
+        family: protocol.Family = "p1" if self._sleep_smart else self._family
+        await self._action(protocol.light_command(family), "light")
 
     async def massage_off(self) -> None:
         if not self.supports_massage:
@@ -797,7 +800,8 @@ class LogicdataAppController(BedController):
             if client is not None and client.is_connected:
                 for uuid in self._subscribed:
                     try:
-                        await client.stop_notify(uuid)
+                        async with self._ble_lock:
+                            await client.stop_notify(uuid)
                     except Exception:
                         _LOGGER.debug(
                             "Unable to unsubscribe MOTIONrelax characteristic", exc_info=True

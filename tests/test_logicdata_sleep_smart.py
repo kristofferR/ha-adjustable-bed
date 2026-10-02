@@ -290,6 +290,11 @@ async def test_massage_mode_and_light_send_their_release_companions(coordinator,
     ]
 
 
+async def test_middle_rail_light_keeps_the_p1_toggle(coordinator, instant):
+    await bed(coordinator, command_family="p2").lights_toggle()
+    assert packets(coordinator)[0] == "f1f10f000f7e"
+
+
 async def test_factory_reset_and_massage_query_are_profile_actions(coordinator, instant):
     controller = bed(coordinator)
     assert controller.supports_factory_reset

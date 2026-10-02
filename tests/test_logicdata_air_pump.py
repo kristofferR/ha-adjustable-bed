@@ -170,6 +170,9 @@ async def test_pressure_polls_after_800_ms_then_every_500_ms(coordinator):
         sleeps.append(round(seconds, 1))
 
     await controller.start_notify()
+    # The coordinator invalidates diagnostics when it schedules polling, after
+    # start_notify; that must not cancel the 800 ms first query.
+    controller.invalidate_diagnostics()
     coordinator.client.start_notify.assert_awaited_once()
     assert coordinator.client.start_notify.await_args.args[0] == pump.NOTIFY_UUID
     assert controller.diagnostic_poll_interval == 0.5
@@ -182,7 +185,12 @@ async def test_pressure_polls_after_800_ms_then_every_500_ms(coordinator):
     handler(SimpleNamespace(uuid=pump.NOTIFY_UUID), bytearray(b"RET>SP>0000001E"))
     handler(SimpleNamespace(uuid=pump.NOTIFY_UUID), bytearray(b"RET>SP>12"))
     controller.invalidate_diagnostics()
-    assert updates == [{pump.PRESSURE_STATE: 30}, {pump.PRESSURE_STATE: None}]
+    assert updates == [
+        {pump.PRESSURE_STATE: None},
+        {pump.PRESSURE_STATE: 30},
+        {pump.PRESSURE_STATE: None},
+    ]
+    await controller.stop_notify()
     await controller.async_refresh_diagnostics()
     assert writes(coordinator) == [pump.QUERY_PRESSURE] * 2
 
