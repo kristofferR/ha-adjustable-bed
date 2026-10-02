@@ -348,6 +348,7 @@ retain their legacy profile unless you explicitly change it.
 | Leggett Okin | Prodigy / U Series app profile | [Leggett app profiles](beds/leggett-okin.md) |
 | L&P legacy app | Model code, protocol mode, confirmed write UUID, optional notification UUID | [L&P legacy](beds/lp-legacy.md) |
 | LOGICDATA app | Phone/tablet app, command family, layout, transport, under-bed light | [LOGICDATA app profiles](beds/logicdata-app.md) |
+| LOGICDATA Sleep Smart app | Bed: app profile `sleep_smart`, P1 (Vienna/Toronto) or P2 (Middle Rail), standard or split series, transport, light. Pump: separate `logicdata_air_pump` bed type with no motor settings | [Sleep Smart](beds/logicdata-sleep-smart.md) |
 | Jiecang app | App, layout, transport, under-bed light | [Jiecang app profiles](beds/jiecang-app.md) |
 | Malouf Base / Lucid Base app | App, exact model, transport, physical primary/secondary role | [Malouf/Lucid app profiles](beds/malouf-app.md) |
 | Customatic apps | Explicit Clarity, Jerome's C or Remedy bed type; fixed two, two or three motor layout | [Customatic app profiles](beds/customatic.md) |
