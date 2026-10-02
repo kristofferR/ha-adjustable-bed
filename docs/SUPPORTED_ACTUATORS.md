@@ -159,7 +159,7 @@ These beds have their own dedicated integrations:
    - `Limoss*`, `Stawett*` → Limoss
    - `OKIN-BLE*` → requires service/manufacturer data to distinguish [Malouf/Lucid](beds/malouf.md) from other OKIN-family profiles
    - `Rize*` → Often [DewertOkin](beds/dewertokin.md), but `Mouselet*` devices are [Kaidi](beds/kaidi.md)
-   - `Simmons*`, `Glory*`, `Symphony*` → See [DewertOkin](beds/dewertokin.md)
+   - `Simmons*`, `Glory*`, `Symphony*` → See [DewertOkin](beds/dewertokin.md); beds using the `com.okin.simmons` app → [SIMMONS app](beds/simmons.md)
    - `Star35*` → [Okin CB35](beds/okin-cb35.md) (Sealy Posturematic)
    - `SILVERmotion*` or Logicdata manufacturer ID → [Logicdata](beds/logicdata.md)
    - `OKIN-*` with no advertised service UUIDs → manual setup; use diagnostics to check for [Okin CST](beds/okin-cst.md) or [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md)

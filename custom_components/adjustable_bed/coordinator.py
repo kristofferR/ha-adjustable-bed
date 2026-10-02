@@ -116,6 +116,7 @@ from .const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
     BED_TYPE_SERTA,
+    BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SOLACE,
@@ -197,6 +198,7 @@ from .const import (
     REVERIE_BACK_MAX_ANGLE,
     RICHMAT_REMOTE_AUTO,
     RUNTIME_BOND_KEYS,
+    SIMMONS_NAME_RULE_VARIANTS,
     SOLACE_VARIANT_WOOSA,
     STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
     VARIANT_AUTO,
@@ -218,6 +220,7 @@ from .controller_factory import create_controller
 from .detection import (
     OKIN_SHARED_UUID_GATT_REFINABLE_TYPES,
     detect_richmat_remote_from_name,
+    is_mac_like_name,
     refine_dewertokin_star_protocol_from_name,
     refine_malouf_protocol_from_gatt,
     refine_nordic_uart_protocol_from_device_info,
@@ -688,6 +691,21 @@ class AdjustableBedCoordinator:
             )
             if self._pending_internal_bond_marker is not None:
                 self._pending_capability_reload = True
+            self._async_persist_config(
+                {**self.entry.data, CONF_BLE_DEVICE_NAME: device_name},
+                keys={CONF_BLE_DEVICE_NAME},
+            )
+        elif (
+            self._bed_type == BED_TYPE_SIMMONS
+            and self._protocol_variant in SIMMONS_NAME_RULE_VARIANTS
+            and not is_mac_like_name(device_name)
+            and self.entry.data.get(CONF_BLE_DEVICE_NAME) != device_name
+        ):
+            # The SIMMONS name rule needs the raw name later, when BlueZ may
+            # report only the address; entities do not depend on it.
+            self._begin_internal_entry_update(
+                bool(self.entry.data.get(CONF_BLE_BOND_ESTABLISHED, False))
+            )
             self._async_persist_config(
                 {**self.entry.data, CONF_BLE_DEVICE_NAME: device_name},
                 keys={CONF_BLE_DEVICE_NAME},

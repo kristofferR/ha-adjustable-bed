@@ -918,6 +918,7 @@
       "starcode_profile_mismatch": "Choose the bed class matching the exact case-sensitive Bluetooth name.",
       "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 entries with different Bluetooth addresses.",
       "starcode_unpair_first": "Use standalone entries for this independently addressed accessory group.",
+      "simmons_unpair_first": "Unpair the beds and configure each side separately before changing the SIMMONS bed type or protocol.",
       "remacro_model_unmapped": "This bed advertises a company ID that no Remacro app lists.",
       "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses.",
       "remacro_app_unpair_first": "Each side keeps its own Remacro app. Unpair the beds and change each side's protocol variant separately."
@@ -2020,6 +2021,21 @@
       "starcode_query": {
         "name": "Refresh massage and RGB"
       },
+      "simmons_inclined_left": {
+        "name": "Inclined left"
+      },
+      "simmons_inclined_middle": {
+        "name": "Inclined middle"
+      },
+      "simmons_inclined_right": {
+        "name": "Inclined right"
+      },
+      "simmons_sync_clock": {
+        "name": "Sync clock"
+      },
+      "simmons_refresh_alarms": {
+        "name": "Refresh alarms"
+      },
       "remacro_led_brightness_save": {
         "name": "Save light level"
       }
@@ -2915,6 +2931,12 @@
       },
       "adjustable_lite_massage_timer": {
         "name": "Massage timer"
+      },
+      "simmons_alarm_1": {
+        "name": "Alarm 1"
+      },
+      "simmons_alarm_2": {
+        "name": "Alarm 2"
       }
     },
     "light": {
@@ -4129,6 +4151,61 @@
           "description": "Up, down, composite flat or STOP."
         }
       }
+    },
+    "simmons_hold_control": {
+      "name": "Hold SIMMONS control",
+      "description": "Hold one SIMMONS app control, repeating it every 300 ms, then send its release stops. The app's help says holding Custom Mode for 5 seconds saves the current position; the save on the bed is unverified.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "Zero-gravity, TV and anti-snore exist only on a regular bed; the inclined controls only on an inclined bed."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "simmons_set_alarm": {
+      "name": "Set SIMMONS alarm",
+      "description": "Program or turn off alarm 1 or 2 of a SIMMONS app bed. The two enabled alarms cannot share a time or a mode.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "slot": {
+          "name": "Alarm"
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Turn off to disable this alarm."
+        },
+        "time": {
+          "name": "Local alarm time",
+          "description": "Minute precision, in the Home Assistant time zone."
+        },
+        "weekdays": {
+          "name": "Repeat on",
+          "description": "Leave empty for the next occurrence of the selected time."
+        },
+        "mode": {
+          "name": "Mode",
+          "description": "Required when enabling. Anti-snore is available on a regular bed only."
+        },
+        "confirm_custom_mode": {
+          "name": "Confirm Custom Mode",
+          "description": "Required for Custom Mode. Check the saved back/foot angles first; extreme custom angles can cause injury."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
     }
   },
   "exceptions": {
@@ -4185,6 +4262,9 @@
     },
     "bundle_needs_side_for_paired": {
       "message": "{device_name} is a paired bed; pick one side's device to generate a support bundle."
+    },
+    "simmons_alarm_not_reported": {
+      "message": "The bed did not report both alarm records in this connection, so nothing was written. Try again, or press Refresh Alarms first."
     },
     "remacro_model_unknown": {
       "message": "No advertisement from this Remacro bed has been seen yet, so its model is unknown. Setup retries once the bed is in Bluetooth range."

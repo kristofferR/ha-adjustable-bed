@@ -205,6 +205,11 @@ export function bedEntitiesForDevice(
           bed.massage.buttons.push(id);
         } else if (key.startsWith("starcode_abm5_4_")) {
           bed.utility.push(id);
+        } else if (key.startsWith("simmons_inclined_")) {
+          // Inclined-bed controls replace three presets; their physical roles are unverified.
+          presetMap.set(key, id);
+        } else if (key === "simmons_sync_clock" || key === "simmons_refresh_alarms") {
+          bed.utility.push(id);
         } else if (key === "coolbase_head_massage" || key === "coolbase_foot_massage" || key === "coolbase_massage_mode") {
           bed.massage.buttons.push(id);
         } else if (key.startsWith("coolbase_")) {
