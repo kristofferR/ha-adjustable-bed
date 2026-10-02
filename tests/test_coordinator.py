@@ -303,7 +303,7 @@ class TestCoordinatorConnection:
             ),
             patch(
                 "custom_components.adjustable_bed.coordinator.async_clear_proxy_gatt_cache",
-                new=AsyncMock(side_effect=[True, False]),
+                new=AsyncMock(return_value=True),
             ),
             patch("custom_components.adjustable_bed.coordinator.client_source", side_effect=route),
             patch(

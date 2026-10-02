@@ -3470,9 +3470,11 @@ class AdjustableBedCoordinator:
         # skip flag, it is consumed by the attempt that verifies it.
         rerouted_stale_gatt_source: str | None = None
         while True:
-            if rerouted_stale_gatt_source and self._stale_gatt_retry_source is None:
+            if rerouted_stale_gatt_source:
                 # HA routed the verification through another path, and it did not
-                # succeed. The cleared proxy still deserves its no-pair check.
+                # succeed. The cleared proxy still deserves its no-pair check, even
+                # if the other path just cleared its own cache: the original proxy
+                # holds the bond being recovered.
                 self._stale_gatt_retry_source = rerouted_stale_gatt_source
                 self._skip_pair_next_attempt = True
             rerouted_stale_gatt_source = None
