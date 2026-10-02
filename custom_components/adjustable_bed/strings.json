@@ -634,6 +634,7 @@
       "wrong_variant": "Failed to communicate with bed. Try selecting a different protocol variant.",
       "device_busy": "The bed is busy or another device is connected. Try disconnecting other controllers first.",
       "invalid_number": "Please enter valid numbers for motor pulse count and delay.",
+      "invalid_pulse_count_range": "For this app profile, the motor pulse count must be between 1 and 600.",
       "invalid_pin": "PIN must be empty or exactly 4 digits.",
       "invalid_variant_for_bed_type": "The selected protocol variant is not compatible with the selected bed type.",
       "invalid_motor_count_for_bed_type": "One motor is supported only for Standard OCTO TV lift controllers.",
@@ -878,6 +879,7 @@
     },
     "error": {
       "invalid_number": "Please enter valid numbers for motor pulse count and delay.",
+      "invalid_pulse_count_range": "For this app profile, the motor pulse count must be between 1 and 600.",
       "invalid_pin": "PIN must be empty or exactly 4 digits.",
       "invalid_motor_count_for_bed_type": "One motor is supported only for Standard OCTO TV lift controllers.",
       "invalid_angle": "Angle must be a positive number between 0 and 180 degrees.",
@@ -900,6 +902,7 @@
       "malouf_app_pair_settings": "Unpair first, then select each physical bed\u2019s app profile before combining them again.",
       "furnimove_remote_required": "Choose a captured FurniMove handset ID. An unknown ID requires its exact app table; the receiver label cannot choose one.",
       "furnimove_unpair_first": "Separate the paired entries before changing to FurniMove, then select each side\u2019s own handset layout.",
+      "okin_bedding_app_unpair_first": "Separate the paired entries before changing to or from the Tranquil or Z-Series app, then select each side\u2019s own app profile.",
       "vibradorm_app_required": "Choose the bed app.",
       "vibradorm_app_invalid": "Choose a supported app control layout and retained feature settings.",
       "vibradorm_app_unpair_first": "Unpair these entries before changing app settings. Each physical side keeps its own app controls.",
@@ -2478,6 +2481,42 @@
       "serenity_alarm_type": {
         "name": "App alarm state"
       },
+      "tranquil_manufacturer": {
+        "name": "Manufacturer"
+      },
+      "tranquil_status_code": {
+        "name": "App status code"
+      },
+      "tranquil_massage_timer_code": {
+        "name": "Massage timer code"
+      },
+      "tranquil_massage_timer_minutes": {
+        "name": "Massage timer"
+      },
+      "tranquil_save_event_code": {
+        "name": "Local memory save event"
+      },
+      "tranquil_alarm_type": {
+        "name": "App alarm state"
+      },
+      "zseries_manufacturer": {
+        "name": "Manufacturer"
+      },
+      "zseries_status_code": {
+        "name": "App status code"
+      },
+      "zseries_massage_timer_code": {
+        "name": "Massage timer code"
+      },
+      "zseries_massage_timer_minutes": {
+        "name": "Massage timer"
+      },
+      "zseries_save_event_code": {
+        "name": "Local memory save event"
+      },
+      "zseries_alarm_type": {
+        "name": "App alarm state"
+      },
       "furnimove_model": {
         "name": "FurniMove model"
       },
@@ -3479,6 +3518,81 @@
         }
       }
     },
+    "tranquil_hold_control": {
+      "name": "Hold Tranquil control",
+      "description": "Hold one supported Tranquil app action, then release it. Save actions can change stored positions.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "Literal action from the selected Tranquil profile held-control options."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "zseries_hold_control": {
+      "name": "Hold Z-Series control",
+      "description": "Hold one supported Z-Series app action, then release it. Save actions can change stored positions.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "Literal action from the selected Z-Series profile held-control options."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "zseries_set_alarm": {
+      "name": "Set Z-Series alarm",
+      "description": "Set or clear the Customatic Z-Series app alarm. The bed clock is set to Home Assistant local time first.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Alarm time",
+          "description": "Required when enabling. Minute precision; the app sets today, or tomorrow if the time has passed."
+        },
+        "wake_mode": {
+          "name": "Wake mode",
+          "description": "Required when enabling the alarm."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "zseries_sync_clock": {
+      "name": "Synchronize Z-Series clock",
+      "description": "Set the Customatic Z-Series controller clock to the current Home Assistant local time.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
     "rmcontrol_alarm": {
       "name": "RMControl alarm",
       "description": "Configure a supported product's countdown or repeating alarm using its exact action catalog.",
@@ -4231,6 +4345,12 @@
     },
     "side_not_available": {
       "message": "This bed has no {side} side."
+    },
+    "zseries_alarm_time_required": {
+      "message": "Choose an alarm time to enable the Z-Series alarm."
+    },
+    "zseries_alarm_wake_mode_required": {
+      "message": "Choose a wake-up mode to enable the Z-Series alarm."
     },
     "service_not_supported_for_paired": {
       "message": "{device_name} is a paired bed; {service} is not yet supported on paired beds."
