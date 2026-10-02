@@ -583,57 +583,58 @@ async def handle_goto_preset(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
-    await _preflight_live_limoss_remote(targets, lambda ctrl: ctrl.validate_memory_recall(preset))
+    async with _limoss_remote_reload_transaction(targets):
+        await _preflight_live_limoss_remote(targets, lambda ctrl: ctrl.validate_memory_recall(preset))
 
-    # Phase 1: validate the preset on EVERY targeted side before moving any
-    # bed, so a multi-target call never half-executes.
-    preflighted: PreflightedSides = []
-    try:
-        for coordinator, side in targets:
-            for target in _command_targets(coordinator, side):
-                controller = await _validation_controller(coordinator, target, preflighted)
-                if not controller.supports_memory_presets:
-                    raise ServiceValidationError(
-                        f"Device '{target.name}' does not support memory presets",
-                        translation_domain=DOMAIN,
-                        translation_key="memory_presets_not_supported",
-                        translation_placeholders={"device_name": target.name},
-                    )
-                # Validate preset against controller's memory slot count
-                slot_count = controller.memory_slot_count
-                if preset > slot_count:
-                    raise ServiceValidationError(
-                        f"Device '{target.name}' only supports memory presets 1-{slot_count}. "
-                        f"Preset {preset} is not available for this bed type.",
-                        translation_domain=DOMAIN,
-                        translation_key="invalid_preset_number",
-                        translation_placeholders={
-                            "device_name": target.name,
-                            "max_preset": str(slot_count),
-                            "requested_preset": str(preset),
-                        },
-                    )
-                try:
-                    controller.validate_memory_recall(preset)
-                except ValueError as error:
-                    raise ServiceValidationError(str(error)) from error
-    except ServiceValidationError:
-        await _release_preflighted(preflighted)
-        raise
+        # Phase 1: validate the preset on EVERY targeted side before moving any
+        # bed, so a multi-target call never half-executes.
+        preflighted: PreflightedSides = []
+        try:
+            for coordinator, side in targets:
+                for target in _command_targets(coordinator, side):
+                    controller = await _validation_controller(coordinator, target, preflighted)
+                    if not controller.supports_memory_presets:
+                        raise ServiceValidationError(
+                            f"Device '{target.name}' does not support memory presets",
+                            translation_domain=DOMAIN,
+                            translation_key="memory_presets_not_supported",
+                            translation_placeholders={"device_name": target.name},
+                        )
+                    # Validate preset against controller's memory slot count
+                    slot_count = controller.memory_slot_count
+                    if preset > slot_count:
+                        raise ServiceValidationError(
+                            f"Device '{target.name}' only supports memory presets 1-{slot_count}. "
+                            f"Preset {preset} is not available for this bed type.",
+                            translation_domain=DOMAIN,
+                            translation_key="invalid_preset_number",
+                            translation_placeholders={
+                                "device_name": target.name,
+                                "max_preset": str(slot_count),
+                                "requested_preset": str(preset),
+                            },
+                        )
+                    try:
+                        controller.validate_memory_recall(preset)
+                    except ValueError as error:
+                        raise ServiceValidationError(str(error)) from error
+        except ServiceValidationError:
+            await _release_preflighted(preflighted)
+            raise
 
-    # Phase 2: every target validated - now move them. If one bed's command
-    # fails, release the still-connected preflighted beds that never ran (and
-    # so never reset their idle timer) before propagating.
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator,
-                side,
-                lambda ctrl, p=preset: ctrl.preset_memory(p),  # type: ignore[misc]
-            )
-    except Exception:
-        await _release_preflighted(preflighted)
-        raise
+        # Phase 2: every target validated - now move them. If one bed's command
+        # fails, release the still-connected preflighted beds that never ran (and
+        # so never reset their idle timer) before propagating.
+        try:
+            for coordinator, side in targets:
+                await _execute_sided(
+                    coordinator,
+                    side,
+                    lambda ctrl, p=preset: ctrl.preset_memory(p),  # type: ignore[misc]
+                )
+        except Exception:
+            await _release_preflighted(preflighted)
+            raise
 
 
 async def handle_save_preset(call: ServiceCall) -> None:
@@ -653,53 +654,54 @@ async def handle_save_preset(call: ServiceCall) -> None:
         if not controller.supports_memory_programming or not 1 <= preset <= controller.memory_slot_count:
             raise ValueError("The fresh Limoss Remote profile cannot program this memory slot")
 
-    await _preflight_live_limoss_remote(targets, validate_remote_slot)
+    async with _limoss_remote_reload_transaction(targets):
+        await _preflight_live_limoss_remote(targets, validate_remote_slot)
 
-    # Phase 1: validate that every targeted side can program this slot before
-    # programming any, so a multi-target call never half-executes.
-    preflighted: PreflightedSides = []
-    try:
-        for coordinator, side in targets:
-            for target in _command_targets(coordinator, side):
-                controller = await _validation_controller(coordinator, target, preflighted)
-                if not controller.supports_memory_programming:
-                    raise ServiceValidationError(
-                        f"Device '{target.name}' does not support programming memory presets",
-                        translation_domain=DOMAIN,
-                        translation_key="memory_programming_not_supported",
-                        translation_placeholders={"device_name": target.name},
-                    )
-                # Validate preset against controller's memory slot count
-                slot_count = controller.memory_slot_count
-                if preset > slot_count:
-                    raise ServiceValidationError(
-                        f"Device '{target.name}' only supports memory presets 1-{slot_count}. "
-                        f"Preset {preset} is not available for this bed type.",
-                        translation_domain=DOMAIN,
-                        translation_key="invalid_preset_number",
-                        translation_placeholders={
-                            "device_name": target.name,
-                            "max_preset": str(slot_count),
-                            "requested_preset": str(preset),
-                        },
-                    )
-    except ServiceValidationError:
-        await _release_preflighted(preflighted)
-        raise
+        # Phase 1: validate that every targeted side can program this slot before
+        # programming any, so a multi-target call never half-executes.
+        preflighted: PreflightedSides = []
+        try:
+            for coordinator, side in targets:
+                for target in _command_targets(coordinator, side):
+                    controller = await _validation_controller(coordinator, target, preflighted)
+                    if not controller.supports_memory_programming:
+                        raise ServiceValidationError(
+                            f"Device '{target.name}' does not support programming memory presets",
+                            translation_domain=DOMAIN,
+                            translation_key="memory_programming_not_supported",
+                            translation_placeholders={"device_name": target.name},
+                        )
+                    # Validate preset against controller's memory slot count
+                    slot_count = controller.memory_slot_count
+                    if preset > slot_count:
+                        raise ServiceValidationError(
+                            f"Device '{target.name}' only supports memory presets 1-{slot_count}. "
+                            f"Preset {preset} is not available for this bed type.",
+                            translation_domain=DOMAIN,
+                            translation_key="invalid_preset_number",
+                            translation_placeholders={
+                                "device_name": target.name,
+                                "max_preset": str(slot_count),
+                                "requested_preset": str(preset),
+                            },
+                        )
+        except ServiceValidationError:
+            await _release_preflighted(preflighted)
+            raise
 
-    # Phase 2: every target validated - now program them. Release any
-    # still-connected preflighted bed that never ran if one fails.
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator,
-                side,
-                lambda ctrl, p=preset: ctrl.program_memory(p),  # type: ignore[misc]
-                cancel_running=False,
-            )
-    except Exception:
-        await _release_preflighted(preflighted)
-        raise
+        # Phase 2: every target validated - now program them. Release any
+        # still-connected preflighted bed that never ran if one fails.
+        try:
+            for coordinator, side in targets:
+                await _execute_sided(
+                    coordinator,
+                    side,
+                    lambda ctrl, p=preset: ctrl.program_memory(p),  # type: ignore[misc]
+                    cancel_running=False,
+                )
+        except Exception:
+            await _release_preflighted(preflighted)
+            raise
 
 
 async def handle_stop_all(call: ServiceCall) -> None:
@@ -2098,6 +2100,31 @@ def _limoss_remote_controller(controller: BedController | SideBoundController) -
     raise ServiceValidationError("This action requires the explicit Limoss Remote profile")
 
 
+@contextlib.asynccontextmanager
+async def _limoss_remote_reload_transaction(
+    targets: list[tuple[BedTarget, str]],
+) -> AsyncIterator[None]:
+    """Defer selected receivers' entity reloads through all service phases."""
+    from .coordinator import AdjustableBedCoordinator
+
+    async with contextlib.AsyncExitStack() as stack:
+        physical: dict[int, BedChild] = {}
+        for coordinator, side in targets:
+            selected = [
+                target for target in _command_targets(coordinator, side)
+                if target.bed_type == BED_TYPE_LIMOSS_REMOTE
+            ]
+            if selected and isinstance(coordinator, PairedBedCoordinator):
+                # Any child's capability update reloads this same parent entry.
+                selected = list(coordinator.children.values())
+            physical.update((id(target), target) for target in selected)
+        for _, target in sorted(physical.items()):
+            if not isinstance(target, AdjustableBedCoordinator):
+                raise ServiceValidationError("Limoss Remote requires a physical receiver target")
+            await stack.enter_async_context(target.async_defer_capability_reload())
+        yield
+
+
 async def _preflight_live_limoss_remote(
     targets: list[tuple[BedTarget, str]],
     validate: Callable[[LimossRemoteController | SideBoundController], object],
@@ -2154,31 +2181,32 @@ async def _execute_limoss_remote(
             validate(_limoss_remote_controller(controller))
         except ValueError as error:
             raise ServiceValidationError(str(error)) from error
-    await _preflight_live_limoss_remote(targets, validate)
-    preflighted = await _preflight_capability(targets, "requires_notification_channel", "Limoss Remote", check)
-    completed = 0
+    async with _limoss_remote_reload_transaction(targets):
+        await _preflight_live_limoss_remote(targets, validate)
+        preflighted = await _preflight_capability(targets, "requires_notification_channel", "Limoss Remote", check)
+        completed = 0
 
-    async def run(controller: BedController | SideBoundController) -> None:
-        from .beds.base import SideBoundController
+        async def run(controller: BedController | SideBoundController) -> None:
+            from .beds.base import SideBoundController
 
-        nonlocal completed
-        selected = _limoss_remote_controller(controller)
-        check(selected)
-        await execute(selected)
-        physical = selected._controller if isinstance(selected, SideBoundController) else selected
-        if physical._coordinator.cancel_command.is_set():
-            raise asyncio.CancelledError
-        completed += 1
+            nonlocal completed
+            selected = _limoss_remote_controller(controller)
+            check(selected)
+            await execute(selected)
+            physical = selected._controller if isinstance(selected, SideBoundController) else selected
+            if physical._coordinator.cancel_command.is_set():
+                raise asyncio.CancelledError
+            completed += 1
 
-    try:
-        for coordinator, side in targets:
-            before = completed
-            await _execute_sided(coordinator, side, run, cancel_running=True)
-            if completed - before != len(_command_targets(coordinator, side)):
-                raise ServiceValidationError("Limoss Remote action was interrupted before completion")
-    except (Exception, asyncio.CancelledError):
-        await _release_preflighted(preflighted)
-        raise
+        try:
+            for coordinator, side in targets:
+                before = completed
+                await _execute_sided(coordinator, side, run, cancel_running=True)
+                if completed - before != len(_command_targets(coordinator, side)):
+                    raise ServiceValidationError("Limoss Remote action was interrupted before completion")
+        except (Exception, asyncio.CancelledError):
+            await _release_preflighted(preflighted)
+            raise
 
 
 def _limoss_remote_targets(call: ServiceCall) -> list[tuple[BedTarget, str]]:
@@ -2228,53 +2256,14 @@ async def handle_limoss_remote_features(call: ServiceCall) -> None:
 
     light, massage = call.data["underbed_light"], call.data["massage"]
     targets = _limoss_remote_targets(call)
-    touched: list[tuple[LimossRemoteController, bool, bool]] = []
-    online: list[tuple[BedTarget, str]] = []
-    local: list[BedChild] = []
-    for coordinator, side in targets:
-        physical_targets = _command_targets(coordinator, side)
-        disabling: list[BedChild] = []
-        for target in physical_targets:
-            cached = target.capability_controller
-            if cached is None:
-                raise ServiceValidationError("This receiver has no cached app profile")
-            selected = _limoss_remote_controller(cached)
-            physical = selected._controller if isinstance(selected, SideBoundController) else selected
-            assert isinstance(physical, LimossRemoteController)
-            if (physical.underbed_light and not light) or (physical.massage and not massage):
-                disabling.append(target)
-            else:
-                local.append(target)
-        if len(disabling) == len(physical_targets):
-            online.append((coordinator, side))
-        elif isinstance(coordinator, PairedBedCoordinator):
-            online.extend(
-                (coordinator, child_side)
-                for child_side, child in coordinator.children.items()
-                if child in disabling
-            )
-
-    async def apply(controller: LimossRemoteController | SideBoundController) -> None:
-        physical = controller._controller if isinstance(controller, SideBoundController) else controller
-        assert isinstance(physical, LimossRemoteController)
-        touched.append((physical, physical.underbed_light, physical.massage))
-        await controller.set_optional_features(light, massage, persist=False)
-
-    try:
-        # Only disabling an enabled feature has native OFF frames to deliver.
-        if online:
-            await _execute_limoss_remote(call, lambda ctrl: None, apply, targets=online)
-        async with contextlib.AsyncExitStack() as stack:
-            # Shared guards use one process-local order across multi-target calls.
-            owners = {id(coordinator): coordinator for coordinator, _ in targets}
-            for _, coordinator in sorted(owners.items()):
-                guard = (
-                    coordinator.async_capability_reload_guard()
-                    if isinstance(coordinator, PairedBedCoordinator)
-                    else coordinator.async_command_operation_guard()
-                )
-                await stack.enter_async_context(guard)
-            for target in local:
+    async with _limoss_remote_reload_transaction(targets):
+        touched: list[tuple[LimossRemoteController, bool, bool]] = []
+        online: list[tuple[BedTarget, str]] = []
+        local: list[BedChild] = []
+        for coordinator, side in targets:
+            physical_targets = _command_targets(coordinator, side)
+            disabling: list[BedChild] = []
+            for target in physical_targets:
                 cached = target.capability_controller
                 if cached is None:
                     raise ServiceValidationError("This receiver has no cached app profile")
@@ -2282,15 +2271,55 @@ async def handle_limoss_remote_features(call: ServiceCall) -> None:
                 physical = selected._controller if isinstance(selected, SideBoundController) else selected
                 assert isinstance(physical, LimossRemoteController)
                 if (physical.underbed_light and not light) or (physical.massage and not massage):
-                    raise ServiceValidationError("The local feature selection changed; retry the action")
-                await apply(selected)
-            for controller, _, _ in touched:
-                controller._coordinator.remember_limoss_remote_features(light, massage)
-    except (Exception, asyncio.CancelledError):
-        # Flags describe the selected local layout, not a hardware acknowledgement.
-        for controller, previous_light, previous_massage in touched:
-            controller.underbed_light, controller.massage = previous_light, previous_massage
-        raise
+                    disabling.append(target)
+                else:
+                    local.append(target)
+            if len(disabling) == len(physical_targets):
+                online.append((coordinator, side))
+            elif isinstance(coordinator, PairedBedCoordinator):
+                online.extend(
+                    (coordinator, child_side)
+                    for child_side, child in coordinator.children.items()
+                    if child in disabling
+                )
+
+        async def apply(controller: LimossRemoteController | SideBoundController) -> None:
+            physical = controller._controller if isinstance(controller, SideBoundController) else controller
+            assert isinstance(physical, LimossRemoteController)
+            touched.append((physical, physical.underbed_light, physical.massage))
+            await controller.set_optional_features(light, massage, persist=False)
+
+        try:
+            # Only disabling an enabled feature has native OFF frames to deliver.
+            if online:
+                await _execute_limoss_remote(call, lambda ctrl: None, apply, targets=online)
+            async with contextlib.AsyncExitStack() as stack:
+                # Shared guards use one process-local order across multi-target calls.
+                owners = {id(coordinator): coordinator for coordinator, _ in targets}
+                for _, coordinator in sorted(owners.items()):
+                    guard = (
+                        coordinator.async_capability_reload_guard()
+                        if isinstance(coordinator, PairedBedCoordinator)
+                        else coordinator.async_command_operation_guard()
+                    )
+                    await stack.enter_async_context(guard)
+                for target in local:
+                    cached = target.capability_controller
+                    if cached is None:
+                        raise ServiceValidationError("This receiver has no cached app profile")
+                    selected = _limoss_remote_controller(cached)
+                    physical = selected._controller if isinstance(selected, SideBoundController) else selected
+                    assert isinstance(physical, LimossRemoteController)
+                    if (physical.underbed_light and not light) or (physical.massage and not massage):
+                        raise ServiceValidationError("The local feature selection changed; retry the action")
+                    await apply(selected)
+                for controller, _, _ in touched:
+                    controller._coordinator.remember_limoss_remote_features(light, massage)
+        except (Exception, asyncio.CancelledError):
+            # Flags describe the selected local layout, not a hardware acknowledgement.
+            for controller, previous_light, previous_massage in touched:
+                controller.underbed_light, controller.massage = previous_light, previous_massage
+            raise
 
 async def handle_tranquil_hold_control(call: ServiceCall) -> None:
     """Hold one literal Tranquil action, then send its proven release sequence."""

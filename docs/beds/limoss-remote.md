@@ -25,8 +25,10 @@ must finish before any feature selections are saved. A failure or cancellation
 retains the previous local selections even if some hardware writes succeeded.
 Replacing a queued or active OFF transaction also keeps its previous selection;
 a normal scheduler return alone does not establish burst completion.
-Entity reloads wait until the selected operations and any active sibling command
-have released their command lanes. App artwork themes are retained as a local preference in diagnostics;
+Fresh capability updates defer entity reloads through every selected service
+phase, including preflight and terminal persistence. BLE links still release
+between sequential sides. Reloads resume only after the transaction and any
+active sibling command have released their command lanes. App artwork themes are retained as a local preference in diagnostics;
 Home Assistant continues to use its own theme and does not copy app artwork.
 
 ## Controls and actions

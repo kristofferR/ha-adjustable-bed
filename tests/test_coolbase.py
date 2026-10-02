@@ -678,18 +678,13 @@ class TestCoolBaseAppVectors:
         coordinator._client.start_notify.assert_awaited()
         assert coordinator._client.start_notify.await_args.args[0] == KEESON_BASE_NOTIFY_CHAR_UUID
 
-    @pytest.mark.parametrize(("dewert_okin_profile", "raises"), [(False, True), (True, False)])
-    async def test_required_notify_failure_propagates(
-        self, dewert_okin_profile: bool, raises: bool
-    ) -> None:
+    @pytest.mark.parametrize("dewert_okin_profile", [False, True])
+    async def test_notify_failure_keeps_motor_control(self, dewert_okin_profile: bool) -> None:
+        """A proxy without a free notify slot loses status, never the connection."""
         client = MagicMock(is_connected=True)
         client.start_notify = AsyncMock(side_effect=BleakError("no CCCD"))
         controller = CoolBaseController(MagicMock(client=client), dewert_okin_profile=dewert_okin_profile)
-        if raises:
-            with pytest.raises(BleakError):
-                await controller.start_notify()
-        else:
-            await controller.start_notify()
+        await controller.start_notify()
 
     def test_dewert_okin_profile_marks_cool_base_sensors_stale(self) -> None:
         assert _controller().stale_controller_state_sensor_entity_keys == frozenset()

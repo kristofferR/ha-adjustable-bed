@@ -17,6 +17,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
     CONF_PAIR_MODE,
+    CONF_PROTOCOL_VARIANT,
     CONF_SIDE,
     DOMAIN,
     PAIR_MODE_SEPARATE_ADDRESS,
@@ -24,6 +25,7 @@ from custom_components.adjustable_bed.const import (
     SIDE_RIGHT,
 )
 from custom_components.adjustable_bed.furnimove_repair import (
+    CONF_STAIRCASE_LAYOUT_CONFIRMED,
     FurniMoveLayoutRepairFlow,
     async_clear_furnimove_layout_issues,
     async_refresh_furnimove_layout_issues,
@@ -94,6 +96,24 @@ async def test_confirmed_staircase_is_not_converted_to_a_bed(hass):
     assert entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_RF_ECO_BT
     assert entry.data[CONF_MOTOR_COUNT] == 1
     async_refresh_furnimove_layout_issues(hass, entry)
+    assert not ir.async_get(hass).issues
+
+
+async def test_keep_current_dismisses_repair_without_rewriting_settings(hass):
+    """A working OKIMAT bed saved as RF ECO BT keeps its motors and remote (#406)."""
+    entry = _legacy(hass, options={CONF_PROTOCOL_VARIANT: "82418"})
+    before = (dict(entry.data), dict(entry.options))
+    async_refresh_furnimove_layout_issues(hass, entry)
+    flow = FurniMoveLayoutRepairFlow(entry.entry_id, None)
+    flow.hass = hass
+    form = await flow.async_step_init()
+    assert "keep" in [
+        option["value"] for option in form["data_schema"].schema["layout"].config["options"]
+    ]
+    result = await flow.async_step_init({"layout": "keep"})
+    assert result["type"] == "create_entry"
+    assert dict(entry.data) == {**before[0], CONF_STAIRCASE_LAYOUT_CONFIRMED: True}
+    assert dict(entry.options) == before[1]
     assert not ir.async_get(hass).issues
 
 
