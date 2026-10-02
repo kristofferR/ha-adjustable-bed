@@ -34,6 +34,7 @@ from .const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LIMOSS,
+    BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_APP,
@@ -99,6 +100,11 @@ from .const import (
     CONF_KAIDI_PRODUCT_ID,
     CONF_KAIDI_SOFA_ACU_NO,
     CONF_LEGGETT_APP_PROFILE,
+    CONF_LIMOSS_REMOTE_LIGHT,
+    CONF_LIMOSS_REMOTE_MASSAGE,
+    CONF_LIMOSS_REMOTE_PRODUCT,
+    CONF_LIMOSS_REMOTE_STATE,
+    CONF_LIMOSS_REMOTE_THEME,
     CONF_LOGICDATA_APP_FAMILY,
     CONF_LOGICDATA_APP_HAS_LIGHT,
     CONF_LOGICDATA_APP_LAYOUT,
@@ -155,6 +161,7 @@ from .const import (
     LEGGETT_APP_DEFAULT_PROFILE,
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
+    LIMOSS_REMOTE_REVERSE_KEYS,
     LINAK_VARIANT_PERFORMANCE,
     MANUFACTURER_ID_OKIN,
     NORDIC_UART_SERVICE_UUID,
@@ -188,6 +195,8 @@ from .const import (
     SLEEPYS_BOX25_VARIANT_STAR,
     SOLACE_VARIANT_WOOSA,
     SVANE_VARIANT_JENSEN_LINON,
+    SVANE_VARIANT_JMC,
+    SVANE_VARIANT_MULTI,
     VARIANT_AUTO,
 )
 from .kaidi_protocol import extract_kaidi_advertisement
@@ -486,8 +495,18 @@ async def create_controller(
             import_module, ".beds.svane", __package__
         )
         from .beds.svane import SvaneController
+        from .svane_state import CONF_SVANE_PREFERENCES, get_svane_session
 
-        return SvaneController(coordinator)
+        if protocol_variant not in (None, VARIANT_AUTO, SVANE_VARIANT_MULTI, SVANE_VARIANT_JMC):
+            raise ValueError("Unknown Svane Remote profile")
+        profile = "jmc" if protocol_variant == SVANE_VARIANT_JMC else "multi"
+        session = get_svane_session(
+            coordinator.hass,
+            coordinator.address,
+            profile,
+            coordinator.entry.data.get(CONF_SVANE_PREFERENCES),
+        )
+        return SvaneController(coordinator, profile=profile, session=session)
 
     if bed_type == BED_TYPE_SLEEP_NUMBER_MCR:
         await coordinator.hass.async_add_import_executor_job(
@@ -651,6 +670,31 @@ async def create_controller(
             movement_override=data.get(CONF_MOTION_BED_MOVEMENT),
         )
         return MotionBedController(coordinator, selection=selection)
+
+    if bed_type == BED_TYPE_LIMOSS_REMOTE:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.limoss_remote", __package__
+        )
+        from .beds.limoss_remote import LimossRemoteController
+        from .beds.limoss_remote_protocol import LimossRemoteCapabilities
+        from .limoss_remote_state import validate_limoss_remote_state
+
+        entry_data = coordinator.entry.data
+        state = validate_limoss_remote_state(entry_data.get(CONF_LIMOSS_REMOTE_STATE, {}))
+        cached = state.get("capabilities")
+        capabilities = LimossRemoteCapabilities(**cached) if isinstance(cached, dict) else None
+        reverse = tuple(entry_data.get(key, False) for key in LIMOSS_REMOTE_REVERSE_KEYS)
+        return LimossRemoteController(
+            coordinator, product=entry_data.get(CONF_LIMOSS_REMOTE_PRODUCT),
+            underbed_light=entry_data.get(CONF_LIMOSS_REMOTE_LIGHT, False),
+            massage=entry_data.get(CONF_LIMOSS_REMOTE_MASSAGE, False),
+            theme=entry_data.get(CONF_LIMOSS_REMOTE_THEME),
+            reverse_motors=(reverse[0], reverse[1], reverse[2], reverse[3]),
+            cached_capabilities=capabilities,
+            memories=coordinator.limoss_remote_memory_store,
+            metadata=state.get("metadata"),
+        )
+
 
     if bed_type == BED_TYPE_FSM_RELAX:
         await coordinator.hass.async_add_import_executor_job(import_module, ".beds.fsm_relax", __package__)

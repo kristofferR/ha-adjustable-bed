@@ -2191,6 +2191,227 @@ motion_bed_provision_wifi:
           mode: box
           min: -90
           max: 90
+svane_hold_control:
+  name: Hold Svane Remote control
+  description: Hold selected axes or adjust the lamp until the bounded duration ends. Source-specific release runs after movement.
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    control:
+      required: true
+      selector:
+        select:
+          options:
+            - head_up
+            - head_down
+            - feet_up
+            - feet_down
+            - head_up_feet_up
+            - head_up_feet_down
+            - head_down_feet_up
+            - head_down_feet_down
+            - light_adjust
+    duration:
+      description: Feet-only actions and P1 combinations require more than 0.1 seconds.
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.1
+          unit_of_measurement: s
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+
+svane_release_axis:
+  name: Release Svane Remote axis
+  description: Release one axis during an active Svane hold while the other axis continues. This signals the serialized writer.
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    motor:
+      required: true
+      selector:
+        select:
+          options: [head, feet]
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+
+limoss_remote_hold_control:
+  name: Hold Limoss Remote Control
+  description: Hold one rendered app control, then send its five release frames.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      name: Side
+      selector:
+        select:
+          options: [left, right, both]
+    control:
+      name: Control
+      description: "Literal control from this device’s rendered layout."
+      required: true
+      selector:
+        text: {}
+    duration:
+      name: Duration
+      description: "Hold time in seconds, 0.1–60."
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.001
+          unit_of_measurement: s
+          mode: box
+
+limoss_remote_recall_memory:
+  name: Hold Limoss Remote Memory
+  description: Recall this physical target’s captured local memory for a bounded duration.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      name: Side
+      selector:
+        select:
+          options: [left, right, both]
+    preset:
+      name: Memory slot
+      description: "Slot 1–8, limited by the device reply."
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 8
+          step: 1
+          mode: box
+    duration:
+      name: Duration
+      description: "Hold time in seconds, 0.1–60."
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.001
+          unit_of_measurement: s
+          mode: box
+
+limoss_remote_rename_memory:
+  name: Rename Limoss Remote Memory
+  description: Rename a local memory. Empty names are permitted.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      name: Side
+      selector:
+        select:
+          options: [left, right, both]
+    preset:
+      name: Memory slot
+      description: "Slot 1–8, limited by the device reply."
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 8
+          step: 1
+          mode: box
+    name:
+      name: Name
+      description: "Local display name, including an empty string."
+      required: true
+      selector:
+        text: {}
+
+limoss_remote_calibrate:
+  name: Calibrate Limoss Remote
+  description: Hold the app calibration command after explicit confirmation, then send five calibration release frames.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      name: Side
+      selector:
+        select:
+          options: [left, right, both]
+    confirmed:
+      name: Confirm calibration
+      description: "Select true to confirm this device operation."
+      required: true
+      selector:
+        boolean: {}
+    duration:
+      name: Duration
+      description: "Hold time in seconds, 0.1–60."
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.001
+          unit_of_measurement: s
+          mode: box
+
+limoss_remote_features:
+  name: Configure Limoss Remote Controls
+  description: Set local layout selections. Disabling a selected feature sends its ten OFF commands before saving.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      name: Side
+      selector:
+        select:
+          options: [left, right, both]
+    underbed_light:
+      name: Lamp controls
+      description: "Show the app’s lamp action."
+      required: true
+      selector:
+        boolean: {}
+    massage:
+      name: Massage controls
+      description: "Show the app’s massage actions."
+      required: true
+      selector:
+        boolean: {}
+
 fsm_relax_hold_control:
   name: FSM Relax hold control
   description: Hold an app-labelled control, then send the five-frame release. Physical actuator mapping is unverified.

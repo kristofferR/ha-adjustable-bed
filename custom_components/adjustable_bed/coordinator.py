@@ -97,6 +97,7 @@ from .const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LIMOSS,
+    BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
@@ -122,6 +123,7 @@ from .const import (
     BED_TYPE_SOLACE,
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M5X5,
+    BED_TYPE_SVANE,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
@@ -141,6 +143,9 @@ from .const import (
     CONF_IDLE_DISCONNECT_SECONDS,
     CONF_JENSEN_PIN,
     CONF_LEGS_MAX_ANGLE,
+    CONF_LIMOSS_REMOTE_LIGHT,
+    CONF_LIMOSS_REMOTE_MASSAGE,
+    CONF_LIMOSS_REMOTE_STATE,
     CONF_MALOUF_LAYOUT,
     CONF_MALOUF_MEMORY_SLOTS,
     CONF_MOTION_BED_MOVEMENT,
@@ -254,6 +259,7 @@ from .vibradorm_app_state import (
 if TYPE_CHECKING:
     from .beds.base import BedController, SideBoundController
     from .beds.starcode_abm5_4_profiles import RetainedAppState
+    from .limoss_remote_state import LimossRemoteMemoryStore
 
 T = TypeVar("T")
 _LOGGER = logging.getLogger(__name__)
@@ -525,6 +531,7 @@ class AdjustableBedCoordinator:
         self.okin_cb35_preset_started_at: float | None = None
         self._controller_state: dict[str, Any] = {}
         self.starcode_app_retained_state: RetainedAppState | None = None
+        self._limoss_remote_memory_store: LimossRemoteMemoryStore | None = None
         self._furnimove_state_store: Store[dict[str, int | str | bool]] | None = None
         self._furnimove_local_state: dict[str, int | str | bool] = {}
         self._furnimove_state_loaded = False
@@ -1319,6 +1326,18 @@ class AdjustableBedCoordinator:
             self._async_persist_config({**self.entry.data, CONF_NAME: name})
         self._name = name
 
+    def remember_svane_preferences(self, preferences: dict[str, object]) -> None:
+        """Guard one changed target-local preference batch without bond inference."""
+        from .svane_state import CONF_SVANE_PREFERENCES, svane_preferences
+
+        if self._bed_type != BED_TYPE_SVANE:
+            raise ValueError("Svane preferences require the explicit bed profile")
+        svane_preferences(preferences)
+        if self.entry.data.get(CONF_SVANE_PREFERENCES) == preferences:
+            return
+        self._begin_internal_entry_update(self._ble_bond_established)
+        self._async_persist_config({**self.entry.data, CONF_SVANE_PREFERENCES: preferences}, keys={CONF_SVANE_PREFERENCES})
+
     @property
     def is_connected(self) -> bool:
         """Return whether we are currently connected to the bed."""
@@ -1961,6 +1980,62 @@ class AdjustableBedCoordinator:
             await self._async_raise_pairing_issue()
             return False
         return True
+
+    @property
+    def limoss_remote_memory_store(self) -> LimossRemoteMemoryStore:
+        """Keep this physical target's durable memories across controller recreation."""
+        from .limoss_remote_state import LimossRemoteMemoryStore, validate_limoss_remote_state
+
+        if self._bed_type != BED_TYPE_LIMOSS_REMOTE:
+            raise ValueError("Local memories require the explicit Limoss Remote profile")
+        if self._limoss_remote_memory_store is None:
+            state = validate_limoss_remote_state(self.entry.data.get(CONF_LIMOSS_REMOTE_STATE, {}))
+            self._limoss_remote_memory_store = LimossRemoteMemoryStore.restore(
+                state.get("memories"),
+                lambda memories: self.remember_limoss_remote_data({"memories": memories}),
+            )
+        return self._limoss_remote_memory_store
+
+    def remember_limoss_remote_data(self, delta: Mapping[str, object]) -> None:
+        """Guard one terminal local-data update; no bond or hardware-state inference."""
+        from .limoss_remote_state import validate_limoss_remote_state
+
+        if self._bed_type != BED_TYPE_LIMOSS_REMOTE or set(delta) - {"metadata", "capabilities", "memories"}:
+            raise ValueError("Invalid Limoss Remote local data")
+        if not delta:
+            return
+        previous = validate_limoss_remote_state(self.entry.data.get(CONF_LIMOSS_REMOTE_STATE, {}))
+        state = validate_limoss_remote_state({**previous, **delta})
+        if state == previous:
+            return
+        self._begin_internal_entry_update(self._ble_bond_established)
+        capabilities_changed = state.get("capabilities") != previous.get("capabilities")
+        if capabilities_changed:
+            self._offline_controller = self._controller
+            if self._pending_internal_bond_marker is not None:
+                self._pending_capability_reload = True
+        self._async_persist_config({**self.entry.data, CONF_LIMOSS_REMOTE_STATE: state}, keys={CONF_LIMOSS_REMOTE_STATE})
+        if capabilities_changed:
+            self._schedule_pending_capability_reload()
+
+    def remember_limoss_remote_features(self, light: bool, massage: bool) -> None:
+        """Reload the exact target's entity layout after completed OFF writes."""
+        if self._bed_type != BED_TYPE_LIMOSS_REMOTE or type(light) is not bool or type(massage) is not bool:
+            raise ValueError("Invalid Limoss Remote local features")
+        changed = {CONF_LIMOSS_REMOTE_LIGHT: light, CONF_LIMOSS_REMOTE_MASSAGE: massage}
+        if all(self.entry.data.get(key, False) == value for key, value in changed.items()):
+            return
+        self._begin_internal_entry_update(self._ble_bond_established)
+        self._offline_controller = self._controller or self._offline_controller
+        from .beds.limoss_remote import LimossRemoteController
+
+        if isinstance(self._offline_controller, LimossRemoteController):
+            self._offline_controller.underbed_light = light
+            self._offline_controller.massage = massage
+        if self._pending_internal_bond_marker is not None:
+            self._pending_capability_reload = True
+        self._async_persist_config({**self.entry.data, **changed}, keys=set(changed))
+        self._schedule_pending_capability_reload()
 
     def _merged_vibradorm_app_metadata(self, progress: Mapping[str, str]) -> dict[str, str | None]:
         """Preserve completed fields; omitted values mean not read, never clear."""
@@ -3864,6 +3939,7 @@ class AdjustableBedCoordinator:
                 if not _defer_device_info and self._bed_type not in {
                     BED_TYPE_VIBRADORM_APP,
                     BED_TYPE_VMATBASIC,
+                    BED_TYPE_LIMOSS_REMOTE,
                 }:
                     if self._device_info_read_done:
                         ble_manufacturer = self._ble_manufacturer

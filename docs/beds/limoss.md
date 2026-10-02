@@ -115,3 +115,5 @@ These values are derived from APK behavior (`LIMOSS_SENDING_INTERVAL = 80`).
 
 - `disassembly/output/com.limoss.limossremote/ANALYSIS.md`
 - `disassembly/output/com.stawett/ANALYSIS.md`
+
+For the exact Android 7.1.8 app layouts, held cleanup and durable eight-slot local memories, select the separate [Limoss Remote app profile](limoss-remote.md). Shared service/name discovery continues to choose the generic route described here; choose the app profile explicitly.

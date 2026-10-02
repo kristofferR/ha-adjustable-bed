@@ -1527,6 +1527,14 @@ class BedController(ABC):
         """Return True when held controls are available."""
         return bool(self.held_control_options)
 
+    def validate_svane_hold_control(self, control: str, duration_ms: int) -> None:
+        """Validate exact live Svane roles before any target starts motion."""
+        raise ValueError("This profile does not support Svane held actions")
+
+    def request_svane_axis_release(self, axis: str) -> None:
+        """Signal an active Svane writer without doing BLE I/O."""
+        raise ValueError("This profile does not support Svane axis release")
+
     @property
     def requires_linked_live_readiness(self) -> bool:
         """Require both physical GATT sessions ready before a linked command starts."""

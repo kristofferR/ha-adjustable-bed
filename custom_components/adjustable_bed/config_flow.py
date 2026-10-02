@@ -106,6 +106,7 @@ from .const import (
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
@@ -158,6 +159,10 @@ from .const import (
     CONF_KAIDI_RESOLVED_VARIANT,
     CONF_LEGGETT_APP_PROFILE,
     CONF_LEGS_MAX_ANGLE,
+    CONF_LIMOSS_REMOTE_LIGHT,
+    CONF_LIMOSS_REMOTE_MASSAGE,
+    CONF_LIMOSS_REMOTE_PRODUCT,
+    CONF_LIMOSS_REMOTE_THEME,
     CONF_LOGICDATA_APP_FAMILY,
     CONF_LOGICDATA_APP_HAS_LIGHT,
     CONF_LOGICDATA_APP_LAYOUT,
@@ -235,6 +240,8 @@ from .const import (
     LEGGETT_APP_MOTOR_COUNTS,
     LEGGETT_APP_PROFILES,
     LEGGETT_VARIANT_GEN2,
+    LIMOSS_REMOTE_CONFIG_KEYS,
+    LIMOSS_REMOTE_REVERSE_KEYS,
     LOGICDATA_APP_FAMILIES,
     LOGICDATA_APP_LAYOUTS,
     LOGICDATA_APP_PROFILES,
@@ -263,6 +270,9 @@ from .const import (
     STARCODE_APP_CONFIG_KEYS,
     STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
     SVANE_VARIANT_JENSEN_LINON,
+    SVANE_VARIANT_JMC,
+    SVANE_VARIANT_MULTI,
+    SVANE_VARIANTS,
     VARIANT_AUTO,
     VIBRADORM_APP_CONFIG_KEYS,
     VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS,
@@ -670,6 +680,8 @@ class BondRouteMismatchError(Exception):
 _PER_SIDE_APP_PROFILES: Final = {
     SOLACE_VARIANT_WOOSA: "woosa_unpair_first",
     SVANE_VARIANT_JENSEN_LINON: "jensen_linon_unpair_first",
+    SVANE_VARIANT_MULTI: "svane_unpair_first",
+    SVANE_VARIANT_JMC: "svane_unpair_first",
 }
 
 
@@ -678,6 +690,8 @@ def _motor_count_options(
     protocol_variant: str = DEFAULT_PROTOCOL_VARIANT,
 ) -> list[int]:
     """Return motor counts supported by the selected protocol."""
+    if bed_type == BED_TYPE_SVANE and protocol_variant != SVANE_VARIANT_JENSEN_LINON:
+        return [2]
     if bed_type == BED_TYPE_STARCODE_M5X5:
         return [2]
     if bed_type == BED_TYPE_OKIN_RF_ECO_BT:
@@ -961,6 +975,37 @@ def _normalize_motion_bed_data(data: dict[str, Any]) -> None:
     data[CONF_DISABLE_ANGLE_SENSING] = True
     data[CONF_HAS_MASSAGE] = False  # Named app controls own their capabilities.
     data[CONF_MOTOR_PULSE_USER_SET] = False
+def _add_limoss_remote_schema_fields(
+    schema: dict[vol.Marker, Any], current_data: dict[str, Any] | None = None
+) -> None:
+    """Source-local selectors; never select this app using a shared UUID/name."""
+    from .beds.limoss_remote_protocol import THEMES
+
+    data = current_data or {}
+    schema[vol.Required(CONF_LIMOSS_REMOTE_PRODUCT, default=data.get(CONF_LIMOSS_REMOTE_PRODUCT, vol.UNDEFINED))] = vol.In({"bed": "Bed", "chair": "Chair"})
+    for key in (CONF_LIMOSS_REMOTE_LIGHT, CONF_LIMOSS_REMOTE_MASSAGE, *LIMOSS_REMOTE_REVERSE_KEYS):
+        schema[vol.Optional(key, default=data.get(key, False))] = bool
+    marker = vol.Optional(CONF_LIMOSS_REMOTE_THEME, default=data[CONF_LIMOSS_REMOTE_THEME]) if data.get(CONF_LIMOSS_REMOTE_THEME) is not None else vol.Optional(CONF_LIMOSS_REMOTE_THEME)
+    schema[marker] = vol.In(THEMES)
+
+
+def _limoss_remote_errors(data: dict[str, Any]) -> dict[str, str]:
+    from .beds.limoss_remote import validate_limoss_remote_profile
+
+    if data.get(CONF_LIMOSS_REMOTE_PRODUCT) not in ("bed", "chair"):
+        return {CONF_LIMOSS_REMOTE_PRODUCT: "limoss_remote_product_required"}
+    reverse = tuple(data.get(key, False) for key in LIMOSS_REMOTE_REVERSE_KEYS)
+    try:
+        validate_limoss_remote_profile(
+            data[CONF_LIMOSS_REMOTE_PRODUCT], data.get(CONF_LIMOSS_REMOTE_LIGHT, False),
+            data.get(CONF_LIMOSS_REMOTE_MASSAGE, False),
+            (reverse[0], reverse[1], reverse[2], reverse[3]), data.get(CONF_LIMOSS_REMOTE_THEME),
+        )
+    except (TypeError, ValueError):
+        return {"base": "limoss_remote_invalid"}
+    return {}
+
+
 def _add_fsm_relax_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[str, Any]) -> None:
     """Expose local layout, optional controls, reversals and all eight labels."""
     schema[vol.Required(CONF_FSM_RELAX_LAYOUT, default=data.get(CONF_FSM_RELAX_LAYOUT, "chair"))] = vol.In(("chair", "bed"))
@@ -1268,6 +1313,34 @@ def _vmatbasic_errors(data: Mapping[str, Any]) -> dict[str, str]:
                 return {key: "vmatbasic_invalid"}
     return {}
 
+def _add_svane_schema_fields(schema: dict[vol.Marker, Any], bed_type: str | None) -> None:
+    """Explicit app transport selection; host axes do not imply motor count."""
+    if bed_type != BED_TYPE_SVANE:
+        return
+    variant_marker = next((m for m in schema if m.schema == CONF_PROTOCOL_VARIANT), None)
+    variant = (
+        variant_marker.default()
+        if isinstance(variant_marker, (vol.Optional, vol.Required)) and callable(variant_marker.default)
+        else VARIANT_AUTO
+    )
+    if variant not in SVANE_VARIANTS:
+        variant = VARIANT_AUTO
+    if variant_marker is not None:
+        del schema[variant_marker]
+    schema[vol.Optional(CONF_PROTOCOL_VARIANT, default=variant)] = vol.In(SVANE_VARIANTS)
+    if variant == SVANE_VARIANT_JENSEN_LINON:
+        return
+    hidden = {
+        CONF_MOTOR_COUNT,
+        CONF_HAS_MASSAGE,
+        CONF_DISABLE_ANGLE_SENSING,
+        CONF_MOTOR_PULSE_COUNT,
+        CONF_MOTOR_PULSE_DELAY_MS,
+    }
+    for marker in tuple(schema):
+        if marker.schema in hidden:
+            del schema[marker]
+
 
 def _hide_vibradorm_generic_fields(schema: dict[vol.Marker, Any], bed_type: str | None) -> None:
     """App profiles define controls and held behavior independently of generic options."""
@@ -1276,7 +1349,7 @@ def _hide_vibradorm_generic_fields(schema: dict[vol.Marker, Any], bed_type: str 
             if marker.schema in {CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_DELAY_MS, CONF_PROTOCOL_VARIANT}:
                 del schema[marker]
         return
-    if bed_type not in {BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC, BED_TYPE_MOTION_BED}:
+    if bed_type not in {BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC, BED_TYPE_MOTION_BED, BED_TYPE_LIMOSS_REMOTE}:
         return
     hidden = {
         CONF_MOTOR_COUNT,
@@ -1837,6 +1910,23 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return self.async_show_form(
             step_id="starcode_app", data_schema=vol.Schema(schema), errors=errors
         )
+
+    async def async_step_limoss_remote(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect this app's local product/feature/reversal selection."""
+        assert self._manual_data is not None
+        data = {**self._manual_data, **(user_input or {})}
+        errors = _limoss_remote_errors(data) if user_input is not None else {}
+        if user_input is not None and not errors:
+            data[CONF_DISABLE_ANGLE_SENSING] = True
+            data[CONF_HAS_MASSAGE] = False
+            data[CONF_MOTOR_PULSE_USER_SET] = False
+            self._manual_data = data
+            return await self._finish_with_verify(data, data.get(CONF_NAME, "Adjustable Bed"))
+        schema: dict[vol.Marker, Any] = {}
+        _add_limoss_remote_schema_fields(schema, data)
+        return self.async_show_form(step_id="limoss_remote", data_schema=vol.Schema(schema), errors=errors)
 
     async def async_step_fsm_relax(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Select an app profile explicitly, without inferring physical axes."""
@@ -2560,7 +2650,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if user_input is None:
             return None
         requested = user_input.get(CONF_BED_TYPE, shown_bed_type)
-        if requested == shown_bed_type or not {BED_TYPE_SERENITY, BED_TYPE_VMATBASIC}.intersection(
+        if requested == shown_bed_type or not {BED_TYPE_SERENITY, BED_TYPE_VMATBASIC, BED_TYPE_SVANE}.intersection(
             (shown_bed_type, requested)
         ):
             return None
@@ -2767,9 +2857,15 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 if (
                     selected_bed_type == BED_TYPE_SVANE
                     and protocol_variant == VARIANT_AUTO
+                    and self._discovery_info.name != "Svane Bed"
                     and is_jensen_linon_name(self._discovery_info.name)
                 ):
                     entry_data[CONF_PROTOCOL_VARIANT] = SVANE_VARIANT_JENSEN_LINON
+                if selected_bed_type == BED_TYPE_SVANE and protocol_variant == VARIANT_AUTO:
+                    from .svane_state import svane_profile_for_selected_name
+
+                    if svane_profile_for_selected_name(self._discovery_info.name) == "jmc":
+                        entry_data[CONF_PROTOCOL_VARIANT] = SVANE_VARIANT_JMC
                 if _is_leggett_app_type(selected_bed_type, protocol_variant):
                     self._manual_data = entry_data
                     self._leggett_app_pairing_step = "bluetooth_pairing"
@@ -2786,6 +2882,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 if selected_bed_type == BED_TYPE_MOTION_BED:
                     self._manual_data = entry_data
                     return await self.async_step_motion_bed()
+                if selected_bed_type == BED_TYPE_LIMOSS_REMOTE:
+                    self._manual_data = entry_data
+                    return await self.async_step_limoss_remote()
+
 
                 if selected_bed_type == BED_TYPE_FSM_RELAX:
                     self._manual_data = entry_data
@@ -3086,6 +3186,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         )
 
         _hide_vibradorm_generic_fields(schema_dict, bed_type)
+        _add_svane_schema_fields(schema_dict, bed_type)
         return self.async_show_form(
             step_id="bluetooth_confirm",
             data_schema=vol.Schema(schema_dict),
@@ -3639,6 +3740,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, str(discovery_source))
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
+            if bed_type == BED_TYPE_SVANE and protocol_variant == VARIANT_AUTO:
+                from .svane_state import svane_profile_for_selected_name
+
+                if svane_profile_for_selected_name(self._discovery_info.name) == "jmc":
+                    protocol_variant = SVANE_VARIANT_JMC
+
 
             motor_count = _normalize_fixed_motor_count(
                 bed_type,
@@ -3738,6 +3845,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 if bed_type == BED_TYPE_MOTION_BED:
                     self._manual_data = entry_data
                     return await self.async_step_motion_bed()
+                if bed_type == BED_TYPE_LIMOSS_REMOTE:
+                    self._manual_data = entry_data
+                    return await self.async_step_limoss_remote()
+
 
                 if bed_type == BED_TYPE_FSM_RELAX:
                     self._manual_data = entry_data
@@ -3903,6 +4014,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             _add_cb24_side_schema_field(schema_dict)
 
         _hide_vibradorm_generic_fields(schema_dict, defaults_bed_type)
+        _add_svane_schema_fields(schema_dict, defaults_bed_type)
         return self.async_show_form(
             step_id="manual_config",
             data_schema=vol.Schema(schema_dict),
@@ -4055,6 +4167,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     if bed_type == BED_TYPE_MOTION_BED:
                         self._manual_data = entry_data
                         return await self.async_step_motion_bed()
+                    if bed_type == BED_TYPE_LIMOSS_REMOTE:
+                        self._manual_data = entry_data
+                        return await self.async_step_limoss_remote()
+
 
                     if bed_type == BED_TYPE_FSM_RELAX:
                         self._manual_data = entry_data
@@ -4188,6 +4304,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             schema_dict.pop(vol.Optional(CONF_PROTOCOL_VARIANT), None)
 
         _hide_vibradorm_generic_fields(
+            schema_dict, (user_input or {}).get(CONF_BED_TYPE, preselected_bed_type)
+        )
+        _add_svane_schema_fields(
             schema_dict, (user_input or {}).get(CONF_BED_TYPE, preselected_bed_type)
         )
         typed_address = (user_input or {}).get(CONF_ADDRESS, "")
@@ -5511,6 +5630,19 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     control_type="other" if control == "other" else int(control),
                     remembered_floor_default=data.get(CONF_VIBRADORM_FLOOR_DEFAULT, 6),
                 )
+        if data.get(CONF_BED_TYPE) == BED_TYPE_SVANE:
+            variant = data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
+            if variant not in SVANE_VARIANTS:
+                raise ValueError("Unknown Svane Remote profile")
+            if variant != SVANE_VARIANT_JENSEN_LINON:
+                data.update(
+                    {
+                        CONF_MOTOR_COUNT: 2,
+                        CONF_HAS_MASSAGE: False,
+                        CONF_DISABLE_ANGLE_SENSING: True,
+                        CONF_MOTOR_PULSE_USER_SET: False,
+                    }
+                )
         return self.async_create_entry(title=title, data=data)
 
     async def _finish_with_verify(self, entry_data: dict[str, Any], title: str) -> ConfigFlowResult:
@@ -5521,6 +5653,19 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         beds whose single connection must be left for setup (issue #385). Standard
         Octo must verify PIN requirements even when no scanner is available yet.
         """
+        if entry_data.get(CONF_BED_TYPE) == BED_TYPE_SVANE:
+            variant = entry_data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
+            if variant not in SVANE_VARIANTS:
+                raise ValueError("Unknown Svane Remote profile")
+            if variant != SVANE_VARIANT_JENSEN_LINON:
+                entry_data.update(
+                    {
+                        CONF_MOTOR_COUNT: 2,
+                        CONF_HAS_MASSAGE: False,
+                        CONF_DISABLE_ANGLE_SENSING: True,
+                        CONF_MOTOR_PULSE_USER_SET: False,
+                    }
+                )
         if entry_data.get(CONF_BED_TYPE) == BED_TYPE_OKIN_RF_ECO_BT:
             from .furnimove_repair import CONF_STAIRCASE_LAYOUT_CONFIRMED
 
@@ -6304,6 +6449,11 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         if bed_type != BED_TYPE_MOTION_BED:
             for key in MOTION_BED_CONFIG_KEYS:
                 data.pop(key, None)
+        if bed_type != BED_TYPE_LIMOSS_REMOTE:
+            for key in LIMOSS_REMOTE_CONFIG_KEYS:
+                data.pop(key, None)
+            # Per-MAC local memories remain durable when changing protocol.
+
         if bed_type != BED_TYPE_STARCODE_M5X5:
             for key in (CONF_STARCODE_M5X5_PROFILE, CONF_STARCODE_DEVICE_NAME, CONF_STARCODE_LIFT_ENTRIES):
                 data.pop(key, None)
@@ -6815,6 +6965,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             _add_vibradorm_app_schema_fields(schema_dict, current_data)
         if bed_type == BED_TYPE_VMATBASIC and not separate_address_pair:
             _add_vmatbasic_schema_fields(schema_dict, current_data)
+        if bed_type == BED_TYPE_LIMOSS_REMOTE and not separate_address_pair:
+            _add_limoss_remote_schema_fields(schema_dict, current_data)
         if bed_type == BED_TYPE_MALOUF_APP and not separate_address_pair:
             _add_malouf_app_schema_fields(
                 schema_dict, current_data, persisted_data=self.config_entry.data
@@ -6866,12 +7018,22 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             ] = TextSelector(TextSelectorConfig())
 
         _hide_vibradorm_generic_fields(schema_dict, bed_type)
+        _add_svane_schema_fields(schema_dict, bed_type)
         if user_input is not None:
             # HA's select control uses string values; keep persisted counts numeric.
             if CONF_MOTOR_COUNT in user_input:
                 user_input = {**user_input, CONF_MOTOR_COUNT: int(user_input[CONF_MOTOR_COUNT])}
             requested_bed_type = user_input.get(CONF_BED_TYPE, bed_type)
             requested_route = user_input.get(CONF_PROTOCOL_VARIANT, form_variant)
+            if separate_address_pair and (
+                (requested_bed_type == BED_TYPE_LIMOSS_REMOTE and requested_bed_type != bed_type)
+                or any(key in user_input for key in LIMOSS_REMOTE_CONFIG_KEYS)
+            ):
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={"base": "limoss_remote_pair_settings"},
+                )
             if separate_address_pair and (
                 (requested_bed_type == BED_TYPE_FSM_RELAX and requested_bed_type != bed_type)
                 or any(key in user_input for key in (CONF_FSM_RELAX_LAYOUT, CONF_FSM_RELAX_LIGHT, CONF_FSM_RELAX_MASSAGE, CONF_FSM_RELAX_MEMORY_NAMES, *CONF_FSM_RELAX_REVERSALS))
@@ -7059,6 +7221,20 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             if (
                 separate_address_pair
                 and CONF_PROTOCOL_VARIANT in paired_changes
+                and paired_changes[CONF_PROTOCOL_VARIANT] != SVANE_VARIANT_JENSEN_LINON
+                and not any(child.get(CONF_PROTOCOL_VARIANT) == SVANE_VARIANT_JENSEN_LINON
+                            for child in iter_children(self.config_entry.data))
+                and any(child.get(CONF_BED_TYPE) == BED_TYPE_SVANE
+                        for child in iter_children(self.config_entry.data))
+            ):
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={CONF_PROTOCOL_VARIANT: "svane_unpair_first"},
+                )
+            if (
+                separate_address_pair
+                and CONF_PROTOCOL_VARIANT in paired_changes
                 and (
                     unpair_error := next(
                         (
@@ -7242,6 +7418,16 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     user_input[CONF_DISABLE_ANGLE_SENSING] = True
                     user_input[CONF_HAS_MASSAGE] = False
                     user_input[CONF_MOTOR_PULSE_USER_SET] = False
+            if bed_type == BED_TYPE_LIMOSS_REMOTE and not separate_address_pair:
+                app_data = {**current_data, **user_input}
+                app_errors = _limoss_remote_errors(app_data)
+                if app_errors:
+                    return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors)
+                user_input.update({key: app_data[key] for key in LIMOSS_REMOTE_CONFIG_KEYS if key in app_data})
+                user_input[CONF_DISABLE_ANGLE_SENSING] = True
+                user_input[CONF_HAS_MASSAGE] = False
+                user_input[CONF_MOTOR_PULSE_USER_SET] = False
+
 
             if bed_type == BED_TYPE_FSM_RELAX and not separate_address_pair:
                 if errors := _fsm_relax_errors({**current_data, **user_input}):
@@ -7317,6 +7503,26 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                         CONF_MOTOR_PULSE_USER_SET: False,
                     }
                 )
+
+            if bed_type == BED_TYPE_SVANE:
+                svane_variant = user_input.get(
+                    CONF_PROTOCOL_VARIANT, current_data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
+                )
+                if svane_variant not in SVANE_VARIANTS:
+                    return self.async_show_form(
+                        step_id=step_id,
+                        data_schema=vol.Schema(schema_dict),
+                        errors={"base": "invalid_variant"},
+                    )
+                if svane_variant != SVANE_VARIANT_JENSEN_LINON:
+                    user_input.update(
+                        {
+                            CONF_MOTOR_COUNT: 2,
+                            CONF_HAS_MASSAGE: False,
+                            CONF_DISABLE_ANGLE_SENSING: True,
+                            CONF_MOTOR_PULSE_USER_SET: False,
+                        }
+                    )
             if bed_type == BED_TYPE_MALOUF_APP and not separate_address_pair:
                 requested_app = user_input.get(CONF_MALOUF_APP_PROFILE)
                 if requested_app in MALOUF_APP_PROFILES and requested_app != current_data.get(
@@ -7430,6 +7636,26 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                         errors={CONF_LEGS_MAX_ANGLE: "invalid_angle"},
                     )
             # All validations passed - now it is safe to commit global state.
+            if bed_type == BED_TYPE_LIMOSS_REMOTE and not separate_address_pair:
+                from .beds.limoss_remote import apply_limoss_remote_features
+                from .coordinator import AdjustableBedCoordinator
+
+                runtime = self._bond_target_coordinator()
+                previous = runtime.entry.data if isinstance(runtime, AdjustableBedCoordinator) else self.config_entry.data
+                light = user_input.get(CONF_LIMOSS_REMOTE_LIGHT, False)
+                massage = user_input.get(CONF_LIMOSS_REMOTE_MASSAGE, False)
+                disabling = (previous.get(CONF_LIMOSS_REMOTE_LIGHT, False) and not light) or (previous.get(CONF_LIMOSS_REMOTE_MASSAGE, False) and not massage)
+                if disabling:
+                    if not isinstance(runtime, AdjustableBedCoordinator):
+                        return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors={"base": "limoss_remote_feature_update_failed"})
+                    try:
+                        await runtime.async_execute_controller_command(
+                            lambda ctrl: apply_limoss_remote_features(ctrl, light, massage, persist=False),
+                            cancel_running=True,
+                        )
+                    except Exception:
+                        _LOGGER.warning("Unable to complete Limoss Remote feature OFF transaction", exc_info=True)
+                        return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors={"base": "limoss_remote_feature_update_failed"})
             if discovery_disabled_input is not None:
                 await async_set_discovery_disabled(self.hass, discovery_disabled_input)
             # Update the config entry with new options
@@ -7546,6 +7772,14 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                                 control_type="other" if control == "other" else int(control),
                                 remembered_floor_default=new_data[CONF_VIBRADORM_FLOOR_DEFAULT],
                             )
+            if not separate_address_pair and (
+                bed_type == BED_TYPE_SVANE or self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_SVANE
+            ) and any(new_data.get(key) != self.config_entry.data.get(key) for key in (CONF_BED_TYPE, CONF_PROTOCOL_VARIANT)):
+                from .svane_state import clear_svane_session
+
+                address = new_data.get(CONF_ADDRESS)
+                if isinstance(address, str):
+                    clear_svane_session(self.hass, address)
             if any(new_data.get(key) != self.config_entry.data.get(key) for key in (CONF_STARCODE_M5X5_PROFILE, CONF_STARCODE_DEVICE_NAME, CONF_STARCODE_LIFT_ENTRIES)):
                 from .starcode_accessory_group import cancel_group_operations
                 cancel_group_operations(self.hass, self.config_entry.entry_id)

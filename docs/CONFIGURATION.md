@@ -204,7 +204,7 @@ timing; these settings do not replace it. Use the matching [protocol guide](SUPP
 | Sleepy's BOX24 | 10 | 100ms |
 | SleepSpa S9000AI / SLEEPSTAR | 10 | 100ms |
 | Jensen | 4 | 300ms |
-| Svane | 10 | 100ms |
+| Svane Remote app profiles | Held duration, not a configurable repeat count | Source 100ms, feet/separate fallback adds 100ms |
 | Vibradorm | 10 | 100ms |
 | Rondure | 25 | 50ms |
 | Remacro | 10 | 100ms |
@@ -343,7 +343,7 @@ retain their legacy profile unless you explicitly change it.
 | Profile | Settings | Reference |
 |---------|----------|-----------|
 | Solace / Woosa Sleep | Protocol variant **`woosa`** (Woosa Sleep) for beds using that app; `auto` retains conservative name-based routing | [Woosa](beds/woosa.md) |
-| Svane / Jensen LinOn | Protocol variant **`jensen_linon`** (Jensen Adjustable Sleep) for LinOn beds, set by Bluetooth setup for "Adjustable Bed"/"Jensen Bed" names; `auto` is the Svane app | [Jensen LinOn](beds/jensen.md#linon) |
+| Svane Remote / Jensen LinOn | **`svane_remote_multi`**, **`svane_remote_jmc`** (explicit JMC400 app choice), or separate **`jensen_linon`**. Older `auto` stays Svane multi-service. Two named axes, opaque memory, no numeric position feedback or PIN. | [Svane Remote](beds/svane.md), [Jensen LinOn](beds/jensen.md#linon) |
 | Richmat RMControl | Exact product code (empty keeps legacy Richmat), side (`left`, `right`, `both`; default `left`) | [RMControl](beds/rmcontrol.md) |
 | Leggett Okin | Prodigy / U Series app profile | [Leggett app profiles](beds/leggett-okin.md) |
 | L&P legacy app | Model code, protocol mode, confirmed write UUID, optional notification UUID | [L&P legacy](beds/lp-legacy.md) |
@@ -667,6 +667,9 @@ the other side automatically if one side fails.
 ### Motion Bed app
 
 Select the explicit **Motion Bed app** route and the original case-sensitive Bluetooth name. Auto chooses the app’s ordered layout; retained overrides belong to the same physical target. FFE1 alone does not identify this app. Two-address pairs preserve each side’s settings and require unpairing before profile changes. See [Motion Bed setup and controls](beds/motion_bed.md).
+### Limoss Remote app
+
+Select **Limoss Remote app** manually under Limoss. Choose bed/chair, local lamp and massage controls, four reversal flags and an optional app artwork preference. Live replies select the rendered key layout and memory capacity. These settings belong to each physical receiver, including paired children. Disabling a selected feature sends its ten OFF frames before saving; enabling only changes the local layout. Generic pulse, angle and motor-count settings are hidden for this profile. See [the protocol page](beds/limoss-remote.md).
 
 ### AdjustableM5X5 app
 

@@ -38,6 +38,7 @@ from .const import (
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_OKIN,
+    BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
@@ -45,6 +46,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_SVANE,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     CONF_BED_TYPE,
@@ -64,6 +66,7 @@ from .pairing import is_paired, iter_children, pair_member_addresses
 
 if TYPE_CHECKING:
     from .beds.base import BedController, SideBoundController
+    from .beds.limoss_remote import LimossRemoteController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -91,6 +94,8 @@ SERVICE_LEGGETT_SLEEP_TIMER = "leggett_sleep_timer"
 SERVICE_LEGGETT_ALARM_TIMER = "leggett_alarm_timer"
 SERVICE_LEGGETT_HOLD_CONTROL = "leggett_hold_control"
 SERVICE_SERENITY_HOLD_CONTROL = "serenity_hold_control"
+SERVICE_SVANE_HOLD_CONTROL = "svane_hold_control"
+SERVICE_SVANE_RELEASE_AXIS = "svane_release_axis"
 SERVICE_FURNIMOVE_ACTION = "furnimove_action"
 SERVICE_FURNIMOVE_RENAME = "furnimove_rename"
 SERVICE_FURNIMOVE_MASSAGE_PROGRAM = "furnimove_massage_program"
@@ -100,6 +105,11 @@ SERVICE_VIBRADORM_HOLD_CONTROL = "vibradorm_hold_control"
 SERVICE_VMATBASIC_HOLD_CONTROL = "vmatbasic_hold_control"
 SERVICE_VMATBASIC_RENAME = "vmatbasic_rename"
 SERVICE_STARCODE_HOLD_CONTROL = "starcode_abm5_4_hold_control"
+SERVICE_LIMOSS_REMOTE_HOLD_CONTROL = "limoss_remote_hold_control"
+SERVICE_LIMOSS_REMOTE_RECALL_MEMORY = "limoss_remote_recall_memory"
+SERVICE_LIMOSS_REMOTE_RENAME_MEMORY = "limoss_remote_rename_memory"
+SERVICE_LIMOSS_REMOTE_CALIBRATE = "limoss_remote_calibrate"
+SERVICE_LIMOSS_REMOTE_FEATURES = "limoss_remote_features"
 SERVICE_CUSTOMATIC_HOLD_MEMORY = "customatic_hold_memory"
 SERVICE_CUSTOMATIC_MOVE_SIMULTANEOUSLY = "customatic_move_simultaneously"
 SERVICE_LOGICDATA_SET_ALARM = "logicdata_set_alarm"
@@ -366,8 +376,7 @@ def _get_support_bundle_target_from_device(
             # sides; a bundle is per-address, so make the user pick one
             # side's device instead of silently capturing only the first.
             raise ServiceValidationError(
-                f"{entry.title} is a paired bed; target one side's device "
-                "for the support bundle.",
+                f"{entry.title} is a paired bed; target one side's device for the support bundle.",
                 translation_domain=DOMAIN,
                 translation_key="bundle_needs_side_for_paired",
                 translation_placeholders={"device_name": entry.title},
@@ -757,6 +766,7 @@ async def _set_position_plan(
             BED_TYPE_KEESON,
             BED_TYPE_ERGOMOTION,
             BED_TYPE_SLEEPYS_BOX25,
+            BED_TYPE_SVANE,
             BED_TYPE_SLEEP_NUMBER_MCR,
         ) or (bed_type == BED_TYPE_KAIDI and supports_direct_position_control)
 
@@ -1829,6 +1839,82 @@ async def handle_furnimove_move_simultaneously(call: ServiceCall) -> None:
     await _execute_furnimove(call, validate, execute)
 
 
+async def _svane_live_targets(
+    call: ServiceCall,
+) -> tuple[list[tuple[BedTarget, str]], PreflightedSides]:
+    """Validate profile and connect every selected target before motion begins."""
+    targets, missing = _resolve_sided_targets(
+        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    # Reject unrelated profiles without contacting their devices.
+    for parent, side in targets:
+        for target in _command_targets(parent, side):
+            controller = target.capability_controller
+            if (
+                target.bed_type != BED_TYPE_SVANE
+                or controller is None
+                or not controller.supports_held_control
+            ):
+                raise ServiceValidationError("Select a Svane Remote app profile")
+    preflighted: PreflightedSides = []
+    try:
+        for parent, side in targets:
+            for target in _command_targets(parent, side):
+                await _get_controller_for_service(target)
+                preflighted.append((parent, target))
+    except Exception, asyncio.CancelledError:
+        await _release_preflighted(preflighted)
+        raise
+    return targets, preflighted
+
+
+async def handle_svane_hold_control(call: ServiceCall) -> None:
+    """Preflight exact roles on all sides before serialized source held writes."""
+    targets, preflighted = await _svane_live_targets(call)
+    control = call.data[ATTR_CONTROL]
+    duration_ms = int(_leggett_hold_seconds(call.data[ATTR_DURATION]) * 1000)
+    try:
+        for parent, side in targets:
+            for target in _command_targets(parent, side):
+                controller = await _get_controller_for_service(target)
+                controller.validate_svane_hold_control(control, duration_ms)
+
+        async def hold(controller: BedController | SideBoundController) -> None:
+            await controller.hold_control(control, duration_ms)
+
+        for parent, side in targets:
+            await _execute_sided(parent, side, hold, cancel_running=True)
+    except (Exception, asyncio.CancelledError) as error:
+        await _release_preflighted(preflighted)
+        if isinstance(error, ValueError):
+            raise ServiceValidationError(str(error)) from error
+        raise
+
+
+async def handle_svane_release_axis(call: ServiceCall) -> None:
+    """Signal only the active writer, allowing the other held axis to continue."""
+    targets, missing = _resolve_sided_targets(
+        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    controllers: list[BedController | SideBoundController] = []
+    for parent, side in targets:
+        for target in _command_targets(parent, side):
+            controller = target.controller
+            if (
+                target.bed_type != BED_TYPE_SVANE
+                or controller is None
+                or not controller.supports_held_control
+            ):
+                raise ServiceValidationError("Select an active Svane Remote app profile")
+            controllers.append(controller)
+    for controller in controllers:
+        controller.request_svane_axis_release(call.data[ATTR_MOTOR])
+
+
 async def handle_fsm_relax_hold_control(call: ServiceCall) -> None:
     """Hold one app-labelled control from the exact selected table."""
     await _handle_customatic_hold(call, call.data[ATTR_CONTROL], {BED_TYPE_FSM_RELAX}, label="FSM Relax")
@@ -1873,6 +1959,164 @@ async def handle_serenity_hold_control(call: ServiceCall) -> None:
     await _handle_customatic_hold(
         call, call.data[ATTR_CONTROL], {BED_TYPE_SERENITY}, label="Serenity"
     )
+
+
+def _limoss_boolean(value: object) -> bool:
+    if type(value) is not bool:
+        raise vol.Invalid("Select true or false")
+    return value
+
+
+async def handle_limoss_remote_hold_control(call: ServiceCall) -> None:
+    """Hold a rendered literal app action using its five-frame release."""
+    await _handle_customatic_hold(call, call.data[ATTR_CONTROL], {BED_TYPE_LIMOSS_REMOTE}, label="Limoss Remote")
+
+
+def _limoss_remote_controller(controller: BedController | SideBoundController) -> LimossRemoteController | SideBoundController:
+    from .beds.base import SideBoundController
+    from .beds.limoss_remote import LimossRemoteController
+
+    if isinstance(controller, LimossRemoteController):
+        return controller
+    if isinstance(controller, SideBoundController) and isinstance(controller._controller, LimossRemoteController):
+        return controller
+    raise ServiceValidationError("This action requires the explicit Limoss Remote profile")
+
+
+async def _execute_limoss_remote(
+    call: ServiceCall,
+    validate: Callable[[LimossRemoteController | SideBoundController], object],
+    execute: Callable[[LimossRemoteController | SideBoundController], Coroutine[Any, Any, None]],
+    *,
+    targets: list[tuple[BedTarget, str]] | None = None,
+) -> None:
+    targets = _limoss_remote_targets(call) if targets is None else targets
+    def check(controller: BedController | SideBoundController) -> None:
+        try:
+            validate(_limoss_remote_controller(controller))
+        except ValueError as error:
+            raise ServiceValidationError(str(error)) from error
+    preflighted = await _preflight_capability(targets, "requires_notification_channel", "Limoss Remote", check)
+    async def run(controller: BedController | SideBoundController) -> None:
+        await execute(_limoss_remote_controller(controller))
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(coordinator, side, run, cancel_running=True)
+    except (Exception, asyncio.CancelledError):
+        await _release_preflighted(preflighted)
+        raise
+
+
+def _limoss_remote_targets(call: ServiceCall) -> list[tuple[BedTarget, str]]:
+    targets, missing = _resolve_sided_targets(call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE))
+    if missing:
+        raise _missing_device_error(missing[0])
+    for coordinator, side in targets:
+        if any(target.bed_type != BED_TYPE_LIMOSS_REMOTE for target in _command_targets(coordinator, side)):
+            raise ServiceValidationError("This action requires the explicit Limoss Remote profile")
+    return targets
+
+
+async def handle_limoss_remote_recall_memory(call: ServiceCall) -> None:
+    slot, duration = call.data[ATTR_PRESET], int(call.data[ATTR_DURATION] * 1000)
+    await _execute_limoss_remote(call, lambda ctrl: ctrl.validate_memory_recall(slot), lambda ctrl: ctrl.hold_memory(slot, duration))
+
+
+async def handle_limoss_remote_rename_memory(call: ServiceCall) -> None:
+    slot, name = call.data[ATTR_PRESET], call.data[ATTR_NAME]
+    controllers: list[LimossRemoteController | SideBoundController] = []
+    for coordinator, side in _limoss_remote_targets(call):
+        for target in _command_targets(coordinator, side):
+            controller = target.capability_controller
+            if controller is None:
+                raise ServiceValidationError("This receiver has no cached memory capacity")
+            local = _limoss_remote_controller(controller)
+            try:
+                local._slot(slot)
+            except ValueError as error:
+                raise ServiceValidationError(str(error)) from error
+            controllers.append(local)
+    # No receiver access or suspension occurs during this local edit.
+    for controller in controllers:
+        await controller.rename_memory(slot, name)
+
+
+async def handle_limoss_remote_calibrate(call: ServiceCall) -> None:
+    def validate(controller: LimossRemoteController | SideBoundController) -> None:
+        if call.data["confirmed"] is not True or controller.memory_slot_count == 0:
+            raise ValueError("Calibration requires explicit confirmation and a memory-capable profile")
+    await _execute_limoss_remote(call, validate, lambda ctrl: ctrl.hold_calibration(int(call.data[ATTR_DURATION] * 1000), confirmed=True))
+
+
+async def handle_limoss_remote_features(call: ServiceCall) -> None:
+    from .beds.base import SideBoundController
+    from .beds.limoss_remote import LimossRemoteController
+
+    light, massage = call.data["underbed_light"], call.data["massage"]
+    targets = _limoss_remote_targets(call)
+    touched: list[tuple[LimossRemoteController, bool, bool]] = []
+    online: list[tuple[BedTarget, str]] = []
+    local: list[BedChild] = []
+    for coordinator, side in targets:
+        physical_targets = _command_targets(coordinator, side)
+        disabling: list[BedChild] = []
+        for target in physical_targets:
+            cached = target.capability_controller
+            if cached is None:
+                raise ServiceValidationError("This receiver has no cached app profile")
+            selected = _limoss_remote_controller(cached)
+            physical = selected._controller if isinstance(selected, SideBoundController) else selected
+            assert isinstance(physical, LimossRemoteController)
+            if (physical.underbed_light and not light) or (physical.massage and not massage):
+                disabling.append(target)
+            else:
+                local.append(target)
+        if len(disabling) == len(physical_targets):
+            online.append((coordinator, side))
+        elif isinstance(coordinator, PairedBedCoordinator):
+            online.extend(
+                (coordinator, child_side)
+                for child_side, child in coordinator.children.items()
+                if child in disabling
+            )
+
+    async def apply(controller: LimossRemoteController | SideBoundController) -> None:
+        physical = controller._controller if isinstance(controller, SideBoundController) else controller
+        assert isinstance(physical, LimossRemoteController)
+        touched.append((physical, physical.underbed_light, physical.massage))
+        await controller.set_optional_features(light, massage, persist=False)
+
+    try:
+        # Only disabling an enabled feature has native OFF frames to deliver.
+        if online:
+            await _execute_limoss_remote(call, lambda ctrl: None, apply, targets=online)
+        async with contextlib.AsyncExitStack() as stack:
+            # Shared guards use one process-local order across multi-target calls.
+            owners = {id(coordinator): coordinator for coordinator, _ in targets}
+            for _, coordinator in sorted(owners.items()):
+                guard = (
+                    coordinator.async_capability_reload_guard()
+                    if isinstance(coordinator, PairedBedCoordinator)
+                    else coordinator.async_command_operation_guard()
+                )
+                await stack.enter_async_context(guard)
+            for target in local:
+                cached = target.capability_controller
+                if cached is None:
+                    raise ServiceValidationError("This receiver has no cached app profile")
+                selected = _limoss_remote_controller(cached)
+                physical = selected._controller if isinstance(selected, SideBoundController) else selected
+                assert isinstance(physical, LimossRemoteController)
+                if (physical.underbed_light and not light) or (physical.massage and not massage):
+                    raise ServiceValidationError("The local feature selection changed; retry the action")
+                await apply(selected)
+            for controller, _, _ in touched:
+                controller._coordinator.remember_limoss_remote_features(light, massage)
+    except (Exception, asyncio.CancelledError):
+        # Flags describe the selected local layout, not a hardware acknowledgement.
+        for controller, previous_light, previous_massage in touched:
+            controller.underbed_light, controller.massage = previous_light, previous_massage
+        raise
 
 
 async def handle_vibradorm_hold_control(call: ServiceCall) -> None:
@@ -2837,6 +3081,26 @@ async def async_register_services(hass: HomeAssistant) -> None:
         **SIDE_FIELD,
     }
     hass.services.async_register(
+        DOMAIN, SERVICE_LIMOSS_REMOTE_HOLD_CONTROL, handle_limoss_remote_hold_control,
+        schema=vol.Schema({**device_fields, vol.Required(ATTR_CONTROL): cv.string, vol.Required(ATTR_DURATION): _leggett_hold_seconds}),
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_LIMOSS_REMOTE_RECALL_MEMORY, handle_limoss_remote_recall_memory,
+        schema=vol.Schema({**device_fields, vol.Required(ATTR_PRESET): vol.All(_leggett_integer, vol.Range(min=1, max=8)), vol.Required(ATTR_DURATION): _leggett_hold_seconds}),
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_LIMOSS_REMOTE_RENAME_MEMORY, handle_limoss_remote_rename_memory,
+        schema=vol.Schema({**device_fields, vol.Required(ATTR_PRESET): vol.All(_leggett_integer, vol.Range(min=1, max=8)), vol.Required(ATTR_NAME): cv.string}),
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_LIMOSS_REMOTE_CALIBRATE, handle_limoss_remote_calibrate,
+        schema=vol.Schema({**device_fields, vol.Required("confirmed"): _limoss_boolean, vol.Required(ATTR_DURATION): _leggett_hold_seconds}),
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_LIMOSS_REMOTE_FEATURES, handle_limoss_remote_features,
+        schema=vol.Schema({**device_fields, vol.Required("underbed_light"): _limoss_boolean, vol.Required("massage"): _limoss_boolean}),
+    )
+    hass.services.async_register(
         DOMAIN, SERVICE_FURNIMOVE_ACTION, handle_furnimove_action,
         schema=vol.Schema({
             **device_fields,
@@ -2868,13 +3132,37 @@ async def async_register_services(hass: HomeAssistant) -> None:
         }),
     )
     hass.services.async_register(
-        DOMAIN, SERVICE_FURNIMOVE_MASSAGE_DURATION, handle_furnimove_massage_duration,
-        schema=vol.Schema({
-            **device_fields,
-            vol.Required("minutes"): vol.All(
-                vol.In((10, 15, 20, 30, "10", "15", "20", "30")), vol.Coerce(int)
-            ),
-        }),
+        DOMAIN,
+        SERVICE_FURNIMOVE_MASSAGE_DURATION,
+        handle_furnimove_massage_duration,
+        schema=vol.Schema(
+            {
+                **device_fields,
+                vol.Required("minutes"): vol.All(
+                    vol.In((10, 15, 20, 30, "10", "15", "20", "30")), vol.Coerce(int)
+                ),
+            }
+        ),
+    )
+    from .beds.svane import MOTIONS
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SVANE_HOLD_CONTROL,
+        handle_svane_hold_control,
+        schema=vol.Schema(
+            {
+                **device_fields,
+                vol.Required(ATTR_CONTROL): vol.In((*MOTIONS, "light_adjust")),
+                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SVANE_RELEASE_AXIS,
+        handle_svane_release_axis,
+        schema=vol.Schema({**device_fields, vol.Required(ATTR_MOTOR): vol.In(("head", "feet"))}),
     )
     hass.services.async_register(DOMAIN, "fsm_relax_hold_control", handle_fsm_relax_hold_control,
         schema=vol.Schema({vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),

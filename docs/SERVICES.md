@@ -70,7 +70,7 @@ without cancelling active movement. Hardware behavior remains unverified.
 
 | Action | Required fields besides `device_id` | Behavior |
 |--------|------------------------------------|----------|
-| `goto_preset` | `preset` | Recall a memory slot, 1–6 where supported |
+| `goto_preset` | `preset` | Recall a memory slot, 1–8 where supported |
 | `save_preset` | `preset` | Overwrite a supported memory slot with the current position |
 | `stop_all` | None | Cancel pending/active movement and perform the controller's STOP or release cleanup |
 | `set_position` | `motor`, `position` | Move one supported axis to a target |
@@ -231,6 +231,17 @@ Target one or more physical devices with `device_id`, an exact supported `contro
 ## Motion Bed app actions
 
 The [Motion Bed action index](beds/motion_bed.md#actions) covers all 13 typed app actions, including alarms, sleep calibration/reporting, hub modules, pressure, thermal schedules, audio and BLE Wi-Fi provisioning. Named action keys are listed in controller diagnostics. Persistent changes require confirmation; every target is validated before writes, and native paired child targets retain their side.
+### Svane Remote held controls
+
+`svane_hold_control` holds a selected head/feet axis or combination for `duration` seconds (0.1–60). Feet-only actions and P1 combinations require more than 0.1 seconds to allow the source's 100 ms feet delay; shorter requests are rejected before any target moves. If awaited delivery consumes the remaining budget before feet start, the action fails explicitly and releases any started axis. Its literal dropdown also offers `light_adjust`, which runs the app's triangular lamp preference loop after the source's 200 ms threshold. All physical targets are checked before movement.
+
+`svane_release_axis` accepts `motor: head` or `motor: feet` during that hold and signals its serialized writer. The remaining axis continues; final release uses the profile's actual STOP. Both actions accept the normal `device_id` and paired `side` fields. The literal Svane position, Read/TV, toggle and refresh buttons, local intensity number and diagnostic records are described in the [profile guide](beds/svane.md).
+
+
+## Limoss Remote app
+
+The explicit [Limoss Remote app profile](beds/limoss-remote.md) adds `limoss_remote_hold_control`, `limoss_remote_recall_memory`, `limoss_remote_rename_memory`, `limoss_remote_calibrate` and `limoss_remote_features`. Holds accept 0.1–60 seconds. Calibration requires `confirmed: true`. Memory actions accept slots 1–8 within the live capacity; `save_preset` and `goto_preset` expose the same local slots. Rename permits an empty name. All selected targets are validated before writes; paired child targets and `side` retain their physical-target settings.
+
 ### FSM Relax app actions
 
 `fsm_relax_hold_control` accepts a supported `command_XX` and explicit `duration`

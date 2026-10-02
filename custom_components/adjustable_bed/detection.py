@@ -42,6 +42,7 @@ from .const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LIMOSS,
+    BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_APP,
@@ -179,7 +180,6 @@ from .const import (
     SUTA_SERVICE_UUID,
     SUTA_UNSUPPORTED_NAME_PREFIXES,
     SVANE_HEAD_SERVICE_UUID,
-    SVANE_NAME_PATTERNS,
     TIMOTION_AHF_NAME_PATTERNS,
     TIMOTION_AHF_SERVICE_UUID,
     VARIANT_AUTO,
@@ -191,6 +191,7 @@ from .const import (
 )
 from .fsm_relax_discovery import matches_fsm_relax_candidate
 from .kaidi_protocol import extract_kaidi_advertisement
+from .svane_state import is_svane_discovery_name
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -558,6 +559,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_REMACRO: "Remacro (CheersSleep, Jeromes, Slumberland, The Brick)",
     BED_TYPE_COMFORT_MOTION: "Comfort Motion (Lierda)",
     BED_TYPE_LIMOSS: "Limoss / Stawett (TEA encrypted)",
+    BED_TYPE_LIMOSS_REMOTE: "Limoss Remote app (bed / chair)",
     BED_TYPE_LOGICDATA: "Logicdata SimplicityFrame (SILVERmotion)",
     BED_TYPE_LOGICDATA_APP: "Logicdata MotionRelax (phone / tablet apps)",
     BED_TYPE_MALOUF_APP: "Malouf Base / Lucid Base apps",
@@ -1349,7 +1351,7 @@ def _detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detect
         )
 
     # Check for Svane / Jensen LinOn by name pattern
-    if any(pattern in device_name for pattern in SVANE_NAME_PATTERNS):
+    if is_svane_discovery_name(service_info.name) or "jensen bed" in device_name:
         signals.append("name:svane")
         _LOGGER.info(
             "Detected Svane bed at %s (name: %s) by name pattern",

@@ -611,6 +611,29 @@ test("stateless native floor power buttons stay in the physical child's lighting
   expect(bedIsEmpty(left)).toBe(false);
 });
 
+test("Limoss Remote literal channels and local slots seven/eight are visible", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("cover.channel1", "limoss_remote_motor_1"),
+    entry("cover.channel2", "limoss_remote_motor_2"),
+    entry("button.app_light", "remote_action"),
+    entry("button.memory7", "preset_memory_7"),
+    entry("button.save7", "program_memory_7"),
+    entry("button.memory8", "preset_memory_8"),
+    entry("button.save8", "program_memory_8"),
+    entry("sensor.raw1", "limoss_remote_motor_1_position_raw"),
+  ]), "dev1");
+  expect(bed.motors.map((motor) => motor.key)).toEqual([
+    "limoss_remote_motor_1", "limoss_remote_motor_2",
+  ]);
+  expect(bed.motors.every((motor) => motor.position === undefined)).toBe(true);
+  expect(bed.memory).toEqual([
+    { slot: 7, goto: "button.memory7", save: "button.save7" },
+    { slot: 8, goto: "button.memory8", save: "button.save8" },
+  ]);
+  expect(bed.utility).toContain("button.app_light");
+});
+
+
 test("AdjustableM5X5 exposes palette, brightness, distinct cycle/mode and named saves", () => {
   const hass = hassWith([
     entry("cover.union", "starcode_union"),
