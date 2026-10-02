@@ -85,12 +85,16 @@ class MotionBedController(BedController):
         self._network_task: asyncio.Task[None] | None = None
         self._network_connection_hold: ExitStack | None = None
         self._module_capabilities: dict[str, bool] = {}
+        self._remembered_module: str | None = None
         previous = coordinator.capability_controller
         if (isinstance(previous, MotionBedController) and previous.selection == selection
                 and previous._target_address == coordinator.address):
             self._module_capabilities = dict(previous._module_capabilities)
+            self._remembered_module = previous._remembered_module or previous._active_module
 
     def _remember_module_capabilities(self) -> None:
+        if self._active_module is not None and self._remembered_module is None:
+            self._remembered_module = self._active_module
         for module in ("motor", "air", "thermal"):
             present = getattr(self._state, module + "_module_present")
             if isinstance(present, bool):
@@ -268,18 +272,21 @@ class MotionBedController(BedController):
             raise ValueError("Choose a reported Motion Bed hub module")
         if not self._module_present(surface):
             raise ValueError("This hub has not reported the selected module")
+        self._remembered_module = surface
         if self._active_module != surface:
             self._select_module(surface)
             self._started_modules.discard(surface)
             self._publish()
             self._spawn(self._start_present_modules)
 
-    def _select_module(self, module: str | None) -> None:
+    def _select_module(self, module: str | None, *, remember: bool = True) -> None:
         self._module_generation += 1
         if self._thermal_task is not None:
             self._thermal_task.cancel()
             self._thermal_task = None
         self._active_module = module
+        if module is not None and remember:
+            self._remembered_module = module
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
@@ -335,6 +342,7 @@ class MotionBedController(BedController):
             self._remember_module_capabilities()
             if self._target_address != self._coordinator.address:
                 self._module_capabilities.clear()
+                self._remembered_module = None
             self._generation += 1
             if self._held_session is not None:
                 await self._release_held_session(self._held_session)
@@ -525,6 +533,7 @@ class MotionBedController(BedController):
         self._state = result.state
         if "module_deleted" in result.receipts:
             self._module_capabilities.clear()
+            self._remembered_module = None
         else:
             self._remember_module_capabilities()
         if isinstance(self._state.audio_available, bool):
@@ -644,7 +653,8 @@ class MotionBedController(BedController):
                         if getattr(self._state, module + "_module_present") is True)
         self._started_modules.intersection_update(present)
         if self._active_module not in present:
-            self._select_module(present[0] if present else None)
+            self._select_module(self._remembered_module if self._remembered_module in present
+                                else present[0] if present else None, remember=False)
             self._publish()
         module = self._active_module
         if module is None or module in self._started_modules:
@@ -858,6 +868,8 @@ class MotionBedController(BedController):
                 except TimeoutError:
                     pass
             for index, frame in enumerate(request.frames):
+                if self._coordinator.cancel_command.is_set():
+                    return
                 if index and request.spacing_ms:
                     try:
                         await asyncio.wait_for(self._coordinator.cancel_command.wait(), request.spacing_ms / 1000)
@@ -868,6 +880,7 @@ class MotionBedController(BedController):
             if (request.network_poll and network_generation == self._network_generation
                     and self._network_connection_hold is network_hold
                     and self._owned_session_current(generation)
+                    and not self._coordinator.cancel_command.is_set()
                     and self._state.provisioning_status not in ("failed", "success")):
                 self._network_poll_active = True
                 self._network_task = self._spawn(lambda: self._network_poll(connection_hold=network_hold))
@@ -878,6 +891,12 @@ class MotionBedController(BedController):
                 if self._network_connection_hold is network_hold:
                     self._network_connection_hold = None
                     self._network_poll_active = False
+                    if (network_generation == self._network_generation
+                            and self._owned_session_current(generation)
+                            and self._state.provisioning_status == "waiting"):
+                        self._context_expiry.pop(request.context, None)
+                        self._state = replace(self._state, provisioning_status="failed")
+                        self._publish()
             self._operation_generation.reset(token)
 
     async def _bounded_network_query(self) -> None:
@@ -926,7 +945,11 @@ class MotionBedController(BedController):
         await self.write_command(STOP, cancel_event=asyncio.Event())
 
     async def stop_all(self) -> None:
-        surface = self._active_module if self.selection.surface == "hub" else self.selection.surface
+        surface = self.selection.surface
+        if surface == "hub":
+            surface = self._remembered_module or self._active_module
+            if surface is None or not self._module_present(surface):
+                raise ValueError("Choose a validated present Motion Bed hub module before STOP")
         if surface == "air":
             await self.write_command(SOURCE_COMMANDS["QinangFragment:302"], cancel_event=asyncio.Event())
         elif surface == "thermal":
