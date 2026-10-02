@@ -162,7 +162,7 @@ def _real_target(name: str, records):
     controller._clock_synced = True
     if records is not None:
         controller._slots = [AlarmSlot(*record) for record in records]
-        controller._fresh = [True, True]
+        controller._reported = list(controller._slots)
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.name = name
     coordinator.bed_type = BED_TYPE_SIMMONS

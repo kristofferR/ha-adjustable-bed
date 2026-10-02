@@ -50,6 +50,7 @@ from .simmons_protocol import (
     NUS_WRITE,
     P1_ALARM_HEADER,
     AlarmMode,
+    AlarmReport,
     AlarmSlot,
     NotificationAssembler,
     Protocol,
@@ -141,6 +142,11 @@ def _protocol_name(live: str | None, stored: object) -> str | None:
     return stored if isinstance(stored, str) and not is_mac_like_name(stored) else None
 
 
+def _raw(report: AlarmReport) -> AlarmSlot:
+    """The record exactly as reported, without the app's display overlay."""
+    return AlarmSlot(report.hour, report.minute, report.weekday, report.type, report.enabled)
+
+
 def _action(name: str) -> MotorCommandCallable:
     async def invoke(controller: BedController | SideBoundController) -> None:
         target = (
@@ -174,8 +180,9 @@ class SimmonsController(BedController):
         self._assembler = NotificationAssembler()
         self._pending_record: bytes | None = None
         self._awaiting = [False, False]
-        # Which slots were reported on this connection (this controller is per connection).
-        self._fresh = [False, False]
+        # Raw records the bed reported on this connection (this controller is
+        # per connection), without the app's display overlay. Writes use only these.
+        self._reported: list[AlarmSlot | None] = [None, None]
         self._reply = asyncio.Event()
         self._clock_synced = False  # Per connection: this controller is per session.
         # Alarm records live in coordinator state so they survive the
@@ -609,24 +616,24 @@ class SimmonsController(BedController):
             raise ValueError(CUSTOM_MODE_WARNING)
 
     async def _ensure_alarm_state(self) -> tuple[AlarmSlot, AlarmSlot]:
-        """Return both records as reported in this connection, querying if needed.
+        """Return both records exactly as the bed reported them on this connection.
 
-        Restored records may be stale (the app can change an alarm while HA is
-        away), so they are shown but never feed a conflict check or the peer
-        record of a write.
+        Restored records and the app's display overlay may be stale (another
+        app can change an alarm while HA is away), so they are shown but never
+        feed a conflict check or the other slot's bytes in a write.
         """
-        if not all(self._fresh):
+        if None in self._reported:
             self._reply.clear()
             await self._query_once()
             try:
                 async with asyncio.timeout(ALARM_REPLY_TIMEOUT_S):
-                    while not all(self._fresh):
+                    while None in self._reported:
                         await self._reply.wait()
                         self._reply.clear()
             except TimeoutError:
                 pass
-        first, second = self._slots
-        if not all(self._fresh) or first is None or second is None:
+        first, second = self._reported
+        if first is None or second is None:
             raise ServiceValidationError(
                 "The bed did not report both alarm records in this connection; nothing was written",
                 translation_domain=DOMAIN,
@@ -662,8 +669,12 @@ class SimmonsController(BedController):
         weekdays: Sequence[int],
         mode: str | None,
         confirm_custom_mode: bool,
-    ) -> tuple[int, AlarmSlot, bytes]:
-        """Return the slot index, its new local record and the frame to write."""
+    ) -> tuple[int, AlarmSlot, AlarmSlot, bytes]:
+        """Return the slot index, its new display and raw records, and the frame.
+
+        The other slot's bytes are the bed's own report from this connection,
+        so an OKIN two-slot write preserves the bed's current state.
+        """
         self.validate_simmons_alarm(
             slot=slot, enabled=enabled, mode=mode, confirm_custom_mode=confirm_custom_mode
         )
@@ -671,18 +682,19 @@ class SimmonsController(BedController):
             raise ValueError("Invalid alarm time")
         if any(isinstance(day, bool) or not 0 <= day <= 6 for day in weekdays):
             raise ValueError("Alarm weekdays use Monday=0 through Sunday=6")
-        slots = list(await self._ensure_alarm_state())
-        index, peer = slot - 1, slots[2 - slot]
-        local = slots[index]
+        reported = list(await self._ensure_alarm_state())
+        index, peer = slot - 1, reported[2 - slot]
+        current = reported[index]
         if not enabled:
             # Selected weekday and type are cleared; hours and minutes stay.
-            selected = [local.hour, local.minute, 0, 0]
+            selected = [current.hour, current.minute, 0, 0]
             frame = (
                 p2_disable_frame(slot)
                 if self._protocol == "smartbed"
                 else self._p1_frame(index, selected, peer)
             )
-            return index, replace(local, enabled=False), frame
+            display = replace(self._slots[index] or current, enabled=False)
+            return index, display, AlarmSlot(current.hour, current.minute, 0, 0, False), frame
         wire_type = alarm_type(self._protocol, mode or "")
         if peer.enabled and ((peer.hour, peer.minute) == (hour, minute) or peer.type == wire_type):
             raise ValueError(PEER_CONFLICT_ERROR)
@@ -693,7 +705,12 @@ class SimmonsController(BedController):
             if self._protocol == "smartbed"
             else self._p1_frame(index, [hour, minute, weekday, wire_type], peer)
         )
-        return index, AlarmSlot(hour, minute, mask, wire_type, True), frame
+        return (
+            index,
+            AlarmSlot(hour, minute, mask, wire_type, True),
+            AlarmSlot(hour, minute, weekday, wire_type, True),
+            frame,
+        )
 
     async def configure_simmons_alarm(
         self,
@@ -713,7 +730,7 @@ class SimmonsController(BedController):
         if not self._clock_synced:
             # Alarms fire on the bed's clock, so this session must have set it.
             await self.sync_clock()
-        index, updated, frame = await self._plan_alarm(
+        index, display, raw, frame = await self._plan_alarm(
             slot, enabled, hour, minute, weekdays, mode, confirm_custom_mode
         )
         await self._configure_write(frame)
@@ -724,7 +741,8 @@ class SimmonsController(BedController):
             self._awaiting = [True, True]
         else:
             self._awaiting[index] = True
-        self._slots[index] = updated
+        self._slots[index] = display
+        self._reported[index] = raw  # What the bed now holds for this slot.
         self._publish_slots()
         await asyncio.sleep(QUERY_GAP_S)
         await self._query_once()
@@ -752,8 +770,8 @@ class SimmonsController(BedController):
             reports = parse_p1_alarm(message)
             if reports is None:
                 return  # Truncated replies are rejected whole.
-            self._fresh = [True, True]
             for report in reports:
+                self._reported[report.slot - 1] = _raw(report)
                 self._slots[report.slot - 1] = apply_report(
                     report, self._slots[report.slot - 1], "okin"
                 )
@@ -765,7 +783,7 @@ class SimmonsController(BedController):
                 report, self._slots[report.slot - 1], "smartbed"
             )
             self._awaiting[report.slot - 1] = False
-            self._fresh[report.slot - 1] = True
+            self._reported[report.slot - 1] = _raw(report)
         self._publish_slots()
         self._reply.set()
 

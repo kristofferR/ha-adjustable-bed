@@ -397,7 +397,7 @@ def test_alarm_records_survive_controller_recreation():
 def _known(controller: SimmonsController, first: AlarmSlot, second: AlarmSlot) -> None:
     """A linked session: clock already synced and both records reported."""
     controller._slots = [first, second]
-    controller._fresh = [True, True]
+    controller._reported = [first, second]
     controller._clock_synced = True
 
 
@@ -560,7 +560,7 @@ async def test_failed_session_clock_is_synced_before_an_alarm_write():
         await controller.start_notify(None)  # Setup still succeeds.
         assert not controller._clock_synced
         controller._slots = [AlarmSlot(6, 0, 0, 0, False), AlarmSlot(8, 45, 132, 28, False)]
-        controller._fresh = [True, True]
+        controller._reported = list(controller._slots)
         await controller.configure_simmons_alarm(slot=1, enabled=False)
     frames = written(controller)
     assert frames[1].startswith("E7 80 01") and frames[2].startswith("ED 80 03")
@@ -757,3 +757,32 @@ async def test_smartbed_needs_a_fresh_reply_for_each_slot():
     ):
         await controller.configure_simmons_alarm(slot=1, enabled=False)
     assert written(controller) == ["00 C0", "00 D0"]
+
+
+async def test_peer_bytes_come_from_the_raw_report_not_the_display_overlay():
+    # Restored before the reconnect: alarm 2 enabled on Monday (weekday A).
+    state = {
+        "simmons_alarm_1_record": (6, 0, 0, 0, False),
+        "simmons_alarm_2_record": (8, 45, 130, 28, True),
+    }
+    controller = make_controller(state=state)
+    await controller.async_discover_capabilities()
+    controller._clock_synced = True
+
+    async def reply(_char: object, data: bytes, response: bool) -> None:
+        if data == bytes.fromhex("E1 80 03 9B"):
+            # Another app moved alarm 2 to Wednesday (weekday B = 0x88).
+            notify(controller, "ED 80 03 06 00 00 00 08 2D 88 1C")
+
+    controller.client.write_gatt_char.side_effect = reply
+    with patch("asyncio.sleep", new=AsyncMock()):
+        await controller.configure_simmons_alarm(
+            slot=1, enabled=True, hour=7, minute=30, weekdays=[0], mode="anti_snore"
+        )
+    # The app's overlay still displays the old weekday for the enabled record...
+    assert controller._coordinator.controller_state["simmons_alarm_2_weekday_mask"] == 130
+    # ...but the two-slot write carries exactly what the bed reported.
+    assert (
+        written(controller)[1]
+        == p1_alarm_frame([7, 30, 130, 16], [8, 45, 0x88, 28]).hex(" ").upper()
+    )
