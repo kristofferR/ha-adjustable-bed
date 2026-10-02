@@ -585,3 +585,31 @@ async def test_light_slider_zero_turns_the_lamp_off():
     await controller.set_light_level(0)
     assert written(controller)[-1][2] == "130200000000"
     assert not controller.session.light_on
+
+
+async def test_saved_p1_memory_is_persisted_and_survives_a_restart():
+    """Saved P1 slots are stored with the entry, so recall works after a restart (#152)."""
+    controller = make_controller()
+    await controller.program_memory(1)
+    preferences = controller._coordinator.remember_svane_preferences.call_args.args[0]
+    assert preferences["multi_slots"] == {"1": ["8138", "8138"]}
+    # A restart builds a fresh session from the persisted preferences.
+    from custom_components.adjustable_bed.svane_state import svane_multi_slots
+
+    restarted = make_controller(
+        session=SvaneSession(multi_slots=svane_multi_slots(preferences))
+    )
+    restarted._wait = AsyncMock(return_value=True)
+    await restarted.preset_memory(1)
+    assert written(restarted) == [(HEAD, POSITION, "8138"), (FEET, POSITION, "8138")]
+
+
+@pytest.mark.parametrize(
+    "multi_slots",
+    [{"3": ["81", "82"]}, {"1": ["81"]}, {"1": ["", "82"]}, {"1": ["8", "82"]}, ["81", "82"]],
+)
+def test_invalid_persisted_p1_memory_is_rejected(multi_slots):
+    from custom_components.adjustable_bed.svane_state import svane_preferences
+
+    with pytest.raises(ValueError):
+        svane_preferences({"intensity": 90, "multi_slots": multi_slots})
