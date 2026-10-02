@@ -93,3 +93,13 @@ def test_payload_does_not_override_a_bed_identified_by_service_uuid() -> None:
     result = detect_bed_type_detailed(info)
     assert result.bed_type == BED_TYPE_VIBRADORM
     assert result.ambiguous_types == [BED_TYPE_VMATBASIC]
+
+
+def test_vibradorm_with_vmatbasic_hint_still_auto_detects() -> None:
+    """Manual auto-detect keeps resolving the bed as v4.0.2 did."""
+    from custom_components.adjustable_bed.config_flow import _confident_auto_detect
+
+    info = _advertisement({0x03B0: bytes.fromhex("babe11110000")})
+    info.name = "VMAT 533"
+    info.service_uuids = [VIBRADORM_SERVICE_UUID]
+    assert _confident_auto_detect(detect_bed_type_detailed(info)) == BED_TYPE_VIBRADORM
