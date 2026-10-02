@@ -602,6 +602,20 @@
           "starcode_m5x5_profile": "Choose CB25, F23, kneading or Elevate to match the exact Bluetooth name.",
           "starcode_lift_entries": "Choose up to three other configured AdjustableM5X5 entries. This main and the three lifts keep separate Bluetooth addresses and controls."
         }
+      },
+      "fsm_relax": {
+        "title": "FSM Relax app profile",
+        "description": "Select the app layout and optional controls explicitly. Raw memories have no known physical units. Shared Bluetooth advertisements do not identify this app profile.",
+        "data": {
+          "fsm_relax_layout": "App layout",
+          "fsm_relax_light": "Expose app light controls",
+          "fsm_relax_massage": "Expose app massage controls",
+          "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
+          "fsm_relax_reverse_1": "Reverse actuator flag 1",
+          "fsm_relax_reverse_2": "Reverse actuator flag 2",
+          "fsm_relax_reverse_3": "Reverse actuator flag 3",
+          "fsm_relax_reverse_4": "Reverse actuator flag 4"
+        }
       }
     },
     "progress": {
@@ -680,7 +694,8 @@
       "limoss_remote_pair_settings": "Unpair first, then select each physical receiver’s Limoss Remote app profile before combining them again.",
       "starcode_profile_mismatch": "Choose the bed class matching the exact case-sensitive Bluetooth name.",
       "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 entries with different Bluetooth addresses.",
-      "starcode_unpair_first": "Use standalone entries for this independently addressed accessory group."
+      "starcode_unpair_first": "Use standalone entries for this independently addressed accessory group.",
+      "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each)."
     }
   },
   "options": {
@@ -767,7 +782,15 @@
           "limoss_remote_reverse_2": "Reverse motor channel 2",
           "starcode_device_name": "Exact Bluetooth name",
           "starcode_m5x5_profile": "AdjustableM5X5 bed class",
-          "starcode_lift_entries": "Independently addressed lifts (up to three)"
+          "starcode_lift_entries": "Independently addressed lifts (up to three)",
+          "fsm_relax_layout": "App layout",
+          "fsm_relax_light": "Expose app light controls",
+          "fsm_relax_massage": "Expose app massage controls",
+          "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
+          "fsm_relax_reverse_1": "Reverse actuator flag 1",
+          "fsm_relax_reverse_2": "Reverse actuator flag 2",
+          "fsm_relax_reverse_3": "Reverse actuator flag 3",
+          "fsm_relax_reverse_4": "Reverse actuator flag 4"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -913,6 +936,8 @@
       "vmatbasic_required": "Choose the V-MAT Basic product profile.",
       "starcode_app_invalid": "Choose a supported app selector and a live Bluetooth transport.",
       "starcode_app_unpair_first": "Unpair these entries before changing app selectors. Each physical side retains its own app controls.",
+      "fsm_relax_unpair_first": "Unpair the beds first, configure each physical FSM Relax profile, then combine them again.",
+      "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each).",
       "starcode_profile_mismatch": "Choose the bed class matching the exact case-sensitive Bluetooth name.",
       "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 entries with different Bluetooth addresses.",
       "starcode_unpair_first": "Use standalone entries for this independently addressed accessory group."
@@ -2985,6 +3010,48 @@
       },
       "adjustable_lite_massage_timer": {
         "name": "Massage timer"
+      },
+      "fsm_relax_key_count": {
+        "name": "FSM Relax key count"
+      },
+      "fsm_relax_vibration_count": {
+        "name": "FSM Relax vibration count"
+      },
+      "fsm_relax_reported_memory_count": {
+        "name": "FSM Relax reported memory count"
+      },
+      "fsm_relax_hardware_version": {
+        "name": "FSM Relax hardware version"
+      },
+      "fsm_relax_software_version": {
+        "name": "FSM Relax software version"
+      },
+      "fsm_relax_serial": {
+        "name": "FSM Relax serial"
+      },
+      "fsm_relax_acknowledgement": {
+        "name": "FSM Relax acknowledgement"
+      },
+      "fsm_relax_calibration_observed": {
+        "name": "FSM Relax calibration observed"
+      },
+      "fsm_relax_memory_quarantined": {
+        "name": "FSM Relax memory quarantined"
+      },
+      "fsm_relax_optional_information": {
+        "name": "FSM Relax optional information"
+      },
+      "fsm_relax_motor_1_raw": {
+        "name": "FSM Relax motor 1 raw"
+      },
+      "fsm_relax_motor_2_raw": {
+        "name": "FSM Relax motor 2 raw"
+      },
+      "fsm_relax_motor_3_raw": {
+        "name": "FSM Relax motor 3 raw"
+      },
+      "fsm_relax_motor_4_raw": {
+        "name": "FSM Relax motor 4 raw"
       }
     },
     "light": {

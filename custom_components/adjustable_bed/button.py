@@ -786,7 +786,7 @@ def _button_entities_for(
                 registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
         # Named app actions disappear when their profile or transport changes.
-        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "limoss_remote_", "coolbase_"):
+        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "fsm_relax_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "limoss_remote_", "coolbase_"):
             desired_actions = {
                 coordinator.entity_unique_id(spec.key)
                 for spec in controller.controller_button_specs
@@ -1060,11 +1060,7 @@ def _discovered_memory_slot_name(
 ) -> str | None:
     """Return the bed-reported name for a memory button, if there is one."""
     slot = description.memory_slot
-    controller = (
-        coordinator.capability_controller
-        if coordinator.bed_type == BED_TYPE_LIMOSS_REMOTE
-        else coordinator.controller
-    )
+    controller = coordinator.controller or coordinator.capability_controller
     if slot is None or controller is None:
         return None
 
