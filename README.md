@@ -137,7 +137,7 @@ The entries below identify motor/actuator manufacturers or supported app profile
 | ✅ [SUTA Smart Home](docs/beds/suta.md) | SUTA |
 | ✅ [TiMOTION AHF](docs/beds/timotion-ahf.md) | TiMOTION |
 | ✅ [Rondure](docs/beds/rondure.md) | 1500 Tilt Base |
-| ✅ [Remacro](docs/beds/remacro.md) | CheersSleep, Jeromes, Slumberland, The Brick |
+| 🧪 [Remacro app profiles](docs/beds/remacro.md) | Slumberland, The Brick and Jerome's apps; model from the advertised company ID; artifact-verified, hardware unverified |
 | ✅ [Cool Base](docs/beds/coolbase.md) | Cool Base (Keeson with fan) |
 | ✅ [Scott Living](docs/beds/scott-living.md) | Scott Living |
 | ✅ [SBI/Q-Plus](docs/beds/sbi.md) | Q-Plus (Costco) |
