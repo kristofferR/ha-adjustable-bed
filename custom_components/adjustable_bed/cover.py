@@ -280,6 +280,7 @@ def _async_remove_stale_cover_entities(
     } | {
         "both", "right_back", "right_legs", "both_backs", "both_legs",
         "malouf_tilt_head", "malouf_full_tilt",
+        "motor_1", "motor_2", "motor_3", "motor_4",
     }
 
     for key in stale_keys:
@@ -291,6 +292,17 @@ def _async_remove_stale_cover_entities(
         if entity_id is not None:
             registry.async_remove(entity_id)
             _LOGGER.info("Removed stale cover entity %s for %s", entity_id, coordinator.name)
+
+    # Layout-specific app covers must also retire after a protocol change.
+    namespace = "motion_bed_weitiao_"
+    prefix, suffix = coordinator.entity_unique_id(namespace).split(namespace, 1)
+    prefix += namespace
+    active_ids = {coordinator.entity_unique_id(key) for key in active_keys}
+    for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
+        if (row.domain == "cover" and row.platform == DOMAIN
+                and row.unique_id.startswith(prefix) and row.unique_id.endswith(suffix)
+                and row.unique_id not in active_ids):
+            registry.async_remove(row.entity_id)
 
 
 class AdjustableBedCover(AdjustableBedEntity, CoverEntity):

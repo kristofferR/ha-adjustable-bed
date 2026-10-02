@@ -13,9 +13,12 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.typing import UndefinedType
 
 from .beds.base import ProductButtonSpec, SideBoundController
 from .const import (
+    BED_TYPE_LIMOSS_REMOTE,
+    BED_TYPE_MOTION_BED,
     DOMAIN,
     SIDE_BOTH,
 )
@@ -30,6 +33,7 @@ from .remacro_discovery import remacro_side_lacks_global_stop, remacro_side_reje
 
 if TYPE_CHECKING:
     from .beds.base import BedController, ControllerButtonSpec, MotorControlSpec
+    from .coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,7 +57,7 @@ class AdjustableBedButtonEntityDescription(ButtonEntityDescription):
     cancel_movement: bool = False  # If True, cancels any running motor command
     # Capability property name to check on controller (e.g., "supports_preset_zero_g")
     required_capability: str | None = None
-    # Memory slot number for memory preset/program buttons (1-6). Used to check memory_slot_count.
+    # Used to gate memory buttons by the controller's actual slot count.
     memory_slot: int | None = None
     # Whether this is a memory programming button (requires supports_memory_programming)
     is_program_button: bool = False
@@ -741,10 +745,46 @@ async def async_setup_entry(
         entities.extend(_combined_button_entities_for(coordinator, children))
         _async_remove_stale_combined_button_entities(hass, coordinator, children, entities)
         async_add_entities(entities)
+        _async_follow_motion_bed_module_actions(hass, entry, coordinator, async_add_entities, entities)
         return
 
-    async_add_entities([entity for runtime in entity_runtimes(coordinator)
-                        for entity in _button_entities_for(hass, runtime)])
+    initial = [entity for runtime in entity_runtimes(coordinator)
+               for entity in _button_entities_for(hass, runtime)]
+    async_add_entities(initial)
+    _async_follow_motion_bed_module_actions(hass, entry, coordinator, async_add_entities, initial)
+
+def _async_follow_motion_bed_module_actions(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    coordinator: AdjustableBedCoordinator | PairedBedCoordinator,
+    async_add_entities: AddEntitiesCallback,
+    initial: list[ButtonEntity],
+) -> None:
+    # A Motion Bed hub discovers each module after subscribing to status replies.
+    # Keep entity identities stable while adding newly reported module controls.
+    created = {entity.unique_id for entity in initial}
+    actions = {entity.unique_id: entity for entity in initial if isinstance(entity, ControllerActionButton)}
+    def add_motion_bed_module_actions(updates: dict[str, object]) -> None:
+        additions: list[ButtonEntity] = []
+        for runtime in entity_runtimes(coordinator):
+            controller = runtime.capability_controller
+            if controller is None or not controller.supports_motion_bed_actions:
+                continue
+            for spec in controller.controller_button_specs:
+                identity = runtime.entity_unique_id(spec.key)
+                if identity not in created:
+                    created.add(identity)
+                    entity = ControllerActionButton(runtime, spec)
+                    actions[identity] = entity
+                    additions.append(entity)
+        for entity in actions.values():
+            if getattr(entity, "hass", None) is not None and entity.entity_id:
+                entity.async_write_ha_state()
+        if additions:
+            async_add_entities(additions)
+    for runtime in entity_runtimes(coordinator):
+        if runtime.bed_type == BED_TYPE_MOTION_BED:
+            entry.async_on_unload(runtime.register_controller_state_callback(add_motion_bed_module_actions))
 
 
 def _button_entities_for(
@@ -787,12 +827,34 @@ def _button_entities_for(
                 registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
         # Named app actions disappear when their profile or transport changes.
-        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_", "remacro_", "fsm_relax_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_", "richmat_mh_"):
+        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_", "remacro_", "fsm_relax_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_", "richmat_mh_", "svane_", "motion_bed_", "limoss_remote_"):
             desired_actions = {
                 coordinator.entity_unique_id(spec.key)
                 for spec in controller.controller_button_specs
                 if spec.key.startswith(namespace)
             }
+            if (
+                namespace == "motion_bed_"
+                and coordinator.bed_type == BED_TYPE_MOTION_BED
+                and any(spec.key == "motion_bed_active_module" for spec in controller.controller_select_specs)
+            ):
+                from .motion_bed_actions import MOTION_BED_ACTIONS
+
+                # Keep possible hub identities while inventory is unknown, but
+                # retire controls that only belong to the former home profile.
+                owners = {
+                    "Setting2Activity", "MainMcuActivity", "ChangeDeviceActivity", "ConnectMcuActivity",
+                    "DiandongFragment", "DianDongSetActivity", "AlarmActivity",
+                    "QinangFragment", "AnmoSetActivity", "PressSetActivity",
+                    "LengnuanFragment", "TimeSettingActivity",
+                }
+                desired_actions.update(
+                    coordinator.entity_unique_id("motion_bed_" + action.key)
+                    for action in MOTION_BED_ACTIONS
+                    if action.owner in owners
+                    and (action.kind in ("press", "stop")
+                         or (action.kind == "held" and action.owner == "DiandongFragment"))
+                )
             action_prefix, action_suffix = coordinator.entity_unique_id(namespace).split(
                 namespace, 1
             )
@@ -1074,7 +1136,8 @@ def _discovered_memory_slot_name(
         return None
 
     name = names[slot - 1]
-    if not name:
+    # The app permits explicit blank names; preserve other profiles' prior fallback.
+    if name is None or (not name and coordinator.bed_type != BED_TYPE_LIMOSS_REMOTE):
         return None
     return f"Save {name}" if description.is_program_button else name
 
@@ -1102,6 +1165,26 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
     """Button entity for Adjustable Bed."""
 
     entity_description: AdjustableBedButtonEntityDescription
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        if (
+            self._coordinator.bed_type == BED_TYPE_LIMOSS_REMOTE
+            and self.entity_description.memory_slot is not None
+        ):
+            def names_changed(state: dict[str, Any]) -> None:
+                if "limoss_remote_memory_names" in state:
+                    self.async_write_ha_state()
+
+            self.async_on_remove(
+                self._coordinator.register_controller_state_callback(names_changed)
+            )
+
+    @property
+    def name(self) -> str | UndefinedType | None:
+        """Keep editable local memory names current without rebuilding the entity."""
+        slot_name = _discovered_memory_slot_name(self._coordinator, self.entity_description)
+        return slot_name if slot_name is not None else super().name
 
     def __init__(
         self,
@@ -1201,6 +1284,13 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
             if spec.translation_placeholders is not None:
                 self._attr_translation_placeholders = dict(spec.translation_placeholders)
 
+    @property
+    def available(self) -> bool:
+        controller = self._coordinator.capability_controller
+        return super().available and (
+            controller is None or controller.controller_button_available(self._spec.key)
+        )
+
     async def async_press(self) -> None:
         """Execute the named action with its declared replacement policy."""
         if self._spec.scheduler_resource is not None:
@@ -1298,6 +1388,13 @@ class PairedBedCombinedButton(ButtonEntity):
             description.key,
             self._coordinator.name,
         )
+        if description.memory_slot is not None and not description.is_program_button:
+            # Validate every physical slot before dispatching either recall.
+            for child in self._coordinator.children.values():
+                controller = child.capability_controller
+                if controller is None:
+                    raise ValueError(f"Cannot validate memory for unavailable device '{child.name}'")
+                controller.validate_memory_recall(description.memory_slot)
         await self._coordinator.async_execute_controller_command(
             description.press_fn,
             side=SIDE_BOTH,

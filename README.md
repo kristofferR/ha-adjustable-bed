@@ -117,8 +117,9 @@ The entries below identify motor/actuator manufacturers or supported app profile
 | 🧪 [Jiecang app profiles](docs/beds/jiecang-app.md) | ERGOBALANCE 1.0.8 and Dream Motion 1.0.5, explicit layouts; hardware unverified |
 | ✅ [Kaidi](docs/beds/kaidi.md) | Rize Remedy III / newer Mouselet-based Rize beds, Floyd Home, ISleep |
 | ✅ [Limoss](docs/beds/limoss.md) | Limoss, Stawett |
+| 🧪 [Limoss Remote app](docs/beds/limoss-remote.md) | Explicit 7.1.8 bed/chair layouts and eight local memories; hardware unverified |
 | ✅ [Jensen](docs/beds/jensen.md) | Jensen (JMC400, LinON Entry) |
-| ✅ [Svane](docs/beds/svane.md) | Svane; Jensen LinOn ([`jensen_linon`](docs/beds/jensen.md#linon) profile, hardware unverified) |
+| [Svane](docs/beds/svane.md) | Svane Remote multi-service / JMC400 app profiles; Jensen LinOn (`jensen_linon`), static evidence verified, hardware unverified |
 | ✅ [DewertOkin](docs/beds/dewertokin.md) | Many older Rize models, Simmons, Nectar, Resident, Symphony |
 | ✅ [Serta](docs/beds/serta.md) | Serta Motion Perfect |
 | ✅ [Mattress Firm 900](docs/beds/mattressfirm.md) | iFlex / older Nordic UART bases |
@@ -148,6 +149,7 @@ The entries below identify motor/actuator manufacturers or supported app profile
 | 🧪 [AdjustableM5X5 app](docs/beds/starcode-m5x5.md) | Explicit CB25, F23, kneading or Elevate profile; main plus three independently addressed lifts; hardware unverified |
 | ✅ [DewertOkin ELEVATE](docs/beds/star-elevate.md) | ELEVATE two-actuator lift accessory |
 | ✅ [Okin CST](docs/beds/okin-cst.md) | Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; Nectar Motion |
+| 🧪 [Motion Bed app](docs/beds/motion_bed.md) | Explicit QMS/SealyMF and TL motor/air/thermal/hub app profiles; hardware unverified |
 | 🧪 [FurniMove / OKIN Smart Remote app](docs/beds/furnimove.md) | Explicit handset layouts, including RF ECO BT adjustable-bed receivers; hardware unverified |
 | ✅ [OKIN Smart Remote / RF ECO BT](docs/beds/okin-rf-eco-bt.md) | Elda BTH / MEGAMAT staircase actuator |
 | ✅ [Okin DOT](docs/beds/okin-dot.md) | DewertOkin RF1058/RF34/RF6707 handset beds |

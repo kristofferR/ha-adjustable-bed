@@ -60,6 +60,12 @@ CONF_ZSERIES_ALARM_AVAILABLE: Final = "zseries_alarm_available"
 CONF_STARCODE_TRANSPORT_SELECTOR: Final = "starcode_abm5_4_transport_selector"
 STARCODE_APP_CONNECTION_TIMEOUT_SECONDS: Final = 8.0
 STARCODE_APP_CONFIG_KEYS: Final = frozenset({CONF_STARCODE_COMMAND_SELECTOR, CONF_STARCODE_UI_SELECTOR, CONF_STARCODE_TRANSPORT_SELECTOR})
+CONF_MOTION_BED_NAME: Final = "motion_bed_name"
+CONF_MOTION_BED_RESTORED: Final = "motion_bed_restored"
+CONF_MOTION_BED_PRESET: Final = "motion_bed_preset"
+CONF_MOTION_BED_MOVEMENT: Final = "motion_bed_movement"
+MOTION_BED_CONFIG_KEYS: Final = frozenset({CONF_MOTION_BED_NAME, CONF_MOTION_BED_PRESET, CONF_MOTION_BED_MOVEMENT, CONF_MOTION_BED_RESTORED})
+
 CONF_STARCODE_M5X5_PROFILE: Final = "starcode_m5x5_profile"
 CONF_STARCODE_DEVICE_NAME: Final = "starcode_device_name"
 CONF_STARCODE_LIFT_ENTRIES: Final = "starcode_lift_entries"
@@ -459,6 +465,17 @@ BED_TYPE_OKIN_FFE: Final = "okin_ffe"  # OKIN 13/15 series via FFE5 service (0xE
 BED_TYPE_REVERIE_NIGHTSTAND: Final = "reverie_nightstand"  # Reverie Protocol 110
 BED_TYPE_COMFORT_MOTION: Final = "comfort_motion"  # Comfort Motion / Lierda protocol
 BED_TYPE_LIMOSS: Final = "limoss"  # Limoss / Stawett TEA-encrypted protocol
+BED_TYPE_LIMOSS_REMOTE: Final = "limoss_remote"  # Explicit Limoss Remote app
+CONF_LIMOSS_REMOTE_PRODUCT: Final = "limoss_remote_product"
+CONF_LIMOSS_REMOTE_LIGHT: Final = "limoss_remote_light"
+CONF_LIMOSS_REMOTE_MASSAGE: Final = "limoss_remote_massage"
+CONF_LIMOSS_REMOTE_THEME: Final = "limoss_remote_theme"
+CONF_LIMOSS_REMOTE_STATE: Final = "limoss_remote_state"
+LIMOSS_REMOTE_REVERSE_KEYS: Final = tuple(f"limoss_remote_reverse_{i}" for i in range(1, 5))
+LIMOSS_REMOTE_CONFIG_KEYS: Final = frozenset({
+    CONF_LIMOSS_REMOTE_PRODUCT, CONF_LIMOSS_REMOTE_LIGHT, CONF_LIMOSS_REMOTE_MASSAGE,
+    CONF_LIMOSS_REMOTE_THEME, *LIMOSS_REMOTE_REVERSE_KEYS,
+})
 BED_TYPE_SERTA: Final = "serta"  # Serta Motion Perfect (uses Keeson protocol with serta variant)
 BED_TYPE_BEDTECH: Final = "bedtech"  # BedTech 5-byte ASCII protocol
 BED_TYPE_JENSEN: Final = "jensen"  # Jensen JMC400/LinON Entry (6-byte commands)
@@ -479,6 +496,7 @@ BED_TYPE_STARCODE_M5X5: Final = "starcode_m5x5"
 BED_TYPE_VIBRADORM_APP: Final = "vibradorm_app"
 BED_TYPE_VMATBASIC: Final = "vmatbasic"
 BED_TYPE_STARCODE_ABM5_4: Final = "starcode_abm5_4"
+BED_TYPE_MOTION_BED: Final = "motion_bed"
 BED_TYPE_RONDURE: Final = "rondure"  # 1500 Tilt Base / Rondure Hump (8/9-byte FurniBus protocol)
 BED_TYPE_REMACRO: Final = (
     "remacro"  # Remacro SynData protocol (Slumberland, The Brick and Jerome's apps)
@@ -558,6 +576,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_COMFORT_MOTION,
     # Limoss / Stawett
     BED_TYPE_LIMOSS,
+    BED_TYPE_LIMOSS_REMOTE,
     # Serta Motion Perfect
     BED_TYPE_SERTA,
     # BedTech
@@ -588,6 +607,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
+    BED_TYPE_MOTION_BED,
     # Rondure / 1500 Tilt Base
     BED_TYPE_RONDURE,
     # Remacro (CheersSleep / Jeromes / Slumberland / The Brick)
@@ -670,6 +690,8 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         # The constructor refuses offline UART catalogs whose nonpositive C
         # can gain controls from live manufacturer classification.
         BED_TYPE_STARCODE_ABM5_4,
+        BED_TYPE_MOTION_BED,
+        BED_TYPE_LIMOSS_REMOTE,
     }
 )
 
@@ -1478,9 +1500,13 @@ SOLACE_VARIANTS: Final = {
     VARIANT_AUTO: "Auto (conservative device-name profile)",
     SOLACE_VARIANT_WOOSA: "Woosa Sleep app (select explicitly)",
 }
+SVANE_VARIANT_MULTI: Final = "svane_remote_multi"
+SVANE_VARIANT_JMC: Final = "svane_remote_jmc"
 SVANE_VARIANT_JENSEN_LINON: Final = "jensen_linon"
 SVANE_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto (Svane app)",
+    VARIANT_AUTO: "Svane Remote (multi-service, existing entries)",
+    SVANE_VARIANT_MULTI: "Svane Remote (multi-service)",
+    SVANE_VARIANT_JMC: "Svane Remote (JMC400, select explicitly)",
     SVANE_VARIANT_JENSEN_LINON: "Jensen Adjustable Sleep app (LinOn)",
 }
 # Remacro app profiles. Company IDs select the model, never the app, so auto
@@ -2397,6 +2423,8 @@ ALL_PROTOCOL_VARIANTS: Final = [
     VARIANT_AUTO,
     SOLACE_VARIANT_WOOSA,
     SVANE_VARIANT_JENSEN_LINON,
+    SVANE_VARIANT_MULTI,
+    SVANE_VARIANT_JMC,
     REMACRO_VARIANT_SLUMBERLAND,
     REMACRO_VARIANT_THE_BRICK,
     REMACRO_VARIANT_JEROMES,
@@ -2620,6 +2648,8 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
     """
     if not bed_type:
         return False
+    if bed_type == BED_TYPE_SVANE and protocol_variant != SVANE_VARIANT_JENSEN_LINON:
+        return False
     if bed_type in BEDS_WITH_POSITION_FEEDBACK:
         return True
     return bed_type == BED_TYPE_KEESON and protocol_variant == KEESON_VARIANT_ERGOMOTION
@@ -2631,6 +2661,7 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
 # not remain "unknown" forever (#322, #344, #501).
 BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
     {
+        BED_TYPE_LIMOSS_REMOTE,
         BED_TYPE_FURNIMOVE,
         BED_TYPE_FSM_RELAX,
         BED_TYPE_SERENITY,
@@ -2652,6 +2683,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_VIBRADORM_APP,
         BED_TYPE_VMATBASIC,
         BED_TYPE_STARCODE_ABM5_4,
+        BED_TYPE_MOTION_BED,
         BED_TYPE_OKIN_CST,
         BED_TYPE_OKIN_RF_ECO_BT,
     }
@@ -2747,6 +2779,7 @@ BEDS_WITH_DISCONNECT_AFTER_COMMAND_DEFAULT_DISABLED: Final = (
             BED_TYPE_VIBRADORM_APP,
             BED_TYPE_VMATBASIC,
             BED_TYPE_STARCODE_ABM5_4,
+            BED_TYPE_MOTION_BED,
         }
     )
 )

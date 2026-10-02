@@ -16,10 +16,12 @@ import logging
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any
 
+from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..const import (
     SVANE_CHAR_DOWN_UUID,
+    SVANE_CHAR_MEMORY_UUID,
     SVANE_CHAR_POSITION_UUID,
     SVANE_CHAR_UP_UUID,
     SVANE_FEET_SERVICE_UUID,
@@ -27,7 +29,7 @@ from ..const import (
     SVANE_LIGHT_ON_OFF_UUID,
     SVANE_LIGHT_SERVICE_UUID,
 )
-from .svane import SvaneController
+from .base import BedController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -66,7 +68,7 @@ def _direction_char(up: bool) -> str:
     return SVANE_CHAR_UP_UUID if up else SVANE_CHAR_DOWN_UUID
 
 
-class JensenLinonController(SvaneController):
+class JensenLinonController(BedController):
     """Controller for Jensen LinOn beds (Jensen Adjustable Sleep app profile)."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
@@ -74,6 +76,156 @@ class JensenLinonController(SvaneController):
         super().__init__(coordinator)
         # The bed does not report light state, so track what was last sent.
         self._light_on = False
+
+    def _get_char_in_service(
+        self, service_uuid: str, char_uuid: str
+    ) -> BleakGATTCharacteristic | None:
+        """Find a characteristic within a specific service.
+
+        This is required because the same characteristic UUID exists in multiple
+        services (e.g., UP_CHAR exists in both HEAD_SERVICE and FEET_SERVICE).
+
+        Args:
+            service_uuid: The service UUID to search within
+            char_uuid: The characteristic UUID to find
+
+        Returns:
+            The BleakGATTCharacteristic if found, None otherwise
+        """
+        if self.client is None or not self.client.is_connected:
+            return None
+
+        for service in self.client.services:
+            if service.uuid.lower() == service_uuid.lower():
+                for char in service.characteristics:
+                    if char.uuid.lower() == char_uuid.lower():
+                        return char
+        return None
+
+    async def _write_to_service_char(
+        self,
+        service_uuid: str,
+        char_uuid: str,
+        command: bytes,
+        repeat_count: int = 1,
+        repeat_delay_ms: int = 100,
+        cancel_event: asyncio.Event | None = None,
+    ) -> None:
+        """Write a command to a characteristic in a specific service.
+
+        Args:
+            service_uuid: The service UUID containing the characteristic
+            char_uuid: The characteristic UUID to write to
+            command: The bytes to write
+            repeat_count: Number of times to send the command
+            repeat_delay_ms: Delay between repeated commands in milliseconds
+            cancel_event: Optional event to signal cancellation
+        """
+        if self.client is None or not self.client.is_connected:
+            _LOGGER.error("Cannot write command: BLE client not connected")
+            raise ConnectionError("Not connected to bed")
+
+        char = self._get_char_in_service(service_uuid, char_uuid)
+        if char is None:
+            _LOGGER.error(
+                "Characteristic %s not found in service %s",
+                char_uuid,
+                service_uuid,
+            )
+            raise ConnectionError(f"Characteristic {char_uuid} not found in service {service_uuid}")
+
+        effective_cancel = cancel_event or self._coordinator.cancel_command
+
+        _LOGGER.debug(
+            "Writing %s to service %s char %s (repeat: %d, delay: %dms, response=True)",
+            command.hex(),
+            service_uuid[:8],
+            char_uuid[:8],
+            repeat_count,
+            repeat_delay_ms,
+        )
+
+        for i in range(repeat_count):
+            if effective_cancel is not None and effective_cancel.is_set():
+                _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
+                return
+
+            try:
+                async with self._ble_lock:
+                    await self.client.write_gatt_char(char, command, response=True)
+            except BleakError:
+                _LOGGER.exception(
+                    "Failed to write to service %s char %s",
+                    service_uuid[:8],
+                    char_uuid[:8],
+                )
+                raise
+
+            if i < repeat_count - 1:
+                await asyncio.sleep(repeat_delay_ms / 1000)
+
+    async def write_command(
+        self,
+        command: bytes,
+        repeat_count: int = 1,
+        repeat_delay_ms: int = 100,
+        cancel_event: asyncio.Event | None = None,
+    ) -> None:
+        """Write a command to the bed (writes to head memory characteristic).
+
+        This method is provided for compatibility with the base class interface.
+        For motor control, use the specific move_* methods instead.
+        """
+        await self._write_to_service_char(
+            SVANE_HEAD_SERVICE_UUID,
+            SVANE_CHAR_MEMORY_UUID,
+            command,
+            repeat_count,
+            repeat_delay_ms,
+            cancel_event,
+        )
+
+    @property
+    def control_characteristic_uuid(self) -> str:
+        return SVANE_CHAR_UP_UUID
+
+    @property
+    def supports_lights(self) -> bool:
+        return True
+
+    @property
+    def supports_discrete_light_control(self) -> bool:
+        return True
+
+    async def move_head_up(self) -> None:
+        await self._move_motor(SVANE_HEAD_SERVICE_UUID, SVANE_CHAR_UP_UUID)
+
+    async def move_head_down(self) -> None:
+        await self._move_motor(SVANE_HEAD_SERVICE_UUID, SVANE_CHAR_DOWN_UUID)
+
+    async def move_back_up(self) -> None:
+        await self.move_head_up()
+
+    async def move_back_down(self) -> None:
+        await self.move_head_down()
+
+    async def move_back_stop(self) -> None:
+        await self.move_head_stop()
+
+    async def move_legs_up(self) -> None:
+        await self._move_motor(SVANE_FEET_SERVICE_UUID, SVANE_CHAR_UP_UUID)
+
+    async def move_legs_down(self) -> None:
+        await self._move_motor(SVANE_FEET_SERVICE_UUID, SVANE_CHAR_DOWN_UUID)
+
+    async def move_feet_up(self) -> None:
+        await self.move_legs_up()
+
+    async def move_feet_down(self) -> None:
+        await self.move_legs_down()
+
+    async def move_feet_stop(self) -> None:
+        await self.move_legs_stop()
 
     # Capabilities
     @property
@@ -154,7 +306,7 @@ class JensenLinonController(SvaneController):
             # Release the bed, but let the original error or cancellation propagate.
             try:
                 await asyncio.shield(self._send_stop())
-            except (BleakError, ConnectionError):
+            except BleakError, ConnectionError:
                 _LOGGER.debug("Failed to send Jensen LinOn STOP after an interrupted move")
             raise
         await self._send_stop()
@@ -234,7 +386,7 @@ class JensenLinonController(SvaneController):
         except BaseException:
             try:
                 await asyncio.shield(self._send_stop())
-            except (BleakError, ConnectionError):
+            except BleakError, ConnectionError:
                 _LOGGER.debug("Failed to send Jensen LinOn STOP after an interrupted flat")
             raise
         if cancel_event.is_set():

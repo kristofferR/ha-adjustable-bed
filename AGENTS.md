@@ -29,6 +29,8 @@ This file provides guidance for agents working with code in this repository.
 
 This is a Home Assistant custom integration for controlling smart adjustable beds via Bluetooth Low Energy (BLE). It replaces the broken `smartbed-mqtt` addon with a native HA integration that uses Home Assistant's Bluetooth stack directly.
 
+For every current and future bed integration, implement direct BLE bed features only. Bed Wi-Fi provisioning, SSID/password configuration, bed network administration, cloud/account services and unrelated companion-app infrastructure are outside the product boundary, even when their commands travel over BLE. Freeze discovered evidence and give those items explicit `EXCLUDED` dispositions; never treat them as implementation debt or feature work. Home Assistant Bluetooth proxy, adapter and setup infrastructure remains supported.
+
 **Current status:** Dozens of bed protocols implemented. The README's "Supported Beds" table is the single source of truth for which protocols exist and which are confirmed working — don't duplicate that list here.
 
 **v4 baseline:** Work from `main`. It requires Home Assistant 2026.9.0+

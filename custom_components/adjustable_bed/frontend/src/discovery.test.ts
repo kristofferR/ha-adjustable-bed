@@ -33,6 +33,27 @@ function hassWith(entries: EntityRegistryDisplayEntry[]): HomeAssistant {
   };
 }
 
+test("Motion hub module selector is a nonempty utility control", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("select.hub_module", "motion_bed_active_module"),
+  ]), "dev1");
+  expect(bed.utilitySelects).toEqual(["select.hub_module"]);
+  expect(bed.utility).toEqual([]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
+test("Motion hub selector follows native child and single-address side scoping", () => {
+  const hass = hassWith([
+    entry("select.left_module", "motion_bed_active_module_left"),
+    entry("select.right_module", "motion_bed_active_module_right"),
+  ]);
+  expect(bedEntitiesForDevice(hass, "dev1", "left").utilitySelects).toEqual(["select.left_module"]);
+  expect(bedEntitiesForDevice(hass, "dev1", "right").utilitySelects).toEqual(["select.right_module"]);
+  hass.devices.dev1 = { id: "dev1", parent_device_id: "parent" };
+  hass.entities["select.right_module"].device_id = "dev2";
+  expect(bedEntitiesForDevice(hass, "dev1").utilitySelects).toEqual(["select.left_module"]);
+});
+
 test("2-motor bed with light switch and no massage/climate", () => {
   const hass = hassWith([
     entry("cover.seng_back", "back"),
@@ -611,6 +632,28 @@ test("stateless native floor power buttons stay in the physical child's lighting
   expect(bedIsEmpty(left)).toBe(false);
 });
 
+test("Limoss Remote literal channels and local slots seven/eight are visible", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("cover.channel1", "limoss_remote_motor_1"),
+    entry("cover.channel2", "limoss_remote_motor_2"),
+    entry("button.app_light", "remote_action"),
+    entry("button.memory7", "preset_memory_7"),
+    entry("button.save7", "program_memory_7"),
+    entry("button.memory8", "preset_memory_8"),
+    entry("button.save8", "program_memory_8"),
+    entry("sensor.raw1", "limoss_remote_motor_1_position_raw"),
+  ]), "dev1");
+  expect(bed.motors.map((motor) => motor.key)).toEqual([
+    "limoss_remote_motor_1", "limoss_remote_motor_2",
+  ]);
+  expect(bed.motors.every((motor) => motor.position === undefined)).toBe(true);
+  expect(bed.memory).toEqual([
+    { slot: 7, goto: "button.memory7", save: "button.save7" },
+    { slot: 8, goto: "button.memory8", save: "button.save8" },
+  ]);
+  expect(bed.utility).toContain("button.app_light");
+});
+
 test("Remacro split screen buckets its side selector and light save", () => {
   const hass = hassWith([
     entry("cover.bed_head", "head"),
@@ -678,6 +721,17 @@ test("SIMMONS inclined controls join presets and clock/alarm actions land in uti
   const bed = bedEntitiesForDevice(hass, "dev1");
   expect(bed.presets).toEqual(["button.s_flat", "button.s_left", "button.s_middle", "button.s_right"]);
   expect(bed.utility).toEqual(["button.s_clock", "button.s_alarms"]);
+});
+
+test("Svane lamp intensity is exposed with its under-bed-light switch", () => {
+  const hass = hassWith([
+    entry("switch.svane_lamp", "under_bed_lights"),
+    entry("number.svane_intensity", "svane_intensity"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.lights.switch).toBe("switch.svane_lamp");
+  expect(bed.lights.level).toBe("number.svane_intensity");
+  expect(bedIsEmpty(bed)).toBe(false);
 });
 
 test("Sleep Smart pump taps land in utility and its pressure with firmness", () => {

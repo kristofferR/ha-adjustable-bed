@@ -70,14 +70,14 @@ without cancelling active movement. Hardware behavior remains unverified.
 
 | Action | Required fields besides `device_id` | Behavior |
 |--------|------------------------------------|----------|
-| `goto_preset` | `preset` | Recall a memory slot, 1–6 where supported |
+| `goto_preset` | `preset` | Recall a memory slot, 1–8 where supported |
 | `save_preset` | `preset` | Overwrite a supported memory slot with the current position |
 | `stop_all` | None | Cancel pending/active movement and perform the controller's STOP or release cleanup |
 | `set_position` | `motor`, `position` | Move one supported axis to a target |
 | `set_positions` | `positions` | Validate all motor targets before starting an ordered multi-motor request |
 | `timed_move` | `motor`, `direction`, `duration_ms` | Move up/down for an elapsed movement ceiling of 100–30000 ms |
 
-The maximum memory slot depends on the bed; accepting numbers up to 6 does not
+The maximum memory slot depends on the bed; accepting numbers up to 8 does not
 create extra hardware memory. Named presets such as Flat or Zero G are exposed
 as buttons where supported. `save_preset` changes memory stored on the bed.
 
@@ -261,6 +261,21 @@ local state, sends no timer packet and does not stop the receiver on expiry.
 Hold one exact app action. Flat runs 600 ms; save and reset run the six-second local confirmation interval. No device acknowledgement is inferred.
 
 Target one or more physical devices with `device_id`, an exact supported `control`, `duration` in seconds (0.1–60), and optional paired `side`. Every target’s profile and observed-state gate is checked before any write. Movement and memory refresh every 100 ms with immediate STOP; presets release according to the retained UI selector. Flat runs 600 ms after activation; save/reset stream through the six-second local confirmation interval regardless of the duration field. Positive massage controls require observed active state; this profile has no massage timer Off command. [The protocol document](beds/starcode-abm5-4.md) lists all controls, exact capability gates and exclusions.
+
+
+## Motion Bed app actions
+
+The [Motion Bed action index](beds/motion_bed.md#actions) covers all 12 typed app actions, including alarms, sleep calibration/reporting, hub modules, pressure, thermal schedules and audio. Named action keys are listed in controller diagnostics. Persistent changes require confirmation; every target is validated before writes, and native paired child targets retain their side.
+### Svane Remote held controls
+
+`svane_hold_control` holds a selected head/feet axis or combination for `duration` seconds (0.1–60). Feet-only actions and P1 combinations require more than 0.1 seconds to allow the source's 100 ms feet delay; shorter requests are rejected before any target moves. If awaited delivery consumes the remaining budget before feet start, the action fails explicitly and releases any started axis. Its literal dropdown also offers `light_adjust`, which runs the app's triangular lamp preference loop after the source's 200 ms threshold. All physical targets are checked before movement.
+
+`svane_release_axis` accepts `motor: head` or `motor: feet` during that hold and signals its serialized writer. The remaining axis continues; final release uses the profile's actual STOP. Both actions accept the normal `device_id` and paired `side` fields. The literal Svane position, Read/TV, toggle and refresh buttons, local intensity number and diagnostic records are described in the [profile guide](beds/svane.md).
+
+
+## Limoss Remote app
+
+The explicit [Limoss Remote app profile](beds/limoss-remote.md) adds `limoss_remote_hold_control`, `limoss_remote_recall_memory`, `limoss_remote_rename_memory`, `limoss_remote_calibrate` and `limoss_remote_features`. Holds accept 0.1–60 seconds. Calibration requires `confirmed: true`. Memory actions accept slots 1–8 within the live capacity; `save_preset` and `goto_preset` expose the same local slots. Rename permits an empty name. All selected targets are validated before writes; paired child targets and `side` retain their physical-target settings.
 
 ### FSM Relax app actions
 

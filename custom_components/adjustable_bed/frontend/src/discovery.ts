@@ -165,7 +165,7 @@ export function bedEntitiesForDevice(
           motor(`${split.key.slice(0, -9)}_${split.side}`).position = id;
         else if (key.startsWith("massage_") && key.endsWith("_intensity"))
           bed.massage.numbers.push(id);
-        else if (key === "light_level" || key === "starcode_brightness" || key === "vmatbasic_floor_level" || key === "starcode_abm5_4_light_level") bed.lights.level = id;
+        else if (key === "light_level" || key === "svane_intensity" || key === "starcode_brightness" || key === "vmatbasic_floor_level" || key === "starcode_abm5_4_light_level") bed.lights.level = id;
         else if (key === "vmatbasic_floor_minutes") {
           bed.lights.timerMinutes = id;
           bed.lights.timerAppliesImmediately = true;
@@ -304,7 +304,8 @@ export function bedEntitiesForDevice(
         break;
 
       case "select":
-        if (key === "light_timer") bed.lights.timer = id;
+        if (key === "motion_bed_active_module") (bed.utilitySelects ??= []).push(id);
+        else if (key === "light_timer") bed.lights.timer = id;
         // A split bed's local left/right selector routes the motor controls.
         else if (key === "remacro_control_side") bed.controlSide = id;
         else if (key === "starcode_color") mood().selects.push(id);
@@ -434,7 +435,8 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     bed.climate.entities.length === 0 &&
     bed.climate.selects.length === 0 &&
     bed.climate.numbers.length === 0 &&
-    bed.utility.length === 0
+    bed.utility.length === 0 &&
+    !bed.utilitySelects?.length
   );
 }
 
