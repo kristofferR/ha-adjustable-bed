@@ -3348,9 +3348,6 @@
       }
     },
     "number": {
-      "svane_intensity": {
-        "name": "Lamp intensity"
-      },
       "back_position": {
         "name": "Back Position"
       },

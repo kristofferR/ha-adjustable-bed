@@ -185,6 +185,7 @@ from .const import (
     SUTA_SERVICE_UUID,
     SUTA_UNSUPPORTED_NAME_PREFIXES,
     SVANE_HEAD_SERVICE_UUID,
+    SVANE_NAME_PATTERNS,
     TIMOTION_AHF_NAME_PATTERNS,
     TIMOTION_AHF_SERVICE_UUID,
     VARIANT_AUTO,
@@ -1361,7 +1362,11 @@ def _detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detect
         )
 
     # Check for Svane / Jensen LinOn by name pattern
-    if is_svane_discovery_name(service_info.name) or "jensen bed" in device_name:
+    # The app's exact scan names are a subset; keep the established substring
+    # match so renamed beds (e.g. "Svane Bed 2") still detect as before.
+    if is_svane_discovery_name(service_info.name) or any(
+        pattern in device_name for pattern in SVANE_NAME_PATTERNS
+    ):
         signals.append("name:svane")
         _LOGGER.info(
             "Detected Svane bed at %s (name: %s) by name pattern",
