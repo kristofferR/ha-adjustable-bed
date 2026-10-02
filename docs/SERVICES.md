@@ -77,7 +77,7 @@ without cancelling active movement. Hardware behavior remains unverified.
 | `set_positions` | `positions` | Validate all motor targets before starting an ordered multi-motor request |
 | `timed_move` | `motor`, `direction`, `duration_ms` | Move up/down for an elapsed movement ceiling of 100–30000 ms |
 
-The maximum memory slot depends on the bed; accepting numbers up to 6 does not
+The maximum memory slot depends on the bed; accepting numbers up to 8 does not
 create extra hardware memory. Named presets such as Flat or Zero G are exposed
 as buttons where supported. `save_preset` changes memory stored on the bed.
 
