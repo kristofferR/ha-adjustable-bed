@@ -1221,6 +1221,10 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     }
     unowned = set(_entry_addresses(entry)) - owned
     clear_remacro_model_issues(hass, unowned)
+    from .app_state_store import async_remove_app_states
+
+    # Re-adding a bed must not restore the removed entry's app preferences.
+    await async_remove_app_states(hass, unowned)
     # Remacro app state lives as long as some entry owns the bed, so reloads,
     # combine and unpair keep the serial, side, preset and pending LED level.
     sessions = hass.data.get(DOMAIN, {}).get("remacro_sessions")

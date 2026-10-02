@@ -49,6 +49,7 @@ from .adapter import (
     select_adapter,
 )
 from .address_lock import async_get_connect_lock
+from .app_state_store import AppStateStore, app_state_slot, app_state_store
 from .beds.remacro_protocol import ModelProblem
 from .ble_auth import is_ble_authentication_error, is_ble_pairing_auth_failure
 from .bluetooth_diagnostics import connection_reachability
@@ -572,8 +573,10 @@ class AdjustableBedCoordinator:
                 hass, 1, f"{DOMAIN}.motion_bed_{self._address.replace(':', '_').lower()}_{profile_key}"
             )
         # Generic app-local preferences (BedController.persisted_app_state).
-        self._app_state_store: Store[dict[str, Any]] | None = None
-        self._app_state: dict[str, Any] = {}
+        self._app_state_store: AppStateStore | None = None
+        self._app_state_slot = app_state_slot(
+            self._bed_type, self._protocol_variant, self.entry.data.get(CONF_SIDE)
+        )
         self._app_state_restoring = False
         self._controller_state_callbacks: set[Callable[[dict[str, Any]], None]] = set()
         self._controller_state_refresh_task: asyncio.Task[None] | None = None
@@ -5234,7 +5237,7 @@ class AdjustableBedCoordinator:
                     if self._motion_bed_state_store is not None and self._motion_bed_state_loaded:
                         await self._motion_bed_state_store.async_save(self._motion_bed_local_state)
                     if self._app_state_store is not None:
-                        await self._app_state_store.async_save(self._app_state)
+                        await self._app_state_store.async_save()
 
     async def async_disconnect(
         self,
@@ -6959,23 +6962,16 @@ class AdjustableBedCoordinator:
         if controller is None or controller.persisted_app_state is None:
             return
         if self._app_state_store is None:
-            store: Store[dict[str, Any]] = Store(
-                self.hass,
-                1,
-                f"{DOMAIN}.app_state_{self._address.replace(':', '_').lower()}_"
-                f"{self._bed_type}_{self._protocol_variant or 'auto'}",
-            )
-            stored = await store.async_load()
-            self._app_state = dict(stored) if isinstance(stored, dict) else {}
-            self._app_state_store = store
+            self._app_state_store = app_state_store(self.hass, self._address)
+        stored = await self._app_state_store.async_slot(self._app_state_slot)
         self._app_state_restoring = True
         try:
             try:
-                controller.restore_persisted_app_state(self._app_state)
+                controller.restore_persisted_app_state(stored)
             except (ValueError, TypeError):
                 _LOGGER.warning("Ignoring invalid stored app preferences for %s", self._address)
                 controller.restore_persisted_app_state({})
-            self._app_state = dict(controller.persisted_app_state or {})
+            self._app_state_store.update(self._app_state_slot, controller.persisted_app_state or {})
         finally:
             self._app_state_restoring = False
 
@@ -7009,9 +7005,8 @@ class AdjustableBedCoordinator:
                 self._motion_bed_state_store.async_delay_save(lambda: self._motion_bed_local_state, 1)
         if self._app_state_store is not None and not self._app_state_restoring and controller is not None:
             app_state = controller.persisted_app_state
-            if app_state is not None and app_state != self._app_state:
-                self._app_state = dict(app_state)
-                self._app_state_store.async_delay_save(lambda: self._app_state, 1)
+            if app_state is not None:
+                self._app_state_store.update(self._app_state_slot, app_state)
         for callback_fn in list(self._controller_state_callbacks):
             try:
                 callback_fn(self._controller_state)

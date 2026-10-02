@@ -1367,8 +1367,10 @@ class BedController(ABC):
     def persisted_app_state(self) -> Mapping[str, Any] | None:
         """App-local preferences the phone app keeps across restarts, or None.
 
-        The coordinator stores a non-None mapping per bed and hands it back to
-        ``restore_persisted_app_state`` whenever a controller is created.
+        The coordinator stores a non-None mapping per physical address, bed
+        type, protocol variant and side (see ``app_state_store``), hands it back
+        to ``restore_persisted_app_state`` whenever a controller is created, and
+        deletes it when no config entry owns the address any more.
         """
         return None
 

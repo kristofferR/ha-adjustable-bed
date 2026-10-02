@@ -44,6 +44,8 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 APPS = (KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_DYNASTY_BASES)
 ADDRESS = "AA:BB:CC:DD:05:60"
 STOP_FRAME = "e5fe160000000006"
+STORE_KEY = f"{DOMAIN}.app_state_{ADDRESS.replace(':', '_').lower()}"
+SLOT = "keeson:maxcoil_una:"
 
 # The 34 unique payload vectors both reports publish (word -> final bytes).
 REPORT_VECTORS = {
@@ -384,13 +386,65 @@ async def test_slider_levels_persist_across_restarts(
     await controller.set_massage_level("foot", 2)
     coordinator = controller._coordinator
     await coordinator.async_shutdown()
-    key = f"{DOMAIN}.app_state_{ADDRESS.replace(':', '_').lower()}_keeson_maxcoil_una"
-    assert hass_storage[key]["data"] == {"wave": 0, "head": 1, "foot": 2}
+    assert hass_storage[STORE_KEY]["data"] == {SLOT: {"wave": 0, "head": 1, "foot": 2}}
 
     restarted = AdjustableBedCoordinator(hass, coordinator.entry)
     await restarted.async_connect()
     assert restarted.controller.persisted_app_state == {"wave": 0, "head": 1, "foot": 2}
     assert restarted.controller_state[STATE_LEVEL["foot"]] == 2
+
+
+async def test_slider_levels_survive_a_reconnect(
+    hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
+    sleeps: AsyncMock, hass_storage: dict,
+) -> None:
+    controller = await _controller(hass, mock_bleak_client)
+    await controller.set_massage_level("head", 3)
+    coordinator = controller._coordinator
+    await coordinator.async_disconnect()
+    await coordinator.async_connect()
+    rebuilt = coordinator.controller
+    assert rebuilt is not controller
+    assert rebuilt.persisted_app_state == {"wave": 1, "head": 3, "foot": 1}
+    await rebuilt.massage_start()
+    assert _written(mock_bleak_client)[-2] == "e5fe1610000013e3"
+
+
+async def test_invalid_stored_levels_fall_back_to_the_app_default(
+    hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
+    hass_storage: dict,
+) -> None:
+    hass_storage[STORE_KEY] = {"version": 1, "key": STORE_KEY, "data": {SLOT: {"head": 9, "foot": "x"}}}
+    controller = await _controller(hass, mock_bleak_client)
+    assert controller.persisted_app_state == {"wave": 1, "head": 1, "foot": 1}
+    assert controller._coordinator.controller_state[STATE_LEVEL["head"]] == 1
+
+
+async def test_removing_the_entry_deletes_its_stored_levels(
+    hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
+    sleeps: AsyncMock, hass_storage: dict, enable_custom_integrations,
+) -> None:
+    mock_bleak_client.services = _services(
+        _char(KEESON_BASE_WRITE_CHAR_UUID, ["write"]), _char(KEESON_BASE_NOTIFY_CHAR_UUID, ["notify"])
+    )
+    entry = _entry(hass, KEESON_VARIANT_MAXCOIL_UNA, 2)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    await coordinator.async_connect()
+    await coordinator.controller.set_massage_level("wave", 3)
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert hass_storage[STORE_KEY]["data"][SLOT]["wave"] == 3
+
+    assert await hass.config_entries.async_remove(entry.entry_id)
+    await hass.async_block_till_done()
+    assert STORE_KEY not in hass_storage
+
+    # Re-adding the bed starts from the app's first-run levels.
+    readded = AdjustableBedCoordinator(hass, _entry(hass, KEESON_VARIANT_MAXCOIL_UNA, 2))
+    await readded.async_connect()
+    assert readded.controller.persisted_app_state == {"wave": 1, "head": 1, "foot": 1}
 
 
 async def test_setup_exposes_the_app_surface(
