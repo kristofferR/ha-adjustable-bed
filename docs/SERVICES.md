@@ -160,7 +160,10 @@ enable additional commands.
 | Customatic Clarity / Remedy | `customatic_hold_memory` (all 31 memory combinations), `customatic_move_simultaneously` (safe motor combinations) | [Customatic](beds/customatic.md) |
 | Customatic Jerome's C | `customatic_move_simultaneously` (back and legs) | [Customatic](beds/customatic.md) |
 | Jordan's Serenity app | `serenity_hold_control` (one of 31 literal app actions) | [Serenity](beds/serenity.md) |
+| Jordan's Tranquil app | `tranquil_hold_control` (one of 30 literal app actions) | [Tranquil](beds/tranquil.md) |
+| Customatic Z-Series app | `zseries_hold_control` (literal Z-230 or Z-280 actions), `zseries_set_alarm`, `zseries_sync_clock` | [Z-Series](beds/customatic-z-series.md) |
 | SIMMONS app | `simmons_hold_control`, `simmons_set_alarm` | [SIMMONS](beds/simmons.md) |
+| Adjustable bed (Lumbar) app | `adjustable_lumbar_hold_control` | [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md) |
 | AdjustableM5X4 app | `starcode_abm5_4_hold_control` (literal held movement, preset, save or massage controls) | [AdjustableM5X4](beds/starcode-abm5-4.md) |
 | Caresse / Werkmeister apps | `vibradorm_hold_control` (profile-specific movement, memory recall or sync) | [Caresse / Werkmeister](beds/vibradorm_app.md) |
 | V-MAT Basic app | `vmatbasic_hold_control`, `vmatbasic_rename` | [V-MAT Basic](beds/vmatbasic.md) |
@@ -177,11 +180,23 @@ renaming an HA entity or device is a separate operation.
 
 Hold one literal control from the explicit Jordan's Serenity profile for `duration` seconds (0.1–60), then send its two-frame release sequence. Supply `device_id`, `control`, `duration` and optional `side`. The [Serenity control catalog](beds/serenity.md#reachable-commands) lists the literal action names. The controller validates supported action names before dispatch; arbitrary combinations are rejected. Save controls can change stored positions. This action uses all-target capability preflight and the shared command lock.
 
+### `tranquil_hold_control` and `zseries_hold_control`
+
+These work like `serenity_hold_control` for the explicit Tranquil and Z-Series profiles. Each controller accepts only its own literal actions; a Z-230 rejects Z-280-only actions and the reverse. See the [Tranquil](beds/tranquil.md#reachable-commands) and [Z-Series](beds/customatic-z-series.md#reachable-commands) catalogs.
+
+### `zseries_set_alarm` and `zseries_sync_clock`
+
+Available only when the controller's Device Information manufacturer string is exactly `CST13` or `CST14`; that string is what makes the app show its alarm page. The last successful read is stored with the entry; if it has never been read, the action reads it on the live connection first. Every targeted bed or side is checked before any of them is written, so one ineligible or unreadable bed fails the whole call without changes. `zseries_set_alarm` takes `device_id`, `enabled`, `time` (minute precision, Home Assistant time zone) and `wake_mode` (`massage` or `memory_1`), both required when enabling, and optional `side`. Like the app, it targets today's weekday, or tomorrow's when the time has already passed; there is no weekday choice. It first sends the clock, then the alarm frame, then two status queries. The app separates the clock and alarm frames by a user tap; HA sends them back-to-back. `zseries_sync_clock` sends the clock frame and the same queries. Alarm replies update the **App alarm state** sensor.
+
 ### `simmons_hold_control` and `simmons_set_alarm`
 
 Hold accepts `device_id`, `control`, `duration` (0.1–60 seconds in whole milliseconds) and optional `side`. The frame repeats every 300 ms, then two STOP frames follow at +100 and +400 ms. Controls are `head_up`, `head_down`, `legs_up`, `legs_down`, `flat`, `memory`, `light`, plus `zero_g`, `tv`, `anti_snore` on a regular bed or `inclined_left`, `inclined_middle`, `inclined_right` on an inclined bed. Holding `memory` for 5 seconds mirrors the app's help text for saving Custom Mode; whether the bed stores the position is unverified.
 
 Set alarm accepts `device_id`, `slot` (1 or 2), `enabled`, `time`, `weekdays` (empty for the next occurrence), `mode` (`custom_mode`, `flat`, or regular-bed `anti_snore`), `confirm_custom_mode` and optional `side`. Custom Mode requires `confirm_custom_mode: true`. An enabled alarm cannot share its time or mode with the other enabled alarm. Both alarm records must be reported on the current connection; HA queries the bed and refuses the call, writing nothing, if it does not answer. With several beds, every bed is checked before any bed is programmed, so one failing bed changes none. See [SIMMONS alarms](beds/simmons.md#alarms-and-clock).
+
+### `adjustable_lumbar_hold_control`
+
+Accepts `device_id`, `control`, `duration` (0.1–60 seconds) and optional `side`. The frame repeats every 100 ms, then STOP is sent immediately and again 300 ms later. Controls are `head_up`, `head_down`, `feet_up`, `feet_down`, `lumbar_up`, `lumbar_down`, `flat`, `zero_g`, `lounge`, `incline`, `anti_snore`, `save_zero_g`, `save_lounge`, `save_incline`, `save_anti_snore`, `light`, `wave_1`, `wave_2`, `wave_3`, `massage_up` and `massage_down`. Every target must use this profile and accept the control before any bed is written. Whether a save stores the position is unverified. See [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md#timing-and-controls).
 
 ### `vibradorm_hold_control`
 

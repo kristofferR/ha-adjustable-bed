@@ -16,10 +16,10 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
     BED_TYPE_LINAK,
-    BED_TYPE_SERENITY,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_VIBRADORM_APP,
     DOMAIN,
+    OKIN_BEDDING_APP_BED_TYPES,
 )
 from .entity import AdjustableBedEntity
 from .entity_runtime import EntityRuntime
@@ -184,7 +184,10 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         )
         if description.state_key is None:
             self._attr_is_on = False
-            if description.key == "under_bed_lights" and coordinator.bed_type == BED_TYPE_SERENITY:
+            if (
+                description.key == "under_bed_lights"
+                and coordinator.bed_type in OKIN_BEDDING_APP_BED_TYPES
+            ):
                 # This app has on/off commands but no physical state response.
                 self._attr_is_on = None
                 self._attr_assumed_state = True

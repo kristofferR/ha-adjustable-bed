@@ -115,6 +115,13 @@ async def apply_limoss_remote_features(
     raise ValueError("Requires the current Limoss Remote profile")
 
 
+class _ReplyWaitTimeout(TimeoutError):
+    """No matching notification before the reply-wait deadline, excluding ATT errors."""
+
+
+_INFORMATION_TIMEOUT_SECONDS = 10
+
+
 class LimossRemoteController(BedController):
     """Native rendered controls and local eight-slot position capture/recall."""
 
@@ -427,7 +434,7 @@ class LimossRemoteController(BedController):
 
         try:
             await client.start_notify(char, notification)
-            await self.refresh_device_info()
+            await self.refresh_device_info(allow_incomplete_versions=True)
         except BaseException:
             cleanup = asyncio.create_task(self.stop_notify())
             while not cleanup.done():
@@ -528,13 +535,14 @@ class LimossRemoteController(BedController):
                 raise asyncio.CancelledError
             if future in done:
                 return future.result()
-            raise TimeoutError("No matching app reply")
+            raise _ReplyWaitTimeout("No matching app reply")
         finally:
             event_task.cancel()
             await asyncio.gather(event_task, return_exceptions=True)
 
     async def _request(
-        self, opcode: int, payload: bytes, *, retry_capabilities: bool = False
+        self, opcode: int, payload: bytes, *, retry_capabilities: bool = False,
+        deadline: float | None = None,
     ) -> bytes:
         if self._request_active or self._request_reply is not None:
             raise RuntimeError("Another app information transaction is active")
@@ -543,11 +551,18 @@ class LimossRemoteController(BedController):
         try:
             while True:
                 self._request_reply = None
-                await self._write(payload, reply=(opcode, future))
+                # The information budget also bounds lane, pacing and ATT waits.
+                async with asyncio.timeout_at(deadline):
+                    await self._write(payload, reply=(opcode, future))
                 try:
-                    return await self._reply(future, 1 if retry_capabilities else 10)
-                except TimeoutError:
-                    if not retry_capabilities:
+                    wait = 1 if retry_capabilities else 10
+                    if deadline is not None:
+                        wait = min(wait, max(0, deadline - asyncio.get_running_loop().time()))
+                    return await self._reply(future, wait)
+                except _ReplyWaitTimeout:
+                    if not retry_capabilities or (
+                        deadline is not None and asyncio.get_running_loop().time() >= deadline
+                    ):
                         raise
         finally:
             self._request_reply = None
@@ -557,13 +572,21 @@ class LimossRemoteController(BedController):
             elif not future.cancelled():
                 future.exception()  # Consume a teardown error even if the preceding write failed.
 
-    async def refresh_device_info(self) -> None:
+    async def refresh_device_info(self, *, allow_incomplete_versions: bool = False) -> None:
         self._progress = {}
         try:
-            async with asyncio.timeout(10):
-                await self._request(2, b"\x02\0\0\0\x03", retry_capabilities=True)
-                await self._request(0, b"\0\0\0\0\x03")
-                await self._request(1, b"\x01\0\0\0\x03")
+            deadline = asyncio.get_running_loop().time() + _INFORMATION_TIMEOUT_SECONDS
+            await self._request(
+                2, b"\x02\0\0\0\x03", retry_capabilities=True, deadline=deadline
+            )
+            try:
+                await self._request(0, b"\0\0\0\0\x03", deadline=deadline)
+                await self._request(1, b"\x01\0\0\0\x03", deadline=deadline)
+            except _ReplyWaitTimeout:
+                # The app opens controls on fresh02; version replies are optional metadata.
+                if not allow_incomplete_versions:
+                    raise
+                _LOGGER.debug("Version metadata incomplete within the information budget")
         finally:
             completed, self._progress = self._progress, None
             if completed:

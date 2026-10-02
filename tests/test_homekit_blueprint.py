@@ -25,18 +25,11 @@ BLUEPRINT_SOURCE = (
 
 
 @pytest.fixture
-def hass_config_dir(hass_tmp_config_dir: str) -> str:
-    """Keep blueprint installation private to each test and worker."""
-    return hass_tmp_config_dir
-
-
-@pytest.fixture
 def installed_blueprint(hass: HomeAssistant) -> None:
     """Install the shipped file where HA's blueprint loader will import it."""
     destination = Path(hass.config.path("blueprints/script", BLUEPRINT_PATH))
     destination.parent.mkdir(parents=True, exist_ok=True)
-    # The test config dir is shared by every xdist worker. Replace the file
-    # atomically so a parallel test never loads it half-written.
+    # Publish the complete blueprint before HA loads it.
     with tempfile.NamedTemporaryFile(
         "w", dir=destination.parent, suffix=".tmp", delete=False
     ) as staged:

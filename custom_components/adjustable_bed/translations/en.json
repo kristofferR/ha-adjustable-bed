@@ -695,7 +695,8 @@
       "starcode_profile_mismatch": "Choose the bed class matching the exact case-sensitive Bluetooth name.",
       "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 entries with different Bluetooth addresses.",
       "starcode_unpair_first": "Use standalone entries for this independently addressed accessory group.",
-      "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each)."
+      "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each).",
+      "invalid_pulse_count_range": "For this app profile, the motor pulse count must be between 1 and 600."
     }
   },
   "options": {
@@ -904,6 +905,7 @@
     },
     "error": {
       "invalid_number": "Please enter valid numbers for motor pulse count and delay.",
+      "invalid_pulse_count_range": "For this app profile, the motor pulse count must be between 1 and 600.",
       "invalid_pin": "PIN must be empty or exactly 4 digits.",
       "invalid_motor_count_for_bed_type": "One motor is supported only for Standard OCTO TV lift controllers.",
       "invalid_angle": "Angle must be a positive number between 0 and 180 degrees.",
@@ -926,6 +928,7 @@
       "malouf_app_pair_settings": "Unpair first, then select each physical bed’s app profile before combining them again.",
       "furnimove_remote_required": "Choose a captured FurniMove handset ID. An unknown ID requires its exact app table; the receiver label cannot choose one.",
       "furnimove_unpair_first": "Separate the paired entries before changing to FurniMove, then select each side’s own handset layout.",
+      "okin_bedding_app_unpair_first": "Separate the paired entries before changing to or from the Tranquil, Z-Series or Adjustable bed (Lumbar) app, then select each side’s own app profile.",
       "vibradorm_app_required": "Choose the bed app.",
       "vibradorm_app_invalid": "Choose a supported app control layout and retained feature settings.",
       "vibradorm_app_unpair_first": "Unpair these entries before changing app settings. Each physical side keeps its own app controls.",
@@ -941,7 +944,8 @@
       "starcode_profile_mismatch": "Choose the bed class matching the exact case-sensitive Bluetooth name.",
       "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 entries with different Bluetooth addresses.",
       "starcode_unpair_first": "Use standalone entries for this independently addressed accessory group.",
-      "simmons_unpair_first": "Unpair the beds and configure each side separately before changing the SIMMONS bed type or protocol."
+      "simmons_unpair_first": "Unpair the beds and configure each side separately before changing the SIMMONS bed type or protocol.",
+      "adjustable_lumbar_unpair_first": "Unpair the beds and configure each side separately before changing the Adjustable bed (Lumbar) protocol."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -2091,6 +2095,33 @@
       },
       "simmons_refresh_alarms": {
         "name": "Refresh alarms"
+      },
+      "adjustable_lumbar_save_zero_g": {
+        "name": "Save zero gravity"
+      },
+      "adjustable_lumbar_save_lounge": {
+        "name": "Save lounge"
+      },
+      "adjustable_lumbar_save_incline": {
+        "name": "Save incline"
+      },
+      "adjustable_lumbar_save_anti_snore": {
+        "name": "Save anti-snore"
+      },
+      "adjustable_lumbar_wave_1": {
+        "name": "Massage wave 1"
+      },
+      "adjustable_lumbar_wave_2": {
+        "name": "Massage wave 2"
+      },
+      "adjustable_lumbar_wave_3": {
+        "name": "Massage wave 3"
+      },
+      "adjustable_lumbar_massage_on": {
+        "name": "Massage on"
+      },
+      "adjustable_lumbar_check_massage": {
+        "name": "Check massage"
       }
     },
     "cover": {
@@ -3074,6 +3105,42 @@
       },
       "simmons_alarm_2": {
         "name": "Alarm 2"
+      },
+      "tranquil_manufacturer": {
+        "name": "Manufacturer"
+      },
+      "tranquil_status_code": {
+        "name": "App status code"
+      },
+      "tranquil_massage_timer_code": {
+        "name": "Massage timer code"
+      },
+      "tranquil_massage_timer_minutes": {
+        "name": "Massage timer"
+      },
+      "tranquil_save_event_code": {
+        "name": "Local memory save event"
+      },
+      "tranquil_alarm_type": {
+        "name": "App alarm state"
+      },
+      "zseries_manufacturer": {
+        "name": "Manufacturer"
+      },
+      "zseries_status_code": {
+        "name": "App status code"
+      },
+      "zseries_massage_timer_code": {
+        "name": "Massage timer code"
+      },
+      "zseries_massage_timer_minutes": {
+        "name": "Massage timer"
+      },
+      "zseries_save_event_code": {
+        "name": "Local memory save event"
+      },
+      "zseries_alarm_type": {
+        "name": "App alarm state"
       }
     },
     "light": {
@@ -4446,6 +4513,101 @@
           "name": "Side"
         }
       }
+    },
+    "tranquil_hold_control": {
+      "name": "Hold Tranquil control",
+      "description": "Hold one supported Tranquil app action, then release it. Save actions can change stored positions.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "Literal action from the selected Tranquil profile held-control options."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "zseries_hold_control": {
+      "name": "Hold Z-Series control",
+      "description": "Hold one supported Z-Series app action, then release it. Save actions can change stored positions.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "Literal action from the selected Z-Series profile held-control options."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "zseries_set_alarm": {
+      "name": "Set Z-Series alarm",
+      "description": "Set or clear the Customatic Z-Series app alarm. The bed clock is set to Home Assistant local time first.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Alarm time",
+          "description": "Required when enabling. Minute precision; the app sets today, or tomorrow if the time has passed."
+        },
+        "wake_mode": {
+          "name": "Wake mode",
+          "description": "Required when enabling the alarm."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "zseries_sync_clock": {
+      "name": "Synchronize Z-Series clock",
+      "description": "Set the Customatic Z-Series controller clock to the current Home Assistant local time.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "adjustable_lumbar_hold_control": {
+      "name": "Hold Adjustable bed (Lumbar) control",
+      "description": "Hold one Adjustable bed (Lumbar) app control, repeating it every 100 ms, then send STOP immediately and again after 300 ms. Saving a preset holds Flat with that preset; the app reports it after 6 seconds, and the save on the bed is unverified.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "A motor direction, preset, preset save, light, massage wave or massage intensity control."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
     }
   },
   "exceptions": {
@@ -4490,6 +4652,12 @@
     },
     "side_not_available": {
       "message": "This bed has no {side} side."
+    },
+    "zseries_alarm_time_required": {
+      "message": "Choose an alarm time to enable the Z-Series alarm."
+    },
+    "zseries_alarm_wake_mode_required": {
+      "message": "Choose a wake-up mode to enable the Z-Series alarm."
     },
     "service_not_supported_for_paired": {
       "message": "{device_name} is a paired bed; {service} is not yet supported on paired beds."

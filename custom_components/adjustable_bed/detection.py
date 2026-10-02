@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 from bleak.exc import BleakError
 
 from .const import (
+    BED_TYPE_ADJUSTABLE_LUMBAR,
     # Legacy/brand-specific bed types
     # NOTE: BED_TYPE_BEDTECH and BED_TYPE_OKIN_64BIT can now be partially auto-detected:
     # - BedTech: By name pattern ("bedtech") or post-connection characteristic check
@@ -90,9 +91,12 @@ from .const import (
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
     BED_TYPE_TIMOTION_AHF,
+    BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
+    BED_TYPE_ZSERIES_Z230,
+    BED_TYPE_ZSERIES_Z280,
     # Detection constants
     BEDTECH_MANUFACTURER_ID,
     BEDTECH_NAME_PATTERNS,
@@ -517,7 +521,11 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_STARCODE_M5X5: "AdjustableM5X5 app (CB25 / F23 / kneading / Elevate)",
     BED_TYPE_FURNIMOVE: "FurniMove / OKIN Smart Remote (choose handset ID)",
     BED_TYPE_SERENITY: "Jordan's Serenity app",
+    BED_TYPE_TRANQUIL: "Jordan's Tranquil app",
+    BED_TYPE_ZSERIES_Z230: "Customatic Z-Series app (Z-230)",
+    BED_TYPE_ZSERIES_Z280: "Customatic Z-Series app (Z-280)",
     BED_TYPE_SIMMONS: "SIMMONS app",
+    BED_TYPE_ADJUSTABLE_LUMBAR: "Adjustable bed (Lumbar) app",
     BED_TYPE_CUSTOMATIC_CLARITY: "Customatic Clarity app",
     BED_TYPE_CUSTOMATIC_JEROMES: "Customatic Jerome's C app",
     BED_TYPE_CUSTOMATIC_REMEDY: "Customatic Remedy app",

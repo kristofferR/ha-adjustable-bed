@@ -10,6 +10,7 @@ import os
 import struct
 import warnings
 from collections.abc import AsyncGenerator, Callable, Generator
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import psutil
@@ -110,6 +111,12 @@ def controller_mock() -> Callable[..., MagicMock]:
     return make_controller_mock
 
 
+@pytest.fixture
+def hass_config_dir(tmp_path: Path) -> str:
+    """Keep HA files private to each test without copying the plugin's template."""
+    return str(tmp_path)
+
+
 _WORKER_MEMORY_BYTES = 512 * 1024 * 1024
 
 
@@ -155,13 +162,15 @@ async def _shutdown_coordinators(
     request: pytest.FixtureRequest,
     monkeypatch: pytest.MonkeyPatch,
     verify_cleanup: None,
+    hass_storage: dict[str, object],
 ) -> AsyncGenerator[None]:
     """Shut down every coordinator created during a test.
 
     Cancels idle-disconnect/reconnect timers armed by connects so the
     lingering-timer check in pytest-homeassistant-custom-component passes
     without each test having to disconnect manually. Depending on
-    verify_cleanup orders this teardown before the lingering-timer check.
+    verify_cleanup orders this teardown before the lingering-timer check;
+    hass_storage keeps persistence mocked until coordinator shutdown finishes.
 
     Also zeroes the connection retry backoff and post-connect settle delay so
     mock connects do not sleep for real; mark a test ``real_connect_delays``

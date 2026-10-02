@@ -224,10 +224,8 @@ Each row below retains the accepted source pointer and exact reason. These are t
 
 ## Executed implementation checks
 
-The original implementation snapshot passed **346 focused tests** covering controller, config, entity, service, real persistence and pairing checks. Adjacent controller contracts, action buttons, covers and config flow passed **652 tests**. Frontend discovery passed **31 tests**, and its typecheck/build passed with an unchanged runtime bundle. Ruff and Pyright passed for the affected implementation and tests. Every positive proof-group test symbol was matched to an actual passing JUnit case. Current-head release validation belongs in the PR description and its validation receipts.
+Focused tests cover literal packet vectors, all rendered layouts, controller transactions, configuration, entities, services, persistence and paired routing. Lifecycle checks cover command cleanup, cancellation, capability-query ordering and notification ownership. Shared controller contracts and frontend discovery checks verify the public controls and their capability gates. Every positive proof-group test symbol is bound to a passing JUnit case.
 
 ## Notification ownership repair
 
 Independent finding AUDIT040-01 showed that a delayed registered callback could persist diagnostics after its current connection ended or changed. The repaired callback requires the current connected client, the exact selected role and sender handle/UUID, and its own subscription generation. Disconnect invalidates the parser and pending query synchronously, including connection-retry paths; unsubscribe invalidates before native I/O. Same-client resubscription rejects the prior callback while the current callback still resolves its matching request. The original four failure probes plus the independent same-client probe pass. No Bluetooth command is invented for this host lifecycle hook. The original implementation commit and sealed failure receipt remain preserved.
-
-The 652 adjacent tests belong to the original implementation snapshot. The 346-test affected run includes the new lifecycle cases; current-head full-suite results belong in the PR validation record.
