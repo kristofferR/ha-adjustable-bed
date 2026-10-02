@@ -382,6 +382,10 @@ class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         if option not in self._spec.options:
             raise ServiceValidationError("Option is not supported by this controller")
+        if self._spec.local_select_fn is not None:
+            # No frame is sent, so do not take the bed's single BLE link.
+            self._spec.local_select_fn(option)
+            return
 
         async def select(ctrl: BedController) -> None:
             live = next(

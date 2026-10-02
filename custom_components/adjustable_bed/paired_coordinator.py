@@ -54,6 +54,7 @@ from .const import (
 from .entity_runtime import ControllerCommand, EntityRuntime, EntityRuntimeView
 from .paired_devices import child_device_info
 from .position_seek import SeekOutcome, SeekResult
+from .remacro_discovery import remacro_side_lacks_global_stop
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -1061,10 +1062,22 @@ class PairedBedCoordinator:
     async def async_stop_command(self, *, side: str = SIDE_BOTH) -> None:
         """Stop the targeted side(s); never let one side's failure skip another."""
         targets = self._targets_for(side)
-        # Bump each targeted side's counter so a movement still queued on the pair
-        # lock for that side drops instead of starting right after this safety stop.
+        # Bump EVERY targeted side's counter first so a movement still queued on
+        # the pair lock for that side drops instead of starting after this stop,
+        # including a side that gets no STOP frame below.
         for target_side, _ in targets:
             self._bump_pair_cancel_generation(target_side, command_resources("*"))
+        # A Remacro side without a global STOP frame (or without a controller)
+        # only has its running movement cancelled, which sends that axis's
+        # release STOP; it is never reconnected for a frame it cannot take.
+        for _target_side, child in targets:
+            if remacro_side_lacks_global_stop(child):
+                child.request_command_cancel()
+        targets = [
+            (target_side, child)
+            for target_side, child in targets
+            if not remacro_side_lacks_global_stop(child)
+        ]
         async with self._connection_mode_transition_lock:
             errors = await self._stop_children(targets)
         if errors:

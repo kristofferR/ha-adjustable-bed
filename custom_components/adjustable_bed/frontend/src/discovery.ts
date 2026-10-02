@@ -197,6 +197,8 @@ export function bedEntitiesForDevice(
           bed.massage.buttons.push(id);
         } else if (key === "vibradorm_app_floor_timer_toggle") {
           bed.lights.timerToggle = id;
+        } else if (key === "remacro_led_brightness_save") {
+          (bed.lights.buttons ??= []).push(id);
         } else if (key === "starcode_abm5_4_light_plus" || key === "starcode_abm5_4_light_minus" || key === "starcode_abm5_4_light_on" || key === "starcode_abm5_4_light_off") {
           (bed.lights.buttons ??= []).push(id);
         } else if (key === "starcode_abm5_4_massage_release") {
@@ -271,6 +273,8 @@ export function bedEntitiesForDevice(
       case "select":
         if (key === "motion_bed_active_module") (bed.utilitySelects ??= []).push(id);
         else if (key === "light_timer") bed.lights.timer = id;
+        // A split bed's local left/right selector routes the motor controls.
+        else if (key === "remacro_control_side") bed.controlSide = id;
         else if (key === "starcode_color") mood().selects.push(id);
         else if (key === "vibradorm_app_mood_palette" || key === "vibradorm_app_mood_effect" || key === "vmatbasic_mood_palette" || key === "vmatbasic_mood_effect")
           mood().selects.push(id);
@@ -381,6 +385,7 @@ export function bedIsEmpty(bed: BedEntities): boolean {
   return (
     bed.motors.length === 0 &&
     !bed.synchro &&
+    !bed.controlSide &&
     bed.firmness.length === 0 &&
     bed.presets.length === 0 &&
     bed.memory.length === 0 &&

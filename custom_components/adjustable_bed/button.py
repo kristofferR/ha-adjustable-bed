@@ -29,6 +29,7 @@ from .paired_coordinator import (
     SingleAddressPairedCoordinator,
     entity_runtimes,
 )
+from .remacro_discovery import remacro_side_lacks_global_stop, remacro_side_rejected
 
 if TYPE_CHECKING:
     from .beds.base import BedController, ControllerButtonSpec, MotorControlSpec
@@ -736,7 +737,9 @@ async def async_setup_entry(
                     runtime,
                 )
             )
-        entities.append(PairedBedStopButton(coordinator))
+        # A pair whose every side lacks a global STOP frame gets no combined Stop.
+        if not all(remacro_side_lacks_global_stop(child) for child in children):
+            entities.append(PairedBedStopButton(coordinator))
         # Combined buttons read both children's live capabilities, so pass the
         # raw children (the button itself dispatches via the parent, side=both).
         entities.extend(_combined_button_entities_for(coordinator, children))
@@ -824,7 +827,7 @@ def _button_entities_for(
                 registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
         # Named app actions disappear when their profile or transport changes.
-        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "fsm_relax_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "svane_", "motion_bed_", "starcode_", "limoss_remote_", "coolbase_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_"):
+        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "fsm_relax_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "svane_", "motion_bed_", "starcode_", "limoss_remote_", "coolbase_", "remacro_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_"):
             if (
                 namespace == "motion_bed_"
                 and coordinator.bed_type == BED_TYPE_MOTION_BED
@@ -1082,7 +1085,11 @@ def _async_remove_stale_combined_button_entities(
     entities: list[ButtonEntity],
 ) -> None:
     """Remove pair-level controls no longer supported by both known sides."""
-    if any(child.capability_controller is None for child in children):
+    # A merely unknown side may still support them; a refused side never will.
+    if any(
+        child.capability_controller is None and not remacro_side_rejected(child)
+        for child in children
+    ):
         return
 
     desired_unique_ids = {
