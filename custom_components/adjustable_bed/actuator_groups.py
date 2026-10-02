@@ -66,7 +66,9 @@ from .const import (
     BED_TYPE_ZSERIES_Z280,
     KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_BASE,
+    KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_KSBT,
+    KEESON_VARIANT_MAXCOIL_UNA,
     KEESON_VARIANT_PURPLE,
     KEESON_VARIANT_SERTA,
 )
@@ -200,6 +202,20 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "label": "Adjustable Lite app",
                 "description": "KSBT01C and KSBT03C remotes from the Adjustable Lite app",
                 "hint": "Choose this if you control the bed with the Adjustable Lite app",
+            },
+            {
+                "type": BED_TYPE_KEESON,
+                "variant": KEESON_VARIANT_MAXCOIL_UNA,
+                "label": "MaxCoil Una app",
+                "description": "2-, 3- or 4-motor screens of the MaxCoil Una app; set the motor count",
+                "hint": "Choose this if you control the bed with the MaxCoil Una app",
+            },
+            {
+                "type": BED_TYPE_KEESON,
+                "variant": KEESON_VARIANT_DYNASTY_BASES,
+                "label": "Dynasty Bases app",
+                "description": "2-, 3- or 4-motor screens of the Dynasty Bases app; set the motor count",
+                "hint": "Choose this if you control the bed with the Dynasty Bases app",
             },
             {
                 "type": BED_TYPE_KEESON,

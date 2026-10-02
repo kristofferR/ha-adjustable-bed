@@ -571,6 +571,10 @@ class AdjustableBedCoordinator:
             self._motion_bed_state_store = Store(
                 hass, 1, f"{DOMAIN}.motion_bed_{self._address.replace(':', '_').lower()}_{profile_key}"
             )
+        # Generic app-local preferences (BedController.persisted_app_state).
+        self._app_state_store: Store[dict[str, Any]] | None = None
+        self._app_state: dict[str, Any] = {}
+        self._app_state_restoring = False
         self._controller_state_callbacks: set[Callable[[dict[str, Any]], None]] = set()
         self._controller_state_refresh_task: asyncio.Task[None] | None = None
         self._controller_state_refresh_retry_timer: asyncio.TimerHandle | None = None
@@ -1285,6 +1289,7 @@ class AdjustableBedCoordinator:
             )
             await self._async_restore_furnimove_local_state()
             await self._async_restore_motion_bed_local_state()
+            await self._async_restore_app_state()
             if bed_type in RICHMAT_MH_BED_TYPES and not getattr(
                 self._offline_controller, "has_stored_capabilities", False
             ):
@@ -4335,6 +4340,7 @@ class AdjustableBedCoordinator:
                 )
                 await self._async_restore_furnimove_local_state()
                 await self._async_restore_motion_bed_local_state()
+                await self._async_restore_app_state()
                 discovery_result = cast(Any, self._controller).async_discover_capabilities()
                 if inspect.isawaitable(discovery_result):
                     await discovery_result
@@ -5227,6 +5233,8 @@ class AdjustableBedCoordinator:
                         await self._furnimove_state_store.async_save(self._furnimove_local_state)
                     if self._motion_bed_state_store is not None and self._motion_bed_state_loaded:
                         await self._motion_bed_state_store.async_save(self._motion_bed_local_state)
+                    if self._app_state_store is not None:
+                        await self._app_state_store.async_save(self._app_state)
 
     async def async_disconnect(
         self,
@@ -6945,6 +6953,32 @@ class AdjustableBedCoordinator:
         finally:
             self._motion_bed_state_restoring = False
 
+    async def _async_restore_app_state(self) -> None:
+        """Hand a new controller the app-local preferences stored for this bed."""
+        controller = self.capability_controller
+        if controller is None or controller.persisted_app_state is None:
+            return
+        if self._app_state_store is None:
+            store: Store[dict[str, Any]] = Store(
+                self.hass,
+                1,
+                f"{DOMAIN}.app_state_{self._address.replace(':', '_').lower()}_"
+                f"{self._bed_type}_{self._protocol_variant or 'auto'}",
+            )
+            stored = await store.async_load()
+            self._app_state = dict(stored) if isinstance(stored, dict) else {}
+            self._app_state_store = store
+        self._app_state_restoring = True
+        try:
+            try:
+                controller.restore_persisted_app_state(self._app_state)
+            except (ValueError, TypeError):
+                _LOGGER.warning("Ignoring invalid stored app preferences for %s", self._address)
+                controller.restore_persisted_app_state({})
+            self._app_state = dict(controller.persisted_app_state or {})
+        finally:
+            self._app_state_restoring = False
+
     @callback
     def handle_controller_state_updates(self, updates: dict[str, Any]) -> None:
         """Store controller state values and notify listeners."""
@@ -6973,6 +7007,11 @@ class AdjustableBedCoordinator:
             if snapshot != self._motion_bed_local_state:
                 self._motion_bed_local_state = snapshot
                 self._motion_bed_state_store.async_delay_save(lambda: self._motion_bed_local_state, 1)
+        if self._app_state_store is not None and not self._app_state_restoring and controller is not None:
+            app_state = controller.persisted_app_state
+            if app_state is not None and app_state != self._app_state:
+                self._app_state = dict(app_state)
+                self._app_state_store.async_delay_save(lambda: self._app_state, 1)
         for callback_fn in list(self._controller_state_callbacks):
             try:
                 callback_fn(self._controller_state)

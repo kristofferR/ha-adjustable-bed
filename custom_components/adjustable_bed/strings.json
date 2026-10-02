@@ -988,7 +988,8 @@
       "richmat_mh_unpair_first": "Unpair the beds and configure each side separately before changing the Richmat app model.",
       "richmat_mh_choose_model": "The app asks for the model for this Bluetooth name. Choose the model in the protocol variant.",
       "richmat_mh_no_name": "The app selects the model from the Bluetooth name, which is unavailable. Choose the model in the protocol variant.",
-      "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant."
+      "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant.",
+      "ore_comfort_unpair_first": "Unpair the beds and configure each side separately before changing the MaxCoil Una or Dynasty Bases app profile."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond\u2026",
@@ -2207,6 +2208,15 @@
       },
       "richmat_mh_stop_detection": {
         "name": "Stop detection"
+      },
+      "ore_comfort_program_flat": {
+        "name": "Save Flat"
+      },
+      "ore_comfort_program_zero_g": {
+        "name": "Save Zero G"
+      },
+      "ore_comfort_massage_start": {
+        "name": "Start massage"
       }
     },
     "cover": {
@@ -3151,6 +3161,9 @@
       },
       "richmat_mh_pillow_lumbar": {
         "name": "Pillow and lumbar"
+      },
+      "waist": {
+        "name": "Waist"
       }
     },
     "sensor": {
@@ -5996,6 +6009,14 @@
           "15_minutes": "15 minutes",
           "20_minutes": "20 minutes",
           "30_minutes": "30 minutes"
+        }
+      },
+      "ore_comfort_massage_timer": {
+        "name": "Massage timer",
+        "state": {
+          "10": "10 minutes",
+          "20": "20 minutes",
+          "30": "30 minutes"
         }
       }
     },

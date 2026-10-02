@@ -51,6 +51,7 @@ if TYPE_CHECKING:
     from .okin_ore import OkinOreController as OkinOreController
     from .okin_rf_eco_bt import OkinRfEcoBtController as OkinRfEcoBtController
     from .okin_uuid import OkinUuidController as OkinUuidController
+    from .ore_comfort_bed import OreComfortBedController as OreComfortBedController
     from .remacro import RemacroController as RemacroController
     from .reverie import ReverieController as ReverieController
     from .reverie_nightstand import ReverieNightstandController as ReverieNightstandController
@@ -124,6 +125,7 @@ _EXPORT_MODULES = {
     "OkinOreController": "okin_ore",
     "OkinRfEcoBtController": "okin_rf_eco_bt",
     "OkinUuidController": "okin_uuid",
+    "OreComfortBedController": "ore_comfort_bed",
     "RemacroController": "remacro",
     "ReverieController": "reverie",
     "ReverieNightstandController": "reverie_nightstand",
@@ -163,6 +165,7 @@ __all__ = [
     "OkinRfEcoBtController",
     "OkinUuidController",
     "Okin7ByteController",
+    "OreComfortBedController",
     "OkinNordicController",
     "LeggettGen2Controller",
     "LeggettLpLegacyController",

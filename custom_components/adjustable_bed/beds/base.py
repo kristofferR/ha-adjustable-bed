@@ -1363,6 +1363,18 @@ class BedController(ABC):
         """Return product controls with immutable ranges for the selected profile."""
         return ()
 
+    @property
+    def persisted_app_state(self) -> Mapping[str, Any] | None:
+        """App-local preferences the phone app keeps across restarts, or None.
+
+        The coordinator stores a non-None mapping per bed and hands it back to
+        ``restore_persisted_app_state`` whenever a controller is created.
+        """
+        return None
+
+    def restore_persisted_app_state(self, state: Mapping[str, Any]) -> None:  # noqa: B027
+        """Apply stored app-local preferences; raise ValueError or TypeError if invalid."""
+
     async def set_mood_palette(self, option: str) -> None:
         """Select a controller-declared mood palette entry."""
         raise NotImplementedError("Mood palette selection is not supported")

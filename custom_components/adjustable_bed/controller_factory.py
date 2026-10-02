@@ -188,6 +188,7 @@ from .const import (
     OKIN_CB24_VARIANT_NEW,
     OKIN_CB24_VARIANT_OLD,
     OKIN_CST_VARIANTS,
+    ORE_COMFORT_BED_VARIANTS,
     RICHMAT_MH_APPS,
     RICHMAT_PROTOCOL_PREFIX55,
     RICHMAT_PROTOCOL_PREFIXAA,
@@ -1117,6 +1118,15 @@ async def create_controller(
                 write_with_response=write_with_response,
                 **richmat_kwargs,
             )
+
+    if bed_type == BED_TYPE_KEESON and protocol_variant in ORE_COMFORT_BED_VARIANTS:
+        # Explicit app profile with its own controller; Auto never selects it.
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.ore_comfort_bed", __package__
+        )
+        from .beds.ore_comfort_bed import OreComfortBedController
+
+        return OreComfortBedController(coordinator, app=protocol_variant)
 
     if bed_type == BED_TYPE_KEESON:
         await coordinator.hass.async_add_import_executor_job(
