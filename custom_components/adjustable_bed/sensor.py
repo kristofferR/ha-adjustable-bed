@@ -263,6 +263,7 @@ def _sensor_entities_for(
                 "vmatbasic_floor_level_observed", "vmatbasic_floor_minutes_observed",
                 "vmatbasic_floor_percent_observed", "vmatbasic_rssi",
                 "coolbase_left_fan_level", "coolbase_right_fan_level", "coolbase_massage_mode",
+                "simmons_alarm_1", "simmons_alarm_2",
                 "adjustable_lite_massage_timer",
             } - active_keys
         )

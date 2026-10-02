@@ -57,6 +57,7 @@ if TYPE_CHECKING:
     from .serenity import SerenityController as SerenityController
     from .serenity import TranquilController as TranquilController
     from .serenity import ZSeriesController as ZSeriesController
+    from .simmons import SimmonsController as SimmonsController
     from .sleep_number import SleepNumberController as SleepNumberController
     from .sleep_number_mcr import SleepNumberMcrController as SleepNumberMcrController
     from .sleepstar import SleepStarController as SleepStarController
@@ -81,6 +82,7 @@ _EXPORT_MODULES = {
     "SerenityController": "serenity",
     "TranquilController": "serenity",
     "ZSeriesController": "serenity",
+    "SimmonsController": "simmons",
     "CustomaticController": "customatic",
     "CoolBaseController": "coolbase",
     "DewertOkinRfGatewayController": "dewertokin_rf_gateway",
