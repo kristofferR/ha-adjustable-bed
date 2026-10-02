@@ -115,6 +115,24 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         memory_slot=6,
     ),
     AdjustableBedButtonEntityDescription(
+        key="preset_memory_7",
+        translation_key="preset_memory_7",
+        icon="mdi:numeric-7-box",
+        press_fn=lambda ctrl: ctrl.preset_memory(7),
+        cancel_movement=True,
+        required_capability="supports_memory_presets",
+        memory_slot=7,
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="preset_memory_8",
+        translation_key="preset_memory_8",
+        icon="mdi:numeric-8-box",
+        press_fn=lambda ctrl: ctrl.preset_memory(8),
+        cancel_movement=True,
+        required_capability="supports_memory_presets",
+        memory_slot=8,
+    ),
+    AdjustableBedButtonEntityDescription(
         key="preset_flat",
         translation_key="preset_flat",
         icon="mdi:bed",
@@ -275,6 +293,26 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         press_fn=lambda ctrl: ctrl.program_memory(6),
         required_capability="supports_memory_presets",
         memory_slot=6,
+        is_program_button=True,
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="program_memory_7",
+        translation_key="program_memory_7",
+        icon="mdi:content-save",
+        entity_category=EntityCategory.CONFIG,
+        press_fn=lambda ctrl: ctrl.program_memory(7),
+        required_capability="supports_memory_presets",
+        memory_slot=7,
+        is_program_button=True,
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="program_memory_8",
+        translation_key="program_memory_8",
+        icon="mdi:content-save",
+        entity_category=EntityCategory.CONFIG,
+        press_fn=lambda ctrl: ctrl.program_memory(8),
+        required_capability="supports_memory_presets",
+        memory_slot=8,
         is_program_button=True,
     ),
     AdjustableBedButtonEntityDescription(
@@ -746,7 +784,7 @@ def _button_entities_for(
                 registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
         # Named app actions disappear when their profile or transport changes.
-        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "tranquil_", "zseries_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_"):
+        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "tranquil_", "zseries_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_", "fsm_relax_"):
             desired_actions = {
                 coordinator.entity_unique_id(spec.key)
                 for spec in controller.controller_button_specs
@@ -1020,7 +1058,7 @@ def _discovered_memory_slot_name(
 ) -> str | None:
     """Return the bed-reported name for a memory button, if there is one."""
     slot = description.memory_slot
-    controller = coordinator.controller
+    controller = coordinator.controller or coordinator.capability_controller
     if slot is None or controller is None:
         return None
 

@@ -32,6 +32,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
@@ -588,6 +589,10 @@ async def handle_goto_preset(call: ServiceCall) -> None:
                             "requested_preset": str(preset),
                         },
                     )
+                try:
+                    controller.validate_memory_recall(preset)
+                except ValueError as error:
+                    raise ServiceValidationError(str(error)) from error
     except ServiceValidationError:
         await _release_preflighted(preflighted)
         raise
@@ -1831,6 +1836,45 @@ async def handle_furnimove_move_simultaneously(call: ServiceCall) -> None:
     await _execute_furnimove(call, validate, execute)
 
 
+async def handle_fsm_relax_hold_control(call: ServiceCall) -> None:
+    """Hold one app-labelled control from the exact selected table."""
+    await _handle_customatic_hold(call, call.data[ATTR_CONTROL], {BED_TYPE_FSM_RELAX}, label="FSM Relax")
+
+
+async def _fsm_relax_operation(call: ServiceCall, *, calibration: bool) -> None:
+    targets, missing = _resolve_sided_targets(call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE))
+    if missing:
+        raise _missing_device_error(missing[0])
+    if calibration and call.data.get("confirmed") is not True:
+        raise ServiceValidationError("Calibration requires explicit confirmation")
+    for coordinator, side in targets:
+        for target in _command_targets(coordinator, side):
+            if target.bed_type != BED_TYPE_FSM_RELAX:
+                raise ServiceValidationError("This action requires the FSM Relax app profile")
+    slot = call.data.get(ATTR_PRESET, 1)
+    def validate(controller: BedController | SideBoundController) -> None:
+        if not calibration:
+            controller.validate_memory_recall(slot)
+    await _preflight_capability(targets, "supports_confirmed_calibration" if calibration else "supports_memory_presets", "FSM Relax local action", validate)
+    async def execute(controller: BedController | SideBoundController) -> None:
+        if calibration:
+            await controller.calibrate(confirmed=True)
+        else:
+            await controller.recall_memory(slot, hold_ms=int(_leggett_hold_seconds(call.data[ATTR_DURATION]) * 1000))
+    for coordinator, side in targets:
+        await _execute_sided(coordinator, side, execute, cancel_running=True)
+
+
+async def handle_fsm_relax_calibrate(call: ServiceCall) -> None:
+    """Send exactly one positively confirmed calibration write."""
+    await _fsm_relax_operation(call, calibration=True)
+
+
+async def handle_fsm_relax_recall_memory(call: ServiceCall) -> None:
+    """Recall signed local targets with a caller-selected gesture duration."""
+    await _fsm_relax_operation(call, calibration=False)
+
+
 async def handle_serenity_hold_control(call: ServiceCall) -> None:
     """Hold one literal Serenity action, then send its proven release sequence."""
     await _handle_customatic_hold(
@@ -2927,6 +2971,17 @@ async def async_register_services(hass: HomeAssistant) -> None:
             ),
         }),
     )
+    hass.services.async_register(DOMAIN, "fsm_relax_hold_control", handle_fsm_relax_hold_control,
+        schema=vol.Schema({vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                           vol.Required(ATTR_CONTROL): cv.string,
+                           vol.Required(ATTR_DURATION): _leggett_hold_seconds, **SIDE_FIELD}))
+    hass.services.async_register(DOMAIN, "fsm_relax_recall_memory", handle_fsm_relax_recall_memory,
+        schema=vol.Schema({vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                           vol.Required(ATTR_PRESET): vol.All(cv.positive_int, vol.Range(min=1, max=8)),
+                           vol.Required(ATTR_DURATION): _leggett_hold_seconds, **SIDE_FIELD}))
+    hass.services.async_register(DOMAIN, "fsm_relax_calibrate", handle_fsm_relax_calibrate,
+        schema=vol.Schema({vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                           vol.Required("confirmed"): vol.All(cv.boolean, vol.In((True,))), **SIDE_FIELD}))
     hass.services.async_register(
         DOMAIN,
         SERVICE_SERENITY_HOLD_CONTROL,

@@ -1069,6 +1069,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Clean up Repairs issues that would otherwise outlive the entry."""
     async_clear_furnimove_layout_issues(hass, entry.entry_id)
+    from .fsm_relax_state import async_remove_unowned_states
+
+    await async_remove_unowned_states(hass, entry)
     address = entry.data.get(CONF_ADDRESS)
     if address:
         clear_octo_pin_required_issue(hass, address)
