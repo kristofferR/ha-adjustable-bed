@@ -122,6 +122,7 @@ class _FactoryCoordinator(SimpleNamespace):
                     const.CONF_VIBRADORM_APP_PROFILE: "caresse",
                     const.CONF_VIBRADORM_CONTROL_TYPE: "2",
                     const.CONF_VMATBASIC_PROFILE: "basic",
+                    const.CONF_REMACRO_MODEL: 50,
                     const.CONF_STARCODE_COMMAND_SELECTOR: "none",
                     const.CONF_STARCODE_UI_SELECTOR: "none",
                     const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX3633",

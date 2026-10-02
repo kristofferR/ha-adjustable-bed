@@ -633,6 +633,23 @@ test("Limoss Remote literal channels and local slots seven/eight are visible", (
   expect(bed.utility).toContain("button.app_light");
 });
 
+test("Remacro split screen buckets its side selector and light save", () => {
+  const hass = hassWith([
+    entry("cover.bed_head", "head"),
+    entry("cover.bed_feet", "feet"),
+    entry("cover.bed_all", "all_motors"),
+    entry("select.bed_side", "remacro_control_side"),
+    entry("number.bed_light_level", "light_level"),
+    entry("button.bed_light_save", "remacro_led_brightness_save"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+
+  expect(bed.controlSide).toBe("select.bed_side");
+  expect(bed.motors.map((m) => m.key)).toEqual(["head", "feet", "all_motors"]);
+  expect(bed.lights.level).toBe("number.bed_light_level");
+  expect(bed.lights.buttons).toEqual(["button.bed_light_save"]);
+  expect(bedIsEmpty({ ...bed, motors: [], lights: {} })).toBe(false);
+});
 
 test("AdjustableM5X5 exposes palette, brightness, distinct cycle/mode and named saves", () => {
   const hass = hassWith([

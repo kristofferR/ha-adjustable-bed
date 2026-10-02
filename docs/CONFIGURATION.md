@@ -351,6 +351,7 @@ retain their legacy profile unless you explicitly change it.
 | Jiecang app | App, layout, transport, under-bed light | [Jiecang app profiles](beds/jiecang-app.md) |
 | Malouf Base / Lucid Base app | App, exact model, transport, physical primary/secondary role | [Malouf/Lucid app profiles](beds/malouf-app.md) |
 | Customatic apps | Explicit Clarity, Jerome's C or Remedy bed type; fixed two, two or three motor layout | [Customatic app profiles](beds/customatic.md) |
+| Remacro apps | Protocol variant `slumberland` (also `auto`), `the_brick` or `jeromes`; the advertised company ID selects the model | [Remacro](beds/remacro.md) |
 | FurniMove / OKIN Smart Remote app | Required exact handset ID; table-derived motors and massage, fixed 100 ms refresh | [FurniMove](beds/furnimove.md) |
 | Jordan's Serenity app | Explicit app selection; two named axes and literal remote selectors 4/5, fixed 100 ms refresh | [Serenity](beds/serenity.md) |
 | Jordan's Tranquil app | Explicit app selection; two named axes and literal remote selectors 4/5, fixed 100 ms refresh | [Tranquil](beds/tranquil.md) |
