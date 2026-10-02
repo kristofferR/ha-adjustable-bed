@@ -18,7 +18,7 @@ motor channels rather than assigning unproven physical axes or angle units.
 Four reversal flags are independent local settings. Lamp and massage selections
 change the available controls, not measured hardware state. Enabling a feature
 changes the local layout without opening a Bluetooth link. Disabling a previously selected lamp or massage feature
-first sends ten source OFF commands, then saves the selection. Failed OFF writes
+first sends ten source OFF commands, then saves the selection. Switching a standalone entry away from Limoss Remote also turns off its selected optional features before saving the new profile. Failed OFF writes
 leave the saved selection unchanged. The settings action supports the same
 transaction. For paired or multi-target service calls, every selected OFF burst
 must finish before any feature selections are saved. A failure or cancellation
@@ -36,7 +36,7 @@ policy separate from the app's refresh cadence. All actions on a physical receiv
 share the global motor resource. STOP releases that receiver's active control.
 Two-address pairs retain independent profiles, reversal flags, features and
 memories per child. Select each receiver’s profile before pairing; unpair first
-to change those profiles. Shared paired options do not replace child settings.
+to change those profiles or convert the pair to another protocol. Shared paired options do not replace child settings.
 This profile has no single-address side selector.
 
 `adjustable_bed.limoss_remote_hold_control` accepts one currently rendered control
@@ -137,7 +137,7 @@ After notification subscription, the information transaction requests `02`,
 retries that capability query at one-second intervals, then requests hardware `00`
 and software `01` in reply order. The host bounds this transaction to ten seconds,
 including lane, pacing and write waits. A fresh `02` reply is required even when
-capabilities are cached. The app opens controls on that reply, so missing optional
+capabilities are cached. Restored capability values populate offline diagnostic sensors, but do not establish a live notification session. The app opens controls on that reply, so missing optional
 hardware/software replies may exhaust the remaining host budget without blocking
 startup. A write failure or timeout, cancellation or disconnect still fails the
 transaction; cached capabilities never substitute for a missing fresh reply.
