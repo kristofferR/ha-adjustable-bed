@@ -598,6 +598,7 @@ class AdjustableBedCoordinator:
         # released so discovery cannot unload us halfway through a connection.
         self._pending_capability_reload = False
         self._capability_reload_scheduled = False
+        self._capability_reload_deferrals = 0
         self._shutting_down = False
         self._pairing_transfer_active = False
         self._last_bond_verification: dict[str, Any] = {
@@ -722,6 +723,7 @@ class AdjustableBedCoordinator:
         if (
             not self._pending_capability_reload
             or self._capability_reload_scheduled
+            or self._capability_reload_deferrals
             or self._shutting_down
             or self._pairing_transfer_active
         ):
@@ -773,6 +775,7 @@ class AdjustableBedCoordinator:
         """Reload if this disconnected coordinator still owns the loaded entry."""
         if (
             not self._pending_capability_reload
+            or self._capability_reload_deferrals
             or self._shutting_down
             or self._pairing_transfer_active
         ):
@@ -818,6 +821,17 @@ class AdjustableBedCoordinator:
                     controller.restore_retained_app_state(retained)
 
     @contextlib.asynccontextmanager
+    async def async_defer_capability_reload(self) -> AsyncIterator[None]:
+        """Keep a multi-phase service's coordinators alive while releasing BLE links."""
+        self._capability_reload_deferrals += 1
+        try:
+            yield
+        finally:
+            self._capability_reload_deferrals -= 1
+            if not self._capability_reload_deferrals:
+                self._schedule_pending_capability_reload()
+
+    @contextlib.asynccontextmanager
     async def async_command_operation_guard(self) -> AsyncIterator[None]:
         """Wait for this child's command lane and keep it idle."""
         async with self._command_lock:
@@ -835,8 +849,10 @@ class AdjustableBedCoordinator:
         """Return whether a deferred entity reload owns the next disconnected state."""
         link_is_up = self._client is not None and self._client.is_connected
         return (
-            self._pending_capability_reload or self._capability_reload_scheduled
-        ) and not link_is_up
+            (self._pending_capability_reload or self._capability_reload_scheduled)
+            and not self._capability_reload_deferrals
+            and not link_is_up
+        )
 
     def _apply_runtime_bed_type_correction(self, corrected_bed_type: str) -> bool:
         """Apply a protocol correction discovered after BLE service discovery."""
