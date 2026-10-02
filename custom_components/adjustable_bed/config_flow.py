@@ -985,9 +985,12 @@ def _starcode_setup_transport_present(client: BleakClient, selector: str) -> boo
     return False
 
 
-def _add_motion_bed_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[str, Any]) -> None:
+def _add_motion_bed_schema_fields(
+    schema: dict[vol.Marker, Any], data: Mapping[str, Any], observed_name: str | None = None
+) -> None:
     from .motion_bed_models import MOVEMENT_LAYOUTS, PRESET_VARIANTS
-    schema[vol.Required(CONF_MOTION_BED_NAME, default=data.get(CONF_MOTION_BED_NAME, data.get(CONF_NAME, "")))] = str
+    default_name = data.get(CONF_MOTION_BED_NAME, observed_name or data.get(CONF_NAME, ""))
+    schema[vol.Required(CONF_MOTION_BED_NAME, default=default_name)] = str
     schema[vol.Optional(CONF_MOTION_BED_RESTORED, default=data.get(CONF_MOTION_BED_RESTORED, False))] = bool
     schema[vol.Optional(CONF_MOTION_BED_PRESET, default=data.get(CONF_MOTION_BED_PRESET, "auto"))] = vol.In(("auto", *PRESET_VARIANTS))
     schema[vol.Optional(CONF_MOTION_BED_MOVEMENT, default=data.get(CONF_MOTION_BED_MOVEMENT, "auto"))] = vol.In(("auto", *MOVEMENT_LAYOUTS))
@@ -2041,7 +2044,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self._manual_data = data
             return await self._finish_with_verify(data, data.get(CONF_NAME, "Motion Bed"))
         schema: dict[vol.Marker, Any] = {}
-        _add_motion_bed_schema_fields(schema, data)
+        _add_motion_bed_schema_fields(
+            schema, data, self._discovery_info.name if self._discovery_info is not None else None
+        )
         return self.async_show_form(step_id="motion_bed", data_schema=vol.Schema(schema), errors=errors)
 
     async def async_step_malouf_app(

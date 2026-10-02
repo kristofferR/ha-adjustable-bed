@@ -1951,6 +1951,7 @@ motion_bed_action:
       selector:
         device:
           integration: adjustable_bed
+          multiple: true
     side:
       name: Side
       selector:
@@ -1995,6 +1996,7 @@ motion_bed_alarm:
       selector:
         device:
           integration: adjustable_bed
+          multiple: true
     side:
       name: Side
       selector:
@@ -2039,7 +2041,6 @@ motion_bed_alarm:
         boolean: {}
     mode:
       name: Mode
-      required: true
       selector:
         number:
           mode: box
@@ -2071,6 +2072,7 @@ motion_bed_clock:
       selector:
         device:
           integration: adjustable_bed
+          multiple: true
     side:
       name: Side
       selector:
@@ -2104,6 +2106,7 @@ motion_bed_sleep_angles:
       selector:
         device:
           integration: adjustable_bed
+          multiple: true
     side:
       name: Side
       selector:
@@ -2144,6 +2147,7 @@ motion_bed_calibration:
       selector:
         device:
           integration: adjustable_bed
+          multiple: true
     side:
       name: Side
       selector:
@@ -2182,6 +2186,7 @@ motion_bed_sleep_timer:
       selector:
         device:
           integration: adjustable_bed
+          multiple: true
     side:
       name: Side
       selector:
@@ -2216,6 +2221,7 @@ motion_bed_sleep_report:
       selector:
         device:
           integration: adjustable_bed
+          multiple: true
     side:
       name: Side
       selector:
@@ -2264,6 +2270,7 @@ motion_bed_module:
       selector:
         device:
           integration: adjustable_bed
+          multiple: true
     side:
       name: Side
       selector:
@@ -2306,6 +2313,7 @@ motion_bed_air_setting:
       selector:
         device:
           integration: adjustable_bed
+          multiple: true
     side:
       name: Side
       selector:
@@ -2350,6 +2358,7 @@ motion_bed_pressure:
       selector:
         device:
           integration: adjustable_bed
+          multiple: true
     side:
       name: Side
       selector:
@@ -2398,6 +2407,7 @@ motion_bed_thermal_schedule:
       selector:
         device:
           integration: adjustable_bed
+          multiple: true
     side:
       name: Side
       selector:
@@ -2435,6 +2445,7 @@ motion_bed_thermal_schedule:
           mode: box
     gear:
       name: Gear
+      required: true
       selector:
         number:
           mode: box
@@ -2449,6 +2460,7 @@ motion_bed_audio:
       selector:
         device:
           integration: adjustable_bed
+          multiple: true
     side:
       name: Side
       selector:
@@ -2491,6 +2503,7 @@ motion_bed_provision_wifi:
       selector:
         device:
           integration: adjustable_bed
+          multiple: true
     side:
       name: Side
       selector:
