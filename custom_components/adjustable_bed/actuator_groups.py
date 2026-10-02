@@ -66,9 +66,12 @@ from .const import (
     BED_TYPE_ZSERIES_Z280,
     KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_BASE,
+    KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_KSBT,
+    KEESON_VARIANT_OKIN_SEATING,
     KEESON_VARIANT_PURPLE,
     KEESON_VARIANT_SERTA,
+    KEESON_VARIANT_SIMON_LI,
 )
 
 
@@ -200,6 +203,27 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "label": "Adjustable Lite app",
                 "description": "KSBT01C and KSBT03C remotes from the Adjustable Lite app",
                 "hint": "Choose this if you control the bed with the Adjustable Lite app",
+            },
+            {
+                "type": BED_TYPE_KEESON,
+                "variant": KEESON_VARIANT_SIMON_LI,
+                "label": "Simon Li app",
+                "description": "Chair, love seat and sofa seats from the Simon Li app",
+                "hint": "Choose this if you control the seat with the Simon Li app",
+            },
+            {
+                "type": BED_TYPE_KEESON,
+                "variant": KEESON_VARIANT_HEAL_EVERY_NIGHT,
+                "label": "Heal Every Night app",
+                "description": "Healing 6, 7 or 8 beds; set the motor count to 2, 3 or 4 to match",
+                "hint": "Choose this if you control the bed with the Heal Every Night app",
+            },
+            {
+                "type": BED_TYPE_KEESON,
+                "variant": KEESON_VARIANT_OKIN_SEATING,
+                "label": "OKIN-Seating app",
+                "description": "Seats from the OKIN-Seating app",
+                "hint": "Choose this if you control the seat with the OKIN-Seating app",
             },
             {
                 "type": BED_TYPE_KEESON,

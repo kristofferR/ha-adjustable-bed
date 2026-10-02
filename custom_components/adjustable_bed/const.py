@@ -287,6 +287,8 @@ CONF_KAIDI_SOFA_ACU_NO: Final = "kaidi_sofa_acu_no"
 CONF_REMACRO_MODEL: Final = "remacro_model"
 # Remacro committed LED levels by model ID, the app's "LV"+model+address preference.
 CONF_REMACRO_LED_LEVEL: Final = "remacro_led_level"
+# Heal Every Night Installation Mode / Actuator Direction settings (app-local).
+CONF_OKIN_APP_SETTINGS: Final = "okin_app_settings"
 CONF_KAIDI_ADV_TYPE: Final = "kaidi_adv_type"
 CONF_KAIDI_RESOLVED_VARIANT: Final = "kaidi_resolved_variant"
 CONF_KAIDI_VARIANT_SOURCE: Final = "kaidi_variant_source"
@@ -1631,6 +1633,11 @@ KEESON_VARIANT_PURPLE: Final = "purple"
 KEESON_VARIANT_KSBT04C: Final = "ksbt04c"
 KEESON_VARIANT_SLEEP_HARMONY: Final = "sleep_harmony"
 KEESON_VARIANT_ADJUSTABLE_LITE: Final = "adjustable_lite"
+# Okin apps on the big-endian E5 frame (com.okin.simon / com.okin.healeverynight /
+# com.okin.minghua.R): explicit, never auto-selected.
+KEESON_VARIANT_SIMON_LI: Final = "simon_li"
+KEESON_VARIANT_HEAL_EVERY_NIGHT: Final = "heal_every_night"
+KEESON_VARIANT_OKIN_SEATING: Final = "okin_seating"
 # Deprecated alias kept for compatibility with older references.
 KEESON_VARIANT_ORE: Final = KEESON_VARIANT_SINO
 KEESON_VARIANTS: Final = {
@@ -1642,6 +1649,9 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_KSBT04C: "KSBT04C (generic 7-byte checksum)",
     KEESON_VARIANT_SLEEP_HARMONY: "Sleep Harmony (KSBT04C / base-i5)",
     KEESON_VARIANT_ADJUSTABLE_LITE: "Adjustable Lite app (KSBT01C / KSBT03C)",
+    KEESON_VARIANT_SIMON_LI: "Simon Li app (chair / love seat / sofa)",
+    KEESON_VARIANT_HEAL_EVERY_NIGHT: "Heal Every Night app (motor count 2/3/4 = Healing 6/7/8)",
+    KEESON_VARIANT_OKIN_SEATING: "OKIN-Seating app",
     KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
     KEESON_VARIANT_OKIN: "OKIN FFE (OKIN 13/15 series, 0xE6 prefix)",
     KEESON_VARIANT_SERTA: "Serta (Serta MP Remote)",
@@ -2446,6 +2456,9 @@ ALL_PROTOCOL_VARIANTS: Final = [
     KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_SLEEP_HARMONY,
     KEESON_VARIANT_ADJUSTABLE_LITE,
+    KEESON_VARIANT_SIMON_LI,
+    KEESON_VARIANT_HEAL_EVERY_NIGHT,
+    KEESON_VARIANT_OKIN_SEATING,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_SERTA,

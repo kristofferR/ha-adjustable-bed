@@ -36,7 +36,7 @@ using independently identified Keeson protocols remains supported. See the
 for all 128 exclusions and exact accepted evidence.
 
 **DewertOkin/ORE brands** also using FFE5 protocol (31 apps):
-- Simon Li, Cherish Smart, Minghua, Heal Every Night
+- Simon Li, Cherish Smart, Minghua, Heal Every Night (Simon Li, Heal Every Night and OKIN-Seating have [explicit profiles](#simon-li-heal-every-night-and-okin-seating-profiles))
 - ORE: Dynasty, LevaSleep, American Star, Avanti, Comfort Furniture, Hestia Motion, Maxcoil, Power's Bedding, SFM, Ultramatic, Better Living, Koizumi
 - See [DewertOkin](dewertokin.md) for full list
 
@@ -265,6 +265,97 @@ keeps the phone app out meanwhile.
 The app does not decode whether the light button toggles, how the timer
 button cycles, massage level limits, or the unit of the raw timer value. Those
 remain to be confirmed on hardware.
+
+### Simon Li, Heal Every Night and OKIN-Seating Profiles
+
+**Validation status:** clean-room analysis of Simon Li 1.0.1 (2), Heal Every
+Night 1.0 (1) and OKIN-Seating 1.0.1 (2) is complete; hardware is unverified.
+See the [app disposition](../apk-analysis/dispositions/row060-okin-simon-cluster.md).
+
+Select the `simon_li`, `heal_every_night` or `okin_seating` protocol variant.
+None of the apps filters its scan or reads a model, so Auto never selects
+these profiles: add the seat or bed manually as a Keeson bed and pick the app.
+Each app controls one address, so add one entry per seat or bed. Their
+frames carry no side field.
+
+All three write `E5 FE 16 + key_be32 + (~sum(bytes 0-6) & 0xFF)` to the first
+FFE9 characteristic of the last service, in Java UUID order, that has one.
+The SDK rejects a characteristic without the write property, and the apps
+never set a write type, so the integration writes without response when FFE9
+offers it, as Android does. The apps enable notifications on every FFE4
+characteristic and discard the bytes, so the integration subscribes too and
+keeps the replies for diagnostics only. There is no PIN, pairing or
+initialization frame.
+
+Held keys write at 0 ms and then every 100 ms (10 x 100 ms per Home Assistant
+press by default). The release cancels the refresh and writes the zero key
+`E5 FE 16 00 00 00 00 06`: Simon Li and OKIN-Seating sleep 10 ms first, Heal
+Every Night 100 ms. **Stop All** writes it at once. The
+`okin_app_hold_control` action holds any streamed control for 0.1-60 s.
+
+| Control | Simon Li | OKIN-Seating |
+|---------|----------|--------------|
+| Back up / down | `0x04` / `0x08` | `0x04` / `0x08` |
+| Foot up / down | `0x01` / `0x02` | `0x01` / `0x02` |
+| Lumbar up / down | `0x10` / `0x20` | - |
+| Home (button) | `0x16` | `0x0A` |
+| Memory 1 / 2 | `0x40` / `0x80` | - |
+
+Every control, including Home and memory, is a held key. Home keeps the app's
+neutral label: the apps do not show that it means flat. Simon Li has no save
+command: holding a memory key for 2.1 seconds shows "Memory saved", so
+**Save memory** holds the same key for 2.1 seconds. Whether the seat stores
+the position is unverified. OKIN-Seating's foot buttons carry the opposite
+"union" artwork; the integration follows the button identifiers. The motor
+count does not change these fixed controls.
+
+Heal Every Night picks Healing 6, 7 or 8 with the motor count (2, 3 or 4).
+Healing 7 and 8 both show tilt, lumbar and the light. Its keys:
+
+| Control | Key | Products |
+|---------|-----|----------|
+| Head up / down | `0x01` / `0x02` (see settings) | all |
+| Foot up / down | `0x04` / `0x08` (see settings) | all |
+| Tilt up / down | `0x10` / `0x20` | Healing 7/8 |
+| Lumbar up / down | `0x40` / `0x80` | Healing 7/8 |
+| Zero G / Flat | `0x01000001` / `0x01000002` | all |
+| Memory A / B (slots 1 / 2) | `0x01000008` / `0x01000009` | all |
+| Save memory A / B | `0x20000008` / `0x20000009` | all |
+| Preset STOP | `0x01000000` | all |
+| Head massage level 0-3 | `0x10000010` + level | all |
+| Foot massage level 0-3 | `0x11000010` + level | all |
+| Wave 1-4 | `0x10000020` + wave - 1 | all |
+| Timer 10/20/30 | `0x10000030` (the same key for every label) | all |
+| Light on / off | `0x31000001` / `0x31000000` | Healing 7/8 |
+
+Presets are single writes. Pressing the selected preset again sends Preset
+STOP instead, as the app does, and selecting another preset moves the
+selection. **Stop All** also sends Preset STOP while a preset is selected.
+
+The massage page stays disabled until a timer is chosen. A timer turns zero
+levels into one, then writes the timer key, the wave, head and foot levels
+100 ms apart. The level sliders (head and foot 0-3, wave 1-4) and the
++/- buttons then write one frame each; +/- clamp but still write. **Massage:
+Off** (or the timer's Off) writes head 0 and foot 0 and disables the page
+again, keeping the levels. The light switch writes the explicit on/off key.
+Preset selection, light state and massage levels are kept for the life of the
+config entry, across reconnects.
+
+Three settings selects mirror the app's settings page. They send nothing and
+only change which key the head and foot controls write:
+
+| Setting | Effect |
+|---------|--------|
+| Installation mode: swapped | Head controls drive the foot actuator and foot controls the head actuator |
+| Actuator 1 direction: reversed | The head actuator's up and down keys are exchanged |
+| Actuator 2 direction: reversed | The foot actuator's up and down keys are exchanged |
+
+Excluded: phone vibration, the scan and slot screens, dead helpers (the
+rename writer, password and query constants, time and sensor parsers, timers
+2 and 3, the quiet-sleep preset and legacy screens), and the apps' Android
+lifecycle and queue defects. Real users should confirm, after a beta or
+release, which actuators each key moves, what Home does, whether memory saves
+persist, the Heal massage and light semantics, and the GATT layout.
 
 ### Sino Variant (Dynasty, INNOVA, BetterLiving)
 **Primary Service UUID:** `0000ffe5-0000-1000-8000-00805f9b34fb`

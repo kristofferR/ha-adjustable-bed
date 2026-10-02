@@ -809,3 +809,23 @@ test("Richmat MH VER1 angle targets join their motors and the LED timeout is lig
   expect(bed.motors.every((m) => m.cover)).toBe(true);
   expect(bed.lights.timer).toBe("number.led_timer");
 });
+
+test("Okin app Home joins presets and Heal Every Night settings are utility selects", () => {
+  const hass = hassWith([
+    entry("cover.seat_back", "back"),
+    entry("button.seat_home", "okin_app_home"),
+    entry("button.seat_memory_1", "preset_memory_1"),
+    entry("button.seat_save_1", "program_memory_1"),
+    entry("select.heal_install", "okin_app_installation"),
+    entry("select.heal_act_1", "okin_app_actuator_1"),
+    entry("select.heal_act_2", "okin_app_actuator_2"),
+    entry("number.heal_wave", "massage_wave_intensity"),
+    entry("select.heal_timer", "massage_timer"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.presets).toEqual(["button.seat_home"]);
+  expect(bed.utilitySelects).toEqual(["select.heal_install", "select.heal_act_1", "select.heal_act_2"]);
+  expect(bed.massage.numbers).toEqual(["number.heal_wave"]);
+  expect(bed.massage.timer).toBe("select.heal_timer");
+  expect(bed.utility).toEqual([]);
+});

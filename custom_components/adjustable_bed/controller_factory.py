@@ -157,13 +157,16 @@ from .const import (
     # Variants and UUIDs
     KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_ERGOMOTION,
+    KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_JSON,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_KSBT_CR,
     KEESON_VARIANT_OKIN,
+    KEESON_VARIANT_OKIN_SEATING,
     KEESON_VARIANT_PURPLE,
     KEESON_VARIANT_SERTA,
+    KEESON_VARIANT_SIMON_LI,
     KEESON_VARIANT_SINO,
     KEESON_VARIANT_SLEEP_HARMONY,
     LEGGETT_APP_DEFAULT_PROFILE,
@@ -1231,6 +1234,18 @@ async def create_controller(
                 variant=KEESON_VARIANT_ADJUSTABLE_LITE,
                 device_name=device_name,
             )
+        elif keeson_variant in (
+            KEESON_VARIANT_SIMON_LI,
+            KEESON_VARIANT_HEAL_EVERY_NIGHT,
+            KEESON_VARIANT_OKIN_SEATING,
+        ):
+            _LOGGER.debug("Using explicit Okin app profile %s", keeson_variant)
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.keeson_okin_apps", __package__
+            )
+            from .beds.keeson_okin_apps import OkinAppKeesonController
+
+            return OkinAppKeesonController(coordinator, variant=keeson_variant)
         elif keeson_variant == KEESON_VARIANT_ERGOMOTION:
             _LOGGER.debug("Using Ergomotion Keeson variant (with position feedback)")
             return KeesonController(coordinator, variant="ergomotion")

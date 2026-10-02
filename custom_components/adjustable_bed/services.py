@@ -109,6 +109,7 @@ SERVICE_ZSERIES_SET_ALARM = "zseries_set_alarm"
 SERVICE_ZSERIES_SYNC_CLOCK = "zseries_sync_clock"
 SERVICE_SIMMONS_HOLD_CONTROL = "simmons_hold_control"
 SERVICE_ADJUSTABLE_LUMBAR_HOLD_CONTROL = "adjustable_lumbar_hold_control"
+SERVICE_OKIN_APP_HOLD_CONTROL = "okin_app_hold_control"
 SERVICE_SIMMONS_SET_ALARM = "simmons_set_alarm"
 ATTR_SLOT = "slot"
 ATTR_MODE = "mode"
@@ -2471,6 +2472,13 @@ async def handle_adjustable_lumbar_hold_control(call: ServiceCall) -> None:
     )
 
 
+async def handle_okin_app_hold_control(call: ServiceCall) -> None:
+    """Hold one Simon Li, Heal Every Night or OKIN-Seating control, then release it."""
+    await _handle_customatic_hold(
+        call, call.data[ATTR_CONTROL], {BED_TYPE_KEESON}, label="Okin app"
+    )
+
+
 async def handle_simmons_set_alarm(call: ServiceCall) -> None:
     """Program or disable one of the two SIMMONS alarms through the command queue."""
     from .beds.base import SideBoundController
@@ -3687,6 +3695,19 @@ async def async_register_services(hass: HomeAssistant) -> None:
         DOMAIN,
         SERVICE_ADJUSTABLE_LUMBAR_HOLD_CONTROL,
         handle_adjustable_lumbar_hold_control,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_CONTROL): cv.string,
+                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_OKIN_APP_HOLD_CONTROL,
+        handle_okin_app_hold_control,
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
