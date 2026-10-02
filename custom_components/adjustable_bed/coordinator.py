@@ -55,6 +55,7 @@ from .bluetooth_diagnostics import connection_reachability
 from .bluetooth_transport import (
     ConnectionPath,
     TransportClass,
+    async_clear_proxy_gatt_cache,
     async_connection_paths,
     async_path_for_source,
     client_source,
@@ -603,6 +604,14 @@ class AdjustableBedCoordinator:
         self._device_info_read_done: bool = False
         self._device_info_read_attempts: int = 0
         self._bond_probe_timed_out: bool = False
+        # Proxies whose stale GATT cache an auth failure already cleared, so only
+        # the first such failure per proxy skips re-pairing (issue #660).
+        self._stale_gatt_retry_sources: set[str] = set()
+        # The proxy whose stale cache the attempt that just failed cleared; the
+        # next attempt verifies there without pairing.
+        self._stale_gatt_retry_source: str | None = None
+        # The path whose authentication failed most recently in this attempt.
+        self._auth_failure_source: str | None = None
 
         # Track if pairing is supported by the Bluetooth adapter (None = unknown)
         self._pairing_supported: bool | None = None
@@ -1865,12 +1874,43 @@ class AdjustableBedCoordinator:
         if not requires_pairing(self._bed_type, self._protocol_variant):
             return
 
-        _LOGGER.warning(
-            "BLE link on %s is not authenticated: %s. "
-            "Clearing the cached bond marker so the next connection can request pairing.",
-            self._address,
-            err,
+        keep_link = retain_link and grants_one_connection_per_pairing_window(
+            self._bed_type, self._protocol_variant
         )
+        # Stale proxy handles fail exactly like a missing bond (issue #660).
+        # A retained link keeps running on its discovered services, so only a
+        # link being dropped may clear them.
+        cache_cleared = not keep_link and await async_clear_proxy_gatt_cache(
+            self._client, self._connection_path
+        )
+        # The first time, assume the bond is fine and retry on rediscovered
+        # handles without pairing: re-pairing a bonded ESPHome device can fail
+        # with error 82 or wedge the proxy. A repeat failure is a real one.
+        # A clear implies a known proxy path; the retry is spent per proxy because
+        # Home Assistant may reroute the next attempt through another one.
+        cleared_source = self._connection_path.source if self._connection_path else ""
+        self._auth_failure_source = cleared_source
+        stale_cache_retry = (
+            cache_cleared and cleared_source not in self._stale_gatt_retry_sources
+        )
+        if stale_cache_retry:
+            self._stale_gatt_retry_sources.add(cleared_source)
+            self._skip_pair_next_attempt = True
+            self._stale_gatt_retry_source = cleared_source
+            _LOGGER.warning(
+                "BLE link on %s is not authenticated: %s. The proxy's cached GATT "
+                "services may be stale; retrying with rediscovered services "
+                "before requesting pairing.",
+                self._address,
+                err,
+            )
+        else:
+            _LOGGER.warning(
+                "BLE link on %s is not authenticated: %s. "
+                "Clearing the cached bond marker so the next connection can request pairing.",
+                self._address,
+                err,
+            )
         self._record_bond_verification("authentication_failed", err, attempt_details)
         # Attribute the failure to a transport. A host bond and a proxy bond are
         # separate state, so evidence carried by one says nothing about the
@@ -1883,26 +1923,26 @@ class AdjustableBedCoordinator:
             operation="runtime_gatt_access",
             observed_at=datetime.now(UTC).isoformat(),
             error=str(err),
+            gatt_cache_cleared=cache_cleared,
         )
         # A definitive authentication failure invalidates any earlier decision
         # to skip a probe that timed out. The next paired connection should
         # verify the fresh bond again.
         self._bond_probe_timed_out = False
-        latch = self._attempt_trusted_bond_marker and not self._ble_bond_marker_unreliable
-        if latch:
-            self._log_bond_marker_unreliable()
-        self._persist_bond_flags(
-            established=False,
-            unreliable=True if latch else None,
-        )
+        if not stale_cache_retry:
+            latch = self._attempt_trusted_bond_marker and not self._ble_bond_marker_unreliable
+            if latch:
+                self._log_bond_marker_unreliable()
+            self._persist_bond_flags(
+                established=False,
+                unreliable=True if latch else None,
+            )
 
-        if not defer_pairing_issue:
-            await self._async_raise_pairing_issue()
+            if not defer_pairing_issue:
+                await self._async_raise_pairing_issue()
 
         if self._client is not None and self._client.is_connected:
-            if retain_link and grants_one_connection_per_pairing_window(
-                self._bed_type, self._protocol_variant
-            ):
+            if keep_link:
                 # Disconnecting would cost us the box's single connection and
                 # the reconnect that "fixes" the bond can never happen. Leave
                 # the link up; the repair tells the user to re-pair.
@@ -2578,6 +2618,7 @@ class AdjustableBedCoordinator:
                         self._latched_pairing_successes,
                     )
         self._skip_pair_next_attempt = False
+        self._stale_gatt_retry_sources.clear()
         if release_latch:
             self._latched_pairing_successes = 0
             self._persist_bond_flags(established=True, unreliable=False)
@@ -3427,7 +3468,45 @@ class AdjustableBedCoordinator:
 
         attempt = 0
         protocol_correction_pairing_retry_reserved = False
-        while attempt < attempt_limit:
+        stale_gatt_retry_extensions = 0
+        # A pending source may come from a runtime command failure. It stays
+        # pending until authentication has actually been exercised on that proxy.
+        unverified_stale_gatt_source: str | None = None
+        stale_gatt_pairing_reserved = False
+        while True:
+            # The cleared proxy's fresh handles still failed authentication, so
+            # its bond really is gone and pairing is now justified.
+            stale_gatt_verification_failed = bool(
+                unverified_stale_gatt_source
+                and self._auth_failure_source == unverified_stale_gatt_source
+            )
+            if unverified_stale_gatt_source and not stale_gatt_verification_failed:
+                # The last attempt failed without authenticating on the cleared
+                # proxy: it never connected, HA routed it elsewhere, or it broke
+                # before the probe. That proxy still deserves its no-pair check,
+                # even if another path just cleared its own cache, because it
+                # holds the bond being recovered.
+                self._stale_gatt_retry_source = unverified_stale_gatt_source
+                self._skip_pair_next_attempt = True
+            unverified_stale_gatt_source = None
+            if attempt >= attempt_limit:
+                # A stale proxy cache cleared on the last attempt still gets the
+                # rediscovered, no-pair verification it was promised (#660).
+                # Two extensions cover one reroute away from the cleared proxy
+                # while keeping the loop bounded.
+                # One more covers pairing after the verification proved the bond
+                # missing, which the plain budget would otherwise have spent.
+                if self._stale_gatt_retry_source and stale_gatt_retry_extensions < 2:
+                    stale_gatt_retry_extensions += 1
+                elif stale_gatt_verification_failed and not stale_gatt_pairing_reserved:
+                    stale_gatt_pairing_reserved = True
+                else:
+                    break
+                attempt_limit += 1
+            stale_gatt_retry_source = self._stale_gatt_retry_source
+            self._stale_gatt_retry_source = None
+            unverified_stale_gatt_source = stale_gatt_retry_source
+            self._auth_failure_source = None
             if self._vmat_unready_link_pending():
                 break
             attempt_index = attempt
@@ -3498,7 +3577,9 @@ class AdjustableBedCoordinator:
                 adapter_result = await select_adapter(
                     self.hass,
                     self._address,
-                    self._preferred_adapter,
+                    # Steer a stale-cache verification to the proxy that was
+                    # cleared. HA can still reroute; that is handled below.
+                    stale_gatt_retry_source or self._preferred_adapter,
                     exclude_adapters=exhausted_adapters or None,
                 )
                 attempt_details["selected_source"] = adapter_result.source
@@ -3741,6 +3822,8 @@ class AdjustableBedCoordinator:
                     # Use max_attempts=1 here since outer loop handles retries
                     # Disable the services cache to force fresh GATT discovery for
                     # every pairing-required bed, not just the pair=True attempt.
+                    # ESPHome proxies ignore this and serve their cached table;
+                    # an authentication failure clears that cache instead.
                     # These devices expose different services/characteristics
                     # depending on bond state, so a stale cache from a previous
                     # non-paired connection would make characteristic lookups (and
@@ -5944,6 +6027,12 @@ class AdjustableBedCoordinator:
                         )
                     else:
                         result = await operation_task
+                    # A command that worked closes the stale-cache episode. Startup
+                    # alone does not: some beds start without any authenticated
+                    # access, and a missing bond must still reach the repair.
+                    # Neither does a command cancelled before it could finish.
+                    if not operation_task.cancelled():
+                        self._stale_gatt_retry_sources.clear()
                 finally:
                     self._last_protocol_operation_end = datetime.now(UTC)
                     self._active_operation_name = None

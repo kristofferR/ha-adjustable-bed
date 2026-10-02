@@ -2484,3 +2484,119 @@ async def test_combine_dismissal_storage_migrates_single_address_set(
         "key": STORAGE_KEY,
         "data": {KEY_DISMISSED: [addresses]},
     }
+
+
+@pytest.mark.parametrize(
+    ("cleared", "retry_status", "pairs", "repaired"),
+    [
+        (False, BondVerificationStatus.VERIFIED, [True], False),
+        (True, BondVerificationStatus.VERIFIED, [True, False], True),
+        # Fresh handles that still fail prove the bond is gone: pair again.
+        (True, BondVerificationStatus.AUTH_FAILED, [True, False, True], False),
+        (True, BondVerificationStatus.INCONCLUSIVE, [True, False], False),
+    ],
+)
+async def test_repair_verifies_without_pairing_after_clearing_a_stale_proxy_cache(
+    hass: HomeAssistant,
+    cleared: bool,
+    retry_status: BondVerificationStatus,
+    pairs: list[bool],
+    repaired: bool,
+) -> None:
+    """Issue #660: check the existing bond on the cleared proxy's fresh handles first."""
+    flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, None)
+    flow.hass = hass
+    failed = BondEvidence(
+        status=BondVerificationStatus.AUTH_FAILED,
+        owner=BondOwner(transport=TransportClass.PROXY, source="proxy"),
+        operation="repair_pairing",
+        observed_at="now",
+        gatt_cache_cleared=cleared,
+    )
+    verified = replace(failed, status=BondVerificationStatus.VERIFIED, gatt_cache_cleared=False)
+    connect = AsyncMock(return_value=MagicMock(disconnect=AsyncMock()))
+    find_device = MagicMock(return_value=MagicMock())
+    with (
+        patch.object(flow, "_async_pair_via_coordinator", new=AsyncMock(return_value=None)),
+        patch.object(flow, "_find_device", new=find_device),
+        patch.object(flow, "_bed_type", return_value=("sleep_number", None)),
+        patch("bleak_retry_connector.establish_connection", new=connect),
+        patch("custom_components.adjustable_bed.repairs.client_source", return_value="proxy"),
+        patch("custom_components.adjustable_bed.repairs.async_path_for_source", return_value=None),
+        patch(
+            "custom_components.adjustable_bed.repairs.async_verify_authenticated_access",
+            new=AsyncMock(
+                side_effect=[failed, replace(verified, status=retry_status), failed]
+            ),
+        ),
+    ):
+        assert await flow._async_try_pair() is repaired
+
+    # The final pair reuses the live link (pinned source), so it pairs via client.pair().
+    assert ["pair" in c.kwargs for c in connect.await_args_list] == [True] + [False] * (
+        len(pairs) - 1
+    )
+    assert [c.args[0] for c in find_device.call_args_list] == [None] + ["proxy"] * (
+        len(pairs) - 1
+    )
+
+
+async def test_repair_fallback_verifier_also_clears_a_stale_proxy_cache(
+    hass: HomeAssistant,
+) -> None:
+    """Beds without an evidence-backed verifier get the same no-pair retry."""
+    flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, None)
+    flow.hass = hass
+    client = MagicMock(
+        disconnect=AsyncMock(),
+        read_gatt_char=AsyncMock(
+            side_effect=[BleakError("error=15 description=Insufficient encryption"), b"model"]
+        ),
+    )
+    connect = AsyncMock(return_value=client)
+    proxy = ConnectionPath(source="proxy", transport=TransportClass.PROXY, source_domain="esphome")
+    clear = AsyncMock(return_value=True)
+    with (
+        patch.object(flow, "_async_pair_via_coordinator", new=AsyncMock(return_value=None)),
+        patch.object(flow, "_find_device", return_value=MagicMock()),
+        patch.object(flow, "_bed_type", return_value=("logicdata", None)),
+        patch("custom_components.adjustable_bed.repairs.has_evidence_backed_verifier", return_value=False),
+        patch("bleak_retry_connector.establish_connection", new=connect),
+        patch("custom_components.adjustable_bed.repairs.client_source", return_value="proxy"),
+        patch("custom_components.adjustable_bed.repairs.async_path_for_source", return_value=proxy),
+        patch("custom_components.adjustable_bed.repairs.async_clear_proxy_gatt_cache", new=clear),
+    ):
+        assert await flow._async_try_pair() is True
+
+    clear.assert_awaited_once()
+    assert ["pair" in c.kwargs for c in connect.await_args_list] == [True, False]
+
+
+async def test_repair_retries_a_rerouted_stale_cache_verification_once(
+    hass: HomeAssistant,
+) -> None:
+    """Issue #660: HA can reroute the pinned check; one reroute earns a final check."""
+    flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, None)
+    flow.hass = hass
+    outcomes = iter([False, False, True])
+
+    async def once(source: str | None, *, pair: bool) -> bool:
+        result = next(outcomes)
+        if source is None:
+            flow._retry_gatt_cache_source = "proxy"
+        elif not result:
+            flow._retry_route_mismatch = True
+        return result
+
+    attempt = AsyncMock(side_effect=once)
+    with (
+        patch.object(flow, "_async_pair_via_coordinator", new=AsyncMock(return_value=None)),
+        patch.object(flow, "_async_try_pair_once", new=attempt),
+    ):
+        assert await flow._async_try_pair() is True
+
+    assert [(c.args[0], c.kwargs["pair"]) for c in attempt.await_args_list] == [
+        (None, True),
+        ("proxy", False),
+        ("proxy", False),
+    ]

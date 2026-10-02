@@ -950,6 +950,101 @@ class TestPairingPersistence:
         client.disconnect.assert_awaited_once()
 
 
+class TestStaleProxyGattCache:
+    """Issue #660: stale proxy handles fail like a lost bond."""
+
+    @pytest.mark.parametrize(
+        ("cleared", "retry_status", "bond_requests", "proves_bond"),
+        [
+            (False, BondVerificationStatus.VERIFIED, [True], False),
+            (True, BondVerificationStatus.VERIFIED, [True, False], True),
+            (True, BondVerificationStatus.AUTH_FAILED, [True, False, True], True),
+            # An inconclusive read never proves the bond absent.
+            (True, BondVerificationStatus.INCONCLUSIVE, [True, False], False),
+        ],
+    )
+    async def test_cleared_cache_verifies_on_that_proxy_before_pairing_again(
+        self,
+        hass: HomeAssistant,
+        cleared: bool,
+        retry_status: BondVerificationStatus,
+        bond_requests: list[bool],
+        proves_bond: bool,
+    ) -> None:
+        flow = TestPairingPersistence._new_pairing_flow(hass)
+        failed = BondEvidence(
+            status=BondVerificationStatus.AUTH_FAILED,
+            owner=BondOwner(transport=TransportClass.PROXY, source="proxy-a"),
+            operation="setup_pairing",
+            observed_at="now",
+            gatt_cache_cleared=cleared,
+        )
+        verified = replace(
+            failed, status=BondVerificationStatus.VERIFIED, gatt_cache_cleared=False
+        )
+        retry = replace(failed, status=retry_status)
+        results = iter([failed, retry, verified])
+        pinned: list[tuple[str | None, str | None]] = []
+
+        async def attempt(*_args: Any, **kwargs: Any) -> BondEvidence:
+            pinned.append(
+                (
+                    kwargs["preferred_adapter"],
+                    flow._pairing_verify_source
+                    if not kwargs["request_bond"]
+                    else flow._pairing_retry_source,
+                )
+            )
+            return next(results)
+
+        mock = AsyncMock(side_effect=attempt)
+        with (
+            patch(
+                "custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs",
+                return_value=contextlib.AsyncExitStack(),
+            ),
+            patch.object(flow, "_attempt_pairing_with_capture", new=mock),
+        ):
+            evidence = await flow._attempt_pairing("AA:BB:CC:DD:EE:01")
+
+        assert [call.kwargs["request_bond"] for call in mock.await_args_list] == bond_requests
+        assert evidence.proves_bond is proves_bond
+        assert pinned[1:] == [("proxy-a", "proxy-a")] * (len(bond_requests) - 1)
+        assert flow._pairing_verify_source is None
+        assert flow._pairing_retry_source is None
+
+
+class TestStaleProxyRerouteRetry:
+    """Issue #660: one reroute away from the cleared proxy gets a second check."""
+
+    async def test_rerouted_verification_is_retried_once(self, hass: HomeAssistant) -> None:
+        flow = TestPairingPersistence._new_pairing_flow(hass)
+        failed = BondEvidence(
+            status=BondVerificationStatus.AUTH_FAILED,
+            owner=BondOwner(transport=TransportClass.PROXY, source="proxy-a"),
+            operation="setup_pairing",
+            observed_at="now",
+            gatt_cache_cleared=True,
+        )
+        verified = replace(
+            failed, status=BondVerificationStatus.VERIFIED, gatt_cache_cleared=False
+        )
+        attempt = AsyncMock(
+            side_effect=[failed, BondRouteMismatchError("proxy-b"), verified]
+        )
+        with (
+            patch(
+                "custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs",
+                return_value=contextlib.AsyncExitStack(),
+            ),
+            patch.object(flow, "_attempt_pairing_with_capture", new=attempt),
+        ):
+            evidence = await flow._attempt_pairing("AA:BB:CC:DD:EE:01")
+
+        assert evidence is verified
+        assert [c.kwargs["request_bond"] for c in attempt.await_args_list] == [True, False, False]
+
+
 class TestDetectBedType:
     """Test bed type detection."""
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
@@ -197,6 +198,223 @@ class TestCoordinatorConnection:
                 assert create_issue.await_args.kwargs["evidence"]["status"] == "auth_failed"
 
         assert coordinator._connection_attempt_count == 2
+
+    @pytest.mark.parametrize("bond_intact", [True, False])
+    async def test_stale_cache_clear_on_last_attempt_still_reconnects_once(
+        self, hass, mock_coordinator_connected, mock_bleak_client, bond_intact
+    ):
+        """Issue #660: the rediscovered verification is not lost to the attempt budget."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_OKIN,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_BLE_BOND_ESTABLISHED: True,
+            },
+            unique_id=TEST_ADDRESS,
+        )
+        entry.add_to_hass(hass)
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        coordinator._max_retries = 1
+        reads = 0
+
+        async def read_characteristic(_uuid):
+            nonlocal reads
+            reads += 1
+            if reads == 1 or not bond_intact:
+                raise BleakError("Insufficient encryption")
+            return b"Model"
+
+        mock_bleak_client.read_gatt_char.side_effect = read_characteristic
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ) as create_issue,
+            patch(
+                "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+                new=AsyncMock(return_value=("Leggett", "Model")),
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.async_clear_proxy_gatt_cache",
+                new=AsyncMock(return_value=True),
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.client_source",
+                return_value="proxy-a",
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.async_path_for_source",
+                return_value=ConnectionPath(
+                    source="proxy-a", transport=TransportClass.PROXY, source_domain="esphome"
+                ),
+            ),
+        ):
+            assert await coordinator.async_connect() is bond_intact
+
+        # A verification that still fails earns the pairing attempt it now justifies.
+        assert coordinator._connection_attempt_count == (2 if bond_intact else 3)
+        assert create_issue.await_count == int(not bond_intact)
+        # Recovery closes the episode, so a later outage gets a fresh retry.
+        assert coordinator._stale_gatt_retry_sources == (set() if bond_intact else {"proxy-a"})
+
+    async def test_rerouted_stale_cache_verification_returns_to_the_cleared_proxy(
+        self, hass, mock_coordinator_connected, mock_bleak_client
+    ):
+        """Issue #660: a reroute does not use up the cleared proxy's verification."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_OKIN,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_BLE_BOND_ESTABLISHED: True,
+            },
+            unique_id=TEST_ADDRESS,
+        )
+        entry.add_to_hass(hass)
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        coordinator._max_retries = 1
+
+        def route(_client):
+            return "proxy-b" if coordinator._connection_attempt_count == 2 else "proxy-a"
+
+        def path(_hass, source, **_kwargs):
+            return ConnectionPath(
+                source=source, transport=TransportClass.PROXY, source_domain="esphome"
+            )
+
+        async def read_characteristic(_uuid):
+            if coordinator._connection_attempt_count < 3:
+                raise BleakError("Insufficient encryption")
+            return b"Model"
+
+        mock_bleak_client.read_gatt_char.side_effect = read_characteristic
+        from custom_components.adjustable_bed import coordinator as coordinator_module
+
+        select = AsyncMock(side_effect=coordinator_module.select_adapter)
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+                new=AsyncMock(return_value=("Leggett", "Model")),
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.async_clear_proxy_gatt_cache",
+                new=AsyncMock(return_value=True),
+            ),
+            patch("custom_components.adjustable_bed.coordinator.client_source", side_effect=route),
+            patch(
+                "custom_components.adjustable_bed.coordinator.async_path_for_source",
+                side_effect=path,
+            ),
+            patch("custom_components.adjustable_bed.coordinator.select_adapter", new=select),
+        ):
+            assert await coordinator.async_connect() is True
+
+        assert coordinator._connection_attempt_count == 3
+        assert [call.args[2] for call in select.await_args_list][1:] == ["proxy-a", "proxy-a"]
+
+    @pytest.mark.parametrize("failure", ["connect", "before_probe"])
+    async def test_stale_cache_verification_survives_a_failed_reconnect(
+        self, hass, mock_coordinator_connected, mock_bleak_client, mock_establish_connection,
+        failure,
+    ):
+        """Issue #660: a reconnect that never reaches the proxy does not spend its check."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_OKIN,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_BLE_BOND_ESTABLISHED: True,
+            },
+            unique_id=TEST_ADDRESS,
+        )
+        entry.add_to_hass(hass)
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        coordinator._max_retries = 1
+        reads = 0
+        connect = mock_establish_connection.side_effect
+
+        async def establish(*args, **kwargs):
+            if failure == "connect" and coordinator._connection_attempt_count == 2:
+                raise TimeoutError("no answer")
+            return await connect(*args, **kwargs)
+
+        verify = coordinator._async_verify_bonded
+
+        async def verify_bonded(*args, **kwargs):
+            if failure == "before_probe" and coordinator._connection_attempt_count == 2:
+                raise TimeoutError("link dropped before the probe")
+            return await verify(*args, **kwargs)
+
+        async def read_characteristic(_uuid):
+            nonlocal reads
+            reads += 1
+            if reads == 1:
+                raise BleakError("Insufficient encryption")
+            return b"Model"
+
+        mock_establish_connection.side_effect = establish
+        mock_bleak_client.read_gatt_char.side_effect = read_characteristic
+        from custom_components.adjustable_bed import coordinator as coordinator_module
+
+        select = AsyncMock(side_effect=coordinator_module.select_adapter)
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+                new=AsyncMock(return_value=("Leggett", "Model")),
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.async_clear_proxy_gatt_cache",
+                new=AsyncMock(return_value=True),
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.client_source",
+                return_value="proxy-a",
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.async_path_for_source",
+                return_value=ConnectionPath(
+                    source="proxy-a", transport=TransportClass.PROXY, source_domain="esphome"
+                ),
+            ),
+            patch("custom_components.adjustable_bed.coordinator.select_adapter", new=select),
+            patch.object(coordinator, "_async_verify_bonded", side_effect=verify_bonded),
+        ):
+            assert await coordinator.async_connect() is True
+
+        assert coordinator._connection_attempt_count == 3
+        assert [call.args[2] for call in select.await_args_list][1:] == ["proxy-a", "proxy-a"]
+        assert coordinator._ble_bond_established is True
+
+    async def test_runtime_stale_cache_verification_survives_into_the_next_connect(
+        self, hass, mock_config_entry, mock_coordinator_connected
+    ):
+        """A command's cache clear steers the following connect to that proxy."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._stale_gatt_retry_source = "proxy-a"
+        coordinator._skip_pair_next_attempt = True
+        from custom_components.adjustable_bed import coordinator as coordinator_module
+
+        select = AsyncMock(side_effect=coordinator_module.select_adapter)
+        with patch("custom_components.adjustable_bed.coordinator.select_adapter", new=select):
+            assert await coordinator.async_connect() is True
+
+        assert select.await_args_list[0].args[2] == "proxy-a"
+        assert coordinator._stale_gatt_retry_source is None
 
     async def test_connect_success(
         self,
@@ -645,6 +863,42 @@ class TestCoordinatorConnection:
             assert coordinator._client is client
         else:
             disconnect_locked.assert_awaited_once()
+
+    async def test_only_a_working_command_closes_the_stale_cache_episode(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ) -> None:
+        """Issue #660: startup alone does not prove the link authenticates."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        coordinator._stale_gatt_retry_sources.add("proxy-a")
+
+        async def failing(_controller):
+            raise BleakError("not connected")
+
+        with pytest.raises(BleakError):
+            await coordinator.async_execute_controller_command(failing, cancel_running=False)
+        assert coordinator._stale_gatt_retry_sources == {"proxy-a"}
+
+        async def cancel_operation(task, **_kwargs):
+            task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
+
+        with patch.object(
+            coordinator, "_async_wait_for_controller_operation", side_effect=cancel_operation
+        ):
+            await coordinator.async_execute_controller_command(
+                AsyncMock(), cancel_running=False
+            )
+        assert coordinator._stale_gatt_retry_sources == {"proxy-a"}
+
+        await coordinator.async_execute_controller_command(AsyncMock(), cancel_running=False)
+        assert coordinator._stale_gatt_retry_sources == set()
+
+        await coordinator.async_disconnect()
 
     async def test_runtime_auth_failure_keeps_a_one_connection_link(
         self,
@@ -3159,6 +3413,111 @@ class TestBondMarkerReliability:
         assert coordinator._ble_bond_marker_unreliable is False
         coordinator._mark_ble_bond_established()
         assert coordinator._ble_bond_established is True
+
+    def _esphome_link(self, coordinator: AdjustableBedCoordinator, calls: list[str]) -> MagicMock:
+        client = MagicMock()
+        client.is_connected = True
+        client.clear_cache = AsyncMock(side_effect=lambda: calls.append("clear") or True)
+        coordinator._client = client
+        coordinator._connection_path = ConnectionPath(
+            source="B0:CB:D8:03:7D:9E",
+            transport=TransportClass.PROXY,
+            source_domain="esphome",
+        )
+        return client
+
+    async def test_stale_proxy_cache_gets_one_retry_before_repairing(
+        self,
+        hass: HomeAssistant,
+    ):
+        """Issue #660: rediscover handles first, re-pair only if that also fails."""
+        coordinator = self._make_bonded_coordinator(hass)
+        calls: list[str] = []
+        self._esphome_link(coordinator, calls)
+        error = BleakError("handle=23 error=15 description=Insufficient encryption")
+
+        async def disconnect(*, reason: str) -> None:
+            calls.append("disconnect")
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ) as issue,
+            patch.object(coordinator, "async_disconnect", side_effect=disconnect),
+        ):
+            await coordinator._async_handle_ble_authentication_error(error)
+
+            assert calls == ["clear", "disconnect"]
+            assert coordinator._last_bond_evidence is not None
+            assert coordinator._last_bond_evidence.gatt_cache_cleared is True
+            assert coordinator._ble_bond_established is True
+            assert coordinator._skip_pair_next_attempt is True
+            issue.assert_not_awaited()
+
+            self._esphome_link(coordinator, calls)
+            await coordinator._async_handle_ble_authentication_error(error)
+
+            assert coordinator._ble_bond_established is False
+            issue.assert_awaited_once()
+
+    async def test_stale_cache_retry_is_spent_per_proxy(
+        self,
+        hass: HomeAssistant,
+    ):
+        """A reroute to another proxy is that proxy's first stale cache, not a repeat."""
+        coordinator = self._make_bonded_coordinator(hass)
+        calls: list[str] = []
+        error = BleakError("error=15 description=Insufficient encryption")
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ) as issue,
+            patch.object(coordinator, "async_disconnect", new=AsyncMock()),
+        ):
+            self._esphome_link(coordinator, calls)
+            await coordinator._async_handle_ble_authentication_error(error)
+            self._esphome_link(coordinator, calls)
+            coordinator._connection_path = ConnectionPath(
+                source="B0:CB:D8:03:81:2A",
+                transport=TransportClass.PROXY,
+                source_domain="esphome",
+            )
+            await coordinator._async_handle_ble_authentication_error(error)
+
+        assert coordinator._ble_bond_established is True
+        issue.assert_not_awaited()
+
+    async def test_retained_link_keeps_its_discovered_services(
+        self,
+        hass: HomeAssistant,
+    ):
+        """A one-connection bed runs startup on the retained link's services."""
+        coordinator = self._make_bonded_coordinator(hass)
+        calls: list[str] = []
+        client = self._esphome_link(coordinator, calls)
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator."
+                "grants_one_connection_per_pairing_window",
+                return_value=True,
+            ),
+        ):
+            await coordinator._async_handle_ble_authentication_error(
+                BleakError("error=15 description=Insufficient encryption"),
+                retain_link=True,
+            )
+
+        client.clear_cache.assert_not_awaited()
+        assert coordinator._last_bond_evidence is not None
+        assert coordinator._last_bond_evidence.gatt_cache_cleared is False
 
 
 class TestDisconnectCommandSerialization:

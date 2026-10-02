@@ -51,6 +51,23 @@ keys or link-security details; those fields require proxy firmware support.
 The runtime recovery correction does not establish successful Climate 360
 hardware operation.
 
+The #660 support bundles from the same bed show four different handle layouts
+for the Fuzion service across ten days: same characteristics, different order.
+After a power outage, the ESPHome proxy kept serving the table it had cached in
+flash. The Auth read landed on another characteristic and returned 2 bytes, and
+notification subscriptions hit descriptors (`Write not permitted`) or
+encrypted values (`Insufficient encryption`). Every error matches the layout
+discovered after the user erased the proxy, so the bond itself was intact. The
+empty Auth value in #574 fits the same cause. `use_services_cache=False` does
+not bypass either the proxy's cache or Home Assistant's copy of it, so an
+authentication failure through an ESPHome proxy now clears both while the link
+is still up. The next coordinator attempt and the setup and repair retries discover
+the real layout and verify the existing bond without pairing again, because
+re-pairing a bonded ESPHome device can fail with error 82. Only a second
+authentication failure through the same proxy clears the bond marker and
+requests pairing. A link that
+a one-connection bed must retain keeps its services and is not cleared.
+
 Earlier documentation incorrectly stated that Fuzion never bonds. The 5.4.11
 application explicitly bonds after service discovery. This ordering matters for
 the proxy failures reported in #318 and the startup failures in #565 and #574.

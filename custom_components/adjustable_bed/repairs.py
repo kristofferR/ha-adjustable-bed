@@ -33,7 +33,12 @@ from homeassistant.helpers.translation import async_get_translations
 from .adapter import get_discovered_service_info
 from .address_lock import async_get_connect_lock
 from .ble_auth import is_ble_authentication_error
-from .bluetooth_transport import TransportClass, async_path_for_source, client_source
+from .bluetooth_transport import (
+    TransportClass,
+    async_clear_proxy_gatt_cache,
+    async_path_for_source,
+    client_source,
+)
 from .bond_recovery import (
     RecoveryEligibility,
     RecoveryOffer,
@@ -304,6 +309,10 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         self._result_shown = False
         self._retry_route_mismatch = False
         self._retry_pairing_not_supported = False
+        # The proxy whose stale GATT cache the last attempt cleared (issue #660).
+        self._retry_gatt_cache_source: str | None = None
+        # Whether the last attempt's verification failed authentication outright.
+        self._retry_auth_failed = False
 
     def _async_flow_manager(self) -> Any:
         """Repairs flows are driven by their own manager, not the config one."""
@@ -998,16 +1007,41 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         are one-connection beds and are handled by _async_pair_via_coordinator,
         which refuses to open a throwaway client at all.
         """
+        via_coordinator = await self._async_pair_via_coordinator(expected_source)
+        if via_coordinator is not None:
+            return via_coordinator
+        if await self._async_try_pair_once(expected_source, pair=True):
+            return True
+        cleared_source = self._retry_gatt_cache_source
+        if cleared_source is None:
+            return False
+        # The verifier dropped the proxy's stale handles (issue #660). Check the
+        # existing bond on that proxy's rediscovered handles before anyone pairs
+        # again: re-pairing a bonded ESPHome device can fail with error 82.
+        _LOGGER.info(
+            "Repair: verifying %s once with rediscovered GATT services", self._address
+        )
+        if await self._async_try_pair_once(cleared_source, pair=False):
+            return True
+        if self._retry_route_mismatch:
+            # HA reranks routes on connect; one reroute earns a final check.
+            if await self._async_try_pair_once(cleared_source, pair=False):
+                return True
+        if not self._retry_auth_failed:
+            return False
+        # Fresh handles still fail authentication, so the bond really is gone.
+        return await self._async_try_pair_once(cleared_source, pair=True)
+
+    async def _async_try_pair_once(self, expected_source: str | None, *, pair: bool) -> bool:
+        """Run one connect, optional pairing and verification attempt."""
         from bleak import BleakClient
         from bleak.exc import BleakError
         from bleak_retry_connector import establish_connection
 
         self._retry_route_mismatch = False
         self._retry_pairing_not_supported = False
-        via_coordinator = await self._async_pair_via_coordinator(expected_source)
-        if via_coordinator is not None:
-            return via_coordinator
-
+        self._retry_gatt_cache_source = None
+        self._retry_auth_failed = False
         device = self._find_device(expected_source)
         if device is None:
             _LOGGER.warning(
@@ -1025,7 +1059,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         async with async_get_connect_lock(self.hass, self._address):
             try:
                 connect_kwargs: dict[str, Any] = (
-                    {"pair": True} if expected_source is None else {}
+                    {"pair": True} if pair and expected_source is None else {}
                 )
                 client = await establish_connection(
                     BleakClient,
@@ -1051,7 +1085,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                     )
                     return False
                 pair_error: Exception | None = None
-                if expected_source:
+                if pair and expected_source:
                     try:
                         await client.pair()
                     except (NotImplementedError, TypeError) as err:
@@ -1080,6 +1114,11 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                         path=path,
                         operation="repair_pairing",
                     )
+                    if evidence.gatt_cache_cleared:
+                        self._retry_gatt_cache_source = evidence.owner.source
+                    self._retry_auth_failed = (
+                        evidence.status is BondVerificationStatus.AUTH_FAILED
+                    )
                     bonded = evidence.proves_bond
                     proven_bond = bonded
                     if bonded:
@@ -1098,6 +1137,11 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                                 self._address,
                                 err,
                             )
+                            self._retry_auth_failed = True
+                            if path is not None and await async_clear_proxy_gatt_cache(
+                                client, path
+                            ):
+                                self._retry_gatt_cache_source = path.source
                         else:
                             _LOGGER.debug(
                                 "Repair: bond verification inconclusive for %s: %s",

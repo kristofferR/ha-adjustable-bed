@@ -5456,13 +5456,61 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             preferred_adapter = self._pairing_retry_source
 
         async with capture_proxy_logs(self.hass, address, preferred_adapter, retain=True):
-            return await self._attempt_pairing_with_capture(
+            evidence = await self._attempt_pairing_with_capture(
                 address,
                 request_bond=request_bond,
                 track_for_flow_cleanup=track_for_flow_cleanup,
                 device=device,
                 preferred_adapter=preferred_adapter,
             )
+            cleared_source = evidence.owner.source if evidence.gatt_cache_cleared else None
+            if cleared_source:
+                # The failure may only have been the proxy's stale handles, which
+                # the verifier has just dropped (issue #660). Verify the existing
+                # bond on rediscovered handles first: re-pairing a bonded ESPHome
+                # device can fail with error 82 or wedge the proxy. Both retries
+                # are pinned to that proxy, as the manual proxy retry is, so a
+                # reroute cannot judge or pair a different one.
+                _LOGGER.info("Verifying %s once with rediscovered GATT services", address)
+                saved_sources = (self._pairing_verify_source, self._pairing_retry_source)
+                self._pairing_verify_source = cleared_source
+                try:
+                    try:
+                        evidence = await self._attempt_pairing_with_capture(
+                            address,
+                            request_bond=False,
+                            track_for_flow_cleanup=track_for_flow_cleanup,
+                            device=None,
+                            preferred_adapter=cleared_source,
+                        )
+                    except BondRouteMismatchError as err:
+                        # HA reranks routes on connect, so one reroute away from
+                        # the cleared proxy earns a second, final verification.
+                        _LOGGER.info("Stale-cache verification for %s rerouted: %s", address, err)
+                        evidence = await self._attempt_pairing_with_capture(
+                            address,
+                            request_bond=False,
+                            track_for_flow_cleanup=track_for_flow_cleanup,
+                            device=None,
+                            preferred_adapter=cleared_source,
+                        )
+                    # Only a definite failure justifies pairing over a bond that
+                    # may still be intact; an inconclusive read proves nothing.
+                    if (
+                        request_bond
+                        and evidence.status is BondVerificationStatus.AUTH_FAILED
+                    ):
+                        self._pairing_retry_source = cleared_source
+                        evidence = await self._attempt_pairing_with_capture(
+                            address,
+                            request_bond=True,
+                            track_for_flow_cleanup=track_for_flow_cleanup,
+                            device=None,
+                            preferred_adapter=cleared_source,
+                        )
+                finally:
+                    self._pairing_verify_source, self._pairing_retry_source = saved_sources
+            return evidence
 
     async def _attempt_pairing_with_capture(
         self,

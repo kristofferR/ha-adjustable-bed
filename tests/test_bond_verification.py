@@ -356,6 +356,41 @@ class TestVerificationOutcomes:
         assert evidence.status is BondVerificationStatus.AUTH_FAILED
         assert evidence.owner.transport is TransportClass.PROXY
 
+    @pytest.mark.parametrize(
+        ("path", "clears"),
+        [
+            (replace(_PROXY, source_domain="esphome"), True),
+            # Other backends fall back to BlueZ RemoveDevice, which drops host bonds.
+            (_PROXY, False),
+            (replace(_LOCAL, source_domain="esphome"), False),
+        ],
+    )
+    async def test_auth_failure_clears_only_an_esphome_proxy_gatt_cache(
+        self, path: ConnectionPath, clears: bool
+    ) -> None:
+        """Issue #660: a reordered GATT table read through stale handles."""
+        client = _client()
+        client.read_gatt_char.return_value = b"\x00\x00"
+        client.clear_cache = AsyncMock(return_value=True)
+        evidence = await async_verify_authenticated_access(
+            client, bed_type=BED_TYPE_SLEEP_NUMBER, protocol_variant=None,
+            path=path, operation="setup_pairing",
+        )
+        assert evidence.status is BondVerificationStatus.AUTH_FAILED
+        assert evidence.gatt_cache_cleared is clears
+        assert client.clear_cache.await_count == int(clears)
+
+    async def test_a_verified_bond_keeps_the_proxy_gatt_cache(self) -> None:
+        client = _client()
+        client.read_gatt_char.return_value = bytes.fromhex("00112233445566778899aabbccddeeff")
+        client.clear_cache = AsyncMock(return_value=True)
+        evidence = await async_verify_authenticated_access(
+            client, bed_type=BED_TYPE_SLEEP_NUMBER, protocol_variant=None,
+            path=replace(_PROXY, source_domain="esphome"), operation="setup_pairing",
+        )
+        assert evidence.status is BondVerificationStatus.VERIFIED
+        client.clear_cache.assert_not_awaited()
+
     async def test_a_successful_read_verifies_the_bond(self) -> None:
         evidence = await async_verify_authenticated_access(
             _client(),

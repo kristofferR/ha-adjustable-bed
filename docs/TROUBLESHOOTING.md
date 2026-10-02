@@ -400,6 +400,13 @@ erase and reinstall resolved this for a Sleep Number user in
 [issue #574](https://github.com/kristofferR/ha-adjustable-bed/issues/574#issuecomment-5797294142).
 It is a last resort, not a guaranteed fix for every pairing failure.
 
+The same error can also come from the proxy's saved list of the bed's Bluetooth
+services. Some beds, including Sleep Number, lay those services out differently
+after losing power, so a stale list sends every read to the wrong place
+([issue #660](https://github.com/kristofferR/ha-adjustable-bed/issues/660)). The
+integration clears that list on the proxy after an authentication failure, and
+the next attempt reads the bed's real layout. Retry once before going further.
+
 **First, try ordinary pairing:**
 
 1. Note the proxy named in the error. If only its address is shown, find the
@@ -420,7 +427,7 @@ retry. Only treat the named proxy as recovered if the successful connection
 used that proxy. If the route differs or is unknown, do not erase the named
 proxy based on that retry.
 
-If the **same authentication error** returns, the proxy may have stale pairing
+If the **same authentication error** returns after a retry, the proxy may have stale pairing
 keys. Updating its firmware wirelessly, restarting Home Assistant, or deleting
 and re-adding the bed in Home Assistant does **not** erase those keys. Timeouts,
 a bed that cannot be found, or missing Bluetooth services alone do not justify

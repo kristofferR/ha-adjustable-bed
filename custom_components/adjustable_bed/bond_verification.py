@@ -39,7 +39,7 @@ from typing import TYPE_CHECKING, Any
 
 from .ble_auth import is_ble_authentication_error
 from .bluetooth_bond import BondSelectionStatus, async_read_local_bonds, select_local_bond
-from .bluetooth_transport import ConnectionPath, TransportClass
+from .bluetooth_transport import ConnectionPath, TransportClass, async_clear_proxy_gatt_cache
 from .const import (
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_UUID,
@@ -116,6 +116,9 @@ class BondEvidence:
     observed_at: str
     error: str | None = None
     kind: BondEvidenceKind = BondEvidenceKind.AUTHENTICATED_ACCESS
+    # True when the failure also dropped a proxy's cached GATT table, so a
+    # retry runs on rediscovered handles rather than the same stale ones.
+    gatt_cache_cleared: bool = False
 
     @property
     def proves_bond(self) -> bool:
@@ -160,6 +163,7 @@ class BondEvidence:
             "observed_at": self.observed_at,
             "error": self.error,
             "kind": str(self.kind),
+            "gatt_cache_cleared": self.gatt_cache_cleared,
         }
 
 
@@ -297,6 +301,8 @@ async def async_verify_authenticated_access(
                 operation=operation,
                 observed_at=_now(),
                 error=str(err),
+                # Stale proxy handles fail exactly like a missing bond.
+                gatt_cache_cleared=await async_clear_proxy_gatt_cache(client, path),
             )
         # A timeout, an absent characteristic or a generic GATT error tells us
         # nothing. The OKIN CST receiver, for one, simply never answers this
