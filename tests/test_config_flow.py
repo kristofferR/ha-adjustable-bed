@@ -950,6 +950,38 @@ class TestPairingPersistence:
         client.disconnect.assert_awaited_once()
 
 
+class TestStaleProxyGattCache:
+    """Issue #660: stale proxy handles fail like a lost bond."""
+
+    @pytest.mark.parametrize("cleared", [True, False])
+    async def test_pairing_retries_once_after_clearing_the_proxy_cache(
+        self, hass: HomeAssistant, cleared: bool
+    ) -> None:
+        flow = TestPairingPersistence._new_pairing_flow(hass)
+        failed = BondEvidence(
+            status=BondVerificationStatus.AUTH_FAILED,
+            owner=BondOwner(),
+            operation="setup_pairing",
+            observed_at="now",
+            gatt_cache_cleared=cleared,
+        )
+        verified = replace(
+            failed, status=BondVerificationStatus.VERIFIED, gatt_cache_cleared=False
+        )
+        attempt = AsyncMock(side_effect=[failed, verified])
+        with (
+            patch(
+                "custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs",
+                return_value=contextlib.AsyncExitStack(),
+            ),
+            patch.object(flow, "_attempt_pairing_with_capture", new=attempt),
+        ):
+            evidence = await flow._attempt_pairing("AA:BB:CC:DD:EE:01")
+
+        assert evidence is (verified if cleared else failed)
+        assert attempt.await_count == (2 if cleared else 1)
+
+
 class TestDetectBedType:
     """Test bed type detection."""
 

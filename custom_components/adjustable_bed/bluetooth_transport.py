@@ -201,7 +201,7 @@ def async_scanner_registrations(hass: HomeAssistant) -> dict[str, dict[str, Any]
 
     Remote scanners are registered by their owning integration (ESPHome, Shelly,
     …), and that registration is the only place the owning domain and model are
-    recorded. Used purely for labelling.
+    recorded. Used for labelling and to recognise ESPHome proxies.
     """
     registrations: dict[str, dict[str, Any]] = {}
     try:
@@ -475,6 +475,38 @@ def client_source(client: Any) -> str | None:
         if isinstance(source, str) and source:
             return source
     return None
+
+
+async def async_clear_proxy_gatt_cache(client: Any, path: ConnectionPath | None) -> bool:
+    """Drop the cached GATT table of a bed reached through an ESPHome proxy.
+
+    The proxy keeps a bonded device's table in flash, Home Assistant keeps
+    another copy in memory, and neither honours ``use_services_cache=False``.
+    A bed that lays out its characteristics differently after a reboot then
+    gets reads and writes on the wrong handles, which looks exactly like a lost
+    bond (issue #660). Clearing needs the live link; the next connection
+    rediscovers. Limited to ESPHome because Home Assistant's wrapper falls back
+    to BlueZ ``RemoveDevice`` for other backends, which deletes a host bond.
+    """
+    if (
+        path is None
+        or path.transport is not TransportClass.PROXY
+        or path.source_domain != _ESPHOME_DOMAIN
+        or not getattr(client, "is_connected", False)
+    ):
+        return False
+    try:
+        cleared = bool(await client.clear_cache())
+    except Exception:  # noqa: BLE001 - best effort; the caller already has its failure
+        _LOGGER.debug("Could not clear the proxy GATT cache via %s", path.source, exc_info=True)
+        return False
+    if cleared:
+        _LOGGER.warning(
+            "Cleared the cached GATT services for this bed on %s; "
+            "the next connection rediscovers them",
+            path.display_name,
+        )
+    return cleared
 
 
 def path_from_service_info(

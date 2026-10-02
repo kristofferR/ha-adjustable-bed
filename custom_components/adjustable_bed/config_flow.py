@@ -5456,13 +5456,26 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             preferred_adapter = self._pairing_retry_source
 
         async with capture_proxy_logs(self.hass, address, preferred_adapter, retain=True):
-            return await self._attempt_pairing_with_capture(
+            evidence = await self._attempt_pairing_with_capture(
                 address,
                 request_bond=request_bond,
                 track_for_flow_cleanup=track_for_flow_cleanup,
                 device=device,
                 preferred_adapter=preferred_adapter,
             )
+            if evidence.gatt_cache_cleared:
+                # The failure may only have been the proxy's stale handles, which
+                # the verifier has just dropped. One rediscovered attempt tells a
+                # bed that reorders its GATT table apart from a real bond problem.
+                _LOGGER.info("Retrying %s once with rediscovered GATT services", address)
+                evidence = await self._attempt_pairing_with_capture(
+                    address,
+                    request_bond=request_bond,
+                    track_for_flow_cleanup=track_for_flow_cleanup,
+                    device=None,
+                    preferred_adapter=preferred_adapter,
+                )
+            return evidence
 
     async def _attempt_pairing_with_capture(
         self,

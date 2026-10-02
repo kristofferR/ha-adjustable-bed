@@ -55,6 +55,7 @@ from .bluetooth_diagnostics import connection_reachability
 from .bluetooth_transport import (
     ConnectionPath,
     TransportClass,
+    async_clear_proxy_gatt_cache,
     async_connection_paths,
     async_path_for_source,
     client_source,
@@ -1883,6 +1884,11 @@ class AdjustableBedCoordinator:
             operation="runtime_gatt_access",
             observed_at=datetime.now(UTC).isoformat(),
             error=str(err),
+            # Stale proxy handles fail exactly like a missing bond, so the
+            # retry must not reuse them (issue #660).
+            gatt_cache_cleared=await async_clear_proxy_gatt_cache(
+                self._client, self._connection_path
+            ),
         )
         # A definitive authentication failure invalidates any earlier decision
         # to skip a probe that timed out. The next paired connection should
@@ -3741,6 +3747,8 @@ class AdjustableBedCoordinator:
                     # Use max_attempts=1 here since outer loop handles retries
                     # Disable the services cache to force fresh GATT discovery for
                     # every pairing-required bed, not just the pair=True attempt.
+                    # ESPHome proxies ignore this and serve their cached table;
+                    # an authentication failure clears that cache instead.
                     # These devices expose different services/characteristics
                     # depending on bond state, so a stale cache from a previous
                     # non-paired connection would make characteristic lookups (and

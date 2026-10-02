@@ -3160,6 +3160,41 @@ class TestBondMarkerReliability:
         coordinator._mark_ble_bond_established()
         assert coordinator._ble_bond_established is True
 
+    async def test_auth_failure_clears_esphome_gatt_cache_before_disconnect(
+        self,
+        hass: HomeAssistant,
+    ):
+        """Issue #660: the retry must rediscover handles, not reuse the proxy's."""
+        coordinator = self._make_bonded_coordinator(hass)
+        calls: list[str] = []
+        client = MagicMock()
+        client.is_connected = True
+        client.clear_cache = AsyncMock(side_effect=lambda: calls.append("clear") or True)
+        coordinator._client = client
+        coordinator._connection_path = ConnectionPath(
+            source="B0:CB:D8:03:7D:9E",
+            transport=TransportClass.PROXY,
+            source_domain="esphome",
+        )
+
+        async def disconnect(*, reason: str) -> None:
+            calls.append("disconnect")
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ),
+            patch.object(coordinator, "async_disconnect", side_effect=disconnect),
+        ):
+            await coordinator._async_handle_ble_authentication_error(
+                BleakError("handle=23 error=15 description=Insufficient encryption")
+            )
+
+        assert calls == ["clear", "disconnect"]
+        assert coordinator._last_bond_evidence is not None
+        assert coordinator._last_bond_evidence.gatt_cache_cleared is True
+
 
 class TestDisconnectCommandSerialization:
     """Externally triggered disconnects must not interleave with a command.
