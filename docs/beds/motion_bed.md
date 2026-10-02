@@ -12,11 +12,11 @@ Existing Solace and other app profiles remain separate.
 
 Select **Motion Bed app** in setup and enter the original Bluetooth name used
 by that app, preserving case. Shared FFE1 transport does not select this app.
-When an advertised name matches both the existing Solace detector and the
-Motion Bed app's exact case-sensitive whitelist, setup asks which app profile
-to use. Neither the discovery chooser nor manual Auto-detect silently chooses
-Solace for that overlap. Explicit Solace and Motion Bed choices retain their
-separate factories; legacy names outside the Motion whitelist keep their route.
+Hardware-confirmed Solace name routes keep Solace preselected, with Motion Bed
+available as an explicit alternative. Other accepted Motion Bed names require
+an app choice when no established detector claims the device. Explicit Solace
+and Motion Bed choices retain their separate factories; names outside the
+Motion whitelist keep their established route.
 Other accepted names, including TL-Q, QMS-430 and S5-Y, also offer Motion Bed
 in the explicit app chooser. A shared FFE0 advertisement alone does not select
 Motion Bed. Name-only candidates require an explicit choice, while an

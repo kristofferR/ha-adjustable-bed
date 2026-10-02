@@ -633,7 +633,7 @@ class TestDetectBedTypeByNamePattern:
 
     def test_detect_svane_by_name(self):
         """Test Svane detection by 'Svane Bed' name pattern."""
-        service_info = _make_service_info(name="Svane Bed")
+        service_info = _make_service_info(name="Svane Bed Living Room")
         assert detect_bed_type(service_info) == BED_TYPE_SVANE
 
     def test_detect_jensen_linon_by_name(self):

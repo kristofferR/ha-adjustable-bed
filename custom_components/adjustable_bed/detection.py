@@ -186,6 +186,7 @@ from .const import (
     SUTA_SERVICE_UUID,
     SUTA_UNSUPPORTED_NAME_PREFIXES,
     SVANE_HEAD_SERVICE_UUID,
+    SVANE_NAME_PATTERNS,
     TIMOTION_AHF_NAME_PATTERNS,
     TIMOTION_AHF_SERVICE_UUID,
     VARIANT_AUTO,
@@ -1363,7 +1364,11 @@ def _detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detect
         )
 
     # Check for Svane / Jensen LinOn by name pattern
-    if is_svane_discovery_name(service_info.name) or "jensen bed" in device_name:
+    # The app's exact scan names are a subset; keep the established substring
+    # match so renamed beds (e.g. "Svane Bed 2") still detect as before.
+    if is_svane_discovery_name(service_info.name) or any(
+        pattern in device_name for pattern in SVANE_NAME_PATTERNS
+    ):
         signals.append("name:svane")
         _LOGGER.info(
             "Detected Svane bed at %s (name: %s) by name pattern",
@@ -1966,20 +1971,13 @@ def _detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detect
             service_info.address,
             service_info.name,
         )
+        # Hardware-confirmed Solace names keep their confidence; Motion Bed is
+        # offered as an alternative rather than forcing a chooser.
         return DetectionResult(
             bed_type=BED_TYPE_SOLACE,
-            confidence=0.6 if motion_overlap else 0.9,
+            confidence=0.9,
             signals=signals,
             ambiguous_types=[BED_TYPE_MOTION_BED] if motion_overlap else None,
-        )
-
-    if motion_name and SOLACE_SERVICE_UUID.lower() not in service_uuids:
-        # An accepted app name is a candidate, not proof of its BLE transport.
-        # The setup chooser still requires an explicit Motion Bed selection.
-        return DetectionResult(
-            bed_type=BED_TYPE_MOTION_BED,
-            confidence=0.6,
-            signals=[*signals, "name:motion_bed"],
         )
 
     # Check for Solace/Octo/MotoSleep disambiguation (FFE0 UUID)
@@ -2429,6 +2427,16 @@ def _detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detect
             confidence=0.7,  # Lower confidence as fallback
             signals=signals,
             manufacturer_id=MANUFACTURER_ID_OKIN,
+        )
+
+    if motion_name and SOLACE_SERVICE_UUID.lower() not in service_uuids:
+        # The app's case-sensitive contains match also hits short interior
+        # markers (TL-A, S3-2), so it only applies when no other route claimed
+        # the device. The setup chooser still requires an explicit selection.
+        return DetectionResult(
+            bed_type=BED_TYPE_MOTION_BED,
+            confidence=0.6,
+            signals=[*signals, "name:motion_bed"],
         )
 
     _LOGGER.debug("Device %s does not match any known bed types", service_info.address)

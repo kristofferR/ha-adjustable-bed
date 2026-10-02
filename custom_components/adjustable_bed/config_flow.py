@@ -385,6 +385,8 @@ BED_TYPE_AUTO_DETECT = "auto_detect"
 # such as OKIN receivers) — we keep "Auto-detect" selected and ask the user to
 # choose, rather than silently configuring a guessed protocol.
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
+# Explicit app candidates offered beside a confident match are hints, not ambiguity.
+_EXPLICIT_APP_HINTS = frozenset({BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED})
 
 
 def _is_valid_rmcontrol_variant(product: object, variant: str) -> bool:
@@ -805,14 +807,14 @@ def _default_motor_count(
 def _confident_auto_detect(result: DetectionResult) -> str | None:
     """Return the detected bed type only for a high-confidence, unambiguous match.
 
-    An explicit app hint does not defeat a private receiver's high confidence.
+    An explicit app hint does not defeat a confident receiver or name route.
     Shared app transports stay below the threshold and require a choice.
     """
     if (
         result.bed_type is not None
         and result.confidence >= _AUTO_DETECT_MIN_CONFIDENCE
         and not any(
-            candidate != BED_TYPE_STARCODE_ABM5_4 for candidate in (result.ambiguous_types or ())
+            candidate not in _EXPLICIT_APP_HINTS for candidate in (result.ambiguous_types or ())
         )
     ):
         return result.bed_type
