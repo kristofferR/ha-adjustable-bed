@@ -968,7 +968,8 @@
       "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 entries with different Bluetooth addresses.",
       "fsm_relax_unpair_first": "Unpair the beds first, configure each physical FSM Relax profile, then combine them again.",
       "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each).",
-      "svane_unpair_first": "Unpair the beds and configure each side separately before changing a Svane Remote profile."
+      "svane_unpair_first": "Unpair the beds and configure each side separately before changing a Svane Remote profile.",
+      "simmons_unpair_first": "Unpair the beds and configure each side separately before changing the SIMMONS bed type or protocol."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond…",
@@ -2014,60 +2015,6 @@
       "starcode_abm5_4_reset": {
         "name": "Reset stored positions"
       },
-      "coolbase_star": {
-        "name": "Star button"
-      },
-      "coolbase_head_massage": {
-        "name": "Head massage"
-      },
-      "coolbase_massage_mode": {
-        "name": "Massage mode"
-      },
-      "coolbase_foot_massage": {
-        "name": "Foot massage"
-      },
-      "coolbase_right_fan": {
-        "name": "Right fan"
-      },
-      "coolbase_fan_sync": {
-        "name": "Fan sync"
-      },
-      "coolbase_left_fan": {
-        "name": "Left fan"
-      },
-      "starcode_save_lounge": {
-        "name": "Save Lounge"
-      },
-      "starcode_save_zero_g": {
-        "name": "Save Zero Gravity"
-      },
-      "starcode_save_tv": {
-        "name": "Save Ascent"
-      },
-      "starcode_reset": {
-        "name": "Reset saved positions"
-      },
-      "starcode_light_cycle": {
-        "name": "Cycle light color"
-      },
-      "starcode_light_mode": {
-        "name": "Light mode 1"
-      },
-      "starcode_query": {
-        "name": "Refresh massage and RGB"
-      },
-      "preset_memory_7": {
-        "name": "Memory 7"
-      },
-      "program_memory_7": {
-        "name": "Save Memory 7"
-      },
-      "preset_memory_8": {
-        "name": "Memory 8"
-      },
-      "program_memory_8": {
-        "name": "Save Memory 8"
-      },
       "program_memory_7_left": {
         "name": "Left: Save Memory 7"
       },
@@ -2103,6 +2050,75 @@
       },
       "program_memory_8_left": {
         "name": "Left: Save Memory 8"
+      },
+      "preset_memory_7": {
+        "name": "Memory 7"
+      },
+      "program_memory_7": {
+        "name": "Save Memory 7"
+      },
+      "preset_memory_8": {
+        "name": "Memory 8"
+      },
+      "program_memory_8": {
+        "name": "Save Memory 8"
+      },
+      "coolbase_left_fan": {
+        "name": "Left fan"
+      },
+      "coolbase_right_fan": {
+        "name": "Right fan"
+      },
+      "coolbase_fan_sync": {
+        "name": "Fan sync"
+      },
+      "coolbase_head_massage": {
+        "name": "Head massage"
+      },
+      "coolbase_foot_massage": {
+        "name": "Foot massage"
+      },
+      "coolbase_massage_mode": {
+        "name": "Massage mode"
+      },
+      "coolbase_star": {
+        "name": "Star button"
+      },
+      "starcode_save_tv": {
+        "name": "Save Ascent"
+      },
+      "starcode_save_zero_g": {
+        "name": "Save Zero Gravity"
+      },
+      "starcode_save_lounge": {
+        "name": "Save Lounge"
+      },
+      "starcode_reset": {
+        "name": "Reset saved positions"
+      },
+      "starcode_light_mode": {
+        "name": "Light mode 1"
+      },
+      "starcode_light_cycle": {
+        "name": "Cycle light color"
+      },
+      "starcode_query": {
+        "name": "Refresh massage and RGB"
+      },
+      "simmons_inclined_left": {
+        "name": "Inclined left"
+      },
+      "simmons_inclined_middle": {
+        "name": "Inclined middle"
+      },
+      "simmons_inclined_right": {
+        "name": "Inclined right"
+      },
+      "simmons_sync_clock": {
+        "name": "Sync clock"
+      },
+      "simmons_refresh_alarms": {
+        "name": "Refresh alarms"
       }
     },
     "cover": {
@@ -4718,6 +4734,12 @@
       },
       "limoss_remote_motor_1_position_raw": {
         "name": "Motor 1 Raw Position"
+      },
+      "simmons_alarm_1": {
+        "name": "Alarm 1"
+      },
+      "simmons_alarm_2": {
+        "name": "Alarm 2"
       }
     },
     "light": {
@@ -5731,6 +5753,40 @@
     }
   },
   "services": {
+    "svane_hold_control": {
+      "name": "Hold Svane Remote control",
+      "description": "Hold selected axes or adjust the lamp. Movement releases use the selected app profile.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control"
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Bounded host duration in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "svane_release_axis": {
+      "name": "Release Svane Remote axis",
+      "description": "Signal the active writer to release one axis while the other continues.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "motor": {
+          "name": "Axis"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
     "serenity_hold_control": {
       "name": "Hold Serenity control",
       "description": "Hold one supported Serenity app action, then release it. Save actions can change stored positions.",
@@ -6391,54 +6447,6 @@
         }
       }
     },
-    "starcode_move_lifts": {
-      "name": "Control AdjustableM5X5 lifts",
-      "description": "Control the independently addressed accessories configured on one main bed. Flat moves the main before the delayed lift action.",
-      "fields": {
-        "device_id": {
-          "name": "Main bed",
-          "description": "An AdjustableM5X5 main entry with selected lift entries."
-        },
-        "action": {
-          "name": "Action",
-          "description": "Up, down, composite flat or STOP."
-        }
-      }
-    },
-    "svane_hold_control": {
-      "name": "Hold Svane Remote control",
-      "description": "Hold selected axes or adjust the lamp. Movement releases use the selected app profile.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
-        },
-        "control": {
-          "name": "Control"
-        },
-        "duration": {
-          "name": "Duration",
-          "description": "Bounded host duration in seconds, from 0.1 to 60."
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
-    },
-    "svane_release_axis": {
-      "name": "Release Svane Remote axis",
-      "description": "Signal the active writer to release one axis while the other continues.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
-        },
-        "motor": {
-          "name": "Axis"
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
-    },
     "limoss_remote_features": {
       "name": "Configure Limoss Remote Controls",
       "description": "Set local layout selections. Disabling a selected feature sends its ten OFF commands before saving.",
@@ -6548,6 +6556,75 @@
           "description": "Hold time in seconds, 0.1–60."
         }
       }
+    },
+    "starcode_move_lifts": {
+      "name": "Control AdjustableM5X5 lifts",
+      "description": "Control the independently addressed accessories configured on one main bed. Flat moves the main before the delayed lift action.",
+      "fields": {
+        "device_id": {
+          "name": "Main bed",
+          "description": "An AdjustableM5X5 main entry with selected lift entries."
+        },
+        "action": {
+          "name": "Action",
+          "description": "Up, down, composite flat or STOP."
+        }
+      }
+    },
+    "simmons_hold_control": {
+      "name": "Hold SIMMONS control",
+      "description": "Hold one SIMMONS app control, repeating it every 300 ms, then send its release stops. The app's help says holding Custom Mode for 5 seconds saves the current position; the save on the bed is unverified.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "Zero-gravity, TV and anti-snore exist only on a regular bed; the inclined controls only on an inclined bed."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "simmons_set_alarm": {
+      "name": "Set SIMMONS alarm",
+      "description": "Program or turn off alarm 1 or 2 of a SIMMONS app bed. The two enabled alarms cannot share a time or a mode.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "slot": {
+          "name": "Alarm"
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Turn off to disable this alarm."
+        },
+        "time": {
+          "name": "Local alarm time",
+          "description": "Minute precision, in the Home Assistant time zone."
+        },
+        "weekdays": {
+          "name": "Repeat on",
+          "description": "Leave empty for the next occurrence of the selected time."
+        },
+        "mode": {
+          "name": "Mode",
+          "description": "Required when enabling. Anti-snore is available on a regular bed only."
+        },
+        "confirm_custom_mode": {
+          "name": "Confirm Custom Mode",
+          "description": "Required for Custom Mode. Check the saved back/foot angles first; extreme custom angles can cause injury."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
     }
   },
   "exceptions": {
@@ -6604,6 +6681,9 @@
     },
     "bundle_needs_side_for_paired": {
       "message": "{device_name} is a paired bed; pick one side's device to generate a support bundle."
+    },
+    "simmons_alarm_not_reported": {
+      "message": "The bed did not report both alarm records in this connection, so nothing was written. Try again, or press Refresh Alarms first."
     }
   },
   "issues": {

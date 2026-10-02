@@ -15,6 +15,7 @@ Brands using DewertOkin/ORE actuators (79 apps analyzed):
 **Simmons:**
 - SIMMONS (US)
 - Simmons Korea (시몬스)
+- Beds controlled with the `com.okin.simmons` app use the explicit [SIMMONS app profile](simmons.md), not this protocol
 
 **Customatic:**
 - Customatic Demo; Clarity, Remedy and Jerome's C use explicit [Customatic app profiles](customatic.md)
@@ -86,7 +87,7 @@ Brands using DewertOkin/ORE actuators (79 apps analyzed):
 | MFRM Sleepy's Elite | `com.okin.bedding.sleepy` | Multi-protocol |
 | Resident | `com.okin.resident.release` | Flutter |
 | Rize II | `com.okin.bedding.rizeii` | OKIN UUID |
-| Simmons | `com.okin.simmons` | Flutter |
+| Simmons | `com.okin.simmons` | Flutter; own frames, see [SIMMONS app](simmons.md) |
 | Glideaway | `com.ore.bedding.glideawaymontion` | FFE5 |
 | Symphony | `com.ore.bedding.symphony` | FFE5 + Nordic |
 | INNOVA/SFM | `com.ore.sfm` | FFE5 |

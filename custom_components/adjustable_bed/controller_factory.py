@@ -69,6 +69,7 @@ from .const import (
     BED_TYPE_SCOTT_LIVING,
     BED_TYPE_SERENITY,
     BED_TYPE_SERTA,
+    BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPSTAR,
@@ -466,6 +467,22 @@ async def create_controller(
         ValueError: If bed_type is unknown
         ConnectionError: If auto-detection is needed but client is not connected
     """
+    if bed_type == BED_TYPE_SIMMONS:
+        # The app picks the packet format from the Bluetooth name unless the
+        # stored variant fixes it, so pass both.
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.simmons", __package__
+        )
+        from .beds.simmons import SimmonsController
+
+        # Offline capability controllers receive the display name, which the
+        # app's name rule must never read; they use the stored BLE name.
+        return SimmonsController(
+            coordinator,
+            protocol_variant=protocol_variant,
+            device_name=device_name if client is not None else None,
+        )
+
     if bed_type == BED_TYPE_SOLACE:
         if protocol_variant == SOLACE_VARIANT_WOOSA:
             await coordinator.hass.async_add_import_executor_job(
