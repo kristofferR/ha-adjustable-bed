@@ -2486,9 +2486,22 @@ async def test_combine_dismissal_storage_migrates_single_address_set(
     }
 
 
-@pytest.mark.parametrize("cleared", [True, False])
+@pytest.mark.parametrize(
+    ("cleared", "retry_status", "pairs", "repaired"),
+    [
+        (False, BondVerificationStatus.VERIFIED, [True], False),
+        (True, BondVerificationStatus.VERIFIED, [True, False], True),
+        # Fresh handles that still fail prove the bond is gone: pair again.
+        (True, BondVerificationStatus.AUTH_FAILED, [True, False, True], False),
+        (True, BondVerificationStatus.INCONCLUSIVE, [True, False], False),
+    ],
+)
 async def test_repair_verifies_without_pairing_after_clearing_a_stale_proxy_cache(
-    hass: HomeAssistant, cleared: bool
+    hass: HomeAssistant,
+    cleared: bool,
+    retry_status: BondVerificationStatus,
+    pairs: list[bool],
+    repaired: bool,
 ) -> None:
     """Issue #660: check the existing bond on the cleared proxy's fresh handles first."""
     flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, None)
@@ -2512,16 +2525,19 @@ async def test_repair_verifies_without_pairing_after_clearing_a_stale_proxy_cach
         patch("custom_components.adjustable_bed.repairs.async_path_for_source", return_value=None),
         patch(
             "custom_components.adjustable_bed.repairs.async_verify_authenticated_access",
-            new=AsyncMock(side_effect=[failed, verified]),
+            new=AsyncMock(
+                side_effect=[failed, replace(verified, status=retry_status), failed]
+            ),
         ),
     ):
-        assert await flow._async_try_pair() is cleared
+        assert await flow._async_try_pair() is repaired
 
-    assert ["pair" in c.kwargs for c in connect.await_args_list] == (
-        [True, False] if cleared else [True]
+    # The final pair reuses the live link (pinned source), so it pairs via client.pair().
+    assert ["pair" in c.kwargs for c in connect.await_args_list] == [True] + [False] * (
+        len(pairs) - 1
     )
-    assert [c.args[0] for c in find_device.call_args_list] == (
-        [None, "proxy"] if cleared else [None]
+    assert [c.args[0] for c in find_device.call_args_list] == [None] + ["proxy"] * (
+        len(pairs) - 1
     )
 
 

@@ -4488,9 +4488,6 @@ class AdjustableBedCoordinator:
                 self._schedule_position_hydration()
 
                 await self.async_clear_obsolete_pairing_state()
-                # A usable connection closes the stale-cache episode, even for
-                # beds whose bond probe is only ever inconclusive.
-                self._stale_gatt_retry_sources.clear()
 
                 return True
 
@@ -6021,6 +6018,10 @@ class AdjustableBedCoordinator:
                         )
                     else:
                         result = await operation_task
+                    # A command that worked closes the stale-cache episode. Startup
+                    # alone does not: some beds start without any authenticated
+                    # access, and a missing bond must still reach the repair.
+                    self._stale_gatt_retry_sources.clear()
                 finally:
                     self._last_protocol_operation_end = datetime.now(UTC)
                     self._active_operation_name = None

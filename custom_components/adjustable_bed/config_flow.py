@@ -5475,13 +5475,25 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 saved_sources = (self._pairing_verify_source, self._pairing_retry_source)
                 self._pairing_verify_source = cleared_source
                 try:
-                    evidence = await self._attempt_pairing_with_capture(
-                        address,
-                        request_bond=False,
-                        track_for_flow_cleanup=track_for_flow_cleanup,
-                        device=None,
-                        preferred_adapter=cleared_source,
-                    )
+                    try:
+                        evidence = await self._attempt_pairing_with_capture(
+                            address,
+                            request_bond=False,
+                            track_for_flow_cleanup=track_for_flow_cleanup,
+                            device=None,
+                            preferred_adapter=cleared_source,
+                        )
+                    except BondRouteMismatchError as err:
+                        # HA reranks routes on connect, so one reroute away from
+                        # the cleared proxy earns a second, final verification.
+                        _LOGGER.info("Stale-cache verification for %s rerouted: %s", address, err)
+                        evidence = await self._attempt_pairing_with_capture(
+                            address,
+                            request_bond=False,
+                            track_for_flow_cleanup=track_for_flow_cleanup,
+                            device=None,
+                            preferred_adapter=cleared_source,
+                        )
                     # Only a definite failure justifies pairing over a bond that
                     # may still be intact; an inconclusive read proves nothing.
                     if (

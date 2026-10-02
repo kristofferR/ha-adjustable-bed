@@ -862,6 +862,29 @@ class TestCoordinatorConnection:
         else:
             disconnect_locked.assert_awaited_once()
 
+    async def test_only_a_working_command_closes_the_stale_cache_episode(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ) -> None:
+        """Issue #660: startup alone does not prove the link authenticates."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        coordinator._stale_gatt_retry_sources.add("proxy-a")
+
+        async def failing(_controller):
+            raise BleakError("not connected")
+
+        with pytest.raises(BleakError):
+            await coordinator.async_execute_controller_command(failing, cancel_running=False)
+        assert coordinator._stale_gatt_retry_sources == {"proxy-a"}
+
+        await coordinator.async_execute_controller_command(AsyncMock(), cancel_running=False)
+        assert coordinator._stale_gatt_retry_sources == set()
+
+        await coordinator.async_disconnect()
+
     async def test_runtime_auth_failure_keeps_a_one_connection_link(
         self,
         hass: HomeAssistant,

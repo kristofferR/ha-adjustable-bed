@@ -1014,6 +1014,37 @@ class TestStaleProxyGattCache:
         assert flow._pairing_retry_source is None
 
 
+class TestStaleProxyRerouteRetry:
+    """Issue #660: one reroute away from the cleared proxy gets a second check."""
+
+    async def test_rerouted_verification_is_retried_once(self, hass: HomeAssistant) -> None:
+        flow = TestPairingPersistence._new_pairing_flow(hass)
+        failed = BondEvidence(
+            status=BondVerificationStatus.AUTH_FAILED,
+            owner=BondOwner(transport=TransportClass.PROXY, source="proxy-a"),
+            operation="setup_pairing",
+            observed_at="now",
+            gatt_cache_cleared=True,
+        )
+        verified = replace(
+            failed, status=BondVerificationStatus.VERIFIED, gatt_cache_cleared=False
+        )
+        attempt = AsyncMock(
+            side_effect=[failed, BondRouteMismatchError("proxy-b"), verified]
+        )
+        with (
+            patch(
+                "custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs",
+                return_value=contextlib.AsyncExitStack(),
+            ),
+            patch.object(flow, "_attempt_pairing_with_capture", new=attempt),
+        ):
+            evidence = await flow._attempt_pairing("AA:BB:CC:DD:EE:01")
+
+        assert evidence is verified
+        assert [c.kwargs["request_bond"] for c in attempt.await_args_list] == [True, False, False]
+
+
 class TestDetectBedType:
     """Test bed type detection."""
 
