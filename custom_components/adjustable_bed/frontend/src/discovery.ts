@@ -156,7 +156,7 @@ export function bedEntitiesForDevice(
           motor(`${split.key.slice(0, -9)}_${split.side}`).position = id;
         else if (key.startsWith("massage_") && key.endsWith("_intensity"))
           bed.massage.numbers.push(id);
-        else if (key === "light_level" || key === "starcode_brightness" || key === "vmatbasic_floor_level" || key === "starcode_abm5_4_light_level") bed.lights.level = id;
+        else if (key === "light_level" || key === "svane_intensity" || key === "starcode_brightness" || key === "vmatbasic_floor_level" || key === "starcode_abm5_4_light_level") bed.lights.level = id;
         else if (key === "vmatbasic_floor_minutes") {
           bed.lights.timerMinutes = id;
           bed.lights.timerAppliesImmediately = true;

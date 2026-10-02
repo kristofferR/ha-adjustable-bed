@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ..command_scheduler import current_command_context
 from ..svane_state import SvaneProfile, SvaneSession, integer
 from .base import (
     BedController,
@@ -253,6 +254,7 @@ class SvaneController(BedController):
             {
                 "svane_intensity": self.session.intensity,
                 "svane_light_intent": self.session.light_on,
+                "under_bed_lights_on": self.session.light_on,
                 "svane_profile": self.profile,
             }
         )
@@ -621,11 +623,29 @@ class SvaneController(BedController):
             self._started.add((OLD, OLD_CHAR))
         await self._release(tuple(self._started))
 
+    def validate_timed_movement(self, motor: str, direction: str, duration_ms: int) -> None:
+        axis = "head" if motor == "back" else "feet"
+        self.validate_svane_hold_control(f"{axis}_{direction}", duration_ms)
+
+    def _motor_hold_duration_ms(self) -> int:
+        context = current_command_context()
+        if (
+            context is not None
+            and context.active
+            and context.scheduler_token is self._coordinator._command_scheduler.token
+            and context.pulse_count is not None
+            and context.pulse_delay_ms is not None
+        ):
+            # The service keeps the exact elapsed ceiling; its repeat plan
+            # supplies enough hold time without changing the native cadence.
+            return max(1, (context.pulse_count - 1) * context.pulse_delay_ms)
+        return 1000
+
     async def move_head_up(self) -> None:
-        await self.hold_control("head_up", 1000)
+        await self.hold_control("head_up", self._motor_hold_duration_ms())
 
     async def move_head_down(self) -> None:
-        await self.hold_control("head_down", 1000)
+        await self.hold_control("head_down", self._motor_hold_duration_ms())
 
     async def move_head_stop(self) -> None:
         await self.stop_all()
@@ -640,10 +660,10 @@ class SvaneController(BedController):
         await self.move_head_stop()
 
     async def move_legs_up(self) -> None:
-        await self.hold_control("feet_up", 1000)
+        await self.hold_control("feet_up", self._motor_hold_duration_ms())
 
     async def move_legs_down(self) -> None:
-        await self.hold_control("feet_down", 1000)
+        await self.hold_control("feet_down", self._motor_hold_duration_ms())
 
     async def move_legs_stop(self) -> None:
         await self.stop_all()
@@ -748,6 +768,7 @@ class SvaneController(BedController):
         if level % 5:
             raise ValueError("Svane lamp intensity uses steps of five")
         self.session.intensity = level
+        self.session.light_on = True
         self._remember()
         await self._light(level)
 
