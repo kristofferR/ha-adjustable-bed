@@ -410,6 +410,7 @@ CONF_FSM_RELAX_MASSAGE: Final = "fsm_relax_massage"
 CONF_FSM_RELAX_REVERSALS: Final = tuple(f"fsm_relax_reverse_{i}" for i in range(1, 5))
 CONF_FSM_RELAX_MEMORY_NAMES: Final = "fsm_relax_memory_names"
 BED_TYPE_SERENITY: Final = "serenity"  # Explicit Jordan's Serenity app profile
+BED_TYPE_SIMMONS: Final = "simmons"  # Explicit SIMMONS app profile (com.okin.simmons)
 BED_TYPE_CUSTOMATIC_CLARITY: Final = "customatic_clarity"
 BED_TYPE_CUSTOMATIC_JEROMES: Final = "customatic_jeromes"
 BED_TYPE_CUSTOMATIC_REMEDY: Final = "customatic_remedy"
@@ -498,6 +499,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_NECTAR,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_SERENITY,
+    BED_TYPE_SIMMONS,
     # Explicit Customatic app profiles
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
@@ -617,6 +619,9 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_LOGICDATA,
         BED_TYPE_VIBRADORM_APP,
         BED_TYPE_VMATBASIC,
+        # Layout and protocol come from the stored variant; the BLE name only
+        # chooses a protocol when the variant leaves it on auto.
+        BED_TYPE_SIMMONS,
         # The constructor refuses offline UART catalogs whose nonpositive C
         # can gain controls from live manufacturer classification.
         BED_TYPE_STARCODE_ABM5_4,
@@ -1365,6 +1370,24 @@ REMACRO_READ_CHAR_UUID: Final = "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
 
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
+
+# SIMMONS app: the regular/inclined bed type is independent of the packet
+# format. "auto" applies the app's Bluetooth-name rule to a regular bed.
+SIMMONS_VARIANT_OKIN: Final = "simmons_okin"
+SIMMONS_VARIANT_SMARTBED: Final = "simmons_smartbed"
+SIMMONS_VARIANT_INCLINED: Final = "simmons_inclined"
+SIMMONS_VARIANT_INCLINED_OKIN: Final = "simmons_inclined_okin"
+SIMMONS_VARIANT_INCLINED_SMARTBED: Final = "simmons_inclined_smartbed"
+# Variants whose packet format follows the app's Bluetooth-name rule.
+SIMMONS_NAME_RULE_VARIANTS: Final = frozenset({VARIANT_AUTO, SIMMONS_VARIANT_INCLINED})
+SIMMONS_VARIANTS: Final = {
+    VARIANT_AUTO: "Regular bed, protocol from the Bluetooth name",
+    SIMMONS_VARIANT_OKIN: "Regular bed, OKIN-name protocol",
+    SIMMONS_VARIANT_SMARTBED: "Regular bed, SmartBed-name protocol",
+    SIMMONS_VARIANT_INCLINED: "Inclined bed, protocol from the Bluetooth name",
+    SIMMONS_VARIANT_INCLINED_OKIN: "Inclined bed, OKIN-name protocol",
+    SIMMONS_VARIANT_INCLINED_SMARTBED: "Inclined bed, SmartBed-name protocol",
+}
 SOLACE_VARIANT_WOOSA: Final = "woosa"
 SOLACE_VARIANTS: Final = {
     VARIANT_AUTO: "Auto (conservative device-name profile)",
@@ -2336,6 +2359,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     RONDURE_VARIANT_BOTH,
     RONDURE_VARIANT_SIDE_A,
     RONDURE_VARIANT_SIDE_B,
+    *(_variant for _variant in SIMMONS_VARIANTS if _variant != VARIANT_AUTO),
 ]
 
 # Protocols whose setup requests OS-level BLE pairing. This policy alone does
@@ -2512,6 +2536,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_FURNIMOVE,
         BED_TYPE_FSM_RELAX,
         BED_TYPE_SERENITY,
+        BED_TYPE_SIMMONS,
         BED_TYPE_CUSTOMATIC_CLARITY,
         BED_TYPE_CUSTOMATIC_JEROMES,
         BED_TYPE_CUSTOMATIC_REMEDY,
@@ -2720,6 +2745,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_CUSTOMATIC_REMEDY: (8, 120),
     BED_TYPE_FSM_RELAX: (10, 60),
     BED_TYPE_SERENITY: (10, 100),  # APK refresh cadence; bounded HA movement duration
+    BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
     # Malouf New OKIN (Nordic): 100ms delay → 10 repeats = 1.0s total
     # Source: com.malouf.bedbase / com.lucid.bedbase ANALYSIS.md
     BED_TYPE_MALOUF_NEW_OKIN: (10, 100),

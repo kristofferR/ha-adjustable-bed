@@ -56,6 +56,7 @@ if TYPE_CHECKING:
     from .sbi import SBIController as SBIController
     from .scott_living import ScottLivingController as ScottLivingController
     from .serenity import SerenityController as SerenityController
+    from .simmons import SimmonsController as SimmonsController
     from .sleep_number import SleepNumberController as SleepNumberController
     from .sleep_number_mcr import SleepNumberMcrController as SleepNumberMcrController
     from .sleepstar import SleepStarController as SleepStarController
@@ -78,6 +79,7 @@ _EXPORT_MODULES = {
     "FurniMoveController": "furnimove",
     "FsmRelaxController": "fsm_relax",
     "SerenityController": "serenity",
+    "SimmonsController": "simmons",
     "CustomaticController": "customatic",
     "CoolBaseController": "coolbase",
     "DewertOkinRfGatewayController": "dewertokin_rf_gateway",
