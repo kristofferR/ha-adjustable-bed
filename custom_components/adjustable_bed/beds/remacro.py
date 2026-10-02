@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from bleak.exc import BleakError
 
-from ..const import REMACRO_READ_CHAR_UUID, REMACRO_WRITE_CHAR_UUID
+from ..const import DOMAIN, REMACRO_READ_CHAR_UUID, REMACRO_WRITE_CHAR_UUID
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -53,6 +53,7 @@ from .remacro_protocol import (
     RemacroSession,
     SideCodes,
     SynDataSerial,
+    session_for,
 )
 
 if TYPE_CHECKING:
@@ -555,6 +556,14 @@ class RemacroController(BedController):
         """
         if not self._model.screen.split or option not in ("left", "right"):
             raise ValueError(f"Unsupported control side: {option}")
+        # The entity may hold an older controller; always write the bed's live
+        # session, the one every new controller for this address reads.
+        sessions = self._coordinator.hass.data.get(DOMAIN, {}).get("remacro_sessions")
+        if isinstance(sessions, dict):
+            self._session = session_for(
+                sessions, self._coordinator.address, self._app, self._model.model_id
+            )
+            self._serial = self._session.serial
         self._session.side = option
         self.forward_controller_state_update(SIDE_STATE_KEY, option)
 

@@ -131,8 +131,10 @@ reconnects. In the app only the counter is static; the rest are screen fields th
 reset when the screen reopens. Home Assistant has no app screen and rebuilds its
 controller after every command when Disconnect After Command is on, so resetting them
 would restart the massage cycle, lose the preset re-press STOP, save an old LED level
-or move the other side. This is a deliberate deviation. The state resets when the
-entry reloads or Home Assistant restarts, and when the app profile or model changes.
+or move the other side. This is a deliberate deviation. The state is kept per bed: it
+carries over when a pair absorbs a single bed or unpair restores one, and resets when
+the last entry for that bed unloads, Home Assistant restarts, or the app profile or
+model changes.
 
 ## Presets, memory and stop
 

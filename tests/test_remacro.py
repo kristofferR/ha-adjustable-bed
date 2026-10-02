@@ -1429,3 +1429,74 @@ async def test_pair_setup_outcome_follows_its_sides(
             mock_establish_connection.assert_not_awaited()
         if expected_state is ConfigEntryState.LOADED:
             await hass.config_entries.async_unload(entry.entry_id)
+
+
+async def test_absorbed_split_side_keeps_its_session_across_reconnects(
+    hass: HomeAssistant,
+    mock_coordinator_connected,
+    mock_bleak_client: MagicMock,
+    enable_custom_integrations,
+) -> None:
+    """Absorbing loaded singles must not drop the session the pair now uses."""
+    from custom_components.adjustable_bed.const import CONF_PAIR_CHILDREN
+    from custom_components.adjustable_bed.pairing import KEY_ABSORBED_ENTRY_ID
+
+    left, right = "AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72"
+    adverts = {
+        left: MagicMock(manufacturer_data={51: b""}),
+        right: MagicMock(manufacturer_data={51: b""}),
+    }
+
+    async def instant_pause(self, seconds: float, cancel_event: asyncio.Event) -> bool:
+        return cancel_event.is_set()
+
+    async def instant_sleep(self, seconds: float) -> None:
+        return None
+
+    with (
+        patch(_HISTORY, side_effect=lambda _hass, address, connectable: adverts[address]),
+        patch.object(RemacroController, "_pause", instant_pause),
+        patch.object(RemacroController, "_sleep", instant_sleep),
+    ):
+        originals = {}
+        for address in (left, right):
+            single = _remacro_entry(hass, address)
+            assert await hass.config_entries.async_setup(single.entry_id)
+            await hass.async_block_till_done()
+            originals[address] = single
+        entry, _children = _remacro_pair(hass, 51, 51)
+        children = [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]]
+        for child in children:
+            child[KEY_ABSORBED_ENTRY_ID] = originals[child[CONF_ADDRESS]].entry_id
+        hass.config_entries.async_update_entry(
+            entry, data={**entry.data, CONF_PAIR_CHILDREN: children}
+        )
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        assert all(
+            hass.config_entries.async_get_entry(o.entry_id) is None for o in originals.values()
+        )
+
+        registry = er.async_get(hass)
+        side = registry.async_get_entity_id(
+            "select", DOMAIN, f"{left}_controller_select_remacro_control_side"
+        )
+        cover = registry.async_get_entity_id("cover", DOMAIN, f"{left}_back")
+        assert side is not None and cover is not None
+        await hass.services.async_call(
+            "select", "select_option", {"entity_id": side, "option": "right"}, blocking=True
+        )
+        child = hass.data[DOMAIN][entry.entry_id].children["left"]
+        await child.async_disconnect()
+        assert not child.is_connected
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await hass.services.async_call("cover", "open_cover", {"entity_id": cover}, blocking=True)
+        await hass.async_block_till_done()
+        codes = [
+            bytes(call.args[1])[2:4].hex()
+            for call in mock_bleak_client.write_gatt_char.call_args_list
+            if call.args[0] == REMACRO_WRITE_CHAR_UUID
+        ]
+        # Right head up 0x6404 and its STOP 0x6403, not the left 0x6401/0x6400.
+        assert codes == ["0464", "0364"]
+        await hass.config_entries.async_unload(entry.entry_id)
