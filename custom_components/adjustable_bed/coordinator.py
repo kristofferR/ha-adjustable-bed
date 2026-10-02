@@ -4575,6 +4575,12 @@ class AdjustableBedCoordinator:
             _LOGGER.debug("Skipping auto-reconnect: already connected or connecting")
             return
 
+        # A STOP sent while no command ran leaves the shared cancel event set.
+        # With no command holding the lock there is nothing left to cancel, so it
+        # must not abort this reconnect's connect-time initialization.
+        if not self._command_lock.locked():
+            self._cancel_command.clear()
+
         _LOGGER.info("Attempting automatic reconnection to %s", self._address)
         try:
             connected = await self.async_connect()

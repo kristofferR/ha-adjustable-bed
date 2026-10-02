@@ -1047,7 +1047,9 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     return result
 
 
-def _detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> DetectionResult:
+def _detect_bed_type_detailed(
+    service_info: BluetoothServiceInfoBleak, *, _vmatbasic_checked: bool = False
+) -> DetectionResult:
     """Detect bed type from service info with detailed confidence scoring.
 
     Returns:
@@ -1134,9 +1136,17 @@ def _detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detect
     # The complete payload predicate ignores company ID, even a known family ID.
     from .beds.vmatbasic_protocol import manufacturer_payload_matches
 
-    if len(service_info.manufacturer_data or {}) == 1:
+    if not _vmatbasic_checked and len(service_info.manufacturer_data or {}) == 1:
         company, payload = next(iter(service_info.manufacturer_data.items()))
         if manufacturer_payload_matches(payload):
+            # The payload outranks a bare company-family hint, but not a bed
+            # identified by its own service UUID or name: the same BABE record
+            # is also VMAT revision-3 hardware, which stays on its controller.
+            other = _detect_bed_type_detailed(service_info, _vmatbasic_checked=True)
+            if other.bed_type is not None:
+                other.ambiguous_types = [*(other.ambiguous_types or ()), BED_TYPE_VMATBASIC]
+                other.signals.append("manufacturer:vmatbasic_conditional_record")
+                return other
             return DetectionResult(
                 bed_type=BED_TYPE_VMATBASIC, confidence=0.6,
                 signals=["manufacturer:vmatbasic_conditional_record", "raw_first_ad_order:unknown"],
@@ -1144,7 +1154,7 @@ def _detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detect
                 requires_characteristic_check=True,
             )
 
-    if mfr_bed_type:
+    if mfr_bed_type and not _vmatbasic_checked:
         signals.append(f"manufacturer_id:{mfr_id}")
         _LOGGER.info(
             "Detected %s bed at %s (name: %s) by manufacturer ID %s",
