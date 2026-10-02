@@ -233,6 +233,17 @@ Target one or more physical devices with `device_id`, an exact supported `contro
 
 `svane_release_axis` accepts `motor: head` or `motor: feet` during that hold and signals its serialized writer. The remaining axis continues; final release uses the profile's actual STOP. Both actions accept the normal `device_id` and paired `side` fields. The literal Svane position, Read/TV, toggle and refresh buttons, local intensity number and diagnostic records are described in the [profile guide](beds/svane.md).
 
+
+### FSM Relax app actions
+
+`fsm_relax_hold_control` accepts a supported `command_XX` and explicit `duration`
+in seconds. `fsm_relax_recall_memory` accepts local `preset` 1–8 and `duration`;
+`fsm_relax_calibrate` requires `confirmed: true` and makes one write attempt.
+Native Save/Memory buttons and generic memory actions expose up to eight slots
+subject to the reported count. All actions use the serialized coordinator path.
+Duration is local gesture policy and replies cannot prove physical arrival.
+See [FSM Relax](beds/fsm_relax.md) for profile gates and reply ambiguity.
+
 ### `starcode_move_lifts`
 
 Controls the accessories configured on an AdjustableM5X5 main entry. Choose one main `device_id` and `action`: `up`, `down`, `flat` or `stop`. Movement preflights every selected address and interrupts the conflicting main. `flat` interrupts the selected group, sends main flat, waits 1600 ms and sends lift flat. STOP, unloading or a changed selection cancels the retained delay. If a member fails, every admitted target receives cleanup. The action supports one main plus up to three distinct lifts and never fans out lighting, massage or programming.

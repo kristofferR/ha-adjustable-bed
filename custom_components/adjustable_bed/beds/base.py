@@ -1054,6 +1054,19 @@ class BedController(ABC):
             memory_num: Memory slot number (1-4, availability varies by bed)
         """
 
+    @property
+    def supports_confirmed_calibration(self) -> bool:
+        """Whether an explicitly confirmed calibration action is available."""
+        return False
+
+    async def calibrate(self, *, confirmed: bool) -> None:
+        """Calibrate only with explicit confirmation where supported."""
+        raise NotImplementedError("Confirmed calibration is unavailable")
+
+    async def recall_memory(self, slot: int, *, hold_ms: int) -> None:
+        """Recall a local memory with an explicit caller-owned hold policy."""
+        raise NotImplementedError("Held local memories are unavailable")
+
     @abstractmethod
     async def program_memory(self, memory_num: int) -> None:
         """Save the current bed position to a memory preset.
