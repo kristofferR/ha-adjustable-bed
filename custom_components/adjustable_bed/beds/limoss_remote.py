@@ -165,6 +165,7 @@ class LimossRemoteController(BedController):
         self._progress: dict[str, object] | None = None
         self._last_write_started = float("-inf")
         self._publish_metadata()
+        self._publish_capabilities()
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -487,16 +488,7 @@ class LimossRemoteController(BedController):
             elif opcode == 2:
                 self.capabilities = LimossRemoteCapabilities.from_parameters(parameters)
                 delta["capabilities"] = asdict(self.capabilities)
-                self.forward_controller_state_updates(
-                    {
-                        "limoss_remote_key_count": self.capabilities.key_count,
-                        "limoss_remote_motor_count": self.capabilities.system & 15,
-                        "limoss_remote_configuration": self.capabilities.configuration,
-                        "limoss_remote_memory_slots": self.capabilities.memory_count,
-                        "limoss_remote_reported_entry": self.capabilities.reported_product
-                        or "unknown",
-                    }
-                )
+                self._publish_capabilities()
             elif opcode == 5:
                 self.forward_controller_state_update(
                     "limoss_remote_calibration_result", "reply_received"
@@ -520,6 +512,18 @@ class LimossRemoteController(BedController):
                 expected, future = self._request_reply
                 if expected == opcode and not future.done():
                     future.set_result(parameters)
+
+    def _publish_capabilities(self) -> None:
+        if self.capabilities is not None:
+            self.forward_controller_state_updates(
+                {
+                    "limoss_remote_key_count": self.capabilities.key_count,
+                    "limoss_remote_motor_count": self.capabilities.system & 15,
+                    "limoss_remote_configuration": self.capabilities.configuration,
+                    "limoss_remote_memory_slots": self.capabilities.memory_count,
+                    "limoss_remote_reported_entry": self.capabilities.reported_product or "unknown",
+                }
+            )
 
     def _publish_metadata(self) -> None:
         for field, value in self._metadata.items():

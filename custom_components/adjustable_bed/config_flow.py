@@ -7174,15 +7174,18 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                         data_schema=vol.Schema(schema_dict),
                         errors={CONF_BED_TYPE: "okin_bedding_app_unpair_first"},
                     )
-            if separate_address_pair and (
-                (requested_bed_type == BED_TYPE_LIMOSS_REMOTE and requested_bed_type != bed_type)
-                or any(key in user_input for key in LIMOSS_REMOTE_CONFIG_KEYS)
-            ):
-                return self.async_show_form(
-                    step_id=step_id,
-                    data_schema=vol.Schema(schema_dict),
-                    errors={"base": "limoss_remote_pair_settings"},
-                )
+                if (
+                    (
+                        side_types != {requested_bed_type}
+                        and BED_TYPE_LIMOSS_REMOTE in {requested_bed_type, *side_types}
+                    )
+                    or any(key in user_input for key in LIMOSS_REMOTE_CONFIG_KEYS)
+                ):
+                    return self.async_show_form(
+                        step_id=step_id,
+                        data_schema=vol.Schema(schema_dict),
+                        errors={"base": "limoss_remote_pair_settings"},
+                    )
             if separate_address_pair and (
                 (requested_bed_type == BED_TYPE_FSM_RELAX and requested_bed_type != bed_type)
                 or any(key in user_input for key in (CONF_FSM_RELAX_LAYOUT, CONF_FSM_RELAX_LIGHT, CONF_FSM_RELAX_MASSAGE, CONF_FSM_RELAX_MEMORY_NAMES, *CONF_FSM_RELAX_REVERSALS))
@@ -7867,14 +7870,16 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                         errors={CONF_LEGS_MAX_ANGLE: "invalid_angle"},
                     )
             # All validations passed - now it is safe to commit global state.
-            if bed_type == BED_TYPE_LIMOSS_REMOTE and not separate_address_pair:
+            if not separate_address_pair and BED_TYPE_LIMOSS_REMOTE in (
+                bed_type, self.config_entry.data.get(CONF_BED_TYPE)
+            ):
                 from .beds.limoss_remote import apply_limoss_remote_features
                 from .coordinator import AdjustableBedCoordinator
 
                 runtime = self._bond_target_coordinator()
                 previous = runtime.entry.data if isinstance(runtime, AdjustableBedCoordinator) else self.config_entry.data
-                light = user_input.get(CONF_LIMOSS_REMOTE_LIGHT, False)
-                massage = user_input.get(CONF_LIMOSS_REMOTE_MASSAGE, False)
+                light = bed_type == BED_TYPE_LIMOSS_REMOTE and user_input.get(CONF_LIMOSS_REMOTE_LIGHT, False)
+                massage = bed_type == BED_TYPE_LIMOSS_REMOTE and user_input.get(CONF_LIMOSS_REMOTE_MASSAGE, False)
                 disabling = (previous.get(CONF_LIMOSS_REMOTE_LIGHT, False) and not light) or (previous.get(CONF_LIMOSS_REMOTE_MASSAGE, False) and not massage)
                 if disabling:
                     if not isinstance(runtime, AdjustableBedCoordinator):
