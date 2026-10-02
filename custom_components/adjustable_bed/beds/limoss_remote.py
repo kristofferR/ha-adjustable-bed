@@ -189,7 +189,9 @@ class LimossRemoteController(BedController):
 
     @property
     def layout(self) -> str | None:
-        if self.capabilities is None:
+        if self.capabilities is None or (
+            self.capabilities.reported_product is None and self.product_selection is None
+        ):
             return None
         return self.capabilities.layout(self.product_selection, self.underbed_light, self.massage)
 
@@ -212,7 +214,7 @@ class LimossRemoteController(BedController):
 
     @property
     def supports_memory_programming(self) -> bool:
-        if not self.memory_slot_count or self.capabilities is None:
+        if not self.memory_slot_count or self.capabilities is None or self.layout is None:
             return False
         return 1 <= self.capabilities.effective_motor_count(self.product_selection) <= 4
 
