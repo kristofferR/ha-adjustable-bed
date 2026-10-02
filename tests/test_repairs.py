@@ -2570,3 +2570,33 @@ async def test_repair_fallback_verifier_also_clears_a_stale_proxy_cache(
 
     clear.assert_awaited_once()
     assert ["pair" in c.kwargs for c in connect.await_args_list] == [True, False]
+
+
+async def test_repair_retries_a_rerouted_stale_cache_verification_once(
+    hass: HomeAssistant,
+) -> None:
+    """Issue #660: HA can reroute the pinned check; one reroute earns a final check."""
+    flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, None)
+    flow.hass = hass
+    outcomes = iter([False, False, True])
+
+    async def once(source: str | None, *, pair: bool) -> bool:
+        result = next(outcomes)
+        if source is None:
+            flow._retry_gatt_cache_source = "proxy"
+        elif not result:
+            flow._retry_route_mismatch = True
+        return result
+
+    attempt = AsyncMock(side_effect=once)
+    with (
+        patch.object(flow, "_async_pair_via_coordinator", new=AsyncMock(return_value=None)),
+        patch.object(flow, "_async_try_pair_once", new=attempt),
+    ):
+        assert await flow._async_try_pair() is True
+
+    assert [(c.args[0], c.kwargs["pair"]) for c in attempt.await_args_list] == [
+        (None, True),
+        ("proxy", False),
+        ("proxy", False),
+    ]

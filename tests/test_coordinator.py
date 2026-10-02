@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
@@ -253,7 +254,8 @@ class TestCoordinatorConnection:
         ):
             assert await coordinator.async_connect() is bond_intact
 
-        assert coordinator._connection_attempt_count == 2
+        # A verification that still fails earns the pairing attempt it now justifies.
+        assert coordinator._connection_attempt_count == (2 if bond_intact else 3)
         assert create_issue.await_count == int(not bond_intact)
         # Recovery closes the episode, so a later outage gets a fresh retry.
         assert coordinator._stale_gatt_retry_sources == (set() if bond_intact else {"proxy-a"})
@@ -878,6 +880,19 @@ class TestCoordinatorConnection:
 
         with pytest.raises(BleakError):
             await coordinator.async_execute_controller_command(failing, cancel_running=False)
+        assert coordinator._stale_gatt_retry_sources == {"proxy-a"}
+
+        async def cancel_operation(task, **_kwargs):
+            task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
+
+        with patch.object(
+            coordinator, "_async_wait_for_controller_operation", side_effect=cancel_operation
+        ):
+            await coordinator.async_execute_controller_command(
+                AsyncMock(), cancel_running=False
+            )
         assert coordinator._stale_gatt_retry_sources == {"proxy-a"}
 
         await coordinator.async_execute_controller_command(AsyncMock(), cancel_running=False)

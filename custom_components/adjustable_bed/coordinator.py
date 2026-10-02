@@ -3472,11 +3472,15 @@ class AdjustableBedCoordinator:
         # A pending source may come from a runtime command failure. It stays
         # pending until authentication has actually been exercised on that proxy.
         unverified_stale_gatt_source: str | None = None
+        stale_gatt_pairing_reserved = False
         while True:
-            if (
+            # The cleared proxy's fresh handles still failed authentication, so
+            # its bond really is gone and pairing is now justified.
+            stale_gatt_verification_failed = bool(
                 unverified_stale_gatt_source
-                and self._auth_failure_source != unverified_stale_gatt_source
-            ):
+                and self._auth_failure_source == unverified_stale_gatt_source
+            )
+            if unverified_stale_gatt_source and not stale_gatt_verification_failed:
                 # The last attempt failed without authenticating on the cleared
                 # proxy: it never connected, HA routed it elsewhere, or it broke
                 # before the probe. That proxy still deserves its no-pair check,
@@ -3490,9 +3494,14 @@ class AdjustableBedCoordinator:
                 # rediscovered, no-pair verification it was promised (#660).
                 # Two extensions cover one reroute away from the cleared proxy
                 # while keeping the loop bounded.
-                if not self._stale_gatt_retry_source or stale_gatt_retry_extensions >= 2:
+                # One more covers pairing after the verification proved the bond
+                # missing, which the plain budget would otherwise have spent.
+                if self._stale_gatt_retry_source and stale_gatt_retry_extensions < 2:
+                    stale_gatt_retry_extensions += 1
+                elif stale_gatt_verification_failed and not stale_gatt_pairing_reserved:
+                    stale_gatt_pairing_reserved = True
+                else:
                     break
-                stale_gatt_retry_extensions += 1
                 attempt_limit += 1
             stale_gatt_retry_source = self._stale_gatt_retry_source
             self._stale_gatt_retry_source = None
@@ -6021,7 +6030,9 @@ class AdjustableBedCoordinator:
                     # A command that worked closes the stale-cache episode. Startup
                     # alone does not: some beds start without any authenticated
                     # access, and a missing bond must still reach the repair.
-                    self._stale_gatt_retry_sources.clear()
+                    # Neither does a command cancelled before it could finish.
+                    if not operation_task.cancelled():
+                        self._stale_gatt_retry_sources.clear()
                 finally:
                     self._last_protocol_operation_end = datetime.now(UTC)
                     self._active_operation_name = None

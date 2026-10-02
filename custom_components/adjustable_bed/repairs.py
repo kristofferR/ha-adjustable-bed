@@ -1023,6 +1023,10 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         )
         if await self._async_try_pair_once(cleared_source, pair=False):
             return True
+        if self._retry_route_mismatch:
+            # HA reranks routes on connect; one reroute earns a final check.
+            if await self._async_try_pair_once(cleared_source, pair=False):
+                return True
         if not self._retry_auth_failed:
             return False
         # Fresh handles still fail authentication, so the bond really is gone.
