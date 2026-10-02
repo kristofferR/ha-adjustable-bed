@@ -231,6 +231,15 @@ Target one or more physical devices with `device_id`, an exact supported `contro
 ## Motion Bed app actions
 
 The [Motion Bed action index](beds/motion_bed.md#actions) covers all 13 typed app actions, including alarms, sleep calibration/reporting, hub modules, pressure, thermal schedules, audio and BLE Wi-Fi provisioning. Named action keys are listed in controller diagnostics. Persistent changes require confirmation; every target is validated before writes, and native paired child targets retain their side.
+### FSM Relax app actions
+
+`fsm_relax_hold_control` accepts a supported `command_XX` and explicit `duration`
+in seconds. `fsm_relax_recall_memory` accepts local `preset` 1–8 and `duration`;
+`fsm_relax_calibrate` requires `confirmed: true` and makes one write attempt.
+Native Save/Memory buttons and generic memory actions expose up to eight slots
+subject to the reported count. All actions use the serialized coordinator path.
+Duration is local gesture policy and replies cannot prove physical arrival.
+See [FSM Relax](beds/fsm_relax.md) for profile gates and reply ambiguity.
 
 ### `starcode_move_lifts`
 
