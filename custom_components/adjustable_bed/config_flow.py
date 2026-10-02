@@ -94,6 +94,7 @@ from .bond_verification import (
 from .const import (
     ADAPTER_AUTO,
     ALL_PROTOCOL_VARIANTS,
+    BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
@@ -246,6 +247,7 @@ from .const import (
     MALOUF_LAYOUTS,
     MALOUF_MEMORY_SLOT_OPTIONS,
     MALOUF_MEMORY_SLOTS_AUTO,
+    NAME_RULE_VARIANTS_BY_BED_TYPE,
     OCTO_VARIANT_STAR2,
     OKIN_BEDDING_APP_BED_TYPES,
     OKIN_CST_THREE_MOTOR_VARIANTS,
@@ -676,9 +678,9 @@ _PER_SIDE_APP_PROFILES: Final = {
 }
 
 
-def _simmons_setup_name(bed_type: str | None, name: str | None) -> dict[str, str]:
-    """Keep the raw Bluetooth name the SIMMONS name rule reads, never the display name."""
-    if bed_type != BED_TYPE_SIMMONS or name is None or is_mac_like_name(name):
+def _name_rule_setup_name(bed_type: str | None, name: str | None) -> dict[str, str]:
+    """Keep the raw Bluetooth name an app name rule reads, never the display name."""
+    if bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE or name is None or is_mac_like_name(name):
         return {}
     return {CONF_BLE_DEVICE_NAME: name}
 
@@ -701,7 +703,7 @@ def _motor_count_options(
         BED_TYPE_CUSTOMATIC_JEROMES,
     }:
         return [2]
-    if bed_type == BED_TYPE_CUSTOMATIC_REMEDY:
+    if bed_type in {BED_TYPE_CUSTOMATIC_REMEDY, BED_TYPE_ADJUSTABLE_LUMBAR}:
         return [3]
     if bed_type == BED_TYPE_OCTO and protocol_variant != OCTO_VARIANT_STAR2:
         return [1, 2, 3, 4]
@@ -738,7 +740,7 @@ def _is_valid_motor_count(
 # App profiles that belong to one physical bed: a two-address pair must be
 # separated before either side moves to, from or between them.
 EXPLICIT_PAIR_APP_BED_TYPES: Final = frozenset(
-    {BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES_Z230, BED_TYPE_ZSERIES_Z280}
+    {BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES_Z230, BED_TYPE_ZSERIES_Z280, BED_TYPE_ADJUSTABLE_LUMBAR}
 )
 
 
@@ -2803,7 +2805,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 }
                 if selected_bed_type == BED_TYPE_SOLACE and self._discovery_info.name:
                     entry_data[CONF_BLE_DEVICE_NAME] = self._discovery_info.name
-                entry_data.update(_simmons_setup_name(selected_bed_type, self._discovery_info.name))
+                entry_data.update(_name_rule_setup_name(selected_bed_type, self._discovery_info.name))
                 if (
                     selected_bed_type == BED_TYPE_SVANE
                     and protocol_variant == VARIANT_AUTO
@@ -3000,7 +3002,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
         }
 
-        if bed_type_default in {*OKIN_BEDDING_APP_BED_TYPES, BED_TYPE_SIMMONS, BED_TYPE_FURNIMOVE}:
+        if bed_type_default in {*OKIN_BEDDING_APP_BED_TYPES, *NAME_RULE_VARIANTS_BY_BED_TYPE, BED_TYPE_FURNIMOVE}:
             schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
             schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
         if bed_type_default == BED_TYPE_FURNIMOVE:
@@ -3775,7 +3777,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     ),
                 }
                 if self._discovery_info is not None:
-                    entry_data.update(_simmons_setup_name(bed_type, self._discovery_info.name))
+                    entry_data.update(_name_rule_setup_name(bed_type, self._discovery_info.name))
                 if _is_leggett_app_type(bed_type, protocol_variant):
                     self._manual_data = entry_data
                     self._leggett_app_pairing_step = "manual_pairing"
@@ -3948,7 +3950,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
             }
         )
-        if defaults_bed_type in {*OKIN_BEDDING_APP_BED_TYPES, BED_TYPE_SIMMONS, BED_TYPE_FURNIMOVE}:
+        if defaults_bed_type in {*OKIN_BEDDING_APP_BED_TYPES, *NAME_RULE_VARIANTS_BY_BED_TYPE, BED_TYPE_FURNIMOVE}:
             schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
             schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
         if defaults_bed_type == BED_TYPE_FURNIMOVE:
@@ -4240,7 +4242,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             _add_malouf_schema_fields(schema_dict)
         if preselected_bed_type == BED_TYPE_OKIN_CB24:
             _add_cb24_side_schema_field(schema_dict)
-        if preselected_bed_type in {*OKIN_BEDDING_APP_BED_TYPES, BED_TYPE_SIMMONS, BED_TYPE_FURNIMOVE}:
+        if preselected_bed_type in {*OKIN_BEDDING_APP_BED_TYPES, *NAME_RULE_VARIANTS_BY_BED_TYPE, BED_TYPE_FURNIMOVE}:
             schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
             schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
         if preselected_bed_type == BED_TYPE_FURNIMOVE:
@@ -6761,7 +6763,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
 
         if bed_type in {
             *OKIN_BEDDING_APP_BED_TYPES,
-            BED_TYPE_SIMMONS,
+            *NAME_RULE_VARIANTS_BY_BED_TYPE,
             BED_TYPE_FURNIMOVE,
             BED_TYPE_STARCODE_ABM5_4,
         }:
@@ -7165,23 +7167,30 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     data_schema=vol.Schema(schema_dict),
                     errors={CONF_PROTOCOL_VARIANT: "remacro_app_unpair_first"},
                 )
+            variant_owners = {
+                bed_type,
+                requested_bed_type,
+                *(child.get(CONF_BED_TYPE) for child in iter_children(self.config_entry.data)),
+            }
+            per_side_variant_type = next(
+                (
+                    candidate
+                    for candidate in (BED_TYPE_SIMMONS, BED_TYPE_ADJUSTABLE_LUMBAR)
+                    if candidate in variant_owners
+                ),
+                None,
+            )
             if (
                 separate_address_pair
                 and CONF_PROTOCOL_VARIANT in paired_changes
-                and (
-                    BED_TYPE_SIMMONS in (bed_type, requested_bed_type)
-                    or any(
-                        child.get(CONF_BED_TYPE) == BED_TYPE_SIMMONS
-                        for child in iter_children(self.config_entry.data)
-                    )
-                )
+                and per_side_variant_type is not None
             ):
-                # The SIMMONS variant holds each receiver's own bed type and
-                # packet format; one shared value would mis-route the other side.
+                # These variants hold each receiver's own packet format (and the
+                # SIMMONS bed layout); one shared value would mis-route a side.
                 return self.async_show_form(
                     step_id=step_id,
                     data_schema=vol.Schema(schema_dict),
-                    errors={CONF_PROTOCOL_VARIANT: "simmons_unpair_first"},
+                    errors={CONF_PROTOCOL_VARIANT: f"{per_side_variant_type}_unpair_first"},
                 )
             incompatible_child = any(
                 child.get(CONF_BED_TYPE) == BED_TYPE_RICHMAT

@@ -362,6 +362,7 @@ retain their legacy profile unless you explicitly change it.
 | Adjustable Lite app | Keeson protocol variant **`adjustable_lite`**; the device name picks the KSBT01C or KSBT03C remote; `auto` keeps the generic KSBT profile | [Keeson Adjustable Lite](beds/keeson.md#adjustable-lite-profile) |
 | V-MAT Basic app | Explicit Basic, CBI or CBI with XT-Box product; per-receiver floor settings | [V-MAT Basic](beds/vmatbasic.md) |
 | SIMMONS app | Protocol variant: regular or inclined bed, with the packet format from the Bluetooth name or fixed | [SIMMONS](beds/simmons.md) |
+| Adjustable bed (Lumbar) app | Protocol variant: command table from the Bluetooth name, or fixed OKIN or Star branch | [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md) |
 | Legacy OKIN CB24 | Both sides (default), Side A / Left, or Side B / Right | [Single-address controls](#single-address-left--right-controls) |
 
 For two-address pairs, device-specific app/product selections belong to each
@@ -371,6 +372,10 @@ pair, configure each side, then combine them again.
 ### SIMMONS app profile
 
 Choose **SIMMONS app** manually. OKIN and SmartBed names and the shared Bluetooth services do not identify this app. The protocol variant selects the app's bed type (regular or inclined) and, optionally, the packet format. `auto` keeps a regular bed and applies the app's name rule: a name starting with `smartbed` or any unmatched name uses SmartBed frames, a name starting with `okin` uses OKIN frames. Motor count is fixed at two and the 300 ms refresh is fixed. The variant belongs to each physical bed: split a two-address pair before changing it. See [SIMMONS](beds/simmons.md).
+
+### Adjustable bed (Lumbar) app profile
+
+Choose **Adjustable bed (Lumbar) app** manually. OKIN and Star names and the shared services do not identify this app. `auto` applies the app's name rule: a name starting with `okin` uses the OKIN-service table; a name starting with `star` uses a Nordic UART table chosen by the Device Information manufacturer. Any other name needs a fixed variant. Head, foot and lumbar are fixed, as is the 100 ms refresh. The variant belongs to each physical bed: split a two-address pair before changing it. See [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md).
 
 ### V-MAT Basic app profiles
 

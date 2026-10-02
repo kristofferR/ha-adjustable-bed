@@ -428,6 +428,8 @@ ZSERIES_BED_TYPES: Final = frozenset({BED_TYPE_ZSERIES_Z230, BED_TYPE_ZSERIES_Z2
 # A Z-Series button press holds pulse_count x 100 ms, within the 60 s hold limit.
 ZSERIES_PULSE_COUNT_RANGE: Final = (1, 600)
 BED_TYPE_SIMMONS: Final = "simmons"  # Explicit SIMMONS app profile (com.okin.simmons)
+# Explicit Adjustable bed (Lumbar) app profile (com.okin.bedding.adjustablelumbar)
+BED_TYPE_ADJUSTABLE_LUMBAR: Final = "adjustable_lumbar"
 BED_TYPE_CUSTOMATIC_CLARITY: Final = "customatic_clarity"
 BED_TYPE_CUSTOMATIC_JEROMES: Final = "customatic_jeromes"
 BED_TYPE_CUSTOMATIC_REMEDY: Final = "customatic_remedy"
@@ -507,6 +509,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SERENITY,
     BED_TYPE_TRANQUIL,
     BED_TYPE_SIMMONS,
+    BED_TYPE_ADJUSTABLE_LUMBAR,
     # Explicit Customatic app profiles
     BED_TYPE_ZSERIES_Z230,
     BED_TYPE_ZSERIES_Z280,
@@ -629,6 +632,8 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         # Layout and protocol come from the stored variant; the BLE name only
         # chooses a protocol when the variant leaves it on auto.
         BED_TYPE_SIMMONS,
+        # Controls are identical for all three tables; only the live link picks one.
+        BED_TYPE_ADJUSTABLE_LUMBAR,
         # The constructor refuses offline UART catalogs whose nonpositive C
         # can gain controls from live manufacturer classification.
         BED_TYPE_STARCODE_ABM5_4,
@@ -1390,6 +1395,20 @@ SIMMONS_VARIANTS: Final = {
     SIMMONS_VARIANT_INCLINED: "Inclined bed, protocol from the Bluetooth name",
     SIMMONS_VARIANT_INCLINED_OKIN: "Inclined bed, OKIN-name protocol",
     SIMMONS_VARIANT_INCLINED_SMARTBED: "Inclined bed, SmartBed-name protocol",
+}
+# Adjustable bed (Lumbar) app: "auto" applies the app's Bluetooth-name rule.
+# The Star branch still reads the manufacturer to choose its table.
+ADJUSTABLE_LUMBAR_VARIANT_OKIN: Final = "adjustable_lumbar_okin"
+ADJUSTABLE_LUMBAR_VARIANT_STAR: Final = "adjustable_lumbar_star"
+ADJUSTABLE_LUMBAR_VARIANTS: Final = {
+    VARIANT_AUTO: "Command table from the Bluetooth name (OKIN or Star)",
+    ADJUSTABLE_LUMBAR_VARIANT_OKIN: "OKIN-name table (OKIN service, with response)",
+    ADJUSTABLE_LUMBAR_VARIANT_STAR: "Star-name tables (Nordic UART, chosen by manufacturer)",
+}
+# Explicit app bed types whose name rule reads the stored raw Bluetooth name.
+NAME_RULE_VARIANTS_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_SIMMONS: SIMMONS_NAME_RULE_VARIANTS,
+    BED_TYPE_ADJUSTABLE_LUMBAR: frozenset({VARIANT_AUTO}),
 }
 SOLACE_VARIANT_WOOSA: Final = "woosa"
 SOLACE_VARIANTS: Final = {
@@ -2371,6 +2390,8 @@ ALL_PROTOCOL_VARIANTS: Final = [
     RONDURE_VARIANT_SIDE_A,
     RONDURE_VARIANT_SIDE_B,
     *(_variant for _variant in SIMMONS_VARIANTS if _variant != VARIANT_AUTO),
+    ADJUSTABLE_LUMBAR_VARIANT_OKIN,
+    ADJUSTABLE_LUMBAR_VARIANT_STAR,
 ]
 
 # Protocols whose setup requests OS-level BLE pairing. This policy alone does
@@ -2548,6 +2569,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_ZSERIES_Z230,
         BED_TYPE_ZSERIES_Z280,
         BED_TYPE_SIMMONS,
+        BED_TYPE_ADJUSTABLE_LUMBAR,
         BED_TYPE_CUSTOMATIC_CLARITY,
         BED_TYPE_CUSTOMATIC_JEROMES,
         BED_TYPE_CUSTOMATIC_REMEDY,
@@ -2761,6 +2783,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_ZSERIES_Z230: (10, 100),
     BED_TYPE_ZSERIES_Z280: (10, 100),
     BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
+    BED_TYPE_ADJUSTABLE_LUMBAR: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement
     # Malouf New OKIN (Nordic): 100ms delay → 10 repeats = 1.0s total
     # Source: com.malouf.bedbase / com.lucid.bedbase ANALYSIS.md
     BED_TYPE_MALOUF_NEW_OKIN: (10, 100),

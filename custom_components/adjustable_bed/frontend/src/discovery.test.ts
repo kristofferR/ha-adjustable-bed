@@ -679,3 +679,16 @@ test("SIMMONS inclined controls join presets and clock/alarm actions land in uti
   expect(bed.presets).toEqual(["button.s_flat", "button.s_left", "button.s_middle", "button.s_right"]);
   expect(bed.utility).toEqual(["button.s_clock", "button.s_alarms"]);
 });
+
+test("Adjustable Lumbar waves join massage; preset saves and the query land in utility", () => {
+  const hass = hassWith([
+    entry("button.l_wave", "adjustable_lumbar_wave_1"),
+    entry("button.l_on", "adjustable_lumbar_massage_on"),
+    entry("button.l_save", "adjustable_lumbar_save_zero_g"),
+    entry("button.l_check", "adjustable_lumbar_check_massage"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.massage.buttons).toEqual(["button.l_wave", "button.l_on"]);
+  expect(bed.utility).toEqual(["button.l_save", "button.l_check"]);
+  expect(bed.memory).toEqual([]);
+});

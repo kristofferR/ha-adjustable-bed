@@ -351,6 +351,7 @@ Sleepy's Elite beds are auto-detected by name plus BLE services:
 - **[DewertOkin](dewertokin.md)** - Different command format, uses handle writes
 - **[Okin 64-bit](okin-64bit.md)** - Similar service UUID but different packet format
 - **[Keeson](keeson.md)** - Same FFE5 service but different command encoding
+- **[Adjustable bed (Lumbar) app](adjustable-lumbar.md)** - Also serves `Star` names over Nordic UART, but selects its own tables from an exact `STAR` manufacturer reply; choose that explicit profile for beds using that app
 
 ## AdjustableM5X5
 

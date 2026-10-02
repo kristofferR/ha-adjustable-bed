@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 
 from .adapter import discover_services
 from .const import (
+    BED_TYPE_ADJUSTABLE_LUMBAR,
     # Legacy/brand-specific bed types
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
@@ -464,6 +465,20 @@ async def create_controller(
         ValueError: If bed_type is unknown
         ConnectionError: If auto-detection is needed but client is not connected
     """
+    if bed_type == BED_TYPE_ADJUSTABLE_LUMBAR:
+        # The app's name rule picks the table unless the variant fixes the
+        # branch; offline controllers must not read the display name.
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.adjustable_lumbar", __package__
+        )
+        from .beds.adjustable_lumbar import AdjustableLumbarController
+
+        return AdjustableLumbarController(
+            coordinator,
+            protocol_variant=protocol_variant,
+            device_name=device_name if client is not None else None,
+        )
+
     if bed_type == BED_TYPE_SIMMONS:
         # The app picks the packet format from the Bluetooth name unless the
         # stored variant fixes it, so pass both.
