@@ -1385,3 +1385,47 @@ async def test_light_switch_starts_unknown_and_side_select_needs_no_link(
         sessions = hass.data[DOMAIN]["remacro_sessions"]
         assert [s.side for key, s in sessions.items() if key[0] == address] == ["right"]
         await hass.config_entries.async_unload(entry.entry_id)
+
+
+@pytest.mark.parametrize(
+    ("left_company", "right_company", "expected_state"),
+    [
+        # Both sides refused: permanent error, no retry loop.
+        (13, 13, ConfigEntryState.SETUP_ERROR),
+        # One usable side: the pair loads half-available.
+        (50, 13, ConfigEntryState.LOADED),
+        # A merely unseen side keeps setup retrying.
+        (None, 13, ConfigEntryState.SETUP_RETRY),
+    ],
+)
+async def test_pair_setup_outcome_follows_its_sides(
+    hass: HomeAssistant,
+    mock_coordinator_connected,
+    mock_establish_connection,
+    enable_custom_integrations,
+    left_company,
+    right_company,
+    expected_state,
+) -> None:
+    from homeassistant.helpers import issue_registry as ir
+
+    left, right = "AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72"
+    entry, _children = _remacro_pair(hass, None, None)
+    adverts = {
+        address: MagicMock(manufacturer_data={company: b""}) if company is not None else None
+        for address, company in ((left, left_company), (right, right_company))
+    }
+    with patch(_HISTORY, side_effect=lambda _hass, address, connectable: adverts[address]):
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        assert entry.state is expected_state
+        issues = ir.async_get(hass)
+        assert issues.async_get_issue(DOMAIN, f"remacro_model_{right}") is not None
+        assert (issues.async_get_issue(DOMAIN, f"remacro_model_{left}") is not None) is (
+            left_company == 13
+        )
+        if expected_state is ConfigEntryState.SETUP_ERROR:
+            assert entry.reason is not None and "No side" in entry.reason
+            mock_establish_connection.assert_not_awaited()
+        if expected_state is ConfigEntryState.LOADED:
+            await hass.config_entries.async_unload(entry.entry_id)

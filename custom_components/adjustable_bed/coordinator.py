@@ -2806,7 +2806,7 @@ class AdjustableBedCoordinator:
             "not_in_app",
         )
 
-    def _remacro_model_blocks_connection(self) -> bool:
+    def remacro_model_blocks_connection(self) -> bool:
         """Refuse to connect a Remacro bed whose model the selected app would not list.
 
         A combined bed's side reaches here without the standalone setup check, so
@@ -3161,7 +3161,7 @@ class AdjustableBedCoordinator:
                 self._address,
             )
             return False
-        if self._remacro_model_blocks_connection():
+        if self.remacro_model_blocks_connection():
             return False
         try:
             if self._bed_type == BED_TYPE_SLEEP_NUMBER and (

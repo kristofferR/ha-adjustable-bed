@@ -643,6 +643,17 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     children = _build_paired_children(hass, entry)
     if not children:
         raise ConfigEntryNotReady("Paired bed has no child sides configured")
+    # Every side's app refuses its model: fail permanently like a standalone bed
+    # instead of retrying forever. Each side keeps its own Repairs issue.
+    if all(
+        isinstance(child, AdjustableBedCoordinator) and child.remacro_model_rejected
+        for child in children.values()
+    ):
+        for child in children.values():
+            child.remacro_model_blocks_connection()
+        raise ConfigEntryError(
+            translation_domain=DOMAIN, translation_key="remacro_pair_unsupported"
+        )
 
     # Seed persisted capability snapshots before a live connection can cache an
     # incomplete discovery over them. Complete live discovery still refreshes

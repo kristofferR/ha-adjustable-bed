@@ -36,7 +36,8 @@ The model is checked before any connection attempt:
 - A company ID no app lists, or one the selected app does not list (for example 54 or
   55 with Jerome's): setup fails with that reason and does not retry.
 - On a combined bed, such a side is not connected, gets a Repairs issue and loses its
-  controls; the other side loads and keeps working.
+  controls; the other side loads and keeps working. If every side is refused, setup
+  fails without retrying; a side that has merely not been seen yet keeps it retrying.
 - Setup aborts for a company ID no app lists. When the chosen app does not list the
   model, the setup form shows that as an error on the protocol variant field.
 - The options form refuses an app that does not list the stored model. Saving a fix in
