@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
@@ -117,6 +118,24 @@ async def test_aroma_triplet_and_capability_gate(hass, targets) -> None:
             "mode3_pause_hours": 2,
         }, blocking=True)
     assert second.async_execute_controller_command.await_count == 1
+
+
+async def test_cancellation_releases_the_preflighted_links(hass, targets) -> None:
+    with (
+        patch(
+            "custom_components.adjustable_bed.richmat_mh_services._execute_sided",
+            side_effect=asyncio.CancelledError,
+        ),
+        patch(
+            "custom_components.adjustable_bed.richmat_mh_services._release_preflighted"
+        ) as release,
+        pytest.raises(asyncio.CancelledError),
+    ):
+        await hass.services.async_call(DOMAIN, SERVICE_RICHMAT_MH_AROMA, {
+            "device_id": "bed", "mode2_startup_minutes": 5, "mode3_startup_minutes": 6,
+            "mode3_pause_hours": 2,
+        }, blocking=True)
+    release.assert_awaited_once()
 
 
 def test_service_descriptions_and_translations_cover_the_schema() -> None:

@@ -97,10 +97,6 @@ BUFFER_RESET_LEN: Final = 100
 # Fixed opcodes the app writes outside the per-model catalog.
 BTN_LED_OFF_CODE: Final = 0x75  # Button-light page OFF (k_ubl_off, press_once)
 SMART_SET_LOCK_CODE: Final = 0x84  # Motor-page smart set lock switch (CmdKey.LOCK)
-# Button-light page colour wheel (SweepView sectors); Best Mattress and Idealbed lack white.
-BTN_LED_PALETTE: Final = ((0xFF, 0x00, 0x00), (0xFE, 0x99, 0x02), (0xFF, 0xFF, 0x00), (0x00, 0xFF, 0x00),
-                          (0x02, 0xD4, 0xFE), (0x0D, 0x00, 0xFF), (0xB2, 0x00, 0xB5))
-BTN_LED_WHITE: Final = (0xFF, 0xFF, 0xFF)
 AROMA_FUNCTIONS: Final = (0x1B, 0x1C, 0x1D)  # mode2 startup, mode3 startup, mode3 pause
 AROMA_TASK_SLEEP_S: Final = 0.15
 ALARM_TASK_SLEEP_S: Final = 0.3  # AlarmFrag/AlarmCallFrag task list spacing

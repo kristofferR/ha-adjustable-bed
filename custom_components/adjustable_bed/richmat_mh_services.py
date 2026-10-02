@@ -85,7 +85,8 @@ async def _execute(
             await _execute_sided(
                 coordinator, side, control, cancel_running=False, resource="configuration"
             )
-    except Exception:
+    except BaseException:
+        # Cancellation must also hand the preflighted links back to idle.
         await _release_preflighted(preflighted)
         raise
 

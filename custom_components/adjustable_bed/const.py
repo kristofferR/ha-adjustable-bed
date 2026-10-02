@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from enum import IntFlag
 from typing import Final, overload
 
+from . import richmat_mh_catalog as _richmat_mh_catalog
+
 DOMAIN: Final = "adjustable_bed"
 
 
@@ -1436,31 +1438,32 @@ ADJUSTABLE_LUMBAR_VARIANTS: Final = {
     ADJUSTABLE_LUMBAR_VARIANT_OKIN: "OKIN-name table (OKIN service, with response)",
     ADJUSTABLE_LUMBAR_VARIANT_STAR: "Star-name tables (Nordic UART, chosen by manufacturer)",
 }
-# Richmat MH app model choices: each app's picker dialog and setup wizard
-# (Revive also keeps its six short structured identifiers on its manual route).
-# "auto" applies the app's name rule: the first four characters of the raw
-# Bluetooth name, lowercased, name the model; QRRM asks for a choice.
+# Richmat MH app model choices, from the generated catalog: each app's picker dialog
+# and setup wizard, Revive's six short manual identifiers, and every model for
+# Idealbed, whose manual dialog accepts any valid identifier. "auto" applies the
+# app's name rule: the first four characters of the raw Bluetooth name, lowercased,
+# name the model; QRRM asks for a choice.
+def _richmat_mh_model_choices(app: str) -> tuple[tuple[str, str], ...]:
+    catalog = _richmat_mh_catalog
+    choices: dict[str, str] = dict(catalog.PICKERS.get(app, ()))
+    manual = catalog.MANUAL_SHORT_IDS.get(app, ())
+    if app in catalog.MANUAL_ANY_MODEL:
+        manual = sorted(catalog.MODELS[app])
+    for model in manual:
+        choices.setdefault(model, model.upper())
+    return tuple(choices.items())
+
+
 RICHMAT_MH_MODEL_CHOICES: Final[dict[str, tuple[tuple[str, str], ...]]] = {
-    "revive": (
-        ("vjrm", "2500"), ("farm", "3500"), ("gsrm", "3500SH"), ("fhrm", "4500"),
-        ("garm", "5500"), ("iarm", "3.0"), ("vdrm", "4.0"), ("vorm", "5.0"),
-        ("3i", "3I"), ("4i", "4I"), ("4it", "4iT"), ("5i", "5I"), ("6i", "6I"), ("7i", "7I"),
-    ),
-    "best_mattress": (("bfrm", "BM2000"), ("utrm", "BM3000"), ("vsrm", "BM4000"), ("vorm", "BM5000")),
-    "blvd_home": (
-        ("bfrm", "BLVD-200F"), ("utrm", "BLVD-300F"), ("eorm", "BLVD-400NS"), ("garm", "BLVD-350"),
-    ),
-    "harmony": (
-        ("utrm", "Harmony Pro"), ("hvrm", "Harmony Ultimate"), ("y7rm", "Harmony Lite"),
-        ("a7rm", "BT2000"), ("t3rm", "BT2500"), ("ufrm", "BT3000"), ("vcrm", "BT4000"),
-        ("vfrm", "BT6500"), ("u5rm", "BT7000"),
-    ),
-    "idealbed": (("3i", "3I"), ("4i", "4I"), ("4it", "4iT"), ("5i", "5I"), ("6i", "6I"), ("7i", "7I")),
+    app: _richmat_mh_model_choices(app) for app in _richmat_mh_catalog.MODELS
 }
 RICHMAT_MH_VARIANTS_BY_APP: Final[dict[str, dict[str, str]]] = {
     app: {
         VARIANT_AUTO: "Model from the Bluetooth name (first four characters)",
-        **{f"model_{model}": f"{label} ({model.upper()})" for model, label in choices},
+        **{
+            f"model_{model}": label if label == model.upper() else f"{label} ({model.upper()})"
+            for model, label in choices
+        },
     }
     for app, choices in RICHMAT_MH_MODEL_CHOICES.items()
 }

@@ -17,7 +17,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 from homeassistant.util import dt as dt_util
@@ -41,9 +41,6 @@ from .richmat_mh_protocol import (
     ANGLE_SEND_DELAY_S,
     AROMA_FUNCTIONS,
     AROMA_TASK_SLEEP_S,
-    BTN_LED_OFF_CODE,
-    BTN_LED_PALETTE,
-    BTN_LED_WHITE,
     CALLBACK_FUNCTION_LOCK,
     CALLBACK_FUNCTION_SNORE,
     CALLBACK_LOCKED,
@@ -359,6 +356,17 @@ class Tap:
 LightPage = Literal["led", "btn_led"]
 
 
+@dataclass(slots=True)
+class SessionFlags:
+    """Replies one connection's setup collects before they replace the published pages."""
+
+    version: str = VER0
+    call_page: bool = False
+    dev: dict[str, bool] = field(default_factory=dict)
+    detection: bool = False
+    waist: bool = False
+
+
 class RichmatMhController(BedController):
     """Faithful Richmat MH app controls for one selected model."""
 
@@ -391,6 +399,9 @@ class RichmatMhController(BedController):
         self._call_page: bool = bool(snapshot.get("call_page", False))
         self._detection: bool = bool(snapshot.get("detection", False))
         self._waist: bool = bool(snapshot.get("waist", False))
+        # Replies of a running setup; the published flags above (the stored
+        # snapshot) keep the entities and command gates until it completes.
+        self._pending: SessionFlags | None = None
         self._classifier = Classifier(APP_GROUPS[app])
         self._write_char: BleakGATTCharacteristic | None = None
         self._notify_chars: list[BleakGATTCharacteristic] = []
@@ -639,12 +650,14 @@ class RichmatMhController(BedController):
             else:
                 name = _BUTTON_GROUP_NAMES.get(c.group) or _clean_label(c.label)
                 taps.append(Tap(key, name, c.code, "richmat_mh_action"))
-        if self._light_page() == "btn_led" and BTN_LED_OFF_CODE not in used:
-            # The button-light page's OFF button is identical in every app layout.
-            taps.append(
-                Tap(f"richmat_mh_{BTN_LED_OFF_CODE:02x}", "Button light off", BTN_LED_OFF_CODE,
-                    "richmat_mh_action")
-            )
+        if self._light_page() == "btn_led":
+            # Only Revive and Best Mattress have an emitting button-light OFF row; it is
+            # dead in HARMONY and has no writer in Blvd Home or Idealbed.
+            for c in self._model.controls if self._model is not None else ():
+                if c.route == "B" and c.code not in used:
+                    used.add(c.code)
+                    taps.append(Tap(f"richmat_mh_{c.code:02x}", "Button light off", c.code,
+                                    "richmat_mh_action"))
         return tuple(taps)
 
     # ------------------------------------------------------------ capabilities
@@ -1105,27 +1118,30 @@ class RichmatMhController(BedController):
                 continue
             chars = {c.uuid.lower(): c for c in service.characteristics}
             w, n = chars.get(write_uuid), chars.get(notify_uuid)
-            if w is not None and {"write", "write-without-response"} & set(w.properties):
+            if w is None or n is None:
+                # The app dereferences both fixed characteristics and aborts the selection.
+                raise ValueError("The Richmat MH app's known service lacks its fixed characteristics")
+            if {"write", "write-without-response"} & set(w.properties):
                 write = w
-            if n is not None and {"notify", "indicate"} & set(n.properties):
+            if {"notify", "indicate"} & set(n.properties):
                 notify = n
                 notifies.append(n)
             break  # The app stops at the first known service, complete or not.
         if write is None or notify is None:
-            # Fallback: the first service other than generic access/attribute;
-            # the last writable characteristic wins, every notifier is subscribed.
+            # Fallback: the first service other than generic access/attribute keeps
+            # the roles already found; the last writable characteristic wins, else a
+            # notifier does, and every notifier is subscribed.
             for service in services:
                 if service.uuid.lower()[:8] in FALLBACK_SKIPPED_PREFIXES:
                     continue
-                notifies = []
-                write = notify = None
                 for c in service.characteristics:
                     props = set(c.properties)
                     if {"write", "write-without-response"} & props:
                         write = c
                     elif {"notify", "indicate"} & props:
                         notify = c
-                        notifies.append(c)
+                        if c not in notifies:
+                            notifies.append(c)
                 break
         if write is None or notify is None:
             raise ValueError("The Richmat MH app needs a writable and a notifying characteristic")
@@ -1189,31 +1205,29 @@ class RichmatMhController(BedController):
 
     def _cancel_session(self) -> None:
         task, self._init_task = self._init_task, None
+        self._pending = None  # An abandoned session publishes nothing.
         if task is not None and not task.done():
             task.cancel()
 
     async def _run_session_setup(self) -> None:
         """``handleProtocol``: version query, then the version's init list.
 
-        Flags are rebuilt for this session, so a reply that stops arriving
-        removes its page again.
+        The replies are collected for this session and published together when
+        it completes, so a reply that stops arriving removes its page again. Until
+        then (and after a failed session) the stored snapshot stays in effect.
         """
+        pending = self._pending = SessionFlags()
         try:
-            self._version = VER0
-            self._call_page = False
-            self._dev = {}
-            self._detection = False
-            self._waist = False
             await asyncio.sleep(INIT_DELAY_S)
             await self._write_query(TX_VERSION)
             await asyncio.sleep(INIT_DELAY_S)
-            tasks = INIT_VER1 if self._version == VER1 else INIT_VER0
+            tasks = INIT_VER1 if pending.version == VER1 else INIT_VER0
             self._classifier.rx_type = "INIT"
             clock_sent = False
             for hex_text in tasks:
                 await self._write_query(hex_text)
                 await asyncio.sleep(INIT_TASK_SLEEP_S)
-                if not clock_sent and self.route == "C" and self._alarm_page():
+                if not clock_sent and self._pending_alarm_call_page(pending):
                     # AlarmCallFrag sends the phone clock when its page is created,
                     # even if a later reply removes the page again.
                     clock_sent = True
@@ -1223,8 +1237,25 @@ class RichmatMhController(BedController):
         except Exception:  # noqa: BLE001 - a failed query leaves the stored snapshot
             _LOGGER.debug("Richmat MH connection setup failed", exc_info=True)
             return
+        finally:
+            if self._pending is pending:
+                self._pending = None
+        self._version = pending.version
+        self._call_page = pending.call_page
+        self._dev = pending.dev
+        self._detection = pending.detection
+        self._waist = pending.waist
         self._init_complete.set()
         self._persist_snapshot()
+
+    def _pending_alarm_call_page(self, pending: SessionFlags) -> bool:
+        """Whether the session's replies so far mount the VER1 alarm call page."""
+        f = self._features
+        if f is None or pending.version != VER1 or not f.alarm_call:
+            return False
+        if APP_GROUPS[self._app] != "legacy" and not pending.call_page:
+            return False
+        return pending.dev.get("alarm", False)
 
     async def _send_clock(self) -> None:
         now = dt_util.now()
@@ -1254,13 +1285,15 @@ class RichmatMhController(BedController):
     def _apply(self, event: Event) -> None:
         kind = event.kind
         if kind == "version":
-            self._version = VER1
+            if self._pending is not None:
+                self._pending.version = VER1
         elif kind == "init":
             self._apply_init(event.data)
             if event.data.startswith(RX_CALLBACK_PREFIX):
                 self._apply_lock(event.data[6:8], event.data[4:6])
         elif kind == "detection_available":
-            self._detection = True
+            if self._pending is not None:
+                self._pending.detection = True
         elif kind == "detection_started":
             self._detection_results = {}
             self.forward_controller_state_updates(
@@ -1277,7 +1310,8 @@ class RichmatMhController(BedController):
                     f"{DETECTION_KEY}_results", dict(self._detection_results)
                 )
         elif kind == "waist_init":
-            self._waist = True
+            if self._pending is not None:
+                self._pending.waist = True
             self._apply_waist(parse_waist_init(event.data))
         elif kind == "waist":
             self._apply_waist(parse_waist_piece(event.data))
@@ -1299,25 +1333,32 @@ class RichmatMhController(BedController):
             self._apply_snore(event.data)
 
     def _apply_init(self, rx: str) -> None:
-        """``ControlFrag.onReceiverEvent`` capability flags."""
+        """``ControlFrag.onReceiverEvent`` capability flags, collected by the session.
+
+        Replies outside a setup session (later callbacks) do not rebuild pages.
+        """
+        session = self._pending
+        if session is None:
+            return
+        dev = session.dev
         multi = APP_GROUPS[self._app] == "revive"
-        if self._version == VER1:
+        if session.version == VER1:
             # VER1 resets these five flags before every reply (snore is kept).
             for key in ("alarm", "led", "aroma", "mattress", "speech"):
-                self._dev[key] = False
-            self._call_page = True
+                dev[key] = False
+            session.call_page = True
         if rx == RX_ALARM or (multi and rx == RX_ALARM_MULTI):
-            self._dev["alarm"] = True
+            dev["alarm"] = True
         elif rx == RX_LED:
-            self._dev["led"] = True
+            dev["led"] = True
         elif rx == RX_AROMA:
-            self._dev["aroma"] = True
+            dev["aroma"] = True
         elif rx == TX_MATTRESS:
-            self._dev["mattress"] = True
+            dev["mattress"] = True
         elif rx == TX_SPEECH:
-            self._dev["speech"] = True
-        elif self._version != VER1 and rx.startswith(RX_SNORE_PREFIX):
-            self._dev["snore"] = True
+            dev["speech"] = True
+        elif session.version != VER1 and rx.startswith(RX_SNORE_PREFIX):
+            dev["snore"] = True
 
     def _apply_lock(self, function: str, value: str) -> None:
         """Lock switches follow ``6e 23 v 84`` (motor page) and ``6e 23 v 0a`` (light page)."""
@@ -1380,18 +1421,18 @@ class RichmatMhController(BedController):
     def _apply_waist(self, values: Mapping[str, Any]) -> None:
         """The waist page's bean: mode, per-side settings and alarms."""
         updates: dict[str, Any] = {}
-        for field, value in values.items():
-            if field == "mode":
+        for reply_field, value in values.items():
+            if reply_field == "mode":
                 if 0 <= value < len(WAIST_MODES):
                     updates[WAIST_MODE_KEY] = WAIST_MODES[value]
-            elif field.endswith("_alarm"):
-                key = WAIST_ALARM_KEYS[field.removesuffix("_alarm")]
+            elif reply_field.endswith("_alarm"):
+                key = WAIST_ALARM_KEYS[reply_field.removesuffix("_alarm")]
                 updates[key] = value[0] if value else "off"
                 repeat = next((n for n, c in WAIST_ALARM_REPEAT.items() if value and c == value[1]), None)
                 updates[f"{key}_repeat"] = repeat
                 updates[f"{key}_intensity"] = int(value[2], 16) if value else None
             else:
-                side, name = field.split("_", 1)
+                side, name = reply_field.split("_", 1)
                 # A value the dialog cannot select (e.g. pressure off) is unknown.
                 option = next((o for o, v in WAIST_FIELDS[name].items() if v == value), None)
                 updates[f"richmat_mh_waist_{side}_{name}"] = option
@@ -1413,10 +1454,14 @@ class RichmatMhController(BedController):
     async def _release(self) -> None:
         """STOP 120 ms after the release, attempted even when cancelled."""
 
+        delaying = True
+
         async def release() -> None:
+            nonlocal delaying
             try:
                 await asyncio.sleep(STOP_DELAY_S)
             finally:
+                delaying = False
                 await self.write_command(stop_frame(), cancel_event=asyncio.Event())
 
         task = asyncio.create_task(release())
@@ -1426,7 +1471,9 @@ class RichmatMhController(BedController):
                 await asyncio.shield(task)
             except asyncio.CancelledError:
                 cancelled = True
-                task.cancel()  # Skip the remaining delay; STOP is still sent.
+                if delaying:
+                    # Skip the remaining delay; never cancel the STOP write itself.
+                    task.cancel()
             except Exception:  # noqa: BLE001 - re-raised below unless cancelled
                 break
         if cancelled:
@@ -1481,22 +1528,11 @@ class RichmatMhController(BedController):
         key = LIGHT_TIMER_MINUTES_KEY if self._app == "blvd_home" and self._light_page() == "btn_led" else LIGHT_TIMER_KEY
         self.forward_controller_state_update(key, shown)
 
-    @property
-    def button_light_palette(self) -> tuple[tuple[int, int, int], ...]:
-        """The button-light page's colour sectors (the LED page's hue bar is continuous)."""
-        if APP_GROUPS[self._app] == "legacy":
-            return BTN_LED_PALETTE
-        return (*BTN_LED_PALETTE, BTN_LED_WHITE)
-
     async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
-        page = self._light_page()
-        if page is None:
+        if self._light_page() is None:
             raise NotImplementedError("The bed has not reported a light page for this model")
-        rgb = tuple(int(v) for v in rgb_color)
-        if page == "btn_led" and rgb not in self.button_light_palette:
-            colours = ", ".join(f"#{r:02X}{g:02X}{b:02X}" for r, g, b in self.button_light_palette)
-            raise ValueError(f"The button-light page offers only its colours: {colours}")
-        await self.write_command(rgb_frame(*rgb), cancel_event=asyncio.Event())
+        r, g, b = (int(v) for v in rgb_color)
+        await self.write_command(rgb_frame(r, g, b), cancel_event=asyncio.Event())
 
     async def set_angle(self, bits: int, angle: int) -> None:
         """MotorCallFrag: 100 ms after the slider release, one absolute target."""

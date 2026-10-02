@@ -34,6 +34,11 @@ IDEALBED_COMMAND_KEYS = Path(
     "com.richmat.idealbed-2.4.2-2026-10-02-queue-e0bb6807-20261001-055-003/report/COMMAND_KEYS.json"
 )
 IDEALBED_ENTITY_CONTROLS = IDEALBED_COMMAND_KEYS.with_name("ENTITY_CONTROLS.json")
+# Pinned to the accepted Idealbed report's REPORT.SHA256.
+REPORT_SHA256 = {
+    "COMMAND_KEYS.json": "32976c563eaf919c076592a2060d1f3136be39e235b279011639bf850c89742e",
+    "ENTITY_CONTROLS.json": "01300c8270f353b07c275906f9d6ad1b3e47d98ad1a27b1f83be3e22ca8b5f74",
+}
 # Intensity sliders by their entity opcode (MSG_HEAD/FOOT_INTENSITY_INC).
 INTENSITY_ZONES = {"4C": "head", "4E": "foot"}
 TARGET = Path(__file__).resolve().parents[1] / "custom_components/adjustable_bed/richmat_mh_catalog.py"
@@ -75,20 +80,24 @@ _SCALAR = {"@+id/rvFlat": "FLAT", "@+id/rtUbl1": "UBL1", "@+id/rtUbl2": "UBL2", 
 MOTOR_MODE_TYPES = {"01": "Mode1", "02": "Mode2", "03": "Mode3", "04": "Mode4", "11": "LEFT", "12": "RIGHT"}
 MOTOR_BITS = {"Motor1": 0, "Motor2": 1, "Motor3": 2, "Motor4": 3}
 
-# Fixed picker dialogs and setup-wizard identifiers, from each package's layouts.
+# Fixed picker dialogs and setup-wizard identifiers. Labels are the ones the accepted
+# reports record (Revive model_mappings.json, Best Mattress ANALYSIS.md P1 picker,
+# HARMONY runtime-selector-inventory.json fixed_harmony_models); identifiers whose
+# label the reports do not record are shown as the neutral model ID.
 PICKERS: dict[str, tuple[tuple[str, str], ...]] = {
     "revive": (("vjrm", "2500"), ("farm", "3500"), ("gsrm", "3500SH"), ("fhrm", "4500"),
                ("garm", "5500"), ("iarm", "3.0"), ("vdrm", "4.0"), ("vorm", "5.0")),
     "best_mattress": (("bfrm", "BM2000"), ("utrm", "BM3000"), ("vsrm", "BM4000"), ("vorm", "BM5000")),
-    "blvd_home": (("bfrm", "BLVD-200F"), ("utrm", "BLVD-300F"), ("eorm", "BLVD-400NS"),
-                  ("garm", "BLVD-350")),
-    "harmony": (("utrm", "Harmony Pro"), ("hvrm", "Harmony Ultimate"), ("y7rm", "Harmony Lite"),
-                ("a7rm", "BT2000"), ("t3rm", "BT2500"), ("ufrm", "BT3000"), ("vcrm", "BT4000"),
-                ("vfrm", "BT6500"), ("u5rm", "BT7000")),
-    "idealbed": (("3i", "3I"), ("4i", "4I"), ("5i", "5I"), ("6i", "6I"), ("7i", "7I"), ("4it", "4iT")),
+    "blvd_home": (("bfrm", "BFRM"), ("utrm", "UTRM"), ("eorm", "EORM"), ("garm", "GARM")),
+    "harmony": (("utrm", "UTRM"), ("hvrm", "HVRM"), ("y7rm", "Y7RM"),
+                ("a7rm", "BT2000"), ("t3rm", "BT2500"), ("ufrm", "BT3000 / BT3000FH"),
+                ("vcrm", "BT4000"), ("vfrm", "BT6500"), ("u5rm", "BT7000")),
 }
 # Revive keeps its six short structured identifiers on its manual route.
 MANUAL_SHORT_IDS: dict[str, tuple[str, ...]] = {"revive": ("3i", "4i", "4it", "5i", "6i", "7i")}
+# Idealbed's SelectSurfaceDialogFrag.handleSurface accepts any typed or QR-scanned
+# identifier whose lowercase surface class exists (I-003, SelectSurfaceDialogFrag:129-162).
+MANUAL_ANY_MODEL: tuple[str, ...] = ("idealbed",)
 
 
 class Raw(NamedTuple):
@@ -500,9 +509,23 @@ def model_features(pkg: str, entry: dict[str, Any], ideal_keys: dict[str, str]) 
     }
 
 
+def _pinned(path: Path) -> bytes:
+    data = path.read_bytes()
+    digest = hashlib.sha256(data).hexdigest()
+    if digest != REPORT_SHA256[path.name]:
+        raise SystemExit(f"{path}: hash {digest} does not match the accepted report")
+    return data
+
+
+@cache
+def _idealbed_command_keys() -> dict[str, str]:
+    table = json.loads(_pinned(IDEALBED_COMMAND_KEYS))
+    return {k: v["value"].upper() for k, v in table.items()}
+
+
 @cache
 def _idealbed_entity_controls() -> tuple[dict[str, Any], ...]:
-    return tuple(json.loads(IDEALBED_ENTITY_CONTROLS.read_text()))
+    return tuple(json.loads(_pinned(IDEALBED_ENTITY_CONTROLS)))
 
 
 def _idealbed_entities(variant: str) -> list[dict[str, Any]]:
@@ -531,7 +554,10 @@ def _idealbed_features(entry: dict[str, Any], keys: dict[str, str]) -> dict[str,
     ]
     modes = []
     mm = s.get("setMotorModeMap", "")
-    for part in re.findall(r"EGroupType\.(\w+)\.getK\(\)\), CollectionsKt\.arrayListOf\(([^)]*)\)", mm):
+    # The list items are ``MotorModeType.X.getV()`` calls, so allow empty ``()`` inside.
+    for part in re.findall(
+        r"EGroupType\.(\w+)\.getK\(\)\), CollectionsKt\.arrayListOf\(((?:[^()]|\(\))*)\)", mm
+    ):
         if part[0] == "SINGLE":
             modes = re.findall(r"MotorModeType\.(\w+)\.getV", part[1])
 
@@ -569,8 +595,131 @@ def model_ids(app: str) -> dict[str, dict[str, Any]]:
         if ":" in mid:
             continue  # BLVD other-flavor branch edges, dead in this package
         dead = (e.get("disposition") or e.get("reachability")) == "DEAD/UNUSED"
-        out[mid] = {"index": i, "dead": dead, "entry": e}
+        out[mid] = {"index": i, "dead": dead, "entry": e, "model": m}
     return out
+
+
+# ------------------------------------------------- effective constructors (RA-001)
+# The reconciliation's executed-setter records override every flattened annotation
+# (semantic_override_policy); unassigned fields keep the BaseSurface defaults.
+_FLAG_SETTERS = {"led": "setHasLed", "btn_led": "setHasBtnLed", "aroma": "setHasAroma",
+                 "snore": "setHasSnore", "music": "setHasMusic", "sleep": "setHasSleep",
+                 "smart_set_lock": "setHasSmartSetLock", "smart_light_lock": "setHasSmartLightLock"}
+# Fields whose effective record names only the setter (enum registers, local maps):
+# the flattened value is kept when, and only when, one of these setters executed.
+_VALUE_SETTERS = {"sleep_type": ("setSleepType",), "speech": ("setSpeechList",),
+                  "new_alarm": ("setNewAlarm", "setIsNewAlarm"), "snore_list": ("setSnoreList",),
+                  "alarm_call": ("setAlarmMap",), "angles": ("setMotorMap",),
+                  "intensity": ("setMassageMap",), "motor_modes": ("setMotorModeMap",),
+                  "call": ("setMotorMap", "setMemoryMap", "setMassageMap")}
+_VALUE_DEFAULTS = {"sleep_type": None, "speech": False, "new_alarm": False, "snore_list": [],
+                   "alarm_call": [], "angles": [], "intensity": [], "motor_modes": [], "call": False}
+_HANDLED_SETTERS = {"setFunList", "setRenameMap", "setAlarmList", *_FLAG_SETTERS.values(),
+                    *(s for names in _VALUE_SETTERS.values() for s in names)}
+_GET_KEY = re.compile(r"CmdKey\.INSTANCE\.get(\w+)\(\)")
+
+
+def _flattened_fun_keys(pkg: str, e: dict[str, Any]) -> list[str]:
+    """The CmdKey names of the package's flattened (annotated) FunList."""
+    if pkg == "representative":
+        return [f["action"] for f in e["features"]]
+    if pkg == "sibling-1":
+        (stmt,) = (d["statement"] for d in e["declaration_evidence"] if d["field"] == "FunList")
+        return _GET_KEY.findall(stmt)
+    if pkg == "sibling-3":
+        return list(e["function_keys"])
+    return list(e["fun_keys"])
+
+
+def _flattened_fun_codes(pkg: str, e: dict[str, Any]) -> list[str]:
+    if pkg == "representative":
+        return [f["value"].upper() for f in e["features"]]
+    if pkg == "sibling-1":
+        return [c.upper() for c in e["configuration"]["FunList"]]
+    if pkg == "sibling-3":
+        return [f["hex"].upper() for f in e["configuration"]["FunList"]]
+    return [f["value"].upper() for f in e["fun_values"]]
+
+
+@cache
+def cmdkey_codes(pkg: str) -> dict[str, str]:
+    """CmdKey name -> opcode, from the package's own constructor tables."""
+    if pkg == "sibling-4":
+        return _idealbed_command_keys()
+    table: dict[str, str] = {}
+    for m in inventory(pkg)["models"]:
+        e = m["entry"]
+        if (e.get("disposition") or e.get("reachability")) == "DEAD/UNUSED" or ":" in e["id"]:
+            continue
+        keys, codes = _flattened_fun_keys(pkg, e), _flattened_fun_codes(pkg, e)
+        assert len(keys) == len(codes), (pkg, e["id"])
+        for key, code in zip(keys, codes, strict=True):
+            assert table.setdefault(key, code) == code, (pkg, e["id"], key, code, table[key])
+    return table
+
+
+def effective_constructor(info: dict[str, Any]) -> dict[str, Any] | None:
+    rec = info["model"].get("reconciliation_effective_constructor")
+    if rec is None:
+        return None
+    assert rec["result"] == "PASS", rec
+    return rec["effective_setter_values"]
+
+
+def apply_effective_features(pkg: str, values: dict[str, Any], feats: dict[str, Any]) -> dict[str, Any]:
+    unknown = set(values) - _HANDLED_SETTERS
+    assert not unknown, (pkg, unknown)
+    out = dict(feats)
+    for name, setter in _FLAG_SETTERS.items():
+        out[name] = setter in values and values[setter] in (1, True)
+    for name, setters in _VALUE_SETTERS.items():
+        if any(s in values for s in setters):
+            # The record holds only the register; the flattened value must carry it.
+            assert out[name] not in (None, False, []), (pkg, name)
+        else:
+            out[name] = _VALUE_DEFAULTS[name]
+    keys = cmdkey_codes(pkg)
+    out["alarm"] = [keys[k["cmdkey"]] for k in values.get("setAlarmList") or []]
+    return out
+
+
+def fun_list_delta(pkg: str, info: dict[str, Any], values: dict[str, Any]) -> list[str]:
+    """Effective FunList keys absent from the flattened list the command rows used."""
+    effective = [k["cmdkey"] for k in values["setFunList"]]
+    flattened = _flattened_fun_keys(pkg, info["entry"])
+    removed = [k for k in flattened if k not in effective]
+    assert not removed, (pkg, info["entry"]["id"], removed)
+    return [k for k in effective if k not in flattened]
+
+
+def _blvd_widget_template(code: str) -> Raw:
+    """The single legacy widget every Blvd Home surface renders for one FunList code.
+
+    MenuUtil.setFunctionList maps a CmdKey to its layout independently of the
+    surface, so a code present on other surfaces has one widget template. The
+    frame is the common builder S([6e, 01, txMode, code]).
+    """
+    shapes = set()
+    for r in inventory("sibling-2")["domains"]["commands"][0]["entries"]:
+        st = r.get("source_trace") or {}
+        if st.get("groupcodes") == [code] and st.get("area") in ("MEMORY", "MASSAGE"):
+            shapes.add((st["area"], st["group"], st["widget"], st["final_code"], st["pressType"],
+                        int(st["ms"]), st["final_label"], st["visible"], st["formula"]))
+    assert len(shapes) == 1, (code, shapes)
+    ((area, group, _widget, final, press, ms, label, visible, formula),) = shapes
+    assert visible is True and formula == "S([6e,01,txMode,hexStr2Bytes(final_code)[0]])"
+    if area == "MEMORY":
+        return Raw("L", "memory", group, "memory", label, int(final, 16), ms if press == "1" else 0)
+    return Raw("L", "massage", group, "press", label, int(final, 16), ms if press == "1" else 0)
+
+
+def derived_rows(app: str, missing: list[str]) -> list[Raw]:
+    """Rows for effective FunList keys the package's command extraction skipped."""
+    if not missing:
+        return []
+    assert app == "blvd_home", (app, missing)
+    keys = cmdkey_codes(PACKAGES[app])
+    return [_blvd_widget_template(keys[k]) for k in missing]
 
 
 def build() -> dict[str, Any]:
@@ -581,16 +730,21 @@ def build() -> dict[str, Any]:
         for v, row, _src in adapter():
             raw[v].append(row)
         ids = model_ids(app)
-        ideal_keys: dict[str, str] = {}
-        if pkg == "sibling-4":
-            table = json.loads(IDEALBED_COMMAND_KEYS.read_text())
-            ideal_keys = {k: v["value"].upper() for k, v in table.items()}
+        ideal_keys = _idealbed_command_keys() if pkg == "sibling-4" else {}
         models = {}
         for mid, info in sorted(ids.items()):
             if info["dead"] or mid == "qrrm":
                 continue
-            controls = normalize(raw.get(mid, []))
+            rows = raw.get(mid, [])
             feats = model_features(pkg, info["entry"], ideal_keys)
+            values = effective_constructor(info)
+            if values is not None:
+                feats = apply_effective_features(pkg, values, feats)
+                added = derived_rows(app, fun_list_delta(pkg, info, values))
+                if added:
+                    last_l = max(i for i, r in enumerate(rows) if r.route == "L")
+                    rows = [*rows[: last_l + 1], *added, *rows[last_l + 1 :]]
+            controls = normalize(rows)
             models[mid] = {"controls": controls, "features": feats}
         unknown = set(raw) - set(models)
         assert not unknown, (app, sorted(unknown))
@@ -646,14 +800,15 @@ def render(apps: dict[str, Any]) -> str:
         lines.append(f"    {app!r}: {{")
         lines += out
         lines.append("    },")
-    lines += ["}", "", "# App picker dialogs and setup-wizard identifiers with their app labels.",
+    lines += ["}", "", "# App picker dialogs and setup-wizard identifiers with their labels.",
               "PICKERS: Final = {"]
     for app, choices in PICKERS.items():
         lines.append(f"    {app!r}: {choices!r},")
     lines += ["}", "", "MANUAL_SHORT_IDS: Final = {"]
     for app, ids in MANUAL_SHORT_IDS.items():
         lines.append(f"    {app!r}: {ids!r},")
-    lines += ["}", "# fmt: on", ""]
+    lines += ["}", "", "# Apps whose manual dialog accepts any catalog model identifier.",
+              f"MANUAL_ANY_MODEL: Final = {MANUAL_ANY_MODEL!r}", "# fmt: on", ""]
     return "\n".join(lines)
 
 

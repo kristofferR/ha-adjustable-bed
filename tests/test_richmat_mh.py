@@ -15,6 +15,7 @@ from custom_components.adjustable_bed.beds.richmat_mh import (
     ALARM_OPTIONS,
     APP_GROUPS,
     RichmatMhController,
+    SessionFlags,
     load_model,
     resolve_model,
     selectable_models,
@@ -187,6 +188,7 @@ def test_every_offered_model_loads_and_variants_follow_the_pickers() -> None:
             assert load_model(app, model) is not None, (app, model)
         expected = {"auto", *(f"model_{m}" for m, _label in RICHMAT_MH_MODEL_CHOICES[app])}
         assert set(RICHMAT_MH_VARIANTS_BY_APP[app]) == expected
+    assert set(selectable_models("idealbed")) == set(catalog.MODELS["idealbed"])
 
 
 def test_catalog_controls_are_well_formed() -> None:
@@ -198,7 +200,7 @@ def test_catalog_controls_are_well_formed() -> None:
         else:
             assert kind in ("recall", "save", "press")
         if route == "B":
-            # Every app's button-light page uses one ONCE OFF button.
+            # Route B rows are the button-light page OFF (only Revive and Best Mattress emit one).
             assert (area, code, keep_ms) == ("btn_led", protocol.BTN_LED_OFF_CODE, 0)
 
 
@@ -216,6 +218,10 @@ def test_catalog_controls_are_well_formed() -> None:
         ("revive", "model_7irm", "anything", (None, "unknown_model")),  # not on a picker
         ("best_mattress", None, "VORM0001", ("vorm", None)),
         ("blvd_home", "model_eorm", None, ("eorm", None)),
+        # Idealbed's manual dialog accepts any valid identifier, not just its short IDs.
+        ("idealbed", "model_fhrm", "Cool Touch 1", ("fhrm", None)),
+        ("idealbed", "model_4it", None, ("4it", None)),
+        ("idealbed", "model_qrrm", None, (None, "unknown_model")),  # the dead marker class
     ],
 )
 def test_model_resolution_follows_the_app(app, variant, name, expected) -> None:
@@ -271,12 +277,31 @@ async def test_first_known_service_wins_and_fallback_takes_last_writable() -> No
                  _char("a1", "write"), _char("a2", "notify"), _char("a3", "write"),
                  _char("a4", "indicate")),
         _service(W3[0], _char(W3[1], "write"), _char(W3[2], "notify")),  # complete, later map
-        _service(W1[0], _char(W1[1], "write-without-response")),  # no notifier
+        _service(W1[0], _char(W1[1], "read"), _char(W1[2], "read")),  # no usable role
     ])
     await controller.async_discover_capabilities()
     # The app stops at W1 (incomplete), then falls back to the first non-GAP service.
     assert controller.control_characteristic_uuid == "a3"
     assert [c.uuid for c in controller._notify_chars] == ["a2", "a4"]
+
+
+async def test_fallback_keeps_the_known_services_partial_roles() -> None:
+    controller = make(services=[
+        _service("0000abcd-0000-1000-8000-00805f9b34fb", _char("a1", "notify")),
+        _service(W1[0], _char(W1[1], "write"), _char(W1[2], "read")),
+    ])
+    await controller.async_discover_capabilities()
+    assert controller.control_characteristic_uuid == W1[1]
+    assert [c.uuid for c in controller._notify_chars] == ["a1"]
+
+
+async def test_known_service_missing_a_fixed_characteristic_fails_like_the_app() -> None:
+    controller = make(services=[
+        _service("0000abcd-0000-1000-8000-00805f9b34fb", _char("a1", "write"), _char("a2", "notify")),
+        _service(W1[0], _char(W1[1], "write")),
+    ])
+    with pytest.raises(ValueError, match="fixed characteristics"):
+        await controller.async_discover_capabilities()
 
 
 @pytest.mark.parametrize(("props", "response"), [(("write",), True), (("write-without-response",), False)])
@@ -356,6 +381,29 @@ async def test_release_stop_is_sent_when_the_hold_is_cancelled() -> None:
     assert not controller.ble_lock.locked()
 
 
+async def test_cancel_during_the_release_stop_write_still_completes_it(sleeps) -> None:
+    controller = make(snapshot=vers1("7irm"))
+    await controller.async_discover_capabilities()
+    in_stop, finish = asyncio.Event(), asyncio.Event()
+    completed: list[str] = []
+
+    async def write(char, data, response):
+        if bytes(data) == protocol.stop_frame():
+            in_stop.set()
+            await finish.wait()
+            completed.append(bytes(data).hex())
+
+    controller.client.write_gatt_char.side_effect = write
+    task = asyncio.create_task(controller.tap(0x45))
+    await in_stop.wait()
+    task.cancel()
+    await asyncio.sleep(0)
+    finish.set()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert completed == ["6e01006edd"]
+
+
 # ---------------------------------------------------------------- notifications
 
 
@@ -385,10 +433,14 @@ def test_classifier_detection_and_state_replies() -> None:
 async def test_legacy_init_replies_open_pages_and_snore_prefix_is_ver0_only() -> None:
     controller = make("revive", "CFRM0001")
     controller._classifier.rx_type = "INIT"
+    controller._handle_notification(None, bytearray.fromhex("6e09010078"))
+    assert controller._dev == {}  # outside a setup session, replies change nothing
+    session = controller._pending = SessionFlags()
     for reply in ("6e09010078", "6e0e00037f", "6e21010090", "6e90c101c0"):
         controller._handle_notification(None, bytearray.fromhex(reply))
-    assert controller._dev == {"alarm": True, "led": True, "snore": True}
-    assert controller._detection is True
+    assert session.dev == {"alarm": True, "led": True, "snore": True}
+    assert session.detection is True
+    assert controller._dev == {} and controller._detection is False  # published on completion
 
 
 # ------------------------------------------------------------------- features
@@ -500,11 +552,30 @@ async def test_button_light_page_off_and_blvd_minutes(sleeps) -> None:
     (timer,) = controller.controller_number_specs
     assert (timer.key, timer.native_max_value) == ("richmat_mh_light_timer_minutes", 15)
     await timer.set_fn(controller, 15)
-    off = next(s for s in controller.controller_button_specs if s.key == "richmat_mh_75")
-    await off.press_fn(controller)
-    assert frames(controller) == ["6e0b038400", "6e010075e4", "6e01006edd"]
+    assert frames(controller) == ["6e0b038400"]
     revive = make("revive", "GARM0001", snapshot=vers0("garm"))
+    await revive.async_discover_capabilities()
     assert revive.controller_number_specs[0].native_max_value == 300
+    off = next(s for s in revive.controller_button_specs if s.key == "richmat_mh_75")
+    await off.press_fn(revive)
+    assert frames(revive) == ["6e010075e4", "6e01006edd"]
+
+
+@pytest.mark.parametrize(
+    ("app", "model", "has_off"),
+    [
+        ("revive", "garm", True),
+        ("best_mattress", "vsrm", True),
+        ("harmony", "garm", False),  # A003-UNPROMOTED-UBL_OFF: dead
+        ("blvd_home", "garm", False),  # no emission row
+        ("idealbed", "fhrm", False),  # no emission row
+    ],
+)
+def test_button_light_off_exists_only_where_the_app_emits_it(app, model, has_off) -> None:
+    controller = make(app, f"{model.upper()}0001", snapshot=vers0(model, led=True))
+    assert controller._light_page() == "btn_led"
+    keys = {spec.key for spec in controller.controller_button_specs}
+    assert ("richmat_mh_75" in keys) is has_off
 
 
 async def test_smart_set_lock_toggle_and_callback_state() -> None:
@@ -571,6 +642,37 @@ async def test_ver1_motor_mode_and_memory_arrival() -> None:
     assert frames(controller) == ["6e881c0012"]
     controller._handle_notification(None, bytearray.fromhex("6e90402e6c"))
     assert controller._coordinator.controller_state["richmat_mh_memory_arrival"] == "M1"
+
+
+@pytest.mark.parametrize("model", ["6hrm", "dirm", "ghrm", "h4rm"])
+async def test_idealbed_single_group_motor_modes_keep_both_buttons(model: str) -> None:
+    # setMotorModeMap: SINGLE -> arrayListOf(MotorModeType.LEFT.getV(), MotorModeType.RIGHT.getV())
+    controller = make("idealbed", f"{model.upper()}0001", snapshot=vers1(model))
+    assert controller.motor_mode_options == ("left", "right")
+    await controller.async_discover_capabilities()
+    await controller.set_motor_mode("right")
+    assert frames(controller) == ["6e8818000e"]
+
+
+def test_effective_constructors_override_the_flattened_annotations() -> None:
+    """Reconciliation RA-001: only the executed setters of the pinned flavour count."""
+    garm = load_model("idealbed", "garm").features
+    assert not (garm.btn_led or garm.snore or garm.snore_list or garm.smart_set_lock or garm.speech)
+    assert garm.alarm == (0x2E,)
+    assert load_model("idealbed", "ufrm").features.alarm == ()
+    assert load_model("idealbed", "uzrm").features.alarm == ()
+    hnrm = load_model("blvd_home", "hnrm")
+    assert hnrm.features.alarm == (0x45, 0x46, 0x58, 0xF4, 0xF0, 0x86, 0x4C, 0x4E)
+    reset = [(c.route, c.kind, c.code, c.keep_ms) for c in hnrm.controls if c.group == "FACTORY_RESET"]
+    assert reset == [("L", "recall", 0x62, 0)]
+
+
+async def test_blvd_hnrm_factory_reset_uses_the_common_widget_frame(sleeps) -> None:
+    controller = make("blvd_home", "HNRM0001", snapshot=vers0("hnrm"))
+    await controller.async_discover_capabilities()
+    reset = next(s for s in controller.controller_button_specs if s.key == "richmat_mh_62")
+    await reset.press_fn(controller)
+    assert frames(controller) == ["6e010062d1", "6e01006edd"]
 
 
 def test_legacy_route_has_no_ver1_entities_and_stale_keys_cover_them() -> None:
@@ -669,15 +771,72 @@ def test_mattress_resync_reproduces_the_absolute_end_helper() -> None:
     assert junk.buffer == "5e0304036900"
 
 
-async def test_button_light_colours_are_the_apps_wheel_sectors() -> None:
+async def test_button_light_colour_is_not_restricted_to_unproven_sectors() -> None:
     revive = make("revive", "GARM0001", snapshot=vers0("garm"))
     await revive.async_discover_capabilities()
-    await revive.set_light_color((0xFF, 0xFF, 0xFF))
-    assert frames(revive) == [protocol.rgb_frame(255, 255, 255).hex()]
-    with pytest.raises(ValueError, match="only its colours"):
-        await revive.set_light_color((1, 2, 3))
-    idealbed = make("idealbed", "GARM0001", snapshot=vers0("garm"))
-    assert (0xFF, 0xFF, 0xFF) not in idealbed.button_light_palette  # no white sector
-    led = make("revive", "CFRM0001", snapshot=vers0("cfrm"))
-    await led.async_discover_capabilities()
-    await led.set_light_color((1, 2, 3))  # the LED page's hue bar is continuous
+    await revive.set_light_color((1, 2, 3))
+    assert frames(revive) == [protocol.rgb_frame(1, 2, 3).hex()]
+
+
+async def test_stored_pages_stay_published_while_the_session_runs() -> None:
+    """Platforms are built right after connect; the session must not hide VER1 pages."""
+    controller = make(snapshot=vers1("7irm", alarm=True, led=True))
+    await controller.async_discover_capabilities()
+    hold = asyncio.Event()
+    queries = {protocol.query_frame(t).hex() for t in (protocol.TX_VERSION, *protocol.INIT_VER1)}
+
+    async def write(char, data, response):
+        if bytes(data).hex() in queries:
+            await hold.wait()
+
+    controller.client.write_gatt_char.side_effect = write
+    keys = {s.key for s in controller.controller_number_specs}
+    await controller.start_notify()
+    await asyncio.sleep(0)
+    # Mid-session: the same entities, and VER1 commands still work.
+    assert {s.key for s in controller.controller_number_specs} == keys
+    assert "richmat_mh_back_angle" in keys and controller.motor_mode_options
+    assert controller.supports_light_color_control and controller.supports_richmat_mh_alarm
+    controller.client.write_gatt_char.side_effect = None
+    await controller.write_massage_intensity("head", 2)
+    assert frames(controller)[-1] == protocol.massage_intensity_frame(2, 0).hex()
+    controller._cancel_session()
+    assert controller._pending is None and controller.route == "C"
+
+
+async def test_failed_session_keeps_the_stored_snapshot(sleeps) -> None:
+    controller = make(snapshot=vers1("7irm", alarm=True))
+    await controller.async_discover_capabilities()
+
+    async def write(char, data, response):
+        if bytes(data).hex() == protocol.query_frame(protocol.TX_ALARM).hex():
+            raise ConnectionError("lost")
+
+    controller.client.write_gatt_char.side_effect = write
+    await controller.start_notify()
+    assert controller._init_task is not None
+    await controller._init_task
+    assert controller.route == "C" and controller.supports_richmat_mh_alarm
+    assert controller._pending is None
+    controller._coordinator.remember_richmat_mh_snapshot.assert_not_called()
+
+
+async def test_completed_session_publishes_all_replies_at_once(sleeps) -> None:
+    controller = make("revive", "CFRM0001")  # first connection: nothing stored
+    await controller.async_discover_capabilities()
+    replies = {"6e0a000179": "6e0e00037f", "6e2100008f": "6e21010090"}
+    published: list[bool] = []
+
+    async def write(char, data, response):
+        published.append(controller.supports_light_color_control)
+        if reply := replies.get(bytes(data).hex()):
+            controller._handle_notification(char, bytearray.fromhex(reply))
+
+    controller.client.write_gatt_char.side_effect = write
+    await controller.start_notify()
+    assert controller._init_task is not None
+    await controller._init_task
+    # CFRM has the LED page unconditionally in Revive; the snore reply adds nothing new,
+    # but the dev flags appear only after the last query.
+    assert controller._dev == {"led": True, "snore": True}
+    controller._coordinator.remember_richmat_mh_snapshot.assert_called_once()

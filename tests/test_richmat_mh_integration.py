@@ -186,3 +186,74 @@ def test_coordinator_persists_a_changed_snapshot_and_schedules_a_reload() -> Non
     coordinator._bed_type = "richmat"
     with pytest.raises(ValueError):
         coordinator.remember_richmat_mh_snapshot(snapshot)
+
+
+async def test_two_address_pair_refuses_a_combined_model_change(hass) -> None:
+    """Each side is its own physical bed and app model; unpair before changing it."""
+    from unittest.mock import patch
+
+    from homeassistant.const import CONF_ADDRESS, CONF_NAME
+    from homeassistant.data_entry_flow import FlowResultType
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.adjustable_bed import _build_paired_children
+    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
+    from custom_components.adjustable_bed.const import (
+        CONF_BED_TYPE,
+        CONF_DISABLE_ANGLE_SENSING,
+        CONF_MOTOR_COUNT,
+        CONF_PAIR_CHILDREN,
+        CONF_PAIR_ID,
+        CONF_PAIR_MEMBER_ADDRESSES,
+        CONF_PAIR_MODE,
+        CONF_PAIR_SCHEMA_VERSION,
+        CONF_PREFERRED_ADAPTER,
+        CONF_PROTOCOL_VARIANT,
+        CONF_SIDE,
+        DOMAIN,
+        PAIR_MODE_SEPARATE_ADDRESS,
+    )
+
+    left, right = "AA:BB:CC:DD:EE:81", "AA:BB:CC:DD:EE:82"
+
+    def child(side: str, address: str) -> dict:
+        return {
+            CONF_SIDE: side,
+            CONF_ADDRESS: address,
+            CONF_NAME: side.capitalize(),
+            CONF_BED_TYPE: "richmat_revive",
+            CONF_MOTOR_COUNT: 2,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PREFERRED_ADAPTER: "auto",
+            CONF_PROTOCOL_VARIANT: "model_vorm",
+            CONF_BLE_DEVICE_NAME: "VORM0001",
+        }
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Revive Pair",
+        data={
+            CONF_PAIR_ID: "pair_revive",
+            CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
+            CONF_PAIR_SCHEMA_VERSION: 1,
+            CONF_BED_TYPE: "richmat_revive",
+            CONF_NAME: "Revive Pair",
+            CONF_PREFERRED_ADAPTER: "auto",
+            CONF_PROTOCOL_VARIANT: "model_vorm",
+            CONF_PAIR_MEMBER_ADDRESSES: [left, right],
+            CONF_PAIR_CHILDREN: [child("left", left), child("right", right)],
+        },
+        unique_id="pair_revive",
+        version=4,
+    )
+    entry.add_to_hass(hass)
+    _build_paired_children(hass, entry)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.handler = entry.entry_id
+    flow.hass = hass
+    with patch("homeassistant.components.bluetooth.async_last_service_info", return_value=None):
+        result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: "model_farm"})
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "richmat_mh_unpair_first"}
+    stored = [c[CONF_PROTOCOL_VARIANT] for c in entry.data[CONF_PAIR_CHILDREN]]
+    assert stored == ["model_vorm", "model_vorm"]

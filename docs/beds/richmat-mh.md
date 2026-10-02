@@ -27,10 +27,12 @@ changed.
 2. Leave the protocol variant on `auto` to apply the app's name rule: the first
    four characters of the raw Bluetooth name, lowercased, name the model
    (`7IRM…` selects `7irm`). The raw name is stored at setup.
-3. Choose an explicit model variant (`model_<id>`, labelled as in the app)
-   when the app would ask: names starting with `QRRM`, Idealbed names starting
-   with `Cool Touch`, or a name with no live model. The variants list exactly
-   the app's picker, setup wizard and manual model routes.
+3. Choose an explicit model variant (`model_<id>`) when the app would ask:
+   names starting with `QRRM`, Idealbed names starting with `Cool Touch`, or a
+   name with no live model. The variants list exactly the app's picker, setup
+   wizard and manual model routes; Idealbed's manual dialog accepts any valid
+   model identifier, so every Idealbed model is offered. Labels are the app's
+   where the analysis recorded them, otherwise the model identifier.
 
 The setup and options forms report a name the app cannot resolve on the
 protocol variant field. Each side of a two-address pair keeps its own app and
@@ -63,7 +65,7 @@ on the version reply.
 | Motors | Covers (KEEP at the control's interval, then STOP 120 ms after release) | `6e 01 M C SUM`, STOP `6e 01 M 6e SUM` |
 | Presets, memories, massage, motor-page buttons | Standard presets and memory slots, app-labelled buttons | Tap: one frame, STOP 120 ms later |
 | LED page | RGB light, light timeout 0–300 s (0 = always on) | `6e0c ff R s 6e0d G B s`, `6e 0b HH LL` |
-| Button-light page | RGB light limited to the wheel's colours (red, orange, yellow, green, light blue, blue, purple; white except Best Mattress and Idealbed), timeout (Blvd Home: 0–15 min), **Button light off** | as above, OFF `75` |
+| Button-light page | RGB light, timeout (Blvd Home: 0–15 min); **Button light off** only in Revive Control and Best Mattress, the apps with an emitting OFF button | as above, OFF `75` |
 | Smart set lock | **Toggle smart set lock** button, **Smart set lock** state | `6e 01 M 84` once |
 | Snore intervention | Select: off, anti-snore, zero gravity (the model's list) | `6e 13 M code` |
 | Detection | Start/stop buttons, **Detection** sensor with per-device results | `6e88c210c8`, `6e88c220d8` |
