@@ -828,19 +828,33 @@ def _button_entities_for(
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
         # Named app actions disappear when their profile or transport changes.
         for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "fsm_relax_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "svane_", "motion_bed_", "starcode_", "limoss_remote_", "coolbase_", "remacro_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_"):
-            if (
-                namespace == "motion_bed_"
-                and coordinator.bed_type == BED_TYPE_MOTION_BED
-                and any(spec.key == "motion_bed_active_module" for spec in controller.controller_select_specs)
-            ):
-                # Hub inventory can be unknown or temporarily absent. Keep its
-                # registry identities; current capabilities still gate actions.
-                continue
             desired_actions = {
                 coordinator.entity_unique_id(spec.key)
                 for spec in controller.controller_button_specs
                 if spec.key.startswith(namespace)
             }
+            if (
+                namespace == "motion_bed_"
+                and coordinator.bed_type == BED_TYPE_MOTION_BED
+                and any(spec.key == "motion_bed_active_module" for spec in controller.controller_select_specs)
+            ):
+                from .motion_bed_actions import MOTION_BED_ACTIONS
+
+                # Keep possible hub identities while inventory is unknown, but
+                # retire controls that only belong to the former home profile.
+                owners = {
+                    "Setting2Activity", "MainMcuActivity", "ChangeDeviceActivity", "ConnectMcuActivity",
+                    "DiandongFragment", "DianDongSetActivity", "AlarmActivity",
+                    "QinangFragment", "AnmoSetActivity", "PressSetActivity",
+                    "LengnuanFragment", "TimeSettingActivity",
+                }
+                desired_actions.update(
+                    coordinator.entity_unique_id("motion_bed_" + action.key)
+                    for action in MOTION_BED_ACTIONS
+                    if action.owner in owners
+                    and (action.kind in ("press", "stop")
+                         or (action.kind == "held" and action.owner == "DiandongFragment"))
+                )
             action_prefix, action_suffix = coordinator.entity_unique_id(namespace).split(
                 namespace, 1
             )

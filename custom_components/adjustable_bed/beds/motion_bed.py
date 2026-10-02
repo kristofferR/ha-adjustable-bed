@@ -529,6 +529,16 @@ class MotionBedController(BedController):
                 contexts |= frozenset({"thermal"})
         route = replace(self._route, contexts=contexts)
         result = parse_motion_bed_notification(data, route, self._state)
+        if self._state.provisioning_status in ("success", "failed", "timed_out"):
+            # A completed attempt stays terminal; status queries still update
+            # network telemetry through the unchanged native decoder.
+            result = replace(
+                result,
+                state=replace(result.state, provisioning_status=self._state.provisioning_status,
+                              network_poll_attempts=self._state.network_poll_attempts),
+                effects=tuple(effect for effect in result.effects
+                              if effect.action != "network_status_query"),
+            )
         self._diagnostic_rejection = result.rejection
         self._state = result.state
         if "module_deleted" in result.receipts:
