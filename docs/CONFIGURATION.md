@@ -391,7 +391,7 @@ Select **Jordan's Serenity app** explicitly for the accepted `com.okin.bedding.s
 
 ### Jordan's Tranquil and Customatic Z-Series app profiles
 
-Select **Jordan's Tranquil app** for `com.okin.bedding.tranquil` 1.0.2 (3). For `com.okin.bedding.glory` 1.0.4 (5), select **Customatic Z-Series app (Z-230)** or **(Z-280)** to match the model chosen on the app's selection screen. These apps share OKIN discovery names and GATT UUIDs with other products, so none is detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields. The pulse count stays editable: on Z-Series profiles it also bounds an ordinary button press, because the app streams a touched control until release and defines no deadline of its own. Z-Series setup accepts 1 to 600 pulses (0.1 to 60 s). Notifications stay active when angle sensing is disabled; these profiles report no motor position.
+Select **Jordan's Tranquil app** for `com.okin.bedding.tranquil` 1.0.2 (3). For `com.okin.bedding.glory` 1.0.4 (5), select **Customatic Z-Series app (Z-230)** or **(Z-280)** to match the model chosen on the app's selection screen. These apps share OKIN discovery names and GATT UUIDs with other products, so none is detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields. The pulse count stays editable: on Z-Series profiles it also bounds an ordinary button press, because the app streams a touched control until release and defines no deadline of its own. Z-Series setup accepts 1 to 600 pulses (0.1 to 60 s). A two-address pair must be split before either side changes to, from or between these profiles. Notifications stay active when angle sensing is disabled; these profiles report no motor position.
 
 ### AdjustableM5X4 app selectors
 

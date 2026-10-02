@@ -122,8 +122,11 @@ from .const import (
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SVANE,
+    BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
+    BED_TYPE_ZSERIES_Z230,
+    BED_TYPE_ZSERIES_Z280,
     BEDS_WITH_PERCENTAGE_POSITIONS,
     BEDS_WITH_POSITION_FEEDBACK,
     CB24_BED_SELECTION_A,
@@ -714,6 +717,13 @@ def _is_valid_motor_count(
 ) -> bool:
     """Return whether a motor count is valid for the selected protocol."""
     return motor_count in _motor_count_options(bed_type, protocol_variant)
+
+
+# App profiles that belong to one physical bed: a two-address pair must be
+# separated before either side moves to, from or between them.
+EXPLICIT_PAIR_APP_BED_TYPES: Final = frozenset(
+    {BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES_Z230, BED_TYPE_ZSERIES_Z280}
+)
 
 
 def _invalid_pulse_count(bed_type: str | None, pulse_count: int) -> bool:
@@ -6826,6 +6836,20 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 user_input = {**user_input, CONF_MOTOR_COUNT: int(user_input[CONF_MOTOR_COUNT])}
             requested_bed_type = user_input.get(CONF_BED_TYPE, bed_type)
             requested_route = user_input.get(CONF_PROTOCOL_VARIANT, form_variant)
+            if separate_address_pair:
+                # Stored per-side types, not the pending form value: a rebuilt form
+                # must not hide a change from another app profile on either side.
+                side_types = {
+                    child.get(CONF_BED_TYPE) for child in iter_children(self.config_entry.data)
+                }
+                if side_types != {requested_bed_type} and EXPLICIT_PAIR_APP_BED_TYPES.intersection(
+                    {requested_bed_type, *side_types}
+                ):
+                    return self.async_show_form(
+                        step_id=step_id,
+                        data_schema=vol.Schema(schema_dict),
+                        errors={CONF_BED_TYPE: "okin_bedding_app_unpair_first"},
+                    )
             if separate_address_pair and (
                 (requested_bed_type == BED_TYPE_FSM_RELAX and requested_bed_type != bed_type)
                 or any(key in user_input for key in (CONF_FSM_RELAX_LAYOUT, CONF_FSM_RELAX_LIGHT, CONF_FSM_RELAX_MASSAGE, CONF_FSM_RELAX_MEMORY_NAMES, *CONF_FSM_RELAX_REVERSALS))

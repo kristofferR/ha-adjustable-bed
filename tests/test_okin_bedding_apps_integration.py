@@ -568,3 +568,132 @@ async def test_cancelled_resolution_writes_nothing_and_releases_connected_beds(h
         await task
     assert written(first) == [] and written(second) == []
     children[1].async_ensure_connected.assert_any_await(reset_timer=True)
+
+
+class _OneSlotChild:
+    """A side on a one-slot Bluetooth path: a second simultaneous link fails."""
+
+    slot: list[_OneSlotChild] = []
+
+    def __init__(self, name: str, store: dict) -> None:
+        self.name = name
+        self.bed_type = BED_TYPE_ZSERIES_Z280
+        self.live = zseries("z280")
+        _persisting(self.live, store)
+        self.entry = self.live._coordinator.entry
+        # The cached offline controller is a separate, stale instance for the same entry.
+        self.capability_controller = zseries("z280")
+        self.capability_controller._coordinator.entry = self.entry
+        self.disconnects: list[str] = []
+
+    @property
+    def is_connected(self) -> bool:
+        return self in self.slot
+
+    @property
+    def controller(self):
+        return self.live if self.is_connected else None
+
+    async def async_ensure_connected(self, reset_timer: bool = True) -> bool:
+        if self.slot and self.slot[0] is not self:
+            return False  # The one Bluetooth slot is held by the other side.
+        if not self.slot:
+            self.slot.append(self)
+        return True
+
+    async def async_disconnect(self, reason: str = "intentional", **kwargs) -> bool:
+        self.disconnects.append(reason)
+        if self in self.slot:
+            self.slot.remove(self)
+        return True
+
+
+@pytest.mark.parametrize("paired", [False, True])
+async def test_capability_probe_releases_each_link_on_a_one_slot_path(hass, paired):
+    from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
+
+    _OneSlotChild.slot = []
+    left, right = _OneSlotChild("Left", {}), _OneSlotChild("Right", {})
+
+    async def run(child, command):
+        assert await child.async_ensure_connected()
+        try:
+            await command(child.controller)
+        finally:
+            await child.async_disconnect("sequential_switch")
+
+    if paired:
+        pair = MagicMock(spec=PairedBedCoordinator)
+        pair.name = "Pair"
+        pair.children = {"left": left, "right": right}
+
+        async def execute(command, *, side, **kwargs):
+            for child in (left, right):  # Sequential mode: one link at a time.
+                await run(child, command)
+
+        pair.async_execute_controller_command = AsyncMock(side_effect=execute)
+        resolved = [(pair, SIDE_BOTH)]
+    else:
+        def executor(child):
+            async def execute(command, **kwargs):
+                await run(child, command)
+
+            return execute
+
+        for child in (left, right):
+            child.async_execute_controller_command = AsyncMock(side_effect=executor(child))
+        resolved = [(left, SIDE_BOTH), (right, SIDE_BOTH)]
+    with patch(
+        "custom_components.adjustable_bed.services._command_targets",
+        side_effect=lambda coordinator, side: list(coordinator.children.values())
+        if paired
+        else [coordinator],
+    ):
+        await _call(hass, resolved, "zseries_sync_clock")
+    for child in (left, right):
+        assert child.disconnects[0] == "capability_probe"
+        assert child.entry.data["zseries_alarm_available"] is True
+        assert [frame for frame in written(child.live) if frame != "00c0"][0].startswith("0706")
+    assert _OneSlotChild.slot == []
+
+
+async def test_pair_profile_changes_to_or_from_these_apps_require_unpair(hass):
+    from homeassistant.const import CONF_ADDRESS
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
+    from custom_components.adjustable_bed.const import (
+        BED_TYPE_OKIN_CST,
+        CONF_BED_TYPE,
+        CONF_MOTOR_COUNT,
+        CONF_MOTOR_PULSE_COUNT,
+        CONF_PAIR_CHILDREN,
+    )
+    from custom_components.adjustable_bed.pairing import build_pair_entry_data
+
+    cases = [
+        # (left type, right type, requested type, refused)
+        (BED_TYPE_OKIN_CST, BED_TYPE_OKIN_CST, BED_TYPE_TRANQUIL, True),
+        (BED_TYPE_ZSERIES_Z230, BED_TYPE_ZSERIES_Z230, BED_TYPE_ZSERIES_Z280, True),
+        (BED_TYPE_ZSERIES_Z280, BED_TYPE_ZSERIES_Z280, BED_TYPE_OKIN_CST, True),
+        (BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES_Z280, BED_TYPE_TRANQUIL, True),  # Mixed pair.
+        (BED_TYPE_OKIN_CST, BED_TYPE_ZSERIES_Z230, BED_TYPE_OKIN_CST, True),  # Mixed pair.
+        (BED_TYPE_TRANQUIL, BED_TYPE_TRANQUIL, BED_TYPE_TRANQUIL, False),  # Same type kept.
+    ]
+    for index, (left_type, right_type, requested, refused) in enumerate(cases):
+        left = {CONF_ADDRESS: f"11:22:33:44:55:{index:02d}", CONF_BED_TYPE: left_type, CONF_MOTOR_COUNT: 2}
+        right = {**left, CONF_ADDRESS: f"11:22:33:44:66:{index:02d}", CONF_BED_TYPE: right_type}
+        entry = MockConfigEntry(domain=DOMAIN, data=build_pair_entry_data(left, right, name="Pair"))
+        entry.add_to_hass(hass)
+        children = [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]]
+        flow = AdjustableBedOptionsFlow(entry)
+        flow.handler = entry.entry_id
+        flow.hass = hass
+        result = await flow.async_step_settings(
+            {CONF_BED_TYPE: requested, CONF_MOTOR_PULSE_COUNT: "10"}
+        )
+        if refused:
+            assert result["errors"] == {CONF_BED_TYPE: "okin_bedding_app_unpair_first"}, cases[index]
+            assert [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]] == children
+        else:
+            assert result.get("errors") != {CONF_BED_TYPE: "okin_bedding_app_unpair_first"}

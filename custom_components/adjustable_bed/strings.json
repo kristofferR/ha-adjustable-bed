@@ -902,6 +902,7 @@
       "malouf_app_pair_settings": "Unpair first, then select each physical bed’s app profile before combining them again.",
       "furnimove_remote_required": "Choose a captured FurniMove handset ID. An unknown ID requires its exact app table; the receiver label cannot choose one.",
       "furnimove_unpair_first": "Separate the paired entries before changing to FurniMove, then select each side’s own handset layout.",
+      "okin_bedding_app_unpair_first": "Separate the paired entries before changing to or from the Tranquil or Z-Series app, then select each side’s own app profile.",
       "vibradorm_app_required": "Choose the bed app.",
       "vibradorm_app_invalid": "Choose a supported app control layout and retained feature settings.",
       "vibradorm_app_unpair_first": "Unpair these entries before changing app settings. Each physical side keeps its own app controls.",

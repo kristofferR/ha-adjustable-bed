@@ -1931,22 +1931,38 @@ async def _execute_zseries_alarm(
     try:
         # All-or-nothing: resolve every unknown state on a live connection before
         # any bed receives a clock or alarm frame.
-        for coordinator, side in targets:
-            for target in _command_targets(coordinator, side):
-                cached = target.capability_controller
-                state = _zseries_controller(cached).alarm_state if cached is not None else None
-                if state is None:
-                    if not any(known is target for _, known in preflighted):
-                        preflighted.append((coordinator, target))
-                    live = _zseries_controller(await _get_controller_for_service(target))
-                    state = await live.resolve_alarm_state()
-                if state is None:
-                    raise ServiceValidationError(
-                        f"Could not read the manufacturer string of '{target.name}' that "
-                        "enables Z-Series alarms; try again"
-                    )
-                if not state:
-                    raise ServiceValidationError(f"Device '{target.name}' does not support {label}")
+        physical = [
+            (coordinator, target)
+            for coordinator, side in targets
+            for target in _command_targets(coordinator, side)
+        ]
+        for coordinator, target in physical:
+            cached = target.capability_controller
+            state = _zseries_controller(cached).alarm_state if cached is not None else None
+            if state is None:
+                opened = not target.is_connected
+                if not any(known is target for _, known in preflighted):
+                    preflighted.append((coordinator, target))
+                live = _zseries_controller(await _get_controller_for_service(target))
+                state = await live.resolve_alarm_state()
+                if opened and len(physical) > 1:
+                    # Like _validation_controller, never hold a capability-only link
+                    # while probing the next target: a sequential or one-slot path
+                    # cannot open a second one. The read result is persisted, and
+                    # execution reconnects each side through its normal path.
+                    released = await target.async_disconnect("capability_probe")
+                    if released is False or target.is_connected:
+                        raise ServiceValidationError(
+                            f"Could not release '{target.name}' before checking the next bed"
+                        )
+                    preflighted[:] = [item for item in preflighted if item[1] is not target]
+            if state is None:
+                raise ServiceValidationError(
+                    f"Could not read the manufacturer string of '{target.name}' that "
+                    "enables Z-Series alarms; try again"
+                )
+            if not state:
+                raise ServiceValidationError(f"Device '{target.name}' does not support {label}")
         for coordinator, side in targets:
             # The app cancels the running stream first; HA also releases it safely.
             await _execute_sided(coordinator, side, command)
