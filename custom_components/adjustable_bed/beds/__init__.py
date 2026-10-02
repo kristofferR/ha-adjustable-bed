@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from .limoss_remote import LimossRemoteController as LimossRemoteController
     from .linak import LinakController as LinakController
     from .logicdata import LogicdataController as LogicdataController
+    from .logicdata_air_pump import LogicdataAirPumpController as LogicdataAirPumpController
     from .logicdata_app import LogicdataAppController as LogicdataAppController
     from .malouf_app import MaloufAppController as MaloufAppController
     from .motosleep import MotoSleepController as MotoSleepController
@@ -105,6 +106,7 @@ _EXPORT_MODULES = {
     "LinakController": "linak",
     "LogicdataController": "logicdata",
     "LogicdataAppController": "logicdata_app",
+    "LogicdataAirPumpController": "logicdata_air_pump",
     "MaloufAppController": "malouf_app",
     "MotoSleepController": "motosleep",
     "OctoController": "octo",
@@ -174,6 +176,7 @@ __all__ = [
     "LinakController",
     "LogicdataController",
     "LogicdataAppController",
+    "LogicdataAirPumpController",
     "MotoSleepController",
     "OctoController",
     "RemacroController",

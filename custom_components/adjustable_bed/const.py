@@ -129,7 +129,13 @@ CONF_LOGICDATA_APP_FAMILY: Final = "logicdata_app_family"
 CONF_LOGICDATA_APP_LAYOUT: Final = "logicdata_app_layout"
 CONF_LOGICDATA_APP_TRANSPORT: Final = "logicdata_app_transport"
 CONF_LOGICDATA_APP_HAS_LIGHT: Final = "logicdata_app_has_light"
-LOGICDATA_APP_PROFILES: Final = {"phone": "Phone app", "tablet": "Tablet app"}
+LOGICDATA_APP_PROFILES: Final = {
+    "phone": "Phone app",
+    "tablet": "Tablet app",
+    "sleep_smart": "Sleep Smart Air Mattress app (bed)",
+}
+# Sleep Smart's final movement layout is always two motors; series picks massage zones.
+LOGICDATA_SLEEP_SMART_LAYOUTS: Final = frozenset({"standard_2", "split_series"})
 LOGICDATA_APP_FAMILIES: Final = {"p1": "P1 (standard)", "p2": "P2 (middle)"}
 LOGICDATA_APP_LAYOUTS: Final = {
     "standard_2": "Back and legs (2 motors)",
@@ -479,6 +485,8 @@ BED_TYPE_SUTA: Final = "suta"  # SUTA Smart Home AT protocol (ASCII + CRLF)
 BED_TYPE_TIMOTION_AHF: Final = "timotion_ahf"  # TiMOTION AHF 11-byte bitmask protocol
 BED_TYPE_KAIDI: Final = "kaidi"  # Kaidi custom mesh-over-GATT protocol (Rize/Floyd/ISleep)
 BED_TYPE_LOGICDATA_APP: Final = "logicdata_app"
+# Sleep Smart Air Mattress pump: a separate BLE device on the shared ffe0 service.
+BED_TYPE_LOGICDATA_AIR_PUMP: Final = "logicdata_air_pump"
 BED_TYPE_LOGICDATA: Final = "logicdata"  # Logicdata SimplicityFrame (XXTEA+CRC16+SLIP)
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 
@@ -589,6 +597,7 @@ SUPPORTED_BED_TYPES: Final = [
     # Logicdata SimplicityFrame (SILVERmotion)
     BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_APP,
+    BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_STARCODE_ABM5_4,
 ]
 
@@ -646,6 +655,8 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_SIMMONS,
         # Controls are identical for all three tables; only the live link picks one.
         BED_TYPE_ADJUSTABLE_LUMBAR,
+        # Fixed pump controls; pressure is live-link state only.
+        BED_TYPE_LOGICDATA_AIR_PUMP,
         # The constructor refuses offline UART catalogs whose nonpositive C
         # can gain controls from live manufacturer classification.
         BED_TYPE_STARCODE_ABM5_4,
@@ -2597,6 +2608,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_CUSTOMATIC_REMEDY,
         BED_TYPE_MALOUF_APP,
         BED_TYPE_LOGICDATA_APP,
+        BED_TYPE_LOGICDATA_AIR_PUMP,
         BED_TYPE_JIECANG_APP,
         BED_TYPE_LEGGETT_LP_LEGACY,
         BED_TYPE_VIBRADORM_APP,
@@ -2677,6 +2689,8 @@ BEDS_WITH_DISCONNECT_AFTER_COMMAND_DEFAULT_DISABLED: Final = (
             BED_TYPE_LEGGETT_WILINKE,
             BED_TYPE_LIMOSS,
             BED_TYPE_LOGICDATA_APP,
+            # Pressure is polled only on a held link, like the app's pump tab.
+            BED_TYPE_LOGICDATA_AIR_PUMP,
             BED_TYPE_MALOUF_APP,
             BED_TYPE_OCTO,
             BED_TYPE_OKIMAT,

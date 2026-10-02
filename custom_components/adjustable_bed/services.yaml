@@ -812,11 +812,11 @@ logicdata_set_alarm:
 
 logicdata_rename:
   name: Rename Logicdata controller
-  description: Change the Bluetooth name of a compatible Logicdata app controller.
+  description: Change the Bluetooth name of a compatible Logicdata app controller or Sleep Smart air pump.
   fields:
     device_id:
       name: Device
-      description: A Logicdata app controller that supports device renaming.
+      description: A Logicdata app controller or Sleep Smart air pump that supports device renaming.
       required: true
       selector:
         device:
@@ -824,7 +824,7 @@ logicdata_rename:
           multiple: true
     name:
       name: Name
-      description: This service accepts 1 to 255 printable ASCII characters as a safe common input range for phone and tablet controllers.
+      description: MotionRelax phone and tablet controllers accept 1 to 255 printable ASCII characters. Sleep Smart beds and pumps accept 1 to 20 letters, digits, ä, ö, ü or ß.
       required: true
       selector:
         text:
@@ -836,11 +836,11 @@ logicdata_rename:
 
 logicdata_hold_preset:
   name: Hold Logicdata preset recall
-  description: Recall a middle-motor flat or memory position with repeated commands for a specified duration, then release.
+  description: Hold a flat, preset or memory recall with repeated commands for a specified duration, then release.
   fields:
     device_id:
       name: Device
-      description: A Logicdata app controller using the middle-motor protocol. Standard controllers do not support held preset recall.
+      description: A MotionRelax controller using the middle-motor protocol (flat, memory 1 and 2), or a Sleep Smart bed (flat, zero gravity, anti-snore and memory 1).
       required: true
       selector:
         device:
@@ -851,7 +851,7 @@ logicdata_hold_preset:
       required: true
       selector:
         select:
-          options: [flat, memory_1, memory_2]
+          options: [flat, zero_g, anti_snore, memory_1, memory_2]
     duration:
       name: Duration
       description: Hold for 0.2 to 60 seconds, in whole milliseconds. These are service interface bounds, not firmware limits.

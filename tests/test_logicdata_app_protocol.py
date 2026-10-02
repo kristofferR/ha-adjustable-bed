@@ -183,7 +183,7 @@ def test_rename_profiles_and_safe_ascii_subset():
         protocol.rename_command("phone", "t2", "BED")
 
 
-@pytest.mark.parametrize("profile", protocol.APP_PROFILES)
+@pytest.mark.parametrize("profile", ["phone", "tablet"])
 def test_selector_and_status_parser_without_speculative_checksum(profile):
     assert protocol.parse_notification(
         profile, bytes.fromhex("f2f2110001")

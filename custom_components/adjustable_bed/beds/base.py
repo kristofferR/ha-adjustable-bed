@@ -1565,6 +1565,11 @@ class BedController(ABC):
         return False
 
     @property
+    def held_preset_options(self) -> tuple[str, ...]:
+        """Return the presets ``hold_preset`` accepts for this profile."""
+        return ()
+
+    @property
     def supports_wake_routine(self) -> bool:
         """Return whether an app-defined wake command sequence is available."""
         return False
@@ -2309,6 +2314,10 @@ class BedController(ABC):
     async def rename_device(self, name: str) -> None:
         """Write a protocol-supported BLE device name."""
         raise NotImplementedError("Device rename not supported on this bed")
+
+    def validate_device_rename(self, name: str) -> None:
+        """Reject a name before any target of a multi-target rename writes."""
+        return None
 
     async def set_automatic_light(self, enabled: bool) -> None:
         """Enable or disable automatic under-bed lighting."""
