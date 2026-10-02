@@ -3466,7 +3466,8 @@ class AdjustableBedCoordinator:
         attempt = 0
         protocol_correction_pairing_retry_reserved = False
         stale_gatt_retry_extensions = 0
-        self._stale_gatt_retry_source = None
+        # A pending source may come from a runtime command failure; like its
+        # skip flag, it is consumed by the attempt that verifies it.
         rerouted_stale_gatt_source: str | None = None
         while True:
             if rerouted_stale_gatt_source and self._stale_gatt_retry_source is None:

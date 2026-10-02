@@ -317,6 +317,22 @@ class TestCoordinatorConnection:
         assert coordinator._connection_attempt_count == 3
         assert [call.args[2] for call in select.await_args_list][1:] == ["proxy-a", "proxy-a"]
 
+    async def test_runtime_stale_cache_verification_survives_into_the_next_connect(
+        self, hass, mock_config_entry, mock_coordinator_connected
+    ):
+        """A command's cache clear steers the following connect to that proxy."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._stale_gatt_retry_source = "proxy-a"
+        coordinator._skip_pair_next_attempt = True
+        from custom_components.adjustable_bed import coordinator as coordinator_module
+
+        select = AsyncMock(side_effect=coordinator_module.select_adapter)
+        with patch("custom_components.adjustable_bed.coordinator.select_adapter", new=select):
+            assert await coordinator.async_connect() is True
+
+        assert select.await_args_list[0].args[2] == "proxy-a"
+        assert coordinator._stale_gatt_retry_source is None
+
     async def test_connect_success(
         self,
         hass: HomeAssistant,
