@@ -574,14 +574,36 @@ class LimossRemoteController(BedController):
 
     async def refresh_device_info(self, *, allow_incomplete_versions: bool = False) -> None:
         self._progress = {}
+        owner = (self._notify_client, self._notify_char, self._notify_generation)
         try:
             deadline = asyncio.get_running_loop().time() + _INFORMATION_TIMEOUT_SECONDS
             await self._request(
                 2, b"\x02\0\0\0\x03", retry_capabilities=True, deadline=deadline
             )
             try:
-                await self._request(0, b"\0\0\0\0\x03", deadline=deadline)
-                await self._request(1, b"\x01\0\0\0\x03", deadline=deadline)
+                for opcode in (0, 1):
+                    if allow_incomplete_versions:
+                        task = asyncio.current_task()
+                        if self._coordinator.cancel_command.is_set() or (
+                            task is not None and task.cancelling()
+                        ):
+                            raise asyncio.CancelledError
+                        client, char, generation = owner
+                        if (
+                            client is None or not client.is_connected
+                            or self.client is not client or self._notify_client is not client
+                            or self._notify_char is not char
+                            or self._notify_generation != generation
+                            or _characteristic(client) is not char
+                        ):
+                            raise ConnectionError("App notification channel changed")
+                        # Admit optional phases only if a legal native write can still start.
+                        # Once admitted, lane/pacing/ATT failures remain fatal.
+                        if max(
+                            asyncio.get_running_loop().time(), self._last_write_started + 0.08
+                        ) >= deadline:
+                            break
+                    await self._request(opcode, bytes((opcode, 0, 0, 0, 3)), deadline=deadline)
             except _ReplyWaitTimeout:
                 # The app opens controls on fresh02; version replies are optional metadata.
                 if not allow_incomplete_versions:
