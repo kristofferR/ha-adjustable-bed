@@ -119,16 +119,47 @@ class FurniMoveLayoutRepairFlow(RepairsFlow):
                     CONF_HAS_MASSAGE: False,
                     CONF_DISABLE_ANGLE_SENSING: True,
                 })
+            if user_input["layout"] == "keep" and self._is_rf_eco_bt(entry):
+                return await self._keep_current(entry)
+        options = [
+            selector.SelectOptionDict(value="furnimove", label="FurniMove adjustable bed"),
+            selector.SelectOptionDict(value="staircase", label="Single-actuator staircase"),
+        ]
+        if self._is_rf_eco_bt(entry):
+            options.append(
+                selector.SelectOptionDict(value="keep", label="Keep current configuration")
+            )
         return self.async_show_form(
             step_id="init",
             description_placeholders={"name": entry.title},
             data_schema=vol.Schema({vol.Required("layout"): selector.SelectSelector(
-                selector.SelectSelectorConfig(options=[
-                    selector.SelectOptionDict(value="furnimove", label="FurniMove adjustable bed"),
-                    selector.SelectOptionDict(value="staircase", label="Single-actuator staircase"),
-                ], mode=selector.SelectSelectorMode.DROPDOWN)
+                selector.SelectSelectorConfig(options=options, mode=selector.SelectSelectorMode.DROPDOWN)
             )}),
         )
+
+    def _is_rf_eco_bt(self, entry: ConfigEntry) -> bool:
+        data = (
+            entry.data
+            if self._side is None
+            else effective_child_data(entry.data, self._side, entry.options)
+        )
+        return data.get(CONF_BED_TYPE) == BED_TYPE_OKIN_RF_ECO_BT
+
+    async def _keep_current(self, entry: ConfigEntry) -> FlowResult:
+        """Dismiss the repair for a working setup without rewriting its settings.
+
+        A full OKIMAT bed saved as RF ECO BT is promoted at runtime (#406); the
+        staircase choice would cut it to one motor and drop its remote code.
+        """
+        confirmed = {CONF_STAIRCASE_LAYOUT_CONFIRMED: True}
+        data = (
+            {**entry.data, **confirmed}
+            if self._side is None
+            else with_updated_child(entry.data, self._side, confirmed)
+        )
+        self.hass.config_entries.async_update_entry(entry, data=data)
+        async_refresh_furnimove_layout_issues(self.hass, entry)
+        return self.async_create_entry(title="", data={})
 
     async def async_step_handset(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         if self._entry() is None:

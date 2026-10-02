@@ -68,6 +68,13 @@ def make_controller(profile="multi", *, properties=("write", "read", "notify"), 
 
     client.read_gatt_char = AsyncMock(side_effect=read)
     controller = SvaneController(coordinator, profile=profile, session=session)
+    coordinator.controller = controller
+
+    async def query(refresh, **kwargs):
+        if kwargs["run_if"]():
+            await refresh(controller)
+
+    coordinator.async_execute_controller_query = AsyncMock(side_effect=query)
     return controller
 
 
@@ -303,6 +310,7 @@ async def test_initialization_order_keeps_device_information_off_the_connect_pat
     assert controller.session.position == bytes.fromhex("81388113")
     connected = len(events)
     # The app's paced device-information reads follow in the background.
+    assert controller._device_info_task is not None
     await controller._device_info_task
     assert events[connected:] == [
         ("read", uuid("2a26")),
@@ -564,6 +572,7 @@ async def test_device_information_cancel_preserves_completed_metadata():
 
     controller._wait = wait
     await controller.start_notify()
+    assert controller._device_info_task is not None
     await controller._device_info_task
     assert controller.session.observations["svane_firmware"] == "firmware"
     assert "svane_hardware" not in controller.session.observations

@@ -472,7 +472,7 @@ class SvaneController(BedController):
             self.forward_controller_state_update("svane_initialization", status)
             self._initialized = True
             # The app's device-information reads wait a second after each one;
-            # running them on the connect path would delay every command.
+            # serialize them as an idle query after the pending command.
             if self._device_info_task is None or self._device_info_task.done():
                 self._device_info_task = asyncio.create_task(self._refresh_device_information_quietly())
         except BaseException:
@@ -480,8 +480,18 @@ class SvaneController(BedController):
             raise
 
     async def _refresh_device_information_quietly(self) -> None:
+        async def refresh(current: BedController) -> None:
+            if current is self:
+                await self.refresh_device_information()
+
         try:
-            await self.refresh_device_information()
+            await self._coordinator.async_execute_controller_query(
+                refresh,
+                skip_disconnect=True,
+                preemptible=True,
+                preserve_idle_deadline=True,
+                run_if=lambda: self._initialized and self._coordinator.controller is self,
+            )
         except (BleakError, ConnectionError, TimeoutError, ValueError) as err:
             _LOGGER.debug("Svane device information read failed: %s", err)
 
@@ -634,6 +644,8 @@ class SvaneController(BedController):
                 if self.profile == "jmc" and head is not None:
                     self._started.add((OLD, OLD_CHAR))
                     await self._write(OLD, OLD_CHAR, SvaneCommands.motion(head, feet))
+                    if feet is not None:
+                        feet_started = True
                 else:
                     if head is not None:
                         self._started.add((HEAD, UP if head else DOWN))

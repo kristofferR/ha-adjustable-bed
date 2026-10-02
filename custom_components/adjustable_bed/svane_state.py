@@ -57,7 +57,7 @@ def svane_multi_slots(value: object) -> dict[int, tuple[bytes, bytes]]:
         if slot not in ("1", "2") or not isinstance(axes, list) or len(axes) != 2:
             raise ValueError("Svane P1 memory has two slots of head and feet bytes")
         if any(
-            not isinstance(raw, str) or re.fullmatch(r"(?:[0-9a-fA-F]{2}){1,20}", raw) is None
+            not isinstance(raw, str) or re.fullmatch(r"(?:[0-9a-fA-F]{2})+", raw) is None
             for raw in axes
         ):
             raise ValueError("Svane P1 memory axes are nonempty opaque bytes")
