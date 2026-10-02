@@ -80,6 +80,7 @@ from .command_scheduler import (
 from .const import (
     ADAPTER_AUTO,
     BED_MOTOR_PULSE_DEFAULTS,
+    BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_DEWERTOKIN,
@@ -115,7 +116,6 @@ from .const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
     BED_TYPE_SERTA,
-    BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SOLACE,
@@ -191,6 +191,7 @@ from .const import (
     LINAK_VARIANT_PERFORMANCE,
     MALOUF_LAYOUT_AUTO,
     MALOUF_MEMORY_SLOTS_AUTO,
+    NAME_RULE_VARIANTS_BY_BED_TYPE,
     OCTO_VARIANT_STAR2,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     OKIMAT_SERVICE_UUID,
@@ -199,7 +200,6 @@ from .const import (
     REVERIE_BACK_MAX_ANGLE,
     RICHMAT_REMOTE_AUTO,
     RUNTIME_BOND_KEYS,
-    SIMMONS_NAME_RULE_VARIANTS,
     SOLACE_VARIANT_WOOSA,
     STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
     VARIANT_AUTO,
@@ -694,12 +694,12 @@ class AdjustableBedCoordinator:
                 keys={CONF_BLE_DEVICE_NAME},
             )
         elif (
-            self._bed_type == BED_TYPE_SIMMONS
-            and self._protocol_variant in SIMMONS_NAME_RULE_VARIANTS
+            self._protocol_variant
+            in NAME_RULE_VARIANTS_BY_BED_TYPE.get(self._bed_type, frozenset())
             and not is_mac_like_name(device_name)
             and self.entry.data.get(CONF_BLE_DEVICE_NAME) != device_name
         ):
-            # The SIMMONS name rule needs the raw name later, when BlueZ may
+            # App name rules (SIMMONS, Adjustable Lumbar) need the raw name later, when BlueZ may
             # report only the address; entities do not depend on it.
             self._begin_internal_entry_update(
                 bool(self.entry.data.get(CONF_BLE_BOND_ESTABLISHED, False))
@@ -3937,6 +3937,8 @@ class AdjustableBedCoordinator:
                     BED_TYPE_VIBRADORM_APP,
                     BED_TYPE_VMATBASIC,
                     BED_TYPE_LIMOSS_REMOTE,
+                    # Its controller performs the app's single raw 2A29 read.
+                    BED_TYPE_ADJUSTABLE_LUMBAR,
                 }:
                     if self._device_info_read_done:
                         ble_manufacturer = self._ble_manufacturer
