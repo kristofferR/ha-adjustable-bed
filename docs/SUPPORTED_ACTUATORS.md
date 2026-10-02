@@ -45,6 +45,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Remacro](beds/remacro.md) | Slumberland, The Brick and Jerome's app screens: up to 3 motors, split sides, presets, memory, massage, light |
 | [Logicdata](beds/logicdata.md) | XXTEA encrypted, 2 memory slots, lights, massage |
 | [LOGICDATA app profiles](beds/logicdata-app.md) | Phone/tablet layouts, standard/middle-motor controls, alarms and renaming |
+| [LOGICDATA Sleep Smart](beds/logicdata-sleep-smart.md) | Hold-only presets, one memory, massage mode, factory reset; separate air mattress pump |
 | [Okin CB35](beds/okin-cb35.md) | 7-byte Nordic UART (Sealy Posturematic), 6 motors, massage, lights |
 | [Okin CST](beds/okin-cst.md) | 14-byte dual-field protocol (Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; Nectar Motion) |
 | [FurniMove / OKIN Smart Remote app](beds/furnimove.md) | Explicit handset layouts from production API tables; RF, ordinary and DOT transports |
@@ -114,7 +115,7 @@ Beds that won't be supported:
 - **Logicdata eLift / desk controllers** — Uses local UDP/HTTP, not Bluetooth
 - **ErgoWifi** — Uses Xlink cloud platform
 
-LOGICDATA MOTIONrelax BLE app layouts have an explicit [LOGICDATA app profile](beds/logicdata-app.md). Existing legacy [Jiecang](beds/jiecang.md) entries retain their original protocol.
+LOGICDATA MOTIONrelax BLE app layouts have an explicit [LOGICDATA app profile](beds/logicdata-app.md); the Sleep Smart Air Mattress app has its own [bed profile and pump type](beds/logicdata-sleep-smart.md). Existing legacy [Jiecang](beds/jiecang.md) entries retain their original protocol.
 
 If you have one of these beds, consider running [smartbed-mqtt](https://github.com/richardhopton/smartbed-mqtt) as an add-on or make a separate integration for WiFi/Cloud adjustable beds.
 

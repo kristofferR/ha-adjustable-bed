@@ -109,6 +109,7 @@ from .const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LIMOSS_REMOTE,
+    BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
@@ -252,6 +253,7 @@ from .const import (
     LOGICDATA_APP_LAYOUTS,
     LOGICDATA_APP_PROFILES,
     LOGICDATA_APP_TRANSPORTS,
+    LOGICDATA_SLEEP_SMART_LAYOUTS,
     MALOUF_APP_MODELS,
     MALOUF_APP_PROFILES,
     MALOUF_APP_TRANSPORTS,
@@ -721,6 +723,8 @@ def _motor_count_options(
         BED_TYPE_SIMMONS,
         BED_TYPE_CUSTOMATIC_CLARITY,
         BED_TYPE_CUSTOMATIC_JEROMES,
+        # The pump has no motors; keep the stored count fixed and unused.
+        BED_TYPE_LOGICDATA_AIR_PUMP,
     }:
         return [2]
     if bed_type in {BED_TYPE_CUSTOMATIC_REMEDY, BED_TYPE_ADJUSTABLE_LUMBAR}:
@@ -915,6 +919,10 @@ def _logicdata_app_errors(data: dict[str, Any]) -> dict[str, str]:
         errors[CONF_LOGICDATA_APP_FAMILY] = "logicdata_app_required"
     if data.get(CONF_LOGICDATA_APP_LAYOUT) not in LOGICDATA_APP_LAYOUTS:
         errors[CONF_LOGICDATA_APP_LAYOUT] = "logicdata_app_required"
+    elif data.get(CONF_LOGICDATA_APP_PROFILE) == "sleep_smart":
+        # Either command family uses the final two-motor layout in this app.
+        if data.get(CONF_LOGICDATA_APP_LAYOUT) not in LOGICDATA_SLEEP_SMART_LAYOUTS:
+            errors[CONF_LOGICDATA_APP_LAYOUT] = "logicdata_app_sleep_smart_layout"
     elif (data.get(CONF_LOGICDATA_APP_FAMILY) == "p2") != (
         data.get(CONF_LOGICDATA_APP_LAYOUT) == "middle"
     ):
@@ -2158,13 +2166,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if (
             bed_type is None
             or detection_result.confidence >= 0.7
-            or not detection_result.ambiguous_types
+            or (not detection_result.ambiguous_types and bed_type != BED_TYPE_MOTION_BED)
         ):
             return False
 
         seen: set[str] = set()
         disambiguation_types: list[str] = []
-        for candidate in (bed_type, *detection_result.ambiguous_types):
+        for candidate in (bed_type, *(detection_result.ambiguous_types or ())):
             if candidate not in seen:
                 seen.add(candidate)
                 disambiguation_types.append(candidate)
@@ -3155,7 +3163,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
         }
 
-        if bed_type_default in {*OKIN_BEDDING_APP_BED_TYPES, *NAME_RULE_VARIANTS_BY_BED_TYPE, BED_TYPE_FURNIMOVE}:
+        if bed_type_default in {*OKIN_BEDDING_APP_BED_TYPES, *NAME_RULE_VARIANTS_BY_BED_TYPE, BED_TYPE_FURNIMOVE, BED_TYPE_LOGICDATA_AIR_PUMP}:
             schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
             schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
         if bed_type_default == BED_TYPE_FURNIMOVE:
@@ -4117,7 +4125,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
             }
         )
-        if defaults_bed_type in {*OKIN_BEDDING_APP_BED_TYPES, *NAME_RULE_VARIANTS_BY_BED_TYPE, BED_TYPE_FURNIMOVE}:
+        if defaults_bed_type in {*OKIN_BEDDING_APP_BED_TYPES, *NAME_RULE_VARIANTS_BY_BED_TYPE, BED_TYPE_FURNIMOVE, BED_TYPE_LOGICDATA_AIR_PUMP}:
             schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
             schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
         if defaults_bed_type == BED_TYPE_FURNIMOVE:
@@ -4417,7 +4425,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             _add_malouf_schema_fields(schema_dict)
         if preselected_bed_type == BED_TYPE_OKIN_CB24:
             _add_cb24_side_schema_field(schema_dict)
-        if preselected_bed_type in {*OKIN_BEDDING_APP_BED_TYPES, *NAME_RULE_VARIANTS_BY_BED_TYPE, BED_TYPE_FURNIMOVE}:
+        if preselected_bed_type in {*OKIN_BEDDING_APP_BED_TYPES, *NAME_RULE_VARIANTS_BY_BED_TYPE, BED_TYPE_FURNIMOVE, BED_TYPE_LOGICDATA_AIR_PUMP}:
             schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
             schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
         if preselected_bed_type == BED_TYPE_FURNIMOVE:
@@ -6978,6 +6986,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             *NAME_RULE_VARIANTS_BY_BED_TYPE,
             BED_TYPE_FURNIMOVE,
             BED_TYPE_STARCODE_ABM5_4,
+            BED_TYPE_LOGICDATA_AIR_PUMP,
         }:
             schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
             schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)

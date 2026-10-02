@@ -46,6 +46,7 @@ from .const import (
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA,
+    BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
@@ -571,7 +572,8 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_LIMOSS: "Limoss / Stawett (TEA encrypted)",
     BED_TYPE_LIMOSS_REMOTE: "Limoss Remote app (bed / chair)",
     BED_TYPE_LOGICDATA: "Logicdata SimplicityFrame (SILVERmotion)",
-    BED_TYPE_LOGICDATA_APP: "Logicdata MotionRelax (phone / tablet apps)",
+    BED_TYPE_LOGICDATA_APP: "Logicdata MotionRelax / Sleep Smart (bed apps)",
+    BED_TYPE_LOGICDATA_AIR_PUMP: "Logicdata Sleep Smart air mattress pump",
     BED_TYPE_MALOUF_APP: "Malouf Base / Lucid Base apps",
     BED_TYPE_SBI: "SBI/Q-Plus (Costco)",
     BED_TYPE_SCOTT_LIVING: "Scott Living",
@@ -1943,6 +1945,10 @@ def _detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detect
         )
         return DetectionResult(bed_type=BED_TYPE_OCTO, confidence=0.9, signals=signals)
 
+    from .motion_bed_models import accepts_motion_bed_name
+
+    motion_name = accepts_motion_bed_name(service_info.name or "")
+
     # Home Assistant's Bluetooth index requires three literal leading characters,
     # so automatic discovery is limited to the accepted prefixes represented in
     # the manifest. Shared accepted app names require an explicit profile choice.
@@ -1951,9 +1957,7 @@ def _detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detect
     ) or (
         SOLACE_NAME_PATTERN.fullmatch(device_name)
     ):
-        from .motion_bed_models import accepts_motion_bed_name
-
-        motion_overlap = accepts_motion_bed_name(service_info.name or "")
+        motion_overlap = motion_name
         signals.append("name:solace")
         if motion_overlap:
             signals.append("name:motion_bed")
@@ -1967,6 +1971,15 @@ def _detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detect
             confidence=0.6 if motion_overlap else 0.9,
             signals=signals,
             ambiguous_types=[BED_TYPE_MOTION_BED] if motion_overlap else None,
+        )
+
+    if motion_name and SOLACE_SERVICE_UUID.lower() not in service_uuids:
+        # An accepted app name is a candidate, not proof of its BLE transport.
+        # The setup chooser still requires an explicit Motion Bed selection.
+        return DetectionResult(
+            bed_type=BED_TYPE_MOTION_BED,
+            confidence=0.6,
+            signals=[*signals, "name:motion_bed"],
         )
 
     # Check for Solace/Octo/MotoSleep disambiguation (FFE0 UUID)
@@ -2009,7 +2022,10 @@ def _detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detect
             bed_type=BED_TYPE_OCTO,
             confidence=0.5,
             signals=signals,
-            ambiguous_types=[BED_TYPE_SOLACE, BED_TYPE_MOTOSLEEP],
+            ambiguous_types=[
+                BED_TYPE_SOLACE, BED_TYPE_MOTOSLEEP,
+                *([BED_TYPE_MOTION_BED] if motion_name else []),
+            ],
         )
 
     # BetterLiving / related OKIN-BLE names use Keeson-Sino packet format on

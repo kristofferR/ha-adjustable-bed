@@ -41,6 +41,7 @@ from .const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
+    BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
     BED_TYPE_SERENITY,
@@ -210,6 +211,7 @@ JIECANG_WAKE_PRESETS = ("flat", "zero_g", "anti_snore", "memory_1", "memory_2")
 JIECANG_ALARM_PRESETS = (*JIECANG_WAKE_PRESETS, "yoga")
 
 LOGICDATA_ALARM_PRESETS = ("flat", "zero_g", "anti_snore", "memory_1", "memory_2")
+LOGICDATA_HOLD_PRESETS = ("flat", "zero_g", "anti_snore", "memory_1", "memory_2")
 
 POSITION_MOTOR_OPTIONS = (
     "back", "legs", "head", "feet", "lumbar",
@@ -2491,16 +2493,20 @@ async def _handle_customatic_hold(
 
 
 async def _preflight_logicdata(
-    targets: list[tuple[BedTarget, str]], capability: str, label: str
+    targets: list[tuple[BedTarget, str]],
+    capability: str,
+    label: str,
+    validate: Callable[[BedController | SideBoundController], None] | None = None,
+    bed_types: Collection[str] = (BED_TYPE_LOGICDATA_APP,),
 ) -> PreflightedSides:
     """Restrict app-specific services before connecting or commanding any side."""
     for coordinator, side in targets:
         for target in _command_targets(coordinator, side):
-            if target.bed_type != BED_TYPE_LOGICDATA_APP:
+            if target.bed_type not in bed_types:
                 raise ServiceValidationError(
                     f"Device '{target.name}' is not a Logicdata app controller"
                 )
-    return await _preflight_capability(targets, capability, label)
+    return await _preflight_capability(targets, capability, label, validate)
 
 
 async def _preflight_malouf(
@@ -2610,7 +2616,7 @@ async def handle_logicdata_set_alarm(call: ServiceCall) -> None:
             await _execute_sided(
                 coordinator, side, program, cancel_running=False, resource="configuration"
             )
-    except Exception:
+    except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
         raise
 
@@ -2624,19 +2630,29 @@ async def handle_logicdata_rename(call: ServiceCall) -> None:
     )
     if missing:
         raise _missing_device_error(missing[0])
+    name = call.data[ATTR_NAME]
+
+    def validate(controller: BedController | SideBoundController) -> None:
+        # Each app has its own name rule; reject before any target writes.
+        controller.validate_device_rename(name)
+
     preflighted = await _preflight_logicdata(
-        targets, "supports_device_rename", "Logicdata device rename"
+        targets,
+        "supports_device_rename",
+        "Logicdata device rename",
+        validate,
+        bed_types=(BED_TYPE_LOGICDATA_APP, BED_TYPE_LOGICDATA_AIR_PUMP),
     )
 
     async def rename(controller: BedController | SideBoundController) -> None:
-        await controller.rename_device(call.data[ATTR_NAME])
+        await controller.rename_device(name)
 
     try:
         for coordinator, side in targets:
             await _execute_sided(
                 coordinator, side, rename, cancel_running=False, resource="configuration"
             )
-    except Exception:
+    except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
         raise
 
@@ -2656,7 +2672,7 @@ def _preset_hold_duration_seconds(value: object) -> Decimal:
 
 
 async def handle_logicdata_hold_preset(call: ServiceCall) -> None:
-    """Hold a middle-motor preset recall through the cancellable command queue."""
+    """Hold a MOTIONrelax P2 or Sleep Smart preset through the cancellable command queue."""
     duration_ms = int(call.data[ATTR_DURATION] * 1000)
     targets, missing = _resolve_sided_targets(
         call.hass,
@@ -2665,17 +2681,25 @@ async def handle_logicdata_hold_preset(call: ServiceCall) -> None:
     )
     if missing:
         raise _missing_device_error(missing[0])
+    preset = call.data[ATTR_PRESET]
+
+    def validate(controller: BedController | SideBoundController) -> None:
+        if preset not in controller.held_preset_options:
+            raise ServiceValidationError(
+                f"The selected app profile cannot hold the {preset} preset"
+            )
+
     preflighted = await _preflight_logicdata(
-        targets, "supports_preset_hold", "Logicdata held preset recall"
+        targets, "supports_preset_hold", "Logicdata held preset recall", validate
     )
 
     async def hold(controller: BedController | SideBoundController) -> None:
-        await controller.hold_preset(call.data[ATTR_PRESET], duration_ms)
+        await controller.hold_preset(preset, duration_ms)
 
     try:
         for coordinator, side in targets:
             await _execute_sided(coordinator, side, hold, cancel_running=True)
-    except Exception:
+    except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
         raise
 
@@ -3607,7 +3631,10 @@ async def async_register_services(hass: HomeAssistant) -> None:
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_NAME): vol.All(cv.string, vol.Match(r"\A[\x20-\x7e]{1,255}\Z")),
+                # Each target's controller applies its app's narrower name rule.
+                vol.Required(ATTR_NAME): vol.All(
+                    cv.string, vol.Match(r"\A[\x20-\x7eäöüÄÖÜß]{1,255}\Z")
+                ),
                 **SIDE_FIELD,
             }
         ),
@@ -3619,7 +3646,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_PRESET): vol.In(("flat", "memory_1", "memory_2")),
+                vol.Required(ATTR_PRESET): vol.In(LOGICDATA_HOLD_PRESETS),
                 vol.Required(ATTR_DURATION): _preset_hold_duration_seconds,
                 **SIDE_FIELD,
             }

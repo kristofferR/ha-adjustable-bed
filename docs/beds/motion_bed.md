@@ -17,6 +17,10 @@ Motion Bed app's exact case-sensitive whitelist, setup asks which app profile
 to use. Neither the discovery chooser nor manual Auto-detect silently chooses
 Solace for that overlap. Explicit Solace and Motion Bed choices retain their
 separate factories; legacy names outside the Motion whitelist keep their route.
+Other accepted names, including TL-Q, QMS-430 and S5-Y, also offer Motion Bed
+in the explicit app chooser. A shared FFE0 advertisement alone does not select
+Motion Bed. Name-only candidates require an explicit choice, while an
+incompatible unique service keeps its existing detection priority.
 The source uses 48 case-sensitive substring markers. Ordinary QMS, SealyMF and
 S-series names select their ordered preset and movement layouts. TL-B selects
 the motor module, TL-A air massage, TL-W thermal control, and TL-Q one hub.

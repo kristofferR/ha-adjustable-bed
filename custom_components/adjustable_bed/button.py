@@ -827,7 +827,7 @@ def _button_entities_for(
                 registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
         # Named app actions disappear when their profile or transport changes.
-        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "fsm_relax_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "svane_", "motion_bed_", "starcode_", "limoss_remote_", "coolbase_", "remacro_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_"):
+        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "fsm_relax_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "svane_", "motion_bed_", "starcode_", "limoss_remote_", "coolbase_", "remacro_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_"):
             if (
                 namespace == "motion_bed_"
                 and coordinator.bed_type == BED_TYPE_MOTION_BED
