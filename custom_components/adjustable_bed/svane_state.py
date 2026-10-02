@@ -50,6 +50,7 @@ class SvaneSession:
 
     intensity: int = 90
     light_on: bool = False
+    light_intent_known: bool = False
     light_step: int = 5
     head: bytes | None = None
     feet: bytes | None = None

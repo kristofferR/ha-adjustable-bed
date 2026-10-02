@@ -276,14 +276,14 @@ class SvaneController(BedController):
         )
 
     def _publish_intent(self) -> None:
-        self.forward_controller_state_updates(
-            {
-                "svane_intensity": self.session.intensity,
-                "svane_light_intent": self.session.light_on,
-                "under_bed_lights_on": self.session.light_on,
-                "svane_profile": self.profile,
-            }
-        )
+        state = {
+            "svane_intensity": self.session.intensity,
+            "svane_light_intent": self.session.light_on,
+            "svane_profile": self.profile,
+        }
+        if self.session.light_intent_known:
+            state["under_bed_lights_on"] = self.session.light_on
+        self.forward_controller_state_updates(state)
 
     def _remember(self) -> None:
         self._coordinator.remember_svane_preferences(self.session.preferences())
@@ -803,11 +803,13 @@ class SvaneController(BedController):
 
     async def lights_on(self) -> None:
         self.session.light_on = True
+        self.session.light_intent_known = True
         self._publish_intent()
         await self._light(self.session.intensity)
 
     async def lights_off(self) -> None:
         self.session.light_on = False
+        self.session.light_intent_known = True
         self._publish_intent()
         await self._write(
             OLD if self.profile == "jmc" else LIGHT,
@@ -827,6 +829,7 @@ class SvaneController(BedController):
             raise ValueError("Svane lamp intensity uses steps of five")
         self.session.intensity = level
         self.session.light_on = True
+        self.session.light_intent_known = True
         self._remember()
         await self._light(level)
 
