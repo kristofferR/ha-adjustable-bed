@@ -107,6 +107,7 @@ The entries below identify motor/actuator manufacturers or supported app profile
 | 🧪 [Customatic app profiles](docs/beds/customatic.md) | Clarity, Jerome's C and Remedy 1.0.1; hardware unverified |
 | 🧪 [Jordan's Serenity app](docs/beds/serenity.md) | Explicit 1.0.1 app profile, artifact-verified; hardware unverified |
 | 🧪 [SIMMONS app](docs/beds/simmons.md) | Explicit 1.12.9 app profile, regular or inclined bed, two alarms; hardware unverified |
+| 🧪 [FSM Relax app](docs/beds/fsm_relax.md) | Explicit chair/bed layout, exact app controls, eight persistent local raw memories and confirmed calibration. Static artifact verified; hardware unverified. |
 | ✅ [Okin 64-Bit](docs/beds/okin-64bit.md) | NORA_CON / NORACON Mattress Firm controllers |
 | ✅ [Jiecang](docs/beds/jiecang.md) | Glideaway, Dream Motion, LOGICDATA |
 | 🧪 [Jiecang app profiles](docs/beds/jiecang-app.md) | ERGOBALANCE 1.0.8 and Dream Motion 1.0.5, explicit layouts; hardware unverified |

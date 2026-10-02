@@ -403,6 +403,12 @@ BED_TYPE_NECTAR: Final = "nectar"  # -> okin_7byte
 BED_TYPE_MALOUF_NEW_OKIN: Final = "malouf_new_okin"
 BED_TYPE_MALOUF_LEGACY_OKIN: Final = "malouf_legacy_okin"
 BED_TYPE_MALOUF_APP: Final = "malouf_app"
+BED_TYPE_FSM_RELAX: Final = "fsm_relax"
+CONF_FSM_RELAX_LAYOUT: Final = "fsm_relax_layout"
+CONF_FSM_RELAX_LIGHT: Final = "fsm_relax_light"
+CONF_FSM_RELAX_MASSAGE: Final = "fsm_relax_massage"
+CONF_FSM_RELAX_REVERSALS: Final = tuple(f"fsm_relax_reverse_{i}" for i in range(1, 5))
+CONF_FSM_RELAX_MEMORY_NAMES: Final = "fsm_relax_memory_names"
 BED_TYPE_SERENITY: Final = "serenity"  # Explicit Jordan's Serenity app profile
 BED_TYPE_SIMMONS: Final = "simmons"  # Explicit SIMMONS app profile (com.okin.simmons)
 BED_TYPE_CUSTOMATIC_CLARITY: Final = "customatic_clarity"
@@ -480,6 +486,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_MATTRESSFIRM,
     BED_TYPE_NECTAR,
+    BED_TYPE_FSM_RELAX,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     # Explicit Customatic app profiles
@@ -2505,6 +2512,7 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
 BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
     {
         BED_TYPE_FURNIMOVE,
+        BED_TYPE_FSM_RELAX,
         BED_TYPE_SERENITY,
         BED_TYPE_SIMMONS,
         BED_TYPE_CUSTOMATIC_CLARITY,
@@ -2713,6 +2721,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_CUSTOMATIC_CLARITY: (8, 120),
     BED_TYPE_CUSTOMATIC_JEROMES: (8, 120),
     BED_TYPE_CUSTOMATIC_REMEDY: (8, 120),
+    BED_TYPE_FSM_RELAX: (10, 60),
     BED_TYPE_SERENITY: (10, 100),  # APK refresh cadence; bounded HA movement duration
     BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
     # Malouf New OKIN (Nordic): 100ms delay → 10 repeats = 1.0s total

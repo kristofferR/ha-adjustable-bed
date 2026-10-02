@@ -21,6 +21,7 @@ from .const import (
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
@@ -84,6 +85,11 @@ from .const import (
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     CB1322_MANUFACTURER_MARKERS,
+    CONF_FSM_RELAX_LAYOUT,
+    CONF_FSM_RELAX_LIGHT,
+    CONF_FSM_RELAX_MASSAGE,
+    CONF_FSM_RELAX_MEMORY_NAMES,
+    CONF_FSM_RELAX_REVERSALS,
     CONF_FURNIMOVE_REMOTE,
     CONF_HAS_MASSAGE,
     CONF_JIECANG_APP_HAS_LIGHT,
@@ -642,6 +648,23 @@ async def create_controller(
             ui_selector=data.get(CONF_STARCODE_UI_SELECTOR),
             transport_selector=data.get(CONF_STARCODE_TRANSPORT_SELECTOR),
         )
+
+    if bed_type == BED_TYPE_FSM_RELAX:
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.fsm_relax", __package__)
+        from .beds.fsm_relax import FsmRelaxController, FsmRelaxProfile
+        from .fsm_relax_state import get_fsm_relax_state
+
+        data = {**coordinator.entry.data, **coordinator.entry.options}
+        reversals = tuple(data.get(key, False) for key in CONF_FSM_RELAX_REVERSALS)
+        profile = FsmRelaxProfile(data.get(CONF_FSM_RELAX_LAYOUT, "chair"),
+                                  data.get(CONF_FSM_RELAX_LIGHT, False),
+                                  data.get(CONF_FSM_RELAX_MASSAGE, False),
+                                  (reversals[0], reversals[1], reversals[2], reversals[3]))
+        state = get_fsm_relax_state(coordinator.hass, coordinator.entry.entry_id, coordinator.address)
+        await state.async_load()
+        if CONF_FSM_RELAX_MEMORY_NAMES in data:
+            await state.async_set_names(data[CONF_FSM_RELAX_MEMORY_NAMES])
+        return FsmRelaxController(coordinator, profile=profile, state=state)
 
     if bed_type == BED_TYPE_STARCODE_M5X5:
         await coordinator.hass.async_add_import_executor_job(

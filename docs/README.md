@@ -51,3 +51,5 @@ including the Bluetooth dependencies from Home Assistant's own manifests.
 APK artifacts and frozen reports stay local and ignored. Consult the repository's
 clean-room rules before protocol work. Documentation updates do not establish new
 hardware evidence or complete the release-candidate gates.
+
+- [FSM Relax app profile](beds/fsm_relax.md): explicit layouts and persistent opaque memories.
