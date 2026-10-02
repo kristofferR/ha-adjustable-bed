@@ -66,6 +66,7 @@ from .pairing import is_paired, iter_children, pair_member_addresses
 
 if TYPE_CHECKING:
     from .beds.base import BedController, SideBoundController
+    from .beds.serenity import ZSeriesController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1896,6 +1897,17 @@ async def handle_zseries_hold_control(call: ServiceCall) -> None:
     )
 
 
+def _zseries_controller(controller: BedController | SideBoundController) -> ZSeriesController:
+    """Return the Z-Series controller behind a possibly side-bound proxy."""
+    from .beds.base import SideBoundController as Bound
+    from .beds.serenity import ZSeriesController as ZSeries
+
+    inner = controller._controller if isinstance(controller, Bound) else controller
+    if not isinstance(inner, ZSeries):
+        raise ServiceValidationError("This action requires a Customatic Z-Series app controller")
+    return inner
+
+
 async def _execute_zseries_alarm(
     call: ServiceCall,
     label: str,
@@ -1914,10 +1926,27 @@ async def _execute_zseries_alarm(
                     f"Device '{target.name}' is not a Customatic Z-Series app controller"
                 )
     # The alarm page exists only after an exact CST13/CST14 manufacturer read.
-    # A cached controller can only rule a bed out on a confirmed other string;
-    # an unknown state is re-read on the live connection before any write.
+    # A cached controller can only rule a bed out on a confirmed other string.
     preflighted = await _preflight_capability(targets, "alarm_not_ruled_out", label)
     try:
+        # All-or-nothing: resolve every unknown state on a live connection before
+        # any bed receives a clock or alarm frame.
+        for coordinator, side in targets:
+            for target in _command_targets(coordinator, side):
+                cached = target.capability_controller
+                state = _zseries_controller(cached).alarm_state if cached is not None else None
+                if state is None:
+                    if not any(known is target for _, known in preflighted):
+                        preflighted.append((coordinator, target))
+                    live = _zseries_controller(await _get_controller_for_service(target))
+                    state = await live.resolve_alarm_state()
+                if state is None:
+                    raise ServiceValidationError(
+                        f"Could not read the manufacturer string of '{target.name}' that "
+                        "enables Z-Series alarms; try again"
+                    )
+                if not state:
+                    raise ServiceValidationError(f"Device '{target.name}' does not support {label}")
         for coordinator, side in targets:
             # The app cancels the running stream first; HA also releases it safely.
             await _execute_sided(coordinator, side, command)

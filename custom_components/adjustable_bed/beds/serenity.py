@@ -760,11 +760,15 @@ class ZSeriesController(OkinBeddingAppController):
     def clock_alarm_preset_options(self) -> tuple[str, ...]:
         return tuple(_ALARM_WAKE) if self.alarm_state is True else ()
 
-    async def _require_alarm(self) -> None:
+    async def resolve_alarm_state(self) -> bool | None:
+        """Read the manufacturer again while the state is unknown; never downgrade on failure."""
         if self.alarm_state is None:
-            # Unknown (failed or missing read): re-read on this live connection first.
             await self.refresh_manufacturer()
-        state = self.alarm_state
+        return self.alarm_state
+
+    async def _require_alarm(self) -> None:
+        # Services resolve every target before writing; this guards direct callers.
+        state = await self.resolve_alarm_state()
         if state is None:
             raise ValueError(
                 "Could not read the manufacturer string that enables Z-Series alarms; try again"

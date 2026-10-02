@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from datetime import datetime
 from pathlib import Path
@@ -155,6 +156,9 @@ def _target(bed_type, controller):
     coordinator.bed_type = bed_type
     coordinator.entry = SimpleNamespace(data={})
     coordinator.capability_controller = controller
+    coordinator.controller = controller  # Live controller once connected.
+    coordinator.is_connected = True
+    coordinator.async_ensure_connected = AsyncMock(return_value=True)
 
     async def execute(command, **kwargs):
         await command(controller)
@@ -471,3 +475,96 @@ async def test_unknown_state_that_cannot_be_read_fails_without_writing(hass):
     with pytest.raises(ServiceValidationError, match="Could not read the manufacturer"):
         await _set_alarm(hass, controller)
     assert written(controller) == []
+
+
+def _known_and_unknown(second_read):
+    """First bed is a confirmed CST13 bed; the second has never been read."""
+    first = zseries("z280")
+    _persisting(first, {"zseries_alarm_available": True})
+    second = zseries("z280")
+    _persisting(second, {})
+    second.client.read_gatt_char.side_effect = second_read
+    return first, second
+
+
+def _paired(first, second):
+    from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
+
+    children = {"left": _target(BED_TYPE_ZSERIES_Z280, first), "right": _target(BED_TYPE_ZSERIES_Z280, second)}
+    paired = MagicMock(spec=PairedBedCoordinator)
+    paired.name = "Pair"
+    paired.children = children
+
+    async def execute(command, *, side, **kwargs):
+        for child in children.values():
+            await command(child.controller)
+
+    paired.async_execute_controller_command = AsyncMock(side_effect=execute)
+    return paired, [(paired, SIDE_BOTH)], list(children.values())
+
+
+def _two_devices(first, second):
+    targets = [_target(BED_TYPE_ZSERIES_Z280, first), _target(BED_TYPE_ZSERIES_Z280, second)]
+    return None, [(target, SIDE_BOTH) for target in targets], targets
+
+
+async def _call(hass, resolved, service="zseries_set_alarm"):
+    await async_register_services(hass)
+    data = {"device_id": ["a", "b"]}
+    if service == "zseries_set_alarm":
+        data |= {"enabled": True, "time": "07:45:00", "wake_mode": "massage"}
+    with (
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=(resolved, [])),
+        patch("asyncio.sleep", new=AsyncMock()),
+    ):
+        await hass.services.async_call(DOMAIN, service, data, blocking=True)
+
+
+@pytest.mark.parametrize("layout", [_two_devices, _paired])
+@pytest.mark.parametrize("service", ["zseries_set_alarm", "zseries_sync_clock"])
+@pytest.mark.parametrize(
+    ("second_read", "error"),
+    [([b"CST20"], "does not support"), (TimeoutError("unreadable"), "Could not read")],
+)
+async def test_unknown_later_target_is_resolved_before_any_bed_is_written(
+    hass, layout, service, second_read, error
+):
+    first, second = _known_and_unknown(second_read)
+    _, resolved, children = layout(first, second)
+    with pytest.raises(ServiceValidationError, match=error):
+        await _call(hass, resolved, service)
+    assert written(first) == [] and written(second) == []
+    second.client.read_gatt_char.assert_awaited()
+    first.client.read_gatt_char.assert_not_awaited()  # Confirmed state needs no read.
+    # The bed connected for validation gets its normal idle release.
+    children[1].async_ensure_connected.assert_any_await(reset_timer=True)
+    if second_read == [b"CST20"]:
+        assert second._coordinator.entry.data["zseries_alarm_available"] is False
+
+
+@pytest.mark.parametrize("layout", [_two_devices, _paired])
+async def test_unknown_later_cst_target_is_resolved_then_both_beds_are_written(hass, layout):
+    first, second = _known_and_unknown([b"CST14"])
+    _, resolved, _children = layout(first, second)
+    await _call(hass, resolved, "zseries_sync_clock")
+    assert written(first)[1:] == ["00c0", "00c0"] and written(second)[1:] == ["00c0", "00c0"]
+    assert second._coordinator.entry.data["zseries_alarm_available"] is True
+
+
+@pytest.mark.parametrize("layout", [_two_devices, _paired])
+async def test_cancelled_resolution_writes_nothing_and_releases_connected_beds(hass, layout):
+    blocked = asyncio.Event()
+
+    async def hang(*args, **kwargs):
+        blocked.set()
+        await asyncio.Event().wait()
+
+    first, second = _known_and_unknown(hang)
+    _, resolved, children = layout(first, second)
+    task = asyncio.create_task(_call(hass, resolved))
+    await blocked.wait()
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert written(first) == [] and written(second) == []
+    children[1].async_ensure_connected.assert_any_await(reset_timer=True)
