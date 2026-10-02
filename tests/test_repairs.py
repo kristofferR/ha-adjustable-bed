@@ -2484,3 +2484,38 @@ async def test_combine_dismissal_storage_migrates_single_address_set(
         "key": STORAGE_KEY,
         "data": {KEY_DISMISSED: [addresses]},
     }
+
+
+@pytest.mark.parametrize("cleared", [True, False])
+async def test_repair_verifies_without_pairing_after_clearing_a_stale_proxy_cache(
+    hass: HomeAssistant, cleared: bool
+) -> None:
+    """Issue #660: check the existing bond on rediscovered handles first."""
+    flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, None)
+    flow.hass = hass
+    failed = BondEvidence(
+        status=BondVerificationStatus.AUTH_FAILED,
+        owner=BondOwner(),
+        operation="repair_pairing",
+        observed_at="now",
+        gatt_cache_cleared=cleared,
+    )
+    verified = replace(failed, status=BondVerificationStatus.VERIFIED, gatt_cache_cleared=False)
+    connect = AsyncMock(return_value=MagicMock(disconnect=AsyncMock()))
+    with (
+        patch.object(flow, "_async_pair_via_coordinator", new=AsyncMock(return_value=None)),
+        patch.object(flow, "_find_device", return_value=MagicMock()),
+        patch.object(flow, "_bed_type", return_value=("sleep_number", None)),
+        patch("bleak_retry_connector.establish_connection", new=connect),
+        patch("custom_components.adjustable_bed.repairs.client_source", return_value="proxy"),
+        patch("custom_components.adjustable_bed.repairs.async_path_for_source", return_value=None),
+        patch(
+            "custom_components.adjustable_bed.repairs.async_verify_authenticated_access",
+            new=AsyncMock(side_effect=[failed, verified]),
+        ),
+    ):
+        assert await flow._async_try_pair() is cleared
+
+    assert ["pair" in c.kwargs for c in connect.await_args_list] == (
+        [True, False] if cleared else [True]
+    )

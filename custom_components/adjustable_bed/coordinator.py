@@ -604,9 +604,9 @@ class AdjustableBedCoordinator:
         self._device_info_read_done: bool = False
         self._device_info_read_attempts: int = 0
         self._bond_probe_timed_out: bool = False
-        # Set once an auth failure has cleared a stale proxy GATT cache, so only
-        # the first such failure skips re-pairing (issue #660).
-        self._stale_gatt_retry_spent: bool = False
+        # Proxies whose stale GATT cache an auth failure already cleared, so only
+        # the first such failure per proxy skips re-pairing (issue #660).
+        self._stale_gatt_retry_sources: set[str] = set()
 
         # Track if pairing is supported by the Bluetooth adapter (None = unknown)
         self._pairing_supported: bool | None = None
@@ -1881,9 +1881,14 @@ class AdjustableBedCoordinator:
         # The first time, assume the bond is fine and retry on rediscovered
         # handles without pairing: re-pairing a bonded ESPHome device can fail
         # with error 82 or wedge the proxy. A repeat failure is a real one.
-        stale_cache_retry = cache_cleared and not self._stale_gatt_retry_spent
+        # A clear implies a known proxy path; the retry is spent per proxy because
+        # Home Assistant may reroute the next attempt through another one.
+        cleared_source = self._connection_path.source if self._connection_path else ""
+        stale_cache_retry = (
+            cache_cleared and cleared_source not in self._stale_gatt_retry_sources
+        )
         if stale_cache_retry:
-            self._stale_gatt_retry_spent = True
+            self._stale_gatt_retry_sources.add(cleared_source)
             self._skip_pair_next_attempt = True
             _LOGGER.warning(
                 "BLE link on %s is not authenticated: %s. The proxy's cached GATT "
@@ -2606,7 +2611,7 @@ class AdjustableBedCoordinator:
                         self._latched_pairing_successes,
                     )
         self._skip_pair_next_attempt = False
-        self._stale_gatt_retry_spent = False
+        self._stale_gatt_retry_sources.clear()
         if release_latch:
             self._latched_pairing_successes = 0
             self._persist_bond_flags(established=True, unreliable=False)

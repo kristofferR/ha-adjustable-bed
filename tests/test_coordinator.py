@@ -3207,6 +3207,35 @@ class TestBondMarkerReliability:
             assert coordinator._ble_bond_established is False
             issue.assert_awaited_once()
 
+    async def test_stale_cache_retry_is_spent_per_proxy(
+        self,
+        hass: HomeAssistant,
+    ):
+        """A reroute to another proxy is that proxy's first stale cache, not a repeat."""
+        coordinator = self._make_bonded_coordinator(hass)
+        calls: list[str] = []
+        error = BleakError("error=15 description=Insufficient encryption")
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ) as issue,
+            patch.object(coordinator, "async_disconnect", new=AsyncMock()),
+        ):
+            self._esphome_link(coordinator, calls)
+            await coordinator._async_handle_ble_authentication_error(error)
+            self._esphome_link(coordinator, calls)
+            coordinator._connection_path = ConnectionPath(
+                source="B0:CB:D8:03:81:2A",
+                transport=TransportClass.PROXY,
+                source_domain="esphome",
+            )
+            await coordinator._async_handle_ble_authentication_error(error)
+
+        assert coordinator._ble_bond_established is True
+        issue.assert_not_awaited()
+
     async def test_retained_link_keeps_its_discovered_services(
         self,
         hass: HomeAssistant,
