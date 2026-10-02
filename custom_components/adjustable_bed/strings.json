@@ -575,18 +575,18 @@
           "starcode_abm5_4_transport_selector": "Use the original Bluetooth device name unless matching a proven app transport explicitly."
         }
       },
-      "fsm_relax": {
-        "title": "FSM Relax app profile",
-        "description": "Select the app layout and optional controls explicitly. Raw memories have no known physical units. Shared Bluetooth advertisements do not identify this app profile.",
+      "limoss_remote": {
+        "title": "Limoss Remote App Controls",
+        "description": "Select the product and local controls used in the Limoss Remote app. The connected device supplies its key layout and memory capacity. These settings do not measure hardware state.",
         "data": {
-          "fsm_relax_layout": "App layout",
-          "fsm_relax_light": "Expose app light controls",
-          "fsm_relax_massage": "Expose app massage controls",
-          "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
-          "fsm_relax_reverse_1": "Reverse actuator flag 1",
-          "fsm_relax_reverse_2": "Reverse actuator flag 2",
-          "fsm_relax_reverse_3": "Reverse actuator flag 3",
-          "fsm_relax_reverse_4": "Reverse actuator flag 4"
+          "limoss_remote_product": "App product",
+          "limoss_remote_light": "Show held lamp control",
+          "limoss_remote_massage": "Show massage controls",
+          "limoss_remote_theme": "App artwork theme",
+          "limoss_remote_reverse_1": "Reverse motor channel 1",
+          "limoss_remote_reverse_2": "Reverse motor channel 2",
+          "limoss_remote_reverse_3": "Reverse motor channel 3",
+          "limoss_remote_reverse_4": "Reverse motor channel 4"
         }
       },
       "starcode_m5x5": {
@@ -601,6 +601,20 @@
           "starcode_device_name": "Enter the unchanged Bluetooth name, preserving case. A friendly display name cannot identify the app class or remote.",
           "starcode_m5x5_profile": "Choose CB25, F23, kneading or Elevate to match the exact Bluetooth name.",
           "starcode_lift_entries": "Choose up to three other configured AdjustableM5X5 entries. This main and the three lifts keep separate Bluetooth addresses and controls."
+        }
+      },
+      "fsm_relax": {
+        "title": "FSM Relax app profile",
+        "description": "Select the app layout and optional controls explicitly. Raw memories have no known physical units. Shared Bluetooth advertisements do not identify this app profile.",
+        "data": {
+          "fsm_relax_layout": "App layout",
+          "fsm_relax_light": "Expose app light controls",
+          "fsm_relax_massage": "Expose app massage controls",
+          "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
+          "fsm_relax_reverse_1": "Reverse actuator flag 1",
+          "fsm_relax_reverse_2": "Reverse actuator flag 2",
+          "fsm_relax_reverse_3": "Reverse actuator flag 3",
+          "fsm_relax_reverse_4": "Reverse actuator flag 4"
         }
       }
     },
@@ -674,10 +688,14 @@
       "vmatbasic_required": "Choose the V-MAT Basic product profile.",
       "starcode_app_invalid": "Choose a supported app selector and a live Bluetooth transport.",
       "starcode_app_unpair_first": "Unpair these entries before changing app selectors. Each physical side retains its own app controls.",
-      "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each).",
+      "limoss_remote_product_required": "Select bed or chair for this app profile.",
+      "limoss_remote_feature_update_failed": "The feature OFF commands could not complete. Settings were not saved.",
+      "limoss_remote_invalid": "Select valid Limoss Remote app settings.",
+      "limoss_remote_pair_settings": "Unpair first, then select each physical receiver’s Limoss Remote app profile before combining them again.",
       "starcode_profile_mismatch": "Choose the bed class matching the exact case-sensitive Bluetooth name.",
       "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 entries with different Bluetooth addresses.",
-      "starcode_unpair_first": "Use standalone entries for this independently addressed accessory group."
+      "starcode_unpair_first": "Use standalone entries for this independently addressed accessory group.",
+      "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each)."
     }
   },
   "options": {
@@ -754,6 +772,17 @@
           "vmatbasic_profile": "V-MAT Basic product profile",
           "starcode_abm5_4_command_selector": "Saved command/parser selector",
           "starcode_abm5_4_transport_selector": "Bluetooth transport selector",
+          "limoss_remote_theme": "App artwork theme",
+          "limoss_remote_light": "Show held lamp control",
+          "limoss_remote_product": "App product",
+          "limoss_remote_reverse_1": "Reverse motor channel 1",
+          "limoss_remote_massage": "Show massage controls",
+          "limoss_remote_reverse_3": "Reverse motor channel 3",
+          "limoss_remote_reverse_4": "Reverse motor channel 4",
+          "limoss_remote_reverse_2": "Reverse motor channel 2",
+          "starcode_device_name": "Exact Bluetooth name",
+          "starcode_m5x5_profile": "AdjustableM5X5 bed class",
+          "starcode_lift_entries": "Independently addressed lifts (up to three)",
           "fsm_relax_layout": "App layout",
           "fsm_relax_light": "Expose app light controls",
           "fsm_relax_massage": "Expose app massage controls",
@@ -761,10 +790,7 @@
           "fsm_relax_reverse_1": "Reverse actuator flag 1",
           "fsm_relax_reverse_2": "Reverse actuator flag 2",
           "fsm_relax_reverse_3": "Reverse actuator flag 3",
-          "fsm_relax_reverse_4": "Reverse actuator flag 4",
-          "starcode_device_name": "Exact Bluetooth name",
-          "starcode_m5x5_profile": "AdjustableM5X5 bed class",
-          "starcode_lift_entries": "Independently addressed lifts (up to three)"
+          "fsm_relax_reverse_4": "Reverse actuator flag 4"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -1961,6 +1987,42 @@
       "starcode_abm5_4_reset": {
         "name": "Reset stored positions"
       },
+      "program_memory_7_left": {
+        "name": "Left: Save Memory 7"
+      },
+      "program_memory_8_both": {
+        "name": "Both sides: Save Memory 8"
+      },
+      "preset_memory_7_left": {
+        "name": "Left: Memory 7"
+      },
+      "program_memory_7_right": {
+        "name": "Right: Save Memory 7"
+      },
+      "preset_memory_8_both": {
+        "name": "Both sides: Memory 8"
+      },
+      "program_memory_8_right": {
+        "name": "Right: Save Memory 8"
+      },
+      "program_memory_7_both": {
+        "name": "Both sides: Save Memory 7"
+      },
+      "preset_memory_7_right": {
+        "name": "Right: Memory 7"
+      },
+      "preset_memory_8_left": {
+        "name": "Left: Memory 8"
+      },
+      "preset_memory_7_both": {
+        "name": "Both sides: Memory 7"
+      },
+      "preset_memory_8_right": {
+        "name": "Right: Memory 8"
+      },
+      "program_memory_8_left": {
+        "name": "Left: Save Memory 8"
+      },
       "preset_memory_7": {
         "name": "Memory 7"
       },
@@ -2256,6 +2318,54 @@
       },
       "malouf_full_tilt": {
         "name": "Full tilt"
+      },
+      "limoss_remote_motor_4_right": {
+        "name": "Right: Motor channel 4"
+      },
+      "limoss_remote_motor_2_right": {
+        "name": "Right: Motor channel 2"
+      },
+      "limoss_remote_motor_3_both": {
+        "name": "Both sides: Motor channel 3"
+      },
+      "limoss_remote_motor_3_left": {
+        "name": "Left: Motor channel 3"
+      },
+      "limoss_remote_motor_3_right": {
+        "name": "Right: Motor channel 3"
+      },
+      "limoss_remote_motor_4": {
+        "name": "Motor channel 4"
+      },
+      "limoss_remote_motor_1": {
+        "name": "Motor channel 1"
+      },
+      "limoss_remote_motor_2_left": {
+        "name": "Left: Motor channel 2"
+      },
+      "limoss_remote_motor_4_left": {
+        "name": "Left: Motor channel 4"
+      },
+      "limoss_remote_motor_1_left": {
+        "name": "Left: Motor channel 1"
+      },
+      "limoss_remote_motor_2_both": {
+        "name": "Both sides: Motor channel 2"
+      },
+      "limoss_remote_motor_4_both": {
+        "name": "Both sides: Motor channel 4"
+      },
+      "limoss_remote_motor_2": {
+        "name": "Motor channel 2"
+      },
+      "limoss_remote_motor_1_both": {
+        "name": "Both sides: Motor channel 1"
+      },
+      "limoss_remote_motor_3": {
+        "name": "Motor channel 3"
+      },
+      "limoss_remote_motor_1_right": {
+        "name": "Right: Motor channel 1"
       },
       "starcode_union": {
         "name": "Head and foot together"
@@ -2767,47 +2877,44 @@
       "starcode_abm5_4_raw_7f": {
         "name": "Raw app field 7f"
       },
-      "fsm_relax_key_count": {
-        "name": "FSM Relax key count"
+      "limoss_remote_motor_2_position_raw": {
+        "name": "Motor 2 Raw Position"
       },
-      "fsm_relax_vibration_count": {
-        "name": "FSM Relax vibration count"
+      "limoss_remote_hardware_version": {
+        "name": "App Hardware Version"
       },
-      "fsm_relax_reported_memory_count": {
-        "name": "FSM Relax reported memory count"
+      "limoss_remote_reported_entry": {
+        "name": "Reported App Product"
       },
-      "fsm_relax_hardware_version": {
-        "name": "FSM Relax hardware version"
+      "limoss_remote_motor_3_position_raw": {
+        "name": "Motor 3 Raw Position"
       },
-      "fsm_relax_software_version": {
-        "name": "FSM Relax software version"
+      "limoss_remote_motor_count": {
+        "name": "Reported Motor Count"
       },
-      "fsm_relax_serial": {
-        "name": "FSM Relax serial"
+      "limoss_remote_configuration": {
+        "name": "App Configuration Code"
       },
-      "fsm_relax_acknowledgement": {
-        "name": "FSM Relax acknowledgement"
+      "limoss_remote_software_version": {
+        "name": "App Software Version"
       },
-      "fsm_relax_calibration_observed": {
-        "name": "FSM Relax calibration observed"
+      "limoss_remote_memory_slots": {
+        "name": "Reported Memory Slots"
       },
-      "fsm_relax_memory_quarantined": {
-        "name": "FSM Relax memory quarantined"
+      "limoss_remote_key_count": {
+        "name": "Reported App Keys"
       },
-      "fsm_relax_optional_information": {
-        "name": "FSM Relax optional information"
+      "limoss_remote_calibration_result": {
+        "name": "Calibration Reply"
       },
-      "fsm_relax_motor_1_raw": {
-        "name": "FSM Relax motor 1 raw"
+      "limoss_remote_serial": {
+        "name": "App Serial Value"
       },
-      "fsm_relax_motor_2_raw": {
-        "name": "FSM Relax motor 2 raw"
+      "limoss_remote_motor_4_position_raw": {
+        "name": "Motor 4 Raw Position"
       },
-      "fsm_relax_motor_3_raw": {
-        "name": "FSM Relax motor 3 raw"
-      },
-      "fsm_relax_motor_4_raw": {
-        "name": "FSM Relax motor 4 raw"
+      "limoss_remote_motor_1_position_raw": {
+        "name": "Motor 1 Raw Position"
       },
       "coolbase_left_fan_level": {
         "name": "Left fan level"
@@ -2922,6 +3029,48 @@
       },
       "adjustable_lite_massage_timer": {
         "name": "Massage timer"
+      },
+      "fsm_relax_key_count": {
+        "name": "FSM Relax key count"
+      },
+      "fsm_relax_vibration_count": {
+        "name": "FSM Relax vibration count"
+      },
+      "fsm_relax_reported_memory_count": {
+        "name": "FSM Relax reported memory count"
+      },
+      "fsm_relax_hardware_version": {
+        "name": "FSM Relax hardware version"
+      },
+      "fsm_relax_software_version": {
+        "name": "FSM Relax software version"
+      },
+      "fsm_relax_serial": {
+        "name": "FSM Relax serial"
+      },
+      "fsm_relax_acknowledgement": {
+        "name": "FSM Relax acknowledgement"
+      },
+      "fsm_relax_calibration_observed": {
+        "name": "FSM Relax calibration observed"
+      },
+      "fsm_relax_memory_quarantined": {
+        "name": "FSM Relax memory quarantined"
+      },
+      "fsm_relax_optional_information": {
+        "name": "FSM Relax optional information"
+      },
+      "fsm_relax_motor_1_raw": {
+        "name": "FSM Relax motor 1 raw"
+      },
+      "fsm_relax_motor_2_raw": {
+        "name": "FSM Relax motor 2 raw"
+      },
+      "fsm_relax_motor_3_raw": {
+        "name": "FSM Relax motor 3 raw"
+      },
+      "fsm_relax_motor_4_raw": {
+        "name": "FSM Relax motor 4 raw"
       }
     },
     "light": {
@@ -4150,6 +4299,116 @@
         },
         "side": {
           "name": "Side"
+        }
+      }
+    },
+    "limoss_remote_features": {
+      "name": "Configure Limoss Remote Controls",
+      "description": "Set local layout selections. Disabling a selected feature sends its ten OFF commands before saving.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Select the physical side of a paired bed."
+        },
+        "underbed_light": {
+          "name": "Lamp controls",
+          "description": "Show the app’s lamp action."
+        },
+        "massage": {
+          "name": "Massage controls",
+          "description": "Show the app’s massage actions."
+        }
+      }
+    },
+    "limoss_remote_calibrate": {
+      "name": "Calibrate Limoss Remote",
+      "description": "Hold the app calibration command after explicit confirmation, then send five calibration release frames.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Select the physical side of a paired bed."
+        },
+        "confirmed": {
+          "name": "Confirm calibration",
+          "description": "Select true to confirm this device operation."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, 0.1–60."
+        }
+      }
+    },
+    "limoss_remote_rename_memory": {
+      "name": "Rename Limoss Remote Memory",
+      "description": "Rename a local memory. Empty names are permitted.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Select the physical side of a paired bed."
+        },
+        "preset": {
+          "name": "Memory slot",
+          "description": "Slot 1–8, limited by the device reply."
+        },
+        "name": {
+          "name": "Name",
+          "description": "Local display name, including an empty string."
+        }
+      }
+    },
+    "limoss_remote_recall_memory": {
+      "name": "Hold Limoss Remote Memory",
+      "description": "Recall this physical target’s captured local memory for a bounded duration.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Select the physical side of a paired bed."
+        },
+        "preset": {
+          "name": "Memory slot",
+          "description": "Slot 1–8, limited by the device reply."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, 0.1–60."
+        }
+      }
+    },
+    "limoss_remote_hold_control": {
+      "name": "Hold Limoss Remote Control",
+      "description": "Hold one rendered app control, then send its five release frames.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Select the physical side of a paired bed."
+        },
+        "control": {
+          "name": "Control",
+          "description": "Literal control from this device’s rendered layout."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, 0.1–60."
         }
       }
     },

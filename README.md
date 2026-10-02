@@ -112,6 +112,7 @@ The entries below identify motor/actuator manufacturers or supported app profile
 | 🧪 [Jiecang app profiles](docs/beds/jiecang-app.md) | ERGOBALANCE 1.0.8 and Dream Motion 1.0.5, explicit layouts; hardware unverified |
 | ✅ [Kaidi](docs/beds/kaidi.md) | Rize Remedy III / newer Mouselet-based Rize beds, Floyd Home, ISleep |
 | ✅ [Limoss](docs/beds/limoss.md) | Limoss, Stawett |
+| 🧪 [Limoss Remote app](docs/beds/limoss-remote.md) | Explicit 7.1.8 bed/chair layouts and eight local memories; hardware unverified |
 | ✅ [Jensen](docs/beds/jensen.md) | Jensen (JMC400, LinON Entry) |
 | [Svane](docs/beds/svane.md) | Svane Remote multi-service / JMC400 app profiles; Jensen LinOn (`jensen_linon`), static evidence verified, hardware unverified |
 | ✅ [DewertOkin](docs/beds/dewertokin.md) | Many older Rize models, Simmons, Nectar, Resident, Symphony |

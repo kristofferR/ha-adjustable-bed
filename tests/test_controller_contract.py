@@ -91,6 +91,8 @@ class _FactoryCoordinator(SimpleNamespace):
     """Minimal coordinator stub used for controller factory tests."""
 
     def __init__(self) -> None:
+        from custom_components.adjustable_bed.limoss_remote_state import LimossRemoteMemoryStore
+
         super().__init__(
             starcode_app_retained_state=None,
             hass=SimpleNamespace(
@@ -98,6 +100,7 @@ class _FactoryCoordinator(SimpleNamespace):
                 async_add_import_executor_job=_RecordingImportExecutor(),
                 async_add_executor_job=_RecordingImportExecutor(),
             ),
+            limoss_remote_memory_store=LimossRemoteMemoryStore(),
             client=None,
             controller_state={},
             entry=SimpleNamespace(
@@ -115,6 +118,7 @@ class _FactoryCoordinator(SimpleNamespace):
                     const.CONF_MALOUF_APP_TRANSPORT: "okin_new",
                     const.CONF_STARCODE_M5X5_PROFILE: "cb25",
                     const.CONF_STARCODE_DEVICE_NAME: "STAR252201123456",
+                    const.CONF_LIMOSS_REMOTE_PRODUCT: "bed",
                     const.CONF_VIBRADORM_APP_PROFILE: "caresse",
                     const.CONF_VIBRADORM_CONTROL_TYPE: "2",
                     const.CONF_VMATBASIC_PROFILE: "basic",

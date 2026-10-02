@@ -34,6 +34,7 @@ from .const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LIMOSS,
+    BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_APP,
@@ -98,6 +99,11 @@ from .const import (
     CONF_KAIDI_PRODUCT_ID,
     CONF_KAIDI_SOFA_ACU_NO,
     CONF_LEGGETT_APP_PROFILE,
+    CONF_LIMOSS_REMOTE_LIGHT,
+    CONF_LIMOSS_REMOTE_MASSAGE,
+    CONF_LIMOSS_REMOTE_PRODUCT,
+    CONF_LIMOSS_REMOTE_STATE,
+    CONF_LIMOSS_REMOTE_THEME,
     CONF_LOGICDATA_APP_FAMILY,
     CONF_LOGICDATA_APP_HAS_LIGHT,
     CONF_LOGICDATA_APP_LAYOUT,
@@ -150,6 +156,7 @@ from .const import (
     LEGGETT_APP_DEFAULT_PROFILE,
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
+    LIMOSS_REMOTE_REVERSE_KEYS,
     LINAK_VARIANT_PERFORMANCE,
     MANUFACTURER_ID_OKIN,
     NORDIC_UART_SERVICE_UUID,
@@ -643,6 +650,32 @@ async def create_controller(
             ui_selector=data.get(CONF_STARCODE_UI_SELECTOR),
             transport_selector=data.get(CONF_STARCODE_TRANSPORT_SELECTOR),
         )
+
+
+    if bed_type == BED_TYPE_LIMOSS_REMOTE:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.limoss_remote", __package__
+        )
+        from .beds.limoss_remote import LimossRemoteController
+        from .beds.limoss_remote_protocol import LimossRemoteCapabilities
+        from .limoss_remote_state import validate_limoss_remote_state
+
+        entry_data = coordinator.entry.data
+        state = validate_limoss_remote_state(entry_data.get(CONF_LIMOSS_REMOTE_STATE, {}))
+        cached = state.get("capabilities")
+        capabilities = LimossRemoteCapabilities(**cached) if isinstance(cached, dict) else None
+        reverse = tuple(entry_data.get(key, False) for key in LIMOSS_REMOTE_REVERSE_KEYS)
+        return LimossRemoteController(
+            coordinator, product=entry_data.get(CONF_LIMOSS_REMOTE_PRODUCT),
+            underbed_light=entry_data.get(CONF_LIMOSS_REMOTE_LIGHT, False),
+            massage=entry_data.get(CONF_LIMOSS_REMOTE_MASSAGE, False),
+            theme=entry_data.get(CONF_LIMOSS_REMOTE_THEME),
+            reverse_motors=(reverse[0], reverse[1], reverse[2], reverse[3]),
+            cached_capabilities=capabilities,
+            memories=coordinator.limoss_remote_memory_store,
+            metadata=state.get("metadata"),
+        )
+
 
     if bed_type == BED_TYPE_FSM_RELAX:
         await coordinator.hass.async_add_import_executor_job(import_module, ".beds.fsm_relax", __package__)
