@@ -7155,6 +7155,16 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     data_schema=vol.Schema(schema_dict),
                     errors={"base": "lp_legacy_pair_settings"},
                 )
+            if (
+                separate_address_pair
+                and requested_bed_type == BED_TYPE_MOTION_BED
+                and requested_bed_type != bed_type
+            ):
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={"base": "motion_bed_unpair"},
+                )
             if requested_bed_type != bed_type:
                 # Re-render once using the selected protocol so its variant,
                 # authentication, layout, remote, and position fields are

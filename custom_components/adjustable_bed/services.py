@@ -1086,6 +1086,10 @@ async def _timed_move_plan(
             )
 
         spec = motor_specs[motor]
+        try:
+            controller.validate_timed_movement(motor, direction, duration_ms)
+        except ValueError as err:
+            raise ServiceValidationError(str(err)) from err
 
         # Get the appropriate move function based on direction
         move_fn = spec.open_fn if direction == "up" else spec.close_fn

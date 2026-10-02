@@ -675,15 +675,20 @@ class MotionBedController(BedController):
             module_generation = self._module_generation
         def current() -> bool:
             return self._owned_session_current(generation) and module_generation == self._module_generation and self._module_is_active("thermal")
-        await asyncio.sleep(2)
-        while current():
-            async def query(controller: BedController) -> None:
-                if controller is not self or not current():
-                    return
-                await self.write_command(SOURCE_COMMANDS["LengnuanFragment:58"])
-            await self._coordinator.async_execute_controller_query(query, cancel_running=False, skip_disconnect=True,
-                                                                         run_if=current)
-            await asyncio.sleep(5)
+        if not current():
+            return
+        # Poll spacing exceeds quick handoff. Hold only this current poll's link,
+        # leaving the command lane free between its bounded status queries.
+        with self._coordinator.hold_command_connection():
+            await asyncio.sleep(2)
+            while current():
+                async def query(controller: BedController) -> None:
+                    if controller is not self or not current():
+                        return
+                    await self.write_command(SOURCE_COMMANDS["LengnuanFragment:58"])
+                await self._coordinator.async_execute_controller_query(query, cancel_running=False, skip_disconnect=True,
+                                                                             run_if=current)
+                await asyncio.sleep(5)
 
     def validate_motion_bed_action(self, key: str, *, branch: str = "app",
                                   duration: float = 1, confirmed: bool = False) -> None:

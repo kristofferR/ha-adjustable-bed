@@ -24,6 +24,10 @@ The hub discovers motor, air and thermal modules through the same BLE address.
 Binding a module does not open another connection. The Active hub module select
 chooses among reported modules and controls which surface owns startup and
 thermal polling. All reported module controls remain available.
+Thermal polling holds the current connection across its native two-second initial
+wait and five-second query spacing, including quick-disconnect mode. It releases
+that hold when the selected module changes, polling is cancelled or the session
+drops; other commands can still run between queries.
 The native card exposes this select in its utility section, including paired
 side views. Open its normal Home Assistant entity row to choose the module.
 Hub button registry identities survive unknown and temporarily absent inventory,
@@ -182,3 +186,12 @@ plausible one-byte payload.
 
 Physical users can validate behavior after a beta or release. Lack of maintainer
 hardware does not defer statically proved controls or configuration writes.
+
+Shared status replies are delivered to each active receiver whose own frame is
+complete: calibration requires 12 bytes, network 15 and smart sleep 19. A complete
+shorter receiver is retained even while a longer receiver is active. A truncated
+standalone reply still rejects atomically without updating state.
+
+A two-address pair cannot be converted from another bed type into Motion Bed in
+shared options. Unpair first and configure each physical name/profile independently.
+Existing valid Motion Bed pairs retain their side names when changing common options.

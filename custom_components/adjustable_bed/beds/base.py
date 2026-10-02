@@ -848,6 +848,9 @@ class BedController(ABC):
             self._coordinator.motor_pulse_delay_ms,
         )
 
+    def validate_timed_movement(self, motor: str, direction: str, duration_ms: int) -> None:  # noqa: B027
+        """Validate controller-specific timed limits before any target moves."""
+
     def timed_move_repeat_count(self, duration_ms: int, pulse_delay_ms: int) -> int:
         """Plan repeats including the immediate first write."""
         return max(2, (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms + 1)

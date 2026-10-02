@@ -708,19 +708,21 @@ def parse_motion_bed_notification(
 
         if contexts & {"home", "smart_sleep", "calibration", "network"}:
             status_contexts = contexts & {"smart_sleep", "calibration", "network"}
-            status_minimum = (
-                19 if "smart_sleep" in contexts else 15 if "network" in contexts else 12
+            status_minimum = min(
+                (minimum for context, minimum in (("smart_sleep", 19), ("network", 15), ("calibration", 12))
+                 if context in status_contexts),
+                default=12,
             )
             if status_contexts and prefix("FFFFFFFF02000A14", status_minimum):
-                if "smart_sleep" in contexts:
+                if "smart_sleep" in contexts and len(data) >= 19:
                     matched("SmartSleepFragment:handleReceiveData")
                     state = replace(
                         state, sleep_enabled=data[16] == 1, night_light_enabled=data[17] == 1
                     )
-                if "calibration" in contexts:
+                if "calibration" in contexts and len(data) >= 12:
                     matched("SleepDataEntryActivity:handleReceiveData")
                     state = replace(state, calibration_flat=data[10], calibration_side=data[11] * 2)
-                if "network" in contexts:
+                if "network" in contexts and len(data) >= 15:
                     matched("XinLvDaiActivity:handleReceiveData")
                     code = data[14]
                     statuses = {
