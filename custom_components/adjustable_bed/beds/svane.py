@@ -574,21 +574,27 @@ class SvaneController(BedController):
         if control == "light_adjust":
             if not self.session.light_on or duration_ms <= 200 or not await self._wait(0.2):
                 return
-            while not cancel.is_set() and asyncio.get_running_loop().time() < deadline:
-                if (self.session.intensity >= 100 and self.session.light_step > 0) or (
-                    self.session.intensity <= 5 and self.session.light_step < 0
-                ):
-                    self.session.light_step *= -1
-                old = self.session.intensity
-                self.session.intensity += self.session.light_step
-                self._remember()
-                await self._light(
-                    self.session.intensity, "b5e9" if self.session.intensity > old else "3fb2"
-                )
-                if not await self._wait(
-                    min(0.1, max(0, deadline - asyncio.get_running_loop().time()))
-                ):
-                    return
+            previous_preferences = self.session.preferences()
+            try:
+                while not cancel.is_set() and asyncio.get_running_loop().time() < deadline:
+                    if (self.session.intensity >= 100 and self.session.light_step > 0) or (
+                        self.session.intensity <= 5 and self.session.light_step < 0
+                    ):
+                        self.session.light_step *= -1
+                    old = self.session.intensity
+                    self.session.intensity += self.session.light_step
+                    self._publish_intent()
+                    await self._light(
+                        self.session.intensity, "b5e9" if self.session.intensity > old else "3fb2"
+                    )
+                    if not await self._wait(
+                        min(0.1, max(0, deadline - asyncio.get_running_loop().time()))
+                    ):
+                        return
+            finally:
+                preferences = self.session.preferences()
+                if preferences != previous_preferences:
+                    self._coordinator.remember_svane_preferences(preferences)
             return
         self._active_head, self._active_feet = MOTIONS[control]
         admission = _hold_admission.get() or self.prepare_svane_hold_admission()

@@ -35,7 +35,7 @@ async def test_offline_paired_cached_capability_sensors_publish_restored_values(
     }
     assert {field: sensors["limoss_remote_" + field].native_value for field in expected} == expected
     client.write_gatt_char.assert_not_awaited()
-    client.start_notify.assert_not_awaited()
+    client.start_notify.assert_awaited_once()  # Original ready session only; offline rebuild performs no I/O.
     assert child.client is None
 
 

@@ -368,6 +368,8 @@ if TYPE_CHECKING:
     from bleak import BleakClient
     from bleak.backends.device import BLEDevice
 
+    from .beds.base import BedController
+
 _LOGGER = logging.getLogger(__name__)
 
 CONFIGURED_RETRY_PREFIX = "configured_retry::"
@@ -7884,11 +7886,24 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 if disabling:
                     if not isinstance(runtime, AdjustableBedCoordinator):
                         return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors={"base": "limoss_remote_feature_update_failed"})
+                    completed = False
+                    off_runtime = runtime
+
+                    async def disable_features(controller: BedController) -> None:
+                        nonlocal completed
+                        await apply_limoss_remote_features(controller, light, massage, persist=False)
+                        if off_runtime.cancel_command.is_set():
+                            raise asyncio.CancelledError
+                        completed = True
+
                     try:
                         await runtime.async_execute_controller_command(
-                            lambda ctrl: apply_limoss_remote_features(ctrl, light, massage, persist=False),
-                            cancel_running=True,
+                            disable_features, cancel_running=True,
                         )
+                        # Replaced scheduler tickets return normally without
+                        # completing their callback. They cannot commit options.
+                        if not completed:
+                            raise RuntimeError("Limoss Remote OFF transaction was interrupted")
                     except Exception:
                         _LOGGER.warning("Unable to complete Limoss Remote feature OFF transaction", exc_info=True)
                         return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors={"base": "limoss_remote_feature_update_failed"})
