@@ -81,9 +81,12 @@ from .const import (
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
     BED_TYPE_TIMOTION_AHF,
+    BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
+    BED_TYPE_ZSERIES_Z230,
+    BED_TYPE_ZSERIES_Z280,
     CB1322_MANUFACTURER_MARKERS,
     CONF_FSM_RELAX_LAYOUT,
     CONF_FSM_RELAX_LIGHT,
@@ -328,6 +331,13 @@ class _ControllerSpec:
 # class name fails the suite rather than a user's bed setup.
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_SERENITY: _ControllerSpec("serenity", "SerenityController"),
+    BED_TYPE_TRANQUIL: _ControllerSpec("serenity", "TranquilController"),
+    BED_TYPE_ZSERIES_Z230: _ControllerSpec(
+        "serenity", "ZSeriesController", MappingProxyType({"model": "z230"})
+    ),
+    BED_TYPE_ZSERIES_Z280: _ControllerSpec(
+        "serenity", "ZSeriesController", MappingProxyType({"model": "z280"})
+    ),
     BED_TYPE_CUSTOMATIC_CLARITY: _ControllerSpec(
         "customatic", "CustomaticController", MappingProxyType({"profile": "clarity"})
     ),

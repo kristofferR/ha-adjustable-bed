@@ -119,15 +119,17 @@ from .const import (
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
     BED_TYPE_RICHMAT,
-    BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SOLACE,
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SVANE,
+    BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
+    BED_TYPE_ZSERIES_Z230,
+    BED_TYPE_ZSERIES_Z280,
     BEDS_WITH_PERCENTAGE_POSITIONS,
     BEDS_WITH_POSITION_FEEDBACK,
     CB24_BED_SELECTION_A,
@@ -245,6 +247,7 @@ from .const import (
     MALOUF_MEMORY_SLOT_OPTIONS,
     MALOUF_MEMORY_SLOTS_AUTO,
     OCTO_VARIANT_STAR2,
+    OKIN_BEDDING_APP_BED_TYPES,
     OKIN_CST_THREE_MOTOR_VARIANTS,
     PAIR_MODE_SEPARATE_ADDRESS,
     PAIR_MODE_SINGLE_ADDRESS,
@@ -269,6 +272,8 @@ from .const import (
     VIBRADORM_WERKMEISTER_CONTROLS,
     VMATBASIC_CONFIG_KEYS,
     VMATBASIC_PROFILES,
+    ZSERIES_BED_TYPES,
+    ZSERIES_PULSE_COUNT_RANGE,
     DetectionResult,
     bed_type_has_position_feedback,
     disconnect_after_command_default_enabled,
@@ -690,7 +695,7 @@ def _motor_count_options(
     if bed_type == BED_TYPE_FURNIMOVE:
         return [1, 2, 3, 4]
     if bed_type in {
-        BED_TYPE_SERENITY,
+        *OKIN_BEDDING_APP_BED_TYPES,
         BED_TYPE_SIMMONS,
         BED_TYPE_CUSTOMATIC_CLARITY,
         BED_TYPE_CUSTOMATIC_JEROMES,
@@ -728,6 +733,19 @@ def _is_valid_motor_count(
 ) -> bool:
     """Return whether a motor count is valid for the selected protocol."""
     return motor_count in _motor_count_options(bed_type, protocol_variant)
+
+
+# App profiles that belong to one physical bed: a two-address pair must be
+# separated before either side moves to, from or between them.
+EXPLICIT_PAIR_APP_BED_TYPES: Final = frozenset(
+    {BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES_Z230, BED_TYPE_ZSERIES_Z280}
+)
+
+
+def _invalid_pulse_count(bed_type: str | None, pulse_count: int) -> bool:
+    """Reject counts whose Z-Series press would fall outside the 0.1-60 s hold window."""
+    low, high = ZSERIES_PULSE_COUNT_RANGE
+    return bed_type in ZSERIES_BED_TYPES and not low <= pulse_count <= high
 
 
 def _normalize_fixed_motor_count(
@@ -2573,9 +2591,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if user_input is None:
             return None
         requested = user_input.get(CONF_BED_TYPE, shown_bed_type)
-        if requested == shown_bed_type or not {BED_TYPE_SERENITY, BED_TYPE_VMATBASIC}.intersection(
-            (shown_bed_type, requested)
-        ):
+        rebuild_types = {*OKIN_BEDDING_APP_BED_TYPES, BED_TYPE_VMATBASIC}
+        if requested == shown_bed_type or not rebuild_types.intersection((shown_bed_type, requested)):
             return None
         self._selected_bed_type = None if requested == BED_TYPE_AUTO_DETECT else requested
         self._selected_protocol_variant = None
@@ -2720,6 +2737,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     motor_pulse_count = pulse_defaults[0]
             else:
                 motor_pulse_count = pulse_defaults[0]
+            if _invalid_pulse_count(selected_bed_type, motor_pulse_count):
+                errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
             # Validate motor pulse delay
             pulse_delay_input = user_input.get(CONF_MOTOR_PULSE_DELAY_MS)
             if pulse_delay_input is not None and pulse_delay_input != "":
@@ -2981,7 +3000,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
         }
 
-        if bed_type_default in {BED_TYPE_SERENITY, BED_TYPE_SIMMONS, BED_TYPE_FURNIMOVE}:
+        if bed_type_default in {*OKIN_BEDDING_APP_BED_TYPES, BED_TYPE_SIMMONS, BED_TYPE_FURNIMOVE}:
             schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
             schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
         if bed_type_default == BED_TYPE_FURNIMOVE:
@@ -3703,6 +3722,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 )
             except ValueError, TypeError:
                 errors["base"] = "invalid_number"
+            if not errors and _invalid_pulse_count(bed_type, motor_pulse_count):
+                errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
 
             if not errors:
                 disconnect_after_command = self._disconnect_after_command_choice(
@@ -3927,7 +3948,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
             }
         )
-        if defaults_bed_type in {BED_TYPE_SERENITY, BED_TYPE_SIMMONS, BED_TYPE_FURNIMOVE}:
+        if defaults_bed_type in {*OKIN_BEDDING_APP_BED_TYPES, BED_TYPE_SIMMONS, BED_TYPE_FURNIMOVE}:
             schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
             schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
         if defaults_bed_type == BED_TYPE_FURNIMOVE:
@@ -4013,6 +4034,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     )
                 except ValueError, TypeError:
                     errors["base"] = "invalid_number"
+                if not errors and _invalid_pulse_count(bed_type, motor_pulse_count):
+                    errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
 
                 if not errors:
                     disconnect_after_command = self._disconnect_after_command_choice(
@@ -4217,7 +4240,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             _add_malouf_schema_fields(schema_dict)
         if preselected_bed_type == BED_TYPE_OKIN_CB24:
             _add_cb24_side_schema_field(schema_dict)
-        if preselected_bed_type in {BED_TYPE_SERENITY, BED_TYPE_SIMMONS, BED_TYPE_FURNIMOVE}:
+        if preselected_bed_type in {*OKIN_BEDDING_APP_BED_TYPES, BED_TYPE_SIMMONS, BED_TYPE_FURNIMOVE}:
             schema_dict.pop(vol.Optional(CONF_MOTOR_COUNT), None)
             schema_dict.pop(vol.Optional(CONF_MOTOR_PULSE_DELAY_MS), None)
         if preselected_bed_type == BED_TYPE_FURNIMOVE:
@@ -6737,7 +6760,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         }
 
         if bed_type in {
-            BED_TYPE_SERENITY,
+            *OKIN_BEDDING_APP_BED_TYPES,
             BED_TYPE_SIMMONS,
             BED_TYPE_FURNIMOVE,
             BED_TYPE_STARCODE_ABM5_4,
@@ -6909,6 +6932,20 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 user_input = {**user_input, CONF_MOTOR_COUNT: int(user_input[CONF_MOTOR_COUNT])}
             requested_bed_type = user_input.get(CONF_BED_TYPE, bed_type)
             requested_route = user_input.get(CONF_PROTOCOL_VARIANT, form_variant)
+            if separate_address_pair:
+                # Stored per-side types, not the pending form value: a rebuilt form
+                # must not hide a change from another app profile on either side.
+                side_types = {
+                    child.get(CONF_BED_TYPE) for child in iter_children(self.config_entry.data)
+                }
+                if side_types != {requested_bed_type} and EXPLICIT_PAIR_APP_BED_TYPES.intersection(
+                    {requested_bed_type, *side_types}
+                ):
+                    return self.async_show_form(
+                        step_id=step_id,
+                        data_schema=vol.Schema(schema_dict),
+                        errors={CONF_BED_TYPE: "okin_bedding_app_unpair_first"},
+                    )
             if separate_address_pair and (
                 (requested_bed_type == BED_TYPE_FSM_RELAX and requested_bed_type != bed_type)
                 or any(key in user_input for key in (CONF_FSM_RELAX_LAYOUT, CONF_FSM_RELAX_LIGHT, CONF_FSM_RELAX_MASSAGE, CONF_FSM_RELAX_MEMORY_NAMES, *CONF_FSM_RELAX_REVERSALS))
@@ -7472,6 +7509,14 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     step_id=step_id,
                     data_schema=vol.Schema(schema_dict),
                     errors={"base": "invalid_number"},
+                )
+            if _invalid_pulse_count(
+                bed_type, user_input.get(CONF_MOTOR_PULSE_COUNT, pulse_defaults[0])
+            ):
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={CONF_MOTOR_PULSE_COUNT: "invalid_pulse_count_range"},
                 )
             # Convert angle limit values to floats with field-specific error handling
             if CONF_BACK_MAX_ANGLE in user_input:

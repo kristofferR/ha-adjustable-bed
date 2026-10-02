@@ -1400,6 +1400,186 @@ serenity_hold_control:
             - left
             - right
 
+tranquil_hold_control:
+  name: Hold Tranquil control
+  description: Hold one supported Tranquil app action, then release it. Save actions can change stored positions.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    control:
+      name: Control
+      description: Literal action from the selected Tranquil profile's held-control options.
+      required: true
+      selector:
+        select:
+          options:
+            - head_up
+            - head_down
+            - foot_up
+            - foot_down
+            - selector_4_up
+            - selector_4_down
+            - selector_5_up
+            - selector_5_down
+            - flat
+            - zero_g
+            - lounge
+            - memory_1
+            - memory_2
+            - save_zero_g
+            - save_lounge
+            - save_memory_1
+            - save_memory_2
+            - massage_head_cycle
+            - massage_foot_cycle
+            - massage_mode_cycle
+            - massage_timer_cycle
+            - massage_toggle
+            - light_toggle
+            - anti_snore
+            - wave_1
+            - wave_2
+            - wave_3
+            - massage_off
+            - light_on
+            - light_off
+    duration:
+      name: Duration
+      description: Hold time in seconds.
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.1
+          unit_of_measurement: s
+    side:
+      name: Side
+      selector:
+        select:
+          options:
+            - both
+            - left
+            - right
+
+zseries_hold_control:
+  name: Hold Z-Series control
+  description: Hold one supported Z-Series app action, then release it. Save actions can change stored positions.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    control:
+      name: Control
+      description: Literal action from the selected Z-Series profile's held-control options.
+      required: true
+      selector:
+        select:
+          options:
+            - head_up
+            - head_down
+            - foot_up
+            - foot_down
+            - flat
+            - anti_snore
+            - memory_1
+            - zero_g
+            - tv
+            - save_zero_g
+            - save_memory_1
+            - save_tv
+            - light_toggle
+            - massage_toggle
+            - massage_mode_cycle
+            - massage_timer_cycle
+            - selector_5_up
+            - selector_5_down
+            - memory_2
+            - save_memory_2
+            - massage_head_cycle
+            - massage_foot_cycle
+            - head_foot_up
+            - head_foot_down
+            - massage_intensity_cycle
+    duration:
+      name: Duration
+      description: Hold time in seconds.
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.1
+          unit_of_measurement: s
+    side:
+      name: Side
+      selector:
+        select:
+          options:
+            - both
+            - left
+            - right
+
+zseries_set_alarm:
+  name: Set Z-Series alarm
+  description: Set or clear the Customatic Z-Series app alarm. The bed clock is set to Home Assistant's local time first. Only controllers whose manufacturer string enables the app alarm page are supported.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    enabled:
+      name: Enabled
+      description: Turn off to clear the alarm.
+      required: true
+      selector:
+        boolean:
+    time:
+      name: Local alarm time
+      description: Required when enabling. Time to the nearest minute; the app sets today's weekday, or tomorrow's if the time has passed.
+      selector:
+        time:
+    wake_mode:
+      name: Wake mode
+      description: Required when enabling the alarm.
+      selector:
+        select:
+          options: [massage, memory_1]
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
+
+zseries_sync_clock:
+  name: Synchronize Z-Series clock
+  description: Set a Customatic Z-Series controller's clock to Home Assistant's local time, as the app's alarm page does.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
+
 simmons_hold_control:
   name: Hold SIMMONS control
   description: Hold one SIMMONS app control, repeating it every 300 ms, then send its release stops. The app's help says holding Custom Mode for 5 seconds saves the current position; the save on the bed is unverified.

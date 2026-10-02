@@ -53,6 +53,8 @@ CONF_PROTOCOL_VARIANT: Final = "protocol_variant"
 CONF_MOTOR_COUNT: Final = "motor_count"
 CONF_STARCODE_COMMAND_SELECTOR: Final = "starcode_abm5_4_command_selector"
 CONF_STARCODE_UI_SELECTOR: Final = "starcode_abm5_4_ui_selector"
+# Last successful Z-Series manufacturer observation: True for exact CST13/CST14.
+CONF_ZSERIES_ALARM_AVAILABLE: Final = "zseries_alarm_available"
 CONF_STARCODE_TRANSPORT_SELECTOR: Final = "starcode_abm5_4_transport_selector"
 STARCODE_APP_CONNECTION_TIMEOUT_SECONDS: Final = 8.0
 STARCODE_APP_CONFIG_KEYS: Final = frozenset({CONF_STARCODE_COMMAND_SELECTOR, CONF_STARCODE_UI_SELECTOR, CONF_STARCODE_TRANSPORT_SELECTOR})
@@ -414,6 +416,17 @@ CONF_FSM_RELAX_MASSAGE: Final = "fsm_relax_massage"
 CONF_FSM_RELAX_REVERSALS: Final = tuple(f"fsm_relax_reverse_{i}" for i in range(1, 5))
 CONF_FSM_RELAX_MEMORY_NAMES: Final = "fsm_relax_memory_names"
 BED_TYPE_SERENITY: Final = "serenity"  # Explicit Jordan's Serenity app profile
+BED_TYPE_TRANQUIL: Final = "tranquil"  # Explicit Jordan's Tranquil app profile
+# Customatic Z-Series app: the user picks the Z-230 or Z-280 page in the app.
+BED_TYPE_ZSERIES_Z230: Final = "customatic_z230"
+BED_TYPE_ZSERIES_Z280: Final = "customatic_z280"
+# Explicit OKIN Bedding app profiles sharing the Serenity controller core.
+OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
+    {BED_TYPE_SERENITY, BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES_Z230, BED_TYPE_ZSERIES_Z280}
+)
+ZSERIES_BED_TYPES: Final = frozenset({BED_TYPE_ZSERIES_Z230, BED_TYPE_ZSERIES_Z280})
+# A Z-Series button press holds pulse_count x 100 ms, within the 60 s hold limit.
+ZSERIES_PULSE_COUNT_RANGE: Final = (1, 600)
 BED_TYPE_SIMMONS: Final = "simmons"  # Explicit SIMMONS app profile (com.okin.simmons)
 BED_TYPE_CUSTOMATIC_CLARITY: Final = "customatic_clarity"
 BED_TYPE_CUSTOMATIC_JEROMES: Final = "customatic_jeromes"
@@ -492,8 +505,11 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_NECTAR,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_SERENITY,
+    BED_TYPE_TRANQUIL,
     BED_TYPE_SIMMONS,
     # Explicit Customatic app profiles
+    BED_TYPE_ZSERIES_Z230,
+    BED_TYPE_ZSERIES_Z280,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
@@ -2528,6 +2544,9 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_FURNIMOVE,
         BED_TYPE_FSM_RELAX,
         BED_TYPE_SERENITY,
+        BED_TYPE_TRANQUIL,
+        BED_TYPE_ZSERIES_Z230,
+        BED_TYPE_ZSERIES_Z280,
         BED_TYPE_SIMMONS,
         BED_TYPE_CUSTOMATIC_CLARITY,
         BED_TYPE_CUSTOMATIC_JEROMES,
@@ -2737,6 +2756,10 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_CUSTOMATIC_REMEDY: (8, 120),
     BED_TYPE_FSM_RELAX: (10, 60),
     BED_TYPE_SERENITY: (10, 100),  # APK refresh cadence; bounded HA movement duration
+    BED_TYPE_TRANQUIL: (10, 100),  # APK refresh cadence; bounded HA movement duration
+    # 100 ms is the app refresh; the count also bounds a Z-Series button press.
+    BED_TYPE_ZSERIES_Z230: (10, 100),
+    BED_TYPE_ZSERIES_Z280: (10, 100),
     BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
     # Malouf New OKIN (Nordic): 100ms delay → 10 repeats = 1.0s total
     # Source: com.malouf.bedbase / com.lucid.bedbase ANALYSIS.md
