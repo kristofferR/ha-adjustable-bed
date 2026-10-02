@@ -7697,12 +7697,24 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                             )
             if not separate_address_pair and (
                 bed_type == BED_TYPE_SVANE or self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_SVANE
-            ) and any(new_data.get(key) != self.config_entry.data.get(key) for key in (CONF_BED_TYPE, CONF_PROTOCOL_VARIANT)):
-                from .svane_state import clear_svane_session
+            ):
+                old_variant = self.config_entry.data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
+                new_variant = new_data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
+                if self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_SVANE and old_variant in (
+                    None, VARIANT_AUTO, SVANE_VARIANT_MULTI
+                ):
+                    old_variant = SVANE_VARIANT_MULTI
+                if bed_type == BED_TYPE_SVANE and new_variant in (
+                    None, VARIANT_AUTO, SVANE_VARIANT_MULTI
+                ):
+                    new_variant = SVANE_VARIANT_MULTI
+                if bed_type != self.config_entry.data.get(CONF_BED_TYPE) or new_variant != old_variant:
+                    from .svane_state import CONF_SVANE_PREFERENCES, clear_svane_session
 
-                address = new_data.get(CONF_ADDRESS)
-                if isinstance(address, str):
-                    clear_svane_session(self.hass, address)
+                    new_data.pop(CONF_SVANE_PREFERENCES, None)
+                    address = self.config_entry.data.get(CONF_ADDRESS)
+                    if isinstance(address, str):
+                        clear_svane_session(self.hass, address)
             if any(new_data.get(key) != self.config_entry.data.get(key) for key in (CONF_STARCODE_M5X5_PROFILE, CONF_STARCODE_DEVICE_NAME, CONF_STARCODE_LIFT_ENTRIES)):
                 from .starcode_accessory_group import cancel_group_operations
                 cancel_group_operations(self.hass, self.config_entry.entry_id)
