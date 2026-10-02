@@ -8,6 +8,8 @@ from contextvars import ContextVar
 from dataclasses import dataclass, fields, replace
 from typing import TYPE_CHECKING
 
+from bleak.exc import BleakError
+
 from ..motion_bed_actions import ACTION_BY_KEY, MOTION_BED_ACTIONS, MotionBedAction
 from ..motion_bed_models import MotionBedSelection
 from ..motion_bed_protocol import SOURCE_COMMANDS, build_clock, build_thermal_clock
@@ -686,8 +688,19 @@ class MotionBedController(BedController):
                     if controller is not self or not current():
                         return
                     await self.write_command(SOURCE_COMMANDS["LengnuanFragment:58"])
-                await self._coordinator.async_execute_controller_query(query, cancel_running=False, skip_disconnect=True,
-                                                                             run_if=current)
+                try:
+                    await self._coordinator.async_execute_controller_query(query, cancel_running=False, skip_disconnect=True,
+                                                                         run_if=current)
+                except asyncio.CancelledError:
+                    # A command can preempt this query without cancelling its poll owner.
+                    task = asyncio.current_task()
+                    if task is None or task.cancelling() or not current():
+                        raise
+                except (BleakError, ConnectionError, TimeoutError):
+                    if not current():
+                        return
+                if not current():
+                    return
                 await asyncio.sleep(5)
 
     def validate_motion_bed_action(self, key: str, *, branch: str = "app",
@@ -806,9 +819,12 @@ class MotionBedController(BedController):
         token = self._operation_generation.set(self._generation)
         network_hold: ExitStack | None = None
         hold_transferred = False
+        generation = self._generation
+        network_generation = self._network_generation
         try:
             if request.network_poll:
                 self._network_generation += 1
+                network_generation = self._network_generation
                 if self._network_task is not None:
                     self._network_task.cancel()
                     self._network_task = None
@@ -819,6 +835,9 @@ class MotionBedController(BedController):
                 self._network_connection_hold = network_hold
                 self._network_queries = 0
                 self._network_poll_active = False
+                # Replies may arrive while any provisioning frame is awaiting ATT.
+                self._state = replace(self._state, network_poll_attempts=0, provisioning_status="waiting")
+                self._publish()
             if self.selection.surface == "hub":
                 module = "thermal" if request.context in ("thermal", "thermal_schedule") else "air" if request.name in ("air_setting", "pressure") else "motor" if request.name in ("alarm", "audio", "clock") else None
                 if module is not None:
@@ -846,12 +865,11 @@ class MotionBedController(BedController):
                     except TimeoutError:
                         pass
                 await self.write_command(frame)
-            if request.network_poll:
-                self._network_queries = 0
+            if (request.network_poll and network_generation == self._network_generation
+                    and self._network_connection_hold is network_hold
+                    and self._owned_session_current(generation)
+                    and self._state.provisioning_status not in ("failed", "success")):
                 self._network_poll_active = True
-                self._state = replace(self._state, network_poll_attempts=0, provisioning_status="waiting")
-                self._publish()
-                self._current_session()
                 self._network_task = self._spawn(lambda: self._network_poll(connection_hold=network_hold))
                 hold_transferred = True
         finally:

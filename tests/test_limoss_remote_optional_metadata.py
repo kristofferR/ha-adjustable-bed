@@ -185,3 +185,122 @@ async def test_pre_query_version_reply_cannot_launch_software_query(hass, monkey
     assert emitted == [2, 0]
     assert controller._notify_client is client and controller._request_active is None
     await controller.stop_notify()
+
+
+@pytest.mark.parametrize("late_reply_opcode", [2, 0])
+@pytest.mark.parametrize("strict", [False, True])
+async def test_optional_phase_admission_respects_remaining_native_pacing(
+    hass, monkeypatch, late_reply_opcode, strict
+):
+    coordinator, controller = await startup_controller(hass, monkeypatch, cached=False)
+    budget = 0.06 if late_reply_opcode == 2 else 0.13
+    monkeypatch.setattr(limoss_remote, "_INFORMATION_TIMEOUT_SECONDS", budget)
+    client = coordinator.client
+    emitted, starts = [], []
+
+    async def write(role, packet, **kwargs):
+        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        emitted.append(opcode)
+        starts.append(asyncio.get_running_loop().time())
+        if opcode == late_reply_opcode:
+            await asyncio.sleep(0.02)  # Host-only reply delay; native80ms remains unchanged.
+        respond(client, role, opcode)
+
+    client.write_gatt_char.side_effect = write
+    if strict:
+        # Public refresh retains the old strict admission/write deadline contract.
+        client.start_notify.side_effect = None
+        await client.start_notify(controller.client.services[0].characteristics[0], controller._notification)
+        with pytest.raises(TimeoutError) as error:
+            await controller.refresh_device_info()
+        assert not isinstance(error.value, limoss_remote._ReplyWaitTimeout)
+    else:
+        await coordinator.async_start_notify()
+        assert controller._notify_client is client and controller._request_active is None
+        client.stop_notify.assert_not_awaited()
+    assert emitted == ([2] if late_reply_opcode == 2 else [2, 0])
+    assert starts[-1] + 0.08 >= starts[0] + budget
+    assert controller.capabilities is not None and controller.capabilities.system == 0x22
+    metadata = coordinator.entry.data[const.CONF_LIMOSS_REMOTE_STATE].get("metadata", {})
+    assert metadata == ({} if late_reply_opcode == 2 else {"hardware_version": "12.34"})
+    await controller.stop_notify()
+
+
+@pytest.mark.parametrize("late_reply_opcode", [2, 0])
+@pytest.mark.parametrize("failure", ["cancel", "disconnect", "replace", "generation"])
+async def test_optional_phase_skip_never_admits_cancelled_or_stale_subscription(
+    hass, monkeypatch, late_reply_opcode, failure
+):
+    coordinator, controller = await startup_controller(hass, monkeypatch, cached=False)
+    monkeypatch.setattr(
+        limoss_remote, "_INFORMATION_TIMEOUT_SECONDS", 0.06 if late_reply_opcode == 2 else 0.13
+    )
+    client = coordinator.client
+    emitted = []
+
+    async def write(role, packet, **kwargs):
+        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        emitted.append(opcode)
+        if opcode == late_reply_opcode:
+            await asyncio.sleep(0.02)
+        respond(client, role, opcode)
+        if opcode == late_reply_opcode:
+            if failure == "cancel":
+                coordinator.cancel_command.set()
+            elif failure == "disconnect":
+                client.is_connected = False
+                controller.on_disconnect()
+            elif failure == "replace":
+                from tests.test_limoss_remote import make_controller
+                coordinator._client = make_controller().client
+            else:
+                controller._notify_generation += 1
+
+    client.write_gatt_char.side_effect = write
+    expected = asyncio.CancelledError if failure == "cancel" else ConnectionError
+    with pytest.raises(expected):
+        await coordinator.async_start_notify()
+    assert emitted == ([2] if late_reply_opcode == 2 else [2, 0])
+    assert controller._notify_client is None and controller._request_active is None
+    assert controller._request_reply is None and controller._progress is None
+
+
+@pytest.mark.parametrize("blocked", ["lane", "pacing"])
+async def test_admitted_optional_phase_still_fails_when_write_budget_expires(
+    hass, monkeypatch, blocked
+):
+    coordinator, controller = await startup_controller(hass, monkeypatch, cached=False)
+    client = coordinator.client
+    release = asyncio.Event()
+    holders: list[asyncio.Task[None]] = []
+    emitted = []
+
+    async def hold_lane():
+        async with controller._ble_lock:
+            await release.wait()
+
+    async def pacing(seconds, event=None):
+        await release.wait()
+
+    def write(role, packet, **kwargs):
+        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        emitted.append(opcode)
+        respond(client, role, opcode)
+        if opcode == 2:
+            if blocked == "lane":
+                holders.append(asyncio.create_task(hold_lane()))
+            else:
+                controller._sleep = pacing
+
+    client.write_gatt_char.side_effect = write
+    try:
+        with pytest.raises(TimeoutError) as caught:
+            await coordinator.async_start_notify()
+        assert not isinstance(caught.value, limoss_remote._ReplyWaitTimeout)
+        assert emitted == [2]
+        assert controller._notify_client is None and controller._request_active is None
+        client.stop_notify.assert_awaited_once()
+    finally:
+        release.set()
+        for holder in holders:
+            await holder

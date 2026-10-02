@@ -199,3 +199,7 @@ standalone reply still rejects atomically without updating state.
 A two-address pair cannot be converted from another bed type into Motion Bed in
 shared options. Unpair first and configure each physical name/profile independently.
 Existing valid Motion Bed pairs retain their side names when changing common options.
+
+Layout changes retire obsolete Motion movement covers while retaining active entity identities and customization. The same namespace cleanup runs when switching to another protocol and stays scoped to the config entry and paired side.
+
+A current thermal poll retains its connection hold after command preemption or a transient status-query failure, then tries again at the existing five-second interval. Cancelling the poll or replacing its session stops it and releases the hold. Wi-Fi provisioning initializes its pending state before writing frames, preserves replies received during those writes, and starts the bounded poll only if the same attempt remains current and nonterminal.
