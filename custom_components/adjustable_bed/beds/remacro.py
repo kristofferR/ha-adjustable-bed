@@ -292,6 +292,9 @@ class RemacroController(BedController):
                     open_fn=_remacro(lambda ctrl: ctrl.move_all_up()),
                     close_fn=_remacro(lambda ctrl: ctrl.move_all_down()),
                     stop_fn=_remacro(lambda ctrl: ctrl.move_all_stop()),
+                    # Moves every motor: any single-axis stop or reversal must
+                    # preempt it, so it overlaps every motor resource.
+                    scheduler_resource="motor:*",
                 )
             )
         return tuple(specs)

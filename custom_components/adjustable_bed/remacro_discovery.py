@@ -75,9 +75,13 @@ def update_remacro_model_issue(
 
 
 def remacro_side_lacks_global_stop(runtime: EntityRuntime) -> bool:
-    """Whether a known Remacro side's screen defines no global STOP (NineActivity)."""
+    """Whether a Remacro side cannot take a global STOP frame.
+
+    True for a NineActivity screen and for a side without a controller (its
+    model is refused or not seen yet), which a STOP would only try to connect.
+    """
     # Checked first so other bed types (and minimal test runtimes) are untouched.
     if getattr(runtime, "bed_type", None) != BED_TYPE_REMACRO:
         return False
     controller = runtime.capability_controller
-    return controller is not None and not controller.supports_stop_all
+    return controller is None or not controller.supports_stop_all

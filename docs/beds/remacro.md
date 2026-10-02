@@ -157,7 +157,11 @@ As in the apps, pressing the preset that is already active sends `0x0001` instea
 The Stop button sends `0x0001` and clears the active preset. NineActivity defines no
 global STOP, so it has no Stop button; stopping a cover ends the running movement
 with its own release STOP. A combined bed gets its combined Stop only when a side has a
-global STOP; that Stop only cancels the running movement on a NineActivity side.
+global STOP; that Stop only cancels the running (or queued) movement on a NineActivity
+side or a side whose model is refused or not seen yet, and never connects it.
+
+The All motors cover moves every motor, so stopping or reversing any single axis
+interrupts it immediately.
 
 ## Massage
 

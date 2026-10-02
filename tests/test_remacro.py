@@ -1526,19 +1526,29 @@ async def test_unmapped_model_stays_refused_after_a_restart_without_history(
     mock_establish_connection.assert_not_awaited()
 
 
-@pytest.mark.parametrize(("left_company", "stop_button"), [(52, False), (51, True)])
+@pytest.mark.parametrize(
+    ("left_company", "right_company", "stop_button"),
+    [
+        (52, 52, False),
+        (51, 52, True),
+        # A refused (controller-less) side cannot take a global STOP either.
+        (52, 13, False),
+        (51, 13, True),
+    ],
+)
 async def test_paired_stop_needs_a_side_with_global_stop(
     hass: HomeAssistant,
     mock_coordinator_connected,
     enable_custom_integrations,
     left_company,
+    right_company,
     stop_button,
 ) -> None:
     left, right = "AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72"
-    entry, _children = _remacro_pair(hass, left_company, 52)
+    entry, _children = _remacro_pair(hass, None, None)
     adverts = {
         left: MagicMock(manufacturer_data={left_company: b""}),
-        right: MagicMock(manufacturer_data={52: b""}),
+        right: MagicMock(manufacturer_data={right_company: b""}),
     }
     registry = er.async_get(hass)
     with patch(_HISTORY, side_effect=lambda _hass, address, connectable: adverts[address]):
@@ -1564,7 +1574,8 @@ async def test_paired_stop_needs_a_side_with_global_stop(
                     "button", "press", {"entity_id": stop}, blocking=True
                 )
             left_stop.assert_awaited_once()
-            # The NineActivity side only has its running movement cancelled.
+            # The other side only has its running movement cancelled, never a
+            # reconnect for a frame it cannot take.
             right_stop.assert_not_awaited()
             right_cancel.assert_called_once()
         await hass.config_entries.async_unload(entry.entry_id)
@@ -1604,4 +1615,56 @@ async def test_unseen_paired_side_gets_controls_when_it_advertises(
         assert entry.state is ConfigEntryState.LOADED
         assert registry.async_get_entity_id("cover", DOMAIN, f"{right}_back") is not None
         assert not callbacks  # The reload no longer watches a now-known side.
+        await hass.config_entries.async_unload(entry.entry_id)
+
+
+async def test_all_motors_yields_to_a_single_axis_stop(
+    hass: HomeAssistant,
+    mock_coordinator_connected,
+    mock_bleak_client: MagicMock,
+    enable_custom_integrations,
+) -> None:
+    """The combined control overlaps every motor, so a head stop preempts it."""
+    address = "AA:BB:CC:DD:EE:91"
+    entry = _remacro_entry(hass, address)
+    registry = er.async_get(hass)
+    holding = asyncio.Event()
+
+    async def hold_until_cancelled(self, seconds: float, cancel_event: asyncio.Event) -> bool:
+        holding.set()
+        await cancel_event.wait()
+        return True
+
+    async def instant_sleep(self, seconds: float) -> None:
+        return None
+
+    with (
+        patch(_HISTORY, return_value=MagicMock(manufacturer_data={50: b""})),
+        patch.object(RemacroController, "_pause", hold_until_cancelled),
+        patch.object(RemacroController, "_sleep", instant_sleep),
+    ):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        all_motors = registry.async_get_entity_id("cover", DOMAIN, f"{address}_all_motors")
+        head = registry.async_get_entity_id("cover", DOMAIN, f"{address}_back")
+        assert all_motors is not None and head is not None
+        mock_bleak_client.write_gatt_char.reset_mock()
+        moving = hass.async_create_task(
+            hass.services.async_call(
+                "cover", "open_cover", {"entity_id": all_motors}, blocking=True
+            )
+        )
+        async with asyncio.timeout(2):
+            await holding.wait()
+            await hass.services.async_call(
+                "cover", "stop_cover", {"entity_id": head}, blocking=True
+            )
+            await moving
+        codes = [
+            bytes(call.args[1])[2:4].hex()
+            for call in mock_bleak_client.write_gatt_char.call_args_list
+            if call.args[0] == REMACRO_WRITE_CHAR_UUID
+        ]
+        # All motors up, its release STOP, then the head STOP.
+        assert codes == ["1001", "0100", "0001"]
         await hass.config_entries.async_unload(entry.entry_id)
