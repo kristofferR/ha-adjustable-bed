@@ -110,6 +110,8 @@ class ControllerSelectSpec:
     state_key: str
     options: tuple[str, ...]
     select_fn: Callable[[BedController, str], Awaitable[None]]
+    # An app-local choice that sends no frame: applied without connecting.
+    local_select_fn: Callable[[str], None] | None = field(default=None, kw_only=True)
 
 
 @dataclass(frozen=True, slots=True)

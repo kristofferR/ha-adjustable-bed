@@ -47,6 +47,7 @@ from .adapter import (
     select_adapter,
 )
 from .address_lock import async_get_connect_lock
+from .beds.remacro_protocol import ModelProblem
 from .ble_auth import is_ble_authentication_error, is_ble_pairing_auth_failure
 from .bluetooth_diagnostics import connection_reachability
 from .bluetooth_transport import (
@@ -111,6 +112,7 @@ from .const import (
     BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
@@ -150,6 +152,8 @@ from .const import (
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
+    CONF_REMACRO_LED_LEVEL,
+    CONF_REMACRO_MODEL,
     CONF_RICHMAT_REMOTE,
     CONF_RMCONTROL_PRODUCT,
     CONF_RMCONTROL_SIDE,
@@ -235,6 +239,11 @@ from .position_seek import (
     SeekResult,
     SeekSample,
     SeekTimeoutError,
+)
+from .remacro_discovery import (
+    remacro_entry_problem,
+    remacro_manufacturer_data,
+    update_remacro_model_issue,
 )
 from .unsupported import (
     create_pairing_required_issue,
@@ -1166,6 +1175,14 @@ class AdjustableBedCoordinator:
         is_linak_performance = (
             bed_type == BED_TYPE_LINAK and self._protocol_variant == LINAK_VARIANT_PERFORMANCE
         )
+        # A stored Remacro model selects the same screen offline; a live
+        # advertisement still wins when the side connects. A side the app would
+        # refuse gets no controls, only its Repairs issue.
+        stored_remacro_model = (
+            bed_type == BED_TYPE_REMACRO
+            and isinstance(self.entry.data.get(CONF_REMACRO_MODEL), int)
+            and not self.remacro_model_rejected
+        )
         statically_mintable = bed_type in OFFLINE_CAPABILITY_SAFE_BED_TYPES and (
             bed_type != BED_TYPE_SOLACE
             or isinstance(self.entry.data.get(CONF_BLE_DEVICE_NAME), str)
@@ -1173,6 +1190,7 @@ class AdjustableBedCoordinator:
         )
         mintable = (
             statically_mintable
+            or stored_remacro_model
             # FSM Relax factory loads only its exact persisted capability body.
             # With no snapshot its action/memory descriptors remain empty.
             or bed_type == BED_TYPE_FSM_RELAX
@@ -1284,6 +1302,26 @@ class AdjustableBedCoordinator:
             return
         self._begin_internal_entry_update(self._ble_bond_established)
         self._async_persist_config({**self.entry.data, CONF_VIBRADORM_FLOOR_DEFAULT: level})
+
+    def remember_remacro_led_level(self, model_id: int, level: int) -> None:
+        """Persist the committed Remacro LED level.
+
+        The app keys its "LV" preference by model (company ID) and address, so
+        each model keeps its own value and a new model starts at the default.
+        """
+        if self._bed_type != BED_TYPE_REMACRO:
+            raise ValueError("The LED level belongs to the Remacro app profiles")
+        if isinstance(level, bool) or not isinstance(level, int) or not 0 <= level <= 255:
+            raise ValueError("The LED level must be an integer from 0 to 255")
+        stored = self.entry.data.get(CONF_REMACRO_LED_LEVEL)
+        levels = dict(stored) if isinstance(stored, dict) else {}
+        if levels.get(str(model_id)) == level:
+            return
+        levels[str(model_id)] = level
+        self._begin_internal_entry_update(self._ble_bond_established)
+        self._async_persist_config(
+            {**self.entry.data, CONF_REMACRO_LED_LEVEL: levels}, keys={CONF_REMACRO_LED_LEVEL}
+        )
 
     def remember_vmatbasic_settings(self, settings: dict[str, int]) -> None:
         """Persist this physical receiver's requested settings, never measured state."""
@@ -2773,6 +2811,43 @@ class AdjustableBedCoordinator:
         async with self._lock:
             return await self._async_connect_locked()
 
+    def _remacro_model_problem(self) -> tuple[ModelProblem | None, dict[str, str]]:
+        return remacro_entry_problem(
+            {
+                CONF_PROTOCOL_VARIANT: self._protocol_variant,
+                CONF_REMACRO_MODEL: self.entry.data.get(CONF_REMACRO_MODEL),
+            },
+            remacro_manufacturer_data(self.hass, self._address),
+        )
+
+    @property
+    def remacro_model_unseen(self) -> bool:
+        """Whether this Remacro bed's model is not known yet (nothing advertised)."""
+        return self._bed_type == BED_TYPE_REMACRO and self._remacro_model_problem()[0] == "unknown"
+
+    @property
+    def remacro_model_rejected(self) -> bool:
+        """Whether the selected app would refuse this Remacro bed's model."""
+        return self._bed_type == BED_TYPE_REMACRO and self._remacro_model_problem()[0] in (
+            "unmapped",
+            "not_in_app",
+        )
+
+    def remacro_model_blocks_connection(self) -> bool:
+        """Refuse to connect a Remacro bed whose model the selected app would not list.
+
+        A combined bed's side reaches here without the standalone setup check, so
+        the check runs per connection: the other side keeps working.
+        """
+        if self._bed_type != BED_TYPE_REMACRO:
+            return False
+        problem, placeholders = self._remacro_model_problem()
+        update_remacro_model_issue(self.hass, self._address, self._name, problem, placeholders)
+        if problem is None:
+            return False
+        _LOGGER.debug("Not connecting Remacro bed %s: model %s", self._address, problem)
+        return True
+
     def _uses_persistent_connection(self) -> bool:
         """Return True when this controller should stay connected indefinitely.
 
@@ -3112,6 +3187,8 @@ class AdjustableBedCoordinator:
                 "Skipping connection to %s while ownership transfers to a paired entry",
                 self._address,
             )
+            return False
+        if self.remacro_model_blocks_connection():
             return False
         try:
             if self._bed_type == BED_TYPE_SLEEP_NUMBER and (

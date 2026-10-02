@@ -2826,6 +2826,29 @@ class TestSequentialCycle:
         assert (SIDE_LEFT, "stop") in log
         assert (SIDE_RIGHT, "connect") not in log
 
+    async def test_stop_drops_queued_motion_on_a_side_without_global_stop(self):
+        # A Remacro NineActivity side gets no STOP frame, but its queued movement
+        # must still be invalidated by an accepted combined Stop.
+        log: list = []
+        coord, _left, right = self._seq(log, left={"block": True})
+        right.bed_type = "remacro"
+        right.capability_controller = SimpleNamespace(supports_stop_all=False)
+        running = asyncio.ensure_future(
+            coord.async_execute_controller_command(_noop, side=SIDE_LEFT)
+        )
+        while (SIDE_LEFT, "command") not in log:
+            await asyncio.sleep(0)
+        queued = asyncio.ensure_future(
+            coord.async_execute_controller_command(_noop, side=SIDE_RIGHT)
+        )
+        await asyncio.sleep(0)
+        await coord.async_stop_command(side=SIDE_BOTH)
+        await running
+        await queued
+        assert (SIDE_LEFT, "stop") in log
+        assert (SIDE_RIGHT, "stop") not in log
+        assert (SIDE_RIGHT, "command") not in log
+
     async def test_releases_other_connected_side_before_connecting(self):
         # A left command while the right side is already connected out-of-band
         # (e.g. its diagnostic Connect button) releases right FIRST. (#390 :370)

@@ -42,7 +42,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Scott Living](beds/scott-living.md) | 9-byte protocol |
 | [SBI/Q-Plus](beds/sbi.md) | Position feedback via pulse lookup |
 | [Rondure](beds/rondure.md) | 4 motors, split-king, massage, lights |
-| [Remacro](beds/remacro.md) | 4 motors, 8 presets, RGB lights, heat |
+| [Remacro](beds/remacro.md) | Slumberland, The Brick and Jerome's app screens: up to 3 motors, split sides, presets, memory, massage, light |
 | [Logicdata](beds/logicdata.md) | XXTEA encrypted, 2 memory slots, lights, massage |
 | [LOGICDATA app profiles](beds/logicdata-app.md) | Phone/tablet layouts, standard/middle-motor controls, alarms and renaming |
 | [Okin CB35](beds/okin-cb35.md) | 7-byte Nordic UART (Sealy Posturematic), 6 motors, massage, lights |
@@ -158,7 +158,6 @@ These beds have their own dedicated integrations:
    - `AHF*` → TiMOTION AHF
    - `Limoss*`, `Stawett*` → Limoss
    - `OKIN-BLE*` → requires service/manufacturer data to distinguish [Malouf/Lucid](beds/malouf.md) from other OKIN-family profiles
-   - `CheersSleep*`, `Jeromes*`, `Slumberland*`, `The Brick*` → Remacro
    - `Rize*` → Often [DewertOkin](beds/dewertokin.md), but `Mouselet*` devices are [Kaidi](beds/kaidi.md)
    - `Simmons*`, `Glory*`, `Symphony*` → See [DewertOkin](beds/dewertokin.md); beds using the `com.okin.simmons` app → [SIMMONS app](beds/simmons.md)
    - `Star35*` → [Okin CB35](beds/okin-cb35.md) (Sealy Posturematic)
