@@ -23,9 +23,11 @@ def target(*, memory=8):
     coordinator.capability_controller = controller
 
     async def execute(command, **kwargs):
-        await command(controller)
+        return await command(controller)
 
     coordinator.async_execute_controller_command = AsyncMock(side_effect=execute)
+    coordinator.async_execute_controller_query = AsyncMock(side_effect=execute)
+    controller.start_notify = AsyncMock()  # This dispatch fixture represents a ready session.
     return coordinator, controller
 
 

@@ -23,6 +23,8 @@ leave the saved selection unchanged. The settings action supports the same
 transaction. For paired or multi-target service calls, every selected OFF burst
 must finish before any feature selections are saved. A failure or cancellation
 retains the previous local selections even if some hardware writes succeeded.
+Replacing a queued or active OFF transaction also keeps its previous selection;
+a normal scheduler return alone does not establish burst completion.
 Entity reloads wait until the selected operations and any active sibling command
 have released their command lanes. App artwork themes are retained as a local preference in diagnostics;
 Home Assistant continues to use its own theme and does not copy app artwork.
@@ -70,7 +72,13 @@ memory-capable receiver. It holds the source calibration operation and always
 attempts its five calibration release frames once a command has been constructed.
 A calibration reply is reported as **reply received**, not proof of physical
 completion. `limoss_remote_features` accepts both `underbed_light` and `massage`
-booleans. Services validate every selected physical target before writing to any.
+booleans. Before held movement, calibration or memory execution, services refresh
+receiver startup and validate every selected physical target before moving
+any. A physical BLE connection does not establish readiness until that session's
+fresh capability query completes; concurrent callers share the same startup
+completion without repeating queries in an already-ready session. Sequential pairs release each validation link before opening the next.
+Cached capacities remain available for offline local editing, but cannot admit a
+new movement session. Each execution also rechecks its live receiver layout.
 Target a paired child device or supply `side: left`, `right` or `both` normally.
 
 ## Eight local memories
