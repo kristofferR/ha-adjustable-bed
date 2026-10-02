@@ -680,6 +680,20 @@ test("SIMMONS inclined controls join presets and clock/alarm actions land in uti
   expect(bed.utility).toEqual(["button.s_clock", "button.s_alarms"]);
 });
 
+test("Sleep Smart pump taps land in utility and its pressure with firmness", () => {
+  const hass = hassWith([
+    entry("button.p_inflate", "logicdata_air_pump_inflate"),
+    entry("button.p_save", "logicdata_air_pump_save_memory"),
+    entry("sensor.p_pressure", "logicdata_air_pump_pressure"),
+    entry("button.b_query", "logicdata_app_query_massage"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.utility).toEqual(["button.p_inflate", "button.p_save"]);
+  expect(bed.firmness).toEqual(["sensor.p_pressure"]);
+  expect(bed.massage.buttons).toEqual(["button.b_query"]);
+  expect(bed.memory).toEqual([]);
+});
+
 test("Adjustable Lumbar waves join massage; preset saves and the query land in utility", () => {
   const hass = hassWith([
     entry("button.l_wave", "adjustable_lumbar_wave_1"),

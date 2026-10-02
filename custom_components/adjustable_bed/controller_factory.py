@@ -37,6 +37,7 @@ from .const import (
     BED_TYPE_LIMOSS,
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA,
+    BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
@@ -378,6 +379,9 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_JIECANG: _ControllerSpec("jiecang", "JiecangController"),
     BED_TYPE_LIMOSS: _ControllerSpec("limoss", "LimossController"),
     BED_TYPE_LOGICDATA: _ControllerSpec("logicdata", "LogicdataController"),
+    BED_TYPE_LOGICDATA_AIR_PUMP: _ControllerSpec(
+        "logicdata_air_pump", "LogicdataAirPumpController"
+    ),
     BED_TYPE_MATTRESSFIRM: _ControllerSpec("okin_nordic", "OkinNordicController"),
     BED_TYPE_NECTAR: _ControllerSpec("okin_7byte", "Okin7ByteController"),
     BED_TYPE_DIAGNOSTIC: _ControllerSpec("diagnostic", "DiagnosticBedController"),

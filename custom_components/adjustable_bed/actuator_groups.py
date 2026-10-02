@@ -28,6 +28,7 @@ from .const import (
     BED_TYPE_LIMOSS,
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA,
+    BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
@@ -270,7 +271,7 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
     },
     "logicdata": {
         "display": "Logicdata",
-        "description": "SimplicityFrame and MotionRelax beds",
+        "description": "SimplicityFrame, MotionRelax and Sleep Smart beds",
         "variants": [
             {
                 "type": BED_TYPE_LOGICDATA,
@@ -280,9 +281,15 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
             },
             {
                 "type": BED_TYPE_LOGICDATA_APP,
-                "label": "MotionRelax phone / tablet apps",
+                "label": "MotionRelax / Sleep Smart bed apps",
                 "description": "Explicit app, command family and physical layout",
                 "hint": "Choose the app and its configuration in the next step.",
+            },
+            {
+                "type": BED_TYPE_LOGICDATA_AIR_PUMP,
+                "label": "Sleep Smart air mattress pump",
+                "description": "Inflate, deflate, firmness 30, pressure memory and pressure",
+                "hint": "Add the pump as its own device; its shared service cannot identify it.",
             },
         ],
     },

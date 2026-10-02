@@ -142,6 +142,7 @@ The entries below identify motor/actuator manufacturers or supported app profile
 | ✅ [SBI/Q-Plus](docs/beds/sbi.md) | Q-Plus (Costco) |
 | ✅ [Logicdata](docs/beds/logicdata.md) | SILVERmotion, SimplicityFrame |
 | 🧪 [LOGICDATA app profiles](docs/beds/logicdata-app.md) | MOTIONrelax phone and tablet apps, explicit standard/middle layouts |
+| 🧪 [LOGICDATA Sleep Smart Air Mattress app](docs/beds/logicdata-sleep-smart.md) | Explicit 1.0.0 bed profile (Vienna, Toronto, Middle Rail) and air mattress pump; hardware unverified |
 | ✅ [Okin CB35](docs/beds/okin-cb35.md) | Sealy Posturematic |
 | 🧪 [AdjustableM5X5 app](docs/beds/starcode-m5x5.md) | Explicit CB25, F23, kneading or Elevate profile; main plus three independently addressed lifts; hardware unverified |
 | ✅ [DewertOkin ELEVATE](docs/beds/star-elevate.md) | ELEVATE two-actuator lift accessory |

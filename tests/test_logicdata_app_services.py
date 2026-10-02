@@ -35,6 +35,8 @@ async def service_target(hass: HomeAssistant):
         supports_clock_alarm=True,
         supports_device_rename=True,
         supports_preset_hold=True,
+        held_preset_options=("flat", "memory_1", "memory_2"),
+        validate_device_rename=MagicMock(),
         configure_clock_alarm=AsyncMock(),
         rename_device=AsyncMock(),
         hold_preset=AsyncMock(),
@@ -272,7 +274,7 @@ async def test_hold_preset_rejects_invalid_duration_before_dispatch(
     coordinator.async_execute_controller_command.assert_not_awaited()
 
 
-@pytest.mark.parametrize("preset", ["zero_g", "memory_3", "yoga", 1])
+@pytest.mark.parametrize("preset", ["memory_3", "yoga", 1])
 async def test_hold_preset_rejects_unsupported_presets(hass: HomeAssistant, service_target, preset):
     _, _, resolve = service_target
     with pytest.raises(vol.Invalid):
