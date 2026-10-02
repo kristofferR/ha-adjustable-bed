@@ -3466,18 +3466,18 @@ class AdjustableBedCoordinator:
         attempt = 0
         protocol_correction_pairing_retry_reserved = False
         stale_gatt_retry_extensions = 0
-        # A pending source may come from a runtime command failure; like its
-        # skip flag, it is consumed by the attempt that verifies it.
-        rerouted_stale_gatt_source: str | None = None
+        # A pending source may come from a runtime command failure. It stays
+        # pending until an attempt actually connects through that proxy.
+        unverified_stale_gatt_source: str | None = None
         while True:
-            if rerouted_stale_gatt_source:
-                # HA routed the verification through another path, and it did not
-                # succeed. The cleared proxy still deserves its no-pair check, even
-                # if the other path just cleared its own cache: the original proxy
-                # holds the bond being recovered.
-                self._stale_gatt_retry_source = rerouted_stale_gatt_source
+            if unverified_stale_gatt_source:
+                # The last attempt failed before reaching the cleared proxy: it
+                # never connected, or HA routed it elsewhere. That proxy still
+                # deserves its no-pair check, even if another path just cleared
+                # its own cache, because it holds the bond being recovered.
+                self._stale_gatt_retry_source = unverified_stale_gatt_source
                 self._skip_pair_next_attempt = True
-            rerouted_stale_gatt_source = None
+            unverified_stale_gatt_source = None
             if attempt >= attempt_limit:
                 # A stale proxy cache cleared on the last attempt still gets the
                 # rediscovered, no-pair verification it was promised (#660).
@@ -3489,6 +3489,7 @@ class AdjustableBedCoordinator:
                 attempt_limit += 1
             stale_gatt_retry_source = self._stale_gatt_retry_source
             self._stale_gatt_retry_source = None
+            unverified_stale_gatt_source = stale_gatt_retry_source
             if self._vmat_unready_link_pending():
                 break
             attempt_index = attempt
@@ -4000,8 +4001,8 @@ class AdjustableBedCoordinator:
                 # verification runs before controller startup and must be able
                 # to attribute a failure to the transport that carried it.
                 actual_adapter = client_source(self._client) or "unknown"
-                if stale_gatt_retry_source and actual_adapter != stale_gatt_retry_source:
-                    rerouted_stale_gatt_source = stale_gatt_retry_source
+                if actual_adapter == stale_gatt_retry_source:
+                    unverified_stale_gatt_source = None
 
                 # Track successful connection for diagnostics (issue #168)
                 self._connection_success_count += 1
