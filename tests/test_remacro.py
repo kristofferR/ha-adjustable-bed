@@ -1158,17 +1158,53 @@ async def test_app_state_survives_controller_rebuilds(app) -> None:
     controller._coordinator.remember_remacro_led_level.assert_called_once_with(50, 10)
 
 
-async def test_unload_drops_the_session(
+async def test_session_outlives_unload_until_no_entry_owns_the_bed(
     hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
 ) -> None:
-    entry = _remacro_entry(hass, "AA:BB:CC:DD:EE:70")
+    address = "AA:BB:CC:DD:EE:70"
+    entry = _remacro_entry(hass, address)
     with patch(_HISTORY, return_value=MagicMock(manufacturer_data={50: b""})):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
     sessions = hass.data[DOMAIN]["remacro_sessions"]
-    assert any(key[0] == "AA:BB:CC:DD:EE:70" for key in sessions)
     await hass.config_entries.async_unload(entry.entry_id)
-    assert not any(key[0] == "AA:BB:CC:DD:EE:70" for key in sessions)
+    # Unpair unloads the pair before its restored entries exist; the state stays.
+    assert any(key[0] == address for key in sessions)
+    restored = _remacro_entry(hass, address)
+    await hass.config_entries.async_remove(entry.entry_id)
+    assert any(key[0] == address for key in sessions)
+    await hass.config_entries.async_remove(restored.entry_id)
+    assert not any(key[0] == address for key in sessions)
+
+
+async def test_unchanged_pair_app_validates_each_side_against_its_own_app(
+    hass: HomeAssistant,
+) -> None:
+    from homeassistant.data_entry_flow import FlowResultType
+
+    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
+    from custom_components.adjustable_bed.const import CONF_PAIR_CHILDREN
+
+    entry, _children = _remacro_pair(hass, 45, 55)
+    children = [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]]
+    children[0][CONF_PROTOCOL_VARIANT], children[1][CONF_PROTOCOL_VARIANT] = (
+        "jeromes",
+        "slumberland",
+    )
+    hass.config_entries.async_update_entry(
+        entry,
+        data={**entry.data, CONF_PROTOCOL_VARIANT: "jeromes", CONF_PAIR_CHILDREN: children},
+    )
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.handler = entry.entry_id
+    flow.hass = hass
+    adverts = {
+        "AA:BB:CC:DD:EE:71": MagicMock(manufacturer_data={45: b""}),
+        "AA:BB:CC:DD:EE:72": MagicMock(manufacturer_data={55: b""}),
+    }
+    with patch(_HISTORY, side_effect=lambda _hass, address, connectable: adverts[address]):
+        result = await flow.async_step_settings({})
+    assert not (result["type"] is FlowResultType.FORM and result.get("errors"))
 
 
 @pytest.mark.parametrize("variants", [("the_brick", "jeromes"), ("jeromes", "jeromes")])

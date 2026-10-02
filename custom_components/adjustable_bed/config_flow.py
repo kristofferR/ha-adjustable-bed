@@ -7214,8 +7214,14 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     target_address = target.get(CONF_ADDRESS)
                     if not isinstance(target_address, str):
                         continue
+                    # An unchanged app keeps each side validated against its own.
+                    target_variant = (
+                        requested_variant
+                        if not remacro_targets or CONF_PROTOCOL_VARIANT in paired_changes
+                        else target.get(CONF_PROTOCOL_VARIANT, requested_variant)
+                    )
                     problem, _ = remacro_entry_problem(
-                        {**target, CONF_PROTOCOL_VARIANT: requested_variant},
+                        {**target, CONF_PROTOCOL_VARIANT: target_variant},
                         remacro_manufacturer_data(self.hass, target_address),
                     )
                     if problem not in (None, "unknown"):

@@ -1193,19 +1193,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
         _LOGGER.debug("Disconnecting from bed...")
         await coordinator.async_shutdown()
-        # Remacro app state lives for the bed's runtime. When a pair absorbs a
-        # single (or unpair restores one) another entry already owns the bed and
-        # is using the same session, so only a bed nobody else owns drops it.
-        sessions = hass.data[DOMAIN].get("remacro_sessions")
-        if isinstance(sessions, dict):
-            owned = {
-                address
-                for other in hass.config_entries.async_entries(DOMAIN)
-                if other.entry_id != entry.entry_id
-                for address in _entry_addresses(other)
-            }
-            for address in set(_entry_addresses(entry)) - owned:
-                drop_sessions(sessions, address)
         _LOGGER.info("Successfully unloaded Adjustable Bed integration for %s", entry.title)
 
     return unload_ok
@@ -1228,7 +1215,14 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         if other.entry_id != entry.entry_id
         for owned_address in _entry_addresses(other)
     }
-    clear_remacro_model_issues(hass, set(_entry_addresses(entry)) - owned)
+    unowned = set(_entry_addresses(entry)) - owned
+    clear_remacro_model_issues(hass, unowned)
+    # Remacro app state lives as long as some entry owns the bed, so reloads,
+    # combine and unpair keep the serial, side, preset and pending LED level.
+    sessions = hass.data.get(DOMAIN, {}).get("remacro_sessions")
+    if isinstance(sessions, dict):
+        for address in unowned:
+            drop_sessions(sessions, address)
     hass.loop.call_soon(async_refresh_combine_beds_issue, hass)
 
 
