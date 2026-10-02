@@ -9,6 +9,7 @@ from dataclasses import dataclass, fields, replace
 from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
+from homeassistant.util import dt as dt_util
 
 from ..motion_bed_actions import ACTION_BY_KEY, MOTION_BED_ACTIONS, MotionBedAction
 from ..motion_bed_models import MotionBedSelection
@@ -585,13 +586,12 @@ class MotionBedController(BedController):
             await self.write_command(command)
 
     async def _startup(self) -> None:
-        from datetime import datetime
         surface = self.selection.surface
         if surface == "home":
             await asyncio.sleep(0.5)
             await self.write_command(SOURCE_COMMANDS["HomeActivity:321"])
             await asyncio.sleep(0.5)
-            await self.write_command(build_clock(datetime.now().astimezone()))
+            await self.write_command(build_clock(dt_util.now()))
             await asyncio.sleep(0.5)
             await self.write_command(SOURCE_COMMANDS["HomeActivity:311"])
             await asyncio.sleep(0.5)
@@ -613,7 +613,6 @@ class MotionBedController(BedController):
         )
 
     async def _module_startup(self, module: str) -> None:
-        from datetime import datetime
         module_generation = self._module_generation
         def current() -> bool:
             return module_generation == self._module_generation and self._module_is_active(module)
@@ -625,7 +624,7 @@ class MotionBedController(BedController):
             await asyncio.sleep(0.2)
             if not current():
                 return
-            await self.write_command(build_clock(datetime.now().astimezone()))
+            await self.write_command(build_clock(dt_util.now()))
         elif module == "air":
             await self.write_command(SOURCE_COMMANDS["QinangFragment:133"])
         elif module == "thermal":
@@ -633,7 +632,7 @@ class MotionBedController(BedController):
             await asyncio.sleep(0.2)
             if not current():
                 return
-            await self.write_command(build_thermal_clock(datetime.now().astimezone()))
+            await self.write_command(build_thermal_clock(dt_util.now()))
             if not current():
                 return
             if self._thermal_task is not None:
@@ -834,7 +833,8 @@ class MotionBedController(BedController):
                 network_hold.enter_context(self._coordinator.hold_command_connection())
                 self._network_connection_hold = network_hold
                 self._network_queries = 0
-                self._network_poll_active = False
+                # This attempt owns delayed acknowledgements even before its poll starts.
+                self._network_poll_active = True
                 # Replies may arrive while any provisioning frame is awaiting ATT.
                 self._state = replace(self._state, network_poll_attempts=0, provisioning_status="waiting")
                 self._publish()
@@ -877,6 +877,7 @@ class MotionBedController(BedController):
                 network_hold.close()
                 if self._network_connection_hold is network_hold:
                     self._network_connection_hold = None
+                    self._network_poll_active = False
             self._operation_generation.reset(token)
 
     async def _bounded_network_query(self) -> None:
@@ -898,8 +899,18 @@ class MotionBedController(BedController):
                 async def query(controller: BedController) -> None:
                     if controller is self and current():
                         await self._bounded_network_query()
-                await self._coordinator.async_execute_controller_query(query, cancel_running=False, skip_disconnect=True,
+                try:
+                    await self._coordinator.async_execute_controller_query(query, cancel_running=False, skip_disconnect=True,
                                                                          run_if=current)
+                except asyncio.CancelledError:
+                    task = asyncio.current_task()
+                    if task is None or task.cancelling() or not current():
+                        raise
+                except (BleakError, ConnectionError, TimeoutError):
+                    if not current():
+                        return
+                if not current():
+                    return
             if current() and self._state.provisioning_status == "waiting":
                 self._state = replace(self._state, provisioning_status="timed_out")
                 self._publish()

@@ -430,7 +430,9 @@ async def test_provisioning_connection_hold_cleanup_boundaries(hass, monkeypatch
                 tick.set()
             result, = await asyncio.gather(task, return_exceptions=True)
             if ending == "query_failure":
-                assert isinstance(result, ConnectionError)
+                assert result is None
+                assert controller._network_queries == 10
+                assert controller.protocol_diagnostics["provisioning_status"] == "timed_out"
             assert not controller._network_poll_active
         assert coord._command_connection_holds == 0
         assert controller._network_connection_hold is None
