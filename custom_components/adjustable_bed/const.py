@@ -1183,7 +1183,8 @@ LINAK_NAME_PATTERNS: Final = ("bed ",)
 #   starting with "base-i4", so the dot is not required
 # - base-i5.XXXXXXXX (e.g., base-i5.00000682) - Note: base-i5 can also be Cool Base
 # - KSBTXXXXCXXXXXX (e.g., KSBT03C000015046)
-# - ORE-XXXXXXXXXXX (e.g., ORE-ac2170000d) - Dynasty, INNOVA beds (use ORE variant)
+# - ORE-XXXXXXXXXXX (e.g., ORE-ac2170000d) - ORE beds; Auto uses the Base profile,
+#   and app users select their explicit profile (e.g. innova)
 # - smart_dfu - Beautyrest Baselogic Platinum (Keeson MC232FD, KSBT04C protocol)
 KEESON_NAME_PATTERNS: Final = ("base-i4", "base-i5.", "ksbt", "ore-", "smart_dfu")
 
@@ -1639,7 +1640,7 @@ KEESON_VARIANT_INNOVA: Final = "innova"
 KEESON_VARIANT_MAXCOIL_UNA: Final = "maxcoil_una"
 KEESON_VARIANT_DYNASTY_BASES: Final = "dynasty_bases"
 ORE_COMFORT_BED_VARIANTS: Final = frozenset(
-    {KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_DYNASTY_BASES}
+    {KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_DYNASTY_BASES, KEESON_VARIANT_BEDSENSE_BASES}
 )
 # Restonic BT Remote (com.keeson.restonicBT): the app's user-selected remote style.
 KEESON_VARIANT_RESTONIC_A: Final = "restonic_a"

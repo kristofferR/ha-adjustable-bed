@@ -138,6 +138,7 @@ SERVICE_JIECANG_WAKE = "jiecang_wake"
 SERVICE_JIECANG_STOP_WAKE = "jiecang_stop_wake"
 SERVICE_JIECANG_RENAME = "jiecang_rename"
 SERVICE_INNOVA_RENAME = "innova_rename"
+SERVICE_INNOVA_HOLD_CONTROL = "innova_hold_control"
 SERVICE_MALOUF_SET_ALARM = "malouf_set_alarm"
 SERVICE_MALOUF_SYNC_CLOCK = "malouf_sync_clock"
 
@@ -2484,6 +2485,26 @@ async def handle_restonic_hold_control(call: ServiceCall) -> None:
     )
 
 
+async def handle_innova_hold_control(call: ServiceCall) -> None:
+    """Hold one streamed INNOVA app control, then send its delayed zero key."""
+    from .beds.base import SideBoundController
+    from .beds.innova import InnovaController
+
+    def require_innova(controller: BedController | SideBoundController) -> None:
+        target = controller._controller if isinstance(controller, SideBoundController) else controller
+        if not isinstance(target, InnovaController):
+            raise ServiceValidationError("Requires the INNOVA app profile")
+
+    await _handle_customatic_hold(
+        call,
+        call.data[ATTR_CONTROL],
+        {BED_TYPE_KEESON},
+        label="INNOVA",
+        validate_extra=require_innova,
+        control_noun="control",
+    )
+
+
 async def handle_simmons_set_alarm(call: ServiceCall) -> None:
     """Program or disable one of the two SIMMONS alarms through the command queue."""
     from .beds.base import SideBoundController
@@ -3739,6 +3760,19 @@ async def async_register_services(hass: HomeAssistant) -> None:
         DOMAIN,
         SERVICE_ADJUSTABLE_LUMBAR_HOLD_CONTROL,
         handle_adjustable_lumbar_hold_control,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_CONTROL): cv.string,
+                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_INNOVA_HOLD_CONTROL,
+        handle_innova_hold_control,
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),

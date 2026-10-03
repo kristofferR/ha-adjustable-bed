@@ -248,7 +248,11 @@ export function bedEntitiesForDevice(
         } else if (key.startsWith("logicdata_air_pump_")) {
           // Pump taps have no motor, preset or memory-slot meaning.
           bed.utility.push(id);
-        } else if (key === "ore_comfort_massage_start") {
+        } else if (
+          key === "ore_comfort_massage_start" ||
+          key === "innova_massage_level" ||
+          key === "innova_massage_timer_hold"
+        ) {
           bed.massage.buttons.push(id);
         } else if (key === "ore_comfort_program_flat" || key === "ore_comfort_program_zero_g") {
           // Preset saves have no memory slot.

@@ -43,6 +43,7 @@ from ..const import (
     KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_ERGOMOTION,
+    KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_JSON,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_KSBT04C,
@@ -91,6 +92,8 @@ _APP_MOTOR_PULSE_DEFAULTS: dict[str, tuple[int, int]] = {
     KEESON_VARIANT_PURPLE: (10, 100),
     # Adjustable Lite schedules held movement at 0 ms then every 300 ms.
     KEESON_VARIANT_ADJUSTABLE_LITE: (4, 300),
+    # INNOVA writes held keys at 0 ms then every 100 ms.
+    KEESON_VARIANT_INNOVA: (10, 100),
     # Restonic BT schedules held controls at 0 ms then every 100 ms.
     KEESON_VARIANT_RESTONIC_A: (10, 100),
     KEESON_VARIANT_RESTONIC_B: (10, 100),
@@ -242,7 +245,7 @@ class KeesonCommands:
 
 
 class SinoCommands:
-    """Sino (Dynasty, INNOVA) specific command constants.
+    """Sino (Dynasty, BetterLiving) specific command constants.
 
     Sino beds with FFE5/FFE9 service UUIDs use SinoProtocol command values.
     Motor and preset commands use the same values as standard Keeson.
@@ -1095,7 +1098,7 @@ class KeesonController(BedController):
             # BaseI4/I5/OKIN/Serta/Ergomotion/Sino: [prefix, 0xfe, 0x16, ...int_bytes, checksum]
             # OKIN FFE (13/15 series) uses 0xE6 prefix, others use 0xE5
             int_bytes = int_to_bytes(command_value)
-            # Sino variant (Dynasty, INNOVA) and BetterLiving BED_DEFAULT use
+            # Sino variant (Dynasty) and BetterLiving BED_DEFAULT use
             # big-endian byte order. All other variants use little-endian.
             if self._variant != KEESON_VARIANT_SINO and not self._betterliving_presets:
                 int_bytes.reverse()  # Little-endian for non-Sino variants
@@ -2130,7 +2133,7 @@ class KeesonController(BedController):
     async def massage_off(self) -> None:
         """Turn off all massage."""
         if self._variant == KEESON_VARIANT_SINO:
-            # Dynasty/INNOVA apps stop massage by setting both zones to intensity 0.
+            # Dynasty-family apps stop massage by setting both zones to intensity 0.
             await self.write_command(
                 self._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE),
                 repeat_count=self._single_shot_count,

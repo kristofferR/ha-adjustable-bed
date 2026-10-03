@@ -1,10 +1,13 @@
-"""ORE comfort-bed app family controller (MaxCoil Una, Dynasty Bases).
+"""ORE comfort-bed app family controller (MaxCoil Una, Dynasty Bases, Bedsense Bases).
 
 Implements the accepted clean-room reports for com.ore.maxcoil 1.1.0 (5) and
 com.ore.Dynasty 1.0.2 (3), formal cluster-013
-(docs/apk-analysis/dispositions/row056-ore-maxcoil-dynasty.md). Both apps ship
-the same ``com.ore.okincomfortbed`` code base; they differ only in launcher,
-Back navigation and artwork, so they share one behavior here.
+(docs/apk-analysis/dispositions/row056-ore-maxcoil-dynasty.md), and for
+com.ore.sfmc2bedsence 1.1 (3), formal cluster-015
+(docs/apk-analysis/dispositions/row059-ore-bedsense-innova.md). MaxCoil Una and
+Dynasty Bases ship the same ``com.ore.okincomfortbed`` code base. Bedsense Bases
+is a separate package whose accepted report proves byte-identical frames,
+screens, timing, release and reply handling, so all three share one behavior.
 
 Every command is ``E5 FE 16`` + a big-endian 32-bit word + the complement of the
 byte sum, written to the last FFE9 characteristic found in any service. The app
@@ -29,6 +32,7 @@ from homeassistant.exceptions import HomeAssistantError
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
+    KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_MAXCOIL_UNA,
 )
@@ -60,6 +64,9 @@ class OreComfortBedApp:
 ORE_COMFORT_BED_APPS: Final[dict[str, OreComfortBedApp]] = {
     KEESON_VARIANT_MAXCOIL_UNA: OreComfortBedApp("MaxCoil Una", "com.ore.maxcoil", "1.1.0 (5)"),
     KEESON_VARIANT_DYNASTY_BASES: OreComfortBedApp("Dynasty Bases", "com.ore.Dynasty", "1.0.2 (3)"),
+    KEESON_VARIANT_BEDSENSE_BASES: OreComfortBedApp(
+        "Bedsense Bases", "com.ore.sfmc2bedsence", "1.1 (3)"
+    ),
 }
 
 # Action words (MainActivity key codes).

@@ -57,8 +57,8 @@ for all 128 exclusions and exact accepted evidence.
 | ✅ | Juna Sleep | `com.keeson.junasleep` |
 | ✅ | [Purple Smart Base](https://play.google.com/store/apps/details?id=com.keeson.purpleBase) | `com.keeson.purpleBase` |
 | ✅ | [Adjustable Lite](https://play.google.com/store/apps/details?id=com.keeson.adjustablelite) | `com.keeson.adjustablelite` |
-| ✅ | [Bedsense Bases](https://play.google.com/store/apps/details?id=com.ore.sfmc2bedsence) | `com.ore.sfmc2bedsence` |
-| ✅ | INNOVA | `com.ore.sfm` |
+| ✅ | Bedsense Bases ([profile](ore-comfort-bed.md)) | `com.ore.sfmc2bedsence` |
+| ✅ | INNOVA ([profile](#innova-profile)) | `com.ore.sfm` |
 | ✅ | MaxCoil Una ([profile](ore-comfort-bed.md)) | `com.ore.maxcoil` |
 | ✅ | Dynasty Bases ([profile](ore-comfort-bed.md)) | `com.ore.Dynasty` |
 | ✅ | Restonic BT Remote | `com.keeson.restonicBT` |
@@ -271,58 +271,54 @@ The app does not decode whether the light button toggles, how the timer
 button cycles, massage level limits, or the unit of the raw timer value. Those
 remain to be confirmed on hardware.
 
-### Bedsense Bases and INNOVA Profiles
+### INNOVA Profile
 
-**Validation status:** clean-room analysis of Bedsense Bases 1.1 (3)
-(`com.ore.sfmc2bedsence`) and INNOVA 2.0 (3) (`com.ore.sfm`) is complete;
-hardware is unverified. See the
+**Validation status:** clean-room analysis of INNOVA 2.0 (3) (`com.ore.sfm`)
+is complete; hardware is unverified. See the
 [cluster disposition](../apk-analysis/dispositions/row059-ore-bedsense-innova.md).
+Its cluster sibling Bedsense Bases uses the
+[MaxCoil Una / Dynasty Bases / Bedsense Bases profile](ore-comfort-bed.md).
 
-Select `bedsense_bases` (`Bedsense Bases app`) or `innova` (`INNOVA app`) as
-the protocol variant. Neither app filters its scan by name or service, so Auto
-never chooses them. Set the motor count to the layout picked in the app: 2
-(2M), 3 (3M) or 4 (4M).
+Select the `innova` (`INNOVA app`) protocol variant. The app scans without any
+name or service rule, so Auto never chooses it; `ORE-` names stay on the Base
+profile. Set the motor count to the screen picked in the app: 2 (2M), 3 (3M)
+or 4 (4M).
 
-Both apps write `E5 FE 16 k0 k1 k2 k3 checksum` to `0000ffe9`, with the
-complemented byte sum as the checksum, and require `0000ffe4` to exist.
-Bedsense puts the 32-bit key in big-endian order and INNOVA in little-endian
-order. Neither app sets a write type, so the integration writes without
-response when the characteristic offers it, as Android does. Held controls
-write at 0 ms and every 100 ms; release cancels the refresh and sends the
-zero key `E5 FE 16 00 00 00 00 06` 100 ms later. One-shot controls also sleep
-100 ms before their write. The **Stop** button sends the zero key.
+The app writes `E5 FE 16 k0 k1 k2 k3 checksum` to `0000ffe9`: the standard
+Keeson 32-bit key in little-endian order, then the complemented byte sum. It
+requires `0000ffe4` to exist and never sets a write type, so the integration
+writes without response when the characteristic offers it, as Android does.
 
-| Control | Bedsense Bases key | INNOVA key | Exposed as |
-|---------|--------------------|------------|------------|
-| Back up / down | `0x00000001` / `0x00000002` | same | Back cover |
-| Legs up / down | `0x00000004` / `0x00000008` | same | Legs cover |
-| 2M combined up / down | `0x00000010` / `0x00000020` | `0x00000005` / `0x0000000A` | Back + Legs cover |
-| 3M third motor | head `0x00000010` / `0x00000020` | lumbar `0x00000040` / `0x00000080` | Head or Lumbar cover |
-| 4M waist | `0x00000010` / `0x00000020` | same | Waist cover |
-| 4M lumbar | `0x00000040` / `0x00000080` | same | Lumbar cover |
-| Zero G | `0x01000001` | `0x00001000` | Zero G button |
-| Flat | `0x01000002` | `0x08000000` | Flat button |
-| Memory A / B | `0x01000008` / `0x01000009` (one write) | `0x00002000` / `0x00004000` (held, then zero key) | Memory 1 / 2 |
-| Program Zero G / Flat | `0x20000001` / `0x20000002` | none | Program Zero G / Program Flat buttons |
-| Program Memory A / B | `0x20000008` / `0x20000009` | none | Save Memory 1 / 2 |
-| Light | on `0x31000001`, off `0x31000000` | toggle `0x00020000` | Light switch (Bedsense) or toggle (INNOVA) |
+| Control | Key | Exposed as |
+|---------|-----|------------|
+| Back up / down | `0x00000001` / `0x00000002` | Back cover |
+| Legs up / down | `0x00000004` / `0x00000008` | Legs cover |
+| 2M back and legs together | `0x00000005` / `0x0000000A` | Back + Legs cover |
+| 3M third actuator (lumbar IDs) | `0x00000040` / `0x00000080` | Lumbar cover |
+| 4M waist | `0x00000010` / `0x00000020` | Waist cover |
+| 4M lumbar | `0x00000040` / `0x00000080` | Lumbar cover |
+| Zero G / Flat | `0x00001000` / `0x08000000` | Zero G / Flat buttons (one write) |
+| Memory A / B | `0x00002000` / `0x00004000` | Memory A / B buttons (held) |
+| Light | `0x00020000` | Toggle light button |
+| Head massage + / - | `0x00000800` / `0x00800000` | Head massage buttons |
+| Foot massage + / - | `0x00000400` / `0x01000000` | Foot massage buttons |
+| Massage level | `0x00000100` | **Massage level** button |
+| Massage timer (massage page) | `0x00000200`, one write | **Massage: Timer** button |
+| Massage timer (memory page) | `0x00000200`, held | **Massage timer (memory page)** button |
+| Release / Stop | `0x00000000` | Stop button |
 
-**Bedsense massage** uses absolute levels. The app's 0-39 sliders send
-`floor(progress / 10)`, so each zone has levels 0-3: wave `0x10000020 + n`,
-head `0x10000010 + n` and foot `0x11000010 + n`. **Massage start** sends the
-current wave, head and foot levels in that order (the app defaults to level
-1). Massage off sends head and foot level 0. The timer select sends
-`0x10000030`, `0x10000031` or `0x10000032` for 10, 20 or 30 minutes; the app
-has no timer-off command. The app replies are 9-byte notifications whose bits
-it discards, so Bedsense neither subscribes nor reports state.
+Held controls write at 0 ms and then every 100 ms. Releasing them writes the
+zero key 100 ms later; a Stop, a cancelled hold or a replacement writes it at
+once, on a fresh event, so it cannot be suppressed. One-shot controls sleep
+100 ms before their write, as the app does. A cover or held button press holds
+for the motor pulse count (10 x 100 ms by default). `innova_hold_control` holds
+any streamed control for 0.1-60 s: `back_up`, `back_down`, `legs_up`,
+`legs_down`, `memory_a`, `memory_b`, `memory_timer`, plus `combined_up/down`
+(2M), `lumbar_up/down` (3M and 4M) and `waist_up/down` (4M).
 
-**INNOVA massage** is relative: head `+0x00000800` / `-0x00800000`, foot
-`+0x00000400` / `-0x01000000`, **Massage level** `0x00000100` and
-**Massage: Timer** `0x00000200`. The memory page streams the same timer key
-while held, exposed as **Massage timer (memory page)**. INNOVA has no memory
-programming, so Memory A/B are held recall buttons; a press holds them for
-the configured motor pulse burst. The `innova_rename` action writes the
-app's 18-byte `EF 02` name frame (1-14 characters after trimming).
+INNOVA has no memory programming, absolute massage level, massage off or
+anti-snore control. The `innova_rename` action writes the app's 18-byte
+`EF 02` name frame: at most 14 characters as typed, then trimmed and non-empty.
 
 INNOVA subscribes to `0000ffe4`. Only 16- and 19-byte notifications are read,
 without header or checksum checks:
@@ -337,12 +333,12 @@ shown as the **Light** binary sensor. The signed timer byte `-1` clears the
 **Massage timer** sensor and `1`/`2`/`3` show 10/20/30 minutes; other values
 leave it unchanged. Both states clear when the connection ends. The app shows
 the lamp only on its light page and the timer only on its other pages; Home
-Assistant shows both.
+Assistant shows both. The app enables FFE4 locally without writing the CCCD,
+so delivery after Home Assistant subscribes needs confirming on hardware.
 
 Hardware still needs to confirm the physical actuator behind each key
-(INNOVA's 3M third motor uses lumbar IDs beside head artwork), the save
-behavior, whether held INNOVA memory recall needs a longer hold, massage
-level limits, and the meaning of the lamp bit.
+(the 3M third motor uses lumbar IDs beside head artwork), how long Memory A/B
+must be held, massage level limits and timer cycling, and the lamp bit.
 
 ### Restonic BT Profiles
 
@@ -488,7 +484,7 @@ app/protocol family, not to the shared 32-bit command values:
 | KSBT03CR | SomosBeds | 300ms `Timer.schedule` | 4 writes, 300ms apart |
 | Sleep Harmony (`KSBT04C` / `base-i5.`) | Sleep Harmony | 300ms handler loop | 4 writes, 300ms apart |
 | Adjustable Lite (`KSBT01C` / `KSBT03C`) | Adjustable Lite | Immediate write plus 300ms `Timer.schedule`; release only cancels the timer | 4 writes, 300ms apart, with no release packet |
-| Bedsense Bases / INNOVA | Bedsense Bases / INNOVA | Immediate write, then every 100ms; release sends the zero key 100ms later | 10 writes, 100ms apart, then the zero key |
+| INNOVA | INNOVA | Immediate write, then every 100ms; release sends the zero key 100ms later | 10 writes, 100ms apart, then the zero key |
 | Restonic BT (remote A / B) | Restonic BT Remote | Immediate write plus 100ms `Timer.schedule`; release writes one zero frame 100ms later | 10 writes, 100ms apart, then the zero frame after 100ms |
 | Ergomotion | Ergomotion / Ergomotion 4.0 / Tempur Zero G | 100ms handler loop | 10 writes, 100ms apart |
 | Serta | Serta MP Remote | 100ms handler loop | 10 writes, 100ms apart |
