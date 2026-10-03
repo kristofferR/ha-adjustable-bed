@@ -423,8 +423,9 @@ class OkinAppKeesonController(KeesonController):
         await self.release_now()
         if self._is_heal and self._session.selected_preset is not None:
             # The app stops preset travel by re-tapping the selected preset.
-            self._session.selected_preset = None
-            await self._write_key(HEAL_PRESET_STOP, cancel_event=asyncio.Event())
+            # Deselect only once STOP is written, so a failure can be retried.
+            if await self._write_key(HEAL_PRESET_STOP, cancel_event=asyncio.Event()):
+                self._session.selected_preset = None
 
     @property
     def supports_stop_all(self) -> bool:
@@ -522,6 +523,7 @@ class OkinAppKeesonController(KeesonController):
         repeat_count: int = 1,
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
+        on_write: Callable[[], None] | None = None,
     ) -> None:
         """Write to the app's FFE9 with Android's default write type."""
         selected = cancel_event if cancel_event is not None else self._coordinator.cancel_command
@@ -541,10 +543,23 @@ class OkinAppKeesonController(KeesonController):
             cancel_event=selected,
             response=response,
             characteristic=target,
+            on_write=on_write,
         )
 
-    async def _write_key(self, key: int, cancel_event: asyncio.Event | None = None) -> None:
-        await self.write_command(okin_app_frame(key), cancel_event=cancel_event)
+    async def _write_key(self, key: int, cancel_event: asyncio.Event | None = None) -> bool:
+        """Write one key; True only when the frame went out.
+
+        A cancelled command skips the write without an error, so app state is
+        committed only on a confirmed write, never just on the absence of one.
+        """
+        written = False
+
+        def confirm() -> None:
+            nonlocal written
+            written = True
+
+        await self.write_command(okin_app_frame(key), cancel_event=cancel_event, on_write=confirm)
+        return written
 
     async def _write_single_shot(self, command: bytes) -> None:
         await self.write_command(command)
@@ -634,11 +649,11 @@ class OkinAppKeesonController(KeesonController):
         # The selection changes only once its frame is written, so a failed
         # recall is retried as a recall rather than turned into a STOP.
         if self._session.selected_preset == preset:
-            await self._write_key(HEAL_PRESET_STOP)
-            self._session.selected_preset = None
+            if await self._write_key(HEAL_PRESET_STOP):
+                self._session.selected_preset = None
             return
-        await self._write_key(HEAL_PRESETS[preset])
-        self._session.selected_preset = preset
+        if await self._write_key(HEAL_PRESETS[preset]):
+            self._session.selected_preset = preset
 
     async def preset_flat(self) -> None:
         if not self._is_heal:
@@ -732,13 +747,13 @@ class OkinAppKeesonController(KeesonController):
 
     async def lights_on(self) -> None:
         self._require_light()
-        await self._write_key(HEAL_LIGHT_ON)
-        self._session.light_on = True
+        if await self._write_key(HEAL_LIGHT_ON):
+            self._session.light_on = True
 
     async def lights_off(self) -> None:
         self._require_light()
-        await self._write_key(HEAL_LIGHT_OFF)
-        self._session.light_on = False
+        if await self._write_key(HEAL_LIGHT_OFF):
+            self._session.light_on = False
 
     async def lights_toggle(self) -> None:
         """The app's light button: its local state picks on or off."""
@@ -822,11 +837,14 @@ class OkinAppKeesonController(KeesonController):
             # The app enables the sliders and +/- buttons only after a timer.
             raise ValueError("Start the massage with a timer first")
 
-    async def _send_massage_steps(self, keys: list[int]) -> None:
+    async def _send_massage_steps(self, keys: list[int]) -> bool:
+        """Write a page sequence 100 ms apart; True only when every frame went out."""
         for index, key in enumerate(keys):
             if index:
                 await asyncio.sleep(HEAL_MASSAGE_STEP_DELAY_S)
-            await self._write_key(key)
+            if not await self._write_key(key):
+                return False
+        return True
 
     async def set_massage_timer(self, minutes: int) -> None:
         """Timer 10/20/30 start the massage page; Off is the app's STOP."""
@@ -839,26 +857,22 @@ class OkinAppKeesonController(KeesonController):
             raise ValueError("The app offers 10, 20 or 30 minutes")
         session = self._session
         # Zero levels become one, then timer1, the wave, head and foot follow.
-        session.wave = session.wave or 1
-        session.head = session.head or 1
-        session.foot = session.foot or 1
+        wave, head, foot = session.wave or 1, session.head or 1, session.foot or 1
+        if not await self._send_massage_steps(
+            [HEAL_TIMER, HEAL_WAVE + wave - 1, HEAL_HEAD_MASSAGE + head, HEAL_FOOT_MASSAGE + foot]
+        ):
+            return  # The page keeps its previous state until the whole start is written.
+        session.wave, session.head, session.foot = wave, head, foot
         session.massage_enabled = True
         session.timer_minutes = minutes
         self.forward_controller_state_updates(self._published_state())
-        await self._send_massage_steps(
-            [
-                HEAL_TIMER,
-                HEAL_WAVE + session.wave - 1,
-                HEAL_HEAD_MASSAGE + session.head,
-                HEAL_FOOT_MASSAGE + session.foot,
-            ]
-        )
 
     async def massage_off(self) -> None:
         """The massage STOP button: both zones off; levels are kept."""
         if not self._is_heal:
             raise NotImplementedError("Only the Heal Every Night app has massage")
-        await self._send_massage_steps([HEAL_HEAD_MASSAGE, HEAL_FOOT_MASSAGE])
+        if not await self._send_massage_steps([HEAL_HEAD_MASSAGE, HEAL_FOOT_MASSAGE]):
+            return
         self._session.massage_enabled = False
         self._session.timer_minutes = None
         self.forward_controller_state_update(STATE_HEAL_TIMER, None)
@@ -872,10 +886,11 @@ class OkinAppKeesonController(KeesonController):
         await self._apply_massage_level(zone, level)
 
     async def _apply_massage_level(self, zone: str, level: int) -> None:
-        setattr(self._session, zone, level)
-        self.forward_controller_state_update(STATE_HEAL_MASSAGE[zone], level)
         base = {"head": HEAL_HEAD_MASSAGE, "foot": HEAL_FOOT_MASSAGE}.get(zone)
-        await self._write_key(HEAL_WAVE + level - 1 if base is None else base + level)
+        if await self._write_key(HEAL_WAVE + level - 1 if base is None else base + level):
+            # Only a written level moves the session, so +/- never steps from a phantom.
+            setattr(self._session, zone, level)
+            self.forward_controller_state_update(STATE_HEAL_MASSAGE[zone], level)
 
     async def _step_massage(self, zone: str, delta: int) -> None:
         """+/-: clamp, then send the level even when the clamp kept it."""

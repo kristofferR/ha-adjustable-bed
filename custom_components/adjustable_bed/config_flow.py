@@ -7521,6 +7521,21 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     data_schema=vol.Schema(schema_dict),
                     errors={CONF_PROTOCOL_VARIANT: unpair_error},
                 )
+            # Heal Every Night's motor count picks its Healing 6/7/8 product,
+            # which belongs to one receiver; never copy it onto the other side.
+            if (
+                separate_address_pair
+                and CONF_MOTOR_COUNT in paired_changes
+                and any(
+                    child.get(CONF_PROTOCOL_VARIANT) == KEESON_VARIANT_HEAL_EVERY_NIGHT
+                    for child in iter_children(self.config_entry.data)
+                )
+            ):
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={CONF_MOTOR_COUNT: "okin_app_unpair_first"},
+                )
             # Each physical receiver keeps its own Remacro app; a combined edit
             # would write one side's profile into the other side's descriptor.
             if (

@@ -1063,3 +1063,130 @@ async def test_massage_off_publishes_the_cleared_timer(
     await controller.massage_off()
     assert coordinator.controller_state["okin_app_massage_timer"] is None
     assert controller.get_massage_state()["timer_mode"] is None
+
+
+def _fail_write(client: MagicMock, *, nth: int) -> None:
+    """Make the nth following write raise, then let writes succeed again."""
+    original = client.write_gatt_char.side_effect
+    count = 0
+
+    async def write(*args: Any, **kwargs: Any) -> None:
+        nonlocal count
+        count += 1
+        if count == nth:
+            raise BleakError("write failed")
+        await original(*args, **kwargs)
+
+    client.write_gatt_char.side_effect = write
+
+
+async def test_stop_all_keeps_the_preset_selected_until_preset_stop_is_written(
+    coordinator, mock_bleak_client: MagicMock, no_sleep
+):
+    controller = _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT)
+    await controller.preset_flat()
+    mock_bleak_client.write_gatt_char.reset_mock()
+    _fail_write(mock_bleak_client, nth=2)  # The zero key succeeds, preset STOP fails.
+    with pytest.raises(BleakError):
+        await controller.stop_all()
+    mock_bleak_client.write_gatt_char.reset_mock()
+    await controller.stop_all()  # The retry still stops the preset travel.
+    assert _written(mock_bleak_client) == [ZERO, "e5fe160100000005"]
+
+
+async def test_timer_start_commits_nothing_until_the_whole_sequence_is_written(
+    coordinator, mock_bleak_client: MagicMock, no_sleep
+):
+    controller = _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT)
+    _fail_write(mock_bleak_client, nth=3)  # The head level of the start sequence fails.
+    with pytest.raises(BleakError):
+        await controller.set_massage_timer(10)
+    assert controller.get_massage_state() == {
+        "head_intensity": 0,
+        "foot_intensity": 0,
+        "wave_intensity": None,
+        "timer_mode": None,
+    }
+    assert coordinator.controller_state["okin_app_massage_timer"] is None
+    assert coordinator.controller_state["okin_app_massage_wave"] is None
+    with pytest.raises(ValueError):
+        await controller.massage_head_up()  # The page is still disabled.
+
+
+async def test_failed_level_write_does_not_move_the_session_level(
+    coordinator, mock_bleak_client: MagicMock, no_sleep
+):
+    controller = _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT)
+    await controller.set_massage_timer(10)  # Head level 1.
+    _fail_write(mock_bleak_client, nth=1)
+    with pytest.raises(BleakError):
+        await controller.massage_head_up()
+    assert coordinator.controller_state["okin_app_massage_head"] == 1
+    mock_bleak_client.write_gatt_char.reset_mock()
+    await controller.massage_head_up()  # Steps from the written level 1 to 2.
+    assert _written(mock_bleak_client) == ["e5fe1610000012e4"]
+
+
+async def test_a_cancelled_write_commits_no_app_state(
+    coordinator, mock_bleak_client: MagicMock, no_sleep
+):
+    """A stop request skips the write without an error; nothing is recorded."""
+    controller = _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT, 3)
+    coordinator.cancel_command.set()
+    await controller.preset_flat()
+    await controller.lights_on()
+    await controller.set_massage_timer(20)
+    mock_bleak_client.write_gatt_char.assert_not_awaited()
+    coordinator.cancel_command.clear()
+    await controller.preset_flat()  # A recall, not a re-tap STOP.
+    await controller.lights_toggle()  # Still off, so the toggle turns it on.
+    assert _written(mock_bleak_client) == ["e5fe160100000203", "e5fe1631000001d4"]
+    assert controller.get_massage_state()["timer_mode"] is None
+
+
+@pytest.mark.parametrize("heal_side", ["left", "right"])
+async def test_paired_heal_motor_count_change_requires_unpairing(
+    hass: HomeAssistant, heal_side: str
+):
+    """Heal Every Night's motor count is its own receiver's product picker."""
+    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
+    from custom_components.adjustable_bed.pairing import (
+        build_pair_entry_data,
+        effective_child_data,
+    )
+
+    def side(address: str, variant: str) -> dict[str, Any]:
+        return {
+            CONF_ADDRESS: address,
+            CONF_NAME: "Bed",
+            CONF_BED_TYPE: BED_TYPE_KEESON,
+            CONF_PROTOCOL_VARIANT: variant,
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PREFERRED_ADAPTER: "auto",
+        }
+
+    variants = {
+        "left": KEESON_VARIANT_HEAL_EVERY_NIGHT if heal_side == "left" else KEESON_VARIANT_BASE,
+        "right": KEESON_VARIANT_HEAL_EVERY_NIGHT if heal_side == "right" else KEESON_VARIANT_BASE,
+    }
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=build_pair_entry_data(
+            side("AA:BB:CC:DD:EE:81", variants["left"]),
+            side("AA:BB:CC:DD:EE:82", variants["right"]),
+            name="Paired beds",
+        ),
+    )
+    entry.add_to_hass(hass)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass = hass
+    flow.handler = entry.entry_id
+
+    result = await flow.async_step_settings({CONF_MOTOR_COUNT: 4})
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {CONF_MOTOR_COUNT: "okin_app_unpair_first"}
+    for child in ("left", "right"):
+        assert effective_child_data(entry.data, child)[CONF_MOTOR_COUNT] == 2

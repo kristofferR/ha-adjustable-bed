@@ -280,7 +280,9 @@ None of the apps filters its scan or reads a model, so Auto never selects
 these profiles: add the seat or bed manually as a Keeson bed and pick the app.
 Each app controls one address, so add one entry per seat or bed. Their
 frames carry no side field. In a two-address pair, unpair the beds before
-changing to, from or between these profiles, so each side keeps its own app.
+changing to, from or between these profiles, so each side keeps its own app,
+and before changing the motor count while a side uses Heal Every Night,
+whose motor count picks that receiver's product.
 
 All three write `E5 FE 16 + key_be32 + (~sum(bytes 0-6) & 0xFF)` to the first
 FFE9 characteristic of the last service, in Java UUID order, that has one.
@@ -348,7 +350,9 @@ levels into one, then writes the timer key, the wave, head and foot levels
 Off** (or the timer's Off) writes head 0 and foot 0 and disables the page
 again, keeping the levels. The light switch writes the explicit on/off key. The bed reports no light
 state, so the switch starts unknown and shows the commanded state as assumed.
-Preset selection, light state and massage levels are kept across reconnects
+Preset selection, light state and massage levels change only once their
+frames are written, so a failed or cancelled write leaves the previous state
+for a retry. They are kept across reconnects
 until the entry is removed or its profile changes. Home Assistant allows
 massage Off and any timer at any time, while the app disables Off before a
 timer starts and disables the running timer's button.
