@@ -359,6 +359,11 @@ class OreComfortBedController(BedController):
     def supports_discrete_light_control(self) -> bool:
         return True
 
+    @property
+    def light_state_is_assumed(self) -> bool:
+        """The app only keeps a local flag; the bed never reports its light."""
+        return True
+
     async def lights_on(self) -> None:
         await self._send_single(LIGHT_ON)
 

@@ -613,3 +613,35 @@ def test_two_address_pairs_refuse_a_shared_profile_change() -> None:
         (Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json").read_text()
     )
     assert "ore_comfort_unpair_first" in strings["options"]["error"]
+
+
+async def test_light_switch_reports_assumed_state(
+    hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
+    sleeps: AsyncMock, enable_custom_integrations,
+) -> None:
+    from homeassistant.const import ATTR_ASSUMED_STATE, ATTR_ENTITY_ID, STATE_ON, STATE_UNKNOWN
+    from homeassistant.helpers import entity_registry as er
+
+    mock_bleak_client.services = _services(
+        _char(KEESON_BASE_WRITE_CHAR_UUID, ["write"]), _char(KEESON_BASE_NOTIFY_CHAR_UUID, ["notify"])
+    )
+    entry = _entry(hass, KEESON_VARIANT_MAXCOIL_UNA, 2)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    entity_id = er.async_get(hass).async_get_entity_id("switch", DOMAIN, f"{ADDRESS}_under_bed_lights")
+    assert entity_id is not None
+
+    # No light state is ever reported, so a restart cannot claim a confirmed off.
+    state = hass.states.get(entity_id)
+    assert state.state == STATE_UNKNOWN
+    assert state.attributes[ATTR_ASSUMED_STATE] is True
+
+    mock_bleak_client.write_gatt_char.reset_mock()
+    await hass.services.async_call("switch", "turn_on", {ATTR_ENTITY_ID: entity_id}, blocking=True)
+    assert "e5fe1631000001d4" in _written(mock_bleak_client)
+    state = hass.states.get(entity_id)
+    assert state.state == STATE_ON
+    assert state.attributes[ATTR_ASSUMED_STATE] is True
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()

@@ -1236,6 +1236,16 @@ class BedController(ABC):
         return False
 
     @property
+    def light_state_is_assumed(self) -> bool:
+        """Return True when discrete light commands have no state readback.
+
+        The light switch then starts unknown and reports the commanded value
+        as assumed state, so a restart or the physical remote is not shown as
+        a confirmed state.
+        """
+        return False
+
+    @property
     def supports_explicit_light_on_control(self) -> bool:
         """Return True if bed has a dedicated light-on command.
 
