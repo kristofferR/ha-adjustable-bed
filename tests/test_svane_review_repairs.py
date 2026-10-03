@@ -120,7 +120,7 @@ async def test_registered_minimum_hold_rejects_asymmetric_or_empty_delivery(hass
               return_value=([(coordinator, SIDE_BOTH)], [])),
         pytest.raises(ServiceValidationError, match="100|0.1"),
     ):
-        await hass.services.async_call(DOMAIN, "svane_hold_control",
+        await hass.services.async_call(DOMAIN, "hold_control",
             {"device_id": "bed", "control": control, "duration": 0.1}, blocking=True)
     controller.client.write_gatt_char.assert_not_awaited()
     coordinator.async_execute_controller_command.assert_not_awaited()
@@ -289,7 +289,7 @@ async def test_first_feet_frame_after_source_delay_for_accepted_hold(hass, monke
     controller.client.write_gatt_char.side_effect = write
     with patch("custom_components.adjustable_bed.services._resolve_sided_targets",
                return_value=([(coordinator, SIDE_BOTH)], [])):
-        await hass.services.async_call(DOMAIN, "svane_hold_control",
+        await hass.services.async_call(DOMAIN, "hold_control",
             {"device_id": "bed", "control": control, "duration": 0.101}, blocking=True)
     feet_roles = next(s.characteristics for s in controller.client.services if s.uuid == FEET)
     movement = next(time for time, role, payload in observed

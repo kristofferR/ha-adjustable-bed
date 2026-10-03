@@ -794,6 +794,9 @@ class LimossRemoteController(BedController):
     async def preset_memory(self, memory_num: int) -> None:
         await self.hold_memory(memory_num, 1000)
 
+    async def recall_memory(self, slot: int, *, hold_ms: int) -> None:
+        await self.hold_memory(slot, hold_ms)
+
     async def hold_memory(self, memory_num: int, duration_ms: int) -> None:
         self.validate_memory_recall(memory_num)
         memory = self.memories.slots[memory_num]

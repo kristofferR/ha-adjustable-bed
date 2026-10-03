@@ -787,7 +787,7 @@ async def test_hold_service(
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(
             DOMAIN,
-            "okin_app_hold_control",
+            "hold_control",
             {"device_id": [device.id], "control": "tilt_up", "duration": 1},
             blocking=True,
         )
@@ -795,7 +795,7 @@ async def test_hold_service(
 
     await hass.services.async_call(
         DOMAIN,
-        "okin_app_hold_control",
+        "hold_control",
         {"device_id": [device.id], "control": "home", "duration": 0.3},
         blocking=True,
     )
@@ -803,10 +803,10 @@ async def test_hold_service(
 
     await _reload(hass, entry, **{CONF_PROTOCOL_VARIANT: KEESON_VARIANT_BASE})
     mock_bleak_client.write_gatt_char.reset_mock()
-    with pytest.raises(ServiceValidationError, match="Okin app profile"):
+    with pytest.raises(ServiceValidationError, match="has no held controls"):
         await hass.services.async_call(
             DOMAIN,
-            "okin_app_hold_control",
+            "hold_control",
             {"device_id": [device.id], "control": "home", "duration": 1},
             blocking=True,
         )

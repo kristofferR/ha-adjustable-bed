@@ -173,11 +173,11 @@ async def test_registered_sequential_pair_rejects_fresh_second_profile_before_an
             stack.enter_context(patch(module + "create_controller", side_effect=factory))
             stack.enter_context(patch.object(hass.config_entries, "async_reload", new=AsyncMock()))
             data = {"duration": 0.1}
-            service = {"recall": "limoss_remote_recall_memory", "hold": "limoss_remote_hold_control", "goto": "goto_preset", "save": "save_preset"}[route]
+            service = {"recall": "goto_preset", "hold": "hold_control", "goto": "goto_preset", "save": "save_preset"}[route]
             if route in {"goto", "save"}:
                 data = {}
             if change == "layout":
-                service, data = "limoss_remote_hold_control", {**data, "control": "motor_2_up"}
+                service, data = "hold_control", {**data, "control": "motor_2_up"}
             else:
                 data["preset"] = 8
             error = None

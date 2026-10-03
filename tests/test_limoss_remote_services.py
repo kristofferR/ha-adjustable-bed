@@ -46,14 +46,14 @@ async def service_target(hass):
     ("service", "data", "method", "args", "kwargs"),
     [
         (
-            "limoss_remote_hold_control",
+            "hold_control",
             {"control": "motor_1_up", "duration": 0.125},
             "hold_control",
             ("motor_1_up", 125),
             {},
         ),
         (
-            "limoss_remote_recall_memory",
+            "goto_preset",
             {"preset": 8, "duration": 0.5},
             "hold_memory",
             (8, 500),
@@ -94,12 +94,11 @@ async def test_public_actions_dispatch_live_controller(
 @pytest.mark.parametrize(
     ("service", "data"),
     [
-        ("limoss_remote_hold_control", {"control": "motor_1_up", "duration": True}),
-        ("limoss_remote_hold_control", {"control": "motor_1_up", "duration": 0.099}),
-        ("limoss_remote_hold_control", {"control": "motor_1_up", "duration": 60.001}),
-        ("limoss_remote_hold_control", {"control": "motor_1_up", "duration": float("nan")}),
-        ("limoss_remote_recall_memory", {"preset": 9, "duration": 1}),
-        ("limoss_remote_recall_memory", {"preset": True, "duration": 1}),
+        ("hold_control", {"control": "motor_1_up", "duration": True}),
+        ("hold_control", {"control": "motor_1_up", "duration": 0.099}),
+        ("hold_control", {"control": "motor_1_up", "duration": 60.001}),
+        ("hold_control", {"control": "motor_1_up", "duration": float("nan")}),
+        ("goto_preset", {"preset": 1, "duration": 0.099}),
         ("limoss_remote_calibrate", {"confirmed": "true", "duration": 1}),
         ("limoss_remote_calibrate", {"confirmed": 1, "duration": 1}),
         ("limoss_remote_features", {"underbed_light": 1, "massage": False}),
@@ -117,8 +116,8 @@ async def test_invalid_inputs_never_resolve_or_write(hass, service_target, servi
 @pytest.mark.parametrize(
     ("service", "data", "invalid"),
     [
-        ("limoss_remote_hold_control", {"control": "motor_3_up", "duration": 1}, "layout"),
-        ("limoss_remote_recall_memory", {"preset": 8, "duration": 1}, "capacity"),
+        ("hold_control", {"control": "motor_3_up", "duration": 1}, "layout"),
+        ("goto_preset", {"preset": 8, "duration": 1}, "capacity"),
         ("goto_preset", {"preset": 8}, "empty"),
         ("limoss_remote_calibrate", {"confirmed": False, "duration": 1}, "confirm"),
     ],

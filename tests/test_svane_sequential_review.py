@@ -124,7 +124,7 @@ async def test_public_both_release_signals_moving_side_with_offline_sibling(hass
     left.async_connect.side_effect = connect_waiting
     with patch("custom_components.adjustable_bed.services._resolve_sided_targets",
                return_value=([(pair, SIDE_LEFT)], [])):
-        held = asyncio.create_task(hass.services.async_call(DOMAIN, "svane_hold_control", {
+        held = asyncio.create_task(hass.services.async_call(DOMAIN, "hold_control", {
             "device_id": "pair", "control": "head_up", "duration": .2,
         }, blocking=True))
         try:
@@ -146,10 +146,10 @@ async def test_public_both_release_signals_moving_side_with_offline_sibling(hass
 
 
 @pytest.mark.parametrize("sequential_pair", ["multi", "jmc"], indirect=True)
-@pytest.mark.parametrize("endpoint", ["svane_hold_control", "timed_move"])
+@pytest.mark.parametrize("endpoint", ["hold_control", "timed_move"])
 async def test_public_both_preflight_never_opens_two_links(hass, sequential_pair, endpoint):
     pair, children, clients, records, clock = sequential_pair
-    data = {"device_id": "pair", "control": "head_up", "duration": .2} if endpoint == "svane_hold_control" else {
+    data = {"device_id": "pair", "control": "head_up", "duration": .2} if endpoint == "hold_control" else {
         "device_id": "pair", "motor": "back", "direction": "up", "duration_ms": 200,
     }
     with patch("custom_components.adjustable_bed.services._resolve_sided_targets",
@@ -162,11 +162,11 @@ async def test_public_both_preflight_never_opens_two_links(hass, sequential_pair
 
 
 @pytest.mark.parametrize("sequential_pair", ["multi", "jmc"], indirect=True)
-@pytest.mark.parametrize("endpoint", ["svane_hold_control", "timed_move"])
+@pytest.mark.parametrize("endpoint", ["hold_control", "timed_move"])
 async def test_later_sequential_invalid_role_prevents_all_movement(hass, sequential_pair, endpoint):
     pair, children, clients, records, clock = sequential_pair
     clients[SIDE_RIGHT].services[0 if sequential_pair[1][SIDE_RIGHT].capability_controller.profile == "multi" else 3].characteristics = []
-    data = {"device_id": "pair", "control": "head_up", "duration": .2} if endpoint == "svane_hold_control" else {
+    data = {"device_id": "pair", "control": "head_up", "duration": .2} if endpoint == "hold_control" else {
         "device_id": "pair", "motor": "back", "direction": "up", "duration_ms": 200,
     }
     with patch("custom_components.adjustable_bed.services._resolve_sided_targets",

@@ -10,7 +10,6 @@ from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.const import (
     BED_TYPE_JIECANG_APP,
-    BED_TYPE_LINAK,
     DOMAIN,
     SIDE_BOTH,
     SIDE_RIGHT,
@@ -35,6 +34,8 @@ async def service_target(hass: HomeAssistant):
         supports_preset_yoga=True,
         supports_wake_routine=True,
         supports_device_rename=True,
+        disconnects_after_rename=False,
+        validate_device_rename=MagicMock(),
         configure_clock_alarm=AsyncMock(),
         execute_wake_routine=AsyncMock(),
         stop_wake_routine=AsyncMock(),
@@ -246,18 +247,6 @@ async def test_stop_wake_interrupts_through_coordinator(hass: HomeAssistant, ser
     controller.stop_wake_routine.assert_awaited_once_with()
     assert coordinator.async_execute_controller_command.await_args.kwargs["cancel_running"]
     controller.configure_clock_alarm.assert_not_awaited()
-
-
-async def test_rename_rejects_other_protocol_even_if_capable(hass: HomeAssistant, service_target):
-    coordinator, controller, _ = service_target
-    coordinator.bed_type = BED_TYPE_LINAK
-    await_call = hass.services.async_call(
-        DOMAIN, SERVICE_JIECANG_RENAME, {"device_id": "bed", "name": "Bed"}, blocking=True
-    )
-    with pytest.raises(ServiceValidationError, match="not a Jiecang app controller"):
-        await await_call
-    coordinator.async_execute_controller_command.assert_not_awaited()
-    controller.rename_device.assert_not_awaited()
 
 
 async def test_missing_device_prevents_partial_dispatch(hass: HomeAssistant, service_target):

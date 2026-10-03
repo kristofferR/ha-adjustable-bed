@@ -1075,6 +1075,11 @@ class BedController(ABC):
         """Recall a local memory with an explicit caller-owned hold policy."""
         raise NotImplementedError("Held local memories are unavailable")
 
+    @property
+    def supports_held_memory_recall(self) -> bool:
+        """Whether ``goto_preset`` may choose the recall hold duration."""
+        return type(self).recall_memory is not BedController.recall_memory
+
     @abstractmethod
     async def program_memory(self, memory_num: int) -> None:
         """Save the current bed position to a memory preset.
@@ -1590,6 +1595,11 @@ class BedController(ABC):
         return False
 
     @property
+    def disconnects_after_rename(self) -> bool:
+        """Return True if a rename ends with an intentional disconnect."""
+        return False
+
+    @property
     def supports_alarm(self) -> bool:
         """Return True if the controller exposes the BLE timer/alarm service."""
         return False
@@ -1623,6 +1633,13 @@ class BedController(ABC):
     def supports_held_control(self) -> bool:
         """Return True when held controls are available."""
         return bool(self.held_control_options)
+
+    def validate_hold_control(self, control: str, duration_ms: int) -> None:
+        """Reject profile constraints on a declared control before any target moves.
+
+        ``hold_control`` checks membership in ``held_control_options`` first.
+        """
+        return None
 
     def validate_svane_hold_control(self, control: str, duration_ms: int) -> None:
         """Validate exact live Svane roles before any target starts motion."""

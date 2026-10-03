@@ -38,7 +38,7 @@ async def test_registered_service_routes_literal_hold_and_seconds(hass):
     ):
         await hass.services.async_call(
             DOMAIN,
-            "starcode_abm5_4_hold_control",
+            "hold_control",
             {"device_id": "bed", "control": "wave_up", "duration": 1.001},
             blocking=True,
         )
@@ -52,7 +52,6 @@ async def test_registered_service_routes_literal_hold_and_seconds(hass):
         ("wave_up", False, BED_TYPE_STARCODE_ABM5_4),
         ("memory_2", True, BED_TYPE_STARCODE_ABM5_4),
         ("head_up+foot_up", True, BED_TYPE_STARCODE_ABM5_4),
-        ("head_up", True, "sleepys_box25"),
     ],
 )
 async def test_later_invalid_profile_action_or_observed_gate_prevents_every_write(
@@ -70,31 +69,13 @@ async def test_later_invalid_profile_action_or_observed_gate_prevents_every_writ
     ):
         await hass.services.async_call(
             DOMAIN,
-            "starcode_abm5_4_hold_control",
+            "hold_control",
             {"device_id": ["first", "second"], "control": control, "duration": 1},
             blocking=True,
         )
     ctrl.hold_control.assert_not_awaited()
     first.async_execute_controller_command.assert_not_awaited()
     second.async_execute_controller_command.assert_not_awaited()
-
-
-def test_service_catalog_and_translation_fields_match_actual_controller():
-    import json
-    from pathlib import Path
-
-    import yaml
-
-    root = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
-    metadata = yaml.safe_load((root / "services.yaml").read_text())["starcode_abm5_4_hold_control"]
-    assert metadata["fields"]["control"]["selector"]["select"]["options"] == list(
-        make_controller().held_control_options
-    )
-    for filename in ("strings.json", "translations/en.json"):
-        translated = json.loads((root / filename).read_text())["services"][
-            "starcode_abm5_4_hold_control"
-        ]
-        assert set(translated["fields"]) == set(metadata["fields"])
 
 
 @pytest.mark.parametrize("side", ["left", "right", "both"])
@@ -135,7 +116,7 @@ async def test_real_two_address_pair_dispatch_preserves_side_and_independent_C(h
     ) as resolve:
         await hass.services.async_call(
             DOMAIN,
-            "starcode_abm5_4_hold_control",
+            "hold_control",
             {"device_id": "pair", "control": "head_up", "duration": 1.001, "side": side},
             blocking=True,
         )

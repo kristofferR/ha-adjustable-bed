@@ -10,7 +10,6 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-import yaml
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 
@@ -22,7 +21,6 @@ from custom_components.adjustable_bed.config_flow import (
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_DIAGNOSTIC,
-    BED_TYPE_SERENITY,
     BED_TYPE_TRANQUIL,
     BED_TYPE_ZSERIES_Z230,
     BED_TYPE_ZSERIES_Z280,
@@ -170,11 +168,9 @@ def _target(bed_type, controller):
 @pytest.mark.parametrize(
     ("service", "bed_type", "factory", "control", "error"),
     [
-        ("tranquil_hold_control", BED_TYPE_TRANQUIL, tranquil, "save_lounge", None),
-        ("tranquil_hold_control", BED_TYPE_SERENITY, tranquil, "save_lounge", "Tranquil action"),
-        ("zseries_hold_control", BED_TYPE_ZSERIES_Z230, lambda: zseries("z230"), "head_foot_up", None),
-        ("zseries_hold_control", BED_TYPE_ZSERIES_Z230, lambda: zseries("z230"), "memory_2", "combination"),
-        ("zseries_hold_control", BED_TYPE_TRANQUIL, tranquil, "head_up", "Z-Series action"),
+        ("hold_control", BED_TYPE_TRANQUIL, tranquil, "save_lounge", None),
+        ("hold_control", BED_TYPE_ZSERIES_Z230, lambda: zseries("z230"), "head_foot_up", None),
+        ("hold_control", BED_TYPE_ZSERIES_Z230, lambda: zseries("z230"), "memory_2", "does not support held control"),
     ],
 )
 async def test_hold_services_preflight_profile_and_literal_action(
@@ -239,7 +235,7 @@ async def test_alarm_service_requires_zseries_and_manufacturer_enabled_page(
             )
         assert written(controller) == []
         await hass.services.async_call(DOMAIN, "zseries_set_alarm", data, blocking=True)
-        await hass.services.async_call(DOMAIN, "zseries_sync_clock", {"device_id": "bed"}, blocking=True)
+        await hass.services.async_call(DOMAIN, "sync_clock", {"device_id": "bed"}, blocking=True)
     clock = "07061a0a01040d2f3b"
     assert written(controller) == [
         clock, "07052002072d000101", "00c0", "00c0", clock, "00c0", "00c0"
@@ -247,20 +243,9 @@ async def test_alarm_service_requires_zseries_and_manufacturer_enabled_page(
     assert coordinator.async_execute_controller_command.await_args.kwargs["cancel_running"]
 
 
-def test_service_selectors_and_translations_match_controller_catalogs():
-    services = yaml.safe_load((ROOT / "services.yaml").read_text())
-    assert services["tranquil_hold_control"]["fields"]["control"]["selector"]["select"][
-        "options"
-    ] == list(tranquil().held_control_options)
-    zseries_options = services["zseries_hold_control"]["fields"]["control"]["selector"]["select"]["options"]
-    assert set(zseries_options) == {
-        *zseries("z230").held_control_options,
-        *zseries("z280").held_control_options,
-    }
+def test_state_sensor_translations_match_controller_catalogs():
     for filename in ("strings.json", "translations/en.json"):
         metadata = json.loads((ROOT / filename).read_text())
-        for name in ("tranquil_hold_control", "zseries_hold_control", "zseries_set_alarm", "zseries_sync_clock"):
-            assert set(metadata["services"][name]["fields"]) == set(services[name]["fields"])
         for prefix in ("tranquil", "zseries"):
             for spec in (tranquil() if prefix == "tranquil" else zseries("z280")).controller_state_sensor_specs:
                 assert spec.translation_key in metadata["entity"]["sensor"]
@@ -521,7 +506,7 @@ async def _call(hass, resolved, service="zseries_set_alarm"):
 
 
 @pytest.mark.parametrize("layout", [_two_devices, _paired])
-@pytest.mark.parametrize("service", ["zseries_set_alarm", "zseries_sync_clock"])
+@pytest.mark.parametrize("service", ["zseries_set_alarm", "sync_clock"])
 @pytest.mark.parametrize(
     ("second_read", "error"),
     [([b"CST20"], "does not support"), (TimeoutError("unreadable"), "Could not read")],
@@ -546,7 +531,7 @@ async def test_unknown_later_target_is_resolved_before_any_bed_is_written(
 async def test_unknown_later_cst_target_is_resolved_then_both_beds_are_written(hass, layout):
     first, second = _known_and_unknown([b"CST14"])
     _, resolved, _children = layout(first, second)
-    await _call(hass, resolved, "zseries_sync_clock")
+    await _call(hass, resolved, "sync_clock")
     assert written(first)[1:] == ["00c0", "00c0"] and written(second)[1:] == ["00c0", "00c0"]
     assert second._coordinator.entry.data["zseries_alarm_available"] is True
 
@@ -649,7 +634,7 @@ async def test_capability_probe_releases_each_link_on_a_one_slot_path(hass, pair
         if paired
         else [coordinator],
     ):
-        await _call(hass, resolved, "zseries_sync_clock")
+        await _call(hass, resolved, "sync_clock")
     for child in (left, right):
         assert child.disconnects[0] == "capability_probe"
         assert child.entry.data["zseries_alarm_available"] is True

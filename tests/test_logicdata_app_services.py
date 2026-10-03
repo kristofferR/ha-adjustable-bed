@@ -10,7 +10,6 @@ from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.beds.logicdata_app import LogicdataAppController
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA_APP,
     DOMAIN,
     SIDE_BOTH,
@@ -37,6 +36,7 @@ async def service_target(hass: HomeAssistant):
         supports_preset_hold=True,
         held_preset_options=("flat", "memory_1", "memory_2"),
         validate_device_rename=MagicMock(),
+        disconnects_after_rename=False,
         configure_clock_alarm=AsyncMock(),
         rename_device=AsyncMock(),
         hold_preset=AsyncMock(),
@@ -172,18 +172,6 @@ async def test_invalid_fields_do_not_dispatch(hass: HomeAssistant, service_targe
         await hass.services.async_call(DOMAIN, service, {"device_id": "bed", **data}, blocking=True)
     resolve.assert_not_called()
     coordinator.async_execute_controller_command.assert_not_awaited()
-
-
-async def test_rename_rejects_other_protocol_even_if_capable(hass: HomeAssistant, service_target):
-    coordinator, controller, _ = service_target
-    coordinator.bed_type = BED_TYPE_LINAK
-    await_call = hass.services.async_call(
-        DOMAIN, SERVICE_LOGICDATA_RENAME, {"device_id": "bed", "name": "Bed"}, blocking=True
-    )
-    with pytest.raises(ServiceValidationError, match="not a Logicdata app controller"):
-        await await_call
-    coordinator.async_execute_controller_command.assert_not_awaited()
-    controller.rename_device.assert_not_awaited()
 
 
 async def test_missing_device_prevents_partial_dispatch(hass: HomeAssistant, service_target):

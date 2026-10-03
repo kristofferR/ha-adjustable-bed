@@ -174,7 +174,7 @@ def _service_target(profile=BED_TYPE_ADJUSTABLE_LUMBAR):
 
 @pytest.mark.parametrize(
     ("control", "error"),
-    [("save_lounge", None), ("massage_stop", "combination"), ("tv", "combination")],
+    [("save_lounge", None), ("massage_stop", "does not support held control"), ("tv", "does not support held control")],
 )
 async def test_hold_service_preflights_before_writing(hass, control, error):
     await async_register_services(hass)
@@ -187,12 +187,12 @@ async def test_hold_service_preflights_before_writing(hass, control, error):
         if error:
             with pytest.raises(ServiceValidationError, match=error):
                 await hass.services.async_call(
-                    DOMAIN, "adjustable_lumbar_hold_control", call, blocking=True
+                    DOMAIN, "hold_control", call, blocking=True
                 )
             coordinator.async_execute_controller_command.assert_not_awaited()
         else:
             await hass.services.async_call(
-                DOMAIN, "adjustable_lumbar_hold_control", call, blocking=True
+                DOMAIN, "hold_control", call, blocking=True
             )
             controller.hold_control.assert_awaited_once_with("save_lounge", 6000)
 
@@ -201,34 +201,22 @@ async def test_hold_service_refuses_a_mixed_selection_before_any_write(hass):
     await async_register_services(hass)
     lumbar, lumbar_controller = _service_target()
     other, _ = _service_target("okin_64bit")
+    other.capability_controller = SimpleNamespace(held_control_options=())
     with (
         patch(
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(lumbar, SIDE_BOTH), (other, SIDE_BOTH)], []),
         ),
-        pytest.raises(ServiceValidationError, match="Adjustable bed"),
+        pytest.raises(ServiceValidationError, match="has no held controls"),
     ):
         await hass.services.async_call(
             DOMAIN,
-            "adjustable_lumbar_hold_control",
+            "hold_control",
             {"device_id": ["a", "b"], "control": "flat", "duration": 1},
             blocking=True,
         )
     lumbar.async_execute_controller_command.assert_not_awaited()
     lumbar_controller.hold_control.assert_not_awaited()
-
-
-def test_service_metadata_lists_every_held_control():
-    from pathlib import Path
-
-    import yaml
-
-    from custom_components.adjustable_bed.beds.adjustable_lumbar import HELD_CONTROLS
-
-    root = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
-    services = yaml.safe_load((root / "services.yaml").read_text())
-    field = services["adjustable_lumbar_hold_control"]["fields"]["control"]
-    assert tuple(field["selector"]["select"]["options"]) == HELD_CONTROLS
 
 
 def _side(address: str, variant: str) -> dict[str, object]:

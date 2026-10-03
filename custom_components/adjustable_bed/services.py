@@ -28,7 +28,6 @@ from homeassistant.helpers.service import async_get_device_and_config_entry
 
 from .beds.linak_protocol import LinakAlarmAction, LinakAlarmStep
 from .const import (
-    BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
@@ -41,24 +40,18 @@ from .const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
-    BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
-    BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
-    BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_SVANE,
-    BED_TYPE_TRANQUIL,
-    BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     CONF_BED_TYPE,
     CONF_MOTOR_COUNT,
     CONF_PROTOCOL_VARIANT,
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
-    OKIN_APP_VARIANTS,
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
@@ -100,49 +93,37 @@ SERVICE_SOLACE_AUDIO = "solace_audio"
 SERVICE_SOLACE_SET_ALARM = "solace_set_alarm"
 SERVICE_LEGGETT_SLEEP_TIMER = "leggett_sleep_timer"
 SERVICE_LEGGETT_ALARM_TIMER = "leggett_alarm_timer"
+SERVICE_HOLD_CONTROL = "hold_control"
+SERVICE_RENAME = "rename"
+SERVICE_SYNC_CLOCK = "sync_clock"
+# Released per-app names that now alias the generic actions above (linak_rename
+# sits with the other Linak actions).
 SERVICE_LEGGETT_HOLD_CONTROL = "leggett_hold_control"
-SERVICE_SERENITY_HOLD_CONTROL = "serenity_hold_control"
-SERVICE_SVANE_HOLD_CONTROL = "svane_hold_control"
+SERVICE_LOGICDATA_RENAME = "logicdata_rename"
+SERVICE_JIECANG_RENAME = "jiecang_rename"
+SERVICE_MALOUF_SYNC_CLOCK = "malouf_sync_clock"
 SERVICE_SVANE_RELEASE_AXIS = "svane_release_axis"
-SERVICE_TRANQUIL_HOLD_CONTROL = "tranquil_hold_control"
-SERVICE_ZSERIES_HOLD_CONTROL = "zseries_hold_control"
 SERVICE_ZSERIES_SET_ALARM = "zseries_set_alarm"
-SERVICE_ZSERIES_SYNC_CLOCK = "zseries_sync_clock"
-SERVICE_SIMMONS_HOLD_CONTROL = "simmons_hold_control"
-SERVICE_ADJUSTABLE_LUMBAR_HOLD_CONTROL = "adjustable_lumbar_hold_control"
-SERVICE_OKIN_APP_HOLD_CONTROL = "okin_app_hold_control"
-SERVICE_RESTONIC_HOLD_CONTROL = "restonic_hold_control"
 SERVICE_SIMMONS_SET_ALARM = "simmons_set_alarm"
 ATTR_SLOT = "slot"
 ATTR_MODE = "mode"
 ATTR_CONFIRM_CUSTOM_MODE = "confirm_custom_mode"
 SERVICE_FURNIMOVE_ACTION = "furnimove_action"
-SERVICE_FURNIMOVE_RENAME = "furnimove_rename"
 SERVICE_FURNIMOVE_MASSAGE_PROGRAM = "furnimove_massage_program"
 SERVICE_FURNIMOVE_MASSAGE_DURATION = "furnimove_massage_duration"
 SERVICE_FURNIMOVE_MOVE_SIMULTANEOUSLY = "furnimove_move_simultaneously"
-SERVICE_VIBRADORM_HOLD_CONTROL = "vibradorm_hold_control"
-SERVICE_VMATBASIC_HOLD_CONTROL = "vmatbasic_hold_control"
-SERVICE_VMATBASIC_RENAME = "vmatbasic_rename"
-SERVICE_STARCODE_HOLD_CONTROL = "starcode_abm5_4_hold_control"
-SERVICE_LIMOSS_REMOTE_HOLD_CONTROL = "limoss_remote_hold_control"
-SERVICE_LIMOSS_REMOTE_RECALL_MEMORY = "limoss_remote_recall_memory"
 SERVICE_LIMOSS_REMOTE_RENAME_MEMORY = "limoss_remote_rename_memory"
 SERVICE_LIMOSS_REMOTE_CALIBRATE = "limoss_remote_calibrate"
 SERVICE_LIMOSS_REMOTE_FEATURES = "limoss_remote_features"
+SERVICE_FSM_RELAX_CALIBRATE = "fsm_relax_calibrate"
 SERVICE_CUSTOMATIC_HOLD_MEMORY = "customatic_hold_memory"
 SERVICE_CUSTOMATIC_MOVE_SIMULTANEOUSLY = "customatic_move_simultaneously"
 SERVICE_LOGICDATA_SET_ALARM = "logicdata_set_alarm"
-SERVICE_LOGICDATA_RENAME = "logicdata_rename"
 SERVICE_LOGICDATA_HOLD_PRESET = "logicdata_hold_preset"
 SERVICE_JIECANG_SET_ALARM = "jiecang_set_alarm"
 SERVICE_JIECANG_WAKE = "jiecang_wake"
 SERVICE_JIECANG_STOP_WAKE = "jiecang_stop_wake"
-SERVICE_JIECANG_RENAME = "jiecang_rename"
-SERVICE_INNOVA_RENAME = "innova_rename"
-SERVICE_INNOVA_HOLD_CONTROL = "innova_hold_control"
 SERVICE_MALOUF_SET_ALARM = "malouf_set_alarm"
-SERVICE_MALOUF_SYNC_CLOCK = "malouf_sync_clock"
 
 # Service call attributes
 ATTR_PRESET = "preset"
@@ -580,8 +561,16 @@ async def handle_goto_preset(call: ServiceCall) -> None:
     preset = call.data[ATTR_PRESET]
     device_ids = call.data.get(CONF_DEVICE_ID, [])
     explicit_side = call.data.get(ATTR_SIDE)
+    duration = call.data.get(ATTR_DURATION)
+    # None keeps each controller's own recall gesture.
+    hold_ms = None if duration is None else int(duration * 1000)
 
-    _LOGGER.info("Service goto_preset called: preset=%d (side=%s)", preset, explicit_side)
+    _LOGGER.info(
+        "Service goto_preset called: preset=%d, hold_ms=%s (side=%s)",
+        preset,
+        hold_ms,
+        explicit_side,
+    )
 
     targets, missing = _resolve_sided_targets(hass, device_ids, explicit_side)
     if missing:
@@ -618,6 +607,13 @@ async def handle_goto_preset(call: ServiceCall) -> None:
                                 "requested_preset": str(preset),
                             },
                         )
+                    if hold_ms is not None and not controller.supports_held_memory_recall:
+                        raise ServiceValidationError(
+                            f"Device '{target.name}' does not accept a preset hold duration",
+                            translation_domain=DOMAIN,
+                            translation_key="preset_duration_not_supported",
+                            translation_placeholders={"device_name": target.name},
+                        )
                     try:
                         controller.validate_memory_recall(preset)
                     except ValueError as error:
@@ -626,16 +622,18 @@ async def handle_goto_preset(call: ServiceCall) -> None:
             await _release_preflighted(preflighted)
             raise
 
+        async def recall(controller: BedController | SideBoundController) -> None:
+            if hold_ms is None:
+                await controller.preset_memory(preset)
+            else:
+                await controller.recall_memory(preset, hold_ms=hold_ms)
+
         # Phase 2: every target validated - now move them. If one bed's command
         # fails, release the still-connected preflighted beds that never ran (and
         # so never reset their idle timer) before propagating.
         try:
             for coordinator, side in targets:
-                await _execute_sided(
-                    coordinator,
-                    side,
-                    lambda ctrl, p=preset: ctrl.preset_memory(p),  # type: ignore[misc]
-                )
+                await _execute_sided(coordinator, side, recall)
         except Exception:
             await _release_preflighted(preflighted)
             raise
@@ -1275,28 +1273,20 @@ async def handle_timed_move(call: ServiceCall) -> None:
         raise
 
 
-async def _preflight_capability(
+async def _preflight_each(
     targets: list[tuple[BedTarget, str]],
-    capability: str,
-    label: str,
-    validate: Callable[[BedController | SideBoundController], None] | None = None,
+    check: Callable[[BedChild, BedController | SideBoundController], None],
 ) -> PreflightedSides:
-    """Validate a capability on every physical target before any write."""
+    """Check every physical target before any write.
+
+    A ``ValueError`` from ``check`` becomes a ``ServiceValidationError``; any
+    failure releases the sides connected only for validation.
+    """
     preflighted: PreflightedSides = []
     try:
         for coordinator, side in targets:
             for target in _command_targets(coordinator, side):
-                controller = await _validation_controller(
-                    coordinator,
-                    target,
-                    preflighted,
-                )
-                if not getattr(controller, capability, False):
-                    raise ServiceValidationError(
-                        f"Device '{target.name}' does not support {label}",
-                    )
-                if validate is not None:
-                    validate(controller)
+                check(target, await _validation_controller(coordinator, target, preflighted))
     except asyncio.CancelledError:
         await _release_preflighted(preflighted)
         raise
@@ -1306,6 +1296,56 @@ async def _preflight_capability(
             raise ServiceValidationError(str(err)) from err
         raise
     return preflighted
+
+
+async def _preflight_capability(
+    targets: list[tuple[BedTarget, str]],
+    capability: str,
+    label: str,
+    validate: Callable[[BedController | SideBoundController], None] | None = None,
+) -> PreflightedSides:
+    """Validate a capability on every physical target before any write."""
+
+    def check(target: BedChild, controller: BedController | SideBoundController) -> None:
+        if not getattr(controller, capability, False):
+            raise ServiceValidationError(f"Device '{target.name}' does not support {label}")
+        if validate is not None:
+            validate(controller)
+
+    return await _preflight_each(targets, check)
+
+
+def _call_targets(call: ServiceCall) -> list[tuple[BedTarget, str]]:
+    """Resolve a sided call's targets, rejecting a device with no configured bed."""
+    targets, missing = _resolve_sided_targets(
+        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
+    )
+    if missing:
+        raise _missing_device_error(missing[0])
+    return targets
+
+
+def _profile_route(
+    targets: list[tuple[BedTarget, str]], routes: dict[str, str], action: str
+) -> str | None:
+    """Return the dedicated route shared by every physical target, else None.
+
+    Some profiles validate and release through their own live session, so a
+    call cannot mix them with beds that use the generic route.
+    """
+    selected = {
+        routes.get(target.bed_type)
+        for coordinator, side in targets
+        for target in _command_targets(coordinator, side)
+    }
+    if len(selected) > 1:
+        raise ServiceValidationError(
+            f"These beds use different app profiles; call {action} separately for each",
+            translation_domain=DOMAIN,
+            translation_key="mixed_profile_targets",
+            translation_placeholders={"action": action},
+        )
+    return next(iter(selected), None)
 
 
 async def handle_linak_move_simultaneously(call: ServiceCall) -> None:
@@ -1373,25 +1413,38 @@ async def handle_linak_move_simultaneously(call: ServiceCall) -> None:
         raise
 
 
-async def handle_linak_rename(call: ServiceCall) -> None:
-    """Rename one or both targeted Linak BLE controllers."""
-    hass = call.hass
+async def handle_rename(call: ServiceCall) -> None:
+    """Write a new Bluetooth name to every targeted controller that supports it."""
     name = call.data[ATTR_NAME]
-    if len(name.encode()) > 17:
-        raise ServiceValidationError("Linak device names must be at most 17 UTF-8 bytes")
-    explicit_side = call.data.get(ATTR_SIDE)
-    targets, missing = _resolve_sided_targets(
-        hass,
-        call.data.get(CONF_DEVICE_ID, []),
-        explicit_side,
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    preflighted = await _preflight_capability(
+    targets = _call_targets(call)
+    route = _profile_route(
         targets,
-        "supports_device_rename",
-        "Linak device rename",
+        {BED_TYPE_FURNIMOVE: "furnimove", BED_TYPE_VMATBASIC: "vmatbasic"},
+        SERVICE_RENAME,
     )
+    if route == "furnimove":
+        await _rename_furnimove(call, targets, name)
+        return
+    if route == "vmatbasic":
+        await _rename_vmatbasic(targets, name)
+        return
+
+    disconnect: set[int] = set()
+
+    def check(target: BedChild, controller: BedController | SideBoundController) -> None:
+        if not controller.supports_device_rename:
+            raise ServiceValidationError(
+                f"Device '{target.name}' does not support Bluetooth rename",
+                translation_domain=DOMAIN,
+                translation_key="device_rename_not_supported",
+                translation_placeholders={"device_name": target.name},
+            )
+        # Each app has its own name rule; reject before any target writes.
+        controller.validate_device_rename(name)
+        if controller.disconnects_after_rename:
+            disconnect.add(id(target))
+
+    preflighted = await _preflight_each(targets, check)
 
     async def rename(controller: BedController | SideBoundController) -> None:
         await controller.rename_device(name)
@@ -1399,15 +1452,12 @@ async def handle_linak_rename(call: ServiceCall) -> None:
     try:
         for coordinator, side in targets:
             await _execute_sided(
-                coordinator,
-                side,
-                rename,
-                cancel_running=False,
-                resource="configuration",
+                coordinator, side, rename, cancel_running=False, resource="configuration"
             )
             for target in _command_targets(coordinator, side):
-                await target.async_disconnect(reason="intentional")
-    except Exception:
+                if id(target) in disconnect:
+                    await target.async_disconnect(reason="intentional")
+    except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
         raise
 
@@ -1583,7 +1633,7 @@ def _leggett_integer(value: object) -> int:
     return value
 
 
-def _leggett_hold_seconds(value: object) -> Decimal:
+def _hold_seconds(value: object) -> Decimal:
     """Accept bounded seconds that convert exactly to whole milliseconds."""
     try:
         duration = Decimal(str(value))
@@ -1660,33 +1710,74 @@ async def handle_leggett_alarm_timer(call: ServiceCall) -> None:
     await _handle_leggett_timer(call, alarm=True)
 
 
-async def handle_leggett_hold_control(call: ServiceCall) -> None:
-    """Run one supported held control, including its release cleanup."""
+async def handle_hold_control(call: ServiceCall) -> None:
+    """Hold one controller-declared control, then run its protocol release."""
     control = call.data[ATTR_CONTROL]
     duration_ms = int(call.data[ATTR_DURATION] * 1000)
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
+    targets = _call_targets(call)
+    route = _profile_route(
+        targets,
+        {BED_TYPE_SVANE: "svane", BED_TYPE_LIMOSS_REMOTE: "limoss_remote"},
+        SERVICE_HOLD_CONTROL,
     )
-    if missing:
-        raise _missing_device_error(missing[0])
-    preflighted = await _preflight_leggett(
-        targets, "supports_held_control", "Leggett held controls"
-    )
+    if route == "svane":
+        await _hold_svane(call, control, duration_ms)
+    elif route == "limoss_remote":
+        await _hold_limoss_remote(call, control, duration_ms)
+    elif control == "floor_hold" and any(
+        target.bed_type == BED_TYPE_VMATBASIC
+        for coordinator, side in targets
+        for target in _command_targets(coordinator, side)
+    ):
+        await _hold_vmatbasic_floor(targets, control, duration_ms)
+    else:
+        await _hold_targets(targets, control, duration_ms)
+
+
+def _require_held_control(
+    target: BedChild, controller: BedController | SideBoundController, control: str
+) -> None:
+    """Reject a control the target's controller does not declare, listing valid ones."""
+    options = controller.held_control_options
+    if not options:
+        raise ServiceValidationError(
+            f"Device '{target.name}' has no held controls",
+            translation_domain=DOMAIN,
+            translation_key="held_controls_not_supported",
+            translation_placeholders={"device_name": target.name},
+        )
+    if control not in options:
+        raise ServiceValidationError(
+            f"Device '{target.name}' does not support held control '{control}'. "
+            f"Valid controls: {', '.join(options)}",
+            translation_domain=DOMAIN,
+            translation_key="held_control_not_supported",
+            translation_placeholders={
+                "device_name": target.name,
+                "control": control,
+                "valid_controls": ", ".join(options),
+            },
+        )
+
+
+async def _hold_targets(
+    targets: list[tuple[BedTarget, str]], control: str, duration_ms: int
+) -> None:
+    """Preflight the whole selection before starting any held write sequence."""
+
+    def check(target: BedChild, controller: BedController | SideBoundController) -> None:
+        _require_held_control(target, controller, control)
+        controller.validate_hold_control(control, duration_ms)
+
+    preflighted = await _preflight_each(targets, check)
+
+    async def hold(controller: BedController | SideBoundController) -> None:
+        await controller.hold_control(control, duration_ms)
+
     try:
         for coordinator, side in targets:
-            for target in _command_targets(coordinator, side):
-                controller = await _validation_controller(coordinator, target, preflighted)
-                if control not in controller.held_control_options:
-                    raise ServiceValidationError(
-                        f"Device '{target.name}' does not support held control '{control}'"
-                    )
-
-        async def hold(controller: BedController | SideBoundController) -> None:
-            await controller.hold_control(control, duration_ms)
-
-        for coordinator, side in targets:
             await _execute_sided(coordinator, side, hold, cancel_running=True)
-    except Exception:
+    except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
         raise
 
@@ -1799,16 +1890,16 @@ async def handle_furnimove_action(call: ServiceCall) -> None:
     await _execute_furnimove(call, validate, execute)
 
 
-async def handle_furnimove_rename(call: ServiceCall) -> None:
+async def _rename_furnimove(
+    call: ServiceCall, targets: list[tuple[BedTarget, str]], name: str
+) -> None:
     """Write the original validated name to this app's discovered rename role."""
-    name = call.data[ATTR_NAME]
     from .beds.furnimove import validate_furnimove_name
 
     try:
         validate_furnimove_name(name)
     except ValueError as err:
         raise ServiceValidationError(str(err)) from err
-    targets = _furnimove_targets(call)
     physical = [target for coordinator, side in targets for target in _command_targets(coordinator, side)]
     if len(physical) != 1:
         raise ServiceValidationError("Rename one physical FurniMove receiver at a time")
@@ -1959,6 +2050,7 @@ async def _svane_live_targets(
                 or not isinstance(controller, SvaneController)
             ):
                 raise ServiceValidationError("Select a Svane Remote app profile")
+            _require_held_control(target, controller, control)
             try:
                 controller.validate_svane_hold_constraints(control, duration_ms)
             except ValueError as err:
@@ -1981,10 +2073,8 @@ async def _svane_live_targets(
     return targets, preflighted, admissions
 
 
-async def handle_svane_hold_control(call: ServiceCall) -> None:
+async def _hold_svane(call: ServiceCall, control: str, duration_ms: int) -> None:
     """Preflight exact roles on all sides before serialized source held writes."""
-    control = call.data[ATTR_CONTROL]
-    duration_ms = int(_leggett_hold_seconds(call.data[ATTR_DURATION]) * 1000)
     targets, preflighted, admissions = await _svane_live_targets(call, control, duration_ms)
     try:
         async def hold(controller: BedController | SideBoundController) -> None:
@@ -2029,50 +2119,22 @@ async def handle_svane_release_axis(call: ServiceCall) -> None:
         controller.request_svane_axis_release(call.data[ATTR_MOTOR])
 
 
-async def handle_fsm_relax_hold_control(call: ServiceCall) -> None:
-    """Hold one app-labelled control from the exact selected table."""
-    await _handle_customatic_hold(call, call.data[ATTR_CONTROL], {BED_TYPE_FSM_RELAX}, label="FSM Relax")
-
-
-async def _fsm_relax_operation(call: ServiceCall, *, calibration: bool) -> None:
-    targets, missing = _resolve_sided_targets(call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE))
-    if missing:
-        raise _missing_device_error(missing[0])
-    if calibration and call.data.get("confirmed") is not True:
+async def handle_fsm_relax_calibrate(call: ServiceCall) -> None:
+    """Send exactly one positively confirmed calibration write."""
+    targets = _call_targets(call)
+    if call.data.get("confirmed") is not True:
         raise ServiceValidationError("Calibration requires explicit confirmation")
     for coordinator, side in targets:
         for target in _command_targets(coordinator, side):
             if target.bed_type != BED_TYPE_FSM_RELAX:
                 raise ServiceValidationError("This action requires the FSM Relax app profile")
-    slot = call.data.get(ATTR_PRESET, 1)
-    def validate(controller: BedController | SideBoundController) -> None:
-        if not calibration:
-            controller.validate_memory_recall(slot)
-    await _preflight_capability(targets, "supports_confirmed_calibration" if calibration else "supports_memory_presets", "FSM Relax local action", validate)
+    await _preflight_capability(targets, "supports_confirmed_calibration", "FSM Relax local action")
+
     async def execute(controller: BedController | SideBoundController) -> None:
-        if calibration:
-            await controller.calibrate(confirmed=True)
-        else:
-            await controller.recall_memory(slot, hold_ms=int(_leggett_hold_seconds(call.data[ATTR_DURATION]) * 1000))
+        await controller.calibrate(confirmed=True)
+
     for coordinator, side in targets:
         await _execute_sided(coordinator, side, execute, cancel_running=True)
-
-
-async def handle_fsm_relax_calibrate(call: ServiceCall) -> None:
-    """Send exactly one positively confirmed calibration write."""
-    await _fsm_relax_operation(call, calibration=True)
-
-
-async def handle_fsm_relax_recall_memory(call: ServiceCall) -> None:
-    """Recall signed local targets with a caller-selected gesture duration."""
-    await _fsm_relax_operation(call, calibration=False)
-
-
-async def handle_serenity_hold_control(call: ServiceCall) -> None:
-    """Hold one literal Serenity action, then send its proven release sequence."""
-    await _handle_customatic_hold(
-        call, call.data[ATTR_CONTROL], {BED_TYPE_SERENITY}, label="Serenity"
-    )
 
 
 def _limoss_boolean(value: object) -> bool:
@@ -2081,16 +2143,14 @@ def _limoss_boolean(value: object) -> bool:
     return value
 
 
-async def handle_limoss_remote_hold_control(call: ServiceCall) -> None:
+async def _hold_limoss_remote(call: ServiceCall, control: str, duration_ms: int) -> None:
     """Hold a rendered literal app action using its five-frame release."""
-    control = call.data[ATTR_CONTROL]
-    duration = int(_leggett_hold_seconds(call.data[ATTR_DURATION]) * 1000)
 
     def validate(controller: LimossRemoteController | SideBoundController) -> None:
         if control not in controller.held_control_options:
             raise ValueError(f"The selected profile does not support combination '{control}'")
 
-    await _execute_limoss_remote(call, validate, lambda ctrl: ctrl.hold_control(control, duration))
+    await _execute_limoss_remote(call, validate, lambda ctrl: ctrl.hold_control(control, duration_ms))
 
 
 def _limoss_remote_controller(controller: BedController | SideBoundController) -> LimossRemoteController | SideBoundController:
@@ -2223,11 +2283,6 @@ def _limoss_remote_targets(call: ServiceCall) -> list[tuple[BedTarget, str]]:
     return targets
 
 
-async def handle_limoss_remote_recall_memory(call: ServiceCall) -> None:
-    slot, duration = call.data[ATTR_PRESET], int(call.data[ATTR_DURATION] * 1000)
-    await _execute_limoss_remote(call, lambda ctrl: ctrl.validate_memory_recall(slot), lambda ctrl: ctrl.hold_memory(slot, duration))
-
-
 async def handle_limoss_remote_rename_memory(call: ServiceCall) -> None:
     slot, name = call.data[ATTR_PRESET], call.data[ATTR_NAME]
     controllers: list[LimossRemoteController | SideBoundController] = []
@@ -2324,20 +2379,6 @@ async def handle_limoss_remote_features(call: ServiceCall) -> None:
             for controller, previous_light, previous_massage in touched:
                 controller.underbed_light, controller.massage = previous_light, previous_massage
             raise
-
-async def handle_tranquil_hold_control(call: ServiceCall) -> None:
-    """Hold one literal Tranquil action, then send its proven release sequence."""
-    await _handle_customatic_hold(
-        call, call.data[ATTR_CONTROL], {BED_TYPE_TRANQUIL}, label="Tranquil"
-    )
-
-
-async def handle_zseries_hold_control(call: ServiceCall) -> None:
-    """Hold one literal Z-Series action, then send its proven release sequence."""
-    await _handle_customatic_hold(
-        call, call.data[ATTR_CONTROL], ZSERIES_BED_TYPES, label="Z-Series"
-    )
-
 
 def _zseries_controller(controller: BedController | SideBoundController) -> ZSeriesController:
     """Return the Z-Series controller behind a possibly side-bound proxy."""
@@ -2450,83 +2491,6 @@ async def handle_zseries_set_alarm(call: ServiceCall) -> None:
     await _execute_zseries_alarm(call, "Z-Series app alarms", program)
 
 
-async def handle_zseries_sync_clock(call: ServiceCall) -> None:
-    """Send the Z-Series alarm page's local clock frame and status queries."""
-
-    async def sync(controller: BedController | SideBoundController) -> None:
-        await controller.sync_clock()
-
-    await _execute_zseries_alarm(call, "Z-Series clock synchronization", sync)
-
-
-async def handle_simmons_hold_control(call: ServiceCall) -> None:
-    """Hold one SIMMONS app control, then send its two delayed STOPs."""
-    await _handle_customatic_hold(
-        call, call.data[ATTR_CONTROL], {BED_TYPE_SIMMONS}, label="SIMMONS"
-    )
-
-
-async def handle_adjustable_lumbar_hold_control(call: ServiceCall) -> None:
-    """Hold one Adjustable bed (Lumbar) control, then send its two release STOPs."""
-    await _handle_customatic_hold(
-        call,
-        call.data[ATTR_CONTROL],
-        {BED_TYPE_ADJUSTABLE_LUMBAR},
-        label="Adjustable bed (Lumbar)",
-    )
-
-
-async def handle_okin_app_hold_control(call: ServiceCall) -> None:
-    """Hold one Simon Li, Heal Every Night or OKIN-Seating control, then release it."""
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    for coordinator, side in targets:
-        for target in _command_targets(coordinator, side):
-            if target.bed_type != BED_TYPE_KEESON or target.entry.data.get(
-                CONF_PROTOCOL_VARIANT
-            ) not in OKIN_APP_VARIANTS:
-                raise ServiceValidationError(
-                    f"Device '{target.name}' does not use an Okin app profile"
-                )
-    await _handle_customatic_hold(
-        call, call.data[ATTR_CONTROL], {BED_TYPE_KEESON}, label="Okin app"
-    )
-
-
-async def handle_restonic_hold_control(call: ServiceCall) -> None:
-    """Hold one Restonic BT remote control, then send its delayed zero frame."""
-    await _handle_customatic_hold(
-        call,
-        call.data[ATTR_CONTROL],
-        {BED_TYPE_KEESON},
-        label="Restonic BT",
-        control_noun="control",
-    )
-
-
-async def handle_innova_hold_control(call: ServiceCall) -> None:
-    """Hold one streamed INNOVA app control, then send its delayed zero key."""
-    from .beds.base import SideBoundController
-    from .beds.innova import InnovaController
-
-    def require_innova(controller: BedController | SideBoundController) -> None:
-        target = controller._controller if isinstance(controller, SideBoundController) else controller
-        if not isinstance(target, InnovaController):
-            raise ServiceValidationError("Requires the INNOVA app profile")
-
-    await _handle_customatic_hold(
-        call,
-        call.data[ATTR_CONTROL],
-        {BED_TYPE_KEESON},
-        label="INNOVA",
-        validate_extra=require_innova,
-        control_noun="control",
-    )
-
-
 async def handle_simmons_set_alarm(call: ServiceCall) -> None:
     """Program or disable one of the two SIMMONS alarms through the command queue."""
     from .beds.base import SideBoundController
@@ -2591,29 +2555,18 @@ async def handle_simmons_set_alarm(call: ServiceCall) -> None:
         raise
 
 
-async def handle_vibradorm_hold_control(call: ServiceCall) -> None:
-    """Hold a selected app control with explicit duration and profile release."""
-    await _handle_customatic_hold(
-        call, call.data[ATTR_CONTROL], {BED_TYPE_VIBRADORM_APP}, label="Caresse/Werkmeister"
-    )
-
-
-async def handle_vmatbasic_hold_control(call: ServiceCall) -> None:
-    """Mirror only movement; the XT floor refresh belongs to one physical receiver."""
-    control = call.data[ATTR_CONTROL]
-    if control != "floor_hold":
-        await _handle_customatic_hold(call, control, {BED_TYPE_VMATBASIC}, label="V-MAT Basic")
-        return
-    targets, missing = _resolve_sided_targets(call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE))
-    if missing:
-        raise _missing_device_error(missing[0])
+async def _hold_vmatbasic_floor(
+    targets: list[tuple[BedTarget, str]], control: str, duration_ms: int
+) -> None:
+    """Refresh the XT floor light; it belongs to one physical receiver, never mirrored."""
     physical = [target for coordinator, side in targets for target in _command_targets(coordinator, side)]
     if len(physical) != 1 or physical[0].bed_type != BED_TYPE_VMATBASIC:
         raise ServiceValidationError("Target one physical V-MAT Basic receiver for floor refresh")
-    duration_ms = int(_leggett_hold_seconds(call.data[ATTR_DURATION]) * 1000)
+
     def validate(controller: BedController | SideBoundController) -> None:
         if control not in controller.held_control_options:
             raise ServiceValidationError("XT floor refresh requires the XT-Box profile")
+
     preflighted = await _preflight_capability(targets, "supports_held_control", "V-MAT Basic floor refresh", validate)
     try:
         await _execute_sided(targets[0][0], targets[0][1], lambda controller: controller.hold_control(control, duration_ms), resource="lighting")
@@ -2622,20 +2575,17 @@ async def handle_vmatbasic_hold_control(call: ServiceCall) -> None:
         raise
 
 
-async def handle_vmatbasic_rename(call: ServiceCall) -> None:
+async def _rename_vmatbasic(targets: list[tuple[BedTarget, str]], name: str) -> None:
     """Rename exactly one selected primary receiver, retaining the old name on failure."""
     from .beds.vmatbasic_protocol import rename
     from .coordinator import AdjustableBedCoordinator
 
     try:
-        packet = rename(call.data[ATTR_NAME])
+        packet = rename(name)
         if len(packet) > 20:
             raise ValueError("Encoded name exceeds the safe twenty-byte write payload")
     except (ValueError, UnicodeError) as error:
         raise ServiceValidationError(str(error)) from error
-    targets, missing = _resolve_sided_targets(call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE))
-    if missing:
-        raise _missing_device_error(missing[0])
     physical = [target for coordinator, side in targets for target in _command_targets(coordinator, side)]
     if len(physical) != 1:
         raise ServiceValidationError("Rename one physical V-MAT Basic receiver at a time")
@@ -2656,78 +2606,19 @@ async def handle_vmatbasic_rename(call: ServiceCall) -> None:
         raise
 
 
-async def handle_starcode_hold_control(call: ServiceCall) -> None:
-    """Preflight each physical app target, including its observed-state gate."""
-    from .beds.base import SideBoundController
-    from .beds.starcode_abm5_4 import StarcodeAbm5_4Controller
-
-    duration_ms = int(_leggett_hold_seconds(call.data[ATTR_DURATION]) * 1000)
-
-    def validate(controller: BedController | SideBoundController) -> None:
-        target = (
-            controller._controller if isinstance(controller, SideBoundController) else controller
-        )
-        if not isinstance(target, StarcodeAbm5_4Controller) or controller.command_side is not None:
-            raise ServiceValidationError("Requires a physical AdjustableM5X4 profile")
-        try:
-            target.validate_hold_control(call.data[ATTR_CONTROL], duration_ms)
-        except ValueError as err:
-            raise ServiceValidationError(str(err)) from err
-
-    await _handle_customatic_hold(
-        call,
-        call.data[ATTR_CONTROL],
-        {BED_TYPE_STARCODE_ABM5_4},
-        label="AdjustableM5X4",
-        validate_extra=validate,
-    )
-
-
 async def _handle_customatic_hold(
-    call: ServiceCall,
-    control: str,
-    bed_types: Collection[str],
-    *,
-    label: str = "Customatic",
-    validate_extra: Callable[[BedController | SideBoundController], None] | None = None,
-    control_noun: str = "combination",
+    call: ServiceCall, control: str, bed_types: Collection[str]
 ) -> None:
-    """Preflight the whole selection before starting any held write sequence."""
-    duration_ms = int(_leggett_hold_seconds(call.data[ATTR_DURATION]) * 1000)
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
+    """Hold a Customatic combination after checking every target's profile."""
+    duration_ms = int(call.data[ATTR_DURATION] * 1000)
+    targets = _call_targets(call)
     for coordinator, side in targets:
         for target in _command_targets(coordinator, side):
             if target.bed_type not in bed_types:
                 raise ServiceValidationError(
-                    f"Device '{target.name}' does not support this {label} action"
+                    f"Device '{target.name}' does not support this Customatic action"
                 )
-
-    def validate(controller: BedController | SideBoundController) -> None:
-        if control not in controller.held_control_options:
-            raise ServiceValidationError(
-                f"The selected profile does not support {control_noun} '{control}'"
-            )
-
-        if validate_extra is not None:
-            validate_extra(controller)
-
-    preflighted = await _preflight_capability(
-        targets, "supports_held_control", f"{label} held controls", validate
-    )
-
-    async def hold(controller: BedController | SideBoundController) -> None:
-        await controller.hold_control(control, duration_ms)
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(coordinator, side, hold, cancel_running=True)
-    except (Exception, asyncio.CancelledError):
-        await _release_preflighted(preflighted)
-        raise
+    await _hold_targets(targets, control, duration_ms)
 
 
 async def _preflight_logicdata(
@@ -2801,26 +2692,36 @@ async def handle_malouf_set_alarm(call: ServiceCall) -> None:
         raise
 
 
-async def handle_malouf_sync_clock(call: ServiceCall) -> None:
-    """Synchronize the app profile's device clock using HA's configured time zone."""
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    preflighted = await _preflight_malouf(
-        targets, "supports_clock_sync", "Malouf clock synchronization"
-    )
+async def handle_sync_clock(call: ServiceCall) -> None:
+    """Synchronize each targeted device clock to Home Assistant's local time."""
+    targets = _call_targets(call)
 
     async def sync(controller: BedController | SideBoundController) -> None:
         await controller.sync_clock()
 
+    if _profile_route(
+        targets, dict.fromkeys(ZSERIES_BED_TYPES, "zseries"), SERVICE_SYNC_CLOCK
+    ):
+        # Z-Series clocks live on the alarm page, gated by a live manufacturer read.
+        await _execute_zseries_alarm(call, "Z-Series clock synchronization", sync)
+        return
+
+    def check(target: BedChild, controller: BedController | SideBoundController) -> None:
+        if not controller.supports_clock_sync:
+            raise ServiceValidationError(
+                f"Device '{target.name}' does not support clock synchronization",
+                translation_domain=DOMAIN,
+                translation_key="clock_sync_not_supported",
+                translation_placeholders={"device_name": target.name},
+            )
+
+    preflighted = await _preflight_each(targets, check)
     try:
         for coordinator, side in targets:
             await _execute_sided(
                 coordinator, side, sync, cancel_running=False, resource="configuration"
             )
-    except Exception:
+    except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
         raise
 
@@ -2853,80 +2754,6 @@ async def handle_logicdata_set_alarm(call: ServiceCall) -> None:
         for coordinator, side in targets:
             await _execute_sided(
                 coordinator, side, program, cancel_running=False, resource="configuration"
-            )
-    except (Exception, asyncio.CancelledError):
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def handle_logicdata_rename(call: ServiceCall) -> None:
-    """Rename a compatible Logicdata app controller through its command queue."""
-    targets, missing = _resolve_sided_targets(
-        call.hass,
-        call.data[CONF_DEVICE_ID],
-        call.data.get(ATTR_SIDE),
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    name = call.data[ATTR_NAME]
-
-    def validate(controller: BedController | SideBoundController) -> None:
-        # Each app has its own name rule; reject before any target writes.
-        controller.validate_device_rename(name)
-
-    preflighted = await _preflight_logicdata(
-        targets,
-        "supports_device_rename",
-        "Logicdata device rename",
-        validate,
-        bed_types=(BED_TYPE_LOGICDATA_APP, BED_TYPE_LOGICDATA_AIR_PUMP),
-    )
-
-    async def rename(controller: BedController | SideBoundController) -> None:
-        await controller.rename_device(name)
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator, side, rename, cancel_running=False, resource="configuration"
-            )
-    except (Exception, asyncio.CancelledError):
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def handle_innova_rename(call: ServiceCall) -> None:
-    """Rename beds using the INNOVA app profile with its EF 02 frame."""
-    targets, missing = _resolve_sided_targets(
-        call.hass,
-        call.data[CONF_DEVICE_ID],
-        call.data.get(ATTR_SIDE),
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    for coordinator, side in targets:
-        for target in _command_targets(coordinator, side):
-            if target.bed_type != BED_TYPE_KEESON:
-                raise ServiceValidationError(
-                    f"Device '{target.name}' does not use the INNOVA app profile"
-                )
-    name = call.data[ATTR_NAME]
-
-    def validate(controller: BedController | SideBoundController) -> None:
-        # Reject the name before any target writes.
-        controller.validate_device_rename(name)
-
-    preflighted = await _preflight_capability(
-        targets, "supports_device_rename", "INNOVA device rename", validate
-    )
-
-    async def rename(controller: BedController | SideBoundController) -> None:
-        await controller.rename_device(name)
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator, side, rename, cancel_running=False, resource="configuration"
             )
     except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
@@ -3078,32 +2905,6 @@ async def handle_jiecang_stop_wake(call: ServiceCall) -> None:
     try:
         for coordinator, side in targets:
             await _execute_sided(coordinator, side, stop, cancel_running=True)
-    except Exception:
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def handle_jiecang_rename(call: ServiceCall) -> None:
-    """Rename a compatible Jiecang app controller through its command queue."""
-    targets, missing = _resolve_sided_targets(
-        call.hass,
-        call.data[CONF_DEVICE_ID],
-        call.data.get(ATTR_SIDE),
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    preflighted = await _preflight_jiecang(
-        targets, "supports_device_rename", "Jiecang device rename"
-    )
-
-    async def rename(controller: BedController | SideBoundController) -> None:
-        await controller.rename_device(call.data[ATTR_NAME])
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator, side, rename, cancel_running=False, resource="configuration"
-            )
     except Exception:
         await _release_preflighted(preflighted)
         raise
@@ -3390,6 +3191,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
             {
                 vol.Required(CONF_DEVICE_ID): cv.ensure_list,
                 vol.Required(ATTR_PRESET): vol.All(vol.Coerce(int), vol.Range(min=1)),
+                vol.Optional(ATTR_DURATION): _hold_seconds,
                 **SIDE_FIELD,
             }
         ),
@@ -3494,16 +3296,43 @@ async def async_register_services(hass: HomeAssistant) -> None:
     )
     hass.services.async_register(
         DOMAIN,
-        SERVICE_LINAK_RENAME,
-        handle_linak_rename,
+        SERVICE_RENAME,
+        handle_rename,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
-                vol.Required(ATTR_NAME): vol.All(cv.string, vol.Length(min=1, max=17)),
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                # Each target's controller applies its app's own name rule.
+                vol.Required(ATTR_NAME): cv.string,
                 **SIDE_FIELD,
             }
         ),
     )
+    # Released per-app rename actions keep their original schemas.
+    for service, devices, name_rule in (
+        (SERVICE_LINAK_RENAME, cv.ensure_list, vol.Length(min=1, max=17)),
+        (
+            SERVICE_LOGICDATA_RENAME,
+            vol.All(cv.ensure_list, vol.Length(min=1)),
+            vol.Match(r"\A[\x20-\x7eäöüÄÖÜß]{1,255}\Z"),
+        ),
+        (
+            SERVICE_JIECANG_RENAME,
+            vol.All(cv.ensure_list, vol.Length(min=1)),
+            vol.Match(r"\A[A-Za-z0-9]{1,20}\Z"),
+        ),
+    ):
+        hass.services.async_register(
+            DOMAIN,
+            service,
+            handle_rename,
+            schema=vol.Schema(
+                {
+                    vol.Required(CONF_DEVICE_ID): devices,
+                    vol.Required(ATTR_NAME): vol.All(cv.string, name_rule),
+                    **SIDE_FIELD,
+                }
+            ),
+        )
     hass.services.async_register(
         DOMAIN,
         SERVICE_LINAK_SET_ALARM,
@@ -3598,17 +3427,24 @@ async def async_register_services(hass: HomeAssistant) -> None:
             }
         ),
     )
+    hold_fields = {
+        vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+        vol.Required(ATTR_DURATION): _hold_seconds,
+        **SIDE_FIELD,
+    }
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_HOLD_CONTROL,
+        handle_hold_control,
+        # Each target's controller declares its valid controls.
+        schema=vol.Schema({**hold_fields, vol.Required(ATTR_CONTROL): cv.string}),
+    )
     hass.services.async_register(
         DOMAIN,
         SERVICE_LEGGETT_HOLD_CONTROL,
-        handle_leggett_hold_control,
+        handle_hold_control,
         schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_CONTROL): vol.In(LEGGETT_HELD_CONTROLS),
-                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
-                **SIDE_FIELD,
-            }
+            {**hold_fields, vol.Required(ATTR_CONTROL): vol.In(LEGGETT_HELD_CONTROLS)}
         ),
     )
     device_fields = {
@@ -3616,20 +3452,12 @@ async def async_register_services(hass: HomeAssistant) -> None:
         **SIDE_FIELD,
     }
     hass.services.async_register(
-        DOMAIN, SERVICE_LIMOSS_REMOTE_HOLD_CONTROL, handle_limoss_remote_hold_control,
-        schema=vol.Schema({**device_fields, vol.Required(ATTR_CONTROL): cv.string, vol.Required(ATTR_DURATION): _leggett_hold_seconds}),
-    )
-    hass.services.async_register(
-        DOMAIN, SERVICE_LIMOSS_REMOTE_RECALL_MEMORY, handle_limoss_remote_recall_memory,
-        schema=vol.Schema({**device_fields, vol.Required(ATTR_PRESET): vol.All(_leggett_integer, vol.Range(min=1, max=8)), vol.Required(ATTR_DURATION): _leggett_hold_seconds}),
-    )
-    hass.services.async_register(
         DOMAIN, SERVICE_LIMOSS_REMOTE_RENAME_MEMORY, handle_limoss_remote_rename_memory,
         schema=vol.Schema({**device_fields, vol.Required(ATTR_PRESET): vol.All(_leggett_integer, vol.Range(min=1, max=8)), vol.Required(ATTR_NAME): cv.string}),
     )
     hass.services.async_register(
         DOMAIN, SERVICE_LIMOSS_REMOTE_CALIBRATE, handle_limoss_remote_calibrate,
-        schema=vol.Schema({**device_fields, vol.Required("confirmed"): _limoss_boolean, vol.Required(ATTR_DURATION): _leggett_hold_seconds}),
+        schema=vol.Schema({**device_fields, vol.Required("confirmed"): _limoss_boolean, vol.Required(ATTR_DURATION): _hold_seconds}),
     )
     hass.services.async_register(
         DOMAIN, SERVICE_LIMOSS_REMOTE_FEATURES, handle_limoss_remote_features,
@@ -3640,13 +3468,9 @@ async def async_register_services(hass: HomeAssistant) -> None:
         schema=vol.Schema({
             **device_fields,
             vol.Required("row_index"): vol.All(_leggett_integer, vol.Range(min=0)),
-            vol.Optional(ATTR_DURATION): _leggett_hold_seconds,
+            vol.Optional(ATTR_DURATION): _hold_seconds,
             vol.Optional("consumer", default="app"): vol.In(("app", "widget")),
         }),
-    )
-    hass.services.async_register(
-        DOMAIN, SERVICE_FURNIMOVE_RENAME, handle_furnimove_rename,
-        schema=vol.Schema({**device_fields, vol.Required(ATTR_NAME): cv.string}),
     )
     hass.services.async_register(
         DOMAIN, SERVICE_FURNIMOVE_MASSAGE_PROGRAM, handle_furnimove_massage_program,
@@ -3679,67 +3503,15 @@ async def async_register_services(hass: HomeAssistant) -> None:
             }
         ),
     )
-    from .beds.svane import MOTIONS
-
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_SVANE_HOLD_CONTROL,
-        handle_svane_hold_control,
-        schema=vol.Schema(
-            {
-                **device_fields,
-                vol.Required(ATTR_CONTROL): vol.In((*MOTIONS, "light_adjust")),
-                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
-            }
-        ),
-    )
     hass.services.async_register(
         DOMAIN,
         SERVICE_SVANE_RELEASE_AXIS,
         handle_svane_release_axis,
         schema=vol.Schema({**device_fields, vol.Required(ATTR_MOTOR): vol.In(("head", "feet"))}),
     )
-    hass.services.async_register(DOMAIN, "fsm_relax_hold_control", handle_fsm_relax_hold_control,
-        schema=vol.Schema({vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                           vol.Required(ATTR_CONTROL): cv.string,
-                           vol.Required(ATTR_DURATION): _leggett_hold_seconds, **SIDE_FIELD}))
-    hass.services.async_register(DOMAIN, "fsm_relax_recall_memory", handle_fsm_relax_recall_memory,
-        schema=vol.Schema({vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                           vol.Required(ATTR_PRESET): vol.All(cv.positive_int, vol.Range(min=1, max=8)),
-                           vol.Required(ATTR_DURATION): _leggett_hold_seconds, **SIDE_FIELD}))
-    hass.services.async_register(DOMAIN, "fsm_relax_calibrate", handle_fsm_relax_calibrate,
+    hass.services.async_register(DOMAIN, SERVICE_FSM_RELAX_CALIBRATE, handle_fsm_relax_calibrate,
         schema=vol.Schema({vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
                            vol.Required("confirmed"): vol.All(cv.boolean, vol.In((True,))), **SIDE_FIELD}))
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_SERENITY_HOLD_CONTROL,
-        handle_serenity_hold_control,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_CONTROL): cv.string,
-                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    for service, handler in (
-        (SERVICE_TRANQUIL_HOLD_CONTROL, handle_tranquil_hold_control),
-        (SERVICE_ZSERIES_HOLD_CONTROL, handle_zseries_hold_control),
-    ):
-        hass.services.async_register(
-            DOMAIN,
-            service,
-            handler,
-            schema=vol.Schema(
-                {
-                    vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                    vol.Required(ATTR_CONTROL): cv.string,
-                    vol.Required(ATTR_DURATION): _leggett_hold_seconds,
-                    **SIDE_FIELD,
-                }
-            ),
-        )
     hass.services.async_register(
         DOMAIN,
         SERVICE_ZSERIES_SET_ALARM,
@@ -3750,82 +3522,6 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 vol.Required(ATTR_ENABLED): cv.boolean,
                 vol.Optional(ATTR_TIME): cv.time,
                 vol.Optional(ATTR_WAKE_MODE): vol.In(("massage", "memory_1")),
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_ZSERIES_SYNC_CLOCK,
-        handle_zseries_sync_clock,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_SIMMONS_HOLD_CONTROL,
-        handle_simmons_hold_control,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_CONTROL): cv.string,
-                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_ADJUSTABLE_LUMBAR_HOLD_CONTROL,
-        handle_adjustable_lumbar_hold_control,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_CONTROL): cv.string,
-                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_OKIN_APP_HOLD_CONTROL,
-        handle_okin_app_hold_control,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_CONTROL): cv.string,
-                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_INNOVA_HOLD_CONTROL,
-        handle_innova_hold_control,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_CONTROL): cv.string,
-                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_RESTONIC_HOLD_CONTROL,
-        handle_restonic_hold_control,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_CONTROL): cv.string,
-                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
                 **SIDE_FIELD,
             }
         ),
@@ -3851,56 +3547,13 @@ async def async_register_services(hass: HomeAssistant) -> None:
     )
     hass.services.async_register(
         DOMAIN,
-        SERVICE_VIBRADORM_HOLD_CONTROL,
-        handle_vibradorm_hold_control,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_CONTROL): cv.string,
-                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN, SERVICE_VMATBASIC_HOLD_CONTROL, handle_vmatbasic_hold_control,
-        schema=vol.Schema({
-            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-            vol.Required(ATTR_CONTROL): vol.In(("all_up", "all_down", "back_up", "back_down", "legs_up", "legs_down", "floor_hold")),
-            vol.Required(ATTR_DURATION): _leggett_hold_seconds,
-            **SIDE_FIELD,
-        }),
-    )
-    hass.services.async_register(
-        DOMAIN, SERVICE_VMATBASIC_RENAME, handle_vmatbasic_rename,
-        schema=vol.Schema({
-            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-            vol.Required(ATTR_NAME): cv.string,
-            **SIDE_FIELD,
-        }),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_STARCODE_HOLD_CONTROL,
-        handle_starcode_hold_control,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_CONTROL): cv.string,
-                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
         SERVICE_CUSTOMATIC_HOLD_MEMORY,
         handle_customatic_hold_memory,
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
                 vol.Required(ATTR_ACTIONS): _customatic_memory_actions,
-                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
+                vol.Required(ATTR_DURATION): _hold_seconds,
                 **SIDE_FIELD,
             }
         ),
@@ -3913,7 +3566,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
             {
                 vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
                 vol.Required(ATTR_ACTIONS): _customatic_movement_actions,
-                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
+                vol.Required(ATTR_DURATION): _hold_seconds,
                 **SIDE_FIELD,
             }
         ),
@@ -3936,34 +3589,6 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 ),
                 vol.Optional(ATTR_FOOT_LEVEL, default=0): vol.All(
                     vol.Coerce(int), vol.Range(min=0, max=3)
-                ),
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_INNOVA_RENAME,
-        handle_innova_rename,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                # The controller applies the app's trim and 14-unit rule.
-                vol.Required(ATTR_NAME): cv.string,
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_LOGICDATA_RENAME,
-        handle_logicdata_rename,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                # Each target's controller applies its app's narrower name rule.
-                vol.Required(ATTR_NAME): vol.All(
-                    cv.string, vol.Match(r"\A[\x20-\x7eäöüÄÖÜß]{1,255}\Z")
                 ),
                 **SIDE_FIELD,
             }
@@ -4036,18 +3661,6 @@ async def async_register_services(hass: HomeAssistant) -> None:
     )
     hass.services.async_register(
         DOMAIN,
-        SERVICE_JIECANG_RENAME,
-        handle_jiecang_rename,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_NAME): vol.All(cv.string, vol.Match(r"\A[A-Za-z0-9]{1,20}\Z")),
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
         SERVICE_MALOUF_SET_ALARM,
         handle_malouf_set_alarm,
         schema=vol.Schema(
@@ -4063,17 +3676,18 @@ async def async_register_services(hass: HomeAssistant) -> None:
             }
         ),
     )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_MALOUF_SYNC_CLOCK,
-        handle_malouf_sync_clock,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                **SIDE_FIELD,
-            }
-        ),
-    )
+    for service in (SERVICE_SYNC_CLOCK, SERVICE_MALOUF_SYNC_CLOCK):
+        hass.services.async_register(
+            DOMAIN,
+            service,
+            handle_sync_clock,
+            schema=vol.Schema(
+                {
+                    vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                    **SIDE_FIELD,
+                }
+            ),
+        )
     hass.services.async_register(
         DOMAIN,
         SERVICE_GENERATE_SUPPORT_BUNDLE,

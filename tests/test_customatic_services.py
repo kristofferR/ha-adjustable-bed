@@ -42,6 +42,7 @@ def target(profile=BED_TYPE_CUSTOMATIC_REMEDY):
             "+".join(f"{axis}_{direction}" for axis, direction in selection.items())
             for selection in MOTOR_SELECTIONS
         ),
+        validate_hold_control=MagicMock(),
         hold_control=AsyncMock(),
     )
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
@@ -147,7 +148,7 @@ async def test_lumbar_preflight_rejects_two_motor_profile_before_any_write(
     other, other_controller = target(BED_TYPE_CUSTOMATIC_CLARITY)
     other_controller.held_control_options = ("back_up+legs_down",)
     resolve.return_value = ([(coordinator, SIDE_BOTH), (other, SIDE_BOTH)], [])
-    with pytest.raises(ServiceValidationError, match="does not support combination"):
+    with pytest.raises(ServiceValidationError, match="does not support held control"):
         await hass.services.async_call(
             DOMAIN, SERVICE_CUSTOMATIC_MOVE_SIMULTANEOUSLY,
             {"device_id": ["bed", "other"], "actions": {"lumbar": "up"}, "duration": 1},

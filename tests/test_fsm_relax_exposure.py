@@ -58,8 +58,7 @@ async def test_named_action_callback_executes_current_controller_through_queue()
     current.hold_control.assert_awaited_once_with("command_22", 120)
 
 
-@pytest.mark.parametrize("calibration", (False, True))
-async def test_service_preflight_serialized_current_action(calibration):
+async def test_calibration_preflight_serialized_current_action():
     ctrl = make_controller()
     ctrl.local.slots[8] = {0: -1}
     ctrl._subscribed = True
@@ -72,8 +71,8 @@ async def test_service_preflight_serialized_current_action(calibration):
         data={"device_id": ["device"], "preset": 8, "duration": 0.12, "confirmed": True},
     )
 
-    async def preflight(targets, capability, label, validator):
-        validator(ctrl)
+    async def preflight(targets, capability, label, validator=None):
+        assert capability == "supports_confirmed_calibration"
 
     async def execute(coordinator, side, fn, **kwargs):
         assert kwargs["cancel_running"] is True
@@ -85,11 +84,8 @@ async def test_service_preflight_serialized_current_action(calibration):
         patch.object(services, "_preflight_capability", side_effect=preflight),
         patch.object(services, "_execute_sided", side_effect=execute),
     ):
-        await services._fsm_relax_operation(call, calibration=calibration)
-    if calibration:
-        ctrl.calibrate.assert_awaited_once_with(confirmed=True)
-    else:
-        ctrl.recall_memory.assert_awaited_once_with(8, hold_ms=120)
+        await services.handle_fsm_relax_calibrate(call)
+    ctrl.calibrate.assert_awaited_once_with(confirmed=True)
 
 
 async def test_false_confirmation_and_wrong_profile_fail_before_execution():
@@ -101,10 +97,10 @@ async def test_false_confirmation_and_wrong_profile_fail_before_execution():
         patch.object(services, "_execute_sided", AsyncMock()) as execute,
     ):
         with pytest.raises(ServiceValidationError, match="confirmation"):
-            await services._fsm_relax_operation(call, calibration=True)
+            await services.handle_fsm_relax_calibrate(call)
         call.data["confirmed"] = True
         with pytest.raises(ServiceValidationError, match="profile"):
-            await services._fsm_relax_operation(call, calibration=True)
+            await services.handle_fsm_relax_calibrate(call)
         execute.assert_not_called()
 
 
@@ -141,7 +137,7 @@ async def _close_memory_targets(*targets: AdjustableBedCoordinator) -> None:
         await target.controller.stop_notify()
 
 
-@pytest.mark.parametrize("service", ("goto_preset", "fsm_relax_recall_memory"))
+@pytest.mark.parametrize("service", ("goto_preset", "goto_preset"))
 @pytest.mark.parametrize("invalid", (
     "missing", "motor_zero", "raw_overflow", "raw_bool", "index", "quarantined",
     "shared_quarantine", "query_failure", "query_failure_reconstructed", "subscription",
@@ -192,7 +188,7 @@ async def test_registered_memory_preflight_rejects_all_targets_before_writes(
         controller._live_capabilities = False
     await services.async_register_services(hass)
     data = {"device_id": ["first", "second"], "preset": 8}
-    if service == "fsm_relax_recall_memory":
+    if service == "goto_preset":
         data["duration"] = 0.12
     try:
         with (
@@ -208,7 +204,7 @@ async def test_registered_memory_preflight_rejects_all_targets_before_writes(
         await _close_memory_targets(first, second)
 
 
-@pytest.mark.parametrize("service", ("goto_preset", "fsm_relax_recall_memory"))
+@pytest.mark.parametrize("service", ("goto_preset", "goto_preset"))
 async def test_registered_memory_preflight_preserves_valid_sparse_recall(
     hass: HomeAssistant, service: str,
 ):
@@ -218,7 +214,7 @@ async def test_registered_memory_preflight_preserves_valid_sparse_recall(
     second = await _actual_memory_target(hass, "AA:BB:CC:DD:EE:02")
     await services.async_register_services(hass)
     data = {"device_id": ["first", "second"], "preset": 8}
-    if service == "fsm_relax_recall_memory":
+    if service == "goto_preset":
         data["duration"] = 0.12
     try:
         with patch.object(services, "_resolve_sided_targets", return_value=(
@@ -262,7 +258,7 @@ async def test_memory_preflight_offline_and_bound_views_preserve_device_local_ru
         await _close_memory_targets(target)
 
 
-@pytest.mark.parametrize("service", ("goto_preset", "fsm_relax_recall_memory"))
+@pytest.mark.parametrize("service", ("goto_preset", "goto_preset"))
 async def test_registered_memory_recall_valid_offline_snapshot_reconnects_before_execution(
     hass: HomeAssistant, service: str,
 ):
@@ -292,7 +288,7 @@ async def test_registered_memory_recall_valid_offline_snapshot_reconnects_before
         return True
 
     data = {"device_id": ["target"], "preset": 8}
-    if service == "fsm_relax_recall_memory":
+    if service == "goto_preset":
         data["duration"] = 0.12
     try:
         with (

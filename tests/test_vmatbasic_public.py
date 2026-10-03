@@ -69,7 +69,7 @@ async def test_registered_motor_hold_delivers_only_primary_literal_stream_and_re
         await invoke(
             hass,
             [(coordinator, const.SIDE_BOTH)],
-            "vmatbasic_hold_control",
+            "hold_control",
             control="back_up",
             duration=0.1,
         )
@@ -90,7 +90,7 @@ async def test_registered_xt_floor_hold_has_no_motor_stop(hass):
         await invoke(
             hass,
             [(coordinator, const.SIDE_BOTH)],
-            "vmatbasic_hold_control",
+            "hold_control",
             control="floor_hold",
             duration=0.1,
         )
@@ -105,7 +105,7 @@ async def test_registered_xt_floor_hold_has_no_motor_stop(hass):
 async def test_registered_rename_retains_only_successful_primary_name(hass, name, packet):
     coordinator = await target(hass)
     try:
-        await invoke(hass, [(coordinator, const.SIDE_BOTH)], "vmatbasic_rename", name=name)
+        await invoke(hass, [(coordinator, const.SIDE_BOTH)], "rename", name=name)
         assert written(coordinator.controller)[0][1] == packet
         assert coordinator.entry.data[CONF_NAME] == packet.decode()
         assert coordinator.command_trace[-1]["payload"] == {
@@ -121,7 +121,7 @@ async def test_failed_rename_does_not_change_retained_name(hass):
     coordinator.client.write_gatt_char.side_effect = RuntimeError("failed")
     try:
         with pytest.raises(RuntimeError):
-            await invoke(hass, [(coordinator, const.SIDE_BOTH)], "vmatbasic_rename", name="New")
+            await invoke(hass, [(coordinator, const.SIDE_BOTH)], "rename", name="New")
         assert coordinator.entry.data[CONF_NAME] == "App receiver"
     finally:
         await close(coordinator)
@@ -130,8 +130,8 @@ async def test_failed_rename_does_not_change_retained_name(hass):
 @pytest.mark.parametrize(
     "service,data",
     [
-        ("vmatbasic_hold_control", {"control": "floor_hold", "duration": 0.1}),
-        ("vmatbasic_rename", {"name": "New"}),
+        ("hold_control", {"control": "floor_hold", "duration": 0.1}),
+        ("rename", {"name": "New"}),
     ],
 )
 async def test_accessory_multi_target_rejection_precedes_any_write(hass, service, data):
@@ -355,7 +355,7 @@ async def test_real_child_entry_preserves_physical_profile_settings_and_guarded_
         assert parent.consume_internal_entry_update(parent.entry)
         assert not parent.consume_internal_entry_update(parent.entry)
         assert not right.consume_internal_entry_update(parent.entry)
-        await invoke(hass, [(parent, const.SIDE_LEFT)], "vmatbasic_rename", name="Left named")
+        await invoke(hass, [(parent, const.SIDE_LEFT)], "rename", name="Left named")
         assert get_child(parent.entry.data, const.SIDE_LEFT)[CONF_NAME] == "Left named"
         assert dict(right.entry.data) == before_right
     finally:
@@ -366,8 +366,8 @@ async def test_real_child_entry_preserves_physical_profile_settings_and_guarded_
 @pytest.mark.parametrize(
     "service,data",
     [
-        ("vmatbasic_hold_control", {"control": "floor_hold", "duration": 0.1}),
-        ("vmatbasic_rename", {"name": "Changed"}),
+        ("hold_control", {"control": "floor_hold", "duration": 0.1}),
+        ("rename", {"name": "Changed"}),
     ],
 )
 async def test_real_paired_accessory_both_rejects_before_either_write(hass, service, data):
@@ -384,8 +384,8 @@ async def test_real_paired_accessory_both_rejects_before_either_write(hass, serv
 @pytest.mark.parametrize(
     "service,data",
     [
-        ("vmatbasic_hold_control", {"control": "floor_hold", "duration": 0.1}),
-        ("vmatbasic_rename", {"name": "Changed"}),
+        ("hold_control", {"control": "floor_hold", "duration": 0.1}),
+        ("rename", {"name": "Changed"}),
     ],
 )
 async def test_failed_accessory_execution_releases_preflight_idle_ownership(hass, service, data):
