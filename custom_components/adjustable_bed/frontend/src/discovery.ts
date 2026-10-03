@@ -157,6 +157,8 @@ export function bedEntitiesForDevice(
         if (key.endsWith("_angle")) motor(key.slice(0, -6)).angle = id;
         // The Sleep Smart pump's pressure reading sits with firmness controls.
         else if (key === "logicdata_air_pump_pressure") bed.firmness.push(id);
+        // INNOVA reports its massage timer indicator; the app has no timer select.
+        else if (key === "innova_massage_timer") bed.massage.timer = id;
         break;
 
       case "number":
@@ -251,7 +253,11 @@ export function bedEntitiesForDevice(
         } else if (key.startsWith("logicdata_air_pump_")) {
           // Pump taps have no motor, preset or memory-slot meaning.
           bed.utility.push(id);
-        } else if (key === "ore_comfort_massage_start") {
+        } else if (
+          key === "ore_comfort_massage_start" ||
+          key === "innova_massage_level" ||
+          key === "innova_massage_timer_hold"
+        ) {
           bed.massage.buttons.push(id);
         } else if (key === "ore_comfort_program_flat" || key === "ore_comfort_program_zero_g") {
           // Preset saves have no memory slot.
@@ -310,7 +316,7 @@ export function bedEntitiesForDevice(
 
       case "binary_sensor":
         if (key === "ble_connection") bed.connectivity = id;
-        else if (key === "under_bed_lights" || key === "adjustable_lite_light") bed.lights.state = id;
+        else if (key === "under_bed_lights" || key === "adjustable_lite_light" || key === "innova_light") bed.lights.state = id;
         else if (key.startsWith("bed_presence")) bed.presence.push(id);
         break;
 

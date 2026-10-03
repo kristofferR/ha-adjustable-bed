@@ -209,8 +209,8 @@ from .const import (
     NAME_RULE_VARIANTS_BY_BED_TYPE,
     OCTO_VARIANT_STAR2,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
+    OFFLINE_CAPABILITY_SAFE_VARIANTS,
     OKIMAT_SERVICE_UUID,
-    OKIN_APP_VARIANTS,
     POSITION_FEEDBACK_TIMEOUT,
     POSITION_MODE_ACCURACY,
     REVERIE_BACK_MAX_ANGLE,
@@ -1256,15 +1256,17 @@ class AdjustableBedCoordinator:
             or isinstance(self.entry.data.get(CONF_BLE_DEVICE_NAME), str)
             or self._protocol_variant == SOLACE_VARIANT_WOOSA
         )
+        # An explicit variant whose capabilities come only from stored config.
+        variant_mintable = self._protocol_variant in OFFLINE_CAPABILITY_SAFE_VARIANTS.get(
+            bed_type, frozenset()
+        )
         mintable = (
             statically_mintable
+            or variant_mintable
             or stored_remacro_model
             # FSM Relax factory loads only its exact persisted capability body.
             # With no snapshot its action/memory descriptors remain empty.
             or bed_type == BED_TYPE_FSM_RELAX
-            # The explicit Okin app profiles derive every control from the stored
-            # variant, motor count and Heal Every Night settings.
-            or (bed_type == BED_TYPE_KEESON and self._protocol_variant in OKIN_APP_VARIANTS)
             or (bed_type == BED_TYPE_OCTO and (octo_snapshot is not None or is_octo_star2))
             or (bed_type == BED_TYPE_LINAK and (linak_snapshot is not None or is_linak_performance))
             or (bed_type == BED_TYPE_JENSEN and jensen_snapshot is not None)

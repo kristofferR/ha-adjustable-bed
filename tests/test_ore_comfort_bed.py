@@ -34,6 +34,7 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
+    KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_MAXCOIL_UNA,
     VARIANT_AUTO,
@@ -41,7 +42,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
-APPS = (KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_DYNASTY_BASES)
+APPS = (KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_DYNASTY_BASES, KEESON_VARIANT_BEDSENSE_BASES)
 ADDRESS = "AA:BB:CC:DD:05:60"
 STOP_FRAME = "e5fe160000000006"
 STORE_KEY = f"{DOMAIN}.app_state_{ADDRESS.replace(':', '_').lower()}"

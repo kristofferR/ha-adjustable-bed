@@ -107,6 +107,27 @@ test("Adjustable Lite light toggle and reported bulb state share the lighting se
   expect(bed.lights.state).toBe("binary_sensor.lite_light");
 });
 
+test("INNOVA light toggle and reported lamp state share the lighting section", () => {
+  const hass = hassWith([
+    entry("button.innova_toggle_light", "toggle_light"),
+    entry("binary_sensor.innova_light", "innova_light"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.lights.toggle).toBe("button.innova_toggle_light");
+  expect(bed.lights.state).toBe("binary_sensor.innova_light");
+});
+
+test("INNOVA massage level and memory-page timer buttons join the massage section", () => {
+  const hass = hassWith([
+    entry("button.innova_level", "innova_massage_level"),
+    entry("button.innova_timer_hold", "innova_massage_timer_hold"),
+    entry("sensor.innova_timer", "innova_massage_timer"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.massage.buttons).toEqual(["button.innova_level", "button.innova_timer_hold"]);
+  expect(bed.massage.timer).toBe("sensor.innova_timer");
+});
+
 test("exact app controls separate floor, bounded mood and massage surfaces", () => {
   const hass = hassWith([
     entry("light.floor", "under_bed_lights"),

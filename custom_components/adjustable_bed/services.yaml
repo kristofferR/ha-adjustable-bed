@@ -1015,6 +1015,30 @@ jiecang_rename:
         select:
           options: [both, left, right]
 
+innova_rename:
+  name: Rename INNOVA bed
+  description: Change the Bluetooth name of a bed using the INNOVA app profile.
+  fields:
+    device_id:
+      name: Device
+      description: A bed using the INNOVA app profile.
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    name:
+      name: Name
+      description: New Bluetooth name, 1 to 14 characters after trimming spaces.
+      required: true
+      selector:
+        text:
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
+
 generate_support_bundle:
   name: Generate Support Bundle
   description: Capture the full adjustable-bed support bundle. This combines BLE diagnostics, pairing evidence, retained setup/pairing logs, adapter and ESPHome proxy health, GATT details, scanner state, up to 30 ranked nearby Bluetooth devices, command trace, and recent integration logs into one JSON file. Nearby device names and addresses are included.
@@ -1737,6 +1761,53 @@ okin_app_hold_control:
             - both
             - left
             - right
+
+innova_hold_control:
+  name: Hold INNOVA control
+  description: Hold one control the INNOVA app streams while pressed, for a Keeson bed on the INNOVA profile. The key repeats every 100 ms; release sends one zero key 100 ms after the hold ends.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    control:
+      name: Control
+      description: A control on the selected screen. Combined exists on 2M, waist on 4M and lumbar on 3M and 4M.
+      required: true
+      selector:
+        select:
+          options:
+            - back_up
+            - back_down
+            - legs_up
+            - legs_down
+            - combined_up
+            - combined_down
+            - waist_up
+            - waist_down
+            - lumbar_up
+            - lumbar_down
+            - memory_a
+            - memory_b
+            - memory_timer
+    duration:
+      name: Duration
+      description: Hold time in seconds, from 0.1 to 60.
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.1
+          unit_of_measurement: s
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
 
 restonic_hold_control:
   name: Hold Restonic BT control

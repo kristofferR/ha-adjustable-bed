@@ -550,7 +550,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_CB24: "Okin CB24 (SmartBed by Okin, Amada)",
     BED_TYPE_OKIN_DOT: "Okin DOT (FurniMove RF1058/RF34/RF6707 remotes)",
     BED_TYPE_OKIN_FFE: "Okin FFE (13/15 series)",
-    BED_TYPE_OKIN_ORE: "Okin ORE (Dynasty, INNOVA)",
+    BED_TYPE_OKIN_ORE: "Okin ORE (Glideaway Motion app)",
     BED_TYPE_OKIN_64BIT: "Okin 64-Bit (10-byte commands)",
     BED_TYPE_OKIN_CB35: "Okin CB35 (Sealy Posturematic, DewertOkin Star)",
     BED_TYPE_OKIN_CST: "Okin CST (Rize product profiles, 14-byte dual-field)",
