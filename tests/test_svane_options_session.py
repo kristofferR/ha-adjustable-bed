@@ -87,7 +87,7 @@ async def test_effective_p1_alias_options_preserve_saved_slots_and_recall(hass, 
     (SVANE_VARIANT_JMC, SVANE_VARIANT_JENSEN_LINON),
     (SVANE_VARIANT_MULTI, SVANE_VARIANT_JMC),
 ])
-async def test_real_profile_change_removes_preferences_and_cannot_resurrect_jmc(hass, old, new):
+async def test_profile_change_keeps_each_profiles_preferences(hass, old, new):
     preferences = {"intensity": 95, "slots": ["00112233", "44556677"]}
     entry = MockConfigEntry(domain=DOMAIN, data={
         CONF_ADDRESS: "AA:BB:CC:DD:EE:01", CONF_NAME: "Svane", CONF_BED_TYPE: BED_TYPE_SVANE,
@@ -102,18 +102,13 @@ async def test_real_profile_change_removes_preferences_and_cannot_resurrect_jmc(
     peer.restore(preferences)
 
     await apply_options(hass, entry, {CONF_PROTOCOL_VARIANT: new})
-    assert await stored_app_state(original._coordinator, old_profile) == {}
-    await apply_options(hass, entry, {CONF_PROTOCOL_VARIANT: SVANE_VARIANT_JMC})
+    # The old profile keeps its slot, so changing back restores it.
+    assert await stored_app_state(original._coordinator, old_profile) == preferences
+    await apply_options(hass, entry, {CONF_PROTOCOL_VARIANT: old})
     rebuilt = await controller_for_entry(hass, entry)
-    assert rebuilt.session is not original.session
-    assert rebuilt.session.intensity == 90
-    assert rebuilt.session.jmc_slots == (bytes.fromhex("81388113"), bytes.fromhex("82738204"))
-    assert not rebuilt.session.multi_slots
+    assert rebuilt.session.preferences() == preferences
     assert get_svane_session(hass, "AA:BB:CC:DD:EE:02", "jmc") is peer
     assert peer.preferences() == preferences
-    rebuilt.validate_memory_recall(1)
-    await rebuilt.preset_memory(1)
-    assert [packet for _, _, packet in written(rebuilt)] == ["100481388113"]
 
 
 async def test_ordinary_jmc_options_retain_preferences_and_same_session(hass):

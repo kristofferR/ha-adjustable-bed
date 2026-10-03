@@ -6,9 +6,8 @@ key), so a profile change never reads another profile's state. The address
 already separates the sides of a two-address pair. Coordinators sharing an
 address share one instance, so their saves never overwrite each other's slot.
 The coordinator restores a slot into every new controller and saves it whenever
-the controller publishes state. Svane and Heal Every Night preferences end with
-their profile, so the options flow discards that slot when the profile changes;
-other profiles keep theirs.
+the controller publishes state. Changing profile keeps every profile's slot,
+so changing back restores that profile's preferences.
 
 Where a value belongs:
 
@@ -52,8 +51,6 @@ class AppStateStore:
     def __init__(self, hass: HomeAssistant, address: str) -> None:
         self._store: Store[dict[str, dict[str, Any]]] = Store(hass, 1, app_state_storage_key(address))
         self._data: dict[str, dict[str, Any]] | None = None
-        # Slots of a profile the user switched away from, until it is restored again.
-        self._discarded: set[str] = set()
         self._pending = False
         self._lock = asyncio.Lock()
 
@@ -71,12 +68,11 @@ class AppStateStore:
         """Return a copy of one slot, loading the store on first use."""
         async with self._lock:
             data = await self._async_load()
-        self._discarded.discard(slot)
         return dict(data.get(slot, {}))
 
     def update(self, slot: str, state: Mapping[str, Any]) -> None:
         """Schedule a save when a loaded slot changed."""
-        if self._data is None or slot in self._discarded or self._data.get(slot) == state:
+        if self._data is None or self._data.get(slot) == state:
             return
         self._data[slot] = dict(state)
         self._schedule_save()
@@ -85,24 +81,12 @@ class AppStateStore:
         """Write one slot now; on failure raise and keep the previous value."""
         async with self._lock:
             data = await self._async_load()
-            if slot in self._discarded or data.get(slot) == state:
+            if data.get(slot) == state:
                 return
             await self._store.async_save({**data, slot: dict(state)})
             data[slot] = dict(state)
             # The write included every pending change and cancelled the delayed one.
             self._pending = False
-
-    async def async_discard(self, slot: str) -> None:
-        """Forget a profile's state when the user changes profile.
-
-        Saves by controllers of the old profile are ignored until a new
-        controller restores the slot, so changing back starts fresh.
-        """
-        async with self._lock:
-            data = await self._async_load()
-            self._discarded.add(slot)
-            if data.pop(slot, None) is not None:
-                self._schedule_save()
 
     async def async_save(self) -> None:
         """Write pending changes now (entry unload)."""

@@ -56,8 +56,6 @@ from .adapter import (
 )
 from .address_lock import async_get_connect_lock
 from .app_profiles import hidden_generic_fields, is_per_side_variant, per_side_profile
-from .app_session import drop_app_sessions
-from .app_state_store import app_state_slot, app_state_store
 from .beds.remacro_protocol import add_remacro_model, app_for_variant
 from .bluetooth_bond import (
     BondRemovalResult,
@@ -107,7 +105,6 @@ from .const import (
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
-    BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
@@ -238,7 +235,6 @@ from .const import (
     JIECANG_APP_LAYOUTS,
     JIECANG_APP_PROFILES,
     JIECANG_APP_TRANSPORTS,
-    KEESON_VARIANT_HEAL_EVERY_NIGHT,
     LEGGETT_APP_DEFAULT_PROFILE,
     LEGGETT_APP_MOTOR_COUNTS,
     LEGGETT_APP_PROFILES,
@@ -7804,38 +7800,6 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                                 control_type="other" if control == "other" else int(control),
                                 remembered_floor_default=new_data[CONF_VIBRADORM_FLOOR_DEFAULT],
                             )
-            if not separate_address_pair and (
-                bed_type == BED_TYPE_SVANE or self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_SVANE
-            ):
-                old_variant = self.config_entry.data.get(CONF_PROTOCOL_VARIANT) or VARIANT_AUTO
-                new_variant = new_data.get(CONF_PROTOCOL_VARIANT) or VARIANT_AUTO
-                if bed_type != self.config_entry.data.get(CONF_BED_TYPE) or new_variant != old_variant:
-                    # The old profile's preferences and session end with it.
-                    address = self.config_entry.data.get(CONF_ADDRESS)
-                    if isinstance(address, str):
-                        drop_app_sessions(self.hass, address)
-                        if self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_SVANE:
-                            profile = "jmc" if old_variant == SVANE_VARIANT_JMC else "multi"
-                            await app_state_store(self.hass, address).async_discard(
-                                app_state_slot(BED_TYPE_SVANE, old_variant, profile)
-                            )
-            old_okin_variant = self.config_entry.data.get(CONF_PROTOCOL_VARIANT)
-            if (
-                not separate_address_pair
-                and self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_KEESON
-                and old_okin_variant == KEESON_VARIANT_HEAL_EVERY_NIGHT
-                and (
-                    bed_type != BED_TYPE_KEESON
-                    or new_data.get(CONF_PROTOCOL_VARIANT) != old_okin_variant
-                )
-            ):
-                # Heal Every Night's settings and page state belong to that profile.
-                address = self.config_entry.data.get(CONF_ADDRESS)
-                if isinstance(address, str):
-                    drop_app_sessions(self.hass, address)
-                    await app_state_store(self.hass, address).async_discard(
-                        app_state_slot(BED_TYPE_KEESON, old_okin_variant)
-                    )
             if any(new_data.get(key) != self.config_entry.data.get(key) for key in (CONF_STARCODE_M5X5_PROFILE, CONF_BLE_DEVICE_NAME, CONF_STARCODE_LIFT_ENTRIES)):
                 from .starcode_accessory_group import cancel_group_operations
                 cancel_group_operations(self.hass, self.config_entry.entry_id)

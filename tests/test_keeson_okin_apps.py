@@ -858,7 +858,7 @@ def test_drop_sessions_forgets_only_that_bed(hass: HomeAssistant):
     assert app_session(hass, "AA:BB:CC:DD:EE:02", profile, HealSession) is second
 
 
-async def test_heal_session_and_settings_end_with_the_profile_or_entry(
+async def test_heal_settings_survive_a_profile_change_and_end_with_the_entry(
     hass: HomeAssistant,
     mock_coordinator_connected,
     mock_async_ble_device_from_address: MagicMock,
@@ -875,7 +875,7 @@ async def test_heal_session_and_settings_end_with_the_profile_or_entry(
     sessions = hass.data[DOMAIN]["app_sessions"]
     assert address in sessions
 
-    # Changing the profile in the options flow drops the settings and the page state.
+    # Changing the profile keeps Heal Every Night's slot for a later change back.
     form = await hass.config_entries.options.async_init(entry.entry_id)
     form = await hass.config_entries.options.async_configure(
         form["flow_id"], user_input={"next_step_id": "settings"}
@@ -893,12 +893,10 @@ async def test_heal_session_and_settings_end_with_the_profile_or_entry(
     assert result["type"] == FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
     assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SIMON_LI
-    assert address not in sessions
 
-    # Changing back starts with default settings.
     await _reload(hass, entry, **{CONF_PROTOCOL_VARIANT: KEESON_VARIANT_HEAL_EVERY_NIGHT})
     controller = hass.data[DOMAIN][entry.entry_id].capability_controller
-    assert controller.persisted_app_state["installation"] is False
+    assert controller.persisted_app_state["installation"] is True
     assert address in hass.data[DOMAIN]["app_sessions"]
     # A Heal entry's state also ends when the entry is removed.
     assert await hass.config_entries.async_remove(entry.entry_id)

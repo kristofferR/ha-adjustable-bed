@@ -363,9 +363,9 @@ until the entry is removed or its profile changes. Home Assistant allows
 massage Off and any timer at any time, while the app disables Off before a
 timer starts and disables the running timer's button.
 
-Three settings selects mirror the app's settings page. They send nothing,
-only change which key the head and foot controls write, and are cleared when
-the profile changes:
+Three settings selects mirror the app's settings page. They send nothing and
+only change which key the head and foot controls write. They are stored for the
+Heal Every Night profile, so changing to another profile and back restores them:
 
 | Setting | Effect |
 |---------|--------|

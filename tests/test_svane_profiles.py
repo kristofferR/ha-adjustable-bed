@@ -123,7 +123,7 @@ async def test_preverification_normalizes_legacy_options_before_probe(hass):
     assert flow._pending_entry[CONF_DISABLE_ANGLE_SENSING] is True
 
 
-async def test_options_explicit_jmc_persists_and_clears_changed_app_session(hass):
+async def test_options_explicit_jmc_persists_with_its_own_session(hass):
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={
@@ -150,7 +150,7 @@ async def test_options_explicit_jmc_persists_and_clears_changed_app_session(hass
         )
     assert result["type"] == "create_entry"
     assert entry.data[CONF_PROTOCOL_VARIANT] == SVANE_VARIANT_JMC
-    assert not get_svane_session(hass, entry.data[CONF_ADDRESS], "multi").light_on
+    assert not get_svane_session(hass, entry.data[CONF_ADDRESS], "jmc").light_on
 
 
 @pytest.mark.parametrize(
