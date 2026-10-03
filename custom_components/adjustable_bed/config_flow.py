@@ -382,7 +382,9 @@ BED_TYPE_AUTO_DETECT = "auto_detect"
 # choose, rather than silently configuring a guessed protocol.
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
-_EXPLICIT_APP_HINTS = frozenset({BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC})
+_EXPLICIT_APP_HINTS = frozenset(
+    {BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE}
+)
 
 
 def _is_valid_rmcontrol_variant(product: object, variant: str) -> bool:

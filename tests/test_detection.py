@@ -885,7 +885,7 @@ class TestDetectBedTypeByManufacturerData:
         )
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type == BED_TYPE_DEWERTOKIN
-        assert result.confidence == 0.6
+        assert result.confidence == 0.95
         assert BED_TYPE_FURNIMOVE in result.ambiguous_types
         assert result.manufacturer_id == MANUFACTURER_ID_DEWERTOKIN
 
@@ -1128,7 +1128,7 @@ class TestOkinUUIDDisambiguation:
         result = detect_bed_type_detailed(service_info)
 
         assert result.bed_type == BED_TYPE_DEWERTOKIN
-        assert result.confidence == 0.6
+        assert result.confidence == 0.9
         assert BED_TYPE_FURNIMOVE in result.ambiguous_types
         assert "uuid:dewertokin_rf_gateway" in result.signals
 
@@ -2524,13 +2524,13 @@ class TestDetectionConfidenceScores:
         assert result.confidence == 1.0
 
     def test_manufacturer_data_high_confidence(self):
-        """A shared manufacturer ID requires an explicit app profile."""
+        """DewertOkin keeps its confident route; FurniMove stays an explicit app candidate."""
         service_info = _make_service_info(
             name="Unknown",
             manufacturer_data={MANUFACTURER_ID_DEWERTOKIN: b"\x01"},
         )
         result = detect_bed_type_detailed(service_info)
-        assert result.confidence == 0.6
+        assert result.confidence == 0.95
         assert BED_TYPE_FURNIMOVE in result.ambiguous_types
 
     def test_name_pattern_medium_confidence(self):

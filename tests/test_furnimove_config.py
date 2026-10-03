@@ -181,3 +181,39 @@ def test_app_gateway_is_a_candidate_with_no_inferred_handset():
     assert result.bed_type == BED_TYPE_FURNIMOVE
     assert result.ambiguous_types
     assert result.detected_remote is None
+
+
+@pytest.mark.parametrize(
+    ("service_uuids", "manufacturer_data", "expected", "confident"),
+    [
+        # The app checks its manufacturer and 1523 predicates before the gateway.
+        (["00001420-0000-1000-8000-00805f9b34fb"], {1643: b"\x01"}, "dewertokin", True),
+        (
+            ["00001420-0000-1000-8000-00805f9b34fb", "00001523-0000-1000-8000-00805f9b34fb"],
+            {},
+            "dewertokin",
+            True,
+        ),
+        # Another bed's unique service UUID keeps its own route.
+        (
+            ["00001420-0000-1000-8000-00805f9b34fb", "00001234-0000-1000-8000-00805f9b34fb"],
+            {},
+            "jensen",
+            True,
+        ),
+    ],
+)
+def test_gateway_service_never_outranks_another_match(
+    service_uuids, manufacturer_data, expected, confident
+):
+    from custom_components.adjustable_bed.config_flow import _confident_auto_detect
+
+    info = MagicMock()
+    info.name = "Bed"
+    info.address = "AA:BB:CC:DD:EE:FF"
+    info.service_uuids = service_uuids
+    info.manufacturer_data = manufacturer_data
+    result = detect_bed_type_detailed(info)
+    assert result.bed_type == expected
+    assert BED_TYPE_FURNIMOVE in result.ambiguous_types
+    assert (_confident_auto_detect(result) == expected) is confident

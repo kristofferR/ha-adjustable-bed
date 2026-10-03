@@ -44,6 +44,13 @@ each handset under one bed type only:
 Existing entries keep working unchanged. An Okin DOT entry using 90167, 91983
 or 93558 receives the repair described below.
 
+Discovery follows the same split. DewertOkin manufacturer data, the `1523`
+service and the RF-Gateway service keep their confident DewertOkin route, with
+FurniMove listed as an optional app candidate. The app's gateway service
+`00001420-0000-1000-8000-00805f9b34fb` is its last acceptance rule, so it only
+proposes FurniMove when nothing else matched; with another match it adds
+FurniMove as a candidate without overriding it.
+
 Motor count, massage availability and action ordering come from the selected
 table. An unavailable ID requires a new verified table; the integration does
 not contact the cloud or ship the app's API credential. Motor position and

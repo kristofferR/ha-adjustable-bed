@@ -224,6 +224,9 @@ from .svane_state import is_svane_discovery_name
 
 _LOGGER = logging.getLogger(__name__)
 
+# Advertised gateway service FurniMove accepts as an RF receiver (scan predicate 4).
+_FURNIMOVE_GATEWAY_SERVICE_UUID = "00001420-0000-1000-8000-00805f9b34fb"
+
 
 def _is_motosleep_local_name(device_name: str) -> bool:
     """Return whether the normalized name is an HHC or exact MOTO bed name."""
@@ -1114,6 +1117,23 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     from .beds.starcode_abm5_4_profiles import TRANSPORTS, scan_matches
 
     result = _detect_bed_type_detailed(service_info)
+    advertised = {str(uuid).lower() for uuid in (service_info.service_uuids or [])}
+    # FurniMove accepts this gateway service last, after its manufacturer and
+    # 1523 service predicates, and without a payload mask. It names an app
+    # candidate, never a handset or layout, so any other match keeps priority.
+    if _FURNIMOVE_GATEWAY_SERVICE_UUID in advertised:
+        if result.bed_type is None:
+            if not any(signal.startswith("excluded:") for signal in result.signals):
+                return DetectionResult(
+                    bed_type=BED_TYPE_FURNIMOVE,
+                    confidence=0.6,
+                    signals=["uuid:furnimove_gateway"],
+                    ambiguous_types=[BED_TYPE_DEWERTOKIN],
+                )
+        elif result.bed_type != BED_TYPE_FURNIMOVE:
+            if BED_TYPE_FURNIMOVE not in (result.ambiguous_types or ()):
+                result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_FURNIMOVE]
+            result.signals.append("uuid:furnimove_gateway")
     if result.bed_type is not None and scan_matches(service_info.name):
         candidates = list(result.ambiguous_types or ())
         if BED_TYPE_STARCODE_ABM5_4 not in candidates:
@@ -1201,15 +1221,6 @@ def _detect_bed_type_detailed(
                     bed_type=None, confidence=0.0, signals=["excluded:" + pattern]
                 )
 
-    # FurniMove accepts this advertised gateway service without a payload mask.
-    # It identifies an app candidate, never a handset or actuator layout.
-    if "00001420-0000-1000-8000-00805f9b34fb" in service_uuids:
-        return DetectionResult(
-            bed_type=BED_TYPE_FURNIMOVE, confidence=0.6,
-            signals=["uuid:furnimove_gateway"],
-            ambiguous_types=[BED_TYPE_DEWERTOKIN],
-        )
-
     # Priority 1: Check manufacturer data (highest confidence, unique signal)
     mfr_bed_type, mfr_confidence, mfr_id = _check_manufacturer_data(service_info.manufacturer_data)
     # A host-map record is a candidate hint, not proof of the source's first
@@ -1244,9 +1255,11 @@ def _detect_bed_type_detailed(
             service_info.name,
             mfr_id,
         )
+        # FurniMove also accepts DewertOkin receivers, but handsets on the
+        # released routes stay there; it remains an explicit app candidate.
         return DetectionResult(
             bed_type=mfr_bed_type,
-            confidence=0.6 if mfr_bed_type == BED_TYPE_DEWERTOKIN else mfr_confidence,
+            confidence=mfr_confidence,
             signals=signals,
             manufacturer_id=mfr_id,
             ambiguous_types=[BED_TYPE_FURNIMOVE]
@@ -1312,7 +1325,7 @@ def _detect_bed_type_detailed(
         )
         return DetectionResult(
             bed_type=BED_TYPE_DEWERTOKIN,
-            confidence=0.6,
+            confidence=0.9,
             signals=signals,
             ambiguous_types=[BED_TYPE_FURNIMOVE],
         )
@@ -1326,7 +1339,7 @@ def _detect_bed_type_detailed(
         )
         return DetectionResult(
             bed_type=BED_TYPE_DEWERTOKIN,
-            confidence=0.6,
+            confidence=0.9,
             signals=signals,
             ambiguous_types=[BED_TYPE_FURNIMOVE],
         )
