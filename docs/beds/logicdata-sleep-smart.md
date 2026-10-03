@@ -57,7 +57,7 @@ frames.
 | Massage stop / mode | Massage stop only stops massage. Mode sends its fixed frame, a two-byte release at +1000 ms and a short release at +1100 ms |
 | Refresh massage state | The massage tab's parameter query, sent at 100, 250 and 450 ms |
 | Factory reset | Disabled by default. One reset frame; the app warns that it deletes stored memories and that a later held DOWN performs a reference drive |
-| `logicdata_rename` | `01 FC 07`, byte length and UTF-8 name on the name characteristic, once |
+| `rename` | `01 FC 07`, byte length and UTF-8 name on the name characteristic, once |
 
 Cancellation and failures always finish with the release frame, even though the
 app's key-release and cancel paths do not.
@@ -112,7 +112,7 @@ The value is shown as received; the app defines no unit. The reading clears when
 the link closes. New pump entries keep the link between commands for the idle
 timeout so the reading stays current.
 
-`logicdata_rename` renames the pump with `AT+ENAT`, `AT+LENA<name>` after 50 ms
+`rename` renames the pump with `AT+ENAT`, `AT+LENA<name>` after 50 ms
 and `AT+REST` after 100 ms, each ending in CR LF. The pump restarts afterwards.
 Names follow the same alphabet with at most 20 characters.
 

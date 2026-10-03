@@ -219,7 +219,7 @@ UART with another C must connect and finish classification before its complete
 catalog is known. U remains independent. Offline capabilities do not create
 observed feedback or permission for state-gated timer/light/massage commands.
 
-The `adjustable_bed.starcode_abm5_4_hold_control` action accepts
+The `adjustable_bed.hold_control` action accepts
 `device_id`, profile-specific `control`, `duration` in seconds (0.1–60), and an
 optional `side`, with whole-target preflight before writes. The controller's
 internal duration is milliseconds. Its exact 23 control keys are `head_up`,

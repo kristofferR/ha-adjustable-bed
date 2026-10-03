@@ -19,7 +19,7 @@ Frames are `0c 02`, a big-endian 32-bit primary field, a big-endian 32-bit secon
 
 Values occupy the primary field unless a secondary value is listed.
 
-| Control (`tranquil_hold_control` name) | Primary | Secondary | Source |
+| Control (`hold_control` name) | Primary | Secondary | Source |
 |---|---:|---:|---|
 | Head up/down (`head_up`, `head_down`) | `0x1`, `0x2` | 0 | Touch and voice |
 | Foot up/down (`foot_up`, `foot_down`) | `0x4`, `0x8` | 0 | Touch and voice |
@@ -49,7 +49,7 @@ Only M1 and M2 are numbered memory slots. **Save Zero Gravity** and **Save Loung
 
 Held controls repeat every 100 ms. Release attempts two zero frames at +100 and +200 ms from one origin, with a fresh cancellation event so cancellation cannot suppress either. Every release is global, so all covers share one scheduler resource.
 
-Button and preset durations: Flat holds 1500 ms and Lounge, Zero Gravity, Anti-Snore, waves, massage off and light commands hold 500 ms, matching the app's voice deadlines. Save buttons hold five seconds, matching the app help; the app has no hold timer or storage acknowledgement. M1/M2 recall, selectors and massage-page buttons use the same 500 ms bound as an HA policy. `tranquil_hold_control` holds any literal action for 0.1 to 60 seconds.
+Button and preset durations: Flat holds 1500 ms and Lounge, Zero Gravity, Anti-Snore, waves, massage off and light commands hold 500 ms, matching the app's voice deadlines. Save buttons hold five seconds, matching the app help; the app has no hold timer or storage acknowledgement. M1/M2 recall, selectors and massage-page buttons use the same 500 ms bound as an HA policy. `hold_control` holds any literal action for 0.1 to 60 seconds.
 
 Excluded app behavior: the voice "stop" branch sends Head Up before scheduling STOP, so HA sends STOP only. Also excluded: unbounded voice motion, remote touch-mask replay, delayed stops that overlap newer commands, and streams that survive disconnect or device changes.
 

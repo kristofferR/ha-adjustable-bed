@@ -50,8 +50,8 @@ own command sequences instead of sharing a universal repeat/stop schedule.
   either app's executor.
 - `adjustable_bed.jiecang_stop_wake` stops active wake massage without changing
   the saved alarm schedule.
-- `adjustable_bed.jiecang_rename` writes a Bluetooth name of up to 20 ASCII
-  letters or digits. This changes the advertised device name, separately from
+- `adjustable_bed.rename` (or the older `jiecang_rename`) writes a Bluetooth
+  name of up to 20 ASCII letters or digits. This changes the advertised device name, separately from
   its friendly name in Home Assistant.
 
 The normal cover, button, light, number and select actions remain available for
