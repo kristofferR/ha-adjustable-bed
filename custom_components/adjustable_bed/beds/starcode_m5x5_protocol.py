@@ -116,7 +116,9 @@ def _normal_and_sonic(data: bytes) -> dict[str, StateValue]:
         "light_mode": data[15] >> 4,
         "light_brightness": data[14] >> 4,
         "light_on": color > 0,
-        "light_color_index": _closest_color(rgb) if direct else color,
+        # Report direct RGB in the wire numbering the palette select uses
+        # (0 = off, 1 = white): palette position p is wire index p + 1.
+        "light_color_index": _closest_color(rgb) + 1 if direct else color,
         "light_rgb": rgb,
         "light_rgb_mode": int(direct),
         "sonic_head_level": sonic_head,

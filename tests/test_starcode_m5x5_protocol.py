@@ -595,8 +595,9 @@ def test_changed_and_identical_frames_are_processed_without_debounce_drop() -> N
         (5, 0x00FF00, 5),
         (6, 0x0000FF, 6),
         (7, 0x800080, 7),
-        (8, 0x800080, 6),
-        (15, 0xFF0000, 1),
+        (8, 0x800080, 7),
+        (15, 0xFF0000, 2),
+        (9, 0xFFFFFF, 1),
     ],
 )
 def test_palette_wire_index_and_direct_color_nearest_index(
