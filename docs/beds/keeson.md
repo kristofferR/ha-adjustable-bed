@@ -282,7 +282,9 @@ Each app controls one address, so add one entry per seat or bed. Their
 frames carry no side field. In a two-address pair, unpair the beds before
 changing to, from or between these profiles, so each side keeps its own app,
 and before changing the motor count while a side uses Heal Every Night,
-whose motor count picks that receiver's product.
+whose motor count picks that receiver's product. Every control comes from the
+stored profile, so a side that is out of range keeps its entities and the
+other side of the pair still loads.
 
 All three write `E5 FE 16 + key_be32 + (~sum(bytes 0-6) & 0xFF)` to the first
 FFE9 characteristic of the last service, in Java UUID order, that has one.

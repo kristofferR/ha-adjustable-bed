@@ -456,7 +456,13 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
         """Return the current timer setting from controller state."""
         controller = self._coordinator.controller
         if controller is None:
-            timer_mode = self._coordinator.controller_state.get("woosa_massage_timer", 0)
+            # Between connections, the timer the profile last published.
+            state = self._coordinator.controller_state
+            timer_mode = (
+                state.get("okin_app_massage_timer")
+                if "okin_app_massage_timer" in state
+                else state.get("woosa_massage_timer", 0)
+            )
         else:
             timer_mode = controller.get_massage_state().get("timer_mode")
 

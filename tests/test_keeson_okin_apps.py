@@ -13,7 +13,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from types import SimpleNamespace
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, call
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 from bleak.exc import BleakError
@@ -1190,3 +1190,124 @@ async def test_paired_heal_motor_count_change_requires_unpairing(
     assert result["errors"] == {CONF_MOTOR_COUNT: "okin_app_unpair_first"}
     for child in ("left", "right"):
         assert effective_child_data(entry.data, child)[CONF_MOTOR_COUNT] == 2
+
+
+@pytest.mark.parametrize(
+    ("variant", "mintable"),
+    [
+        (KEESON_VARIANT_HEAL_EVERY_NIGHT, True),
+        (KEESON_VARIANT_SIMON_LI, True),
+        (KEESON_VARIANT_OKIN_SEATING, True),
+        (KEESON_VARIANT_BASE, False),
+    ],
+)
+async def test_okin_app_profiles_mint_offline_from_stored_config(
+    hass: HomeAssistant, variant: str, mintable: bool
+):
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:91",
+            CONF_NAME: "Seat",
+            CONF_BED_TYPE: BED_TYPE_KEESON,
+            CONF_PROTOCOL_VARIANT: variant,
+            CONF_MOTOR_COUNT: 3,
+        },
+    )
+    entry.add_to_hass(hass)
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    await coordinator.async_prime_offline_controller()
+    controller = coordinator.capability_controller
+    assert isinstance(controller, OkinAppKeesonController) is mintable
+    if mintable:
+        assert controller.client is None
+        assert controller.controller_entity_discovery_complete
+
+
+async def test_pair_with_an_offline_okin_receiver_still_loads(
+    hass: HomeAssistant,
+    mock_coordinator_connected,
+    mock_async_ble_device_from_address: MagicMock,
+    enable_custom_integrations,
+):
+    """The unreachable side mints its controls from config; the other side runs."""
+    from homeassistant.config_entries import ConfigEntryState
+
+    from custom_components.adjustable_bed.const import CONF_PAIR_ID
+    from custom_components.adjustable_bed.pairing import build_pair_entry_data
+
+    left, right = "AA:BB:CC:DD:EE:93", "AA:BB:CC:DD:EE:94"
+
+    def side(address: str, variant: str) -> dict[str, Any]:
+        return {
+            CONF_ADDRESS: address,
+            CONF_NAME: "Seat",
+            CONF_BED_TYPE: BED_TYPE_KEESON,
+            CONF_PROTOCOL_VARIANT: variant,
+            CONF_MOTOR_COUNT: 3,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PREFERRED_ADAPTER: "auto",
+        }
+
+    data = build_pair_entry_data(
+        side(left, KEESON_VARIANT_HEAL_EVERY_NIGHT),
+        side(right, KEESON_VARIANT_SIMON_LI),
+        name="Paired seats",
+    )
+    pair = MockConfigEntry(domain=DOMAIN, data=data, unique_id=data[CONF_PAIR_ID], version=4)
+    pair.add_to_hass(hass)
+    registry = er.async_get(hass)
+    # The offline side already owns controller-gated controls from earlier runs.
+    registry.async_get_or_create("button", DOMAIN, f"{right}_okin_app_home", config_entry=pair)
+
+    original_connect = AdjustableBedCoordinator.async_connect
+
+    async def connect(coordinator: AdjustableBedCoordinator) -> bool:
+        if coordinator.address == right:
+            return False
+        return await original_connect(coordinator)
+
+    with patch.object(AdjustableBedCoordinator, "async_connect", connect):
+        assert await hass.config_entries.async_setup(pair.entry_id)
+        await hass.async_block_till_done()
+    assert pair.state is ConfigEntryState.LOADED
+    children = hass.data[DOMAIN][pair.entry_id].children
+    offline = next(child for child in children.values() if child.address == right)
+    assert not offline.is_connected
+    assert isinstance(offline.capability_controller, OkinAppKeesonController)
+    assert await hass.config_entries.async_unload(pair.entry_id)
+    await hass.async_block_till_done()
+
+
+async def test_timer_select_keeps_the_heal_timer_across_a_disconnect(
+    hass: HomeAssistant,
+    mock_coordinator_connected,
+    mock_async_ble_device_from_address: MagicMock,
+    enable_custom_integrations,
+    no_sleep,
+):
+    address = "AA:BB:CC:DD:EE:95"
+    entry = _entry(hass, address, KEESON_VARIANT_HEAL_EVERY_NIGHT, 2)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    select_id = er.async_get(hass).async_get_entity_id("select", DOMAIN, f"{address}_massage_timer")
+    await hass.services.async_call(
+        "select", "select_option", {"entity_id": select_id, "option": "20 min"}, blocking=True
+    )
+    await hass.async_block_till_done()
+    assert hass.states.get(select_id).state == "20 min"
+
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    await coordinator.async_disconnect()
+    assert coordinator.controller is None
+    coordinator.handle_controller_state_updates({"unrelated": 1})  # Re-render the select.
+    await hass.async_block_till_done()
+    assert hass.states.get(select_id).state == "20 min"
+
+    # A reconnect republishes the retained session before the controller is assigned.
+    await coordinator.async_connect()
+    await hass.async_block_till_done()
+    assert hass.states.get(select_id).state == "20 min"
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
