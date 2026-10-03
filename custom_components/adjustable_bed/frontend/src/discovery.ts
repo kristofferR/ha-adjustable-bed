@@ -157,6 +157,8 @@ export function bedEntitiesForDevice(
         if (key.endsWith("_angle")) motor(key.slice(0, -6)).angle = id;
         // The Sleep Smart pump's pressure reading sits with firmness controls.
         else if (key === "logicdata_air_pump_pressure") bed.firmness.push(id);
+        // INNOVA reports its massage timer indicator; the app has no timer select.
+        else if (key === "innova_massage_timer") bed.massage.timer = id;
         break;
 
       case "number":

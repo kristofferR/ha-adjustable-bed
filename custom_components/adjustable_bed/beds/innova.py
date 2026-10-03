@@ -303,8 +303,9 @@ class InnovaController(KeesonController):
 
         A Stop, a cancelled hold or a replacement sends it at once, and a Stop
         arriving during the wait ends the wait. The write runs on a fresh event
-        in a shielded task that is awaited until it finishes, however often the
-        caller is cancelled; the cancellation is re-raised afterwards.
+        in its own task, which is never cancelled and is awaited until it
+        finishes, however often the caller is cancelled. The cancellation is
+        re-raised afterwards, unless the write failed: that error wins.
         """
         stop_requested = self._coordinator.cancel_command
         interrupted: asyncio.CancelledError | None = None
@@ -316,17 +317,19 @@ class InnovaController(KeesonController):
         release = asyncio.create_task(
             self.write_command(self._build_command(ZERO_KEY), cancel_event=asyncio.Event())
         )
-        # Keep awaiting the shielded write through any number of cancellations.
+        # asyncio.wait never cancels the task, so keep waiting for the write
+        # through any number of cancellations of this caller.
         while not release.done():
             try:
-                await asyncio.shield(release)
+                await asyncio.wait((release,))
             except asyncio.CancelledError:
                 interrupted = interrupted or asyncio.CancelledError()
-            except Exception:  # noqa: BLE001 - surfaced by release.result() below
-                break
         if interrupted is not None:
-            if not release.cancelled():
-                release.exception()  # Mark a write failure as retrieved.
+            # A failed release must not hide behind the cancellation: like an
+            # exception raised in a finally block, the write error wins.
+            failure = None if release.cancelled() else release.exception()
+            if failure is not None:
+                raise failure from interrupted
             raise interrupted
         release.result()
 

@@ -989,7 +989,8 @@
       "richmat_mh_choose_model": "The app asks for the model for this Bluetooth name. Choose the model in the protocol variant.",
       "richmat_mh_no_name": "The app selects the model from the Bluetooth name, which is unavailable. Choose the model in the protocol variant.",
       "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant.",
-      "ore_comfort_unpair_first": "Unpair the beds and configure each side separately before changing the MaxCoil Una, Dynasty Bases or Bedsense Bases app profile."
+      "ore_comfort_unpair_first": "Unpair the beds and configure each side separately before changing the MaxCoil Una, Dynasty Bases or Bedsense Bases app profile.",
+      "innova_unpair_first": "Unpair the beds and configure each side separately before changing the INNOVA app profile."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond\u2026",

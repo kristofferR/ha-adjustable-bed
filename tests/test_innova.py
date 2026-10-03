@@ -759,3 +759,84 @@ async def test_innova_hold_control_service(
         )
     assert await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
+
+
+async def test_a_failed_release_is_not_hidden_by_a_cancellation(
+    coordinator, mock_bleak_client: MagicMock, no_sleep
+):
+    """Like an exception in a finally block, the release write error wins."""
+    controller = _innova(coordinator)
+    started, finish = asyncio.Event(), asyncio.Event()
+
+    async def failing_write(_char, data, response=True):
+        if bytes(data).hex() == ZERO:
+            started.set()
+            await finish.wait()
+            raise BleakError("release write failed")
+
+    mock_bleak_client.write_gatt_char.side_effect = failing_write
+    task = asyncio.create_task(controller.stop_all())
+    await started.wait()
+    task.cancel()
+    await _yield()
+    finish.set()
+    with pytest.raises(BleakError, match="release write failed") as raised:
+        await task
+    assert isinstance(raised.value.__cause__, asyncio.CancelledError)
+
+
+def test_controller_is_exported_from_the_beds_package():
+    from custom_components.adjustable_bed import beds
+
+    assert "InnovaController" in beds.__all__
+    assert beds.InnovaController is InnovaController
+
+
+def _pair_side(address: str, variant: str) -> dict[str, object]:
+    return {
+        CONF_ADDRESS: address,
+        CONF_NAME: address,
+        CONF_BED_TYPE: BED_TYPE_KEESON,
+        CONF_PROTOCOL_VARIANT: variant,
+        CONF_MOTOR_COUNT: 2,
+        CONF_DISABLE_ANGLE_SENSING: True,
+    }
+
+
+@pytest.mark.parametrize(
+    ("left", "right", "requested"),
+    [
+        (KEESON_VARIANT_BASE, KEESON_VARIANT_BASE, KEESON_VARIANT_INNOVA),
+        (KEESON_VARIANT_INNOVA, KEESON_VARIANT_BASE, KEESON_VARIANT_BASE),
+    ],
+    ids=["switch_to_innova", "switch_away_from_innova"],
+)
+async def test_two_address_pair_refuses_a_shared_innova_change(
+    hass: HomeAssistant, left, right, requested
+):
+    """INNOVA is per receiver: the shared options form must not copy it to both sides."""
+    from homeassistant.data_entry_flow import FlowResultType
+
+    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
+    from custom_components.adjustable_bed.pairing import (
+        build_pair_entry_data,
+        effective_child_data,
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=build_pair_entry_data(
+            _pair_side("AA:BB:CC:DD:EE:71", left),
+            _pair_side("AA:BB:CC:DD:EE:72", right),
+            name="Pair",
+        ),
+    )
+    entry.add_to_hass(hass)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass = hass
+    flow.handler = entry.entry_id
+    refused = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: requested})
+    assert refused["type"] is FlowResultType.FORM
+    assert refused["errors"] == {CONF_PROTOCOL_VARIANT: "innova_unpair_first"}
+    assert effective_child_data(entry.data, "left")[CONF_PROTOCOL_VARIANT] == left
+    assert effective_child_data(entry.data, "right")[CONF_PROTOCOL_VARIANT] == right

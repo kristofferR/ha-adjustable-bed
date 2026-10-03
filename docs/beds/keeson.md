@@ -282,7 +282,8 @@ Its cluster sibling Bedsense Bases uses the
 Select the `innova` (`INNOVA app`) protocol variant. The app scans without any
 name or service rule, so Auto never chooses it; `ORE-` names stay on the Base
 profile. Set the motor count to the screen picked in the app: 2 (2M), 3 (3M)
-or 4 (4M).
+or 4 (4M). For a two-address pair, split the pair before
+changing the profile: each receiver keeps its own app profile.
 
 The app writes `E5 FE 16 k0 k1 k2 k3 checksum` to `0000ffe9`: the standard
 Keeson 32-bit key in little-endian order, then the complemented byte sum. It

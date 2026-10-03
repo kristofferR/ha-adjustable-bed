@@ -125,6 +125,7 @@ test("INNOVA massage level and memory-page timer buttons join the massage sectio
   ]);
   const bed = bedEntitiesForDevice(hass, "dev1");
   expect(bed.massage.buttons).toEqual(["button.innova_level", "button.innova_timer_hold"]);
+  expect(bed.massage.timer).toBe("sensor.innova_timer");
 });
 
 test("exact app controls separate floor, bounded mood and massage surfaces", () => {
