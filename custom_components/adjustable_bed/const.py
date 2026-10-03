@@ -1642,6 +1642,15 @@ KEESON_VARIANT_DYNASTY_BASES: Final = "dynasty_bases"
 ORE_COMFORT_BED_VARIANTS: Final = frozenset(
     {KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_DYNASTY_BASES, KEESON_VARIANT_BEDSENSE_BASES}
 )
+# Explicit protocol variants whose entity-gating capabilities depend only on stored
+# config, for bed types that are not offline-safe as a whole (a Keeson "auto" entry
+# detects its variant live). A paired side on one of these variants can be minted
+# offline. Each bed type contributes its own frozenset, so profiles extend this
+# independently; every member must build its controller without a client.
+OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS: Final = ORE_COMFORT_BED_VARIANTS | {KEESON_VARIANT_INNOVA}
+OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_KEESON: OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS,
+}
 # Restonic BT Remote (com.keeson.restonicBT): the app's user-selected remote style.
 KEESON_VARIANT_RESTONIC_A: Final = "restonic_a"
 KEESON_VARIANT_RESTONIC_B: Final = "restonic_b"

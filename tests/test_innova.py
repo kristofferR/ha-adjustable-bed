@@ -50,6 +50,7 @@ from custom_components.adjustable_bed.const import (
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_RESTONIC_B,
+    OFFLINE_CAPABILITY_SAFE_VARIANTS,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -840,3 +841,154 @@ async def test_two_address_pair_refuses_a_shared_innova_change(
     assert refused["errors"] == {CONF_PROTOCOL_VARIANT: "innova_unpair_first"}
     assert effective_child_data(entry.data, "left")[CONF_PROTOCOL_VARIANT] == left
     assert effective_child_data(entry.data, "right")[CONF_PROTOCOL_VARIANT] == right
+
+
+@pytest.mark.parametrize("variant", sorted(OFFLINE_CAPABILITY_SAFE_VARIANTS[BED_TYPE_KEESON]))
+async def test_offline_safe_variants_build_without_a_client(coordinator, variant):
+    """Every allowed explicit variant mints its real controller client-free."""
+    controller = await create_controller(
+        coordinator=coordinator,
+        bed_type=BED_TYPE_KEESON,
+        protocol_variant=variant,
+        client=None,
+        device_name="ORE bed",
+    )
+    assert isinstance(controller, (InnovaController, OreComfortBedController))
+    assert controller.motor_control_specs
+
+
+def test_keeson_auto_is_not_offline_safe():
+    from custom_components.adjustable_bed.const import OFFLINE_CAPABILITY_SAFE_BED_TYPES
+
+    assert BED_TYPE_KEESON not in OFFLINE_CAPABILITY_SAFE_BED_TYPES
+    assert not {"auto", KEESON_VARIANT_BASE} & OFFLINE_CAPABILITY_SAFE_VARIANTS[BED_TYPE_KEESON]
+
+
+LEFT_ADDRESS, RIGHT_ADDRESS = "AA:BB:CC:DD:EE:81", "AA:BB:CC:DD:EE:82"
+
+
+@pytest.mark.parametrize(
+    ("variant", "controller_key", "controller_type"),
+    [
+        (KEESON_VARIANT_INNOVA, "innova_massage_level", InnovaController),
+        (KEESON_VARIANT_BEDSENSE_BASES, "ore_comfort_massage_start", OreComfortBedController),
+        ("maxcoil_una", "ore_comfort_massage_start", OreComfortBedController),
+    ],
+)
+async def test_pair_reload_with_one_side_offline_keeps_both_sides(
+    hass: HomeAssistant,
+    mock_coordinator_connected,
+    mock_async_ble_device_from_address: MagicMock,
+    mock_bleak_client: MagicMock,
+    enable_custom_integrations,
+    variant,
+    controller_key,
+    controller_type,
+):
+    """An unreachable receiver no longer blocks the reachable side of a pair."""
+    from unittest.mock import patch
+
+    from homeassistant.config_entries import ConfigEntryState
+
+    from custom_components.adjustable_bed.const import SIDE_RIGHT
+    from custom_components.adjustable_bed.pairing import build_pair_entry_data
+
+    mock_bleak_client.services = _services(
+        (KEESON_BASE_WRITE_CHAR_UUID, ["write"]), (KEESON_BASE_NOTIFY_CHAR_UUID, ["notify"])
+    )
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Pair",
+        data=build_pair_entry_data(
+            _pair_side(LEFT_ADDRESS, variant), _pair_side(RIGHT_ADDRESS, variant), name="Pair"
+        ),
+        version=4,
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    registry = er.async_get(hass)
+    right_action = registry.async_get_entity_id(
+        "button", DOMAIN, f"{RIGHT_ADDRESS}_{controller_key}"
+    )
+    assert right_action is not None
+
+    original = AdjustableBedCoordinator.async_connect
+
+    async def right_unreachable(self: AdjustableBedCoordinator, *args: Any, **kwargs: Any) -> bool:
+        if self.address == RIGHT_ADDRESS:
+            return False
+        return await original(self, *args, **kwargs)
+
+    with patch.object(AdjustableBedCoordinator, "async_connect", right_unreachable):
+        assert await hass.config_entries.async_reload(entry.entry_id)
+        await hass.async_block_till_done()
+
+    assert entry.state is ConfigEntryState.LOADED
+    right = hass.data[DOMAIN][entry.entry_id].children[SIDE_RIGHT]
+    assert not right.is_connected
+    assert isinstance(right.capability_controller, controller_type)
+    assert registry.async_get_entity_id("button", DOMAIN, f"{RIGHT_ADDRESS}_{controller_key}")
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+
+
+async def test_disconnect_keeps_app_state_and_clears_reported_state(
+    hass: HomeAssistant,
+    mock_coordinator_connected,
+    mock_async_ble_device_from_address: MagicMock,
+    mock_bleak_client: MagicMock,
+    enable_custom_integrations,
+    no_sleep,
+):
+    """Bedsense levels/timer survive a disconnect; INNOVA's bed reports become unknown."""
+    mock_bleak_client.services = _services(
+        (KEESON_BASE_WRITE_CHAR_UUID, ["write"]), (KEESON_BASE_NOTIFY_CHAR_UUID, ["notify"])
+    )
+    registry = er.async_get(hass)
+
+    bedsense = _entry(hass, "AA:BB:CC:DD:EE:91", KEESON_VARIANT_BEDSENSE_BASES, 2)
+    assert await hass.config_entries.async_setup(bedsense.entry_id)
+    await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][bedsense.entry_id]
+    number = registry.async_get_entity_id(
+        "number", DOMAIN, "AA:BB:CC:DD:EE:91_controller_number_ore_comfort_massage_head"
+    )
+    select = registry.async_get_entity_id(
+        "select", DOMAIN, "AA:BB:CC:DD:EE:91_controller_select_ore_comfort_massage_timer"
+    )
+    await hass.services.async_call(
+        "number", "set_value", {"entity_id": number, "value": 3}, blocking=True
+    )
+    await hass.services.async_call(
+        "select", "select_option", {"entity_id": select, "option": "20"}, blocking=True
+    )
+    await coordinator.async_disconnect()
+    await hass.async_block_till_done()
+    assert coordinator.controller is None
+    assert float(hass.states.get(number).state) == 3
+    assert hass.states.get(select).state == "20"
+
+    innova = _entry(hass, "AA:BB:CC:DD:EE:92", KEESON_VARIANT_INNOVA, 2)
+    assert await hass.config_entries.async_setup(innova.entry_id)
+    await hass.async_block_till_done()
+    innova_coordinator = hass.data[DOMAIN][innova.entry_id]
+    innova_coordinator.controller._on_notification(MagicMock(), bytearray(_status(16, 0x40, 0x02)))
+    await hass.async_block_till_done()
+    light = registry.async_get_entity_id(
+        "binary_sensor", DOMAIN, f"AA:BB:CC:DD:EE:92_{STATE_LIGHT}"
+    )
+    timer = registry.async_get_entity_id(
+        "sensor", DOMAIN, f"AA:BB:CC:DD:EE:92_{STATE_MASSAGE_TIMER}"
+    )
+    assert hass.states.get(light).state == "on"
+    assert hass.states.get(timer).state == "20"
+    await innova_coordinator.async_disconnect()
+    await hass.async_block_till_done()
+    # The bed or its remote can change these while disconnected: unknown, not a default.
+    assert hass.states.get(light).state == "unknown"
+    assert hass.states.get(timer).state == "unknown"
+
+    for entry in (bedsense, innova):
+        assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()

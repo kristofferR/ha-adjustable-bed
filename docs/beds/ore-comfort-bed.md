@@ -35,7 +35,8 @@ The apps scan for every Bluetooth device and let you choose one by address.
 They have no name, service or manufacturer rule, so **Auto never selects this
 profile**. The older `sino` variant (Dynasty, BetterLiving) is
 unchanged; it sends different preset and massage values. For a two-address
-pair, split the pair before changing the profile.
+pair, split the pair before changing the profile. A pair side that is out of
+range keeps its controls, built from the stored profile.
 
 ## Transport
 
