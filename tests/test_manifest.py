@@ -92,3 +92,16 @@ def test_manifest_discovers_adjustable_lite_name_only_advertisements() -> None:
 
     for name in ("KSBT01C000015046", "KSBT03C000015046"):
         assert any(fnmatchcase(name, pattern) for pattern in patterns)
+
+
+def test_manifest_discovers_restonic_bt_name_only_advertisements() -> None:
+    """Restonic BT accepts case-sensitive base-i4/base-i5 names with no service filter."""
+    manifest_path = (
+        Path(__file__).parents[1] / "custom_components" / "adjustable_bed" / "manifest.json"
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    patterns = [entry["local_name"] for entry in manifest["bluetooth"] if "local_name" in entry]
+
+    for name in ("base-i4.00002574", "base-i4X0001", "base-i4", "base-i5.00000682"):
+        assert any(fnmatchcase(name, pattern) for pattern in patterns)
+    assert not any(fnmatchcase("BASE-I4.00002574", pattern) for pattern in patterns)

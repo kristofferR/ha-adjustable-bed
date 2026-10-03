@@ -164,6 +164,7 @@ enable additional commands.
 | Customatic Z-Series app | `zseries_hold_control` (literal Z-230 or Z-280 actions), `zseries_set_alarm`, `zseries_sync_clock` | [Z-Series](beds/customatic-z-series.md) |
 | SIMMONS app | `simmons_hold_control`, `simmons_set_alarm` | [SIMMONS](beds/simmons.md) |
 | Adjustable bed (Lumbar) app | `adjustable_lumbar_hold_control` | [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md) |
+| Restonic BT Remote app (Keeson) | `restonic_hold_control` | [Keeson Restonic BT](beds/keeson.md#restonic-bt-profiles) |
 | AdjustableM5X4 app | `starcode_abm5_4_hold_control` (literal held movement, preset, save or massage controls) | [AdjustableM5X4](beds/starcode-abm5-4.md) |
 | Caresse / Werkmeister apps | `vibradorm_hold_control` (profile-specific movement, memory recall or sync) | [Caresse / Werkmeister](beds/vibradorm_app.md) |
 | V-MAT Basic app | `vmatbasic_hold_control`, `vmatbasic_rename` | [V-MAT Basic](beds/vmatbasic.md) |
@@ -211,6 +212,10 @@ Set alarm accepts `device_id`, `slot` (1 or 2), `enabled`, `time`, `weekdays` (e
 ### `adjustable_lumbar_hold_control`
 
 Accepts `device_id`, `control`, `duration` (0.1–60 seconds) and optional `side`. The frame repeats every 100 ms, then STOP is sent immediately and again 300 ms later. Controls are `head_up`, `head_down`, `feet_up`, `feet_down`, `lumbar_up`, `lumbar_down`, `flat`, `zero_g`, `lounge`, `incline`, `anti_snore`, `save_zero_g`, `save_lounge`, `save_incline`, `save_anti_snore`, `light`, `wave_1`, `wave_2`, `wave_3`, `massage_up` and `massage_down`. Every target must use this profile and accept the control before any bed is written. Whether a save stores the position is unverified. See [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md#timing-and-controls).
+
+### `restonic_hold_control`
+
+Accepts `device_id`, `control`, `duration` (0.1–60 seconds) and optional `side`. Head and foot directions, remote B's `back_legs_up`/`back_legs_down` and remote A's `zero_g` repeat every 100 ms while held; `flat`, remote B's `zero_g`, `light` and `zzz` are sent once when the hold starts. When the hold ends, one zero frame follows 100 ms later. Remote A accepts `head_up`, `head_down`, `feet_up`, `feet_down`, `flat` and `zero_g`; remote B adds `back_legs_up`, `back_legs_down`, `light` and `zzz`. Every target must use a Restonic BT profile and accept the control before any bed is written. See [Restonic BT](beds/keeson.md#restonic-bt-profiles).
 
 ### `vibradorm_hold_control`
 

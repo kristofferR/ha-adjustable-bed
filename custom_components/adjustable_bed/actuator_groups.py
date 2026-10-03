@@ -68,8 +68,12 @@ from .const import (
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_INNOVA,
+    KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_KSBT,
+    KEESON_VARIANT_MAXCOIL_UNA,
     KEESON_VARIANT_PURPLE,
+    KEESON_VARIANT_RESTONIC_A,
+    KEESON_VARIANT_RESTONIC_B,
     KEESON_VARIANT_SERTA,
 )
 
@@ -216,6 +220,34 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "label": "INNOVA app",
                 "description": "2M, 3M or 4M bases from the INNOVA app; set the motor count to match",
                 "hint": "Choose this if you control the bed with the INNOVA app",
+            },
+            {
+                "type": BED_TYPE_KEESON,
+                "variant": KEESON_VARIANT_MAXCOIL_UNA,
+                "label": "MaxCoil Una app",
+                "description": "2-, 3- or 4-motor screens of the MaxCoil Una app; set the motor count",
+                "hint": "Choose this if you control the bed with the MaxCoil Una app",
+            },
+            {
+                "type": BED_TYPE_KEESON,
+                "variant": KEESON_VARIANT_DYNASTY_BASES,
+                "label": "Dynasty Bases app",
+                "description": "2-, 3- or 4-motor screens of the Dynasty Bases app; set the motor count",
+                "hint": "Choose this if you control the bed with the Dynasty Bases app",
+            },
+            {
+                "type": BED_TYPE_KEESON,
+                "variant": KEESON_VARIANT_RESTONIC_A,
+                "label": "Restonic BT app, remote A",
+                "description": "Head, foot, Flat and Zero G (6 buttons)",
+                "hint": "Choose this if the Restonic BT Remote app is set to remote style A",
+            },
+            {
+                "type": BED_TYPE_KEESON,
+                "variant": KEESON_VARIANT_RESTONIC_B,
+                "label": "Restonic BT app, remote B",
+                "description": "Adds Back + Legs, light and ZZZ buttons (10 buttons)",
+                "hint": "Choose this if the Restonic BT Remote app is set to remote style B",
             },
             {
                 "type": BED_TYPE_KEESON,

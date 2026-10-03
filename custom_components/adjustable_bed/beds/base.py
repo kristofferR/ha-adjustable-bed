@@ -1236,6 +1236,16 @@ class BedController(ABC):
         return False
 
     @property
+    def light_state_is_assumed(self) -> bool:
+        """Return True when discrete light commands have no state readback.
+
+        The light switch then starts unknown and reports the commanded value
+        as assumed state, so a restart or the physical remote is not shown as
+        a confirmed state.
+        """
+        return False
+
+    @property
     def supports_explicit_light_on_control(self) -> bool:
         """Return True if bed has a dedicated light-on command.
 
@@ -1362,6 +1372,22 @@ class BedController(ABC):
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
         """Return product controls with immutable ranges for the selected profile."""
         return ()
+
+    @property
+    def persisted_app_state(self) -> Mapping[str, Any] | None:
+        """App-local preferences the phone app keeps across restarts, or None.
+
+        The coordinator stores a non-None mapping per physical address, bed
+        type and protocol variant (see ``app_state_store``), hands it back to
+        ``restore_persisted_app_state`` whenever a controller is created, and
+        deletes it when no config entry owns the address any more. The address
+        separates the sides of a two-address pair; a profile that offers
+        single-address side controls would need the side in the slot too.
+        """
+        return None
+
+    def restore_persisted_app_state(self, state: Mapping[str, Any]) -> None:  # noqa: B027
+        """Apply stored app-local preferences; raise ValueError or TypeError if invalid."""
 
     async def set_mood_palette(self, option: str) -> None:
         """Select a controller-declared mood palette entry."""

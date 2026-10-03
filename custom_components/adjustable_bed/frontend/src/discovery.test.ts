@@ -719,6 +719,47 @@ test("Cool Base app-labelled controls land in massage and utility sections", () 
   expect(bed.memory).toEqual([]);
 });
 
+test("MaxCoil Una / Dynasty Bases controls land in motor, massage and utility sections", () => {
+  const hass = hassWith([
+    entry("cover.back", "back"),
+    entry("cover.feet", "feet"),
+    entry("cover.waist", "waist"),
+    entry("cover.lumbar", "lumbar"),
+    entry("number.head", "massage_head_intensity"),
+    entry("number.foot", "massage_foot_intensity"),
+    entry("number.wave", "massage_wave_intensity"),
+    entry("select.timer", "ore_comfort_massage_timer"),
+    entry("button.start", "ore_comfort_massage_start"),
+    entry("button.save_flat", "ore_comfort_program_flat"),
+    entry("button.save_zg", "ore_comfort_program_zero_g"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.motors.map((m) => m.key)).toEqual(["back", "feet", "lumbar", "waist"]);
+  expect(bed.massage.numbers).toEqual(["number.head", "number.foot", "number.wave"]);
+  expect(bed.massage.timer).toBe("select.timer");
+  expect(bed.massage.buttons).toEqual(["button.start"]);
+  expect(bed.utility).toEqual(["button.save_flat", "button.save_zg"]);
+  expect(bed.memory).toEqual([]);
+});
+
+test("Restonic BT remote B maps its combined cover, light and ZZZ button", () => {
+  const hass = hassWith([
+    entry("cover.r_back", "head"),
+    entry("cover.r_legs", "feet"),
+    entry("cover.r_both", "back_legs"),
+    entry("button.r_flat", "preset_flat"),
+    entry("button.r_zero_g", "preset_zero_g"),
+    entry("button.r_light", "toggle_light"),
+    entry("button.r_zzz", "restonic_zzz"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.motors.map((m) => m.key)).toEqual(["back_legs", "head", "feet"]);
+  expect(bed.presets).toEqual(["button.r_flat", "button.r_zero_g"]);
+  expect(bed.lights.toggle).toBe("button.r_light");
+  expect(bed.utility).toEqual(["button.r_zzz"]);
+  expect(bed.memory).toEqual([]);
+});
+
 test("SIMMONS inclined controls join presets and clock/alarm actions land in utility", () => {
   const hass = hassWith([
     entry("button.s_flat", "preset_flat"),

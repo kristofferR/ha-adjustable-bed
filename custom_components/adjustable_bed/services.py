@@ -109,6 +109,7 @@ SERVICE_ZSERIES_SET_ALARM = "zseries_set_alarm"
 SERVICE_ZSERIES_SYNC_CLOCK = "zseries_sync_clock"
 SERVICE_SIMMONS_HOLD_CONTROL = "simmons_hold_control"
 SERVICE_ADJUSTABLE_LUMBAR_HOLD_CONTROL = "adjustable_lumbar_hold_control"
+SERVICE_RESTONIC_HOLD_CONTROL = "restonic_hold_control"
 SERVICE_SIMMONS_SET_ALARM = "simmons_set_alarm"
 ATTR_SLOT = "slot"
 ATTR_MODE = "mode"
@@ -2472,6 +2473,17 @@ async def handle_adjustable_lumbar_hold_control(call: ServiceCall) -> None:
     )
 
 
+async def handle_restonic_hold_control(call: ServiceCall) -> None:
+    """Hold one Restonic BT remote control, then send its delayed zero frame."""
+    await _handle_customatic_hold(
+        call,
+        call.data[ATTR_CONTROL],
+        {BED_TYPE_KEESON},
+        label="Restonic BT",
+        control_noun="control",
+    )
+
+
 async def handle_simmons_set_alarm(call: ServiceCall) -> None:
     """Program or disable one of the two SIMMONS alarms through the command queue."""
     from .beds.base import SideBoundController
@@ -2635,6 +2647,7 @@ async def _handle_customatic_hold(
     *,
     label: str = "Customatic",
     validate_extra: Callable[[BedController | SideBoundController], None] | None = None,
+    control_noun: str = "combination",
 ) -> None:
     """Preflight the whole selection before starting any held write sequence."""
     duration_ms = int(_leggett_hold_seconds(call.data[ATTR_DURATION]) * 1000)
@@ -2653,7 +2666,7 @@ async def _handle_customatic_hold(
     def validate(controller: BedController | SideBoundController) -> None:
         if control not in controller.held_control_options:
             raise ServiceValidationError(
-                f"The selected profile does not support combination '{control}'"
+                f"The selected profile does not support {control_noun} '{control}'"
             )
 
         if validate_extra is not None:
@@ -3726,6 +3739,19 @@ async def async_register_services(hass: HomeAssistant) -> None:
         DOMAIN,
         SERVICE_ADJUSTABLE_LUMBAR_HOLD_CONTROL,
         handle_adjustable_lumbar_hold_control,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(ATTR_CONTROL): cv.string,
+                vol.Required(ATTR_DURATION): _leggett_hold_seconds,
+                **SIDE_FIELD,
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_RESTONIC_HOLD_CONTROL,
+        handle_restonic_hold_control,
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),

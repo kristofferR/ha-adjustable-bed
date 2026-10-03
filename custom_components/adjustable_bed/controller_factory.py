@@ -165,6 +165,8 @@ from .const import (
     KEESON_VARIANT_KSBT_CR,
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_PURPLE,
+    KEESON_VARIANT_RESTONIC_A,
+    KEESON_VARIANT_RESTONIC_B,
     KEESON_VARIANT_SERTA,
     KEESON_VARIANT_SINO,
     KEESON_VARIANT_SLEEP_HARMONY,
@@ -190,6 +192,7 @@ from .const import (
     OKIN_CB24_VARIANT_NEW,
     OKIN_CB24_VARIANT_OLD,
     OKIN_CST_VARIANTS,
+    ORE_COMFORT_BED_VARIANTS,
     RICHMAT_MH_APPS,
     RICHMAT_PROTOCOL_PREFIX55,
     RICHMAT_PROTOCOL_PREFIXAA,
@@ -1120,6 +1123,15 @@ async def create_controller(
                 **richmat_kwargs,
             )
 
+    if bed_type == BED_TYPE_KEESON and protocol_variant in ORE_COMFORT_BED_VARIANTS:
+        # Explicit app profile with its own controller; Auto never selects it.
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.ore_comfort_bed", __package__
+        )
+        from .beds.ore_comfort_bed import OreComfortBedController
+
+        return OreComfortBedController(coordinator, app=protocol_variant)
+
     if bed_type == BED_TYPE_KEESON:
         await coordinator.hass.async_add_import_executor_job(
             import_module, ".beds.keeson", __package__
@@ -1241,6 +1253,10 @@ async def create_controller(
             from .beds.keeson_ore_sfm import OreSfmKeesonController
 
             return OreSfmKeesonController(coordinator, variant=keeson_variant)
+        elif keeson_variant in (KEESON_VARIANT_RESTONIC_A, KEESON_VARIANT_RESTONIC_B):
+            # Explicit only: the app's base-i4/base-i5 names are shared with other profiles.
+            _LOGGER.debug("Using explicit Restonic BT Keeson variant (%s)", keeson_variant)
+            return KeesonController(coordinator, variant=keeson_variant, device_name=device_name)
         elif keeson_variant == KEESON_VARIANT_ERGOMOTION:
             _LOGGER.debug("Using Ergomotion Keeson variant (with position feedback)")
             return KeesonController(coordinator, variant="ergomotion")
