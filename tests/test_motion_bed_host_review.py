@@ -36,7 +36,7 @@ async def test_hub_reload_keeps_registry_customization_through_inventory_changes
     controller = coord.controller
     assert isinstance(controller, MotionBedController)
     controller._state = replace(controller._state, air_module_present=True)
-    spec = next(s for s in controller.controller_button_specs if "qinang_fragment" in s.key)
+    spec = next(s for s in controller.controller_button_specs if s.key == "motion_bed_air_massage_stop")
     controller._state = replace(controller._state, air_module_present=None)
     registry = er.async_get(hass)
     existing = registry.async_get_or_create(

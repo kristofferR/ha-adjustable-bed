@@ -67,6 +67,14 @@ keys and labels. Movement covers use only the selected layout's exact control
 pairs and names. Modular motor buttons expose **Back down** and **Leg down**:
 the shipped upper-arrow callbacks are dead and do not establish an up command.
 
+Entity identities follow the control's function, not the app screen that hosts
+it. Covers are keyed by their app label plus the split side (W7/W8 **Left
+BACK**, **Right LEG**), so changing layouts keeps a shared control's name and
+registry settings. Screens shown together that send identical frames, such as
+the four **Sync** buttons, share one button entity; on modular targets the
+module's own screen owns it. Air-module programs keep separate `air_`
+identities because they reuse bed labels for massage programs.
+
 Motion sends one start frame, holds for a bounded duration, and releases with
 the protocol STOP even on cancellation or failure. The hold captures its original
 client and characteristic, so a still-live old target is released during rebind

@@ -838,22 +838,18 @@ def _button_entities_for(
                 and coordinator.bed_type == BED_TYPE_MOTION_BED
                 and any(spec.key == "motion_bed_active_module" for spec in controller.controller_select_specs)
             ):
-                from .motion_bed_actions import MOTION_BED_ACTIONS
+                from .beds.motion_bed import button_actions_for
 
                 # Keep possible hub identities while inventory is unknown, but
                 # retire controls that only belong to the former home profile.
-                owners = {
+                owners = frozenset({
                     "Setting2Activity", "MainMcuActivity", "ChangeDeviceActivity", "ConnectMcuActivity",
                     "DiandongFragment", "DianDongSetActivity", "AlarmActivity",
                     "QinangFragment", "AnmoSetActivity", "PressSetActivity",
                     "LengnuanFragment", "TimeSettingActivity",
-                }
+                })
                 desired_actions.update(
-                    coordinator.entity_unique_id("motion_bed_" + action.key)
-                    for action in MOTION_BED_ACTIONS
-                    if action.owner in owners
-                    and (action.kind in ("press", "stop")
-                         or (action.kind == "held" and action.owner == "DiandongFragment"))
+                    coordinator.entity_unique_id(key) for key in button_actions_for(owners)
                 )
             action_prefix, action_suffix = coordinator.entity_unique_id(namespace).split(
                 namespace, 1

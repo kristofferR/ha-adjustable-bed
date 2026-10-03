@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from collections.abc import Callable, Coroutine, Mapping
 from contextvars import ContextVar
 from dataclasses import dataclass, fields, replace
+from functools import lru_cache
+from types import MappingProxyType
 from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
@@ -38,6 +41,69 @@ if TYPE_CHECKING:
 
 CHARACTERISTIC = "0000ffe1-0000-1000-8000-00805f9b34fb"
 STOP = bytes.fromhex("FFFFFFFF0500000000D700")
+
+# Hub module that owns each modular screen's controls.
+_MODULE_OWNERS: Mapping[str, str] = {
+    "DiandongFragment": "motor", "DianDongSetActivity": "motor",
+    "QinangFragment": "air", "AnmoSetActivity": "air", "PressSetActivity": "air",
+    "LengnuanFragment": "thermal",
+}
+# Entity identities follow a control's function, not the app screen hosting it.
+_SCREEN_PREFIX = re.compile(
+    r"(?:kuaijie_k\w+?fragment|weitiao_w\w+?fragment|setting2activity|\w+?_(?:activity|fragment))_"
+)
+# Movement pairs are keyed by their app label; split pads add their side.
+_COVER_AXES: Mapping[str, str] = {
+    "BACK": "back", "HEAD": "head", "LEG": "legs", "LUMBAR": "lumbar", "HIP": "hip",
+    "LIFT": "lift", "TILT": "tilt", "BACK LEG": "back_legs",
+    "Split Legs Left": "legs", "Split Legs Right": "legs",
+}
+_SPLIT_SIDE = re.compile(r"_split_\w+?_(left|right)_up$")
+
+
+def motion_bed_button_key(action: MotionBedAction) -> str:
+    """Return the function-derived entity key for a Motion Bed button action."""
+    if action.owner == "SleepAdjustActivity":
+        # Sleep adjustment keeps its own refresh and release contract.
+        return "motion_bed_sleep_adjust_" + action.key.removeprefix("sleep_adjust_activity_").removeprefix("adjust_")
+    match = _SCREEN_PREFIX.match(action.key)
+    function = action.key[match.end():] if match else action.key
+    if _MODULE_OWNERS.get(action.owner) == "air" and not function.startswith("air_"):
+        # Air-module programs reuse bed labels (back, lumbar, yoga) for massage.
+        function = "air_" + function
+    return "motion_bed_" + function
+
+
+def motion_bed_cover_key(up: MotionBedAction) -> str:
+    """Return the entity key for a layout's movement pair, given its up action."""
+    axis = _COVER_AXES[up.name.removesuffix(" up")]
+    side = _SPLIT_SIDE.search(up.key)
+    return f"motion_bed_{side.group(1)}_{axis}" if side else f"motion_bed_{axis}"
+
+
+def _is_button(action: MotionBedAction) -> bool:
+    if action.kind == "held":
+        return action.owner in ("DiandongFragment", "SleepAdjustActivity")
+    # Programming is offered by the confirmed action service, never a one-tap erase.
+    return action.kind not in ("persistent", "query", "program")
+
+
+@lru_cache(maxsize=32)
+def button_actions_for(owners: frozenset[str]) -> Mapping[str, MotionBedAction]:
+    """Map each active function key to the one action its button sends.
+
+    Screens shown together can offer the same function with identical frames
+    (Sync, audio preview); they share one entity. The module-owned screen wins
+    so hub routing and its receiver context apply.
+    """
+    chosen: dict[str, MotionBedAction] = {}
+    active = [action for action in MOTION_BED_ACTIONS if action.owner in owners and _is_button(action)]
+    for action in sorted(active, key=lambda action: action.kind == "held"):
+        key = motion_bed_button_key(action)
+        current = chosen.get(key)
+        if current is None or (current.owner not in _MODULE_OWNERS and action.owner in _MODULE_OWNERS):
+            chosen[key] = action
+    return MappingProxyType(chosen)
 
 
 def _action_callback(key: str) -> MotorCommandCallable:
@@ -203,8 +269,8 @@ class MotionBedController(BedController):
         return tuple(action for action in MOTION_BED_ACTIONS if action.owner in owners)
 
     def controller_button_available(self, key: str) -> bool:
-        action = ACTION_BY_KEY.get(key.removeprefix("motion_bed_"))
-        if action is None or action.owner not in self._active_owners():
+        action = button_actions_for(self._active_owners()).get(key)
+        if action is None:
             return False
         try:
             self.validate_motion_bed_action(action.key)
@@ -216,24 +282,12 @@ class MotionBedController(BedController):
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         return tuple(
             ControllerButtonSpec(
-                key="motion_bed_" + action.key,
+                key=key,
                 name=action.name,
                 press_fn=_action_callback(action.key),
                 translation_key=None,
             )
-            for action in self.actions
-            if action.kind not in ("persistent", "held", "query")
-            # Programming is offered by the confirmed action service, never a one-tap erase.
-            and action.kind != "program"
-        ) + tuple(
-            ControllerButtonSpec(
-                key="motion_bed_" + action.key,
-                name=action.name,
-                press_fn=_action_callback(action.key),
-                translation_key=None,
-            )
-            for action in self.actions
-            if action.kind == "held" and action.owner in ("DiandongFragment", "SleepAdjustActivity")
+            for key, action in button_actions_for(self._active_owners()).items()
         )
 
     @property
@@ -241,16 +295,18 @@ class MotionBedController(BedController):
         if self.selection.surface != "home":
             return ()  # Modular upper-arrow source callbacks are dead.
         movement = {action.key: action for action in self.actions if action.kind == "held" and action.owner.startswith("Weitiao")}
-        controls: list[MotorControlSpec] = []
-        for key in movement:
+        controls: dict[str, MotorControlSpec] = {}
+        for key, up in movement.items():
             if key.endswith("_up") and key[:-3] + "_down" in movement:
-                controls.append(MotorControlSpec(
-                    key="motion_bed_" + key[:-3], translation_key="motion_bed_" + key[:-3],
+                entity_key = motion_bed_cover_key(up)
+                # W8 repeats its LEG pair on the split and coupled pads.
+                controls.setdefault(entity_key, MotorControlSpec(
+                    key=entity_key, translation_key=entity_key,
                     open_fn=_action_callback(key), close_fn=_action_callback(key[:-3] + "_down"),
                     stop_fn=lambda controller: controller.stop_all(),
                     scheduler_resource="motion_bed_motor",
                 ))
-        return tuple(controls)
+        return tuple(controls.values())
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
@@ -710,7 +766,7 @@ class MotionBedController(BedController):
         action = ACTION_BY_KEY[key]
         self._activate(action.context)
         if self.selection.surface == "hub":
-            module = "thermal" if action.owner == "LengnuanFragment" else "air" if action.owner in ("QinangFragment", "AnmoSetActivity", "PressSetActivity") else "motor" if action.owner in ("DiandongFragment", "DianDongSetActivity") else None
+            module = _MODULE_OWNERS.get(action.owner)
             if module is not None:
                 await self.set_motion_bed_surface(module)
         source_ids = action.select(self._state, self.selection.alternate_identity, branch=branch)

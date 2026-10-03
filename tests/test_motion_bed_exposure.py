@@ -67,7 +67,7 @@ async def test_new_hub_modules_add_buttons_once_disable_removed_modules_and_unsu
     controller._publish()
     assert additions
     assert len({entity.unique_id for entity in initial + additions}) == len(initial + additions)
-    air_buttons = [entity for entity in additions if "qinang_fragment" in entity.unique_id]
+    air_buttons = [entity for entity in additions if "_motion_bed_air_" in entity.unique_id]
     assert air_buttons and all(entity.available for entity in air_buttons)
     before = len(additions)
     controller._publish()

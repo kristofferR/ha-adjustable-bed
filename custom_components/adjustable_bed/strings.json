@@ -2486,641 +2486,149 @@
       "malouf_full_tilt": {
         "name": "Full tilt"
       },
-      "motion_bed_weitiao_w8fragment_coupled_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w6fragment_wholelift_both": {
-        "name": "LIFT (both)"
-      },
-      "motion_bed_weitiao_w13fragment_wholelift": {
-        "name": "LIFT"
-      },
-      "motion_bed_weitiao_w7fragment_split_legs_right_right": {
-        "name": "Split Legs Right (right)"
-      },
-      "motion_bed_weitiao_w18fragment_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w2fragment_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w14fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w12fragment_wholelift_both": {
-        "name": "LIFT (both)"
-      },
-      "motion_bed_weitiao_w18fragment_lumbar_right": {
-        "name": "LUMBAR (right)"
-      },
-      "motion_bed_weitiao_w18fragment_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w4fragment_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w3fragment_back_legs": {
-        "name": "BACK LEG"
-      },
-      "motion_bed_weitiao_w13fragment_wholeqingxie_left": {
-        "name": "TILT (left)"
-      },
-      "motion_bed_weitiao_w13fragment_wholeqingxie_right": {
-        "name": "TILT (right)"
-      },
-      "motion_bed_weitiao_w4fragment_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w10fragment_head": {
-        "name": "HEAD"
-      },
-      "motion_bed_weitiao_w14fragment_wholelift_right": {
-        "name": "LIFT (right)"
-      },
-      "motion_bed_weitiao_w1fragment_hip_right": {
-        "name": "HIP (right)"
-      },
-      "motion_bed_weitiao_w11fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w4fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w13fragment_wholelift_right": {
-        "name": "LIFT (right)"
-      },
-      "motion_bed_weitiao_w13fragment_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w13fragment_lumbar_right": {
-        "name": "LUMBAR (right)"
-      },
-      "motion_bed_weitiao_w14fragment_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w13fragment_wholelift_both": {
-        "name": "LIFT (both)"
-      },
-      "motion_bed_weitiao_w8fragment_coupled_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w10fragment_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w3fragment_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w12fragment_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w10fragment_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w10fragment_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w1fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w18fragment_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w7fragment_split_legs_left_both": {
-        "name": "Split Legs Left (both)"
-      },
-      "motion_bed_weitiao_w3fragment_lumbar": {
-        "name": "LUMBAR"
-      },
-      "motion_bed_weitiao_w18fragment_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w13fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w3fragment_back_legs_right": {
-        "name": "BACK LEG (right)"
-      },
-      "motion_bed_weitiao_w13fragment_lumbar": {
-        "name": "LUMBAR"
-      },
-      "motion_bed_weitiao_w8fragment_split_back_left_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w1fragment_head": {
-        "name": "HEAD"
-      },
-      "motion_bed_weitiao_w8fragment_split_back_right": {
+      "motion_bed_back": {
         "name": "BACK"
       },
-      "motion_bed_weitiao_w18fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w13fragment_head_both": {
-        "name": "HEAD (both)"
-      },
-      "motion_bed_weitiao_w7fragment_split_legs_left_left": {
-        "name": "Split Legs Left (left)"
-      },
-      "motion_bed_weitiao_w13fragment_head_left": {
-        "name": "HEAD (left)"
-      },
-      "motion_bed_weitiao_w2fragment_head_left": {
-        "name": "HEAD (left)"
-      },
-      "motion_bed_weitiao_w18fragment_lumbar_left": {
-        "name": "LUMBAR (left)"
-      },
-      "motion_bed_weitiao_w2fragment_lumbar_right": {
-        "name": "LUMBAR (right)"
-      },
-      "motion_bed_weitiao_w7fragment_coupled_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w6fragment_wholelift_right": {
-        "name": "LIFT (right)"
-      },
-      "motion_bed_weitiao_w8fragment_split_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w3fragment_lumbar_right": {
-        "name": "LUMBAR (right)"
-      },
-      "motion_bed_weitiao_w14fragment_head": {
-        "name": "HEAD"
-      },
-      "motion_bed_weitiao_w7fragment_split_back_right_left": {
+      "motion_bed_back_left": {
         "name": "BACK (left)"
       },
-      "motion_bed_weitiao_w7fragment_split_back_right_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w18fragment_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w4fragment_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w12fragment_wholelift_right": {
-        "name": "LIFT (right)"
-      },
-      "motion_bed_weitiao_w11fragment_wholelift_left": {
-        "name": "LIFT (left)"
-      },
-      "motion_bed_weitiao_w7fragment_coupled_back_right": {
+      "motion_bed_back_right": {
         "name": "BACK (right)"
       },
-      "motion_bed_weitiao_w6fragment_wholelift": {
-        "name": "LIFT"
+      "motion_bed_back_both": {
+        "name": "BACK (both)"
       },
-      "motion_bed_weitiao_w14fragment_wholeqingxie_left": {
-        "name": "TILT (left)"
+      "motion_bed_head": {
+        "name": "HEAD"
       },
-      "motion_bed_weitiao_w14fragment_legs_right": {
-        "name": "LEG (right)"
+      "motion_bed_head_left": {
+        "name": "HEAD (left)"
       },
-      "motion_bed_weitiao_w11fragment_legs_left": {
-        "name": "LEG (left)"
+      "motion_bed_head_right": {
+        "name": "HEAD (right)"
       },
-      "motion_bed_weitiao_w13fragment_wholeqingxie_both": {
-        "name": "TILT (both)"
+      "motion_bed_head_both": {
+        "name": "HEAD (both)"
       },
-      "motion_bed_weitiao_w11fragment_legs": {
+      "motion_bed_legs": {
         "name": "LEG"
       },
-      "motion_bed_weitiao_w14fragment_wholeqingxie_right": {
-        "name": "TILT (right)"
+      "motion_bed_legs_left": {
+        "name": "LEG (left)"
       },
-      "motion_bed_weitiao_w1fragment_hip": {
+      "motion_bed_legs_right": {
+        "name": "LEG (right)"
+      },
+      "motion_bed_legs_both": {
+        "name": "LEG (both)"
+      },
+      "motion_bed_lumbar": {
+        "name": "LUMBAR"
+      },
+      "motion_bed_lumbar_left": {
+        "name": "LUMBAR (left)"
+      },
+      "motion_bed_lumbar_right": {
+        "name": "LUMBAR (right)"
+      },
+      "motion_bed_lumbar_both": {
+        "name": "LUMBAR (both)"
+      },
+      "motion_bed_hip": {
         "name": "HIP"
       },
-      "motion_bed_weitiao_w10fragment_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w2fragment_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w14fragment_head_both": {
-        "name": "HEAD (both)"
-      },
-      "motion_bed_weitiao_w13fragment_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w8fragment_split_back_right_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w18fragment_head_right": {
-        "name": "LIFT (right)"
-      },
-      "motion_bed_weitiao_w1fragment_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w12fragment_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w12fragment_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w4fragment_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w7fragment_split_back_right": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w12fragment_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w8fragment_coupled_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w2fragment_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w7fragment_split_back_left_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w3fragment_back_legs_left": {
-        "name": "BACK LEG (left)"
-      },
-      "motion_bed_weitiao_w13fragment_lumbar_both": {
-        "name": "LUMBAR (both)"
-      },
-      "motion_bed_weitiao_w14fragment_wholeqingxie": {
-        "name": "TILT"
-      },
-      "motion_bed_weitiao_w12fragment_wholelift": {
-        "name": "LIFT"
-      },
-      "motion_bed_weitiao_w3fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w12fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w11fragment_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w1fragment_hip_both": {
-        "name": "HIP (both)"
-      },
-      "motion_bed_weitiao_w14fragment_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w11fragment_wholelift": {
-        "name": "LIFT"
-      },
-      "motion_bed_weitiao_w13fragment_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w1fragment_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w18fragment_head_left": {
-        "name": "LIFT (left)"
-      },
-      "motion_bed_weitiao_w13fragment_wholelift_left": {
-        "name": "LIFT (left)"
-      },
-      "motion_bed_weitiao_w11fragment_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w3fragment_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w14fragment_lumbar_both": {
-        "name": "LUMBAR (both)"
-      },
-      "motion_bed_weitiao_w1fragment_head_both": {
-        "name": "HEAD (both)"
-      },
-      "motion_bed_weitiao_w2fragment_head_both": {
-        "name": "HEAD (both)"
-      },
-      "motion_bed_weitiao_w12fragment_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w1fragment_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w7fragment_split_back_right_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w18fragment_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w3fragment_lumbar_both": {
-        "name": "LUMBAR (both)"
-      },
-      "motion_bed_weitiao_w8fragment_coupled_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w7fragment_coupled_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w3fragment_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w10fragment_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w8fragment_split_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w3fragment_lumbar_left": {
-        "name": "LUMBAR (left)"
-      },
-      "motion_bed_weitiao_w7fragment_split_back_left": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w4fragment_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w12fragment_wholelift_left": {
-        "name": "LIFT (left)"
-      },
-      "motion_bed_weitiao_w2fragment_head": {
-        "name": "HEAD"
-      },
-      "motion_bed_weitiao_w11fragment_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w2fragment_lumbar_left": {
-        "name": "LUMBAR (left)"
-      },
-      "motion_bed_weitiao_w8fragment_coupled_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w10fragment_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w10fragment_head_left": {
-        "name": "HEAD (left)"
-      },
-      "motion_bed_weitiao_w13fragment_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w6fragment_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w8fragment_split_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w14fragment_wholelift_both": {
-        "name": "LIFT (both)"
-      },
-      "motion_bed_weitiao_w7fragment_coupled_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w12fragment_wholeqingxie_both": {
-        "name": "TILT (both)"
-      },
-      "motion_bed_weitiao_w3fragment_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w11fragment_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w3fragment_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w4fragment_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w14fragment_lumbar": {
-        "name": "LUMBAR"
-      },
-      "motion_bed_weitiao_w7fragment_coupled_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w1fragment_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w18fragment_lumbar": {
-        "name": "LUMBAR"
-      },
-      "motion_bed_weitiao_w6fragment_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w10fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w8fragment_coupled_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w7fragment_coupled_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w14fragment_wholelift_left": {
-        "name": "LIFT (left)"
-      },
-      "motion_bed_weitiao_w14fragment_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w8fragment_coupled_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w13fragment_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w14fragment_lumbar_right": {
-        "name": "LUMBAR (right)"
-      },
-      "motion_bed_weitiao_w11fragment_wholelift_both": {
-        "name": "LIFT (both)"
-      },
-      "motion_bed_weitiao_w2fragment_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w18fragment_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w12fragment_wholeqingxie": {
-        "name": "TILT"
-      },
-      "motion_bed_weitiao_w10fragment_head_right": {
-        "name": "HEAD (right)"
-      },
-      "motion_bed_weitiao_w8fragment_split_back_left_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w1fragment_head_right": {
-        "name": "HEAD (right)"
-      },
-      "motion_bed_weitiao_w8fragment_coupled_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w7fragment_split_back_left_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w8fragment_split_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w1fragment_head_left": {
-        "name": "HEAD (left)"
-      },
-      "motion_bed_weitiao_w2fragment_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w11fragment_wholelift_right": {
-        "name": "LIFT (right)"
-      },
-      "motion_bed_weitiao_w18fragment_lumbar_both": {
-        "name": "LUMBAR (both)"
-      },
-      "motion_bed_weitiao_w13fragment_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w1fragment_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w7fragment_coupled_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w7fragment_coupled_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w13fragment_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w8fragment_split_back_right_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w13fragment_head_right": {
-        "name": "HEAD (right)"
-      },
-      "motion_bed_weitiao_w14fragment_wholeqingxie_both": {
-        "name": "TILT (both)"
-      },
-      "motion_bed_weitiao_w7fragment_split_legs_right_both": {
-        "name": "Split Legs Right (both)"
-      },
-      "motion_bed_weitiao_w7fragment_split_legs_left_right": {
-        "name": "Split Legs Left (right)"
-      },
-      "motion_bed_weitiao_w8fragment_split_back_left_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w13fragment_head": {
-        "name": "HEAD"
-      },
-      "motion_bed_weitiao_w13fragment_lumbar_left": {
-        "name": "LUMBAR (left)"
-      },
-      "motion_bed_weitiao_w18fragment_head": {
-        "name": "LIFT"
-      },
-      "motion_bed_weitiao_w2fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w14fragment_head_right": {
-        "name": "HEAD (right)"
-      },
-      "motion_bed_weitiao_w7fragment_split_legs_right_left": {
-        "name": "Split Legs Right (left)"
-      },
-      "motion_bed_weitiao_w2fragment_head_right": {
-        "name": "HEAD (right)"
-      },
-      "motion_bed_weitiao_w14fragment_head_left": {
-        "name": "HEAD (left)"
-      },
-      "motion_bed_weitiao_w12fragment_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w8fragment_split_back_left": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w1fragment_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w14fragment_wholelift": {
-        "name": "LIFT"
-      },
-      "motion_bed_weitiao_w7fragment_split_legs_right": {
-        "name": "Split Legs Right"
-      },
-      "motion_bed_weitiao_w6fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w3fragment_back_legs_both": {
-        "name": "BACK LEG (both)"
-      },
-      "motion_bed_weitiao_w2fragment_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w12fragment_wholeqingxie_right": {
-        "name": "TILT (right)"
-      },
-      "motion_bed_weitiao_w14fragment_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w2fragment_lumbar_both": {
-        "name": "LUMBAR (both)"
-      },
-      "motion_bed_weitiao_w1fragment_hip_left": {
+      "motion_bed_hip_left": {
         "name": "HIP (left)"
       },
-      "motion_bed_weitiao_w12fragment_wholeqingxie_left": {
-        "name": "TILT (left)"
+      "motion_bed_hip_right": {
+        "name": "HIP (right)"
       },
-      "motion_bed_weitiao_w14fragment_back": {
-        "name": "BACK"
+      "motion_bed_hip_both": {
+        "name": "HIP (both)"
       },
-      "motion_bed_weitiao_w11fragment_back_both": {
-        "name": "BACK (both)"
+      "motion_bed_lift": {
+        "name": "LIFT"
       },
-      "motion_bed_weitiao_w10fragment_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w7fragment_split_back_left_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w2fragment_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w1fragment_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w10fragment_head_both": {
-        "name": "HEAD (both)"
-      },
-      "motion_bed_weitiao_w13fragment_wholeqingxie": {
-        "name": "TILT"
-      },
-      "motion_bed_weitiao_w8fragment_split_back_right_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w6fragment_wholelift_left": {
+      "motion_bed_lift_left": {
         "name": "LIFT (left)"
       },
-      "motion_bed_weitiao_w14fragment_back_both": {
-        "name": "BACK (both)"
+      "motion_bed_lift_right": {
+        "name": "LIFT (right)"
       },
-      "motion_bed_weitiao_w18fragment_head_both": {
+      "motion_bed_lift_both": {
         "name": "LIFT (both)"
       },
-      "motion_bed_weitiao_w14fragment_lumbar_left": {
-        "name": "LUMBAR (left)"
+      "motion_bed_tilt": {
+        "name": "TILT"
       },
-      "motion_bed_weitiao_w3fragment_back": {
-        "name": "BACK"
+      "motion_bed_tilt_left": {
+        "name": "TILT (left)"
       },
-      "motion_bed_weitiao_w12fragment_back_left": {
-        "name": "BACK (left)"
+      "motion_bed_tilt_right": {
+        "name": "TILT (right)"
       },
-      "motion_bed_weitiao_w3fragment_legs_both": {
-        "name": "LEG (both)"
+      "motion_bed_tilt_both": {
+        "name": "TILT (both)"
       },
-      "motion_bed_weitiao_w7fragment_split_legs_left": {
-        "name": "Split Legs Left"
+      "motion_bed_back_legs": {
+        "name": "BACK LEG"
       },
-      "motion_bed_weitiao_w2fragment_lumbar": {
-        "name": "LUMBAR"
+      "motion_bed_back_legs_left": {
+        "name": "BACK LEG (left)"
       },
-      "motion_bed_weitiao_w4fragment_legs_left": {
-        "name": "LEG (left)"
+      "motion_bed_back_legs_right": {
+        "name": "BACK LEG (right)"
       },
-      "motion_bed_weitiao_w6fragment_back_both": {
-        "name": "BACK (both)"
+      "motion_bed_back_legs_both": {
+        "name": "BACK LEG (both)"
+      },
+      "motion_bed_left_back": {
+        "name": "Left BACK"
+      },
+      "motion_bed_left_back_left": {
+        "name": "Left BACK (left)"
+      },
+      "motion_bed_left_back_right": {
+        "name": "Left BACK (right)"
+      },
+      "motion_bed_left_back_both": {
+        "name": "Left BACK (both)"
+      },
+      "motion_bed_right_back": {
+        "name": "Right BACK"
+      },
+      "motion_bed_right_back_left": {
+        "name": "Right BACK (left)"
+      },
+      "motion_bed_right_back_right": {
+        "name": "Right BACK (right)"
+      },
+      "motion_bed_right_back_both": {
+        "name": "Right BACK (both)"
+      },
+      "motion_bed_left_legs": {
+        "name": "Left LEG"
+      },
+      "motion_bed_left_legs_left": {
+        "name": "Left LEG (left)"
+      },
+      "motion_bed_left_legs_right": {
+        "name": "Left LEG (right)"
+      },
+      "motion_bed_left_legs_both": {
+        "name": "Left LEG (both)"
+      },
+      "motion_bed_right_legs": {
+        "name": "Right LEG"
+      },
+      "motion_bed_right_legs_left": {
+        "name": "Right LEG (left)"
+      },
+      "motion_bed_right_legs_right": {
+        "name": "Right LEG (right)"
+      },
+      "motion_bed_right_legs_both": {
+        "name": "Right LEG (both)"
       },
       "starcode_union": {
         "name": "Head and foot together"
@@ -5891,7 +5399,7 @@
         }
       },
       "motion_bed_active_module_left": {
-        "name": "Left active hub module",
+        "name": "Active hub module (left)",
         "state": {
           "motor": "Motor",
           "air": "Air massage",
@@ -5907,7 +5415,7 @@
         }
       },
       "motion_bed_active_module_both": {
-        "name": "Both active hub modules",
+        "name": "Active hub module (both)",
         "state": {
           "motor": "Motor",
           "air": "Air massage",
@@ -5915,7 +5423,7 @@
         }
       },
       "motion_bed_active_module_right": {
-        "name": "Right active hub module",
+        "name": "Active hub module (right)",
         "state": {
           "motor": "Motor",
           "air": "Air massage",
