@@ -40,7 +40,7 @@ def virtual_hold(monkeypatch, controller):
 async def hold(hass, coordinator):
     with patch('custom_components.adjustable_bed.services._resolve_sided_targets',
                return_value=([(coordinator, SIDE_BOTH)], [])):
-        await hass.services.async_call(DOMAIN, 'svane_hold_control', {
+        await hass.services.async_call(DOMAIN, 'hold_control', {
             'device_id': 'bed', 'control': 'light_adjust', 'duration': .201,
         }, blocking=True)
 

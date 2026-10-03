@@ -171,6 +171,7 @@ async def test_rename_validates_every_app_rule_before_any_write(hass, services):
 
     phone = _target(
         "Phone bed", BED_TYPE_LOGICDATA_APP, supports_device_rename=True,
+        disconnects_after_rename=False,
         validate_device_rename=MagicMock(), rename_device=AsyncMock(),
     )
     pump = _target(

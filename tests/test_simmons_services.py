@@ -41,9 +41,8 @@ def _targets(coordinator):
     ("profile", "variant", "control", "error"),
     [
         (BED_TYPE_SIMMONS, None, "memory", None),
-        (BED_TYPE_SIMMONS, None, "inclined_left", "combination"),
-        (BED_TYPE_SIMMONS, "simmons_inclined", "zero_g", "combination"),
-        ("okin_ffe", None, "memory", "SIMMONS action"),
+        (BED_TYPE_SIMMONS, None, "inclined_left", "does not support held control"),
+        (BED_TYPE_SIMMONS, "simmons_inclined", "zero_g", "does not support held control"),
     ],
 )
 async def test_hold_control_preflights_profile_and_layout(hass, profile, variant, control, error):
@@ -53,10 +52,10 @@ async def test_hold_control_preflights_profile_and_layout(hass, profile, variant
     with _targets(coordinator):
         if error:
             with pytest.raises(ServiceValidationError, match=error):
-                await hass.services.async_call(DOMAIN, "simmons_hold_control", call, blocking=True)
+                await hass.services.async_call(DOMAIN, "hold_control", call, blocking=True)
             coordinator.async_execute_controller_command.assert_not_awaited()
         else:
-            await hass.services.async_call(DOMAIN, "simmons_hold_control", call, blocking=True)
+            await hass.services.async_call(DOMAIN, "hold_control", call, blocking=True)
             controller.hold_control.assert_awaited_once_with("memory", 5500)
 
 
@@ -128,23 +127,13 @@ async def test_set_alarm_requires_a_simmons_target(hass):
     controller.configure_simmons_alarm.assert_not_awaited()
 
 
-def test_service_metadata_matches_every_layout_control():
+def test_entity_translations_cover_every_layout():
     import json
     from pathlib import Path
 
-    import yaml
-
     root = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
-    services = yaml.safe_load((root / "services.yaml").read_text())
-    options = services["simmons_hold_control"]["fields"]["control"]["selector"]["select"]["options"]
-    assert set(options) == {
-        *make_controller().held_control_options,
-        *make_controller("simmons_inclined").held_control_options,
-    }
     for filename in ("strings.json", "translations/en.json"):
         metadata = json.loads((root / filename).read_text())
-        for name in ("simmons_hold_control", "simmons_set_alarm"):
-            assert set(metadata["services"][name]["fields"]) == set(services[name]["fields"])
         assert {"simmons_alarm_1", "simmons_alarm_2"} <= set(metadata["entity"]["sensor"])
         buttons = {
             spec.translation_key

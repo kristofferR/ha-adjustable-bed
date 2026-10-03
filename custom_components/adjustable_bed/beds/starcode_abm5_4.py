@@ -601,6 +601,8 @@ class StarcodeAbm5_4Controller(BedController):
             raise ValueError("The app requires observed own-address active state for this control")
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
+        if self.command_side is not None:
+            raise ValueError("This app has no one-address side selector")
         if (
             control not in self.held_control_options
             or type(duration_ms) is not int

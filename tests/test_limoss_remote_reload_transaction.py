@@ -111,7 +111,7 @@ async def loaded_runtime(hass, paired):
     (False, "goto_preset", False),
     (False, "goto_preset", True),
     (True, "goto_preset", True),
-    (True, "limoss_remote_recall_memory", True),
+    (True, "goto_preset", True),
     (True, "limoss_remote_features", True),
 ])
 async def test_capability_reload_waits_for_real_public_transaction(hass, paired, service, changed):
@@ -131,7 +131,7 @@ async def test_capability_reload_waits_for_real_public_transaction(hass, paired,
             assert not any(child.is_connected for child in children)
 
         data = {"preset": 1}
-        if service == "limoss_remote_recall_memory":
+        if service == "goto_preset":
             data["duration"] = 0.1
         elif service == "limoss_remote_features":
             data = {"underbed_light": False, "massage": False}
@@ -167,7 +167,7 @@ async def test_failed_or_cancelled_public_transaction_releases_reload_after_nati
         state.update(capacity=7, failure=failure)
         with patch.object(services, "_resolve_sided_targets", return_value=([(original, const.SIDE_BOTH)], [])):
             operation = asyncio.create_task(hass.services.async_call(
-                const.DOMAIN, "limoss_remote_recall_memory",
+                const.DOMAIN, "goto_preset",
                 {"device_id": ["physical"], "preset": 1, "duration": 0.1}, blocking=True,
             ))
             try:

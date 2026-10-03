@@ -62,10 +62,10 @@ async def test_registered_hold_reports_incomplete_delivery_and_preserves_normal_
                return_value=([(coordinator, SIDE_BOTH)], [])):
         if scenario.endswith("exhausts_budget"):
             with pytest.raises(ServiceValidationError, match="selected feet axis could start"):
-                await hass.services.async_call(DOMAIN, "svane_hold_control",
+                await hass.services.async_call(DOMAIN, "hold_control",
                     {"device_id": "bed", "control": control, "duration": duration}, blocking=True)
         else:
-            await hass.services.async_call(DOMAIN, "svane_hold_control",
+            await hass.services.async_call(DOMAIN, "hold_control",
                 {"device_id": "bed", "control": control, "duration": duration}, blocking=True)
     assert not controller._started
     assert not controller.ble_lock.locked()

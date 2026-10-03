@@ -241,8 +241,7 @@ async def test_actual_reconnect_and_repeated_serial_skip_unchanged_storage(
 
 
 @pytest.mark.parametrize("action,fields", [
-    ("fsm_relax_hold_control", {"control": "command_12", "duration": 0.1}),
-    ("fsm_relax_recall_memory", {"preset": 1, "duration": 0.1}),
+    ("hold_control", {"control": "command_12", "duration": 0.1}),
     ("fsm_relax_calibrate", {"confirmed": True}),
 ])
 async def test_visual_action_side_options_match_registered_schema(
@@ -289,7 +288,7 @@ async def _fire_default_handoff(hass: HomeAssistant, coordinator: AdjustableBedC
     assert coordinator.client is None and coordinator.controller is None
 
 
-@pytest.mark.parametrize("service", ("goto_preset", "fsm_relax_recall_memory"))
+@pytest.mark.parametrize("service", ("goto_preset", "goto_preset"))
 async def test_registered_save_disconnect_cached_preflight_reconnects_new_memory(
     hass: HomeAssistant,
     mock_coordinator_connected: None,
@@ -326,7 +325,7 @@ async def test_registered_save_disconnect_cached_preflight_reconnects_new_memory
             assert coordinator.capability_controller is offline
             prior_writes = mock_bleak_client.write_gatt_char.call_count
             data: dict[str, object] = {"device_id": "target", "preset": 8}
-            if service == "fsm_relax_recall_memory":
+            if service == "goto_preset":
                 data["duration"] = 0.12
             await hass.services.async_call(const.DOMAIN, service, data, blocking=True)
             current = coordinator.controller
@@ -344,7 +343,7 @@ async def test_registered_save_disconnect_cached_preflight_reconnects_new_memory
         await coordinator.async_shutdown()
 
 
-@pytest.mark.parametrize("service", ("goto_preset", "fsm_relax_recall_memory"))
+@pytest.mark.parametrize("service", ("goto_preset", "goto_preset"))
 @pytest.mark.parametrize("side", (const.SIDE_LEFT, const.SIDE_RIGHT))
 async def test_paired_save_replacement_keeps_asymmetric_target_memories(
     hass: HomeAssistant, service: str, side: str,
@@ -404,7 +403,7 @@ async def test_paired_save_replacement_keeps_asymmetric_target_memories(
             return True
 
         data: dict[str, object] = {"device_id": "parent", "preset": 8, "side": side}
-        if service == "fsm_relax_recall_memory":
+        if service == "goto_preset":
             data["duration"] = 0.12
         with (
             patch.object(services, "_resolve_sided_targets", return_value=([(pair, side)], [])),

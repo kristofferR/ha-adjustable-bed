@@ -703,18 +703,18 @@ async def test_innova_rename_service(
     mock_bleak_client.write_gatt_char.reset_mock()
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(
-            DOMAIN, "innova_rename", {"device_id": [device.id], "name": "N" * 15}, blocking=True
+            DOMAIN, "rename", {"device_id": [device.id], "name": "N" * 15}, blocking=True
         )
     mock_bleak_client.write_gatt_char.assert_not_awaited()
     await hass.services.async_call(
-        DOMAIN, "innova_rename", {"device_id": [device.id], "name": " BED "}, blocking=True
+        DOMAIN, "rename", {"device_id": [device.id], "name": " BED "}, blocking=True
     )
     assert _written(mock_bleak_client)[-1] == "ef0242454400000000000000000000000043"
 
     await _reload(hass, entry, **{CONF_PROTOCOL_VARIANT: KEESON_VARIANT_BEDSENSE_BASES})
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(
-            DOMAIN, "innova_rename", {"device_id": [device.id], "name": "BED"}, blocking=True
+            DOMAIN, "rename", {"device_id": [device.id], "name": "BED"}, blocking=True
         )
     assert await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
@@ -737,13 +737,13 @@ async def test_innova_hold_control_service(
     ):
         with pytest.raises((ServiceValidationError, vol.Invalid)):
             await hass.services.async_call(
-                DOMAIN, "innova_hold_control", {"device_id": [device.id], **data}, blocking=True
+                DOMAIN, "hold_control", {"device_id": [device.id], **data}, blocking=True
             )
     mock_bleak_client.write_gatt_char.assert_not_awaited()
 
     await hass.services.async_call(
         DOMAIN,
-        "innova_hold_control",
+        "hold_control",
         {"device_id": [device.id], "control": "memory_a", "duration": 0.5},
         blocking=True,
     )
@@ -754,7 +754,7 @@ async def test_innova_hold_control_service(
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(
             DOMAIN,
-            "innova_hold_control",
+            "hold_control",
             {"device_id": [device.id], "control": "legs_up", "duration": 1},
             blocking=True,
         )

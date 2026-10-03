@@ -49,7 +49,7 @@ async def test_real_hold_endpoint_frames_and_cleanup(hass, profile):
     ):
         await hass.services.async_call(
             DOMAIN,
-            "svane_hold_control",
+            "hold_control",
             {"device_id": "bed", "control": "head_up_feet_down", "duration": 0.13},
             blocking=True,
         )
@@ -86,7 +86,7 @@ async def test_later_target_rejected_before_first_motion(hass, failure):
     ):
         await hass.services.async_call(
             DOMAIN,
-            "svane_hold_control",
+            "hold_control",
             {"device_id": ["one", "two"], "control": "head_up", "duration": 0.1},
             blocking=True,
         )
@@ -129,7 +129,7 @@ async def test_mixed_profile_native_pair_routes_each_physical_target(hass, side)
     ):
         await hass.services.async_call(
             DOMAIN,
-            "svane_hold_control",
+            "hold_control",
             {"device_id": "pair", "side": side, "control": "head_up", "duration": 0.1},
             blocking=True,
         )
@@ -151,7 +151,7 @@ async def test_axis_release_endpoint_signals_active_real_writer_no_independent_b
         held = asyncio.create_task(
             hass.services.async_call(
                 DOMAIN,
-                "svane_hold_control",
+                "hold_control",
                 {"device_id": "bed", "control": "head_up_feet_down", "duration": 0.6},
                 blocking=True,
             )
@@ -190,25 +190,6 @@ async def test_release_selection_preflight_no_partial_intent_mutation(hass):
             blocking=True,
         )
     assert not controller._pending_release
-
-
-def test_literal_dropdown_matches_catalog_and_translated_root_metadata():
-    import json
-    from pathlib import Path
-
-    import yaml
-
-    from custom_components.adjustable_bed.beds.svane import MOTIONS
-
-    root = Path(__file__).parents[1] / "custom_components/adjustable_bed"
-    services = yaml.safe_load((root / "services.yaml").read_text())
-    assert services["svane_hold_control"]["fields"]["control"]["selector"]["select"]["options"] == [
-        *MOTIONS,
-        "light_adjust",
-    ]
-    for name in ("strings.json", "translations/en.json"):
-        data = json.loads((root / name).read_text())
-        assert {"svane_hold_control", "svane_release_axis"} <= data["services"].keys()
 
 
 @pytest.mark.parametrize("slot", [1, 2])

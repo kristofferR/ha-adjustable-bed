@@ -135,7 +135,7 @@ async def test_public_light_button_queues_after_native_movement_release(
         else:
             await hass.services.async_call(
                 const.DOMAIN,
-                "starcode_abm5_4_hold_control",
+                "hold_control",
                 {
                     "device_id": ["native"],
                     "control": "save_memory_1" if movement == "save" else "head_up",

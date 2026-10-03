@@ -491,6 +491,15 @@ class LinakController(BedController):
         return self._profile is LinakProfile.BED_CONTROL
 
     @property
+    def disconnects_after_rename(self) -> bool:
+        """Disconnect after renaming so advertising can refresh."""
+        return True
+
+    def validate_device_rename(self, name: str) -> None:
+        if not name or len(name.encode()) > 17:
+            raise ValueError("Linak device names must contain 1 to 17 UTF-8 bytes")
+
+    @property
     def supports_simultaneous_movement(self) -> bool:
         """Return whether the modern profile exposes two-section opcodes."""
         return self._profile is LinakProfile.BED_CONTROL

@@ -1,123 +1,97 @@
 rmcontrol_alarm:
-  name: RMControl alarm
-  description: Configure a supported RMControl product's countdown or repeating alarm. Query results appear in controller state and diagnostics. Alarm actions use the exact product catalog, not raw command bytes.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
     operation:
-      name: Operation
       required: true
       selector:
         select:
           options: [single, cancel_single, repeat, delete, query, sync]
     minutes:
-      name: Countdown minutes
-      description: Required for single alarms.
       selector:
         number:
           min: 1
           max: 65535
           mode: box
     action:
-      name: Product action
-      description: Exact alarm action name from the selected product's diagnostics. Required for single and repeating alarms.
       selector:
         text:
     alarm_id:
-      name: Alarm slot
-      description: Required for repeat and delete. Updating a slot replaces that alarm.
       selector:
         number:
           min: 1
           max: 7
           mode: box
     time:
-      name: Local alarm time
-      description: Required for repeating alarms. Minute precision.
       selector:
         time:
     weekdays:
-      name: Repeat on
-      description: Required for repeating alarms.
       selector:
         select:
           multiple: true
           options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
     side:
-      name: Side
-      description: Target side of a paired bed. A standalone bed uses its configured RMControl side.
       selector:
         select:
           options: [left, right, both]
 
 rmcontrol_anti_snore:
-  name: RMControl snore intervention
-  description: Enable, configure or query supported automatic snore intervention. This is separate from the anti-snore position preset.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
     operation:
-      name: Operation
       required: true
       selector:
         select:
           options: [switch, configure, query]
     enabled:
-      name: Enabled
-      description: Required for switch.
       selector:
         boolean:
     mode:
-      name: Configuration mode
-      description: Required for configure.
       selector:
         select:
           options: [count, time]
     value:
-      name: Intervention value
-      description: Required for configure. Uses the selected mode's app value; physical interpretation is hardware unverified.
       selector:
         number:
           min: 0
           max: 255
           mode: box
     side:
-      name: Side
       selector:
         select:
           options: [left, right, both]
 
 goto_preset:
-  name: Go to Preset
-  description: Move bed to a saved memory position.
   fields:
     device_id:
-      name: Device
-      description: The adjustable bed device.
       required: true
       selector:
         device:
           integration: adjustable_bed
     preset:
-      name: Preset Number
-      description: Memory slot number (1-8, device-dependent).
       required: true
       selector:
         number:
           min: 1
           max: 8
           mode: box
+    duration:
+      required: false
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.001
+          unit_of_measurement: seconds
+          mode: box
     side:
-      name: Side
-      description: Which side of a paired bed to target. Leave unset to target the whole bed (or the specific side when you target one side's device); single beds always control the whole bed.
       required: false
       selector:
         select:
@@ -130,19 +104,13 @@ goto_preset:
               label: Right
 
 save_preset:
-  name: Save to Preset
-  description: Save current bed position to a memory slot.
   fields:
     device_id:
-      name: Device
-      description: The adjustable bed device.
       required: true
       selector:
         device:
           integration: adjustable_bed
     preset:
-      name: Preset Number
-      description: Memory slot number (1-8, device-dependent).
       required: true
       selector:
         number:
@@ -150,8 +118,6 @@ save_preset:
           max: 8
           mode: box
     side:
-      name: Side
-      description: Which side of a paired bed to target. Leave unset to target the whole bed (or the specific side when you target one side's device); single beds always control the whole bed.
       required: false
       selector:
         select:
@@ -164,19 +130,13 @@ save_preset:
               label: Right
 
 stop_all:
-  name: Stop All Motors
-  description: Immediately stop all bed motors.
   fields:
     device_id:
-      name: Device
-      description: The adjustable bed device.
       required: true
       selector:
         device:
           integration: adjustable_bed
     side:
-      name: Side
-      description: Which side of a paired bed to stop. Leave unset to stop the whole bed (or the specific side when you target one side's device); single beds always stop the whole bed.
       required: false
       selector:
         select:
@@ -189,19 +149,13 @@ stop_all:
               label: Right
 
 set_position:
-  name: Set Motor Position
-  description: Move a motor to a specific position and stop when reached. Only works for beds with position feedback (Linak, Okimat, Reverie, Keeson, Ergomotion, BOX25 Star).
   fields:
     device_id:
-      name: Device
-      description: The adjustable bed device.
       required: true
       selector:
         device:
           integration: adjustable_bed
     motor:
-      name: Motor
-      description: The motor to move.
       required: true
       selector:
         select:
@@ -225,8 +179,6 @@ set_position:
             - label: Right legs (Sleep Number MCR)
               value: right_legs
     position:
-      name: Position
-      description: Target position (0-68° for back/head, 0-45° for legs/feet, 0-100% for Keeson/Ergomotion/BOX25 Star/Sleep Number MCR).
       required: true
       selector:
         number:
@@ -234,8 +186,6 @@ set_position:
           max: 100
           mode: slider
     side:
-      name: Side
-      description: Which side of a paired bed to target. Leave unset to target both sides (or the specific side when you target one side's device); single beds use their whole-bed target.
       required: false
       selector:
         select:
@@ -248,19 +198,13 @@ set_position:
               label: Right
 
 set_positions:
-  name: Set Multiple Motor Positions
-  description: Move several motors to validated target positions in one ordered request. Every target is validated before movement starts.
   fields:
     device_id:
-      name: Device
-      description: The adjustable bed device.
       required: true
       selector:
         device:
           integration: adjustable_bed
     positions:
-      name: Positions
-      description: One target per motor. Sleep Number MCR uses left_back, right_back, left_legs, or right_legs with 0-100% targets.
       required: true
       example:
         - motor: back
@@ -270,8 +214,6 @@ set_positions:
       selector:
         object:
     side:
-      name: Side
-      description: Which side of a paired bed to target. Leave unset to target both sides (or the specific side when you target one side's device); single beds use their whole-bed target.
       required: false
       selector:
         select:
@@ -284,19 +226,13 @@ set_positions:
               label: Right
 
 timed_move:
-  name: Timed Move
-  description: Move a motor for a specified duration. Useful for beds without presets or position feedback.
   fields:
     device_id:
-      name: Device
-      description: The adjustable bed device.
       required: true
       selector:
         device:
           integration: adjustable_bed
     motor:
-      name: Motor
-      description: The motor to move.
       required: true
       selector:
         select:
@@ -322,8 +258,6 @@ timed_move:
             - label: Stair
               value: stair
     direction:
-      name: Direction
-      description: Direction to move the motor.
       required: true
       selector:
         select:
@@ -333,8 +267,6 @@ timed_move:
             - label: Down
               value: down
     duration_ms:
-      name: Duration (ms)
-      description: How long to move the motor in milliseconds (100-30000).
       required: true
       selector:
         number:
@@ -344,8 +276,6 @@ timed_move:
           unit_of_measurement: ms
           mode: box
     side:
-      name: Side
-      description: Which side of a paired bed to target. Leave unset to target both sides (or the specific side when you target one side's device); single beds use their whole-bed target.
       required: false
       selector:
         select:
@@ -357,327 +287,20 @@ timed_move:
             - value: right
               label: Right
 
-linak_move_simultaneously:
-  name: Move Two Sections Together
-  description: Move two different sections with one native command (Linak Bed Control, Jensen JMC400), then send STOP.
+hold_control:
   fields:
     device_id:
-      name: Device
-      description: A Linak Bed Control or Jensen JMC400 device.
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-    first_motor:
-      name: First Motor
-      required: true
-      selector:
-        select:
-          options: [base, feet, head, legs, back]
-    first_direction:
-      name: First Direction
-      required: true
-      selector:
-        select:
-          options: [up, down]
-    second_motor:
-      name: Second Motor
-      required: true
-      selector:
-        select:
-          options: [base, feet, head, legs, back]
-    second_direction:
-      name: Second Direction
-      required: true
-      selector:
-        select:
-          options: [up, down]
-    duration_ms:
-      name: Duration
-      description: How long to hold the combined movement before STOP.
-      required: true
-      selector:
-        number:
-          min: 100
-          max: 30000
-          step: 100
-          unit_of_measurement: ms
-          mode: box
-    side:
-      name: Side
-      required: false
-      selector:
-        select:
-          options: [both, left, right]
-
-linak_rename:
-  name: Rename Linak Controller
-  description: Write a 1 to 17 byte BLE name, then disconnect so the controller can advertise the new name.
-  fields:
-    device_id:
-      name: Device
-      description: A Linak Bed Control device.
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-    name:
-      name: Name
-      description: New BLE name, limited to 17 UTF-8 bytes.
-      required: true
-      selector:
-        text:
-    side:
-      name: Side
-      required: false
-      selector:
-        select:
-          options: [both, left, right]
-
-linak_set_alarm:
-  name: Set Linak Alarm
-  description: Program a Bed Control alarm with up to four actions, recurrence, and commit.
-  fields:
-    device_id:
-      name: Device
-      description: An alarm-capable Linak Bed Control device.
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-    seconds:
-      name: Seconds
-      description: Seconds until the alarm. Zero disables the timer.
-      required: true
-      selector:
-        number:
-          min: 0
-          max: 131071
-          mode: box
-    actions:
-      name: Actions
-      description: One to four objects with action, lifetime, and pause fields.
-      required: true
-      example:
-        - action: memory_1
-          lifetime: 1
-          pause: 0
-      selector:
-        object:
-    recurrence_count:
-      name: Recurrence Count
-      required: false
-      default: 0
-      selector:
-        number:
-          min: 0
-          max: 31
-          mode: box
-    recurrence_minutes:
-      name: Recurrence Minutes
-      required: false
-      default: 0
-      selector:
-        number:
-          min: 0
-          max: 2047
-          mode: box
-    side:
-      name: Side
-      required: false
-      selector:
-        select:
-          options: [both, left, right]
-
-solace_audio:
-  name: Control Solace audio
-  description: Select or preview MotionFlex music, query volume, or set volume.
-  fields:
-    device_id:
-      name: Device
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    action:
-      name: Action
-      required: true
-      selector:
-        select:
-          options: [select, preview, query, set_volume]
-    track:
-      name: Track
-      description: Required for select and preview actions.
-      selector:
-        number:
-          min: 1
-          max: 5
-          step: 1
-          mode: box
-    volume:
-      name: Volume
-      description: Required for the set_volume action.
-      selector:
-        number:
-          min: 1
-          max: 5
-          step: 1
-          mode: slider
-    side:
-      name: Side
-      required: false
-      selector:
-        select:
-          options: [both, left, right]
-
-solace_set_alarm:
-  name: Set Solace alarm
-  description: Program the MotionFlex or Woosa Sleep alarm time, recurrence, action, massage, and sound. Woosa supports sound off or alarm only.
-  fields:
-    device_id:
-      name: Device
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    enabled:
-      name: Enabled
-      required: true
-      selector:
-        boolean:
-    time:
-      name: Time
-      selector:
-        time:
-    weekdays:
-      name: Weekdays
-      selector:
-        select:
-          multiple: true
-          options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
-    mode:
-      name: Bed action
-      selector:
-        select:
-          options: [zero_g, memory_1, no_action]
-    massage:
-      name: Massage
-      selector:
-        boolean:
-    sound:
-      name: Sound
-      selector:
-        select:
-          options: [none, alarm, music_1, music_2, music_3, music_4, music_5]
-    side:
-      name: Side
-      required: false
-      selector:
-        select:
-          options: [both, left, right]
-
-leggett_sleep_timer:
-  name: Set Leggett sleep timer
-  description: Start a delayed preset or cancel the stored sleep timer.
-  fields:
-    device_id:
-      name: Device
-      description: A timer-capable Leggett Okin controller with its matching app profile.
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    action:
-      name: Action
-      required: true
-      selector:
-        select:
-          options: [start, cancel]
-    minutes:
-      name: Delay
-      description: Required to start. Prodigy accepts 1 to 1439 minutes; U Series accepts 15, 30, 45, 60, 75, or 90 minutes.
-      selector:
-        number:
-          min: 1
-          max: 1439
-          step: 1
-          unit_of_measurement: minutes
-          mode: box
-    preset:
-      name: Sleep action
-      description: Prodigy uses memory slots 1 to 4. U Series uses 0 for flat or 1 to 3 for memory; its third memory is available only through this timer.
-      default: 1
-      selector:
-        number:
-          min: 0
-          max: 4
-          step: 1
-          mode: box
-    side:
-      name: Side
-      selector:
-        select:
-          options: [both, left, right]
-
-leggett_alarm_timer:
-  name: Set Leggett alarm timer
-  description: Start an alarm delay or cancel the stored alarm using the selected app profile.
-  fields:
-    device_id:
-      name: Device
-      description: A timer-capable Leggett Okin controller with its matching app profile.
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    action:
-      name: Action
-      required: true
-      selector:
-        select:
-          options: [start, cancel]
-    minutes:
-      name: Delay
-      description: Required to start. Alarm delay in whole minutes, from 1 to 1440.
-      selector:
-        number:
-          min: 1
-          max: 1440
-          step: 1
-          unit_of_measurement: minutes
-          mode: box
-    side:
-      name: Side
-      selector:
-        select:
-          options: [both, left, right]
-
-leggett_hold_control:
-  name: Hold Leggett control
-  description: Hold a supported control for a bounded duration, then send its release sequence.
-  fields:
-    device_id:
-      name: Device
-      description: A Leggett Okin controller with its matching app profile.
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     control:
-      name: Control
-      description: Memory 1, memory 2, and store are U Series controls. Other choices are available on all app profiles.
       required: true
+      example: head_up
       selector:
-        select:
-          options: [flat, snore, lights_toggle, massage_toggle, massage_wave, massage_head_up, massage_head_down, massage_foot_up, massage_foot_down, memory_1, memory_2, store]
+        text:
     duration:
-      name: Duration
-      description: Hold for 0.1 to 60 seconds, in whole milliseconds. These are service interface bounds, not firmware limits.
       required: true
       selector:
         number:
@@ -687,106 +310,369 @@ leggett_hold_control:
           unit_of_measurement: seconds
           mode: box
     side:
-      name: Side
+      selector:
+        select:
+          options: [both, left, right]
+
+rename:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    name:
+      required: true
+      selector:
+        text:
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+
+sync_clock:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+
+linak_move_simultaneously:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    first_motor:
+      required: true
+      selector:
+        select:
+          options: [base, feet, head, legs, back]
+    first_direction:
+      required: true
+      selector:
+        select:
+          options: [up, down]
+    second_motor:
+      required: true
+      selector:
+        select:
+          options: [base, feet, head, legs, back]
+    second_direction:
+      required: true
+      selector:
+        select:
+          options: [up, down]
+    duration_ms:
+      required: true
+      selector:
+        number:
+          min: 100
+          max: 30000
+          step: 100
+          unit_of_measurement: ms
+          mode: box
+    side:
+      required: false
+      selector:
+        select:
+          options: [both, left, right]
+
+linak_rename:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    name:
+      required: true
+      selector:
+        text:
+    side:
+      required: false
+      selector:
+        select:
+          options: [both, left, right]
+
+linak_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    seconds:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 131071
+          mode: box
+    actions:
+      required: true
+      example:
+        - action: memory_1
+          lifetime: 1
+          pause: 0
+      selector:
+        object:
+    recurrence_count:
+      required: false
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 31
+          mode: box
+    recurrence_minutes:
+      required: false
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 2047
+          mode: box
+    side:
+      required: false
+      selector:
+        select:
+          options: [both, left, right]
+
+solace_audio:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    action:
+      required: true
+      selector:
+        select:
+          options: [select, preview, query, set_volume]
+    track:
+      selector:
+        number:
+          min: 1
+          max: 5
+          step: 1
+          mode: box
+    volume:
+      selector:
+        number:
+          min: 1
+          max: 5
+          step: 1
+          mode: slider
+    side:
+      required: false
+      selector:
+        select:
+          options: [both, left, right]
+
+solace_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    enabled:
+      required: true
+      selector:
+        boolean:
+    time:
+      selector:
+        time:
+    weekdays:
+      selector:
+        select:
+          multiple: true
+          options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+    mode:
+      selector:
+        select:
+          options: [zero_g, memory_1, no_action]
+    massage:
+      selector:
+        boolean:
+    sound:
+      selector:
+        select:
+          options: [none, alarm, music_1, music_2, music_3, music_4, music_5]
+    side:
+      required: false
+      selector:
+        select:
+          options: [both, left, right]
+
+leggett_sleep_timer:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    action:
+      required: true
+      selector:
+        select:
+          options: [start, cancel]
+    minutes:
+      selector:
+        number:
+          min: 1
+          max: 1439
+          step: 1
+          unit_of_measurement: minutes
+          mode: box
+    preset:
+      default: 1
+      selector:
+        number:
+          min: 0
+          max: 4
+          step: 1
+          mode: box
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+
+leggett_alarm_timer:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    action:
+      required: true
+      selector:
+        select:
+          options: [start, cancel]
+    minutes:
+      selector:
+        number:
+          min: 1
+          max: 1440
+          step: 1
+          unit_of_measurement: minutes
+          mode: box
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+
+leggett_hold_control:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    control:
+      required: true
+      selector:
+        select:
+          options: [flat, snore, lights_toggle, massage_toggle, massage_wave, massage_head_up, massage_head_down, massage_foot_up, massage_foot_down, memory_1, memory_2, store]
+    duration:
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.001
+          unit_of_measurement: seconds
+          mode: box
+    side:
       selector:
         select:
           options: [both, left, right]
 
 malouf_set_alarm:
-  name: Set Malouf / Lucid clock alarm
-  description: Program or clear an alarm on a compatible Malouf Base or Lucid Base app profile. Programming synchronizes the bed clock to Home Assistant's local time first.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     enabled:
-      name: Enabled
-      description: Turn off to clear the stored alarm.
       required: true
       selector:
         boolean:
     time:
-      name: Local alarm time
-      description: Time to the nearest minute, using Home Assistant's configured time zone.
       selector:
         time:
     weekdays:
-      name: Repeat on
-      description: Leave empty for the next occurrence of the selected time.
       selector:
         select:
           multiple: true
           options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
     preset:
-      name: Bed preset
       default: zero_g
       selector:
         select:
           options: [zero_g, lounge, tv, anti_snore, memory_1, memory_2]
     side:
-      name: Side
       selector:
         select:
           options: [both, left, right]
 
 malouf_sync_clock:
-  name: Synchronize Malouf / Lucid clock
-  description: Set a compatible Malouf Base or Lucid Base app controller's clock to Home Assistant's local time.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     side:
-      name: Side
       selector:
         select:
           options: [both, left, right]
 
 logicdata_set_alarm:
-  name: Set Logicdata clock alarm
-  description: Configure the controller's recurring alarm with a preset and massage levels.
   fields:
     device_id:
-      name: Device
-      description: A Logicdata phone app controller using the standard protocol. Tablet and middle-motor controllers do not support clock alarms.
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     enabled:
-      name: Enabled
       required: true
       selector:
         boolean:
     time:
-      name: Time
-      description: Alarm time on the controller's local clock, to the nearest minute.
       selector:
         time:
     weekdays:
-      name: Weekdays
       selector:
         select:
           multiple: true
           options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
     preset:
-      name: Bed preset
       default: flat
       selector:
         select:
           options: [flat, zero_g, anti_snore, memory_1, memory_2]
     head_level:
-      name: Head massage level
-      description: Alarm massage intensity, with 0 for off and 1 to 3 for increasing intensity.
       default: 0
       selector:
         number:
@@ -795,8 +681,6 @@ logicdata_set_alarm:
           step: 1
           mode: box
     foot_level:
-      name: Foot massage level
-      description: Alarm massage intensity, with 0 for off and 1 to 3 for increasing intensity.
       default: 0
       selector:
         number:
@@ -805,56 +689,41 @@ logicdata_set_alarm:
           step: 1
           mode: box
     side:
-      name: Side
       selector:
         select:
           options: [both, left, right]
 
 logicdata_rename:
-  name: Rename Logicdata controller
-  description: Change the Bluetooth name of a compatible Logicdata app controller or Sleep Smart air pump.
   fields:
     device_id:
-      name: Device
-      description: A Logicdata app controller or Sleep Smart air pump that supports device renaming.
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     name:
-      name: Name
-      description: MotionRelax phone and tablet controllers accept 1 to 255 printable ASCII characters. Sleep Smart beds and pumps accept 1 to 20 letters, digits, ä, ö, ü or ß.
       required: true
       selector:
         text:
     side:
-      name: Side
       selector:
         select:
           options: [both, left, right]
 
 logicdata_hold_preset:
-  name: Hold Logicdata preset recall
-  description: Hold a flat, preset or memory recall with repeated commands for a specified duration, then release.
   fields:
     device_id:
-      name: Device
-      description: A MotionRelax controller using the middle-motor protocol (flat, memory 1 and 2), or a Sleep Smart bed (flat, zero gravity, anti-snore and memory 1).
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     preset:
-      name: Preset
       required: true
       selector:
         select:
           options: [flat, zero_g, anti_snore, memory_1, memory_2]
     duration:
-      name: Duration
-      description: Hold for 0.2 to 60 seconds, in whole milliseconds. These are service interface bounds, not firmware limits.
       required: true
       selector:
         number:
@@ -864,48 +733,36 @@ logicdata_hold_preset:
           unit_of_measurement: seconds
           mode: box
     side:
-      name: Side
       selector:
         select:
           options: [both, left, right]
 
 jiecang_set_alarm:
-  name: Set Jiecang clock alarm
-  description: Configure the controller's recurring alarm with a preset and massage levels.
   fields:
     device_id:
-      name: Device
-      description: A Jiecang app controller that supports clock alarms.
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     enabled:
-      name: Enabled
       required: true
       selector:
         boolean:
     time:
-      name: Time
-      description: Alarm time on the controller's local clock, to the nearest minute.
       selector:
         time:
     weekdays:
-      name: Weekdays
       selector:
         select:
           multiple: true
           options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
     preset:
-      name: Bed preset
       default: flat
       selector:
         select:
           options: [flat, zero_g, anti_snore, memory_1, memory_2, yoga]
     head_level:
-      name: Head massage level
-      description: Alarm massage intensity, with 0 for off and 1 to 3 for increasing intensity.
       default: 0
       selector:
         number:
@@ -914,8 +771,6 @@ jiecang_set_alarm:
           step: 1
           mode: box
     foot_level:
-      name: Foot massage level
-      description: Alarm massage intensity, with 0 for off and 1 to 3 for increasing intensity.
       default: 0
       selector:
         number:
@@ -924,32 +779,24 @@ jiecang_set_alarm:
           step: 1
           mode: box
     side:
-      name: Side
       selector:
         select:
           options: [both, left, right]
 
 jiecang_wake:
-  name: Start Jiecang wake routine
-  description: Move to a preset and start the selected wake massage levels immediately.
   fields:
     device_id:
-      name: Device
-      description: A Jiecang app controller that supports wake routines.
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     preset:
-      name: Bed preset
       default: flat
       selector:
         select:
           options: [flat, zero_g, anti_snore, memory_1, memory_2]
     head_level:
-      name: Head massage level
-      description: Wake massage intensity, with 0 for off and 1 to 3 for increasing intensity.
       default: 0
       selector:
         number:
@@ -958,8 +805,6 @@ jiecang_wake:
           step: 1
           mode: box
     foot_level:
-      name: Foot massage level
-      description: Wake massage intensity, with 0 for off and 1 to 3 for increasing intensity.
       default: 0
       selector:
         number:
@@ -968,98 +813,53 @@ jiecang_wake:
           step: 1
           mode: box
     side:
-      name: Side
       selector:
         select:
           options: [both, left, right]
 
 jiecang_stop_wake:
-  name: Stop Jiecang wake massage
-  description: Stop active wake massage without disabling the stored weekly clock alarm.
   fields:
     device_id:
-      name: Device
-      description: A Jiecang app controller that supports wake routines.
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     side:
-      name: Side
       selector:
         select:
           options: [both, left, right]
 
 jiecang_rename:
-  name: Rename Jiecang controller
-  description: Change the Bluetooth name of a compatible Jiecang app controller.
   fields:
     device_id:
-      name: Device
-      description: A Jiecang app controller that supports device renaming.
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     name:
-      name: Name
-      description: New Bluetooth name, using 1 to 20 ASCII letters or digits.
       required: true
       selector:
         text:
     side:
-      name: Side
-      selector:
-        select:
-          options: [both, left, right]
-
-innova_rename:
-  name: Rename INNOVA bed
-  description: Change the Bluetooth name of a bed using the INNOVA app profile.
-  fields:
-    device_id:
-      name: Device
-      description: A bed using the INNOVA app profile.
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    name:
-      name: Name
-      description: New Bluetooth name, 1 to 14 characters after trimming spaces.
-      required: true
-      selector:
-        text:
-    side:
-      name: Side
       selector:
         select:
           options: [both, left, right]
 
 generate_support_bundle:
-  name: Generate Support Bundle
-  description: Capture the full adjustable-bed support bundle. This combines BLE diagnostics, pairing evidence, retained setup/pairing logs, adapter and ESPHome proxy health, GATT details, scanner state, up to 30 ranked nearby Bluetooth devices, command trace, and recent integration logs into one JSON file. Nearby device names and addresses are included.
   fields:
     device_id:
-      name: Device
-      description: A configured adjustable bed device to capture. Provide exactly one of `device_id` or `target_address`.
       required: false
       selector:
         device:
           integration: adjustable_bed
     target_address:
-      name: Target Address
-      description: Bluetooth MAC address of an unconfigured device (for example `AA:BB:CC:DD:EE:FF`). Provide exactly one of `device_id` or `target_address`.
       required: false
       example: "AA:BB:CC:DD:EE:FF"
       selector:
         text:
     capture_duration:
-      name: Capture Duration
-      description: How long to capture notifications in seconds. Operate the physical remote during this time to generate useful traffic.
       required: false
       default: 120
       selector:
@@ -1069,31 +869,23 @@ generate_support_bundle:
           unit_of_measurement: seconds
           mode: box
     include_logs:
-      name: Include Recent Logs
-      description: Include recent Home Assistant log entries related to Bluetooth and this integration.
       required: false
       default: true
       selector:
         boolean:
 
 sleep_number_command:
-  name: Sleep Number command
-  description: Run a validated Sleep Number BLE control or query. Supported commands depend on the bed. Optional response data contains per-side results. See the Sleep Number service documentation for exact parameters.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
     side:
-      name: Physical side
-      description: For a paired bed, select left, right or both. A child device defaults to its own side.
       selector:
         select:
           options: [left, right, both]
     command:
-      name: Command
       required: true
       selector:
         select:
@@ -1182,33 +974,24 @@ sleep_number_command:
             - underbed_auto
             - underbed_auto_status
     parameters:
-      name: Parameters
-      description: Command-specific fields. Unknown fields and unsupported values are rejected. A parameter side cannot override the selected physical side.
       selector:
         object:
 
 customatic_hold_memory:
-  name: Hold Customatic memory controls
-  description: Hold a nonempty combination of the Clarity or Remedy memory-page actions. Program combinations can change stored positions.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     actions:
-      name: Actions
-      description: Select any combination of flat, zg, anti, program and incline. Jerome's C has no memory page.
       required: true
       selector:
         select:
           multiple: true
           options: [flat, zg, anti, program, incline]
     duration:
-      name: Duration
-      description: Hold for 0.1 to 60 seconds, in whole milliseconds. The refresh ends without a separate STOP frame.
       required: true
       selector:
         number:
@@ -1218,31 +1001,23 @@ customatic_hold_memory:
           unit_of_measurement: seconds
           mode: box
     side:
-      name: Side
       selector:
         select:
           options: [both, left, right]
 
 customatic_move_simultaneously:
-  name: Move Customatic motors together
-  description: Move one to three axes with one native mask, then send the movement release frame.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     actions:
-      name: Motor directions
-      description: A mapping of back, legs and optionally lumbar to up or down. Lumbar requires the Remedy profile. Opposing directions on one motor are rejected.
       required: true
       selector:
         object:
     duration:
-      name: Duration
-      description: Hold for 0.1 to 60 seconds, in whole milliseconds, then release.
       required: true
       selector:
         number:
@@ -1252,675 +1027,79 @@ customatic_move_simultaneously:
           unit_of_measurement: seconds
           mode: box
     side:
-      name: Side
       selector:
         select:
           options: [both, left, right]
-
-vmatbasic_hold_control:
-  name: Hold V-MAT Basic control
-  description: Hold a movement for 0.1 to 60 seconds, then send its movement release. The XT floor action ends its refresh without a release packet. Only movement can target both linked receivers.
-  fields:
-    device_id:
-      name: Device
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-    control:
-      name: Control
-      required: true
-      selector:
-        select:
-          options:
-            - all_up
-            - all_down
-            - back_up
-            - back_down
-            - legs_up
-            - legs_down
-            - floor_hold
-    duration:
-      name: Duration
-      required: true
-      selector:
-        number:
-          min: 0.1
-          max: 60
-          step: 0.001
-          unit_of_measurement: s
-          mode: box
-    side:
-      name: Side
-      selector:
-        select:
-          options:
-            - left
-            - right
-            - both
-
-vmatbasic_rename:
-  name: Rename V-MAT Basic receiver
-  description: Rename one selected physical receiver. Accepts at most ten UTF-16 units after Java whitespace trimming and twenty encoded UTF-8 bytes, including an empty name. Saved names change only after a successful write.
-  fields:
-    device_id:
-      name: Device
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-    name:
-      name: New name
-      required: true
-      selector:
-        text:
-    side:
-      name: Side
-      selector:
-        select:
-          options:
-            - left
-            - right
-
-vibradorm_hold_control:
-  name: Hold Caresse / Werkmeister / VMAT control
-  description: Hold a control supported by the selected app profile, then send its release command.
-  fields:
-    device_id:
-      name: Device
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    control:
-      name: Control
-      description: Each target must support this control in its selected app and remote profile.
-      required: true
-      selector:
-        select:
-          options: [head_up, head_down, back_up, back_down, legs_up, legs_down, feet_up, feet_down, all_up, all_down, memory_1, memory_2, memory_3, memory_4, memory_5, memory_6, sync]
-    duration:
-      name: Duration
-      description: Hold time in seconds. This host limit does not change the app's refresh interval.
-      required: true
-      selector:
-        number:
-          min: 0.1
-          max: 60
-          step: 0.1
-          unit_of_measurement: s
-    side:
-      name: Side
-      selector:
-        select:
-          options: [both, left, right]
-
-serenity_hold_control:
-  name: Hold Serenity control
-  description: Hold one supported Serenity app action, then release it. Save actions can change stored positions.
-  fields:
-    device_id:
-      name: Device
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    control:
-      name: Control
-      description: Literal action from the Serenity profile's held-control options.
-      required: true
-      selector:
-        select:
-          options:
-            - head_up
-            - head_down
-            - foot_up
-            - foot_down
-            - selector_4_up
-            - selector_4_down
-            - selector_5_up
-            - selector_5_down
-            - flat
-            - zero_g
-            - memory_1
-            - tv
-            - memory_2
-            - save_zero_g
-            - save_memory_1
-            - save_tv
-            - save_memory_2
-            - massage_head_cycle
-            - massage_foot_cycle
-            - massage_mode_cycle
-            - massage_timer_cycle
-            - massage_toggle
-            - light_toggle
-            - leisure
-            - anti_snore
-            - wave_1
-            - wave_2
-            - wave_3
-            - massage_off
-            - light_on
-            - light_off
-    duration:
-      name: Duration
-      description: Hold time in seconds.
-      required: true
-      selector:
-        number:
-          min: 0.1
-          max: 60
-          step: 0.1
-          unit_of_measurement: s
-    side:
-      name: Side
-      selector:
-        select:
-          options:
-            - both
-            - left
-            - right
-
-tranquil_hold_control:
-  name: Hold Tranquil control
-  description: Hold one supported Tranquil app action, then release it. Save actions can change stored positions.
-  fields:
-    device_id:
-      name: Device
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    control:
-      name: Control
-      description: Literal action from the selected Tranquil profile's held-control options.
-      required: true
-      selector:
-        select:
-          options:
-            - head_up
-            - head_down
-            - foot_up
-            - foot_down
-            - selector_4_up
-            - selector_4_down
-            - selector_5_up
-            - selector_5_down
-            - flat
-            - zero_g
-            - lounge
-            - memory_1
-            - memory_2
-            - save_zero_g
-            - save_lounge
-            - save_memory_1
-            - save_memory_2
-            - massage_head_cycle
-            - massage_foot_cycle
-            - massage_mode_cycle
-            - massage_timer_cycle
-            - massage_toggle
-            - light_toggle
-            - anti_snore
-            - wave_1
-            - wave_2
-            - wave_3
-            - massage_off
-            - light_on
-            - light_off
-    duration:
-      name: Duration
-      description: Hold time in seconds.
-      required: true
-      selector:
-        number:
-          min: 0.1
-          max: 60
-          step: 0.1
-          unit_of_measurement: s
-    side:
-      name: Side
-      selector:
-        select:
-          options:
-            - both
-            - left
-            - right
-
-zseries_hold_control:
-  name: Hold Z-Series control
-  description: Hold one supported Z-Series app action, then release it. Save actions can change stored positions.
-  fields:
-    device_id:
-      name: Device
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    control:
-      name: Control
-      description: Literal action from the selected Z-Series profile's held-control options.
-      required: true
-      selector:
-        select:
-          options:
-            - head_up
-            - head_down
-            - foot_up
-            - foot_down
-            - flat
-            - anti_snore
-            - memory_1
-            - zero_g
-            - tv
-            - save_zero_g
-            - save_memory_1
-            - save_tv
-            - light_toggle
-            - massage_toggle
-            - massage_mode_cycle
-            - massage_timer_cycle
-            - selector_5_up
-            - selector_5_down
-            - memory_2
-            - save_memory_2
-            - massage_head_cycle
-            - massage_foot_cycle
-            - head_foot_up
-            - head_foot_down
-            - massage_intensity_cycle
-    duration:
-      name: Duration
-      description: Hold time in seconds.
-      required: true
-      selector:
-        number:
-          min: 0.1
-          max: 60
-          step: 0.1
-          unit_of_measurement: s
-    side:
-      name: Side
-      selector:
-        select:
-          options:
-            - both
-            - left
-            - right
 
 zseries_set_alarm:
-  name: Set Z-Series alarm
-  description: Set or clear the Customatic Z-Series app alarm. The bed clock is set to Home Assistant's local time first. Only controllers whose manufacturer string enables the app alarm page are supported.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     enabled:
-      name: Enabled
-      description: Turn off to clear the alarm.
       required: true
       selector:
         boolean:
     time:
-      name: Local alarm time
-      description: Required when enabling. Time to the nearest minute; the app sets today's weekday, or tomorrow's if the time has passed.
       selector:
         time:
     wake_mode:
-      name: Wake mode
-      description: Required when enabling the alarm.
       selector:
         select:
           options: [massage, memory_1]
     side:
-      name: Side
       selector:
         select:
           options: [both, left, right]
-
-zseries_sync_clock:
-  name: Synchronize Z-Series clock
-  description: Set a Customatic Z-Series controller's clock to Home Assistant's local time, as the app's alarm page does.
-  fields:
-    device_id:
-      name: Device
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    side:
-      name: Side
-      selector:
-        select:
-          options: [both, left, right]
-
-simmons_hold_control:
-  name: Hold SIMMONS control
-  description: Hold one SIMMONS app control, repeating it every 300 ms, then send its release stops. The app's help says holding Custom Mode for 5 seconds saves the current position; the save on the bed is unverified.
-  fields:
-    device_id:
-      name: Device
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    control:
-      name: Control
-      description: Zero-gravity, TV and anti-snore exist only on a regular bed; the inclined controls only on an inclined bed.
-      required: true
-      selector:
-        select:
-          options:
-            - head_up
-            - head_down
-            - legs_up
-            - legs_down
-            - flat
-            - memory
-            - light
-            - zero_g
-            - tv
-            - anti_snore
-            - inclined_left
-            - inclined_middle
-            - inclined_right
-    duration:
-      name: Duration
-      description: Hold time in seconds.
-      required: true
-      selector:
-        number:
-          min: 0.1
-          max: 60
-          step: 0.1
-          unit_of_measurement: s
-    side:
-      name: Side
-      selector:
-        select:
-          options:
-            - both
-            - left
-            - right
-
-adjustable_lumbar_hold_control:
-  name: Hold Adjustable bed (Lumbar) control
-  description: Hold one Adjustable bed (Lumbar) app control, repeating it every 100 ms, then send STOP immediately and again after 300 ms. Saving a preset holds Flat with that preset; the app reports it after 6 seconds, and the save on the bed is unverified.
-  fields:
-    device_id:
-      name: Device
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    control:
-      name: Control
-      description: A motor direction, preset, preset save, light, massage wave or massage intensity control.
-      required: true
-      selector:
-        select:
-          options:
-            - head_up
-            - head_down
-            - feet_up
-            - feet_down
-            - lumbar_up
-            - lumbar_down
-            - flat
-            - zero_g
-            - lounge
-            - incline
-            - anti_snore
-            - save_zero_g
-            - save_lounge
-            - save_incline
-            - save_anti_snore
-            - light
-            - wave_1
-            - wave_2
-            - wave_3
-            - massage_up
-            - massage_down
-    duration:
-      name: Duration
-      description: Hold time in seconds, from 0.1 to 60.
-      required: true
-      selector:
-        number:
-          min: 0.1
-          max: 60
-          step: 0.1
-          unit_of_measurement: s
-    side:
-      name: Side
-      selector:
-        select:
-          options:
-            - both
-            - left
-            - right
-
-okin_app_hold_control:
-  name: Hold Okin app control
-  description: Hold one Simon Li, Heal Every Night or OKIN-Seating control, repeating it every 100 ms, then release it with the app's zero frame. Holding a Simon Li memory for 2.1 seconds or more is the app's memory save.
-  fields:
-    device_id:
-      name: Device
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    control:
-      name: Control
-      description: A control of the selected app. Back and Home belong to Simon Li and OKIN-Seating, lumbar and memory to Simon Li, and head and tilt to Heal Every Night.
-      required: true
-      selector:
-        select:
-          options:
-            - back_up
-            - back_down
-            - head_up
-            - head_down
-            - foot_up
-            - foot_down
-            - tilt_up
-            - tilt_down
-            - lumbar_up
-            - lumbar_down
-            - home
-            - memory_1
-            - memory_2
-    duration:
-      name: Duration
-      description: Hold time in seconds, from 0.1 to 60.
-      required: true
-      selector:
-        number:
-          min: 0.1
-          max: 60
-          step: 0.1
-          unit_of_measurement: s
-    side:
-      name: Side
-      selector:
-        select:
-          options:
-            - both
-            - left
-            - right
-
-innova_hold_control:
-  name: Hold INNOVA control
-  description: Hold one control the INNOVA app streams while pressed, for a Keeson bed on the INNOVA profile. The key repeats every 100 ms; release sends one zero key 100 ms after the hold ends.
-  fields:
-    device_id:
-      name: Device
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    control:
-      name: Control
-      description: A control on the selected screen. Combined exists on 2M, waist on 4M and lumbar on 3M and 4M.
-      required: true
-      selector:
-        select:
-          options:
-            - back_up
-            - back_down
-            - legs_up
-            - legs_down
-            - combined_up
-            - combined_down
-            - waist_up
-            - waist_down
-            - lumbar_up
-            - lumbar_down
-            - memory_a
-            - memory_b
-            - memory_timer
-    duration:
-      name: Duration
-      description: Hold time in seconds, from 0.1 to 60.
-      required: true
-      selector:
-        number:
-          min: 0.1
-          max: 60
-          step: 0.1
-          unit_of_measurement: s
-    side:
-      name: Side
-      selector:
-        select:
-          options: [both, left, right]
-
-restonic_hold_control:
-  name: Hold Restonic BT control
-  description: Hold one Restonic BT Remote app control for a Keeson bed on a Restonic BT profile. Motor directions and remote A's Zero G repeat every 100 ms; the other controls are sent once. Release sends one zero frame 100 ms after the hold ends.
-  fields:
-    device_id:
-      name: Device
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    control:
-      name: Control
-      description: A control on the selected remote. Back + Legs, light and ZZZ exist only on remote B.
-      required: true
-      selector:
-        select:
-          options:
-            - head_up
-            - head_down
-            - feet_up
-            - feet_down
-            - flat
-            - zero_g
-            - back_legs_up
-            - back_legs_down
-            - light
-            - zzz
-    duration:
-      name: Duration
-      description: Hold time in seconds, from 0.1 to 60.
-      required: true
-      selector:
-        number:
-          min: 0.1
-          max: 60
-          step: 0.1
-          unit_of_measurement: s
-    side:
-      name: Side
-      selector:
-        select:
-          options:
-            - both
-            - left
-            - right
 
 simmons_set_alarm:
-  name: Set SIMMONS alarm
-  description: Program or turn off alarm 1 or 2 of a SIMMONS app bed. The two enabled alarms cannot share a time or a mode.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     slot:
-      name: Alarm
       required: true
       selector:
         select:
           options: ["1", "2"]
     enabled:
-      name: Enabled
-      description: Turn off to disable this alarm.
       required: true
       selector:
         boolean:
     time:
-      name: Local alarm time
-      description: Time to the nearest minute, using Home Assistant's configured time zone.
       selector:
         time:
     weekdays:
-      name: Repeat on
-      description: Leave empty for the next occurrence of the selected time.
       selector:
         select:
           multiple: true
           options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
     mode:
-      name: Mode
-      description: Required when enabling. Anti-snore is available on a regular bed only.
       selector:
         select:
           options: [custom_mode, flat, anti_snore]
     confirm_custom_mode:
-      name: Confirm Custom Mode
-      description: Required for Custom Mode. Check the saved back/foot angles first; extreme custom angles can cause injury.
       selector:
         boolean:
     side:
-      name: Side
       selector:
         select:
           options: [both, left, right]
 
 furnimove_action:
-  name: FurniMove handset action
-  description: Execute an ordered action row from the selected handset. Find row indexes
-    in controller diagnostics. The widget consumer uses the app’s separate fixed timing.
   fields:
     device_id:
-      name: Device
       required: true
       selector: &id001
         device:
           integration: adjustable_bed
     side:
-      name: Side
       selector: &id002
         select:
           options:
@@ -1928,7 +1107,6 @@ furnimove_action:
           - right
           - both
     row_index:
-      name: Action row index
       required: true
       selector:
         number:
@@ -1936,9 +1114,6 @@ furnimove_action:
           max: 1000
           mode: box
     duration:
-      name: Hold duration
-      description: Optional seconds for held actions. Other actions use their captured
-        row timing.
       selector:
         number:
           min: 0.1
@@ -1947,64 +1122,36 @@ furnimove_action:
           mode: box
           unit_of_measurement: s
     consumer:
-      name: Consumer
       default: app
       selector:
         select:
           options:
           - app
           - widget
-furnimove_rename:
-  name: Rename FurniMove receiver
-  description: Rename one receiver using a unique name, with up to 18 UTF-16 units
-    after trimming. The original text is sent to the receiver.
-  fields:
-    device_id:
-      name: Device
-      required: true
-      selector: *id001
-    side:
-      name: Side
-      selector: *id002
-    name:
-      name: New name
-      required: true
-      selector:
-        text: {}
+
 furnimove_massage_program:
-  name: FurniMove massage program
-  description: Select program 1, 2, 3 or 4 (Wave) using the handset’s captured massage
-    queue.
   fields:
     device_id:
-      name: Device
       required: true
       selector: *id001
     side:
-      name: Side
       selector: *id002
     program:
-      name: Program
       required: true
       selector:
         number:
           min: 1
           max: 4
           mode: box
+
 furnimove_massage_duration:
-  name: FurniMove advisory massage duration
-  description: Set the local app duration preference. This does not program a hardware
-    timer or stop massage when time expires.
   fields:
     device_id:
-      name: Device
       required: true
       selector: *id001
     side:
-      name: Side
       selector: *id002
     minutes:
-      name: Advisory duration
       required: true
       selector:
         select:
@@ -2017,20 +1164,15 @@ furnimove_massage_duration:
             label: 20 minutes
           - value: '30'
             label: 30 minutes
+
 furnimove_move_simultaneously:
-  name: Move two FurniMove motors
-  description: Hold two supported axes with the app’s combined command and release
-    cleanup.
   fields:
     device_id:
-      name: Device
       required: true
       selector: *id001
     side:
-      name: Side
       selector: *id002
     first_motor:
-      name: First motor
       required: true
       selector:
         select:
@@ -2040,7 +1182,6 @@ furnimove_move_simultaneously:
           - legs
           - feet
     second_motor:
-      name: Second motor
       required: true
       selector:
         select:
@@ -2050,7 +1191,6 @@ furnimove_move_simultaneously:
           - legs
           - feet
     first_direction:
-      name: First direction
       required: true
       selector:
         select:
@@ -2058,7 +1198,6 @@ furnimove_move_simultaneously:
           - up
           - down
     second_direction:
-      name: Second direction
       required: true
       selector:
         select:
@@ -2066,7 +1205,6 @@ furnimove_move_simultaneously:
           - up
           - down
     duration_ms:
-      name: Duration in milliseconds
       required: true
       selector:
         number:
@@ -2074,54 +1212,15 @@ furnimove_move_simultaneously:
           max: 60000
           mode: box
 
-starcode_abm5_4_hold_control:
-  name: Hold AdjustableM5X4 control
-  description: Hold one exact app action. Flat runs 600 ms; save and reset run the six-second local confirmation interval. No device acknowledgement is inferred.
-  fields:
-    device_id:
-      name: Device
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    control:
-      name: Control
-      required: true
-      selector:
-        select:
-          options: [head_up, head_down, foot_up, foot_down, union_up, union_down, memory_1, flat, tv, lounge, zero_g, anti_snore, save_memory_1, save_tv, save_lounge, save_zero_g, save_reset, head_strength_up, head_strength_down, foot_strength_up, foot_strength_down, wave_up, wave_down]
-    duration:
-      name: Duration
-      description: Hold duration in seconds for movement, presets and wave controls.
-      required: true
-      selector:
-        number:
-          min: 0.1
-          max: 60
-          step: 0.1
-          unit_of_measurement: s
-    side:
-      name: Side
-      selector:
-        select:
-          options: [both, left, right]
-
-
 motion_bed_action:
-  name: Motion Bed app action
-  description: Run a named action listed in controller diagnostics. Persistent save,
-    clear, reset and module changes require confirmation.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     side:
-      name: Side
       selector:
         select:
           options:
@@ -2129,17 +1228,14 @@ motion_bed_action:
           - right
           - both
     confirmed:
-      name: Confirm persistent change
       default: false
       selector:
         boolean: {}
     action:
-      name: Action
       required: true
       selector:
         text: {}
     branch:
-      name: Branch
       selector:
         select:
           options:
@@ -2147,26 +1243,21 @@ motion_bed_action:
           - save
           - clear
     duration:
-      name: Duration
       selector:
         number:
           mode: box
           min: 0.01
           max: 10
+
 motion_bed_alarm:
-  name: Motion Bed alarm
-  description: Program the app alarm with all six modes and the current physical target’s
-    reported audio capability.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     side:
-      name: Side
       selector:
         select:
           options:
@@ -2174,17 +1265,14 @@ motion_bed_alarm:
           - right
           - both
     confirmed:
-      name: Confirm persistent change
       default: false
       selector:
         boolean: {}
     enabled:
-      name: Enabled
       required: true
       selector:
         boolean: {}
     hour:
-      name: Hour
       required: true
       selector:
         number:
@@ -2192,7 +1280,6 @@ motion_bed_alarm:
           min: 0
           max: 23
     minute:
-      name: Minute
       required: true
       selector:
         number:
@@ -2200,49 +1287,39 @@ motion_bed_alarm:
           min: 0
           max: 59
     weekdays:
-      name: Weekdays
       selector:
         object: {}
     repeat:
-      name: Repeat
       selector:
         boolean: {}
     mode:
-      name: Mode
       selector:
         number:
           mode: box
     massage:
-      name: Massage
       selector:
         boolean: {}
     sound:
-      name: Sound
       selector:
         number:
           mode: box
     audio:
-      name: Audio
       selector:
         boolean: {}
     switch:
-      name: Switch
       selector:
         number:
           mode: box
+
 motion_bed_clock:
-  name: Motion Bed clock
-  description: Set the motor or thermal module clock.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     side:
-      name: Side
       selector:
         select:
           options:
@@ -2250,33 +1327,26 @@ motion_bed_clock:
           - right
           - both
     confirmed:
-      name: Confirm persistent change
       default: false
       selector:
         boolean: {}
     timestamp:
-      name: Timestamp
       required: true
       selector:
         text: {}
     thermal:
-      name: Thermal
       selector:
         boolean: {}
+
 motion_bed_sleep_angles:
-  name: Motion Bed sleep positions
-  description: Save four raw flat and four raw side positions. These values have no
-    established angle or percentage units.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     side:
-      name: Side
       selector:
         select:
           options:
@@ -2284,40 +1354,32 @@ motion_bed_sleep_angles:
           - right
           - both
     confirmed:
-      name: Confirm persistent change
       default: false
       selector:
         boolean: {}
     page:
-      name: Page
       required: true
       selector:
         number:
           mode: box
     flat:
-      name: Flat
       required: true
       selector:
         object: {}
     side_positions:
-      name: Side positions
       required: true
       selector:
         object: {}
+
 motion_bed_calibration:
-  name: Motion Bed sleep calibration
-  description: Save the app’s flat and side calibration readings. Confirm before changing
-    calibration.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     side:
-      name: Side
       selector:
         select:
           options:
@@ -2325,12 +1387,10 @@ motion_bed_calibration:
           - right
           - both
     confirmed:
-      name: Confirm persistent change
       default: false
       selector:
         boolean: {}
     flat:
-      name: Flat
       required: true
       selector:
         number:
@@ -2339,24 +1399,20 @@ motion_bed_calibration:
           max: 2147483647
           step: 1
     side_position:
-      name: Side position
       required: true
       selector:
         number:
           mode: box
+
 motion_bed_sleep_timer:
-  name: Motion Bed sleep timer
-  description: Select an app bedtime or fall timer slot.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     side:
-      name: Side
       selector:
         select:
           options:
@@ -2364,34 +1420,27 @@ motion_bed_sleep_timer:
           - right
           - both
     confirmed:
-      name: Confirm persistent change
       default: false
       selector:
         boolean: {}
     slot:
-      name: Slot
       required: true
       selector:
         number:
           mode: box
     fall:
-      name: Fall
       selector:
         boolean: {}
+
 motion_bed_sleep_report:
-  name: Motion Bed sleep report
-  description: Read current, historical day, month or timer data. Historical day selection
-    and graph window offset are separate.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     side:
-      name: Side
       selector:
         select:
           options:
@@ -2399,12 +1448,10 @@ motion_bed_sleep_report:
           - right
           - both
     confirmed:
-      name: Confirm persistent change
       default: false
       selector:
         boolean: {}
     kind:
-      name: Kind
       required: true
       selector:
         select:
@@ -2414,33 +1461,27 @@ motion_bed_sleep_report:
           - timer
           - day
     offset:
-      name: Offset
       selector:
         number:
           mode: box
           min: 0
           max: 29
     window_offset:
-      name: Window offset
       selector:
         number:
           mode: box
           min: 0
           max: 4
+
 motion_bed_module:
-  name: Motion Bed hub module
-  description: Query, bind or delete a motor, air or thermal module on one BLE hub.
-    Confirm bind and delete.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     side:
-      name: Side
       selector:
         select:
           options:
@@ -2448,12 +1489,10 @@ motion_bed_module:
           - right
           - both
     confirmed:
-      name: Confirm persistent change
       default: false
       selector:
         boolean: {}
     operation:
-      name: Operation
       required: true
       selector:
         select:
@@ -2462,28 +1501,22 @@ motion_bed_module:
           - bind
           - delete
     module_type:
-      name: Module type
       selector:
         number:
           mode: box
     address:
-      name: Address
       selector:
         text: {}
+
 motion_bed_air_setting:
-  name: Motion Bed air settings
-  description: Query or save the selected mode’s upper gear and optional timer. Lower
-    pressure is readback only.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     side:
-      name: Side
       selector:
         select:
           options:
@@ -2491,44 +1524,35 @@ motion_bed_air_setting:
           - right
           - both
     confirmed:
-      name: Confirm persistent change
       default: false
       selector:
         boolean: {}
     mode:
-      name: Mode
       required: true
       selector:
         number:
           mode: box
     query:
-      name: Query
       selector:
         boolean: {}
     gear:
-      name: Gear
       selector:
         number:
           mode: box
     timer:
-      name: Timer
       selector:
         number:
           mode: box
+
 motion_bed_pressure:
-  name: Motion Bed air pressure
-  description: Edit one explicitly bound channel after the app’s 2.5-second quiet
-    check, or save twelve channel values in one whole frame.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     side:
-      name: Side
       selector:
         select:
           options:
@@ -2536,12 +1560,10 @@ motion_bed_pressure:
           - right
           - both
     confirmed:
-      name: Confirm persistent change
       default: false
       selector:
         boolean: {}
     operation:
-      name: Operation
       required: true
       selector:
         select:
@@ -2549,35 +1571,28 @@ motion_bed_pressure:
           - live
           - save
     channel:
-      name: Channel
       selector:
         number:
           mode: box
           min: 0
           max: 11
     value:
-      name: Value
       selector:
         number:
           mode: box
     values:
-      name: Values
       selector:
         object: {}
+
 motion_bed_thermal_schedule:
-  name: Motion Bed thermal schedule
-  description: Save a timer with cooling or heating mode and gear, without guessing
-    a thermostat setpoint.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     side:
-      name: Side
       selector:
         select:
           options:
@@ -2585,12 +1600,10 @@ motion_bed_thermal_schedule:
           - right
           - both
     confirmed:
-      name: Confirm persistent change
       default: false
       selector:
         boolean: {}
     hour:
-      name: Hour
       required: true
       selector:
         number:
@@ -2598,7 +1611,6 @@ motion_bed_thermal_schedule:
           min: 0
           max: 23
     minute:
-      name: Minute
       required: true
       selector:
         number:
@@ -2606,31 +1618,25 @@ motion_bed_thermal_schedule:
           min: 0
           max: 59
     mode:
-      name: Mode
       required: true
       selector:
         number:
           mode: box
     gear:
-      name: Gear
       required: true
       selector:
         number:
           mode: box
+
 motion_bed_audio:
-  name: Motion Bed audio
-  description: Select a track, preview a track, or set volume on a target that reports
-    audio support.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     side:
-      name: Side
       selector:
         select:
           options:
@@ -2638,12 +1644,10 @@ motion_bed_audio:
           - right
           - both
     confirmed:
-      name: Confirm persistent change
       default: false
       selector:
         boolean: {}
     operation:
-      name: Operation
       required: true
       selector:
         select:
@@ -2651,56 +1655,15 @@ motion_bed_audio:
           - track
           - volume
     value:
-      name: Value
       required: true
       selector:
         number:
           mode: box
     preview:
-      name: Preview
       selector:
         boolean: {}
-svane_hold_control:
-  name: Hold Svane Remote control
-  description: Hold selected axes or adjust the lamp until the bounded duration ends. Source-specific release runs after movement.
-  fields:
-    device_id:
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    control:
-      required: true
-      selector:
-        select:
-          options:
-            - head_up
-            - head_down
-            - feet_up
-            - feet_down
-            - head_up_feet_up
-            - head_up_feet_down
-            - head_down_feet_up
-            - head_down_feet_down
-            - light_adjust
-    duration:
-      description: Feet-only actions and P1 combinations require more than 0.1 seconds.
-      required: true
-      selector:
-        number:
-          min: 0.1
-          max: 60
-          step: 0.1
-          unit_of_measurement: s
-    side:
-      selector:
-        select:
-          options: [both, left, right]
 
 svane_release_axis:
-  name: Release Svane Remote axis
-  description: Release one axis during an active Svane hold while the other axis continues. This signals the serialized writer.
   fields:
     device_id:
       required: true
@@ -2718,94 +1681,18 @@ svane_release_axis:
         select:
           options: [both, left, right]
 
-limoss_remote_hold_control:
-  name: Hold Limoss Remote Control
-  description: Hold one rendered app control, then send its five release frames.
-  fields:
-    device_id:
-      name: Device
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-    side:
-      name: Side
-      selector:
-        select:
-          options: [left, right, both]
-    control:
-      name: Control
-      description: "Literal control from this device’s rendered layout."
-      required: true
-      selector:
-        text: {}
-    duration:
-      name: Duration
-      description: "Hold time in seconds, 0.1–60."
-      required: true
-      selector:
-        number:
-          min: 0.1
-          max: 60
-          step: 0.001
-          unit_of_measurement: s
-          mode: box
-
-limoss_remote_recall_memory:
-  name: Hold Limoss Remote Memory
-  description: Recall this physical target’s captured local memory for a bounded duration.
-  fields:
-    device_id:
-      name: Device
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-    side:
-      name: Side
-      selector:
-        select:
-          options: [left, right, both]
-    preset:
-      name: Memory slot
-      description: "Slot 1–8, limited by the device reply."
-      required: true
-      selector:
-        number:
-          min: 1
-          max: 8
-          step: 1
-          mode: box
-    duration:
-      name: Duration
-      description: "Hold time in seconds, 0.1–60."
-      required: true
-      selector:
-        number:
-          min: 0.1
-          max: 60
-          step: 0.001
-          unit_of_measurement: s
-          mode: box
-
 limoss_remote_rename_memory:
-  name: Rename Limoss Remote Memory
-  description: Rename a local memory. Empty names are permitted.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
     side:
-      name: Side
       selector:
         select:
           options: [left, right, both]
     preset:
-      name: Memory slot
-      description: "Slot 1–8, limited by the device reply."
       required: true
       selector:
         number:
@@ -2814,36 +1701,26 @@ limoss_remote_rename_memory:
           step: 1
           mode: box
     name:
-      name: Name
-      description: "Local display name, including an empty string."
       required: true
       selector:
         text: {}
 
 limoss_remote_calibrate:
-  name: Calibrate Limoss Remote
-  description: Hold the app calibration command after explicit confirmation, then send five calibration release frames.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
     side:
-      name: Side
       selector:
         select:
           options: [left, right, both]
     confirmed:
-      name: Confirm calibration
-      description: "Select true to confirm this device operation."
       required: true
       selector:
         boolean: {}
     duration:
-      name: Duration
-      description: "Hold time in seconds, 0.1–60."
       required: true
       selector:
         number:
@@ -2854,92 +1731,26 @@ limoss_remote_calibrate:
           mode: box
 
 limoss_remote_features:
-  name: Configure Limoss Remote Controls
-  description: Set local layout selections. Disabling a selected feature sends its ten OFF commands before saving.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
     side:
-      name: Side
       selector:
         select:
           options: [left, right, both]
     underbed_light:
-      name: Lamp controls
-      description: "Show the app’s lamp action."
       required: true
       selector:
         boolean: {}
     massage:
-      name: Massage controls
-      description: "Show the app’s massage actions."
       required: true
       selector:
         boolean: {}
 
-fsm_relax_hold_control:
-  name: FSM Relax hold control
-  description: Hold an app-labelled control, then send the five-frame release. Physical actuator mapping is unverified.
-  fields:
-    device_id:
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-    control:
-      required: true
-      description: Use a command listed in the selected profile's protocol diagnostics.
-      selector:
-        text:
-    duration:
-      required: true
-      description: Local gesture duration in seconds, not a physical arrival deadline.
-      selector:
-        number:
-          min: 0.1
-          max: 60
-          step: 0.001
-          unit_of_measurement: s
-    side:
-      name: Side
-      selector:
-        select:
-          options: [both, left, right]
-fsm_relax_recall_memory:
-  name: FSM Relax recall local memory
-  description: Send saved opaque targets and release after an explicit local hold. Replies cannot prove physical arrival.
-  fields:
-    device_id:
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-    preset:
-      required: true
-      selector:
-        number:
-          min: 1
-          max: 8
-    duration:
-      required: true
-      selector:
-        number:
-          min: 0.1
-          max: 60
-          step: 0.001
-          unit_of_measurement: s
-    side:
-      name: Side
-      selector:
-        select:
-          options: [both, left, right]
 fsm_relax_calibrate:
-  name: FSM Relax confirmed calibration
-  description: Calibrate using the four configured reversal flags. One write attempt; a failed write does not prove that hardware did nothing.
   fields:
     device_id:
       required: true
@@ -2948,27 +1759,21 @@ fsm_relax_calibrate:
           integration: adjustable_bed
     confirmed:
       required: true
-      description: Explicitly confirm calibration before invoking this action.
       selector:
         boolean:
     side:
-      name: Side
       selector:
         select:
           options: [both, left, right]
 
 starcode_move_lifts:
-  name: Control AdjustableM5X5 lifts
-  description: Control up to three independently addressed lifts configured on a main bed. Flat sends main flat before the delayed lift flat action.
   fields:
     device_id:
-      name: Main bed
       required: true
       selector:
         device:
           integration: adjustable_bed
     action:
-      name: Action
       required: true
       selector:
         select:
@@ -2979,69 +1784,49 @@ starcode_move_lifts:
             - stop
 
 richmat_mh_alarm:
-  name: Richmat app alarm
-  description: Set or cancel the countdown alarm of a Richmat MH app profile (Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed). Only the positions and massages the model's alarm page lists are accepted.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     enabled:
-      name: Enabled
-      description: Turn off to cancel the alarm (or the selected slot).
       required: true
       selector:
         boolean:
     time:
-      name: Local alarm time
-      description: Required when enabled. The bed receives the minutes until the next occurrence.
       selector:
         time:
     position:
-      name: Position
-      description: A position from the model's alarm page.
       selector:
         select:
           options: [tv, zero_g, anti_snore, lounge, memory_1, memory_2, memory_3, memory_4, memory_5, yoga, alarm_mode_1, alarm_mode_2, head_massage, foot_massage, head_foot_massage, head_foot_massage_intensity, head_massage_intensity_down, heat, sleep_aid]
     massage:
-      name: Massage
-      description: Massage choices from the model's legacy alarm page.
       selector:
         select:
           multiple: true
           options: [head_massage, foot_massage, head_foot_massage, head_foot_massage_intensity]
     slot:
-      name: Alarm slot
-      description: Required for models whose alarm page shows three slots.
       selector:
         number:
           min: 1
           max: 3
           mode: box
     side:
-      name: Side
-      description: Target side of a paired bed.
       selector:
         select:
           options: [both, left, right]
 
 richmat_mh_aroma:
-  name: Richmat app aroma timing
-  description: Write the three aroma timing sliders of a Richmat MH app profile.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     mode2_startup_minutes:
-      name: Mode 2 startup
-      description: Minutes, 1 to 60.
       required: true
       selector:
         number:
@@ -3049,8 +1834,6 @@ richmat_mh_aroma:
           max: 60
           unit_of_measurement: min
     mode3_startup_minutes:
-      name: Mode 3 startup
-      description: Minutes, 1 to 60.
       required: true
       selector:
         number:
@@ -3058,8 +1841,6 @@ richmat_mh_aroma:
           max: 60
           unit_of_measurement: min
     mode3_pause_hours:
-      name: Mode 3 pause
-      description: Hours, 1 to 12.
       required: true
       selector:
         number:
@@ -3067,50 +1848,36 @@ richmat_mh_aroma:
           max: 12
           unit_of_measurement: h
     side:
-      name: Side
-      description: Target side of a paired bed.
       selector:
         select:
           options: [both, left, right]
 
 richmat_mh_waist_alarm:
-  name: Richmat app waist mattress alarm
-  description: Save or cancel one side's waist mattress alarm on a Richmat MH app profile. Saving sends Home Assistant's current local time with the alarm, as the app does.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     enabled:
-      name: Enabled
-      description: Turn off to cancel the side's alarm.
       required: true
       selector:
         boolean:
     waist_side:
-      name: Waist side
-      description: The waist mattress side the app had selected.
       required: true
       selector:
         select:
           options: [left, right, both]
     time:
-      name: Local alarm time
-      description: Required when enabled.
       selector:
         time:
     repeat:
-      name: Repeat
       default: once
       selector:
         select:
           options: [once, daily]
     intensity:
-      name: Intensity
-      description: 1 (low) to 3 (high).
       default: 1
       selector:
         number:
@@ -3118,32 +1885,23 @@ richmat_mh_waist_alarm:
           max: 3
           mode: box
     side:
-      name: Side
-      description: Target side of a paired bed.
       selector:
         select:
           options: [both, left, right]
 
 richmat_mh_light_color:
-  name: Richmat app light colour
-  description: Write the LED or button-light page colour of a Richmat MH app profile.
   fields:
     device_id:
-      name: Device
       required: true
       selector:
         device:
           integration: adjustable_bed
           multiple: true
     rgb_color:
-      name: Colour
-      description: Red, green and blue, 0 to 255.
       required: true
       selector:
         color_rgb:
     side:
-      name: Side
-      description: Target side of a paired bed.
       selector:
         select:
           options: [both, left, right]

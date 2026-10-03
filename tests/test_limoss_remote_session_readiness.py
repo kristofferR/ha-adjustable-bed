@@ -95,7 +95,7 @@ async def test_inflight_registered_startup_must_not_skip_later_fresh_preflight(h
             with patch("custom_components.adjustable_bed.services._resolve_sided_targets",
                        return_value=([(left, const.SIDE_BOTH), (right, const.SIDE_BOTH)], [])):
                 operation = asyncio.create_task(hass.services.async_call(
-                    const.DOMAIN, "limoss_remote_recall_memory",
+                    const.DOMAIN, "goto_preset",
                     {"device_id": ["left", "right"], "preset": 8, "duration": 0.1}, blocking=True,
                 ))
                 try:

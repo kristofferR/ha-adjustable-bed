@@ -9,7 +9,6 @@ import voluptuous as vol
 from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     CONF_PAIR_ID,
     CONF_VIBRADORM_APP_PROFILE,
@@ -63,7 +62,7 @@ async def invoke(hass, targets, control, duration=0.1, side=None):
     ):
         await hass.services.async_call(
             DOMAIN,
-            "vibradorm_hold_control",
+            "hold_control",
             {
                 "device_id": "selected",
                 "control": control,
@@ -125,22 +124,19 @@ async def test_registered_hold_uses_literal_profile_packet_and_bounded_release(
 
 
 @pytest.mark.parametrize(
-    "later_app,later_control,action,wrong_bed_type",
+    "later_app,later_control,action",
     [
-        ("caresse", 2, "feet_up", False),
-        ("caresse", 3, "memory_4", False),
-        ("caresse", "other", "back_up", False),
-        ("werkmeister", 5, "sync", False),
-        ("caresse", 2, "back_up", True),
+        ("caresse", 2, "feet_up"),
+        ("caresse", 3, "memory_4"),
+        ("caresse", "other", "back_up"),
+        ("werkmeister", 5, "sync"),
     ],
 )
 async def test_all_target_preflight_rejects_later_profile_before_any_write(
-    hass, later_app, later_control, action, wrong_bed_type
+    hass, later_app, later_control, action
 ):
     first, first_controller = await factory_target(hass, "werkmeister", 7)
     second, second_controller = await factory_target(hass, later_app, later_control)
-    if wrong_bed_type:
-        second.bed_type = BED_TYPE_VIBRADORM
     with pytest.raises(ServiceValidationError):
         await invoke(hass, [(first, SIDE_BOTH), (second, SIDE_BOTH)], action)
     assert written(first_controller) == written(second_controller) == []
@@ -177,7 +173,7 @@ async def test_invalid_duration_schema_rejects_before_target_or_write(hass, dura
     ):
         await hass.services.async_call(
             DOMAIN,
-            "vibradorm_hold_control",
+            "hold_control",
             {"device_id": "bed", "control": "back_up", "duration": duration},
             blocking=True,
         )

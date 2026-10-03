@@ -42,6 +42,7 @@ async def service_target(hass: HomeAssistant):
         sleep_timer_memory_options=(1, 2, 3, 4),
         sleep_timer_duration_options=(),
         held_control_options=LEGGETT_HELD_CONTROLS,
+        validate_hold_control=MagicMock(),
         set_sleep_timer=AsyncMock(),
         cancel_sleep_timer=AsyncMock(),
         set_alarm_timer=AsyncMock(),
@@ -234,11 +235,6 @@ async def test_hold_store_rejects_profile_without_standalone_store(
     [
         (SERVICE_LEGGETT_SLEEP_TIMER, {"action": "cancel"}, "supports_sleep_timer"),
         (SERVICE_LEGGETT_ALARM_TIMER, {"action": "cancel"}, "supports_alarm_timer"),
-        (
-            SERVICE_LEGGETT_HOLD_CONTROL,
-            {"control": "snore", "duration": 1},
-            "supports_held_control",
-        ),
     ],
 )
 async def test_capability_and_protocol_are_required(
@@ -311,8 +307,8 @@ async def test_other_legacy_variants_reject_before_dispatch(
     with pytest.raises(ServiceValidationError, match="not a Leggett Okin controller"):
         await hass.services.async_call(
             DOMAIN,
-            SERVICE_LEGGETT_HOLD_CONTROL,
-            {"device_id": "bed", "control": "snore", "duration": 1},
+            SERVICE_LEGGETT_SLEEP_TIMER,
+            {"device_id": "bed", "action": "cancel"},
             blocking=True,
         )
     coordinator.async_execute_controller_command.assert_not_awaited()

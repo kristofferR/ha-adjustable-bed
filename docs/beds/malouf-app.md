@@ -157,7 +157,8 @@ Time uses Home Assistant's configured local time zone and minute precision.
 Selected weekdays create a repeating alarm. An empty weekday list selects the
 next occurrence of that local time, using the app's one-shot weekday encoding.
 Clock synchronization runs immediately before programming an enabled alarm.
-`adjustable_bed.malouf_sync_clock` also permits explicit clock synchronization.
+`adjustable_bed.sync_clock` (or the older `malouf_sync_clock`) also permits
+explicit clock synchronization.
 Connecting alone never writes the clock.
 
 Legacy/custom clock and alarm frames use complement checksums and three writes;

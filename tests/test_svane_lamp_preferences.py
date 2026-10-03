@@ -53,7 +53,7 @@ async def test_public_lamp_hold_persists_final_intent_once(hass, runtime, monkey
         patch.object(hass.config_entries, "async_update_entry",
                      wraps=hass.config_entries.async_update_entry) as update,
     ):
-        task = asyncio.create_task(hass.services.async_call(DOMAIN, "svane_hold_control", {
+        task = asyncio.create_task(hass.services.async_call(DOMAIN, "hold_control", {
             "device_id": "bed", "control": "light_adjust", "duration": .5,
         }, blocking=True))
         try:
@@ -104,7 +104,7 @@ async def test_unchanged_public_lamp_hold_does_not_persist(hass, runtime, reason
               return_value=([(coordinator, SIDE_BOTH)], [])),
         patch.object(coordinator, "save_app_state") as save,
     ):
-        await hass.services.async_call(DOMAIN, "svane_hold_control", {
+        await hass.services.async_call(DOMAIN, "hold_control", {
             "device_id": "bed", "control": "light_adjust",
             "duration": .2 if reason == "short" else .5,
         }, blocking=True)

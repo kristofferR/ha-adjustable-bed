@@ -71,7 +71,7 @@ If it differs, select one device or physical side instead.
 | `adjustable_bed.furnimove_move_simultaneously` | `first_motor`, `second_motor`, their `*_direction`, `duration_ms`, target | Combine two supported axes with full-frame OR and the RF checksum rule. |
 | `adjustable_bed.furnimove_massage_program` | `program` 1–4, target | Programs 1, 2, 3 and Wave (4), including the source queue and local repeated-click behavior. |
 | `adjustable_bed.furnimove_massage_duration` | `minutes` 10, 15, 20 or 30, target | Local advisory preference, not a hardware timer. It sends no duration packet and expiry does not stop massage. |
-| `adjustable_bed.furnimove_rename` | `name`, one physical target | Unique name, at most 18 UTF-16 units after trimming. Writes the original untrimmed UTF-8 text, then saves the trimmed name. |
+| `adjustable_bed.rename` | `name`, one physical target | Unique name, at most 18 UTF-16 units after trimming. Writes the original untrimmed UTF-8 text, then saves the trimmed name. |
 
 Massage intensity and zone controls use the exact app factory, including its
 150 ms queues, Head/Feet ordering, Wave behavior and missing-key zero frames.

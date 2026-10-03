@@ -61,10 +61,10 @@ family is selected. Choose weekdays, time, a supported preset, and back/leg
 massage levels. The tablet profile has no clock or alarm BLE implementation.
 The apps' dormant local wake automation is excluded.
 
-`adjustable_bed.logicdata_rename` changes the Bluetooth device name when the chosen
+`adjustable_bed.rename` changes the Bluetooth device name when the chosen
 transport provides a name characteristic. Its service description lists the
 supported input. This is separate from the Home Assistant friendly name.
-The service accepts 1–255 printable ASCII characters, a deliberate input policy
+The older `logicdata_rename` name still works. The controller accepts 1–255 printable ASCII characters, a deliberate input policy
 that avoids the tablet app's malformed Unicode name encoding.
 
 ## Evidence

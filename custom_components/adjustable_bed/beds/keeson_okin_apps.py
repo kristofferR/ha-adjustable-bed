@@ -331,7 +331,7 @@ class OkinAppKeesonController(KeesonController):
 
     @property
     def held_control_options(self) -> tuple[str, ...]:
-        """Every streamed app control, for ``okin_app_hold_control``."""
+        """Every streamed app control, for the ``hold_control`` action."""
         if not self._is_heal:
             return tuple(self._seat_keys)
         options = ["head_up", "head_down", "foot_up", "foot_down"]

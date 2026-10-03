@@ -449,9 +449,9 @@ async def test_device_information_timeout_continues_to_next_field():
 
 async def test_useries_one_shot_presets_require_explicit_hold():
     controller = make_controller("useries")
-    with pytest.raises(NotImplementedError, match="leggett_hold_control"):
+    with pytest.raises(NotImplementedError, match="hold_control"):
         await controller.preset_memory(1)
-    with pytest.raises(NotImplementedError, match="leggett_hold_control"):
+    with pytest.raises(NotImplementedError, match="hold_control"):
         await controller.preset_anti_snore()
     controller.write_command.assert_not_awaited()
 

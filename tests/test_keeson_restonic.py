@@ -8,12 +8,10 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Awaitable, Callable
-from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
-import yaml
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
@@ -521,14 +519,6 @@ async def test_profiles_are_selected_only_explicitly(coordinator):
         )
 
 
-def test_service_metadata_lists_every_held_control():
-    root = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
-    services = yaml.safe_load((root / "services.yaml").read_text())
-    options = services["restonic_hold_control"]["fields"]["control"]["selector"]["select"]["options"]
-    assert set(options) == set(RESTONIC_A_CONTROLS) | set(RESTONIC_B_CONTROLS)
-    assert len(options) == len(set(options))
-
-
 def _service_target(coordinator: AdjustableBedCoordinator, variant: str):
     controller = _restonic(coordinator, variant)
     controller.hold_control = AsyncMock()
@@ -550,8 +540,8 @@ def _service_target(coordinator: AdjustableBedCoordinator, variant: str):
     [
         (KEESON_VARIANT_RESTONIC_A, "zero_g", None),
         (KEESON_VARIANT_RESTONIC_B, "zzz", None),
-        (KEESON_VARIANT_RESTONIC_A, "zzz", "does not support control 'zzz'"),
-        (KEESON_VARIANT_BASE, "flat", "Restonic BT"),
+        (KEESON_VARIANT_RESTONIC_A, "zzz", "does not support held control 'zzz'"),
+        (KEESON_VARIANT_BASE, "flat", "has no held controls"),
     ],
 )
 async def test_hold_service_preflights_before_writing(
@@ -567,12 +557,12 @@ async def test_hold_service_preflights_before_writing(
         if error:
             with pytest.raises(ServiceValidationError, match=error):
                 await hass.services.async_call(
-                    DOMAIN, "restonic_hold_control", data, blocking=True
+                    DOMAIN, "hold_control", data, blocking=True
                 )
             target.async_execute_controller_command.assert_not_awaited()
             controller.hold_control.assert_not_awaited()
         else:
-            await hass.services.async_call(DOMAIN, "restonic_hold_control", data, blocking=True)
+            await hass.services.async_call(DOMAIN, "hold_control", data, blocking=True)
             controller.hold_control.assert_awaited_once_with(control, 1500)
 
 

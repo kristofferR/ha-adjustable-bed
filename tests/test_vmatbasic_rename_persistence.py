@@ -40,7 +40,7 @@ async def _receiver(hass: HomeAssistant) -> tuple[AdjustableBedCoordinator, str]
 async def _rename(hass: HomeAssistant, device_id: str, name: str) -> None:
     await hass.services.async_call(
         const.DOMAIN,
-        "vmatbasic_rename",
+        "rename",
         {"device_id": device_id, "name": name},
         blocking=True,
     )

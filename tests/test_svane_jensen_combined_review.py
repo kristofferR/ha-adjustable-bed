@@ -87,7 +87,7 @@ async def test_public_head_release_near_deadline_keeps_delivered_jmc_feet_succes
     controller._motor_wait = wait
     with patch("custom_components.adjustable_bed.services._resolve_sided_targets",
                return_value=([(coordinator, SIDE_BOTH)], [])):
-        await hass.services.async_call(DOMAIN, "svane_hold_control", {
+        await hass.services.async_call(DOMAIN, "hold_control", {
             "device_id": "bed", "control": control, "duration": .2,
         }, blocking=True)
     assert released and clock[0] == pytest.approx(.2)

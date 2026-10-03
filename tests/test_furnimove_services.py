@@ -143,7 +143,7 @@ async def test_rename_connects_for_live_role_then_preserves_wire_text_and_identi
     entry = MockConfigEntry(domain=DOMAIN, title="Bed", unique_id="original", data={"name": "Bed"})
     entry.add_to_hass(hass)
     coordinator, controller = await target(entry=entry, rename=True)
-    await invoke(hass, [coordinator], "furnimove_rename", {"name": "  New name  "})
+    await invoke(hass, [coordinator], "rename", {"name": "  New name  "})
     coordinator.async_ensure_connected.assert_awaited_once()
     assert controller.client.write_gatt_char.await_args.args[1] == b"  New name  "
     assert entry.title == "New name" and entry.unique_id == "original"
@@ -156,7 +156,7 @@ async def test_duplicate_or_current_rename_rejected_before_any_connection(hass):
     coordinator, controller = await target(rename=True)
     for name in (" bed ", " TAKEN "):
         with pytest.raises(ServiceValidationError, match="unique"):
-            await invoke(hass, [coordinator], "furnimove_rename", {"name": name})
+            await invoke(hass, [coordinator], "rename", {"name": name})
     coordinator.async_ensure_connected.assert_not_awaited()
     assert not written(controller)
 
