@@ -31,7 +31,11 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.detection import detect_bed_type, get_bed_type_options
+from custom_components.adjustable_bed.detection import (
+    bed_type_choice,
+    detect_bed_type,
+    get_bed_type_options,
+)
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.services import async_register_services
 from tests.conftest import make_controller_mock
@@ -55,7 +59,7 @@ async def test_explicit_profile_is_offline_constructible_and_never_auto_detected
     assert controller.protocol_diagnostics["cst_profile"] == profile
     assert controller.memory_slot_count == slots
     assert get_actuator_group_for_bed_type(bed_type) == group
-    assert bed_type in {option["value"] for option in get_bed_type_options()}
+    assert bed_type_choice(bed_type, variant) in {option["value"] for option in get_bed_type_options()}
     assert _motor_count_options(bed_type) == [2]
     assert _normalize_fixed_motor_count(bed_type, "auto", 4) == 2
     assert get_motor_pulse_defaults(bed_type) == (10, 100)

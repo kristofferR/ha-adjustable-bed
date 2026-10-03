@@ -132,6 +132,16 @@ from .const import (
     KEESON_JSON_SERVICE_UUID,
     KEESON_NAME_PATTERNS,
     KEESON_SINO_NAME_PATTERNS,
+    KEESON_VARIANT_ADJUSTABLE_LITE,
+    KEESON_VARIANT_BEDSENSE_BASES,
+    KEESON_VARIANT_DYNASTY_BASES,
+    KEESON_VARIANT_HEAL_EVERY_NIGHT,
+    KEESON_VARIANT_INNOVA,
+    KEESON_VARIANT_MAXCOIL_UNA,
+    KEESON_VARIANT_OKIN_SEATING,
+    KEESON_VARIANT_RESTONIC_A,
+    KEESON_VARIANT_RESTONIC_B,
+    KEESON_VARIANT_SIMON_LI,
     LEGGETT_GEN2_MANUFACTURER_PREFIXES,
     LEGGETT_GEN2_SERVICE_UUID,
     LEGGETT_OKIN_NAME_PATTERNS,
@@ -167,6 +177,8 @@ from .const import (
     OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
     OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
     REMACRO_SERVICE_UUID,
+    REMACRO_VARIANT_JEROMES,
+    REMACRO_VARIANT_THE_BRICK,
     REVERIE_NIGHTSTAND_SERVICE_UUID,
     REVERIE_SERVICE_UUID,
     RICHMAT_NAME_PATTERNS,
@@ -185,18 +197,24 @@ from .const import (
     SLEEPYS_NAME_PATTERNS,
     SOLACE_NAME_PATTERNS,
     SOLACE_SERVICE_UUID,
+    SOLACE_VARIANT_WOOSA,
     STAR_ELEVATE_NAME_PATTERNS,
     SUTA_NAME_PATTERNS,
     SUTA_SERVICE_UUID,
     SUTA_UNSUPPORTED_NAME_PREFIXES,
     SVANE_HEAD_SERVICE_UUID,
     SVANE_NAME_PATTERNS,
+    SVANE_VARIANT_JENSEN_LINON,
+    SVANE_VARIANT_JMC,
     TIMOTION_AHF_NAME_PATTERNS,
     TIMOTION_AHF_SERVICE_UUID,
     VARIANT_AUTO,
+    VARIANT_REQUIRED_BED_TYPES,
     VIBRADORM_NAME_PATTERNS,
     VIBRADORM_SECONDARY_SERVICE_UUID,
     VIBRADORM_SERVICE_UUID,
+    ZSERIES_VARIANT_Z230,
+    ZSERIES_VARIANT_Z280,
     # Detection result type
     DetectionResult,
 )
@@ -529,7 +547,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_FURNIMOVE: "FurniMove / OKIN Smart Remote (choose handset ID)",
     BED_TYPE_SERENITY: "Jordan's Serenity app",
     BED_TYPE_TRANQUIL: "Jordan's Tranquil app",
-    BED_TYPE_ZSERIES: "Customatic Z-Series app (Z-230 / Z-280)",
+    BED_TYPE_ZSERIES: "Customatic Z-Series app",
     BED_TYPE_SIMMONS: "SIMMONS app",
     BED_TYPE_ADJUSTABLE_LUMBAR: "Adjustable bed (Lumbar) app",
     BED_TYPE_RICHMAT_REVIVE: "Revive Control app (Richmat)",
@@ -576,7 +594,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_REVERIE_NIGHTSTAND: "Reverie Nightstand (Protocol 110)",
     BED_TYPE_RICHMAT: "Richmat",
     BED_TYPE_RONDURE: "1500 Tilt Base (Rondure)",
-    BED_TYPE_REMACRO: "Remacro (Slumberland, The Brick, Jerome's apps)",
+    BED_TYPE_REMACRO: "Slumberland app (Remacro)",
     BED_TYPE_COMFORT_MOTION: "Comfort Motion (Lierda)",
     BED_TYPE_LIMOSS: "Limoss / Stawett (TEA encrypted)",
     BED_TYPE_LIMOSS_REMOTE: "Limoss Remote app (bed / chair)",
@@ -596,7 +614,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_STAR_ELEVATE: "DewertOkin ELEVATE (two-actuator lift)",
     BED_TYPE_SOLACE: "Solace",
     BED_TYPE_SUTA: "SUTA Smart Home (AT protocol)",
-    BED_TYPE_SVANE: "Svane / Jensen LinOn",
+    BED_TYPE_SVANE: "Svane Remote app",
     BED_TYPE_TIMOTION_AHF: "TiMOTION AHF",
     BED_TYPE_VIBRADORM: "Vibradorm (VMAT)",
     BED_TYPE_VIBRADORM_APP: "Vibradorm apps (Caresse Diamant, Werkmeister, VMAT)",
@@ -614,13 +632,63 @@ def is_jensen_linon_name(name: str | None) -> bool:
     return any(pattern in lowered for pattern in JENSEN_LINON_NAME_PATTERNS)
 
 
+# Apps chosen by a protocol variant, listed as their own bed-type choices so
+# users find them by app name. A bed type's own entry names the app its auto
+# variant selects; see AGENTS.md "Adding a New Bed Type".
+APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
+    (BED_TYPE_KEESON, KEESON_VARIANT_ADJUSTABLE_LITE): "Adjustable Lite app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_SIMON_LI): "Simon Li app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_HEAL_EVERY_NIGHT): "Heal Every Night app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_SEATING): "OKIN-Seating app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_BEDSENSE_BASES): "Bedsense Bases app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA): "INNOVA app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_MAXCOIL_UNA): "MaxCoil Una app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_DYNASTY_BASES): "Dynasty Bases app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_A): "Restonic BT app, remote A (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_B): "Restonic BT app, remote B (Keeson)",
+    (BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA): "Woosa Sleep app (Solace)",
+    (BED_TYPE_SVANE, SVANE_VARIANT_JMC): "Svane Remote app (JMC400)",
+    (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON): "Jensen Adjustable Sleep app (LinOn)",
+    (BED_TYPE_REMACRO, REMACRO_VARIANT_THE_BRICK): "The Brick app (Remacro)",
+    (BED_TYPE_REMACRO, REMACRO_VARIANT_JEROMES): "Jerome's app (Remacro)",
+    (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z230): "Customatic Z-Series app (Z-230)",
+    (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z280): "Customatic Z-Series app (Z-280)",
+}
+_CHOICE_SEPARATOR = ":"
+
+
+def bed_type_choice(bed_type: str, variant: str | None) -> str:
+    """Return the selector value for a bed type and variant: its app entry if any."""
+    if variant is not None and (bed_type, variant) in APP_VARIANT_CHOICES:
+        return f"{bed_type}{_CHOICE_SEPARATOR}{variant}"
+    return bed_type
+
+
+def resolve_bed_type_choice(choice: str) -> tuple[str, str | None]:
+    """Return the bed type and, for an app entry, the variant it selects."""
+    bed_type, separator, variant = choice.partition(_CHOICE_SEPARATOR)
+    if separator and (bed_type, variant) in APP_VARIANT_CHOICES:
+        return bed_type, variant
+    return choice, None
+
+
 def get_bed_type_options() -> list[SelectOptionDict]:
-    """Get bed type options sorted alphabetically by display name."""
+    """Get bed type and app choices sorted alphabetically by label.
+
+    A bed type whose variant has no automatic choice is offered only through
+    its app entries.
+    """
+    choices = {
+        bed_type: label
+        for bed_type, label in BED_TYPE_DISPLAY_NAMES.items()
+        if bed_type not in VARIANT_REQUIRED_BED_TYPES
+    }
+    choices.update(
+        {bed_type_choice(*key): label for key, label in APP_VARIANT_CHOICES.items()}
+    )
     return [
-        SelectOptionDict(value=bed_type, label=display_name)
-        for bed_type, display_name in sorted(
-            BED_TYPE_DISPLAY_NAMES.items(), key=lambda x: x[1].lower()
-        )
+        SelectOptionDict(value=value, label=label)
+        for value, label in sorted(choices.items(), key=lambda item: item[1].lower())
     ]
 
 

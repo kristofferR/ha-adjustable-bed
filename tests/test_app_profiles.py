@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from unittest.mock import AsyncMock
+
 import pytest
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant
@@ -9,6 +11,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
 from custom_components.adjustable_bed.config_flow import (
+    AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
     _per_side_refusal,
 )
@@ -17,6 +20,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_KEESON,
     BED_TYPE_LINAK,
     BED_TYPE_SVANE,
+    BED_TYPE_ZSERIES,
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
@@ -28,6 +32,12 @@ from custom_components.adjustable_bed.const import (
     KEESON_VARIANT_SINO,
     SVANE_VARIANT_JENSEN_LINON,
     VARIANT_AUTO,
+    ZSERIES_VARIANT_Z280,
+)
+from custom_components.adjustable_bed.detection import (
+    bed_type_choice,
+    get_bed_type_options,
+    resolve_bed_type_choice,
 )
 
 
@@ -99,3 +109,65 @@ async def test_options_redraw_when_a_variant_needs_hidden_fields(hass: HomeAssis
     assert saved["type"] == "create_entry"
     assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SINO
     assert entry.data[CONF_HAS_MASSAGE] is True
+
+
+def test_apps_chosen_by_a_variant_are_listed_by_name() -> None:
+    options = {option["value"]: option["label"] for option in get_bed_type_options()}
+    innova = bed_type_choice(BED_TYPE_KEESON, KEESON_VARIANT_INNOVA)
+    assert options[innova] == "INNOVA app (Keeson)"
+    assert resolve_bed_type_choice(innova) == (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA)
+    assert resolve_bed_type_choice(BED_TYPE_KEESON) == (BED_TYPE_KEESON, None)
+    # Z-Series has no automatic page, so only its app entries are offered.
+    assert BED_TYPE_ZSERIES not in options
+    assert bed_type_choice(BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z280) in options
+
+
+async def test_setup_resolves_an_app_entry_to_its_bed_type_and_variant(hass: HomeAssistant) -> None:
+    flow = AdjustableBedConfigFlow()
+    flow.hass = hass
+    flow.context = {}
+    flow._disconnect_choice_confirmed = True
+    flow._finish_with_verify = AsyncMock(return_value={"type": "create_entry"})
+    await flow.async_step_manual_entry(
+        {
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:02",
+            CONF_BED_TYPE: bed_type_choice(BED_TYPE_KEESON, KEESON_VARIANT_INNOVA),
+            CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
+        }
+    )
+    saved = flow._finish_with_verify.await_args.args[0]
+    assert (saved[CONF_BED_TYPE], saved[CONF_PROTOCOL_VARIANT]) == (
+        BED_TYPE_KEESON,
+        KEESON_VARIANT_INNOVA,
+    )
+
+
+async def test_options_show_the_app_entry_and_let_the_variant_field_decide(
+    hass: HomeAssistant,
+) -> None:
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:03",
+            CONF_BED_TYPE: BED_TYPE_KEESON,
+            CONF_PROTOCOL_VARIANT: KEESON_VARIANT_INNOVA,
+        },
+    )
+    entry.add_to_hass(hass)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass = hass
+    flow.handler = entry.entry_id
+    innova = bed_type_choice(BED_TYPE_KEESON, KEESON_VARIANT_INNOVA)
+
+    form = await flow.async_step_settings()
+    marker = next(m for m in form["data_schema"].schema if m.schema == CONF_BED_TYPE)
+    assert marker.default() == innova
+    # The selector is unchanged, so the variant field decides.
+    result = await flow.async_step_settings(
+        {CONF_BED_TYPE: innova, CONF_PROTOCOL_VARIANT: KEESON_VARIANT_SINO}
+    )
+    if result["type"] == "form":
+        result = await flow.async_step_settings({})
+    assert result["type"] == "create_entry"
+    assert entry.data[CONF_BED_TYPE] == BED_TYPE_KEESON
+    assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SINO

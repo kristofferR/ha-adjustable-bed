@@ -301,12 +301,14 @@ from .const import (
 )
 from .detection import (
     BED_TYPE_DISPLAY_NAMES,
+    bed_type_choice,
     detect_bed_type,
     detect_bed_type_detailed,
     detect_richmat_remote_from_name,
     get_bed_type_options,
     is_jensen_linon_name,
     is_mac_like_name,
+    resolve_bed_type_choice,
 )
 from .discovery_log import async_get_discovery_log
 from .discovery_settings import (
@@ -711,6 +713,42 @@ def _per_side_refusal(
         if profile is not None and (changed := profile.keys.intersection(changes)):
             return min(changed), profile.label
     return None
+
+
+def _apply_bed_type_choice(user_input: dict[str, Any], shown_choice: str | None) -> None:
+    """Resolve an app entry of the bed-type selector into bed type and variant.
+
+    The app's variant applies only when the user picked that entry; an
+    unchanged selector leaves the variant field in charge.
+    """
+    choice = user_input.get(CONF_BED_TYPE)
+    if not isinstance(choice, str):
+        return
+    bed_type, variant = resolve_bed_type_choice(choice)
+    if variant is None:
+        return
+    user_input[CONF_BED_TYPE] = bed_type
+    if choice != shown_choice:
+        user_input[CONF_PROTOCOL_VARIANT] = variant
+
+
+def _bed_type_selector(
+    default: str | None, *, auto_detect_label: str | None = None
+) -> SelectSelector:
+    """Return the bed-type selector, keeping a default the list does not offer."""
+    options = get_bed_type_options()
+    if default is not None and default != BED_TYPE_AUTO_DETECT and default not in {
+        option["value"] for option in options
+    }:
+        # Legacy aliases (e.g. dewertokin) and app types without an automatic
+        # variant are not listed, but stay selectable for an existing choice.
+        bed_type, _variant = resolve_bed_type_choice(default)
+        options.insert(
+            0, SelectOptionDict(value=default, label=BED_TYPE_DISPLAY_NAMES.get(bed_type, bed_type))
+        )
+    if auto_detect_label is not None:
+        options.insert(0, SelectOptionDict(value=BED_TYPE_AUTO_DETECT, label=auto_detect_label))
+    return SelectSelector(SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN))
 
 
 def _hide_owned_generic_fields(
@@ -2811,6 +2849,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             suggestions = dict(user_input)
             if self._selected_protocol_variant is None:
                 suggestions.pop(CONF_PROTOCOL_VARIANT, None)
+            elif requested is not None:
+                suggestions[CONF_BED_TYPE] = bed_type_choice(
+                    requested, self._selected_protocol_variant
+                )
             result["data_schema"] = self.add_suggested_values_to_schema(schema, suggestions)
         return result
 
@@ -2857,6 +2899,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             )
         defaults_bed_type = None if bed_type_default == BED_TYPE_AUTO_DETECT else bed_type_default
         form_variant = self._selected_protocol_variant or VARIANT_AUTO
+        shown_choice = (
+            bed_type_choice(bed_type_default, form_variant)
+            if isinstance(bed_type_default, str)
+            else bed_type_default
+        )
+        if user_input is not None:
+            _apply_bed_type_choice(user_input, shown_choice)
         if rebuilt := await self._async_fit_setup_form(
             user_input, defaults_bed_type, form_variant, "bluetooth_confirm"
         ):
@@ -3109,52 +3158,21 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 features = get_richmat_features(detected_remote)
                 default_motor_count = get_richmat_motor_count(features)
 
-        # Build schema with optional variant selection
-        # Use searchable dropdown when user asked for all bed types, otherwise simple dropdown
-        bed_type_selector: Any
-        if self._show_full_bed_type_list:
-            # Prepend an "Auto-detect" option and default to it when detection
-            # didn't identify the device, so the user isn't silently dropped onto
-            # the first alphabetical protocol and forced to guess.
-            auto_label = await self._get_config_translation(
+        # Users see display names, never raw type slugs (issue #385). When they
+        # asked for all bed types, an "Auto-detect" option comes first so an
+        # unidentified device is not silently dropped onto the first protocol.
+        auto_label = (
+            await self._get_config_translation(
                 "step.bluetooth_confirm.data.auto_detect_option",
                 "Auto-detect (recommended)",
             )
-            bed_type_selector = SelectSelector(
-                SelectSelectorConfig(
-                    options=[
-                        SelectOptionDict(value=BED_TYPE_AUTO_DETECT, label=auto_label),
-                        *get_bed_type_options(),
-                    ],
-                    mode=SelectSelectorMode.DROPDOWN,
-                )
-            )
-        else:
-            # Same display-name dropdown as the full list, so users see
-            # "Diagnostic (unknown bed)" etc. instead of raw type slugs
-            # (issue #385). Detection may return a legacy alias (e.g.
-            # dewertokin) that the display list omits; prepend it so the
-            # detected default stays selectable.
-            options = get_bed_type_options()
-            if isinstance(bed_type_default, str) and bed_type_default not in {
-                option["value"] for option in options
-            }:
-                options.insert(
-                    0,
-                    SelectOptionDict(
-                        value=bed_type_default,
-                        label=BED_TYPE_DISPLAY_NAMES.get(bed_type_default, bed_type_default),
-                    ),
-                )
-            bed_type_selector = SelectSelector(
-                SelectSelectorConfig(
-                    options=options,
-                    mode=SelectSelectorMode.DROPDOWN,
-                )
-            )
-
+            if self._show_full_bed_type_list
+            else None
+        )
         schema_dict: dict[vol.Marker, Any] = {
-            vol.Optional(CONF_BED_TYPE, default=bed_type_default): bed_type_selector,
+            vol.Optional(CONF_BED_TYPE, default=shown_choice): _bed_type_selector(
+                shown_choice, auto_detect_label=auto_label
+            ),
             vol.Optional(CONF_NAME, default=self._discovery_info.name or "Adjustable Bed"): str,
             vol.Optional(CONF_MOTOR_COUNT, default=default_motor_count): vol.All(
                 vol.Coerce(int), vol.In([1, 2, 3, 4])
@@ -3826,6 +3844,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         detection_result = detect_bed_type_detailed(self._discovery_info)
         confident_bed_type = _confident_auto_detect(detection_result)
         defaults_bed_type = preselected_bed_type or confident_bed_type
+        shown_choice = (
+            bed_type_choice(preselected_bed_type, preselected_protocol_variant)
+            if preselected_bed_type
+            else confident_bed_type or BED_TYPE_AUTO_DETECT
+        )
+        if user_input is not None:
+            _apply_bed_type_choice(user_input, shown_choice)
         if rebuilt := await self._async_fit_setup_form(
             user_input, defaults_bed_type, preselected_protocol_variant, "manual_config"
         ):
@@ -3995,46 +4020,25 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if discovery_source not in adapters:
             discovery_source = ADAPTER_AUTO
 
-        # Build base schema with bed type selector (alphabetically sorted)
-        if preselected_bed_type:
-            # Bed type was pre-selected from two-tier actuator selection.
-            # Use it as the default value in the SelectSelector, but the field
-            # remains editable so users can override if needed.
-            schema_dict: dict[vol.Marker, Any] = {
-                vol.Required(CONF_BED_TYPE, default=preselected_bed_type): SelectSelector(
-                    SelectSelectorConfig(
-                        options=get_bed_type_options(),
-                        mode=SelectSelectorMode.DROPDOWN,
-                    )
-                ),
-                vol.Optional(CONF_PROTOCOL_VARIANT, default=preselected_protocol_variant): vol.In(
-                    ALL_PROTOCOL_VARIANTS
-                ),
-            }
-        else:
-            # No pre-selected brand: offer "Auto-detect" first and default to it
-            # (or to the detected type) so the user isn't dropped onto the first
-            # alphabetical protocol and forced to guess (issue #385).
-            auto_label = await self._get_config_translation(
+        # A brand picked in the two-tier selection is the editable default.
+        # Without one, "Auto-detect" comes first so the user isn't dropped onto
+        # the first alphabetical protocol and forced to guess (issue #385).
+        auto_label = (
+            None
+            if preselected_bed_type
+            else await self._get_config_translation(
                 "step.bluetooth_confirm.data.auto_detect_option",
                 "Auto-detect (recommended)",
             )
-            schema_dict = {
-                vol.Required(
-                    CONF_BED_TYPE, default=confident_bed_type or BED_TYPE_AUTO_DETECT
-                ): SelectSelector(
-                    SelectSelectorConfig(
-                        options=[
-                            SelectOptionDict(value=BED_TYPE_AUTO_DETECT, label=auto_label),
-                            *get_bed_type_options(),
-                        ],
-                        mode=SelectSelectorMode.DROPDOWN,
-                    )
-                ),
-                vol.Optional(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO): vol.In(
-                    ALL_PROTOCOL_VARIANTS
-                ),
-            }
+        )
+        schema_dict: dict[vol.Marker, Any] = {
+            vol.Required(CONF_BED_TYPE, default=shown_choice): _bed_type_selector(
+                shown_choice, auto_detect_label=auto_label
+            ),
+            vol.Optional(CONF_PROTOCOL_VARIANT, default=preselected_protocol_variant): vol.In(
+                ALL_PROTOCOL_VARIANTS
+            ),
+        }
 
         # Determine smart defaults based on the bed type the form will default to:
         # a pre-selected brand, or the high-confidence detection that the
@@ -4121,6 +4125,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         errors: dict[str, str] = {}
         preselected_bed_type = self._selected_bed_type
         preselected_protocol_variant = self._selected_protocol_variant or VARIANT_AUTO
+        shown_choice = (
+            bed_type_choice(preselected_bed_type, preselected_protocol_variant)
+            if preselected_bed_type
+            else None
+        )
+        if user_input is not None:
+            _apply_bed_type_choice(user_input, shown_choice)
         if rebuilt := await self._async_fit_setup_form(
             user_input, preselected_bed_type, preselected_protocol_variant, "manual_entry"
         ):
@@ -4279,34 +4290,19 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # Get available Bluetooth adapters
         adapters = get_available_adapters(self.hass)
 
-        # Check if bed type was pre-selected from two-tier actuator selection
-        # Build base schema with bed type selector (alphabetically sorted)
-        if preselected_bed_type:
-            schema_dict: dict[vol.Marker, Any] = {
-                vol.Required(CONF_ADDRESS): str,
-                vol.Required(CONF_BED_TYPE, default=preselected_bed_type): SelectSelector(
-                    SelectSelectorConfig(
-                        options=get_bed_type_options(),
-                        mode=SelectSelectorMode.DROPDOWN,
-                    )
-                ),
-                vol.Optional(CONF_PROTOCOL_VARIANT, default=preselected_protocol_variant): vol.In(
-                    ALL_PROTOCOL_VARIANTS
-                ),
-            }
-        else:
-            schema_dict = {
-                vol.Required(CONF_ADDRESS): str,
-                vol.Required(CONF_BED_TYPE): SelectSelector(
-                    SelectSelectorConfig(
-                        options=get_bed_type_options(),
-                        mode=SelectSelectorMode.DROPDOWN,
-                    )
-                ),
-                vol.Optional(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO): vol.In(
-                    ALL_PROTOCOL_VARIANTS
-                ),
-            }
+        # A bed type picked in the two-tier selection is the editable default.
+        bed_type_marker = (
+            vol.Required(CONF_BED_TYPE, default=shown_choice)
+            if shown_choice is not None
+            else vol.Required(CONF_BED_TYPE)
+        )
+        schema_dict: dict[vol.Marker, Any] = {
+            vol.Required(CONF_ADDRESS): str,
+            bed_type_marker: _bed_type_selector(shown_choice),
+            vol.Optional(CONF_PROTOCOL_VARIANT, default=preselected_protocol_variant): vol.In(
+                ALL_PROTOCOL_VARIANTS
+            ),
+        }
 
         # Determine smart defaults based on preselected bed type and variant
         if preselected_bed_type:
@@ -6429,9 +6425,12 @@ def _shown_option_values(schema_dict: dict[Any, Any]) -> dict[str, Any]:
     """
     try:
         shown = cast("dict[str, Any]", vol.Schema(schema_dict)({}))
-        # Match the options handler's conversion from the string-valued select.
+        # Match the options handler's conversion from the string-valued select,
+        # and its resolution of an app entry to the plain bed type.
         if CONF_MOTOR_COUNT in shown:
             shown[CONF_MOTOR_COUNT] = int(shown[CONF_MOTOR_COUNT])
+        if isinstance(shown.get(CONF_BED_TYPE), str):
+            shown[CONF_BED_TYPE] = resolve_bed_type_choice(shown[CONF_BED_TYPE])[0]
         return shown
     except vol.Invalid:
         return {}
@@ -6855,17 +6854,11 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         if bed_type is None:
             bed_type = BED_TYPE_DIAGNOSTIC
 
-        bed_type_options = get_bed_type_options()
-        if bed_type not in {option["value"] for option in bed_type_options}:
-            bed_type_options.insert(
-                0,
-                SelectOptionDict(
-                    value=bed_type,
-                    label=BED_TYPE_DISPLAY_NAMES.get(bed_type, bed_type),
-                ),
-            )
         variants = get_variants_for_bed_type(bed_type)
         form_variant = self._variant_for_bed_type(bed_type, current_data)
+        shown_choice = bed_type_choice(bed_type, form_variant)
+        if user_input is not None:
+            _apply_bed_type_choice(user_input, shown_choice)
         has_position_feedback = bed_type_has_position_feedback(bed_type, form_variant)
         form_pulse_defaults = get_motor_pulse_defaults(bed_type, form_variant)
         motor_count_options = _motor_count_options_for_all_variants(bed_type)
@@ -6897,12 +6890,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
 
         # Build schema
         schema_dict: dict[vol.Marker, Any] = {
-            vol.Optional(CONF_BED_TYPE, default=bed_type): SelectSelector(
-                SelectSelectorConfig(
-                    options=bed_type_options,
-                    mode=SelectSelectorMode.DROPDOWN,
-                )
-            ),
+            vol.Optional(CONF_BED_TYPE, default=shown_choice): _bed_type_selector(shown_choice),
             vol.Optional(
                 CONF_MOTOR_COUNT,
                 default=str(form_motor_count),

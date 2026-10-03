@@ -439,6 +439,8 @@ ZSERIES_VARIANTS: Final = {
     ZSERIES_VARIANT_Z230: "Z-230 page (combined head and foot, M1)",
     ZSERIES_VARIANT_Z280: "Z-280 page (M1/M2, separate massage zones)",
 }
+# Bed types whose variant is a user choice with no automatic default.
+VARIANT_REQUIRED_BED_TYPES: Final = frozenset({BED_TYPE_ZSERIES})
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
     {BED_TYPE_SERENITY, BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES}

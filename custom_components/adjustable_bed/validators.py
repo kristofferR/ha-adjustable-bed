@@ -55,6 +55,7 @@ from .const import (
     SOLACE_VARIANTS,
     SVANE_VARIANTS,
     VARIANT_AUTO,
+    VARIANT_REQUIRED_BED_TYPES,
     ZSERIES_VARIANTS,
 )
 
@@ -122,10 +123,6 @@ def get_variants_for_bed_type(bed_type: str | None) -> dict[str, str] | None:
 def bed_type_has_variants(bed_type: str) -> bool:
     """Check if a bed type has multiple protocol variants."""
     return bed_type in VARIANTS_BY_BED_TYPE
-
-
-# Bed types whose variant is a user choice with no automatic default.
-VARIANT_REQUIRED_BED_TYPES: frozenset[str] = frozenset({BED_TYPE_ZSERIES})
 
 
 def is_valid_variant_for_bed_type(bed_type: str, variant: str) -> bool:
