@@ -26,7 +26,7 @@ import contextlib
 import logging
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
@@ -39,6 +39,7 @@ from ..const import (
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_OKIN_SEATING,
     KEESON_VARIANT_SIMON_LI,
+    OKIN_APP_VARIANTS,
 )
 from .base import (
     BedController,
@@ -50,13 +51,11 @@ from .base import (
 )
 from .keeson import KeesonController
 
+if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
+
 _LOGGER = logging.getLogger(__name__)
 
-OKIN_APP_VARIANTS: Final = (
-    KEESON_VARIANT_SIMON_LI,
-    KEESON_VARIANT_HEAL_EVERY_NIGHT,
-    KEESON_VARIANT_OKIN_SEATING,
-)
 
 ZERO_KEY: Final = 0x00000000
 HOLD_INTERVAL_MS: Final = 100
@@ -136,7 +135,7 @@ STATE_HEAL_MASSAGE: Final[dict[str, str]] = {
 SESSIONS_KEY: Final = "okin_app_sessions"
 
 
-def drop_okin_app_sessions(hass: Any, address: str) -> None:
+def drop_okin_app_sessions(hass: HomeAssistant, address: str) -> None:
     """Forget a bed's Heal Every Night page state (entry removal or profile change)."""
     sessions = hass.data.get(DOMAIN, {}).get(SESSIONS_KEY)
     if isinstance(sessions, dict):
@@ -344,20 +343,36 @@ class OkinAppKeesonController(KeesonController):
         await self._stream(key, writes, HOLD_INTERVAL_MS, tail_s=tail)
 
     async def _stream(
-        self, key: int, repeat_count: int, repeat_delay_ms: int, *, tail_s: float = 0
+        self,
+        key: int,
+        repeat_count: int,
+        repeat_delay_ms: int,
+        *,
+        tail_s: float = 0,
+        max_s: float | None = None,
     ) -> None:
-        """Write a held key at 0 ms and every interval, then release it."""
+        """Write a held key at 0 ms and every interval, then release it.
+
+        ``max_s`` bounds the elapsed time, not the write count: each interval
+        is the write's own latency plus the delay. Reaching it ends the stream
+        at once, even during a refresh sleep or a write.
+        """
         cancel_event = self._coordinator.cancel_command
+        deadline = asyncio.timeout(max_s)
         try:
-            await self.write_command(
-                okin_app_frame(key),
-                repeat_count=repeat_count,
-                repeat_delay_ms=repeat_delay_ms,
-                cancel_event=cancel_event,
-            )
-            if tail_s > 0 and not cancel_event.is_set():
-                with contextlib.suppress(TimeoutError):
-                    await asyncio.wait_for(cancel_event.wait(), tail_s)
+            async with deadline:
+                await self.write_command(
+                    okin_app_frame(key),
+                    repeat_count=repeat_count,
+                    repeat_delay_ms=repeat_delay_ms,
+                    cancel_event=cancel_event,
+                )
+                if tail_s > 0 and not cancel_event.is_set():
+                    with contextlib.suppress(TimeoutError):
+                        await asyncio.wait_for(cancel_event.wait(), tail_s)
+        except TimeoutError:
+            if not deadline.expired():
+                raise
         finally:
             await self._release_motion()
 
@@ -635,10 +650,16 @@ class OkinAppKeesonController(KeesonController):
         if self._is_heal:
             await self._heal_preset(f"memory_{memory_num}")
         else:
-            # Never reach the app's 2.1 s save threshold on a recall.
+            # Stay below the app's 2.1 s save hold on a recall: cap the writes
+            # and, since write latency adds to every interval, the elapsed time.
             count, delay_ms = self.motor_pulse_settings()
             writes = min(count, SIMON_MEMORY_RECALL_MAX_MS // max(delay_ms, 1) + 1)
-            await self._stream(SIMON_KEYS[f"memory_{memory_num}"], writes, delay_ms)
+            await self._stream(
+                SIMON_KEYS[f"memory_{memory_num}"],
+                writes,
+                delay_ms,
+                max_s=SIMON_MEMORY_RECALL_MAX_MS / 1000,
+            )
 
     async def program_memory(self, memory_num: int) -> None:
         if self._is_seating:

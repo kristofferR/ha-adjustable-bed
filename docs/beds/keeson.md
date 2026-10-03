@@ -305,11 +305,12 @@ Every Night 100 ms. A cover stop or the end of a timed move writes it at once;
 Every control, including Home and memory, is a held key. Home keeps the app's
 neutral label: the apps do not show that it means flat. Simon Li has no save
 command: holding a memory key for 2.1 seconds shows "Memory saved", so
-**Save memory** holds the same key for 2.1 seconds, and a memory recall is
-capped at 2 seconds whatever the pulse settings, so it never saves. Whether
-the seat stores the position is unverified. OKIN-Seating's foot buttons carry the opposite
-"union" artwork; the integration follows the button identifiers. The motor
-count does not change these fixed controls.
+**Save memory** holds the same key for 2.1 seconds. A memory recall ends
+after at most 2 seconds of elapsed time, whatever the pulse settings or write
+latency, so it stays below the app's 2.1 s save hold. Whether the seat stores
+the position, and its own save threshold, are unverified. OKIN-Seating's foot
+buttons carry the opposite "union" artwork; the integration follows the
+button identifiers. The motor count does not change these fixed controls.
 
 Heal Every Night picks Healing 6, 7 or 8 with the motor count (2, 3 or 4).
 Healing 7 and 8 both show tilt, lumbar and the light. Its keys:

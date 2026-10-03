@@ -1638,6 +1638,11 @@ KEESON_VARIANT_ADJUSTABLE_LITE: Final = "adjustable_lite"
 KEESON_VARIANT_SIMON_LI: Final = "simon_li"
 KEESON_VARIANT_HEAL_EVERY_NIGHT: Final = "heal_every_night"
 KEESON_VARIANT_OKIN_SEATING: Final = "okin_seating"
+OKIN_APP_VARIANTS: Final = (
+    KEESON_VARIANT_SIMON_LI,
+    KEESON_VARIANT_HEAL_EVERY_NIGHT,
+    KEESON_VARIANT_OKIN_SEATING,
+)
 # Deprecated alias kept for compatibility with older references.
 KEESON_VARIANT_ORE: Final = KEESON_VARIANT_SINO
 KEESON_VARIANTS: Final = {

@@ -58,9 +58,7 @@ from .const import (
     CONF_PROTOCOL_VARIANT,
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
-    KEESON_VARIANT_HEAL_EVERY_NIGHT,
-    KEESON_VARIANT_OKIN_SEATING,
-    KEESON_VARIANT_SIMON_LI,
+    OKIN_APP_VARIANTS,
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
@@ -2486,11 +2484,7 @@ async def handle_okin_app_hold_control(call: ServiceCall) -> None:
         for target in _command_targets(coordinator, side):
             if target.bed_type != BED_TYPE_KEESON or target.entry.data.get(
                 CONF_PROTOCOL_VARIANT
-            ) not in (
-                KEESON_VARIANT_SIMON_LI,
-                KEESON_VARIANT_HEAL_EVERY_NIGHT,
-                KEESON_VARIANT_OKIN_SEATING,
-            ):
+            ) not in OKIN_APP_VARIANTS:
                 raise ServiceValidationError(
                     f"Device '{target.name}' does not use an Okin app profile"
                 )

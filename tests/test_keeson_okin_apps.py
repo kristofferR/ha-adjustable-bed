@@ -901,3 +901,45 @@ async def test_heal_session_and_settings_end_with_the_profile_or_entry(
     assert await hass.config_entries.async_remove(entry.entry_id)
     await hass.async_block_till_done()
     assert key not in hass.data[DOMAIN]["okin_app_sessions"]
+
+
+@pytest.mark.parametrize(
+    ("limit_ms", "pulses", "latency_s"),
+    [
+        (100, (10_000, 0), 0.02),  # Delay 0: the write cap alone would allow 101 writes.
+        (300, (30, 100), 0.04),  # Each interval is latency + delay, so 4 capped writes overrun.
+    ],
+)
+async def test_simon_memory_recall_is_bounded_by_elapsed_time(
+    coordinator,
+    mock_bleak_client: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+    limit_ms,
+    pulses,
+    latency_s,
+):
+    """The recall ends at its time limit even when every write takes time.
+
+    The limit is scaled down from 2000 ms so the test runs on a short real clock.
+    """
+    monkeypatch.setattr(
+        "custom_components.adjustable_bed.beds.keeson_okin_apps.SIMON_MEMORY_RECALL_MAX_MS",
+        limit_ms,
+    )
+    loop = asyncio.get_running_loop()
+    starts: list[tuple[float, str]] = []
+
+    async def slow_write(_char: Any, data: bytes, response: bool = False) -> None:
+        starts.append((loop.time(), data.hex()))
+        await asyncio.sleep(latency_s)
+
+    mock_bleak_client.write_gatt_char = AsyncMock(side_effect=slow_write)
+    controller = _ctrl(coordinator, KEESON_VARIANT_SIMON_LI)
+    controller.motor_pulse_settings = lambda: pulses  # type: ignore[method-assign]
+    begin = loop.time()
+    await controller.preset_memory(1)
+    keys = [at - begin for at, frame in starts if frame == "e5fe1600000040c6"]
+    capped = min(pulses[0], limit_ms // max(pulses[1], 1) + 1)
+    assert 1 <= len(keys) < capped  # The deadline, not the write cap, ended the stream.
+    assert max(keys) < limit_ms / 1000
+    assert starts[-1][1] == ZERO  # The shielded release still follows.
