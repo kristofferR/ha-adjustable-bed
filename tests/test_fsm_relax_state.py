@@ -1,106 +1,111 @@
-"""Device-local eight-slot storage and atomic rollback, without physical units."""
+"""Device-local eight-slot app state and atomic memory saves, without physical units."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
+from homeassistant.const import CONF_ADDRESS
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.adjustable_bed import async_remove_entry, const
+from custom_components.adjustable_bed.app_state_store import app_state_store
+from custom_components.adjustable_bed.beds.fsm_relax import FsmRelaxController
+from custom_components.adjustable_bed.controller_factory import create_controller
+from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.fsm_relax_state import (
-    FsmRelaxState,
+    FsmRelaxSession,
+    validate_capability_body,
     validate_names,
     validate_positions,
 )
+from tests.app_state_helpers import restart_app_state, stored_app_state
+
+ADDRESS = "AA:BB:CC:DD:EE:FF"
+SLOT = f"{const.BED_TYPE_FSM_RELAX}:auto"
 
 
-async def test_store_roundtrip_restart_names_serial_and_removal(hass):
-    state = FsmRelaxState(hass, "entry", "AA:BB:CC:DD:EE:FF")
-    await state.async_load()
-    await state.async_save_slot(8, {0: -(2**31), 3: 2**31 - 1})
-    await state.async_set_names([" Sleep ", ""] + [f"Slot {i}" for i in range(3, 9)])
-    await state.async_save_capabilities(bytes.fromhex("0206040008"))
-    await state.async_save_serial(-1)
-    reloaded = FsmRelaxState(hass, "entry", "aa:bb:cc:dd:ee:ff")
-    await reloaded.async_load()
-    assert reloaded.slots == {8: {0: -(2**31), 3: 2**31 - 1}}
-    assert reloaded.names == (
-        "Sleep",
-        "M2",
-        "Slot 3",
-        "Slot 4",
-        "Slot 5",
-        "Slot 6",
-        "Slot 7",
-        "Slot 8",
+def _entry(hass, address=ADDRESS, **extra):
+    entry = MockConfigEntry(
+        domain=const.DOMAIN,
+        data={CONF_ADDRESS: address, const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX, **extra},
     )
-    assert reloaded.capability_body == bytes.fromhex("0206040008")
-    assert reloaded.serial == -1
-    await reloaded.async_set_names([""] * 8)
-    assert reloaded.names == tuple(f"M{i}" for i in range(1, 9))
-    for identity, address in [("other", "11:22:33:44:55:66")]:
-        other = FsmRelaxState(hass, identity, address)
-        await other.async_load()
-        assert other.slots == {} and other.serial is None
-    await reloaded.async_remove()
-    after = FsmRelaxState(hass, "entry", "AA:BB:CC:DD:EE:FF")
-    await after.async_load()
-    assert after.slots == {} and after.capability_body is None and after.serial is None
+    entry.add_to_hass(hass)
+    return entry
 
 
-async def test_child_entry_ownership_transfers_preserve_physical_store_and_true_removal(hass):
-    from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+async def _controller(coordinator: AdjustableBedCoordinator) -> FsmRelaxController:
+    """Mint and restore an offline controller, as setup does."""
+    controller = await create_controller(coordinator, const.BED_TYPE_FSM_RELAX, None, None)
+    assert isinstance(controller, FsmRelaxController)
+    coordinator._offline_controller = controller
+    await coordinator._async_restore_app_state(controller)
+    return controller
 
-    from custom_components.adjustable_bed import async_remove_entry, const
-    from custom_components.adjustable_bed.coordinator import ChildEntryView
+
+async def test_memories_and_serial_survive_restart_and_names_come_from_config(hass):
+    names = [" Sleep ", ""] + [f"Slot {i}" for i in range(3, 9)]
+    entry = _entry(hass, **{const.CONF_FSM_RELAX_MEMORY_NAMES: names})
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    controller = await _controller(coordinator)
+    await controller._save_slot(8, {0: -(2**31), 3: 2**31 - 1})
+    controller.session.serial = -1
+    coordinator.save_app_state(controller)
+    assert await stored_app_state(coordinator) == {
+        "slots": {"8": {"0": -(2**31), "3": 2**31 - 1}},
+        "serial": -1,
+    }
+    await restart_app_state(hass, ADDRESS)
+    restored = await _controller(AdjustableBedCoordinator(hass, entry))
+    assert restored.session is not controller.session
+    assert restored.session.slots == {8: {0: -(2**31), 3: 2**31 - 1}}
+    assert restored.session.serial == -1
+    assert restored.memory_slot_names == (
+        "Sleep", "M2", "Slot 3", "Slot 4", "Slot 5", "Slot 6", "Slot 7", "Slot 8",
+    )
+    other = await _controller(AdjustableBedCoordinator(hass, _entry(hass, "11:22:33:44:55:66")))
+    assert other.session.slots == {} and other.session.serial is None
+
+
+async def test_physical_memories_outlive_ownership_transfers_until_true_removal(hass):
     from custom_components.adjustable_bed.pairing import build_pair_entry_data
 
-    left_data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX}
+    left_data = {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX}
     right_data = {**left_data, CONF_ADDRESS: "11:22:33:44:55:66"}
     left = MockConfigEntry(domain=const.DOMAIN, data=left_data)
     right = MockConfigEntry(domain=const.DOMAIN, data=right_data)
-    pair = MockConfigEntry(domain=const.DOMAIN, data=build_pair_entry_data(left_data, right_data, name="Pair"))
+    pair = MockConfigEntry(
+        domain=const.DOMAIN, data=build_pair_entry_data(left_data, right_data, name="Pair")
+    )
     for entry in (left, right, pair):
         entry.add_to_hass(hass)
     for entry, raw in ((left, -1), (right, -(2**31))):
-        state = FsmRelaxState(hass, entry.entry_id, entry.data[CONF_ADDRESS])
-        await state.async_save_slot(8, {0: raw})
-        await state.async_set_names([entry.entry_id] + [""] * 7)
-        await state.async_save_capabilities(bytes.fromhex("0206000008"))
-    for index, original in enumerate((left, right)):
-        child = ChildEntryView(pair, pair.data[const.CONF_PAIR_CHILDREN][index], lambda _: None)
-        state = FsmRelaxState(hass, child.entry_id, child.data[CONF_ADDRESS])
-        await state.async_load()
-        assert state.slots[8][0] == (-1 if index == 0 else -(2**31))
-        assert state.names[0] == original.entry_id
+        controller = await _controller(AdjustableBedCoordinator(hass, entry))
+        await controller._save_slot(8, {0: raw})
+    # Combining removes the standalone owners; the pair still owns both beds.
+    for original, raw in ((left, -1), (right, -(2**31))):
         await async_remove_entry(hass, original)
-        after = FsmRelaxState(hass, "unpaired-owner", child.data[CONF_ADDRESS])
-        await after.async_load()
-        assert after.slots == state.slots and after.names == state.names
+        stored = await app_state_store(hass, original.data[CONF_ADDRESS]).async_slot(SLOT)
+        assert stored["slots"] == {"8": {"0": raw}}
     # Unpair leaves surviving standalone owners, so parent removal preserves both.
     await async_remove_entry(hass, pair)
-    # True pair removal cleans each physical child once no other owner exists.
+    # True pair removal deletes each physical record once no other owner exists.
     with patch.object(hass.config_entries, "async_entries", return_value=[pair]):
         await async_remove_entry(hass, pair)
-    for address in (left_data[CONF_ADDRESS], right_data[CONF_ADDRESS]):
-        removed = FsmRelaxState(hass, "new-owner", address)
-        await removed.async_load()
-        assert removed.slots == {} and removed.capability_body is None
+    for address in (ADDRESS, right_data[CONF_ADDRESS]):
+        assert await app_state_store(hass, address).async_slot(SLOT) == {}
 
 
-async def test_atomic_failure_preserves_existing_slot_names_and_serial(hass):
-    state = FsmRelaxState(hass, "entry", "AA:BB:CC:DD:EE:FF")
-    state._store = MagicMock(async_save=AsyncMock(side_effect=OSError("disk")))
-    state.slots = {1: {0: 11}}
-    for operation in (
-        state.async_save_slot(1, {0: -1}),
-        state.async_set_names(["new"] * 8),
-        state.async_save_serial(3),
-        state.async_save_capabilities(bytes.fromhex("0202040008")),
+async def test_failed_memory_write_keeps_the_previous_slot(hass):
+    coordinator = AdjustableBedCoordinator(hass, _entry(hass))
+    controller = await _controller(coordinator)
+    await controller._save_slot(1, {0: 11})
+    store = coordinator._app_state_store._store
+    with (
+        patch.object(store, "async_save", AsyncMock(side_effect=OSError("disk"))),
+        pytest.raises(OSError),
     ):
-        with pytest.raises(OSError):
-            await operation
-    assert state.slots == {1: {0: 11}}
-    assert state.names == tuple(f"M{i}" for i in range(1, 9))
-    assert state.serial is None and state.capability_body is None
+        await controller._save_slot(1, {0: -1})
+    assert controller.session.slots == {1: {0: 11}}
+    assert (await stored_app_state(coordinator))["slots"] == {"1": {"0": 11}}
 
 
 @pytest.mark.parametrize("value", [None, [], [""] * 7, [""] * 9, ["x" * 81] * 8, [True] * 8])
@@ -117,66 +122,42 @@ def test_opaque_position_validation(positions):
         validate_positions(positions)
 
 
-async def test_corrupt_record_is_never_projected_to_bed(hass):
-    state = FsmRelaxState(hass, "entry", "AA:BB:CC:DD:EE:FF")
-    state._store = MagicMock(
-        async_load=AsyncMock(return_value={"slots": {"1": {"0": 2**40}}, "names": [""] * 8})
-    )
-    await state.async_load()
-    assert state.slots == {}
-
-
-async def test_metadata_idempotence_first_change_and_rollback(hass):
-    state = FsmRelaxState(hass, "entry", "AA:BB:CC:DD:EE:FF")
-    save = AsyncMock()
-    state._store = MagicMock(async_save=save)
-    first = bytes.fromhex("0202000008")
-    changed = bytes.fromhex("0204000008")
-    await state.async_save_capabilities(first)
-    await state.async_save_serial(1)
-    assert save.await_count == 2
-    for _ in range(2):
-        await state.async_save_capabilities(first)
-        await state.async_save_serial(1)
-    assert save.await_count == 2
-    await state.async_save_capabilities(changed)
-    await state.async_save_serial(-1)
-    assert save.await_count == 4
-    assert state.capability_body == changed and state.serial == -1
-    save.side_effect = OSError("disk")
-    await state.async_save_capabilities(changed)
-    await state.async_save_serial(-1)
-    for operation in (state.async_save_capabilities(first), state.async_save_serial(2)):
-        with pytest.raises(OSError):
-            await operation
-    assert state.capability_body == changed and state.serial == -1
-    assert save.await_count == 6
-
-
-@pytest.mark.parametrize("field,value", [
-    ("capability_body", bytes.fromhex("0302000008")),
-    ("capability_body", bytes.fromhex("02020000")),
-    ("serial", True),
-    ("serial", 2**31),
-    ("serial", -(2**31) - 1),
-])
-async def test_invalid_metadata_is_rejected_even_when_equal_to_local_state(hass, field, value):
-    state = FsmRelaxState(hass, "entry", "AA:BB:CC:DD:EE:FF")
-    save = AsyncMock()
-    state._store = MagicMock(async_save=save)
-    setattr(state, field, value)
+@pytest.mark.parametrize(
+    "stored",
+    [
+        {"slots": {"1": {"0": 2**40}}},
+        {"slots": {"9": {"0": 1}}},
+        {"slots": {"1": {"x": 1}}},
+        {"serial": True},
+        {"serial": 2**31},
+        {"names": [""] * 8},
+    ],
+)
+async def test_corrupt_record_is_never_projected_to_bed(hass, stored):
+    session = FsmRelaxSession(slots={1: {0: 11}}, serial=3)
     with pytest.raises(ValueError):
-        if field == "capability_body":
-            await state.async_save_capabilities(value)
-        else:
-            await state.async_save_serial(value)
-    save.assert_not_awaited()
+        session.restore(stored)
+    assert session.slots == {1: {0: 11}} and session.serial == 3
+    coordinator = AdjustableBedCoordinator(hass, _entry(hass))
+    coordinator._app_state_store._store.async_load = AsyncMock(return_value={SLOT: stored})
+    controller = await _controller(coordinator)
+    assert controller.session.slots == {} and controller.session.serial is None
 
 
-async def test_unchanged_names_skip_store_write(hass):
-    state = FsmRelaxState(hass, "entry", "AA:BB:CC:DD:EE:FF")
-    await state.async_load()
-    await state.async_set_names(["Sleep"] + [""] * 7)
-    with patch.object(state._store, "async_save", AsyncMock()) as save:
-        await state.async_set_names(["Sleep"] + [""] * 7)
-    save.assert_not_awaited()
+async def test_capability_reply_is_entry_data_written_once_per_change(hass):
+    entry = _entry(hass)
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    with patch.object(
+        hass.config_entries, "async_update_entry", wraps=hass.config_entries.async_update_entry
+    ) as update:
+        for body in ("0202000008", "0202000008", "0206040004"):
+            coordinator.remember_fsm_relax_capabilities(bytes.fromhex(body))
+    assert update.call_count == 2
+    assert entry.data["capabilities"] == {"fsm_relax": "0206040004"}
+    controller = await _controller(coordinator)
+    assert controller.key_count == 6 and controller.memory_slot_count == 4
+
+
+@pytest.mark.parametrize("value", [None, 2, "zz", "0302000008", "02020000"])
+def test_invalid_stored_capability_is_ignored(value):
+    assert validate_capability_body(value) is None

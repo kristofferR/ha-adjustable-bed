@@ -15,7 +15,10 @@ from custom_components.adjustable_bed.beds.limoss import LimossController
 from custom_components.adjustable_bed.beds.limoss_remote_protocol import format_command
 from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 from custom_components.adjustable_bed.controller_factory import create_controller
-from custom_components.adjustable_bed.limoss_remote_state import LimossRemoteMemory
+from custom_components.adjustable_bed.limoss_remote_state import (
+    LimossRemoteMemory,
+    get_limoss_remote_session,
+)
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote_review_lifecycle import (
@@ -112,7 +115,8 @@ async def test_registered_sequential_pair_rejects_fresh_second_profile_before_an
     trace = []
     awaiting_capability = asyncio.Event()
     for side, child in children.items():
-        child.limoss_remote_memory_store.slots[8] = LimossRemoteMemory("Eight", ((0, -1),))
+        get_limoss_remote_session(child.hass, child.address).memories.slots[8] = LimossRemoteMemory("Eight", ((0, -1),))
+        child.save_app_state()
         child._client = child._controller = None
         child._post_connect_delay = 0
         child._max_retries = 1

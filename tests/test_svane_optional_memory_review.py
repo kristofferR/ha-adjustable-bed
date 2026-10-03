@@ -25,12 +25,8 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.cover import _cover_entities_for
 from custom_components.adjustable_bed.services import async_register_services
-from custom_components.adjustable_bed.svane_state import (
-    CONF_SVANE_PREFERENCES,
-    clear_svane_session,
-    get_svane_session,
-    svane_multi_slots,
-)
+from custom_components.adjustable_bed.svane_state import get_svane_session, svane_multi_slots
+from tests.app_state_helpers import restart_app_state, stored_app_state
 from tests.test_svane import make_controller, written
 
 
@@ -116,6 +112,7 @@ async def test_long_opaque_memory_save_survives_cold_restore_and_exact_recall(ha
     controller._coordinator = coordinator
     coordinator._client = native
     coordinator._controller = controller
+    await coordinator._async_restore_app_state(controller)
     assert native is not None
     raw = bytes(range(length))
 
@@ -128,10 +125,11 @@ async def test_long_opaque_memory_save_survives_cold_restore_and_exact_recall(ha
     native.read_gatt_char.side_effect = read
     controller._wait = wait
     await coordinator.async_execute_controller_command(lambda c: c.program_memory(1))
-    saved = entry.data[CONF_SVANE_PREFERENCES]
+    saved = await stored_app_state(coordinator)
     assert svane_multi_slots(saved)[1] == (raw, raw)
-    clear_svane_session(hass, coordinator.address)
-    restored = get_svane_session(hass, coordinator.address, "multi", saved)
+    await restart_app_state(hass, coordinator.address)
+    restored = get_svane_session(hass, coordinator.address, "multi")
+    restored.restore(await stored_app_state(AdjustableBedCoordinator(hass, entry), "multi"))
     assert restored.multi_slots[1] == (raw, raw)
     rebuilt = SvaneController(coordinator, profile="multi", session=restored)
     coordinator._controller = rebuilt

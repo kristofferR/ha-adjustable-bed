@@ -3,14 +3,19 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable, Coroutine, Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
 from bleak.exc import BleakError
 from homeassistant.config_entries import ConfigEntryState
 
-from ..fsm_relax_state import FsmRelaxState, validate_positions
+from ..fsm_relax_state import (
+    FsmRelaxSession,
+    validate_capability_body,
+    validate_names,
+    validate_positions,
+)
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -151,43 +156,61 @@ class FsmRelaxController(BedController):
         coordinator: AdjustableBedCoordinator,
         *,
         profile: FsmRelaxProfile | None = None,
-        state: FsmRelaxState,
+        session: FsmRelaxSession,
+        names: tuple[str, ...] | None = None,
     ) -> None:
         super().__init__(coordinator)
         self.profile = profile or FsmRelaxProfile()
-        self.local = state
+        self.session = session
+        self.names = names or validate_names([""] * 8)
         self._write_lock = asyncio.Lock()
-        self._memory_lock = state.session.memory_lock
+        self._memory_lock = session.memory_lock
         self._buffer = bytearray()
         self._generation = 0
         self._subscribed = False
         self._quarantined = False
         self._pending: dict[int, asyncio.Future[bytes]] = {}
         self._optional_task: asyncio.Task[None] | None = None
-        self._metadata_tasks: set[asyncio.Task[None]] = set()
-        self._capabilities: bytes | None = state.capability_body
+        self._capabilities: bytes | None = self._stored_capabilities
         self._live_capabilities = False
         self._state: dict[str, object] = {}
-        if state.serial is not None:
-            self._publish({"serial": state.serial})
+        if session.serial is not None:
+            self._publish({"serial": session.serial})
         if self._capabilities is not None:
             self._accept_body(self._capabilities)
 
     @property
     def _counter(self) -> int:
-        return self.local.session.counter
+        return self.session.counter
 
     @_counter.setter
     def _counter(self, value: int) -> None:
-        self.local.session.counter = value & 255
+        self.session.counter = value & 255
 
     @property
     def _quarantine_client(self) -> object | None:
-        return self.local.session.quarantine_client
+        return self.session.quarantine_client
 
     @_quarantine_client.setter
     def _quarantine_client(self, client: object | None) -> None:
-        self.local.session.quarantine_client = client
+        self.session.quarantine_client = client
+
+    @property
+    def persisted_app_state(self) -> dict[str, object]:
+        return self.session.persisted()
+
+    def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
+        self.session.restore(state)
+        if self.session.serial is not None:
+            self._publish({"serial": self.session.serial})
+
+    @property
+    def _stored_capabilities(self) -> bytes | None:
+        """The last capability reply, kept in the entry because it decides the entities."""
+        capabilities = self._coordinator.entry.data.get("capabilities")
+        if not isinstance(capabilities, Mapping):
+            return None
+        return validate_capability_body(capabilities.get("fsm_relax"))
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -208,8 +231,8 @@ class FsmRelaxController(BedController):
     @property
     def _known_capabilities(self) -> bytes | None:
         # A cached offline controller observes successful saves by its live replacement.
-        if not self._subscribed and self.local.capability_body is not None:
-            return self.local.capability_body
+        if not self._subscribed and (stored := self._stored_capabilities) is not None:
+            return stored
         return self._capabilities
 
     @property
@@ -248,7 +271,7 @@ class FsmRelaxController(BedController):
 
     @property
     def memory_slot_names(self) -> tuple[str, ...]:
-        return self.local.names
+        return self.names
 
     @property
     def key_count(self) -> int:
@@ -318,8 +341,8 @@ class FsmRelaxController(BedController):
                     fsm_relax_vibration_count=body[2],
                     fsm_relax_reported_memory_count=int.from_bytes(body[3:5], "big"),
                 )
-            if self.local.serial is not None:
-                persisted["fsm_relax_serial"] = self.local.serial
+            if self.session.serial is not None:
+                persisted["fsm_relax_serial"] = self.session.serial
         return {
             **super().protocol_diagnostics,
             **self._state,
@@ -423,8 +446,6 @@ class FsmRelaxController(BedController):
         self._pending.clear()
         if self._optional_task is not None:
             self._optional_task.cancel()
-        for task in tuple(self._metadata_tasks):
-            task.cancel()
 
     async def stop_notify(self) -> None:
         self.on_disconnect()
@@ -435,11 +456,6 @@ class FsmRelaxController(BedController):
             except asyncio.CancelledError:
                 pass
             self._optional_task = None
-        for task in tuple(self._metadata_tasks):
-            task.cancel()
-        if self._metadata_tasks:
-            await asyncio.gather(*self._metadata_tasks, return_exceptions=True)
-        self._metadata_tasks.clear()
         client = self.client
         if client is not None and client.is_connected:
             await client.stop_notify(_CHAR)
@@ -490,13 +506,9 @@ class FsmRelaxController(BedController):
         elif opcode == 5:
             self._publish({"calibration_observed": True})
         elif opcode == 6:
-            serial = int.from_bytes(data, "big", signed=True)
-            self._publish({"serial": serial})
-            task = self._coordinator.entry.async_create_background_task(
-                self._coordinator.hass, self.local.async_save_serial(serial), "fsm_relax_serial"
-            )
-            self._metadata_tasks.add(task)
-            task.add_done_callback(self._metadata_tasks.discard)
+            self.session.serial = int.from_bytes(data, "big", signed=True)
+            self._coordinator.save_app_state(self)
+            self._publish({"serial": self.session.serial})
 
     async def _query(self, opcode: int, *, retries: int = 4, optional: bool = False) -> bytes:
         if opcode in self._pending:
@@ -540,12 +552,13 @@ class FsmRelaxController(BedController):
                 future.exception()
 
     async def async_discover_capabilities(self) -> None:
-        await self.local.async_load()
         await self.start_notify()
-        previous = self.local.capability_body
+        previous = self._stored_capabilities
         async with asyncio.timeout(4):
             body = await self._query(2)
-        await self.local.async_save_capabilities(body)
+        if len(body) != 5 or body[0] != 2:
+            raise ValueError("Invalid capability record")
+        self._coordinator.remember_fsm_relax_capabilities(body)
         loaded = self._coordinator.hass.config_entries.async_get_entry(
             self._coordinator.entry.entry_id
         )
@@ -646,7 +659,7 @@ class FsmRelaxController(BedController):
         if type(memory_num) is not int:
             raise ValueError("Selected memory slot is unavailable")
         super().validate_memory_recall(memory_num)
-        positions = self.local.slots.get(memory_num)
+        positions = self.session.slots.get(memory_num)
         if positions is None or 0 not in positions:
             raise ValueError("Memory has no motor-zero target")
         validate_positions(positions)
@@ -666,10 +679,22 @@ class FsmRelaxController(BedController):
                 for index in range(self.key_count // 2):
                     body = await self._query((index + 1) * 16, retries=1)
                     positions[index] = int.from_bytes(body[1:], "big", signed=True)
-                await self.local.async_save_slot(memory_num, positions)
+                await self._save_slot(memory_num, positions)
             except BaseException:
                 self._quarantine()
                 raise
+
+    async def _save_slot(self, slot: int, positions: dict[int, int]) -> None:
+        """Report a saved memory only once it is durable; a failed write changes nothing."""
+        validated = validate_positions(positions)
+        async with self.session.persist_lock:
+            candidate = {**self.session.slots, slot: validated}
+            await self._coordinator.async_write_app_state(
+                self, self.session.persisted(slots=candidate)
+            )
+            self.session.slots = candidate
+        # Pick up a serial received while the write was in flight.
+        self._coordinator.save_app_state(self)
 
     async def recall_memory(self, slot: int, *, hold_ms: int) -> None:
         if type(hold_ms) is not int or not 1 <= hold_ms <= 120000:
@@ -677,7 +702,7 @@ class FsmRelaxController(BedController):
         async with self._memory_lock:
             self._validate_memory(slot)
             self.validate_memory_recall(slot)
-            positions = self.local.slots.get(slot)
+            positions = self.session.slots.get(slot)
             assert positions is not None
             loop = asyncio.get_running_loop()
             start = loop.time()

@@ -1,4 +1,4 @@
-"""Target-local Svane app caches, separate from measured device state."""
+"""Target-local Svane app sessions and preferences, separate from measured device state."""
 
 from __future__ import annotations
 
@@ -7,12 +7,12 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal
 
+from .app_session import app_session
+
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
 SvaneProfile = Literal["multi", "jmc"]
-CONF_SVANE_PREFERENCES = "svane_remote_preferences"
-_NAMESPACE = "adjustable_bed_svane_remote_sessions"
 _DEFAULT_SLOTS = (bytes.fromhex("81388113"), bytes.fromhex("82738204"))
 
 
@@ -82,6 +82,12 @@ class SvaneSession:
     head_release_epoch: int = 0
     feet_release_epoch: int = 0
 
+    def restore(self, preferences: Mapping[str, object]) -> None:
+        """Apply stored preferences after validating all of them."""
+        intensity, slots = svane_preferences(preferences)
+        multi_slots = svane_multi_slots(preferences)
+        self.intensity, self.jmc_slots, self.multi_slots = intensity, slots, multi_slots
+
     def preferences(self) -> dict[str, object]:
         preferences: dict[str, object] = {
             "intensity": self.intensity,
@@ -96,48 +102,13 @@ class SvaneSession:
         return preferences
 
 
-@dataclass(slots=True)
-class _Sessions:
-    targets: dict[tuple[str, SvaneProfile], SvaneSession] = field(default_factory=dict)
-
-
-def get_svane_session(
-    hass: HomeAssistant,
-    address: str,
-    profile: SvaneProfile,
-    preferences: object = None,
-) -> SvaneSession:
+def get_svane_session(hass: HomeAssistant, address: str, profile: SvaneProfile) -> SvaneSession:
     """Retain physical intent over same-process BLE rebuilds and entry reloads."""
-    address = address.upper()
-    if re.fullmatch(r"(?:[0-9A-F]{2}:){5}[0-9A-F]{2}", address) is None:
+    if re.fullmatch(r"(?:[0-9A-F]{2}:){5}[0-9A-F]{2}", address.upper()) is None:
         raise ValueError("Svane session requires an exact physical address")
     if profile not in ("multi", "jmc"):
         raise ValueError("Unknown Svane app profile")
-    intensity, slots = svane_preferences(preferences)
-    cache = hass.data.get(_NAMESPACE)
-    if not isinstance(cache, _Sessions):
-        cache = _Sessions()
-        hass.data[_NAMESPACE] = cache
-    for key in tuple(cache.targets):
-        if key[0] == address and key[1] != profile:
-            del cache.targets[key]
-    key = (address, profile)
-    session = cache.targets.get(key)
-    if session is None:
-        session = SvaneSession(
-            intensity=intensity, jmc_slots=slots, multi_slots=svane_multi_slots(preferences)
-        )
-        cache.targets[key] = session
-    return session
-
-
-def clear_svane_session(hass: HomeAssistant, address: str) -> None:
-    """Reset only an explicitly changed physical app profile."""
-    cache = hass.data.get(_NAMESPACE)
-    if isinstance(cache, _Sessions):
-        for key in tuple(cache.targets):
-            if key[0] == address.upper():
-                del cache.targets[key]
+    return app_session(hass, address, ("svane", profile), SvaneSession)
 
 
 def svane_profile_for_selected_name(name: str | None) -> SvaneProfile:

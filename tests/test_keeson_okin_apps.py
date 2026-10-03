@@ -25,10 +25,12 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.adjustable_bed.app_session import app_session, drop_app_sessions
+from custom_components.adjustable_bed.app_state_store import app_state_store
 from custom_components.adjustable_bed.beds.keeson import KeesonController
 from custom_components.adjustable_bed.beds.keeson_okin_apps import (
+    HealSession,
     OkinAppKeesonController,
-    drop_okin_app_sessions,
     heal_movement_key,
     java_uuid_order,
     okin_app_frame,
@@ -39,7 +41,6 @@ from custom_components.adjustable_bed.const import (
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
-    CONF_OKIN_APP_SETTINGS,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
@@ -52,6 +53,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from tests.app_state_helpers import stored_app_state
 
 Action = Callable[[OkinAppKeesonController], Awaitable[None]]
 ZERO = "e5fe160000000006"
@@ -339,19 +341,10 @@ async def test_heal_settings_remap_movement_like_the_app(
     coordinator, mock_bleak_client: MagicMock, no_sleep, settings, frames
 ):
     installation, actuator_1, actuator_2 = settings
-    hass = coordinator.hass
-    hass.config_entries.async_update_entry(
-        coordinator.entry,
-        data={
-            **coordinator.entry.data,
-            CONF_OKIN_APP_SETTINGS: {
-                "installation": installation,
-                "actuator_1": actuator_1,
-                "actuator_2": actuator_2,
-            },
-        },
-    )
     controller = _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT, 3)
+    controller.restore_persisted_app_state(
+        {"installation": installation, "actuator_1": actuator_1, "actuator_2": actuator_2}
+    )
     for move, frame in zip(
         ("move_head_up", "move_head_down", "move_feet_up", "move_feet_down"), frames, strict=True
     ):
@@ -725,7 +718,7 @@ async def test_setup_exposes_each_app_surface_and_cleans_up(
     assert light.state == "unknown"
     assert light.attributes.get("assumed_state") is True
 
-    # Settings are local: no frame, persisted in the entry, and remap the keys.
+    # Settings are local: no frame, persisted as app state, and remap the keys.
     state_id = registry.async_get_entity_id(
         "select", DOMAIN, f"{address}_controller_select_okin_app_installation"
     )
@@ -735,7 +728,7 @@ async def test_setup_exposes_each_app_surface_and_cleans_up(
     )
     await hass.async_block_till_done()
     mock_bleak_client.write_gatt_char.assert_not_awaited()  # A local setting sends nothing.
-    assert entry.data[CONF_OKIN_APP_SETTINGS] == {
+    assert await stored_app_state(hass.data[DOMAIN][entry.entry_id]) == {
         "installation": True,
         "actuator_1": False,
         "actuator_2": False,
@@ -851,16 +844,18 @@ async def test_heal_state_starts_without_a_wave_level_and_settings_are_heal_only
     controller = _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT)
     assert coordinator.controller_state["okin_app_massage_wave"] is None
     assert controller.get_massage_state()["wave_intensity"] is None
-    with pytest.raises(ValueError):
-        coordinator.remember_okin_app_settings({"installation": True})  # Entry variant is auto.
+    assert controller.persisted_app_state is not None
+    assert _ctrl(coordinator, KEESON_VARIANT_SIMON_LI).persisted_app_state is None
 
 
 def test_drop_sessions_forgets_only_that_bed(hass: HomeAssistant):
-    sessions = hass.data.setdefault(DOMAIN, {}).setdefault("okin_app_sessions", {})
-    sessions[("AA:BB:CC:DD:EE:01", KEESON_VARIANT_HEAL_EVERY_NIGHT)] = object()
-    sessions[("AA:BB:CC:DD:EE:02", KEESON_VARIANT_HEAL_EVERY_NIGHT)] = object()
-    drop_okin_app_sessions(hass, "aa:bb:cc:dd:ee:01")
-    assert list(sessions) == [("AA:BB:CC:DD:EE:02", KEESON_VARIANT_HEAL_EVERY_NIGHT)]
+    profile = ("okin_app", KEESON_VARIANT_HEAL_EVERY_NIGHT)
+    first = app_session(hass, "aa:bb:cc:dd:ee:01", profile, HealSession)
+    second = app_session(hass, "AA:BB:CC:DD:EE:02", profile, HealSession)
+    assert app_session(hass, "AA:BB:CC:DD:EE:01", profile, HealSession) is first
+    drop_app_sessions(hass, "aa:bb:cc:dd:ee:01")
+    assert app_session(hass, "AA:BB:CC:DD:EE:01", profile, HealSession) is not first
+    assert app_session(hass, "AA:BB:CC:DD:EE:02", profile, HealSession) is second
 
 
 async def test_heal_session_and_settings_end_with_the_profile_or_entry(
@@ -870,15 +865,15 @@ async def test_heal_session_and_settings_end_with_the_profile_or_entry(
     enable_custom_integrations,
 ):
     address = "AA:BB:CC:DD:EE:63"
-    key = (address, KEESON_VARIANT_HEAL_EVERY_NIGHT)
+    slot = f"{BED_TYPE_KEESON}:{KEESON_VARIANT_HEAL_EVERY_NIGHT}"
     entry = _entry(hass, address, KEESON_VARIANT_HEAL_EVERY_NIGHT, 2)
-    hass.config_entries.async_update_entry(
-        entry, data={**entry.data, CONF_OKIN_APP_SETTINGS: {"installation": True}}
-    )
+    await app_state_store(hass, address).async_write(slot, {"installation": True})
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    sessions = hass.data[DOMAIN]["okin_app_sessions"]
-    assert key in sessions
+    controller = hass.data[DOMAIN][entry.entry_id].capability_controller
+    assert controller.persisted_app_state["installation"] is True
+    sessions = hass.data[DOMAIN]["app_sessions"]
+    assert address in sessions
 
     # Changing the profile in the options flow drops the settings and the page state.
     form = await hass.config_entries.options.async_init(entry.entry_id)
@@ -898,15 +893,17 @@ async def test_heal_session_and_settings_end_with_the_profile_or_entry(
     assert result["type"] == FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
     assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SIMON_LI
-    assert CONF_OKIN_APP_SETTINGS not in entry.data
-    assert key not in sessions
+    assert address not in sessions
 
-    # A Heal entry's state also ends when the entry is removed.
+    # Changing back starts with default settings.
     await _reload(hass, entry, **{CONF_PROTOCOL_VARIANT: KEESON_VARIANT_HEAL_EVERY_NIGHT})
-    assert key in hass.data[DOMAIN]["okin_app_sessions"]
+    controller = hass.data[DOMAIN][entry.entry_id].capability_controller
+    assert controller.persisted_app_state["installation"] is False
+    assert address in hass.data[DOMAIN]["app_sessions"]
+    # A Heal entry's state also ends when the entry is removed.
     assert await hass.config_entries.async_remove(entry.entry_id)
     await hass.async_block_till_done()
-    assert key not in hass.data[DOMAIN]["okin_app_sessions"]
+    assert address not in hass.data[DOMAIN]["app_sessions"]
 
 
 @pytest.mark.parametrize(

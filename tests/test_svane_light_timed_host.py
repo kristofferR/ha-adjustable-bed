@@ -48,6 +48,7 @@ async def runtime(hass, request):
     coordinator._client = controller.client
     coordinator._controller = controller
     controller._coordinator = coordinator
+    await coordinator._async_restore_app_state(controller)
     await async_register_services(hass)
     try:
         yield coordinator, controller

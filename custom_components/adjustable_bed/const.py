@@ -287,8 +287,6 @@ CONF_KAIDI_SOFA_ACU_NO: Final = "kaidi_sofa_acu_no"
 CONF_REMACRO_MODEL: Final = "remacro_model"
 # Remacro committed LED levels by model ID, the app's "LV"+model+address preference.
 CONF_REMACRO_LED_LEVEL: Final = "remacro_led_level"
-# Heal Every Night Installation Mode / Actuator Direction settings (app-local).
-CONF_OKIN_APP_SETTINGS: Final = "okin_app_settings"
 CONF_KAIDI_ADV_TYPE: Final = "kaidi_adv_type"
 CONF_KAIDI_RESOLVED_VARIANT: Final = "kaidi_resolved_variant"
 CONF_KAIDI_VARIANT_SOURCE: Final = "kaidi_variant_source"

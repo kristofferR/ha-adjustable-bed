@@ -23,10 +23,9 @@ from collections.abc import (
     Mapping,
 )
 from datetime import UTC, datetime
-from hashlib import sha256
-from json import dumps
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 from uuid import uuid4
+from weakref import WeakKeyDictionary
 
 from bleak import BleakClient
 from bleak.backends.device import BLEDevice
@@ -37,7 +36,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.storage import Store
 
 from .adapter import (
     AdapterSelectionResult,
@@ -49,7 +47,7 @@ from .adapter import (
     select_adapter,
 )
 from .address_lock import async_get_connect_lock
-from .app_state_store import AppStateStore, app_state_slot, app_state_store
+from .app_state_store import app_state_slot, app_state_store
 from .beds.remacro_protocol import ModelProblem
 from .ble_auth import is_ble_authentication_error, is_ble_pairing_auth_failure
 from .bluetooth_diagnostics import connection_reachability
@@ -106,7 +104,6 @@ from .const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MATTRESSFIRM,
-    BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
@@ -128,7 +125,6 @@ from .const import (
     BED_TYPE_SOLACE,
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M5X5,
-    BED_TYPE_SVANE,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
@@ -143,7 +139,6 @@ from .const import (
     CONF_CONNECTION_PROFILE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISCONNECT_AFTER_COMMAND,
-    CONF_FURNIMOVE_REMOTE,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
     CONF_JENSEN_PIN,
@@ -153,16 +148,11 @@ from .const import (
     CONF_LIMOSS_REMOTE_STATE,
     CONF_MALOUF_LAYOUT,
     CONF_MALOUF_MEMORY_SLOTS,
-    CONF_MOTION_BED_MOVEMENT,
-    CONF_MOTION_BED_NAME,
-    CONF_MOTION_BED_PRESET,
-    CONF_MOTION_BED_RESTORED,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_MOTOR_PULSE_USER_SET,
     CONF_OCTO_PIN,
-    CONF_OKIN_APP_SETTINGS,
     CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
@@ -199,7 +189,6 @@ from .const import (
     DEVICE_INFO_CHARS,
     DEVICE_INFO_READ_TIMEOUT,
     DOMAIN,
-    KEESON_VARIANT_HEAL_EVERY_NIGHT,
     LEGGETT_OKIN_SUPERSEDED_PULSE_DEFAULTS,
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_OKIN,
@@ -277,7 +266,6 @@ from .vibradorm_app_state import (
 if TYPE_CHECKING:
     from .beds.base import BedController, SideBoundController
     from .beds.starcode_abm5_4_profiles import RetainedAppState
-    from .limoss_remote_state import LimossRemoteMemoryStore
 
 T = TypeVar("T")
 _LOGGER = logging.getLogger(__name__)
@@ -549,35 +537,10 @@ class AdjustableBedCoordinator:
         self.okin_cb35_preset_started_at: float | None = None
         self._controller_state: dict[str, Any] = {}
         self.starcode_app_retained_state: RetainedAppState | None = None
-        self._limoss_remote_memory_store: LimossRemoteMemoryStore | None = None
-        self._furnimove_state_store: Store[dict[str, int | str | bool]] | None = None
-        self._furnimove_local_state: dict[str, int | str | bool] = {}
-        self._furnimove_state_loaded = False
-        self._furnimove_state_restoring = False
         self.furnimove_widget_state: tuple[bool, bytes | None, bytes | None] = (False, None, None)
-        if self._bed_type == BED_TYPE_FURNIMOVE:
-            self._furnimove_state_store = Store(
-                hass,
-                1,
-                f"{DOMAIN}.furnimove_{self._address.replace(':', '_').lower()}_"
-                f"{entry.data.get(CONF_FURNIMOVE_REMOTE, 'unset')}",
-            )
-        self._motion_bed_state_store: Store[dict[str, bool]] | None = None
-        self._motion_bed_local_state: dict[str, bool] = {}
-        self._motion_bed_state_loaded = False
-        self._motion_bed_state_restoring = False
-        if self._bed_type == BED_TYPE_MOTION_BED:
-            profile = {key: entry.data.get(key) for key in (
-                CONF_MOTION_BED_NAME, CONF_MOTION_BED_PRESET,
-                CONF_MOTION_BED_MOVEMENT, CONF_MOTION_BED_RESTORED,
-            )}
-            profile_key = sha256(dumps(profile, sort_keys=True).encode()).hexdigest()[:16]
-            self._motion_bed_state_store = Store(
-                hass, 1, f"{DOMAIN}.motion_bed_{self._address.replace(':', '_').lower()}_{profile_key}"
-            )
-        # Generic app-local preferences (BedController.persisted_app_state).
-        self._app_state_store: AppStateStore | None = None
-        self._app_state_slot = ""
+        # App-local state (BedController.persisted_app_state), slotted per restored controller.
+        self._app_state_store = app_state_store(hass, self._address)
+        self._app_state_slots: WeakKeyDictionary[BedController, str] = WeakKeyDictionary()
         self._app_state_restoring = False
         self._controller_state_callbacks: set[Callable[[dict[str, Any]], None]] = set()
         self._controller_state_refresh_task: asyncio.Task[None] | None = None
@@ -1264,7 +1227,7 @@ class AdjustableBedCoordinator:
             statically_mintable
             or variant_mintable
             or stored_remacro_model
-            # FSM Relax factory loads only its exact persisted capability body.
+            # FSM Relax mints from its exact stored capability body (entry data).
             # With no snapshot its action/memory descriptors remain empty.
             or bed_type == BED_TYPE_FSM_RELAX
             or (bed_type == BED_TYPE_OCTO and (octo_snapshot is not None or is_octo_star2))
@@ -1296,9 +1259,7 @@ class AdjustableBedCoordinator:
                 cb24_bed_selection=self._cb24_bed_selection,
                 capability_snapshot=octo_snapshot or linak_snapshot or jensen_snapshot,
             )
-            await self._async_restore_furnimove_local_state()
-            await self._async_restore_motion_bed_local_state()
-            await self._async_restore_app_state()
+            await self._async_restore_app_state(self._offline_controller)
             if bed_type in RICHMAT_MH_BED_TYPES and not getattr(
                 self._offline_controller, "has_stored_capabilities", False
             ):
@@ -1424,6 +1385,20 @@ class AdjustableBedCoordinator:
         self._offline_controller = self._controller
         self._schedule_pending_capability_reload()
 
+    def remember_fsm_relax_capabilities(self, body: bytes) -> None:
+        """Persist FSM Relax's capability reply, which decides its entities.
+
+        The controller decides whether the change needs a reload.
+        """
+        if self._bed_type != BED_TYPE_FSM_RELAX:
+            raise ValueError("The capability reply belongs to the FSM Relax app profile")
+        capabilities = dict(self.entry.data.get("capabilities") or {})
+        if capabilities.get("fsm_relax") == body.hex():
+            return
+        capabilities["fsm_relax"] = body.hex()
+        self._begin_internal_entry_update(self._ble_bond_established)
+        self._async_persist_config({**self.entry.data, "capabilities": capabilities})
+
     def remember_vmatbasic_settings(self, settings: dict[str, int]) -> None:
         """Persist this physical receiver's requested settings, never measured state."""
         from .beds.vmatbasic_protocol import integer
@@ -1454,33 +1429,6 @@ class AdjustableBedCoordinator:
             self._begin_internal_entry_update(self._ble_bond_established)
             self._async_persist_config({**self.entry.data, CONF_NAME: name})
         self._name = name
-
-    def remember_okin_app_settings(self, settings: Mapping[str, bool]) -> None:
-        """Persist Heal Every Night's app-local movement settings for this address."""
-        if (
-            self._bed_type != BED_TYPE_KEESON
-            or self._protocol_variant != KEESON_VARIANT_HEAL_EVERY_NIGHT
-        ):
-            raise ValueError("These settings belong to the Heal Every Night app profile")
-        stored = {key: value is True for key, value in settings.items()}
-        if self.entry.data.get(CONF_OKIN_APP_SETTINGS) == stored:
-            return
-        self._begin_internal_entry_update(self._ble_bond_established)
-        self._async_persist_config(
-            {**self.entry.data, CONF_OKIN_APP_SETTINGS: stored}, keys={CONF_OKIN_APP_SETTINGS}
-        )
-
-    def remember_svane_preferences(self, preferences: dict[str, object]) -> None:
-        """Guard one changed target-local preference batch without bond inference."""
-        from .svane_state import CONF_SVANE_PREFERENCES, svane_preferences
-
-        if self._bed_type != BED_TYPE_SVANE:
-            raise ValueError("Svane preferences require the explicit bed profile")
-        svane_preferences(preferences)
-        if self.entry.data.get(CONF_SVANE_PREFERENCES) == preferences:
-            return
-        self._begin_internal_entry_update(self._ble_bond_established)
-        self._async_persist_config({**self.entry.data, CONF_SVANE_PREFERENCES: preferences}, keys={CONF_SVANE_PREFERENCES})
 
     @property
     def is_connected(self) -> bool:
@@ -2156,42 +2104,22 @@ class AdjustableBedCoordinator:
             return False
         return True
 
-    @property
-    def limoss_remote_memory_store(self) -> LimossRemoteMemoryStore:
-        """Keep this physical target's durable memories across controller recreation."""
-        from .limoss_remote_state import LimossRemoteMemoryStore, validate_limoss_remote_state
-
-        if self._bed_type != BED_TYPE_LIMOSS_REMOTE:
-            raise ValueError("Local memories require the explicit Limoss Remote profile")
-        if self._limoss_remote_memory_store is None:
-            state = validate_limoss_remote_state(self.entry.data.get(CONF_LIMOSS_REMOTE_STATE, {}))
-            self._limoss_remote_memory_store = LimossRemoteMemoryStore.restore(
-                state.get("memories"),
-                lambda memories: self.remember_limoss_remote_data({"memories": memories}),
-            )
-        return self._limoss_remote_memory_store
-
-    def remember_limoss_remote_data(self, delta: Mapping[str, object]) -> None:
-        """Guard one terminal local-data update; no bond or hardware-state inference."""
+    def remember_limoss_remote_capabilities(self, capabilities: Mapping[str, int]) -> None:
+        """Persist the reported capability record, which decides the entity layout."""
         from .limoss_remote_state import validate_limoss_remote_state
 
-        if self._bed_type != BED_TYPE_LIMOSS_REMOTE or set(delta) - {"metadata", "capabilities", "memories"}:
+        if self._bed_type != BED_TYPE_LIMOSS_REMOTE:
             raise ValueError("Invalid Limoss Remote local data")
-        if not delta:
-            return
         previous = validate_limoss_remote_state(self.entry.data.get(CONF_LIMOSS_REMOTE_STATE, {}))
-        state = validate_limoss_remote_state({**previous, **delta})
+        state = validate_limoss_remote_state({"capabilities": capabilities})
         if state == previous:
             return
         self._begin_internal_entry_update(self._ble_bond_established)
-        capabilities_changed = state.get("capabilities") != previous.get("capabilities")
-        if capabilities_changed:
-            self._offline_controller = self._controller
-            if self._pending_internal_bond_marker is not None:
-                self._pending_capability_reload = True
+        self._offline_controller = self._controller
+        if self._pending_internal_bond_marker is not None:
+            self._pending_capability_reload = True
         self._async_persist_config({**self.entry.data, CONF_LIMOSS_REMOTE_STATE: state}, keys={CONF_LIMOSS_REMOTE_STATE})
-        if capabilities_changed:
-            self._schedule_pending_capability_reload()
+        self._schedule_pending_capability_reload()
 
     def remember_limoss_remote_features(self, light: bool, massage: bool) -> None:
         """Reload the exact target's entity layout after completed OFF writes."""
@@ -4362,9 +4290,7 @@ class AdjustableBedCoordinator:
                     manufacturer_data=manufacturer_data,
                     capability_snapshot=stored_capability_snapshot,
                 )
-                await self._async_restore_furnimove_local_state()
-                await self._async_restore_motion_bed_local_state()
-                await self._async_restore_app_state()
+                await self._async_restore_app_state(self._controller)
                 discovery_result = cast(Any, self._controller).async_discover_capabilities()
                 if inspect.isawaitable(discovery_result):
                     await discovery_result
@@ -5253,12 +5179,7 @@ class AdjustableBedCoordinator:
                 try:
                     await self.async_disconnect()
                 finally:
-                    if self._furnimove_state_store is not None and self._furnimove_state_loaded:
-                        await self._furnimove_state_store.async_save(self._furnimove_local_state)
-                    if self._motion_bed_state_store is not None and self._motion_bed_state_loaded:
-                        await self._motion_bed_state_store.async_save(self._motion_bed_local_state)
-                    if self._app_state_store is not None:
-                        await self._app_state_store.async_save()
+                    await self._app_state_store.async_save()
 
     async def async_disconnect(
         self,
@@ -6930,72 +6851,55 @@ class AdjustableBedCoordinator:
             controller = self.capability_controller
             if self._bed_type != BED_TYPE_FURNIMOVE or controller is None:
                 raise ValueError("No selected FurniMove handset is available")
-            await self._async_restore_furnimove_local_state()
+            # The capability controller may be an older instance than the one that
+            # last saved; hand it the current preferences before changing one.
+            await self._async_restore_app_state(controller)
             await controller.set_massage_timer(minutes)
 
-    async def _async_restore_furnimove_local_state(self) -> None:
-        """Restore app state used by massage dispatch, never physical feedback."""
-        store = self._furnimove_state_store
-        controller = self.capability_controller
-        if store is None or controller is None:
-            return
-        if not self._furnimove_state_loaded:
-            stored = await store.async_load()
-            self._furnimove_local_state = stored if isinstance(stored, dict) else {}
-            self._furnimove_state_loaded = True
-        self._furnimove_state_restoring = True
-        try:
-            try:
-                controller.restore_furnimove_local_state(self._furnimove_local_state)
-            except (ValueError, TypeError):
-                _LOGGER.warning("Ignoring invalid local FurniMove preferences for %s", self._address)
-                self._furnimove_local_state = {}
-                controller.restore_furnimove_local_state({})
-            self._furnimove_local_state = controller.furnimove_local_state
-        finally:
-            self._furnimove_state_restoring = False
-
-    async def _async_restore_motion_bed_local_state(self) -> None:
-        """Restore the per-target audio preference without restoring live feedback."""
-        store = self._motion_bed_state_store
-        controller = self.capability_controller
-        if store is None or controller is None:
-            return
-        if not self._motion_bed_state_loaded:
-            stored = await store.async_load()
-            self._motion_bed_local_state = stored if isinstance(stored, dict) else {}
-            self._motion_bed_state_loaded = True
-        self._motion_bed_state_restoring = True
-        try:
-            try:
-                controller.restore_motion_bed_local_state(self._motion_bed_local_state)
-            except (ValueError, TypeError):
-                _LOGGER.warning("Ignoring invalid local Motion Bed preferences for %s", self._address)
-                self._motion_bed_local_state = {}
-                controller.restore_motion_bed_local_state({})
-            self._motion_bed_local_state = controller.motion_bed_local_state
-        finally:
-            self._motion_bed_state_restoring = False
-
-    async def _async_restore_app_state(self) -> None:
-        """Hand a new controller the app-local preferences stored for this bed."""
-        controller = self.capability_controller
+    async def _async_restore_app_state(self, controller: BedController | None) -> None:
+        """Hand a new controller the app-local state stored for this bed and profile."""
         if controller is None or controller.persisted_app_state is None:
             return
-        if self._app_state_store is None:
-            self._app_state_slot = app_state_slot(self._bed_type, self._protocol_variant)
-            self._app_state_store = app_state_store(self.hass, self._address)
-        stored = await self._app_state_store.async_slot(self._app_state_slot)
+        slot = app_state_slot(
+            self._bed_type, self._protocol_variant, controller.persisted_app_state_key
+        )
+        stored = await self._app_state_store.async_slot(slot)
         self._app_state_restoring = True
         try:
             try:
                 controller.restore_persisted_app_state(stored)
             except (ValueError, TypeError):
-                _LOGGER.warning("Ignoring invalid stored app preferences for %s", self._address)
+                _LOGGER.warning("Ignoring invalid stored app state for %s", self._address)
                 controller.restore_persisted_app_state({})
-            self._app_state_store.update(self._app_state_slot, controller.persisted_app_state or {})
+            self._app_state_slots[controller] = slot
+            self._app_state_store.update(slot, controller.persisted_app_state or {})
         finally:
             self._app_state_restoring = False
+
+    def save_app_state(self, controller: BedController | None = None) -> None:
+        """Schedule a save of a restored controller's app-local state.
+
+        Publishing controller state saves the capability controller's state.
+        A controller whose state lives in a shared session saves itself, since
+        it may be an older instance than the capability controller, or the
+        coordinator may have none after a disconnect.
+        """
+        controller = controller or self.capability_controller
+        if controller is None or self._app_state_restoring:
+            return
+        slot = self._app_state_slots.get(controller)
+        state = controller.persisted_app_state if slot is not None else None
+        if slot is not None and state is not None:
+            self._app_state_store.update(slot, state)
+
+    async def async_write_app_state(
+        self, controller: BedController, state: Mapping[str, Any]
+    ) -> None:
+        """Write ``controller``'s app-local state now; raise if it is not durable."""
+        slot = self._app_state_slots.get(controller) or app_state_slot(
+            self._bed_type, self._protocol_variant, controller.persisted_app_state_key
+        )
+        await self._app_state_store.async_write(slot, state)
 
     @callback
     def handle_controller_state_updates(self, updates: dict[str, Any]) -> None:
@@ -7004,31 +6908,7 @@ class AdjustableBedCoordinator:
             return
 
         self._controller_state.update(updates)
-        controller = self.capability_controller
-        if (
-            self._furnimove_state_store is not None
-            and self._furnimove_state_loaded
-            and not self._furnimove_state_restoring
-            and controller is not None
-        ):
-            snapshot = controller.furnimove_local_state
-            if snapshot != self._furnimove_local_state:
-                self._furnimove_local_state = snapshot
-                self._furnimove_state_store.async_delay_save(lambda: self._furnimove_local_state, 1)
-        if (
-            self._motion_bed_state_store is not None
-            and self._motion_bed_state_loaded
-            and not self._motion_bed_state_restoring
-            and controller is not None
-        ):
-            snapshot = controller.motion_bed_local_state
-            if snapshot != self._motion_bed_local_state:
-                self._motion_bed_local_state = snapshot
-                self._motion_bed_state_store.async_delay_save(lambda: self._motion_bed_local_state, 1)
-        if self._app_state_store is not None and not self._app_state_restoring and controller is not None:
-            app_state = controller.persisted_app_state
-            if app_state is not None:
-                self._app_state_store.update(self._app_state_slot, app_state)
+        self.save_app_state()
         for callback_fn in list(self._controller_state_callbacks):
             try:
                 callback_fn(self._controller_state)

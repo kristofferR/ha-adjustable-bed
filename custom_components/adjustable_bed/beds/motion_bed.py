@@ -5,6 +5,7 @@ import asyncio
 from collections.abc import Callable, Coroutine, Mapping
 from contextvars import ContextVar
 from dataclasses import dataclass, fields, replace
+from hashlib import sha256
 from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
@@ -141,13 +142,19 @@ class MotionBedController(BedController):
         return True
 
     @property
-    def motion_bed_local_state(self) -> dict[str, bool]:
+    def persisted_app_state_key(self) -> str:
+        """The audio preference belongs to the selected app profile."""
+        profile = "|".join(str(getattr(self.selection, field.name)) for field in fields(self.selection))
+        return sha256(profile.encode()).hexdigest()[:16]
+
+    @property
+    def persisted_app_state(self) -> dict[str, bool]:
         return {"audio_available": self._audio_preference}
 
-    def restore_motion_bed_local_state(self, state: Mapping[str, bool]) -> None:
+    def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
         if set(state) - {"audio_available"} or any(type(value) is not bool for value in state.values()):
             raise ValueError("Invalid Motion Bed audio preference")
-        self._audio_preference = state.get("audio_available", False)
+        self._audio_preference = state.get("audio_available") is True
 
     @property
     def _has_audio(self) -> bool:

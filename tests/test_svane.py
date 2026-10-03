@@ -464,7 +464,7 @@ async def test_lamp_triangle_updates_intent_before_failure_and_no_release_frame(
     assert written(controller) == [
         (LIGHT, uuid(characteristic), SvaneCommands.light_brightness(expected).hex())
     ]
-    controller._coordinator.remember_svane_preferences.assert_called_once()
+    controller._coordinator.save_app_state.assert_called_once_with(controller)
 
 
 async def test_lamp_hold_off_or_short_no_io():
@@ -485,9 +485,8 @@ async def test_process_cache_rebuild_cold_restart_and_target_isolation(hass):
     other = get_svane_session(hass, "AA:BB:CC:DD:EE:00", "multi")
     assert not other.light_on and not other.multi_slots
     cold = SimpleNamespace(data={})
-    reset = get_svane_session(
-        cold, "AA:BB:CC:DD:EE:FF", "multi", {"intensity": 95, "slots": ["00112233", "44556677"]}
-    )
+    reset = get_svane_session(cold, "AA:BB:CC:DD:EE:FF", "multi")
+    reset.restore({"intensity": 95, "slots": ["00112233", "44556677"]})
     assert not reset.light_on and reset.light_step == 5 and not reset.multi_slots
     assert reset.intensity == 95 and reset.jmc_slots == (
         bytes.fromhex("00112233"),
@@ -508,9 +507,12 @@ async def test_process_cache_rebuild_cold_restart_and_target_isolation(hass):
         {"slots": ["00112233"]},
     ],
 )
-def test_bad_stored_preferences_before_connection(hass, preferences):
+def test_bad_stored_preferences_are_rejected_before_changing_the_session(hass, preferences):
+    session = get_svane_session(hass, "AA:BB:CC:DD:EE:FF", "multi")
+    session.multi_slots[1] = (b"head", b"feet")
     with pytest.raises(ValueError):
-        get_svane_session(hass, "AA:BB:CC:DD:EE:FF", "multi", preferences)
+        session.restore(preferences)
+    assert session.intensity == 90 and session.multi_slots == {1: (b"head", b"feet")}
 
 
 async def test_notify_lifecycle_cleanup_unsubscribes_even_failed_motor_release():
@@ -600,14 +602,12 @@ async def test_saved_p1_memory_is_persisted_and_survives_a_restart():
     """Saved P1 slots are stored with the entry, so recall works after a restart (#152)."""
     controller = make_controller()
     await controller.program_memory(1)
-    preferences = controller._coordinator.remember_svane_preferences.call_args.args[0]
+    controller._coordinator.save_app_state.assert_called_once_with(controller)
+    preferences = controller.persisted_app_state
     assert preferences["multi_slots"] == {"1": ["8138", "8138"]}
     # A restart builds a fresh session from the persisted preferences.
-    from custom_components.adjustable_bed.svane_state import svane_multi_slots
-
-    restarted = make_controller(
-        session=SvaneSession(multi_slots=svane_multi_slots(preferences))
-    )
+    restarted = make_controller()
+    restarted.restore_persisted_app_state(preferences)
     restarted._wait = AsyncMock(return_value=True)
     await restarted.preset_memory(1)
     assert written(restarted) == [(HEAD, POSITION, "8138"), (FEET, POSITION, "8138")]

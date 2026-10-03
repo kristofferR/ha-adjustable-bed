@@ -90,12 +90,13 @@ byte-identical reply during a new same-opcode request, may still be indistinguis
 Acknowledgement 04 is observed only and cannot prove physical arrival.
 
 Options expose exactly eight local memory names. A blank field resets that slot
-to M1–M8. Editing/resetting names never writes BLE. Names and raw targets persist
-across HA restart/controller replacement; removing the entry removes its store.
-Reconnects do not rewrite storage when the normalized names are unchanged.
-Identical valid capability snapshots and serial observations also skip storage
-writes. First and changed values still persist atomically; failed writes retain
-the previous value. Fresh live capability readiness is required on each connection.
+to M1–M8. Editing/resetting names never writes BLE. Names are entry options and
+the capability snapshot is entry data; raw targets and the serial are app state
+for the physical bed. All survive HA restart/controller replacement, and removing
+the last entry that owns the bed removes its app state. Identical capability
+snapshots and serial observations skip storage writes. A memory save persists
+atomically; a failed write retains the previous value. Fresh live capability
+readiness is required on each connection.
 Unsolicited signed serial 06 is remembered, without inventing a serial query.
 
 All three FSM Relax action forms expose `side:both/left/right`. A child device

@@ -55,6 +55,8 @@ from .adapter import (
     read_ble_device_info,
 )
 from .address_lock import async_get_connect_lock
+from .app_session import drop_app_sessions
+from .app_state_store import app_state_slot, app_state_store
 from .beds.remacro_protocol import add_remacro_model
 from .bluetooth_bond import (
     BondRemovalResult,
@@ -195,7 +197,6 @@ from .const import (
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_MOTOR_PULSE_USER_SET,
     CONF_OCTO_PIN,
-    CONF_OKIN_APP_SETTINGS,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
     CONF_PAIR_MODE,
@@ -8180,12 +8181,15 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 ):
                     new_variant = SVANE_VARIANT_MULTI
                 if bed_type != self.config_entry.data.get(CONF_BED_TYPE) or new_variant != old_variant:
-                    from .svane_state import CONF_SVANE_PREFERENCES, clear_svane_session
-
-                    new_data.pop(CONF_SVANE_PREFERENCES, None)
+                    # The old profile's preferences and session end with it.
                     address = self.config_entry.data.get(CONF_ADDRESS)
                     if isinstance(address, str):
-                        clear_svane_session(self.hass, address)
+                        drop_app_sessions(self.hass, address)
+                        if self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_SVANE:
+                            profile = "jmc" if old_variant == SVANE_VARIANT_JMC else "multi"
+                            await app_state_store(self.hass, address).async_discard(
+                                app_state_slot(BED_TYPE_SVANE, old_variant, profile)
+                            )
             old_okin_variant = self.config_entry.data.get(CONF_PROTOCOL_VARIANT)
             if (
                 not separate_address_pair
@@ -8197,12 +8201,12 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 )
             ):
                 # Heal Every Night's settings and page state belong to that profile.
-                from .beds.keeson_okin_apps import drop_okin_app_sessions
-
-                new_data.pop(CONF_OKIN_APP_SETTINGS, None)
                 address = self.config_entry.data.get(CONF_ADDRESS)
                 if isinstance(address, str):
-                    drop_okin_app_sessions(self.hass, address)
+                    drop_app_sessions(self.hass, address)
+                    await app_state_store(self.hass, address).async_discard(
+                        app_state_slot(BED_TYPE_KEESON, old_okin_variant)
+                    )
             if any(new_data.get(key) != self.config_entry.data.get(key) for key in (CONF_STARCODE_M5X5_PROFILE, CONF_STARCODE_DEVICE_NAME, CONF_STARCODE_LIFT_ENTRIES)):
                 from .starcode_accessory_group import cancel_group_operations
                 cancel_group_operations(self.hass, self.config_entry.entry_id)

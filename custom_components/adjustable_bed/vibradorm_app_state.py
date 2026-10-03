@@ -6,11 +6,12 @@ import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal
 
+from .app_session import app_session, drop_app_sessions
+
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
 ControlType = int | Literal["other"]
-_STATE_NAMESPACE = "adjustable_bed_vibradorm_app_session_intents"
 
 
 def _integer(value: int, minimum: int, maximum: int) -> None:
@@ -133,11 +134,6 @@ class VibradormAppSessionIntent:
     mood: dict[str, str | int] = field(default_factory=dict)
 
 
-@dataclass(slots=True)
-class _IntentCache:
-    targets: dict[tuple[str, str, ControlType, str | None], VibradormAppSessionIntent] = field(default_factory=dict)
-
-
 def _address(address: str) -> str:
     target = address.upper()
     if re.fullmatch(r"(?:[0-9A-F]{2}:){5}[0-9A-F]{2}", target) is None:
@@ -164,14 +160,6 @@ def _key(
     return (_address(address), app_profile, control_type, remote)
 
 
-def _cache(hass: HomeAssistant) -> _IntentCache:
-    cached = hass.data.get(_STATE_NAMESPACE)
-    if not isinstance(cached, _IntentCache):
-        cached = _IntentCache()
-        hass.data[_STATE_NAMESPACE] = cached
-    return cached
-
-
 def get_vibradorm_app_session_intent(
     hass: HomeAssistant, address: str, *, app_profile: str, control_type: ControlType,
     remembered_floor_default: int,
@@ -179,20 +167,12 @@ def get_vibradorm_app_session_intent(
 ) -> VibradormAppSessionIntent:
     """Get exact-target intent; a cold configured process starts with level zero."""
     _integer(remembered_floor_default, 1, 8)
-    key = _key(address, app_profile, control_type, remote)
-    cache = _cache(hass)
-    # Changing back to an earlier profile must not resurrect its old session.
-    for existing in tuple(cache.targets):
-        if existing[0] == key[0] and existing != key:
-            del cache.targets[existing]
-    intent = cache.targets.get(key)
-    if intent is None:
-        intent = VibradormAppSessionIntent(
-            floor=VibradormAppFloorIntent(default_level=remembered_floor_default)
-        )
-        cache.targets[key] = intent
-    else:
-        intent.floor.default_level = remembered_floor_default
+    target, *profile = _key(address, app_profile, control_type, remote)
+    # Changing back to an earlier profile does not resurrect its old session.
+    intent = app_session(
+        hass, target, ("vibradorm_app", *profile), VibradormAppSessionIntent
+    )
+    intent.floor.default_level = remembered_floor_default
     return intent
 
 
@@ -218,9 +198,4 @@ def mark_vibradorm_app_selection(
 
 def clear_vibradorm_app_session_intent(hass: HomeAssistant, address: str) -> None:
     """Forget only a changed physical target/profile, never ordinary BLE teardown."""
-    target = _address(address)
-    cached = hass.data.get(_STATE_NAMESPACE)
-    if isinstance(cached, _IntentCache):
-        for key in tuple(cached.targets):
-            if key[0] == target:
-                del cached.targets[key]
+    drop_app_sessions(hass, _address(address))

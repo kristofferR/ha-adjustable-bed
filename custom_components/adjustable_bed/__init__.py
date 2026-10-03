@@ -1205,9 +1205,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Clean up Repairs issues that would otherwise outlive the entry."""
     async_clear_furnimove_layout_issues(hass, entry.entry_id)
-    from .fsm_relax_state import async_remove_unowned_states
-
-    await async_remove_unowned_states(hass, entry)
     address = entry.data.get(CONF_ADDRESS)
     if address:
         clear_octo_pin_required_issue(hass, address)
@@ -1223,7 +1220,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     clear_remacro_model_issues(hass, unowned)
     from .app_state_store import async_remove_app_states
 
-    # Re-adding a bed must not restore the removed entry's app preferences.
+    # Re-adding a bed must not restore the removed entry's app state or session.
     try:
         await async_remove_app_states(hass, unowned)
     except OSError:
@@ -1234,11 +1231,6 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     if isinstance(sessions, dict):
         for address in unowned:
             drop_sessions(sessions, address)
-    if hass.data.get(DOMAIN, {}).get("okin_app_sessions"):
-        from .beds.keeson_okin_apps import drop_okin_app_sessions
-
-        for address in unowned:
-            drop_okin_app_sessions(hass, address)
     hass.loop.call_soon(async_refresh_combine_beds_issue, hass)
 
 

@@ -19,7 +19,6 @@ from custom_components.adjustable_bed.config_flow import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.detection import get_bed_type_options
-from custom_components.adjustable_bed.fsm_relax_state import FsmRelaxState
 
 
 def data():
@@ -34,19 +33,19 @@ def data():
 
 
 async def test_factory_retains_exact_profile_store_and_legacy_limoss(hass):
-    entry = MockConfigEntry(domain=const.DOMAIN, data=data())
+    entry = MockConfigEntry(
+        domain=const.DOMAIN, data={**data(), "capabilities": {"fsm_relax": "0206000008"}}
+    )
     c = MagicMock(hass=hass, entry=entry, address="AA:BB:CC:DD:EE:FF", client=None)
     c._cancel_command = asyncio.Event()
-    stored = FsmRelaxState(hass, entry.entry_id, c.address)
-    await stored.async_save_capabilities(bytes.fromhex("0206000008"))
-    await stored.async_save_slot(8, {0: -1})
     ctrl = await create_controller(c, const.BED_TYPE_FSM_RELAX, None, None)
     assert isinstance(ctrl, FsmRelaxController)
+    ctrl.restore_persisted_app_state({"slots": {"8": {"0": -1}}})
     assert ctrl.profile.layout == "bed"
     assert ctrl.profile.reversals == (True, False, True, False)
     assert ctrl.profile.light_enabled and ctrl.profile.massage_enabled
     assert ctrl.key_count == 6 and ctrl.memory_slot_count == 8
-    assert ctrl.local.slots[8] == {0: -1} and ctrl.memory_slot_names[0] == "Sleep"
+    assert ctrl.session.slots[8] == {0: -1} and ctrl.memory_slot_names[0] == "Sleep"
     assert ctrl.motor_control_specs == () and not ctrl.supports_position_feedback
     ctrl._counter = 255
     rebuilt = await create_controller(c, const.BED_TYPE_FSM_RELAX, None, None)

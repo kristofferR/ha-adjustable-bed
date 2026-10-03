@@ -23,12 +23,14 @@ from custom_components.adjustable_bed.button import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.cover import _cover_entities_for
+from custom_components.adjustable_bed.limoss_remote_state import get_limoss_remote_session
 from custom_components.adjustable_bed.paired_coordinator import (
     PairedBedCoordinator,
     PairedSideError,
 )
 from custom_components.adjustable_bed.pairing import get_child
 from custom_components.adjustable_bed.services import async_register_services
+from tests.app_state_helpers import stored_app_state
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote import make_controller
 from tests.test_limoss_remote_config import app_data
@@ -43,6 +45,7 @@ async def live_controller(coordinator):
     )
     controller = coordinator.controller
     assert isinstance(controller, LimossRemoteController)
+    await coordinator._async_restore_app_state(controller)
     controller._sleep = AsyncMock()  # Literal wire frames, not host wall-clock pacing.
     coordinator.cache_capability_controller()
     client = coordinator.client
@@ -124,7 +127,7 @@ async def test_local_rename_offline_updates_real_button_states_without_reconnect
         )
         await live_controller(coordinator)
         target, side = coordinator, const.SIDE_BOTH
-    coordinator.limoss_remote_memory_store.rename(8, "Before")
+    get_limoss_remote_session(coordinator.hass, coordinator.address).memories.rename(8, "Before")
     buttons = [
         entity
         for entity in _button_entities_for(hass, coordinator)
@@ -149,9 +152,7 @@ async def test_local_rename_offline_updates_real_button_states_without_reconnect
         state = hass.states.get(entity.entity_id)
         assert state is not None
         assert state.attributes["friendly_name"].endswith(entity.name)
-    assert (
-        coordinator.entry.data[const.CONF_LIMOSS_REMOTE_STATE]["memories"]["8"]["name"] == "After"
-    )
+    assert (await stored_app_state(coordinator))["memories"]["8"]["name"] == "After"
     if paired:
         assert pair is not None
         assert get_child(pair.entry.data, const.SIDE_RIGHT) == opposite
@@ -170,7 +171,7 @@ async def test_local_rename_preflights_all_offline_capacities_before_mutating(ha
             hass, pair, "limoss_remote_rename_memory", {"preset": 8, "name": "Invalid"}
         )
     assert pair.entry.data == before
-    assert all(child.limoss_remote_memory_store.slots == {} for child in children.values())
+    assert all(get_limoss_remote_session(child.hass, child.address).memories.slots == {} for child in children.values())
 
 
 @pytest.mark.parametrize("failure", [None, ConnectionError, TimeoutError])
