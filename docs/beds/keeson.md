@@ -279,7 +279,8 @@ Select the `simon_li`, `heal_every_night` or `okin_seating` protocol variant.
 None of the apps filters its scan or reads a model, so Auto never selects
 these profiles: add the seat or bed manually as a Keeson bed and pick the app.
 Each app controls one address, so add one entry per seat or bed. Their
-frames carry no side field.
+frames carry no side field. In a two-address pair, unpair the beds before
+changing to, from or between these profiles, so each side keeps its own app.
 
 All three write `E5 FE 16 + key_be32 + (~sum(bytes 0-6) & 0xFF)` to the first
 FFE9 characteristic of the last service, in Java UUID order, that has one.
@@ -291,7 +292,8 @@ keeps the replies for diagnostics only. There is no PIN, pairing or
 initialization frame.
 
 Held keys write at 0 ms and then every 100 ms (10 x 100 ms per Home Assistant
-press by default). The release cancels the refresh and writes the zero key
+press by default). The motor pulse count sets how many writes a press makes;
+the interval stays at the apps' fixed 100 ms whatever the pulse delay. The release cancels the refresh and writes the zero key
 `E5 FE 16 00 00 00 00 06`: Simon Li and OKIN-Seating sleep 10 ms first, Heal
 Every Night 100 ms. A cover stop or the end of a timed move writes it at once;
 **Stop All** does too. The
@@ -344,7 +346,8 @@ levels into one, then writes the timer key, the wave, head and foot levels
 100 ms apart. The level sliders (head and foot 0-3, wave 1-4) and the
 +/- buttons then write one frame each; +/- clamp but still write. **Massage:
 Off** (or the timer's Off) writes head 0 and foot 0 and disables the page
-again, keeping the levels. The light switch writes the explicit on/off key.
+again, keeping the levels. The light switch writes the explicit on/off key. The bed reports no light
+state, so the switch starts unknown and shows the commanded state as assumed.
 Preset selection, light state and massage levels are kept across reconnects
 until the entry is removed or its profile changes. Home Assistant allows
 massage Off and any timer at any time, while the app disables Off before a

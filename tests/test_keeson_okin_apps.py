@@ -718,6 +718,12 @@ async def test_setup_exposes_each_app_surface_and_cleans_up(
         assert exists("select", f"controller_select_{key}"), key
     assert exists("select", "massage_timer")
     assert exists("switch", "under_bed_lights")
+    # No state feedback: the light switch starts unknown and reports assumed state.
+    light = hass.states.get(
+        registry.async_get_entity_id("switch", DOMAIN, f"{address}_under_bed_lights")
+    )
+    assert light.state == "unknown"
+    assert light.attributes.get("assumed_state") is True
 
     # Settings are local: no frame, persisted in the entry, and remap the keys.
     state_id = registry.async_get_entity_id(
@@ -943,3 +949,117 @@ async def test_simon_memory_recall_is_bounded_by_elapsed_time(
     assert 1 <= len(keys) < capped  # The deadline, not the write cap, ended the stream.
     assert max(keys) < limit_ms / 1000
     assert starts[-1][1] == ZERO  # The shielded release still follows.
+
+
+@pytest.mark.parametrize(
+    ("initial", "requested"),
+    [
+        (KEESON_VARIANT_BASE, KEESON_VARIANT_SIMON_LI),
+        (KEESON_VARIANT_HEAL_EVERY_NIGHT, KEESON_VARIANT_BASE),
+        (KEESON_VARIANT_SIMON_LI, KEESON_VARIANT_OKIN_SEATING),
+    ],
+)
+async def test_paired_options_require_unpairing_for_an_app_profile_change(
+    hass: HomeAssistant, initial: str, requested: str
+):
+    """Each physical seat keeps its own app; the shared form never copies one."""
+    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
+    from custom_components.adjustable_bed.pairing import (
+        build_pair_entry_data,
+        effective_child_data,
+    )
+
+    def side(address: str, variant: str) -> dict[str, Any]:
+        return {
+            CONF_ADDRESS: address,
+            CONF_NAME: "Seat",
+            CONF_BED_TYPE: BED_TYPE_KEESON,
+            CONF_PROTOCOL_VARIANT: variant,
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PREFERRED_ADAPTER: "auto",
+        }
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=build_pair_entry_data(
+            side("AA:BB:CC:DD:EE:71", initial),
+            side("AA:BB:CC:DD:EE:72", KEESON_VARIANT_BASE),
+            name="Paired seats",
+        ),
+    )
+    entry.add_to_hass(hass)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass = hass
+    flow.handler = entry.entry_id
+
+    result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: requested})
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "okin_app_unpair_first"}
+    assert effective_child_data(entry.data, "right")[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_BASE
+
+
+async def test_held_controls_keep_the_count_but_use_the_app_100ms_refresh(
+    coordinator, mock_bleak_client: MagicMock, no_sleep
+):
+    coordinator._motor_pulse_count, coordinator._motor_pulse_delay_ms = 5, 300
+    for variant in (KEESON_VARIANT_SIMON_LI, KEESON_VARIANT_OKIN_SEATING):
+        mock_bleak_client.write_gatt_char.reset_mock()
+        no_sleep.reset_mock()
+        controller = _ctrl(coordinator, variant)
+        assert controller.motor_pulse_settings() == (5, 100)
+        await controller.preset_home()
+        assert len(_written(mock_bleak_client)) == 6  # 5 key writes + the zero key.
+        assert no_sleep.await_args_list == [call(0.1)] * 4 + [call(0.01)]
+    heal = _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT)
+    assert heal.motor_pulse_settings() == (5, 100)
+
+
+async def test_heal_preset_selection_is_kept_only_after_a_successful_write(
+    coordinator, mock_bleak_client: MagicMock, no_sleep
+):
+    controller = _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT)
+    original = mock_bleak_client.write_gatt_char.side_effect
+    mock_bleak_client.write_gatt_char.side_effect = BleakError("write failed")
+    with pytest.raises(BleakError):
+        await controller.preset_zero_g()
+    mock_bleak_client.write_gatt_char.side_effect = original
+    mock_bleak_client.write_gatt_char.reset_mock()
+    await controller.preset_zero_g()  # The retry recalls instead of stopping.
+    assert _written(mock_bleak_client) == ["e5fe160100000104"]
+
+    mock_bleak_client.write_gatt_char.side_effect = BleakError("write failed")
+    with pytest.raises(BleakError):
+        await controller.preset_zero_g()  # A failed STOP keeps the selection.
+    mock_bleak_client.write_gatt_char.side_effect = original
+    mock_bleak_client.write_gatt_char.reset_mock()
+    await controller.preset_zero_g()
+    assert _written(mock_bleak_client) == ["e5fe160100000005"]
+
+
+async def test_heal_light_state_is_assumed_only_where_the_light_exists(coordinator):
+    assert _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT, 3).light_state_is_assumed
+    assert not _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT, 2).light_state_is_assumed
+    assert not _ctrl(coordinator, KEESON_VARIANT_SIMON_LI).light_state_is_assumed
+
+
+async def test_massage_off_publishes_the_cleared_timer(
+    coordinator, mock_bleak_client: MagicMock, no_sleep
+):
+    controller = _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT)
+    await controller.set_massage_timer(20)
+    assert coordinator.controller_state["okin_app_massage_timer"] == 20
+
+    original = mock_bleak_client.write_gatt_char.side_effect
+    mock_bleak_client.write_gatt_char.side_effect = BleakError("write failed")
+    with pytest.raises(BleakError):
+        await controller.massage_off()
+    assert coordinator.controller_state["okin_app_massage_timer"] == 20
+    assert controller.get_massage_state()["timer_mode"] == "20"
+
+    mock_bleak_client.write_gatt_char.side_effect = original
+    await controller.massage_off()
+    assert coordinator.controller_state["okin_app_massage_timer"] is None
+    assert controller.get_massage_state()["timer_mode"] is None

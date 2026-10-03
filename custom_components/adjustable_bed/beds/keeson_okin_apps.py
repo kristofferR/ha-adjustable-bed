@@ -132,6 +132,7 @@ STATE_HEAL_MASSAGE: Final[dict[str, str]] = {
     "foot": "okin_app_massage_foot",
     "wave": "okin_app_massage_wave",
 }
+STATE_HEAL_TIMER: Final = "okin_app_massage_timer"
 SESSIONS_KEY: Final = "okin_app_sessions"
 
 
@@ -324,6 +325,11 @@ class OkinAppKeesonController(KeesonController):
         if self._is_heal:
             return heal_movement_key(control, **self._settings())
         return self._seat_keys[control]
+
+    def motor_pulse_settings(self) -> tuple[int, int]:
+        """The configured repeat count at the apps' fixed 100 ms refresh."""
+        count, _delay_ms = super().motor_pulse_settings()
+        return count, HOLD_INTERVAL_MS
 
     async def hold_app_control(self, control: str) -> None:
         """Hold a control for the configured burst, as one app press."""
@@ -625,12 +631,14 @@ class OkinAppKeesonController(KeesonController):
 
     async def _heal_preset(self, preset: str) -> None:
         """Tap a Heal preset: recall it, or stop it when it is already selected."""
+        # The selection changes only once its frame is written, so a failed
+        # recall is retried as a recall rather than turned into a STOP.
         if self._session.selected_preset == preset:
-            self._session.selected_preset = None
             await self._write_key(HEAL_PRESET_STOP)
+            self._session.selected_preset = None
             return
-        self._session.selected_preset = preset
         await self._write_key(HEAL_PRESETS[preset])
+        self._session.selected_preset = preset
 
     async def preset_flat(self) -> None:
         if not self._is_heal:
@@ -712,6 +720,11 @@ class OkinAppKeesonController(KeesonController):
     @property
     def supports_light_toggle_control(self) -> bool:
         return False
+
+    @property
+    def light_state_is_assumed(self) -> bool:
+        """The light has no state feedback; the switch shows the commanded value."""
+        return self._heal_full
 
     def _require_light(self) -> None:
         if not self._heal_full:
@@ -795,6 +808,7 @@ class OkinAppKeesonController(KeesonController):
             STATE_HEAL_MASSAGE["foot"]: session.foot,
             # Wave levels are 1..4; before the first timer the app has none.
             STATE_HEAL_MASSAGE["wave"]: session.wave or None,
+            STATE_HEAL_TIMER: session.timer_minutes,
         }
         settings = self._settings()
         for setting, options in HEAL_SETTING_OPTIONS.items():
@@ -844,9 +858,10 @@ class OkinAppKeesonController(KeesonController):
         """The massage STOP button: both zones off; levels are kept."""
         if not self._is_heal:
             raise NotImplementedError("Only the Heal Every Night app has massage")
+        await self._send_massage_steps([HEAL_HEAD_MASSAGE, HEAL_FOOT_MASSAGE])
         self._session.massage_enabled = False
         self._session.timer_minutes = None
-        await self._send_massage_steps([HEAL_HEAD_MASSAGE, HEAL_FOOT_MASSAGE])
+        self.forward_controller_state_update(STATE_HEAL_TIMER, None)
 
     async def set_heal_massage_level(self, zone: str, level: int) -> None:
         """A slider: head and foot 0..3 (0 is off), wave 1..4."""

@@ -248,6 +248,8 @@ from .const import (
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_MAXCOIL_UNA,
+    KEESON_VARIANT_OKIN_SEATING,
+    KEESON_VARIANT_SIMON_LI,
     LEGGETT_APP_DEFAULT_PROFILE,
     LEGGETT_APP_MOTOR_COUNTS,
     LEGGETT_APP_PROFILES,
@@ -708,6 +710,9 @@ _PER_SIDE_APP_PROFILES: Final = {
     SVANE_VARIANT_JMC: "svane_unpair_first",
     KEESON_VARIANT_MAXCOIL_UNA: "ore_comfort_unpair_first",
     KEESON_VARIANT_DYNASTY_BASES: "ore_comfort_unpair_first",
+    KEESON_VARIANT_SIMON_LI: "okin_app_unpair_first",
+    KEESON_VARIANT_HEAL_EVERY_NIGHT: "okin_app_unpair_first",
+    KEESON_VARIANT_OKIN_SEATING: "okin_app_unpair_first",
 }
 
 
