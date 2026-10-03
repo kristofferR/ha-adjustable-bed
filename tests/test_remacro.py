@@ -145,7 +145,7 @@ def _hex(value: str) -> bytes:
 def _protocol_codes() -> set[int]:
     codes = {protocol.FLAT, protocol.MOTOR_STOP, protocol.LIGHT_OFF, protocol.LIGHT_RGBV}
     codes.add(protocol.LIGHT_RGBV_SAVE)
-    for screen in protocol.SCREENS.values():
+    for screen in (*protocol.SCREENS.values(), protocol.FALLBACK_SCREEN):
         for side in (screen.left, screen.right):
             if side is None:
                 continue
@@ -234,14 +234,20 @@ def test_model_selection_uses_lowest_company_id() -> None:
     assert protocol.resolve_model(JEROMES, None, 47).model_id == 47
     # The advertisement wins over the stored selector, as in the apps.
     assert protocol.resolve_model(SLUMBER, {50: b""}, 47).model_id == 50
-    with pytest.raises(ValueError, match="Jerome's"):
-        protocol.resolve_model(JEROMES, {54: b""}, None)
-    with pytest.raises(ValueError, match="company ID 13"):
-        protocol.resolve_model(SLUMBER, {13: b"", 50: b""}, None)
-    with pytest.raises(ValueError, match="unknown"):
-        protocol.resolve_model(SLUMBER, {}, True)
+    # Not listed by the app, unmapped or unseen: the limited fallback, not a refusal.
+    for app, adverts, stored, model_id in (
+        (JEROMES, {54: b""}, None, 54),
+        (SLUMBER, {13: b"", 50: b""}, None, 13),
+        (SLUMBER, {}, True, None),
+    ):
+        model = protocol.resolve_model(app, adverts, stored)
+        assert (model.model_id, model.recognized) == (model_id, False)
+        assert model.screen is protocol.FALLBACK_SCREEN
+    assert protocol.resolve_model(SLUMBER, {54: b""}, None).recognized is True
+    assert protocol.apps_listing(54) == [SLUMBER, BRICK]
+    assert protocol.apps_listing(13) == []
     assert protocol.add_remacro_model({"a": 1}, {52: b""}) == {"a": 1, CONF_REMACRO_MODEL: 52}
-    # An unmapped ID is remembered too, so it stays refused without history.
+    # An unmapped ID is remembered too, so it keeps its issue without history.
     assert protocol.add_remacro_model({"a": 1}, {99: b""}) == {"a": 1, CONF_REMACRO_MODEL: 99}
     assert protocol.add_remacro_model({"a": 1}, {}) == {"a": 1}
 
@@ -266,7 +272,7 @@ class Clock:
 
 def make_controller(
     app: protocol.RemacroApp,
-    model_id: int,
+    model_id: int | protocol.Model,
     *,
     pulse: tuple[int, int] = (10, 25),
     led_level: int | None = None,
@@ -296,7 +302,7 @@ def make_controller(
     controller = RemacroController(
         coordinator,
         app=app,
-        model=protocol.MODELS[model_id],
+        model=model_id if isinstance(model_id, protocol.Model) else protocol.MODELS[model_id],
         led_level=led_level,
         session=session,
     )
@@ -616,6 +622,37 @@ def test_capabilities_match_each_screen(model_id, motors, memory, presets, massa
     assert controller.supports_position_feedback is False
 
 
+async def test_fallback_keeps_the_common_controls_with_artifact_codes() -> None:
+    """An unrecognized model keeps v4.0.2's controls that every screen agrees on."""
+    controller, _, writes = make_controller(JEROMES, protocol.fallback_model(54))
+    assert [spec.key for spec in controller.motor_control_specs] == ["back", "lumbar", "legs"]
+    assert controller.has_tilt_support is False
+    assert controller.supports_preset_flat and controller.supports_preset_tv
+    assert controller.supports_preset_zero_g is True
+    assert controller.supports_preset_anti_snore is False
+    assert controller.memory_slot_count == 0
+    assert controller.supports_massage is False
+    assert controller.supports_lights and controller.supports_discrete_light_control
+    assert controller.supports_light_color_control is False
+    assert controller.supports_stop_all is True
+    assert controller.supports_led_brightness is False
+    assert controller.controller_number_specs == controller.controller_select_specs == ()
+    assert controller.protocol_diagnostics["remacro_model_recognized"] is False
+    await controller.move_back_up()
+    for action in ("preset_flat", "preset_tv", "preset_zero_g", "lights_on", "stop_all"):
+        await getattr(controller, action)()
+    # Head up and its own STOP, Flat 0x0111, TV 0x0302, Zero-G 0x0303, light, STOP.
+    assert [frame[6:11] for _, frame in writes] == [
+        "01 01",
+        "00 01",
+        "11 01",
+        "02 03",
+        "03 03",
+        "01 05",
+        "01 00",
+    ]
+
+
 async def test_unsupported_controls_raise_without_writing() -> None:
     controller, _, writes = make_controller(SLUMBER, 14)
     with pytest.raises(NotImplementedError):
@@ -647,6 +684,7 @@ def test_protocol_diagnostics_names_profile() -> None:
         "remacro_app": JEROMES,
         "remacro_model_id": 52,
         "remacro_model": "CS-B500YM",
+        "remacro_model_recognized": True,
         "remacro_screen": "NineActivity",
         "remacro_control_side": "left",
     }
@@ -802,38 +840,128 @@ def _remacro_entry(hass: HomeAssistant, address: str, **data) -> MockConfigEntry
     return entry
 
 
-async def test_existing_entry_without_model_waits_before_connecting(
-    hass: HomeAssistant,
-    mock_coordinator_connected,
-    mock_establish_connection,
-    enable_custom_integrations,
-) -> None:
-    entry = _remacro_entry(hass, "AA:BB:CC:DD:EE:60")
-    assert not await hass.config_entries.async_setup(entry.entry_id)
-    assert entry.state is ConfigEntryState.SETUP_RETRY
-    assert entry.reason is not None and "model is unknown" in entry.reason
-    mock_establish_connection.assert_not_awaited()
+@pytest.fixture(autouse=True)
+def watchers():
+    """Collect the fallback watchers' Bluetooth callbacks by address."""
+    callbacks: dict = {}
+
+    def register(_hass, seen, matcher, _mode):
+        callbacks[matcher["address"]] = seen
+
+        def unsubscribe() -> None:
+            callbacks.pop(matcher["address"], None)
+
+        return unsubscribe
+
+    with patch("homeassistant.components.bluetooth.async_register_callback", side_effect=register):
+        yield callbacks
 
 
-@pytest.mark.parametrize(
-    ("variant", "company_id", "reason"),
-    [("slumberland", 13, "none of the"), ("jeromes", 54, "Jerome's app does not list")],
-)
-async def test_unlisted_model_fails_setup_without_a_reconnect_loop(
-    hass: HomeAssistant,
-    mock_coordinator_connected,
-    mock_establish_connection,
-    enable_custom_integrations,
-    variant,
-    company_id,
-    reason,
+def _controller(hass: HomeAssistant, entry: MockConfigEntry) -> RemacroController:
+    controller = hass.data[DOMAIN][entry.entry_id].controller
+    assert isinstance(controller, RemacroController)
+    return controller
+
+
+async def test_unknown_model_loads_the_fallback_then_reloads_to_the_model(
+    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations, watchers
 ) -> None:
-    entry = _remacro_entry(hass, "AA:BB:CC:DD:EE:61", **{CONF_PROTOCOL_VARIANT: variant})
-    with patch(_HISTORY, return_value=MagicMock(manufacturer_data={company_id: b""})):
-        assert not await hass.config_entries.async_setup(entry.entry_id)
-    assert entry.state is ConfigEntryState.SETUP_ERROR
-    assert entry.reason is not None and reason in entry.reason
-    mock_establish_connection.assert_not_awaited()
+    """An upgraded entry that has never seen the model still loads, as in v4.0.2."""
+    from homeassistant.helpers import issue_registry as ir
+
+    address = "AA:BB:CC:DD:EE:60"
+    entry = _remacro_entry(hass, address)
+    registry = er.async_get(hass)
+    adverts: dict = {address: None}
+    callbacks = watchers
+    with patch(_HISTORY, side_effect=lambda _hass, addr, connectable: adverts[addr]):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        assert entry.state is ConfigEntryState.LOADED
+        assert CONF_REMACRO_MODEL not in entry.data
+        fallback = _controller(hass, entry)
+        assert fallback.model.recognized is False
+        assert registry.async_get_entity_id("cover", DOMAIN, f"{address}_back") is not None
+        assert registry.async_get_entity_id("cover", DOMAIN, f"{address}_all_motors") is None
+        # Not seen yet raises no issue: the bed is usually only out of range.
+        assert ir.async_get(hass).async_get_issue(DOMAIN, f"remacro_model_{address}") is None
+
+        # An unlisted advertisement keeps the fallback; a listed one reloads.
+        callbacks[address](MagicMock(address=address, manufacturer_data={13: b""}), None)
+        await hass.async_block_till_done()
+        assert _controller(hass, entry) is fallback
+        adverts[address] = MagicMock(manufacturer_data={50: b""})
+        callbacks[address](MagicMock(address=address, manufacturer_data={50: b""}), None)
+        await hass.async_block_till_done()
+
+        assert entry.state is ConfigEntryState.LOADED
+        assert entry.data[CONF_REMACRO_MODEL] == 50
+        assert _controller(hass, entry).model is protocol.MODELS[50]
+        assert registry.async_get_entity_id("cover", DOMAIN, f"{address}_all_motors") is not None
+        assert not callbacks  # A recognized model is no longer watched.
+        await hass.config_entries.async_unload(entry.entry_id)
+
+
+async def test_unmapped_model_loads_the_fallback_with_a_warning(
+    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
+) -> None:
+    from homeassistant.helpers import issue_registry as ir
+
+    address = "AA:BB:CC:DD:EE:61"
+    entry = _remacro_entry(hass, address)
+    with patch(_HISTORY, return_value=MagicMock(manufacturer_data={13: b""})):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.LOADED
+    assert _controller(hass, entry).model == protocol.fallback_model(13)
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, f"remacro_model_{address}")
+    assert issue is not None
+    assert issue.translation_key == "remacro_model_unmapped"
+    assert issue.severity is ir.IssueSeverity.WARNING
+    assert issue.is_fixable is False
+    assert issue.translation_placeholders is not None
+    assert issue.translation_placeholders["company_id"] == "13"
+    await hass.config_entries.async_unload(entry.entry_id)
+
+
+async def test_model_another_app_lists_offers_switching_to_that_app(
+    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
+) -> None:
+    from homeassistant.data_entry_flow import FlowResultType
+    from homeassistant.helpers import issue_registry as ir
+
+    from custom_components.adjustable_bed.repairs import async_create_fix_flow
+
+    address = "AA:BB:CC:DD:EE:62"
+    entry = _remacro_entry(hass, address, **{CONF_PROTOCOL_VARIANT: "jeromes"})
+    issue_id = f"remacro_model_{address}"
+    with patch(_HISTORY, return_value=MagicMock(manufacturer_data={54: b""})):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        assert entry.state is ConfigEntryState.LOADED
+        assert _controller(hass, entry).model == protocol.fallback_model(54)
+        issue = ir.async_get(hass).async_get_issue(DOMAIN, issue_id)
+        assert issue is not None
+        assert issue.translation_key == "remacro_model_not_in_app"
+        assert issue.severity is ir.IssueSeverity.WARNING and issue.is_fixable is True
+        assert issue.translation_placeholders is not None
+        assert issue.translation_placeholders["apps"] == "Slumberland or The Brick"
+
+        flow = await async_create_fix_flow(hass, issue_id, issue.data)
+        flow.hass = hass
+        form = await flow.async_step_init()
+        assert form["type"] is FlowResultType.FORM
+        assert form["description_placeholders"]["apps"] == "Slumberland or The Brick"
+        result = await flow.async_step_init({CONF_PROTOCOL_VARIANT: "the_brick"})
+        assert result["type"] is FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+
+        assert entry.data[CONF_PROTOCOL_VARIANT] == "the_brick"
+        assert entry.state is ConfigEntryState.LOADED
+        controller = _controller(hass, entry)
+        assert (controller.app, controller.model) == (BRICK, protocol.MODELS[54])
+        assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is None
+        await hass.config_entries.async_unload(entry.entry_id)
 
 
 async def test_model_cache_falls_back_to_non_connectable_history(
@@ -895,9 +1023,7 @@ async def test_legacy_entities_are_removed_or_kept_on_upgrade(
     await hass.config_entries.async_unload(entry.entry_id)
 
 
-async def test_config_flow_refuses_models_the_app_does_not_list(hass: HomeAssistant) -> None:
-    from homeassistant.data_entry_flow import FlowResultType
-
+async def test_config_flow_points_to_an_app_that_lists_the_model(hass: HomeAssistant) -> None:
     from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 
     flow = AdjustableBedConfigFlow()
@@ -906,22 +1032,21 @@ async def test_config_flow_refuses_models_the_app_does_not_list(hass: HomeAssist
     flow.handler = DOMAIN
     data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:64", CONF_BED_TYPE: BED_TYPE_REMACRO}
     with patch(_HISTORY, return_value=None):
-        unmapped = flow._remacro_unsupported_abort(data, manufacturer_data={13: b""})
-        not_listed = flow._remacro_unsupported_abort(
-            {**data, CONF_PROTOCOL_VARIANT: "jeromes"}, manufacturer_data={55: b""}
-        )
-        field_error = flow._remacro_variant_error(
-            BED_TYPE_REMACRO, "jeromes", data[CONF_ADDRESS], {55: b""}
-        )
-        unknown = flow._remacro_unsupported_abort(data, manufacturer_data={})
-        listed = flow._remacro_unsupported_abort(data, manufacturer_data={55: b""})
-    assert unmapped is not None and unmapped["type"] is FlowResultType.ABORT
-    assert unmapped["reason"] == "remacro_model_unmapped"
-    # A model another app lists is a field error on the form choosing the app.
-    assert not_listed is None
-    assert field_error == "remacro_model_not_in_app"
-    assert unmapped["description_placeholders"] == {"company_id": "13", "app": "Slumberland"}
-    assert unknown is None and listed is None
+        errors = {
+            (variant, company_id): flow._remacro_variant_error(
+                BED_TYPE_REMACRO, variant, data[CONF_ADDRESS], {company_id: b""}
+            )
+            for variant in ("jeromes", "slumberland")
+            for company_id in (13, 55)
+        }
+    # Only a model another app lists is a field error; an unmapped one sets up
+    # on the fallback controls like any other choice.
+    assert errors == {
+        ("jeromes", 55): "remacro_model_not_in_app",
+        ("jeromes", 13): None,
+        ("slumberland", 55): None,
+        ("slumberland", 13): None,
+    }
     # An empty discovery map falls back to the non-connectable history.
     adverts = {True: None, False: MagicMock(manufacturer_data={52: b""})}
     with patch(_HISTORY, side_effect=lambda _hass, _address, connectable: adverts[connectable]):
@@ -1000,7 +1125,7 @@ async def test_discovery_form_reports_an_app_that_does_not_list_the_model(
     assert result["errors"][CONF_PROTOCOL_VARIANT] == "remacro_model_not_in_app"
 
 
-async def test_options_fix_reloads_a_failed_entry(
+async def test_options_keep_or_fix_the_app_of_a_fallback_entry(
     hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
 ) -> None:
     from homeassistant.data_entry_flow import FlowResultType
@@ -1008,17 +1133,25 @@ async def test_options_fix_reloads_a_failed_entry(
     from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 
     entry = _remacro_entry(hass, "AA:BB:CC:DD:EE:68", **{CONF_PROTOCOL_VARIANT: "jeromes"})
-    with patch(_HISTORY, return_value=MagicMock(manufacturer_data={54: b""})):
-        assert not await hass.config_entries.async_setup(entry.entry_id)
-        assert entry.state is ConfigEntryState.SETUP_ERROR
+
+    async def save(user_input: dict) -> FlowResultType:
         flow = AdjustableBedOptionsFlow(entry)
         flow.handler = entry.entry_id
         flow.hass = hass
-        result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: "slumberland"})
-        assert result["type"] is FlowResultType.CREATE_ENTRY
+        result = await flow.async_step_settings(user_input)
         await hass.async_block_till_done()
+        return result["type"]
+
+    with patch(_HISTORY, return_value=MagicMock(manufacturer_data={54: b""})):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        assert _controller(hass, entry).model.recognized is False
+        # Other options still save while the app stays unchanged.
+        assert await save({CONF_PROTOCOL_VARIANT: "jeromes"}) is FlowResultType.CREATE_ENTRY
+        # Choosing an app that lists the model reloads onto its controls.
+        assert await save({CONF_PROTOCOL_VARIANT: "slumberland"}) is FlowResultType.CREATE_ENTRY
     assert entry.state is ConfigEntryState.LOADED
-    assert entry.data[CONF_REMACRO_MODEL] == 54
+    assert _controller(hass, entry).model is protocol.MODELS[54]
     await hass.config_entries.async_unload(entry.entry_id)
 
 
@@ -1087,29 +1220,6 @@ def _remacro_pair(hass: HomeAssistant, left_model: int | None, right_model: int 
     return entry, _build_paired_children(hass, entry)
 
 
-async def test_paired_side_with_unlisted_model_does_not_connect(
-    hass: HomeAssistant, mock_coordinator_connected, mock_establish_connection
-) -> None:
-    from homeassistant.helpers import issue_registry as ir
-
-    _entry, children = _remacro_pair(hass, None, None)
-    adverts = {
-        "AA:BB:CC:DD:EE:71": MagicMock(manufacturer_data={50: b""}),
-        "AA:BB:CC:DD:EE:72": MagicMock(manufacturer_data={13: b""}),
-    }
-    with patch(
-        "custom_components.adjustable_bed.remacro_discovery.bluetooth.async_last_service_info",
-        side_effect=lambda _hass, address, connectable: adverts[address],
-    ):
-        assert await children["right"].async_connect() is False
-        mock_establish_connection.assert_not_awaited()
-        assert await children["left"].async_connect() is True
-    issue = ir.async_get(hass).async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:72")
-    assert issue is not None and issue.translation_key == "remacro_model_unmapped"
-    assert ir.async_get(hass).async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:71") is None
-    await children["left"].async_disconnect()
-
-
 async def test_paired_side_led_level_persists_to_its_descriptor(hass: HomeAssistant) -> None:
     from custom_components.adjustable_bed.const import CONF_PAIR_CHILDREN
 
@@ -1121,13 +1231,17 @@ async def test_paired_side_led_level_persists_to_its_descriptor(hass: HomeAssist
     assert CONF_REMACRO_LED_LEVEL not in descriptors["left"]
 
 
-async def test_paired_offline_minting_needs_a_stored_model(hass: HomeAssistant) -> None:
+async def test_paired_offline_minting_uses_the_stored_model_or_the_fallback(
+    hass: HomeAssistant,
+) -> None:
     _entry, children = _remacro_pair(hass, 51, None)
     await children["left"].async_prime_offline_controller()
     await children["right"].async_prime_offline_controller()
     minted = children["left"].capability_controller
-    assert isinstance(minted, RemacroController) and minted.model.model_id == 51
-    assert children["right"].capability_controller is None
+    assert isinstance(minted, RemacroController) and minted.model is protocol.MODELS[51]
+    fallback = children["right"].capability_controller
+    assert isinstance(fallback, RemacroController)
+    assert fallback.model == protocol.fallback_model(None)
 
 
 @pytest.mark.parametrize("app", [SLUMBER, JEROMES])
@@ -1242,7 +1356,12 @@ async def test_removing_an_entry_clears_its_remacro_issues(
     restored = _remacro_entry(hass, "AA:BB:CC:DD:EE:71")
     for address in ("AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72", "AA:BB:CC:DD:EE:73"):
         update_remacro_model_issue(
-            hass, address, "Bed", "unmapped", {"company_id": "13", "app": "Slumberland"}
+            hass,
+            address,
+            "Bed",
+            "unmapped",
+            {"company_id": "13", "app": "Slumberland"},
+            entry_id=pair.entry_id,
         )
     issues = ir.async_get(hass)
     await hass.config_entries.async_remove(pair.entry_id)
@@ -1254,108 +1373,94 @@ async def test_removing_an_entry_clears_its_remacro_issues(
     assert issues.async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:71") is None
 
 
-async def test_pair_loads_when_one_side_has_an_unmapped_model(
+def _set_side_variants(hass: HomeAssistant, entry: MockConfigEntry, left: str, right: str) -> None:
+    from custom_components.adjustable_bed.const import CONF_PAIR_CHILDREN
+
+    children = [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]]
+    children[0][CONF_PROTOCOL_VARIANT], children[1][CONF_PROTOCOL_VARIANT] = left, right
+    hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_PAIR_CHILDREN: children})
+
+
+def _side_model(hass: HomeAssistant, entry: MockConfigEntry, side: str) -> protocol.Model:
+    controller = hass.data[DOMAIN][entry.entry_id].children[side].capability_controller
+    assert isinstance(controller, RemacroController)
+    return controller.model
+
+
+async def test_pair_mixes_a_recognized_side_with_a_fallback_side(
     hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
 ) -> None:
     from homeassistant.helpers import issue_registry as ir
 
+    from custom_components.adjustable_bed.const import CONF_PAIR_CHILDREN
+    from custom_components.adjustable_bed.repairs import async_create_fix_flow
+
     left, right = "AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72"
-    entry, _children = _remacro_pair(hass, 50, 50)
+    entry, _children = _remacro_pair(hass, None, None)
+    _set_side_variants(hass, entry, "slumberland", "jeromes")
     registry = er.async_get(hass)
-    for address in (left, right):
-        registry.async_get_or_create("cover", DOMAIN, f"{address}_back", config_entry=entry)
     adverts = {
         left: MagicMock(manufacturer_data={50: b""}),
-        right: MagicMock(manufacturer_data={13: b""}),
+        right: MagicMock(manufacturer_data={54: b""}),
     }
+    issue_id = f"remacro_model_{right}"
     with patch(_HISTORY, side_effect=lambda _hass, address, connectable: adverts[address]):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
         assert entry.state is ConfigEntryState.LOADED
-        good = registry.async_get_entity_id("cover", DOMAIN, f"{left}_back")
-        assert good is not None
-        state = hass.states.get(good)
-        assert state is not None and state.state != "unavailable"
-        assert registry.async_get_entity_id("cover", DOMAIN, f"{right}_back") is None
+        assert _side_model(hass, entry, "left") is protocol.MODELS[50]
+        assert _side_model(hass, entry, "right") == protocol.fallback_model(54)
+        for unique_id in (f"{left}_back", f"{left}_all_motors", f"{right}_back"):
+            entity_id = registry.async_get_entity_id("cover", DOMAIN, unique_id)
+            assert entity_id is not None, unique_id
+            state = hass.states.get(entity_id)
+            assert state is not None and state.state != "unavailable"
+        assert registry.async_get_entity_id("cover", DOMAIN, f"{right}_all_motors") is None
+        # Both sides share Flat and a global STOP, so the pair keeps them.
+        for key in ("preset_flat_both", "stop_both"):
+            assert registry.async_get_entity_id("button", DOMAIN, f"pair_remacro_{key}")
+
         issues = ir.async_get(hass)
-        assert issues.async_get_issue(DOMAIN, f"remacro_model_{right}") is not None
         assert issues.async_get_issue(DOMAIN, f"remacro_model_{left}") is None
+        issue = issues.async_get_issue(DOMAIN, issue_id)
+        assert issue is not None and issue.is_fixable is True
+        assert issue.data == {"entry_id": entry.entry_id, "side": "right", "company_id": "54"}
+
+        flow = await async_create_fix_flow(hass, issue_id, issue.data)
+        flow.hass = hass
+        await flow.async_step_init({CONF_PROTOCOL_VARIANT: "slumberland"})
+        await hass.async_block_till_done()
+        variants = [child[CONF_PROTOCOL_VARIANT] for child in entry.data[CONF_PAIR_CHILDREN]]
+        assert variants == ["slumberland", "slumberland"]
+        assert entry.state is ConfigEntryState.LOADED
+        assert _side_model(hass, entry, "right") is protocol.MODELS[54]
         await hass.config_entries.async_unload(entry.entry_id)
 
 
-def _absorbing_pair(hass: HomeAssistant):
-    """A pair whose sides still have their original standalone entries."""
-    from custom_components.adjustable_bed.const import CONF_PAIR_CHILDREN
-    from custom_components.adjustable_bed.pairing import KEY_ABSORBED_ENTRY_ID
+async def test_pair_without_a_recognized_side_still_loads(
+    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations, watchers
+) -> None:
+    from homeassistant.helpers import issue_registry as ir
 
     left, right = "AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72"
+    entry, _children = _remacro_pair(hass, None, None)
     registry = er.async_get(hass)
-    originals = {}
-    for address in (left, right):
-        single = _remacro_entry(hass, address, **{CONF_REMACRO_MODEL: 50})
-        for domain, key in (("cover", "back"), ("button", "preset_flat")):
-            registry.async_get_or_create(domain, DOMAIN, f"{address}_{key}", config_entry=single)
-        originals[address] = single
-    entry, _children = _remacro_pair(hass, 50, 50)
-    children = [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]]
-    for child in children:
-        child[KEY_ABSORBED_ENTRY_ID] = originals[child[CONF_ADDRESS]].entry_id
-    hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_PAIR_CHILDREN: children})
-    adverts = {
-        left: MagicMock(manufacturer_data={50: b""}),
-        right: MagicMock(manufacturer_data={13: b""}),
-    }
-    history = patch(_HISTORY, side_effect=lambda _hass, address, connectable: adverts[address])
-    return entry, originals, left, right, history
-
-
-async def test_absorbing_a_refused_side_leaves_no_stale_controls(
-    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
-) -> None:
-    entry, originals, left, right, history = _absorbing_pair(hass)
-    registry = er.async_get(hass)
-    good_cover = registry.async_get_entity_id("cover", DOMAIN, f"{left}_back")
-    with history:
+    adverts = {left: None, right: MagicMock(manufacturer_data={13: b""})}
+    callbacks = watchers
+    with patch(_HISTORY, side_effect=lambda _hass, address, connectable: adverts[address]):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
         assert entry.state is ConfigEntryState.LOADED
-        assert all(
-            hass.config_entries.async_get_entry(o.entry_id) is None for o in originals.values()
-        )
-        # The good side keeps its entity ID, now owned by the pair.
-        row = registry.async_get(good_cover)
-        assert row is not None and row.config_entry_id == entry.entry_id
-        # Only the side's connection diagnostics remain; its old controls are gone.
-        right_keys = {
-            r.unique_id.removeprefix(f"{right}_")
-            for r in registry.entities.values()
-            if r.unique_id.startswith(f"{right}_")
-        }
-        assert right_keys <= {"ble_connection", "connect", "disconnect"}
+        assert _side_model(hass, entry, "left") == protocol.fallback_model(None)
+        assert _side_model(hass, entry, "right") == protocol.fallback_model(13)
+        for address in (left, right):
+            assert registry.async_get_entity_id("cover", DOMAIN, f"{address}_back") is not None
+        # Only the unlisted side is reported; both reload once a listed model shows.
+        issues = ir.async_get(hass)
+        assert issues.async_get_issue(DOMAIN, f"remacro_model_{left}") is None
+        assert issues.async_get_issue(DOMAIN, f"remacro_model_{right}") is not None
+        assert set(callbacks) == {left, right}
         await hass.config_entries.async_unload(entry.entry_id)
-
-
-async def test_refused_side_rollback_keeps_its_original_controls(
-    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
-) -> None:
-    entry, originals, left, right, history = _absorbing_pair(hass)
-    registry = er.async_get(hass)
-    refused = originals[right]
-    real_remove = hass.config_entries.async_remove
-
-    async def remove(entry_id: str):
-        if entry_id == refused.entry_id:
-            raise RuntimeError("simulated removal failure")
-        return await real_remove(entry_id)
-
-    with history, patch.object(hass.config_entries, "async_remove", side_effect=remove):
-        assert await hass.config_entries.async_setup(entry.entry_id)
-        await hass.async_block_till_done()
-    assert hass.config_entries.async_get_entry(refused.entry_id) is not None
-    rows = [r for r in registry.entities.values() if r.unique_id.startswith(f"{right}_")]
-    assert {r.unique_id.removeprefix(f"{right}_") for r in rows} == {"back", "preset_flat"}
-    assert {r.config_entry_id for r in rows} == {refused.entry_id}
-    await hass.config_entries.async_unload(entry.entry_id)
 
 
 async def test_leaving_remacro_clears_its_model_issues(hass: HomeAssistant) -> None:
@@ -1370,7 +1475,7 @@ async def test_leaving_remacro_clears_its_model_issues(hass: HomeAssistant) -> N
 
     placeholders = {"company_id": "13", "app": "Slumberland"}
     for address in ("AA:BB:CC:DD:EE:80", "AA:BB:CC:DD:EE:81"):
-        update_remacro_model_issue(hass, address, "Bed", "unmapped", placeholders)
+        update_remacro_model_issue(hass, address, "Bed", "unmapped", placeholders, entry_id="x")
     standalone = _remacro_entry(hass, "AA:BB:CC:DD:EE:80", **{CONF_BED_TYPE: "linak"})
     _async_prepare_remacro_entry(hass, standalone)
     pair = MockConfigEntry(
@@ -1423,50 +1528,6 @@ async def test_light_switch_starts_unknown_and_side_select_needs_no_link(
         sessions = hass.data[DOMAIN]["remacro_sessions"]
         assert [s.side for key, s in sessions.items() if key[0] == address] == ["right"]
         await hass.config_entries.async_unload(entry.entry_id)
-
-
-@pytest.mark.parametrize(
-    ("left_company", "right_company", "expected_state"),
-    [
-        # Both sides refused: permanent error, no retry loop.
-        (13, 13, ConfigEntryState.SETUP_ERROR),
-        # One usable side: the pair loads half-available.
-        (50, 13, ConfigEntryState.LOADED),
-        # A merely unseen side keeps setup retrying.
-        (None, 13, ConfigEntryState.SETUP_RETRY),
-    ],
-)
-async def test_pair_setup_outcome_follows_its_sides(
-    hass: HomeAssistant,
-    mock_coordinator_connected,
-    mock_establish_connection,
-    enable_custom_integrations,
-    left_company,
-    right_company,
-    expected_state,
-) -> None:
-    from homeassistant.helpers import issue_registry as ir
-
-    left, right = "AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72"
-    entry, _children = _remacro_pair(hass, None, None)
-    adverts = {
-        address: MagicMock(manufacturer_data={company: b""}) if company is not None else None
-        for address, company in ((left, left_company), (right, right_company))
-    }
-    with patch(_HISTORY, side_effect=lambda _hass, address, connectable: adverts[address]):
-        await hass.config_entries.async_setup(entry.entry_id)
-        await hass.async_block_till_done()
-        assert entry.state is expected_state
-        issues = ir.async_get(hass)
-        assert issues.async_get_issue(DOMAIN, f"remacro_model_{right}") is not None
-        assert (issues.async_get_issue(DOMAIN, f"remacro_model_{left}") is not None) is (
-            left_company == 13
-        )
-        if expected_state is ConfigEntryState.SETUP_ERROR:
-            assert entry.reason is not None and "No side" in entry.reason
-            mock_establish_connection.assert_not_awaited()
-        if expected_state is ConfigEntryState.LOADED:
-            await hass.config_entries.async_unload(entry.entry_id)
 
 
 async def test_absorbed_split_side_keeps_its_session_across_reconnects(
@@ -1540,26 +1601,25 @@ async def test_absorbed_split_side_keeps_its_session_across_reconnects(
         await hass.config_entries.async_unload(entry.entry_id)
 
 
-async def test_unmapped_model_stays_refused_after_a_restart_without_history(
-    hass: HomeAssistant,
-    mock_coordinator_connected,
-    mock_establish_connection,
-    enable_custom_integrations,
+async def test_unmapped_model_keeps_its_warning_after_a_restart_without_history(
+    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
 ) -> None:
     from homeassistant.helpers import issue_registry as ir
 
     address = "AA:BB:CC:DD:EE:90"
     entry = _remacro_entry(hass, address)
     with patch(_HISTORY, return_value=MagicMock(manufacturer_data={13: b""})):
-        assert not await hass.config_entries.async_setup(entry.entry_id)
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
     assert entry.data[CONF_REMACRO_MODEL] == 13
-    # Restart with the bed out of range: no history, only the stored selector.
+    # Restart without history: the stored selector keeps it unlisted, not unseen.
     with patch(_HISTORY, return_value=None):
         await hass.config_entries.async_reload(entry.entry_id)
         await hass.async_block_till_done()
-    assert entry.state is ConfigEntryState.SETUP_ERROR
+    assert entry.state is ConfigEntryState.LOADED
+    assert _controller(hass, entry).model == protocol.fallback_model(13)
     assert ir.async_get(hass).async_get_issue(DOMAIN, f"remacro_model_{address}") is not None
-    mock_establish_connection.assert_not_awaited()
+    await hass.config_entries.async_unload(entry.entry_id)
 
 
 @pytest.mark.parametrize(
@@ -1567,9 +1627,8 @@ async def test_unmapped_model_stays_refused_after_a_restart_without_history(
     [
         (52, 52, False),
         (51, 52, True),
-        # A refused (controller-less) side cannot take a global STOP either.
-        (52, 13, False),
-        (51, 13, True),
+        # The fallback screen has the global STOP.
+        (52, 13, True),
     ],
 )
 async def test_paired_stop_needs_a_side_with_global_stop(
@@ -1604,44 +1663,40 @@ async def test_paired_stop_needs_a_side_with_global_stop(
             with (
                 patch.object(children["left"], "async_stop_command", AsyncMock()) as left_stop,
                 patch.object(children["right"], "async_stop_command", AsyncMock()) as right_stop,
+                patch.object(children["left"], "request_command_cancel") as left_cancel,
                 patch.object(children["right"], "request_command_cancel") as right_cancel,
             ):
                 await hass.services.async_call(
                     "button", "press", {"entity_id": stop}, blocking=True
                 )
-            left_stop.assert_awaited_once()
-            # The other side only has its running movement cancelled, never a
-            # reconnect for a frame it cannot take.
-            right_stop.assert_not_awaited()
-            right_cancel.assert_called_once()
+            for company, stop_command, cancel in (
+                (left_company, left_stop, left_cancel),
+                (right_company, right_stop, right_cancel),
+            ):
+                # A NineActivity side only has its running movement cancelled,
+                # never a reconnect for a frame it cannot take.
+                assert stop_command.await_count == (company != 52)
+                assert cancel.call_count == (company == 52)
         await hass.config_entries.async_unload(entry.entry_id)
 
 
-async def test_unseen_paired_side_gets_controls_when_it_advertises(
-    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
+async def test_unseen_paired_side_upgrades_from_the_fallback_when_it_advertises(
+    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations, watchers
 ) -> None:
     left, right = "AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72"
     entry, _children = _remacro_pair(hass, None, None)
-    adverts = {left: MagicMock(manufacturer_data={50: b""}), right: None}
-    callbacks = {}
-
-    def register(_hass, seen, matcher, _mode):
-        callbacks[matcher["address"]] = seen
-
-        def unsubscribe() -> None:
-            callbacks.pop(matcher["address"], None)
-
-        return unsubscribe
-
+    # The right side keeps the cover it had before upgrading from v4.0.2.
     registry = er.async_get(hass)
-    with (
-        patch(_HISTORY, side_effect=lambda _hass, address, connectable: adverts[address]),
-        patch("homeassistant.components.bluetooth.async_register_callback", side_effect=register),
-    ):
+    legacy = registry.async_get_or_create("cover", DOMAIN, f"{right}_back", config_entry=entry)
+    adverts = {left: MagicMock(manufacturer_data={50: b""}), right: None}
+    callbacks = watchers
+    with patch(_HISTORY, side_effect=lambda _hass, address, connectable: adverts[address]):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
-        assert registry.async_get_entity_id("cover", DOMAIN, f"{left}_back") is not None
-        assert registry.async_get_entity_id("cover", DOMAIN, f"{right}_back") is None
+        assert entry.state is ConfigEntryState.LOADED
+        assert _side_model(hass, entry, "right") == protocol.fallback_model(None)
+        assert registry.async_get(legacy.entity_id) is not None
+        assert registry.async_get_entity_id("cover", DOMAIN, f"{right}_all_motors") is None
         assert set(callbacks) == {right}
 
         adverts[right] = MagicMock(manufacturer_data={47: b""})
@@ -1649,57 +1704,10 @@ async def test_unseen_paired_side_gets_controls_when_it_advertises(
         await hass.async_block_till_done()
 
         assert entry.state is ConfigEntryState.LOADED
-        assert registry.async_get_entity_id("cover", DOMAIN, f"{right}_back") is not None
+        assert _side_model(hass, entry, "right") is protocol.MODELS[47]
+        assert registry.async_get(legacy.entity_id) is not None
+        assert registry.async_get_entity_id("cover", DOMAIN, f"{right}_all_motors") is not None
         assert not callbacks  # The reload no longer watches a now-known side.
-        await hass.config_entries.async_unload(entry.entry_id)
-
-
-async def test_unseen_side_with_legacy_controls_loads_the_pair_half_available(
-    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
-) -> None:
-    left, right = "AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72"
-    entry, _children = _remacro_pair(hass, 50, None)
-    registry = er.async_get(hass)
-    # Left over from the generic controller this pair used before upgrading.
-    registry.async_get_or_create("cover", DOMAIN, f"{right}_back", config_entry=entry)
-    adverts = {left: MagicMock(manufacturer_data={50: b""}), right: None}
-    callbacks = {}
-
-    def register(_hass, seen, matcher, _mode):
-        callbacks[matcher["address"]] = seen
-        return lambda: callbacks.pop(matcher["address"], None)
-
-    with (
-        patch(_HISTORY, side_effect=lambda _hass, address, connectable: adverts[address]),
-        patch("homeassistant.components.bluetooth.async_register_callback", side_effect=register),
-    ):
-        assert await hass.config_entries.async_setup(entry.entry_id)
-        await hass.async_block_till_done()
-        assert entry.state is ConfigEntryState.LOADED
-        assert set(callbacks) == {right}
-        # Kept for the reload that adopts it once the side advertises.
-        assert registry.async_get_entity_id("cover", DOMAIN, f"{right}_back") is not None
-        await hass.config_entries.async_unload(entry.entry_id)
-
-
-async def test_refused_side_retires_pair_level_combined_controls(
-    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
-) -> None:
-    left, right = "AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72"
-    entry, _children = _remacro_pair(hass, 50, 50)
-    registry = er.async_get(hass)
-    stale = registry.async_get_or_create(
-        "button", DOMAIN, "pair_remacro_preset_flat_both", config_entry=entry
-    ).entity_id
-    adverts = {
-        left: MagicMock(manufacturer_data={50: b""}),
-        right: MagicMock(manufacturer_data={13: b""}),
-    }
-    with patch(_HISTORY, side_effect=lambda _hass, address, connectable: adverts[address]):
-        assert await hass.config_entries.async_setup(entry.entry_id)
-        await hass.async_block_till_done()
-        assert entry.state is ConfigEntryState.LOADED
-        assert registry.async_get(stale) is None
         await hass.config_entries.async_unload(entry.entry_id)
 
 

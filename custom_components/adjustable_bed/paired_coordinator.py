@@ -1067,9 +1067,9 @@ class PairedBedCoordinator:
         # including a side that gets no STOP frame below.
         for target_side, _ in targets:
             self._bump_pair_cancel_generation(target_side, command_resources("*"))
-        # A Remacro side without a global STOP frame (or without a controller)
-        # only has its running movement cancelled, which sends that axis's
-        # release STOP; it is never reconnected for a frame it cannot take.
+        # A Remacro side without a global STOP frame only has its running
+        # movement cancelled, which sends that axis's release STOP; it is never
+        # reconnected for a frame it cannot take.
         for _target_side, child in targets:
             if remacro_side_lacks_global_stop(child):
                 child.request_command_cancel()

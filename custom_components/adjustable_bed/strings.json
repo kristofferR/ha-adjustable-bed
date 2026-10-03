@@ -653,9 +653,7 @@
       "discovery_disabled": "Automatic discovery is turned off for the Adjustable Bed integration. Re-enable it in any bed's options if you want new devices to be discovered.",
       "diagnostic_browser_ready": "**{name}**\n\nAddress: `{address}`\nSource: `{source}`\nScanner connectable: `{connectable}`\n\nRun `adjustable_bed.generate_support_bundle` with `target_address: {address}` to capture the full support bundle.",
       "not_enough_beds": "You need at least two set-up beds of the same type to combine.",
-      "combine_cleanup_failed": "Couldn't remove one of the original beds, so the combined bed wasn't created. Try again or remove the beds manually first.",
-      "remacro_model_unmapped": "This bed advertises company ID {company_id}, which none of the Slumberland, The Brick or Jerome's apps list, so it cannot be set up as a Remacro bed.",
-      "remacro_model_not_in_app": "The {app} app does not list a bed advertising company ID {company_id}. Set the bed up again and choose the app it uses as the protocol variant."
+      "combine_cleanup_failed": "Couldn't remove one of the original beds, so the combined bed wasn't created. Try again or remove the beds manually first."
     },
     "error": {
       "scan_failed": "Bluetooth scanning is unavailable. Check your adapters and try again, or choose a device from the list.",
@@ -981,7 +979,6 @@
       "invalid_pulse_count_range": "For this app profile, the motor pulse count must be between 1 and 600.",
       "okin_bedding_app_unpair_first": "Separate the paired entries before changing to or from the Tranquil, Z-Series or Adjustable bed (Lumbar) app, then select each side\u2019s own app profile.",
       "adjustable_lumbar_unpair_first": "Unpair the beds and configure each side separately before changing the Adjustable bed (Lumbar) protocol.",
-      "remacro_model_unmapped": "This bed advertises a company ID that no Remacro app lists.",
       "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses.",
       "remacro_app_unpair_first": "Each side keeps its own Remacro app. Unpair the beds and change each side's protocol variant separately.",
       "logicdata_app_sleep_smart_layout": "Sleep Smart beds use the two-motor standard or split-series layout.",
@@ -6802,18 +6799,6 @@
     },
     "simmons_alarm_not_reported": {
       "message": "The bed did not report both alarm records in this connection, so nothing was written. Try again, or press Refresh Alarms first."
-    },
-    "remacro_model_unknown": {
-      "message": "No advertisement from this Remacro bed has been seen yet, so its model is unknown. Setup retries once the bed is in Bluetooth range."
-    },
-    "remacro_model_unmapped": {
-      "message": "The bed advertises company ID {company_id}, which none of the Slumberland, The Brick or Jerome's apps list. The {app} app would not offer this bed."
-    },
-    "remacro_model_not_in_app": {
-      "message": "The {app} app does not list a bed advertising company ID {company_id}. Choose the app this bed uses as the protocol variant in the integration options."
-    },
-    "remacro_pair_unsupported": {
-      "message": "No side of this combined bed advertises a model its Remacro app lists. See the Repairs issue for each side."
     }
   },
   "issues": {
@@ -6942,12 +6927,25 @@
       }
     },
     "remacro_model_unmapped": {
-      "title": "{name} has an unsupported Remacro model",
-      "description": "**{name}** ({address}) advertises company ID {company_id}, which none of the Slumberland, The Brick or Jerome's apps list. Home Assistant does not connect to it."
+      "title": "{name} uses limited Remacro controls",
+      "description": "**{name}** ({address}) advertises company ID {company_id}, which none of the Slumberland, The Brick or Jerome's apps list, so its model is not recognized. Home Assistant uses a limited set of controls common to these beds: Head, Feet and Lumbar movement, Flat, TV and Zero-G, the light and Stop. Some of them may do nothing on this bed. If the bed later advertises a listed model, it reloads with that model's controls."
     },
     "remacro_model_not_in_app": {
       "title": "{name} is not listed by the {app} app",
-      "description": "**{name}** ({address}) advertises company ID {company_id}, which the {app} app does not list. Home Assistant does not connect to it. Choose the app this bed uses as the protocol variant in the integration options."
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Choose the app for {name}",
+            "description": "**{name}** uses limited controls because its current app does not list its model. {apps} list it. Choose the app you use with this bed; it then reloads with that model's controls.",
+            "data": {
+              "protocol_variant": "App"
+            }
+          }
+        },
+        "abort": {
+          "entry_missing": "The entry or paired side no longer exists. Open its current configuration."
+        }
+      }
     }
   },
   "selector": {

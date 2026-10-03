@@ -73,20 +73,6 @@ def async_has_side_controller_entities(
     )
 
 
-def async_remove_side_controller_entities(
-    hass: HomeAssistant, entry: ConfigEntry, address: str
-) -> None:
-    """Retire one side's controller-gated controls that the pair itself owns."""
-    registry = er.async_get(hass)
-    for row in list(er.async_entries_for_config_entry(registry, entry.entry_id)):
-        if (
-            row.platform == DOMAIN
-            and row.domain in _CONTROLLER_GATED_CONTROL_DOMAINS
-            and row.unique_id.startswith(f"{address}_")
-        ):
-            registry.async_remove(row.entity_id)
-
-
 def _device_for_entry_and_identifier(
     registry: dr.DeviceRegistry,
     config_entry_id: str,

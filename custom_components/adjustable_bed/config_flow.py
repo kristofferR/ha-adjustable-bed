@@ -55,7 +55,7 @@ from .adapter import (
     read_ble_device_info,
 )
 from .address_lock import async_get_connect_lock
-from .beds.remacro_protocol import add_remacro_model
+from .beds.remacro_protocol import add_remacro_model, app_for_variant
 from .bluetooth_bond import (
     BondRemovalResult,
     BondSelectionStatus,
@@ -2390,27 +2390,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         )
         return "remacro_model_not_in_app" if problem == "not_in_app" else None
 
-    def _remacro_unsupported_abort(
-        self,
-        entry_data: dict[str, Any],
-        *,
-        manufacturer_data: dict[int, bytes] | None = None,
-    ) -> ConfigFlowResult | None:
-        """Refuse a Remacro bed the selected app would not list."""
-        if entry_data.get(CONF_BED_TYPE) != BED_TYPE_REMACRO:
-            return None
-        problem, placeholders = remacro_entry_problem(
-            entry_data,
-            remacro_manufacturer_data(self.hass, entry_data[CONF_ADDRESS], manufacturer_data),
-        )
-        # An unseen model may still advertise later; setup retries for it. A model
-        # another app lists is a field error on the form that picks the app.
-        if problem != "unmapped":
-            return None
-        return self.async_abort(
-            reason=f"remacro_model_{problem}", description_placeholders=placeholders
-        )
-
     def _async_abort_diagnostic_browser(
         self,
         *,
@@ -3099,12 +3078,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     entry_data,
                     manufacturer_data=self._discovery_info.manufacturer_data,
                 )
-                if (
-                    abort := self._remacro_unsupported_abort(
-                        entry_data, manufacturer_data=self._discovery_info.manufacturer_data
-                    )
-                ) is not None:
-                    return abort
                 # If bed requires pairing, show pairing instructions
                 if selected_bed_type and requires_pairing(selected_bed_type, protocol_variant):
                     self._manual_data = entry_data
@@ -4061,12 +4034,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     entry_data,
                     manufacturer_data=self._discovery_info.manufacturer_data,
                 )
-                if (
-                    abort := self._remacro_unsupported_abort(
-                        entry_data, manufacturer_data=self._discovery_info.manufacturer_data
-                    )
-                ) is not None:
-                    return abort
                 return await self._finish_with_verify(
                     entry_data,
                     user_input.get(CONF_NAME, "Adjustable Bed"),
@@ -4398,8 +4365,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         self._manual_data = entry_data
                         return await self.async_step_manual_pairing()
                     entry_data = self._maybe_add_advertisement_metadata(entry_data)
-                    if (abort := self._remacro_unsupported_abort(entry_data)) is not None:
-                        return abort
                     return await self._finish_with_verify(
                         entry_data,
                         user_input.get(CONF_NAME, "Adjustable Bed"),
@@ -7611,27 +7576,25 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     data_schema=vol.Schema(schema_dict),
                     errors={CONF_PROTOCOL_VARIANT: "invalid_variant_for_bed_type"},
                 )
-            # The selected app must list each bed's model, as the app would.
+            # Switching a bed to an app that does not list its model would only
+            # trade its controls for the fallback ones. Keeping the current app
+            # is allowed, so a bed on the fallback controls can still save other
+            # options. Pairs refuse any app change above.
             remacro_error: str | None = None
-            if bed_type == BED_TYPE_REMACRO:
-                remacro_targets: list[Mapping[str, Any]] = [*iter_children(current_data)]
-                for target in remacro_targets or [current_data]:
-                    target_address = target.get(CONF_ADDRESS)
-                    if not isinstance(target_address, str):
-                        continue
-                    # An unchanged app keeps each side validated against its own.
-                    target_variant = (
-                        requested_variant
-                        if not remacro_targets or CONF_PROTOCOL_VARIANT in paired_changes
-                        else target.get(CONF_PROTOCOL_VARIANT, requested_variant)
-                    )
-                    problem, _ = remacro_entry_problem(
-                        {**target, CONF_PROTOCOL_VARIANT: target_variant},
-                        remacro_manufacturer_data(self.hass, target_address),
-                    )
-                    if problem not in (None, "unknown"):
-                        remacro_error = f"remacro_model_{problem}"
-                        break
+            remacro_address = current_data.get(CONF_ADDRESS)
+            if (
+                bed_type == BED_TYPE_REMACRO
+                and not separate_address_pair
+                and isinstance(remacro_address, str)
+                and app_for_variant(requested_variant)
+                != app_for_variant(self.config_entry.data.get(CONF_PROTOCOL_VARIANT))
+            ):
+                problem, _ = remacro_entry_problem(
+                    {**current_data, CONF_PROTOCOL_VARIANT: requested_variant},
+                    remacro_manufacturer_data(self.hass, remacro_address),
+                )
+                if problem == "not_in_app":
+                    remacro_error = "remacro_model_not_in_app"
             if remacro_error is None and bed_type in RICHMAT_MH_APPS:
                 # Each Richmat MH bed resolves its model from its stored raw name.
                 for target in [*iter_children(current_data)] or [current_data]:
