@@ -1644,6 +1644,12 @@ OKIN_APP_VARIANTS: Final = (
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_OKIN_SEATING,
 )
+# ORE comfort-bed apps (com.ore.okincomfortbed code base): explicit, never auto-selected.
+KEESON_VARIANT_MAXCOIL_UNA: Final = "maxcoil_una"
+KEESON_VARIANT_DYNASTY_BASES: Final = "dynasty_bases"
+ORE_COMFORT_BED_VARIANTS: Final = frozenset(
+    {KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_DYNASTY_BASES}
+)
 # Restonic BT Remote (com.keeson.restonicBT): the app's user-selected remote style.
 KEESON_VARIANT_RESTONIC_A: Final = "restonic_a"
 KEESON_VARIANT_RESTONIC_B: Final = "restonic_b"
@@ -1661,6 +1667,8 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_SIMON_LI: "Simon Li app (chair / love seat / sofa)",
     KEESON_VARIANT_HEAL_EVERY_NIGHT: "Heal Every Night app (motor count 2/3/4 = Healing 6/7/8)",
     KEESON_VARIANT_OKIN_SEATING: "OKIN-Seating app",
+    KEESON_VARIANT_MAXCOIL_UNA: "MaxCoil Una app (2M / 3M / 4M motor count)",
+    KEESON_VARIANT_DYNASTY_BASES: "Dynasty Bases app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_RESTONIC_A: "Restonic BT app, remote A (6 buttons)",
     KEESON_VARIANT_RESTONIC_B: "Restonic BT app, remote B (10 buttons)",
     KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
@@ -2470,6 +2478,8 @@ ALL_PROTOCOL_VARIANTS: Final = [
     KEESON_VARIANT_SIMON_LI,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_OKIN_SEATING,
+    KEESON_VARIANT_MAXCOIL_UNA,
+    KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_RESTONIC_A,
     KEESON_VARIANT_RESTONIC_B,
     KEESON_VARIANT_ERGOMOTION,

@@ -32,14 +32,14 @@ Brands using DewertOkin/ORE actuators (79 apps analyzed):
 - Glideaway Motion
 - Symphony Sleep
 - Movita
-- Dynasty Bases
+- Dynasty Bases (current app: [MaxCoil Una / Dynasty Bases profile](ore-comfort-bed.md))
 - Better Living
 - LevaSleep
 - American Star
 - Avanti Bases
 - Comfort Furniture
 - Hestia Motion
-- Maxcoil Una
+- Maxcoil Una (current app: [MaxCoil Una / Dynasty Bases profile](ore-comfort-bed.md))
 - Power's Bedding
 - Ultramatic Smart Bed
 

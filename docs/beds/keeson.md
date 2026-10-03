@@ -57,6 +57,8 @@ for all 128 exclusions and exact accepted evidence.
 | ✅ | Juna Sleep | `com.keeson.junasleep` |
 | ✅ | [Purple Smart Base](https://play.google.com/store/apps/details?id=com.keeson.purpleBase) | `com.keeson.purpleBase` |
 | ✅ | [Adjustable Lite](https://play.google.com/store/apps/details?id=com.keeson.adjustablelite) | `com.keeson.adjustablelite` |
+| ✅ | MaxCoil Una ([profile](ore-comfort-bed.md)) | `com.ore.maxcoil` |
+| ✅ | Dynasty Bases ([profile](ore-comfort-bed.md)) | `com.ore.Dynasty` |
 | ✅ | Restonic BT Remote | `com.keeson.restonicBT` |
 
 ## Features
@@ -425,6 +427,8 @@ stops motion and presets.
 **Format:** 8 bytes `[0xE5, 0xFE, 0x16, b4, b5, b6, b7, checksum]` (big-endian byte order)
 
 Used by BetterLiving/OKIN-BLE devices. Same packet structure as Base variant but with big-endian command byte ordering. Auto-detected by name pattern `okin-ble`.
+
+The current MaxCoil Una and Dynasty Bases apps use the same frame with different preset, save and massage words and a 2M/3M/4M layout choice. Select their explicit [MaxCoil Una / Dynasty Bases profile](ore-comfort-bed.md) (`maxcoil_una` or `dynasty_bases`); `sino` is unchanged.
 
 ### Ergomotion Variant (with Position Feedback)
 Same protocol as Base variant but with real-time position updates via BLE notifications.

@@ -184,13 +184,13 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         self._app_floor_intent = (
             description.key == "under_bed_lights" and coordinator.bed_type == BED_TYPE_VIBRADORM_APP
         )
+        controller = coordinator.capability_controller
         if description.state_key is None:
             self._attr_is_on = False
-            if description.key == "under_bed_lights" and coordinator.bed_type in {
-                *OKIN_BEDDING_APP_BED_TYPES,
-                BED_TYPE_REMACRO,
-                BED_TYPE_SVANE,
-            }:
+            if description.key == "under_bed_lights" and (
+                coordinator.bed_type in {*OKIN_BEDDING_APP_BED_TYPES, BED_TYPE_REMACRO, BED_TYPE_SVANE}
+                or (controller is not None and controller.light_state_is_assumed)
+            ):
                 # These apps have on/off commands but no physical state response.
                 self._attr_is_on = None
                 self._attr_assumed_state = True
@@ -211,7 +211,6 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         # a switch created for an offline paired side still caches the correct
         # capability (from the client-free controller) instead of defaulting to
         # False; the live controller takes over for actual commands.
-        controller = coordinator.capability_controller
         self._supports_discrete_light_control = (
             controller is not None and controller.supports_discrete_light_control
         )

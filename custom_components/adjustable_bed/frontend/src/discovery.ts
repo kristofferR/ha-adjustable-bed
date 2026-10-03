@@ -251,6 +251,11 @@ export function bedEntitiesForDevice(
         } else if (key.startsWith("logicdata_air_pump_")) {
           // Pump taps have no motor, preset or memory-slot meaning.
           bed.utility.push(id);
+        } else if (key === "ore_comfort_massage_start") {
+          bed.massage.buttons.push(id);
+        } else if (key === "ore_comfort_program_flat" || key === "ore_comfort_program_zero_g") {
+          // Preset saves have no memory slot.
+          bed.utility.push(id);
         } else if (key === "coolbase_head_massage" || key === "coolbase_foot_massage" || key === "coolbase_massage_mode") {
           bed.massage.buttons.push(id);
         } else if (key === "restonic_zzz") {
@@ -320,7 +325,7 @@ export function bedEntitiesForDevice(
           mood().selects.push(id);
         else if (key === "vibradorm_app_massage_wave")
           (bed.massage.selects ??= []).push(id);
-        else if ((key === "massage_timer" || key === "starcode_abm5_4_massage_timer")) bed.massage.timer = id;
+        else if (key === "massage_timer" || key === "starcode_abm5_4_massage_timer" || key === "ore_comfort_massage_timer") bed.massage.timer = id;
         else if (/thermal|footwarming|foundation/.test(key))
           bed.climate.selects.push(id);
         break;
