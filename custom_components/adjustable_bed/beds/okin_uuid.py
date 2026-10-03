@@ -32,9 +32,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
@@ -48,11 +49,14 @@ from ..const import (
     OKIN_POSITION_NOTIFY_CHAR_UUID,
     VARIANT_AUTO,
 )
+from ..furnimove_profiles import FURNIMOVE_PRODUCTION_IDS, FurniMoveProfile, get_furnimove_profile
 from .base import BedController, MotorControlSpec
 from .okin_protocol import build_okin_command
 from .okin_uuid_remotes import (
     DEFAULT_OKIN_UUID_REMOTE,
+    OKIN_DOT_VARIANT_LABELS,
     OKIN_UUID_REMOTE_DATA,
+    OKIN_UUID_VARIANT_LABELS,
 )
 
 if TYPE_CHECKING:
@@ -125,11 +129,97 @@ def _remote_config(kwargs: dict) -> OkinUuidRemoteConfig:
     return OkinUuidRemoteConfig(**expanded)
 
 
-# The remote table is generated from the DewertOkin handset backend + the
-# bundled handsetlist.csv capability flags. See okin_uuid_remotes.py for
-# provenance and the tools/okin_remotes/ regeneration pipeline.
+# FurniMove action name -> remote config field. M1-M4 are the app's head, back,
+# legs and feet channels; "Out" raises and "In" lowers.
+_FURNIMOVE_FIELDS: Final = {
+    "Flat": "flat",
+    "M1Out": "head_up",
+    "M1In": "head_down",
+    "M2Out": "back_up",
+    "M2In": "back_down",
+    "M3Out": "legs_up",
+    "M3In": "legs_down",
+    "M4Out": "feet_up",
+    "M4In": "feet_down",
+    "Sync": "sync",
+    "ChildLock": "child_lock",
+    "ZeroGravity": "zero_gravity",
+    "QuietSleep": "quiet_sleep",
+    "UBL": "toggle_lights",
+    "Memo1": "memory_1",
+    "Memo2": "memory_2",
+    "Memo3": "memory_3",
+    "Memo4": "memory_4",
+}
+_FURNIMOVE_MASSAGE: Final = {
+    "MassagerHeadPlus": "head_up",
+    "MassagerHeadMinus": "head_down",
+    "MassagerFeetPlus": "foot_up",
+    "MassagerFeetMinus": "foot_down",
+    "MassagerStop": "stop",
+    "MassagerWave": "wave",
+    "MassageAll": "all",
+    "Massager1": "mode1",
+    "Massager2": "mode2",
+    "Massager3": "mode3",
+    "MassagerHead": "head_toggle",
+    "MassagerFeet": "foot_toggle",
+}
+
+
+def _furnimove_remote(profile: FurniMoveProfile, *, dot: bool) -> OkinUuidRemoteConfig:
+    """Project a pinned FurniMove handset table onto this controller's fields.
+
+    The first row of each name wins, as in the app. MemoSave keeps its hold
+    timing; UBL stays a single press. Rows this controller has no consumer for
+    (Reset, the standby release, mode switches) are skipped. Only DOT handsets
+    map Snore, matching the table v4.0.2 shipped.
+    """
+    description = (profile.description or "").strip().strip('"').strip()
+    model = re.match(r"[A-Za-z0-9/\-]+", description) if description else None
+    fields: dict[str, Any] = {
+        "name": model.group(0) if model else (description[:20] or "Okin RF"),
+        "dot": dot,
+    }
+    massage: dict[str, int] = {}
+    for row in profile.actions:
+        keycode = int(row.keycode, 16)
+        if row.action == "MemoSave":
+            if row.duration_ms and row.frequency_ms:
+                if row.duration_ms % row.frequency_ms:
+                    raise ValueError(f"{profile.handset_id}: MemoSave hold is not whole ticks")
+                fields.setdefault(
+                    "memory_save",
+                    OkinUuidComplexCommand(
+                        keycode, row.duration_ms // row.frequency_ms, row.frequency_ms
+                    ),
+                )
+            else:
+                fields.setdefault("memory_save", keycode)
+        elif row.action == "Snore" and dot:
+            fields.setdefault("anti_snore", keycode)
+        elif field := _FURNIMOVE_FIELDS.get(row.action):
+            fields.setdefault(field, keycode)
+        elif key := _FURNIMOVE_MASSAGE.get(row.action):
+            massage.setdefault(key, keycode)
+    return OkinUuidRemoteConfig(**fields, massage=massage or None)
+
+
+# Handsets in the pinned FurniMove production catalog take their keycodes only
+# from it; the generated table holds the remaining codes. New setups keep the
+# standard handsets on this route, which adds the BLE bond and FFE4 position
+# feedback the FurniMove app profile lacks. The DOT handsets move to FurniMove,
+# whose per-consumer framing is the app's exact behavior.
+FURNIMOVE_STANDARD_HANDSETS: Final = FURNIMOVE_PRODUCTION_IDS & frozenset(OKIN_UUID_VARIANT_LABELS)
+FURNIMOVE_DOT_HANDSETS: Final = FURNIMOVE_PRODUCTION_IDS & frozenset(OKIN_DOT_VARIANT_LABELS)
+
 OKIN_UUID_REMOTES: dict[str, OkinUuidRemoteConfig] = {
-    code: _remote_config(kwargs) for code, kwargs in OKIN_UUID_REMOTE_DATA.items()
+    code: (
+        _furnimove_remote(get_furnimove_profile(code), dot=code in FURNIMOVE_DOT_HANDSETS)
+        if code in FURNIMOVE_PRODUCTION_IDS
+        else _remote_config(OKIN_UUID_REMOTE_DATA[code])
+    )
+    for code in sorted({*OKIN_UUID_VARIANT_LABELS, *OKIN_DOT_VARIANT_LABELS}, key=int)
 }
 
 # Default remote for auto-detect (most common/basic)

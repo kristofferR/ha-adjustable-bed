@@ -6,6 +6,16 @@ This directory regenerates `custom_components/adjustable_bed/beds/okin_uuid_remo
 
 ## Source of truth
 
+Codes in the pinned FurniMove production catalog
+(`custom_components/adjustable_bed/furnimove_profiles.py`, captured
+2026-09-30 for the accepted `com.okin.okinsmartcomfort` 2.2.0 audit) are the
+exception: `okin_uuid.py` derives their keycodes and memory-save timing from
+that catalog, and `gen_module.py` emits labels but no data row for them. Every
+overlapping handset matched the earlier backend capture byte for byte when the
+tables were merged; `tests/test_okin_uuid.py` pins the resulting table.
+
+The remaining codes come from the backend capture below.
+
 DewertOkin's **FurniMove / OkinSmartComfort** app resolves each handset code
 against a live AWS backend at pairing time (the bundled `handsetlist.csv` is
 only a stale seed). The backend returns authoritative 32-bit keycodes and

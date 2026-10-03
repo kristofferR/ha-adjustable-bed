@@ -4,13 +4,16 @@ Protocol reverse-engineered from the FurniMove app (com.okin.okinsmartcomfort):
 
 - The handset remote codes (RF1058/RF34/RF6707: 90167, 91983, 93558, 97450,
   97544, 98035) resolve through the same FurniMove backend as the Okimat
-  remotes, so the per-remote keycode table in ``okin_uuid_remotes.py`` is
-  shared (entries flagged ``dot=True``).
+  remotes, so the per-remote keycode table ``OKIN_UUID_REMOTES`` is shared
+  (entries flagged ``dot=True``). 90167, 91983 and 93558 are derived from the
+  pinned FurniMove catalog; new setups of those three use the FurniMove app
+  profile, and this controller keeps existing entries working.
 - The receiver box exposes the Nordic UART service instead of the Okin
   62741523 service. FurniMove flags a connection as DOT when it finds the
   Nordic UART write characteristic 6E400002 (named ``CB24_WRITE_CHARACTERISTIC``
-  in the app) and immediately writes the ASCII string ``affirm`` to it
-  (``BluetoothLeService.setCharacteristics``).
+  in the app). The earlier analysis this controller came from also recorded an
+  ASCII ``affirm`` write there; the accepted 2.2.0 audit has no such write, and
+  it stays here only so released entries keep their behavior.
 - Commands are CB24-style 7-byte frames ``[0x05, 0x02, <keycode BE>, 0x00]``
   (``HexValueConverter.toByteArray`` with ``isDOTProtocol=true``) instead of
   the standard Okin 6-byte ``[0x04, 0x02, <keycode BE>]``.

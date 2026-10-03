@@ -1096,3 +1096,52 @@ class TestOkinUuidMotorLayout:
 
         stale = coordinator.controller.stale_motor_entity_keys
         assert {"stair", "back", "legs", "head", "feet"} <= stale
+
+
+class TestOkinUuidFurniMoveCatalog:
+    """Handsets in the pinned FurniMove catalog have exactly one keycode source."""
+
+    # SHA-256 of every remote's fields except the log-only name, computed from
+    # the generated v4.0.2 table before the FurniMove handsets were derived.
+    V4_0_2_KEYCODE_DIGEST = "9b8ddfb7583fc1d66847977fb4c20928dd2f77edb81552fb4ee6d515fdccad70"
+
+    def test_catalog_handsets_have_no_generated_row(self) -> None:
+        from custom_components.adjustable_bed.beds.okin_uuid_remotes import (
+            OKIN_UUID_REMOTE_DATA,
+        )
+        from custom_components.adjustable_bed.furnimove_profiles import (
+            FURNIMOVE_PRODUCTION_IDS,
+        )
+
+        assert FURNIMOVE_PRODUCTION_IDS.isdisjoint(OKIN_UUID_REMOTE_DATA)
+        assert len(FURNIMOVE_PRODUCTION_IDS & set(OKIN_UUID_REMOTES)) == 86
+
+    def test_released_keycodes_and_timing_are_unchanged(self) -> None:
+        import dataclasses
+        import hashlib
+        import json
+
+        payload = json.dumps(
+            {
+                code: {k: v for k, v in dataclasses.asdict(cfg).items() if k != "name"}
+                for code, cfg in sorted(OKIN_UUID_REMOTES.items())
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        assert hashlib.sha256(payload.encode()).hexdigest() == self.V4_0_2_KEYCODE_DIGEST
+
+    def test_catalog_projection(self) -> None:
+        # The captured table reuses 0x20 for M4In, as the handset backend did.
+        remote = OKIN_UUID_REMOTES["93332"]
+        assert (remote.head_up, remote.head_down, remote.feet_up, remote.feet_down) == (
+            0x10,
+            0x20,
+            0x40,
+            0x20,
+        )
+        assert remote.memory_save == OkinUuidComplexCommand(0x10000, 10, 200)
+        assert remote.dot is False
+        dot = OKIN_UUID_REMOTES["93558"]
+        assert dot.dot is True
+        assert (dot.flat, dot.anti_snore, dot.zero_gravity) == (0x08000000, 0x4000, 0x1000)
