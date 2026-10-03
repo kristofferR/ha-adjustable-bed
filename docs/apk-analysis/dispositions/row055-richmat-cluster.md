@@ -36,7 +36,7 @@ The comparison classifies **45236 inventory entries** (every domain entry, model
 ## Upgrade safety
 
 - The profiles are opt-in bed types. Detection never selects them; the legacy Richmat and RMControl controllers, variants and entities are unchanged.
-- Each side of a two-address pair keeps its own app model; the shared options form refuses a model change (`richmat_mh_unpair_first`).
+- Each side of a two-address pair keeps its own app model; the shared options form refuses a model change (`app_profile_unpair_first`).
 
 ## Exclusions by reason
 

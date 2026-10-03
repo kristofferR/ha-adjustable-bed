@@ -74,7 +74,7 @@ Every ledger row uses the code (`C`) and focused test (`T`) references below. `S
 | C37 | [custom_components/adjustable_bed/beds/serenity.py:350 (OkinBeddingAppController.requires_notification_channel)](../../../custom_components/adjustable_bed/beds/serenity.py#L350) |
 | C38 | [custom_components/adjustable_bed/beds/serenity.py:445 (OkinBeddingAppController.start_notify)](../../../custom_components/adjustable_bed/beds/serenity.py#L445) |
 | C39 | [custom_components/adjustable_bed/beds/serenity.py:428 (OkinBeddingAppController.write_command)](../../../custom_components/adjustable_bed/beds/serenity.py#L428) |
-| C40 | [custom_components/adjustable_bed/config_flow.py:1863 (AdjustableBedConfigFlow._async_rebuild_changed_serenity_form)](../../../custom_components/adjustable_bed/config_flow.py#L1863) |
+| C40 | [custom_components/adjustable_bed/config_flow.py:2809 (AdjustableBedConfigFlow._async_fit_setup_form)](../../../custom_components/adjustable_bed/config_flow.py#L2809) |
 | C41 | [custom_components/adjustable_bed/config_flow.py:1896 (AdjustableBedConfigFlow.async_step_bluetooth_confirm)](../../../custom_components/adjustable_bed/config_flow.py#L1896) |
 | C42 | [custom_components/adjustable_bed/config_flow.py:2882 (AdjustableBedConfigFlow.async_step_manual_config)](../../../custom_components/adjustable_bed/config_flow.py#L2882) |
 | C43 | [custom_components/adjustable_bed/config_flow.py:3185 (AdjustableBedConfigFlow.async_step_manual_entry)](../../../custom_components/adjustable_bed/config_flow.py#L3185) |
@@ -117,7 +117,7 @@ Every ledger row uses the code (`C`) and focused test (`T`) references below. `S
 | T26 | [tests/test_serenity.py:137 (test_signed_status_change_only_save_diversion_and_short_input)](../../../tests/test_serenity.py#L137) |
 | T27 | [tests/test_serenity.py:329 (test_unsupported_actions_no_write)](../../../tests/test_serenity.py#L329) |
 | T28 | [tests/test_serenity.py:604 (test_write_timeout_is_not_mistaken_for_elapsed_hold_deadline)](../../../tests/test_serenity.py#L604) |
-| T29 | [tests/test_serenity_config.py:146 (test_changing_setup_profile_restores_choices_and_keeps_entered_values)](../../../tests/test_serenity_config.py#L146) |
+| T29 | [tests/test_serenity_config.py:184 (test_changing_setup_profile_restores_choices_and_keeps_entered_values)](../../../tests/test_serenity_config.py#L184) |
 | T30 | [tests/test_serenity_config.py:26 (test_explicit_profile_builds_fixed_controls_without_live_advertisement)](../../../tests/test_serenity_config.py#L26) |
 | T31 | [tests/test_serenity_config.py:46 (test_fixed_named_axis_layout_normalizes_old_generic_motor_setting)](../../../tests/test_serenity_config.py#L46) |
 | T32 | [tests/test_serenity_config.py:93 (test_options_switch_from_generic_profile_preserves_explicit_serenity_defaults)](../../../tests/test_serenity_config.py#L93) |
