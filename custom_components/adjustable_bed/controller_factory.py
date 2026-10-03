@@ -165,6 +165,8 @@ from .const import (
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_OKIN_SEATING,
     KEESON_VARIANT_PURPLE,
+    KEESON_VARIANT_RESTONIC_A,
+    KEESON_VARIANT_RESTONIC_B,
     KEESON_VARIANT_SERTA,
     KEESON_VARIANT_SIMON_LI,
     KEESON_VARIANT_SINO,
@@ -1246,6 +1248,10 @@ async def create_controller(
             from .beds.keeson_okin_apps import OkinAppKeesonController
 
             return OkinAppKeesonController(coordinator, variant=keeson_variant)
+        elif keeson_variant in (KEESON_VARIANT_RESTONIC_A, KEESON_VARIANT_RESTONIC_B):
+            # Explicit only: the app's base-i4/base-i5 names are shared with other profiles.
+            _LOGGER.debug("Using explicit Restonic BT Keeson variant (%s)", keeson_variant)
+            return KeesonController(coordinator, variant=keeson_variant, device_name=device_name)
         elif keeson_variant == KEESON_VARIANT_ERGOMOTION:
             _LOGGER.debug("Using Ergomotion Keeson variant (with position feedback)")
             return KeesonController(coordinator, variant="ergomotion")

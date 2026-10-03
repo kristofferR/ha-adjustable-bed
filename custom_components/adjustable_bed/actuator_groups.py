@@ -70,6 +70,8 @@ from .const import (
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_OKIN_SEATING,
     KEESON_VARIANT_PURPLE,
+    KEESON_VARIANT_RESTONIC_A,
+    KEESON_VARIANT_RESTONIC_B,
     KEESON_VARIANT_SERTA,
     KEESON_VARIANT_SIMON_LI,
 )
@@ -224,6 +226,20 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "label": "OKIN-Seating app",
                 "description": "Seats from the OKIN-Seating app",
                 "hint": "Choose this if you control the seat with the OKIN-Seating app",
+            },
+            {
+                "type": BED_TYPE_KEESON,
+                "variant": KEESON_VARIANT_RESTONIC_A,
+                "label": "Restonic BT app, remote A",
+                "description": "Head, foot, Flat and Zero G (6 buttons)",
+                "hint": "Choose this if the Restonic BT Remote app is set to remote style A",
+            },
+            {
+                "type": BED_TYPE_KEESON,
+                "variant": KEESON_VARIANT_RESTONIC_B,
+                "label": "Restonic BT app, remote B",
+                "description": "Adds Back + Legs, light and ZZZ buttons (10 buttons)",
+                "hint": "Choose this if the Restonic BT Remote app is set to remote style B",
             },
             {
                 "type": BED_TYPE_KEESON,

@@ -2103,6 +2103,9 @@
       "coolbase_star": {
         "name": "Star button"
       },
+      "restonic_zzz": {
+        "name": "ZZZ"
+      },
       "starcode_save_tv": {
         "name": "Save Ascent"
       },
@@ -7019,16 +7022,16 @@
         }
       }
     },
-    "okin_app_hold_control": {
-      "name": "Hold Okin app control",
-      "description": "Hold one Simon Li, Heal Every Night or OKIN-Seating control, repeating it every 100 ms, then release it with the app's zero frame. Holding a Simon Li memory for 2.1 seconds or more is the app's memory save.",
+    "restonic_hold_control": {
+      "name": "Hold Restonic BT control",
+      "description": "Hold one Restonic BT Remote app control for a Keeson bed on a Restonic BT profile. Motor directions and remote A's Zero G repeat every 100 ms; the other controls are sent once. Release sends one zero frame 100 ms after the hold ends.",
       "fields": {
         "device_id": {
           "name": "Device"
         },
         "control": {
           "name": "Control",
-          "description": "A control of the selected app. Back and Home belong to Simon Li and OKIN-Seating, lumbar and memory to Simon Li, and head and tilt to Heal Every Night."
+          "description": "A control on the selected remote. Back + Legs, light and ZZZ exist only on remote B."
         },
         "duration": {
           "name": "Duration",
@@ -7144,6 +7147,26 @@
         "side": {
           "name": "Side",
           "description": "Target side of a paired bed."
+        }
+      }
+    },
+    "okin_app_hold_control": {
+      "name": "Hold Okin app control",
+      "description": "Hold one Simon Li, Heal Every Night or OKIN-Seating control, repeating it every 100 ms, then release it with the app's zero frame. Holding a Simon Li memory for 2.1 seconds or more is the app's memory save.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "A control of the selected app. Back and Home belong to Simon Li and OKIN-Seating, lumbar and memory to Simon Li, and head and tilt to Heal Every Night."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
         }
       }
     }

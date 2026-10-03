@@ -165,6 +165,7 @@ enable additional commands.
 | SIMMONS app | `simmons_hold_control`, `simmons_set_alarm` | [SIMMONS](beds/simmons.md) |
 | Adjustable bed (Lumbar) app | `adjustable_lumbar_hold_control` | [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md) |
 | Simon Li / Heal Every Night / OKIN-Seating apps | `okin_app_hold_control` | [Okin app profiles](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles) |
+| Restonic BT Remote app (Keeson) | `restonic_hold_control` | [Keeson Restonic BT](beds/keeson.md#restonic-bt-profiles) |
 | AdjustableM5X4 app | `starcode_abm5_4_hold_control` (literal held movement, preset, save or massage controls) | [AdjustableM5X4](beds/starcode-abm5-4.md) |
 | Caresse / Werkmeister apps | `vibradorm_hold_control` (profile-specific movement, memory recall or sync) | [Caresse / Werkmeister](beds/vibradorm_app.md) |
 | V-MAT Basic app | `vmatbasic_hold_control`, `vmatbasic_rename` | [V-MAT Basic](beds/vmatbasic.md) |
@@ -215,6 +216,10 @@ Accepts `device_id`, `control`, `duration` (0.1–60 seconds) and optional `side
 ### `okin_app_hold_control`
 
 Accepts `device_id`, `control`, `duration` (0.1–60 seconds) and optional `side`. The key repeats every 100 ms, then the app's zero frame follows 10 ms (Simon Li, OKIN-Seating) or 100 ms (Heal Every Night) after the hold. Simon Li controls are `back_up`, `back_down`, `foot_up`, `foot_down`, `lumbar_up`, `lumbar_down`, `home`, `memory_1` and `memory_2`; OKIN-Seating has `back_up`, `back_down`, `foot_up`, `foot_down` and `home`; Heal Every Night has `head_up`, `head_down`, `foot_up` and `foot_down` (following its Installation mode and Actuator direction settings), plus `tilt_up`, `tilt_down`, `lumbar_up` and `lumbar_down` on Healing 7 and 8. Holding a Simon Li memory for 2.1 seconds or more is the app's memory save; whether the seat stores the position is unverified. Every target must use one of these profiles and accept the control before any bed is written. See [Okin app profiles](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles).
+
+### `restonic_hold_control`
+
+Accepts `device_id`, `control`, `duration` (0.1–60 seconds) and optional `side`. Head and foot directions, remote B's `back_legs_up`/`back_legs_down` and remote A's `zero_g` repeat every 100 ms while held; `flat`, remote B's `zero_g`, `light` and `zzz` are sent once when the hold starts. When the hold ends, one zero frame follows 100 ms later. Remote A accepts `head_up`, `head_down`, `feet_up`, `feet_down`, `flat` and `zero_g`; remote B adds `back_legs_up`, `back_legs_down`, `light` and `zzz`. Every target must use a Restonic BT profile and accept the control before any bed is written. See [Restonic BT](beds/keeson.md#restonic-bt-profiles).
 
 ### `vibradorm_hold_control`
 

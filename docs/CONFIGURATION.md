@@ -262,6 +262,7 @@ controller-specific choices are documented here:
 | **Simon Li** | App profile, big-endian E5 frames; fixed back, foot, lumbar, Home and two memories | Seats controlled with the Simon Li app |
 | **Heal Every Night** | App profile, big-endian E5 frames; motor count picks Healing 6/7/8 | Beds controlled with the Heal Every Night app |
 | **OKIN-Seating** | App profile, big-endian E5 frames; back, foot and Home | Seats controlled with the OKIN-Seating app |
+| **Restonic BT, remote A / B** | App profiles for the two Restonic BT Remote styles | Beds controlled with the Restonic BT Remote app |
 | **Purple** | Purple profile | Purple Smart Base |
 | **Ergomotion** | Base protocol with position feedback | Ergomotion-branded beds |
 | **Okin** | OKIN FFE (0xE6 prefix) | OKIN 13/15 series |
@@ -366,6 +367,7 @@ retain their legacy profile unless you explicitly change it.
 | VMAT app | Explicit app and exact shipped remote ordinal; remote-derived features | [VMAT](beds/vmat.md) |
 | Adjustable Lite app | Keeson protocol variant **`adjustable_lite`**; the device name picks the KSBT01C or KSBT03C remote; `auto` keeps the generic KSBT profile | [Keeson Adjustable Lite](beds/keeson.md#adjustable-lite-profile) |
 | Simon Li / Heal Every Night / OKIN-Seating apps | Keeson protocol variants **`simon_li`**, **`heal_every_night`** and **`okin_seating`**; Heal Every Night's motor count (2, 3 or 4) selects Healing 6/7/8 and its Installation mode and Actuator direction selects remap the head and foot keys; never auto-selected | [Okin app profiles](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles) |
+| Restonic BT Remote app | Keeson protocol variant **`restonic_a`** or **`restonic_b`**, matching the app's remote style setting; never chosen automatically (a `base-i5` bed is offered as Cool Base, so switch its bed type to Keeson first) | [Keeson Restonic BT](beds/keeson.md#restonic-bt-profiles) |
 | V-MAT Basic app | Explicit Basic, CBI or CBI with XT-Box product; per-receiver floor settings | [V-MAT Basic](beds/vmatbasic.md) |
 | SIMMONS app | Protocol variant: regular or inclined bed, with the packet format from the Bluetooth name or fixed | [SIMMONS](beds/simmons.md) |
 | Adjustable bed (Lumbar) app | Protocol variant: command table from the Bluetooth name, or fixed OKIN or Star branch | [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md) |
