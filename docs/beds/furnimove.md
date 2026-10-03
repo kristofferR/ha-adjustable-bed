@@ -26,6 +26,24 @@ brand/active queries found no further referenced production mappings.
 Alternate debug-environment tables do not replace missing production IDs.
 The captured catalog is finite, not a claim to enumerate every future API ID.
 
+### One bed type per handset
+
+This catalog is also the keycode source for the 86 handsets that the
+[Okin UUID](okimat.md) and [Okin DOT](okin-dot.md) bed types list. Their
+earlier backend capture matched it byte for byte, including memory-save
+timing, so those bed types now derive the keycodes from here. New setups offer
+each handset under one bed type only:
+
+| Handsets | New setups use | Why |
+|---|---|---|
+| 83 standard handsets also listed under Okin UUID | Okin UUID | It adds the mandatory BLE bond and FFE4 position feedback that this app profile lacks, so FurniMove is not a superset there. |
+| DOT handsets 90167, 91983, 93558 | FurniMove | Neither route bonds or reports positions. FurniMove adds the app's per-control frame format and reported light state. |
+| 12234, `00000`, `280702`, `280703` | FurniMove | No other bed type lists them. |
+| DOT handsets 97450, 97544, 98035 | Okin DOT | They are not in the FurniMove capture. |
+
+Existing entries keep working unchanged. An Okin DOT entry using 90167, 91983
+or 93558 receives the repair described below.
+
 Motor count, massage availability and action ordering come from the selected
 table. An unavailable ID requires a new verified table; the integration does
 not contact the cloud or ship the app's API credential. Motor position and
@@ -38,10 +56,21 @@ explicit staircase confirmation receives a fixable warning under **Settings →
 System → Repairs**, even if connection fails. A saved count of one motor does
 not establish the product. The repair offers these choices:
 
-- Confirm a single-actuator staircase, retaining its one Stair cover.
-- Choose FurniMove and its exact handset layout, restoring the selected axes.
+- **FurniMove adjustable bed:** choose the exact handset layout, restoring the
+  selected axes. Handsets that stay on the Okin UUID route are not listed.
+- **Single-actuator staircase:** retain its one Stair cover.
+- **Keep current configuration:** dismiss the repair without changing any
+  setting. A full OKIMAT bed saved as RF ECO BT is promoted at runtime (#406);
+  set its printed handset code under Okin UUID in the integration options.
 
-The repair updates the same config entry. Bluetooth address, device ownership,
+A FurniMove entry without a captured handset gets the first two choices.
+
+An **Okin DOT** entry using handset 90167, 91983 or 93558 receives a separate
+fixable warning offering **Switch to the FurniMove profile** or **Keep current
+configuration**. Switching keeps the handset and derives the axes and massage
+availability from its table.
+
+Each repair updates the same config entry. Bluetooth address, device ownership,
 entry identity and matching entity IDs remain intact. A retired Stair cover,
 unsupported axes and obsolete app action/state entities are removed. A paired
 repair changes only its selected physical side. FurniMove conversion clears

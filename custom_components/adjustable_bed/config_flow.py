@@ -120,6 +120,7 @@ from .const import (
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CST,
+    BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
@@ -257,6 +258,7 @@ from .const import (
     OCTO_VARIANT_STAR2,
     OKIN_BEDDING_APP_BED_TYPES,
     OKIN_CST_THREE_MOTOR_VARIANTS,
+    OKIN_DOT_FURNIMOVE_VARIANTS,
     PAIR_MODE_SEPARATE_ADDRESS,
     PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SIDES,
@@ -916,23 +918,21 @@ MALOUF_BED_TYPES = frozenset({BED_TYPE_MALOUF_NEW_OKIN, BED_TYPE_MALOUF_LEGACY_O
 def _add_furnimove_schema_field(
     schema: dict[vol.Marker, Any], current_data: dict[str, Any] | None = None
 ) -> None:
-    from .furnimove_profiles import FURNIMOVE_PROFILES
+    from .furnimove_profiles import furnimove_handset_choices
 
     current_data = current_data or {}
+    current = current_data.get(CONF_FURNIMOVE_REMOTE)
     schema[vol.Required(
         CONF_FURNIMOVE_REMOTE,
-        default=current_data.get(CONF_FURNIMOVE_REMOTE, vol.UNDEFINED),
-    )] = vol.In({
-        key: f"{key}: {profile.description or 'Shipped offline table'}"
-        for key, profile in FURNIMOVE_PROFILES.items()
-    })
+        default=current if isinstance(current, str) else vol.UNDEFINED,
+    )] = vol.In(furnimove_handset_choices(current))
 
 
-def _furnimove_errors(data: dict[str, Any]) -> dict[str, str]:
-    from .furnimove_profiles import FURNIMOVE_PROFILES
+def _furnimove_errors(data: dict[str, Any], current: object = None) -> dict[str, str]:
+    from .furnimove_profiles import furnimove_handset_choices
 
     remote = data.get(CONF_FURNIMOVE_REMOTE)
-    if not isinstance(remote, str) or remote not in FURNIMOVE_PROFILES:
+    if not isinstance(remote, str) or remote not in furnimove_handset_choices(current):
         return {CONF_FURNIMOVE_REMOTE: "furnimove_remote_required"}
     return {}
 
@@ -6969,8 +6969,15 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 )
             ] = bool
 
-        # Add variant selection if the bed type has variants
+        # Add variant selection if the bed type has variants. Handsets that moved
+        # to the FurniMove app profile stay selectable only for an entry using one.
         if variants:
+            if bed_type == BED_TYPE_OKIN_DOT:
+                variants = {
+                    key: label
+                    for key, label in variants.items()
+                    if key not in OKIN_DOT_FURNIMOVE_VARIANTS or key == form_variant
+                }
             schema_dict[
                 vol.Optional(
                     CONF_PROTOCOL_VARIANT,
@@ -7339,7 +7346,9 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     user_input[CONF_MOTOR_COUNT] = LEGGETT_APP_MOTOR_COUNTS[profile]
             if bed_type == BED_TYPE_FURNIMOVE and not separate_address_pair:
                 app_data = {**current_data, **user_input}
-                app_errors = _furnimove_errors(app_data)
+                app_errors = _furnimove_errors(
+                    app_data, current_data.get(CONF_FURNIMOVE_REMOTE)
+                )
                 if app_errors:
                     return self.async_show_form(
                         step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors

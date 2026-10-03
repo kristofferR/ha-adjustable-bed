@@ -45,7 +45,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Okin CST](beds/okin-cst.md) | 14-byte dual-field protocol (Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; Nectar Motion) |
 | [FurniMove / OKIN Smart Remote app](beds/furnimove.md) | Explicit handset layouts from production API tables; RF, ordinary and DOT transports |
 | [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md) | Single stair actuator for Elda BTH / MEGAMAT |
-| [Okin DOT](beds/okin-dot.md) | Handset-specific motor, memory and light controls |
+| [Okin DOT](beds/okin-dot.md) | Handset-specific motor, memory and light controls (RF34/RF6707; new RF1058 setups use FurniMove) |
 | [DewertOkin ELEVATE](beds/star-elevate.md) | Two-actuator lift accessory |
 
 ---

@@ -5723,7 +5723,7 @@
           },
           "handset": {
             "title": "Select the FurniMove handset",
-            "description": "Choose the handset ID used by the FurniMove app, matching its physical remote. Receiver labels such as RF ECO BT and P1103 do not identify the motor layout. No layout is selected automatically.",
+            "description": "Choose the handset ID used by the FurniMove app, matching its physical remote. Receiver labels such as RF ECO BT and P1103 do not identify the motor layout. No layout is selected automatically. Handset codes listed under Okin UUID are not offered here; a full bed with one of those keeps its current configuration and uses that code in the Okin UUID options.",
             "data": {
               "furnimove_remote": "Handset layout"
             }
@@ -5731,6 +5731,23 @@
         },
         "error": {
           "handset_required": "Select a captured handset layout. An unknown ID cannot be used safely."
+        },
+        "abort": {
+          "entry_missing": "The entry or paired side no longer exists. Open its current configuration."
+        }
+      }
+    },
+    "furnimove_handset_route": {
+      "title": "Use the FurniMove profile for {name}",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Switch {name} to FurniMove",
+            "description": "**{name}** uses Okin DOT with handset {handset}. The FurniMove profile for that handset follows the app exactly, including the frame format of each control and the light state the receiver reports. If the bed already works as expected, keep the current configuration. Your existing device and matching entity IDs will be preserved.",
+            "data": {
+              "route": "Configuration"
+            }
+          }
         },
         "abort": {
           "entry_missing": "The entry or paired side no longer exists. Open its current configuration."
@@ -5777,6 +5794,19 @@
       "options": {
         "retry": "Try again",
         "finish": "Finish setup without pairing"
+      }
+    },
+    "furnimove_layout": {
+      "options": {
+        "furnimove": "FurniMove adjustable bed",
+        "staircase": "Single-actuator staircase",
+        "keep": "Keep current configuration"
+      }
+    },
+    "furnimove_handset_route": {
+      "options": {
+        "furnimove": "Switch to the FurniMove profile",
+        "keep": "Keep current configuration"
       }
     }
   }

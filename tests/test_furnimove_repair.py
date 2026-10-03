@@ -9,7 +9,9 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_RF_ECO_BT,
+    BED_TYPE_OKIN_UUID,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
     CONF_FURNIMOVE_REMOTE,
@@ -25,6 +27,7 @@ from custom_components.adjustable_bed.const import (
     SIDE_RIGHT,
 )
 from custom_components.adjustable_bed.furnimove_repair import (
+    CONF_FURNIMOVE_ROUTE_KEPT,
     CONF_STAIRCASE_LAYOUT_CONFIRMED,
     FurniMoveLayoutRepairFlow,
     async_clear_furnimove_layout_issues,
@@ -107,9 +110,9 @@ async def test_keep_current_dismisses_repair_without_rewriting_settings(hass):
     flow = FurniMoveLayoutRepairFlow(entry.entry_id, None)
     flow.hass = hass
     form = await flow.async_step_init()
-    assert "keep" in [
-        option["value"] for option in form["data_schema"].schema["layout"].config["options"]
-    ]
+    config = form["data_schema"].schema["layout"].config
+    assert config["options"] == ["furnimove", "staircase", "keep"]
+    assert config["translation_key"] == "furnimove_layout"
     result = await flow.async_step_init({"layout": "keep"})
     assert result["type"] == "create_entry"
     assert dict(entry.data) == {**before[0], CONF_STAIRCASE_LAYOUT_CONFIRMED: True}
@@ -152,3 +155,85 @@ async def test_one_motor_does_not_prove_that_a_legacy_entry_is_a_staircase(hass)
     hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_MOTOR_COUNT: 1})
     async_refresh_furnimove_layout_issues(hass, entry)
     assert ir.async_get(hass).async_get_issue(DOMAIN, f"furnimove_layout_{entry.entry_id}_standalone")
+
+
+async def test_handset_step_offers_only_furnimove_route_handsets(hass):
+    """Okin UUID catalog handsets stay on that route; they are not offered here."""
+    entry = _legacy(hass)
+    flow = FurniMoveLayoutRepairFlow(entry.entry_id, None)
+    flow.hass = hass
+    form = await flow.async_step_handset()
+    offered = {
+        option["value"]
+        for option in form["data_schema"].schema[CONF_FURNIMOVE_REMOTE].config["options"]
+    }
+    assert {"00000", "12234", "90167", "91983", "93558", "280702", "280703"} == offered
+    rejected = await flow.async_step_handset({CONF_FURNIMOVE_REMOTE: "82417"})
+    assert rejected["errors"] == {CONF_FURNIMOVE_REMOTE: "handset_required"}
+    assert entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_RF_ECO_BT
+
+
+def _dot(hass, variant: str):
+    entry = MockConfigEntry(domain=DOMAIN, title="DOT bed", unique_id="AA:BB:CC:DD:EE:10", version=4,
+        data={CONF_ADDRESS: "AA:BB:CC:DD:EE:10", CONF_BED_TYPE: BED_TYPE_OKIN_DOT,
+              CONF_PROTOCOL_VARIANT: variant, CONF_MOTOR_COUNT: 2})
+    entry.add_to_hass(hass)
+    return entry
+
+
+async def test_dot_handset_in_furnimove_catalog_is_offered_the_furnimove_profile(hass):
+    entry = _dot(hass, "93558")
+    entry_id = entry.entry_id
+    async_refresh_furnimove_layout_issues(hass, entry)
+    issue_id = f"furnimove_layout_{entry_id}_standalone"
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, issue_id)
+    assert issue is not None and issue.translation_key == "furnimove_handset_route"
+    assert issue.translation_placeholders == {"name": "DOT bed", "handset": "93558"}
+    flow = await async_create_fix_flow(hass, issue_id, issue.data)
+    flow.hass = hass
+    form = await flow.async_step_init({"issue_id": issue_id})
+    config = form["data_schema"].schema["route"].config
+    assert (config["options"], config["translation_key"]) == (
+        ["furnimove", "keep"], "furnimove_handset_route",
+    )
+    result = await flow.async_step_init({"route": "furnimove"})
+    assert result["type"] == "create_entry"
+    assert entry.entry_id == entry_id
+    assert entry.data[CONF_BED_TYPE] == BED_TYPE_FURNIMOVE
+    assert entry.data[CONF_FURNIMOVE_REMOTE] == "93558"
+    assert CONF_PROTOCOL_VARIANT not in entry.data
+    assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is None
+
+
+async def test_dot_entry_can_keep_its_working_configuration(hass):
+    entry = _dot(hass, "90167")
+    before = dict(entry.data)
+    async_refresh_furnimove_layout_issues(hass, entry)
+    flow = FurniMoveLayoutRepairFlow(entry.entry_id, None)
+    flow.hass = hass
+    await flow.async_step_init({"route": "keep"})
+    assert dict(entry.data) == {**before, CONF_FURNIMOVE_ROUTE_KEPT: True}
+    assert not ir.async_get(hass).issues
+
+
+async def test_dot_handsets_outside_the_catalog_and_okin_uuid_entries_get_no_prompt(hass):
+    """Okin UUID stays the route for its handsets: it adds the bond and FFE4 feedback."""
+    dot = _dot(hass, "97450")
+    async_refresh_furnimove_layout_issues(hass, dot)
+    okin = MockConfigEntry(domain=DOMAIN, title="Okimat", unique_id="AA:BB:CC:DD:EE:11", version=4,
+        data={CONF_ADDRESS: "AA:BB:CC:DD:EE:11", CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
+              CONF_PROTOCOL_VARIANT: "82417", CONF_MOTOR_COUNT: 2})
+    okin.add_to_hass(hass)
+    async_refresh_furnimove_layout_issues(hass, okin)
+    assert not ir.async_get(hass).issues
+
+
+def test_every_repair_choice_has_a_translated_label():
+    import json
+    from pathlib import Path
+
+    strings = json.loads(Path("custom_components/adjustable_bed/strings.json").read_text())
+    assert set(strings["selector"]["furnimove_layout"]["options"]) == {
+        "furnimove", "staircase", "keep",
+    }
+    assert set(strings["selector"]["furnimove_handset_route"]["options"]) == {"furnimove", "keep"}

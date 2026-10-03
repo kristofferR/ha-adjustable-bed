@@ -2460,6 +2460,9 @@ OKIN_DOT_VARIANTS: Final = {
     "97544": "97544 - RF34/09/BK/BK/ (Back/Legs, 2 Mem)",
     "98035": "98035 - RF6707 (Head/Back)",
 }
+# DOT handsets in the pinned FurniMove catalog. New setups use the FurniMove app
+# profile for them; existing Okin DOT entries keep these variants.
+OKIN_DOT_FURNIMOVE_VARIANTS: Final = frozenset({"90167", "91983", "93558"})
 
 # OKIN 64-bit protocol variants (10-byte commands with 64-bit bitmasks)
 OKIN_64BIT_VARIANT_NORDIC: Final = "nordic"
@@ -2522,7 +2525,11 @@ ALL_PROTOCOL_VARIANTS: Final = [
     OCTO_VARIANT_STANDARD,
     OCTO_VARIANT_STAR2,
     *(_variant for _variant in OKIMAT_VARIANTS if _variant != VARIANT_AUTO),
-    *(_variant for _variant in OKIN_DOT_VARIANTS if _variant != VARIANT_AUTO),
+    *(
+        _variant
+        for _variant in OKIN_DOT_VARIANTS
+        if _variant != VARIANT_AUTO and _variant not in OKIN_DOT_FURNIMOVE_VARIANTS
+    ),
     OKIN_64BIT_VARIANT_NORDIC,
     OKIN_64BIT_VARIANT_CUSTOM,
     LINAK_VARIANT_BED_CONTROL,
