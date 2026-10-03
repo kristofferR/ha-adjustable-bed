@@ -1183,7 +1183,8 @@ LINAK_NAME_PATTERNS: Final = ("bed ",)
 #   starting with "base-i4", so the dot is not required
 # - base-i5.XXXXXXXX (e.g., base-i5.00000682) - Note: base-i5 can also be Cool Base
 # - KSBTXXXXCXXXXXX (e.g., KSBT03C000015046)
-# - ORE-XXXXXXXXXXX (e.g., ORE-ac2170000d) - Dynasty, INNOVA beds (use ORE variant)
+# - ORE-XXXXXXXXXXX (e.g., ORE-ac2170000d) - ORE beds; Auto uses the Base profile,
+#   and app users select their explicit profile (e.g. innova)
 # - smart_dfu - Beautyrest Baselogic Platinum (Keeson MC232FD, KSBT04C protocol)
 KEESON_NAME_PATTERNS: Final = ("base-i4", "base-i5.", "ksbt", "ore-", "smart_dfu")
 
@@ -1632,12 +1633,24 @@ KEESON_VARIANT_PURPLE: Final = "purple"
 KEESON_VARIANT_KSBT04C: Final = "ksbt04c"
 KEESON_VARIANT_SLEEP_HARMONY: Final = "sleep_harmony"
 KEESON_VARIANT_ADJUSTABLE_LITE: Final = "adjustable_lite"
+# ORE SFM apps (com.ore.sfmc2bedsence / com.ore.sfm): explicit, never auto-selected.
+KEESON_VARIANT_BEDSENSE_BASES: Final = "bedsense_bases"
+KEESON_VARIANT_INNOVA: Final = "innova"
 # ORE comfort-bed apps (com.ore.okincomfortbed code base): explicit, never auto-selected.
 KEESON_VARIANT_MAXCOIL_UNA: Final = "maxcoil_una"
 KEESON_VARIANT_DYNASTY_BASES: Final = "dynasty_bases"
 ORE_COMFORT_BED_VARIANTS: Final = frozenset(
-    {KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_DYNASTY_BASES}
+    {KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_DYNASTY_BASES, KEESON_VARIANT_BEDSENSE_BASES}
 )
+# Explicit protocol variants whose entity-gating capabilities depend only on stored
+# config, for bed types that are not offline-safe as a whole (a Keeson "auto" entry
+# detects its variant live). A paired side on one of these variants can be minted
+# offline. Each bed type contributes its own frozenset, so profiles extend this
+# independently; every member must build its controller without a client.
+OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS: Final = ORE_COMFORT_BED_VARIANTS | {KEESON_VARIANT_INNOVA}
+OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_KEESON: OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS,
+}
 # Restonic BT Remote (com.keeson.restonicBT): the app's user-selected remote style.
 KEESON_VARIANT_RESTONIC_A: Final = "restonic_a"
 KEESON_VARIANT_RESTONIC_B: Final = "restonic_b"
@@ -1652,6 +1665,8 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_KSBT04C: "KSBT04C (generic 7-byte checksum)",
     KEESON_VARIANT_SLEEP_HARMONY: "Sleep Harmony (KSBT04C / base-i5)",
     KEESON_VARIANT_ADJUSTABLE_LITE: "Adjustable Lite app (KSBT01C / KSBT03C)",
+    KEESON_VARIANT_BEDSENSE_BASES: "Bedsense Bases app (2M / 3M / 4M motor count)",
+    KEESON_VARIANT_INNOVA: "INNOVA app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_MAXCOIL_UNA: "MaxCoil Una app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_DYNASTY_BASES: "Dynasty Bases app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_RESTONIC_A: "Restonic BT app, remote A (6 buttons)",
@@ -1659,7 +1674,7 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
     KEESON_VARIANT_OKIN: "OKIN FFE (OKIN 13/15 series, 0xE6 prefix)",
     KEESON_VARIANT_SERTA: "Serta (Serta MP Remote)",
-    KEESON_VARIANT_SINO: "Sino (Dynasty, INNOVA, BetterLiving - big-endian)",
+    KEESON_VARIANT_SINO: "Sino (Dynasty, BetterLiving - big-endian)",
     "ore": "ORE (deprecated alias for Sino)",
     KEESON_VARIANT_PURPLE: "Purple Smart Base (Premium / Premium Plus)",
 }
@@ -2460,6 +2475,8 @@ ALL_PROTOCOL_VARIANTS: Final = [
     KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_SLEEP_HARMONY,
     KEESON_VARIANT_ADJUSTABLE_LITE,
+    KEESON_VARIANT_BEDSENSE_BASES,
+    KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_MAXCOIL_UNA,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_RESTONIC_A,

@@ -157,6 +157,7 @@ from .const import (
     # Variants and UUIDs
     KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_ERGOMOTION,
+    KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_JSON,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_KSBT04C,
@@ -1243,6 +1244,15 @@ async def create_controller(
                 variant=KEESON_VARIANT_ADJUSTABLE_LITE,
                 device_name=device_name,
             )
+        elif keeson_variant == KEESON_VARIANT_INNOVA:
+            # Explicit only: the INNOVA app scans without any name or service rule.
+            _LOGGER.debug("Using explicit INNOVA app profile")
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.innova", __package__
+            )
+            from .beds.innova import InnovaController
+
+            return InnovaController(coordinator)
         elif keeson_variant in (KEESON_VARIANT_RESTONIC_A, KEESON_VARIANT_RESTONIC_B):
             # Explicit only: the app's base-i4/base-i5 names are shared with other profiles.
             _LOGGER.debug("Using explicit Restonic BT Keeson variant (%s)", keeson_variant)

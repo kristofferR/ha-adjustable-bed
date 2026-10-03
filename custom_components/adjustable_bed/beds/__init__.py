@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     )
     from .fsm_relax import FsmRelaxController as FsmRelaxController
     from .furnimove import FurniMoveController as FurniMoveController
+    from .innova import InnovaController as InnovaController
     from .jensen import JensenController as JensenController
     from .jensen_linon import JensenLinonController as JensenLinonController
     from .jiecang import JiecangController as JiecangController
@@ -82,6 +83,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "InnovaController": "innova",
     "StarcodeM5X5Controller": "starcode_m5x5",
     "FurniMoveController": "furnimove",
     "FsmRelaxController": "fsm_relax",
@@ -166,6 +168,7 @@ __all__ = [
     "OkinUuidController",
     "Okin7ByteController",
     "OreComfortBedController",
+    "InnovaController",
     "OkinNordicController",
     "LeggettGen2Controller",
     "LeggettLpLegacyController",

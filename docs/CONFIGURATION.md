@@ -27,8 +27,10 @@ You can configure the integration in two places:
 
 During initial setup, you'll configure basic options like bed type, motor count, and massage support.
 
-**OKIN ORE:** Add the integration manually and select **Okin ORE (Dynasty, INNOVA)**
-as the bed type. The `00001000-0000-1000-8000-00805f9b34fb` UUID is also the standard
+**OKIN ORE:** Add the integration manually and select **Okin ORE (Glideaway Motion app)**
+as the bed type. Beds controlled with the current Dynasty Bases or INNOVA apps use
+the Keeson [MaxCoil Una / Dynasty Bases / Bedsense Bases](beds/ore-comfort-bed.md)
+or [INNOVA](beds/keeson.md#innova-profile) profile instead. The `00001000-0000-1000-8000-00805f9b34fb` UUID is also the standard
 Bluetooth Service Discovery Server UUID, so it cannot identify an ORE bed by itself.
 UUID-only automatic discovery is disabled to avoid detecting unrelated devices such
 as Apple TVs ([issue #577](https://github.com/kristofferR/ha-adjustable-bed/issues/577)).
@@ -259,12 +261,14 @@ controller-specific choices are documented here:
 | **KSBT04C** | Generic 7-byte checksum format | Matching KSBT04C devices |
 | **Sleep Harmony** | App-specific settings and lighting | Sleep Harmony controllers |
 | **Adjustable Lite** | App profile for KSBT01C / KSBT03C remotes | Beds controlled with the Adjustable Lite app |
+| **Bedsense Bases** | ORE comfort-bed app profile; motor count picks 2M/3M/4M | Beds controlled with the Bedsense Bases app |
+| **INNOVA** | App profile, little-endian E5 frames; motor count picks 2M/3M/4M | Beds controlled with the INNOVA app |
 | **Restonic BT, remote A / B** | App profiles for the two Restonic BT Remote styles | Beds controlled with the Restonic BT Remote app |
 | **Purple** | Purple profile | Purple Smart Base |
 | **Ergomotion** | Base protocol with position feedback | Ergomotion-branded beds |
 | **Okin** | OKIN FFE (0xE6 prefix) | OKIN 13/15 series |
 | **Serta** | Serta MP Remote protocol | Serta Motion Perfect |
-| **Sino** | Big-endian packet format | Dynasty, INNOVA, BetterLiving |
+| **Sino** | Big-endian packet format | Dynasty, BetterLiving |
 
 ### Leggett & Platt Variants
 
@@ -363,7 +367,8 @@ retain their legacy profile unless you explicitly change it.
 | Caresse / Werkmeister apps | Explicit app and remote profile; Caresse retained settings and feature flags | [Caresse / Werkmeister](beds/vibradorm_app.md) |
 | VMAT app | Explicit app and exact shipped remote ordinal; remote-derived features | [VMAT](beds/vmat.md) |
 | Adjustable Lite app | Keeson protocol variant **`adjustable_lite`**; the device name picks the KSBT01C or KSBT03C remote; `auto` keeps the generic KSBT profile | [Keeson Adjustable Lite](beds/keeson.md#adjustable-lite-profile) |
-| MaxCoil Una / Dynasty Bases apps | Keeson protocol variant **`maxcoil_una`** or **`dynasty_bases`**; motor count 2, 3 or 4 picks the app's 2M, 3M or 4M screen; never auto-selected | [MaxCoil Una / Dynasty Bases](beds/ore-comfort-bed.md) |
+| INNOVA app | Keeson protocol variant **`innova`**; the motor count (2, 3 or 4) selects the app's 2M/3M/4M screen; never auto-selected | [INNOVA](beds/keeson.md#innova-profile) |
+| MaxCoil Una / Dynasty Bases / Bedsense Bases apps | Keeson protocol variant **`maxcoil_una`**, **`dynasty_bases`** or **`bedsense_bases`**; motor count 2, 3 or 4 picks the app's 2M, 3M or 4M screen; never auto-selected | [MaxCoil Una / Dynasty Bases](beds/ore-comfort-bed.md) |
 | Restonic BT Remote app | Keeson protocol variant **`restonic_a`** or **`restonic_b`**, matching the app's remote style setting; never chosen automatically (a `base-i5` bed is offered as Cool Base, so switch its bed type to Keeson first) | [Keeson Restonic BT](beds/keeson.md#restonic-bt-profiles) |
 | V-MAT Basic app | Explicit Basic, CBI or CBI with XT-Box product; per-receiver floor settings | [V-MAT Basic](beds/vmatbasic.md) |
 | SIMMONS app | Protocol variant: regular or inclined bed, with the packet format from the Bluetooth name or fixed | [SIMMONS](beds/simmons.md) |

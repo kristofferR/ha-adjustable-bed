@@ -989,7 +989,8 @@
       "richmat_mh_choose_model": "The app asks for the model for this Bluetooth name. Choose the model in the protocol variant.",
       "richmat_mh_no_name": "The app selects the model from the Bluetooth name, which is unavailable. Choose the model in the protocol variant.",
       "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant.",
-      "ore_comfort_unpair_first": "Unpair the beds and configure each side separately before changing the MaxCoil Una or Dynasty Bases app profile."
+      "ore_comfort_unpair_first": "Unpair the beds and configure each side separately before changing the MaxCoil Una, Dynasty Bases or Bedsense Bases app profile.",
+      "innova_unpair_first": "Unpair the beds and configure each side separately before changing the INNOVA app profile."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond\u2026",
@@ -2220,6 +2221,12 @@
       },
       "ore_comfort_massage_start": {
         "name": "Start massage"
+      },
+      "innova_massage_level": {
+        "name": "Massage level"
+      },
+      "innova_massage_timer_hold": {
+        "name": "Massage timer (memory page)"
       }
     },
     "cover": {
@@ -2342,6 +2349,18 @@
       },
       "lumbar_both": {
         "name": "Both sides: Lumbar"
+      },
+      "waist": {
+        "name": "Waist"
+      },
+      "waist_left": {
+        "name": "Left: Waist"
+      },
+      "waist_right": {
+        "name": "Right: Waist"
+      },
+      "waist_both": {
+        "name": "Both sides: Waist"
       },
       "pillow_left": {
         "name": "Left: Pillow"
@@ -3164,9 +3183,6 @@
       },
       "richmat_mh_pillow_lumbar": {
         "name": "Pillow and lumbar"
-      },
-      "waist": {
-        "name": "Waist"
       }
     },
     "sensor": {
@@ -4707,6 +4723,9 @@
       "adjustable_lite_massage_timer": {
         "name": "Massage timer"
       },
+      "innova_massage_timer": {
+        "name": "Massage timer"
+      },
       "fsm_relax_key_count": {
         "name": "FSM Relax key count"
       },
@@ -5478,6 +5497,9 @@
         "name": "Firmware read ok"
       },
       "adjustable_lite_light": {
+        "name": "Light"
+      },
+      "innova_light": {
         "name": "Light"
       },
       "richmat_mh_smart_set_lock": {
@@ -6459,6 +6481,43 @@
         "name": {
           "name": "Name",
           "description": "New Bluetooth name, using 1 to 20 ASCII letters or digits."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "innova_hold_control": {
+      "name": "Hold INNOVA control",
+      "description": "Hold one control the INNOVA app streams while pressed, for a Keeson bed on the INNOVA profile. The key repeats every 100 ms; release sends one zero key 100 ms after the hold ends.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "A control on the selected screen. Combined exists on 2M, waist on 4M and lumbar on 3M and 4M."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "innova_rename": {
+      "name": "Rename INNOVA bed",
+      "description": "Change the Bluetooth name of a bed using the INNOVA app profile.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A bed using the INNOVA app profile."
+        },
+        "name": {
+          "name": "Name",
+          "description": "New Bluetooth name, 1 to 14 characters after trimming spaces."
         },
         "side": {
           "name": "Side"
