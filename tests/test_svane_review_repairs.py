@@ -82,7 +82,7 @@ async def test_registered_save_does_not_overwrite_slot_with_stale_read(hass, pro
         )
     assert controller.session.preferences() == before
     assert controller.session.multi_slots == multi_before
-    controller._coordinator.remember_svane_preferences.assert_not_called()
+    controller._coordinator.save_app_state.assert_not_called()
     controller.client.write_gatt_char.assert_not_awaited()
 
 
@@ -242,7 +242,7 @@ async def test_cancelled_save_preserves_old_slots_and_completed_diagnostics(hass
     assert controller.session.multi_slots == multi_before
     assert controller.session.head == bytes.fromhex("8138")
     assert controller.session.position == bytes.fromhex("81388113")
-    controller._coordinator.remember_svane_preferences.assert_not_called()
+    controller._coordinator.save_app_state.assert_not_called()
     controller.client.write_gatt_char.assert_not_awaited()
 
 

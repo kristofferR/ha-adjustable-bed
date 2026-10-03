@@ -13,7 +13,10 @@ from custom_components.adjustable_bed.adapter import AdapterSelectionResult
 from custom_components.adjustable_bed.beds.limoss import LimossController
 from custom_components.adjustable_bed.beds.limoss_remote import LimossRemoteController
 from custom_components.adjustable_bed.beds.limoss_remote_protocol import format_command
-from custom_components.adjustable_bed.limoss_remote_state import LimossRemoteMemory
+from custom_components.adjustable_bed.limoss_remote_state import (
+    LimossRemoteMemory,
+    get_limoss_remote_session,
+)
 from custom_components.adjustable_bed.services import async_register_services
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote import make_controller
@@ -45,7 +48,8 @@ async def test_retirement_after_ready_before_waiter_resumes_prevents_first_movem
     entered, release, waiter_entered = asyncio.Event(), asyncio.Event(), asyncio.Event()
     trace = []
     for child in (left, right):
-        child.limoss_remote_memory_store.slots[8] = LimossRemoteMemory("Eight", ((0, -1),))
+        get_limoss_remote_session(child.hass, child.address).memories.slots[8] = LimossRemoteMemory("Eight", ((0, -1),))
+        child.save_app_state()
 
     def left_write(role, packet, **kwargs):
         trace.append(("left", LimossController._tea_decrypt(packet[1:9])[1]))

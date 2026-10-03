@@ -10,6 +10,7 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 from .adapter import discover_services
+from .app_session import app_session
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     # Legacy/brand-specific bed types
@@ -149,7 +150,6 @@ from .const import (
     DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
     DEWERTOKIN_RF_GATEWAY_MODEL,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
-    DOMAIN,
     KEESON_BETTERLIVING_SERVICE_UUIDS,
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_JSON_SERVICE_UUID,
@@ -565,17 +565,12 @@ async def create_controller(
             import_module, ".beds.svane", __package__
         )
         from .beds.svane import SvaneController
-        from .svane_state import CONF_SVANE_PREFERENCES, get_svane_session
+        from .svane_state import get_svane_session
 
         if protocol_variant not in (None, VARIANT_AUTO, SVANE_VARIANT_MULTI, SVANE_VARIANT_JMC):
             raise ValueError("Unknown Svane Remote profile")
         profile = "jmc" if protocol_variant == SVANE_VARIANT_JMC else "multi"
-        session = get_svane_session(
-            coordinator.hass,
-            coordinator.address,
-            profile,
-            coordinator.entry.data.get(CONF_SVANE_PREFERENCES),
-        )
+        session = get_svane_session(coordinator.hass, coordinator.address, profile)
         return SvaneController(coordinator, profile=profile, session=session)
 
     if bed_type == BED_TYPE_SLEEP_NUMBER_MCR:
@@ -699,13 +694,8 @@ async def create_controller(
         await coordinator.hass.async_add_import_executor_job(
             import_module, ".beds.remacro", __package__
         )
-        from .beds.remacro import RemacroController
-        from .beds.remacro_protocol import (
-            app_for_variant,
-            remacro_led_level,
-            resolve_model,
-            session_for,
-        )
+        from .beds.remacro import RemacroController, remacro_session
+        from .beds.remacro_protocol import app_for_variant, remacro_led_level, resolve_model
 
         app = app_for_variant(protocol_variant)
         # The live advertisement wins, as in the apps; the stored selector only
@@ -713,12 +703,12 @@ async def create_controller(
         model = resolve_model(
             app, manufacturer_data, coordinator.entry.data.get(CONF_REMACRO_MODEL)
         )
-        sessions = coordinator.hass.data.setdefault(DOMAIN, {}).setdefault("remacro_sessions", {})
+        session = remacro_session(coordinator.hass, coordinator.address, app, model.model_id)
         return RemacroController(
             coordinator,
             app=app,
             model=model,
-            session=session_for(sessions, coordinator.address, app, model.model_id),
+            session=session,
             led_level=remacro_led_level(coordinator.entry.data, model.model_id),
         )
 
@@ -726,8 +716,7 @@ async def create_controller(
         await coordinator.hass.async_add_import_executor_job(
             import_module, ".beds.vmatbasic", __package__
         )
-        from .beds.vmatbasic import VMatBasicController
-        from .vmatbasic_state import get_vmatbasic_session_intent
+        from .beds.vmatbasic import VMatBasicController, get_vmatbasic_session_intent
 
         data = coordinator.entry.data
         return VMatBasicController(
@@ -774,7 +763,7 @@ async def create_controller(
         )
         from .beds.limoss_remote import LimossRemoteController
         from .beds.limoss_remote_protocol import LimossRemoteCapabilities
-        from .limoss_remote_state import validate_limoss_remote_state
+        from .limoss_remote_state import get_limoss_remote_session, validate_limoss_remote_state
 
         entry_data = coordinator.entry.data
         state = validate_limoss_remote_state(entry_data.get(CONF_LIMOSS_REMOTE_STATE, {}))
@@ -788,15 +777,14 @@ async def create_controller(
             theme=entry_data.get(CONF_LIMOSS_REMOTE_THEME),
             reverse_motors=(reverse[0], reverse[1], reverse[2], reverse[3]),
             cached_capabilities=capabilities,
-            memories=coordinator.limoss_remote_memory_store,
-            metadata=state.get("metadata"),
+            session=get_limoss_remote_session(coordinator.hass, coordinator.address),
         )
 
 
     if bed_type == BED_TYPE_FSM_RELAX:
         await coordinator.hass.async_add_import_executor_job(import_module, ".beds.fsm_relax", __package__)
         from .beds.fsm_relax import FsmRelaxController, FsmRelaxProfile
-        from .fsm_relax_state import get_fsm_relax_state
+        from .fsm_relax_state import FsmRelaxSession, validate_names
 
         data = {**coordinator.entry.data, **coordinator.entry.options}
         reversals = tuple(data.get(key, False) for key in CONF_FSM_RELAX_REVERSALS)
@@ -804,11 +792,14 @@ async def create_controller(
                                   data.get(CONF_FSM_RELAX_LIGHT, False),
                                   data.get(CONF_FSM_RELAX_MASSAGE, False),
                                   (reversals[0], reversals[1], reversals[2], reversals[3]))
-        state = get_fsm_relax_state(coordinator.hass, coordinator.entry.entry_id, coordinator.address)
-        await state.async_load()
-        if CONF_FSM_RELAX_MEMORY_NAMES in data:
-            await state.async_set_names(data[CONF_FSM_RELAX_MEMORY_NAMES])
-        return FsmRelaxController(coordinator, profile=profile, state=state)
+        return FsmRelaxController(
+            coordinator,
+            profile=profile,
+            session=app_session(
+                coordinator.hass, coordinator.address, ("fsm_relax",), FsmRelaxSession
+            ),
+            names=validate_names(data.get(CONF_FSM_RELAX_MEMORY_NAMES, [""] * 8)),
+        )
 
     if bed_type == BED_TYPE_STARCODE_M5X5:
         await coordinator.hass.async_add_import_executor_job(

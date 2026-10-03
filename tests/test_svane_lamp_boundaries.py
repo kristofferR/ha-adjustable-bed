@@ -16,7 +16,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.number import _number_entities_for
-from custom_components.adjustable_bed.svane_state import CONF_SVANE_PREFERENCES
+from tests.app_state_helpers import stored_app_state, write_app_state
 from tests.test_svane import LIGHT, OLD, OLD_CHAR, SvaneCommands, uuid, written
 from tests.test_svane_light_timed_host import runtime as imported_runtime
 
@@ -59,7 +59,7 @@ async def test_public_direct_intensity_then_hold_keeps_inward_step_or_reverses_o
     virtual_hold(monkeypatch, controller)
     await hold(hass, coordinator)
     assert controller.session.intensity == expected
-    assert coordinator.entry.data[CONF_SVANE_PREFERENCES]['intensity'] == expected
+    assert (await stored_app_state(coordinator))['intensity'] == expected
     assert coordinator.controller_state['svane_intensity'] == expected
     assert coordinator.controller_state['under_bed_lights_on'] is True
     role = (OLD, OLD_CHAR) if controller.profile == 'jmc' else (
@@ -99,12 +99,12 @@ async def test_factory_restored_valid_boundary_adjusts_without_invalid_preferenc
     hass, runtime, monkeypatch, initial, expected
 ):
     coordinator, previous = runtime
-    hass.config_entries.async_update_entry(coordinator.entry, data={
-        **coordinator.entry.data, CONF_SVANE_PREFERENCES: {'intensity': initial},
-    })
+    coordinator._controller = None  # A restart: no earlier controller saves over the record.
+    await write_app_state(coordinator, {'intensity': initial}, previous.profile)
     controller = await create_controller(coordinator, BED_TYPE_SVANE,
                                          coordinator.entry.data[CONF_PROTOCOL_VARIANT], None)
     assert isinstance(controller, SvaneController)
+    await coordinator._async_restore_app_state(controller)
     assert controller.session.intensity == initial
     assert controller.session.light_step == 5
     coordinator._controller = controller
@@ -113,7 +113,7 @@ async def test_factory_restored_valid_boundary_adjusts_without_invalid_preferenc
     virtual_hold(monkeypatch, controller)
     await hold(hass, coordinator)
     assert controller.session.intensity == expected
-    assert coordinator.entry.data[CONF_SVANE_PREFERENCES]['intensity'] == expected
+    assert (await stored_app_state(coordinator))['intensity'] == expected
     assert len(written(controller)) == 1
 
 
@@ -142,7 +142,7 @@ async def test_public_boundary_hold_caller_cancel_keeps_valid_intent_without_lam
             with pytest.raises(asyncio.CancelledError):
                 await task
         assert controller.session.intensity == 10 and controller.session.light_on
-        assert coordinator.entry.data[CONF_SVANE_PREFERENCES]['intensity'] == 10
+        assert (await stored_app_state(coordinator))['intensity'] == 10
         assert len(written(controller)) == 1
         assert written(controller)[0][2] == '13020a010064'
         assert not controller.ble_lock.locked() and not coordinator._command_lock.locked()

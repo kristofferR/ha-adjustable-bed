@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import sys
 from collections.abc import Callable, Coroutine
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 
-from ..vmatbasic_state import VMatBasicSessionIntent
+from ..app_session import app_session
 from . import vmatbasic_protocol as protocol
 from .base import (
     BedController,
@@ -23,10 +25,32 @@ from .base import (
 if TYPE_CHECKING:
     from bleak import BleakClient
     from bleak.backends.characteristic import BleakGATTCharacteristic
+    from homeassistant.core import HomeAssistant
 
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+
+@dataclass(slots=True)
+class VMatBasicSessionIntent:
+    """The selected fragment color and brightness, never measured hardware state."""
+
+    palette: str = "col20"
+    brightness: int = 100
+    effect: str | None = None
+    speed: int | None = None
+
+
+def get_vmatbasic_session_intent(
+    hass: HomeAssistant, address: str, profile: str
+) -> VMatBasicSessionIntent:
+    """Preserve a same-target session across BLE reconstruction, not a cold HA start."""
+    if re.fullmatch(r"(?:[0-9A-F]{2}:){5}[0-9A-F]{2}", address.upper()) is None:
+        raise ValueError("V-MAT Basic intent requires an exact physical Bluetooth address")
+    if profile not in ("basic", "cbi", "xtbox"):
+        raise ValueError("Unknown V-MAT Basic profile")
+    return app_session(hass, address, ("vmatbasic", profile), VMatBasicSessionIntent)
 _PREFIX = "vmatbasic_"
 
 

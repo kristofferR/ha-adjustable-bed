@@ -102,10 +102,12 @@ bit for bit without inventing distance or angle units.
 
 `limoss_remote_rename_memory` accepts `preset` and `name`. Names are local and may
 be empty. Rename retains all captured positions and updates button labels without
-reconnecting. Memory names and positions survive controller recreation, entry
-reload, unpair/re-pair and integration restart through the physical target's
-config data. Changing the selected protocol preserves the stored app memory data;
-other protocols do not use it. No source-backed clear-memory action exists.
+reconnecting. Memory names and positions, and the reported versions and serial,
+survive controller recreation, entry reload, unpair/re-pair and integration
+restart as the physical target's app state, until no entry owns the bed. The
+reported capabilities stay in the config entry because they decide the entities.
+Changing the selected protocol preserves the stored app memory data; other
+protocols do not use it. No source-backed clear-memory action exists.
 
 ## Transport and timing
 

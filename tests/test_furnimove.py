@@ -419,7 +419,7 @@ def test_recreated_controller_retains_runtime_feedback_without_publishing_new_pr
     assert restored.protocol_diagnostics["furnimove_sync"] is True
     assert restored.protocol_diagnostics["furnimove_child_lock"] is False
     assert restored.protocol_diagnostics["furnimove_massage_program"] == 3
-    assert "program" not in restored.furnimove_local_state
+    assert "program" not in restored.persisted_app_state
     old._coordinator.handle_controller_state_update.assert_not_called()
     restored._parse_feedback(generic(0))
     assert old._coordinator.handle_controller_state_update.call_args_list == [
@@ -561,12 +561,12 @@ async def test_massage_handset_without_program_rows_hides_mode_step():
 
 async def test_local_state_restore_selects_wire_consumer_without_hardware_claim() -> None:
     controller = await fast_controller("12234")
-    controller.restore_furnimove_local_state(
+    controller.restore_persisted_app_state(
         {"duration_minutes": 20, "running": True, "zone": "wave", "intensity": 2}
     )
     assert written(controller) == []
     assert controller.get_massage_state()["source"] == "local_app_state"
-    assert controller.furnimove_local_state == {
+    assert controller.persisted_app_state == {
         "duration_minutes": 20,
         "running": True,
         "zone": "wave",
@@ -574,14 +574,14 @@ async def test_local_state_restore_selects_wire_consumer_without_hardware_claim(
     }
     await controller.massage_intensity_up()
     assert written(controller) == ["040280000000", "040200000000"]
-    assert controller.furnimove_local_state["intensity"] == 3
+    assert controller.persisted_app_state["intensity"] == 3
     await controller.massage_off()
-    assert controller.furnimove_local_state == {"duration_minutes": 20}
+    assert controller.persisted_app_state == {"duration_minutes": 20}
     with pytest.raises(ValueError):
-        controller.restore_furnimove_local_state(
+        controller.restore_persisted_app_state(
             {"duration_minutes": 15, "running": True, "zone": "head", "intensity": 99}
         )
-    assert controller.furnimove_local_state == {"duration_minutes": 20}
+    assert controller.persisted_app_state == {"duration_minutes": 20}
 
 
 async def test_widget_uses_fixed_once_timing_and_dot_false() -> None:

@@ -13,6 +13,7 @@ from custom_components.adjustable_bed import const, services
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
 from custom_components.adjustable_bed.beds.limoss import LimossController
 from custom_components.adjustable_bed.beds.limoss_remote_protocol import format_command
+from custom_components.adjustable_bed.limoss_remote_state import get_limoss_remote_session
 from tests.test_limoss_remote import make_controller
 from tests.test_limoss_remote_config import app_data
 from tests.test_limoss_remote_review_lifecycle import CAPS
@@ -92,7 +93,7 @@ async def loaded_runtime(hass, paired):
         original = hass.data[const.DOMAIN][entry.entry_id]
         children = list(original.children.values()) if paired else [original]
         for child in children:
-            child.limoss_remote_memory_store.save(1, ((0, -1),))
+            get_limoss_remote_session(child.hass, child.address).memories.save(1, ((0, -1),))
         await hass.async_block_till_done()
         await original.async_disconnect(reason="initial idle")
         trace.clear()
@@ -197,7 +198,7 @@ async def test_unselected_sibling_reload_waits_for_selected_service_phases(hass)
 
         async def changed_sibling_after_preflight(*args, **kwargs):
             await preflight(*args, **kwargs)
-            right.remember_limoss_remote_data({"capabilities": {**CAPS, "memory_count": 7}})
+            right.remember_limoss_remote_capabilities({**CAPS, "memory_count": 7})
             await hass.async_block_till_done()
             assert hass.data[const.DOMAIN][entry.entry_id] is original
             assert right._pending_capability_reload
@@ -222,7 +223,7 @@ async def test_already_scheduled_reload_rechecks_nested_transaction_before_unloa
         async with AsyncExitStack() as transaction:
             async with child.async_command_operation_guard():
                 # Schedule a reload that must first acquire the existing lane guard.
-                child.remember_limoss_remote_data({"capabilities": {**CAPS, "memory_count": 7}})
+                child.remember_limoss_remote_capabilities({**CAPS, "memory_count": 7})
                 assert child._capability_reload_scheduled
                 await transaction.enter_async_context(child.async_defer_capability_reload())
             async with child.async_defer_capability_reload():

@@ -17,7 +17,7 @@ from custom_components.adjustable_bed.beds.fsm_relax import (
     decode_packet,
     signed_version,
 )
-from custom_components.adjustable_bed.fsm_relax_state import FsmRelaxState
+from custom_components.adjustable_bed.fsm_relax_state import FsmRelaxSession
 
 
 async def test_actual_coordinator_drop_immediately_invalidates_owned_session(hass):
@@ -43,9 +43,7 @@ async def test_actual_coordinator_drop_immediately_invalidates_owned_session(has
     pending = asyncio.get_running_loop().create_future()
     ctrl._pending[0] = pending
     optional = asyncio.create_task(asyncio.sleep(100))
-    metadata = asyncio.create_task(asyncio.sleep(100))
     ctrl._optional_task = optional
-    ctrl._metadata_tasks.add(metadata)
     generation = ctrl._generation
     client.is_connected = False
     coordinator._on_disconnect(client)
@@ -54,8 +52,8 @@ async def test_actual_coordinator_drop_immediately_invalidates_owned_session(has
     assert not ctrl._subscribed and not ctrl._live_capabilities
     assert not ctrl._buffer and not ctrl._pending
     assert isinstance(pending.exception(), ConnectionError)
-    assert optional.cancelling() and metadata.cancelling()
-    await asyncio.gather(optional, metadata, return_exceptions=True)
+    assert optional.cancelling()
+    await asyncio.gather(optional, return_exceptions=True)
 
 
 async def test_initializing_disconnect_fails_query_and_rejects_same_client_old_callback(hass):
@@ -132,11 +130,9 @@ def make_controller(profile=None, *, cap=b"\x02\x08\x04\x00\x08"):
     c.client.write_gatt_char = AsyncMock()
     c.client.start_notify = AsyncMock()
     c.client.stop_notify = AsyncMock()
-    state = FsmRelaxState(c.hass, "entry", c.address)
-    state._store = MagicMock(
-        async_load=AsyncMock(return_value=None), async_save=AsyncMock(), async_remove=AsyncMock()
-    )
-    ctrl = FsmRelaxController(c, profile=profile, state=state)
+    c.entry.data = {}
+    c.async_write_app_state = AsyncMock()
+    ctrl = FsmRelaxController(c, profile=profile, session=FsmRelaxSession())
     c.controller = ctrl
     if cap is not None:
         ctrl._accept_body(cap)
@@ -296,9 +292,9 @@ async def test_exact_signed_versions_ack_serial_and_unknown():
     assert ctrl._state["fsm_relax_serial"] == -1
     assert ctrl._state["fsm_relax_calibration_observed"] is True
     assert "not correlated" in ctrl._state["fsm_relax_acknowledgement"]
-    assert ctrl.local.slots == {}
-    await asyncio.gather(*ctrl._metadata_tasks)
-    assert ctrl.local.serial == -1
+    assert ctrl.session.slots == {}
+    assert ctrl.session.serial == -1
+    ctrl._coordinator.save_app_state.assert_called_with(ctrl)
 
 
 def test_fragment_coalesced_noise_and_checksum_validation():
@@ -475,21 +471,23 @@ async def test_sequential_new_query_atomic_signed_save(key):
     ctrl.client.write_gatt_char.side_effect = respond
     await ctrl.program_memory(8)
     assert bodies(ctrl) == [bytes(((i + 1) * 16, 0, 0, 0, 0)) for i in range(key // 2)]
-    assert ctrl.local.slots[8] == {i: -(i + 1) * 16 for i in range(key // 2)}
-    assert ctrl.local._store.async_save.await_count == 1
+    assert ctrl.session.slots[8] == {i: -(i + 1) * 16 for i in range(key // 2)}
+    ctrl._coordinator.async_write_app_state.assert_awaited_once_with(
+        ctrl, ctrl.session.persisted()
+    )
 
 
 async def test_timeout_cancel_quarantine_and_same_opcode_ambiguity():
     ctrl = make_controller(cap=bytes.fromhex("0202000008"))
     await ctrl.start_notify()
     ctrl._live_capabilities = True
-    ctrl.local.slots[1] = {0: 123}
+    ctrl.session.slots[1] = {0: 123}
     with (
         patch.object(ctrl, "_query", AsyncMock(side_effect=TimeoutError)),
         pytest.raises(TimeoutError),
     ):
         await ctrl.program_memory(1)
-    assert ctrl.local.slots[1] == {0: 123}
+    assert ctrl.session.slots[1] == {0: 123}
     with pytest.raises(RuntimeError, match="quarantined"):
         await ctrl.program_memory(1)
     await ctrl.stop_notify()
@@ -512,7 +510,7 @@ async def test_timeout_cancel_quarantine_and_same_opcode_ambiguity():
 
     ctrl.client.write_gatt_char.side_effect = delayed
     await ctrl.program_memory(2)
-    assert ctrl.local.slots[2] == {0: 123}
+    assert ctrl.session.slots[2] == {0: 123}
     assert "indistinguishable" in ctrl.protocol_diagnostics["reply_freshness"]
     ctrl.client.write_gatt_char.side_effect = None
     task = asyncio.create_task(ctrl.program_memory(3))
@@ -520,7 +518,7 @@ async def test_timeout_cancel_quarantine_and_same_opcode_ambiguity():
     ctrl._coordinator._cancel_command.set()
     with pytest.raises(asyncio.CancelledError):
         await task
-    assert 3 not in ctrl.local.slots and ctrl._quarantined
+    assert 3 not in ctrl.session.slots and ctrl._quarantined
 
 
 async def test_unsolicited_wrong_order_and_transport_failure_no_slot_mutation():
@@ -528,7 +526,7 @@ async def test_unsolicited_wrong_order_and_transport_failure_no_slot_mutation():
     await ctrl.start_notify()
     ctrl._live_capabilities = True
     feed(ctrl, bytes.fromhex("10ffffffff"))
-    assert ctrl.local.slots == {}
+    assert ctrl.session.slots == {}
 
     def wrong(_role, packet, **_kwargs):
         feed(ctrl, bytes.fromhex("20ffffffff"))
@@ -537,14 +535,14 @@ async def test_unsolicited_wrong_order_and_transport_failure_no_slot_mutation():
     ctrl.client.write_gatt_char.side_effect = wrong
     with pytest.raises(BleakError):
         await ctrl.program_memory(1)
-    assert ctrl.local.slots == {} and ctrl._quarantined
+    assert ctrl.session.slots == {} and ctrl._quarantined
 
 
 async def test_sparse_recall_normal_queue_and_cancel_preempts_targets():
     ctrl = make_controller()
     await ctrl.start_notify()
     ctrl._live_capabilities = True
-    ctrl.local.slots[8] = {0: -1, 2: -(2**31)}
+    ctrl.session.slots[8] = {0: -1, 2: -(2**31)}
     await ctrl.recall_memory(8, hold_ms=1)
     assert (
         bodies(ctrl)
@@ -569,7 +567,7 @@ async def test_memory_invalid_slots_and_missing_motor_zero(slot):
     ctrl._live_capabilities = True
     with pytest.raises(ValueError):
         await ctrl.recall_memory(slot, hold_ms=120)
-    ctrl.local.slots[1] = {1: 4}
+    ctrl.session.slots[1] = {1: 4}
     with pytest.raises(ValueError, match="motor-zero"):
         await ctrl.recall_memory(1, hold_ms=120)
     ctrl.client.write_gatt_char.assert_not_called()
@@ -675,7 +673,7 @@ async def test_complete_optional_hardware_software_stage_order():
 
 async def test_discovery_capability_change_requests_entity_reconciliation():
     ctrl = make_controller(cap=bytes.fromhex("0202000004"))
-    ctrl.local.capability_body = bytes.fromhex("0202000004")
+    ctrl._coordinator.entry.data = {"capabilities": {"fsm_relax": "0202000004"}}
 
     def reply(_role, packet, **_kwargs):
         if decode_packet(packet)[0] == 2:

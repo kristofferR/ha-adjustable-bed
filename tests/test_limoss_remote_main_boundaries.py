@@ -8,7 +8,10 @@ from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.button import AdjustableBedButton, _button_entities_for
-from custom_components.adjustable_bed.limoss_remote_state import LimossRemoteMemory
+from custom_components.adjustable_bed.limoss_remote_state import (
+    LimossRemoteMemory,
+    get_limoss_remote_session,
+)
 from custom_components.adjustable_bed.services import async_register_services
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote import make_controller
@@ -41,9 +44,9 @@ async def test_actual_generic_memory_preflight_rejects_second_target_before_any_
         await live_controller(coordinator)
         targets.append(coordinator)
     first, second = targets
-    first.limoss_remote_memory_store.slots[8] = LimossRemoteMemory("Eight", ((0, -1),))
+    get_limoss_remote_session(first.hass, first.address).memories.slots[8] = LimossRemoteMemory("Eight", ((0, -1),))
     if invalid == "different_layout":
-        second.limoss_remote_memory_store.slots[8] = LimossRemoteMemory(
+        get_limoss_remote_session(second.hass, second.address).memories.slots[8] = LimossRemoteMemory(
             "Other layout", ((0, -1), (3, 2147483647))
         )
     await async_register_services(hass)

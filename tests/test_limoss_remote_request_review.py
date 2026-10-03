@@ -13,6 +13,7 @@ from custom_components.adjustable_bed.beds.limoss import LimossController
 from custom_components.adjustable_bed.beds.limoss_remote_protocol import format_command
 from custom_components.adjustable_bed.button import AdjustableBedButton, _button_entities_for
 from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
+from custom_components.adjustable_bed.limoss_remote_state import get_limoss_remote_session
 from custom_components.adjustable_bed.pairing import get_child
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote_review_lifecycle import (
@@ -79,7 +80,7 @@ async def test_public_save_ignores_registered_pre_query_pose(hass, blocked, canc
         # This valid owner frame arrives before the query can reach ATT.
         callback(char, bytearray(format_command(bytes.fromhex("10ffffffff"), 0)))
         assert controller._request_reply is None
-        assert coordinator.limoss_remote_memory_store.slots == {}
+        assert get_limoss_remote_session(coordinator.hass, coordinator.address).memories.slots == {}
         client.write_gatt_char.assert_not_awaited()
         with pytest.raises(RuntimeError, match="Another app"):
             await controller._request(0x20, bytes.fromhex("2000000000"))
@@ -92,7 +93,7 @@ async def test_public_save_ignores_registered_pre_query_pose(hass, blocked, canc
             if blocked == "lane":
                 controller._ble_lock.release()
             await asyncio.wait_for(operation, 1)
-            assert coordinator.limoss_remote_memory_store.slots[8].positions == ((0, 7), (1, 7))
+            assert get_limoss_remote_session(coordinator.hass, coordinator.address).memories.slots[8].positions == ((0, 7), (1, 7))
             assert received == [0x10, 0x20]
     finally:
         release.set()
@@ -103,7 +104,7 @@ async def test_public_save_ignores_registered_pre_query_pose(hass, blocked, canc
         await asyncio.gather(operation, return_exceptions=True)
     assert controller._request_reply is None and not controller._request_active
     if cancel:
-        assert coordinator.limoss_remote_memory_store.slots == {}
+        assert get_limoss_remote_session(coordinator.hass, coordinator.address).memories.slots == {}
 
 
 @pytest.mark.parametrize("paired", [False, True])

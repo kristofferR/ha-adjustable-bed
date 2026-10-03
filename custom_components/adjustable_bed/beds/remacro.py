@@ -22,7 +22,8 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from bleak.exc import BleakError
 
-from ..const import DOMAIN, REMACRO_READ_CHAR_UUID, REMACRO_WRITE_CHAR_UUID
+from ..app_session import app_session
+from ..const import REMACRO_READ_CHAR_UUID, REMACRO_WRITE_CHAR_UUID
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -55,10 +56,11 @@ from .remacro_protocol import (
     RemacroSession,
     SideCodes,
     SynDataSerial,
-    session_for,
 )
 
 if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
+
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -93,6 +95,23 @@ async def _set_led_brightness(controller: BedController, value: float) -> None:
     await _remacro(lambda ctrl: ctrl.set_led_brightness(int(value)))(controller)
 
 
+def remacro_session(
+    hass: HomeAssistant, address: str, app: str, model_id: int | None
+) -> RemacroSession:
+    """Return the bed's live session for one app and model.
+
+    Non-exclusive: the stored model (offline) and the advertised one (live) may
+    differ, so both controllers' sessions coexist.
+    """
+    return app_session(
+        hass,
+        address,
+        ("remacro", app, model_id),
+        lambda: RemacroSession(SynDataSerial(cache_hold_serial=app == APP_JEROMES)),
+        exclusive=False,
+    )
+
+
 class RemacroController(BedController):
     """One Remacro bed as shown by one app's model-specific control screen."""
 
@@ -110,8 +129,8 @@ class RemacroController(BedController):
         self._model = model
         # All app state lives in the session so controller rebuilds after a
         # command handoff or idle disconnect do not reset it (see RemacroSession).
-        self._session = session or RemacroSession(
-            SynDataSerial(cache_hold_serial=app == APP_JEROMES)
+        self._session = session or remacro_session(
+            coordinator.hass, coordinator.address, app, model.model_id
         )
         self._serial = self._session.serial
         if self._session.led_brightness is None:
@@ -566,12 +585,10 @@ class RemacroController(BedController):
             raise ValueError(f"Unsupported control side: {option}")
         # The entity may hold an older controller; always write the bed's live
         # session, the one every new controller for this address reads.
-        sessions = self._coordinator.hass.data.get(DOMAIN, {}).get("remacro_sessions")
-        if isinstance(sessions, dict):
-            self._session = session_for(
-                sessions, self._coordinator.address, self._app, self._model.model_id
-            )
-            self._serial = self._session.serial
+        self._session = remacro_session(
+            self._coordinator.hass, self._coordinator.address, self._app, self._model.model_id
+        )
+        self._serial = self._session.serial
         self._session.side = option
         self.forward_controller_state_update(SIDE_STATE_KEY, option)
 

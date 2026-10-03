@@ -11,6 +11,7 @@ from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.beds.vmatbasic import get_vmatbasic_session_intent
 from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.controller_factory import create_controller
@@ -20,7 +21,6 @@ from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.select import _select_entities_for
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.services import async_register_services
-from custom_components.adjustable_bed.vmatbasic_state import get_vmatbasic_session_intent
 from tests.test_vmatbasic import make_controller, written
 
 

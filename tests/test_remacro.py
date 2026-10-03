@@ -279,6 +279,7 @@ def make_controller(
     session: protocol.RemacroSession | None = None,
 ) -> tuple[RemacroController, Clock, list[tuple[int, str]]]:
     coordinator = MagicMock()
+    coordinator.hass.data = {}
     coordinator.address = "AA:BB:CC:DD:EE:FF"
     coordinator.cancel_command = asyncio.Event()
     coordinator.motor_pulse_count, coordinator.motor_pulse_delay_ms = pulse
@@ -722,7 +723,7 @@ async def test_factory_resolves_app_and_model() -> None:
     assert again._serial.hold(0x0100)[0] == 3
     session = again._session
     assert (session.active_preset, session.head_level, session.led_brightness) == ("tv", 2, 255)
-    assert "remacro_sessions" in coordinator.hass.data[DOMAIN]
+    assert session in coordinator.hass.data[DOMAIN]["app_sessions"]["AA:BB:CC:DD:EE:FF"].values()
     other_app = await create_controller(
         coordinator, BED_TYPE_REMACRO, "jeromes", None, manufacturer_data={51: b""}
     )
@@ -1280,15 +1281,15 @@ async def test_session_outlives_unload_until_no_entry_owns_the_bed(
     with patch(_HISTORY, return_value=MagicMock(manufacturer_data={50: b""})):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
-    sessions = hass.data[DOMAIN]["remacro_sessions"]
+    sessions = hass.data[DOMAIN]["app_sessions"]
     await hass.config_entries.async_unload(entry.entry_id)
     # Unpair unloads the pair before its restored entries exist; the state stays.
-    assert any(key[0] == address for key in sessions)
+    assert sessions.get(address)
     restored = _remacro_entry(hass, address)
     await hass.config_entries.async_remove(entry.entry_id)
-    assert any(key[0] == address for key in sessions)
+    assert sessions.get(address)
     await hass.config_entries.async_remove(restored.entry_id)
-    assert not any(key[0] == address for key in sessions)
+    assert not sessions.get(address)
 
 
 async def test_unchanged_pair_app_validates_each_side_against_its_own_app(
@@ -1525,8 +1526,8 @@ async def test_light_switch_starts_unknown_and_side_select_needs_no_link(
         await hass.async_block_till_done()
         mock_establish_connection.assert_not_awaited()
         assert hass.states.get(side).state == "right"
-        sessions = hass.data[DOMAIN]["remacro_sessions"]
-        assert [s.side for key, s in sessions.items() if key[0] == address] == ["right"]
+        sessions = hass.data[DOMAIN]["app_sessions"]
+        assert [s.side for s in sessions[address].values()] == ["right"]
         await hass.config_entries.async_unload(entry.entry_id)
 
 

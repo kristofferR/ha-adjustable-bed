@@ -99,27 +99,6 @@ class RemacroSession:
     led_brightness: int | None = None
 
 
-def drop_sessions(cache: dict[tuple[str, str, int | None], RemacroSession], address: str) -> None:
-    """Forget every session for a bed when its entry runtime ends."""
-    for key in [key for key in cache if key[0] == address.upper()]:
-        del cache[key]
-
-
-def session_for(
-    cache: dict[tuple[str, str, int | None], RemacroSession],
-    address: str,
-    app: str,
-    model_id: int | None,
-) -> RemacroSession:
-    """Return the session for one bed, app and model; a change starts fresh."""
-    key = (address.upper(), app, model_id)
-    session = cache.get(key)
-    if session is None:
-        session = RemacroSession(SynDataSerial(cache_hold_serial=app == APP_JEROMES))
-        cache[key] = session
-    return session
-
-
 @dataclass(frozen=True, slots=True)
 class Axis:
     """Press codes and the STOP sent on release."""

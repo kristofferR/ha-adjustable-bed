@@ -17,6 +17,7 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from tests.app_state_helpers import restart_app_state, stored_app_state
 
 
 def coordinator(hass, handset="00000"):
@@ -152,22 +153,22 @@ async def test_local_massage_state_survives_reconnect_and_home_assistant_restart
     ctrl._client = MagicMock(is_connected=True, services=[MagicMock(characteristics=[char(WRITE)])])
     ctrl._client.write_gatt_char = AsyncMock()
     ctrl._controller = FurniMoveController(ctrl, handset_id="12234")
-    await ctrl._async_restore_furnimove_local_state()
-    ctrl._controller.restore_furnimove_local_state({
+    await ctrl._async_restore_app_state(ctrl._controller)
+    ctrl._controller.restore_persisted_app_state({
         "duration_minutes": 20, "running": True, "zone": "head", "intensity": 3,
     })
-    expected = ctrl._controller.furnimove_local_state
-    assert ctrl._furnimove_local_state == expected
+    expected = ctrl._controller.persisted_app_state
+    assert await stored_app_state(ctrl, "12234") == expected
     ctrl._controller = FurniMoveController(ctrl, handset_id="12234")
-    await ctrl._async_restore_furnimove_local_state()
-    assert ctrl._controller.furnimove_local_state == expected
+    await ctrl._async_restore_app_state(ctrl._controller)
+    assert ctrl._controller.persisted_app_state == expected
     assert not ctrl._client.write_gatt_char.called
-    await ctrl._furnimove_state_store.async_save(ctrl._furnimove_local_state)
+    await restart_app_state(hass, ctrl.address)
     restarted = AdjustableBedCoordinator(hass, ctrl.entry)
     restarted._client = ctrl._client
     restarted._controller = FurniMoveController(restarted, handset_id="12234")
-    await restarted._async_restore_furnimove_local_state()
-    assert restarted._controller.furnimove_local_state == expected
+    await restarted._async_restore_app_state(restarted._controller)
+    assert restarted._controller.persisted_app_state == expected
     assert "furnimove_ubl" not in restarted.controller_state
     await restarted._controller.async_discover_capabilities()
     restarted._controller._pause = AsyncMock(return_value=True)
@@ -176,17 +177,19 @@ async def test_local_massage_state_survives_reconnect_and_home_assistant_restart
     from custom_components.adjustable_bed.beds.furnimove import build_furnimove_command
 
     assert written(restarted._controller) == [build_furnimove_command(stop.keycode).hex()] * 2
-    assert restarted._furnimove_local_state == {"duration_minutes": 20}
+    assert await stored_app_state(restarted, "12234") == {"duration_minutes": 20}
 
 
 async def test_invalid_local_preferences_do_not_block_connection_startup(hass):
     from custom_components.adjustable_bed.beds.furnimove import FurniMoveController
 
     ctrl = coordinator(hass)
-    ctrl._furnimove_state_store.async_load = AsyncMock(return_value={"duration_minutes": -1})
+    ctrl._app_state_store._store.async_load = AsyncMock(
+        return_value={"furnimove:auto:00000": {"duration_minutes": -1}}
+    )
     ctrl._controller = FurniMoveController(ctrl, handset_id="00000")
-    await ctrl._async_restore_furnimove_local_state()
-    assert ctrl._controller.furnimove_local_state == {"duration_minutes": 15}
+    await ctrl._async_restore_app_state(ctrl._controller)
+    assert ctrl._controller.persisted_app_state == {"duration_minutes": 15}
     assert not ctrl._client.write_gatt_char.called
 
 
@@ -225,14 +228,14 @@ async def test_feedback_does_not_rearm_local_preference_save(hass):
 
     ctrl = coordinator(hass)
     ctrl._controller = FurniMoveController(ctrl, handset_id="12234")
-    await ctrl._async_restore_furnimove_local_state()
-    ctrl._furnimove_state_store.async_delay_save = MagicMock()
+    await ctrl._async_restore_app_state(ctrl._controller)
+    ctrl._app_state_store._store.async_delay_save = MagicMock()
     ctrl.handle_controller_state_update("furnimove_sync", True)
-    ctrl._furnimove_state_store.async_delay_save.assert_not_called()
+    ctrl._app_state_store._store.async_delay_save.assert_not_called()
     await ctrl._controller.set_massage_timer(20)
-    ctrl._furnimove_state_store.async_delay_save.assert_called_once()
+    ctrl._app_state_store._store.async_delay_save.assert_called_once()
     ctrl.handle_controller_state_update("furnimove_sync", False)
-    ctrl._furnimove_state_store.async_delay_save.assert_called_once()
+    ctrl._app_state_store._store.async_delay_save.assert_called_once()
 
 
 async def test_local_duration_waits_for_command_lock_without_connecting(hass):
@@ -244,7 +247,7 @@ async def test_local_duration_waits_for_command_lock_without_connecting(hass):
         update = asyncio.create_task(ctrl.async_set_furnimove_massage_duration(20))
         await asyncio.sleep(0)
         assert not update.done()
-        assert ctrl.capability_controller.furnimove_local_state == {"duration_minutes": 15}
+        assert ctrl.capability_controller.persisted_app_state == {"duration_minutes": 15}
     await update
-    assert ctrl.capability_controller.furnimove_local_state == {"duration_minutes": 20}
+    assert ctrl.capability_controller.persisted_app_state == {"duration_minutes": 20}
     ctrl.async_ensure_connected.assert_not_awaited()

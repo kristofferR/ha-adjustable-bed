@@ -91,8 +91,6 @@ class _FactoryCoordinator(SimpleNamespace):
     """Minimal coordinator stub used for controller factory tests."""
 
     def __init__(self) -> None:
-        from custom_components.adjustable_bed.limoss_remote_state import LimossRemoteMemoryStore
-
         super().__init__(
             capability_controller=None,
             starcode_app_retained_state=None,
@@ -101,7 +99,6 @@ class _FactoryCoordinator(SimpleNamespace):
                 async_add_import_executor_job=_RecordingImportExecutor(),
                 async_add_executor_job=_RecordingImportExecutor(),
             ),
-            limoss_remote_memory_store=LimossRemoteMemoryStore(),
             client=None,
             controller_state={},
             entry=SimpleNamespace(
@@ -208,8 +205,7 @@ async def _create_controller_for_bed_type(bed_type: str) -> BedController:
     if bed_type == const.BED_TYPE_FSM_RELAX:
         coordinator.entry.options = {}
         coordinator.entry.entry_id = "contract-fsm-relax"
-        with patch("custom_components.adjustable_bed.fsm_relax_state.Store", return_value=MagicMock(async_load=AsyncMock(return_value=None))):
-            return await create_controller(coordinator, bed_type, None, client)
+        return await create_controller(coordinator, bed_type, None, client)
     variant = _protocol_variant_for_bed_type(bed_type)
     return await create_controller(coordinator, bed_type, variant, client)
 

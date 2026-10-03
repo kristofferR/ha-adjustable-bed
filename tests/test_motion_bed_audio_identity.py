@@ -45,7 +45,7 @@ async def test_actual_callback_audio_feedback_controls_preview_volume_and_alarm_
     excluded = "QMS3-N93-327" in name.upper()
     expected = not excluded and flag not in ((0,) if kind == "03" else (0x0F,0xAF))
     assert rig.controller.protocol_diagnostics["audio_available"] is expected
-    assert rig.controller.motion_bed_local_state == {"audio_available": expected}
+    assert rig.controller.persisted_app_state == {"audio_available": expected}
     volume = MotionBedWrite("audio", (build_audio_volume(2),), "home")
     alarm = MotionBedWrite("alarm", (build_alarm(enabled=True,hour=6,minute=30,weekdays={},audio=expected),), "home", confirmed=True, persistent=True, alarm_audio=expected)
     rig.controller.validate_motion_bed_write(alarm)

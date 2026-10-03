@@ -11,6 +11,7 @@ from custom_components.adjustable_bed.beds.limoss import LimossController
 from custom_components.adjustable_bed.beds.limoss_remote import LimossRemoteController
 from custom_components.adjustable_bed.beds.limoss_remote_protocol import format_command
 from custom_components.adjustable_bed.controller_factory import create_controller
+from custom_components.adjustable_bed.limoss_remote_state import get_limoss_remote_session
 from tests.test_coordinator_limoss_remote import actual_coordinator
 
 CAPS = {"key_count": 8, "system": 18, "vibration": 255, "configuration": 0, "memory_count": 8}
@@ -61,7 +62,7 @@ async def test_registered_startup_admits_fresh02_with_missing_optional_version(
     assert controller.layout == "cKey4"
     assert controller._notify_client is client and controller._request_reply is None
     client.stop_notify.assert_not_awaited()
-    metadata = coordinator.entry.data[const.CONF_LIMOSS_REMOTE_STATE].get("metadata", {})
+    metadata = get_limoss_remote_session(coordinator.hass, coordinator.address).metadata
     assert metadata == ({} if missing == 0 else {"hardware_version": "12.34"})
     await controller.stop_notify()
 
@@ -164,7 +165,7 @@ async def test_caller_task_cancel_during_optional_wait_preserves_cleanup(hass, m
     client.stop_notify.assert_awaited_once()
     assert controller._request_active is None and controller._notify_client is None
     assert not coordinator.cancel_command.is_set()
-    metadata = coordinator.entry.data[const.CONF_LIMOSS_REMOTE_STATE].get("metadata", {})
+    metadata = get_limoss_remote_session(coordinator.hass, coordinator.address).metadata
     assert metadata == ({} if opcode == 0 else {"hardware_version": "12.34"})
 
 
@@ -221,7 +222,7 @@ async def test_optional_phase_admission_respects_remaining_native_pacing(
     assert emitted == ([2] if late_reply_opcode == 2 else [2, 0])
     assert starts[-1] + 0.08 >= starts[0] + budget
     assert controller.capabilities is not None and controller.capabilities.system == 0x22
-    metadata = coordinator.entry.data[const.CONF_LIMOSS_REMOTE_STATE].get("metadata", {})
+    metadata = get_limoss_remote_session(coordinator.hass, coordinator.address).metadata
     assert metadata == ({} if late_reply_opcode == 2 else {"hardware_version": "12.34"})
     await controller.stop_notify()
 

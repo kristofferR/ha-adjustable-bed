@@ -505,6 +505,26 @@ async def test_a_removed_store_ignores_later_saves(hass: HomeAssistant, hass_sto
     assert STORE_KEY not in hass_storage
 
 
+async def test_a_discarded_profile_ignores_old_saves_until_restored(
+    hass: HomeAssistant, hass_storage: dict
+) -> None:
+    from custom_components.adjustable_bed.app_state_store import app_state_store
+
+    store = app_state_store(hass, ADDRESS)
+    assert await store.async_slot(SLOT) == {}
+    store.update(SLOT, {"wave": 2})
+    await store.async_discard(SLOT)
+    # The old profile's controller may still publish while its entry reloads.
+    store.update(SLOT, {"wave": 3})
+    await store.async_save()
+    assert hass_storage[STORE_KEY]["data"] == {}
+    # Changing back to the profile starts fresh, then saves again.
+    assert await store.async_slot(SLOT) == {}
+    store.update(SLOT, {"wave": 1})
+    await store.async_save()
+    assert hass_storage[STORE_KEY]["data"] == {SLOT: {"wave": 1}}
+
+
 async def test_failed_store_deletion_does_not_block_entry_removal(
     hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch, enable_custom_integrations,
     caplog: pytest.LogCaptureFixture,

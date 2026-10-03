@@ -21,11 +21,8 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.svane_state import (
-    CONF_SVANE_PREFERENCES,
-    clear_svane_session,
-)
 from custom_components.adjustable_bed.switch import _switch_entities_for
+from tests.app_state_helpers import restart_app_state, write_app_state
 from tests.test_svane import make_controller
 
 
@@ -35,14 +32,17 @@ async def lamp_runtime(hass, request):
     entry = MockConfigEntry(domain=DOMAIN, data={
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_NAME: "Svane", CONF_BED_TYPE: BED_TYPE_SVANE,
         CONF_PROTOCOL_VARIANT: variant, CONF_DISCONNECT_AFTER_COMMAND: False,
-        CONF_SVANE_PREFERENCES: {"intensity": 55, "slots": ["81388113", "82738204"]},
     })
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)
+    await write_app_state(
+        coordinator, {"intensity": 55, "slots": ["81388113", "82738204"]}, request.param
+    )
     coordinator._client = make_controller(request.param).client
     controller = await create_controller(coordinator, BED_TYPE_SVANE, variant, coordinator.client)
     assert isinstance(controller, SvaneController)
     coordinator._controller = controller
+    await coordinator._async_restore_app_state(controller)
     lamp = next(e for e in _switch_entities_for(hass, coordinator)
                 if e.entity_description.key == "under_bed_lights")
     lamp.entity_id = "switch.svane_lamp"
@@ -164,12 +164,14 @@ async def test_warm_reload_retains_intent_but_profile_or_cold_session_does_not(h
             changed_runtime._cancel_disconnect_timer()
             await changed_runtime._command_scheduler.async_shutdown()
         # A new process has no process-local session. Only persisted preferences remain.
-        clear_svane_session(hass, coordinator.address)
+        await restart_app_state(hass, coordinator.address)
         cold_entry = MockConfigEntry(domain=DOMAIN, data=dict(coordinator.entry.data))
         cold_entry.add_to_hass(hass)
         cold = AdjustableBedCoordinator(hass, cold_entry)
         fresh = await create_controller(cold, BED_TYPE_SVANE, variant, None)
-        assert isinstance(fresh, SvaneController) and not fresh.session.light_intent_known
+        assert isinstance(fresh, SvaneController)
+        await cold._async_restore_app_state(fresh)
+        assert not fresh.session.light_intent_known
         assert "under_bed_lights_on" not in cold.controller_state
         assert fresh.session.intensity == known_session.intensity
         await cold._command_scheduler.async_shutdown()
