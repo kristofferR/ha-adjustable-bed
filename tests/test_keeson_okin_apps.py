@@ -1311,3 +1311,93 @@ async def test_timer_select_keeps_the_heal_timer_across_a_disconnect(
     assert hass.states.get(select_id).state == "20 min"
     assert await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
+
+
+async def test_stop_all_sends_preset_stop_even_when_the_zero_key_fails(
+    coordinator, mock_bleak_client: MagicMock, no_sleep
+):
+    controller = _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT)
+    await controller.preset_flat()
+    mock_bleak_client.write_gatt_char.reset_mock()
+    _fail_write(mock_bleak_client, nth=1)  # The zero key fails.
+    with pytest.raises(BleakError):
+        await controller.stop_all()
+    assert _written(mock_bleak_client) == [ZERO, "e5fe160100000005"]
+    # Preset STOP was written, so the preset is no longer selected.
+    mock_bleak_client.write_gatt_char.reset_mock()
+    await controller.preset_flat()
+    assert _written(mock_bleak_client) == ["e5fe160100000203"]
+
+
+async def test_stop_all_raises_the_first_error_and_keeps_an_unstopped_preset(
+    coordinator, mock_bleak_client: MagicMock, no_sleep
+):
+    controller = _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT)
+    await controller.preset_zero_g()
+    mock_bleak_client.write_gatt_char.reset_mock()
+    original = mock_bleak_client.write_gatt_char.side_effect
+    errors = [BleakError("zero"), BleakError("preset stop")]
+
+    async def fail(*_args: Any, **_kwargs: Any) -> None:
+        raise errors.pop(0)
+
+    mock_bleak_client.write_gatt_char.side_effect = fail
+    with pytest.raises(BleakError, match="zero"):
+        await controller.stop_all()
+    mock_bleak_client.write_gatt_char.side_effect = original
+    mock_bleak_client.write_gatt_char.reset_mock()
+    await controller.preset_zero_g()  # Still selected: the re-tap is preset STOP.
+    assert _written(mock_bleak_client) == ["e5fe160100000005"]
+
+
+async def test_massage_off_sends_both_zones_even_when_one_fails(
+    coordinator, mock_bleak_client: MagicMock, no_sleep
+):
+    controller = _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT)
+    await controller.set_massage_timer(10)
+    mock_bleak_client.write_gatt_char.reset_mock()
+    _fail_write(mock_bleak_client, nth=1)  # Head off fails.
+    with pytest.raises(BleakError):
+        await controller.massage_off()
+    assert _written(mock_bleak_client) == HEAL_STOP
+    # Not both written: the page stays open and the timer stays published.
+    assert coordinator.controller_state["okin_app_massage_timer"] == 10
+    await controller.massage_head_up()
+
+
+async def test_cancelled_stop_all_still_writes_both_cleanup_frames(
+    coordinator, mock_bleak_client: MagicMock
+):
+    controller = _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT)
+    await controller.preset_flat()
+    mock_bleak_client.write_gatt_char.reset_mock()
+    original = mock_bleak_client.write_gatt_char.side_effect
+    started, gate = asyncio.Event(), asyncio.Event()
+
+    async def slow(*args: Any, **kwargs: Any) -> None:
+        started.set()
+        await gate.wait()
+        await original(*args, **kwargs)
+
+    mock_bleak_client.write_gatt_char.side_effect = slow
+    task = asyncio.create_task(controller.stop_all())
+    await started.wait()  # The zero key is in flight.
+    task.cancel()
+    gate.set()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert _written(mock_bleak_client) == [ZERO, "e5fe160100000005"]
+
+
+@pytest.mark.parametrize("delay", [True, False])
+async def test_release_cancelled_at_once_still_writes_the_zero_key(
+    coordinator, mock_bleak_client: MagicMock, delay: bool
+):
+    """A release cancelled as soon as it starts still writes the zero key."""
+    controller = _ctrl(coordinator, KEESON_VARIANT_SIMON_LI)
+    task = asyncio.create_task(controller._release_motion(delay=delay))
+    await asyncio.sleep(0)  # The outer task now awaits the shielded release.
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert _written(mock_bleak_client) == [ZERO]

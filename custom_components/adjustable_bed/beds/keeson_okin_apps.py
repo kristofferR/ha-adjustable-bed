@@ -24,7 +24,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Coroutine, Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final
 
@@ -142,6 +142,27 @@ def drop_okin_app_sessions(hass: HomeAssistant, address: str) -> None:
     if isinstance(sessions, dict):
         for key in [key for key in sessions if key[0] == address.upper()]:
             del sessions[key]
+
+
+async def _run_to_completion(cleanup: Coroutine[Any, Any, None]) -> None:
+    """Run a cleanup sequence to its end even if the caller is cancelled.
+
+    The caller's cancellation is re-raised once the sequence has finished.
+    """
+    task = asyncio.ensure_future(cleanup)
+    cancelled = False
+    while not task.done():
+        try:
+            await asyncio.shield(task)
+        except asyncio.CancelledError:
+            cancelled = True
+        except Exception:  # noqa: BLE001 - re-raised below unless cancelled
+            break
+    if cancelled:
+        if not task.cancelled():
+            task.exception()
+        raise asyncio.CancelledError
+    task.result()
 
 
 def okin_app_frame(key: int) -> bytes:
@@ -385,16 +406,20 @@ class OkinAppKeesonController(KeesonController):
     async def _release_motion(self, *, delay: bool = True) -> None:
         """Write the zero key after the app's release delay, even when cancelled."""
         seconds = (HEAL_RELEASE_DELAY_S if self._is_heal else SEAT_RELEASE_DELAY_S) if delay else 0
-        delaying = True
+        delaying = False
 
         async def release() -> None:
             nonlocal delaying
-            try:
-                if seconds:
+            if seconds:
+                # Only this sleep may be cut short; the write after it never is.
+                delaying = True
+                try:
                     await asyncio.sleep(seconds)
-            finally:
-                delaying = False
-                await self.write_command(okin_app_frame(ZERO_KEY), cancel_event=asyncio.Event())
+                except asyncio.CancelledError:
+                    pass  # Skip the remaining delay, then still write the zero key.
+                finally:
+                    delaying = False
+            await self.write_command(okin_app_frame(ZERO_KEY), cancel_event=asyncio.Event())
 
         task = asyncio.create_task(release())
         cancelled = False
@@ -419,13 +444,31 @@ class OkinAppKeesonController(KeesonController):
         await self._release_motion(delay=False)
 
     async def stop_all(self) -> None:
-        """Stop All: the zero key at once; Heal also stops a selected preset."""
-        await self.release_now()
+        """Stop All: the zero key at once; Heal also stops a selected preset.
+
+        Both frames are attempted even when the other fails or the caller is
+        cancelled, because only preset STOP halts preset travel. The first
+        error is raised afterwards.
+        """
+        errors: list[BaseException] = []
+        try:
+            await self.release_now()
+        except BaseException as err:  # noqa: BLE001 - re-raised after preset STOP
+            errors.append(err)
         if self._is_heal and self._session.selected_preset is not None:
-            # The app stops preset travel by re-tapping the selected preset.
-            # Deselect only once STOP is written, so a failure can be retried.
-            if await self._write_key(HEAL_PRESET_STOP, cancel_event=asyncio.Event()):
-                self._session.selected_preset = None
+
+            async def preset_stop() -> None:
+                # The app stops preset travel by re-tapping the selected preset.
+                # Deselect only once STOP is written, so a failure can be retried.
+                if await self._write_key(HEAL_PRESET_STOP, cancel_event=asyncio.Event()):
+                    self._session.selected_preset = None
+
+            try:
+                await _run_to_completion(preset_stop())
+            except BaseException as err:  # noqa: BLE001 - the first error wins
+                errors.append(err)
+        if errors:
+            raise errors[0]
 
     @property
     def supports_stop_all(self) -> bool:
@@ -871,11 +914,27 @@ class OkinAppKeesonController(KeesonController):
         """The massage STOP button: both zones off; levels are kept."""
         if not self._is_heal:
             raise NotImplementedError("Only the Heal Every Night app has massage")
-        if not await self._send_massage_steps([HEAL_HEAD_MASSAGE, HEAL_FOOT_MASSAGE]):
-            return
-        self._session.massage_enabled = False
-        self._session.timer_minutes = None
-        self.forward_controller_state_update(STATE_HEAL_TIMER, None)
+
+        async def zones_off() -> None:
+            # Both zone-off frames are attempted even if one fails, each with a
+            # fresh event; the page closes only once both are written.
+            errors: list[BaseException] = []
+            written = 0
+            for index, key in enumerate((HEAL_HEAD_MASSAGE, HEAL_FOOT_MASSAGE)):
+                if index:
+                    await asyncio.sleep(HEAL_MASSAGE_STEP_DELAY_S)
+                try:
+                    written += await self._write_key(key, cancel_event=asyncio.Event())
+                except Exception as err:  # noqa: BLE001 - raised after the other zone
+                    errors.append(err)
+            if written == 2:
+                self._session.massage_enabled = False
+                self._session.timer_minutes = None
+                self.forward_controller_state_update(STATE_HEAL_TIMER, None)
+            if errors:
+                raise errors[0]
+
+        await _run_to_completion(zones_off())
 
     async def set_heal_massage_level(self, zone: str, level: int) -> None:
         """A slider: head and foot 0..3 (0 is off), wave 1..4."""

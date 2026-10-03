@@ -345,7 +345,9 @@ Healing 7 and 8 both show tilt, lumbar and the light. Its keys:
 Presets are single writes. Pressing the selected preset again sends Preset
 STOP instead, as the app does, and selecting another preset moves the
 selection. **Stop All** also sends Preset STOP while a preset is selected; a
-cover stop does not, as the app's movement release does not.
+cover stop does not, as the app's movement release does not. Stop All and
+massage Off attempt every cleanup frame even if one fails or the action is
+cancelled, then report the first error.
 
 The massage page stays disabled until a timer is chosen. A timer turns zero
 levels into one, then writes the timer key, the wave, head and foot levels
