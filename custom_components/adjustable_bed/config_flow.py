@@ -135,8 +135,7 @@ from .const import (
     BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
-    BED_TYPE_ZSERIES_Z230,
-    BED_TYPE_ZSERIES_Z280,
+    BED_TYPE_ZSERIES,
     BEDS_WITH_PERCENTAGE_POSITIONS,
     BEDS_WITH_POSITION_FEEDBACK,
     CB24_BED_SELECTION_A,
@@ -303,7 +302,6 @@ from .const import (
     VIBRADORM_WERKMEISTER_CONTROLS,
     VMATBASIC_CONFIG_KEYS,
     VMATBASIC_PROFILES,
-    ZSERIES_BED_TYPES,
     ZSERIES_PULSE_COUNT_RANGE,
     DetectionResult,
     bed_type_has_position_feedback,
@@ -803,8 +801,7 @@ def _richmat_mh_variant_error(
 EXPLICIT_PAIR_APP_BED_TYPES: Final = frozenset(
     {
         BED_TYPE_TRANQUIL,
-        BED_TYPE_ZSERIES_Z230,
-        BED_TYPE_ZSERIES_Z280,
+        BED_TYPE_ZSERIES,
         BED_TYPE_ADJUSTABLE_LUMBAR,
         *RICHMAT_MH_BED_TYPES,
     }
@@ -814,7 +811,7 @@ EXPLICIT_PAIR_APP_BED_TYPES: Final = frozenset(
 def _invalid_pulse_count(bed_type: str | None, pulse_count: int) -> bool:
     """Reject counts whose Z-Series press would fall outside the 0.1-60 s hold window."""
     low, high = ZSERIES_PULSE_COUNT_RANGE
-    return bed_type in ZSERIES_BED_TYPES and not low <= pulse_count <= high
+    return bed_type == BED_TYPE_ZSERIES and not low <= pulse_count <= high
 
 
 def _normalize_fixed_motor_count(
@@ -7523,6 +7520,17 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 requested_bed_type,
                 *(child.get(CONF_BED_TYPE) for child in iter_children(self.config_entry.data)),
             }
+            if (
+                separate_address_pair
+                and CONF_PROTOCOL_VARIANT in paired_changes
+                and BED_TYPE_ZSERIES in variant_owners
+            ):
+                # The Z-Series variant is each physical bed's own app page.
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={CONF_PROTOCOL_VARIANT: "okin_bedding_app_unpair_first"},
+                )
             per_side_variant_type = next(
                 (
                     candidate

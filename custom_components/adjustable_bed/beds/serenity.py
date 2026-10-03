@@ -14,7 +14,7 @@ import asyncio
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from datetime import datetime
-from typing import TYPE_CHECKING, Final, Literal
+from typing import TYPE_CHECKING, Final
 
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
@@ -693,7 +693,7 @@ class ZSeriesController(OkinBeddingAppController):
     """Customatic Z-Series 1.0.4, with the user-selected Z-230 or Z-280 page."""
 
     def __init__(
-        self, coordinator: AdjustableBedCoordinator, *, model: Literal["z230", "z280"]
+        self, coordinator: AdjustableBedCoordinator, *, model: str
     ) -> None:
         super().__init__(coordinator, app=f"zseries_{model}")
         # This connection's observation; None until a manufacturer read succeeds.

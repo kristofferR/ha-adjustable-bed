@@ -90,8 +90,7 @@ from .const import (
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
-    BED_TYPE_ZSERIES_Z230,
-    BED_TYPE_ZSERIES_Z280,
+    BED_TYPE_ZSERIES,
     CB1322_MANUFACTURER_MARKERS,
     CONF_FSM_RELAX_LAYOUT,
     CONF_FSM_RELAX_LIGHT,
@@ -214,6 +213,7 @@ from .const import (
     SVANE_VARIANT_JMC,
     SVANE_VARIANT_MULTI,
     VARIANT_AUTO,
+    ZSERIES_VARIANTS,
 )
 from .kaidi_protocol import extract_kaidi_advertisement
 from .kaidi_variants import resolve_kaidi_variant
@@ -356,12 +356,6 @@ class _ControllerSpec:
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_SERENITY: _ControllerSpec("serenity", "SerenityController"),
     BED_TYPE_TRANQUIL: _ControllerSpec("serenity", "TranquilController"),
-    BED_TYPE_ZSERIES_Z230: _ControllerSpec(
-        "serenity", "ZSeriesController", MappingProxyType({"model": "z230"})
-    ),
-    BED_TYPE_ZSERIES_Z280: _ControllerSpec(
-        "serenity", "ZSeriesController", MappingProxyType({"model": "z280"})
-    ),
     BED_TYPE_CUSTOMATIC_CLARITY: _ControllerSpec(
         "customatic", "CustomaticController", MappingProxyType({"profile": "clarity"})
     ),
@@ -551,6 +545,17 @@ async def create_controller(
         from .beds.solace import SolaceController
 
         return SolaceController(coordinator)
+
+    if bed_type == BED_TYPE_ZSERIES:
+        # The app page is a user choice nothing on the bed identifies.
+        if protocol_variant not in ZSERIES_VARIANTS:
+            raise ValueError("Choose the Z-230 or Z-280 page selected in the Z-Series app")
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.serenity", __package__
+        )
+        from .beds.serenity import ZSeriesController
+
+        return ZSeriesController(coordinator, model=protocol_variant)
 
     if bed_type == BED_TYPE_SVANE:
         if protocol_variant == SVANE_VARIANT_JENSEN_LINON:

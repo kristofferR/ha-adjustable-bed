@@ -431,14 +431,19 @@ CONF_FSM_RELAX_REVERSALS: Final = tuple(f"fsm_relax_reverse_{i}" for i in range(
 CONF_FSM_RELAX_MEMORY_NAMES: Final = "fsm_relax_memory_names"
 BED_TYPE_SERENITY: Final = "serenity"  # Explicit Jordan's Serenity app profile
 BED_TYPE_TRANQUIL: Final = "tranquil"  # Explicit Jordan's Tranquil app profile
-# Customatic Z-Series app: the user picks the Z-230 or Z-280 page in the app.
-BED_TYPE_ZSERIES_Z230: Final = "customatic_z230"
-BED_TYPE_ZSERIES_Z280: Final = "customatic_z280"
+# Customatic Z-Series app: the user picks the Z-230 or Z-280 page in the app,
+# which nothing on the bed identifies, so the variant has no auto choice.
+BED_TYPE_ZSERIES: Final = "customatic_zseries"
+ZSERIES_VARIANT_Z230: Final = "z230"
+ZSERIES_VARIANT_Z280: Final = "z280"
+ZSERIES_VARIANTS: Final = {
+    ZSERIES_VARIANT_Z230: "Z-230 page (combined head and foot, M1)",
+    ZSERIES_VARIANT_Z280: "Z-280 page (M1/M2, separate massage zones)",
+}
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
-    {BED_TYPE_SERENITY, BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES_Z230, BED_TYPE_ZSERIES_Z280}
+    {BED_TYPE_SERENITY, BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES}
 )
-ZSERIES_BED_TYPES: Final = frozenset({BED_TYPE_ZSERIES_Z230, BED_TYPE_ZSERIES_Z280})
 # A Z-Series button press holds pulse_count x 100 ms, within the 60 s hold limit.
 ZSERIES_PULSE_COUNT_RANGE: Final = (1, 600)
 BED_TYPE_SIMMONS: Final = "simmons"  # Explicit SIMMONS app profile (com.okin.simmons)
@@ -559,8 +564,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_RICHMAT_HARMONY,
     BED_TYPE_RICHMAT_IDEALBED,
     # Explicit Customatic app profiles
-    BED_TYPE_ZSERIES_Z230,
-    BED_TYPE_ZSERIES_Z280,
+    BED_TYPE_ZSERIES,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
@@ -2712,8 +2716,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_FSM_RELAX,
         BED_TYPE_SERENITY,
         BED_TYPE_TRANQUIL,
-        BED_TYPE_ZSERIES_Z230,
-        BED_TYPE_ZSERIES_Z280,
+        BED_TYPE_ZSERIES,
         BED_TYPE_SIMMONS,
         BED_TYPE_ADJUSTABLE_LUMBAR,
         # VER1 angle replies feed the app's arc labels, not the shared angle axes.
@@ -2932,8 +2935,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_SERENITY: (10, 100),  # APK refresh cadence; bounded HA movement duration
     BED_TYPE_TRANQUIL: (10, 100),  # APK refresh cadence; bounded HA movement duration
     # 100 ms is the app refresh; the count also bounds a Z-Series button press.
-    BED_TYPE_ZSERIES_Z230: (10, 100),
-    BED_TYPE_ZSERIES_Z280: (10, 100),
+    BED_TYPE_ZSERIES: (10, 100),
     BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
     BED_TYPE_ADJUSTABLE_LUMBAR: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement
     # Richmat MH apps: KEEP repeats at each control's own interval (100 ms for

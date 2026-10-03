@@ -47,6 +47,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SVANE,
     BED_TYPE_VMATBASIC,
+    BED_TYPE_ZSERIES,
     CONF_BED_TYPE,
     CONF_MOTOR_COUNT,
     CONF_PROTOCOL_VARIANT,
@@ -55,7 +56,6 @@ from .const import (
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
-    ZSERIES_BED_TYPES,
     bed_type_has_position_feedback,
     resolve_explicit_bed_type,
 )
@@ -2404,7 +2404,7 @@ async def _execute_zseries_alarm(
         raise _missing_device_error(missing[0])
     for coordinator, side in targets:
         for target in _command_targets(coordinator, side):
-            if target.bed_type not in ZSERIES_BED_TYPES:
+            if target.bed_type != BED_TYPE_ZSERIES:
                 raise ServiceValidationError(
                     f"Device '{target.name}' is not a Customatic Z-Series app controller"
                 )
@@ -2700,7 +2700,7 @@ async def handle_sync_clock(call: ServiceCall) -> None:
         await controller.sync_clock()
 
     if _profile_route(
-        targets, dict.fromkeys(ZSERIES_BED_TYPES, "zseries"), SERVICE_SYNC_CLOCK
+        targets, {BED_TYPE_ZSERIES: "zseries"}, SERVICE_SYNC_CLOCK
     ):
         # Z-Series clocks live on the alarm page, gated by a live manufacturer read.
         await _execute_zseries_alarm(call, "Z-Series clock synchronization", sync)
