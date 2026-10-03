@@ -154,10 +154,17 @@ def entry(hass: HomeAssistant) -> MockConfigEntry:
 
 @pytest.fixture
 async def coordinator(
-    hass: HomeAssistant, entry: MockConfigEntry, mock_coordinator_connected
+    hass: HomeAssistant,
+    entry: MockConfigEntry,
+    mock_coordinator_connected,
+    mock_bleak_client: MagicMock,
 ) -> AdjustableBedCoordinator:
     coordinator = AdjustableBedCoordinator(hass, entry)
     await coordinator.async_connect()
+    # The app's two roles; tests needing other layouts replace them.
+    mock_bleak_client.services = _services(
+        (KEESON_BASE_WRITE_CHAR_UUID, ["write"]), (KEESON_BASE_NOTIFY_CHAR_UUID, ["notify"])
+    )
     return coordinator
 
 
@@ -196,6 +203,13 @@ def _services(*chars: tuple[str, list[str]]) -> list[SimpleNamespace]:
             ],
         )
     ]
+
+
+async def _yield() -> None:
+    """Let other tasks run without asyncio.sleep, which the fixtures replace."""
+    future = asyncio.get_running_loop().create_future()
+    asyncio.get_running_loop().call_soon(future.set_result, None)
+    await future
 
 
 def _bedsense(
@@ -295,29 +309,60 @@ async def test_cancelling_mid_release_still_writes_the_zero_key(
     assert _written(mock_bleak_client) == ["e5fe160400000002"] * HOLD + [ZERO]
 
 
-async def test_release_write_survives_a_second_cancellation(
-    coordinator, mock_bleak_client: MagicMock, no_sleep
+@pytest.mark.parametrize("cancellations", [1, 2, 3])
+async def test_release_write_survives_repeated_cancellations(
+    coordinator, mock_bleak_client: MagicMock, no_sleep, cancellations
 ):
-    """The zero-key write is shielded: cancelling during it cannot abort it."""
+    """Cancelling during the in-flight zero-key write, even repeatedly, cannot drop it."""
     controller = _innova(coordinator)
     started, finish = asyncio.Event(), asyncio.Event()
-    writes: list[bytes] = []
+    written: list[str] = []
 
     async def slow_write(_char, data, response=True):
-        writes.append(bytes(data))
         if bytes(data).hex() == ZERO:
             started.set()
             await finish.wait()
+        written.append(bytes(data).hex())
 
     mock_bleak_client.write_gatt_char.side_effect = slow_write
     task = asyncio.create_task(controller.stop_all())
     await started.wait()
-    task.cancel()
-    await asyncio.sleep(0)
+    for _ in range(cancellations):
+        task.cancel()
+        await _yield()
+        assert not task.done()
     finish.set()
     with pytest.raises(asyncio.CancelledError):
         await task
-    assert [w.hex() for w in writes] == [ZERO]
+    assert written == [ZERO]
+
+
+async def test_duplicate_roles_use_the_last_ffe9_and_ffe4(
+    coordinator, mock_bleak_client: MagicMock, no_sleep
+):
+    """Like the app, the last FFE9 and FFE4 found across services win."""
+    first = SimpleNamespace(
+        uuid="0000ffe5-0000-1000-8000-00805f9b34fb",
+        characteristics=[
+            _Char(KEESON_BASE_WRITE_CHAR_UUID, ["write"], 1),
+            _Char(KEESON_BASE_NOTIFY_CHAR_UUID, ["notify"], 2),
+        ],
+    )
+    second = SimpleNamespace(
+        uuid="0000ffe0-0000-1000-8000-00805f9b34fb",
+        characteristics=[
+            _Char(KEESON_BASE_NOTIFY_CHAR_UUID, ["notify"], 3),
+            _Char(KEESON_BASE_WRITE_CHAR_UUID, ["write", "write-without-response"], 4),
+        ],
+    )
+    mock_bleak_client.services = [first, second]
+    controller = _innova(coordinator)
+    await controller.preset_flat()
+    await controller.start_notify(None)
+    target = mock_bleak_client.write_gatt_char.await_args
+    assert target.args[0] is second.characteristics[1]
+    assert target.kwargs["response"] is False
+    assert mock_bleak_client.start_notify.await_args.args[0] is second.characteristics[0]
 
 
 async def test_a_stop_during_the_hold_releases_immediately(
@@ -461,7 +506,7 @@ def test_parser_ignores_other_lengths(length):
 async def test_notifications_publish_and_clear(coordinator, mock_bleak_client: MagicMock):
     controller = _innova(coordinator)
     await controller.start_notify(None)
-    assert mock_bleak_client.start_notify.await_args.args[0] == KEESON_BASE_NOTIFY_CHAR_UUID
+    assert mock_bleak_client.start_notify.await_args.args[0].uuid == KEESON_BASE_NOTIFY_CHAR_UUID
     controller._on_notification(MagicMock(), bytearray(_status(16, 0x40, 0x02)))
     assert coordinator.controller_state[STATE_LIGHT] is True
     assert coordinator.controller_state[STATE_MASSAGE_TIMER] == 20
@@ -505,7 +550,12 @@ async def test_both_roles_are_required_like_the_app(
     mock_bleak_client.write_gatt_char.assert_not_awaited()
 
 
-async def test_profiles_are_selected_only_explicitly(coordinator):
+async def test_profiles_are_selected_only_explicitly(coordinator, mock_bleak_client: MagicMock):
+    # Auto Keeson routing queries services with get_characteristic.
+    services = MagicMock()
+    services.__iter__ = lambda _self: iter([])
+    services.get_characteristic.return_value = None
+    mock_bleak_client.services = services
     auto = await create_controller(
         coordinator=coordinator,
         bed_type=BED_TYPE_KEESON,

@@ -27,8 +27,10 @@ You can configure the integration in two places:
 
 During initial setup, you'll configure basic options like bed type, motor count, and massage support.
 
-**OKIN ORE:** Add the integration manually and select **Okin ORE (Dynasty, INNOVA)**
-as the bed type. The `00001000-0000-1000-8000-00805f9b34fb` UUID is also the standard
+**OKIN ORE:** Add the integration manually and select **Okin ORE (Glideaway Motion app)**
+as the bed type. Beds controlled with the current Dynasty Bases or INNOVA apps use
+the Keeson [MaxCoil Una / Dynasty Bases / Bedsense Bases](beds/ore-comfort-bed.md)
+or [INNOVA](beds/keeson.md#innova-profile) profile instead. The `00001000-0000-1000-8000-00805f9b34fb` UUID is also the standard
 Bluetooth Service Discovery Server UUID, so it cannot identify an ORE bed by itself.
 UUID-only automatic discovery is disabled to avoid detecting unrelated devices such
 as Apple TVs ([issue #577](https://github.com/kristofferR/ha-adjustable-bed/issues/577)).

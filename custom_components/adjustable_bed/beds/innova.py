@@ -178,6 +178,8 @@ class InnovaController(KeesonController):
             coordinator, variant=KEESON_VARIANT_INNOVA, char_uuid=KEESON_BASE_WRITE_CHAR_UUID
         )
         self._notify_char_uuid = KEESON_BASE_NOTIFY_CHAR_UUID
+        # Roles resolved for one connection: (client, last FFE9, last FFE4).
+        self._roles: tuple[object, BleakGATTCharacteristic, BleakGATTCharacteristic] | None = None
 
     # ------------------------------------------------------------------ layout
     @property
@@ -232,33 +234,37 @@ class InnovaController(KeesonController):
     def _build_command(self, command_value: int) -> bytes:
         return innova_frame(command_value)
 
-    def _refresh_write_mode(self) -> None:
-        """Mirror Android: the app never sets a write type on the characteristic."""
-        if self._write_mode_initialized:
-            return
+    def _resolve_roles(self) -> tuple[BleakGATTCharacteristic, BleakGATTCharacteristic]:
+        """Return the app's write and notify roles, resolved once per connection.
+
+        The app scans every service, ignores service UUIDs and properties, and
+        keeps the last FFE9 and the last FFE4 it sees; controls stay disabled
+        unless both exist. Writing to those exact objects avoids bleak's
+        ambiguous-UUID error on beds exposing duplicates. The app never sets a
+        write type, so Android's default applies: without response when the
+        characteristic offers it.
+        """
         client = self.client
-        if client is None or client.services is None:
-            return
+        if client is None or not client.is_connected or client.services is None:
+            raise ConnectionError("Not connected to bed")
+        if self._roles is not None and self._roles[0] is client:
+            return self._roles[1], self._roles[2]
+        write: BleakGATTCharacteristic | None = None
+        notify: BleakGATTCharacteristic | None = None
         for service in client.services:
             for char in service.characteristics:
-                if str(char.uuid).lower() == self._char_uuid:
-                    props = {prop.lower() for prop in getattr(char, "properties", [])}
-                    self._write_with_response = "write-without-response" not in props
-        self._write_mode_initialized = True
-
-    def _require_roles(self) -> None:
-        """The app refuses to control the bed unless both FFE9 and FFE4 exist."""
-        client = self.client
-        if client is None or client.services is None:
-            return
-        uuids = {
-            str(char.uuid).lower()
-            for service in client.services
-            for char in service.characteristics
-        }
-        # An empty enumeration means services are not resolved yet, not absent.
-        if uuids and not {KEESON_BASE_WRITE_CHAR_UUID, KEESON_BASE_NOTIFY_CHAR_UUID} <= uuids:
+                uuid = str(char.uuid).lower()
+                if uuid == KEESON_BASE_WRITE_CHAR_UUID:
+                    write = char
+                elif uuid == KEESON_BASE_NOTIFY_CHAR_UUID:
+                    notify = char
+        if write is None or notify is None:
+            self.log_discovered_services(level=logging.INFO)
             raise BleakError("INNOVA requires both the FFE9 write and FFE4 notify characteristics")
+        props = {prop.lower() for prop in getattr(write, "properties", [])}
+        self._write_with_response = "write-without-response" not in props
+        self._roles = (client, write, notify)
+        return write, notify
 
     async def write_command(
         self,
@@ -267,8 +273,20 @@ class InnovaController(KeesonController):
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
-        self._require_roles()
-        await super().write_command(command, repeat_count, repeat_delay_ms, cancel_event)
+        """Write to the resolved FFE9 object with Android's default write type."""
+        selected = cancel_event if cancel_event is not None else self._coordinator.cancel_command
+        if selected.is_set():
+            return
+        write, _notify = self._resolve_roles()
+        await self._write_gatt_with_retry(
+            KEESON_BASE_WRITE_CHAR_UUID,
+            command,
+            repeat_count=repeat_count,
+            repeat_delay_ms=repeat_delay_ms,
+            cancel_event=selected,
+            response=self._write_with_response,
+            characteristic=write,
+        )
 
     async def _send_singles(self, *keys: int) -> None:
         """``sendSingleMessage``: sleep 100 ms, then write once, per key."""
@@ -285,7 +303,8 @@ class InnovaController(KeesonController):
 
         A Stop, a cancelled hold or a replacement sends it at once, and a Stop
         arriving during the wait ends the wait. The write runs on a fresh event
-        in a shielded task, so cancelling the caller never suppresses it.
+        in a shielded task that is awaited until it finishes, however often the
+        caller is cancelled; the cancellation is re-raised afterwards.
         """
         stop_requested = self._coordinator.cancel_command
         interrupted: asyncio.CancelledError | None = None
@@ -297,13 +316,19 @@ class InnovaController(KeesonController):
         release = asyncio.create_task(
             self.write_command(self._build_command(ZERO_KEY), cancel_event=asyncio.Event())
         )
-        try:
-            await asyncio.shield(release)
-        except asyncio.CancelledError:
-            await release
-            raise
+        # Keep awaiting the shielded write through any number of cancellations.
+        while not release.done():
+            try:
+                await asyncio.shield(release)
+            except asyncio.CancelledError:
+                interrupted = interrupted or asyncio.CancelledError()
+            except Exception:  # noqa: BLE001 - surfaced by release.result() below
+                break
         if interrupted is not None:
+            if not release.cancelled():
+                release.exception()  # Mark a write failure as retrieved.
             raise interrupted
+        release.result()
 
     async def _release_motion(self, *, delay: bool = True) -> None:
         await self._release(delay=delay)
@@ -563,16 +588,22 @@ class InnovaController(KeesonController):
         if self.client is None or not self.client.is_connected:
             return
         try:
-            await self.client.start_notify(self._notify_char_uuid, self._on_notification)
-        except BleakError:
+            # The last FFE4 the app found; a UUID string is ambiguous on duplicates.
+            _write, notify = self._resolve_roles()
+            await self.client.start_notify(notify, self._on_notification)
+        except BleakError, ConnectionError:
             # The app ignores the notification-enable result too.
             _LOGGER.warning("Failed to start INNOVA notifications")
 
     async def stop_notify(self) -> None:
-        if self.client is None or not self.client.is_connected:
+        client = self.client
+        if client is None or not client.is_connected:
             return
+        roles = self._roles
         try:
-            await self.client.stop_notify(self._notify_char_uuid)
+            await client.stop_notify(
+                roles[2] if roles is not None and roles[0] is client else self._notify_char_uuid
+            )
         except BleakError:
             _LOGGER.debug("Failed to stop INNOVA notifications")
 

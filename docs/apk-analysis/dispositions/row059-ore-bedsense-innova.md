@@ -2,8 +2,8 @@
 
 Formal cluster `cluster-015` has two accepted members: `com.ore.sfmc2bedsence` 1.1 (3)
 ("Bedsense Bases", representative) and `com.ore.sfm` 2.0 (3) ("INNOVA", sibling). The
-comparison accounts for **126 discovery items: 50 IMPLEMENTED, 47
-ALREADY_IMPLEMENTED, 29 EXCLUDED**. Hardware is unverified (STATIC VERIFIED /
+comparison accounts for **126 discovery items: 50 IMPLEMENTED, 48
+ALREADY_IMPLEMENTED, 28 EXCLUDED**. Hardware is unverified (STATIC VERIFIED /
 HARDWARE UNVERIFIED).
 
 The public contracts are the [MaxCoil Una / Dynasty Bases / Bedsense Bases profile](../../beds/ore-comfort-bed.md)
@@ -51,16 +51,20 @@ Raw artifacts, reports and decompiled sources remain machine-local.
   streamed control for 0.1-60 s. Relative massage steps, Massage level and Massage: Timer
   buttons, a light toggle, the `innova_rename` action, and FFE4 Light / Massage timer states
   that clear when the connection ends.
-- INNOVA writes only to FFE9, requires FFE4 and mirrors Android's inherited write type.
-  Changing profile or bed type removes the profile's covers, buttons and states.
+- INNOVA writes to and subscribes the last FFE9 and FFE4 found across services, as the app
+  does, requires both and mirrors Android's inherited write type. Changing profile or bed
+  type removes the profile's covers, buttons and states.
+- The `okin_ore` bed type is now labelled "Okin ORE (Glideaway Motion app)": the accepted
+  Dynasty Bases and INNOVA reports prove both apps use only the `E5 FE 16` frame, so docs
+  point their users to the Keeson app profiles. Its key and behavior are unchanged.
 
 ## Totals
 
 | Disposition | Count |
 |---|---|
 | IMPLEMENTED | 50 |
-| ALREADY_IMPLEMENTED | 47 |
-| EXCLUDED | 29 |
+| ALREADY_IMPLEMENTED | 48 |
+| EXCLUDED | 28 |
 | Total | 126 |
 
 | Exclusion reason | Count |
@@ -68,7 +72,7 @@ Raw artifacts, reports and decompiled sources remain machine-local.
 | App UI identity flow | 3 |
 | Dead artifact code | 8 |
 | Platform boundary | 11 |
-| Safety constraint | 3 |
+| Safety constraint | 2 |
 | Unrelated to bed integration | 4 |
 
 ## Inventory coverage
@@ -136,9 +140,9 @@ B = Bedsense Bases, S = INNOVA. Pointers counts the inventory entries mapped to 
 | B-alias | B | configuration | Saved address and per-address local display alias | EXCLUDED | 1 | App UI identity flow: Home Assistant discovers by advertisement and connects to the configured address. The alias editor sends no frame. |
 | B-settings | B | configuration | Haptic feedback and inert actuator/installation switches | EXCLUDED | 13 | Unrelated to bed integration: third-party or phone-local code with no bed protocol effect. Only phone vibration changes; no packet or capability effect. |
 | B-rename-closure | B | configuration | No device rename builder in this app | ALREADY_IMPLEMENTED | 1 | custom_components/adjustable_bed/beds/ore_comfort_bed.py exposes no rename (supports_device_rename False); tests/test_innova.py::test_innova_rename_service rejects Bedsense |
-| B-bedding2 | B | variant | Manual 2M layout (bedding2) | ALREADY_IMPLEMENTED | 3 | custom_components/adjustable_bed/beds/ore_comfort_bed.py LAYOUTS[2] chosen by the motor count; tests/test_ore_comfort_bed.py::test_motor_count_selects_the_app_screen[bedsense_bases] |
-| B-bedding3 | B | variant | Manual 3M layout (bedding3) | ALREADY_IMPLEMENTED | 3 | custom_components/adjustable_bed/beds/ore_comfort_bed.py LAYOUTS[3] chosen by the motor count; tests/test_ore_comfort_bed.py::test_motor_count_selects_the_app_screen[bedsense_bases] |
-| B-bedding4 | B | variant | Manual 4M layout (bedding4) | ALREADY_IMPLEMENTED | 3 | custom_components/adjustable_bed/beds/ore_comfort_bed.py LAYOUTS[4] chosen by the motor count; tests/test_ore_comfort_bed.py::test_motor_count_selects_the_app_screen[bedsense_bases] |
+| B-bedding2 | B | variant | Manual 2M layout (bedding2) | ALREADY_IMPLEMENTED | 3 | custom_components/adjustable_bed/beds/ore_comfort_bed.py LAYOUTS[2] chosen by the motor count; tests/test_ore_comfort_bed.py::test_motor_count_selects_the_app_screen[2-keys0-bedsense_bases] |
+| B-bedding3 | B | variant | Manual 3M layout (bedding3) | ALREADY_IMPLEMENTED | 3 | custom_components/adjustable_bed/beds/ore_comfort_bed.py LAYOUTS[3] chosen by the motor count; tests/test_ore_comfort_bed.py::test_motor_count_selects_the_app_screen[3-keys1-bedsense_bases] |
+| B-bedding4 | B | variant | Manual 4M layout (bedding4) | ALREADY_IMPLEMENTED | 3 | custom_components/adjustable_bed/beds/ore_comfort_bed.py LAYOUTS[4] chosen by the motor count; tests/test_ore_comfort_bed.py::test_motor_count_selects_the_app_screen[4-keys2-bedsense_bases] |
 | B-dead-selectors | B | dead | Unknown-selector fallback and dormant `others` branch (500 ms) | EXCLUDED | 6 | Dead artifact code: no reachable selector, caller or listener-to-write chain in this package. |
 | B-dead-resources | B | dead | Unused sofa/others layouts and sav/M1-M4 labels | EXCLUDED | 9 | Dead artifact code: no reachable selector, caller or listener-to-write chain in this package. |
 | B-capability | B | capability | Layout chosen manually; no model, firmware or feature-bit route | IMPLEMENTED | 1 | const.py KEESON_VARIANT_BEDSENSE_BASES in ORE_COMFORT_BED_VARIANTS, custom_components/adjustable_bed/beds/ore_comfort_bed.py ORE_COMFORT_BED_APPS entry, config_flow.py _PER_SIDE_APP_PROFILES guard, actuator_groups.py wizard entry; tests/test_innova.py::test_profiles_are_selected_only_explicitly, tests/test_ore_comfort_bed.py::test_profile_is_explicit_and_auto_keeps_keeson |
@@ -147,7 +151,7 @@ B = Bedsense Bases, S = INNOVA. Pointers counts the inventory entries mapped to 
 | B-reads | B | dead | Read queue never populated; descriptor/RSSI callbacks log only | EXCLUDED | 5 | Dead artifact code: no reachable selector, caller or listener-to-write chain in this package. |
 | B-alt-transport | B | dead | No Classic, network/cloud, firmware or second protocol (negative closure) | EXCLUDED | 1 | Dead artifact code: nothing reachable exists to implement. |
 | B-ui-motion | B | ui | Motion fragments: hold, release and out-of-bounds cancel | ALREADY_IMPLEMENTED | 4 | custom_components/adjustable_bed/beds/ore_comfort_bed.py covers per screen with held burst and release, one global key (scheduler resource *); tests/test_ore_comfort_bed.py::test_hold_repeats_every_100ms_then_releases_with_zero |
-| B-ui-preset-toggle | B | ui | Preset fragment lastButton: tapping the same preset again sends the zero key | EXCLUDED | 1 | Safety constraint: the zero key itself is exposed as the Stop button (B-cmd-013), but a hidden toggle would make a preset button or automation alternate between recall and stop depending on earlier presses. |
+| B-ui-preset-toggle | B | ui | Preset fragment lastButton: tapping the same preset again sends the zero key | ALREADY_IMPLEMENTED | 1 | custom_components/adjustable_bed/beds/ore_comfort_bed.py stop_all sends the same zero word as the Stop button, as row056 L19 resolves this behavior; preset buttons always recall, so a preset or automation never alternates between recall and stop; tests/test_ore_comfort_bed.py::test_release_is_sent_even_when_the_hold_was_cancelled, tests/test_innova.py::test_bedsense_report_vectors_on_the_ore_comfort_controller |
 | B-ui-massage | B | ui | Massage fragment: persisted 0-39 sliders (default 10), timer label cycle, start/stop | ALREADY_IMPLEMENTED | 1 | custom_components/adjustable_bed/beds/ore_comfort_bed.py levels default to 1 and persist per entry through app_state_store; ore_comfort_massage_timer select; tests/test_ore_comfort_bed.py::test_slider_levels_persist_across_restarts, tests/test_ore_comfort_bed.py::test_massage_levels_timer_and_stop_publish_app_state |
 | B-ui-light | B | ui | Light fragment: local isLightOn chooses on or off frame | ALREADY_IMPLEMENTED | 1 | custom_components/adjustable_bed/beds/ore_comfort_bed.py discrete on/off with assumed state; tests/test_ore_comfort_bed.py::test_light_switch_reports_assumed_state |
 | S-cmd-001 | S | command | 4M back up `0x00000001` held | IMPLEMENTED | 3 | custom_components/adjustable_bed/beds/innova.py Back cover; tests/test_innova.py::test_innova_controls_send_the_artifact_frames |
@@ -190,8 +194,8 @@ B = Bedsense Bases, S = INNOVA. Pointers counts the inventory entries mapped to 
 | S-parser | S | parser | Flags byte 13/14: bit 5 suppresses, bit 6 lamp; signed timer 14/15: -1 none, 1/2/3 = 10/20/30, else unchanged | IMPLEMENTED | 2 | custom_components/adjustable_bed/beds/innova.py parse_innova_status; Light binary sensor and Massage timer sensor (both indicators always shown, while the app routes each to its own page); tests/test_innova.py::test_parser_branches, tests/test_innova.py::test_notifications_publish_and_clear |
 | S-state-routing | S | capability | Lamp bit drives the light page; timer drives memory/massage indicators | IMPLEMENTED | 1 | custom_components/adjustable_bed/beds/innova.py controller_state_*_specs, invalidate_diagnostics clears at session end; frontend discovery.ts innova_light; tests/test_innova.py::test_notifications_publish_and_clear, tests/test_innova.py::test_setup_exposes_each_app_surface_and_cleans_up |
 | S-timing | S | timing | Held keys at 0 ms then every 100 ms; single sends sleep 100 ms first; dead others 500 ms | IMPLEMENTED | 1 | custom_components/adjustable_bed/beds/innova.py HOLD_INTERVAL_MS, _send_singles; keeson.py _APP_MOTOR_PULSE_DEFAULTS innova (10, 100); tests/test_innova.py::test_hold_timing_and_single_send_delay |
-| S-release | S | release | UP/outside (and CANCEL where handled): cancel refresh, zero key 100 ms later | IMPLEMENTED | 1 | custom_components/adjustable_bed/beds/innova.py _release: 100 ms wait ended by Stop, immediate when cancelled, shielded write on a fresh asyncio.Event; tests/test_innova.py::test_cancelling_mid_release_still_writes_the_zero_key, tests/test_innova.py::test_release_write_survives_a_second_cancellation, tests/test_innova.py::test_a_stop_during_the_hold_releases_immediately |
-| S-gatt | S | transport | FFE9 write and FFE4 notify by UUID; both required; inherited write type; local notify | IMPLEMENTED | 9 | custom_components/adjustable_bed/beds/innova.py fixed FFE9, _require_roles, _refresh_write_mode, start_notify on FFE4 (Home Assistant must write the CCCD to receive the replies the app parses); tests/test_innova.py::test_both_roles_are_required_like_the_app, tests/test_innova.py::test_write_type_mirrors_android_default, tests/test_innova.py::test_failed_subscription_does_not_block_control |
+| S-release | S | release | UP/outside (and CANCEL where handled): cancel refresh, zero key 100 ms later | IMPLEMENTED | 1 | custom_components/adjustable_bed/beds/innova.py _release: 100 ms wait ended by Stop, immediate when cancelled, shielded write on a fresh asyncio.Event awaited through any number of cancellations; tests/test_innova.py::test_cancelling_mid_release_still_writes_the_zero_key, tests/test_innova.py::test_release_write_survives_repeated_cancellations, tests/test_innova.py::test_a_stop_during_the_hold_releases_immediately |
+| S-gatt | S | transport | FFE9 write and FFE4 notify by UUID; both required; inherited write type; local notify | IMPLEMENTED | 9 | custom_components/adjustable_bed/beds/innova.py _resolve_roles keeps the last FFE9 and last FFE4 per connection and writes/subscribes to those objects, requires both, mirrors the inherited write type; start_notify on that FFE4 (Home Assistant must write the CCCD to receive the replies the app parses); tests/test_innova.py::test_duplicate_roles_use_the_last_ffe9_and_ffe4, tests/test_innova.py::test_both_roles_are_required_like_the_app, tests/test_innova.py::test_write_type_mirrors_android_default, tests/test_innova.py::test_failed_subscription_does_not_block_control |
 | S-write | S | transport | Initial queue write of the offered frame | IMPLEMENTED | 3 | custom_components/adjustable_bed/beds/innova.py write_command -> base _write_gatt_with_retry; tests/test_innova.py::test_innova_controls_send_the_artifact_frames |
 | S-queue | S | transport | Mutable-characteristic queue aliasing, status-blind dequeue, >10 overflow disconnect | EXCLUDED | 2 | Safety constraint: the app's queue stores one mutable characteristic, so delayed writes can carry a later payload, and it disconnects above 10 entries; the integration serializes every GATT write with its own frame (AGENTS command serialization). This is an app defect, not protocol behavior. |
 | S-auth | S | session | No authentication, PIN, key exchange or bonding | ALREADY_IMPLEMENTED | 1 | custom_components/adjustable_bed/beds/keeson.py KeesonController (InnovaController's base) has no handshake; tests/test_innova.py::test_setup_exposes_each_app_surface_and_cleans_up sets up without one |

@@ -821,7 +821,7 @@ class TestDetectBedTypeByNamePattern:
         assert detect_bed_type(service_info) != BED_TYPE_KEESON
 
     def test_detect_keeson_by_name_ore(self):
-        """Test Keeson detection by ORE- prefix (Dynasty/INNOVA beds)."""
+        """Test Keeson detection by ORE- prefix (ORE-named beds; Auto uses the Base profile)."""
         service_info = _make_service_info(name="ORE-ac2170000d")
         assert detect_bed_type(service_info) == BED_TYPE_KEESON
 

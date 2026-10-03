@@ -840,7 +840,7 @@ class TestKeesonMassage:
 
 
 class TestSinoMassage:
-    """Test Sino (Dynasty/INNOVA) massage commands with absolute intensity levels."""
+    """Test Sino (Dynasty, BetterLiving) massage commands with absolute intensity levels."""
 
     @pytest.fixture
     def sino_config_entry_data(self, mock_keeson_config_entry_data: dict) -> dict:

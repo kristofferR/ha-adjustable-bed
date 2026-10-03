@@ -3,10 +3,10 @@
 Protocol reverse-engineered from com.ore.bedding.glideawaymontion APK.
 See disassembly/output/com.ore.bedding.glideawaymontion/ANALYSIS.md for details.
 
-This controller handles beds that use the OREBedBleProtocol A5 5A packet format:
-- Dynasty beds
-- INNOVA beds
-- Other ORE/OKIN beds with service UUID 00001000-0000-1000-8000-00805f9b34fb
+This controller handles beds that use the OREBedBleProtocol A5 5A packet format,
+such as ORE/OKIN beds with service UUID 00001000-0000-1000-8000-00805f9b34fb.
+The current Dynasty Bases and INNOVA apps use the E5 FE 16 Keeson frame instead;
+see beds/ore_comfort_bed.py and beds/innova.py.
 
 Packet format: [0xA5, 0x5A, checksum, 0x00, param_length, cmd_hi, cmd_lo, ...params]
 Checksum: ~(SUM of bytes from index 3) & 0xFF
