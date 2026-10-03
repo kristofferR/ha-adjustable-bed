@@ -709,6 +709,29 @@ test("Cool Base app-labelled controls land in massage and utility sections", () 
   expect(bed.memory).toEqual([]);
 });
 
+test("MaxCoil Una / Dynasty Bases controls land in motor, massage and utility sections", () => {
+  const hass = hassWith([
+    entry("cover.back", "back"),
+    entry("cover.feet", "feet"),
+    entry("cover.waist", "waist"),
+    entry("cover.lumbar", "lumbar"),
+    entry("number.head", "massage_head_intensity"),
+    entry("number.foot", "massage_foot_intensity"),
+    entry("number.wave", "massage_wave_intensity"),
+    entry("select.timer", "ore_comfort_massage_timer"),
+    entry("button.start", "ore_comfort_massage_start"),
+    entry("button.save_flat", "ore_comfort_program_flat"),
+    entry("button.save_zg", "ore_comfort_program_zero_g"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.motors.map((m) => m.key)).toEqual(["back", "feet", "lumbar", "waist"]);
+  expect(bed.massage.numbers).toEqual(["number.head", "number.foot", "number.wave"]);
+  expect(bed.massage.timer).toBe("select.timer");
+  expect(bed.massage.buttons).toEqual(["button.start"]);
+  expect(bed.utility).toEqual(["button.save_flat", "button.save_zg"]);
+  expect(bed.memory).toEqual([]);
+});
+
 test("Restonic BT remote B maps its combined cover, light and ZZZ button", () => {
   const hass = hassWith([
     entry("cover.r_back", "head"),

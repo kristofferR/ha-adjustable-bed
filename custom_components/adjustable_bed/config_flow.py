@@ -243,6 +243,8 @@ from .const import (
     JIECANG_APP_LAYOUTS,
     JIECANG_APP_PROFILES,
     JIECANG_APP_TRANSPORTS,
+    KEESON_VARIANT_DYNASTY_BASES,
+    KEESON_VARIANT_MAXCOIL_UNA,
     LEGGETT_APP_DEFAULT_PROFILE,
     LEGGETT_APP_MOTOR_COUNTS,
     LEGGETT_APP_PROFILES,
@@ -701,6 +703,8 @@ _PER_SIDE_APP_PROFILES: Final = {
     SVANE_VARIANT_JENSEN_LINON: "jensen_linon_unpair_first",
     SVANE_VARIANT_MULTI: "svane_unpair_first",
     SVANE_VARIANT_JMC: "svane_unpair_first",
+    KEESON_VARIANT_MAXCOIL_UNA: "ore_comfort_unpair_first",
+    KEESON_VARIANT_DYNASTY_BASES: "ore_comfort_unpair_first",
 }
 
 

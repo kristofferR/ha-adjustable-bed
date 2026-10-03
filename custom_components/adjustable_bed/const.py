@@ -1632,6 +1632,12 @@ KEESON_VARIANT_PURPLE: Final = "purple"
 KEESON_VARIANT_KSBT04C: Final = "ksbt04c"
 KEESON_VARIANT_SLEEP_HARMONY: Final = "sleep_harmony"
 KEESON_VARIANT_ADJUSTABLE_LITE: Final = "adjustable_lite"
+# ORE comfort-bed apps (com.ore.okincomfortbed code base): explicit, never auto-selected.
+KEESON_VARIANT_MAXCOIL_UNA: Final = "maxcoil_una"
+KEESON_VARIANT_DYNASTY_BASES: Final = "dynasty_bases"
+ORE_COMFORT_BED_VARIANTS: Final = frozenset(
+    {KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_DYNASTY_BASES}
+)
 # Restonic BT Remote (com.keeson.restonicBT): the app's user-selected remote style.
 KEESON_VARIANT_RESTONIC_A: Final = "restonic_a"
 KEESON_VARIANT_RESTONIC_B: Final = "restonic_b"
@@ -1646,6 +1652,8 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_KSBT04C: "KSBT04C (generic 7-byte checksum)",
     KEESON_VARIANT_SLEEP_HARMONY: "Sleep Harmony (KSBT04C / base-i5)",
     KEESON_VARIANT_ADJUSTABLE_LITE: "Adjustable Lite app (KSBT01C / KSBT03C)",
+    KEESON_VARIANT_MAXCOIL_UNA: "MaxCoil Una app (2M / 3M / 4M motor count)",
+    KEESON_VARIANT_DYNASTY_BASES: "Dynasty Bases app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_RESTONIC_A: "Restonic BT app, remote A (6 buttons)",
     KEESON_VARIANT_RESTONIC_B: "Restonic BT app, remote B (10 buttons)",
     KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
@@ -2452,6 +2460,8 @@ ALL_PROTOCOL_VARIANTS: Final = [
     KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_SLEEP_HARMONY,
     KEESON_VARIANT_ADJUSTABLE_LITE,
+    KEESON_VARIANT_MAXCOIL_UNA,
+    KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_RESTONIC_A,
     KEESON_VARIANT_RESTONIC_B,
     KEESON_VARIANT_ERGOMOTION,
