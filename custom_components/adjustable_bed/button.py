@@ -29,7 +29,7 @@ from .paired_coordinator import (
     SingleAddressPairedCoordinator,
     entity_runtimes,
 )
-from .remacro_discovery import remacro_side_lacks_global_stop, remacro_side_rejected
+from .remacro_discovery import remacro_side_lacks_global_stop
 
 if TYPE_CHECKING:
     from .beds.base import BedController, ControllerButtonSpec, MotorControlSpec
@@ -1099,11 +1099,8 @@ def _async_remove_stale_combined_button_entities(
     entities: list[ButtonEntity],
 ) -> None:
     """Remove pair-level controls no longer supported by both known sides."""
-    # A merely unknown side may still support them; a refused side never will.
-    if any(
-        child.capability_controller is None and not remacro_side_rejected(child)
-        for child in children
-    ):
+    # A side whose capabilities are still unknown may yet support them.
+    if any(child.capability_controller is None for child in children):
         return
 
     desired_unique_ids = {

@@ -13,8 +13,8 @@ from homeassistant.config_entries import (
     ConfigEntry,
 )
 from homeassistant.const import CONF_ADDRESS, Platform
-from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.typing import ConfigType
@@ -76,7 +76,6 @@ from .paired_devices import async_register_children
 from .paired_registry import (
     _async_rehome_absorbed_singles,
     async_has_side_controller_entities,
-    async_remove_side_controller_entities,
 )
 from .paired_registry import (
     async_unpair_entry as async_unpair_entry,
@@ -92,6 +91,7 @@ from .pairing import (
     with_updated_child,
 )
 from .remacro_discovery import (
+    async_watch_remacro_fallback,
     clear_remacro_model_issues,
     remacro_entry_problem,
     remacro_manufacturer_data,
@@ -345,10 +345,10 @@ def _maybe_cache_kaidi_metadata(hass: HomeAssistant, entry: ConfigEntry) -> None
 
 
 def _async_prepare_remacro_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Cache and validate the Remacro model before any connection attempt.
+    """Cache the Remacro model and refresh its Repairs warning before connecting.
 
-    The apps refuse a bed whose lowest company ID they do not list, so such an
-    entry fails permanently instead of reconnecting forever.
+    A model the selected app does not list, or one not seen yet, still loads on
+    the fallback controls, as every Remacro bed did in v4.0.2; it never blocks setup.
     """
     if entry.data.get(CONF_BED_TYPE) != BED_TYPE_REMACRO:
         # An earlier Remacro setup may have raised a model issue for this bed.
@@ -360,25 +360,20 @@ def _async_prepare_remacro_entry(hass: HomeAssistant, entry: ConfigEntry) -> Non
         hass.config_entries.async_update_entry(entry, data=new_data)
     problem, placeholders = remacro_entry_problem(entry.data, manufacturer_data)
     update_remacro_model_issue(
-        hass, entry.data[CONF_ADDRESS], entry.title, problem, placeholders
+        hass,
+        entry.data[CONF_ADDRESS],
+        entry.title,
+        problem,
+        placeholders,
+        entry_id=entry.entry_id,
     )
-    if problem == "unknown":
-        raise ConfigEntryNotReady(
-            translation_domain=DOMAIN, translation_key="remacro_model_unknown"
-        )
-    if problem is not None:
-        raise ConfigEntryError(
-            translation_domain=DOMAIN,
-            translation_key=f"remacro_model_{problem}",
-            translation_placeholders=placeholders,
-        )
 
 
 def _maybe_cache_paired_remacro_models(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Remember each Remacro side's model from its own advertisement history.
+    """Remember each Remacro side's model and refresh its Repairs warning.
 
     The stored model lets a side without history resolve its screen at connect
-    and lets its capabilities be minted offline; a live advertisement still wins.
+    and offline; a live advertisement still wins.
     """
     children = entry.data.get(CONF_PAIR_CHILDREN)
     if not isinstance(children, list):
@@ -400,6 +395,25 @@ def _maybe_cache_paired_remacro_models(hass: HomeAssistant, entry: ConfigEntry) 
     if updated != children:
         hass.config_entries.async_update_entry(
             entry, data={**entry.data, CONF_PAIR_CHILDREN: updated}
+        )
+    for side in PAIR_SIDES:
+        if get_child(entry.data, side) is None:
+            continue
+        data = effective_child_data(entry.data, side, entry.options)
+        address = data.get(CONF_ADDRESS)
+        if data.get(CONF_BED_TYPE) != BED_TYPE_REMACRO or not isinstance(address, str):
+            continue
+        problem, placeholders = remacro_entry_problem(
+            data, remacro_manufacturer_data(hass, address)
+        )
+        update_remacro_model_issue(
+            hass,
+            address,
+            f"{entry.title} ({side})",
+            problem,
+            placeholders,
+            entry_id=entry.entry_id,
+            side=side,
         )
 
 
@@ -643,17 +657,6 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     children = _build_paired_children(hass, entry)
     if not children:
         raise ConfigEntryNotReady("Paired bed has no child sides configured")
-    # Every side's app refuses its model: fail permanently like a standalone bed
-    # instead of retrying forever. Each side keeps its own Repairs issue.
-    if all(
-        isinstance(child, AdjustableBedCoordinator) and child.remacro_model_rejected
-        for child in children.values()
-    ):
-        for child in children.values():
-            child.remacro_model_blocks_connection()
-        raise ConfigEntryError(
-            translation_domain=DOMAIN, translation_key="remacro_pair_unsupported"
-        )
 
     # Seed persisted capability snapshots before a live connection can cache an
     # incomplete discovery over them. Complete live discovery still refreshes
@@ -717,15 +720,6 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
             for child in children.values():
                 if not async_has_side_controller_entities(hass, entry, child.address):
                     continue
-                if child.remacro_model_rejected:
-                    # The app would refuse this side; its Repairs issue explains
-                    # why. Retire its controls instead of failing the whole pair.
-                    async_remove_side_controller_entities(hass, entry, child.address)
-                    continue
-                if child.remacro_model_unseen:
-                    # Its controls wait, unavailable, for the reload that
-                    # _async_watch_unseen_remacro_sides schedules when it advertises.
-                    continue
                 await child.async_prime_offline_controller()
                 capability_controller = child.capability_controller
                 if (
@@ -785,12 +779,6 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     }
     for side in retained_sides:
         await coordinator.async_remove_child(side)
-    # The absorb just moved a refused Remacro side's old controls onto the pair.
-    # Retire them only now that the transfer committed; a rolled-back side keeps
-    # its rows under its surviving original entry, which this never touches.
-    for child in coordinator.children.values():
-        if isinstance(child, AdjustableBedCoordinator) and child.remacro_model_rejected:
-            async_remove_side_controller_entities(hass, entry, child.address)
     if not coordinator.children:
         hass.data[DOMAIN].pop(entry.entry_id, None)
         await coordinator.async_shutdown()
@@ -842,48 +830,12 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
         if child.is_connected:
             child._schedule_position_hydration()
 
-    _async_watch_unseen_remacro_sides(hass, entry, coordinator)
+    sides = coordinator.children.values()
+    async_watch_remacro_fallback(
+        hass, entry, (side for side in sides if isinstance(side, AdjustableBedCoordinator))
+    )
     _LOGGER.info("Paired bed setup complete for %s", entry.title)
     return True
-
-
-def _async_watch_unseen_remacro_sides(
-    hass: HomeAssistant, entry: ConfigEntry, coordinator: PairedBedCoordinator
-) -> None:
-    """Reload the pair once a Remacro side whose model is unknown advertises.
-
-    The pair loads half-available without that side, which has no controls
-    until its model is known; the reload then caches the model and builds them.
-    """
-    for child in coordinator.children.values():
-        if not isinstance(child, AdjustableBedCoordinator) or not child.remacro_model_unseen:
-            continue
-
-        reload_requested = False
-
-        @callback
-        def _seen(
-            service_info: bluetooth.BluetoothServiceInfoBleak,
-            _change: bluetooth.BluetoothChange,
-        ) -> None:
-            nonlocal reload_requested
-            if service_info.manufacturer_data and not reload_requested:
-                reload_requested = True
-                _LOGGER.info(
-                    "Remacro side %s advertised; reloading %s to add its controls",
-                    service_info.address,
-                    entry.title,
-                )
-                hass.config_entries.async_schedule_reload(entry.entry_id)
-
-        entry.async_on_unload(
-            bluetooth.async_register_callback(
-                hass,
-                _seen,
-                bluetooth.BluetoothCallbackMatcher(address=child.address),
-                bluetooth.BluetoothScanningMode.PASSIVE,
-            )
-        )
 
 
 async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -1107,6 +1059,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.info("Successfully connected to bed at %s", entry.data.get(CONF_ADDRESS))
     # Keep the proven layout available to the combine wizard after idle disconnect.
     coordinator.cache_capability_controller()
+    async_watch_remacro_fallback(hass, entry, (coordinator,))
     return await _async_finish_entry_setup(
         hass,
         entry,
