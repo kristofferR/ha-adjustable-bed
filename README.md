@@ -94,6 +94,7 @@ The entries below identify motor/actuator manufacturers or supported app profile
 | ✅ [Linak](docs/beds/linak.md) | Tempur-Pedic, Bedre Nætter, Jensen |
 | ✅ [Keeson](docs/beds/keeson.md) | Ergomotion, Tempur, Beautyrest, King Koil, Member's Mark, Purple, GhostBed, ErgoSportive |
 | 🧪 [Adjustable Lite app profile](docs/beds/keeson.md#adjustable-lite-profile) | Explicit Keeson profile for the KSBT01C and KSBT03C remotes; artifact-verified, hardware unverified |
+| 🧪 [Simon Li, Heal Every Night and OKIN-Seating app profiles](docs/beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles) | Explicit Keeson profiles for the Okin seating apps and the Healing 6/7/8 beds; artifact-verified, hardware unverified |
 | 🧪 [INNOVA app profile](docs/beds/keeson.md#innova-profile) | Explicit Keeson profile for the INNOVA app's 2M/3M/4M screens; artifact-verified, hardware unverified |
 | 🧪 [MaxCoil Una / Dynasty Bases / Bedsense Bases app profile](docs/beds/ore-comfort-bed.md) | Explicit Keeson profile for the 2M, 3M and 4M app screens; artifact-verified, hardware unverified |
 | 🧪 [Restonic BT app profiles](docs/beds/keeson.md#restonic-bt-profiles) | Explicit Keeson profiles for the Restonic BT Remote app's remote styles A and B; artifact-verified, hardware unverified |

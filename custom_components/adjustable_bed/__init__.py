@@ -1234,6 +1234,11 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     if isinstance(sessions, dict):
         for address in unowned:
             drop_sessions(sessions, address)
+    if hass.data.get(DOMAIN, {}).get("okin_app_sessions"):
+        from .beds.keeson_okin_apps import drop_okin_app_sessions
+
+        for address in unowned:
+            drop_okin_app_sessions(hass, address)
     hass.loop.call_soon(async_refresh_combine_beds_issue, hass)
 
 

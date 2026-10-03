@@ -227,6 +227,9 @@ export function bedEntitiesForDevice(
           bed.massage.buttons.push(id);
         } else if (key.startsWith("starcode_abm5_4_")) {
           bed.utility.push(id);
+        } else if (key === "okin_app_home") {
+          // Simon Li / OKIN-Seating Home is a held key whose posture is not established.
+          presetMap.set(key, id);
         } else if (key.startsWith("simmons_inclined_")) {
           // Inclined-bed controls replace three presets; their physical roles are unverified.
           presetMap.set(key, id);
@@ -318,7 +321,8 @@ export function bedEntitiesForDevice(
         break;
 
       case "select":
-        if (key === "motion_bed_active_module") (bed.utilitySelects ??= []).push(id);
+        if (key === "motion_bed_active_module" || key.startsWith("okin_app_"))
+          (bed.utilitySelects ??= []).push(id);
         else if (key === "light_timer") bed.lights.timer = id;
         // A split bed's local left/right selector routes the motor controls.
         else if (key === "remacro_control_side") bed.controlSide = id;

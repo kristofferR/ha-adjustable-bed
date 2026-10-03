@@ -162,6 +162,7 @@ from .const import (
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_MOTOR_PULSE_USER_SET,
     CONF_OCTO_PIN,
+    CONF_OKIN_APP_SETTINGS,
     CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
@@ -198,6 +199,7 @@ from .const import (
     DEVICE_INFO_CHARS,
     DEVICE_INFO_READ_TIMEOUT,
     DOMAIN,
+    KEESON_VARIANT_HEAL_EVERY_NIGHT,
     LEGGETT_OKIN_SUPERSEDED_PULSE_DEFAULTS,
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_OKIN,
@@ -1452,6 +1454,21 @@ class AdjustableBedCoordinator:
             self._begin_internal_entry_update(self._ble_bond_established)
             self._async_persist_config({**self.entry.data, CONF_NAME: name})
         self._name = name
+
+    def remember_okin_app_settings(self, settings: Mapping[str, bool]) -> None:
+        """Persist Heal Every Night's app-local movement settings for this address."""
+        if (
+            self._bed_type != BED_TYPE_KEESON
+            or self._protocol_variant != KEESON_VARIANT_HEAL_EVERY_NIGHT
+        ):
+            raise ValueError("These settings belong to the Heal Every Night app profile")
+        stored = {key: value is True for key, value in settings.items()}
+        if self.entry.data.get(CONF_OKIN_APP_SETTINGS) == stored:
+            return
+        self._begin_internal_entry_update(self._ble_bond_established)
+        self._async_persist_config(
+            {**self.entry.data, CONF_OKIN_APP_SETTINGS: stored}, keys={CONF_OKIN_APP_SETTINGS}
+        )
 
     def remember_svane_preferences(self, preferences: dict[str, object]) -> None:
         """Guard one changed target-local preference batch without bond inference."""

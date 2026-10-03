@@ -54,7 +54,7 @@ Brands using DewertOkin/ORE actuators (79 apps analyzed):
 - IST
 
 **Other Brands:**
-- Simon Li
+- Simon Li (see the [Keeson app profiles](keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), which also cover Heal Every Night and OKIN-Seating)
 - Cherish Smart
 - Support 挺你
 - Apex

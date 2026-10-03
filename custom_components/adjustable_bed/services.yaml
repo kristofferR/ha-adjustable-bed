@@ -1712,6 +1712,56 @@ adjustable_lumbar_hold_control:
             - left
             - right
 
+okin_app_hold_control:
+  name: Hold Okin app control
+  description: Hold one Simon Li, Heal Every Night or OKIN-Seating control, repeating it every 100 ms, then release it with the app's zero frame. Holding a Simon Li memory for 2.1 seconds or more is the app's memory save.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    control:
+      name: Control
+      description: A control of the selected app. Back and Home belong to Simon Li and OKIN-Seating, lumbar and memory to Simon Li, and head and tilt to Heal Every Night.
+      required: true
+      selector:
+        select:
+          options:
+            - back_up
+            - back_down
+            - head_up
+            - head_down
+            - foot_up
+            - foot_down
+            - tilt_up
+            - tilt_down
+            - lumbar_up
+            - lumbar_down
+            - home
+            - memory_1
+            - memory_2
+    duration:
+      name: Duration
+      description: Hold time in seconds, from 0.1 to 60.
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 60
+          step: 0.1
+          unit_of_measurement: s
+    side:
+      name: Side
+      selector:
+        select:
+          options:
+            - both
+            - left
+            - right
+
 innova_hold_control:
   name: Hold INNOVA control
   description: Hold one control the INNOVA app streams while pressed, for a Keeson bed on the INNOVA profile. The key repeats every 100 ms; release sends one zero key 100 ms after the hold ends.

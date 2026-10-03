@@ -853,7 +853,11 @@ async def test_offline_safe_variants_build_without_a_client(coordinator, variant
         client=None,
         device_name="ORE bed",
     )
-    assert isinstance(controller, (InnovaController, OreComfortBedController))
+    from custom_components.adjustable_bed.beds.keeson_okin_apps import OkinAppKeesonController
+
+    assert isinstance(
+        controller, (InnovaController, OreComfortBedController, OkinAppKeesonController)
+    )
     assert controller.motor_control_specs
 
 

@@ -990,7 +990,8 @@
       "richmat_mh_no_name": "The app selects the model from the Bluetooth name, which is unavailable. Choose the model in the protocol variant.",
       "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant.",
       "ore_comfort_unpair_first": "Unpair the beds and configure each side separately before changing the MaxCoil Una, Dynasty Bases or Bedsense Bases app profile.",
-      "innova_unpair_first": "Unpair the beds and configure each side separately before changing the INNOVA app profile."
+      "innova_unpair_first": "Unpair the beds and configure each side separately before changing the INNOVA app profile.",
+      "okin_app_unpair_first": "Unpair the beds and configure each side separately before changing to, from or between the Simon Li, Heal Every Night and OKIN-Seating app profiles."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond\u2026",
@@ -2227,6 +2228,9 @@
       },
       "innova_massage_timer_hold": {
         "name": "Massage timer (memory page)"
+      },
+      "okin_app_home": {
+        "name": "Home"
       }
     },
     "cover": {
@@ -6043,6 +6047,27 @@
           "20": "20 minutes",
           "30": "30 minutes"
         }
+      },
+      "okin_app_installation": {
+        "name": "Installation mode",
+        "state": {
+          "standard": "Standard",
+          "swapped": "Swapped"
+        }
+      },
+      "okin_app_actuator_1": {
+        "name": "Actuator 1 direction",
+        "state": {
+          "normal": "Normal",
+          "reversed": "Reversed"
+        }
+      },
+      "okin_app_actuator_2": {
+        "name": "Actuator 2 direction",
+        "state": {
+          "normal": "Normal",
+          "reversed": "Reversed"
+        }
       }
     },
     "climate": {
@@ -7203,6 +7228,26 @@
         "side": {
           "name": "Side",
           "description": "Target side of a paired bed."
+        }
+      }
+    },
+    "okin_app_hold_control": {
+      "name": "Hold Okin app control",
+      "description": "Hold one Simon Li, Heal Every Night or OKIN-Seating control, repeating it every 100 ms, then release it with the app's zero frame. Holding a Simon Li memory for 2.1 seconds or more is the app's memory save.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "A control of the selected app. Back and Home belong to Simon Li and OKIN-Seating, lumbar and memory to Simon Li, and head and tilt to Heal Every Night."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
         }
       }
     }

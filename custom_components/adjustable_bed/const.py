@@ -287,6 +287,8 @@ CONF_KAIDI_SOFA_ACU_NO: Final = "kaidi_sofa_acu_no"
 CONF_REMACRO_MODEL: Final = "remacro_model"
 # Remacro committed LED levels by model ID, the app's "LV"+model+address preference.
 CONF_REMACRO_LED_LEVEL: Final = "remacro_led_level"
+# Heal Every Night Installation Mode / Actuator Direction settings (app-local).
+CONF_OKIN_APP_SETTINGS: Final = "okin_app_settings"
 CONF_KAIDI_ADV_TYPE: Final = "kaidi_adv_type"
 CONF_KAIDI_RESOLVED_VARIANT: Final = "kaidi_resolved_variant"
 CONF_KAIDI_VARIANT_SOURCE: Final = "kaidi_variant_source"
@@ -1633,6 +1635,16 @@ KEESON_VARIANT_PURPLE: Final = "purple"
 KEESON_VARIANT_KSBT04C: Final = "ksbt04c"
 KEESON_VARIANT_SLEEP_HARMONY: Final = "sleep_harmony"
 KEESON_VARIANT_ADJUSTABLE_LITE: Final = "adjustable_lite"
+# Okin apps on the big-endian E5 frame (com.okin.simon / com.okin.healeverynight /
+# com.okin.minghua.R): explicit, never auto-selected.
+KEESON_VARIANT_SIMON_LI: Final = "simon_li"
+KEESON_VARIANT_HEAL_EVERY_NIGHT: Final = "heal_every_night"
+KEESON_VARIANT_OKIN_SEATING: Final = "okin_seating"
+OKIN_APP_VARIANTS: Final = (
+    KEESON_VARIANT_SIMON_LI,
+    KEESON_VARIANT_HEAL_EVERY_NIGHT,
+    KEESON_VARIANT_OKIN_SEATING,
+)
 # ORE SFM apps (com.ore.sfmc2bedsence / com.ore.sfm): explicit, never auto-selected.
 KEESON_VARIANT_BEDSENSE_BASES: Final = "bedsense_bases"
 KEESON_VARIANT_INNOVA: Final = "innova"
@@ -1647,7 +1659,9 @@ ORE_COMFORT_BED_VARIANTS: Final = frozenset(
 # detects its variant live). A paired side on one of these variants can be minted
 # offline. Each bed type contributes its own frozenset, so profiles extend this
 # independently; every member must build its controller without a client.
-OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS: Final = ORE_COMFORT_BED_VARIANTS | {KEESON_VARIANT_INNOVA}
+OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS: Final = (
+    ORE_COMFORT_BED_VARIANTS | {KEESON_VARIANT_INNOVA} | frozenset(OKIN_APP_VARIANTS)
+)
 OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_KEESON: OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS,
 }
@@ -1665,6 +1679,9 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_KSBT04C: "KSBT04C (generic 7-byte checksum)",
     KEESON_VARIANT_SLEEP_HARMONY: "Sleep Harmony (KSBT04C / base-i5)",
     KEESON_VARIANT_ADJUSTABLE_LITE: "Adjustable Lite app (KSBT01C / KSBT03C)",
+    KEESON_VARIANT_SIMON_LI: "Simon Li app (chair / love seat / sofa)",
+    KEESON_VARIANT_HEAL_EVERY_NIGHT: "Heal Every Night app (motor count 2/3/4 = Healing 6/7/8)",
+    KEESON_VARIANT_OKIN_SEATING: "OKIN-Seating app",
     KEESON_VARIANT_BEDSENSE_BASES: "Bedsense Bases app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_INNOVA: "INNOVA app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_MAXCOIL_UNA: "MaxCoil Una app (2M / 3M / 4M motor count)",
@@ -2475,6 +2492,9 @@ ALL_PROTOCOL_VARIANTS: Final = [
     KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_SLEEP_HARMONY,
     KEESON_VARIANT_ADJUSTABLE_LITE,
+    KEESON_VARIANT_SIMON_LI,
+    KEESON_VARIANT_HEAL_EVERY_NIGHT,
+    KEESON_VARIANT_OKIN_SEATING,
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_MAXCOIL_UNA,
