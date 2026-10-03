@@ -1502,23 +1502,22 @@ SOLACE_VARIANTS: Final = {
     VARIANT_AUTO: "Auto (conservative device-name profile)",
     SOLACE_VARIANT_WOOSA: "Woosa Sleep app (select explicitly)",
 }
-SVANE_VARIANT_MULTI: Final = "svane_remote_multi"
+# The multi-service profile is stored as ``auto``, as v4.0.2 entries hold it.
+# A new setup whose scanned name contains ``JMC`` stores the JMC profile.
+SVANE_VARIANT_MULTI: Final = VARIANT_AUTO
 SVANE_VARIANT_JMC: Final = "svane_remote_jmc"
 SVANE_VARIANT_JENSEN_LINON: Final = "jensen_linon"
 SVANE_VARIANTS: Final = {
-    VARIANT_AUTO: "Svane Remote (multi-service, existing entries)",
-    SVANE_VARIANT_MULTI: "Svane Remote (multi-service)",
-    SVANE_VARIANT_JMC: "Svane Remote (JMC400, select explicitly)",
+    SVANE_VARIANT_MULTI: "Svane Remote app (multi-service)",
+    SVANE_VARIANT_JMC: "Svane Remote app (JMC400)",
     SVANE_VARIANT_JENSEN_LINON: "Jensen Adjustable Sleep app (LinOn)",
 }
 # Remacro app profiles. Company IDs select the model, never the app, so auto
-# keeps the Slumberland app; The Brick and Jerome's are explicit choices.
-REMACRO_VARIANT_SLUMBERLAND: Final = "slumberland"
+# (stored by v4.0.2 entries) is the Slumberland app; the others are explicit.
 REMACRO_VARIANT_THE_BRICK: Final = "the_brick"
 REMACRO_VARIANT_JEROMES: Final = "jeromes"
 REMACRO_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto (Slumberland app)",
-    REMACRO_VARIANT_SLUMBERLAND: "Slumberland app",
+    VARIANT_AUTO: "Slumberland app",
     REMACRO_VARIANT_THE_BRICK: "The Brick app",
     REMACRO_VARIANT_JEROMES: "Jerome's app",
 }
@@ -1666,8 +1665,6 @@ OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
 # Restonic BT Remote (com.keeson.restonicBT): the app's user-selected remote style.
 KEESON_VARIANT_RESTONIC_A: Final = "restonic_a"
 KEESON_VARIANT_RESTONIC_B: Final = "restonic_b"
-# Deprecated alias kept for compatibility with older references.
-KEESON_VARIANT_ORE: Final = KEESON_VARIANT_SINO
 KEESON_VARIANTS: Final = {
     VARIANT_AUTO: "Auto-detect",
     KEESON_VARIANT_BASE: "BaseI4/BaseI5 (Member's Mark)",
@@ -1689,8 +1686,7 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
     KEESON_VARIANT_OKIN: "OKIN FFE (OKIN 13/15 series, 0xE6 prefix)",
     KEESON_VARIANT_SERTA: "Serta (Serta MP Remote)",
-    KEESON_VARIANT_SINO: "Sino (Dynasty, BetterLiving - big-endian)",
-    "ore": "ORE (deprecated alias for Sino)",
+    KEESON_VARIANT_SINO: "Sino (BetterLiving, big-endian)",
     KEESON_VARIANT_PURPLE: "Purple Smart Base (Premium / Premium Plus)",
 }
 
@@ -2467,9 +2463,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     VARIANT_AUTO,
     SOLACE_VARIANT_WOOSA,
     SVANE_VARIANT_JENSEN_LINON,
-    SVANE_VARIANT_MULTI,
     SVANE_VARIANT_JMC,
-    REMACRO_VARIANT_SLUMBERLAND,
     REMACRO_VARIANT_THE_BRICK,
     REMACRO_VARIANT_JEROMES,
     KAIDI_VARIANT_SEAT_1,
@@ -2504,7 +2498,6 @@ ALL_PROTOCOL_VARIANTS: Final = [
     KEESON_VARIANT_SERTA,
     KEESON_VARIANT_SINO,
     KEESON_VARIANT_PURPLE,
-    "ore",  # Deprecated alias for Sino retained for existing config entries
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_OKIN,
     LEGGETT_VARIANT_MLRM,
@@ -2863,7 +2856,6 @@ def disconnect_after_command_default_enabled(
         VARIANT_AUTO,
         KEESON_VARIANT_ERGOMOTION,
         KEESON_VARIANT_SINO,
-        "ore",
     }:
         return False
     if bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant in {

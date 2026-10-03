@@ -567,7 +567,7 @@ async def create_controller(
         from .beds.svane import SvaneController
         from .svane_state import get_svane_session
 
-        if protocol_variant not in (None, VARIANT_AUTO, SVANE_VARIANT_MULTI, SVANE_VARIANT_JMC):
+        if protocol_variant not in (None, SVANE_VARIANT_MULTI, SVANE_VARIANT_JMC):
             raise ValueError("Unknown Svane Remote profile")
         profile = "jmc" if protocol_variant == SVANE_VARIANT_JMC else "multi"
         session = get_svane_session(coordinator.hass, coordinator.address, profile)
@@ -1134,10 +1134,6 @@ async def create_controller(
         keeson_variant = protocol_variant
         keeson_betterliving_presets = False
         keeson_cb1322_presets = False
-        if keeson_variant == "ore":
-            _LOGGER.debug("Normalizing deprecated Keeson variant 'ore' to 'sino'")
-            keeson_variant = KEESON_VARIANT_SINO
-
         # Auto-detect Keeson sub-variant where possible.
         # BetterLiving/OKIN-BLE beds use Sino (big-endian) and advertise
         # fallback service UUIDs that overlap with Richmat WiLinke.

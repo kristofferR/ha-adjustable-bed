@@ -524,7 +524,7 @@
         "title": "FurniMove handset",
         "description": "Choose the handset ID used in FurniMove / OKIN Smart Remote. The RF ECO BT receiver label does not identify the motor layout. Use the shipped offline table only when that is the layout selected in the app.",
         "data": {
-          "furnimove_remote": "Handset ID"
+          "furnimove_remote": "FurniMove handset ID"
         }
       },
       "vibradorm_app": {

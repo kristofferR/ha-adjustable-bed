@@ -293,7 +293,6 @@ from .const import (
     STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
     SVANE_VARIANT_JENSEN_LINON,
     SVANE_VARIANT_JMC,
-    SVANE_VARIANT_MULTI,
     SVANE_VARIANTS,
     VARIANT_AUTO,
     VIBRADORM_APP_CONFIG_KEYS,
@@ -709,7 +708,6 @@ class BondRouteMismatchError(Exception):
 _PER_SIDE_APP_PROFILES: Final = {
     SOLACE_VARIANT_WOOSA: "woosa_unpair_first",
     SVANE_VARIANT_JENSEN_LINON: "jensen_linon_unpair_first",
-    SVANE_VARIANT_MULTI: "svane_unpair_first",
     SVANE_VARIANT_JMC: "svane_unpair_first",
     KEESON_VARIANT_MAXCOIL_UNA: "ore_comfort_unpair_first",
     KEESON_VARIANT_DYNASTY_BASES: "ore_comfort_unpair_first",
@@ -1697,8 +1695,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     """Handle a config flow for Adjustable Bed."""
 
     # v4 introduces the paired-bed schema (Dual Bed 4.0). The v3->v4 migration is
-    # a strict no-op for non-paired entries; see async_migrate_entry.
+    # a strict no-op for non-paired entries; see async_migrate_entry. Minor
+    # version 2 stores v4.0.2 aliases and per-app keys under one name.
     VERSION = 4
+    MINOR_VERSION = 2
 
     @staticmethod
     def _mark_ble_bond_established(entry_data: dict[str, Any]) -> dict[str, Any]:
@@ -8133,16 +8133,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             if not separate_address_pair and (
                 bed_type == BED_TYPE_SVANE or self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_SVANE
             ):
-                old_variant = self.config_entry.data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
-                new_variant = new_data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
-                if self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_SVANE and old_variant in (
-                    None, VARIANT_AUTO, SVANE_VARIANT_MULTI
-                ):
-                    old_variant = SVANE_VARIANT_MULTI
-                if bed_type == BED_TYPE_SVANE and new_variant in (
-                    None, VARIANT_AUTO, SVANE_VARIANT_MULTI
-                ):
-                    new_variant = SVANE_VARIANT_MULTI
+                old_variant = self.config_entry.data.get(CONF_PROTOCOL_VARIANT) or VARIANT_AUTO
+                new_variant = new_data.get(CONF_PROTOCOL_VARIANT) or VARIANT_AUTO
                 if bed_type != self.config_entry.data.get(CONF_BED_TYPE) or new_variant != old_variant:
                     # The old profile's preferences and session end with it.
                     address = self.config_entry.data.get(CONF_ADDRESS)

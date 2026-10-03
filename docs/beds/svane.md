@@ -4,12 +4,11 @@ Svane Remote **Version 1.8 (8)**, package `com.svane.svaneremote`, has two expli
 
 | Configuration | App route | Endpoint |
 | --- | --- | --- |
-| `svane_remote_multi` | P1 multi-service | Exact head, feet and lamp roles below |
+| `auto` (shown as **Svane Remote app (multi-service)**), or an older Svane entry without a variant | P1 multi-service | Exact head, feet and lamp roles below |
 | `svane_remote_jmc` | P2 JMC400 | `1234` / `1111` |
-| `auto`, or an older Svane entry without a variant | P1 compatibility default | No automatic rewrite of existing entries |
 | `jensen_linon` | Jensen Adjustable Sleep | Separate one-byte controller |
 
-Select the Svane app explicitly. A new setup with a scanned name containing case-sensitive `JMC` chooses its JMC variant; explicit variants override that new-selection rule. Existing entries retain their stored variant. The shared JMC name and service also occur in the Jensen route and do not prove this app's features. The source's individual discovery names are exactly case-sensitive `Svane Bed` and `JMC400`; its selected-name rule uses case-sensitive `JMC` to choose P2. HA accepts a known address with an explicit profile, including a changed advertising name. No PIN, pairing, model inference or manufacturer filter is introduced for Svane Remote.
+Select the Svane app explicitly. A new setup that keeps the multi-service default and has a scanned name containing case-sensitive `JMC` stores the JMC variant instead, following the app's own name rule. Existing entries retain their stored variant. The shared JMC name and service also occur in the Jensen route and do not prove this app's features. The source's individual discovery names are exactly case-sensitive `Svane Bed` and `JMC400`; its selected-name rule uses case-sensitive `JMC` to choose P2. HA accepts a known address with an explicit profile, including a changed advertising name. No PIN, pairing, model inference or manufacturer filter is introduced for Svane Remote.
 
 The source exposes two axes, head/backrest and feet/seat+footrest. Their cover identities retain the integration's existing `back` and `legs` keys. Physical actuator count and numeric position units are unknown. Motor-count, angle sensing, massage and repeat-count settings are hidden for these app profiles. There are no measured-angle sensors or position sliders.
 

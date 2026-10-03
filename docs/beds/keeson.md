@@ -506,11 +506,11 @@ Deferred validation for real users: the actual write mode, whether the light
 toggles, what ZZZ does, how many actuators move, and whether the zero frame
 stops motion and presets.
 
-### Sino Variant (Dynasty, BetterLiving)
+### Sino Variant (BetterLiving)
 **Primary Service UUID:** `0000ffe5-0000-1000-8000-00805f9b34fb`
 **Format:** 8 bytes `[0xE5, 0xFE, 0x16, b4, b5, b6, b7, checksum]` (big-endian byte order)
 
-Used by BetterLiving/OKIN-BLE devices. Same packet structure as Base variant but with big-endian command byte ordering. Auto-detected by name pattern `okin-ble`.
+Used by BetterLiving/OKIN-BLE devices. Same packet structure as Base variant but with big-endian command byte ordering. Auto-detected by name pattern `okin-ble`. Entries that stored the older `ore` alias are migrated to `sino` when the integration loads.
 
 The current MaxCoil Una and Dynasty Bases apps use the same frame with different preset, save and massage words and a 2M/3M/4M layout choice. Select their explicit [MaxCoil Una / Dynasty Bases profile](ore-comfort-bed.md) (`maxcoil_una` or `dynasty_bases`); `sino` is unchanged.
 

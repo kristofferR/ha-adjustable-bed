@@ -11,12 +11,12 @@ bed has confirmed these controls yet.
 
 | App | Package | Protocol variant |
 |-----|---------|------------------|
-| Slumberland | `com.cheers.slumber` 1.0 (2) | `slumberland` (also `auto`) |
+| Slumberland | `com.cheers.slumber` 1.0 (2) | `auto` |
 | The Brick | `com.cheers.brick` 1.0 (3) | `the_brick` |
 | Jerome's | `com.cheers.jewmes` 1.202112141512 (20) | `jeromes` |
 
 Nothing in the advertisement identifies the app, so choose the protocol variant
-that matches the app you use. `auto` keeps the Slumberland behavior. The apps differ
+that matches the app you use. `auto` is the Slumberland app, as in v4.0.2. The apps differ
 in their frame counters, in one OneActivity timing, in massage wave cycling, in the
 models they list and in whether the LED light setting is shown.
 

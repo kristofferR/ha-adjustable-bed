@@ -772,7 +772,7 @@ async def test_entities_follow_the_advertised_model(
             CONF_ADDRESS: "AA:BB:CC:DD:EE:51",
             CONF_NAME: "Remacro Bed",
             CONF_BED_TYPE: BED_TYPE_REMACRO,
-            CONF_PROTOCOL_VARIANT: "slumberland",
+            CONF_PROTOCOL_VARIANT: "auto",
             CONF_MOTOR_COUNT: 2,
             CONF_DISABLE_ANGLE_SENSING: True,
             CONF_PREFERRED_ADAPTER: "auto",
@@ -1037,7 +1037,7 @@ async def test_config_flow_points_to_an_app_that_lists_the_model(hass: HomeAssis
             (variant, company_id): flow._remacro_variant_error(
                 BED_TYPE_REMACRO, variant, data[CONF_ADDRESS], {company_id: b""}
             )
-            for variant in ("jeromes", "slumberland")
+            for variant in ("jeromes", "auto")
             for company_id in (13, 55)
         }
     # Only a model another app lists is a field error; an unmapped one sets up
@@ -1045,8 +1045,8 @@ async def test_config_flow_points_to_an_app_that_lists_the_model(hass: HomeAssis
     assert errors == {
         ("jeromes", 55): "remacro_model_not_in_app",
         ("jeromes", 13): None,
-        ("slumberland", 55): None,
-        ("slumberland", 13): None,
+        ("auto", 55): None,
+        ("auto", 13): None,
     }
     # An empty discovery map falls back to the non-connectable history.
     adverts = {True: None, False: MagicMock(manufacturer_data={52: b""})}
@@ -1066,7 +1066,7 @@ async def test_options_reject_an_app_that_does_not_list_the_model(hass: HomeAssi
             CONF_ADDRESS: "AA:BB:CC:DD:EE:65",
             CONF_BED_TYPE: BED_TYPE_REMACRO,
             CONF_MOTOR_COUNT: 2,
-            CONF_PROTOCOL_VARIANT: "slumberland",
+            CONF_PROTOCOL_VARIANT: "auto",
             CONF_REMACRO_MODEL: 54,
         },
     )
@@ -1078,7 +1078,7 @@ async def test_options_reject_an_app_that_does_not_list_the_model(hass: HomeAssi
         result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: "jeromes"})
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {CONF_PROTOCOL_VARIANT: "remacro_model_not_in_app"}
-    assert entry.data[CONF_PROTOCOL_VARIANT] == "slumberland"
+    assert entry.data[CONF_PROTOCOL_VARIANT] == "auto"
 
 
 async def test_paired_sides_cache_their_own_model(hass: HomeAssistant) -> None:
@@ -1150,7 +1150,7 @@ async def test_options_keep_or_fix_the_app_of_a_fallback_entry(
         # Other options still save while the app stays unchanged.
         assert await save({CONF_PROTOCOL_VARIANT: "jeromes"}) is FlowResultType.CREATE_ENTRY
         # Choosing an app that lists the model reloads onto its controls.
-        assert await save({CONF_PROTOCOL_VARIANT: "slumberland"}) is FlowResultType.CREATE_ENTRY
+        assert await save({CONF_PROTOCOL_VARIANT: "auto"}) is FlowResultType.CREATE_ENTRY
     assert entry.state is ConfigEntryState.LOADED
     assert _controller(hass, entry).model is protocol.MODELS[54]
     await hass.config_entries.async_unload(entry.entry_id)
@@ -1304,7 +1304,7 @@ async def test_unchanged_pair_app_validates_each_side_against_its_own_app(
     children = [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]]
     children[0][CONF_PROTOCOL_VARIANT], children[1][CONF_PROTOCOL_VARIANT] = (
         "jeromes",
-        "slumberland",
+        "auto",
     )
     hass.config_entries.async_update_entry(
         entry,
@@ -1337,7 +1337,7 @@ async def test_combined_options_refuse_any_app_change(hass: HomeAssistant, varia
     flow.handler = entry.entry_id
     flow.hass = hass
     with patch(_HISTORY, return_value=None):
-        result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: "slumberland"})
+        result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: "auto"})
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {CONF_PROTOCOL_VARIANT: "remacro_app_unpair_first"}
     stored = [child[CONF_PROTOCOL_VARIANT] for child in entry.data[CONF_PAIR_CHILDREN]]
@@ -1398,7 +1398,7 @@ async def test_pair_mixes_a_recognized_side_with_a_fallback_side(
 
     left, right = "AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72"
     entry, _children = _remacro_pair(hass, None, None)
-    _set_side_variants(hass, entry, "slumberland", "jeromes")
+    _set_side_variants(hass, entry, "auto", "jeromes")
     registry = er.async_get(hass)
     adverts = {
         left: MagicMock(manufacturer_data={50: b""}),
@@ -1429,10 +1429,10 @@ async def test_pair_mixes_a_recognized_side_with_a_fallback_side(
 
         flow = await async_create_fix_flow(hass, issue_id, issue.data)
         flow.hass = hass
-        await flow.async_step_init({CONF_PROTOCOL_VARIANT: "slumberland"})
+        await flow.async_step_init({CONF_PROTOCOL_VARIANT: "auto"})
         await hass.async_block_till_done()
         variants = [child[CONF_PROTOCOL_VARIANT] for child in entry.data[CONF_PAIR_CHILDREN]]
-        assert variants == ["slumberland", "slumberland"]
+        assert variants == ["auto", "auto"]
         assert entry.state is ConfigEntryState.LOADED
         assert _side_model(hass, entry, "right") is protocol.MODELS[54]
         await hass.config_entries.async_unload(entry.entry_id)

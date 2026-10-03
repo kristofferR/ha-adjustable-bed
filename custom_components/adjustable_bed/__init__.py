@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable, Mapping
-from typing import Any
+from typing import Any, Final
 
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import (
@@ -52,6 +52,7 @@ from .const import (
     CONF_RICHMAT_REMOTE,
     CONF_SIDE,
     DOMAIN,
+    KEESON_VARIANT_SINO,
     OCTO_VARIANT_STAR2,
     PAIR_CONNECTION_MODE_SEQUENTIAL,
     PAIR_MODE_SINGLE_ADDRESS,
@@ -82,6 +83,8 @@ from .paired_registry import (
 )
 from .pairing import (
     KEY_ABSORBED_ENTRY_ID,
+    KEY_ORIGIN_DATA,
+    KEY_ORIGIN_OPTIONS,
     effective_child_data,
     get_child,
     inheritable_child_fields,
@@ -259,6 +262,37 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
+# Keeson's deprecated "ore" variant was an alias for Sino.
+_V4_2_VARIANT_ALIASES: Final = {"ore": KEESON_VARIANT_SINO}
+# Per-app copies of generic settings, released in v4.0.2.
+_V4_2_RENAMED_KEYS: Final[dict[str, str]] = {}
+
+
+def migrate_v4_2_data(data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return entry data with v4.0.2 aliases replaced, including paired sides.
+
+    A side descriptor and the original entry it restores on unpair are
+    migrated too, so a later split never brings an alias back.
+    """
+    migrated = dict(data)
+    variant = migrated.get(CONF_PROTOCOL_VARIANT)
+    if isinstance(variant, str) and variant in _V4_2_VARIANT_ALIASES:
+        migrated[CONF_PROTOCOL_VARIANT] = _V4_2_VARIANT_ALIASES[variant]
+    for old_key, new_key in _V4_2_RENAMED_KEYS.items():
+        if old_key in migrated:
+            value = migrated.pop(old_key)
+            migrated.setdefault(new_key, value)
+    for key in (KEY_ORIGIN_DATA, KEY_ORIGIN_OPTIONS):
+        if isinstance(nested := migrated.get(key), Mapping):
+            migrated[key] = migrate_v4_2_data(nested)
+    if isinstance(children := migrated.get(CONF_PAIR_CHILDREN), list):
+        migrated[CONF_PAIR_CHILDREN] = [
+            migrate_v4_2_data(child) if isinstance(child, Mapping) else child
+            for child in children
+        ]
+    return migrated
+
+
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Migrate config entries to newer schema versions."""
     _LOGGER.debug(
@@ -304,6 +338,16 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # upgrade can never corrupt a single bed. Paired entries are created only
         # by the opt-in pairing flow (already at v4) and never reach this branch.
         hass.config_entries.async_update_entry(entry, version=4)
+
+    if entry.minor_version < 2:
+        # v4.1 -> v4.2: store values that v4.0.2 kept under aliases or
+        # per-app keys under the one name the integration now reads.
+        hass.config_entries.async_update_entry(
+            entry,
+            data=migrate_v4_2_data(entry.data),
+            options=migrate_v4_2_data(entry.options),
+            minor_version=2,
+        )
 
     _LOGGER.debug(
         "Migration complete for config entry %s (%s), now at version %s",
