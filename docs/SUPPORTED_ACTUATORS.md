@@ -1,6 +1,7 @@
 # Supported Actuators
 
-This guide maps actuator families and app profiles to detailed protocol references.
+Find your controller, compare its features, and follow the linked setup guide.
+Related apps and remote layouts are grouped with their manufacturer.
 The [README Supported Beds table](../README.md#supported-beds) is the canonical
 support index. Each linked guide records model-specific evidence and hardware
 validation limits; the feature summaries below depend on the selected controller.
@@ -8,45 +9,38 @@ validation limits; the feature summaries below depend on the selected controller
 | Brand | Key Features |
 |-------|--------------|
 | [Linak](beds/linak.md) | Auto-detected models, up to 5 axes, 0/4 memories, speed/status/errors, massage, alarms, lights |
-| [Keeson](beds/keeson.md) | Position feedback (Ergomotion), 4 presets, massage, lights |
-| [Richmat](beds/richmat.md) | 1-5 memory presets, massage (discrete), RGB lights + timer, Controller Sync, motors 5-7 |
-| [RMControl products](beds/rmcontrol.md) | Explicit product catalogs, reported state, alarms and snore intervention |
-| [Richmat app profiles](beds/richmat-mh.md) | Revive Control, Best Mattress, Blvd Home, HARMONY and Idealbed model catalogs: covers, presets, memory, massage, light, alarms, aroma, snore, VER1 angles and the waist mattress |
+| [Keeson](beds/keeson.md) | Position feedback (Ergomotion), presets, massage, lights; [Adjustable Lite](beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](beds/keeson.md#innova-profile), [MaxCoil / Dynasty / Bedsense](beds/ore-comfort-bed.md), [Restonic BT](beds/keeson.md#restonic-bt-profiles) |
+| [Richmat](beds/richmat.md) | Model-dependent motors, memory, massage, lighting, alarms and reported state; [RMControl](beds/rmcontrol.md), [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat-mh.md) |
 | [MotoSleep](beds/motosleep.md) | Model-dependent HHC/MOTO controls, memory, massage and lighting |
 | [Octo](beds/octo.md) | Two protocol variants, optional PIN auth, RGBW lights. Sold as bett1.de, Dunlopillo, Hüsler Nest, Swiss Sense, Velda, Werkmeister, sleepling and more ([known brand list](beds/octo.md#bed-brands-that-ship-octo-actuators)) |
 | [Solace](beds/solace.md) | Name-based profiles, named presets, optional massage/lights, exact S4-Y lift/tilt; explicit [Woosa Sleep](beds/woosa.md) profile with one Favourite memory |
-| [Leggett & Platt](beds/leggett-platt.md) | Gen2: motor control + RGB lighting; Okin: tilt/lumbar, massage |
-| [Prodigy / U Series app profiles](beds/leggett-okin.md) | Explicit layout, held controls, sleep/alarm timers |
-| [L&P legacy app](beds/lp-legacy.md) | Explicit model, protocol mode and confirmed GATT characteristics |
+| [Leggett & Platt](beds/leggett-platt.md) | Gen2 motor control and RGB lighting; Okin tilt/lumbar and massage; [Prodigy / U Series](beds/leggett-okin.md) layouts and timers, [L&P legacy](beds/lp-legacy.md) model settings |
 | [Reverie](beds/reverie.md) | Position control (0-100%), 4 presets, wave massage |
 | [Okimat/Okin](beds/okimat.md) | 4 memory presets, massage, lights (requires pairing) |
 | [Okin 64-Bit](beds/okin-64bit.md) | 10-byte Nordic/custom OKIN protocol, lumbar, lights, massage |
-| [Jiecang](beds/jiecang.md) | Motor control, 3 memory slots, massage, split bed support |
-| [Jiecang app profiles](beds/jiecang-app.md) | ERGOBALANCE / Dream Motion layouts, alarms, wake routines, renaming |
+| [Jiecang](beds/jiecang.md) | Motor control, memory, massage, split beds; [ERGOBALANCE / Dream Motion](beds/jiecang-app.md) layouts, alarms, wake routines and renaming |
 | [Kaidi](beds/kaidi.md) | Mouselet-based beds, Flat/Zero-G/Anti-Snore, 4 memory slots |
 | [Jensen](beds/jensen.md) | Go-to-position, massage/light/fan levels (0-10), app-stored memories, dynamic feature detection |
 | [DewertOkin](beds/dewertokin.md) | 79 brands (many older Rize/Simmons models), multiple protocols |
 | [Serta](beds/serta.md) | Massage intensity control, Zero-G/TV/Lounge |
 | [Mattress Firm 900](beds/mattressfirm.md) | Older iFlex/Nordic UART bases, lumbar control, built-in presets |
 | [Nectar](beds/nectar.md) | Lumbar control, massage, lights, Zero-G/Anti-Snore/Lounge |
-| [Malouf/Lucid](beds/malouf.md) | Configurable 2/3/4-motor or Hi-Lo layout, 1-2 memory positions, massage, lights |
+| [Malouf/Lucid](beds/malouf.md) | Model-dependent motor layout, memory, massage and lights; [Malouf Base / Lucid Base](beds/malouf-app.md) model and transport selection |
 | [BedTech](beds/bedtech.md) | 5 presets, 4 massage modes, dual-base support |
 | [Sleep Number](beds/sleep_number.md) | Fuzion and BAM/MCR: capability-dependent position, firmness, presets, lighting and thermal controls |
 | [Sleepy's Elite](beds/sleepys.md) | BOX15/24/25 variants, presets, BOX25 position sliders including lumbar |
 | [SleepSpa S9000AI](beds/sleepstar.md) | CB37 sleep monitor, five app-addressable actuators, position feedback, sonic massage, RGB lighting |
 | [Svane](beds/svane.md) | Svane Remote multi-service / JMC400 profiles, opaque software memories, local lamp preference; separate Jensen LinOn |
-| [Vibradorm](beds/vibradorm.md) | Position feedback, 4 memory presets, lights |
+| [Vibradorm](beds/vibradorm.md) | Position feedback, memory and lights; [Caresse / Werkmeister](beds/vibradorm_app.md), [VMAT](beds/vmat.md) and [V-MAT Basic](beds/vmatbasic.md) remote-specific controls |
 | [SUTA Smart Home](beds/suta.md) | AT command protocol, 4 memory slots, discrete lights |
 | [TiMOTION AHF](beds/timotion-ahf.md) | 5-motor bitmask protocol, toggle lights, AHF name detection |
-| [Limoss](beds/limoss.md) | TEA-encrypted packets, position feedback, dynamic capability query |
+| [Limoss](beds/limoss.md) | TEA-encrypted packets, position feedback, dynamic capabilities; [Limoss Remote](beds/limoss-remote.md) bed/chair layouts and local memories |
 | [Cool Base](beds/coolbase.md) | Keeson BaseI5 with fan control |
 | [Scott Living](beds/scott-living.md) | 9-byte protocol |
 | [SBI/Q-Plus](beds/sbi.md) | Position feedback via pulse lookup |
 | [Rondure](beds/rondure.md) | 4 motors, split-king, massage, lights |
 | [Remacro](beds/remacro.md) | Slumberland, The Brick and Jerome's app screens: up to 3 motors, split sides, presets, memory, massage, light |
-| [Logicdata](beds/logicdata.md) | XXTEA encrypted, 2 memory slots, lights, massage |
-| [LOGICDATA app profiles](beds/logicdata-app.md) | Phone/tablet layouts, standard/middle-motor controls, alarms and renaming |
-| [LOGICDATA Sleep Smart](beds/logicdata-sleep-smart.md) | Hold-only presets, one memory, massage mode, factory reset; separate air mattress pump |
+| [Logicdata](beds/logicdata.md) | SILVERmotion / SimplicityFrame memory, lights and massage; [MOTIONrelax](beds/logicdata-app.md) layouts and alarms; [Sleep Smart](beds/logicdata-sleep-smart.md) bed controls and separate air mattress pump |
 | [Okin CB35](beds/okin-cb35.md) | 7-byte Nordic UART (Sealy Posturematic), 6 motors, massage, lights |
 | [Okin CST](beds/okin-cst.md) | 14-byte dual-field protocol (Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; Nectar Motion) |
 | [FurniMove / OKIN Smart Remote app](beds/furnimove.md) | Explicit handset layouts from production API tables; RF, ordinary and DOT transports |

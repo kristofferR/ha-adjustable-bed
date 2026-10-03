@@ -1,6 +1,6 @@
 # Richmat app profiles (Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed)
 
-**Status:** 🧪 Artifact-verified, hardware unverified. APK Protocol Audit row055
+**Status:** ✅ Artifact-verified, hardware unverified. APK Protocol Audit row055
 (formal cluster-020): every package report and the cluster reconciliation are
 accepted. The [disposition ledger](../apk-analysis/dispositions/row055-richmat-cluster.md)
 accounts for every inventory entry.

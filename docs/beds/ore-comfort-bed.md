@@ -1,6 +1,6 @@
 # MaxCoil Una / Dynasty Bases / Bedsense Bases app profile
 
-**Status:** 🧪 artifact-verified, hardware unverified. Clean-room analysis of
+**Status:** ✅ artifact-verified, hardware unverified. Clean-room analysis of
 MaxCoil Una 1.1.0 (5) (`com.ore.maxcoil`) and Dynasty Bases 1.0.2 (3)
 (`com.ore.Dynasty`) is complete and accepted (formal cluster-013), as is
 Bedsense Bases 1.1 (3) (`com.ore.sfmc2bedsence`, formal cluster-015). See the

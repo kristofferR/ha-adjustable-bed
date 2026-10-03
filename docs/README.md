@@ -12,7 +12,7 @@ These guides describe `main`. The integration requires **Home Assistant
 | [Project README](../README.md) | Installation, supported beds, dashboard card and YAML options |
 | [Compatibility and migration](HA_2026_9.md) | HA minimum, v3 backup/rollback, native child devices |
 | [Connection guide](CONNECTION_GUIDE.md) | Discovery, adapters, proxies and Bluetooth bonds |
-| [Configuration](CONFIGURATION.md) | Options, app profiles, combined beds and restoring standalone controls |
+| [Configuration](CONFIGURATION.md) | Options, choosing your remote, combined beds and restoring standalone controls |
 | [Actions and automations](SERVICES.md) | Memory, movement, side targeting and specialized actions |
 | [Apple Home and Siri](HOMEKIT.md) | Importable control blueprint, HomeKit scenes and Siri Shortcuts |
 | [Troubleshooting](TROUBLESHOOTING.md) | Card loading, connections, position feedback and migration problems |
@@ -20,11 +20,12 @@ These guides describe `main`. The integration requires **Home Assistant
 
 ## Controller and Protocol Reference
 
-The [Supported Beds table](../README.md#supported-beds) is the supported-family
-index. [Supported Actuators](SUPPORTED_ACTUATORS.md) maps brands and controller
-hints to the detailed guides in [`beds/`](beds/). Those guides distinguish
-implemented behavior, artifact evidence, and physical validation. A supported
-family does not mean every retail model has been tested.
+Start with the [Supported Beds table](../README.md#supported-beds), where related
+brands, models and apps are grouped together. Use [Supported Actuators](SUPPORTED_ACTUATORS.md)
+to identify your controller and compare features. The detailed guides in
+[`beds/`](beds/) cover model-specific setup and testing status.
+
+## Protocol Research
 
 App-disposition ledgers in `beds/` and implementation records in `apk-analysis/`
 preserve the scope and evidence of individual audits.
@@ -51,5 +52,3 @@ including the Bluetooth dependencies from Home Assistant's own manifests.
 APK artifacts and frozen reports stay local and ignored. Consult the repository's
 clean-room rules before protocol work. Documentation updates do not establish new
 hardware evidence or complete the release-candidate gates.
-
-- [FSM Relax app profile](beds/fsm_relax.md): explicit layouts and persistent opaque memories.

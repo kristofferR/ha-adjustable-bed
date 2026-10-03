@@ -1,6 +1,6 @@
 # SleepSpa S9000AI (SLEEPSTAR)
 
-**Status:** 🧪 Statically verified from the OEM app; physical hardware testing is pending
+**Status:** ✅ Statically verified from the OEM app; physical hardware testing is pending
 
 This controller is for the SleepSpa S9000AI device class advertised as
 `SLEEPSTAR`. It is a CB37 sleep-monitor session over Nordic UART. Bed actions

@@ -344,44 +344,43 @@ receiver's under-bed light toggle.
 
 ### App and Product Profiles
 
-These settings select controls from a specific app or remote layout. Shared
-Bluetooth services alone cannot establish the correct product. Existing entries
-retain their legacy profile unless you explicitly change it.
+Choose the app, model or remote supplied with your bed when setup asks for it.
+These choices determine which controls are available. Related choices are
+listed together below, with links to their setup instructions.
 
-| Profile | Settings | Reference |
-|---------|----------|-----------|
-| Solace / Woosa Sleep | Protocol variant **`woosa`** (Woosa Sleep) for beds using that app; `auto` retains conservative name-based routing | [Woosa](beds/woosa.md) |
-| Svane Remote / Jensen LinOn | **`svane_remote_multi`**, **`svane_remote_jmc`** (explicit JMC400 app choice), or separate **`jensen_linon`**. Older `auto` stays Svane multi-service. Two named axes, opaque memory, no numeric position feedback or PIN. | [Svane Remote](beds/svane.md), [Jensen LinOn](beds/jensen.md#linon) |
-| Richmat RMControl | Exact product code (empty keeps legacy Richmat), side (`left`, `right`, `both`; default `left`) | [RMControl](beds/rmcontrol.md) |
-| Richmat app profiles | Explicit Revive Control, Best Mattress, Blvd Home, HARMONY or Idealbed bed type; protocol variant `auto` (name rule) or the app's `model_<id>` | [Richmat app profiles](#richmat-app-profiles) |
-| Leggett Okin | Prodigy / U Series app profile | [Leggett app profiles](beds/leggett-okin.md) |
-| L&P legacy app | Model code, protocol mode, confirmed write UUID, optional notification UUID | [L&P legacy](beds/lp-legacy.md) |
-| LOGICDATA app | Phone/tablet app, command family, layout, transport, under-bed light | [LOGICDATA app profiles](beds/logicdata-app.md) |
-| LOGICDATA Sleep Smart app | Bed: app profile `sleep_smart`, P1 (Vienna/Toronto) or P2 (Middle Rail), standard or split series, transport, light. Pump: separate `logicdata_air_pump` bed type with no motor settings | [Sleep Smart](beds/logicdata-sleep-smart.md) |
-| Jiecang app | App, layout, transport, under-bed light | [Jiecang app profiles](beds/jiecang-app.md) |
-| Malouf Base / Lucid Base app | App, exact model, transport, physical primary/secondary role | [Malouf/Lucid app profiles](beds/malouf-app.md) |
-| Customatic apps | Explicit Clarity, Jerome's C or Remedy bed type; fixed two, two or three motor layout | [Customatic app profiles](beds/customatic.md) |
-| Remacro apps | Protocol variant `slumberland` (also `auto`), `the_brick` or `jeromes`; the advertised company ID selects the model | [Remacro](beds/remacro.md) |
-| FurniMove / OKIN Smart Remote app | Required exact handset ID; table-derived motors and massage, fixed 100 ms refresh | [FurniMove](beds/furnimove.md) |
-| Jordan's Serenity app | Explicit app selection; two named axes and literal remote selectors 4/5, fixed 100 ms refresh | [Serenity](beds/serenity.md) |
-| Jordan's Tranquil app | Explicit app selection; two named axes and literal remote selectors 4/5, fixed 100 ms refresh | [Tranquil](beds/tranquil.md) |
-| Customatic Z-Series app | Explicit Z-230 or Z-280 bed type, matching the model chosen in the app; fixed 100 ms refresh | [Z-Series](beds/customatic-z-series.md) |
-| AdjustableM5X4 app | Explicit saved command/parser selector and optional Bluetooth transport; retained UI selector remains address-owned | [AdjustableM5X4](beds/starcode-abm5-4.md) |
-| Caresse / Werkmeister apps | Explicit app and remote profile; Caresse retained settings and feature flags | [Caresse / Werkmeister](beds/vibradorm_app.md) |
-| VMAT app | Explicit app and exact shipped remote ordinal; remote-derived features | [VMAT](beds/vmat.md) |
-| Adjustable Lite app | Keeson protocol variant **`adjustable_lite`**; the device name picks the KSBT01C or KSBT03C remote; `auto` keeps the generic KSBT profile | [Keeson Adjustable Lite](beds/keeson.md#adjustable-lite-profile) |
-| Simon Li / Heal Every Night / OKIN-Seating apps | Keeson protocol variants **`simon_li`**, **`heal_every_night`** and **`okin_seating`**; Heal Every Night's motor count (2, 3 or 4) selects Healing 6/7/8 and its Installation mode and Actuator direction selects remap the head and foot keys; never auto-selected | [Okin app profiles](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles) |
-| INNOVA app | Keeson protocol variant **`innova`**; the motor count (2, 3 or 4) selects the app's 2M/3M/4M screen; never auto-selected | [INNOVA](beds/keeson.md#innova-profile) |
-| MaxCoil Una / Dynasty Bases / Bedsense Bases apps | Keeson protocol variant **`maxcoil_una`**, **`dynasty_bases`** or **`bedsense_bases`**; motor count 2, 3 or 4 picks the app's 2M, 3M or 4M screen; never auto-selected | [MaxCoil Una / Dynasty Bases](beds/ore-comfort-bed.md) |
-| Restonic BT Remote app | Keeson protocol variant **`restonic_a`** or **`restonic_b`**, matching the app's remote style setting; never chosen automatically (a `base-i5` bed is offered as Cool Base, so switch its bed type to Keeson first) | [Keeson Restonic BT](beds/keeson.md#restonic-bt-profiles) |
-| V-MAT Basic app | Explicit Basic, CBI or CBI with XT-Box product; per-receiver floor settings | [V-MAT Basic](beds/vmatbasic.md) |
-| SIMMONS app | Protocol variant: regular or inclined bed, with the packet format from the Bluetooth name or fixed | [SIMMONS](beds/simmons.md) |
-| Adjustable bed (Lumbar) app | Protocol variant: command table from the Bluetooth name, or fixed OKIN or Star branch | [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md) |
-| Legacy OKIN CB24 | Both sides (default), Side A / Left, or Side B / Right | [Single-address controls](#single-address-left--right-controls) |
+1. Let automatic discovery identify the controller where possible.
+2. If adding manually, find your brand or app in [Supported Beds](../README.md#supported-beds).
+3. Match any requested model or remote to your physical bed. Shared Bluetooth
+   names and services do not always identify the right layout.
 
-For two-address pairs, device-specific app/product selections belong to each
-physical bed. If the shared options form refuses a profile change, split the
-pair, configure each side, then combine them again.
+Existing entries keep their selection until you change it. For a two-address
+pair, settings belong to each physical bed. If the shared form refuses a change,
+split the pair, configure each side, then combine them again.
+
+| Bed or brand | Model and remote settings |
+|--------------|---------------------------|
+| Keeson | Choose the matching protocol variant: [Adjustable Lite](beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases](beds/ore-comfort-bed.md), or [Restonic BT](beds/keeson.md#restonic-bt-profiles). Match motor count or remote style where offered. |
+| Richmat | [RMControl](beds/rmcontrol.md): product code and side. [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat-mh.md): app and model. |
+| Leggett & Platt | [Prodigy / U Series](beds/leggett-okin.md): remote layout. [L&P legacy](beds/lp-legacy.md): model, protocol mode and confirmed GATT characteristics. |
+| Solace / Woosa | [Woosa Sleep](beds/woosa.md): protocol variant `woosa`; `auto` retains name-based Solace routing. |
+| Svane / Jensen LinOn | [Svane](beds/svane.md): multi-service or JMC400 remote. [Jensen LinOn](beds/jensen.md#linon): separate `jensen_linon` variant. |
+| Jiecang | [ERGOBALANCE / Dream Motion](beds/jiecang-app.md): app, layout, transport and light. |
+| LOGICDATA | [MOTIONrelax](beds/logicdata-app.md): phone/tablet app, command family, layout, transport and light. [Sleep Smart](beds/logicdata-sleep-smart.md): bed layout and series, or separate air pump. |
+| Malouf / Lucid | [Base apps](beds/malouf-app.md): app, exact model, transport and primary/secondary role. |
+| Customatic / Jordan's | [Clarity / Jerome's / Remedy](beds/customatic.md), [Z-Series](beds/customatic-z-series.md), [Serenity](beds/serenity.md), [Tranquil](beds/tranquil.md): select the matching app and model. |
+| Vibradorm | [Caresse / Werkmeister](beds/vibradorm_app.md), [VMAT](beds/vmat.md), [V-MAT Basic](beds/vmatbasic.md): app, exact remote or product, and offered light settings. |
+| Remacro | [Slumberland / The Brick / Jerome's](beds/remacro.md): protocol variant; advertised company ID selects the model. |
+| FurniMove / OKIN Smart Remote | [Exact handset ID](beds/furnimove.md); also includes a guided repair for older RF ECO BT entries. |
+| SIMMONS | [Regular/inclined bed and packet format](beds/simmons.md). |
+| Adjustable bed (Lumbar) | [Automatic or fixed command table](beds/adjustable-lumbar.md). |
+| AdjustableM5X4 / M5X5 | [M5X4](beds/starcode-abm5-4.md): command and transport selectors. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. |
+| Motion Bed | [Layout and retained settings](beds/motion_bed.md); preserve the original Bluetooth name. |
+| Limoss | [Limoss Remote](beds/limoss-remote.md): bed/chair layout, light/massage and reversal settings. |
+| FSM Relax | [Bed/chair layout, light/massage and reversal settings](beds/fsm_relax.md). |
+| Legacy OKIN CB24 | [Single-address controls](#single-address-left--right-controls): both sides, Side A / Left, or Side B / Right. |
+
+<details>
+<summary><b>Detailed app and remote settings</b></summary>
 
 ### Richmat app profiles
 
@@ -461,6 +460,32 @@ send onboarding queries or position polls. Accessory state is assumed local
 intent, preserved during the current HA process and rolled back on failed
 writes. See the [complete VMAT contract](beds/vmat.md).
 Configure each physical side separately before combining a two-address pair.
+
+### Motion Bed app
+
+Select the explicit **Motion Bed app** route and the original case-sensitive Bluetooth name. Auto chooses the app’s ordered layout; retained overrides belong to the same physical target. FFE1 alone does not identify this app. Two-address pairs preserve each side’s settings and require unpairing before profile changes. See [Motion Bed setup and controls](beds/motion_bed.md).
+
+### Limoss Remote app
+
+Select **Limoss Remote app** manually under Limoss. Choose bed/chair, local lamp and massage controls, four reversal flags and an optional app artwork preference. Live replies select the rendered key layout and memory capacity. These settings belong to each physical receiver, including paired children. Disabling a selected feature sends its ten OFF frames before saving; enabling only changes the local layout. Generic pulse, angle and motor-count settings are hidden for this profile. See [the protocol page](beds/limoss-remote.md).
+
+### AdjustableM5X5 app
+
+Select **AdjustableM5X5** (`starcode_m5x5`) and enter the exact Bluetooth name, preserving case. Confirm CB25, F23, kneading or Elevate. The specific F23/kneading prefixes take precedence over generic `STAR25`; shared Nordic UART identifiers alone cannot choose an app. The exact optional manufacturer read selects the command dialect when connecting.
+
+On the main entry, select up to **three other configured AdjustableM5X5 entries** as lifts. This supports four independent Bluetooth addresses: one main and three lifts. All four bedding classes can occupy either slot. Duplicate addresses and unrelated products are rejected. This group keeps each device's existing coordinator and entities. It does not convert them into Left/Right paired devices.
+
+Use `adjustable_bed.starcode_move_lifts` for native lift-union movement, STOP or composite flat. A profile or group-selection edit cancels retained delayed writes. Individual controls remain on each physical device. See [protocol and control details](beds/starcode-m5x5.md).
+
+### FSM Relax app
+
+Select the explicit FSM Relax app bed type, then choose chair/bed layout, optional
+light/massage controls and four reversal flags. These settings are local app
+configuration, not inferred hardware identity. Options include eight local memory
+names, with blank names resetting M1–M8. Raw memory values have no known units.
+See [FSM Relax](beds/fsm_relax.md) for exact controls, quarantine and calibration.
+
+</details>
 
 ### Octo PIN
 
@@ -697,27 +722,3 @@ the other side automatically if one side fails.
 - **Having connection issues?** See [Troubleshooting](TROUBLESHOOTING.md)
 - **Want to learn about your bed's protocol?** See [Supported Actuators](SUPPORTED_ACTUATORS.md)
 - **Setting up Bluetooth?** See [Connection Guide](CONNECTION_GUIDE.md)
-
-
-### Motion Bed app
-
-Select the explicit **Motion Bed app** route and the original case-sensitive Bluetooth name. Auto chooses the app’s ordered layout; retained overrides belong to the same physical target. FFE1 alone does not identify this app. Two-address pairs preserve each side’s settings and require unpairing before profile changes. See [Motion Bed setup and controls](beds/motion_bed.md).
-### Limoss Remote app
-
-Select **Limoss Remote app** manually under Limoss. Choose bed/chair, local lamp and massage controls, four reversal flags and an optional app artwork preference. Live replies select the rendered key layout and memory capacity. These settings belong to each physical receiver, including paired children. Disabling a selected feature sends its ten OFF frames before saving; enabling only changes the local layout. Generic pulse, angle and motor-count settings are hidden for this profile. See [the protocol page](beds/limoss-remote.md).
-
-### AdjustableM5X5 app
-
-Select **AdjustableM5X5** (`starcode_m5x5`) and enter the exact Bluetooth name, preserving case. Confirm CB25, F23, kneading or Elevate. The specific F23/kneading prefixes take precedence over generic `STAR25`; shared Nordic UART identifiers alone cannot choose an app. The exact optional manufacturer read selects the command dialect when connecting.
-
-On the main entry, select up to **three other configured AdjustableM5X5 entries** as lifts. This supports four independent Bluetooth addresses: one main and three lifts. All four bedding classes can occupy either slot. Duplicate addresses and unrelated products are rejected. This group keeps each device's existing coordinator and entities. It does not convert them into Left/Right paired devices.
-
-Use `adjustable_bed.starcode_move_lifts` for native lift-union movement, STOP or composite flat. A profile or group-selection edit cancels retained delayed writes. Individual controls remain on each physical device. See [protocol and control details](beds/starcode-m5x5.md).
-
-### FSM Relax app
-
-Select the explicit FSM Relax app bed type, then choose chair/bed layout, optional
-light/massage controls and four reversal flags. These settings are local app
-configuration, not inferred hardware identity. Options include eight local memory
-names, with blank names resetting M1–M8. Raw memory values have no known units.
-See [FSM Relax](beds/fsm_relax.md) for exact controls, quarantine and calibration.

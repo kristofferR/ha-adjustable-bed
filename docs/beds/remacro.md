@@ -1,6 +1,6 @@
 # Remacro
 
-**Status:** 🧪 Artifact-verified, hardware unverified
+**Status:** ✅ Artifact-verified, hardware unverified
 
 Remacro is the SynData protocol used by three store-branded Android apps from the
 same developer. The integration follows the accepted row 050 analyses of all three
