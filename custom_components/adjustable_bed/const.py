@@ -1179,12 +1179,13 @@ SERTA_NAME_PATTERNS: Final = ("serta", "motion perfect", "ergomotion", "hump")
 LINAK_NAME_PATTERNS: Final = ("bed ",)
 
 # Keeson name patterns for devices that may not advertise the specific service UUID
-# - base-i4.XXXXXXXX (e.g., base-i4.00002574)
+# - base-i4XXXX (e.g., base-i4.00002574); the Restonic BT app accepts any name
+#   starting with "base-i4", so the dot is not required
 # - base-i5.XXXXXXXX (e.g., base-i5.00000682) - Note: base-i5 can also be Cool Base
 # - KSBTXXXXCXXXXXX (e.g., KSBT03C000015046)
 # - ORE-XXXXXXXXXXX (e.g., ORE-ac2170000d) - Dynasty, INNOVA beds (use ORE variant)
 # - smart_dfu - Beautyrest Baselogic Platinum (Keeson MC232FD, KSBT04C protocol)
-KEESON_NAME_PATTERNS: Final = ("base-i4.", "base-i5.", "ksbt", "ore-", "smart_dfu")
+KEESON_NAME_PATTERNS: Final = ("base-i4", "base-i5.", "ksbt", "ore-", "smart_dfu")
 
 # BetterLiving / related OKIN app naming that uses Keeson-Sino packet format (E5 FE 16, big-endian)
 # Source: com.ore.betterliving2 app disassembly
@@ -1631,6 +1632,9 @@ KEESON_VARIANT_PURPLE: Final = "purple"
 KEESON_VARIANT_KSBT04C: Final = "ksbt04c"
 KEESON_VARIANT_SLEEP_HARMONY: Final = "sleep_harmony"
 KEESON_VARIANT_ADJUSTABLE_LITE: Final = "adjustable_lite"
+# Restonic BT Remote (com.keeson.restonicBT): the app's user-selected remote style.
+KEESON_VARIANT_RESTONIC_A: Final = "restonic_a"
+KEESON_VARIANT_RESTONIC_B: Final = "restonic_b"
 # Deprecated alias kept for compatibility with older references.
 KEESON_VARIANT_ORE: Final = KEESON_VARIANT_SINO
 KEESON_VARIANTS: Final = {
@@ -1642,6 +1646,8 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_KSBT04C: "KSBT04C (generic 7-byte checksum)",
     KEESON_VARIANT_SLEEP_HARMONY: "Sleep Harmony (KSBT04C / base-i5)",
     KEESON_VARIANT_ADJUSTABLE_LITE: "Adjustable Lite app (KSBT01C / KSBT03C)",
+    KEESON_VARIANT_RESTONIC_A: "Restonic BT app, remote A (6 buttons)",
+    KEESON_VARIANT_RESTONIC_B: "Restonic BT app, remote B (10 buttons)",
     KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
     KEESON_VARIANT_OKIN: "OKIN FFE (OKIN 13/15 series, 0xE6 prefix)",
     KEESON_VARIANT_SERTA: "Serta (Serta MP Remote)",
@@ -2446,6 +2452,8 @@ ALL_PROTOCOL_VARIANTS: Final = [
     KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_SLEEP_HARMONY,
     KEESON_VARIANT_ADJUSTABLE_LITE,
+    KEESON_VARIANT_RESTONIC_A,
+    KEESON_VARIANT_RESTONIC_B,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_SERTA,

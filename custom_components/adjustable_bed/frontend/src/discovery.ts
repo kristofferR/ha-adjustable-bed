@@ -250,6 +250,9 @@ export function bedEntitiesForDevice(
           bed.utility.push(id);
         } else if (key === "coolbase_head_massage" || key === "coolbase_foot_massage" || key === "coolbase_massage_mode") {
           bed.massage.buttons.push(id);
+        } else if (key === "restonic_zzz") {
+          // Restonic BT remote B's ZZZ tap; the app proves no preset or memory meaning.
+          bed.utility.push(id);
         } else if (key.startsWith("coolbase_")) {
           // Fan and star controls are app-labelled taps with no axis or memory meaning.
           bed.utility.push(id);
