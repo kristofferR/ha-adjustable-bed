@@ -2881,22 +2881,22 @@
       "customatic_model": {
         "name": "Model"
       },
-      "serenity_manufacturer": {
+      "okin_bedding_app_manufacturer": {
         "name": "Manufacturer"
       },
-      "serenity_status_code": {
+      "okin_bedding_app_status_code": {
         "name": "App status code"
       },
-      "serenity_massage_timer_code": {
+      "okin_bedding_app_massage_timer_code": {
         "name": "Massage timer code"
       },
-      "serenity_massage_timer_minutes": {
+      "okin_bedding_app_massage_timer_minutes": {
         "name": "Massage timer"
       },
-      "serenity_save_event_code": {
+      "okin_bedding_app_save_event_code": {
         "name": "Local memory save event"
       },
-      "serenity_alarm_type": {
+      "okin_bedding_app_alarm_type": {
         "name": "App alarm state"
       },
       "furnimove_model": {
@@ -4342,42 +4342,6 @@
       },
       "simmons_alarm_2": {
         "name": "Alarm 2"
-      },
-      "tranquil_manufacturer": {
-        "name": "Manufacturer"
-      },
-      "tranquil_status_code": {
-        "name": "App status code"
-      },
-      "tranquil_massage_timer_code": {
-        "name": "Massage timer code"
-      },
-      "tranquil_massage_timer_minutes": {
-        "name": "Massage timer"
-      },
-      "tranquil_save_event_code": {
-        "name": "Local memory save event"
-      },
-      "tranquil_alarm_type": {
-        "name": "App alarm state"
-      },
-      "zseries_manufacturer": {
-        "name": "Manufacturer"
-      },
-      "zseries_status_code": {
-        "name": "App status code"
-      },
-      "zseries_massage_timer_code": {
-        "name": "Massage timer code"
-      },
-      "zseries_massage_timer_minutes": {
-        "name": "Massage timer"
-      },
-      "zseries_save_event_code": {
-        "name": "Local memory save event"
-      },
-      "zseries_alarm_type": {
-        "name": "App alarm state"
       },
       "logicdata_app_massage_mode": {
         "name": "Massage mode"

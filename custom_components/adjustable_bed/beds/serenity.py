@@ -535,7 +535,8 @@ class OkinBeddingAppController(OkinCstController):
         return tuple(
             ControllerStateSensorSpec(
                 key=self._key(key),
-                translation_key=self._key(key),
+                # The apps share one parser, so their sensors share names.
+                translation_key=f"okin_bedding_app_{key}",
                 state_key=self._key(key),
                 icon="mdi:information-outline",
                 native_unit_of_measurement="min" if key == "massage_timer_minutes" else None,

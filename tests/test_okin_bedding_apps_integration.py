@@ -266,6 +266,15 @@ def test_service_selectors_and_translations_match_controller_catalogs():
                 assert spec.translation_key in metadata["entity"]["sensor"]
 
 
+def test_app_sensors_share_translations_and_keep_app_identities():
+    tranquil_specs = tranquil().controller_state_sensor_specs
+    zseries_specs = zseries("z280").controller_state_sensor_specs
+    assert [s.translation_key for s in tranquil_specs] == [s.translation_key for s in zseries_specs]
+    assert all(s.translation_key.startswith("okin_bedding_app_") for s in tranquil_specs)
+    assert all(s.key.startswith("tranquil_") for s in tranquil_specs)
+    assert all(s.key.startswith("zseries_") for s in zseries_specs)
+
+
 @pytest.mark.parametrize("bed_type", list(LABELS))
 async def test_options_switch_from_generic_okin_profile_applies_fixed_defaults(hass, bed_type):
     from homeassistant.const import CONF_ADDRESS
