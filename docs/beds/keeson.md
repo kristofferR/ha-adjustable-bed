@@ -59,6 +59,7 @@ for all 128 exclusions and exact accepted evidence.
 | ✅ | [Adjustable Lite](https://play.google.com/store/apps/details?id=com.keeson.adjustablelite) | `com.keeson.adjustablelite` |
 | ✅ | MaxCoil Una ([profile](ore-comfort-bed.md)) | `com.ore.maxcoil` |
 | ✅ | Dynasty Bases ([profile](ore-comfort-bed.md)) | `com.ore.Dynasty` |
+| ✅ | Restonic BT Remote | `com.keeson.restonicBT` |
 
 ## Features
 
@@ -268,6 +269,61 @@ The app does not decode whether the light button toggles, how the timer
 button cycles, massage level limits, or the unit of the raw timer value. Those
 remain to be confirmed on hardware.
 
+### Restonic BT Profiles
+
+**Validation status:** clean-room analysis of Restonic BT Remote 1.2.0 (3) is
+complete; hardware is unverified. See the
+[app disposition](../apk-analysis/dispositions/row058-restonic-bt.md).
+
+The app has two remote styles, chosen by the user in its settings (A is the
+default). Select the matching protocol variant: `restonic_a` (`Restonic BT
+app, remote A (6 buttons)`) or `restonic_b` (`Restonic BT app, remote B (10
+buttons)`). Neither is ever chosen automatically: the app accepts any device
+name that starts with `base-i4` or `base-i5` (case-sensitive), and those names
+are shared with Member's Mark, Purple, Sleep Harmony and Cool Base, which use
+different cadences, releases or frames. How discovery offers such a bed:
+
+| Advertised name | Offered as | What a Restonic BT user does |
+|-----------------|------------|------------------------------|
+| `base-i4…` (with or without a dot) | Keeson, Auto (Base profile) | Choose the `restonic_a` or `restonic_b` protocol variant |
+| `base-i5…` (any) | Cool Base | Change the bed type to Keeson, then choose `restonic_a` or `restonic_b` |
+
+Both styles write the Base frame `E5 FE 16 + command_le32 + checksum`, where
+the checksum is `(~sum(bytes 0-6)) & 0xFF`, to FFE5 / FFE9 only. The app never
+sets a write type, so the integration writes without response when the
+characteristic offers it, as Android does by default. There is no
+notification, read, handshake, PIN or memory.
+
+| Control | Frame | Remote A | Remote B |
+|---------|-------|----------|----------|
+| Head up / down | `E5 FE 16 01 00 00 00 05` / `E5 FE 16 02 00 00 00 04` | Held | Held |
+| Foot up / down | `E5 FE 16 04 00 00 00 02` / `E5 FE 16 08 00 00 00 FE` | Held | Held |
+| Back + Legs up / down (head and foot together) | `E5 FE 16 05 00 00 00 01` / `E5 FE 16 0A 00 00 00 FC` | ❌ | Held |
+| Flat | `E5 FE 16 00 00 00 08 FE` | Once | Once |
+| Zero G | `E5 FE 16 00 10 00 00 F6` | Held | Once |
+| Light | `E5 FE 16 00 00 02 00 04` | ❌ | Once |
+| ZZZ | `E5 FE 16 00 80 00 00 86` | ❌ | Once |
+| Release | `E5 FE 16 00 00 00 00 06` | After every control | After every control |
+
+Held controls write at once and then every 100 ms. Once controls write a single
+frame when the button is pressed. Releasing any control writes the zero frame
+100 ms later. In Home Assistant, a cover or held Zero G button press holds for
+the motor pulse settings (10 x 100 ms by default), one-shot buttons press once,
+and `restonic_hold_control` holds any control for a chosen duration. A Stop,
+a cover's stop, or a command that replaces a running hold writes the zero frame
+at once instead of after 100 ms, and a Stop during that 100 ms ends the wait.
+The Back + Legs cover shares its scheduler lane with the head and foot covers,
+so moving or stopping either of them interrupts it.
+
+Remote B's back-up and back-down glyphs appear as a **Back + Legs** cover. The
+app sends the same light frame on every press and tracks no state, so the light
+is a toggle button, not a light entity. ZZZ is exposed as a **ZZZ** button: the
+app does not show what it does, so it is not mapped to anti-snore or a memory.
+
+Deferred validation for real users: the actual write mode, whether the light
+toggles, what ZZZ does, how many actuators move, and whether the zero frame
+stops motion and presets.
+
 ### Sino Variant (Dynasty, INNOVA, BetterLiving)
 **Primary Service UUID:** `0000ffe5-0000-1000-8000-00805f9b34fb`
 **Format:** 8 bytes `[0xE5, 0xFE, 0x16, b4, b5, b6, b7, checksum]` (big-endian byte order)
@@ -357,6 +413,7 @@ app/protocol family, not to the shared 32-bit command values:
 | KSBT03CR | SomosBeds | 300ms `Timer.schedule` | 4 writes, 300ms apart |
 | Sleep Harmony (`KSBT04C` / `base-i5.`) | Sleep Harmony | 300ms handler loop | 4 writes, 300ms apart |
 | Adjustable Lite (`KSBT01C` / `KSBT03C`) | Adjustable Lite | Immediate write plus 300ms `Timer.schedule`; release only cancels the timer | 4 writes, 300ms apart, with no release packet |
+| Restonic BT (remote A / B) | Restonic BT Remote | Immediate write plus 100ms `Timer.schedule`; release writes one zero frame 100ms later | 10 writes, 100ms apart, then the zero frame after 100ms |
 | Ergomotion | Ergomotion / Ergomotion 4.0 / Tempur Zero G | 100ms handler loop | 10 writes, 100ms apart |
 | Serta | Serta MP Remote | 100ms handler loop | 10 writes, 100ms apart |
 | Sino / BetterLiving OKIN | BetterLiving | 100ms on the two-motor screen, 200ms on the three-motor screen | 10 x 100ms or 5 x 200ms |
@@ -383,6 +440,7 @@ status timer continues sending `00 B0`. Base (including the integration's
 Member's Mark route), Ergomotion, and Serta retain their family-specific zero
 frames. Purple uses the explicit seven-byte P2 zero frame. Sleep Harmony waits
 200 ms and sends one zero frame after both movement and one-shot actions.
+Restonic BT does the same after 100 ms.
 KSBT03CR retains its independently derived release behavior. One-shot commands
 themselves are sent once before any profile-specific release.
 
@@ -408,7 +466,7 @@ Unique service UUID auto-detection:
 
 | Device Name Prefix | Protocol |
 |-------------------|----------|
-| `base` / `base-i5` | Ambiguous: Auto keeps the Base profile; Purple Premium uses E5/8-byte and Sleep Harmony uses E6/9-byte, so select either profile explicitly |
+| `base` / `base-i5` | Ambiguous: Auto keeps the Base profile; Purple Premium uses E5/8-byte and Sleep Harmony uses E6/9-byte, so select either profile explicitly. Restonic BT (`base-i4` / `base-i5`) users select their remote's profile |
 | `KSBT01C` | Nordic UART with 6-byte packets; select the Adjustable Lite profile for that app |
 | `KSBT03C` | Nordic UART with 6-byte packets (3 motors: no head tilt; e.g. Ergomotion Rio 5.0); Adjustable Lite users select its profile |
 | `KSBT04` | Nordic UART with 6-byte packets (confirmed Rio 6.0 family) |
@@ -420,3 +478,9 @@ Discovery also matches name-only `KSBT01C*` and `KSBT03C*` advertisements.
 The Adjustable Lite app also accepts the identity in the middle of a name. Auto
 stays prefix-based so existing entries keep their frames; such beds can be added
 manually with the Adjustable Lite profile, which selects its remote the same way.
+
+Discovery likewise matches name-only `base-i4*` and `base-i5*` advertisements,
+the names the Restonic BT Remote app accepts. Any name starting with `base-i4`,
+with or without the dot, is detected as Keeson (Auto keeps Base); any `base-i5`
+name is still offered as Cool Base. See
+[Restonic BT profiles](#restonic-bt-profiles) for switching to the profile.

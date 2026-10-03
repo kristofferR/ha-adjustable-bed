@@ -2104,6 +2104,9 @@
       "coolbase_star": {
         "name": "Star button"
       },
+      "restonic_zzz": {
+        "name": "ZZZ"
+      },
       "starcode_save_tv": {
         "name": "Save Ascent"
       },
@@ -7006,6 +7009,26 @@
         "control": {
           "name": "Control",
           "description": "A motor direction, preset, preset save, light, massage wave or massage intensity control."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold time in seconds, from 0.1 to 60."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "restonic_hold_control": {
+      "name": "Hold Restonic BT control",
+      "description": "Hold one Restonic BT Remote app control for a Keeson bed on a Restonic BT profile. Motor directions and remote A's Zero G repeat every 100 ms; the other controls are sent once. Release sends one zero frame 100 ms after the hold ends.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "A control on the selected remote. Back + Legs, light and ZZZ exist only on remote B."
         },
         "duration": {
           "name": "Duration",

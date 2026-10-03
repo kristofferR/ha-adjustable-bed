@@ -163,6 +163,8 @@ from .const import (
     KEESON_VARIANT_KSBT_CR,
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_PURPLE,
+    KEESON_VARIANT_RESTONIC_A,
+    KEESON_VARIANT_RESTONIC_B,
     KEESON_VARIANT_SERTA,
     KEESON_VARIANT_SINO,
     KEESON_VARIANT_SLEEP_HARMONY,
@@ -1241,6 +1243,10 @@ async def create_controller(
                 variant=KEESON_VARIANT_ADJUSTABLE_LITE,
                 device_name=device_name,
             )
+        elif keeson_variant in (KEESON_VARIANT_RESTONIC_A, KEESON_VARIANT_RESTONIC_B):
+            # Explicit only: the app's base-i4/base-i5 names are shared with other profiles.
+            _LOGGER.debug("Using explicit Restonic BT Keeson variant (%s)", keeson_variant)
+            return KeesonController(coordinator, variant=keeson_variant, device_name=device_name)
         elif keeson_variant == KEESON_VARIANT_ERGOMOTION:
             _LOGGER.debug("Using Ergomotion Keeson variant (with position feedback)")
             return KeesonController(coordinator, variant="ergomotion")

@@ -732,6 +732,24 @@ test("MaxCoil Una / Dynasty Bases controls land in motor, massage and utility se
   expect(bed.memory).toEqual([]);
 });
 
+test("Restonic BT remote B maps its combined cover, light and ZZZ button", () => {
+  const hass = hassWith([
+    entry("cover.r_back", "head"),
+    entry("cover.r_legs", "feet"),
+    entry("cover.r_both", "back_legs"),
+    entry("button.r_flat", "preset_flat"),
+    entry("button.r_zero_g", "preset_zero_g"),
+    entry("button.r_light", "toggle_light"),
+    entry("button.r_zzz", "restonic_zzz"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.motors.map((m) => m.key)).toEqual(["back_legs", "head", "feet"]);
+  expect(bed.presets).toEqual(["button.r_flat", "button.r_zero_g"]);
+  expect(bed.lights.toggle).toBe("button.r_light");
+  expect(bed.utility).toEqual(["button.r_zzz"]);
+  expect(bed.memory).toEqual([]);
+});
+
 test("SIMMONS inclined controls join presets and clock/alarm actions land in utility", () => {
   const hass = hassWith([
     entry("button.s_flat", "preset_flat"),

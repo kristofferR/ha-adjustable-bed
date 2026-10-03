@@ -2025,11 +2025,13 @@ class TestKsbt03cMotorLayout:
         mock_keeson_config_entry,
         mock_coordinator_connected,
     ):
-        """Test stale keys cover the optional tilt/lumbar motors."""
+        """Test stale keys cover the optional motors and the Restonic BT combined cover."""
         coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
         await coordinator.async_connect()
 
-        assert coordinator.controller.stale_motor_entity_keys == frozenset({"tilt", "lumbar"})
+        assert coordinator.controller.stale_motor_entity_keys == frozenset(
+            {"tilt", "lumbar", "back_legs"}
+        )
 
 
 class TestKeesonMassageOffGating:
