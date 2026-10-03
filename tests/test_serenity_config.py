@@ -140,9 +140,47 @@ async def test_options_switch_from_generic_profile_preserves_explicit_serenity_d
 
 
 @pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
-@pytest.mark.parametrize(
-    "shown,requested", [(BED_TYPE_SERENITY, BED_TYPE_OCTO), (BED_TYPE_OCTO, BED_TYPE_SERENITY)]
-)
+async def test_switching_to_the_app_ignores_fields_it_sets_itself(hass, step):
+    from unittest.mock import AsyncMock
+
+    from homeassistant.const import CONF_ADDRESS, CONF_NAME
+
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+    from custom_components.adjustable_bed.const import (
+        CONF_BED_TYPE,
+        CONF_MOTOR_COUNT,
+        CONF_MOTOR_PULSE_DELAY_MS,
+    )
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass = hass
+    flow.context = {}
+    flow._selected_bed_type = flow._disambiguated_bed_type = BED_TYPE_OCTO
+    info = MagicMock()
+    info.name = "OKIN-003444"
+    info.address = "AA:BB:CC:DD:EE:FF"
+    info.service_uuids = ["62741523-52f9-8864-b1ab-3b3a8d65950b"]
+    info.manufacturer_data = {}
+    info.source = "auto"
+    flow._discovery_info = info
+    flow._async_transport_note = AsyncMock(return_value="")
+    flow._disconnect_choice_confirmed = True
+    flow._finish_with_verify = AsyncMock(return_value={"type": "create_entry"})
+    await getattr(flow, f"async_step_{step}")(
+        {
+            CONF_BED_TYPE: BED_TYPE_SERENITY,
+            CONF_NAME: "Edited bed",
+            CONF_ADDRESS: "11:22:33:44:55:66",
+            CONF_MOTOR_COUNT: 4,
+            CONF_MOTOR_PULSE_DELAY_MS: "300",
+        }
+    )
+    saved = flow._finish_with_verify.await_args.args[0]
+    assert (saved[CONF_MOTOR_COUNT], saved[CONF_MOTOR_PULSE_DELAY_MS]) == (2, 100)
+
+
+@pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
+@pytest.mark.parametrize("shown,requested", [(BED_TYPE_SERENITY, BED_TYPE_OCTO)])
 async def test_changing_setup_profile_restores_choices_and_keeps_entered_values(
     hass, step, shown, requested
 ):

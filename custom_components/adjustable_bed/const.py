@@ -2545,6 +2545,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
         for variant in variants
         if variant != VARIANT_AUTO
     ),
+    *ZSERIES_VARIANTS,
 ]
 
 # Protocols whose setup requests OS-level BLE pairing. This policy alone does

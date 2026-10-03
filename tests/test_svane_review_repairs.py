@@ -105,7 +105,7 @@ async def test_shared_pair_profile_edit_preserves_each_physical_descriptor(hass,
     result = await flow._async_options_form({CONF_PROTOCOL_VARIANT: requested}, step_id="settings")
     if result.get("type") == "form" and not result.get("errors"):
         result = await flow._async_options_form({CONF_PROTOCOL_VARIANT: requested}, step_id="settings")
-    assert result.get("errors", {}).get(CONF_PROTOCOL_VARIANT) == "svane_unpair_first"
+    assert result.get("errors", {}).get(CONF_PROTOCOL_VARIANT) == "app_profile_unpair_first"
     assert entry.data == before
 
 

@@ -838,7 +838,7 @@ async def test_two_address_pair_refuses_a_shared_innova_change(
     flow.handler = entry.entry_id
     refused = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: requested})
     assert refused["type"] is FlowResultType.FORM
-    assert refused["errors"] == {CONF_PROTOCOL_VARIANT: "innova_unpair_first"}
+    assert refused["errors"] == {CONF_PROTOCOL_VARIANT: "app_profile_unpair_first"}
     assert effective_child_data(entry.data, "left")[CONF_PROTOCOL_VARIANT] == left
     assert effective_child_data(entry.data, "right")[CONF_PROTOCOL_VARIANT] == right
 

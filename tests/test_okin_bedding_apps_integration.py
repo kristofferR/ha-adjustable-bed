@@ -716,7 +716,7 @@ async def test_pair_profile_changes_to_or_from_these_apps_require_unpair(hass):
             {CONF_BED_TYPE: requested, CONF_PROTOCOL_VARIANT: variant, CONF_MOTOR_PULSE_COUNT: "10"}
         )
         if refused:
-            assert "okin_bedding_app_unpair_first" in result["errors"].values(), cases[index]
+            assert "app_profile_unpair_first" in result["errors"].values(), cases[index]
             assert [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]] == children
         else:
-            assert "okin_bedding_app_unpair_first" not in (result.get("errors") or {}).values()
+            assert "app_profile_unpair_first" not in (result.get("errors") or {}).values()

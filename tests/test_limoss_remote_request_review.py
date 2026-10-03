@@ -170,7 +170,7 @@ async def test_paired_options_reject_profile_conversion_before_entry_change(hass
     flow.handler = entry.entry_id
     with patch.object(hass.config_entries, "async_reload", new=AsyncMock()) as reload:
         result = await flow.async_step_settings({const.CONF_BED_TYPE: const.BED_TYPE_LIMOSS_REMOTE})
-    assert result.get("errors") == {"base": "limoss_remote_pair_settings"}
+    assert result.get("errors") == {const.CONF_BED_TYPE: "app_profile_unpair_first"}
     assert entry.data == before
     reload.assert_not_awaited()
 
@@ -191,7 +191,7 @@ async def test_existing_pair_options_keep_bed_chair_profiles_and_shared_setting(
         assert updated[const.CONF_PRODUCT_TYPE] == previous[const.CONF_PRODUCT_TYPE]
         assert updated.get(const.CONF_IDLE_DISCONNECT_SECONDS) == 55
     result = await flow.async_step_settings({const.CONF_PRODUCT_TYPE: "chair"})
-    assert result.get("errors") == {"base": "limoss_remote_pair_settings"}
+    assert result.get("errors") == {"base": "app_profile_unpair_first"}
 
 
 @pytest.mark.parametrize("cancel", [False, True])

@@ -161,7 +161,9 @@ async def test_pair_options_requires_unpair_for_new_route_or_physical_profile_ed
     assert const.CONF_PRODUCT_TYPE not in fields
     submitted = {const.CONF_PRODUCT_TYPE: "bed"} if existing_fsm else {const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX}
     result = await flow.async_step_settings(submitted)
-    assert result["errors"] == {"base": "fsm_relax_unpair_first"}
+    field = "base" if existing_fsm else const.CONF_BED_TYPE
+    assert result["errors"] == {field: "app_profile_unpair_first"}
+    assert result["description_placeholders"]["profile"] == "FSM Relax"
     assert [child[const.CONF_PRODUCT_TYPE] for child in entry.data[const.CONF_PAIR_CHILDREN]] == ["bed", "chair"]
     assert [child[const.CONF_BED_TYPE] for child in entry.data[const.CONF_PAIR_CHILDREN]] == [left[const.CONF_BED_TYPE], right[const.CONF_BED_TYPE]]
 

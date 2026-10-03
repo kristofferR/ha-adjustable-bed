@@ -123,7 +123,7 @@ async def test_other_two_address_pair_cannot_enter_motion_before_rerender(hass):
     flow.hass, flow.handler = hass, entry.entry_id
     original = entry.data
     result = await flow._async_options_form({CONF_BED_TYPE: BED_TYPE_MOTION_BED}, step_id="settings")
-    assert result["errors"] == {"base": "motion_bed_unpair"}
+    assert result["errors"] == {CONF_BED_TYPE: "app_profile_unpair_first"}
     assert not flow._pending_changed_data
     assert entry.data == original
 

@@ -994,7 +994,7 @@ async def test_paired_options_require_unpairing_for_an_app_profile_change(
     result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: requested})
 
     assert result["type"] is FlowResultType.FORM
-    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "okin_app_unpair_first"}
+    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "app_profile_unpair_first"}
     assert effective_child_data(entry.data, "right")[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_BASE
 
 
@@ -1184,7 +1184,7 @@ async def test_paired_heal_motor_count_change_requires_unpairing(
     result = await flow.async_step_settings({CONF_MOTOR_COUNT: 4})
 
     assert result["type"] is FlowResultType.FORM
-    assert result["errors"] == {CONF_MOTOR_COUNT: "okin_app_unpair_first"}
+    assert result["errors"] == {CONF_MOTOR_COUNT: "app_profile_unpair_first"}
     for child in ("left", "right"):
         assert effective_child_data(entry.data, child)[CONF_MOTOR_COUNT] == 2
 

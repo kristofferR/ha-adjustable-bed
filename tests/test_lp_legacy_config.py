@@ -177,9 +177,10 @@ async def test_paired_options_preserve_each_sides_profile_and_endpoints(
     result = await flow.async_step_settings()
     shown = {marker.schema for marker in result["data_schema"].schema}
     assert shown.isdisjoint(_settings())
-    result = await flow.async_step_settings(
-        {CONF_MOTOR_PULSE_COUNT: "20", **right}
-    )
+    # A side's own profile is not part of the shared form.
+    refused = await flow.async_step_settings({CONF_MOTOR_PULSE_COUNT: "20", **right})
+    assert refused["errors"] == {"base": "app_profile_unpair_first"}
+    result = await flow.async_step_settings({CONF_MOTOR_PULSE_COUNT: "20"})
     assert result["type"] == FlowResultType.CREATE_ENTRY
     for child, original in zip(entry.data[CONF_PAIR_CHILDREN], (left, right), strict=True):
         assert {key: child[key] for key in _settings()} == {
@@ -203,5 +204,5 @@ async def test_paired_type_change_cannot_create_unconfigured_lp_sides(hass: Home
 
     result = await flow.async_step_settings({CONF_BED_TYPE: BED_TYPE_LEGGETT_LP_LEGACY})
 
-    assert result["errors"] == {"base": "lp_legacy_pair_settings"}
+    assert result["errors"] == {CONF_BED_TYPE: "app_profile_unpair_first"}
     assert entry.data == data

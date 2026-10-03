@@ -150,7 +150,7 @@ async def test_pair_cannot_switch_to_leggett_app_without_unpairing(hass):
     flow.handler = entry.entry_id
     flow.hass = hass
     result = await flow.async_step_settings({CONF_BED_TYPE: BED_TYPE_LEGGETT_OKIN})
-    assert result["errors"] == {CONF_BED_TYPE: "leggett_app_unpair_first"}
+    assert result["errors"] == {CONF_BED_TYPE: "app_profile_unpair_first"}
     assert entry.data[CONF_BED_TYPE] == BED_TYPE_LINAK
     assert flow._pending_data == {}
 

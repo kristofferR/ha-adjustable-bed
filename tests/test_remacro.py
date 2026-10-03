@@ -1339,7 +1339,7 @@ async def test_combined_options_refuse_any_app_change(hass: HomeAssistant, varia
     with patch(_HISTORY, return_value=None):
         result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: "auto"})
     assert result["type"] is FlowResultType.FORM
-    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "remacro_app_unpair_first"}
+    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "app_profile_unpair_first"}
     stored = [child[CONF_PROTOCOL_VARIANT] for child in entry.data[CONF_PAIR_CHILDREN]]
     assert stored == list(variants)
 

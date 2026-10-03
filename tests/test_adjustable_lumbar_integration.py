@@ -245,7 +245,7 @@ async def test_two_address_pair_refuses_shared_variant_changes(hass):
     flow.handler = entry.entry_id
     refused = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: "adjustable_lumbar_okin"})
     assert refused["type"] is FlowResultType.FORM
-    assert refused["errors"] == {CONF_PROTOCOL_VARIANT: "adjustable_lumbar_unpair_first"}
+    assert refused["errors"] == {CONF_PROTOCOL_VARIANT: "app_profile_unpair_first"}
     saved = await flow.async_step_settings({CONF_IDLE_DISCONNECT_SECONDS: 60})
     assert saved["type"] is FlowResultType.CREATE_ENTRY
     assert effective_child_data(entry.data, "left")[CONF_PROTOCOL_VARIANT] == VARIANT_AUTO

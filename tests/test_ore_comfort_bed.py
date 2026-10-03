@@ -624,16 +624,14 @@ async def test_switching_profiles_retires_the_other_profiles_entities(
 
 
 def test_two_address_pairs_refuse_a_shared_profile_change() -> None:
-    import json
-    from pathlib import Path
+    from custom_components.adjustable_bed.app_profiles import is_per_side_variant
+    from custom_components.adjustable_bed.config_flow import _per_side_refusal
 
-    from custom_components.adjustable_bed.config_flow import _PER_SIDE_APP_PROFILES
-
-    assert {_PER_SIDE_APP_PROFILES[v] for v in APPS} == {"ore_comfort_unpair_first"}
-    strings = json.loads(
-        (Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json").read_text()
-    )
-    assert "ore_comfort_unpair_first" in strings["options"]["error"]
+    assert all(is_per_side_variant(BED_TYPE_KEESON, app) for app in APPS)
+    for app in APPS:
+        sides = [(BED_TYPE_KEESON, "sino"), (BED_TYPE_KEESON, "sino")]
+        refusal = _per_side_refusal((BED_TYPE_KEESON, app), sides, {CONF_PROTOCOL_VARIANT: app})
+        assert refusal is not None and refusal[0] == CONF_PROTOCOL_VARIANT
 
 
 async def test_light_switch_reports_assumed_state(

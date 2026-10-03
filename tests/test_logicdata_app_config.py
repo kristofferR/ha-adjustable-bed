@@ -282,6 +282,6 @@ async def test_paired_options_require_unpair_before_selecting_app_type(hass):
     flow.handler = entry.entry_id
     flow.hass = hass
     result = await flow.async_step_settings({CONF_BED_TYPE: BED_TYPE_LOGICDATA_APP})
-    assert result["errors"] == {CONF_BED_TYPE: "logicdata_app_unpair_first"}
+    assert result["errors"] == {CONF_BED_TYPE: "app_profile_unpair_first"}
     assert entry.data == original
     assert flow._pending_data == {}
