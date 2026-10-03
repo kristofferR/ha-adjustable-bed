@@ -1,6 +1,8 @@
 """Factory, public controls and primary-only services exercise real delivery."""
 
 import asyncio
+import json
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -162,6 +164,11 @@ async def test_real_number_select_callbacks_and_reconstruction_preserve_color_de
             if hasattr(entity, "_spec")
         }
         assert all(entity.current_option is None for entity in selects.values())
+        strings = json.loads(
+            (Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json").read_text()
+        )["entity"]["select"]
+        for key in ("vmatbasic_mood_palette", "vmatbasic_mood_effect"):
+            assert list(strings[key]["state"]) == selects[key].options
         assert all(entity.native_value is None for entity in numbers.values())
         await selects["vmatbasic_mood_palette"].async_select_option("col1")
         await numbers["vmatbasic_mood_brightness"].async_set_native_value(50)

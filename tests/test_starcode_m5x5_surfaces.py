@@ -1,5 +1,7 @@
 """Explicit app setup, public controls and registered four-address action."""
 
+import json
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -38,6 +40,11 @@ from custom_components.adjustable_bed.select import _select_entities_for
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.services import async_register_services
 from tests.test_starcode_accessory_group import group, target
+
+
+def _entity_strings() -> dict:
+    path = Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json"
+    return json.loads(path.read_text())["entity"]
 
 
 async def test_paired_generic_settings_preserve_child_app_profiles(hass: HomeAssistant) -> None:
@@ -137,7 +144,11 @@ async def test_controls_state_and_readonly_domains(hass: HomeAssistant) -> None:
     numbers = _number_entities_for(hass, c)
     assert any(n.entity_description.translation_key == "starcode_brightness" for n in numbers)
     selects = _select_entities_for(hass, c)
-    assert any(s.entity_description.translation_key == "starcode_color" for s in selects)
+    color = next(s for s in selects if s.entity_description.translation_key == "starcode_color")
+    # The app's light enum names every index: 0 is off, 1 white, 7 purple.
+    states = _entity_strings()["select"]["starcode_color"]["state"]
+    assert list(states) == color.options
+    assert (states["0"], states["1"], states["7"]) == ("Off", "White", "Purple")
     sensors = _sensor_entities_for(hass, c)
     sensor_keys = {s.translation_key for s in sensors}
     assert {
