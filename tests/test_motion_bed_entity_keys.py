@@ -27,7 +27,8 @@ from custom_components.adjustable_bed.motion_bed_protocol import SOURCE_COMMANDS
 ENTITY_STRINGS = json.loads(
     (Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json").read_text()
 )["entity"]
-SIDE_VIEWS = ("", "_left", "_right", "_both")
+# Covers get a side suffix on single-address paired views; no cover is "both".
+SIDE_VIEWS = ("", "_left", "_right")
 HOME_MOVEMENTS = tuple(layout for layout in MOVEMENT_LAYOUTS if layout != "modular")
 HOME_PRESETS = tuple(preset for preset in PRESET_VARIANTS if preset != "modular")
 
