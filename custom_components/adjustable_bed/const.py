@@ -60,14 +60,13 @@ CONF_ZSERIES_ALARM_AVAILABLE: Final = "zseries_alarm_available"
 CONF_STARCODE_TRANSPORT_SELECTOR: Final = "starcode_abm5_4_transport_selector"
 STARCODE_APP_CONNECTION_TIMEOUT_SECONDS: Final = 8.0
 STARCODE_APP_CONFIG_KEYS: Final = frozenset({CONF_STARCODE_COMMAND_SELECTOR, CONF_STARCODE_UI_SELECTOR, CONF_STARCODE_TRANSPORT_SELECTOR})
-CONF_MOTION_BED_NAME: Final = "motion_bed_name"
 CONF_MOTION_BED_RESTORED: Final = "motion_bed_restored"
 CONF_MOTION_BED_PRESET: Final = "motion_bed_preset"
 CONF_MOTION_BED_MOVEMENT: Final = "motion_bed_movement"
-MOTION_BED_CONFIG_KEYS: Final = frozenset({CONF_MOTION_BED_NAME, CONF_MOTION_BED_PRESET, CONF_MOTION_BED_MOVEMENT, CONF_MOTION_BED_RESTORED})
+# The app's identity is the exact advertised name, stored as ble_device_name.
+MOTION_BED_CONFIG_KEYS: Final = frozenset({CONF_MOTION_BED_PRESET, CONF_MOTION_BED_MOVEMENT, CONF_MOTION_BED_RESTORED})
 
 CONF_STARCODE_M5X5_PROFILE: Final = "starcode_m5x5_profile"
-CONF_STARCODE_DEVICE_NAME: Final = "starcode_device_name"
 CONF_STARCODE_LIFT_ENTRIES: Final = "starcode_lift_entries"
 CONF_VIBRADORM_APP_PROFILE: Final = "vibradorm_app_profile"
 CONF_VMATBASIC_PROFILE: Final = "vmatbasic_profile"
@@ -92,7 +91,6 @@ CONF_VIBRADORM_RESTORED: Final = "vibradorm_restored"
 CONF_VIBRADORM_FLOOR_LIGHT: Final = "vibradorm_floor_light"
 CONF_VIBRADORM_FLOOR_DEFAULT: Final = "vibradorm_floor_default"
 CONF_VIBRADORM_RGB: Final = "vibradorm_rgb"
-CONF_VIBRADORM_MASSAGE: Final = "vibradorm_massage"
 CONF_VIBRADORM_LIGHT_EXTENSION: Final = "vibradorm_light_extension"
 VIBRADORM_APP_PROFILES: Final = {
     "caresse": "Caresse Diamant", "werkmeister": "Werkmeister", "vmat": "VMAT",
@@ -119,7 +117,7 @@ VIBRADORM_RESTORED_CONTROLS: Final = {
 }
 VIBRADORM_APP_CONFIG_KEYS: Final = frozenset({
     CONF_VIBRADORM_APP_PROFILE, CONF_VIBRADORM_CONTROL_TYPE, CONF_VIBRADORM_RESTORED,
-    CONF_VIBRADORM_FLOOR_LIGHT, CONF_VIBRADORM_RGB, CONF_VIBRADORM_MASSAGE,
+    CONF_VIBRADORM_FLOOR_LIGHT, CONF_VIBRADORM_RGB,
     CONF_VIBRADORM_LIGHT_EXTENSION, CONF_VIBRADORM_FLOOR_DEFAULT,
     CONF_VIBRADORM_VMAT_REMOTE,
 })
@@ -136,7 +134,6 @@ CONF_LOGICDATA_APP_PROFILE: Final = "logicdata_app_profile"
 CONF_LOGICDATA_APP_FAMILY: Final = "logicdata_app_family"
 CONF_LOGICDATA_APP_LAYOUT: Final = "logicdata_app_layout"
 CONF_LOGICDATA_APP_TRANSPORT: Final = "logicdata_app_transport"
-CONF_LOGICDATA_APP_HAS_LIGHT: Final = "logicdata_app_has_light"
 LOGICDATA_APP_PROFILES: Final = {
     "phone": "Phone app",
     "tablet": "Tablet app",
@@ -163,7 +160,6 @@ LOGICDATA_APP_TRANSPORTS: Final = {
 CONF_JIECANG_APP_PROFILE: Final = "jiecang_app_profile"
 CONF_JIECANG_APP_LAYOUT: Final = "jiecang_app_layout"
 CONF_JIECANG_APP_TRANSPORT: Final = "jiecang_app_transport"
-CONF_JIECANG_APP_HAS_LIGHT: Final = "jiecang_app_has_light"
 JIECANG_APP_PROFILES: Final = {"dreamask": "ERGOBALANCE (Dreamask)", "dreamotion": "Dream Motion"}
 JIECANG_APP_LAYOUTS: Final = {
     "standard_2": "Back and legs (2 motors)",
@@ -217,6 +213,13 @@ MALOUF_APP_TRANSPORTS: Final = {
     "okin_new": "OKIN new (Nordic UART)",
 }
 CONF_HAS_MASSAGE: Final = "has_massage"
+# Light controls, for app profiles where the user chooses whether they exist.
+CONF_HAS_LIGHT: Final = "has_light"
+# The product chosen in apps that drive both chairs and beds.
+CONF_PRODUCT_TYPE: Final = "product_type"
+PRODUCT_TYPES: Final = {"bed": "Bed", "chair": "Chair"}
+# Per-channel motor direction flags an app sends with every movement command.
+CONF_REVERSE_MOTORS: Final = tuple(f"reverse_motor_{i}" for i in range(1, 5))
 CONF_DISABLE_ANGLE_SENSING: Final = "disable_angle_sensing"
 CONF_PREFERRED_ADAPTER: Final = "preferred_adapter"
 CONF_CONNECTION_PROFILE: Final = "connection_profile"
@@ -424,10 +427,6 @@ BED_TYPE_MALOUF_NEW_OKIN: Final = "malouf_new_okin"
 BED_TYPE_MALOUF_LEGACY_OKIN: Final = "malouf_legacy_okin"
 BED_TYPE_MALOUF_APP: Final = "malouf_app"
 BED_TYPE_FSM_RELAX: Final = "fsm_relax"
-CONF_FSM_RELAX_LAYOUT: Final = "fsm_relax_layout"
-CONF_FSM_RELAX_LIGHT: Final = "fsm_relax_light"
-CONF_FSM_RELAX_MASSAGE: Final = "fsm_relax_massage"
-CONF_FSM_RELAX_REVERSALS: Final = tuple(f"fsm_relax_reverse_{i}" for i in range(1, 5))
 CONF_FSM_RELAX_MEMORY_NAMES: Final = "fsm_relax_memory_names"
 BED_TYPE_SERENITY: Final = "serenity"  # Explicit Jordan's Serenity app profile
 BED_TYPE_TRANQUIL: Final = "tranquil"  # Explicit Jordan's Tranquil app profile
@@ -471,15 +470,12 @@ BED_TYPE_REVERIE_NIGHTSTAND: Final = "reverie_nightstand"  # Reverie Protocol 11
 BED_TYPE_COMFORT_MOTION: Final = "comfort_motion"  # Comfort Motion / Lierda protocol
 BED_TYPE_LIMOSS: Final = "limoss"  # Limoss / Stawett TEA-encrypted protocol
 BED_TYPE_LIMOSS_REMOTE: Final = "limoss_remote"  # Explicit Limoss Remote app
-CONF_LIMOSS_REMOTE_PRODUCT: Final = "limoss_remote_product"
-CONF_LIMOSS_REMOTE_LIGHT: Final = "limoss_remote_light"
-CONF_LIMOSS_REMOTE_MASSAGE: Final = "limoss_remote_massage"
 CONF_LIMOSS_REMOTE_THEME: Final = "limoss_remote_theme"
 CONF_LIMOSS_REMOTE_STATE: Final = "limoss_remote_state"
-LIMOSS_REMOTE_REVERSE_KEYS: Final = tuple(f"limoss_remote_reverse_{i}" for i in range(1, 5))
+# Every setting the Limoss Remote profile reads, including shared ones.
 LIMOSS_REMOTE_CONFIG_KEYS: Final = frozenset({
-    CONF_LIMOSS_REMOTE_PRODUCT, CONF_LIMOSS_REMOTE_LIGHT, CONF_LIMOSS_REMOTE_MASSAGE,
-    CONF_LIMOSS_REMOTE_THEME, *LIMOSS_REMOTE_REVERSE_KEYS,
+    CONF_PRODUCT_TYPE, CONF_HAS_LIGHT, CONF_HAS_MASSAGE,
+    CONF_LIMOSS_REMOTE_THEME, *CONF_REVERSE_MOTORS,
 })
 BED_TYPE_SERTA: Final = "serta"  # Serta Motion Perfect (uses Keeson protocol with serta variant)
 BED_TYPE_BEDTECH: Final = "bedtech"  # BedTech 5-byte ASCII protocol
@@ -517,6 +513,16 @@ BED_TYPE_LOGICDATA_APP: Final = "logicdata_app"
 BED_TYPE_LOGICDATA_AIR_PUMP: Final = "logicdata_air_pump"
 BED_TYPE_LOGICDATA: Final = "logicdata"  # Logicdata SimplicityFrame (XXTEA+CRC16+SLIP)
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
+
+# Bed types whose entry chooses light controls (CONF_HAS_LIGHT), with the default.
+HAS_LIGHT_DEFAULTS: Final[dict[str, bool]] = {
+    BED_TYPE_LOGICDATA_APP: True,
+    BED_TYPE_JIECANG_APP: True,
+    BED_TYPE_FSM_RELAX: False,
+    BED_TYPE_LIMOSS_REMOTE: False,
+}
+# Apps that drive chairs and beds (CONF_PRODUCT_TYPE, CONF_REVERSE_MOTORS).
+CHAIR_AND_BED_APP_BED_TYPES: Final = frozenset({BED_TYPE_FSM_RELAX, BED_TYPE_LIMOSS_REMOTE})
 
 # All supported bed types (includes both protocol-based and legacy names)
 SUPPORTED_BED_TYPES: Final = [

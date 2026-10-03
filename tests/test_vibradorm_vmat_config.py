@@ -268,12 +268,12 @@ def test_normalization_uses_remote_not_submitted_capability_flags(remote):
     data = _vibradorm_app_data({const.CONF_VIBRADORM_APP_PROFILE: "vmat"}, {
         const.CONF_VIBRADORM_VMAT_REMOTE: remote,
         const.CONF_VIBRADORM_CONTROL_TYPE: "99",
-        const.CONF_VIBRADORM_MASSAGE: not profile.massage,
+        const.CONF_HAS_MASSAGE: not profile.massage,
         const.CONF_VIBRADORM_FLOOR_LIGHT: not profile.floor_light,
     })
     assert _vibradorm_app_errors(data) == {}
     assert data[const.CONF_VIBRADORM_CONTROL_TYPE] == str(profile.control_type)
-    assert data[const.CONF_VIBRADORM_MASSAGE] is profile.massage
+    assert data[const.CONF_HAS_MASSAGE] is profile.massage
     assert data[const.CONF_VIBRADORM_FLOOR_LIGHT] is profile.floor_light
     assert data[const.CONF_VIBRADORM_FLOOR_DEFAULT] == (6 if profile.light_extension else 8)
 

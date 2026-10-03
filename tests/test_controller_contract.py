@@ -104,7 +104,6 @@ class _FactoryCoordinator(SimpleNamespace):
             entry=SimpleNamespace(
                 data={
                     const.CONF_FURNIMOVE_REMOTE: "00000",
-                    const.CONF_MOTION_BED_NAME: "QMS-IQ",
                     const.CONF_LOGICDATA_APP_PROFILE: "phone",
                     const.CONF_LOGICDATA_APP_FAMILY: "p1",
                     const.CONF_LOGICDATA_APP_LAYOUT: "standard_2",
@@ -116,8 +115,8 @@ class _FactoryCoordinator(SimpleNamespace):
                     const.CONF_MALOUF_APP_MODEL: "L600",
                     const.CONF_MALOUF_APP_TRANSPORT: "okin_new",
                     const.CONF_STARCODE_M5X5_PROFILE: "cb25",
-                    const.CONF_STARCODE_DEVICE_NAME: "STAR252201123456",
-                    const.CONF_LIMOSS_REMOTE_PRODUCT: "bed",
+                    const.CONF_BLE_DEVICE_NAME: "STAR252201123456",
+                    const.CONF_PRODUCT_TYPE: "bed",
                     const.CONF_VIBRADORM_APP_PROFILE: "caresse",
                     const.CONF_VIBRADORM_CONTROL_TYPE: "2",
                     const.CONF_VMATBASIC_PROFILE: "basic",
@@ -203,6 +202,10 @@ async def _create_controller_for_bed_type(bed_type: str) -> BedController:
                 CONF_LP_LEGACY_WRITE_UUID: "11111111-2222-3333-4444-555555555555",
             }
         )
+
+    if bed_type == const.BED_TYPE_MOTION_BED:
+        # The app's identity is the exact advertised name.
+        coordinator.entry.data = {**coordinator.entry.data, const.CONF_BLE_DEVICE_NAME: "QMS-IQ"}
 
     if bed_type == const.BED_TYPE_FSM_RELAX:
         coordinator.entry.options = {}

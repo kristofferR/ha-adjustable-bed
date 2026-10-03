@@ -13,7 +13,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTION_BED,
     BED_TYPE_SOLACE,
     CONF_BED_TYPE,
-    CONF_MOTION_BED_NAME,
+    CONF_BLE_DEVICE_NAME,
     LINAK_CONTROL_SERVICE_UUID,
     SOLACE_SERVICE_UUID,
 )
@@ -64,7 +64,7 @@ async def test_additional_accepted_names_require_explicit_choice(hass, name, adv
         {CONF_BED_TYPE: BED_TYPE_MOTION_BED, CONF_NAME: "Bedroom"}
     )
     assert result["step_id"] == "motion_bed"
-    marker = next(key for key in result["data_schema"].schema if key.schema == CONF_MOTION_BED_NAME)
+    marker = next(key for key in result["data_schema"].schema if key.schema == CONF_BLE_DEVICE_NAME)
     assert marker.default() == name
 
 

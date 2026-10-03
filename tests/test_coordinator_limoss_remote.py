@@ -139,7 +139,7 @@ async def test_paired_local_memory_update_changes_only_addressed_child(hass):
         **{
             CONF_ADDRESS: "22:33:44:55:66:77",
             const.CONF_SIDE: const.SIDE_RIGHT,
-            const.CONF_LIMOSS_REMOTE_PRODUCT: "chair",
+            const.CONF_PRODUCT_TYPE: "chair",
         }
     )
     entry = MockConfigEntry(
@@ -227,7 +227,7 @@ async def test_unpair_provenance_restores_latest_preferences_and_keeps_address_m
 
     left_data = app_data()
     right_data = app_data(
-        **{CONF_ADDRESS: "22:33:44:55:66:77", const.CONF_LIMOSS_REMOTE_PRODUCT: "chair"}
+        **{CONF_ADDRESS: "22:33:44:55:66:77", const.CONF_PRODUCT_TYPE: "chair"}
     )
     pair = build_pair_entry_data(
         left_data, right_data, name="Pair", left_origin_data=left_data, right_origin_data=right_data
@@ -245,7 +245,7 @@ async def test_unpair_provenance_restores_latest_preferences_and_keeps_address_m
     descriptor = get_child(entry.data, const.SIDE_LEFT)
     assert descriptor is not None
     restored = single_data_from_child(descriptor)
-    assert restored[const.CONF_LIMOSS_REMOTE_LIGHT] is True
+    assert restored[const.CONF_HAS_LIGHT] is True
     # Memories belong to the physical address, so unpairing keeps them as they are.
     assert const.CONF_LIMOSS_REMOTE_STATE not in restored
     assert (await stored_app_state(left))["memories"]["8"]["name"] == "After pairing"

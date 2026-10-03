@@ -11,7 +11,7 @@ from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTION_BED,
     CONF_BED_TYPE,
-    CONF_MOTION_BED_NAME,
+    CONF_BLE_DEVICE_NAME,
     DOMAIN,
 )
 from custom_components.adjustable_bed.motion_bed_services import async_register_motion_bed_services
@@ -42,11 +42,11 @@ async def test_original_name_prefill_survives_editable_title(
         CONF_BED_TYPE: BED_TYPE_MOTION_BED,
     }
     if stored is not None:
-        flow._manual_data[CONF_MOTION_BED_NAME] = stored
+        flow._manual_data[CONF_BLE_DEVICE_NAME] = stored
     if observed is not None:
         flow._discovery_info = _make_service_info(name=observed)
     result = await flow.async_step_motion_bed()
-    marker = next(k for k in result["data_schema"].schema if k.schema == CONF_MOTION_BED_NAME)
+    marker = next(k for k in result["data_schema"].schema if k.schema == CONF_BLE_DEVICE_NAME)
     assert marker.default() == expected
 
 

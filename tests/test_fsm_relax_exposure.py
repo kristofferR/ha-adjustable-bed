@@ -108,7 +108,7 @@ async def _actual_memory_target(hass: HomeAssistant, address: str) -> Adjustable
     entry = MockConfigEntry(domain=const.DOMAIN, data={
         CONF_ADDRESS: address,
         const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX,
-        const.CONF_FSM_RELAX_LAYOUT: "bed",
+        const.CONF_PRODUCT_TYPE: "bed",
         const.CONF_DISCONNECT_AFTER_COMMAND: False,
         const.CONF_MOTOR_PULSE_COUNT: 1,
     })

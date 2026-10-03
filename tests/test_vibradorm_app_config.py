@@ -59,7 +59,7 @@ def app_data(app="caresse", control="2", **extra):
         const.CONF_VIBRADORM_RESTORED: False,
         const.CONF_VIBRADORM_FLOOR_LIGHT: app == "werkmeister",
         const.CONF_VIBRADORM_RGB: False,
-        const.CONF_VIBRADORM_MASSAGE: False,
+        const.CONF_HAS_MASSAGE: False,
         const.CONF_VIBRADORM_LIGHT_EXTENSION: False,
         **extra,
     }
@@ -108,7 +108,7 @@ async def test_restored_basic_features_and_no_motor_branch_are_explicit(hass):
             await flow.async_step_vibradorm_app({
                 const.CONF_VIBRADORM_CONTROL_TYPE: control,
                 const.CONF_VIBRADORM_RGB: True,
-                const.CONF_VIBRADORM_MASSAGE: True,
+                const.CONF_HAS_MASSAGE: True,
             })
         resume.assert_awaited_once()
         coordinator = MagicMock()
@@ -126,7 +126,7 @@ async def test_app_change_rebuilds_options_and_clears_retained_features(hass):
     entry = MockConfigEntry(domain=const.DOMAIN, data=app_data(**{
         const.CONF_VIBRADORM_RESTORED: True,
         const.CONF_VIBRADORM_RGB: True,
-        const.CONF_VIBRADORM_MASSAGE: True,
+        const.CONF_HAS_MASSAGE: True,
         const.CONF_VIBRADORM_APP_METADATA: {"model": "old metadata"},
     }))
     entry.add_to_hass(hass)
@@ -142,7 +142,7 @@ async def test_app_change_rebuilds_options_and_clears_retained_features(hass):
     assert const.CONF_MOTOR_PULSE_DELAY_MS not in fields
     result = await flow.async_step_settings({const.CONF_VIBRADORM_CONTROL_TYPE: "7"})
     assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert entry.data[const.CONF_VIBRADORM_MASSAGE] is False
+    assert entry.data[const.CONF_HAS_MASSAGE] is False
     assert entry.data[const.CONF_MOTOR_COUNT] == 4
     assert const.CONF_VIBRADORM_APP_METADATA not in entry.data
 
@@ -153,7 +153,7 @@ async def test_full_rendered_form_profile_switch_discards_old_app_fields(hass, o
     old = app_data(old_app, "2" if old_app == "caresse" else "7", **{
         const.CONF_VIBRADORM_RESTORED: old_app == "caresse",
         const.CONF_VIBRADORM_RGB: old_app == "caresse",
-        const.CONF_VIBRADORM_MASSAGE: old_app == "caresse",
+        const.CONF_HAS_MASSAGE: old_app == "caresse",
         const.CONF_VIBRADORM_LIGHT_EXTENSION: old_app == "caresse",
         const.CONF_VIBRADORM_FLOOR_DEFAULT: 8,
         const.CONF_VIBRADORM_APP_METADATA: {"model": "old metadata"},
@@ -188,7 +188,7 @@ async def test_full_rendered_form_profile_switch_discards_old_app_fields(hass, o
         assert defaults[const.CONF_VIBRADORM_CONTROL_TYPE] == "5"
     else:
         assert defaults[const.CONF_VIBRADORM_RESTORED] is False
-    for key in (const.CONF_VIBRADORM_RGB, const.CONF_VIBRADORM_MASSAGE,
+    for key in (const.CONF_VIBRADORM_RGB, const.CONF_HAS_MASSAGE,
                 const.CONF_VIBRADORM_LIGHT_EXTENSION, const.CONF_VIBRADORM_FLOOR_DEFAULT):
         assert key not in defaults
     if options:
@@ -202,7 +202,7 @@ async def test_full_rendered_form_profile_switch_discards_old_app_fields(hass, o
         updated = flow._manual_data
     assert updated[const.CONF_VIBRADORM_CONTROL_TYPE] == ("5" if new_app == "werkmeister" else "2")
     assert updated[const.CONF_VIBRADORM_FLOOR_DEFAULT] == 6
-    assert updated[const.CONF_VIBRADORM_MASSAGE] is False
+    assert updated[const.CONF_HAS_MASSAGE] is False
     assert updated[const.CONF_VIBRADORM_RGB] is False
     assert const.CONF_VIBRADORM_APP_METADATA not in updated
 
@@ -777,14 +777,14 @@ async def test_retained_options_persist_literal_remote_and_independent_features(
     result = await flow.async_step_settings({
         const.CONF_VIBRADORM_CONTROL_TYPE: control,
         const.CONF_VIBRADORM_RGB: True,
-        const.CONF_VIBRADORM_MASSAGE: True,
+        const.CONF_HAS_MASSAGE: True,
         const.CONF_VIBRADORM_FLOOR_LIGHT: False,
         const.CONF_VIBRADORM_LIGHT_EXTENSION: True,
     })
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert entry.data[const.CONF_VIBRADORM_CONTROL_TYPE] == control
     assert entry.data[const.CONF_VIBRADORM_RGB] is True
-    assert entry.data[const.CONF_VIBRADORM_MASSAGE] is True
+    assert entry.data[const.CONF_HAS_MASSAGE] is True
     assert entry.data[const.CONF_VIBRADORM_FLOOR_LIGHT] is False
     assert entry.data[const.CONF_VIBRADORM_LIGHT_EXTENSION] is True
     assert entry.data[const.CONF_MOTOR_PULSE_USER_SET] is False

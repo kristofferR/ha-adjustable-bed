@@ -57,6 +57,19 @@ To adjust settings after setup:
 | **Has Massage** | On/Off | Off | Enable massage controls if your bed supports it |
 | **Preferred Adapter** | Auto / Specific adapter | Auto | Which Bluetooth adapter or proxy to use |
 
+Some app profiles add settings that several apps share. Each has one name and
+label wherever it appears:
+
+| Setting | Offered by | Description |
+|---------|------------|-------------|
+| **Enable light controls** (`has_light`) | Logicdata and Jiecang bed apps (default on), FSM Relax and Limoss Remote (default off) | Expose the app's light controls |
+| **Bed or chair** (`product_type`) | FSM Relax, Limoss Remote | The product chosen in the app |
+| **Reverse motor channel 1–4** (`reverse_motor_1` to `reverse_motor_4`) | FSM Relax, Limoss Remote | The app's per-channel direction flags, sent with every movement |
+| **Exact Bluetooth name** (`ble_device_name`) | Motion Bed, AdjustableM5X5 | The unchanged advertised name that identifies the app profile |
+
+Entries that stored `logicdata_app_has_light` or `jiecang_app_has_light` are
+migrated to `has_light` when the integration loads.
+
 The adapter choice is a preference. Home Assistant can select another path when
 connecting; diagnostics record the actual adapter or proxy used.
 

@@ -20,9 +20,9 @@ from custom_components.adjustable_bed.const import (
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_LOGICDATA_APP_FAMILY,
-    CONF_LOGICDATA_APP_HAS_LIGHT,
     CONF_LOGICDATA_APP_LAYOUT,
     CONF_LOGICDATA_APP_PROFILE,
     CONF_LOGICDATA_APP_TRANSPORT,
@@ -78,7 +78,7 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
     assert saved[CONF_LOGICDATA_APP_PROFILE] == "phone"
     assert saved[CONF_LOGICDATA_APP_LAYOUT] == "standard_3_split_upper"
     assert saved[CONF_LOGICDATA_APP_TRANSPORT] == "auto"
-    assert saved[CONF_LOGICDATA_APP_HAS_LIGHT] is True
+    assert saved[CONF_HAS_LIGHT] is True
     assert saved[CONF_DISABLE_ANGLE_SENSING] is True
     assert saved[CONF_HAS_MASSAGE] is True
 
@@ -112,7 +112,7 @@ async def test_options_keep_app_layout_and_transport(hass):
             CONF_LOGICDATA_APP_FAMILY: "p1",
             CONF_LOGICDATA_APP_LAYOUT: "standard_4",
             CONF_LOGICDATA_APP_TRANSPORT: "t3",
-            CONF_LOGICDATA_APP_HAS_LIGHT: False,
+            CONF_HAS_LIGHT: False,
         },
     )
     entry.add_to_hass(hass)
@@ -122,14 +122,14 @@ async def test_options_keep_app_layout_and_transport(hass):
     result = await flow.async_step_settings()
     defaults = {marker.schema: marker.default() for marker in result["data_schema"].schema}
     assert defaults[CONF_LOGICDATA_APP_LAYOUT] == "standard_4"
-    assert defaults[CONF_LOGICDATA_APP_HAS_LIGHT] is False
+    assert defaults[CONF_HAS_LIGHT] is False
     result = await flow.async_step_settings(
         {
             CONF_LOGICDATA_APP_PROFILE: "tablet",
             CONF_LOGICDATA_APP_FAMILY: "p1",
             CONF_LOGICDATA_APP_LAYOUT: "standard_3_hi_low",
             CONF_LOGICDATA_APP_TRANSPORT: "t2",
-            CONF_LOGICDATA_APP_HAS_LIGHT: True,
+            CONF_HAS_LIGHT: True,
         }
     )
     assert result["type"] == FlowResultType.CREATE_ENTRY
@@ -163,7 +163,7 @@ async def test_factory_passes_explicit_settings_without_affecting_legacy(hass):
                 CONF_LOGICDATA_APP_FAMILY: "p1",
                 CONF_LOGICDATA_APP_LAYOUT: "standard_3_hi_low",
                 CONF_LOGICDATA_APP_TRANSPORT: "t2",
-                CONF_LOGICDATA_APP_HAS_LIGHT: False,
+                CONF_HAS_LIGHT: False,
             }
         )
     )
@@ -230,7 +230,7 @@ async def test_paired_options_preserve_distinct_app_packet_selectors(hass):
         CONF_LOGICDATA_APP_FAMILY: "p1",
         CONF_LOGICDATA_APP_LAYOUT: "standard_2",
         CONF_LOGICDATA_APP_TRANSPORT: "t1",
-        CONF_LOGICDATA_APP_HAS_LIGHT: False,
+        CONF_HAS_LIGHT: False,
     }
     right = {
         **left,
@@ -239,7 +239,7 @@ async def test_paired_options_preserve_distinct_app_packet_selectors(hass):
         CONF_LOGICDATA_APP_FAMILY: "p2",
         CONF_LOGICDATA_APP_LAYOUT: "middle",
         CONF_LOGICDATA_APP_TRANSPORT: "t3",
-        CONF_LOGICDATA_APP_HAS_LIGHT: True,
+        CONF_HAS_LIGHT: True,
     }
     entry = MockConfigEntry(domain=DOMAIN, data=build_pair_entry_data(left, right, name="Pair"))
     entry.add_to_hass(hass)
@@ -255,7 +255,7 @@ async def test_paired_options_preserve_distinct_app_packet_selectors(hass):
         CONF_LOGICDATA_APP_FAMILY,
         CONF_LOGICDATA_APP_LAYOUT,
         CONF_LOGICDATA_APP_TRANSPORT,
-        CONF_LOGICDATA_APP_HAS_LIGHT,
+        CONF_HAS_LIGHT,
     }
     assert not app_keys.intersection(marker.schema for marker in schema.schema)
     with pytest.raises(vol.Invalid, match=CONF_LOGICDATA_APP_PROFILE):

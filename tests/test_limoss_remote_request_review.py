@@ -114,8 +114,8 @@ async def test_public_enable_only_features_offline_never_connect_or_write(hass, 
         coordinators = list(children.values())
         data = deepcopy(dict(target.entry.data))
         for descriptor in data[const.CONF_PAIR_CHILDREN]:
-            descriptor[const.CONF_LIMOSS_REMOTE_LIGHT] = False
-            descriptor[const.CONF_LIMOSS_REMOTE_MASSAGE] = False
+            descriptor[const.CONF_HAS_LIGHT] = False
+            descriptor[const.CONF_HAS_MASSAGE] = False
         hass.config_entries.async_update_entry(target.entry, data=data)
         for controller in controllers.values():
             controller.underbed_light = controller.massage = False
@@ -133,8 +133,8 @@ async def test_public_enable_only_features_offline_never_connect_or_write(hass, 
             child.async_ensure_connected.assert_not_awaited()
             client.write_gatt_char.assert_not_awaited()
             assert child.capability_controller.underbed_light and child.capability_controller.massage
-            assert child.entry.data[const.CONF_LIMOSS_REMOTE_LIGHT] is True
-            assert child.entry.data[const.CONF_LIMOSS_REMOTE_MASSAGE] is True
+            assert child.entry.data[const.CONF_HAS_LIGHT] is True
+            assert child.entry.data[const.CONF_HAS_MASSAGE] is True
         await hass.async_block_till_done()
 
 
@@ -151,8 +151,8 @@ async def test_mixed_pair_features_connect_only_receiver_requiring_off(hass):
         await public_call(hass, pair, "limoss_remote_features", {"underbed_light": True, "massage": False})
         left.async_ensure_connected.assert_not_awaited()
         assert right_packets == [bytes.fromhex("6600000000")] * 10
-        assert left.entry.data[const.CONF_LIMOSS_REMOTE_LIGHT] is True
-        assert right.entry.data[const.CONF_LIMOSS_REMOTE_MASSAGE] is False
+        assert left.entry.data[const.CONF_HAS_LIGHT] is True
+        assert right.entry.data[const.CONF_HAS_MASSAGE] is False
         await hass.async_block_till_done()
 
 
@@ -178,7 +178,7 @@ async def test_paired_options_reject_profile_conversion_before_entry_change(hass
 async def test_existing_pair_options_keep_bed_chair_profiles_and_shared_setting(hass):
     pair, children, _ = await pair_runtime(hass)
     descriptors = deepcopy(dict(pair.entry.data))
-    descriptors[const.CONF_PAIR_CHILDREN][1][const.CONF_LIMOSS_REMOTE_PRODUCT] = "chair"
+    descriptors[const.CONF_PAIR_CHILDREN][1][const.CONF_PRODUCT_TYPE] = "chair"
     hass.config_entries.async_update_entry(pair.entry, data=descriptors)
     before = [deepcopy(get_child(pair.entry.data, side)) for side in (const.SIDE_LEFT, const.SIDE_RIGHT)]
     flow = AdjustableBedOptionsFlow(pair.entry)
@@ -188,9 +188,9 @@ async def test_existing_pair_options_keep_bed_chair_profiles_and_shared_setting(
     assert result["type"] == "create_entry"
     for side, previous in zip((const.SIDE_LEFT, const.SIDE_RIGHT), before, strict=True):
         updated = get_child(pair.entry.data, side)
-        assert updated[const.CONF_LIMOSS_REMOTE_PRODUCT] == previous[const.CONF_LIMOSS_REMOTE_PRODUCT]
+        assert updated[const.CONF_PRODUCT_TYPE] == previous[const.CONF_PRODUCT_TYPE]
         assert updated.get(const.CONF_IDLE_DISCONNECT_SECONDS) == 55
-    result = await flow.async_step_settings({const.CONF_LIMOSS_REMOTE_PRODUCT: "chair"})
+    result = await flow.async_step_settings({const.CONF_PRODUCT_TYPE: "chair"})
     assert result.get("errors") == {"base": "limoss_remote_pair_settings"}
 
 
@@ -249,7 +249,7 @@ async def test_offline_enable_waits_sibling_lane_before_any_local_edit(hass, can
 
 
 async def test_offline_disable_still_requires_receiver_and_keeps_selection_on_failure(hass):
-    coordinator = actual_coordinator(hass, **{const.CONF_LIMOSS_REMOTE_LIGHT: True, const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS}})
+    coordinator = actual_coordinator(hass, **{const.CONF_HAS_LIGHT: True, const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS}})
     controller = await live_controller(coordinator)
     client = coordinator.client
     coordinator._controller = coordinator._client = None

@@ -35,6 +35,7 @@ from .const import (
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_ADV_TYPE,
     CONF_KAIDI_PRODUCT_ID,
@@ -265,7 +266,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 # Keeson's deprecated "ore" variant was an alias for Sino.
 _V4_2_VARIANT_ALIASES: Final = {"ore": KEESON_VARIANT_SINO}
 # Per-app copies of generic settings, released in v4.0.2.
-_V4_2_RENAMED_KEYS: Final[dict[str, str]] = {}
+_V4_2_RENAMED_KEYS: Final[dict[str, str]] = {
+    "logicdata_app_has_light": CONF_HAS_LIGHT,
+    "jiecang_app_has_light": CONF_HAS_LIGHT,
+}
 
 
 def migrate_v4_2_data(data: Mapping[str, Any]) -> dict[str, Any]:

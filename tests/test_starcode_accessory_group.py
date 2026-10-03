@@ -12,7 +12,7 @@ from custom_components.adjustable_bed.beds.starcode_m5x5 import StarcodeM5X5Cont
 from custom_components.adjustable_bed.const import (
     BED_TYPE_STARCODE_M5X5,
     CONF_BED_TYPE,
-    CONF_STARCODE_DEVICE_NAME,
+    CONF_BLE_DEVICE_NAME,
     CONF_STARCODE_LIFT_ENTRIES,
     CONF_STARCODE_M5X5_PROFILE,
     DOMAIN,
@@ -42,7 +42,7 @@ def target(hass: HomeAssistant, index: int, profile: str) -> AdjustableBedCoordi
             CONF_NAME: name,
             CONF_BED_TYPE: BED_TYPE_STARCODE_M5X5,
             CONF_STARCODE_M5X5_PROFILE: profile,
-            CONF_STARCODE_DEVICE_NAME: name,
+            CONF_BLE_DEVICE_NAME: name,
             CONF_STARCODE_LIFT_ENTRIES: [],
         },
     )

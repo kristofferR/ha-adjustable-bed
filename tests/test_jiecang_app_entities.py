@@ -20,8 +20,8 @@ from custom_components.adjustable_bed.const import (
     COMFORT_MOTION_LIERDA3_WRITE_CHAR_UUID,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
-    CONF_JIECANG_APP_HAS_LIGHT,
     CONF_JIECANG_APP_LAYOUT,
     CONF_JIECANG_APP_PROFILE,
     CONF_JIECANG_APP_TRANSPORT,
@@ -78,7 +78,7 @@ def _entry(hass: HomeAssistant, layout: str) -> MockConfigEntry:
             CONF_JIECANG_APP_PROFILE: "dreamotion",
             CONF_JIECANG_APP_LAYOUT: layout,
             CONF_JIECANG_APP_TRANSPORT: "g3",
-            CONF_JIECANG_APP_HAS_LIGHT: True,
+            CONF_HAS_LIGHT: True,
             # The selected app layout must win over this legacy motor count.
             CONF_MOTOR_COUNT: 2,
             CONF_HAS_MASSAGE: True,
@@ -390,7 +390,7 @@ async def test_reload_removes_app_controls_after_protocol_change(
     ("option", "removed_keys", "retained_keys"),
     [
         (
-            CONF_JIECANG_APP_HAS_LIGHT,
+            CONF_HAS_LIGHT,
             {"light_level"},
             {"massage_head_intensity", "massage_foot_intensity"},
         ),

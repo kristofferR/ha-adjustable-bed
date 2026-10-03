@@ -15,7 +15,7 @@ from custom_components.adjustable_bed.button import (
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTION_BED,
     CONF_BED_TYPE,
-    CONF_MOTION_BED_NAME,
+    CONF_BLE_DEVICE_NAME,
     DOMAIN,
     SIDE_BOTH,
 )
@@ -80,7 +80,7 @@ async def test_public_module_delete_reply_refreshes_remaining_inventory(monkeypa
 
 
 async def test_registered_existing_buttons_publish_audio_availability(hass):
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_ADDRESS: "AA:BB:CC:DD:EE:01", CONF_BED_TYPE: BED_TYPE_MOTION_BED, CONF_MOTION_BED_NAME: "QMS-IQ"})
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_ADDRESS: "AA:BB:CC:DD:EE:01", CONF_BED_TYPE: BED_TYPE_MOTION_BED, CONF_BLE_DEVICE_NAME: "QMS-IQ"})
     entry.add_to_hass(hass)
     coord = AdjustableBedCoordinator(hass, entry)
     controller = MotionBedController(coord, selection=select_motion_bed("QMS-IQ"))

@@ -24,10 +24,10 @@ from custom_components.adjustable_bed.detection import get_bed_type_options
 def data():
     return {
         const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX,
-        const.CONF_FSM_RELAX_LAYOUT: "bed",
-        const.CONF_FSM_RELAX_LIGHT: True,
-        const.CONF_FSM_RELAX_MASSAGE: True,
-        **dict(zip(const.CONF_FSM_RELAX_REVERSALS, (True, False, True, False), strict=True)),
+        const.CONF_PRODUCT_TYPE: "bed",
+        const.CONF_HAS_LIGHT: True,
+        const.CONF_HAS_MASSAGE: True,
+        **dict(zip(const.CONF_REVERSE_MOTORS, (True, False, True, False), strict=True)),
         const.CONF_FSM_RELAX_MEMORY_NAMES: ["Sleep"] + [""] * 7,
     }
 
@@ -67,10 +67,11 @@ async def test_explicit_profile_step_validates_and_persists_all_values(hass):
     form = await flow.async_step_fsm_relax()
     assert form["step_id"] == "fsm_relax"
     await flow.async_step_fsm_relax(data())
-    assert flow._manual_data[const.CONF_FSM_RELAX_LAYOUT] == "bed"
+    assert flow._manual_data[const.CONF_PRODUCT_TYPE] == "bed"
     assert flow._manual_data[const.CONF_FSM_RELAX_MEMORY_NAMES][0] == "Sleep"
     assert flow._manual_data[const.CONF_DISABLE_ANGLE_SENSING] is True
-    assert flow._manual_data[const.CONF_HAS_MASSAGE] is False
+    # The app step's massage choice is the entry's has_massage, never overwritten.
+    assert flow._manual_data[const.CONF_HAS_MASSAGE] is True
     flow._finish_with_verify.assert_awaited_once_with(flow._manual_data, "Adjustable Bed")
     flow._finish_with_verify.reset_mock()
     form = await flow.async_step_fsm_relax({const.CONF_FSM_RELAX_MEMORY_NAMES: [""] * 7})
@@ -83,10 +84,10 @@ def test_profile_fields_schema_and_exact_options_validation():
     _add_fsm_relax_schema_fields(schema, data())
     result = vol.Schema(schema)({})
     assert isinstance(result, dict)
-    assert result[const.CONF_FSM_RELAX_LAYOUT] == "bed"
+    assert result[const.CONF_PRODUCT_TYPE] == "bed"
     assert result[const.CONF_FSM_RELAX_MEMORY_NAMES][0] == "Sleep"
     assert _fsm_relax_errors(data()) == {}
-    assert _fsm_relax_errors({**data(), const.CONF_FSM_RELAX_REVERSALS[0]: "yes"})
+    assert _fsm_relax_errors({**data(), const.CONF_REVERSE_MOTORS[0]: "yes"})
     assert const.BED_TYPE_FSM_RELAX not in const.BEDS_WITH_POSITION_FEEDBACK
     assert const.BED_TYPE_FSM_RELAX in const.BEDS_WITHOUT_ANGLE_FEEDBACK
     assert const.BED_TYPE_FSM_RELAX in {option["value"] for option in get_bed_type_options()}
@@ -132,7 +133,9 @@ def test_physical_profile_fields_never_inherit_from_paired_parent():
     from custom_components.adjustable_bed.pairing import inheritable_child_fields
     parent = {**data(), const.CONF_MOTOR_PULSE_COUNT: 4}
     inherited = inheritable_child_fields(parent)
-    for key in (const.CONF_FSM_RELAX_LAYOUT, const.CONF_FSM_RELAX_LIGHT, const.CONF_FSM_RELAX_MASSAGE, const.CONF_FSM_RELAX_MEMORY_NAMES, *const.CONF_FSM_RELAX_REVERSALS):
+    # Shared light and massage keys are stored on every side, so only the
+    # side-only app settings need excluding.
+    for key in (const.CONF_PRODUCT_TYPE, const.CONF_FSM_RELAX_MEMORY_NAMES, *const.CONF_REVERSE_MOTORS):
         assert key not in inherited
     assert inherited[const.CONF_MOTOR_PULSE_COUNT] == 4
 
@@ -145,7 +148,7 @@ async def test_pair_options_requires_unpair_for_new_route_or_physical_profile_ed
     from custom_components.adjustable_bed.pairing import build_pair_entry_data
 
     left = {**data(), CONF_ADDRESS: "AA:BB:CC:DD:EE:FF"}
-    right = {**data(), CONF_ADDRESS: "11:22:33:44:55:66", const.CONF_FSM_RELAX_LAYOUT: "chair"}
+    right = {**data(), CONF_ADDRESS: "11:22:33:44:55:66", const.CONF_PRODUCT_TYPE: "chair"}
     if not existing_fsm:
         left[const.CONF_BED_TYPE] = right[const.CONF_BED_TYPE] = const.BED_TYPE_LIMOSS
     entry = MockConfigEntry(domain=const.DOMAIN, data=build_pair_entry_data(left, right, name="Pair"))
@@ -155,11 +158,11 @@ async def test_pair_options_requires_unpair_for_new_route_or_physical_profile_ed
     flow.hass = hass
     shown = await flow.async_step_settings()
     fields = {marker.schema for marker in shown["data_schema"].schema}
-    assert const.CONF_FSM_RELAX_LAYOUT not in fields
-    submitted = {const.CONF_FSM_RELAX_LAYOUT: "bed"} if existing_fsm else {const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX}
+    assert const.CONF_PRODUCT_TYPE not in fields
+    submitted = {const.CONF_PRODUCT_TYPE: "bed"} if existing_fsm else {const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX}
     result = await flow.async_step_settings(submitted)
     assert result["errors"] == {"base": "fsm_relax_unpair_first"}
-    assert [child[const.CONF_FSM_RELAX_LAYOUT] for child in entry.data[const.CONF_PAIR_CHILDREN]] == ["bed", "chair"]
+    assert [child[const.CONF_PRODUCT_TYPE] for child in entry.data[const.CONF_PAIR_CHILDREN]] == ["bed", "chair"]
     assert [child[const.CONF_BED_TYPE] for child in entry.data[const.CONF_PAIR_CHILDREN]] == [left[const.CONF_BED_TYPE], right[const.CONF_BED_TYPE]]
 
 
@@ -230,7 +233,9 @@ async def test_public_explicit_profile_finishes_without_pairing_backend(
             const.CONF_DISCONNECT_AFTER_COMMAND: True,
         }
         if route == "bluetooth":
-            submitted.pop(CONF_ADDRESS)
+            # The form drawn for FSM Relax leaves these to its app step.
+            for key in (CONF_ADDRESS, const.CONF_MOTOR_COUNT, const.CONF_HAS_MASSAGE, const.CONF_DISABLE_ANGLE_SENSING):
+                submitted.pop(key)
         result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input=submitted)
         assert result["step_id"] == "fsm_relax"
         result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input={
@@ -239,8 +244,8 @@ async def test_public_explicit_profile_finishes_without_pairing_backend(
         assert result["type"] == FlowResultType.CREATE_ENTRY
         saved = result["data"]
         assert saved[const.CONF_BED_TYPE] == const.BED_TYPE_FSM_RELAX
-        assert saved[const.CONF_FSM_RELAX_LAYOUT] == "bed"
-        assert saved[const.CONF_FSM_RELAX_REVERSALS[0]] is True
+        assert saved[const.CONF_PRODUCT_TYPE] == "bed"
+        assert saved[const.CONF_REVERSE_MOTORS[0]] is True
         assert saved[const.CONF_FSM_RELAX_MEMORY_NAMES][0] == "Sleep"
         assert saved[const.CONF_DISABLE_ANGLE_SENSING] is True
         assert const.BED_TYPE_FSM_RELAX not in const.BEDS_REQUIRING_PAIRING

@@ -23,11 +23,11 @@ from custom_components.adjustable_bed.config_flow import (
 from custom_components.adjustable_bed.const import (
     BED_TYPE_STARCODE_M5X5,
     CONF_BED_TYPE,
+    CONF_BLE_DEVICE_NAME,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_PULSE_COUNT,
     CONF_PAIR_CHILDREN,
-    CONF_STARCODE_DEVICE_NAME,
     CONF_STARCODE_LIFT_ENTRIES,
     CONF_STARCODE_M5X5_PROFILE,
     DOMAIN,
@@ -60,7 +60,7 @@ async def test_paired_generic_settings_preserve_child_app_profiles(hass: HomeAss
     result = await flow.async_step_settings({CONF_MOTOR_PULSE_COUNT: 7})
     assert result["type"] == FlowResultType.CREATE_ENTRY
     for before, after in zip(original, entry.data[CONF_PAIR_CHILDREN], strict=True):
-        for key in (CONF_STARCODE_M5X5_PROFILE, CONF_STARCODE_DEVICE_NAME):
+        for key in (CONF_STARCODE_M5X5_PROFILE, CONF_BLE_DEVICE_NAME):
             assert before[key] == after[key]
 
 
@@ -89,7 +89,7 @@ async def test_explicit_setup_and_factory(hass: HomeAssistant, profile: str, nam
         flow, "_finish_with_verify", AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY})
     ) as finish:
         await flow.async_step_starcode_m5x5(
-            {CONF_STARCODE_M5X5_PROFILE: profile, CONF_STARCODE_DEVICE_NAME: name}
+            {CONF_STARCODE_M5X5_PROFILE: profile, CONF_BLE_DEVICE_NAME: name}
         )
     data = finish.await_args.args[0]
     assert data[CONF_DISABLE_ANGLE_SENSING] == (profile == "elevate")
@@ -104,7 +104,7 @@ async def test_explicit_setup_and_factory(hass: HomeAssistant, profile: str, nam
 async def test_name_and_lift_identity_validation(hass: HomeAssistant) -> None:
     main, *lifts = group(hass)
     assert _starcode_errors(hass, main.entry.data, main.entry.entry_id) == {}
-    bad = {**main.entry.data, CONF_STARCODE_DEVICE_NAME: "star254205123456"}
+    bad = {**main.entry.data, CONF_BLE_DEVICE_NAME: "star254205123456"}
     assert CONF_STARCODE_M5X5_PROFILE in _starcode_errors(hass, bad)
     bad = {**main.entry.data, CONF_STARCODE_LIFT_ENTRIES: [t.entry.entry_id for t in lifts] * 2}
     assert CONF_STARCODE_LIFT_ENTRIES in _starcode_errors(hass, bad)
@@ -113,7 +113,7 @@ async def test_name_and_lift_identity_validation(hass: HomeAssistant) -> None:
     accepted = vol.Schema(schema)(
         {
             CONF_STARCODE_M5X5_PROFILE: "cb25",
-            CONF_STARCODE_DEVICE_NAME: "STAR252201123456",
+            CONF_BLE_DEVICE_NAME: "STAR252201123456",
             CONF_STARCODE_LIFT_ENTRIES: [t.entry.entry_id for t in lifts],
         }
     )

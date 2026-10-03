@@ -9,6 +9,8 @@ from importlib import import_module
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Final, Literal
 
+from homeassistant.const import CONF_NAME
+
 from .adapter import discover_services
 from .app_session import app_session
 from .const import (
@@ -92,27 +94,20 @@ from .const import (
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
     CB1322_MANUFACTURER_MARKERS,
-    CONF_FSM_RELAX_LAYOUT,
-    CONF_FSM_RELAX_LIGHT,
-    CONF_FSM_RELAX_MASSAGE,
+    CONF_BLE_DEVICE_NAME,
     CONF_FSM_RELAX_MEMORY_NAMES,
-    CONF_FSM_RELAX_REVERSALS,
     CONF_FURNIMOVE_REMOTE,
+    CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
-    CONF_JIECANG_APP_HAS_LIGHT,
     CONF_JIECANG_APP_LAYOUT,
     CONF_JIECANG_APP_PROFILE,
     CONF_JIECANG_APP_TRANSPORT,
     CONF_KAIDI_PRODUCT_ID,
     CONF_KAIDI_SOFA_ACU_NO,
     CONF_LEGGETT_APP_PROFILE,
-    CONF_LIMOSS_REMOTE_LIGHT,
-    CONF_LIMOSS_REMOTE_MASSAGE,
-    CONF_LIMOSS_REMOTE_PRODUCT,
     CONF_LIMOSS_REMOTE_STATE,
     CONF_LIMOSS_REMOTE_THEME,
     CONF_LOGICDATA_APP_FAMILY,
-    CONF_LOGICDATA_APP_HAS_LIGHT,
     CONF_LOGICDATA_APP_LAYOUT,
     CONF_LOGICDATA_APP_PROFILE,
     CONF_LOGICDATA_APP_TRANSPORT,
@@ -125,12 +120,12 @@ from .const import (
     CONF_MALOUF_APP_PROFILE,
     CONF_MALOUF_APP_TRANSPORT,
     CONF_MOTION_BED_MOVEMENT,
-    CONF_MOTION_BED_NAME,
     CONF_MOTION_BED_PRESET,
     CONF_MOTION_BED_RESTORED,
+    CONF_PRODUCT_TYPE,
     CONF_REMACRO_MODEL,
+    CONF_REVERSE_MOTORS,
     CONF_STARCODE_COMMAND_SELECTOR,
-    CONF_STARCODE_DEVICE_NAME,
     CONF_STARCODE_M5X5_PROFILE,
     CONF_STARCODE_TRANSPORT_SELECTOR,
     CONF_STARCODE_UI_SELECTOR,
@@ -139,7 +134,6 @@ from .const import (
     CONF_VIBRADORM_FLOOR_DEFAULT,
     CONF_VIBRADORM_FLOOR_LIGHT,
     CONF_VIBRADORM_LIGHT_EXTENSION,
-    CONF_VIBRADORM_MASSAGE,
     CONF_VIBRADORM_RESTORED,
     CONF_VIBRADORM_RGB,
     CONF_VIBRADORM_VMAT_REMOTE,
@@ -149,6 +143,7 @@ from .const import (
     DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
     DEWERTOKIN_RF_GATEWAY_MODEL,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
+    HAS_LIGHT_DEFAULTS,
     KEESON_BETTERLIVING_SERVICE_UUIDS,
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_JSON_SERVICE_UUID,
@@ -174,7 +169,6 @@ from .const import (
     LEGGETT_APP_DEFAULT_PROFILE,
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
-    LIMOSS_REMOTE_REVERSE_KEYS,
     LINAK_VARIANT_PERFORMANCE,
     MANUFACTURER_ID_OKIN,
     NORDIC_UART_SERVICE_UUID,
@@ -691,7 +685,7 @@ async def create_controller(
             command_family=entry_data[CONF_LOGICDATA_APP_FAMILY],
             layout=entry_data[CONF_LOGICDATA_APP_LAYOUT],
             transport=entry_data.get(CONF_LOGICDATA_APP_TRANSPORT, "auto"),
-            has_light=entry_data.get(CONF_LOGICDATA_APP_HAS_LIGHT, True),
+            has_light=entry_data.get(CONF_HAS_LIGHT, HAS_LIGHT_DEFAULTS[BED_TYPE_LOGICDATA_APP]),
             has_massage=entry_data.get(CONF_HAS_MASSAGE, False),
         )
 
@@ -756,7 +750,7 @@ async def create_controller(
 
         data = coordinator.entry.data
         selection = select_motion_bed(
-            data.get(CONF_MOTION_BED_NAME, data.get("name", "")), restored=data.get(CONF_MOTION_BED_RESTORED, False),
+            data.get(CONF_BLE_DEVICE_NAME, data.get(CONF_NAME, "")), restored=data.get(CONF_MOTION_BED_RESTORED, False),
             preset_override=data.get(CONF_MOTION_BED_PRESET),
             movement_override=data.get(CONF_MOTION_BED_MOVEMENT),
         )
@@ -774,11 +768,11 @@ async def create_controller(
         state = validate_limoss_remote_state(entry_data.get(CONF_LIMOSS_REMOTE_STATE, {}))
         cached = state.get("capabilities")
         capabilities = LimossRemoteCapabilities(**cached) if isinstance(cached, dict) else None
-        reverse = tuple(entry_data.get(key, False) for key in LIMOSS_REMOTE_REVERSE_KEYS)
+        reverse = tuple(entry_data.get(key, False) for key in CONF_REVERSE_MOTORS)
         return LimossRemoteController(
-            coordinator, product=entry_data.get(CONF_LIMOSS_REMOTE_PRODUCT),
-            underbed_light=entry_data.get(CONF_LIMOSS_REMOTE_LIGHT, False),
-            massage=entry_data.get(CONF_LIMOSS_REMOTE_MASSAGE, False),
+            coordinator, product=entry_data.get(CONF_PRODUCT_TYPE),
+            underbed_light=entry_data.get(CONF_HAS_LIGHT, False),
+            massage=entry_data.get(CONF_HAS_MASSAGE, False),
             theme=entry_data.get(CONF_LIMOSS_REMOTE_THEME),
             reverse_motors=(reverse[0], reverse[1], reverse[2], reverse[3]),
             cached_capabilities=capabilities,
@@ -792,10 +786,10 @@ async def create_controller(
         from .fsm_relax_state import FsmRelaxSession, validate_names
 
         data = {**coordinator.entry.data, **coordinator.entry.options}
-        reversals = tuple(data.get(key, False) for key in CONF_FSM_RELAX_REVERSALS)
-        profile = FsmRelaxProfile(data.get(CONF_FSM_RELAX_LAYOUT, "chair"),
-                                  data.get(CONF_FSM_RELAX_LIGHT, False),
-                                  data.get(CONF_FSM_RELAX_MASSAGE, False),
+        reversals = tuple(data.get(key, False) for key in CONF_REVERSE_MOTORS)
+        profile = FsmRelaxProfile(data.get(CONF_PRODUCT_TYPE, "chair"),
+                                  data.get(CONF_HAS_LIGHT, False),
+                                  data.get(CONF_HAS_MASSAGE, False),
                                   (reversals[0], reversals[1], reversals[2], reversals[3]))
         return FsmRelaxController(
             coordinator,
@@ -815,7 +809,7 @@ async def create_controller(
         return StarcodeM5X5Controller(
             coordinator,
             profile=coordinator.entry.data[CONF_STARCODE_M5X5_PROFILE],
-            device_name=coordinator.entry.data[CONF_STARCODE_DEVICE_NAME],
+            device_name=coordinator.entry.data[CONF_BLE_DEVICE_NAME],
         )
 
     if bed_type == BED_TYPE_VIBRADORM_APP:
@@ -853,7 +847,7 @@ async def create_controller(
             restored=entry_data.get(CONF_VIBRADORM_RESTORED, False),
             floor_light=entry_data.get(CONF_VIBRADORM_FLOOR_LIGHT),
             rgb=entry_data.get(CONF_VIBRADORM_RGB, False),
-            massage=entry_data.get(CONF_VIBRADORM_MASSAGE, False),
+            massage=entry_data.get(CONF_HAS_MASSAGE, False),
             light_extension=entry_data.get(CONF_VIBRADORM_LIGHT_EXTENSION, False),
             floor_intent=intent.floor,
             timer_intent=intent.timer,
@@ -874,7 +868,7 @@ async def create_controller(
             profile=entry_data[CONF_JIECANG_APP_PROFILE],
             layout=entry_data[CONF_JIECANG_APP_LAYOUT],
             transport=entry_data.get(CONF_JIECANG_APP_TRANSPORT, "auto"),
-            has_light=entry_data.get(CONF_JIECANG_APP_HAS_LIGHT, True),
+            has_light=entry_data.get(CONF_HAS_LIGHT, HAS_LIGHT_DEFAULTS[BED_TYPE_JIECANG_APP]),
         )
 
     if bed_type == BED_TYPE_MALOUF_APP:

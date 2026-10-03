@@ -141,6 +141,7 @@ from .const import (
     CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
     CB24_BED_SELECTION_DEFAULT,
+    CHAIR_AND_BED_APP_BED_TYPES,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ATTEMPTED_SOURCE,
@@ -152,28 +153,20 @@ from .const import (
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISABLE_DISCOVERY,
     CONF_DISCONNECT_AFTER_COMMAND,
-    CONF_FSM_RELAX_LAYOUT,
-    CONF_FSM_RELAX_LIGHT,
-    CONF_FSM_RELAX_MASSAGE,
     CONF_FSM_RELAX_MEMORY_NAMES,
-    CONF_FSM_RELAX_REVERSALS,
     CONF_FURNIMOVE_REMOTE,
+    CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
     CONF_JENSEN_PIN,
-    CONF_JIECANG_APP_HAS_LIGHT,
     CONF_JIECANG_APP_LAYOUT,
     CONF_JIECANG_APP_PROFILE,
     CONF_JIECANG_APP_TRANSPORT,
     CONF_KAIDI_RESOLVED_VARIANT,
     CONF_LEGGETT_APP_PROFILE,
     CONF_LEGS_MAX_ANGLE,
-    CONF_LIMOSS_REMOTE_LIGHT,
-    CONF_LIMOSS_REMOTE_MASSAGE,
-    CONF_LIMOSS_REMOTE_PRODUCT,
     CONF_LIMOSS_REMOTE_THEME,
     CONF_LOGICDATA_APP_FAMILY,
-    CONF_LOGICDATA_APP_HAS_LIGHT,
     CONF_LOGICDATA_APP_LAYOUT,
     CONF_LOGICDATA_APP_PROFILE,
     CONF_LOGICDATA_APP_TRANSPORT,
@@ -188,7 +181,6 @@ from .const import (
     CONF_MALOUF_LAYOUT,
     CONF_MALOUF_MEMORY_SLOTS,
     CONF_MOTION_BED_MOVEMENT,
-    CONF_MOTION_BED_NAME,
     CONF_MOTION_BED_PRESET,
     CONF_MOTION_BED_RESTORED,
     CONF_MOTOR_COUNT,
@@ -202,12 +194,13 @@ from .const import (
     CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
+    CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
+    CONF_REVERSE_MOTORS,
     CONF_RICHMAT_REMOTE,
     CONF_RMCONTROL_PRODUCT,
     CONF_RMCONTROL_SIDE,
     CONF_STARCODE_COMMAND_SELECTOR,
-    CONF_STARCODE_DEVICE_NAME,
     CONF_STARCODE_LIFT_ENTRIES,
     CONF_STARCODE_M5X5_PROFILE,
     CONF_STARCODE_TRANSPORT_SELECTOR,
@@ -218,7 +211,6 @@ from .const import (
     CONF_VIBRADORM_FLOOR_DEFAULT,
     CONF_VIBRADORM_FLOOR_LIGHT,
     CONF_VIBRADORM_LIGHT_EXTENSION,
-    CONF_VIBRADORM_MASSAGE,
     CONF_VIBRADORM_RESTORED,
     CONF_VIBRADORM_RGB,
     CONF_VIBRADORM_VMAT_REMOTE,
@@ -242,6 +234,7 @@ from .const import (
     DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
+    HAS_LIGHT_DEFAULTS,
     JIECANG_APP_LAYOUTS,
     JIECANG_APP_PROFILES,
     JIECANG_APP_TRANSPORTS,
@@ -257,7 +250,6 @@ from .const import (
     LEGGETT_APP_PROFILES,
     LEGGETT_VARIANT_GEN2,
     LIMOSS_REMOTE_CONFIG_KEYS,
-    LIMOSS_REMOTE_REVERSE_KEYS,
     LOGICDATA_APP_FAMILIES,
     LOGICDATA_APP_LAYOUTS,
     LOGICDATA_APP_PROFILES,
@@ -280,6 +272,7 @@ from .const import (
     PAIR_SIDES,
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
+    PRODUCT_TYPES,
     RICHMAT_MH_APPS,
     RICHMAT_MH_BED_TYPES,
     RICHMAT_REMOTE_AUTO,
@@ -944,8 +937,8 @@ def _add_logicdata_app_schema_fields(
     ] = vol.In(LOGICDATA_APP_TRANSPORTS)
     schema[
         vol.Optional(
-            CONF_LOGICDATA_APP_HAS_LIGHT,
-            default=current_data.get(CONF_LOGICDATA_APP_HAS_LIGHT, True),
+            CONF_HAS_LIGHT,
+            default=current_data.get(CONF_HAS_LIGHT, HAS_LIGHT_DEFAULTS[BED_TYPE_LOGICDATA_APP]),
         )
     ] = bool
 
@@ -1037,8 +1030,8 @@ def _add_motion_bed_schema_fields(
     schema: dict[vol.Marker, Any], data: Mapping[str, Any], observed_name: str | None = None
 ) -> None:
     from .motion_bed_models import MOVEMENT_LAYOUTS, PRESET_VARIANTS
-    default_name = data.get(CONF_MOTION_BED_NAME, observed_name or data.get(CONF_NAME, ""))
-    schema[vol.Required(CONF_MOTION_BED_NAME, default=default_name)] = str
+    default_name = data.get(CONF_BLE_DEVICE_NAME, observed_name or data.get(CONF_NAME, ""))
+    schema[vol.Required(CONF_BLE_DEVICE_NAME, default=default_name)] = str
     schema[vol.Optional(CONF_MOTION_BED_RESTORED, default=data.get(CONF_MOTION_BED_RESTORED, False))] = bool
     schema[vol.Optional(CONF_MOTION_BED_PRESET, default=data.get(CONF_MOTION_BED_PRESET, "auto"))] = vol.In(("auto", *PRESET_VARIANTS))
     schema[vol.Optional(CONF_MOTION_BED_MOVEMENT, default=data.get(CONF_MOTION_BED_MOVEMENT, "auto"))] = vol.In(("auto", *MOVEMENT_LAYOUTS))
@@ -1047,7 +1040,7 @@ def _add_motion_bed_schema_fields(
 def _motion_bed_errors(data: Mapping[str, Any]) -> dict[str, str]:
     from .motion_bed_models import select_motion_bed
     try:
-        select_motion_bed(data.get(CONF_MOTION_BED_NAME, ""), restored=data.get(CONF_MOTION_BED_RESTORED, False),
+        select_motion_bed(data.get(CONF_BLE_DEVICE_NAME, ""), restored=data.get(CONF_MOTION_BED_RESTORED, False),
                          preset_override=None if data.get(CONF_MOTION_BED_PRESET, "auto") == "auto" else data[CONF_MOTION_BED_PRESET],
                          movement_override=None if data.get(CONF_MOTION_BED_MOVEMENT, "auto") == "auto" else data[CONF_MOTION_BED_MOVEMENT])
     except ValueError:
@@ -1062,6 +1055,16 @@ def _normalize_motion_bed_data(data: dict[str, Any]) -> None:
     data[CONF_DISABLE_ANGLE_SENSING] = True
     data[CONF_HAS_MASSAGE] = False  # Named app controls own their capabilities.
     data[CONF_MOTOR_PULSE_USER_SET] = False
+def _add_feature_fields(
+    schema: dict[vol.Marker, Any], data: Mapping[str, Any], bed_type: str
+) -> None:
+    """Add the light, massage and motor reversal choices of a chair-and-bed app."""
+    schema[vol.Optional(CONF_HAS_LIGHT, default=data.get(CONF_HAS_LIGHT, HAS_LIGHT_DEFAULTS[bed_type]))] = bool
+    schema[vol.Optional(CONF_HAS_MASSAGE, default=data.get(CONF_HAS_MASSAGE, False))] = bool
+    for key in CONF_REVERSE_MOTORS:
+        schema[vol.Optional(key, default=data.get(key, False))] = bool
+
+
 def _add_limoss_remote_schema_fields(
     schema: dict[vol.Marker, Any], current_data: dict[str, Any] | None = None
 ) -> None:
@@ -1069,9 +1072,8 @@ def _add_limoss_remote_schema_fields(
     from .beds.limoss_remote_protocol import THEMES
 
     data = current_data or {}
-    schema[vol.Required(CONF_LIMOSS_REMOTE_PRODUCT, default=data.get(CONF_LIMOSS_REMOTE_PRODUCT, vol.UNDEFINED))] = vol.In({"bed": "Bed", "chair": "Chair"})
-    for key in (CONF_LIMOSS_REMOTE_LIGHT, CONF_LIMOSS_REMOTE_MASSAGE, *LIMOSS_REMOTE_REVERSE_KEYS):
-        schema[vol.Optional(key, default=data.get(key, False))] = bool
+    schema[vol.Required(CONF_PRODUCT_TYPE, default=data.get(CONF_PRODUCT_TYPE, vol.UNDEFINED))] = vol.In(PRODUCT_TYPES)
+    _add_feature_fields(schema, data, BED_TYPE_LIMOSS_REMOTE)
     marker = vol.Optional(CONF_LIMOSS_REMOTE_THEME, default=data[CONF_LIMOSS_REMOTE_THEME]) if data.get(CONF_LIMOSS_REMOTE_THEME) is not None else vol.Optional(CONF_LIMOSS_REMOTE_THEME)
     schema[marker] = vol.In(THEMES)
 
@@ -1079,13 +1081,13 @@ def _add_limoss_remote_schema_fields(
 def _limoss_remote_errors(data: dict[str, Any]) -> dict[str, str]:
     from .beds.limoss_remote import validate_limoss_remote_profile
 
-    if data.get(CONF_LIMOSS_REMOTE_PRODUCT) not in ("bed", "chair"):
-        return {CONF_LIMOSS_REMOTE_PRODUCT: "limoss_remote_product_required"}
-    reverse = tuple(data.get(key, False) for key in LIMOSS_REMOTE_REVERSE_KEYS)
+    if data.get(CONF_PRODUCT_TYPE) not in PRODUCT_TYPES:
+        return {CONF_PRODUCT_TYPE: "limoss_remote_product_required"}
+    reverse = tuple(data.get(key, False) for key in CONF_REVERSE_MOTORS)
     try:
         validate_limoss_remote_profile(
-            data[CONF_LIMOSS_REMOTE_PRODUCT], data.get(CONF_LIMOSS_REMOTE_LIGHT, False),
-            data.get(CONF_LIMOSS_REMOTE_MASSAGE, False),
+            data[CONF_PRODUCT_TYPE], data.get(CONF_HAS_LIGHT, False),
+            data.get(CONF_HAS_MASSAGE, False),
             (reverse[0], reverse[1], reverse[2], reverse[3]), data.get(CONF_LIMOSS_REMOTE_THEME),
         )
     except (TypeError, ValueError):
@@ -1095,9 +1097,8 @@ def _limoss_remote_errors(data: dict[str, Any]) -> dict[str, str]:
 
 def _add_fsm_relax_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[str, Any]) -> None:
     """Expose local layout, optional controls, reversals and all eight labels."""
-    schema[vol.Required(CONF_FSM_RELAX_LAYOUT, default=data.get(CONF_FSM_RELAX_LAYOUT, "chair"))] = vol.In(("chair", "bed"))
-    for key in (CONF_FSM_RELAX_LIGHT, CONF_FSM_RELAX_MASSAGE, *CONF_FSM_RELAX_REVERSALS):
-        schema[vol.Optional(key, default=data.get(key, False))] = bool
+    schema[vol.Required(CONF_PRODUCT_TYPE, default=data.get(CONF_PRODUCT_TYPE, "chair"))] = vol.In(PRODUCT_TYPES)
+    _add_feature_fields(schema, data, BED_TYPE_FSM_RELAX)
     schema[vol.Optional(CONF_FSM_RELAX_MEMORY_NAMES, default=data.get(CONF_FSM_RELAX_MEMORY_NAMES, [""] * 8))] = TextSelector(TextSelectorConfig(multiple=True))
 
 
@@ -1106,8 +1107,8 @@ def _fsm_relax_errors(data: Mapping[str, Any]) -> dict[str, str]:
     from .fsm_relax_state import validate_names
 
     try:
-        r = tuple(data.get(key, False) for key in CONF_FSM_RELAX_REVERSALS)
-        FsmRelaxProfile(data.get(CONF_FSM_RELAX_LAYOUT, "chair"), data.get(CONF_FSM_RELAX_LIGHT, False), data.get(CONF_FSM_RELAX_MASSAGE, False), (r[0], r[1], r[2], r[3]))
+        r = tuple(data.get(key, False) for key in CONF_REVERSE_MOTORS)
+        FsmRelaxProfile(data.get(CONF_PRODUCT_TYPE, "chair"), data.get(CONF_HAS_LIGHT, False), data.get(CONF_HAS_MASSAGE, False), (r[0], r[1], r[2], r[3]))
         validate_names(data.get(CONF_FSM_RELAX_MEMORY_NAMES, [""] * 8))
     except ValueError:
         return {"base": "fsm_relax_invalid"}
@@ -1123,8 +1124,8 @@ def _add_starcode_schema_fields(
     from .starcode_accessory_group import lift_choices
 
     schema[vol.Required(
-        CONF_STARCODE_DEVICE_NAME,
-        default=data.get(CONF_STARCODE_DEVICE_NAME, data.get(CONF_NAME, vol.UNDEFINED)),
+        CONF_BLE_DEVICE_NAME,
+        default=data.get(CONF_BLE_DEVICE_NAME, data.get(CONF_NAME, vol.UNDEFINED)),
     )] = str
     schema[vol.Required(
         CONF_STARCODE_M5X5_PROFILE,
@@ -1148,7 +1149,7 @@ def _starcode_errors(
     from .beds.starcode_m5x5 import profile_from_name
     from .starcode_accessory_group import validate_lift_entries
 
-    name = data.get(CONF_STARCODE_DEVICE_NAME)
+    name = data.get(CONF_BLE_DEVICE_NAME)
     if not isinstance(name, str) or profile_from_name(name) != data.get(CONF_STARCODE_M5X5_PROFILE):
         return {CONF_STARCODE_M5X5_PROFILE: "starcode_profile_mismatch"}
     try:
@@ -1195,7 +1196,7 @@ def _add_vibradorm_app_schema_fields(
             )] = vol.In(VIBRADORM_RESTORED_CONTROLS)
             for key in (
                 CONF_VIBRADORM_FLOOR_LIGHT, CONF_VIBRADORM_RGB,
-                CONF_VIBRADORM_MASSAGE, CONF_VIBRADORM_LIGHT_EXTENSION,
+                CONF_HAS_MASSAGE, CONF_VIBRADORM_LIGHT_EXTENSION,
             ):
                 schema[vol.Optional(key, default=data.get(key, False))] = bool
             schema[vol.Optional(
@@ -1224,7 +1225,7 @@ def _vibradorm_app_data(
         CONF_VIBRADORM_APP_PROFILE in submitted
         and submitted[CONF_VIBRADORM_APP_PROFILE] != previous.get(CONF_VIBRADORM_APP_PROFILE)
     ):
-        for key in VIBRADORM_APP_CONFIG_KEYS - {CONF_VIBRADORM_APP_PROFILE}:
+        for key in (*VIBRADORM_APP_CONFIG_KEYS - {CONF_VIBRADORM_APP_PROFILE}, CONF_HAS_MASSAGE):
             data.pop(key, None)
             updates.pop(key, None)
         data.pop(CONF_VIBRADORM_APP_METADATA, None)
@@ -1243,7 +1244,7 @@ def _vibradorm_app_data(
             for key, flag in (
                 (CONF_VIBRADORM_FLOOR_LIGHT, selected.floor_light),
                 (CONF_VIBRADORM_RGB, selected.rgb),
-                (CONF_VIBRADORM_MASSAGE, selected.massage),
+                (CONF_HAS_MASSAGE, selected.massage),
                 (CONF_VIBRADORM_LIGHT_EXTENSION, selected.light_extension),
             ):
                 data[key] = flag
@@ -1259,7 +1260,7 @@ def _vibradorm_app_data(
             data.get(CONF_VIBRADORM_CONTROL_TYPE, "5") if app == "werkmeister" else "2"
         )
         data[CONF_VIBRADORM_FLOOR_LIGHT] = app == "werkmeister"
-        for key in (CONF_VIBRADORM_RGB, CONF_VIBRADORM_MASSAGE, CONF_VIBRADORM_LIGHT_EXTENSION):
+        for key in (CONF_VIBRADORM_RGB, CONF_HAS_MASSAGE, CONF_VIBRADORM_LIGHT_EXTENSION):
             data[key] = False
         data[CONF_VIBRADORM_FLOOR_DEFAULT] = 6
     else:
@@ -1269,7 +1270,7 @@ def _vibradorm_app_data(
         data.setdefault(CONF_VIBRADORM_CONTROL_TYPE, "2")
         for key in (
             CONF_VIBRADORM_FLOOR_LIGHT, CONF_VIBRADORM_RGB,
-            CONF_VIBRADORM_MASSAGE, CONF_VIBRADORM_LIGHT_EXTENSION,
+            CONF_HAS_MASSAGE, CONF_VIBRADORM_LIGHT_EXTENSION,
         ):
             data.setdefault(key, False)
         data.setdefault(CONF_VIBRADORM_FLOOR_DEFAULT, 6 if data[CONF_VIBRADORM_LIGHT_EXTENSION] else 8)
@@ -1307,7 +1308,7 @@ def _vibradorm_app_errors(data: Mapping[str, Any]) -> dict[str, str]:
             restored=data.get(CONF_VIBRADORM_RESTORED, False),
             floor_light=data.get(CONF_VIBRADORM_FLOOR_LIGHT),
             rgb=data.get(CONF_VIBRADORM_RGB, False),
-            massage=data.get(CONF_VIBRADORM_MASSAGE, False),
+            massage=data.get(CONF_HAS_MASSAGE, False),
             light_extension=data.get(CONF_VIBRADORM_LIGHT_EXTENSION, False),
             remote=data.get(CONF_VIBRADORM_VMAT_REMOTE),
         )
@@ -1431,7 +1432,7 @@ def _add_svane_schema_fields(schema: dict[vol.Marker, Any], bed_type: str | None
 
 def _hide_vibradorm_generic_fields(schema: dict[vol.Marker, Any], bed_type: str | None) -> None:
     """App profiles define controls and held behavior independently of generic options."""
-    if bed_type == BED_TYPE_STARCODE_M5X5:
+    if bed_type in {BED_TYPE_STARCODE_M5X5, BED_TYPE_FSM_RELAX}:
         for marker in tuple(schema):
             if marker.schema in {CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_DELAY_MS, CONF_PROTOCOL_VARIANT}:
                 del schema[marker]
@@ -1470,8 +1471,8 @@ def _add_jiecang_app_schema_fields(
     ] = vol.In(JIECANG_APP_TRANSPORTS)
     schema[
         vol.Optional(
-            CONF_JIECANG_APP_HAS_LIGHT,
-            default=current_data.get(CONF_JIECANG_APP_HAS_LIGHT, True),
+            CONF_HAS_LIGHT,
+            default=current_data.get(CONF_HAS_LIGHT, HAS_LIGHT_DEFAULTS[BED_TYPE_JIECANG_APP]),
         )
     ] = bool
 
@@ -2009,7 +2010,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         errors = _limoss_remote_errors(data) if user_input is not None else {}
         if user_input is not None and not errors:
             data[CONF_DISABLE_ANGLE_SENSING] = True
-            data[CONF_HAS_MASSAGE] = False
             data[CONF_MOTOR_PULSE_USER_SET] = False
             self._manual_data = data
             return await self._finish_with_verify(data, data.get(CONF_NAME, "Adjustable Bed"))
@@ -2024,7 +2024,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         errors = _fsm_relax_errors(data) if user_input is not None else {}
         self._manual_data = data
         if user_input is not None and not errors:
-            data[CONF_HAS_MASSAGE] = False
             data[CONF_DISABLE_ANGLE_SENSING] = True
             return await self._finish_with_verify(data, data.get(CONF_NAME, "Adjustable Bed"))
         schema: dict[vol.Marker, Any] = {}
@@ -2067,7 +2066,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 data[CONF_VIBRADORM_APP_PROFILE], "other" if control == "other" else int(control),
                 restored=data[CONF_VIBRADORM_RESTORED],
                 floor_light=data[CONF_VIBRADORM_FLOOR_LIGHT],
-                rgb=data[CONF_VIBRADORM_RGB], massage=data[CONF_VIBRADORM_MASSAGE],
+                rgb=data[CONF_VIBRADORM_RGB], massage=data[CONF_HAS_MASSAGE],
                 light_extension=data[CONF_VIBRADORM_LIGHT_EXTENSION],
                 remote=data.get(CONF_VIBRADORM_VMAT_REMOTE),
             )
@@ -6632,7 +6631,6 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 CONF_LOGICDATA_APP_FAMILY,
                 CONF_LOGICDATA_APP_LAYOUT,
                 CONF_LOGICDATA_APP_TRANSPORT,
-                CONF_LOGICDATA_APP_HAS_LIGHT,
             ):
                 data.pop(key, None)
         if bed_type != BED_TYPE_JIECANG_APP:
@@ -6640,7 +6638,6 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 CONF_JIECANG_APP_PROFILE,
                 CONF_JIECANG_APP_LAYOUT,
                 CONF_JIECANG_APP_TRANSPORT,
-                CONF_JIECANG_APP_HAS_LIGHT,
             ):
                 data.pop(key, None)
         if bed_type != BED_TYPE_STARCODE_ABM5_4:
@@ -6650,12 +6647,16 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             for key in MOTION_BED_CONFIG_KEYS:
                 data.pop(key, None)
         if bed_type != BED_TYPE_LIMOSS_REMOTE:
-            for key in LIMOSS_REMOTE_CONFIG_KEYS:
-                data.pop(key, None)
+            data.pop(CONF_LIMOSS_REMOTE_THEME, None)
             # Per-MAC local memories remain durable when changing protocol.
+        if bed_type not in HAS_LIGHT_DEFAULTS:
+            data.pop(CONF_HAS_LIGHT, None)
+        if bed_type not in CHAIR_AND_BED_APP_BED_TYPES:
+            for key in (CONF_PRODUCT_TYPE, *CONF_REVERSE_MOTORS):
+                data.pop(key, None)
 
         if bed_type != BED_TYPE_STARCODE_M5X5:
-            for key in (CONF_STARCODE_M5X5_PROFILE, CONF_STARCODE_DEVICE_NAME, CONF_STARCODE_LIFT_ENTRIES):
+            for key in (CONF_STARCODE_M5X5_PROFILE, CONF_STARCODE_LIFT_ENTRIES):
                 data.pop(key, None)
         if bed_type != BED_TYPE_VIBRADORM_APP:
             for key in VIBRADORM_APP_CONFIG_KEYS:
@@ -7149,6 +7150,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 )
             ] = vol.In(remote_options)
 
+        _hide_vibradorm_generic_fields(schema_dict, bed_type)
+        _add_svane_schema_fields(schema_dict, bed_type)
         if _is_leggett_app_type(bed_type, form_variant) and not separate_address_pair:
             _add_leggett_app_schema_field(schema_dict, current_data)
         if bed_type == BED_TYPE_FURNIMOVE and not separate_address_pair:
@@ -7223,8 +7226,6 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 )
             ] = TextSelector(TextSelectorConfig())
 
-        _hide_vibradorm_generic_fields(schema_dict, bed_type)
-        _add_svane_schema_fields(schema_dict, bed_type)
         if user_input is not None:
             # HA's select control uses string values; keep persisted counts numeric.
             if CONF_MOTOR_COUNT in user_input:
@@ -7250,7 +7251,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                         side_types != {requested_bed_type}
                         and BED_TYPE_LIMOSS_REMOTE in {requested_bed_type, *side_types}
                     )
-                    or any(key in user_input for key in LIMOSS_REMOTE_CONFIG_KEYS)
+                    or (bed_type == BED_TYPE_LIMOSS_REMOTE and any(key in user_input for key in LIMOSS_REMOTE_CONFIG_KEYS - {CONF_HAS_MASSAGE}))
                 ):
                     return self.async_show_form(
                         step_id=step_id,
@@ -7259,7 +7260,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     )
             if separate_address_pair and (
                 (requested_bed_type == BED_TYPE_FSM_RELAX and requested_bed_type != bed_type)
-                or any(key in user_input for key in (CONF_FSM_RELAX_LAYOUT, CONF_FSM_RELAX_LIGHT, CONF_FSM_RELAX_MASSAGE, CONF_FSM_RELAX_MEMORY_NAMES, *CONF_FSM_RELAX_REVERSALS))
+                or (bed_type == BED_TYPE_FSM_RELAX and any(key in user_input for key in (CONF_PRODUCT_TYPE, CONF_HAS_LIGHT, CONF_FSM_RELAX_MEMORY_NAMES, *CONF_REVERSE_MOTORS)))
             ):
                 return self.async_show_form(
                     step_id=step_id, data_schema=vol.Schema(schema_dict),
@@ -7306,7 +7307,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 )
             if separate_address_pair and (
                 (requested_bed_type == BED_TYPE_STARCODE_M5X5 and requested_bed_type != bed_type)
-                or any(key in user_input for key in (CONF_STARCODE_M5X5_PROFILE, CONF_STARCODE_DEVICE_NAME, CONF_STARCODE_LIFT_ENTRIES))
+                or any(key in user_input for key in (CONF_STARCODE_M5X5_PROFILE, CONF_STARCODE_LIFT_ENTRIES))
             ):
                 return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors={"base": "starcode_unpair_first"})
             if separate_address_pair and (
@@ -7768,7 +7769,6 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors)
                 user_input.update({key: app_data[key] for key in LIMOSS_REMOTE_CONFIG_KEYS if key in app_data})
                 user_input[CONF_DISABLE_ANGLE_SENSING] = True
-                user_input[CONF_HAS_MASSAGE] = False
                 user_input[CONF_MOTOR_PULSE_USER_SET] = False
 
 
@@ -7776,7 +7776,6 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 if errors := _fsm_relax_errors({**current_data, **user_input}):
                     return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors=errors)
                 user_input[CONF_DISABLE_ANGLE_SENSING] = True
-                user_input[CONF_HAS_MASSAGE] = False
 
             if bed_type == BED_TYPE_STARCODE_M5X5 and not separate_address_pair:
                 app_errors = _starcode_errors(self.hass, {**current_data, **user_input}, self.config_entry.entry_id)
@@ -7790,7 +7789,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 if _vibradorm_app_form_changed(current_data, user_input):
                     self._remember_pending_changes(schema_dict, user_input)
                     self._pending_data.update(
-                        {key: app_data[key] for key in VIBRADORM_APP_CONFIG_KEYS if key in app_data}
+                        {key: app_data[key] for key in (*VIBRADORM_APP_CONFIG_KEYS, CONF_HAS_MASSAGE) if key in app_data}
                     )
                     if discovery_disabled_input is not None:
                         self._pending_data[CONF_DISABLE_DISCOVERY] = discovery_disabled_input
@@ -7809,7 +7808,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     restored=app_data[CONF_VIBRADORM_RESTORED],
                     floor_light=app_data[CONF_VIBRADORM_FLOOR_LIGHT],
                     rgb=app_data[CONF_VIBRADORM_RGB],
-                    massage=app_data[CONF_VIBRADORM_MASSAGE],
+                    massage=app_data[CONF_HAS_MASSAGE],
                     light_extension=app_data[CONF_VIBRADORM_LIGHT_EXTENSION],
                     remote=app_data.get(CONF_VIBRADORM_VMAT_REMOTE),
                 )
@@ -7995,9 +7994,13 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
 
                 runtime = self._bond_target_coordinator()
                 previous = runtime.entry.data if isinstance(runtime, AdjustableBedCoordinator) else self.config_entry.data
-                light = bed_type == BED_TYPE_LIMOSS_REMOTE and user_input.get(CONF_LIMOSS_REMOTE_LIGHT, False)
-                massage = bed_type == BED_TYPE_LIMOSS_REMOTE and user_input.get(CONF_LIMOSS_REMOTE_MASSAGE, False)
-                disabling = (previous.get(CONF_LIMOSS_REMOTE_LIGHT, False) and not light) or (previous.get(CONF_LIMOSS_REMOTE_MASSAGE, False) and not massage)
+                light = bed_type == BED_TYPE_LIMOSS_REMOTE and user_input.get(CONF_HAS_LIGHT, False)
+                massage = bed_type == BED_TYPE_LIMOSS_REMOTE and user_input.get(CONF_HAS_MASSAGE, False)
+                # Only an enabled Limoss Remote feature has OFF commands to send.
+                disabling = previous.get(CONF_BED_TYPE) == BED_TYPE_LIMOSS_REMOTE and (
+                    (previous.get(CONF_HAS_LIGHT, False) and not light)
+                    or (previous.get(CONF_HAS_MASSAGE, False) and not massage)
+                )
                 if disabling:
                     if not isinstance(runtime, AdjustableBedCoordinator):
                         return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors={"base": "limoss_remote_feature_update_failed"})
@@ -8170,7 +8173,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     await app_state_store(self.hass, address).async_discard(
                         app_state_slot(BED_TYPE_KEESON, old_okin_variant)
                     )
-            if any(new_data.get(key) != self.config_entry.data.get(key) for key in (CONF_STARCODE_M5X5_PROFILE, CONF_STARCODE_DEVICE_NAME, CONF_STARCODE_LIFT_ENTRIES)):
+            if any(new_data.get(key) != self.config_entry.data.get(key) for key in (CONF_STARCODE_M5X5_PROFILE, CONF_BLE_DEVICE_NAME, CONF_STARCODE_LIFT_ENTRIES)):
                 from .starcode_accessory_group import cancel_group_operations
                 cancel_group_operations(self.hass, self.config_entry.entry_id)
             self.hass.config_entries.async_update_entry(

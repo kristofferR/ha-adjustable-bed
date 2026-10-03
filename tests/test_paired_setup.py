@@ -62,7 +62,6 @@ from custom_components.adjustable_bed.const import (
     CONF_LP_LEGACY_MODE,
     CONF_LP_LEGACY_MODEL,
     CONF_LP_LEGACY_WRITE_UUID,
-    CONF_MOTION_BED_NAME,
     CONF_MOTOR_COUNT,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_CONNECTION_MODE,
@@ -3727,7 +3726,7 @@ class TestOfflineSafeBedTypes:
                     "starcode_abm5_4_transport_selector": "BOX3633",
                 })
             elif bed_type == BED_TYPE_MOTION_BED:
-                child[CONF_MOTION_BED_NAME] = (
+                child[CONF_BLE_DEVICE_NAME] = (
                     "QMS4-left" if child[CONF_SIDE] == SIDE_LEFT else "SealyMF-right"
                 )
             elif bed_type == BED_TYPE_LEGGETT_LP_LEGACY:

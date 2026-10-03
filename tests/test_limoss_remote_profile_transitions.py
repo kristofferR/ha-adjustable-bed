@@ -67,8 +67,8 @@ async def test_leaving_remote_finishes_old_native_off_transaction_before_save(ha
     coordinator = actual_coordinator(
         hass,
         **{
-            const.CONF_LIMOSS_REMOTE_LIGHT: True,
-            const.CONF_LIMOSS_REMOTE_MASSAGE: True,
+            const.CONF_HAS_LIGHT: True,
+            const.CONF_HAS_MASSAGE: True,
             const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
         },
     )
@@ -129,7 +129,10 @@ async def test_leaving_remote_finishes_old_native_off_transaction_before_save(ha
             reload.assert_not_awaited()
         else:
             assert coordinator.entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_LIMOSS
-            assert not const.LIMOSS_REMOTE_CONFIG_KEYS.intersection(coordinator.entry.data)
+            # has_massage is a shared setting the new profile reads too.
+            assert not (
+                const.LIMOSS_REMOTE_CONFIG_KEYS - {const.CONF_HAS_MASSAGE}
+            ).intersection(coordinator.entry.data)
             assert coordinator.entry.data[const.CONF_LIMOSS_REMOTE_STATE] == before[const.CONF_LIMOSS_REMOTE_STATE]
             assert not controller.underbed_light and not controller.massage
     assert payloads == ["7100000000"] * 10 + ["6600000000"] * (2 if failure else 10)

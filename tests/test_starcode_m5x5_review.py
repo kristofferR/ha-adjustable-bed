@@ -16,8 +16,8 @@ from custom_components.adjustable_bed.config_flow import (
     AdjustableBedOptionsFlow,
 )
 from custom_components.adjustable_bed.const import (
+    CONF_BLE_DEVICE_NAME,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_STARCODE_DEVICE_NAME,
     CONF_STARCODE_LIFT_ENTRIES,
     CONF_STARCODE_M5X5_PROFILE,
     DOMAIN,
@@ -161,7 +161,7 @@ async def test_options_elevate_reload_removes_all_old_position_and_telemetry_row
     flow.handler = old.entry.entry_id
     flow.hass = hass
     result = await flow.async_step_settings(
-        {CONF_STARCODE_M5X5_PROFILE: "elevate", CONF_STARCODE_DEVICE_NAME: "ELEVATE123456"}
+        {CONF_STARCODE_M5X5_PROFILE: "elevate", CONF_BLE_DEVICE_NAME: "ELEVATE123456"}
     )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert old.entry.data[CONF_DISABLE_ANGLE_SENSING] is True

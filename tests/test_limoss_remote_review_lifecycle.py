@@ -79,8 +79,8 @@ async def pair_runtime(hass):
                     CONF_ADDRESS: f"AA:BB:CC:DD:EE:{index + 1:02X}",
                     const.CONF_SIDE: side,
                     const.CONF_DISCONNECT_AFTER_COMMAND: False,
-                    const.CONF_LIMOSS_REMOTE_LIGHT: True,
-                    const.CONF_LIMOSS_REMOTE_MASSAGE: True,
+                    const.CONF_HAS_LIGHT: True,
+                    const.CONF_HAS_MASSAGE: True,
                     const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
                 }
             )
@@ -216,8 +216,8 @@ async def test_paired_feature_flags_persist_only_after_all_off_bursts_succeed(ha
                     == [bytes.fromhex("7100000000")] * 10 + [bytes.fromhex("6600000000")] * 10
                 )
                 descriptor = get_child(pair.entry.data, side)
-                assert descriptor[const.CONF_LIMOSS_REMOTE_LIGHT] is False
-                assert descriptor[const.CONF_LIMOSS_REMOTE_MASSAGE] is False
+                assert descriptor[const.CONF_HAS_LIGHT] is False
+                assert descriptor[const.CONF_HAS_MASSAGE] is False
             await hass.async_block_till_done()
         reload.assert_not_awaited()  # Connected children do not reload mid-command.
 

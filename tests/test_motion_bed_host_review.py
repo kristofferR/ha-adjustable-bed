@@ -19,8 +19,8 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTION_BED,
     BED_TYPE_SOLACE,
     CONF_BED_TYPE,
+    CONF_BLE_DEVICE_NAME,
     CONF_DISCONNECT_AFTER_COMMAND,
-    CONF_MOTION_BED_NAME,
     DOMAIN,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
@@ -110,7 +110,7 @@ async def test_explicit_discovered_app_choice_reaches_its_real_factory(enable_cu
     result = await flow.async_step_bluetooth_confirm({CONF_BED_TYPE: app, CONF_NAME: "QMS-IQ", CONF_DISCONNECT_AFTER_COMMAND: False})
     if app == BED_TYPE_MOTION_BED:
         assert result["step_id"] == "motion_bed"
-        await flow.async_step_motion_bed({CONF_MOTION_BED_NAME: "QMS-IQ"})
+        await flow.async_step_motion_bed({CONF_BLE_DEVICE_NAME: "QMS-IQ"})
     else:
         assert result["type"] == FlowResultType.CREATE_ENTRY
     flow._finish_with_verify.assert_awaited_once()

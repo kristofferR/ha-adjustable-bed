@@ -47,8 +47,8 @@ async def prepare_live(coordinator):
 @pytest.mark.parametrize("interrupt", [None, "stop", "replace"])
 async def test_options_off_must_finish_before_persist_even_after_scheduler_replacement(hass, interrupt):
     coordinator = actual_coordinator(hass, **{
-        const.CONF_LIMOSS_REMOTE_LIGHT: True,
-        const.CONF_LIMOSS_REMOTE_MASSAGE: True,
+        const.CONF_HAS_LIGHT: True,
+        const.CONF_HAS_MASSAGE: True,
         const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
     })
     controller, client = await prepare_live(coordinator)
@@ -220,8 +220,8 @@ async def test_feature_service_interrupted_off_never_commits_selected_flags(hass
         side = const.SIDE_LEFT
     else:
         coordinator = actual_coordinator(hass, **{
-            const.CONF_LIMOSS_REMOTE_LIGHT: True,
-            const.CONF_LIMOSS_REMOTE_MASSAGE: True,
+            const.CONF_HAS_LIGHT: True,
+            const.CONF_HAS_MASSAGE: True,
             const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
         })
         target, side = coordinator, const.SIDE_BOTH
@@ -262,8 +262,8 @@ async def test_feature_service_interrupted_off_never_commits_selected_flags(hass
 
 async def test_queued_off_replaced_before_callback_does_not_save_options(hass):
     coordinator = actual_coordinator(hass, **{
-        const.CONF_LIMOSS_REMOTE_LIGHT: True,
-        const.CONF_LIMOSS_REMOTE_MASSAGE: True,
+        const.CONF_HAS_LIGHT: True,
+        const.CONF_HAS_MASSAGE: True,
         const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
     })
     controller, client = await prepare_live(coordinator)

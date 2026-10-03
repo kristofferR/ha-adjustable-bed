@@ -9,7 +9,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.adjustable_bed.button import ControllerActionButton, async_setup_entry
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTION_BED,
-    CONF_MOTION_BED_NAME,
+    CONF_BLE_DEVICE_NAME,
     DOMAIN,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
@@ -23,7 +23,7 @@ async def test_public_home_to_hub_prunes_home_only_registry_control(hass):
     home = []
     await async_setup_entry(hass, coord.entry, home.extend)
     hass.config_entries.async_update_entry(
-        coord.entry, data={**coord.entry.data, CONF_MOTION_BED_NAME: "TL-Q"}
+        coord.entry, data={**coord.entry.data, CONF_BLE_DEVICE_NAME: "TL-Q"}
     )
     hub = await create_controller(coord, BED_TYPE_MOTION_BED, None, coord.client)
     hub_keys = {spec.key for spec in hub.controller_button_specs}

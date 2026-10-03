@@ -2,15 +2,19 @@
 
 from __future__ import annotations
 
+import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed import async_migrate_entry
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_JIECANG_APP,
     BED_TYPE_KEESON,
     BED_TYPE_LINAK,
+    BED_TYPE_LOGICDATA_APP,
     CONF_BED_TYPE,
+    CONF_HAS_LIGHT,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
     CONF_PROTOCOL_VARIANT,
@@ -36,6 +40,27 @@ async def test_ore_alias_becomes_sino(hass: HomeAssistant) -> None:
 
     assert entry.minor_version == 2
     assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SINO
+
+
+@pytest.mark.parametrize(
+    ("bed_type", "old_key"),
+    [
+        (BED_TYPE_LOGICDATA_APP, "logicdata_app_has_light"),
+        (BED_TYPE_JIECANG_APP, "jiecang_app_has_light"),
+    ],
+)
+async def test_app_light_choice_becomes_has_light(
+    hass: HomeAssistant, bed_type: str, old_key: str
+) -> None:
+    entry = _entry(
+        hass,
+        {CONF_ADDRESS: "AA:BB:CC:DD:EE:04", CONF_BED_TYPE: bed_type, old_key: False},
+    )
+
+    assert await async_migrate_entry(hass, entry) is True
+
+    assert old_key not in entry.data
+    assert entry.data[CONF_HAS_LIGHT] is False
 
 
 async def test_paired_sides_and_their_originals_are_migrated(hass: HomeAssistant) -> None:

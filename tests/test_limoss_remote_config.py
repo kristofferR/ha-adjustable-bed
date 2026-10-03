@@ -25,9 +25,9 @@ def app_data(**extra):
         CONF_ADDRESS: ADDRESS,
         CONF_NAME: "App bed",
         const.CONF_BED_TYPE: const.BED_TYPE_LIMOSS_REMOTE,
-        const.CONF_LIMOSS_REMOTE_PRODUCT: "bed",
-        const.CONF_LIMOSS_REMOTE_LIGHT: False,
-        const.CONF_LIMOSS_REMOTE_MASSAGE: False,
+        const.CONF_PRODUCT_TYPE: "bed",
+        const.CONF_HAS_LIGHT: False,
+        const.CONF_HAS_MASSAGE: False,
         **extra,
     }
 
@@ -50,11 +50,10 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
     )
     assert result["step_id"] == "limoss_remote"
     fields = {key.schema for key in result["data_schema"].schema}
-    assert const.CONF_LIMOSS_REMOTE_PRODUCT in fields
+    assert {const.CONF_PRODUCT_TYPE, const.CONF_HAS_LIGHT, const.CONF_HAS_MASSAGE} <= fields
     assert not fields.intersection(
         {
             const.CONF_MOTOR_COUNT,
-            const.CONF_HAS_MASSAGE,
             const.CONF_PROTOCOL_VARIANT,
             const.CONF_MOTOR_PULSE_COUNT,
             const.CONF_MOTOR_PULSE_DELAY_MS,
@@ -62,10 +61,10 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
     )
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
         await flow.async_step_limoss_remote(
-            {const.CONF_LIMOSS_REMOTE_PRODUCT: "chair", const.LIMOSS_REMOTE_REVERSE_KEYS[3]: True}
+            {const.CONF_PRODUCT_TYPE: "chair", const.CONF_REVERSE_MOTORS[3]: True}
         )
-    assert finish.await_args.args[0][const.CONF_LIMOSS_REMOTE_PRODUCT] == "chair"
-    assert finish.await_args.args[0][const.LIMOSS_REMOTE_REVERSE_KEYS[3]] is True
+    assert finish.await_args.args[0][const.CONF_PRODUCT_TYPE] == "chair"
+    assert finish.await_args.args[0][const.CONF_REVERSE_MOTORS[3]] is True
     assert finish.await_args.args[0][const.CONF_DISABLE_ANGLE_SENSING] is True
 
 
@@ -73,8 +72,8 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
     "invalid",
     [
         {},
-        {const.CONF_LIMOSS_REMOTE_PRODUCT: "unknown"},
-        {const.CONF_LIMOSS_REMOTE_PRODUCT: "bed", const.CONF_LIMOSS_REMOTE_THEME: "made_up"},
+        {const.CONF_PRODUCT_TYPE: "unknown"},
+        {const.CONF_PRODUCT_TYPE: "bed", const.CONF_LIMOSS_REMOTE_THEME: "made_up"},
     ],
 )
 async def test_invalid_profile_never_finishes_setup(hass, invalid):
@@ -106,9 +105,9 @@ def test_parent_options_cannot_override_physical_target_profile_or_memories():
         const.CONF_PREFERRED_ADAPTER: "proxy",
     }
     inherited = inheritable_child_fields(data)
-    assert not (const.LIMOSS_REMOTE_CONFIG_KEYS | {const.CONF_LIMOSS_REMOTE_STATE}).intersection(
-        inherited
-    )
+    # Shared light and massage keys are stored on every side.
+    side_only = const.LIMOSS_REMOTE_CONFIG_KEYS - {const.CONF_HAS_LIGHT, const.CONF_HAS_MASSAGE}
+    assert not (side_only | {const.CONF_LIMOSS_REMOTE_STATE}).intersection(inherited)
     assert inherited[const.CONF_PREFERRED_ADAPTER] == "proxy"
 
 
@@ -120,17 +119,17 @@ async def test_enabling_local_features_saves_options_without_ble(hass):
     flow.handler = entry.entry_id
     result = await flow.async_step_settings(
         {
-            const.CONF_LIMOSS_REMOTE_LIGHT: True,
-            const.CONF_LIMOSS_REMOTE_MASSAGE: True,
+            const.CONF_HAS_LIGHT: True,
+            const.CONF_HAS_MASSAGE: True,
             const.CONF_LIMOSS_REMOTE_THEME: "bed_clear",
-            const.LIMOSS_REMOTE_REVERSE_KEYS[0]: True,
+            const.CONF_REVERSE_MOTORS[0]: True,
         }
     )
     assert result["type"] == "create_entry"
-    assert entry.data[const.CONF_LIMOSS_REMOTE_LIGHT] is True
-    assert entry.data[const.CONF_LIMOSS_REMOTE_MASSAGE] is True
+    assert entry.data[const.CONF_HAS_LIGHT] is True
+    assert entry.data[const.CONF_HAS_MASSAGE] is True
     assert entry.data[const.CONF_LIMOSS_REMOTE_THEME] == "bed_clear"
-    assert entry.data[const.LIMOSS_REMOTE_REVERSE_KEYS[0]] is True
+    assert entry.data[const.CONF_REVERSE_MOTORS[0]] is True
 
 
 @pytest.mark.parametrize("fail", [False, True])
@@ -142,8 +141,8 @@ async def test_options_disable_finishes_exact_off_bursts_before_saving(hass, fai
     coordinator = actual_coordinator(
         hass,
         **{
-            const.CONF_LIMOSS_REMOTE_LIGHT: True,
-            const.CONF_LIMOSS_REMOTE_MASSAGE: True,
+            const.CONF_HAS_LIGHT: True,
+            const.CONF_HAS_MASSAGE: True,
             const.CONF_LIMOSS_REMOTE_STATE: {
                 "capabilities": {
                     "key_count": 8,
@@ -178,7 +177,7 @@ async def test_options_disable_finishes_exact_off_bursts_before_saving(hass, fai
     flow.hass = hass
     flow.handler = coordinator.entry.entry_id
     result = await flow.async_step_settings(
-        {const.CONF_LIMOSS_REMOTE_LIGHT: False, const.CONF_LIMOSS_REMOTE_MASSAGE: False}
+        {const.CONF_HAS_LIGHT: False, const.CONF_HAS_MASSAGE: False}
     )
     if fail:
         assert result["errors"] == {"base": "limoss_remote_feature_update_failed"}
@@ -188,8 +187,8 @@ async def test_options_disable_finishes_exact_off_bursts_before_saving(hass, fai
     else:
         assert result["type"] == "create_entry"
         assert payloads == ["7100000000"] * 10 + ["6600000000"] * 10
-        assert coordinator.entry.data[const.CONF_LIMOSS_REMOTE_LIGHT] is False
-        assert coordinator.entry.data[const.CONF_LIMOSS_REMOTE_MASSAGE] is False
+        assert coordinator.entry.data[const.CONF_HAS_LIGHT] is False
+        assert coordinator.entry.data[const.CONF_HAS_MASSAGE] is False
 
 
 def test_limoss_group_requires_explicit_app_or_legacy_selection():

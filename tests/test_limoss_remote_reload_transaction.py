@@ -27,8 +27,8 @@ async def loaded_runtime(hass, paired):
         const.CONF_SIDE: side,
         const.CONF_DISCONNECT_AFTER_COMMAND: True,
         const.CONF_DISABLE_ANGLE_SENSING: True,
-        const.CONF_LIMOSS_REMOTE_LIGHT: True,
-        const.CONF_LIMOSS_REMOTE_MASSAGE: True,
+        const.CONF_HAS_LIGHT: True,
+        const.CONF_HAS_MASSAGE: True,
         const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
     }) for address, side in zip(addresses, (const.SIDE_LEFT, const.SIDE_RIGHT), strict=False)]
     entry = MockConfigEntry(domain=const.DOMAIN, version=4, data={

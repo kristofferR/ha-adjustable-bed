@@ -10,7 +10,7 @@ from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTION_BED,
     CONF_BED_TYPE,
-    CONF_MOTION_BED_NAME,
+    CONF_BLE_DEVICE_NAME,
     CONF_MOTION_BED_PRESET,
     DOMAIN,
 )
@@ -20,7 +20,7 @@ from tests.app_state_helpers import restart_app_state, stored_app_state
 
 
 def coordinator(hass, *, address="AA:BB:CC:DD:EE:FF", preset=None):
-    data = {CONF_ADDRESS: address, CONF_BED_TYPE: BED_TYPE_MOTION_BED, CONF_MOTION_BED_NAME: "QMS-IQ"}
+    data = {CONF_ADDRESS: address, CONF_BED_TYPE: BED_TYPE_MOTION_BED, CONF_BLE_DEVICE_NAME: "QMS-IQ"}
     if preset:
         data[CONF_MOTION_BED_PRESET] = preset
     entry = MockConfigEntry(domain=DOMAIN, data=data)

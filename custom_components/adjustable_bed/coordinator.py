@@ -138,12 +138,11 @@ from .const import (
     CONF_CONNECTION_PROFILE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
     CONF_JENSEN_PIN,
     CONF_LEGS_MAX_ANGLE,
-    CONF_LIMOSS_REMOTE_LIGHT,
-    CONF_LIMOSS_REMOTE_MASSAGE,
     CONF_LIMOSS_REMOTE_STATE,
     CONF_MALOUF_LAYOUT,
     CONF_MALOUF_MEMORY_SLOTS,
@@ -2114,7 +2113,7 @@ class AdjustableBedCoordinator:
         """Reload the exact target's entity layout after completed OFF writes."""
         if self._bed_type != BED_TYPE_LIMOSS_REMOTE or type(light) is not bool or type(massage) is not bool:
             raise ValueError("Invalid Limoss Remote local features")
-        changed = {CONF_LIMOSS_REMOTE_LIGHT: light, CONF_LIMOSS_REMOTE_MASSAGE: massage}
+        changed = {CONF_HAS_LIGHT: light, CONF_HAS_MASSAGE: massage}
         if all(self.entry.data.get(key, False) == value for key, value in changed.items()):
             return
         self._begin_internal_entry_update(self._ble_bond_established)

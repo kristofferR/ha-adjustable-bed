@@ -34,20 +34,19 @@ from .const import (
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
     CONF_CB24_BED_SELECTION,
-    CONF_FSM_RELAX_LAYOUT,
-    CONF_FSM_RELAX_LIGHT,
-    CONF_FSM_RELAX_MASSAGE,
     CONF_FSM_RELAX_MEMORY_NAMES,
-    CONF_FSM_RELAX_REVERSALS,
     CONF_KAIDI_RESOLVED_VARIANT,
     CONF_LIMOSS_REMOTE_STATE,
+    CONF_LIMOSS_REMOTE_THEME,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     CONF_PAIR_MEMBER_ADDRESSES,
     CONF_PAIR_MODE,
     CONF_PAIR_SCHEMA_VERSION,
+    CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
+    CONF_REVERSE_MOTORS,
     CONF_SIDE,
     KAIDI_VARIANT_SEAT_1,
     KAIDI_VARIANT_SEAT_1_2,
@@ -95,14 +94,14 @@ class ChildDescriptor(TypedDict, total=False):
     vmatbasic_profile: str
     vmatbasic_floor_level: int
     vmatbasic_floor_minutes: int
-    limoss_remote_product: str
-    limoss_remote_light: bool
-    limoss_remote_massage: bool
+    product_type: str
+    has_light: bool
+    has_massage: bool
     limoss_remote_theme: str
-    limoss_remote_reverse_1: bool
-    limoss_remote_reverse_2: bool
-    limoss_remote_reverse_3: bool
-    limoss_remote_reverse_4: bool
+    reverse_motor_1: bool
+    reverse_motor_2: bool
+    reverse_motor_3: bool
+    reverse_motor_4: bool
     limoss_remote_state: dict[str, Any]
     # Set once a BLE bond is established, so future connects skip pairing.
     ble_bond_established: bool
@@ -208,8 +207,10 @@ def get_child(entry_data: Mapping[str, Any], side: str) -> ChildDescriptor | Non
 
 CHILD_INHERITANCE_EXCLUDED_KEYS: Final = frozenset(
     {
-        CONF_FSM_RELAX_LAYOUT, CONF_FSM_RELAX_LIGHT, CONF_FSM_RELAX_MASSAGE,
-        CONF_FSM_RELAX_MEMORY_NAMES, *CONF_FSM_RELAX_REVERSALS,
+        # App settings that belong to one physical side. Shared keys such
+        # as has_massage and has_light are stored on every side anyway.
+        CONF_PRODUCT_TYPE, *CONF_REVERSE_MOTORS,
+        CONF_FSM_RELAX_MEMORY_NAMES, CONF_LIMOSS_REMOTE_THEME,
         CONF_PAIR_ID,
         CONF_PAIR_MODE,
         CONF_PAIR_CHILDREN,
@@ -218,7 +219,6 @@ CHILD_INHERITANCE_EXCLUDED_KEYS: Final = frozenset(
         CONF_PAIR_CONNECTION_MODE,
         *RUNTIME_BOND_KEYS,
         *VMATBASIC_CONFIG_KEYS,
-        *LIMOSS_REMOTE_CONFIG_KEYS,
         CONF_LIMOSS_REMOTE_STATE,
     }
 )

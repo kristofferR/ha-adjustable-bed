@@ -442,14 +442,14 @@
           "logicdata_app_family": "Command family",
           "logicdata_app_layout": "Physical actuator layout",
           "logicdata_app_transport": "BLE transport",
-          "logicdata_app_has_light": "Enable light controls"
+          "has_light": "Enable light controls"
         },
         "data_description": {
           "logicdata_app_profile": "Choose the MotionRelax phone or tablet app, or the Sleep Smart Air Mattress app, used for this bed. Shared Bluetooth services do not identify the app.",
           "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family. In Sleep Smart, P2 is the middle rail bed.",
           "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout. Sleep Smart beds use the two-motor standard or split-series layout.",
           "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
-          "logicdata_app_has_light": "Expose under-bed light controls when the selected standard layout has lighting."
+          "has_light": "Expose under-bed light controls when the selected standard layout has lighting."
         }
       },
       "jiecang_app": {
@@ -459,13 +459,13 @@
           "jiecang_app_profile": "Bed app",
           "jiecang_app_layout": "Physical actuator layout",
           "jiecang_app_transport": "BLE transport",
-          "jiecang_app_has_light": "Enable light controls"
+          "has_light": "Enable light controls"
         },
         "data_description": {
           "jiecang_app_profile": "Select the app used to control this bed. Bluetooth UUIDs cannot identify the app profile.",
           "jiecang_app_layout": "Select the layout configured in the app. The integration does not infer it from the device name or motor count.",
           "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion also supports standalone G2.",
-          "jiecang_app_has_light": "Expose light controls when this bed has under-bed lighting."
+          "has_light": "Expose light controls when this bed has under-bed lighting."
         }
       },
       "lp_legacy": {
@@ -537,7 +537,7 @@
           "vibradorm_floor_light": "Retained floor lighting",
           "vibradorm_floor_default": "Remembered floor brightness",
           "vibradorm_rgb": "Retained mood lighting",
-          "vibradorm_massage": "Retained massage controls",
+          "has_massage": "Retained massage controls",
           "vibradorm_light_extension": "Retained lighting extension",
           "vibradorm_vmat_remote": "VMAT remote"
         },
@@ -579,13 +579,13 @@
         "title": "Motion Bed app profile",
         "description": "Choose the identity and controls used by this app. Hardware operation remains unverified.",
         "data": {
-          "motion_bed_name": "Motion Bed advertised name",
+          "ble_device_name": "Exact Bluetooth name",
           "motion_bed_restored": "Use an app-restored profile",
           "motion_bed_preset": "Retained preset layout",
           "motion_bed_movement": "Retained movement layout"
         },
         "data_description": {
-          "motion_bed_name": "Enter the original case-sensitive Bluetooth name used by the Motion Bed app. The shared FFE1 transport cannot identify this app.",
+          "ble_device_name": "Enter the original case-sensitive Bluetooth name used by the Motion Bed app. The shared FFE1 transport cannot identify this app.",
           "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
           "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
           "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count."
@@ -595,12 +595,12 @@
         "title": "AdjustableM5X5 app",
         "description": "Confirm the exact bedding class and optional accessory group. Shared Bluetooth services do not identify an app.",
         "data": {
-          "starcode_device_name": "Exact Bluetooth name",
+          "ble_device_name": "Exact Bluetooth name",
           "starcode_m5x5_profile": "AdjustableM5X5 bed class",
           "starcode_lift_entries": "Independently addressed lifts (up to three)"
         },
         "data_description": {
-          "starcode_device_name": "Enter the unchanged Bluetooth name, preserving case. A friendly display name cannot identify the app class or remote.",
+          "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. A friendly display name cannot identify the app class or remote.",
           "starcode_m5x5_profile": "Choose CB25, F23, kneading or Elevate to match the exact Bluetooth name.",
           "starcode_lift_entries": "Choose up to three other configured AdjustableM5X5 entries. This main and the three lifts keep separate Bluetooth addresses and controls."
         }
@@ -609,28 +609,28 @@
         "title": "FSM Relax app profile",
         "description": "Select the app layout and optional controls explicitly. Raw memories have no known physical units. Shared Bluetooth advertisements do not identify this app profile.",
         "data": {
-          "fsm_relax_layout": "App layout",
-          "fsm_relax_light": "Expose app light controls",
-          "fsm_relax_massage": "Expose app massage controls",
+          "product_type": "Bed or chair",
+          "has_light": "Enable light controls",
+          "has_massage": "Has massage feature",
           "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
-          "fsm_relax_reverse_1": "Reverse actuator flag 1",
-          "fsm_relax_reverse_2": "Reverse actuator flag 2",
-          "fsm_relax_reverse_3": "Reverse actuator flag 3",
-          "fsm_relax_reverse_4": "Reverse actuator flag 4"
+          "reverse_motor_1": "Reverse motor channel 1",
+          "reverse_motor_2": "Reverse motor channel 2",
+          "reverse_motor_3": "Reverse motor channel 3",
+          "reverse_motor_4": "Reverse motor channel 4"
         }
       },
       "limoss_remote": {
         "title": "Limoss Remote App Controls",
         "description": "Select the product and local controls used in the Limoss Remote app. The connected device supplies its key layout and memory capacity. These settings do not measure hardware state.",
         "data": {
-          "limoss_remote_product": "App product",
-          "limoss_remote_light": "Show held lamp control",
-          "limoss_remote_massage": "Show massage controls",
+          "product_type": "Bed or chair",
+          "has_light": "Enable light controls",
+          "has_massage": "Has massage feature",
           "limoss_remote_theme": "App artwork theme",
-          "limoss_remote_reverse_1": "Reverse motor channel 1",
-          "limoss_remote_reverse_2": "Reverse motor channel 2",
-          "limoss_remote_reverse_3": "Reverse motor channel 3",
-          "limoss_remote_reverse_4": "Reverse motor channel 4"
+          "reverse_motor_1": "Reverse motor channel 1",
+          "reverse_motor_2": "Reverse motor channel 2",
+          "reverse_motor_3": "Reverse motor channel 3",
+          "reverse_motor_4": "Reverse motor channel 4"
         }
       }
     },
@@ -767,11 +767,10 @@
           "logicdata_app_family": "Command family",
           "logicdata_app_layout": "Physical actuator layout",
           "logicdata_app_transport": "BLE transport",
-          "logicdata_app_has_light": "Enable light controls",
+          "has_light": "Enable light controls",
           "jiecang_app_profile": "Bed app",
           "jiecang_app_layout": "Physical actuator layout",
           "jiecang_app_transport": "BLE transport",
-          "jiecang_app_has_light": "Enable light controls",
           "lp_legacy_model": "Legacy app model code",
           "lp_legacy_mode": "Legacy app protocol mode",
           "lp_legacy_write_uuid": "Write characteristic UUID",
@@ -786,7 +785,6 @@
           "vibradorm_restored": "Use retained Caresse settings",
           "vibradorm_floor_light": "Retained floor lighting",
           "vibradorm_rgb": "Retained mood lighting",
-          "vibradorm_massage": "Retained massage controls",
           "vibradorm_light_extension": "Retained lighting extension",
           "vibradorm_floor_default": "Remembered floor brightness",
           "vibradorm_vmat_remote": "VMAT remote",
@@ -797,27 +795,17 @@
           "starcode_abm5_4_transport_selector": "Bluetooth transport selector",
           "motion_bed_preset": "Retained preset layout",
           "motion_bed_movement": "Retained movement layout",
-          "motion_bed_name": "Motion Bed advertised name",
+          "ble_device_name": "Exact Bluetooth name",
           "motion_bed_restored": "Use an app-restored profile",
           "starcode_lift_entries": "Independently addressed lifts (up to three)",
           "starcode_m5x5_profile": "AdjustableM5X5 bed class",
-          "starcode_device_name": "Exact Bluetooth name",
-          "fsm_relax_layout": "App layout",
-          "fsm_relax_light": "Expose app light controls",
-          "fsm_relax_massage": "Expose app massage controls",
+          "product_type": "Bed or chair",
           "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
-          "fsm_relax_reverse_1": "Reverse actuator flag 1",
-          "fsm_relax_reverse_2": "Reverse actuator flag 2",
-          "fsm_relax_reverse_3": "Reverse actuator flag 3",
-          "fsm_relax_reverse_4": "Reverse actuator flag 4",
-          "limoss_remote_theme": "App artwork theme",
-          "limoss_remote_light": "Show held lamp control",
-          "limoss_remote_product": "App product",
-          "limoss_remote_reverse_1": "Reverse motor channel 1",
-          "limoss_remote_massage": "Show massage controls",
-          "limoss_remote_reverse_3": "Reverse motor channel 3",
-          "limoss_remote_reverse_4": "Reverse motor channel 4",
-          "limoss_remote_reverse_2": "Reverse motor channel 2"
+          "reverse_motor_1": "Reverse motor channel 1",
+          "reverse_motor_2": "Reverse motor channel 2",
+          "reverse_motor_3": "Reverse motor channel 3",
+          "reverse_motor_4": "Reverse motor channel 4",
+          "limoss_remote_theme": "App artwork theme"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -848,11 +836,10 @@
           "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family. In Sleep Smart, P2 is the middle rail bed.",
           "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout. Sleep Smart beds use the two-motor standard or split-series layout.",
           "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
-          "logicdata_app_has_light": "Expose under-bed light controls when the selected standard layout has lighting.",
+          "has_light": "Expose light controls when the bed has lighting.",
           "jiecang_app_profile": "Select the app used to control this bed. Bluetooth UUIDs cannot identify the app profile.",
           "jiecang_app_layout": "Select the layout configured in the app. The integration does not infer it from the device name or motor count.",
           "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion also supports standalone G2.",
-          "jiecang_app_has_light": "Expose light controls when this bed has under-bed lighting.",
           "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
           "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
           "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
@@ -870,12 +857,11 @@
           "vmatbasic_floor_minutes": "CBI accepts 0\u20131439 minutes; XT-Box accepts 0\u2013255. Zero is an explicit timer setting.",
           "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
           "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
-          "motion_bed_name": "Enter the original case-sensitive Bluetooth name used by the Motion Bed app. The shared FFE1 transport cannot identify this app.",
+          "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. Motion Bed and AdjustableM5X5 profiles are identified from it, not from a friendly display name.",
           "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
           "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
           "starcode_lift_entries": "Choose up to three other configured AdjustableM5X5 entries. This main and the three lifts keep separate Bluetooth addresses and controls.",
-          "starcode_m5x5_profile": "Choose CB25, F23, kneading or Elevate to match the exact Bluetooth name.",
-          "starcode_device_name": "Enter the unchanged Bluetooth name, preserving case. A friendly display name cannot identify the app class or remote."
+          "starcode_m5x5_profile": "Choose CB25, F23, kneading or Elevate to match the exact Bluetooth name."
         }
       },
       "remove_bond": {
