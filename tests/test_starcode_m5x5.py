@@ -25,9 +25,14 @@ from custom_components.adjustable_bed.beds.starcode_m5x5 import (
 )
 from custom_components.adjustable_bed.beds.starcode_m5x5_protocol import clock_packet
 
-VECTORS = json.loads(
-    Path(__file__).with_name("fixtures").joinpath("starcode_m5x5_commands.json").read_text()
-)
+# ELEVATE (P3) rows are verified against the star_elevate controller instead.
+VECTORS = [
+    case
+    for case in json.loads(
+        Path(__file__).with_name("fixtures").joinpath("starcode_m5x5_commands.json").read_text()
+    )
+    if case["profile"] != "elevate"
+]
 NOW = datetime(2026, 10, 1, 12, 34, 56)
 
 
@@ -131,9 +136,7 @@ async def test_all_command_vectors(hass: HomeAssistant, case: dict[str, object])
 
 def controller_stop(controller: StarcodeM5X5Controller) -> bytes:
     return bytes.fromhex(
-        "5a010310300fa5"
-        if controller.dialect == "star" or controller.profile == "elevate"
-        else "05020000000000"
+        "5a010310300fa5" if controller.dialect == "star" else "05020000000000"
     )
 
 
@@ -145,7 +148,7 @@ def controller_stop(controller: StarcodeM5X5Controller) -> bytes:
         ("STAR255402foo", "kneading"),
         ("STAR255403foo", "kneading"),
         ("STAR25999", "cb25"),
-        ("ELEVATEfoo", "elevate"),
+        ("ELEVATEfoo", None),
         ("star25999", None),
         ("TV", None),
     ],
@@ -154,7 +157,7 @@ def test_exact_factory_precedence(name: str, profile: str | None) -> None:
     assert profile_from_name(name) == profile
 
 
-@pytest.mark.parametrize("profile", ["cb25", "f23", "kneading", "elevate"])
+@pytest.mark.parametrize("profile", ["cb25", "f23", "kneading"])
 async def test_required_roles_and_without_response(hass: HomeAssistant, profile: str) -> None:
     c = make_controller(hass, profile, "star")
     events = []
@@ -435,14 +438,9 @@ async def test_profile_capability_boundaries(hass: HomeAssistant) -> None:
         "supports_massage_off_control",
         "supports_massage_toggle_control",
     )
-    c = make_controller(hass, "elevate")
-    assert all(getattr(c, capability) is False for capability in bed_only_capabilities)
-    assert c.memory_slot_count == 0
-    assert not c.supports_massage and not c.supports_light and not c.has_lumbar_support
-    assert len(c.motor_control_specs) == 3
-    for action in ("lumbar_up", "save_tv", "massage_head_up", "memory_1"):
-        with pytest.raises(ValueError):
-            await c.app_action(action)
+    # ELEVATE lifts use the star_elevate bed type, not an app bedding class.
+    with pytest.raises(ValueError, match="bedding class"):
+        make_controller(hass, "elevate")
     for profile in ("cb25", "f23", "kneading"):
         c = make_controller(hass, profile)
         assert all(getattr(c, capability) is True for capability in bed_only_capabilities)

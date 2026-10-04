@@ -303,7 +303,7 @@ the interval stays at the apps' fixed 100 ms whatever the pulse delay. The relea
 `E5 FE 16 00 00 00 00 06`: Simon Li and OKIN-Seating sleep 10 ms first, Heal
 Every Night 100 ms. A cover stop or the end of a timed move writes it at once;
 **Stop All** does too. The
-`okin_app_hold_control` action holds any streamed control for 0.1-60 s.
+`hold_control` action holds any streamed control for 0.1-60 s.
 
 | Control | Simon Li | OKIN-Seating |
 |---------|----------|--------------|
@@ -363,9 +363,9 @@ until the entry is removed or its profile changes. Home Assistant allows
 massage Off and any timer at any time, while the app disables Off before a
 timer starts and disables the running timer's button.
 
-Three settings selects mirror the app's settings page. They send nothing,
-only change which key the head and foot controls write, and are cleared when
-the profile changes:
+Three settings selects mirror the app's settings page. They send nothing and
+only change which key the head and foot controls write. They are stored for the
+Heal Every Night profile, so changing to another profile and back restores them:
 
 | Setting | Effect |
 |---------|--------|
@@ -422,13 +422,13 @@ Held controls write at 0 ms and then every 100 ms. Releasing them writes the
 zero key 100 ms later; a Stop, a cancelled hold or a replacement writes it at
 once, on a fresh event, so it cannot be suppressed. One-shot controls sleep
 100 ms before their write, as the app does. A cover or held button press holds
-for the motor pulse count (10 x 100 ms by default). `innova_hold_control` holds
+for the motor pulse count (10 x 100 ms by default). `hold_control` holds
 any streamed control for 0.1-60 s: `back_up`, `back_down`, `legs_up`,
 `legs_down`, `memory_a`, `memory_b`, `memory_timer`, plus `combined_up/down`
 (2M), `lumbar_up/down` (3M and 4M) and `waist_up/down` (4M).
 
 INNOVA has no memory programming, absolute massage level, massage off or
-anti-snore control. The `innova_rename` action writes the app's 18-byte
+anti-snore control. The `rename` action writes the app's 18-byte
 `EF 02` name frame: at most 14 characters as typed, then trimmed and non-empty.
 
 INNOVA subscribes to `0000ffe4`. Only 16- and 19-byte notifications are read,
@@ -491,7 +491,7 @@ Held controls write at once and then every 100 ms. Once controls write a single
 frame when the button is pressed. Releasing any control writes the zero frame
 100 ms later. In Home Assistant, a cover or held Zero G button press holds for
 the motor pulse settings (10 x 100 ms by default), one-shot buttons press once,
-and `restonic_hold_control` holds any control for a chosen duration. A Stop,
+and `hold_control` holds any control for a chosen duration. A Stop,
 a cover's stop, or a command that replaces a running hold writes the zero frame
 at once instead of after 100 ms, and a Stop during that 100 ms ends the wait.
 The Back + Legs cover shares its scheduler lane with the head and foot covers,
@@ -506,11 +506,11 @@ Deferred validation for real users: the actual write mode, whether the light
 toggles, what ZZZ does, how many actuators move, and whether the zero frame
 stops motion and presets.
 
-### Sino Variant (Dynasty, BetterLiving)
+### Sino Variant (BetterLiving)
 **Primary Service UUID:** `0000ffe5-0000-1000-8000-00805f9b34fb`
 **Format:** 8 bytes `[0xE5, 0xFE, 0x16, b4, b5, b6, b7, checksum]` (big-endian byte order)
 
-Used by BetterLiving/OKIN-BLE devices. Same packet structure as Base variant but with big-endian command byte ordering. Auto-detected by name pattern `okin-ble`.
+Used by BetterLiving/OKIN-BLE devices. Same packet structure as Base variant but with big-endian command byte ordering. Auto-detected by name pattern `okin-ble`. Entries that stored the older `ore` alias are migrated to `sino` when the integration loads.
 
 The current MaxCoil Una and Dynasty Bases apps use the same frame with different preset, save and massage words and a 2M/3M/4M layout choice. Select their explicit [MaxCoil Una / Dynasty Bases profile](ore-comfort-bed.md) (`maxcoil_una` or `dynasty_bases`); `sino` is unchanged.
 

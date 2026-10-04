@@ -63,7 +63,7 @@ Held app controls write immediately and then every 100 ms. Releasing writes STOP
 | Home Assistant control | Behavior |
 |---|---|
 | Head, Feet and Lumbar covers | Stream for the configured pulse count at 100 ms (default 10, about 1 s), then the release STOPs. Motor count and pulse delay are fixed. |
-| Flat, Zero Gravity, Lounge, Incline, Anti-Snore presets; Toggle Light; Massage +/−; Wave 1–3 | App tap: one write, then the release STOPs. Use `adjustable_lumbar_hold_control` to hold longer. |
+| Flat, Zero Gravity, Lounge, Incline, Anti-Snore presets; Toggle Light; Massage +/−; Wave 1–3 | App tap: one write, then the release STOPs. Use `hold_control` to hold longer. |
 | Massage off | Massage stop, then the release STOPs (the release replaces the app's +100 ms repeat). |
 | Save Zero Gravity / Lounge / Incline / Anti-Snore | Holds the Flat+preset save frame for 6 s, when the app reports "Setup" (its help text says 5 s), then the release STOPs. Whether the bed stores the position is unverified. |
 | Massage On | The app's voice route: one pre-STOP, then the massage-on frame twice, 100 ms apart. It is the only path to this frame. |

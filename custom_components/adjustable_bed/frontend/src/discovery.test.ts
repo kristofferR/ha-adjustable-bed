@@ -2,6 +2,7 @@
 // Run with: bun test
 import { expect, test } from "bun:test";
 import {
+  type BedSide,
   bedEntitiesForDevice,
   bedIsEmpty,
   isSingleAddressPairedDevice,
@@ -600,6 +601,55 @@ test("native children retain side ordering and normalize single-address entity k
   expect(bedEntitiesForDevice(hass, "left").memory[0]?.goto).toBe("button.memory_left");
 });
 
+function pairedHass(entries: [string, string, string, BedSide][]): HomeAssistant {
+  const hass = hassWith(entries.map(([id, key, device]) => entry(id, key, device)));
+  hass.devices = {
+    parent: { id: "parent", name: "Bed" },
+    left: { id: "left", name: "Left", parent_device_id: "parent" },
+    right: { id: "right", name: "Right", parent_device_id: "parent" },
+  };
+  for (const [id, , , bed_side] of entries)
+    hass.states[id] = { entity_id: id, state: "unknown", attributes: { bed_side }, last_changed: "", last_updated: "" };
+  return hass;
+}
+
+test("separate-address children keep side words that name the control", () => {
+  const hass = pairedHass(["left", "right"].flatMap((side) => [
+    [`binary_sensor.${side}_ble`, "ble_connection", side, side],
+    [`button.${side}_inclined_left`, "simmons_inclined_left", side, side],
+    [`button.${side}_inclined_right`, "simmons_inclined_right", side, side],
+    [`cover.${side}_split_left`, "split_back_left", side, side],
+    [`cover.${side}_split_right`, "split_back_right", side, side],
+  ] as [string, string, string, BedSide][]));
+  for (const side of ["left", "right"]) {
+    const bed = bedEntitiesForDevice(hass, side);
+    expect(bed.presets).toEqual([`button.${side}_inclined_left`, `button.${side}_inclined_right`]);
+    expect(bed.motors.map((m) => [m.key, m.cover])).toEqual([
+      ["split_back_left", `cover.${side}_split_left`],
+      ["split_back_right", `cover.${side}_split_right`],
+    ]);
+  }
+});
+
+test("single-address children strip only their own side suffix", () => {
+  const hass = pairedHass([
+    ["binary_sensor.left_ble", "ble_connection_left", "left", "left"],
+    ["cover.left_back", "back_left", "left", "left"],
+    ["button.left_inclined_left", "simmons_inclined_left", "left", "left"],
+    ["button.left_inclined_right", "simmons_inclined_right_left", "left", "left"],
+    ["binary_sensor.right_ble", "ble_connection_right", "right", "right"],
+    ["cover.right_back", "back_right", "right", "right"],
+    ["button.right_inclined_left", "simmons_inclined_left_right", "right", "right"],
+    ["button.right_inclined_right", "simmons_inclined_right", "right", "right"],
+  ]);
+  for (const side of ["left", "right"]) {
+    const bed = bedEntitiesForDevice(hass, side);
+    expect(bed.motors.map((m) => [m.key, m.cover])).toEqual([["back", `cover.${side}_back`]]);
+    expect(bed.connectivity).toBe(`binary_sensor.${side}_ble`);
+    expect([...bed.presets].sort()).toEqual([`button.${side}_inclined_left`, `button.${side}_inclined_right`]);
+  }
+});
+
 test("AdjustableM5X4 exact bounded controls remain on their physical child", () => {
   const entries = ["left", "right"].flatMap((side) => [
     entry(`light.${side}_floor`, "under_bed_lights", side),
@@ -838,12 +888,17 @@ test("Richmat MH app-labelled buttons, sliders and selectors land in their secti
     entry("number.back_angle", "richmat_mh_back_angle"),
     entry("number.timer", "richmat_mh_light_timer_minutes"),
     entry("select.mode", "richmat_mh_motor_mode"),
+    entry("select.snore", "richmat_mh_snore"),
+    entry("select.waist", "richmat_mh_waist_mode"),
+    entry("select.waist_left_heat", "richmat_mh_waist_left_heat"),
     entry("light.led", "light"),
   ]);
   const bed = bedEntitiesForDevice(hass, "dev1");
   expect(bed.presets).toEqual(["button.flat", "button.read", "button.relax"]);
   expect(bed.massage.buttons).toEqual(["button.wave"]);
   expect(bed.massage.numbers).toEqual(["number.head"]);
+  expect(bed.massage.selects).toEqual(["select.waist", "select.waist_left_heat"]);
+  expect(bed.utilitySelects).toEqual(["select.mode", "select.snore"]);
   expect(bed.lights.timerMinutes).toBe("number.timer");
   expect(bed.lights.light).toBe("light.led");
   // Utility tiles press buttons; sliders, selectors and state stay as HA entities.

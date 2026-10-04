@@ -275,7 +275,7 @@ async def test_two_address_pair_refuses_a_combined_model_change(hass) -> None:
     with patch("homeassistant.components.bluetooth.async_last_service_info", return_value=None):
         result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: "model_farm"})
     assert result["type"] is FlowResultType.FORM
-    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "richmat_mh_unpair_first"}
+    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "app_profile_unpair_first"}
     stored = [c[CONF_PROTOCOL_VARIANT] for c in entry.data[CONF_PAIR_CHILDREN]]
     assert stored == ["model_vorm", "model_vorm"]
 

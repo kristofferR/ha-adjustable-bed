@@ -12,7 +12,7 @@ from custom_components.adjustable_bed.beds.motion_bed import STOP, MotionBedCont
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTION_BED,
     CONF_BED_TYPE,
-    CONF_MOTION_BED_NAME,
+    CONF_BLE_DEVICE_NAME,
     DOMAIN,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -22,7 +22,7 @@ from tests.test_motion_bed_controller import characteristic, client_for, rig_for
 
 
 async def real_coordinator(hass, name):
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_ADDRESS: "AA:BB:CC:DD:EE:01", CONF_BED_TYPE: BED_TYPE_MOTION_BED, CONF_MOTION_BED_NAME: name})
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_ADDRESS: "AA:BB:CC:DD:EE:01", CONF_BED_TYPE: BED_TYPE_MOTION_BED, CONF_BLE_DEVICE_NAME: name})
     entry.add_to_hass(hass)
     coord = AdjustableBedCoordinator(hass, entry)
     coord._client = client_for(characteristic(29))

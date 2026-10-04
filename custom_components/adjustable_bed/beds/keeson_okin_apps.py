@@ -25,15 +25,14 @@ import asyncio
 import contextlib
 import logging
 from collections.abc import Callable, Coroutine, Mapping
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Final
+from dataclasses import dataclass, field
+from typing import Any, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ..app_session import app_session
 from ..const import (
-    CONF_OKIN_APP_SETTINGS,
-    DOMAIN,
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
@@ -50,9 +49,6 @@ from .base import (
     MotorControlSpec,
 )
 from .keeson import KeesonController
-
-if TYPE_CHECKING:
-    from homeassistant.core import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -133,15 +129,6 @@ STATE_HEAL_MASSAGE: Final[dict[str, str]] = {
     "wave": "okin_app_massage_wave",
 }
 STATE_HEAL_TIMER: Final = "okin_app_massage_timer"
-SESSIONS_KEY: Final = "okin_app_sessions"
-
-
-def drop_okin_app_sessions(hass: HomeAssistant, address: str) -> None:
-    """Forget a bed's Heal Every Night page state (entry removal or profile change)."""
-    sessions = hass.data.get(DOMAIN, {}).get(SESSIONS_KEY)
-    if isinstance(sessions, dict):
-        for key in [key for key in sessions if key[0] == address.upper()]:
-            del sessions[key]
 
 
 async def _run_to_completion(cleanup: Coroutine[Any, Any, None]) -> None:
@@ -214,7 +201,8 @@ class HealSession:
     The app keeps it in its fragments (selected preset, light button and
     massage page). Home Assistant rebuilds the controller on every connection,
     so it lives here to keep a reconnect from forgetting the preset to stop,
-    the light state or the massage levels.
+    the light state or the massage levels. ``settings`` is the persisted app
+    state (Installation Mode and Actuator Direction).
     """
 
     selected_preset: str | None = None
@@ -224,6 +212,9 @@ class HealSession:
     foot: int = 0
     wave: int = 0
     timer_minutes: int | None = None
+    settings: dict[str, bool] = field(
+        default_factory=lambda: dict.fromkeys(HEAL_SETTING_OPTIONS, False)
+    )
 
 
 def _press(method: str, *args: Any) -> MotorCommandCallable:
@@ -246,9 +237,8 @@ class OkinAppKeesonController(KeesonController):
         self._notify_char_uuid = KEESON_BASE_NOTIFY_CHAR_UUID
         self._session = HealSession()
         if self._is_heal:
-            sessions = coordinator.hass.data.setdefault(DOMAIN, {}).setdefault(SESSIONS_KEY, {})
-            self._session = sessions.setdefault(
-                (str(coordinator.address).upper(), variant), HealSession()
+            self._session = app_session(
+                coordinator.hass, str(coordinator.address), ("okin_app", variant), HealSession
             )
             self.forward_controller_state_updates(self._published_state())
 
@@ -268,9 +258,18 @@ class OkinAppKeesonController(KeesonController):
         return SIMON_KEYS if self._is_simon else SEATING_KEYS
 
     def _settings(self) -> dict[str, bool]:
-        stored = self._coordinator.entry.data.get(CONF_OKIN_APP_SETTINGS)
-        stored = stored if isinstance(stored, Mapping) else {}
-        return {key: stored.get(key) is True for key in HEAL_SETTING_OPTIONS}
+        return dict(self._session.settings)
+
+    @property
+    def persisted_app_state(self) -> dict[str, bool] | None:
+        """Heal Every Night keeps its movement settings across restarts."""
+        return self._settings() if self._is_heal else None
+
+    def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
+        if set(state) - set(HEAL_SETTING_OPTIONS) or any(type(v) is not bool for v in state.values()):
+            raise ValueError("Invalid Heal Every Night settings")
+        self._session.settings = {key: state.get(key) is True for key in HEAL_SETTING_OPTIONS}
+        self.forward_controller_state_updates(self._published_state())
 
     @property
     def supports_single_address_pairing(self) -> bool:
@@ -332,7 +331,7 @@ class OkinAppKeesonController(KeesonController):
 
     @property
     def held_control_options(self) -> tuple[str, ...]:
-        """Every streamed app control, for ``okin_app_hold_control``."""
+        """Every streamed app control, for the ``hold_control`` action."""
         if not self._is_heal:
             return tuple(self._seat_keys)
         options = ["head_up", "head_down", "foot_up", "foot_down"]
@@ -1028,9 +1027,8 @@ class OkinAppKeesonController(KeesonController):
         options = HEAL_SETTING_OPTIONS.get(setting)
         if not self._is_heal or options is None or option not in options:
             raise ValueError(f"Unsupported Heal Every Night setting {setting}={option}")
-        settings = self._settings()
-        settings[setting] = option == options[1]
-        self._coordinator.remember_okin_app_settings(settings)
+        self._session.settings[setting] = option == options[1]
+        self._coordinator.save_app_state(self)
         self.forward_controller_state_update(f"{ACTION_NAMESPACE}{setting}", option)
 
     @property

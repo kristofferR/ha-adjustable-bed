@@ -228,6 +228,17 @@ The supported-protocol list lives in the README's "Supported Beds" table — tha
 
 10. **Create documentation** in `docs/beds/newbed.md`
 
+11. **For an app profile, make the app findable and declare what it owns.**
+    Users search the bed-type list by app name. An app that is its own bed type
+    is named in `BED_TYPE_DISPLAY_NAMES`. An app chosen by a protocol variant
+    gets an entry in `APP_VARIANT_CHOICES` (`detection.py`); the bed type's own
+    label names the app its `auto` variant selects. An app chosen inside its app
+    step (for example `vibradorm_app_profile`) is named in its bed type's label.
+    In `app_profiles.py`, list the generic fields the profile sets itself and
+    the settings that belong to one side of a two-address pair. Reuse the shared
+    keys (`has_massage`, `has_light`, `product_type`, `reverse_motor_1`–`4`,
+    `ble_device_name`) instead of adding per-app copies.
+
 ## Configuration Options
 
 | Option | Description | Default |

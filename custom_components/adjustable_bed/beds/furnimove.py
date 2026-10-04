@@ -1106,7 +1106,12 @@ class FurniMoveController(BedController):
         }
 
     @property
-    def furnimove_local_state(self) -> dict[str, int | str | bool]:
+    def persisted_app_state_key(self) -> str:
+        """Each handset keeps its own app preferences."""
+        return self.profile.handset_id
+
+    @property
+    def persisted_app_state(self) -> dict[str, int | str | bool]:
         """Persist local app state; inactive snapshots discard the active record."""
         state: dict[str, int | str | bool] = {
             "duration_minutes": int(str(self._state["furnimove_massage_timer_minutes"]))
@@ -1119,7 +1124,7 @@ class FurniMoveController(BedController):
             )
         return state
 
-    def restore_furnimove_local_state(self, state: Mapping[str, int | str | bool]) -> None:
+    def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
         """Restore validated local selection without asserting hardware state."""
         duration = state.get("duration_minutes", 15)
         running = state.get("running", False)

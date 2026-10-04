@@ -212,7 +212,7 @@ async def test_real_scheduler_white_queues_without_interrupting_user_stream(
 
 
 @pytest.mark.parametrize("side", ["left", "right", "both"])
-@pytest.mark.parametrize("route", ["goto_preset", "starcode_abm5_4_hold_control"])
+@pytest.mark.parametrize("route", ["goto_preset", "hold_control"])
 async def test_registered_preset_routes_use_actual_physical_children_and_native_release(
     hass, side, route
 ):

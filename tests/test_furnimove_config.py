@@ -105,6 +105,62 @@ async def test_options_change_from_stair_requires_a_handset_then_derives_layout(
     assert _motor_count_options(BED_TYPE_OKIN_RF_ECO_BT) == [1]
 
 
+async def test_each_handset_is_offered_by_one_bed_type_for_new_setups(hass):
+    """Okin UUID keeps its catalog handsets; FurniMove takes the DOT ones."""
+    from custom_components.adjustable_bed.beds.okin_uuid import (
+        FURNIMOVE_DOT_HANDSETS,
+        FURNIMOVE_STANDARD_HANDSETS,
+    )
+    from custom_components.adjustable_bed.const import (
+        ALL_PROTOCOL_VARIANTS,
+        OKIMAT_VARIANTS,
+        OKIN_DOT_FURNIMOVE_VARIANTS,
+    )
+    from custom_components.adjustable_bed.furnimove_profiles import furnimove_handset_choices
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass = hass
+    flow.context = {}
+    flow._manual_data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_FURNIMOVE}
+    result = await flow.async_step_furnimove()
+    marker = next(iter(result["data_schema"].schema))
+    offered = set(result["data_schema"].schema[marker].container)
+    rejected = await flow.async_step_furnimove({CONF_FURNIMOVE_REMOTE: "82417"})
+    assert rejected["errors"] == {CONF_FURNIMOVE_REMOTE: "furnimove_remote_required"}
+    assert offered == {"00000", "12234", "90167", "91983", "93558", "280702", "280703"}
+    assert len(FURNIMOVE_STANDARD_HANDSETS) == 83
+    assert offered.isdisjoint(FURNIMOVE_STANDARD_HANDSETS)
+    assert FURNIMOVE_STANDARD_HANDSETS.issubset(OKIMAT_VARIANTS)
+    assert OKIN_DOT_FURNIMOVE_VARIANTS == FURNIMOVE_DOT_HANDSETS
+    assert OKIN_DOT_FURNIMOVE_VARIANTS.isdisjoint(ALL_PROTOCOL_VARIANTS)
+    # A stored choice is never silently replaced by the narrower picker.
+    assert "82417" in furnimove_handset_choices("82417")
+
+
+async def test_dot_options_keep_a_stored_furnimove_handset_only_for_that_entry(hass):
+    from custom_components.adjustable_bed.const import BED_TYPE_OKIN_DOT
+
+    def options_flow(stored: str) -> AdjustableBedOptionsFlow:
+        entry = MockConfigEntry(domain=DOMAIN, data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_OKIN_DOT,
+            CONF_PROTOCOL_VARIANT: stored, CONF_MOTOR_COUNT: 2,
+        })
+        entry.add_to_hass(hass)
+        flow = AdjustableBedOptionsFlow(entry)
+        flow.hass = hass
+        flow.handler = entry.entry_id
+        return flow
+
+    for stored, expected in (("93558", True), ("97450", False)):
+        flow = options_flow(stored)
+        form = await flow._async_options_form(None, step_id="settings")
+        marker = next(m for m in form["data_schema"].schema if m.schema == CONF_PROTOCOL_VARIANT)
+        container = form["data_schema"].schema[marker].container
+        assert ("93558" in container) is expected
+        assert {"90167", "91983"}.isdisjoint(container)
+        assert stored in container
+
+
 @pytest.mark.parametrize("chosen", [BED_TYPE_FURNIMOVE, BED_TYPE_SERENITY])
 def test_shared_gatt_does_not_replace_an_explicit_app(chosen):
     service = MagicMock()
@@ -125,3 +181,39 @@ def test_app_gateway_is_a_candidate_with_no_inferred_handset():
     assert result.bed_type == BED_TYPE_FURNIMOVE
     assert result.ambiguous_types
     assert result.detected_remote is None
+
+
+@pytest.mark.parametrize(
+    ("service_uuids", "manufacturer_data", "expected", "confident"),
+    [
+        # The app checks its manufacturer and 1523 predicates before the gateway.
+        (["00001420-0000-1000-8000-00805f9b34fb"], {1643: b"\x01"}, "dewertokin", True),
+        (
+            ["00001420-0000-1000-8000-00805f9b34fb", "00001523-0000-1000-8000-00805f9b34fb"],
+            {},
+            "dewertokin",
+            True,
+        ),
+        # Another bed's unique service UUID keeps its own route.
+        (
+            ["00001420-0000-1000-8000-00805f9b34fb", "00001234-0000-1000-8000-00805f9b34fb"],
+            {},
+            "jensen",
+            True,
+        ),
+    ],
+)
+def test_gateway_service_never_outranks_another_match(
+    service_uuids, manufacturer_data, expected, confident
+):
+    from custom_components.adjustable_bed.config_flow import _confident_auto_detect
+
+    info = MagicMock()
+    info.name = "Bed"
+    info.address = "AA:BB:CC:DD:EE:FF"
+    info.service_uuids = service_uuids
+    info.manufacturer_data = manufacturer_data
+    result = detect_bed_type_detailed(info)
+    assert result.bed_type == expected
+    assert BED_TYPE_FURNIMOVE in result.ambiguous_types
+    assert (_confident_auto_detect(result) == expected) is confident

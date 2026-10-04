@@ -32,6 +32,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
     BED_TYPE_SVANE,
+    BED_TYPE_ZSERIES,
     KAIDI_VARIANTS,
     KEESON_VARIANTS,
     LEGGETT_VARIANTS,
@@ -54,6 +55,8 @@ from .const import (
     SOLACE_VARIANTS,
     SVANE_VARIANTS,
     VARIANT_AUTO,
+    VARIANT_REQUIRED_BED_TYPES,
+    ZSERIES_VARIANTS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -101,6 +104,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     **{bed_type: RICHMAT_MH_VARIANTS_BY_APP[app] for bed_type, app in RICHMAT_MH_APPS.items()},
     BED_TYPE_SOLACE: SOLACE_VARIANTS,
     BED_TYPE_SVANE: SVANE_VARIANTS,
+    BED_TYPE_ZSERIES: ZSERIES_VARIANTS,
     BED_TYPE_OCTO: OCTO_VARIANTS,
     BED_TYPE_OKIMAT: OKIMAT_VARIANTS,
     BED_TYPE_OKIN_UUID: OKIMAT_VARIANTS,  # Same remote variants as Okimat
@@ -124,7 +128,7 @@ def bed_type_has_variants(bed_type: str) -> bool:
 def is_valid_variant_for_bed_type(bed_type: str, variant: str) -> bool:
     """Check if a protocol variant is valid for a given bed type."""
     if variant == VARIANT_AUTO:
-        return True
+        return bed_type not in VARIANT_REQUIRED_BED_TYPES
     valid_variants = get_variants_for_bed_type(bed_type)
     return valid_variants is not None and variant in valid_variants
 

@@ -19,9 +19,9 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LOGICDATA_APP,
     CONF_BED_TYPE,
     CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_LOGICDATA_APP_FAMILY,
-    CONF_LOGICDATA_APP_HAS_LIGHT,
     CONF_LOGICDATA_APP_LAYOUT,
     CONF_LOGICDATA_APP_PROFILE,
     CONF_LOGICDATA_APP_TRANSPORT,
@@ -110,7 +110,7 @@ async def test_entities_follow_the_app_surface(
             CONF_LOGICDATA_APP_FAMILY: "p1",
             CONF_LOGICDATA_APP_LAYOUT: "standard_2",
             CONF_LOGICDATA_APP_TRANSPORT: "t1",
-            CONF_LOGICDATA_APP_HAS_LIGHT: True,
+            CONF_HAS_LIGHT: True,
             CONF_HAS_MASSAGE: True,
             CONF_MOTOR_PULSE_COUNT: 1,
             CONF_PREFERRED_ADAPTER: "auto",
@@ -171,6 +171,7 @@ async def test_rename_validates_every_app_rule_before_any_write(hass, services):
 
     phone = _target(
         "Phone bed", BED_TYPE_LOGICDATA_APP, supports_device_rename=True,
+        disconnects_after_rename=False,
         validate_device_rename=MagicMock(), rename_device=AsyncMock(),
     )
     pump = _target(

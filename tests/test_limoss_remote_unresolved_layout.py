@@ -30,7 +30,7 @@ async def test_missing_product_unknown_cache_supports_offline_entities_and_diagn
         data={
             key: value
             for key, value in coordinator.entry.data.items()
-            if key != const.CONF_LIMOSS_REMOTE_PRODUCT
+            if key != const.CONF_PRODUCT_TYPE
         },
     )
     client = coordinator.client

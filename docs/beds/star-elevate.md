@@ -63,6 +63,25 @@ The implementation is based on the frozen COMPLETE APK Protocol Audit reports fo
 Command direction and multi-device fan-out remain deferred real-hardware checks
 after beta/release; no APK-analysis gap remains.
 
-## AdjustableM5X5 app selection
+## AdjustableM5X5 lifts
 
-For AdjustableM5X5 1.2.3, select the dedicated [app profile](starcode-m5x5.md). It verifies the app's required firmware characteristic, exact session order and timing, and supports an independently addressed main plus three lifts. The generic Elevate route remains available for other app contracts.
+This bed type is the one route for ELEVATE devices, including those used with
+the AdjustableM5X5 app. That app's ELEVATE class sends exactly the frames above
+(its P3 vectors are tested against this controller), so it is not a separate
+profile.
+
+Its app-proven group behavior is carried over:
+
+- Select an ELEVATE entry as a lift on an [AdjustableM5X5](starcode-m5x5.md)
+  main. An ELEVATE can also be the main and select up to three lifts in its own
+  options, matching the app's restored main slot.
+- `adjustable_bed.starcode_move_lifts` drives ELEVATE lifts with both-actuator
+  up/down, one-shot flat and STOP. Before a group moves, each member receives
+  the interrupt frame `5A 01 03 10 30 4F A5`.
+- Ordinary ELEVATE movement or flat interrupts the rest of its group first.
+
+The app's session also refuses a device without a readable firmware
+characteristic before it sends the wake frame. That check sends nothing to the
+device and released ELEVATE entries already work without it, so this controller
+does not add it as a new connection requirement. ELEVATE has no
+manufacturer-selected dialect: it always uses these Star frames.

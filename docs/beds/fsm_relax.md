@@ -32,10 +32,10 @@ Each available app action has a native button and appears in the card's utility
 section. The exact source tables select the buttons, including asymmetric tables
 where light replaces a combined direction. No firmware Flat preset, physical-axis
 slider, six-zone massage toggle, light on/off state, RGB, brightness, or timer is
-inferred. Use `adjustable_bed.fsm_relax_hold_control` to specify a hold duration:
+inferred. Use `adjustable_bed.hold_control` to specify a hold duration:
 
 ```yaml
-action: adjustable_bed.fsm_relax_hold_control
+action: adjustable_bed.hold_control
 data:
   device_id: YOUR_DEVICE_ID
   control: command_12
@@ -70,13 +70,13 @@ Memory buttons and `goto_preset` recall stored targets once per available motor.
 Motor zero must exist; absent later motor rows are skipped. The default button
 hold is the configured motor pulse count multiplied by 60 ms. This is a local HA
 gesture policy, not an app-proven autonomous preset duration or arrival deadline.
-Use `adjustable_bed.fsm_relax_recall_memory` with `preset:1..8` and an explicit
-`duration` in seconds to choose that policy. A normal release follows remaining
+Use `adjustable_bed.goto_preset` with `preset:1..8` and an explicit `duration`
+in seconds to choose that policy. A normal release follows remaining
 queued targets. Cancellation preempts unsent targets and still attempts all five
 memory-release frames.
 
-Both recall actions validate every target's stored motor-zero row, signed raw
-values and quarantine before any bed moves. Valid persisted targets can be
+`goto_preset`, with or without `duration`, validates every target's stored
+motor-zero row, signed raw values and quarantine before any bed moves. Valid persisted targets can be
 validated while offline; execution still requires a fresh live capability
 subscription. A connected controller without that readiness fails preflight.
 
@@ -90,12 +90,13 @@ byte-identical reply during a new same-opcode request, may still be indistinguis
 Acknowledgement 04 is observed only and cannot prove physical arrival.
 
 Options expose exactly eight local memory names. A blank field resets that slot
-to M1–M8. Editing/resetting names never writes BLE. Names and raw targets persist
-across HA restart/controller replacement; removing the entry removes its store.
-Reconnects do not rewrite storage when the normalized names are unchanged.
-Identical valid capability snapshots and serial observations also skip storage
-writes. First and changed values still persist atomically; failed writes retain
-the previous value. Fresh live capability readiness is required on each connection.
+to M1–M8. Editing/resetting names never writes BLE. Names are entry options and
+the capability snapshot is entry data; raw targets and the serial are app state
+for the physical bed. All survive HA restart/controller replacement, and removing
+the last entry that owns the bed removes its app state. Identical capability
+snapshots and serial observations skip storage writes. A memory save persists
+atomically; a failed write retains the previous value. Fresh live capability
+readiness is required on each connection.
 Unsolicited signed serial 06 is remembered, without inventing a serial query.
 
 All three FSM Relax action forms expose `side:both/left/right`. A child device

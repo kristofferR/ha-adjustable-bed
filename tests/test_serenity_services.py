@@ -43,8 +43,7 @@ def target(profile=BED_TYPE_SERENITY, *, record_only=True):
     "profile,control,error",
     [
         (BED_TYPE_SERENITY, "save_memory_1", None),
-        (BED_TYPE_SERENITY, "head_up+foot_up", "combination"),
-        ("okin_cst", "save_memory_1", "Serenity action"),
+        (BED_TYPE_SERENITY, "head_up+foot_up", "does not support held control"),
     ],
 )
 async def test_serenity_hold_preflights_profile_and_literal_action(hass, profile, control, error):
@@ -58,7 +57,7 @@ async def test_serenity_hold_preflights_profile_and_literal_action(hass, profile
             with pytest.raises(ServiceValidationError, match=error):
                 await hass.services.async_call(
                     DOMAIN,
-                    "serenity_hold_control",
+                    "hold_control",
                     {"device_id": "bed", "control": control, "duration": 1.001},
                     blocking=True,
                 )
@@ -66,7 +65,7 @@ async def test_serenity_hold_preflights_profile_and_literal_action(hass, profile
         else:
             await hass.services.async_call(
                 DOMAIN,
-                "serenity_hold_control",
+                "hold_control",
                 {"device_id": "bed", "control": control, "duration": 1.001},
                 blocking=True,
             )
@@ -83,7 +82,7 @@ async def test_service_to_real_controller_emits_artifact_save_and_release(hass):
     ):
         await hass.services.async_call(
             DOMAIN,
-            "serenity_hold_control",
+            "hold_control",
             {"device_id": "bed", "control": "save_memory_1", "duration": 0.1},
             blocking=True,
         )
@@ -98,16 +97,17 @@ async def test_later_incompatible_target_rejects_before_any_write(hass):
     await async_register_services(hass)
     first, controller = target()
     second, _ = target("okin_cst")
+    second.capability_controller = SimpleNamespace(held_control_options=())
     with (
         patch(
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], []),
         ),
-        pytest.raises(ServiceValidationError, match="Serenity action"),
+        pytest.raises(ServiceValidationError, match="has no held controls"),
     ):
         await hass.services.async_call(
             DOMAIN,
-            "serenity_hold_control",
+            "hold_control",
             {"device_id": ["first", "second"], "control": "head_up", "duration": 1},
             blocking=True,
         )
@@ -149,7 +149,7 @@ async def test_real_pair_preserves_requested_side_and_literal_action(hass, side)
     ) as resolve:
         await hass.services.async_call(
             DOMAIN,
-            "serenity_hold_control",
+            "hold_control",
             {"device_id": "pair", "control": "selector_4_down", "duration": 1.001, "side": side},
             blocking=True,
         )
@@ -192,7 +192,7 @@ async def test_cancelled_dispatch_restores_later_preflighted_target_idle_timer(h
         call = asyncio.create_task(
             hass.services.async_call(
                 DOMAIN,
-                "serenity_hold_control",
+                "hold_control",
                 {"device_id": ["first", "second"], "control": "head_up", "duration": 1},
                 blocking=True,
             )
@@ -209,19 +209,3 @@ async def test_cancelled_dispatch_restores_later_preflighted_target_idle_timer(h
         ]
 
 
-def test_action_selector_and_service_translation_use_the_real_control_catalog():
-    import json
-    from pathlib import Path
-
-    import yaml
-
-    root = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
-    service = yaml.safe_load((root / "services.yaml").read_text())["serenity_hold_control"]
-    assert service["fields"]["control"]["selector"]["select"]["options"] == list(
-        make_controller().held_control_options
-    )
-    for filename in ("strings.json", "translations/en.json"):
-        metadata = json.loads((root / filename).read_text())
-        translated = metadata["services"]["serenity_hold_control"]
-        assert set(translated["fields"]) == set(service["fields"])
-        assert "serenity_hold_control" not in metadata["selector"]

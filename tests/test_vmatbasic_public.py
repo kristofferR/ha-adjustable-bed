@@ -1,6 +1,8 @@
 """Factory, public controls and primary-only services exercise real delivery."""
 
 import asyncio
+import json
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -9,6 +11,7 @@ from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.beds.vmatbasic import get_vmatbasic_session_intent
 from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.controller_factory import create_controller
@@ -18,7 +21,6 @@ from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.select import _select_entities_for
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.services import async_register_services
-from custom_components.adjustable_bed.vmatbasic_state import get_vmatbasic_session_intent
 from tests.test_vmatbasic import make_controller, written
 
 
@@ -69,7 +71,7 @@ async def test_registered_motor_hold_delivers_only_primary_literal_stream_and_re
         await invoke(
             hass,
             [(coordinator, const.SIDE_BOTH)],
-            "vmatbasic_hold_control",
+            "hold_control",
             control="back_up",
             duration=0.1,
         )
@@ -90,7 +92,7 @@ async def test_registered_xt_floor_hold_has_no_motor_stop(hass):
         await invoke(
             hass,
             [(coordinator, const.SIDE_BOTH)],
-            "vmatbasic_hold_control",
+            "hold_control",
             control="floor_hold",
             duration=0.1,
         )
@@ -105,7 +107,7 @@ async def test_registered_xt_floor_hold_has_no_motor_stop(hass):
 async def test_registered_rename_retains_only_successful_primary_name(hass, name, packet):
     coordinator = await target(hass)
     try:
-        await invoke(hass, [(coordinator, const.SIDE_BOTH)], "vmatbasic_rename", name=name)
+        await invoke(hass, [(coordinator, const.SIDE_BOTH)], "rename", name=name)
         assert written(coordinator.controller)[0][1] == packet
         assert coordinator.entry.data[CONF_NAME] == packet.decode()
         assert coordinator.command_trace[-1]["payload"] == {
@@ -121,7 +123,7 @@ async def test_failed_rename_does_not_change_retained_name(hass):
     coordinator.client.write_gatt_char.side_effect = RuntimeError("failed")
     try:
         with pytest.raises(RuntimeError):
-            await invoke(hass, [(coordinator, const.SIDE_BOTH)], "vmatbasic_rename", name="New")
+            await invoke(hass, [(coordinator, const.SIDE_BOTH)], "rename", name="New")
         assert coordinator.entry.data[CONF_NAME] == "App receiver"
     finally:
         await close(coordinator)
@@ -130,8 +132,8 @@ async def test_failed_rename_does_not_change_retained_name(hass):
 @pytest.mark.parametrize(
     "service,data",
     [
-        ("vmatbasic_hold_control", {"control": "floor_hold", "duration": 0.1}),
-        ("vmatbasic_rename", {"name": "New"}),
+        ("hold_control", {"control": "floor_hold", "duration": 0.1}),
+        ("rename", {"name": "New"}),
     ],
 )
 async def test_accessory_multi_target_rejection_precedes_any_write(hass, service, data):
@@ -162,6 +164,11 @@ async def test_real_number_select_callbacks_and_reconstruction_preserve_color_de
             if hasattr(entity, "_spec")
         }
         assert all(entity.current_option is None for entity in selects.values())
+        strings = json.loads(
+            (Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json").read_text()
+        )["entity"]["select"]
+        for key in ("vmatbasic_mood_palette", "vmatbasic_mood_effect"):
+            assert list(strings[key]["state"]) == selects[key].options
         assert all(entity.native_value is None for entity in numbers.values())
         await selects["vmatbasic_mood_palette"].async_select_option("col1")
         await numbers["vmatbasic_mood_brightness"].async_set_native_value(50)
@@ -355,7 +362,7 @@ async def test_real_child_entry_preserves_physical_profile_settings_and_guarded_
         assert parent.consume_internal_entry_update(parent.entry)
         assert not parent.consume_internal_entry_update(parent.entry)
         assert not right.consume_internal_entry_update(parent.entry)
-        await invoke(hass, [(parent, const.SIDE_LEFT)], "vmatbasic_rename", name="Left named")
+        await invoke(hass, [(parent, const.SIDE_LEFT)], "rename", name="Left named")
         assert get_child(parent.entry.data, const.SIDE_LEFT)[CONF_NAME] == "Left named"
         assert dict(right.entry.data) == before_right
     finally:
@@ -366,8 +373,8 @@ async def test_real_child_entry_preserves_physical_profile_settings_and_guarded_
 @pytest.mark.parametrize(
     "service,data",
     [
-        ("vmatbasic_hold_control", {"control": "floor_hold", "duration": 0.1}),
-        ("vmatbasic_rename", {"name": "Changed"}),
+        ("hold_control", {"control": "floor_hold", "duration": 0.1}),
+        ("rename", {"name": "Changed"}),
     ],
 )
 async def test_real_paired_accessory_both_rejects_before_either_write(hass, service, data):
@@ -384,8 +391,8 @@ async def test_real_paired_accessory_both_rejects_before_either_write(hass, serv
 @pytest.mark.parametrize(
     "service,data",
     [
-        ("vmatbasic_hold_control", {"control": "floor_hold", "duration": 0.1}),
-        ("vmatbasic_rename", {"name": "Changed"}),
+        ("hold_control", {"control": "floor_hold", "duration": 0.1}),
+        ("rename", {"name": "Changed"}),
     ],
 )
 async def test_failed_accessory_execution_releases_preflight_idle_ownership(hass, service, data):

@@ -15,7 +15,7 @@ from custom_components.adjustable_bed.const import CONF_STARCODE_M5X5_PROFILE, D
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
 from custom_components.adjustable_bed.starcode_accessory_group import _tasks
-from tests.test_starcode_accessory_group import group
+from tests.test_starcode_accessory_group import flat_frame, group
 from tests.test_starcode_m5x5 import make_controller
 
 
@@ -191,7 +191,7 @@ async def test_public_individual_motion_cancels_actual_retained_group(
             call.args[0] for call in source.controller.write_command.await_args_list
         }
         for lift in members[1:]:
-            assert lift.controller.packet("flat") not in {
+            assert flat_frame(lift.controller) not in {
                 call.args[0] for call in lift.controller.write_command.await_args_list
             }
     finally:

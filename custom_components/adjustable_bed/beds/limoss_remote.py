@@ -13,7 +13,7 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from ..const import LIMOSS_CHAR_UUID, LIMOSS_SERVICE_UUID
-from ..limoss_remote_state import LimossRemoteMemoryStore
+from ..limoss_remote_state import LimossRemoteSession
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -135,27 +135,21 @@ class LimossRemoteController(BedController):
         reverse_motors: tuple[bool, bool, bool, bool] = (False, False, False, False),
         theme: str | None = None,
         cached_capabilities: LimossRemoteCapabilities | None = None,
-        memories: LimossRemoteMemoryStore,
+        session: LimossRemoteSession,
         sequence: LimossRemoteSequence | None = None,
-        metadata: Mapping[str, str] | None = None,
     ) -> None:
         super().__init__(coordinator)
         validate_limoss_remote_profile(product, underbed_light, massage, reverse_motors, theme)
-        if not isinstance(memories, LimossRemoteMemoryStore):
-            raise TypeError("A persistent per-target memory store is required")
+        if not isinstance(session, LimossRemoteSession):
+            raise TypeError("A persistent per-target session is required")
         self.product_selection: Product | None = product
         self.underbed_light, self.massage = underbed_light, massage
         self.reverse_motors, self.theme = reverse_motors, theme
         self.capabilities = cached_capabilities
-        self.memories = memories
+        self.session = session
+        self.memories = session.memories
         self.sequence = sequence if sequence is not None else APP_SEQUENCE
-        self._metadata = dict(metadata or {})
-        if any(
-            key not in ("hardware_version", "software_version", "serial")
-            or not isinstance(value, str)
-            for key, value in self._metadata.items()
-        ):
-            raise ValueError("Cached metadata contains invalid diagnostic fields")
+        self._metadata = session.metadata
         self._parser = LimossRemoteParser()
         self._notify_client: BleakClient | None = None
         self._notify_char: BleakGATTCharacteristic | None = None
@@ -164,7 +158,7 @@ class LimossRemoteController(BedController):
         self._notify_startup_done: asyncio.Future[None] | None = None
         self._request_reply: tuple[int, asyncio.Future[bytes]] | None = None
         self._request_active: asyncio.Future[bytes] | None = None
-        self._progress: dict[str, object] | None = None
+        self._progress: dict[str, dict[str, int]] | None = None
         self._last_write_started = float("-inf")
         self._publish_metadata()
         self._publish_capabilities()
@@ -172,6 +166,14 @@ class LimossRemoteController(BedController):
     @property
     def control_characteristic_uuid(self) -> str:
         return LIMOSS_CHAR_UUID
+
+    @property
+    def persisted_app_state(self) -> dict[str, object]:
+        return self.session.persisted()
+
+    def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
+        self.session.restore(state)
+        self._publish_metadata()
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -542,17 +544,20 @@ class LimossRemoteController(BedController):
         self.forward_raw_notification(sender.uuid, bytes(raw))
         for payload in self._parser.feed(bytes(raw)):
             opcode, parameters = payload[0], payload[1:]
-            delta: dict[str, object] = {}
             if opcode in (0, 1):
                 field = "hardware_version" if opcode == 0 else "software_version"
                 value = version_string(parameters)
                 self._metadata[field] = value
-                delta["metadata"] = dict(self._metadata)
+                self._coordinator.save_app_state(self)
                 self.forward_controller_state_update(f"limoss_remote_{field}", value)
             elif opcode == 2:
                 self.capabilities = LimossRemoteCapabilities.from_parameters(parameters)
-                delta["capabilities"] = asdict(self.capabilities)
                 self._publish_capabilities()
+                # The information phase persists its result once, when it ends.
+                if self._progress is not None:
+                    self._progress["capabilities"] = asdict(self.capabilities)
+                else:
+                    self._coordinator.remember_limoss_remote_capabilities(asdict(self.capabilities))
             elif opcode == 5:
                 self.forward_controller_state_update(
                     "limoss_remote_calibration_result", "reply_received"
@@ -560,18 +565,13 @@ class LimossRemoteController(BedController):
             elif opcode == 6:
                 value = str(int.from_bytes(parameters, "big", signed=True))
                 self._metadata["serial"] = value
-                delta["metadata"] = dict(self._metadata)
+                self._coordinator.save_app_state(self)
                 self.forward_controller_state_update("limoss_remote_serial", value)
             elif opcode in (0x10, 0x20, 0x30, 0x40):
                 self.forward_controller_state_update(
                     f"limoss_remote_motor_{opcode // 16}_position_raw",
                     int.from_bytes(parameters, "big", signed=True),
                 )
-            if delta:
-                if self._progress is not None:
-                    self._progress.update(delta)
-                else:
-                    self._coordinator.remember_limoss_remote_data(delta)
             if self._request_reply is not None:
                 expected, future = self._request_reply
                 if expected == opcode and not future.done():
@@ -680,7 +680,7 @@ class LimossRemoteController(BedController):
         finally:
             completed, self._progress = self._progress, None
             if completed:
-                self._coordinator.remember_limoss_remote_data(completed)
+                self._coordinator.remember_limoss_remote_capabilities(completed["capabilities"])
 
     def _slot(self, slot: int) -> int:
         integer(slot, 1, 8, "Memory slot")
@@ -701,12 +701,14 @@ class LimossRemoteController(BedController):
                 raw = await self._request(opcode, bytes((opcode, 0, 0, 0, 0)))
                 positions.append((motor, int.from_bytes(raw, "big", signed=True)))
         self.memories.save(slot, tuple(positions))
+        self._coordinator.save_app_state(self)
 
     async def rename_memory(self, memory_num: int, name: str) -> None:
         self._slot(memory_num)
         if not isinstance(name, str):
             raise ValueError("Memory name must be a string")
         self.memories.rename(memory_num, name)
+        self._coordinator.save_app_state(self)
         self.forward_controller_state_update("limoss_remote_memory_names", self.memory_slot_names)
 
     async def _release(self, *, calibration: bool = False) -> None:
@@ -793,6 +795,9 @@ class LimossRemoteController(BedController):
 
     async def preset_memory(self, memory_num: int) -> None:
         await self.hold_memory(memory_num, 1000)
+
+    async def recall_memory(self, slot: int, *, hold_ms: int) -> None:
+        await self.hold_memory(slot, hold_ms)
 
     async def hold_memory(self, memory_num: int, duration_ms: int) -> None:
         self.validate_memory_recall(memory_num)

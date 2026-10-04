@@ -15,6 +15,8 @@ import type {
 export const PLATFORM = "adjustable_bed";
 export type BedSide = "left" | "right" | "both";
 
+// The trailing side word of a key. Whether it is a paired-side suffix or part
+// of the control's own name (SIMMONS "Inclined left") depends on the device.
 export function splitSide(key: string): { key: string; side?: BedSide } {
   for (const side of ["left", "right", "both"] as const) {
     const suffix = `_${side}`;
@@ -106,6 +108,14 @@ export function bedEntitiesForDevice(
 
   const nativePair = hass.devices?.[deviceId]?.parent_device_id ||
     Object.values(hass.devices ?? {}).some((device) => device.parent_device_id === deviceId);
+  const deviceEntries = Object.values(hass.entities).filter(
+    (entry) => entry.device_id === deviceId && entry.platform === PLATFORM,
+  );
+  // Single-address pairs append the logical side to their keys. A separate
+  // address keeps its standalone keys (its connection sensor is unsuffixed),
+  // so a trailing side word there belongs to the control's own name.
+  const sideSuffixed = !!selectedSide || (!!nativePair &&
+    !deviceEntries.some((entry) => entry.translation_key === "ble_connection"));
   const motorMap = new Map<string, MotorEntity>();
   const motor = (key: string): MotorEntity => {
     let m = motorMap.get(key);
@@ -126,8 +136,7 @@ export function bedEntitiesForDevice(
     return s;
   };
 
-  for (const entry of Object.values(hass.entities)) {
-    if (entry.device_id !== deviceId || entry.platform !== PLATFORM) continue;
+  for (const entry of deviceEntries) {
     if (entry.hidden) continue;
     const id = entry.entity_id;
     const domain = domainOf(id);
@@ -142,9 +151,9 @@ export function bedEntitiesForDevice(
     if (selectedSide) {
       if (entitySide !== selectedSide) continue;
     }
-    // Native child devices already scope a side; single-address pairs retain
-    // their sided translation keys after migration.
-    const key = selectedSide || nativePair ? split.key : rawKey;
+    // Native child devices already scope a side; strip only the suffix naming
+    // the entity's own side, so left/right controls stay distinct.
+    const key = sideSuffixed && split.side === entitySide ? split.key : rawKey;
 
     let match: RegExpMatchArray | null;
 
@@ -230,8 +239,9 @@ export function bedEntitiesForDevice(
         } else if (key === "okin_app_home") {
           // Simon Li / OKIN-Seating Home is a held key whose posture is not established.
           presetMap.set(key, id);
-        } else if (key.startsWith("simmons_inclined_")) {
+        } else if (key.startsWith("simmons_inclined")) {
           // Inclined-bed controls replace three presets; their physical roles are unverified.
+          // A single-address left view keys "Inclined left" without a second suffix.
           presetMap.set(key, id);
         } else if (key === "simmons_sync_clock" || key === "simmons_refresh_alarms") {
           bed.utility.push(id);
@@ -330,6 +340,12 @@ export function bedEntitiesForDevice(
         else if (key === "vibradorm_app_mood_palette" || key === "vibradorm_app_mood_effect" || key === "vmatbasic_mood_palette" || key === "vmatbasic_mood_effect")
           mood().selects.push(id);
         else if (key === "vibradorm_app_massage_wave")
+          (bed.massage.selects ??= []).push(id);
+        // Richmat MH: motor mode and snore intervention are device settings;
+        // the waist mattress mode and per-side settings drive one massage pad.
+        else if (key === "richmat_mh_motor_mode" || key === "richmat_mh_snore")
+          (bed.utilitySelects ??= []).push(id);
+        else if (key.startsWith("richmat_mh_waist_"))
           (bed.massage.selects ??= []).push(id);
         else if (key === "massage_timer" || key === "starcode_abm5_4_massage_timer" || key === "ore_comfort_massage_timer") bed.massage.timer = id;
         else if (/thermal|footwarming|foundation/.test(key))

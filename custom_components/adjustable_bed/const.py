@@ -60,14 +60,13 @@ CONF_ZSERIES_ALARM_AVAILABLE: Final = "zseries_alarm_available"
 CONF_STARCODE_TRANSPORT_SELECTOR: Final = "starcode_abm5_4_transport_selector"
 STARCODE_APP_CONNECTION_TIMEOUT_SECONDS: Final = 8.0
 STARCODE_APP_CONFIG_KEYS: Final = frozenset({CONF_STARCODE_COMMAND_SELECTOR, CONF_STARCODE_UI_SELECTOR, CONF_STARCODE_TRANSPORT_SELECTOR})
-CONF_MOTION_BED_NAME: Final = "motion_bed_name"
 CONF_MOTION_BED_RESTORED: Final = "motion_bed_restored"
 CONF_MOTION_BED_PRESET: Final = "motion_bed_preset"
 CONF_MOTION_BED_MOVEMENT: Final = "motion_bed_movement"
-MOTION_BED_CONFIG_KEYS: Final = frozenset({CONF_MOTION_BED_NAME, CONF_MOTION_BED_PRESET, CONF_MOTION_BED_MOVEMENT, CONF_MOTION_BED_RESTORED})
+# The app's identity is the exact advertised name, stored as ble_device_name.
+MOTION_BED_CONFIG_KEYS: Final = frozenset({CONF_MOTION_BED_PRESET, CONF_MOTION_BED_MOVEMENT, CONF_MOTION_BED_RESTORED})
 
 CONF_STARCODE_M5X5_PROFILE: Final = "starcode_m5x5_profile"
-CONF_STARCODE_DEVICE_NAME: Final = "starcode_device_name"
 CONF_STARCODE_LIFT_ENTRIES: Final = "starcode_lift_entries"
 CONF_VIBRADORM_APP_PROFILE: Final = "vibradorm_app_profile"
 CONF_VMATBASIC_PROFILE: Final = "vmatbasic_profile"
@@ -92,7 +91,6 @@ CONF_VIBRADORM_RESTORED: Final = "vibradorm_restored"
 CONF_VIBRADORM_FLOOR_LIGHT: Final = "vibradorm_floor_light"
 CONF_VIBRADORM_FLOOR_DEFAULT: Final = "vibradorm_floor_default"
 CONF_VIBRADORM_RGB: Final = "vibradorm_rgb"
-CONF_VIBRADORM_MASSAGE: Final = "vibradorm_massage"
 CONF_VIBRADORM_LIGHT_EXTENSION: Final = "vibradorm_light_extension"
 VIBRADORM_APP_PROFILES: Final = {
     "caresse": "Caresse Diamant", "werkmeister": "Werkmeister", "vmat": "VMAT",
@@ -119,7 +117,7 @@ VIBRADORM_RESTORED_CONTROLS: Final = {
 }
 VIBRADORM_APP_CONFIG_KEYS: Final = frozenset({
     CONF_VIBRADORM_APP_PROFILE, CONF_VIBRADORM_CONTROL_TYPE, CONF_VIBRADORM_RESTORED,
-    CONF_VIBRADORM_FLOOR_LIGHT, CONF_VIBRADORM_RGB, CONF_VIBRADORM_MASSAGE,
+    CONF_VIBRADORM_FLOOR_LIGHT, CONF_VIBRADORM_RGB,
     CONF_VIBRADORM_LIGHT_EXTENSION, CONF_VIBRADORM_FLOOR_DEFAULT,
     CONF_VIBRADORM_VMAT_REMOTE,
 })
@@ -136,7 +134,6 @@ CONF_LOGICDATA_APP_PROFILE: Final = "logicdata_app_profile"
 CONF_LOGICDATA_APP_FAMILY: Final = "logicdata_app_family"
 CONF_LOGICDATA_APP_LAYOUT: Final = "logicdata_app_layout"
 CONF_LOGICDATA_APP_TRANSPORT: Final = "logicdata_app_transport"
-CONF_LOGICDATA_APP_HAS_LIGHT: Final = "logicdata_app_has_light"
 LOGICDATA_APP_PROFILES: Final = {
     "phone": "Phone app",
     "tablet": "Tablet app",
@@ -163,7 +160,6 @@ LOGICDATA_APP_TRANSPORTS: Final = {
 CONF_JIECANG_APP_PROFILE: Final = "jiecang_app_profile"
 CONF_JIECANG_APP_LAYOUT: Final = "jiecang_app_layout"
 CONF_JIECANG_APP_TRANSPORT: Final = "jiecang_app_transport"
-CONF_JIECANG_APP_HAS_LIGHT: Final = "jiecang_app_has_light"
 JIECANG_APP_PROFILES: Final = {"dreamask": "ERGOBALANCE (Dreamask)", "dreamotion": "Dream Motion"}
 JIECANG_APP_LAYOUTS: Final = {
     "standard_2": "Back and legs (2 motors)",
@@ -217,6 +213,13 @@ MALOUF_APP_TRANSPORTS: Final = {
     "okin_new": "OKIN new (Nordic UART)",
 }
 CONF_HAS_MASSAGE: Final = "has_massage"
+# Light controls, for app profiles where the user chooses whether they exist.
+CONF_HAS_LIGHT: Final = "has_light"
+# The product chosen in apps that drive both chairs and beds.
+CONF_PRODUCT_TYPE: Final = "product_type"
+PRODUCT_TYPES: Final = {"bed": "Bed", "chair": "Chair"}
+# Per-channel motor direction flags an app sends with every movement command.
+CONF_REVERSE_MOTORS: Final = tuple(f"reverse_motor_{i}" for i in range(1, 5))
 CONF_DISABLE_ANGLE_SENSING: Final = "disable_angle_sensing"
 CONF_PREFERRED_ADAPTER: Final = "preferred_adapter"
 CONF_CONNECTION_PROFILE: Final = "connection_profile"
@@ -287,8 +290,6 @@ CONF_KAIDI_SOFA_ACU_NO: Final = "kaidi_sofa_acu_no"
 CONF_REMACRO_MODEL: Final = "remacro_model"
 # Remacro committed LED levels by model ID, the app's "LV"+model+address preference.
 CONF_REMACRO_LED_LEVEL: Final = "remacro_led_level"
-# Heal Every Night Installation Mode / Actuator Direction settings (app-local).
-CONF_OKIN_APP_SETTINGS: Final = "okin_app_settings"
 CONF_KAIDI_ADV_TYPE: Final = "kaidi_adv_type"
 CONF_KAIDI_RESOLVED_VARIANT: Final = "kaidi_resolved_variant"
 CONF_KAIDI_VARIANT_SOURCE: Final = "kaidi_variant_source"
@@ -303,6 +304,11 @@ CONF_PAIR_MEMBER_ADDRESSES: Final = "pair_member_addresses"
 CONF_PAIR_SCHEMA_VERSION: Final = "pair_schema_version"
 # Per-child descriptor key for which physical side the child drives.
 CONF_SIDE: Final = "side"
+
+# Set by the minor-version 3 migration on entries from before the explicit app
+# profiles whose route gained some, to the reviewed bed types and variants;
+# cleared once the review is answered or the route changes.
+CONF_PROFILE_REVIEW_PENDING: Final = "profile_review_pending"
 
 # pair_mode values: one shared BLE link vs two separate per-side links.
 PAIR_MODE_SINGLE_ADDRESS: Final = "single_address"
@@ -426,21 +432,24 @@ BED_TYPE_MALOUF_NEW_OKIN: Final = "malouf_new_okin"
 BED_TYPE_MALOUF_LEGACY_OKIN: Final = "malouf_legacy_okin"
 BED_TYPE_MALOUF_APP: Final = "malouf_app"
 BED_TYPE_FSM_RELAX: Final = "fsm_relax"
-CONF_FSM_RELAX_LAYOUT: Final = "fsm_relax_layout"
-CONF_FSM_RELAX_LIGHT: Final = "fsm_relax_light"
-CONF_FSM_RELAX_MASSAGE: Final = "fsm_relax_massage"
-CONF_FSM_RELAX_REVERSALS: Final = tuple(f"fsm_relax_reverse_{i}" for i in range(1, 5))
 CONF_FSM_RELAX_MEMORY_NAMES: Final = "fsm_relax_memory_names"
 BED_TYPE_SERENITY: Final = "serenity"  # Explicit Jordan's Serenity app profile
 BED_TYPE_TRANQUIL: Final = "tranquil"  # Explicit Jordan's Tranquil app profile
-# Customatic Z-Series app: the user picks the Z-230 or Z-280 page in the app.
-BED_TYPE_ZSERIES_Z230: Final = "customatic_z230"
-BED_TYPE_ZSERIES_Z280: Final = "customatic_z280"
+# Customatic Z-Series app: the user picks the Z-230 or Z-280 page in the app,
+# which nothing on the bed identifies, so the variant has no auto choice.
+BED_TYPE_ZSERIES: Final = "customatic_zseries"
+ZSERIES_VARIANT_Z230: Final = "z230"
+ZSERIES_VARIANT_Z280: Final = "z280"
+ZSERIES_VARIANTS: Final = {
+    ZSERIES_VARIANT_Z230: "Z-230 page (combined head and foot, M1)",
+    ZSERIES_VARIANT_Z280: "Z-280 page (M1/M2, separate massage zones)",
+}
+# Bed types whose variant is a user choice with no automatic default.
+VARIANT_REQUIRED_BED_TYPES: Final = frozenset({BED_TYPE_ZSERIES})
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
-    {BED_TYPE_SERENITY, BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES_Z230, BED_TYPE_ZSERIES_Z280}
+    {BED_TYPE_SERENITY, BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES}
 )
-ZSERIES_BED_TYPES: Final = frozenset({BED_TYPE_ZSERIES_Z230, BED_TYPE_ZSERIES_Z280})
 # A Z-Series button press holds pulse_count x 100 ms, within the 60 s hold limit.
 ZSERIES_PULSE_COUNT_RANGE: Final = (1, 600)
 BED_TYPE_SIMMONS: Final = "simmons"  # Explicit SIMMONS app profile (com.okin.simmons)
@@ -468,15 +477,12 @@ BED_TYPE_REVERIE_NIGHTSTAND: Final = "reverie_nightstand"  # Reverie Protocol 11
 BED_TYPE_COMFORT_MOTION: Final = "comfort_motion"  # Comfort Motion / Lierda protocol
 BED_TYPE_LIMOSS: Final = "limoss"  # Limoss / Stawett TEA-encrypted protocol
 BED_TYPE_LIMOSS_REMOTE: Final = "limoss_remote"  # Explicit Limoss Remote app
-CONF_LIMOSS_REMOTE_PRODUCT: Final = "limoss_remote_product"
-CONF_LIMOSS_REMOTE_LIGHT: Final = "limoss_remote_light"
-CONF_LIMOSS_REMOTE_MASSAGE: Final = "limoss_remote_massage"
 CONF_LIMOSS_REMOTE_THEME: Final = "limoss_remote_theme"
 CONF_LIMOSS_REMOTE_STATE: Final = "limoss_remote_state"
-LIMOSS_REMOTE_REVERSE_KEYS: Final = tuple(f"limoss_remote_reverse_{i}" for i in range(1, 5))
+# Every setting the Limoss Remote profile reads, including shared ones.
 LIMOSS_REMOTE_CONFIG_KEYS: Final = frozenset({
-    CONF_LIMOSS_REMOTE_PRODUCT, CONF_LIMOSS_REMOTE_LIGHT, CONF_LIMOSS_REMOTE_MASSAGE,
-    CONF_LIMOSS_REMOTE_THEME, *LIMOSS_REMOTE_REVERSE_KEYS,
+    CONF_PRODUCT_TYPE, CONF_HAS_LIGHT, CONF_HAS_MASSAGE,
+    CONF_LIMOSS_REMOTE_THEME, *CONF_REVERSE_MOTORS,
 })
 BED_TYPE_SERTA: Final = "serta"  # Serta Motion Perfect (uses Keeson protocol with serta variant)
 BED_TYPE_BEDTECH: Final = "bedtech"  # BedTech 5-byte ASCII protocol
@@ -495,6 +501,9 @@ BED_TYPE_STAR_ELEVATE: Final = "star_elevate"  # ELEVATE two-actuator StarCode a
 BED_TYPE_SVANE: Final = "svane"  # Svane LinonPI multi-service protocol
 BED_TYPE_VIBRADORM: Final = "vibradorm"  # Vibradorm VMAT protocol
 BED_TYPE_STARCODE_M5X5: Final = "starcode_m5x5"
+# AdjustableM5X5 groups: a main plus independently addressed lifts. ELEVATE
+# accessories join through their own bed type.
+STARCODE_GROUP_BED_TYPES: Final = frozenset({BED_TYPE_STARCODE_M5X5, BED_TYPE_STAR_ELEVATE})
 BED_TYPE_VIBRADORM_APP: Final = "vibradorm_app"
 BED_TYPE_VMATBASIC: Final = "vmatbasic"
 BED_TYPE_STARCODE_ABM5_4: Final = "starcode_abm5_4"
@@ -514,6 +523,16 @@ BED_TYPE_LOGICDATA_APP: Final = "logicdata_app"
 BED_TYPE_LOGICDATA_AIR_PUMP: Final = "logicdata_air_pump"
 BED_TYPE_LOGICDATA: Final = "logicdata"  # Logicdata SimplicityFrame (XXTEA+CRC16+SLIP)
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
+
+# Bed types whose entry chooses light controls (CONF_HAS_LIGHT), with the default.
+HAS_LIGHT_DEFAULTS: Final[dict[str, bool]] = {
+    BED_TYPE_LOGICDATA_APP: True,
+    BED_TYPE_JIECANG_APP: True,
+    BED_TYPE_FSM_RELAX: False,
+    BED_TYPE_LIMOSS_REMOTE: False,
+}
+# Apps that drive chairs and beds (CONF_PRODUCT_TYPE, CONF_REVERSE_MOTORS).
+CHAIR_AND_BED_APP_BED_TYPES: Final = frozenset({BED_TYPE_FSM_RELAX, BED_TYPE_LIMOSS_REMOTE})
 
 # All supported bed types (includes both protocol-based and legacy names)
 SUPPORTED_BED_TYPES: Final = [
@@ -561,8 +580,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_RICHMAT_HARMONY,
     BED_TYPE_RICHMAT_IDEALBED,
     # Explicit Customatic app profiles
-    BED_TYPE_ZSERIES_Z230,
-    BED_TYPE_ZSERIES_Z280,
+    BED_TYPE_ZSERIES,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
@@ -1504,23 +1522,22 @@ SOLACE_VARIANTS: Final = {
     VARIANT_AUTO: "Auto (conservative device-name profile)",
     SOLACE_VARIANT_WOOSA: "Woosa Sleep app (select explicitly)",
 }
-SVANE_VARIANT_MULTI: Final = "svane_remote_multi"
+# The multi-service profile is stored as ``auto``, as v4.0.2 entries hold it.
+# A new setup whose scanned name contains ``JMC`` stores the JMC profile.
+SVANE_VARIANT_MULTI: Final = VARIANT_AUTO
 SVANE_VARIANT_JMC: Final = "svane_remote_jmc"
 SVANE_VARIANT_JENSEN_LINON: Final = "jensen_linon"
 SVANE_VARIANTS: Final = {
-    VARIANT_AUTO: "Svane Remote (multi-service, existing entries)",
-    SVANE_VARIANT_MULTI: "Svane Remote (multi-service)",
-    SVANE_VARIANT_JMC: "Svane Remote (JMC400, select explicitly)",
+    SVANE_VARIANT_MULTI: "Svane Remote app (multi-service)",
+    SVANE_VARIANT_JMC: "Svane Remote app (JMC400)",
     SVANE_VARIANT_JENSEN_LINON: "Jensen Adjustable Sleep app (LinOn)",
 }
 # Remacro app profiles. Company IDs select the model, never the app, so auto
-# keeps the Slumberland app; The Brick and Jerome's are explicit choices.
-REMACRO_VARIANT_SLUMBERLAND: Final = "slumberland"
+# (stored by v4.0.2 entries) is the Slumberland app; the others are explicit.
 REMACRO_VARIANT_THE_BRICK: Final = "the_brick"
 REMACRO_VARIANT_JEROMES: Final = "jeromes"
 REMACRO_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto (Slumberland app)",
-    REMACRO_VARIANT_SLUMBERLAND: "Slumberland app",
+    VARIANT_AUTO: "Slumberland app",
     REMACRO_VARIANT_THE_BRICK: "The Brick app",
     REMACRO_VARIANT_JEROMES: "Jerome's app",
 }
@@ -1668,8 +1685,6 @@ OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
 # Restonic BT Remote (com.keeson.restonicBT): the app's user-selected remote style.
 KEESON_VARIANT_RESTONIC_A: Final = "restonic_a"
 KEESON_VARIANT_RESTONIC_B: Final = "restonic_b"
-# Deprecated alias kept for compatibility with older references.
-KEESON_VARIANT_ORE: Final = KEESON_VARIANT_SINO
 KEESON_VARIANTS: Final = {
     VARIANT_AUTO: "Auto-detect",
     KEESON_VARIANT_BASE: "BaseI4/BaseI5 (Member's Mark)",
@@ -1691,8 +1706,7 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
     KEESON_VARIANT_OKIN: "OKIN FFE (OKIN 13/15 series, 0xE6 prefix)",
     KEESON_VARIANT_SERTA: "Serta (Serta MP Remote)",
-    KEESON_VARIANT_SINO: "Sino (Dynasty, BetterLiving - big-endian)",
-    "ore": "ORE (deprecated alias for Sino)",
+    KEESON_VARIANT_SINO: "Sino (BetterLiving, big-endian)",
     KEESON_VARIANT_PURPLE: "Purple Smart Base (Premium / Premium Plus)",
 }
 
@@ -2454,6 +2468,9 @@ OKIN_DOT_VARIANTS: Final = {
     "97544": "97544 - RF34/09/BK/BK/ (Back/Legs, 2 Mem)",
     "98035": "98035 - RF6707 (Head/Back)",
 }
+# DOT handsets in the pinned FurniMove catalog. New setups use the FurniMove app
+# profile for them; existing Okin DOT entries keep these variants.
+OKIN_DOT_FURNIMOVE_VARIANTS: Final = frozenset({"90167", "91983", "93558"})
 
 # OKIN 64-bit protocol variants (10-byte commands with 64-bit bitmasks)
 OKIN_64BIT_VARIANT_NORDIC: Final = "nordic"
@@ -2469,9 +2486,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     VARIANT_AUTO,
     SOLACE_VARIANT_WOOSA,
     SVANE_VARIANT_JENSEN_LINON,
-    SVANE_VARIANT_MULTI,
     SVANE_VARIANT_JMC,
-    REMACRO_VARIANT_SLUMBERLAND,
     REMACRO_VARIANT_THE_BRICK,
     REMACRO_VARIANT_JEROMES,
     KAIDI_VARIANT_SEAT_1,
@@ -2506,7 +2521,6 @@ ALL_PROTOCOL_VARIANTS: Final = [
     KEESON_VARIANT_SERTA,
     KEESON_VARIANT_SINO,
     KEESON_VARIANT_PURPLE,
-    "ore",  # Deprecated alias for Sino retained for existing config entries
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_OKIN,
     LEGGETT_VARIANT_MLRM,
@@ -2519,7 +2533,11 @@ ALL_PROTOCOL_VARIANTS: Final = [
     OCTO_VARIANT_STANDARD,
     OCTO_VARIANT_STAR2,
     *(_variant for _variant in OKIMAT_VARIANTS if _variant != VARIANT_AUTO),
-    *(_variant for _variant in OKIN_DOT_VARIANTS if _variant != VARIANT_AUTO),
+    *(
+        _variant
+        for _variant in OKIN_DOT_VARIANTS
+        if _variant != VARIANT_AUTO and _variant not in OKIN_DOT_FURNIMOVE_VARIANTS
+    ),
     OKIN_64BIT_VARIANT_NORDIC,
     OKIN_64BIT_VARIANT_CUSTOM,
     LINAK_VARIANT_BED_CONTROL,
@@ -2544,6 +2562,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
         for variant in variants
         if variant != VARIANT_AUTO
     ),
+    *ZSERIES_VARIANTS,
 ]
 
 # Protocols whose setup requests OS-level BLE pairing. This policy alone does
@@ -2721,8 +2740,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_FSM_RELAX,
         BED_TYPE_SERENITY,
         BED_TYPE_TRANQUIL,
-        BED_TYPE_ZSERIES_Z230,
-        BED_TYPE_ZSERIES_Z280,
+        BED_TYPE_ZSERIES,
         BED_TYPE_SIMMONS,
         BED_TYPE_ADJUSTABLE_LUMBAR,
         # VER1 angle replies feed the app's arc labels, not the shared angle axes.
@@ -2865,7 +2883,6 @@ def disconnect_after_command_default_enabled(
         VARIANT_AUTO,
         KEESON_VARIANT_ERGOMOTION,
         KEESON_VARIANT_SINO,
-        "ore",
     }:
         return False
     if bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant in {
@@ -2942,8 +2959,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_SERENITY: (10, 100),  # APK refresh cadence; bounded HA movement duration
     BED_TYPE_TRANQUIL: (10, 100),  # APK refresh cadence; bounded HA movement duration
     # 100 ms is the app refresh; the count also bounds a Z-Series button press.
-    BED_TYPE_ZSERIES_Z230: (10, 100),
-    BED_TYPE_ZSERIES_Z280: (10, 100),
+    BED_TYPE_ZSERIES: (10, 100),
     BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
     BED_TYPE_ADJUSTABLE_LUMBAR: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement
     # Richmat MH apps: KEEP repeats at each control's own interval (100 ms for

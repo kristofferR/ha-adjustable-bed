@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -9,7 +11,10 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.star_elevate import StarElevateController
+from custom_components.adjustable_bed.beds.star_elevate import (
+    StarElevateCommands,
+    StarElevateController,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_STAR_ELEVATE,
     CONF_BED_TYPE,
@@ -131,3 +136,73 @@ class TestStarElevateController:
         assert mock_write.await_args_list[1].args[0] == bytes.fromhex(
             "5A 01 03 10 30 0F A5"
         )
+
+
+# AdjustableM5X5 1.2.3 drives ELEVATE lifts with these frozen P3 vectors.
+M5X5_ELEVATE_VECTORS = [
+    case
+    for case in json.loads(
+        Path(__file__).with_name("fixtures").joinpath("starcode_m5x5_commands.json").read_text()
+    )
+    if case["profile"] == "elevate"
+]
+
+
+@pytest.mark.parametrize("case", M5X5_ELEVATE_VECTORS, ids=lambda case: case["id"])
+async def test_adjustable_m5x5_elevate_vectors(
+    hass: HomeAssistant,
+    mock_star_elevate_config_entry,
+    mock_coordinator_connected,
+    case: dict[str, object],
+) -> None:
+    """Every AdjustableM5X5 ELEVATE frame is the star_elevate frame for that action."""
+    coordinator = AdjustableBedCoordinator(hass, mock_star_elevate_config_entry)
+    await coordinator.async_connect()
+    controller = coordinator.controller
+    assert isinstance(controller, StarElevateController)
+    controller._initialized = case["action"] != "initialize"
+    methods = {
+        "union_up": controller.move_both_up,
+        "union_down": controller.move_both_down,
+        "head_up": controller.move_head_up,
+        "head_down": controller.move_head_down,
+        "foot_up": controller.move_feet_up,
+        "foot_down": controller.move_feet_down,
+        "flat": controller.preset_flat,
+        "stop": controller.stop_all,
+        "interrupt": controller.interrupt,
+        "initialize": controller.start_notify,
+    }
+    with patch.object(controller, "_write_gatt_with_retry", AsyncMock()) as mock_write:
+        await methods[str(case["action"])]()
+    frames = [call.args[1] for call in mock_write.await_args_list]
+    expected = bytes.fromhex(str(case["vector"]))
+    if case["source_count"] == -1:
+        # Held until release, then the shared STOP; flat sends no STOP.
+        assert frames == [expected, StarElevateCommands.STOP]
+        assert mock_write.await_args_list[0].kwargs["repeat_count"] >= 1
+    else:
+        assert frames == [expected]
+
+
+async def test_elevate_main_or_lift_interrupts_its_group_peers(
+    hass: HomeAssistant,
+    mock_star_elevate_config_entry,
+    mock_coordinator_connected,
+) -> None:
+    """Individual ELEVATE motion and flat interrupt a configured group first."""
+    coordinator = AdjustableBedCoordinator(hass, mock_star_elevate_config_entry)
+    await coordinator.async_connect()
+    controller = coordinator.controller
+    assert isinstance(controller, StarElevateController)
+    with (
+        patch(
+            "custom_components.adjustable_bed.starcode_accessory_group.interrupt_conflicting_group",
+            AsyncMock(),
+        ) as interrupt,
+        patch.object(controller, "write_command", AsyncMock()),
+    ):
+        await controller.move_head_up()
+        await controller.preset_flat()
+    assert interrupt.await_count == 2
+    assert controller.ready is True

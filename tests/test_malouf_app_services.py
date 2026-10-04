@@ -100,10 +100,10 @@ async def test_clock_sync_is_serialized(hass, service_target):
     assert coordinator.async_execute_controller_command.await_args.kwargs["resource"] == "configuration"
 
 
-async def test_service_rejects_wrong_protocol_before_any_write(hass, service_target):
-    coordinator, controller, _ = service_target
-    coordinator.bed_type = "malouf"
-    with pytest.raises(ServiceValidationError, match="not a Malouf Base"):
+async def test_clock_sync_rejects_transport_without_clock_before_any_write(hass, service_target):
+    _, controller, _ = service_target
+    controller.supports_clock_sync = False
+    with pytest.raises(ServiceValidationError, match="does not support clock synchronization"):
         await hass.services.async_call(DOMAIN, SERVICE_MALOUF_SYNC_CLOCK,
                                       {"device_id": "bed"}, blocking=True)
     controller.sync_clock.assert_not_awaited()

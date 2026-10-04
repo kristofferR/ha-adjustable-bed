@@ -57,6 +57,19 @@ To adjust settings after setup:
 | **Has Massage** | On/Off | Off | Enable massage controls if your bed supports it |
 | **Preferred Adapter** | Auto / Specific adapter | Auto | Which Bluetooth adapter or proxy to use |
 
+Some app profiles add settings that several apps share. Each has one name and
+label wherever it appears:
+
+| Setting | Offered by | Description |
+|---------|------------|-------------|
+| **Enable light controls** (`has_light`) | Logicdata and Jiecang bed apps (default on), FSM Relax and Limoss Remote (default off) | Expose the app's light controls |
+| **Bed or chair** (`product_type`) | FSM Relax, Limoss Remote | The product chosen in the app |
+| **Reverse motor channel 1–4** (`reverse_motor_1` to `reverse_motor_4`) | FSM Relax, Limoss Remote | The app's per-channel direction flags, sent with every movement |
+| **Exact Bluetooth name** (`ble_device_name`) | Motion Bed, AdjustableM5X5 | The unchanged advertised name that identifies the app profile |
+
+Entries that stored `logicdata_app_has_light` or `jiecang_app_has_light` are
+migrated to `has_light` when the integration loads.
+
 The adapter choice is a preference. Home Assistant can select another path when
 connecting; diagnostics record the actual adapter or proxy used.
 
@@ -350,12 +363,17 @@ listed together below, with links to their setup instructions.
 
 1. Let automatic discovery identify the controller where possible.
 2. If adding manually, find your brand or app in [Supported Beds](../README.md#supported-beds).
+   The bed-type list names each app, so you can also search it for the app you
+   use, for example **INNOVA app (Keeson)** or **The Brick app (Remacro)**.
+   Choosing an app sets its protocol variant for you.
 3. Match any requested model or remote to your physical bed. Shared Bluetooth
    names and services do not always identify the right layout.
 
-Existing entries keep their selection until you change it. For a two-address
-pair, settings belong to each physical bed. If the shared form refuses a change,
-split the pair, configure each side, then combine them again.
+Existing entries keep their selection until you change it. Beds added before
+4.1.0 whose bed type gained app profiles are asked once, through a repair,
+which app they use; see [the upgrade prompt](TROUBLESHOOTING.md#new-app-profiles-are-available-repair).
+For a two-address pair, settings belong to each physical bed. If the shared form
+refuses a change, split the pair, configure each side, then combine them again.
 
 | Bed or brand | Model and remote settings |
 |--------------|---------------------------|
@@ -419,7 +437,7 @@ Select **Jordan's Serenity app** explicitly for the accepted `com.okin.bedding.s
 
 ### Jordan's Tranquil and Customatic Z-Series app profiles
 
-Select **Jordan's Tranquil app** for `com.okin.bedding.tranquil` 1.0.2 (3). For `com.okin.bedding.glory` 1.0.4 (5), select **Customatic Z-Series app (Z-230)** or **(Z-280)** to match the model chosen on the app's selection screen. These apps share OKIN discovery names and GATT UUIDs with other products, so none is detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields. The pulse count stays editable: on Z-Series profiles it also bounds an ordinary button press, because the app streams a touched control until release and defines no deadline of its own. Z-Series setup accepts 1 to 600 pulses (0.1 to 60 s). A two-address pair must be split before either side changes to, from or between these profiles. Notifications stay active when angle sensing is disabled; these profiles report no motor position.
+Select **Jordan's Tranquil app** for `com.okin.bedding.tranquil` 1.0.2 (3). For `com.okin.bedding.glory` 1.0.4 (5), select **Customatic Z-Series app (Z-230)** or **(Z-280)** to match the model chosen on the app's selection screen (protocol variant `z230` or `z280`). These apps share OKIN discovery names and GATT UUIDs with other products, so none is detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields. The pulse count stays editable: on Z-Series profiles it also bounds an ordinary button press, because the app streams a touched control until release and defines no deadline of its own. Z-Series setup accepts 1 to 600 pulses (0.1 to 60 s). A two-address pair must be split before either side changes to, from or between these profiles. Notifications stay active when angle sensing is disabled; these profiles report no motor position.
 
 ### AdjustableM5X4 app selectors
 
@@ -471,9 +489,9 @@ Select **Limoss Remote app** manually under Limoss. Choose bed/chair, local lamp
 
 ### AdjustableM5X5 app
 
-Select **AdjustableM5X5** (`starcode_m5x5`) and enter the exact Bluetooth name, preserving case. Confirm CB25, F23, kneading or Elevate. The specific F23/kneading prefixes take precedence over generic `STAR25`; shared Nordic UART identifiers alone cannot choose an app. The exact optional manufacturer read selects the command dialect when connecting.
+Select **AdjustableM5X5** (`starcode_m5x5`) and enter the exact Bluetooth name, preserving case. Confirm CB25, F23 or kneading. ELEVATE lifts use the [DewertOkin ELEVATE](beds/star-elevate.md) bed type instead. The specific F23/kneading prefixes take precedence over generic `STAR25`; shared Nordic UART identifiers alone cannot choose an app. The exact optional manufacturer read selects the command dialect when connecting.
 
-On the main entry, select up to **three other configured AdjustableM5X5 entries** as lifts. This supports four independent Bluetooth addresses: one main and three lifts. All four bedding classes can occupy either slot. Duplicate addresses and unrelated products are rejected. This group keeps each device's existing coordinator and entities. It does not convert them into Left/Right paired devices.
+On the main entry, select up to **three other configured AdjustableM5X5 or DewertOkin ELEVATE entries** as lifts. This supports four independent Bluetooth addresses: one main and three lifts. The three bed classes and ELEVATE can occupy either slot; an ELEVATE main selects its lifts in its own options. Duplicate addresses and unrelated products are rejected. This group keeps each device's existing coordinator and entities. It does not convert them into Left/Right paired devices.
 
 Use `adjustable_bed.starcode_move_lifts` for native lift-union movement, STOP or composite flat. A profile or group-selection edit cancels retained delayed writes. Individual controls remain on each physical device. See [protocol and control details](beds/starcode-m5x5.md).
 

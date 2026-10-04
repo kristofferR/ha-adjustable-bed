@@ -15,6 +15,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
+    BED_TYPE_ZSERIES,
     bed_type_has_position_feedback,
     get_motor_pulse_defaults,
     requires_pairing,
@@ -56,7 +57,13 @@ def test_layout_counts_and_no_invented_feedback_or_pairing(bed_type, profile, mo
 def test_customatic_group_lists_each_explicit_package_profile():
     variants = ACTUATOR_GROUPS["customatic"]["variants"]
     assert variants is not None
-    assert {item["type"] for item in variants} == {item[0] for item in PROFILES}
+    assert {item["type"] for item in variants} == {item[0] for item in PROFILES} | {
+        BED_TYPE_ZSERIES
+    }
+    assert [item.get("variant") for item in variants if item["type"] == BED_TYPE_ZSERIES] == [
+        "z230",
+        "z280",
+    ]
 
 
 @pytest.mark.parametrize("name", ["OKIN-Receiver", "OKIN", "iFlex_Bed", "iFlex_Bed-1234"])

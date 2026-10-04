@@ -39,8 +39,9 @@ from custom_components.adjustable_bed.detection import detect_bed_type
 from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
-from custom_components.adjustable_bed.svane_state import CONF_SVANE_PREFERENCES, get_svane_session
+from custom_components.adjustable_bed.svane_state import get_svane_session
 from custom_components.adjustable_bed.switch import _switch_entities_for
+from tests.app_state_helpers import stored_app_state
 from tests.test_malouf_app_entities import configure_entity_runtime
 from tests.test_svane import make_controller, written
 
@@ -122,7 +123,7 @@ async def test_preverification_normalizes_legacy_options_before_probe(hass):
     assert flow._pending_entry[CONF_DISABLE_ANGLE_SENSING] is True
 
 
-async def test_options_explicit_jmc_persists_and_clears_changed_app_session(hass):
+async def test_options_explicit_jmc_persists_with_its_own_session(hass):
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={
@@ -149,7 +150,7 @@ async def test_options_explicit_jmc_persists_and_clears_changed_app_session(hass
         )
     assert result["type"] == "create_entry"
     assert entry.data[CONF_PROTOCOL_VARIANT] == SVANE_VARIANT_JMC
-    assert not get_svane_session(hass, entry.data[CONF_ADDRESS], "multi").light_on
+    assert not get_svane_session(hass, entry.data[CONF_ADDRESS], "jmc").light_on
 
 
 @pytest.mark.parametrize(
@@ -243,20 +244,25 @@ async def test_real_parser_coordinator_and_diagnostic_freshness_no_angle_inferen
     assert not controller.position_number_specs
 
 
-async def test_guarded_preference_changed_only_no_bond_claim(hass):
+async def test_preferences_are_app_state_without_entry_or_bond_writes(hass):
     entry = MockConfigEntry(
         domain=DOMAIN, data={CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_SVANE}
     )
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)
+    controller = await create_controller(coordinator, BED_TYPE_SVANE, None, None)
+    assert isinstance(controller, SvaneController)
+    coordinator._controller = controller
+    await coordinator._async_restore_app_state(controller)
+    before = dict(entry.data)
     preferences = {"intensity": 95, "slots": ["00112233", "44556677"]}
-    with patch.object(
-        coordinator, "_begin_internal_entry_update", wraps=coordinator._begin_internal_entry_update
-    ) as guard:
-        coordinator.remember_svane_preferences(preferences)
-        coordinator.remember_svane_preferences(preferences)
-    assert guard.call_count == 1 and guard.call_args.args == (False,)
-    assert entry.data[CONF_SVANE_PREFERENCES] == preferences
+    with patch.object(coordinator, "_begin_internal_entry_update") as guard:
+        controller.session.restore(preferences)
+        coordinator.save_app_state(controller)
+        coordinator.save_app_state(controller)
+    guard.assert_not_called()
+    assert entry.data == before
+    assert await stored_app_state(coordinator, "multi") == preferences
 
 
 async def test_paired_persistence_and_parent_to_standalone_migration_remain_target_local(hass):
@@ -283,10 +289,6 @@ async def test_paired_persistence_and_parent_to_standalone_migration_remain_targ
         CONF_SIDE: SIDE_RIGHT,
         CONF_PROTOCOL_VARIANT: SVANE_VARIANT_JMC,
     }
-    session = get_svane_session(hass, first[CONF_ADDRESS], "multi")
-    session.light_on = True
-    session.light_step = -5
-    session.multi_slots[1] = (b"head", b"feet")
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={
@@ -300,23 +302,28 @@ async def test_paired_persistence_and_parent_to_standalone_migration_remain_targ
     parent = PairedBedCoordinator(hass, entry, children)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = parent
     left, right = children[SIDE_LEFT], children[SIDE_RIGHT]
-    preferences = {"intensity": 95, "slots": ["00112233", "44556677"]}
-    with patch.object(
-        hass.config_entries, "async_update_entry", wraps=hass.config_entries.async_update_entry
-    ) as update:
-        left.remember_svane_preferences(preferences)
-        left.remember_svane_preferences(preferences)
-    update.assert_called_once()
+    left_controller = await create_controller(left, BED_TYPE_SVANE, SVANE_VARIANT_MULTI, None)
+    assert isinstance(left_controller, SvaneController)
+    left._controller = left_controller
+    await left._async_restore_app_state(left_controller)
+    session = left_controller.session
+    session.light_on = True
+    session.light_step = -5
+    session.multi_slots[1] = (b"head", b"feet")
+    with patch.object(hass.config_entries, "async_update_entry") as update:
+        left.save_app_state(left_controller)
+    # Preferences belong to the physical address, never to either descriptor.
+    update.assert_not_called()
+    assert get_child(entry.data, SIDE_LEFT) == first
     assert get_child(entry.data, SIDE_RIGHT) == second
-    assert left.entry.data[CONF_SVANE_PREFERENCES] == preferences
-    assert parent.consume_internal_entry_update(entry)
-    assert not parent.consume_internal_entry_update(entry)
-    assert not right.consume_internal_entry_update(entry)
+    assert (await stored_app_state(left, "multi"))["multi_slots"] == {"1": ["68656164", "66656574"]}
+    assert await stored_app_state(right, "jmc") == {}
     standalone = MockConfigEntry(domain=DOMAIN, data=dict(left.entry.data))
     rebuilt = AdjustableBedCoordinator(hass, standalone)
     controller = await create_controller(rebuilt, BED_TYPE_SVANE, SVANE_VARIANT_MULTI, None)
     assert isinstance(controller, SvaneController)
     assert controller.session is session
+    await rebuilt._async_restore_app_state(controller)
     assert (
         session.multi_slots[1] == (b"head", b"feet")
         and session.light_on

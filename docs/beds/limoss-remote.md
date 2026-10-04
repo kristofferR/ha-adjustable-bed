@@ -43,7 +43,7 @@ memories per child. Select each receiver’s profile before pairing; unpair firs
 to change those profiles or convert the pair to another protocol. Shared paired options do not replace child settings.
 This profile has no single-address side selector.
 
-`adjustable_bed.limoss_remote_hold_control` accepts one currently rendered control
+`adjustable_bed.hold_control` accepts one currently rendered control
 and a duration from 0.1 to 60 seconds, with millisecond precision. Available names
 are:
 
@@ -62,7 +62,7 @@ ten-frame burst without an additional motor release.
 Example:
 
 ```yaml
-action: adjustable_bed.limoss_remote_hold_control
+action: adjustable_bed.hold_control
 data:
   device_id: YOUR_DEVICE_ID
   control: motor_1_up
@@ -95,17 +95,19 @@ sending a save/recall command, avoiding source array crashes and an unparsed
 fifth-motor query.
 
 Recall buttons and `goto_preset` hold a stored memory for one second. For an
-explicit duration, use `limoss_remote_recall_memory` with `preset` and `duration`.
+explicit duration, give `goto_preset` a `duration` as well as the `preset`.
 Recall requires a stored motor-1 row. Sparse retained rows for the other reported
 motors are allowed and sent in motor order. Raw signed 32-bit values are preserved
 bit for bit without inventing distance or angle units.
 
 `limoss_remote_rename_memory` accepts `preset` and `name`. Names are local and may
 be empty. Rename retains all captured positions and updates button labels without
-reconnecting. Memory names and positions survive controller recreation, entry
-reload, unpair/re-pair and integration restart through the physical target's
-config data. Changing the selected protocol preserves the stored app memory data;
-other protocols do not use it. No source-backed clear-memory action exists.
+reconnecting. Memory names and positions, and the reported versions and serial,
+survive controller recreation, entry reload, unpair/re-pair and integration
+restart as the physical target's app state, until no entry owns the bed. The
+reported capabilities stay in the config entry because they decide the entities.
+Changing the selected protocol preserves the stored app memory data; other
+protocols do not use it. No source-backed clear-memory action exists.
 
 ## Transport and timing
 

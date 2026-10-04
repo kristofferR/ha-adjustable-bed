@@ -102,8 +102,7 @@ from .const import (
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
-    BED_TYPE_ZSERIES_Z230,
-    BED_TYPE_ZSERIES_Z280,
+    BED_TYPE_ZSERIES,
     # Detection constants
     BEDTECH_MANUFACTURER_ID,
     BEDTECH_NAME_PATTERNS,
@@ -133,6 +132,16 @@ from .const import (
     KEESON_JSON_SERVICE_UUID,
     KEESON_NAME_PATTERNS,
     KEESON_SINO_NAME_PATTERNS,
+    KEESON_VARIANT_ADJUSTABLE_LITE,
+    KEESON_VARIANT_BEDSENSE_BASES,
+    KEESON_VARIANT_DYNASTY_BASES,
+    KEESON_VARIANT_HEAL_EVERY_NIGHT,
+    KEESON_VARIANT_INNOVA,
+    KEESON_VARIANT_MAXCOIL_UNA,
+    KEESON_VARIANT_OKIN_SEATING,
+    KEESON_VARIANT_RESTONIC_A,
+    KEESON_VARIANT_RESTONIC_B,
+    KEESON_VARIANT_SIMON_LI,
     LEGGETT_GEN2_MANUFACTURER_PREFIXES,
     LEGGETT_GEN2_SERVICE_UUID,
     LEGGETT_OKIN_NAME_PATTERNS,
@@ -168,6 +177,8 @@ from .const import (
     OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
     OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
     REMACRO_SERVICE_UUID,
+    REMACRO_VARIANT_JEROMES,
+    REMACRO_VARIANT_THE_BRICK,
     REVERIE_NIGHTSTAND_SERVICE_UUID,
     REVERIE_SERVICE_UUID,
     RICHMAT_NAME_PATTERNS,
@@ -186,18 +197,24 @@ from .const import (
     SLEEPYS_NAME_PATTERNS,
     SOLACE_NAME_PATTERNS,
     SOLACE_SERVICE_UUID,
+    SOLACE_VARIANT_WOOSA,
     STAR_ELEVATE_NAME_PATTERNS,
     SUTA_NAME_PATTERNS,
     SUTA_SERVICE_UUID,
     SUTA_UNSUPPORTED_NAME_PREFIXES,
     SVANE_HEAD_SERVICE_UUID,
     SVANE_NAME_PATTERNS,
+    SVANE_VARIANT_JENSEN_LINON,
+    SVANE_VARIANT_JMC,
     TIMOTION_AHF_NAME_PATTERNS,
     TIMOTION_AHF_SERVICE_UUID,
     VARIANT_AUTO,
+    VARIANT_REQUIRED_BED_TYPES,
     VIBRADORM_NAME_PATTERNS,
     VIBRADORM_SECONDARY_SERVICE_UUID,
     VIBRADORM_SERVICE_UUID,
+    ZSERIES_VARIANT_Z230,
+    ZSERIES_VARIANT_Z280,
     # Detection result type
     DetectionResult,
 )
@@ -206,6 +223,9 @@ from .kaidi_protocol import extract_kaidi_advertisement
 from .svane_state import is_svane_discovery_name
 
 _LOGGER = logging.getLogger(__name__)
+
+# Advertised gateway service FurniMove accepts as an RF receiver (scan predicate 4).
+_FURNIMOVE_GATEWAY_SERVICE_UUID = "00001420-0000-1000-8000-00805f9b34fb"
 
 
 def _is_motosleep_local_name(device_name: str) -> bool:
@@ -526,12 +546,11 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
 
     BED_TYPE_FSM_RELAX: "FSM Relax app (explicit chair/bed profile)",
 
-    BED_TYPE_STARCODE_M5X5: "AdjustableM5X5 app (CB25 / F23 / kneading / Elevate)",
+    BED_TYPE_STARCODE_M5X5: "AdjustableM5X5 app (CB25 / F23 / kneading)",
     BED_TYPE_FURNIMOVE: "FurniMove / OKIN Smart Remote (choose handset ID)",
     BED_TYPE_SERENITY: "Jordan's Serenity app",
     BED_TYPE_TRANQUIL: "Jordan's Tranquil app",
-    BED_TYPE_ZSERIES_Z230: "Customatic Z-Series app (Z-230)",
-    BED_TYPE_ZSERIES_Z280: "Customatic Z-Series app (Z-280)",
+    BED_TYPE_ZSERIES: "Customatic Z-Series app",
     BED_TYPE_SIMMONS: "SIMMONS app",
     BED_TYPE_ADJUSTABLE_LUMBAR: "Adjustable bed (Lumbar) app",
     BED_TYPE_RICHMAT_REVIVE: "Revive Control app (Richmat)",
@@ -578,7 +597,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_REVERIE_NIGHTSTAND: "Reverie Nightstand (Protocol 110)",
     BED_TYPE_RICHMAT: "Richmat",
     BED_TYPE_RONDURE: "1500 Tilt Base (Rondure)",
-    BED_TYPE_REMACRO: "Remacro (Slumberland, The Brick, Jerome's apps)",
+    BED_TYPE_REMACRO: "Slumberland app (Remacro)",
     BED_TYPE_COMFORT_MOTION: "Comfort Motion (Lierda)",
     BED_TYPE_LIMOSS: "Limoss / Stawett (TEA encrypted)",
     BED_TYPE_LIMOSS_REMOTE: "Limoss Remote app (bed / chair)",
@@ -598,10 +617,10 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_STAR_ELEVATE: "DewertOkin ELEVATE (two-actuator lift)",
     BED_TYPE_SOLACE: "Solace",
     BED_TYPE_SUTA: "SUTA Smart Home (AT protocol)",
-    BED_TYPE_SVANE: "Svane / Jensen LinOn",
+    BED_TYPE_SVANE: "Svane Remote app",
     BED_TYPE_TIMOTION_AHF: "TiMOTION AHF",
     BED_TYPE_VIBRADORM: "Vibradorm (VMAT)",
-    BED_TYPE_VIBRADORM_APP: "Caresse Diamant / Werkmeister apps",
+    BED_TYPE_VIBRADORM_APP: "Vibradorm apps (Caresse Diamant, Werkmeister, VMAT)",
     BED_TYPE_VMATBASIC: "V-MAT Basic app (explicit product profile)",
     BED_TYPE_STARCODE_ABM5_4: "AdjustableM5X4 app (explicit profile)",
     BED_TYPE_MOTION_BED: "Motion Bed app",
@@ -616,13 +635,63 @@ def is_jensen_linon_name(name: str | None) -> bool:
     return any(pattern in lowered for pattern in JENSEN_LINON_NAME_PATTERNS)
 
 
+# Apps chosen by a protocol variant, listed as their own bed-type choices so
+# users find them by app name. A bed type's own entry names the app its auto
+# variant selects; see AGENTS.md "Adding a New Bed Type".
+APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
+    (BED_TYPE_KEESON, KEESON_VARIANT_ADJUSTABLE_LITE): "Adjustable Lite app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_SIMON_LI): "Simon Li app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_HEAL_EVERY_NIGHT): "Heal Every Night app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_SEATING): "OKIN-Seating app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_BEDSENSE_BASES): "Bedsense Bases app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA): "INNOVA app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_MAXCOIL_UNA): "MaxCoil Una app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_DYNASTY_BASES): "Dynasty Bases app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_A): "Restonic BT app, remote A (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_B): "Restonic BT app, remote B (Keeson)",
+    (BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA): "Woosa Sleep app (Solace)",
+    (BED_TYPE_SVANE, SVANE_VARIANT_JMC): "Svane Remote app (JMC400)",
+    (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON): "Jensen Adjustable Sleep app (LinOn)",
+    (BED_TYPE_REMACRO, REMACRO_VARIANT_THE_BRICK): "The Brick app (Remacro)",
+    (BED_TYPE_REMACRO, REMACRO_VARIANT_JEROMES): "Jerome's app (Remacro)",
+    (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z230): "Customatic Z-Series app (Z-230)",
+    (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z280): "Customatic Z-Series app (Z-280)",
+}
+_CHOICE_SEPARATOR = ":"
+
+
+def bed_type_choice(bed_type: str, variant: str | None) -> str:
+    """Return the selector value for a bed type and variant: its app entry if any."""
+    if variant is not None and (bed_type, variant) in APP_VARIANT_CHOICES:
+        return f"{bed_type}{_CHOICE_SEPARATOR}{variant}"
+    return bed_type
+
+
+def resolve_bed_type_choice(choice: str) -> tuple[str, str | None]:
+    """Return the bed type and, for an app entry, the variant it selects."""
+    bed_type, separator, variant = choice.partition(_CHOICE_SEPARATOR)
+    if separator and (bed_type, variant) in APP_VARIANT_CHOICES:
+        return bed_type, variant
+    return choice, None
+
+
 def get_bed_type_options() -> list[SelectOptionDict]:
-    """Get bed type options sorted alphabetically by display name."""
+    """Get bed type and app choices sorted alphabetically by label.
+
+    A bed type whose variant has no automatic choice is offered only through
+    its app entries.
+    """
+    choices = {
+        bed_type: label
+        for bed_type, label in BED_TYPE_DISPLAY_NAMES.items()
+        if bed_type not in VARIANT_REQUIRED_BED_TYPES
+    }
+    choices.update(
+        {bed_type_choice(*key): label for key, label in APP_VARIANT_CHOICES.items()}
+    )
     return [
-        SelectOptionDict(value=bed_type, label=display_name)
-        for bed_type, display_name in sorted(
-            BED_TYPE_DISPLAY_NAMES.items(), key=lambda x: x[1].lower()
-        )
+        SelectOptionDict(value=value, label=label)
+        for value, label in sorted(choices.items(), key=lambda item: item[1].lower())
     ]
 
 
@@ -1048,6 +1117,23 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     from .beds.starcode_abm5_4_profiles import TRANSPORTS, scan_matches
 
     result = _detect_bed_type_detailed(service_info)
+    advertised = {str(uuid).lower() for uuid in (service_info.service_uuids or [])}
+    # FurniMove accepts this gateway service last, after its manufacturer and
+    # 1523 service predicates, and without a payload mask. It names an app
+    # candidate, never a handset or layout, so any other match keeps priority.
+    if _FURNIMOVE_GATEWAY_SERVICE_UUID in advertised:
+        if result.bed_type is None:
+            if not any(signal.startswith("excluded:") for signal in result.signals):
+                return DetectionResult(
+                    bed_type=BED_TYPE_FURNIMOVE,
+                    confidence=0.6,
+                    signals=["uuid:furnimove_gateway"],
+                    ambiguous_types=[BED_TYPE_DEWERTOKIN],
+                )
+        elif result.bed_type != BED_TYPE_FURNIMOVE:
+            if BED_TYPE_FURNIMOVE not in (result.ambiguous_types or ()):
+                result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_FURNIMOVE]
+            result.signals.append("uuid:furnimove_gateway")
     if result.bed_type is not None and scan_matches(service_info.name):
         candidates = list(result.ambiguous_types or ())
         if BED_TYPE_STARCODE_ABM5_4 not in candidates:
@@ -1135,15 +1221,6 @@ def _detect_bed_type_detailed(
                     bed_type=None, confidence=0.0, signals=["excluded:" + pattern]
                 )
 
-    # FurniMove accepts this advertised gateway service without a payload mask.
-    # It identifies an app candidate, never a handset or actuator layout.
-    if "00001420-0000-1000-8000-00805f9b34fb" in service_uuids:
-        return DetectionResult(
-            bed_type=BED_TYPE_FURNIMOVE, confidence=0.6,
-            signals=["uuid:furnimove_gateway"],
-            ambiguous_types=[BED_TYPE_DEWERTOKIN],
-        )
-
     # Priority 1: Check manufacturer data (highest confidence, unique signal)
     mfr_bed_type, mfr_confidence, mfr_id = _check_manufacturer_data(service_info.manufacturer_data)
     # A host-map record is a candidate hint, not proof of the source's first
@@ -1178,9 +1255,11 @@ def _detect_bed_type_detailed(
             service_info.name,
             mfr_id,
         )
+        # FurniMove also accepts DewertOkin receivers, but handsets on the
+        # released routes stay there; it remains an explicit app candidate.
         return DetectionResult(
             bed_type=mfr_bed_type,
-            confidence=0.6 if mfr_bed_type == BED_TYPE_DEWERTOKIN else mfr_confidence,
+            confidence=mfr_confidence,
             signals=signals,
             manufacturer_id=mfr_id,
             ambiguous_types=[BED_TYPE_FURNIMOVE]
@@ -1246,7 +1325,7 @@ def _detect_bed_type_detailed(
         )
         return DetectionResult(
             bed_type=BED_TYPE_DEWERTOKIN,
-            confidence=0.6,
+            confidence=0.9,
             signals=signals,
             ambiguous_types=[BED_TYPE_FURNIMOVE],
         )
@@ -1260,7 +1339,7 @@ def _detect_bed_type_detailed(
         )
         return DetectionResult(
             bed_type=BED_TYPE_DEWERTOKIN,
-            confidence=0.6,
+            confidence=0.9,
             signals=signals,
             ambiguous_types=[BED_TYPE_FURNIMOVE],
         )
@@ -1512,16 +1591,17 @@ def _detect_bed_type_detailed(
             ),
         )
 
-    if (service_info.name or "").startswith(("STAR25", "ELEVATE")):
-        other = BED_TYPE_STAR_ELEVATE if (service_info.name or "").startswith("ELEVATE") else BED_TYPE_SLEEPYS_BOX25
+    if (service_info.name or "").startswith("STAR25"):
         return DetectionResult(
-            bed_type=other, confidence=0.65,
+            bed_type=BED_TYPE_SLEEPYS_BOX25, confidence=0.65,
             signals=[*signals, "name:starcode_bedding_app_choices"],
             ambiguous_types=[BED_TYPE_STARCODE_M5X5],
         )
 
     # ELEVATE is a separate StarCode controller with a dedicated 0x40-0x4F
-    # command range. Check it before the generic Star controller family.
+    # command range. Check it before the generic Star controller family. It is
+    # the one route for both apps' ELEVATE lifts, including AdjustableM5X5
+    # groups, so the app does not make this name ambiguous.
     if any(device_name.startswith(pattern) for pattern in STAR_ELEVATE_NAME_PATTERNS):
         signals.append("name:star_elevate")
         if NORDIC_UART_SERVICE_UUID.lower() in service_uuids:

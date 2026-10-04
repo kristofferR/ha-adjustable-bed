@@ -1199,6 +1199,20 @@ async def async_create_fix_flow(
     if issue_id.startswith(ISSUE_PREFIX):
         return FurniMoveLayoutRepairFlow(payload.get("entry_id", ""), payload.get("side"))
 
+    from .profile_review import ISSUE_PREFIX as PROFILE_REVIEW_ISSUE_PREFIX
+    from .profile_review import ProfileReviewRepairFlow
+
+    if issue_id.startswith(PROFILE_REVIEW_ISSUE_PREFIX):
+        return ProfileReviewRepairFlow(payload.get("entry_id", ""))
+
+    from .remacro_discovery import ISSUE_PREFIX as REMACRO_ISSUE_PREFIX
+    from .remacro_discovery import RemacroAppRepairFlow
+
+    if issue_id.startswith(REMACRO_ISSUE_PREFIX):
+        return RemacroAppRepairFlow(
+            payload.get("entry_id", ""), payload.get("side"), payload.get("company_id")
+        )
+
     evidence: BondEvidence | None = None
     raw_status = payload.get("evidence_status")
     status: BondVerificationStatus | None = None

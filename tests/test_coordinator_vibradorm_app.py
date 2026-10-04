@@ -665,7 +665,6 @@ def test_new_selection_intent_is_process_local_and_isolated_by_physical_target(
     )
     assert cold is not selected
     assert (cold.floor.level, cold.floor.default_level) == (0, 6)
-    assert DOMAIN not in cold_hass.data  # Cache cannot look like a loaded integration entry.
     assert CONF_BLE_BOND_ESTABLISHED not in coordinator.entry.data
 
 
@@ -678,7 +677,7 @@ async def test_floor_and_pending_timer_survive_teardown_reload_and_unpair(
     coordinator.apply_confirmed_bond_removal()
     assert coordinator.vibradorm_app_session_intent is state
     await coordinator.async_shutdown()
-    hass.data.pop(DOMAIN)
+    hass.data[DOMAIN].pop(coordinator.entry.entry_id, None)
     reloaded = AdjustableBedCoordinator(hass, coordinator.entry)
     assert reloaded.vibradorm_app_session_intent is state
     assert state.floor.level == 4

@@ -20,7 +20,10 @@ from custom_components.adjustable_bed.beds.limoss_remote_protocol import (
     version_string,
 )
 from custom_components.adjustable_bed.const import LIMOSS_CHAR_UUID, LIMOSS_SERVICE_UUID
-from custom_components.adjustable_bed.limoss_remote_state import LimossRemoteMemoryStore
+from custom_components.adjustable_bed.limoss_remote_state import (
+    LimossRemoteMemoryStore,
+    LimossRemoteSession,
+)
 from tests.limoss_remote_vectors import NATIVE_FRAMES, RENDERED_LAYOUTS
 
 
@@ -53,9 +56,14 @@ def make_controller(
         massage=massage,
         reverse_motors=reversal,
         cached_capabilities=LimossRemoteCapabilities(keys, system, 255, configuration, memory),
-        memories=store if store is not None else LimossRemoteMemoryStore(),
+        session=LimossRemoteSession(memories=store if store is not None else LimossRemoteMemoryStore()),
         sequence=sequence if sequence is not None else LimossRemoteSequence(),
     )
+
+
+def assert_nothing_persisted(c):
+    assert not c.session.metadata
+    c._coordinator.remember_limoss_remote_capabilities.assert_not_called()
 
 
 def inner_packets(controller):
@@ -194,11 +202,11 @@ async def test_information_query_chain_literal_order_and_completed_batch():
         "0100000003",
     ]
     assert c.layout == "gKey12"
-    assert c._coordinator.remember_limoss_remote_data.call_args.args[0]["metadata"] == {
+    assert c.session.metadata == {
         "hardware_version": "-128.0",
         "software_version": "12.34",
     }
-    assert c._coordinator.remember_limoss_remote_data.call_count == 1
+    c._coordinator.remember_limoss_remote_capabilities.assert_called_once()
     char = c.client.start_notify.call_args.args[0]
     await c.stop_notify()
     assert c.client.stop_notify.call_args.args[0] is char
@@ -218,16 +226,14 @@ async def test_failed_info_retains_completed_fields_without_false_success():
     c.client.write_gatt_char.side_effect = callback
     with pytest.raises(OSError):
         await c.refresh_device_info()
-    assert c._coordinator.remember_limoss_remote_data.call_args.args[0]["metadata"] == {
-        "hardware_version": "12.34"
-    }
+    assert c.session.metadata == {"hardware_version": "12.34"}
+    c._coordinator.remember_limoss_remote_capabilities.assert_called_once()
     assert c._request_reply is None
 
 
 @pytest.mark.asyncio
 async def test_save_queries_fresh_signed_values_atomically_and_reconstructs8slots():
-    persisted = MagicMock()
-    store = LimossRemoteMemoryStore(persist=persisted)
+    store = LimossRemoteMemoryStore()
     c = make_controller(system=0x14, store=store)
     values = (-2147483648, -1, 0, 2147483647)
 
@@ -244,7 +250,8 @@ async def test_save_queries_fresh_signed_values_atomically_and_reconstructs8slot
     assert len(store.slots) == 8
     assert store.slots[8].name == ""
     assert store.slots[8].positions == tuple(enumerate(values))
-    restored = LimossRemoteMemoryStore.restore(persisted.call_args.args[0])
+    assert c._coordinator.save_app_state.call_count == 16
+    restored = LimossRemoteMemoryStore.restore(c.persisted_app_state["memories"])
     assert restored.serialize() == store.serialize()
     assert [inner[1] for inner in inner_packets(c)] == [0x10, 0x20, 0x30, 0x40] * 8
     assert not any(inner[1] in (0x11, 0xFF) for inner in inner_packets(c))
@@ -549,7 +556,7 @@ async def test_subscription_callback_ignores_old_client_after_reconnect_and_stop
     await c.stop_notify()
     first.stop_notify.assert_awaited_once_with(first_char)
     first_callback(first_char, bytearray(format_command(b"\6\xff\xff\xff\xff", 0)))
-    c._coordinator.remember_limoss_remote_data.assert_not_called()
+    assert_nothing_persisted(c)
     second = make_controller().client
     second_char = second.services[0].characteristics[0]
     second_char.handle = 44
@@ -557,11 +564,9 @@ async def test_subscription_callback_ignores_old_client_after_reconnect_and_stop
     await c.start_notify()
     second_callback = second.start_notify.await_args.args[1]
     first_callback(first_char, bytearray(format_command(b"\6\0\0\0\1", 0)))
-    c._coordinator.remember_limoss_remote_data.assert_not_called()
+    assert_nothing_persisted(c)
     second_callback(second_char, bytearray(format_command(b"\6\xff\xff\xff\xff", 0)))
-    c._coordinator.remember_limoss_remote_data.assert_called_once_with(
-        {"metadata": {"serial": "-1"}}
-    )
+    assert c.session.metadata == {"serial": "-1"}
     await c.stop_all()
     assert all(call.args[0] is second_char for call in second.write_gatt_char.call_args_list)
     assert [row[1] for row in inner_packets(c)] == [0xFF] * 5
@@ -704,7 +709,7 @@ def test_unused04_unknown_opcodes_do_not_mutate_capabilities_memories_or_issue_q
         )
     assert c.protocol_diagnostics == before
     c._coordinator.handle_controller_state_update.assert_not_called()
-    c._coordinator.remember_limoss_remote_data.assert_not_called()
+    assert_nothing_persisted(c)
     c.client.write_gatt_char.assert_not_called()
 
 
@@ -720,7 +725,7 @@ async def test_notification_teardown_fails_active_request_without_claiming_user_
     assert c._request_reply is None
     assert not c._coordinator.cancel_command.is_set()
     assert [row[1] for row in inner_packets(c)] == [2]
-    c._coordinator.remember_limoss_remote_data.assert_not_called()
+    assert_nothing_persisted(c)
 
 
 @pytest.mark.parametrize(
@@ -753,7 +758,7 @@ async def test_registered_callback_rejects_stale_client_and_wrong_exact_role(tra
             MagicMock(uuid=LIMOSS_CHAR_UUID, handle=role.handle, properties=["write", "notify"])
         ]
     callback(role, bytearray(format_command(bytes.fromhex("06ffffffff"), 0)))
-    c._coordinator.remember_limoss_remote_data.assert_not_called()
+    assert_nothing_persisted(c)
     c._coordinator.handle_controller_state_update.assert_not_called()
     raw_callback.assert_not_called()
     assert c._parser.buffer == b"" and not reply.done()
@@ -783,13 +788,11 @@ async def test_disconnect_generation_fences_reused_client_and_fails_active_query
     pending = asyncio.get_running_loop().create_future()
     c._request_reply = (6, pending)
     old_callback(role, bytearray(format_command(bytes.fromhex("0600000001"), 0)))
-    c._coordinator.remember_limoss_remote_data.assert_not_called()
+    assert_nothing_persisted(c)
     assert not pending.done()
     current_callback(role, bytearray(format_command(bytes.fromhex("06ffffffff"), 0)))
     assert pending.result() == bytes.fromhex("ffffffff")
-    c._coordinator.remember_limoss_remote_data.assert_called_once_with(
-        {"metadata": {"serial": "-1"}}
-    )
+    assert c.session.metadata == {"serial": "-1"}
     c._request_reply = None
     await c.stop_notify()
 
@@ -805,7 +808,7 @@ async def test_unsubscribe_invalidates_registered_callback_before_native_await()
     async def unsubscribe(char):
         assert char is role
         callback(role, bytearray(format_command(bytes.fromhex("06ffffffff"), 0)))
-        c._coordinator.remember_limoss_remote_data.assert_not_called()
+        assert_nothing_persisted(c)
 
     client.stop_notify.side_effect = unsubscribe
     await c.stop_notify()
@@ -832,5 +835,5 @@ async def test_disconnect_hook_fails_actual_information_request_and_drops_late_r
         await task
     callback(role, bytearray(format_command(bytes.fromhex("0208140028"), 0)))
     assert c._request_reply is None and c._progress is None
-    c._coordinator.remember_limoss_remote_data.assert_not_called()
+    assert_nothing_persisted(c)
     assert client.write_gatt_char.await_count == 1

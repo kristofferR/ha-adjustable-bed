@@ -151,14 +151,15 @@ CU170 hardware testing shows that explicit interruption needs the DUMMY keycode.
 Cancellation or write failure uses the proven zero cleanup. U Series memory
 controls follow the ordinary held-key lifecycle instead. Memory 1, Memory 2 and
 Snore therefore have no one-shot preset buttons in this profile. Use
-`adjustable_bed.leggett_hold_control` with an explicit duration for these controls.
+`adjustable_bed.hold_control` with an explicit duration for these controls.
 
 LP Control 2.9.0 uses a 200 ms cadence for held commands where Prodigy CE uses
 100 ms. The integration uses the accepted Prodigy/U Series 100 ms cadence and
 retains the recorded CU170 hardware policy.
 
-`adjustable_bed.leggett_hold_control` exposes bounded holds for flat, Snore,
+`adjustable_bed.hold_control` exposes bounded holds for flat, Snore,
 lighting and massage buttons. U Series also permits memory 1, memory 2 and SET.
+The released `leggett_hold_control` name still works with the same control list.
 The existing movement services cover motor holds. These actions preserve the
 held-button behavior separately from the Prodigy fixed-count favorite recalls.
 
@@ -174,7 +175,7 @@ sequence:
 The app's reset and slot assignment are consecutive calls in one callback.
 An intermediate zero can occur through scheduling, but the integration does not
 insert a guaranteed four-zero gap between the two stages. U Series has only the
-standalone held SET path, available through `leggett_hold_control`.
+standalone held SET path, available through `hold_control`.
 
 The shipped user guide corroborates this: "Touch Save… the massage motors will
 buzz once. Within 5 seconds, touch the Favorite Position being edited."
@@ -247,7 +248,7 @@ and final restoration safely. It must never combine SET with FLAT, the reported
 factory-reset chord. The existing store path sends each key separately.
 
 The CU170 can be configured for latched or hold-required presets. Memory recalls
-use the app's short recall burst; `adjustable_bed.leggett_hold_control` supplies
+use the app's short recall burst; `adjustable_bed.hold_control` supplies
 an explicit held duration for boxes in hold-required mode. Flat retains its
 bounded held-command behavior. Hardware validation of this change remains for
 users after a beta or release; maintainers do not need to acquire a bed.

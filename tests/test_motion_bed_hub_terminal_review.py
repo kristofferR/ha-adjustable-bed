@@ -9,11 +9,10 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.adjustable_bed.button import ControllerActionButton, async_setup_entry
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTION_BED,
-    CONF_MOTION_BED_NAME,
+    CONF_BLE_DEVICE_NAME,
     DOMAIN,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
-from custom_components.adjustable_bed.motion_bed_actions import ACTION_BY_KEY
 from tests.test_motion_bed_lifecycle import real_coordinator
 
 
@@ -24,15 +23,15 @@ async def test_public_home_to_hub_prunes_home_only_registry_control(hass):
     home = []
     await async_setup_entry(hass, coord.entry, home.extend)
     hass.config_entries.async_update_entry(
-        coord.entry, data={**coord.entry.data, CONF_MOTION_BED_NAME: "TL-Q"}
+        coord.entry, data={**coord.entry.data, CONF_BLE_DEVICE_NAME: "TL-Q"}
     )
     hub = await create_controller(coord, BED_TYPE_MOTION_BED, None, coord.client)
     hub_keys = {spec.key for spec in hub.controller_button_specs}
+    # The K1 preset screen's YOGA preset has no hub counterpart.
     home_entity = next(
         e
         for e in home
-        if isinstance(e, ControllerActionButton)
-        and ACTION_BY_KEY[e._spec.key.removeprefix("motion_bed_")].owner.startswith("Kuaijie")
+        if isinstance(e, ControllerActionButton) and e._spec.key == "motion_bed_yujia"
     )
     assert home_entity._spec.key not in hub_keys
     hub._state = replace(
@@ -68,12 +67,12 @@ async def test_unknown_hub_inventory_preserves_customized_module_and_foreign_con
     coord = await real_coordinator(hass, "TL-Q")
     ctrl = coord.controller
     ctrl._state = replace(ctrl._state, air_module_present=True)
-    spec = next(s for s in ctrl.controller_button_specs if "qinang_fragment" in s.key)
+    spec = next(s for s in ctrl.controller_button_specs if s.key == "motion_bed_air_massage_stop")
     ctrl._state = replace(ctrl._state, motor_module_present=True)
     shared_spec = next(
         s
         for s in ctrl.controller_button_specs
-        if s.key == "motion_bed_alarm_activity_audio_preview_1"
+        if s.key == "motion_bed_audio_preview_1"
     )
     ctrl._state = replace(ctrl._state, air_module_present=None, motor_module_present=None)
     registry = er.async_get(hass)
@@ -131,7 +130,7 @@ async def test_actual_paired_unknown_hub_keeps_both_customized_sides(hass):
     coord._controller = await create_controller(coord, BED_TYPE_MOTION_BED, None, coord.client)
     ctrl = coord.controller
     ctrl._state = replace(ctrl._state, air_module_present=True)
-    spec = next(s for s in ctrl.controller_button_specs if "qinang_fragment" in s.key)
+    spec = next(s for s in ctrl.controller_button_specs if s.key == "motion_bed_air_massage_stop")
     ctrl._state = replace(ctrl._state, air_module_present=None)
     pair = SingleAddressPairedCoordinator(hass, entry, coord)
     _async_ensure_paired_device_registry(hass, entry, pair)

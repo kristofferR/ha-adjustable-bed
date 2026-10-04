@@ -178,7 +178,7 @@ async def test_paired_options_reject_woosa_profile_change(
     result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: requested})
 
     assert result["type"] is FlowResultType.FORM
-    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "woosa_unpair_first"}
+    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "app_profile_unpair_first"}
     assert effective_child_data(entry.data, "left")[CONF_PROTOCOL_VARIANT] == initial
     assert effective_child_data(entry.data, "right")[CONF_PROTOCOL_VARIANT] == VARIANT_AUTO
 

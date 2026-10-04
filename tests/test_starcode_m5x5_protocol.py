@@ -517,19 +517,16 @@ def test_every_frame_prefix_safe_without_partial_domain_update(
     assert parse_notification(complete, profile=profile, dialect="star")
 
 
-@pytest.mark.parametrize("profile", ("cb25", "f23", "kneading", "elevate"))
+@pytest.mark.parametrize("profile", ("cb25", "f23", "kneading"))
 def test_wrong_header_and_unknown_frame_do_not_publish(profile: str) -> None:
     for raw in (b"", b"\xa5", b"\xa4\x0d" + bytes(30), b"\xa5\xff" + bytes(30)):
         assert parse_notification(raw, profile=profile, dialect="star") == {}
 
 
-def test_elevate_does_not_inherit_bed_feedback_or_unknown_alarm_slots() -> None:
-    for _, raw, _, _ in SUBCLASS_VECTORS:
-        assert parse_notification(bytes.fromhex(raw), profile="elevate", dialect="star") == {}
-    for _, raw, _, _, _ in ALARM_VECTORS:
-        assert parse_notification(bytes.fromhex(raw), profile="elevate", dialect="star") == {}
-    for _, raw, _ in EQ_VECTORS:
-        assert parse_notification(bytes.fromhex(raw), profile="elevate", dialect="star") == {}
+def test_elevate_is_not_an_app_bed_class() -> None:
+    """ELEVATE lifts use star_elevate, which assigns no semantic notification fields."""
+    with pytest.raises(ValueError, match="Unknown AdjustableM5X5 profile"):
+        parse_notification(bytes.fromhex("a50d") + bytes(16), profile="elevate", dialect="star")
 
 
 def test_main_alarm_legacy_retains_previous_second_slot_and_unrelated_state() -> None:
@@ -595,8 +592,9 @@ def test_changed_and_identical_frames_are_processed_without_debounce_drop() -> N
         (5, 0x00FF00, 5),
         (6, 0x0000FF, 6),
         (7, 0x800080, 7),
-        (8, 0x800080, 6),
-        (15, 0xFF0000, 1),
+        (8, 0x800080, 7),
+        (15, 0xFF0000, 2),
+        (9, 0xFFFFFF, 1),
     ],
 )
 def test_palette_wire_index_and_direct_color_nearest_index(

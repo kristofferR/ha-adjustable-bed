@@ -10,8 +10,8 @@ from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlo
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTION_BED,
     CONF_BED_TYPE,
+    CONF_BLE_DEVICE_NAME,
     CONF_IDLE_DISCONNECT_SECONDS,
-    CONF_MOTION_BED_NAME,
     DOMAIN,
 )
 from custom_components.adjustable_bed.motion_bed_protocol import SOURCE_COMMANDS
@@ -123,7 +123,7 @@ async def test_other_two_address_pair_cannot_enter_motion_before_rerender(hass):
     flow.hass, flow.handler = hass, entry.entry_id
     original = entry.data
     result = await flow._async_options_form({CONF_BED_TYPE: BED_TYPE_MOTION_BED}, step_id="settings")
-    assert result["errors"] == {"base": "motion_bed_unpair"}
+    assert result["errors"] == {CONF_BED_TYPE: "app_profile_unpair_first"}
     assert not flow._pending_changed_data
     assert entry.data == original
 
@@ -133,14 +133,14 @@ async def test_valid_motion_pair_common_options_preserve_independent_names(hass)
     data[CONF_BED_TYPE] = BED_TYPE_MOTION_BED
     for child, name in zip(data["pair_children"], ("QMS-IQ", "TL-B"), strict=True):
         child[CONF_BED_TYPE] = BED_TYPE_MOTION_BED
-        child[CONF_MOTION_BED_NAME] = name
+        child[CONF_BLE_DEVICE_NAME] = name
     entry = MockConfigEntry(domain=DOMAIN, data=data)
     entry.add_to_hass(hass)
     flow = AdjustableBedOptionsFlow(entry)
     flow.hass, flow.handler = hass, entry.entry_id
     result = await flow._async_options_form({CONF_IDLE_DISCONNECT_SECONDS: 60}, step_id="settings")
     assert result["type"] == "create_entry", result
-    assert [c[CONF_MOTION_BED_NAME] for c in entry.data["pair_children"]] == ["QMS-IQ", "TL-B"]
+    assert [c[CONF_BLE_DEVICE_NAME] for c in entry.data["pair_children"]] == ["QMS-IQ", "TL-B"]
     assert all(c[CONF_BED_TYPE] == BED_TYPE_MOTION_BED for c in entry.data["pair_children"])
 
 

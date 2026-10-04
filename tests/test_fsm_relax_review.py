@@ -18,6 +18,10 @@ from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed import button, const, services
+from custom_components.adjustable_bed.app_state_store import (
+    app_state_store,
+    async_remove_app_states,
+)
 from custom_components.adjustable_bed.beds.fsm_relax import (
     FsmRelaxController,
     build_packet,
@@ -25,7 +29,6 @@ from custom_components.adjustable_bed.beds.fsm_relax import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator, ChildEntryView
-from custom_components.adjustable_bed.fsm_relax_state import FsmRelaxState
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.pairing import build_pair_entry_data
 from tests.test_fsm_relax import make_controller
@@ -166,7 +169,7 @@ async def test_offline_paired_first_capability_reloads_parent_and_action_entitie
             await children["right"].async_shutdown()
 
 
-async def test_factory_reconnect_does_not_write_unchanged_normalized_names(
+async def test_memory_names_come_from_config_without_app_state_writes(
     hass: HomeAssistant,
 ) -> None:
     address = "AA:BB:CC:DD:EE:FF"
@@ -176,24 +179,19 @@ async def test_factory_reconnect_does_not_write_unchanged_normalized_names(
         const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX,
         const.CONF_FSM_RELAX_MEMORY_NAMES: names,
     })
-    state = FsmRelaxState(hass, entry.entry_id, address)
-    await state.async_load()
-    await state.async_set_names(names)
     coordinator = AdjustableBedCoordinator(hass, entry)
-    with patch(
-        "custom_components.adjustable_bed.fsm_relax_state.Store.async_save",
-        AsyncMock(side_effect=OSError("redundant write")),
-    ) as save:
+    store = coordinator._app_state_store._store
+    with (
+        patch.object(store, "async_save", AsyncMock(side_effect=OSError("names are config"))) as save,
+        patch.object(store, "async_delay_save") as delay,
+    ):
         for _ in range(2):
             controller = await create_controller(coordinator, const.BED_TYPE_FSM_RELAX, None, None)
             assert isinstance(controller, FsmRelaxController)
             assert controller.memory_slot_names == ("Sleep", *(f"M{i}" for i in range(2, 9)))
+            assert "names" not in controller.persisted_app_state
         save.assert_not_awaited()
-    with patch.object(state._store, "async_save", AsyncMock()) as save:
-        await state.async_set_names(["New"] + [""] * 7)
-        await state.async_set_names([" New "] + [""] * 7)
-        save.assert_awaited_once()
-        assert state.names[0] == "New"
+        delay.assert_not_called()
 
 
 async def test_actual_reconnect_and_repeated_serial_skip_unchanged_storage(
@@ -206,20 +204,22 @@ async def test_actual_reconnect_and_repeated_serial_skip_unchanged_storage(
     address = "AA:BB:CC:DD:EE:FF"
     entry = MockConfigEntry(domain=const.DOMAIN, data={
         CONF_ADDRESS: address, const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX,
+        "capabilities": {"fsm_relax": "0208000008"},
     })
     entry.add_to_hass(hass)
-    state = FsmRelaxState(hass, entry.entry_id, address)
-    await state.async_load()
-    await state.async_save_capabilities(bytes.fromhex("0208000008"))
-    await state.async_save_serial(-1)
     coordinator = AdjustableBedCoordinator(hass, entry)
+    await coordinator._app_state_store.async_write(
+        f"{const.BED_TYPE_FSM_RELAX}:auto", {"slots": {}, "serial": -1}
+    )
     coordinator._max_retries = 1
     coordinator._post_connect_delay = 0
     _reply_to_queries(mock_bleak_client, mock_establish_connection)
-    with patch(
-        "custom_components.adjustable_bed.fsm_relax_state.Store.async_save",
-        AsyncMock(side_effect=OSError("redundant snapshot write")),
-    ) as save:
+    store = coordinator._app_state_store._store
+    with (
+        patch.object(store, "async_save", AsyncMock(side_effect=OSError("redundant write"))) as save,
+        patch.object(store, "async_delay_save") as delay,
+        patch.object(coordinator, "_async_persist_config") as persist,
+    ):
         try:
             for _ in range(2):
                 assert await coordinator.async_connect()
@@ -229,18 +229,19 @@ async def test_actual_reconnect_and_repeated_serial_skip_unchanged_storage(
                 notify = mock_bleak_client.start_notify.call_args.args[1]
                 for _ in range(2):
                     notify(None, bytearray(build_packet(bytes.fromhex("06ffffffff"), 2)))
-                await asyncio.gather(*tuple(controller._metadata_tasks))
-                assert controller.local.serial == -1
+                assert controller.session.serial == -1
                 assert await coordinator.async_disconnect()
             assert mock_establish_connection.await_count == 2
             save.assert_not_awaited()
+            delay.assert_not_called()
+            assert not [call for call in persist.call_args_list if "capabilities" in call.args[0]
+                        and call.args[0]["capabilities"] != entry.data["capabilities"]]
         finally:
             await coordinator.async_shutdown()
 
 
 @pytest.mark.parametrize("action,fields", [
-    ("fsm_relax_hold_control", {"control": "command_12", "duration": 0.1}),
-    ("fsm_relax_recall_memory", {"preset": 1, "duration": 0.1}),
+    ("hold_control", {"control": "command_12", "duration": 0.1}),
     ("fsm_relax_calibrate", {"confirmed": True}),
 ])
 async def test_visual_action_side_options_match_registered_schema(
@@ -287,7 +288,7 @@ async def _fire_default_handoff(hass: HomeAssistant, coordinator: AdjustableBedC
     assert coordinator.client is None and coordinator.controller is None
 
 
-@pytest.mark.parametrize("service", ("goto_preset", "fsm_relax_recall_memory"))
+@pytest.mark.parametrize("service", ("goto_preset", "goto_preset"))
 async def test_registered_save_disconnect_cached_preflight_reconnects_new_memory(
     hass: HomeAssistant,
     mock_coordinator_connected: None,
@@ -300,17 +301,15 @@ async def test_registered_save_disconnect_cached_preflight_reconnects_new_memory
     entry = MockConfigEntry(domain=const.DOMAIN, data={
         CONF_ADDRESS: address, const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX,
         const.CONF_MOTOR_PULSE_COUNT: 1, const.CONF_DISCONNECT_AFTER_COMMAND: True,
+        "capabilities": {"fsm_relax": "0208000008"},
     })
     entry.add_to_hass(hass)
-    persisted = FsmRelaxState(hass, entry.entry_id, address)
-    await persisted.async_load()
-    await persisted.async_save_capabilities(bytes.fromhex("0208000008"))
     coordinator = AdjustableBedCoordinator(hass, entry)
     coordinator._post_connect_delay = 0
     await coordinator.async_prime_offline_controller()
     offline = coordinator.capability_controller
     assert isinstance(offline, FsmRelaxController)
-    assert not offline.local.slots
+    assert not offline.session.slots
     _reply_to_saved_positions(mock_bleak_client, mock_establish_connection, -(2**31))
     await services.async_register_services(hass)
     try:
@@ -326,13 +325,13 @@ async def test_registered_save_disconnect_cached_preflight_reconnects_new_memory
             assert coordinator.capability_controller is offline
             prior_writes = mock_bleak_client.write_gatt_char.call_count
             data: dict[str, object] = {"device_id": "target", "preset": 8}
-            if service == "fsm_relax_recall_memory":
+            if service == "goto_preset":
                 data["duration"] = 0.12
             await hass.services.async_call(const.DOMAIN, service, data, blocking=True)
             current = coordinator.controller
             assert isinstance(current, FsmRelaxController)
-            assert current is not live and current.local is offline.local
-            assert offline.local.slots[8] == dict.fromkeys(range(4), -(2**31))
+            assert current is not live and current.session is offline.session
+            assert offline.session.slots[8] == dict.fromkeys(range(4), -(2**31))
             written = [decode_packet(call.args[1]) for call in
                        mock_bleak_client.write_gatt_char.call_args_list[prior_writes:]]
             assert [body for body in written if body is not None and body[0] in (0x11, 0x21, 0x31, 0x41)] == [
@@ -344,13 +343,14 @@ async def test_registered_save_disconnect_cached_preflight_reconnects_new_memory
         await coordinator.async_shutdown()
 
 
-@pytest.mark.parametrize("service", ("goto_preset", "fsm_relax_recall_memory"))
+@pytest.mark.parametrize("service", ("goto_preset", "goto_preset"))
 @pytest.mark.parametrize("side", (const.SIDE_LEFT, const.SIDE_RIGHT))
 async def test_paired_save_replacement_keeps_asymmetric_target_memories(
     hass: HomeAssistant, service: str, side: str,
 ) -> None:
     left_data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:01", const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX,
-                 const.CONF_DISCONNECT_AFTER_COMMAND: True}
+                 const.CONF_DISCONNECT_AFTER_COMMAND: True,
+                 "capabilities": {"fsm_relax": "0208000008"}}
     right_data = {**left_data, CONF_ADDRESS: "AA:BB:CC:DD:EE:02"}
     entry = MockConfigEntry(domain=const.DOMAIN, data=build_pair_entry_data(left_data, right_data, name="Pair"))
     entry.add_to_hass(hass)
@@ -365,9 +365,6 @@ async def test_paired_save_replacement_keeps_asymmetric_target_memories(
     raw_by_side = {const.SIDE_LEFT: -1, const.SIDE_RIGHT: 2**31 - 1}
     try:
         for key, target in children.items():
-            state = FsmRelaxState(hass, entry.entry_id, target.address)
-            await state.async_load()
-            await state.async_save_capabilities(bytes.fromhex("0208000008"))
             await target.async_prime_offline_controller()
             cached = target.capability_controller
             assert isinstance(cached, FsmRelaxController)
@@ -388,9 +385,9 @@ async def test_paired_save_replacement_keeps_asymmetric_target_memories(
                     "device_id": "parent", "preset": 8, "side": key,
                 }, blocking=True)
             await _fire_default_handoff(hass, target)
-        assert offline[const.SIDE_LEFT].local is not offline[const.SIDE_RIGHT].local
+        assert offline[const.SIDE_LEFT].session is not offline[const.SIDE_RIGHT].session
         for key in children:
-            assert offline[key].local.slots[8] == dict.fromkeys(range(4), raw_by_side[key])
+            assert offline[key].session.slots[8] == dict.fromkeys(range(4), raw_by_side[key])
             clients[key].write_gatt_char.reset_mock()
 
         async def reconnect(**_kwargs: object) -> bool:
@@ -406,7 +403,7 @@ async def test_paired_save_replacement_keeps_asymmetric_target_memories(
             return True
 
         data: dict[str, object] = {"device_id": "parent", "preset": 8, "side": side}
-        if service == "fsm_relax_recall_memory":
+        if service == "goto_preset":
             data["duration"] = 0.12
         with (
             patch.object(services, "_resolve_sided_targets", return_value=([(pair, side)], [])),
@@ -424,49 +421,47 @@ async def test_paired_save_replacement_keeps_asymmetric_target_memories(
             await target.async_shutdown()
 
 
-async def test_factory_shared_models_isolate_owners_addresses_profiles_and_removal(
+async def test_factory_shared_sessions_isolate_addresses_and_end_with_removal(
     hass: HomeAssistant,
 ) -> None:
-    from custom_components.adjustable_bed.fsm_relax_state import get_fsm_relax_state
-
     address = "AA:BB:CC:DD:EE:FF"
     entry = MockConfigEntry(domain=const.DOMAIN, data={
         CONF_ADDRESS: address, const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX,
+        const.CONF_FSM_RELAX_MEMORY_NAMES: ["Sleep"] + [""] * 7,
+        "capabilities": {"fsm_relax": "0202000008"},
     })
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)
     old = await create_controller(coordinator, const.BED_TYPE_FSM_RELAX, None, None)
     assert isinstance(old, FsmRelaxController)
-    await old.local.async_save_slot(8, {0: -1})
-    await old.local.async_set_names(["Sleep"] + [""] * 7)
-    await old.local.async_save_capabilities(bytes.fromhex("0202000008"))
-    await old.local.async_save_serial(-1)
+    coordinator._offline_controller = old
+    await coordinator._async_restore_app_state(old)
+    await old._save_slot(8, {0: -1})
+    old.session.serial = -1
     assert old.memory_slot_count == 8 and old.key_count == 2
     assert old.controller_entity_discovery_complete
     assert old.protocol_diagnostics["fsm_relax_serial"] == -1
-    assert get_fsm_relax_state(hass, entry.entry_id, address.lower()) is old.local
-    assert get_fsm_relax_state(hass, "other-owner", address) is not old.local
-    assert get_fsm_relax_state(hass, entry.entry_id, "AA:BB:CC:DD:EE:01") is not old.local
-    other_hass = MagicMock(spec=HomeAssistant, data={})
-    other_hass.config = MagicMock(config_dir=hass.config.config_dir)
-    assert get_fsm_relax_state(other_hass, entry.entry_id, address) is not old.local
+    other_entry = MockConfigEntry(domain=const.DOMAIN, data={
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:01", const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX,
+    })
+    other = await create_controller(
+        AdjustableBedCoordinator(hass, other_entry), const.BED_TYPE_FSM_RELAX, None, None
+    )
+    assert isinstance(other, FsmRelaxController) and other.session is not old.session
     generic = await create_controller(coordinator, const.BED_TYPE_LIMOSS, None, None)
     assert not isinstance(generic, FsmRelaxController)
     replacement_coordinator = AdjustableBedCoordinator(hass, entry)
     replacement = await create_controller(replacement_coordinator, const.BED_TYPE_FSM_RELAX, None, None)
-    assert isinstance(replacement, FsmRelaxController) and replacement.local is old.local
+    assert isinstance(replacement, FsmRelaxController) and replacement.session is old.session
     assert replacement.profile is not old.profile
-    await replacement.local.async_save_capabilities(bytes.fromhex("0206040004"))
-    await replacement.local.async_save_serial(2**31 - 1)
+    replacement_coordinator.remember_fsm_relax_capabilities(bytes.fromhex("0206040004"))
+    replacement.session.serial = 2**31 - 1
     assert old.memory_slot_count == 4 and old.key_count == 6
     assert old.memory_slot_names[0] == "Sleep"
     assert old.protocol_diagnostics["fsm_relax_serial"] == 2**31 - 1
     assert old.protocol_diagnostics["fsm_relax_reported_memory_count"] == 4
-    await FsmRelaxState(hass, "removing-owner", address).async_remove()
-    assert old.local.slots == {} and replacement.local.slots == {}
-    assert old.local.capability_body is None and old.local.serial is None
-    assert old.local.names == tuple(f"M{i}" for i in range(1, 9))
-    fresh = get_fsm_relax_state(hass, entry.entry_id, address)
-    assert fresh is not old.local
-    await fresh.async_load()
-    assert fresh.slots == {} and fresh.capability_body is None
+    await async_remove_app_states(hass, [address])
+    assert await app_state_store(hass, address).async_slot(f"{const.BED_TYPE_FSM_RELAX}:auto") == {}
+    fresh = await create_controller(coordinator, const.BED_TYPE_FSM_RELAX, None, None)
+    assert isinstance(fresh, FsmRelaxController)
+    assert fresh.session is not old.session and fresh.session.slots == {}

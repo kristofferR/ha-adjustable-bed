@@ -294,7 +294,7 @@ def _async_remove_stale_cover_entities(
             _LOGGER.info("Removed stale cover entity %s for %s", entity_id, coordinator.name)
 
     # Layout-specific app covers must also retire after a protocol change.
-    namespace = "motion_bed_weitiao_"
+    namespace = "motion_bed_"
     prefix, suffix = coordinator.entity_unique_id(namespace).split(namespace, 1)
     prefix += namespace
     active_ids = {coordinator.entity_unique_id(key) for key in active_keys}

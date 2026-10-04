@@ -12,7 +12,7 @@ from homeassistant.helpers import device_registry as dr
 from custom_components.adjustable_bed.const import CONF_STARCODE_LIFT_ENTRIES, DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
-from tests.test_starcode_accessory_group import group, target
+from tests.test_starcode_accessory_group import action_frame, group, target
 
 
 @pytest.mark.parametrize("replacement", ["up", "down", "flat"])
@@ -78,7 +78,7 @@ async def test_registered_replacement_waits_for_prior_cleanup(
         } == {member.address for member in members}
         action = {"up": "union_up", "down": "union_down", "flat": "flat"}[replacement]
         for lift in members[1:]:
-            assert (lift.address, lift.controller.packet(action)) in after[4:]
+            assert (lift.address, action_frame(lift.controller, action)) in after[4:]
             if replacement != "flat":
                 assert after[-4:].count((lift.address, bytes.fromhex("5a010310300fa5"))) == 1
         assert delays == (2 if replacement == "flat" else 1)

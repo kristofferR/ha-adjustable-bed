@@ -8,7 +8,7 @@ import pytest
 from bleak.exc import BleakError
 
 from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH
-from custom_components.adjustable_bed.svane_state import CONF_SVANE_PREFERENCES
+from tests.app_state_helpers import stored_app_state
 from tests.test_svane_light_timed_host import runtime as svane_runtime
 
 runtime = svane_runtime
@@ -20,7 +20,7 @@ async def test_public_lamp_hold_persists_final_intent_once(hass, runtime, monkey
     coordinator, controller = runtime
     controller.session.light_on = True
     controller.session.light_intent_known = True  # A known warm lamp session.
-    coordinator.remember_svane_preferences(controller.session.preferences())
+    await coordinator._async_restore_app_state(controller)
     client = controller.client
     clock = [0.0]
     local_asyncio = SimpleNamespace(**vars(asyncio))
@@ -49,12 +49,11 @@ async def test_public_lamp_hold_persists_final_intent_once(hass, runtime, monkey
     with (
         patch("custom_components.adjustable_bed.services._resolve_sided_targets",
               return_value=([(coordinator, SIDE_BOTH)], [])),
-        patch.object(coordinator, "remember_svane_preferences",
-                     wraps=coordinator.remember_svane_preferences) as remember,
+        patch.object(coordinator, "save_app_state", wraps=coordinator.save_app_state) as save,
         patch.object(hass.config_entries, "async_update_entry",
                      wraps=hass.config_entries.async_update_entry) as update,
     ):
-        task = asyncio.create_task(hass.services.async_call(DOMAIN, "svane_hold_control", {
+        task = asyncio.create_task(hass.services.async_call(DOMAIN, "hold_control", {
             "device_id": "bed", "control": "light_adjust", "duration": .5,
         }, blocking=True))
         try:
@@ -68,11 +67,10 @@ async def test_public_lamp_hold_persists_final_intent_once(hass, runtime, monkey
                     await task
             else:
                 await task
-            remember.assert_called_once_with(controller.session.preferences())
-            preference_updates = [call for call in update.call_args_list
-                                  if CONF_SVANE_PREFERENCES in call.kwargs.get("data", {})]
-            assert len(preference_updates) == 1
-            assert coordinator.entry.data[CONF_SVANE_PREFERENCES] == controller.session.preferences()
+            # The hold saves its final intent once, to app state rather than the entry.
+            assert [call.args for call in save.call_args_list].count((controller,)) == 1
+            update.assert_not_called()
+            assert await stored_app_state(coordinator) == controller.session.preferences()
             assert [s[2] for s in steps] == (
                 ["13025f010064", "130264010064", "13025f010064"]
                 if termination == "success" else ["13025f010064", "130264010064"]
@@ -104,12 +102,12 @@ async def test_unchanged_public_lamp_hold_does_not_persist(hass, runtime, reason
     with (
         patch("custom_components.adjustable_bed.services._resolve_sided_targets",
               return_value=([(coordinator, SIDE_BOTH)], [])),
-        patch.object(coordinator, "remember_svane_preferences") as remember,
+        patch.object(coordinator, "save_app_state") as save,
     ):
-        await hass.services.async_call(DOMAIN, "svane_hold_control", {
+        await hass.services.async_call(DOMAIN, "hold_control", {
             "device_id": "bed", "control": "light_adjust",
             "duration": .2 if reason == "short" else .5,
         }, blocking=True)
-    remember.assert_not_called()
+    assert (controller,) not in [call.args for call in save.call_args_list]
     controller.client.write_gatt_char.assert_not_awaited()
     await coordinator._command_scheduler.async_shutdown()

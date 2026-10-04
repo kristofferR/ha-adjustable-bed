@@ -13,6 +13,7 @@ from custom_components.adjustable_bed.beds.limoss import LimossController
 from custom_components.adjustable_bed.beds.limoss_remote_protocol import format_command
 from custom_components.adjustable_bed.button import AdjustableBedButton, _button_entities_for
 from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
+from custom_components.adjustable_bed.limoss_remote_state import get_limoss_remote_session
 from custom_components.adjustable_bed.pairing import get_child
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote_review_lifecycle import (
@@ -79,7 +80,7 @@ async def test_public_save_ignores_registered_pre_query_pose(hass, blocked, canc
         # This valid owner frame arrives before the query can reach ATT.
         callback(char, bytearray(format_command(bytes.fromhex("10ffffffff"), 0)))
         assert controller._request_reply is None
-        assert coordinator.limoss_remote_memory_store.slots == {}
+        assert get_limoss_remote_session(coordinator.hass, coordinator.address).memories.slots == {}
         client.write_gatt_char.assert_not_awaited()
         with pytest.raises(RuntimeError, match="Another app"):
             await controller._request(0x20, bytes.fromhex("2000000000"))
@@ -92,7 +93,7 @@ async def test_public_save_ignores_registered_pre_query_pose(hass, blocked, canc
             if blocked == "lane":
                 controller._ble_lock.release()
             await asyncio.wait_for(operation, 1)
-            assert coordinator.limoss_remote_memory_store.slots[8].positions == ((0, 7), (1, 7))
+            assert get_limoss_remote_session(coordinator.hass, coordinator.address).memories.slots[8].positions == ((0, 7), (1, 7))
             assert received == [0x10, 0x20]
     finally:
         release.set()
@@ -103,7 +104,7 @@ async def test_public_save_ignores_registered_pre_query_pose(hass, blocked, canc
         await asyncio.gather(operation, return_exceptions=True)
     assert controller._request_reply is None and not controller._request_active
     if cancel:
-        assert coordinator.limoss_remote_memory_store.slots == {}
+        assert get_limoss_remote_session(coordinator.hass, coordinator.address).memories.slots == {}
 
 
 @pytest.mark.parametrize("paired", [False, True])
@@ -113,8 +114,8 @@ async def test_public_enable_only_features_offline_never_connect_or_write(hass, 
         coordinators = list(children.values())
         data = deepcopy(dict(target.entry.data))
         for descriptor in data[const.CONF_PAIR_CHILDREN]:
-            descriptor[const.CONF_LIMOSS_REMOTE_LIGHT] = False
-            descriptor[const.CONF_LIMOSS_REMOTE_MASSAGE] = False
+            descriptor[const.CONF_HAS_LIGHT] = False
+            descriptor[const.CONF_HAS_MASSAGE] = False
         hass.config_entries.async_update_entry(target.entry, data=data)
         for controller in controllers.values():
             controller.underbed_light = controller.massage = False
@@ -132,8 +133,8 @@ async def test_public_enable_only_features_offline_never_connect_or_write(hass, 
             child.async_ensure_connected.assert_not_awaited()
             client.write_gatt_char.assert_not_awaited()
             assert child.capability_controller.underbed_light and child.capability_controller.massage
-            assert child.entry.data[const.CONF_LIMOSS_REMOTE_LIGHT] is True
-            assert child.entry.data[const.CONF_LIMOSS_REMOTE_MASSAGE] is True
+            assert child.entry.data[const.CONF_HAS_LIGHT] is True
+            assert child.entry.data[const.CONF_HAS_MASSAGE] is True
         await hass.async_block_till_done()
 
 
@@ -150,8 +151,8 @@ async def test_mixed_pair_features_connect_only_receiver_requiring_off(hass):
         await public_call(hass, pair, "limoss_remote_features", {"underbed_light": True, "massage": False})
         left.async_ensure_connected.assert_not_awaited()
         assert right_packets == [bytes.fromhex("6600000000")] * 10
-        assert left.entry.data[const.CONF_LIMOSS_REMOTE_LIGHT] is True
-        assert right.entry.data[const.CONF_LIMOSS_REMOTE_MASSAGE] is False
+        assert left.entry.data[const.CONF_HAS_LIGHT] is True
+        assert right.entry.data[const.CONF_HAS_MASSAGE] is False
         await hass.async_block_till_done()
 
 
@@ -169,7 +170,7 @@ async def test_paired_options_reject_profile_conversion_before_entry_change(hass
     flow.handler = entry.entry_id
     with patch.object(hass.config_entries, "async_reload", new=AsyncMock()) as reload:
         result = await flow.async_step_settings({const.CONF_BED_TYPE: const.BED_TYPE_LIMOSS_REMOTE})
-    assert result.get("errors") == {"base": "limoss_remote_pair_settings"}
+    assert result.get("errors") == {const.CONF_BED_TYPE: "app_profile_unpair_first"}
     assert entry.data == before
     reload.assert_not_awaited()
 
@@ -177,7 +178,7 @@ async def test_paired_options_reject_profile_conversion_before_entry_change(hass
 async def test_existing_pair_options_keep_bed_chair_profiles_and_shared_setting(hass):
     pair, children, _ = await pair_runtime(hass)
     descriptors = deepcopy(dict(pair.entry.data))
-    descriptors[const.CONF_PAIR_CHILDREN][1][const.CONF_LIMOSS_REMOTE_PRODUCT] = "chair"
+    descriptors[const.CONF_PAIR_CHILDREN][1][const.CONF_PRODUCT_TYPE] = "chair"
     hass.config_entries.async_update_entry(pair.entry, data=descriptors)
     before = [deepcopy(get_child(pair.entry.data, side)) for side in (const.SIDE_LEFT, const.SIDE_RIGHT)]
     flow = AdjustableBedOptionsFlow(pair.entry)
@@ -187,10 +188,10 @@ async def test_existing_pair_options_keep_bed_chair_profiles_and_shared_setting(
     assert result["type"] == "create_entry"
     for side, previous in zip((const.SIDE_LEFT, const.SIDE_RIGHT), before, strict=True):
         updated = get_child(pair.entry.data, side)
-        assert updated[const.CONF_LIMOSS_REMOTE_PRODUCT] == previous[const.CONF_LIMOSS_REMOTE_PRODUCT]
+        assert updated[const.CONF_PRODUCT_TYPE] == previous[const.CONF_PRODUCT_TYPE]
         assert updated.get(const.CONF_IDLE_DISCONNECT_SECONDS) == 55
-    result = await flow.async_step_settings({const.CONF_LIMOSS_REMOTE_PRODUCT: "chair"})
-    assert result.get("errors") == {"base": "limoss_remote_pair_settings"}
+    result = await flow.async_step_settings({const.CONF_PRODUCT_TYPE: "chair"})
+    assert result.get("errors") == {"base": "app_profile_unpair_first"}
 
 
 @pytest.mark.parametrize("cancel", [False, True])
@@ -248,7 +249,7 @@ async def test_offline_enable_waits_sibling_lane_before_any_local_edit(hass, can
 
 
 async def test_offline_disable_still_requires_receiver_and_keeps_selection_on_failure(hass):
-    coordinator = actual_coordinator(hass, **{const.CONF_LIMOSS_REMOTE_LIGHT: True, const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS}})
+    coordinator = actual_coordinator(hass, **{const.CONF_HAS_LIGHT: True, const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS}})
     controller = await live_controller(coordinator)
     client = coordinator.client
     coordinator._controller = coordinator._client = None

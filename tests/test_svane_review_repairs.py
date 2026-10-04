@@ -82,7 +82,7 @@ async def test_registered_save_does_not_overwrite_slot_with_stale_read(hass, pro
         )
     assert controller.session.preferences() == before
     assert controller.session.multi_slots == multi_before
-    controller._coordinator.remember_svane_preferences.assert_not_called()
+    controller._coordinator.save_app_state.assert_not_called()
     controller.client.write_gatt_char.assert_not_awaited()
 
 
@@ -105,7 +105,7 @@ async def test_shared_pair_profile_edit_preserves_each_physical_descriptor(hass,
     result = await flow._async_options_form({CONF_PROTOCOL_VARIANT: requested}, step_id="settings")
     if result.get("type") == "form" and not result.get("errors"):
         result = await flow._async_options_form({CONF_PROTOCOL_VARIANT: requested}, step_id="settings")
-    assert result.get("errors", {}).get(CONF_PROTOCOL_VARIANT) == "svane_unpair_first"
+    assert result.get("errors", {}).get(CONF_PROTOCOL_VARIANT) == "app_profile_unpair_first"
     assert entry.data == before
 
 
@@ -120,7 +120,7 @@ async def test_registered_minimum_hold_rejects_asymmetric_or_empty_delivery(hass
               return_value=([(coordinator, SIDE_BOTH)], [])),
         pytest.raises(ServiceValidationError, match="100|0.1"),
     ):
-        await hass.services.async_call(DOMAIN, "svane_hold_control",
+        await hass.services.async_call(DOMAIN, "hold_control",
             {"device_id": "bed", "control": control, "duration": 0.1}, blocking=True)
     controller.client.write_gatt_char.assert_not_awaited()
     coordinator.async_execute_controller_command.assert_not_awaited()
@@ -242,7 +242,7 @@ async def test_cancelled_save_preserves_old_slots_and_completed_diagnostics(hass
     assert controller.session.multi_slots == multi_before
     assert controller.session.head == bytes.fromhex("8138")
     assert controller.session.position == bytes.fromhex("81388113")
-    controller._coordinator.remember_svane_preferences.assert_not_called()
+    controller._coordinator.save_app_state.assert_not_called()
     controller.client.write_gatt_char.assert_not_awaited()
 
 
@@ -289,7 +289,7 @@ async def test_first_feet_frame_after_source_delay_for_accepted_hold(hass, monke
     controller.client.write_gatt_char.side_effect = write
     with patch("custom_components.adjustable_bed.services._resolve_sided_targets",
                return_value=([(coordinator, SIDE_BOTH)], [])):
-        await hass.services.async_call(DOMAIN, "svane_hold_control",
+        await hass.services.async_call(DOMAIN, "hold_control",
             {"device_id": "bed", "control": control, "duration": 0.101}, blocking=True)
     feet_roles = next(s.characteristics for s in controller.client.services if s.uuid == FEET)
     movement = next(time for time, role, payload in observed

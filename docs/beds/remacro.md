@@ -11,12 +11,12 @@ bed has confirmed these controls yet.
 
 | App | Package | Protocol variant |
 |-----|---------|------------------|
-| Slumberland | `com.cheers.slumber` 1.0 (2) | `slumberland` (also `auto`) |
+| Slumberland | `com.cheers.slumber` 1.0 (2) | `auto` |
 | The Brick | `com.cheers.brick` 1.0 (3) | `the_brick` |
 | Jerome's | `com.cheers.jewmes` 1.202112141512 (20) | `jeromes` |
 
 Nothing in the advertisement identifies the app, so choose the protocol variant
-that matches the app you use. `auto` keeps the Slumberland behavior. The apps differ
+that matches the app you use. `auto` is the Slumberland app, as in v4.0.2. The apps differ
 in their frame counters, in one OneActivity timing, in massage wave cycling, in the
 models they list and in whether the LED light setting is shown.
 
@@ -28,27 +28,36 @@ manufacturer-specific-data company ID** in the advertisement. Names, payload byt
 and signal strength are never used. The selected model is remembered in the entry
 (`remacro_model`, and per side for combined beds) as a fallback when no advertisement
 is in Home Assistant's history; a live advertisement always wins. A combined bed's side
-with a stored model gets its entities before it first connects.
+gets its entities before it first connects.
 
-The model is checked before any connection attempt:
+A bed whose model the selected app does not recognize still loads, as every Remacro
+bed did up to v4.0.2, with the **fallback** controls described below:
 
-- No model seen yet: setup retries with "model is unknown" until the bed advertises.
-- A company ID no app lists, or one the selected app does not list (for example 54 or
-  55 with Jerome's): setup fails with that reason and does not retry.
-- On a combined bed, such a side is not connected, gets a Repairs issue and loses its
-  controls; the other side loads and keeps working. If every side is refused, setup
-  fails without retrying; a side that has merely not been seen yet keeps it retrying.
-  When the pair loads without an unseen side, it reloads by itself once that side
-  advertises, adding its controls.
-- An observed company ID is remembered even when no app lists it, so the bed stays
-  refused after a restart while it is out of range.
-- Setup aborts for a company ID no app lists. When the chosen app does not list the
-  model, the setup form shows that as an error on the protocol variant field.
-- The options form refuses an app that does not list the stored model. Saving a fix in
-  the options reloads an entry that failed or is retrying, so it applies at once.
+- No model seen yet: the bed loads on the fallback controls without a Repairs issue,
+  and reloads with its model's controls once it advertises a listed company ID. This is
+  the usual case right after upgrading, before Home Assistant has seen an advertisement.
+- A company ID no app lists: fallback controls and a Repairs warning. It too reloads if
+  the bed ever advertises a listed company ID.
+- A company ID the selected app does not list but another one does (for example 54 or 55
+  with Jerome's): fallback controls and a Repairs warning that names the apps listing
+  it. Its fix switches the bed to one of them and reloads it.
+- On a combined bed each side is handled on its own: either side can use the fallback
+  while the other keeps its model's controls.
+- An observed company ID is remembered even when no app lists it, so the bed keeps its
+  warning after a restart while it is out of range.
+- When the chosen app does not list the model, the setup form shows that as an error on
+  the protocol variant field. The options form refuses switching to such an app, but
+  saves other changes while the app stays the same.
 - Each side of a combined bed keeps its own app, so the combined options refuse any app
-  change; unpair and change each side. Removing an entry clears its Repairs issues
-  unless another entry still owns that bed.
+  change; use the side's Repairs fix, or unpair and change each side. Removing an entry
+  clears its Repairs issues unless another entry still owns that bed.
+
+The fallback keeps only the v4.0.2 controls whose codes every listed screen agrees on:
+Head, Feet and Lumbar (each released with its own STOP), Flat (`0x0111`), TV (`0x0302`),
+Zero-G (`0x0303`), the light switch and Stop (`0x0001`). Some may do nothing on a bed
+without that motor or light. v4.0.2's tilt cover, color light and massage buttons sent
+codes no app uses, and its Flat, TV and Zero-G sent the wrong presets, so those are not
+kept.
 
 | Company ID | App label | Screen | Controls |
 |-----------|-----------|--------|----------|
@@ -158,7 +167,7 @@ The Stop button sends `0x0001` and clears the active preset. NineActivity define
 global STOP, so it has no Stop button; stopping a cover ends the running movement
 with its own release STOP. A combined bed gets its combined Stop only when a side has a
 global STOP; that Stop only cancels the running (or queued) movement on a NineActivity
-side or a side whose model is refused or not seen yet, and never connects it.
+side, and never connects it.
 
 The All motors cover moves every motor, so stopping or reversing any single axis
 interrupts it immediately.

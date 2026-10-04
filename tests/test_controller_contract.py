@@ -91,8 +91,6 @@ class _FactoryCoordinator(SimpleNamespace):
     """Minimal coordinator stub used for controller factory tests."""
 
     def __init__(self) -> None:
-        from custom_components.adjustable_bed.limoss_remote_state import LimossRemoteMemoryStore
-
         super().__init__(
             capability_controller=None,
             starcode_app_retained_state=None,
@@ -101,13 +99,11 @@ class _FactoryCoordinator(SimpleNamespace):
                 async_add_import_executor_job=_RecordingImportExecutor(),
                 async_add_executor_job=_RecordingImportExecutor(),
             ),
-            limoss_remote_memory_store=LimossRemoteMemoryStore(),
             client=None,
             controller_state={},
             entry=SimpleNamespace(
                 data={
                     const.CONF_FURNIMOVE_REMOTE: "00000",
-                    const.CONF_MOTION_BED_NAME: "QMS-IQ",
                     const.CONF_LOGICDATA_APP_PROFILE: "phone",
                     const.CONF_LOGICDATA_APP_FAMILY: "p1",
                     const.CONF_LOGICDATA_APP_LAYOUT: "standard_2",
@@ -119,8 +115,8 @@ class _FactoryCoordinator(SimpleNamespace):
                     const.CONF_MALOUF_APP_MODEL: "L600",
                     const.CONF_MALOUF_APP_TRANSPORT: "okin_new",
                     const.CONF_STARCODE_M5X5_PROFILE: "cb25",
-                    const.CONF_STARCODE_DEVICE_NAME: "STAR252201123456",
-                    const.CONF_LIMOSS_REMOTE_PRODUCT: "bed",
+                    const.CONF_BLE_DEVICE_NAME: "STAR252201123456",
+                    const.CONF_PRODUCT_TYPE: "bed",
                     const.CONF_VIBRADORM_APP_PROFILE: "caresse",
                     const.CONF_VIBRADORM_CONTROL_TYPE: "2",
                     const.CONF_VMATBASIC_PROFILE: "basic",
@@ -167,6 +163,8 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return SBI_VARIANT_BOTH
     if bed_type == BED_TYPE_OCTO:
         return OCTO_VARIANT_STANDARD
+    if bed_type == const.BED_TYPE_ZSERIES:
+        return const.ZSERIES_VARIANT_Z230
     return None
 
 
@@ -205,11 +203,14 @@ async def _create_controller_for_bed_type(bed_type: str) -> BedController:
             }
         )
 
+    if bed_type == const.BED_TYPE_MOTION_BED:
+        # The app's identity is the exact advertised name.
+        coordinator.entry.data = {**coordinator.entry.data, const.CONF_BLE_DEVICE_NAME: "QMS-IQ"}
+
     if bed_type == const.BED_TYPE_FSM_RELAX:
         coordinator.entry.options = {}
         coordinator.entry.entry_id = "contract-fsm-relax"
-        with patch("custom_components.adjustable_bed.fsm_relax_state.Store", return_value=MagicMock(async_load=AsyncMock(return_value=None))):
-            return await create_controller(coordinator, bed_type, None, client)
+        return await create_controller(coordinator, bed_type, None, client)
     variant = _protocol_variant_for_bed_type(bed_type)
     return await create_controller(coordinator, bed_type, variant, client)
 

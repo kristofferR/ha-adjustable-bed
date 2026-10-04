@@ -62,8 +62,7 @@ from .const import (
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_TRANQUIL,
-    BED_TYPE_ZSERIES_Z230,
-    BED_TYPE_ZSERIES_Z280,
+    BED_TYPE_ZSERIES,
     KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_BEDSENSE_BASES,
@@ -78,6 +77,8 @@ from .const import (
     KEESON_VARIANT_RESTONIC_B,
     KEESON_VARIANT_SERTA,
     KEESON_VARIANT_SIMON_LI,
+    ZSERIES_VARIANT_Z230,
+    ZSERIES_VARIANT_Z280,
 )
 
 
@@ -130,7 +131,7 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
     },
     "customatic": {
         "display": "Customatic apps",
-        "description": "Clarity, Jerome's C and Remedy app profiles",
+        "description": "Clarity, Jerome's C, Remedy and Z-Series app profiles",
         "variants": [
             {
                 "type": BED_TYPE_CUSTOMATIC_CLARITY,
@@ -149,6 +150,20 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "label": "Remedy",
                 "description": "Back, legs and lumbar, memory controls and light toggle",
                 "hint": "Choose the Remedy app shown on your phone.",
+            },
+            {
+                "type": BED_TYPE_ZSERIES,
+                "variant": ZSERIES_VARIANT_Z230,
+                "label": "Z-Series (Z-230)",
+                "description": "Z-230 page: combined head and foot, M1, ZG and TV saves",
+                "hint": "Choose the model selected in the Z-Series app; a shared OKIN name is not enough.",
+            },
+            {
+                "type": BED_TYPE_ZSERIES,
+                "variant": ZSERIES_VARIANT_Z280,
+                "label": "Z-Series (Z-280)",
+                "description": "Z-280 page: extra selector, M1/M2 and separate massage zones",
+                "hint": "Choose the model selected in the Z-Series app; a shared OKIN name is not enough.",
             },
         ],
     },
@@ -440,18 +455,6 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "hint": "Choose the app shown on your phone; a shared OKIN name is not enough.",
             },
             {
-                "type": BED_TYPE_ZSERIES_Z230,
-                "label": "Customatic Z-Series app (Z-230)",
-                "description": "Z-230 page: combined head and foot, M1, ZG and TV saves",
-                "hint": "Choose the model selected in the Z-Series app; a shared OKIN name is not enough.",
-            },
-            {
-                "type": BED_TYPE_ZSERIES_Z280,
-                "label": "Customatic Z-Series app (Z-280)",
-                "description": "Z-280 page: extra selector, M1/M2 and separate massage zones",
-                "hint": "Choose the model selected in the Z-Series app; a shared OKIN name is not enough.",
-            },
-            {
                 "type": BED_TYPE_SIMMONS,
                 "label": "SIMMONS app",
                 "description": "SIMMONS app controls, Custom Mode memory and two alarms",
@@ -484,13 +487,13 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
             {
                 "type": BED_TYPE_STARCODE_M5X5,
                 "label": "AdjustableM5X5 app",
-                "description": "CB25, F23, kneading and Elevate with independently addressed lifts",
+                "description": "CB25, F23 and kneading beds with independently addressed lifts",
                 "hint": "Select the app class and exact Bluetooth name in the next step",
             },
             {
                 "type": BED_TYPE_STAR_ELEVATE,
                 "label": "ELEVATE two-actuator lift",
-                "description": "Separate ELEVATE accessory used with M1X12/M5X5 systems",
+                "description": "Separate ELEVATE accessory, also an AdjustableM5X5 group lift",
                 "hint": "Device name starts with 'ELEVATE' and advertises Nordic UART",
             },
         ],

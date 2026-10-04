@@ -9,7 +9,10 @@ from importlib import import_module
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Final, Literal
 
+from homeassistant.const import CONF_NAME
+
 from .adapter import discover_services
+from .app_session import app_session
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     # Legacy/brand-specific bed types
@@ -89,30 +92,22 @@ from .const import (
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
-    BED_TYPE_ZSERIES_Z230,
-    BED_TYPE_ZSERIES_Z280,
+    BED_TYPE_ZSERIES,
     CB1322_MANUFACTURER_MARKERS,
-    CONF_FSM_RELAX_LAYOUT,
-    CONF_FSM_RELAX_LIGHT,
-    CONF_FSM_RELAX_MASSAGE,
+    CONF_BLE_DEVICE_NAME,
     CONF_FSM_RELAX_MEMORY_NAMES,
-    CONF_FSM_RELAX_REVERSALS,
     CONF_FURNIMOVE_REMOTE,
+    CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
-    CONF_JIECANG_APP_HAS_LIGHT,
     CONF_JIECANG_APP_LAYOUT,
     CONF_JIECANG_APP_PROFILE,
     CONF_JIECANG_APP_TRANSPORT,
     CONF_KAIDI_PRODUCT_ID,
     CONF_KAIDI_SOFA_ACU_NO,
     CONF_LEGGETT_APP_PROFILE,
-    CONF_LIMOSS_REMOTE_LIGHT,
-    CONF_LIMOSS_REMOTE_MASSAGE,
-    CONF_LIMOSS_REMOTE_PRODUCT,
     CONF_LIMOSS_REMOTE_STATE,
     CONF_LIMOSS_REMOTE_THEME,
     CONF_LOGICDATA_APP_FAMILY,
-    CONF_LOGICDATA_APP_HAS_LIGHT,
     CONF_LOGICDATA_APP_LAYOUT,
     CONF_LOGICDATA_APP_PROFILE,
     CONF_LOGICDATA_APP_TRANSPORT,
@@ -125,12 +120,12 @@ from .const import (
     CONF_MALOUF_APP_PROFILE,
     CONF_MALOUF_APP_TRANSPORT,
     CONF_MOTION_BED_MOVEMENT,
-    CONF_MOTION_BED_NAME,
     CONF_MOTION_BED_PRESET,
     CONF_MOTION_BED_RESTORED,
+    CONF_PRODUCT_TYPE,
     CONF_REMACRO_MODEL,
+    CONF_REVERSE_MOTORS,
     CONF_STARCODE_COMMAND_SELECTOR,
-    CONF_STARCODE_DEVICE_NAME,
     CONF_STARCODE_M5X5_PROFILE,
     CONF_STARCODE_TRANSPORT_SELECTOR,
     CONF_STARCODE_UI_SELECTOR,
@@ -139,7 +134,6 @@ from .const import (
     CONF_VIBRADORM_FLOOR_DEFAULT,
     CONF_VIBRADORM_FLOOR_LIGHT,
     CONF_VIBRADORM_LIGHT_EXTENSION,
-    CONF_VIBRADORM_MASSAGE,
     CONF_VIBRADORM_RESTORED,
     CONF_VIBRADORM_RGB,
     CONF_VIBRADORM_VMAT_REMOTE,
@@ -149,7 +143,7 @@ from .const import (
     DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
     DEWERTOKIN_RF_GATEWAY_MODEL,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
-    DOMAIN,
+    HAS_LIGHT_DEFAULTS,
     KEESON_BETTERLIVING_SERVICE_UUIDS,
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_JSON_SERVICE_UUID,
@@ -175,7 +169,6 @@ from .const import (
     LEGGETT_APP_DEFAULT_PROFILE,
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
-    LIMOSS_REMOTE_REVERSE_KEYS,
     LINAK_VARIANT_PERFORMANCE,
     MANUFACTURER_ID_OKIN,
     NORDIC_UART_SERVICE_UUID,
@@ -214,6 +207,7 @@ from .const import (
     SVANE_VARIANT_JMC,
     SVANE_VARIANT_MULTI,
     VARIANT_AUTO,
+    ZSERIES_VARIANTS,
 )
 from .kaidi_protocol import extract_kaidi_advertisement
 from .kaidi_variants import resolve_kaidi_variant
@@ -356,12 +350,6 @@ class _ControllerSpec:
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_SERENITY: _ControllerSpec("serenity", "SerenityController"),
     BED_TYPE_TRANQUIL: _ControllerSpec("serenity", "TranquilController"),
-    BED_TYPE_ZSERIES_Z230: _ControllerSpec(
-        "serenity", "ZSeriesController", MappingProxyType({"model": "z230"})
-    ),
-    BED_TYPE_ZSERIES_Z280: _ControllerSpec(
-        "serenity", "ZSeriesController", MappingProxyType({"model": "z280"})
-    ),
     BED_TYPE_CUSTOMATIC_CLARITY: _ControllerSpec(
         "customatic", "CustomaticController", MappingProxyType({"profile": "clarity"})
     ),
@@ -552,6 +540,17 @@ async def create_controller(
 
         return SolaceController(coordinator)
 
+    if bed_type == BED_TYPE_ZSERIES:
+        # The app page is a user choice nothing on the bed identifies.
+        if protocol_variant not in ZSERIES_VARIANTS:
+            raise ValueError("Choose the Z-230 or Z-280 page selected in the Z-Series app")
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.serenity", __package__
+        )
+        from .beds.serenity import ZSeriesController
+
+        return ZSeriesController(coordinator, model=protocol_variant)
+
     if bed_type == BED_TYPE_SVANE:
         if protocol_variant == SVANE_VARIANT_JENSEN_LINON:
             await coordinator.hass.async_add_import_executor_job(
@@ -565,17 +564,12 @@ async def create_controller(
             import_module, ".beds.svane", __package__
         )
         from .beds.svane import SvaneController
-        from .svane_state import CONF_SVANE_PREFERENCES, get_svane_session
+        from .svane_state import get_svane_session
 
-        if protocol_variant not in (None, VARIANT_AUTO, SVANE_VARIANT_MULTI, SVANE_VARIANT_JMC):
+        if protocol_variant not in (None, SVANE_VARIANT_MULTI, SVANE_VARIANT_JMC):
             raise ValueError("Unknown Svane Remote profile")
         profile = "jmc" if protocol_variant == SVANE_VARIANT_JMC else "multi"
-        session = get_svane_session(
-            coordinator.hass,
-            coordinator.address,
-            profile,
-            coordinator.entry.data.get(CONF_SVANE_PREFERENCES),
-        )
+        session = get_svane_session(coordinator.hass, coordinator.address, profile)
         return SvaneController(coordinator, profile=profile, session=session)
 
     if bed_type == BED_TYPE_SLEEP_NUMBER_MCR:
@@ -691,7 +685,7 @@ async def create_controller(
             command_family=entry_data[CONF_LOGICDATA_APP_FAMILY],
             layout=entry_data[CONF_LOGICDATA_APP_LAYOUT],
             transport=entry_data.get(CONF_LOGICDATA_APP_TRANSPORT, "auto"),
-            has_light=entry_data.get(CONF_LOGICDATA_APP_HAS_LIGHT, True),
+            has_light=entry_data.get(CONF_HAS_LIGHT, HAS_LIGHT_DEFAULTS[BED_TYPE_LOGICDATA_APP]),
             has_massage=entry_data.get(CONF_HAS_MASSAGE, False),
         )
 
@@ -699,13 +693,8 @@ async def create_controller(
         await coordinator.hass.async_add_import_executor_job(
             import_module, ".beds.remacro", __package__
         )
-        from .beds.remacro import RemacroController
-        from .beds.remacro_protocol import (
-            app_for_variant,
-            remacro_led_level,
-            resolve_model,
-            session_for,
-        )
+        from .beds.remacro import RemacroController, remacro_session
+        from .beds.remacro_protocol import app_for_variant, remacro_led_level, resolve_model
 
         app = app_for_variant(protocol_variant)
         # The live advertisement wins, as in the apps; the stored selector only
@@ -713,12 +702,12 @@ async def create_controller(
         model = resolve_model(
             app, manufacturer_data, coordinator.entry.data.get(CONF_REMACRO_MODEL)
         )
-        sessions = coordinator.hass.data.setdefault(DOMAIN, {}).setdefault("remacro_sessions", {})
+        session = remacro_session(coordinator.hass, coordinator.address, app, model.model_id)
         return RemacroController(
             coordinator,
             app=app,
             model=model,
-            session=session_for(sessions, coordinator.address, app, model.model_id),
+            session=session,
             led_level=remacro_led_level(coordinator.entry.data, model.model_id),
         )
 
@@ -726,8 +715,7 @@ async def create_controller(
         await coordinator.hass.async_add_import_executor_job(
             import_module, ".beds.vmatbasic", __package__
         )
-        from .beds.vmatbasic import VMatBasicController
-        from .vmatbasic_state import get_vmatbasic_session_intent
+        from .beds.vmatbasic import VMatBasicController, get_vmatbasic_session_intent
 
         data = coordinator.entry.data
         return VMatBasicController(
@@ -762,7 +750,7 @@ async def create_controller(
 
         data = coordinator.entry.data
         selection = select_motion_bed(
-            data.get(CONF_MOTION_BED_NAME, data.get("name", "")), restored=data.get(CONF_MOTION_BED_RESTORED, False),
+            data.get(CONF_BLE_DEVICE_NAME, data.get(CONF_NAME, "")), restored=data.get(CONF_MOTION_BED_RESTORED, False),
             preset_override=data.get(CONF_MOTION_BED_PRESET),
             movement_override=data.get(CONF_MOTION_BED_MOVEMENT),
         )
@@ -774,41 +762,43 @@ async def create_controller(
         )
         from .beds.limoss_remote import LimossRemoteController
         from .beds.limoss_remote_protocol import LimossRemoteCapabilities
-        from .limoss_remote_state import validate_limoss_remote_state
+        from .limoss_remote_state import get_limoss_remote_session, validate_limoss_remote_state
 
         entry_data = coordinator.entry.data
         state = validate_limoss_remote_state(entry_data.get(CONF_LIMOSS_REMOTE_STATE, {}))
         cached = state.get("capabilities")
         capabilities = LimossRemoteCapabilities(**cached) if isinstance(cached, dict) else None
-        reverse = tuple(entry_data.get(key, False) for key in LIMOSS_REMOTE_REVERSE_KEYS)
+        reverse = tuple(entry_data.get(key, False) for key in CONF_REVERSE_MOTORS)
         return LimossRemoteController(
-            coordinator, product=entry_data.get(CONF_LIMOSS_REMOTE_PRODUCT),
-            underbed_light=entry_data.get(CONF_LIMOSS_REMOTE_LIGHT, False),
-            massage=entry_data.get(CONF_LIMOSS_REMOTE_MASSAGE, False),
+            coordinator, product=entry_data.get(CONF_PRODUCT_TYPE),
+            underbed_light=entry_data.get(CONF_HAS_LIGHT, False),
+            massage=entry_data.get(CONF_HAS_MASSAGE, False),
             theme=entry_data.get(CONF_LIMOSS_REMOTE_THEME),
             reverse_motors=(reverse[0], reverse[1], reverse[2], reverse[3]),
             cached_capabilities=capabilities,
-            memories=coordinator.limoss_remote_memory_store,
-            metadata=state.get("metadata"),
+            session=get_limoss_remote_session(coordinator.hass, coordinator.address),
         )
 
 
     if bed_type == BED_TYPE_FSM_RELAX:
         await coordinator.hass.async_add_import_executor_job(import_module, ".beds.fsm_relax", __package__)
         from .beds.fsm_relax import FsmRelaxController, FsmRelaxProfile
-        from .fsm_relax_state import get_fsm_relax_state
+        from .fsm_relax_state import FsmRelaxSession, validate_names
 
         data = {**coordinator.entry.data, **coordinator.entry.options}
-        reversals = tuple(data.get(key, False) for key in CONF_FSM_RELAX_REVERSALS)
-        profile = FsmRelaxProfile(data.get(CONF_FSM_RELAX_LAYOUT, "chair"),
-                                  data.get(CONF_FSM_RELAX_LIGHT, False),
-                                  data.get(CONF_FSM_RELAX_MASSAGE, False),
+        reversals = tuple(data.get(key, False) for key in CONF_REVERSE_MOTORS)
+        profile = FsmRelaxProfile(data.get(CONF_PRODUCT_TYPE, "chair"),
+                                  data.get(CONF_HAS_LIGHT, False),
+                                  data.get(CONF_HAS_MASSAGE, False),
                                   (reversals[0], reversals[1], reversals[2], reversals[3]))
-        state = get_fsm_relax_state(coordinator.hass, coordinator.entry.entry_id, coordinator.address)
-        await state.async_load()
-        if CONF_FSM_RELAX_MEMORY_NAMES in data:
-            await state.async_set_names(data[CONF_FSM_RELAX_MEMORY_NAMES])
-        return FsmRelaxController(coordinator, profile=profile, state=state)
+        return FsmRelaxController(
+            coordinator,
+            profile=profile,
+            session=app_session(
+                coordinator.hass, coordinator.address, ("fsm_relax",), FsmRelaxSession
+            ),
+            names=validate_names(data.get(CONF_FSM_RELAX_MEMORY_NAMES, [""] * 8)),
+        )
 
     if bed_type == BED_TYPE_STARCODE_M5X5:
         await coordinator.hass.async_add_import_executor_job(
@@ -819,7 +809,7 @@ async def create_controller(
         return StarcodeM5X5Controller(
             coordinator,
             profile=coordinator.entry.data[CONF_STARCODE_M5X5_PROFILE],
-            device_name=coordinator.entry.data[CONF_STARCODE_DEVICE_NAME],
+            device_name=coordinator.entry.data[CONF_BLE_DEVICE_NAME],
         )
 
     if bed_type == BED_TYPE_VIBRADORM_APP:
@@ -857,7 +847,7 @@ async def create_controller(
             restored=entry_data.get(CONF_VIBRADORM_RESTORED, False),
             floor_light=entry_data.get(CONF_VIBRADORM_FLOOR_LIGHT),
             rgb=entry_data.get(CONF_VIBRADORM_RGB, False),
-            massage=entry_data.get(CONF_VIBRADORM_MASSAGE, False),
+            massage=entry_data.get(CONF_HAS_MASSAGE, False),
             light_extension=entry_data.get(CONF_VIBRADORM_LIGHT_EXTENSION, False),
             floor_intent=intent.floor,
             timer_intent=intent.timer,
@@ -878,7 +868,7 @@ async def create_controller(
             profile=entry_data[CONF_JIECANG_APP_PROFILE],
             layout=entry_data[CONF_JIECANG_APP_LAYOUT],
             transport=entry_data.get(CONF_JIECANG_APP_TRANSPORT, "auto"),
-            has_light=entry_data.get(CONF_JIECANG_APP_HAS_LIGHT, True),
+            has_light=entry_data.get(CONF_HAS_LIGHT, HAS_LIGHT_DEFAULTS[BED_TYPE_JIECANG_APP]),
         )
 
     if bed_type == BED_TYPE_MALOUF_APP:
@@ -1143,10 +1133,6 @@ async def create_controller(
         keeson_variant = protocol_variant
         keeson_betterliving_presets = False
         keeson_cb1322_presets = False
-        if keeson_variant == "ore":
-            _LOGGER.debug("Normalizing deprecated Keeson variant 'ore' to 'sino'")
-            keeson_variant = KEESON_VARIANT_SINO
-
         # Auto-detect Keeson sub-variant where possible.
         # BetterLiving/OKIN-BLE beds use Sino (big-endian) and advertise
         # fallback service UUIDs that overlap with Richmat WiLinke.

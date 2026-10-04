@@ -114,6 +114,12 @@ approximate. See
 `backend`, `csv-inherit:<code>`, or `csv-reconstruct`) and
 `tools/okin_remotes/` for the regeneration pipeline.
 
+The 83 codes that also appear in the pinned [FurniMove](furnimove.md)
+production catalog take their keycodes and memory-save timing from that catalog
+instead; they matched the backend capture byte for byte. Okin UUID remains the
+bed type for those handsets in new setups, because it adds the mandatory bond
+and FFE4 position feedback that the FurniMove app profile lacks.
+
 Because **Flat is a per-code property** (two codes in the same model family can
 use different Flat values), the table stores each code's exact values rather
 than lumping codes into shared family profiles. This corrected several Flat

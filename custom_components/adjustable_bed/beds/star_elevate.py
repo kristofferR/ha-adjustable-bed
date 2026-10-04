@@ -51,10 +51,22 @@ class StarElevateController(BedController):
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         super().__init__(coordinator)
         self._initialized = False
+        self._generation = 0
 
     @property
     def control_characteristic_uuid(self) -> str:
         return NORDIC_UART_WRITE_CHAR_UUID
+
+    @property
+    def ready(self) -> bool:
+        """Connected and past the keep-connected frame, as group members must be."""
+        client = self.client
+        return self._initialized and client is not None and client.is_connected
+
+    @property
+    def session_generation(self) -> int:
+        """Identify the notification session a delayed group action retained."""
+        return self._generation
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -143,6 +155,7 @@ class StarElevateController(BedController):
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """Enable RX and then send keep-connected, matching the OEM sequence."""
         self._notify_callback = callback
+        self._generation += 1
         client = self.client
         if client is None or not client.is_connected:
             return
@@ -154,6 +167,7 @@ class StarElevateController(BedController):
 
     async def stop_notify(self) -> None:
         self._notify_callback = None
+        self._generation += 1
         client = self.client
         if client is not None and client.is_connected:
             try:
@@ -163,6 +177,24 @@ class StarElevateController(BedController):
 
     async def _send_stop(self) -> None:
         await self.write_command(StarElevateCommands.STOP, cancel_event=asyncio.Event())
+
+    async def interrupt(self) -> None:
+        """Interrupt held motion before a grouped AdjustableM5X5 peer moves."""
+        await self.write_command(StarElevateCommands.INTERRUPT, cancel_event=asyncio.Event())
+
+    async def _interrupt_group(self) -> None:
+        """As a lift or main, ordinary motion interrupts the other group members."""
+        from ..starcode_accessory_group import interrupt_conflicting_group
+
+        await interrupt_conflicting_group(self._coordinator)
+
+    async def _move_with_stop(self, command: bytes) -> None:
+        await self._interrupt_group()
+        try:
+            pulse_count, pulse_delay = self.motor_pulse_settings()
+            await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
+        finally:
+            await self._send_stop()
 
     async def move_head_up(self) -> None:
         await self._move_with_stop(StarElevateCommands.ACTUATOR_1_UP)
@@ -207,10 +239,14 @@ class StarElevateController(BedController):
         await self._move_with_stop(StarElevateCommands.BOTH_DOWN)
 
     async def stop_all(self) -> None:
+        from ..starcode_accessory_group import cancel_group_operations
+
+        cancel_group_operations(self._coordinator.hass, self._coordinator.entry.entry_id)
         await self._send_stop()
 
     async def preset_flat(self) -> None:
         """ELEVATE flat is an exact one-shot command with no appended STOP."""
+        await self._interrupt_group()
         await self.write_command(StarElevateCommands.FLAT)
 
     async def preset_memory(self, memory_num: int) -> None:

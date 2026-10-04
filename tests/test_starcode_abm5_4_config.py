@@ -172,7 +172,7 @@ async def test_two_address_options_cannot_copy_app_selectors_between_children(ha
         key.schema for key in result["data_schema"].schema
     )
     result = await flow.async_step_settings({const.CONF_STARCODE_COMMAND_SELECTOR: "BOX1220"})
-    assert result["errors"] == {"base": "starcode_app_unpair_first"}
+    assert result["errors"] == {"base": "app_profile_unpair_first"}
     assert [
         child[const.CONF_STARCODE_COMMAND_SELECTOR]
         for child in entry.data[const.CONF_PAIR_CHILDREN]

@@ -8,7 +8,8 @@ Every value here comes from the accepted cluster-002 / row 050 artifacts:
 The apps select a model only by the lowest manufacturer-specific-data company
 ID in the advertisement; names, payload bytes and RSSI are never consulted.
 Which app a bed belongs to cannot be told from the air, so the app profile is
-an explicit setting.
+an explicit setting. A bed the selected app does not list (or whose company ID
+has not been seen yet) gets ``FALLBACK_SCREEN`` instead of being refused.
 """
 
 from __future__ import annotations
@@ -96,24 +97,6 @@ class RemacroSession:
     wave: int = 0
     # Seeded from the committed level when the session starts.
     led_brightness: int | None = None
-
-
-def drop_sessions(cache: dict[tuple[str, str, int], RemacroSession], address: str) -> None:
-    """Forget every session for a bed when its entry runtime ends."""
-    for key in [key for key in cache if key[0] == address.upper()]:
-        del cache[key]
-
-
-def session_for(
-    cache: dict[tuple[str, str, int], RemacroSession], address: str, app: str, model_id: int
-) -> RemacroSession:
-    """Return the session for one bed, app and model; a change starts fresh."""
-    key = (address.upper(), app, model_id)
-    session = cache.get(key)
-    if session is None:
-        session = RemacroSession(SynDataSerial(cache_hold_serial=app == APP_JEROMES))
-        cache[key] = session
-    return session
 
 
 @dataclass(frozen=True, slots=True)
@@ -316,11 +299,16 @@ SCREENS: Final[Mapping[str, Screen]] = {
 
 @dataclass(frozen=True, slots=True)
 class Model:
-    """One ``BDUtils`` entry: company ID, shipped label and selected screen."""
+    """One ``BDUtils`` entry: company ID, shipped label and selected screen.
 
-    model_id: int
+    ``recognized`` is False for the fallback, whose ``model_id`` is the
+    advertised company ID, or None when none has been seen yet.
+    """
+
+    model_id: int | None
     name: str
     screen: Screen
+    recognized: bool = True
 
 
 MODELS: Final[Mapping[int, Model]] = {
@@ -341,6 +329,29 @@ MODELS: Final[Mapping[int, Model]] = {
         (55, "CS-B200M(ASI)", "ElevenActivity"),
     )
 }
+
+# For a company ID the selected app does not list, or before one is seen. Up to
+# v4.0.2 every Remacro bed got one generic controller by service UUID: Head,
+# Legs, Lumbar and Tilt covers, Flat/TV/Zero-G presets, an RGB light, Stop and
+# opt-in massage. The fallback keeps those controls only where every non-split
+# screen that shows them sends the same code: Head, Feet and Lumbar, each
+# released with its own axis STOP (v4.0.2 sent 0x0001); Flat 0x0111 (v4.0.2
+# sent 0x0301, which is anti-snore); TV 0x0302 and Zero-G 0x0303 (v4.0.2 had
+# them swapped); the light on/off toggle; and the global STOP. Tilt, the
+# RGB/white light and heat have no reachable caller in any app. v4.0.2's massage
+# buttons sent mostly unused codes, while the apps' massage depends on per-model
+# counters, so the fallback has no massage. v4.0.2 exposed no memories.
+FALLBACK_SCREEN: Final = Screen(
+    "Fallback",
+    SideCodes(None, HEAD, LUMBAR, FOOT, presets={"tv": 0x0302, "zero_g": 0x0303}),
+    light_toggle=True,
+)
+
+
+def fallback_model(model_id: int | None) -> Model:
+    """Return the limited model for a company ID the selected app does not list."""
+    return Model(model_id, "unrecognized model", FALLBACK_SCREEN, recognized=False)
+
 
 APP_MODEL_IDS: Final[Mapping[str, frozenset[int]]] = {
     APP_SLUMBERLAND: frozenset(MODELS),
@@ -410,17 +421,20 @@ def resolve_model(
     manufacturer_data: Mapping[int, bytes] | None,
     stored_model_id: object,
 ) -> Model:
-    """Select the model like the app, falling back to the stored selector."""
+    """Select the model like the app, falling back to the stored selector.
+
+    A company ID the app does not list, or none at all, gets the fallback model.
+    """
     problem, model_id = model_problem(app, manufacturer_data, stored_model_id)
-    if problem == "unknown" or model_id is None:
-        raise ValueError(
-            "Remacro model is unknown: no manufacturer data has been seen for this bed yet"
-        )
-    if problem is not None:
-        raise ValueError(
-            f"The {APP_LABELS[app]} app does not list a bed advertising company ID {model_id}"
-        )
+    if problem is not None or model_id is None:
+        return fallback_model(model_id)
     return MODELS[model_id]
+
+
+def apps_listing(model_id: int | None) -> list[RemacroApp]:
+    """Return the apps that list a company ID, in profile order."""
+    apps: tuple[RemacroApp, ...] = (APP_SLUMBERLAND, APP_THE_BRICK, APP_JEROMES)
+    return [app for app in apps if model_id in APP_MODEL_IDS[app]]
 
 
 def add_remacro_model(
@@ -429,7 +443,7 @@ def add_remacro_model(
     """Return entry data remembering the advertised selector.
 
     An unmapped ID is stored too, so a restart with no advertisement history
-    keeps refusing the bed instead of treating it as merely unseen.
+    keeps its Repairs issue instead of treating the bed as merely unseen.
     """
     updated = dict(entry_data)
     model_id = advertised_model_id(manufacturer_data)
@@ -438,8 +452,10 @@ def add_remacro_model(
     return updated
 
 
-def remacro_led_level(entry_data: Mapping[str, Any], model_id: int) -> int | None:
+def remacro_led_level(entry_data: Mapping[str, Any], model_id: int | None) -> int | None:
     """Return the level committed for this model, like the app's per-model "LV"."""
+    if model_id is None:
+        return None
     levels = entry_data.get(CONF_REMACRO_LED_LEVEL)
     level = levels.get(str(model_id)) if isinstance(levels, Mapping) else None
     return level if isinstance(level, int) and not isinstance(level, bool) else None

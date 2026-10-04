@@ -14,7 +14,10 @@ from custom_components.adjustable_bed.beds.limoss import LimossController
 from custom_components.adjustable_bed.beds.limoss_remote import LimossRemoteController
 from custom_components.adjustable_bed.beds.limoss_remote_protocol import format_command
 from custom_components.adjustable_bed.controller_factory import create_controller
-from custom_components.adjustable_bed.limoss_remote_state import LimossRemoteMemory
+from custom_components.adjustable_bed.limoss_remote_state import (
+    LimossRemoteMemory,
+    get_limoss_remote_session,
+)
 from custom_components.adjustable_bed.services import async_register_services
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote import make_controller
@@ -43,7 +46,8 @@ async def test_inflight_registered_startup_must_not_skip_later_fresh_preflight(h
     entered, release, moved = asyncio.Event(), asyncio.Event(), asyncio.Event()
     trace = []
     for child in (left, right):
-        child.limoss_remote_memory_store.slots[8] = LimossRemoteMemory("Eight", ((0, -1),))
+        get_limoss_remote_session(child.hass, child.address).memories.slots[8] = LimossRemoteMemory("Eight", ((0, -1),))
+        child.save_app_state()
 
     def left_write(role, packet, **kwargs):
         opcode = LimossController._tea_decrypt(packet[1:9])[1]
@@ -91,7 +95,7 @@ async def test_inflight_registered_startup_must_not_skip_later_fresh_preflight(h
             with patch("custom_components.adjustable_bed.services._resolve_sided_targets",
                        return_value=([(left, const.SIDE_BOTH), (right, const.SIDE_BOTH)], [])):
                 operation = asyncio.create_task(hass.services.async_call(
-                    const.DOMAIN, "limoss_remote_recall_memory",
+                    const.DOMAIN, "goto_preset",
                     {"device_id": ["left", "right"], "preset": 8, "duration": 0.1}, blocking=True,
                 ))
                 try:

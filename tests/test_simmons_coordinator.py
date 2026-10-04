@@ -185,7 +185,7 @@ async def test_two_address_pair_refuses_shared_variant_changes(
     refused = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: requested})
 
     assert refused["type"] is FlowResultType.FORM
-    assert refused["errors"] == {CONF_PROTOCOL_VARIANT: "simmons_unpair_first"}
+    assert refused["errors"] == {CONF_PROTOCOL_VARIANT: "app_profile_unpair_first"}
     # A shared, non-variant change still saves and leaves each side's variant.
     saved = await flow.async_step_settings({CONF_IDLE_DISCONNECT_SECONDS: 60})
     assert saved["type"] is FlowResultType.CREATE_ENTRY

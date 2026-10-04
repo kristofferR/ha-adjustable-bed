@@ -442,14 +442,14 @@
           "logicdata_app_family": "Command family",
           "logicdata_app_layout": "Physical actuator layout",
           "logicdata_app_transport": "BLE transport",
-          "logicdata_app_has_light": "Enable light controls"
+          "has_light": "Enable light controls"
         },
         "data_description": {
           "logicdata_app_profile": "Choose the MotionRelax phone or tablet app, or the Sleep Smart Air Mattress app, used for this bed. Shared Bluetooth services do not identify the app.",
           "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family. In Sleep Smart, P2 is the middle rail bed.",
           "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout. Sleep Smart beds use the two-motor standard or split-series layout.",
           "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
-          "logicdata_app_has_light": "Expose under-bed light controls when the selected standard layout has lighting."
+          "has_light": "Expose under-bed light controls when the selected standard layout has lighting."
         }
       },
       "jiecang_app": {
@@ -459,13 +459,13 @@
           "jiecang_app_profile": "Bed app",
           "jiecang_app_layout": "Physical actuator layout",
           "jiecang_app_transport": "BLE transport",
-          "jiecang_app_has_light": "Enable light controls"
+          "has_light": "Enable light controls"
         },
         "data_description": {
           "jiecang_app_profile": "Select the app used to control this bed. Bluetooth UUIDs cannot identify the app profile.",
           "jiecang_app_layout": "Select the layout configured in the app. The integration does not infer it from the device name or motor count.",
           "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion also supports standalone G2.",
-          "jiecang_app_has_light": "Expose light controls when this bed has under-bed lighting."
+          "has_light": "Expose light controls when this bed has under-bed lighting."
         }
       },
       "lp_legacy": {
@@ -524,7 +524,7 @@
         "title": "FurniMove handset",
         "description": "Choose the handset ID used in FurniMove / OKIN Smart Remote. The RF ECO BT receiver label does not identify the motor layout. Use the shipped offline table only when that is the layout selected in the app.",
         "data": {
-          "furnimove_remote": "Handset ID"
+          "furnimove_remote": "FurniMove handset ID"
         }
       },
       "vibradorm_app": {
@@ -537,7 +537,7 @@
           "vibradorm_floor_light": "Retained floor lighting",
           "vibradorm_floor_default": "Remembered floor brightness",
           "vibradorm_rgb": "Retained mood lighting",
-          "vibradorm_massage": "Retained massage controls",
+          "has_massage": "Retained massage controls",
           "vibradorm_light_extension": "Retained lighting extension",
           "vibradorm_vmat_remote": "VMAT remote"
         },
@@ -579,13 +579,13 @@
         "title": "Motion Bed app profile",
         "description": "Choose the identity and controls used by this app. Hardware operation remains unverified.",
         "data": {
-          "motion_bed_name": "Motion Bed advertised name",
+          "ble_device_name": "Exact Bluetooth name",
           "motion_bed_restored": "Use an app-restored profile",
           "motion_bed_preset": "Retained preset layout",
           "motion_bed_movement": "Retained movement layout"
         },
         "data_description": {
-          "motion_bed_name": "Enter the original case-sensitive Bluetooth name used by the Motion Bed app. The shared FFE1 transport cannot identify this app.",
+          "ble_device_name": "Enter the original case-sensitive Bluetooth name used by the Motion Bed app. The shared FFE1 transport cannot identify this app.",
           "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
           "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
           "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count."
@@ -595,42 +595,42 @@
         "title": "AdjustableM5X5 app",
         "description": "Confirm the exact bedding class and optional accessory group. Shared Bluetooth services do not identify an app.",
         "data": {
-          "starcode_device_name": "Exact Bluetooth name",
+          "ble_device_name": "Exact Bluetooth name",
           "starcode_m5x5_profile": "AdjustableM5X5 bed class",
           "starcode_lift_entries": "Independently addressed lifts (up to three)"
         },
         "data_description": {
-          "starcode_device_name": "Enter the unchanged Bluetooth name, preserving case. A friendly display name cannot identify the app class or remote.",
-          "starcode_m5x5_profile": "Choose CB25, F23, kneading or Elevate to match the exact Bluetooth name.",
-          "starcode_lift_entries": "Choose up to three other configured AdjustableM5X5 entries. This main and the three lifts keep separate Bluetooth addresses and controls."
+          "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. A friendly display name cannot identify the app class or remote.",
+          "starcode_m5x5_profile": "Choose CB25, F23 or kneading to match the exact Bluetooth name. ELEVATE lifts use the DewertOkin ELEVATE bed type.",
+          "starcode_lift_entries": "Choose up to three other configured AdjustableM5X5 or DewertOkin ELEVATE entries. This main and the three lifts keep separate Bluetooth addresses and controls."
         }
       },
       "fsm_relax": {
         "title": "FSM Relax app profile",
         "description": "Select the app layout and optional controls explicitly. Raw memories have no known physical units. Shared Bluetooth advertisements do not identify this app profile.",
         "data": {
-          "fsm_relax_layout": "App layout",
-          "fsm_relax_light": "Expose app light controls",
-          "fsm_relax_massage": "Expose app massage controls",
+          "product_type": "Bed or chair",
+          "has_light": "Enable light controls",
+          "has_massage": "Has massage feature",
           "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
-          "fsm_relax_reverse_1": "Reverse actuator flag 1",
-          "fsm_relax_reverse_2": "Reverse actuator flag 2",
-          "fsm_relax_reverse_3": "Reverse actuator flag 3",
-          "fsm_relax_reverse_4": "Reverse actuator flag 4"
+          "reverse_motor_1": "Reverse motor channel 1",
+          "reverse_motor_2": "Reverse motor channel 2",
+          "reverse_motor_3": "Reverse motor channel 3",
+          "reverse_motor_4": "Reverse motor channel 4"
         }
       },
       "limoss_remote": {
         "title": "Limoss Remote App Controls",
         "description": "Select the product and local controls used in the Limoss Remote app. The connected device supplies its key layout and memory capacity. These settings do not measure hardware state.",
         "data": {
-          "limoss_remote_product": "App product",
-          "limoss_remote_light": "Show held lamp control",
-          "limoss_remote_massage": "Show massage controls",
+          "product_type": "Bed or chair",
+          "has_light": "Enable light controls",
+          "has_massage": "Has massage feature",
           "limoss_remote_theme": "App artwork theme",
-          "limoss_remote_reverse_1": "Reverse motor channel 1",
-          "limoss_remote_reverse_2": "Reverse motor channel 2",
-          "limoss_remote_reverse_3": "Reverse motor channel 3",
-          "limoss_remote_reverse_4": "Reverse motor channel 4"
+          "reverse_motor_1": "Reverse motor channel 1",
+          "reverse_motor_2": "Reverse motor channel 2",
+          "reverse_motor_3": "Reverse motor channel 3",
+          "reverse_motor_4": "Reverse motor channel 4"
         }
       }
     },
@@ -653,9 +653,7 @@
       "discovery_disabled": "Automatic discovery is turned off for the Adjustable Bed integration. Re-enable it in any bed's options if you want new devices to be discovered.",
       "diagnostic_browser_ready": "**{name}**\n\nAddress: `{address}`\nSource: `{source}`\nScanner connectable: `{connectable}`\n\nRun `adjustable_bed.generate_support_bundle` with `target_address: {address}` to capture the full support bundle.",
       "not_enough_beds": "You need at least two set-up beds of the same type to combine.",
-      "combine_cleanup_failed": "Couldn't remove one of the original beds, so the combined bed wasn't created. Try again or remove the beds manually first.",
-      "remacro_model_unmapped": "This bed advertises company ID {company_id}, which none of the Slumberland, The Brick or Jerome's apps list, so it cannot be set up as a Remacro bed.",
-      "remacro_model_not_in_app": "The {app} app does not list a bed advertising company ID {company_id}. Set the bed up again and choose the app it uses as the protocol variant."
+      "combine_cleanup_failed": "Couldn't remove one of the original beds, so the combined bed wasn't created. Try again or remove the beds manually first."
     },
     "error": {
       "scan_failed": "Bluetooth scanning is unavailable. Check your adapters and try again, or choose a device from the list.",
@@ -694,27 +692,22 @@
       "octo_pin_rejected": "The bed rejected this PIN.",
       "octo_pin_inconclusive": "PIN access has not been verified.",
       "malouf_app_required": "Select the Android app and exact bed model.",
-      "malouf_app_pair_settings": "Unpair first, then select each physical bed\u2019s app profile before combining them again.",
       "furnimove_remote_required": "Choose a captured FurniMove handset ID. An unknown ID requires its exact app table; the receiver label cannot choose one.",
       "vibradorm_app_required": "Choose the bed app.",
       "vibradorm_app_invalid": "Choose a supported app control layout and retained feature settings.",
-      "vibradorm_app_unpair_first": "Unpair these entries before changing app settings. Each physical side keeps its own app controls.",
       "vmat_bond_required": "VMAT setup requires verified native pairing for this exact Bluetooth address. Use a supported host Bluetooth adapter and retry; an unverified proxy pairing request cannot finish setup.",
       "vmatbasic_invalid": "Enter a whole number within the selected product range.",
       "vmatbasic_link_profile": "Combine only CBI or CBI with XT-Box receivers. The Basic profile has no linked control.",
-      "vmatbasic_unpair_first": "Unpair these entries before changing product settings; each receiver retains its own profile.",
       "vmatbasic_required": "Choose the V-MAT Basic product profile.",
       "starcode_app_invalid": "Choose a supported app selector and a live Bluetooth transport.",
-      "starcode_app_unpair_first": "Unpair these entries before changing app selectors. Each physical side retains its own app controls.",
       "motion_bed_profile": "Choose a supported Motion Bed name or an explicit app-restored profile, with layouts belonging to the same surface.",
-      "starcode_unpair_first": "Use standalone entries for this independently addressed accessory group.",
       "starcode_profile_mismatch": "Choose the bed class matching the exact case-sensitive Bluetooth name.",
-      "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 entries with different Bluetooth addresses.",
+      "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 or DewertOkin ELEVATE entries with different Bluetooth addresses.",
+      "starcode_elevate_bed_type": "ELEVATE lifts use the DewertOkin ELEVATE bed type. Set them up with it, then select them as lifts here.",
       "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each).",
       "limoss_remote_product_required": "Select bed or chair for this app profile.",
       "limoss_remote_feature_update_failed": "The feature OFF commands could not complete. Settings were not saved.",
       "limoss_remote_invalid": "Select valid Limoss Remote app settings.",
-      "limoss_remote_pair_settings": "Unpair first, then select each physical receiver\u2019s Limoss Remote app profile before combining them again.",
       "invalid_pulse_count_range": "For this app profile, the motor pulse count must be between 1 and 600.",
       "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses.",
       "logicdata_app_sleep_smart_layout": "Sleep Smart beds use the two-motor standard or split-series layout.",
@@ -769,11 +762,10 @@
           "logicdata_app_family": "Command family",
           "logicdata_app_layout": "Physical actuator layout",
           "logicdata_app_transport": "BLE transport",
-          "logicdata_app_has_light": "Enable light controls",
+          "has_light": "Enable light controls",
           "jiecang_app_profile": "Bed app",
           "jiecang_app_layout": "Physical actuator layout",
           "jiecang_app_transport": "BLE transport",
-          "jiecang_app_has_light": "Enable light controls",
           "lp_legacy_model": "Legacy app model code",
           "lp_legacy_mode": "Legacy app protocol mode",
           "lp_legacy_write_uuid": "Write characteristic UUID",
@@ -788,7 +780,6 @@
           "vibradorm_restored": "Use retained Caresse settings",
           "vibradorm_floor_light": "Retained floor lighting",
           "vibradorm_rgb": "Retained mood lighting",
-          "vibradorm_massage": "Retained massage controls",
           "vibradorm_light_extension": "Retained lighting extension",
           "vibradorm_floor_default": "Remembered floor brightness",
           "vibradorm_vmat_remote": "VMAT remote",
@@ -799,27 +790,17 @@
           "starcode_abm5_4_transport_selector": "Bluetooth transport selector",
           "motion_bed_preset": "Retained preset layout",
           "motion_bed_movement": "Retained movement layout",
-          "motion_bed_name": "Motion Bed advertised name",
+          "ble_device_name": "Exact Bluetooth name",
           "motion_bed_restored": "Use an app-restored profile",
           "starcode_lift_entries": "Independently addressed lifts (up to three)",
           "starcode_m5x5_profile": "AdjustableM5X5 bed class",
-          "starcode_device_name": "Exact Bluetooth name",
-          "fsm_relax_layout": "App layout",
-          "fsm_relax_light": "Expose app light controls",
-          "fsm_relax_massage": "Expose app massage controls",
+          "product_type": "Bed or chair",
           "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
-          "fsm_relax_reverse_1": "Reverse actuator flag 1",
-          "fsm_relax_reverse_2": "Reverse actuator flag 2",
-          "fsm_relax_reverse_3": "Reverse actuator flag 3",
-          "fsm_relax_reverse_4": "Reverse actuator flag 4",
-          "limoss_remote_theme": "App artwork theme",
-          "limoss_remote_light": "Show held lamp control",
-          "limoss_remote_product": "App product",
-          "limoss_remote_reverse_1": "Reverse motor channel 1",
-          "limoss_remote_massage": "Show massage controls",
-          "limoss_remote_reverse_3": "Reverse motor channel 3",
-          "limoss_remote_reverse_4": "Reverse motor channel 4",
-          "limoss_remote_reverse_2": "Reverse motor channel 2"
+          "reverse_motor_1": "Reverse motor channel 1",
+          "reverse_motor_2": "Reverse motor channel 2",
+          "reverse_motor_3": "Reverse motor channel 3",
+          "reverse_motor_4": "Reverse motor channel 4",
+          "limoss_remote_theme": "App artwork theme"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -850,11 +831,10 @@
           "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family. In Sleep Smart, P2 is the middle rail bed.",
           "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout. Sleep Smart beds use the two-motor standard or split-series layout.",
           "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
-          "logicdata_app_has_light": "Expose under-bed light controls when the selected standard layout has lighting.",
+          "has_light": "Expose light controls when the bed has lighting.",
           "jiecang_app_profile": "Select the app used to control this bed. Bluetooth UUIDs cannot identify the app profile.",
           "jiecang_app_layout": "Select the layout configured in the app. The integration does not infer it from the device name or motor count.",
           "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion also supports standalone G2.",
-          "jiecang_app_has_light": "Expose light controls when this bed has under-bed lighting.",
           "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
           "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
           "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
@@ -872,12 +852,11 @@
           "vmatbasic_floor_minutes": "CBI accepts 0\u20131439 minutes; XT-Box accepts 0\u2013255. Zero is an explicit timer setting.",
           "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
           "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
-          "motion_bed_name": "Enter the original case-sensitive Bluetooth name used by the Motion Bed app. The shared FFE1 transport cannot identify this app.",
+          "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. Motion Bed and AdjustableM5X5 profiles are identified from it, not from a friendly display name.",
           "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
           "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
-          "starcode_lift_entries": "Choose up to three other configured AdjustableM5X5 entries. This main and the three lifts keep separate Bluetooth addresses and controls.",
-          "starcode_m5x5_profile": "Choose CB25, F23, kneading or Elevate to match the exact Bluetooth name.",
-          "starcode_device_name": "Enter the unchanged Bluetooth name, preserving case. A friendly display name cannot identify the app class or remote."
+          "starcode_lift_entries": "Choose up to three other configured AdjustableM5X5 or DewertOkin ELEVATE entries. This main and the three lifts keep separate Bluetooth addresses and controls.",
+          "starcode_m5x5_profile": "Choose CB25, F23 or kneading to match the exact Bluetooth name. ELEVATE lifts use the DewertOkin ELEVATE bed type."
         }
       },
       "remove_bond": {
@@ -943,55 +922,33 @@
       "octo_tv_lift_pairing_unsupported": "One-motor OCTO TV/bed lifts must remain standalone and cannot be paired as bed sides.",
       "single_address_pairing_unsupported": "This CBNew protocol has no A/B side selector and cannot safely expose paired-side controls.",
       "leggett_app_invalid_profile": "Choose a supported Leggett app profile.",
-      "leggett_app_unpair_first": "Unpair the beds and configure each side separately before choosing a Leggett app profile.",
       "logicdata_app_required": "Choose the bed app, command family and physical actuator layout.",
       "logicdata_app_family_layout": "For MotionRelax apps, P2 requires the middle layout and all other layouts use P1.",
-      "logicdata_app_unpair_first": "Unpair the beds and configure each side separately before choosing Logicdata bed apps.",
-      "woosa_unpair_first": "Unpair the beds and configure each side separately before changing the Woosa Sleep profile.",
-      "jensen_linon_unpair_first": "Unpair the beds and configure each side separately before changing the Jensen LinOn profile.",
       "jiecang_app_required": "Choose the bed app and physical actuator layout.",
-      "jiecang_app_pair_settings": "Restore the standalone beds, configure each side's app profile and actuator layout, then combine them again.",
       "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
       "invalid_lp_legacy_mode": "Select Legacy or Framed explicitly.",
       "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID.",
-      "lp_legacy_pair_settings": "Unpair the beds and configure the legacy L&P profile, packet mode and Bluetooth characteristics on each bed before pairing them again.",
       "malouf_app_required": "Select the Android app and exact bed model.",
-      "malouf_app_pair_settings": "Unpair first, then select each physical bed\u2019s app profile before combining them again.",
       "furnimove_remote_required": "Choose a captured FurniMove handset ID. An unknown ID requires its exact app table; the receiver label cannot choose one.",
-      "furnimove_unpair_first": "Separate the paired entries before changing to FurniMove, then select each side\u2019s own handset layout.",
       "vibradorm_app_required": "Choose the bed app.",
       "vibradorm_app_invalid": "Choose a supported app control layout and retained feature settings.",
-      "vibradorm_app_unpair_first": "Unpair these entries before changing app settings. Each physical side keeps its own app controls.",
       "vmat_bond_required": "VMAT setup requires verified native pairing for this exact Bluetooth address. Use a supported host Bluetooth adapter and retry; an unverified proxy pairing request cannot finish setup.",
       "vmatbasic_invalid": "Enter a whole number within the selected product range.",
       "vmatbasic_link_profile": "Combine only CBI or CBI with XT-Box receivers. The Basic profile has no linked control.",
-      "vmatbasic_unpair_first": "Unpair these entries before changing product settings; each receiver retains its own profile.",
       "vmatbasic_required": "Choose the V-MAT Basic product profile.",
       "starcode_app_invalid": "Choose a supported app selector and a live Bluetooth transport.",
-      "starcode_app_unpair_first": "Unpair these entries before changing app selectors. Each physical side retains its own app controls.",
       "motion_bed_profile": "Choose a supported Motion Bed name or an explicit app-restored profile, with layouts belonging to the same surface.",
-      "motion_bed_unpair": "Unpair before changing side-specific Motion Bed profiles.",
       "starcode_profile_mismatch": "Choose the bed class matching the exact case-sensitive Bluetooth name.",
-      "starcode_unpair_first": "Use standalone entries for this independently addressed accessory group.",
-      "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 entries with different Bluetooth addresses.",
-      "fsm_relax_unpair_first": "Unpair the beds first, configure each physical FSM Relax profile, then combine them again.",
+      "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 or DewertOkin ELEVATE entries with different Bluetooth addresses.",
+      "starcode_elevate_bed_type": "ELEVATE lifts use the DewertOkin ELEVATE bed type. Set them up with it, then select them as lifts here.",
       "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each).",
-      "svane_unpair_first": "Unpair the beds and configure each side separately before changing a Svane Remote profile.",
-      "simmons_unpair_first": "Unpair the beds and configure each side separately before changing the SIMMONS bed type or protocol.",
       "invalid_pulse_count_range": "For this app profile, the motor pulse count must be between 1 and 600.",
-      "okin_bedding_app_unpair_first": "Separate the paired entries before changing to or from the Tranquil, Z-Series or Adjustable bed (Lumbar) app, then select each side\u2019s own app profile.",
-      "adjustable_lumbar_unpair_first": "Unpair the beds and configure each side separately before changing the Adjustable bed (Lumbar) protocol.",
-      "remacro_model_unmapped": "This bed advertises a company ID that no Remacro app lists.",
       "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses.",
-      "remacro_app_unpair_first": "Each side keeps its own Remacro app. Unpair the beds and change each side's protocol variant separately.",
       "logicdata_app_sleep_smart_layout": "Sleep Smart beds use the two-motor standard or split-series layout.",
-      "richmat_mh_unpair_first": "Unpair the beds and configure each side separately before changing the Richmat app model.",
       "richmat_mh_choose_model": "The app asks for the model for this Bluetooth name. Choose the model in the protocol variant.",
       "richmat_mh_no_name": "The app selects the model from the Bluetooth name, which is unavailable. Choose the model in the protocol variant.",
       "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant.",
-      "ore_comfort_unpair_first": "Unpair the beds and configure each side separately before changing the MaxCoil Una, Dynasty Bases or Bedsense Bases app profile.",
-      "innova_unpair_first": "Unpair the beds and configure each side separately before changing the INNOVA app profile.",
-      "okin_app_unpair_first": "Unpair the beds and configure each side separately before changing to, from or between the Simon Li, Heal Every Night and OKIN-Seating app profiles."
+      "app_profile_unpair_first": "Each side keeps its own {profile} settings. Unpair the beds, change each side separately, then combine them again."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond\u2026",
@@ -1698,17 +1655,11 @@
       "disconnect_right": {
         "name": "Right: Disconnect"
       },
-      "disconnect_both": {
-        "name": "Both sides: Disconnect"
-      },
       "connect_left": {
         "name": "Left: Connect"
       },
       "connect_right": {
         "name": "Right: Connect"
-      },
-      "connect_both": {
-        "name": "Both sides: Connect"
       },
       "wake_controller_left": {
         "name": "Left: Wake Controller"
@@ -1866,9 +1817,6 @@
       "vibradorm_app_mood_toggle_right": {
         "name": "Toggle mood light (right)"
       },
-      "vibradorm_app_mood_toggle_both": {
-        "name": "Toggle mood light (both)"
-      },
       "vibradorm_app_floor_timer_toggle": {
         "name": "Toggle pending floor light timer"
       },
@@ -1877,9 +1825,6 @@
       },
       "vibradorm_app_floor_timer_toggle_right": {
         "name": "Toggle pending floor light timer (right)"
-      },
-      "vibradorm_app_floor_timer_toggle_both": {
-        "name": "Toggle pending floor light timer (both)"
       },
       "vibradorm_app_massage_automatic": {
         "name": "Toggle automatic massage"
@@ -1890,9 +1835,6 @@
       "vibradorm_app_massage_automatic_right": {
         "name": "Toggle automatic massage (right)"
       },
-      "vibradorm_app_massage_automatic_both": {
-        "name": "Toggle automatic massage (both)"
-      },
       "vibradorm_app_massage_individual": {
         "name": "Toggle individual massage"
       },
@@ -1901,9 +1843,6 @@
       },
       "vibradorm_app_massage_individual_right": {
         "name": "Toggle individual massage (right)"
-      },
-      "vibradorm_app_massage_individual_both": {
-        "name": "Toggle individual massage (both)"
       },
       "vibradorm_app_all_up": {
         "name": "Hold all controls up"
@@ -1914,9 +1853,6 @@
       "vibradorm_app_all_up_right": {
         "name": "Hold all controls up (right)"
       },
-      "vibradorm_app_all_up_both": {
-        "name": "Hold all controls up (both)"
-      },
       "vibradorm_app_all_down": {
         "name": "Hold all controls down"
       },
@@ -1925,9 +1861,6 @@
       },
       "vibradorm_app_all_down_right": {
         "name": "Hold all controls down (right)"
-      },
-      "vibradorm_app_all_down_both": {
-        "name": "Hold all controls down (both)"
       },
       "vibradorm_app_sync": {
         "name": "Hold synchronization control"
@@ -1938,9 +1871,6 @@
       "vibradorm_app_sync_right": {
         "name": "Hold synchronization control (right)"
       },
-      "vibradorm_app_sync_both": {
-        "name": "Hold synchronization control (both)"
-      },
       "vibradorm_app_refresh_info": {
         "name": "Refresh device information"
       },
@@ -1949,9 +1879,6 @@
       },
       "vibradorm_app_refresh_info_right": {
         "name": "Refresh device information (right)"
-      },
-      "vibradorm_app_refresh_info_both": {
-        "name": "Refresh device information (both)"
       },
       "vmatbasic_all_up": {
         "name": "All up"
@@ -2315,17 +2242,11 @@
       "head_right": {
         "name": "Right: Head"
       },
-      "head_both": {
-        "name": "Both sides: Head"
-      },
       "back_left": {
         "name": "Left: Back"
       },
       "back_right": {
         "name": "Right: Back"
-      },
-      "back_both": {
-        "name": "Both sides: Back"
       },
       "legs_left": {
         "name": "Left: Legs"
@@ -2333,26 +2254,17 @@
       "legs_right": {
         "name": "Right: Legs"
       },
-      "legs_both": {
-        "name": "Both sides: Legs"
-      },
       "feet_left": {
         "name": "Left: Feet"
       },
       "feet_right": {
         "name": "Right: Feet"
       },
-      "feet_both": {
-        "name": "Both sides: Feet"
-      },
       "lumbar_left": {
         "name": "Left: Lumbar"
       },
       "lumbar_right": {
         "name": "Right: Lumbar"
-      },
-      "lumbar_both": {
-        "name": "Both sides: Lumbar"
       },
       "waist": {
         "name": "Waist"
@@ -2363,17 +2275,11 @@
       "waist_right": {
         "name": "Right: Waist"
       },
-      "waist_both": {
-        "name": "Both sides: Waist"
-      },
       "pillow_left": {
         "name": "Left: Pillow"
       },
       "pillow_right": {
         "name": "Right: Pillow"
-      },
-      "pillow_both": {
-        "name": "Both sides: Pillow"
       },
       "neck_left": {
         "name": "Left: Neck"
@@ -2381,17 +2287,11 @@
       "neck_right": {
         "name": "Right: Neck"
       },
-      "neck_both": {
-        "name": "Both sides: Neck"
-      },
       "tilt_left": {
         "name": "Left: Tilt"
       },
       "tilt_right": {
         "name": "Right: Tilt"
-      },
-      "tilt_both": {
-        "name": "Both sides: Tilt"
       },
       "head_end_tilt_left": {
         "name": "Left: Head End Tilt"
@@ -2399,17 +2299,11 @@
       "head_end_tilt_right": {
         "name": "Right: Head End Tilt"
       },
-      "head_end_tilt_both": {
-        "name": "Both sides: Head End Tilt"
-      },
       "foot_end_tilt_left": {
         "name": "Left: Foot End Tilt"
       },
       "foot_end_tilt_right": {
         "name": "Right: Foot End Tilt"
-      },
-      "foot_end_tilt_both": {
-        "name": "Both sides: Foot End Tilt"
       },
       "hip_left": {
         "name": "Left: Hip"
@@ -2417,17 +2311,11 @@
       "hip_right": {
         "name": "Right: Hip"
       },
-      "hip_both": {
-        "name": "Both sides: Hip"
-      },
       "bed_height_left": {
         "name": "Left: Bed Height"
       },
       "bed_height_right": {
         "name": "Right: Bed Height"
-      },
-      "bed_height_both": {
-        "name": "Both sides: Bed Height"
       },
       "stair_left": {
         "name": "Left: Stair"
@@ -2435,17 +2323,11 @@
       "stair_right": {
         "name": "Right: Stair"
       },
-      "stair_both": {
-        "name": "Both sides: Stair"
-      },
       "keeson_back_left": {
         "name": "Left: Back"
       },
       "keeson_back_right": {
         "name": "Right: Back"
-      },
-      "keeson_back_both": {
-        "name": "Both sides: Back"
       },
       "keeson_head_left": {
         "name": "Left: Head"
@@ -2453,17 +2335,11 @@
       "keeson_head_right": {
         "name": "Right: Head"
       },
-      "keeson_head_both": {
-        "name": "Both sides: Head"
-      },
       "keeson_legs_left": {
         "name": "Left: Legs"
       },
       "keeson_legs_right": {
         "name": "Right: Legs"
-      },
-      "keeson_legs_both": {
-        "name": "Both sides: Legs"
       },
       "right_back": {
         "name": "Right back"
@@ -2486,641 +2362,113 @@
       "malouf_full_tilt": {
         "name": "Full tilt"
       },
-      "motion_bed_weitiao_w8fragment_coupled_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w6fragment_wholelift_both": {
-        "name": "LIFT (both)"
-      },
-      "motion_bed_weitiao_w13fragment_wholelift": {
-        "name": "LIFT"
-      },
-      "motion_bed_weitiao_w7fragment_split_legs_right_right": {
-        "name": "Split Legs Right (right)"
-      },
-      "motion_bed_weitiao_w18fragment_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w2fragment_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w14fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w12fragment_wholelift_both": {
-        "name": "LIFT (both)"
-      },
-      "motion_bed_weitiao_w18fragment_lumbar_right": {
-        "name": "LUMBAR (right)"
-      },
-      "motion_bed_weitiao_w18fragment_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w4fragment_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w3fragment_back_legs": {
-        "name": "BACK LEG"
-      },
-      "motion_bed_weitiao_w13fragment_wholeqingxie_left": {
-        "name": "TILT (left)"
-      },
-      "motion_bed_weitiao_w13fragment_wholeqingxie_right": {
-        "name": "TILT (right)"
-      },
-      "motion_bed_weitiao_w4fragment_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w10fragment_head": {
-        "name": "HEAD"
-      },
-      "motion_bed_weitiao_w14fragment_wholelift_right": {
-        "name": "LIFT (right)"
-      },
-      "motion_bed_weitiao_w1fragment_hip_right": {
-        "name": "HIP (right)"
-      },
-      "motion_bed_weitiao_w11fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w4fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w13fragment_wholelift_right": {
-        "name": "LIFT (right)"
-      },
-      "motion_bed_weitiao_w13fragment_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w13fragment_lumbar_right": {
-        "name": "LUMBAR (right)"
-      },
-      "motion_bed_weitiao_w14fragment_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w13fragment_wholelift_both": {
-        "name": "LIFT (both)"
-      },
-      "motion_bed_weitiao_w8fragment_coupled_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w10fragment_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w3fragment_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w12fragment_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w10fragment_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w10fragment_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w1fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w18fragment_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w7fragment_split_legs_left_both": {
-        "name": "Split Legs Left (both)"
-      },
-      "motion_bed_weitiao_w3fragment_lumbar": {
-        "name": "LUMBAR"
-      },
-      "motion_bed_weitiao_w18fragment_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w13fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w3fragment_back_legs_right": {
-        "name": "BACK LEG (right)"
-      },
-      "motion_bed_weitiao_w13fragment_lumbar": {
-        "name": "LUMBAR"
-      },
-      "motion_bed_weitiao_w8fragment_split_back_left_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w1fragment_head": {
-        "name": "HEAD"
-      },
-      "motion_bed_weitiao_w8fragment_split_back_right": {
+      "motion_bed_back": {
         "name": "BACK"
       },
-      "motion_bed_weitiao_w18fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w13fragment_head_both": {
-        "name": "HEAD (both)"
-      },
-      "motion_bed_weitiao_w7fragment_split_legs_left_left": {
-        "name": "Split Legs Left (left)"
-      },
-      "motion_bed_weitiao_w13fragment_head_left": {
-        "name": "HEAD (left)"
-      },
-      "motion_bed_weitiao_w2fragment_head_left": {
-        "name": "HEAD (left)"
-      },
-      "motion_bed_weitiao_w18fragment_lumbar_left": {
-        "name": "LUMBAR (left)"
-      },
-      "motion_bed_weitiao_w2fragment_lumbar_right": {
-        "name": "LUMBAR (right)"
-      },
-      "motion_bed_weitiao_w7fragment_coupled_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w6fragment_wholelift_right": {
-        "name": "LIFT (right)"
-      },
-      "motion_bed_weitiao_w8fragment_split_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w3fragment_lumbar_right": {
-        "name": "LUMBAR (right)"
-      },
-      "motion_bed_weitiao_w14fragment_head": {
-        "name": "HEAD"
-      },
-      "motion_bed_weitiao_w7fragment_split_back_right_left": {
+      "motion_bed_back_left": {
         "name": "BACK (left)"
       },
-      "motion_bed_weitiao_w7fragment_split_back_right_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w18fragment_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w4fragment_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w12fragment_wholelift_right": {
-        "name": "LIFT (right)"
-      },
-      "motion_bed_weitiao_w11fragment_wholelift_left": {
-        "name": "LIFT (left)"
-      },
-      "motion_bed_weitiao_w7fragment_coupled_back_right": {
+      "motion_bed_back_right": {
         "name": "BACK (right)"
       },
-      "motion_bed_weitiao_w6fragment_wholelift": {
-        "name": "LIFT"
+      "motion_bed_head": {
+        "name": "HEAD"
       },
-      "motion_bed_weitiao_w14fragment_wholeqingxie_left": {
-        "name": "TILT (left)"
+      "motion_bed_head_left": {
+        "name": "HEAD (left)"
       },
-      "motion_bed_weitiao_w14fragment_legs_right": {
-        "name": "LEG (right)"
+      "motion_bed_head_right": {
+        "name": "HEAD (right)"
       },
-      "motion_bed_weitiao_w11fragment_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w13fragment_wholeqingxie_both": {
-        "name": "TILT (both)"
-      },
-      "motion_bed_weitiao_w11fragment_legs": {
+      "motion_bed_legs": {
         "name": "LEG"
       },
-      "motion_bed_weitiao_w14fragment_wholeqingxie_right": {
-        "name": "TILT (right)"
+      "motion_bed_legs_left": {
+        "name": "LEG (left)"
       },
-      "motion_bed_weitiao_w1fragment_hip": {
+      "motion_bed_legs_right": {
+        "name": "LEG (right)"
+      },
+      "motion_bed_lumbar": {
+        "name": "LUMBAR"
+      },
+      "motion_bed_lumbar_left": {
+        "name": "LUMBAR (left)"
+      },
+      "motion_bed_lumbar_right": {
+        "name": "LUMBAR (right)"
+      },
+      "motion_bed_hip": {
         "name": "HIP"
       },
-      "motion_bed_weitiao_w10fragment_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w2fragment_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w14fragment_head_both": {
-        "name": "HEAD (both)"
-      },
-      "motion_bed_weitiao_w13fragment_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w8fragment_split_back_right_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w18fragment_head_right": {
-        "name": "LIFT (right)"
-      },
-      "motion_bed_weitiao_w1fragment_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w12fragment_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w12fragment_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w4fragment_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w7fragment_split_back_right": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w12fragment_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w8fragment_coupled_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w2fragment_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w7fragment_split_back_left_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w3fragment_back_legs_left": {
-        "name": "BACK LEG (left)"
-      },
-      "motion_bed_weitiao_w13fragment_lumbar_both": {
-        "name": "LUMBAR (both)"
-      },
-      "motion_bed_weitiao_w14fragment_wholeqingxie": {
-        "name": "TILT"
-      },
-      "motion_bed_weitiao_w12fragment_wholelift": {
-        "name": "LIFT"
-      },
-      "motion_bed_weitiao_w3fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w12fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w11fragment_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w1fragment_hip_both": {
-        "name": "HIP (both)"
-      },
-      "motion_bed_weitiao_w14fragment_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w11fragment_wholelift": {
-        "name": "LIFT"
-      },
-      "motion_bed_weitiao_w13fragment_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w1fragment_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w18fragment_head_left": {
-        "name": "LIFT (left)"
-      },
-      "motion_bed_weitiao_w13fragment_wholelift_left": {
-        "name": "LIFT (left)"
-      },
-      "motion_bed_weitiao_w11fragment_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w3fragment_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w14fragment_lumbar_both": {
-        "name": "LUMBAR (both)"
-      },
-      "motion_bed_weitiao_w1fragment_head_both": {
-        "name": "HEAD (both)"
-      },
-      "motion_bed_weitiao_w2fragment_head_both": {
-        "name": "HEAD (both)"
-      },
-      "motion_bed_weitiao_w12fragment_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w1fragment_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w7fragment_split_back_right_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w18fragment_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w3fragment_lumbar_both": {
-        "name": "LUMBAR (both)"
-      },
-      "motion_bed_weitiao_w8fragment_coupled_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w7fragment_coupled_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w3fragment_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w10fragment_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w8fragment_split_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w3fragment_lumbar_left": {
-        "name": "LUMBAR (left)"
-      },
-      "motion_bed_weitiao_w7fragment_split_back_left": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w4fragment_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w12fragment_wholelift_left": {
-        "name": "LIFT (left)"
-      },
-      "motion_bed_weitiao_w2fragment_head": {
-        "name": "HEAD"
-      },
-      "motion_bed_weitiao_w11fragment_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w2fragment_lumbar_left": {
-        "name": "LUMBAR (left)"
-      },
-      "motion_bed_weitiao_w8fragment_coupled_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w10fragment_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w10fragment_head_left": {
-        "name": "HEAD (left)"
-      },
-      "motion_bed_weitiao_w13fragment_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w6fragment_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w8fragment_split_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w14fragment_wholelift_both": {
-        "name": "LIFT (both)"
-      },
-      "motion_bed_weitiao_w7fragment_coupled_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w12fragment_wholeqingxie_both": {
-        "name": "TILT (both)"
-      },
-      "motion_bed_weitiao_w3fragment_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w11fragment_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w3fragment_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w4fragment_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w14fragment_lumbar": {
-        "name": "LUMBAR"
-      },
-      "motion_bed_weitiao_w7fragment_coupled_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w1fragment_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w18fragment_lumbar": {
-        "name": "LUMBAR"
-      },
-      "motion_bed_weitiao_w6fragment_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w10fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w8fragment_coupled_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w7fragment_coupled_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w14fragment_wholelift_left": {
-        "name": "LIFT (left)"
-      },
-      "motion_bed_weitiao_w14fragment_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w8fragment_coupled_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w13fragment_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w14fragment_lumbar_right": {
-        "name": "LUMBAR (right)"
-      },
-      "motion_bed_weitiao_w11fragment_wholelift_both": {
-        "name": "LIFT (both)"
-      },
-      "motion_bed_weitiao_w2fragment_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w18fragment_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w12fragment_wholeqingxie": {
-        "name": "TILT"
-      },
-      "motion_bed_weitiao_w10fragment_head_right": {
-        "name": "HEAD (right)"
-      },
-      "motion_bed_weitiao_w8fragment_split_back_left_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w1fragment_head_right": {
-        "name": "HEAD (right)"
-      },
-      "motion_bed_weitiao_w8fragment_coupled_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w7fragment_split_back_left_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w8fragment_split_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w1fragment_head_left": {
-        "name": "HEAD (left)"
-      },
-      "motion_bed_weitiao_w2fragment_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w11fragment_wholelift_right": {
-        "name": "LIFT (right)"
-      },
-      "motion_bed_weitiao_w18fragment_lumbar_both": {
-        "name": "LUMBAR (both)"
-      },
-      "motion_bed_weitiao_w13fragment_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w1fragment_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w7fragment_coupled_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w7fragment_coupled_back_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w13fragment_legs_both": {
-        "name": "LEG (both)"
-      },
-      "motion_bed_weitiao_w8fragment_split_back_right_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w13fragment_head_right": {
-        "name": "HEAD (right)"
-      },
-      "motion_bed_weitiao_w14fragment_wholeqingxie_both": {
-        "name": "TILT (both)"
-      },
-      "motion_bed_weitiao_w7fragment_split_legs_right_both": {
-        "name": "Split Legs Right (both)"
-      },
-      "motion_bed_weitiao_w7fragment_split_legs_left_right": {
-        "name": "Split Legs Left (right)"
-      },
-      "motion_bed_weitiao_w8fragment_split_back_left_left": {
-        "name": "BACK (left)"
-      },
-      "motion_bed_weitiao_w13fragment_head": {
-        "name": "HEAD"
-      },
-      "motion_bed_weitiao_w13fragment_lumbar_left": {
-        "name": "LUMBAR (left)"
-      },
-      "motion_bed_weitiao_w18fragment_head": {
-        "name": "LIFT"
-      },
-      "motion_bed_weitiao_w2fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w14fragment_head_right": {
-        "name": "HEAD (right)"
-      },
-      "motion_bed_weitiao_w7fragment_split_legs_right_left": {
-        "name": "Split Legs Right (left)"
-      },
-      "motion_bed_weitiao_w2fragment_head_right": {
-        "name": "HEAD (right)"
-      },
-      "motion_bed_weitiao_w14fragment_head_left": {
-        "name": "HEAD (left)"
-      },
-      "motion_bed_weitiao_w12fragment_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w8fragment_split_back_left": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w1fragment_legs": {
-        "name": "LEG"
-      },
-      "motion_bed_weitiao_w14fragment_wholelift": {
-        "name": "LIFT"
-      },
-      "motion_bed_weitiao_w7fragment_split_legs_right": {
-        "name": "Split Legs Right"
-      },
-      "motion_bed_weitiao_w6fragment_back_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w3fragment_back_legs_both": {
-        "name": "BACK LEG (both)"
-      },
-      "motion_bed_weitiao_w2fragment_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w12fragment_wholeqingxie_right": {
-        "name": "TILT (right)"
-      },
-      "motion_bed_weitiao_w14fragment_legs_left": {
-        "name": "LEG (left)"
-      },
-      "motion_bed_weitiao_w2fragment_lumbar_both": {
-        "name": "LUMBAR (both)"
-      },
-      "motion_bed_weitiao_w1fragment_hip_left": {
+      "motion_bed_hip_left": {
         "name": "HIP (left)"
       },
-      "motion_bed_weitiao_w12fragment_wholeqingxie_left": {
-        "name": "TILT (left)"
+      "motion_bed_hip_right": {
+        "name": "HIP (right)"
       },
-      "motion_bed_weitiao_w14fragment_back": {
-        "name": "BACK"
+      "motion_bed_lift": {
+        "name": "LIFT"
       },
-      "motion_bed_weitiao_w11fragment_back_both": {
-        "name": "BACK (both)"
-      },
-      "motion_bed_weitiao_w10fragment_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w7fragment_split_back_left_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w2fragment_back": {
-        "name": "BACK"
-      },
-      "motion_bed_weitiao_w1fragment_legs_right": {
-        "name": "LEG (right)"
-      },
-      "motion_bed_weitiao_w10fragment_head_both": {
-        "name": "HEAD (both)"
-      },
-      "motion_bed_weitiao_w13fragment_wholeqingxie": {
-        "name": "TILT"
-      },
-      "motion_bed_weitiao_w8fragment_split_back_right_right": {
-        "name": "BACK (right)"
-      },
-      "motion_bed_weitiao_w6fragment_wholelift_left": {
+      "motion_bed_lift_left": {
         "name": "LIFT (left)"
       },
-      "motion_bed_weitiao_w14fragment_back_both": {
-        "name": "BACK (both)"
+      "motion_bed_lift_right": {
+        "name": "LIFT (right)"
       },
-      "motion_bed_weitiao_w18fragment_head_both": {
-        "name": "LIFT (both)"
+      "motion_bed_tilt": {
+        "name": "TILT"
       },
-      "motion_bed_weitiao_w14fragment_lumbar_left": {
-        "name": "LUMBAR (left)"
+      "motion_bed_tilt_left": {
+        "name": "TILT (left)"
       },
-      "motion_bed_weitiao_w3fragment_back": {
-        "name": "BACK"
+      "motion_bed_tilt_right": {
+        "name": "TILT (right)"
       },
-      "motion_bed_weitiao_w12fragment_back_left": {
-        "name": "BACK (left)"
+      "motion_bed_back_legs": {
+        "name": "BACK LEG"
       },
-      "motion_bed_weitiao_w3fragment_legs_both": {
-        "name": "LEG (both)"
+      "motion_bed_back_legs_left": {
+        "name": "BACK LEG (left)"
       },
-      "motion_bed_weitiao_w7fragment_split_legs_left": {
-        "name": "Split Legs Left"
+      "motion_bed_back_legs_right": {
+        "name": "BACK LEG (right)"
       },
-      "motion_bed_weitiao_w2fragment_lumbar": {
-        "name": "LUMBAR"
+      "motion_bed_left_back": {
+        "name": "Left BACK"
       },
-      "motion_bed_weitiao_w4fragment_legs_left": {
-        "name": "LEG (left)"
+      "motion_bed_left_back_left": {
+        "name": "Left BACK (left)"
       },
-      "motion_bed_weitiao_w6fragment_back_both": {
-        "name": "BACK (both)"
+      "motion_bed_left_back_right": {
+        "name": "Left BACK (right)"
+      },
+      "motion_bed_right_back": {
+        "name": "Right BACK"
+      },
+      "motion_bed_right_back_left": {
+        "name": "Right BACK (left)"
+      },
+      "motion_bed_right_back_right": {
+        "name": "Right BACK (right)"
+      },
+      "motion_bed_left_legs": {
+        "name": "Left LEG"
+      },
+      "motion_bed_left_legs_left": {
+        "name": "Left LEG (left)"
+      },
+      "motion_bed_left_legs_right": {
+        "name": "Left LEG (right)"
+      },
+      "motion_bed_right_legs": {
+        "name": "Right LEG"
+      },
+      "motion_bed_right_legs_left": {
+        "name": "Right LEG (left)"
+      },
+      "motion_bed_right_legs_right": {
+        "name": "Right LEG (right)"
       },
       "starcode_union": {
         "name": "Head and foot together"
@@ -3130,9 +2478,6 @@
       },
       "limoss_remote_motor_2_right": {
         "name": "Right: Motor channel 2"
-      },
-      "limoss_remote_motor_3_both": {
-        "name": "Both sides: Motor channel 3"
       },
       "limoss_remote_motor_3_left": {
         "name": "Left: Motor channel 3"
@@ -3155,17 +2500,8 @@
       "limoss_remote_motor_1_left": {
         "name": "Left: Motor channel 1"
       },
-      "limoss_remote_motor_2_both": {
-        "name": "Both sides: Motor channel 2"
-      },
-      "limoss_remote_motor_4_both": {
-        "name": "Both sides: Motor channel 4"
-      },
       "limoss_remote_motor_2": {
         "name": "Motor channel 2"
-      },
-      "limoss_remote_motor_1_both": {
-        "name": "Both sides: Motor channel 1"
       },
       "limoss_remote_motor_3": {
         "name": "Motor channel 3"
@@ -3283,17 +2619,11 @@
       "head_angle_right": {
         "name": "Right: Head Angle"
       },
-      "head_angle_both": {
-        "name": "Both sides: Head Angle"
-      },
       "back_angle_left": {
         "name": "Left: Back Angle"
       },
       "back_angle_right": {
         "name": "Right: Back Angle"
-      },
-      "back_angle_both": {
-        "name": "Both sides: Back Angle"
       },
       "legs_angle_left": {
         "name": "Left: Legs Angle"
@@ -3301,17 +2631,11 @@
       "legs_angle_right": {
         "name": "Right: Legs Angle"
       },
-      "legs_angle_both": {
-        "name": "Both sides: Legs Angle"
-      },
       "feet_angle_left": {
         "name": "Left: Feet Angle"
       },
       "feet_angle_right": {
         "name": "Right: Feet Angle"
-      },
-      "feet_angle_both": {
-        "name": "Both sides: Feet Angle"
       },
       "massage_head_level_left": {
         "name": "Left: Massage: Head Level"
@@ -3319,26 +2643,17 @@
       "massage_head_level_right": {
         "name": "Right: Massage: Head Level"
       },
-      "massage_head_level_both": {
-        "name": "Both sides: Massage: Head Level"
-      },
       "massage_foot_level_left": {
         "name": "Left: Massage: Foot Level"
       },
       "massage_foot_level_right": {
         "name": "Right: Massage: Foot Level"
       },
-      "massage_foot_level_both": {
-        "name": "Both sides: Massage: Foot Level"
-      },
       "massage_timer_mode_left": {
         "name": "Left: Massage: Timer Mode"
       },
       "massage_timer_mode_right": {
         "name": "Right: Massage: Timer Mode"
-      },
-      "massage_timer_mode_both": {
-        "name": "Both sides: Massage: Timer Mode"
       },
       "leggett_led_mask": {
         "name": "LED mask"
@@ -3373,22 +2688,22 @@
       "customatic_model": {
         "name": "Model"
       },
-      "serenity_manufacturer": {
+      "okin_bedding_app_manufacturer": {
         "name": "Manufacturer"
       },
-      "serenity_status_code": {
+      "okin_bedding_app_status_code": {
         "name": "App status code"
       },
-      "serenity_massage_timer_code": {
+      "okin_bedding_app_massage_timer_code": {
         "name": "Massage timer code"
       },
-      "serenity_massage_timer_minutes": {
+      "okin_bedding_app_massage_timer_minutes": {
         "name": "Massage timer"
       },
-      "serenity_save_event_code": {
+      "okin_bedding_app_save_event_code": {
         "name": "Local memory save event"
       },
-      "serenity_alarm_type": {
+      "okin_bedding_app_alarm_type": {
         "name": "App alarm state"
       },
       "furnimove_model": {
@@ -3424,50 +2739,14 @@
       "vibradorm_app_model": {
         "name": "App model metadata"
       },
-      "vibradorm_app_model_left": {
-        "name": "App model metadata (left)"
-      },
-      "vibradorm_app_model_right": {
-        "name": "App model metadata (right)"
-      },
-      "vibradorm_app_model_both": {
-        "name": "App model metadata (both)"
-      },
       "vibradorm_app_firmware": {
         "name": "App firmware metadata"
-      },
-      "vibradorm_app_firmware_left": {
-        "name": "App firmware metadata (left)"
-      },
-      "vibradorm_app_firmware_right": {
-        "name": "App firmware metadata (right)"
-      },
-      "vibradorm_app_firmware_both": {
-        "name": "App firmware metadata (both)"
       },
       "vibradorm_app_software": {
         "name": "App software metadata"
       },
-      "vibradorm_app_software_left": {
-        "name": "App software metadata (left)"
-      },
-      "vibradorm_app_software_right": {
-        "name": "App software metadata (right)"
-      },
-      "vibradorm_app_software_both": {
-        "name": "App software metadata (both)"
-      },
       "vibradorm_app_main_firmware_article": {
         "name": "App firmware article"
-      },
-      "vibradorm_app_main_firmware_article_left": {
-        "name": "App firmware article (left)"
-      },
-      "vibradorm_app_main_firmware_article_right": {
-        "name": "App firmware article (right)"
-      },
-      "vibradorm_app_main_firmware_article_both": {
-        "name": "App firmware article (both)"
       },
       "vibradorm_app_sync_observed": {
         "name": "Observed synchronization",
@@ -3476,98 +2755,23 @@
           "off": "Off"
         }
       },
-      "vibradorm_app_sync_observed_left": {
-        "name": "Observed synchronization (left)",
-        "state": {
-          "on": "On",
-          "off": "Off"
-        }
-      },
-      "vibradorm_app_sync_observed_right": {
-        "name": "Observed synchronization (right)",
-        "state": {
-          "on": "On",
-          "off": "Off"
-        }
-      },
-      "vibradorm_app_sync_observed_both": {
-        "name": "Observed synchronization (both)",
-        "state": {
-          "on": "On",
-          "off": "Off"
-        }
-      },
       "vibradorm_app_xmc_status": {
         "name": "Onboarding status"
-      },
-      "vibradorm_app_xmc_status_left": {
-        "name": "Onboarding status Left"
-      },
-      "vibradorm_app_xmc_status_right": {
-        "name": "Onboarding status Right"
-      },
-      "vibradorm_app_xmc_status_both": {
-        "name": "Onboarding status Both"
       },
       "vibradorm_app_opmode": {
         "name": "Onboarding operating mode"
       },
-      "vibradorm_app_opmode_left": {
-        "name": "Onboarding operating mode Left"
-      },
-      "vibradorm_app_opmode_right": {
-        "name": "Onboarding operating mode Right"
-      },
-      "vibradorm_app_opmode_both": {
-        "name": "Onboarding operating mode Both"
-      },
       "vibradorm_app_device_name": {
         "name": "App device name"
-      },
-      "vibradorm_app_device_name_left": {
-        "name": "App device name Left"
-      },
-      "vibradorm_app_device_name_right": {
-        "name": "App device name Right"
-      },
-      "vibradorm_app_device_name_both": {
-        "name": "App device name Both"
       },
       "vibradorm_app_revision_id": {
         "name": "Revision ID"
       },
-      "vibradorm_app_revision_id_left": {
-        "name": "Revision ID Left"
-      },
-      "vibradorm_app_revision_id_right": {
-        "name": "Revision ID Right"
-      },
-      "vibradorm_app_revision_id_both": {
-        "name": "Revision ID Both"
-      },
       "vibradorm_app_revision_string": {
         "name": "Revision string"
       },
-      "vibradorm_app_revision_string_left": {
-        "name": "Revision string Left"
-      },
-      "vibradorm_app_revision_string_right": {
-        "name": "Revision string Right"
-      },
-      "vibradorm_app_revision_string_both": {
-        "name": "Revision string Both"
-      },
       "vibradorm_app_variant": {
         "name": "App variant"
-      },
-      "vibradorm_app_variant_left": {
-        "name": "App variant Left"
-      },
-      "vibradorm_app_variant_right": {
-        "name": "App variant Right"
-      },
-      "vibradorm_app_variant_both": {
-        "name": "App variant Both"
       },
       "vmatbasic_floor_minutes_observed": {
         "name": "Observed floor timer"
@@ -3677,56 +2881,17 @@
       "starcode_abm5_4_raw_7f": {
         "name": "Raw app field 7f"
       },
-      "motion_bed_pressure_triplet_tags_left": {
-        "name": "Pressure triplet tags (left)"
-      },
       "motion_bed_audio_volume": {
         "name": "Audio volume"
-      },
-      "motion_bed_thermal_gear_left": {
-        "name": "Thermal gear (left)"
-      },
-      "motion_bed_pressure_raw_left": {
-        "name": "Pressure raw (left)"
-      },
-      "motion_bed_alarm_weekdays_both": {
-        "name": "Alarm weekdays (both)"
       },
       "motion_bed_day_received_segments": {
         "name": "Day received segments"
       },
-      "motion_bed_massage_timer_raw_both": {
-        "name": "Massage timer raw (both)"
-      },
-      "motion_bed_stored_side_positions_right": {
-        "name": "Stored side positions (right)"
-      },
-      "motion_bed_day_total_both": {
-        "name": "Day total (both)"
-      },
       "motion_bed_pressure_triplet_tags": {
         "name": "Pressure triplet tags"
       },
-      "motion_bed_thermal_temperature_both": {
-        "name": "Thermal temperature (both)"
-      },
-      "motion_bed_thermal_mode_left": {
-        "name": "Thermal mode (left)"
-      },
-      "motion_bed_day_side_left": {
-        "name": "Day side (left)"
-      },
-      "motion_bed_first_module_type_both": {
-        "name": "First module type (both)"
-      },
-      "motion_bed_audio_track_left": {
-        "name": "Audio track (left)"
-      },
       "motion_bed_massage_timer_raw": {
         "name": "Massage timer raw"
-      },
-      "motion_bed_day_flat_right": {
-        "name": "Day flat (right)"
       },
       "motion_bed_alarm_weekdays": {
         "name": "Alarm weekdays"
@@ -3734,26 +2899,8 @@
       "motion_bed_air_timer": {
         "name": "Air timer"
       },
-      "motion_bed_raw_positions_both": {
-        "name": "Raw positions (both)"
-      },
-      "motion_bed_day_slots_right": {
-        "name": "Day slots (right)"
-      },
-      "motion_bed_motor_programmed_bits_left": {
-        "name": "Motor programmed bits (left)"
-      },
       "motion_bed_alarm_mode": {
         "name": "Alarm mode"
-      },
-      "motion_bed_day_side_both": {
-        "name": "Day side (both)"
-      },
-      "motion_bed_day_window_start_hour_right": {
-        "name": "Day window start hour (right)"
-      },
-      "motion_bed_pressure_raw_right": {
-        "name": "Pressure raw (right)"
       },
       "motion_bed_sensor_mac": {
         "name": "Sensor mac"
@@ -3764,32 +2911,14 @@
       "motion_bed_calibration_flat": {
         "name": "Calibration flat"
       },
-      "motion_bed_fault_part_right": {
-        "name": "Fault part (right)"
-      },
-      "motion_bed_raw_positions_right": {
-        "name": "Raw positions (right)"
-      },
       "motion_bed_day_segment": {
         "name": "Day segment"
       },
       "motion_bed_air_setting_mode": {
         "name": "Air setting mode"
       },
-      "motion_bed_alarm_music_left": {
-        "name": "Alarm music (left)"
-      },
       "motion_bed_first_module_type": {
         "name": "First module type"
-      },
-      "motion_bed_month_days_left": {
-        "name": "Month days (left)"
-      },
-      "motion_bed_fault_part_both": {
-        "name": "Fault part (both)"
-      },
-      "motion_bed_air_lower_gear_left": {
-        "name": "Air lower gear (left)"
       },
       "motion_bed_air_lower_raw": {
         "name": "Air lower raw"
@@ -3797,257 +2926,50 @@
       "motion_bed_brightness": {
         "name": "Brightness"
       },
-      "motion_bed_air_setting_mode_left": {
-        "name": "Air setting mode (left)"
-      },
-      "motion_bed_thermal_timer_gear_both": {
-        "name": "Thermal timer gear (both)"
-      },
-      "motion_bed_lower_massage_right": {
-        "name": "Lower massage (right)"
-      },
-      "motion_bed_air_setting_mode_both": {
-        "name": "Air setting mode (both)"
-      },
       "motion_bed_lower_massage": {
         "name": "Lower massage"
-      },
-      "motion_bed_day_slots_both": {
-        "name": "Day slots (both)"
-      },
-      "motion_bed_month_maximum_sleep_both": {
-        "name": "Month maximum sleep (both)"
-      },
-      "motion_bed_air_upper_raw_both": {
-        "name": "Air upper raw (both)"
-      },
-      "motion_bed_pressure_values_right": {
-        "name": "Pressure values (right)"
-      },
-      "motion_bed_fall_timer_left": {
-        "name": "Fall timer (left)"
       },
       "motion_bed_thermal_timer_mode": {
         "name": "Thermal timer mode"
       },
-      "motion_bed_thermal_gear_right": {
-        "name": "Thermal gear (right)"
-      },
-      "motion_bed_pressure_raw_both": {
-        "name": "Pressure raw (both)"
-      },
-      "motion_bed_day_next_window_left": {
-        "name": "Day next window (left)"
-      },
-      "motion_bed_app_day_unit_both": {
-        "name": "App day unit (both)"
-      },
-      "motion_bed_light_timer_left": {
-        "name": "Light timer (left)"
-      },
-      "motion_bed_sleep_timer_both": {
-        "name": "Sleep timer (both)"
-      },
-      "motion_bed_app_day_next_window_right": {
-        "name": "App day next window (right)"
-      },
-      "motion_bed_air_lower_raw_left": {
-        "name": "Air lower raw (left)"
-      },
-      "motion_bed_light_timer_right": {
-        "name": "Light timer (right)"
-      },
       "motion_bed_calibration_kk": {
         "name": "Calibration kk"
-      },
-      "motion_bed_stored_side_positions_left": {
-        "name": "Stored side positions (left)"
       },
       "motion_bed_month_average_rolls": {
         "name": "Month average rolls"
       },
-      "motion_bed_air_timer_left": {
-        "name": "Air timer (left)"
-      },
-      "motion_bed_stored_flat_positions_left": {
-        "name": "Stored flat positions (left)"
-      },
-      "motion_bed_day_window_start_hour_left": {
-        "name": "Day window start hour (left)"
-      },
       "motion_bed_alarm_hour": {
         "name": "Alarm hour"
-      },
-      "motion_bed_first_module_type_left": {
-        "name": "First module type (left)"
-      },
-      "motion_bed_fault_part_raw_left": {
-        "name": "Fault part raw (left)"
-      },
-      "motion_bed_alarm_flag_left": {
-        "name": "Alarm flag (left)"
-      },
-      "motion_bed_month_average_sleep_left": {
-        "name": "Month average sleep (left)"
       },
       "motion_bed_calibration_side": {
         "name": "Calibration side"
       },
-      "motion_bed_day_window_left": {
-        "name": "Day window (left)"
-      },
-      "motion_bed_month_minimum_sleep_right": {
-        "name": "Month minimum sleep (right)"
-      },
       "motion_bed_month_minimum_rolls": {
         "name": "Month minimum rolls"
-      },
-      "motion_bed_calibration_kk_right": {
-        "name": "Calibration kk (right)"
-      },
-      "motion_bed_stored_flat_positions_both": {
-        "name": "Stored flat positions (both)"
       },
       "motion_bed_alarm_weekday_mask": {
         "name": "Alarm weekday mask"
       },
-      "motion_bed_thermal_temperature_display_both": {
-        "name": "Thermal temperature display (both)"
-      },
-      "motion_bed_month_flat_right": {
-        "name": "Month flat (right)"
-      },
-      "motion_bed_fault_code_raw_left": {
-        "name": "Fault code raw (left)"
-      },
-      "motion_bed_thermal_slider_index_right": {
-        "name": "Thermal slider index (right)"
-      },
-      "motion_bed_month_minimum_rolls_both": {
-        "name": "Month minimum rolls (both)"
-      },
-      "motion_bed_day_received_segments_right": {
-        "name": "Day received segments (right)"
-      },
-      "motion_bed_audio_volume_both": {
-        "name": "Audio volume (both)"
-      },
-      "motion_bed_app_day_previous_window_right": {
-        "name": "App day previous window (right)"
-      },
-      "motion_bed_alarm_hour_left": {
-        "name": "Alarm hour (left)"
-      },
-      "motion_bed_thermal_slider_index_both": {
-        "name": "Thermal slider index (both)"
-      },
-      "motion_bed_massage_timer_raw_left": {
-        "name": "Massage timer raw (left)"
-      },
-      "motion_bed_alarm_flag_both": {
-        "name": "Alarm flag (both)"
-      },
       "motion_bed_upper_massage": {
         "name": "Upper massage"
-      },
-      "motion_bed_day_rolls_left": {
-        "name": "Day rolls (left)"
       },
       "motion_bed_motor_programmed_bits": {
         "name": "Motor programmed bits"
       },
-      "motion_bed_air_lower_gear_both": {
-        "name": "Air lower gear (both)"
-      },
-      "motion_bed_alarm_music_right": {
-        "name": "Alarm music (right)"
-      },
-      "motion_bed_thermal_gear_both": {
-        "name": "Thermal gear (both)"
-      },
       "motion_bed_app_initial_module_type": {
         "name": "App initial module type"
-      },
-      "motion_bed_month_average_rolls_both": {
-        "name": "Month average rolls (both)"
-      },
-      "motion_bed_air_setting_mode_right": {
-        "name": "Air setting mode (right)"
       },
       "motion_bed_fault": {
         "name": "Fault"
       },
-      "motion_bed_air_timer_right": {
-        "name": "Air timer (right)"
-      },
       "motion_bed_massage_wave": {
         "name": "Massage wave"
-      },
-      "motion_bed_pressure_values_both": {
-        "name": "Pressure values (both)"
-      },
-      "motion_bed_thermal_timer_gear_left": {
-        "name": "Thermal timer gear (left)"
       },
       "motion_bed_raw_positions": {
         "name": "Raw positions"
       },
-      "motion_bed_air_lower_gear_right": {
-        "name": "Air lower gear (right)"
-      },
-      "motion_bed_thermal_temperature_right": {
-        "name": "Thermal temperature (right)"
-      },
-      "motion_bed_app_day_next_window_both": {
-        "name": "App day next window (both)"
-      },
-      "motion_bed_thermal_water_left": {
-        "name": "Thermal water (left)"
-      },
-      "motion_bed_thermal_temperature_display_right": {
-        "name": "Thermal temperature display (right)"
-      },
       "motion_bed_calibration_aa": {
         "name": "Calibration aa"
-      },
-      "motion_bed_day_side_right": {
-        "name": "Day side (right)"
-      },
-      "motion_bed_thermal_mode_right": {
-        "name": "Thermal mode (right)"
-      },
-      "motion_bed_calibration_kk_left": {
-        "name": "Calibration kk (left)"
-      },
-      "motion_bed_alarm_weekdays_left": {
-        "name": "Alarm weekdays (left)"
-      },
-      "motion_bed_day_window_both": {
-        "name": "Day window (both)"
-      },
-      "motion_bed_month_maximum_sleep_right": {
-        "name": "Month maximum sleep (right)"
-      },
-      "motion_bed_first_module_type_right": {
-        "name": "First module type (right)"
-      },
-      "motion_bed_thermal_water_right": {
-        "name": "Thermal water (right)"
-      },
-      "motion_bed_sensor_mac_left": {
-        "name": "Sensor mac (left)"
-      },
-      "motion_bed_day_unit_left": {
-        "name": "Day unit (left)"
-      },
-      "motion_bed_day_slots_left": {
-        "name": "Day slots (left)"
-      },
-      "motion_bed_upper_massage_both": {
-        "name": "Upper massage (both)"
-      },
-      "motion_bed_upper_massage_left": {
-        "name": "Upper massage (left)"
       },
       "motion_bed_month_flat": {
         "name": "Month flat"
@@ -4055,65 +2977,17 @@
       "motion_bed_day_operation": {
         "name": "Day operation"
       },
-      "motion_bed_brightness_left": {
-        "name": "Brightness (left)"
-      },
-      "motion_bed_alarm_hour_right": {
-        "name": "Alarm hour (right)"
-      },
-      "motion_bed_massage_wave_left": {
-        "name": "Massage wave (left)"
-      },
-      "motion_bed_air_timer_both": {
-        "name": "Air timer (both)"
-      },
-      "motion_bed_thermal_timer_minute_right": {
-        "name": "Thermal timer minute (right)"
-      },
-      "motion_bed_thermal_timer_mode_both": {
-        "name": "Thermal timer mode (both)"
-      },
-      "motion_bed_month_flat_both": {
-        "name": "Month flat (both)"
-      },
       "motion_bed_module_status_raw": {
         "name": "Module status raw"
       },
-      "motion_bed_app_initial_module_type_both": {
-        "name": "App initial module type (both)"
-      },
-      "motion_bed_day_received_segments_both": {
-        "name": "Day received segments (both)"
-      },
-      "motion_bed_fall_timer_right": {
-        "name": "Fall timer (right)"
-      },
       "motion_bed_month_maximum_sleep": {
         "name": "Month maximum sleep"
-      },
-      "motion_bed_month_side_left": {
-        "name": "Month side (left)"
       },
       "motion_bed_pressure_values": {
         "name": "Pressure values"
       },
       "motion_bed_month_average_sleep": {
         "name": "Month average sleep"
-      },
-      "motion_bed_thermal_timer_mode_left": {
-        "name": "Thermal timer mode (left)"
-      },
-      "motion_bed_day_window_start_hour_both": {
-        "name": "Day window start hour (both)"
-      },
-      "motion_bed_day_previous_window_both": {
-        "name": "Day previous window (both)"
-      },
-      "motion_bed_audio_track_right": {
-        "name": "Audio track (right)"
-      },
-      "motion_bed_motor_programmed_bits_both": {
-        "name": "Motor programmed bits (both)"
       },
       "motion_bed_day_rolls": {
         "name": "Day rolls"
@@ -4124,71 +2998,17 @@
       "motion_bed_sleep_timer": {
         "name": "Sleep timer"
       },
-      "motion_bed_lower_massage_both": {
-        "name": "Lower massage (both)"
-      },
       "motion_bed_thermal_mode": {
         "name": "Thermal mode"
-      },
-      "motion_bed_day_flat_both": {
-        "name": "Day flat (both)"
-      },
-      "motion_bed_thermal_timer_gear_right": {
-        "name": "Thermal timer gear (right)"
-      },
-      "motion_bed_air_upper_raw_left": {
-        "name": "Air upper raw (left)"
-      },
-      "motion_bed_air_upper_gear_left": {
-        "name": "Air upper gear (left)"
-      },
-      "motion_bed_air_upper_gear_both": {
-        "name": "Air upper gear (both)"
       },
       "motion_bed_thermal_timer_minute": {
         "name": "Thermal timer minute"
       },
-      "motion_bed_massage_timer_raw_right": {
-        "name": "Massage timer raw (right)"
-      },
-      "motion_bed_fault_part_raw_both": {
-        "name": "Fault part raw (both)"
-      },
-      "motion_bed_thermal_temperature_left": {
-        "name": "Thermal temperature (left)"
-      },
-      "motion_bed_app_initial_module_type_left": {
-        "name": "App initial module type (left)"
-      },
-      "motion_bed_thermal_timer_minute_left": {
-        "name": "Thermal timer minute (left)"
-      },
-      "motion_bed_month_minimum_rolls_left": {
-        "name": "Month minimum rolls (left)"
-      },
-      "motion_bed_day_segment_both": {
-        "name": "Day segment (both)"
-      },
-      "motion_bed_calibration_side_both": {
-        "name": "Calibration side (both)"
-      },
       "motion_bed_day_flat": {
         "name": "Day flat"
       },
-      "motion_bed_thermal_timer_hour_both": {
-        "name": "Thermal timer hour (both)"
-      },
-      "motion_bed_thermal_slider_index_left": {
-        "name": "Thermal slider index (left)"
-      },
-      "motion_bed_raw_positions_left": {
-        "name": "Raw positions (left)"
-      },
       "motion_bed_stored_side_positions": {
         "name": "Stored side positions"
-      },
-      "motion_bed_air_lower_raw_both": {
-        "name": "Air lower raw (both)"
       },
       "motion_bed_light_timer": {
         "name": "Light timer"
@@ -4196,80 +3016,11 @@
       "motion_bed_thermal_slider_index": {
         "name": "Thermal slider index"
       },
-      "motion_bed_sleep_timer_right": {
-        "name": "Sleep timer (right)"
-      },
-      "motion_bed_calibration_flat_both": {
-        "name": "Calibration flat (both)"
-      },
-      "motion_bed_day_rolls_both": {
-        "name": "Day rolls (both)"
-      },
-      "motion_bed_month_average_sleep_right": {
-        "name": "Month average sleep (right)"
-      },
-      "motion_bed_day_operation_both": {
-        "name": "Day operation (both)"
-      },
-      "motion_bed_air_upper_gear_right": {
-        "name": "Air upper gear (right)"
-      },
-      "motion_bed_audio_volume_left": {
-        "name": "Audio volume (left)"
-      },
-      "motion_bed_alarm_music_both": {
-        "name": "Alarm music (both)"
-      },
-      "motion_bed_app_day_next_window_left": {
-        "name": "App day next window (left)"
-      },
-      "motion_bed_app_day_unit_left": {
-        "name": "App day unit (left)"
-      },
       "motion_bed_month_side": {
         "name": "Month side"
       },
-      "motion_bed_massage_timer_right": {
-        "name": "Massage timer (right)"
-      },
-      "motion_bed_alarm_weekday_mask_both": {
-        "name": "Alarm weekday mask (both)"
-      },
-      "motion_bed_month_maximum_sleep_left": {
-        "name": "Month maximum sleep (left)"
-      },
-      "motion_bed_module_status_raw_both": {
-        "name": "Module status raw (both)"
-      },
-      "motion_bed_month_average_rolls_right": {
-        "name": "Month average rolls (right)"
-      },
-      "motion_bed_alarm_mode_both": {
-        "name": "Alarm mode (both)"
-      },
-      "motion_bed_alarm_minute_left": {
-        "name": "Alarm minute (left)"
-      },
       "motion_bed_pressure_raw": {
         "name": "Pressure raw"
-      },
-      "motion_bed_month_minimum_sleep_both": {
-        "name": "Month minimum sleep (both)"
-      },
-      "motion_bed_alarm_weekdays_right": {
-        "name": "Alarm weekdays (right)"
-      },
-      "motion_bed_audio_track_both": {
-        "name": "Audio track (both)"
-      },
-      "motion_bed_brightness_right": {
-        "name": "Brightness (right)"
-      },
-      "motion_bed_massage_wave_both": {
-        "name": "Massage wave (both)"
-      },
-      "motion_bed_calibration_kk_both": {
-        "name": "Calibration kk (both)"
       },
       "motion_bed_air_upper_gear": {
         "name": "Air upper gear"
@@ -4277,41 +3028,8 @@
       "motion_bed_month_days": {
         "name": "Month days"
       },
-      "motion_bed_day_previous_window_left": {
-        "name": "Day previous window (left)"
-      },
-      "motion_bed_fault_code_raw_both": {
-        "name": "Fault code raw (both)"
-      },
       "motion_bed_month_minimum_sleep": {
         "name": "Month minimum sleep"
-      },
-      "motion_bed_month_minimum_sleep_left": {
-        "name": "Month minimum sleep (left)"
-      },
-      "motion_bed_alarm_minute_right": {
-        "name": "Alarm minute (right)"
-      },
-      "motion_bed_fault_both": {
-        "name": "Fault (both)"
-      },
-      "motion_bed_audio_volume_right": {
-        "name": "Audio volume (right)"
-      },
-      "motion_bed_month_days_right": {
-        "name": "Month days (right)"
-      },
-      "motion_bed_fault_code_raw_right": {
-        "name": "Fault code raw (right)"
-      },
-      "motion_bed_thermal_timer_minute_both": {
-        "name": "Thermal timer minute (both)"
-      },
-      "motion_bed_thermal_timer_mode_right": {
-        "name": "Thermal timer mode (right)"
-      },
-      "motion_bed_module_status_raw_left": {
-        "name": "Module status raw (left)"
       },
       "motion_bed_fall_timer": {
         "name": "Fall timer"
@@ -4319,56 +3037,14 @@
       "motion_bed_day_total": {
         "name": "Day total"
       },
-      "motion_bed_calibration_side_left": {
-        "name": "Calibration side (left)"
-      },
-      "motion_bed_month_average_rolls_left": {
-        "name": "Month average rolls (left)"
-      },
-      "motion_bed_day_unit_right": {
-        "name": "Day unit (right)"
-      },
-      "motion_bed_air_upper_raw_right": {
-        "name": "Air upper raw (right)"
-      },
-      "motion_bed_thermal_temperature_display_left": {
-        "name": "Thermal temperature display (left)"
-      },
-      "motion_bed_month_maximum_rolls_right": {
-        "name": "Month maximum rolls (right)"
-      },
-      "motion_bed_calibration_aa_left": {
-        "name": "Calibration aa (left)"
-      },
-      "motion_bed_fault_part_left": {
-        "name": "Fault part (left)"
-      },
-      "motion_bed_month_maximum_rolls_both": {
-        "name": "Month maximum rolls (both)"
-      },
       "motion_bed_day_previous_window": {
         "name": "Day previous window"
-      },
-      "motion_bed_day_previous_window_right": {
-        "name": "Day previous window (right)"
       },
       "motion_bed_app_day_previous_window": {
         "name": "App day previous window"
       },
-      "motion_bed_sensor_mac_right": {
-        "name": "Sensor mac (right)"
-      },
-      "motion_bed_day_unit_both": {
-        "name": "Day unit (both)"
-      },
       "motion_bed_day_window": {
         "name": "Day window"
-      },
-      "motion_bed_month_side_both": {
-        "name": "Month side (both)"
-      },
-      "motion_bed_day_operation_right": {
-        "name": "Day operation (right)"
       },
       "motion_bed_massage_timer": {
         "name": "Massage timer"
@@ -4376,44 +3052,8 @@
       "motion_bed_day_slots": {
         "name": "Day slots"
       },
-      "motion_bed_month_minimum_rolls_right": {
-        "name": "Month minimum rolls (right)"
-      },
-      "motion_bed_day_operation_left": {
-        "name": "Day operation (left)"
-      },
-      "motion_bed_module_status_raw_right": {
-        "name": "Module status raw (right)"
-      },
-      "motion_bed_day_total_right": {
-        "name": "Day total (right)"
-      },
-      "motion_bed_massage_wave_right": {
-        "name": "Massage wave (right)"
-      },
-      "motion_bed_alarm_mode_right": {
-        "name": "Alarm mode (right)"
-      },
-      "motion_bed_day_segment_right": {
-        "name": "Day segment (right)"
-      },
-      "motion_bed_pressure_triplet_tags_both": {
-        "name": "Pressure triplet tags (both)"
-      },
       "motion_bed_fault_code_raw": {
         "name": "Fault code raw"
-      },
-      "motion_bed_month_side_right": {
-        "name": "Month side (right)"
-      },
-      "motion_bed_massage_timer_left": {
-        "name": "Massage timer (left)"
-      },
-      "motion_bed_sleep_timer_left": {
-        "name": "Sleep timer (left)"
-      },
-      "motion_bed_app_initial_module_type_right": {
-        "name": "App initial module type (right)"
       },
       "motion_bed_thermal_gear": {
         "name": "Thermal gear"
@@ -4421,110 +3061,29 @@
       "motion_bed_thermal_temperature_display": {
         "name": "Thermal temperature display"
       },
-      "motion_bed_month_days_both": {
-        "name": "Month days (both)"
-      },
       "motion_bed_fault_part": {
         "name": "Fault part"
-      },
-      "motion_bed_air_lower_raw_right": {
-        "name": "Air lower raw (right)"
       },
       "motion_bed_thermal_temperature": {
         "name": "Thermal temperature"
       },
-      "motion_bed_calibration_side_right": {
-        "name": "Calibration side (right)"
-      },
       "motion_bed_air_upper_raw": {
         "name": "Air upper raw"
-      },
-      "motion_bed_calibration_aa_right": {
-        "name": "Calibration aa (right)"
-      },
-      "motion_bed_motor_programmed_bits_right": {
-        "name": "Motor programmed bits (right)"
-      },
-      "motion_bed_light_timer_both": {
-        "name": "Light timer (both)"
       },
       "motion_bed_thermal_timer_gear": {
         "name": "Thermal timer gear"
       },
-      "motion_bed_calibration_flat_right": {
-        "name": "Calibration flat (right)"
-      },
-      "motion_bed_thermal_timer_hour_left": {
-        "name": "Thermal timer hour (left)"
-      },
       "motion_bed_thermal_water": {
         "name": "Thermal water"
-      },
-      "motion_bed_day_segment_left": {
-        "name": "Day segment (left)"
-      },
-      "motion_bed_day_next_window_right": {
-        "name": "Day next window (right)"
       },
       "motion_bed_stored_flat_positions": {
         "name": "Stored flat positions"
       },
-      "motion_bed_day_received_segments_left": {
-        "name": "Day received segments (left)"
-      },
-      "motion_bed_app_day_previous_window_both": {
-        "name": "App day previous window (both)"
-      },
       "motion_bed_alarm_minute": {
         "name": "Alarm minute"
       },
-      "motion_bed_day_total_left": {
-        "name": "Day total (left)"
-      },
-      "motion_bed_alarm_weekday_mask_left": {
-        "name": "Alarm weekday mask (left)"
-      },
-      "motion_bed_upper_massage_right": {
-        "name": "Upper massage (right)"
-      },
-      "motion_bed_thermal_water_both": {
-        "name": "Thermal water (both)"
-      },
-      "motion_bed_calibration_flat_left": {
-        "name": "Calibration flat (left)"
-      },
-      "motion_bed_day_flat_left": {
-        "name": "Day flat (left)"
-      },
-      "motion_bed_alarm_minute_both": {
-        "name": "Alarm minute (both)"
-      },
-      "motion_bed_sensor_mac_both": {
-        "name": "Sensor mac (both)"
-      },
-      "motion_bed_day_next_window_both": {
-        "name": "Day next window (both)"
-      },
-      "motion_bed_massage_timer_both": {
-        "name": "Massage timer (both)"
-      },
-      "motion_bed_brightness_both": {
-        "name": "Brightness (both)"
-      },
-      "motion_bed_thermal_timer_hour_right": {
-        "name": "Thermal timer hour (right)"
-      },
-      "motion_bed_stored_flat_positions_right": {
-        "name": "Stored flat positions (right)"
-      },
-      "motion_bed_app_day_unit_right": {
-        "name": "App day unit (right)"
-      },
       "motion_bed_day_next_window": {
         "name": "Day next window"
-      },
-      "motion_bed_stored_side_positions_both": {
-        "name": "Stored side positions (both)"
       },
       "motion_bed_app_day_next_window": {
         "name": "App day next window"
@@ -4535,56 +3094,17 @@
       "motion_bed_alarm_music": {
         "name": "Alarm music"
       },
-      "motion_bed_alarm_hour_both": {
-        "name": "Alarm hour (both)"
-      },
-      "motion_bed_fault_left": {
-        "name": "Fault (left)"
-      },
-      "motion_bed_pressure_triplet_tags_right": {
-        "name": "Pressure triplet tags (right)"
-      },
-      "motion_bed_alarm_weekday_mask_right": {
-        "name": "Alarm weekday mask (right)"
-      },
       "motion_bed_alarm_flag": {
         "name": "Alarm flag"
       },
       "motion_bed_audio_track": {
         "name": "Audio track"
       },
-      "motion_bed_pressure_values_left": {
-        "name": "Pressure values (left)"
-      },
-      "motion_bed_fault_part_raw_right": {
-        "name": "Fault part raw (right)"
-      },
-      "motion_bed_calibration_aa_both": {
-        "name": "Calibration aa (both)"
-      },
       "motion_bed_day_unit": {
         "name": "Day unit"
       },
-      "motion_bed_fall_timer_both": {
-        "name": "Fall timer (both)"
-      },
-      "motion_bed_thermal_mode_both": {
-        "name": "Thermal mode (both)"
-      },
-      "motion_bed_month_flat_left": {
-        "name": "Month flat (left)"
-      },
-      "motion_bed_day_window_right": {
-        "name": "Day window (right)"
-      },
-      "motion_bed_month_average_sleep_both": {
-        "name": "Month average sleep (both)"
-      },
       "motion_bed_app_day_unit": {
         "name": "App day unit"
-      },
-      "motion_bed_lower_massage_left": {
-        "name": "Lower massage (left)"
       },
       "motion_bed_thermal_timer_hour": {
         "name": "Thermal timer hour"
@@ -4592,26 +3112,8 @@
       "motion_bed_day_side": {
         "name": "Day side"
       },
-      "motion_bed_day_rolls_right": {
-        "name": "Day rolls (right)"
-      },
-      "motion_bed_month_maximum_rolls_left": {
-        "name": "Month maximum rolls (left)"
-      },
-      "motion_bed_app_day_previous_window_left": {
-        "name": "App day previous window (left)"
-      },
-      "motion_bed_alarm_mode_left": {
-        "name": "Alarm mode (left)"
-      },
-      "motion_bed_fault_right": {
-        "name": "Fault (right)"
-      },
       "motion_bed_month_maximum_rolls": {
         "name": "Month maximum rolls"
-      },
-      "motion_bed_alarm_flag_right": {
-        "name": "Alarm flag (right)"
       },
       "coolbase_right_fan_level": {
         "name": "Right fan level"
@@ -4835,42 +3337,6 @@
       "simmons_alarm_2": {
         "name": "Alarm 2"
       },
-      "tranquil_manufacturer": {
-        "name": "Manufacturer"
-      },
-      "tranquil_status_code": {
-        "name": "App status code"
-      },
-      "tranquil_massage_timer_code": {
-        "name": "Massage timer code"
-      },
-      "tranquil_massage_timer_minutes": {
-        "name": "Massage timer"
-      },
-      "tranquil_save_event_code": {
-        "name": "Local memory save event"
-      },
-      "tranquil_alarm_type": {
-        "name": "App alarm state"
-      },
-      "zseries_manufacturer": {
-        "name": "Manufacturer"
-      },
-      "zseries_status_code": {
-        "name": "App status code"
-      },
-      "zseries_massage_timer_code": {
-        "name": "Massage timer code"
-      },
-      "zseries_massage_timer_minutes": {
-        "name": "Massage timer"
-      },
-      "zseries_save_event_code": {
-        "name": "Local memory save event"
-      },
-      "zseries_alarm_type": {
-        "name": "App alarm state"
-      },
       "logicdata_app_massage_mode": {
         "name": "Massage mode"
       },
@@ -4922,9 +3388,6 @@
       },
       "under_bed_lights_right": {
         "name": "Right: Under Bed Lights"
-      },
-      "under_bed_lights_both": {
-        "name": "Both sides: Under Bed Lights"
       }
     },
     "switch": {
@@ -4943,26 +3406,17 @@
       "under_bed_lights_right": {
         "name": "Right: Under Bed Lights"
       },
-      "under_bed_lights_both": {
-        "name": "Both sides: Under Bed Lights"
-      },
       "synchro_mode_left": {
         "name": "Left: Controller Sync"
       },
       "synchro_mode_right": {
         "name": "Right: Controller Sync"
       },
-      "synchro_mode_both": {
-        "name": "Both sides: Controller Sync"
-      },
       "linak_automatic_drive_left": {
         "name": "Left: Automatic Drive"
       },
       "linak_automatic_drive_right": {
         "name": "Right: Automatic Drive"
-      },
-      "linak_automatic_drive_both": {
-        "name": "Both sides: Automatic Drive"
       },
       "automatic_light": {
         "name": "Automatic under-bed light"
@@ -5005,12 +3459,6 @@
       "ble_connection_right": {
         "name": "Right: BLE Connection"
       },
-      "ble_connection_both": {
-        "name": "Both sides: BLE Connection"
-      },
-      "bed_presence_both": {
-        "name": "Both sides: Bed Presence"
-      },
       "leggett_alarm_indicator": {
         "name": "Alarm indicator"
       },
@@ -5038,56 +3486,17 @@
       "motion_bed_coupled_right_memory": {
         "name": "Coupled right memory"
       },
-      "motion_bed_first_modular_alarm_left": {
-        "name": "First modular alarm (left)"
-      },
       "motion_bed_sync_visible": {
         "name": "Sync visible"
       },
       "motion_bed_motor_massage_visible": {
         "name": "Motor massage visible"
       },
-      "motion_bed_motor_module_present_left": {
-        "name": "Motor module present (left)"
-      },
       "motion_bed_alarm_repeat": {
         "name": "Alarm repeat"
       },
-      "motion_bed_air_back_custom_left": {
-        "name": "Air back custom (left)"
-      },
-      "motion_bed_snore_right": {
-        "name": "Snore (right)"
-      },
-      "motion_bed_alarm_enabled_both": {
-        "name": "Alarm enabled (both)"
-      },
-      "motion_bed_motor_massage_enabled_left": {
-        "name": "Motor massage enabled (left)"
-      },
-      "motion_bed_first_modular_alarm_both": {
-        "name": "First modular alarm (both)"
-      },
       "motion_bed_sync_enabled": {
         "name": "Sync enabled"
-      },
-      "motion_bed_right_memory_right": {
-        "name": "Right memory (right)"
-      },
-      "motion_bed_alarm_enabled_left": {
-        "name": "Alarm enabled (left)"
-      },
-      "motion_bed_motor_light_enabled_right": {
-        "name": "Motor light enabled (right)"
-      },
-      "motion_bed_air_module_present_left": {
-        "name": "Air module present (left)"
-      },
-      "motion_bed_audio_available_left": {
-        "name": "Audio available (left)"
-      },
-      "motion_bed_alarm_repeat_right": {
-        "name": "Alarm repeat (right)"
       },
       "motion_bed_thermal_timer_enabled": {
         "name": "Thermal timer enabled"
@@ -5095,197 +3504,44 @@
       "motion_bed_alarm_sound": {
         "name": "Alarm sound"
       },
-      "motion_bed_motor_light_enabled_both": {
-        "name": "Motor light enabled (both)"
-      },
       "motion_bed_sensor_present": {
         "name": "Sensor present"
-      },
-      "motion_bed_left_memory_right": {
-        "name": "Left memory (right)"
       },
       "motion_bed_air_full_custom": {
         "name": "Air full custom"
       },
-      "motion_bed_tv_both": {
-        "name": "Tv (both)"
-      },
-      "motion_bed_thermal_module_present_right": {
-        "name": "Thermal module present (right)"
-      },
-      "motion_bed_coupled_left_memory_both": {
-        "name": "Coupled left memory (both)"
-      },
       "motion_bed_memory_2": {
         "name": "Memory 2"
-      },
-      "motion_bed_audio_available_both": {
-        "name": "Audio available (both)"
       },
       "motion_bed_audio_available": {
         "name": "Audio available"
       },
-      "motion_bed_sync_enabled_right": {
-        "name": "Sync enabled (right)"
-      },
-      "motion_bed_right_zero_gravity_both": {
-        "name": "Right zero gravity (both)"
-      },
       "motion_bed_alarm_enabled": {
         "name": "Alarm enabled"
-      },
-      "motion_bed_alarm_massage_right": {
-        "name": "Alarm massage (right)"
       },
       "motion_bed_air_module_present": {
         "name": "Air module present"
       },
-      "motion_bed_motor_module_present_both": {
-        "name": "Motor module present (both)"
-      },
       "motion_bed_first_modular_alarm": {
         "name": "First modular alarm"
-      },
-      "motion_bed_air_back_custom_both": {
-        "name": "Air back custom (both)"
-      },
-      "motion_bed_air_module_present_both": {
-        "name": "Air module present (both)"
-      },
-      "motion_bed_alarm_sound_left": {
-        "name": "Alarm sound (left)"
-      },
-      "motion_bed_motor_massage_visible_right": {
-        "name": "Motor massage visible (right)"
-      },
-      "motion_bed_sleep_enabled_both": {
-        "name": "Sleep enabled (both)"
-      },
-      "motion_bed_calibration_reset_received_both": {
-        "name": "Calibration reset received (both)"
-      },
-      "motion_bed_memory_1_both": {
-        "name": "Memory 1 (both)"
-      },
-      "motion_bed_air_adaptive_right": {
-        "name": "Air adaptive (right)"
-      },
-      "motion_bed_alarm_repeat_both": {
-        "name": "Alarm repeat (both)"
-      },
-      "motion_bed_sync_visible_left": {
-        "name": "Sync visible (left)"
-      },
-      "motion_bed_motor_sensor_enabled_both": {
-        "name": "Motor sensor enabled (both)"
       },
       "motion_bed_motor_light_enabled": {
         "name": "Motor light enabled"
       },
-      "motion_bed_calibration_reset_received_left": {
-        "name": "Calibration reset received (left)"
-      },
-      "motion_bed_zero_gravity_left": {
-        "name": "Zero gravity (left)"
-      },
       "motion_bed_air_adaptive": {
         "name": "Air adaptive"
-      },
-      "motion_bed_alarm_repeat_left": {
-        "name": "Alarm repeat (left)"
-      },
-      "motion_bed_motor_massage_enabled_right": {
-        "name": "Motor massage enabled (right)"
-      },
-      "motion_bed_right_tv_both": {
-        "name": "Right tv (both)"
-      },
-      "motion_bed_thermal_low_water_both": {
-        "name": "Thermal low water (both)"
-      },
-      "motion_bed_coupled_left_memory_left": {
-        "name": "Coupled left memory (left)"
-      },
-      "motion_bed_air_full_custom_both": {
-        "name": "Air full custom (both)"
-      },
-      "motion_bed_coupled_right_memory_right": {
-        "name": "Coupled right memory (right)"
       },
       "motion_bed_motor_massage_enabled": {
         "name": "Motor massage enabled"
       },
-      "motion_bed_tv_left": {
-        "name": "Tv (left)"
-      },
-      "motion_bed_motor_massage_visible_left": {
-        "name": "Motor massage visible (left)"
-      },
-      "motion_bed_thermal_low_water_left": {
-        "name": "Thermal low water (left)"
-      },
-      "motion_bed_air_adaptive_both": {
-        "name": "Air adaptive (both)"
-      },
-      "motion_bed_snore_both": {
-        "name": "Snore (both)"
-      },
-      "motion_bed_tv_right": {
-        "name": "Tv (right)"
-      },
-      "motion_bed_audio_available_right": {
-        "name": "Audio available (right)"
-      },
       "motion_bed_alarm_massage": {
         "name": "Alarm massage"
-      },
-      "motion_bed_alarm_enabled_right": {
-        "name": "Alarm enabled (right)"
-      },
-      "motion_bed_memory_1_right": {
-        "name": "Memory 1 (right)"
-      },
-      "motion_bed_right_zero_gravity_left": {
-        "name": "Right zero gravity (left)"
-      },
-      "motion_bed_left_tv_both": {
-        "name": "Left tv (both)"
-      },
-      "motion_bed_alarm_sound_right": {
-        "name": "Alarm sound (right)"
-      },
-      "motion_bed_snore_left": {
-        "name": "Snore (left)"
-      },
-      "motion_bed_first_modular_alarm_right": {
-        "name": "First modular alarm (right)"
       },
       "motion_bed_sleep_enabled": {
         "name": "Sleep enabled"
       },
-      "motion_bed_night_light_enabled_left": {
-        "name": "Night light enabled (left)"
-      },
-      "motion_bed_sync_visible_both": {
-        "name": "Sync visible (both)"
-      },
-      "motion_bed_right_zero_gravity_right": {
-        "name": "Right zero gravity (right)"
-      },
-      "motion_bed_thermal_low_water_right": {
-        "name": "Thermal low water (right)"
-      },
       "motion_bed_motor_module_present": {
         "name": "Motor module present"
-      },
-      "motion_bed_motor_sensor_enabled_right": {
-        "name": "Motor sensor enabled (right)"
-      },
-      "motion_bed_motor_light_enabled_left": {
-        "name": "Motor light enabled (left)"
-      },
-      "motion_bed_sync_visible_right": {
-        "name": "Sync visible (right)"
       },
       "motion_bed_left_tv": {
         "name": "Left tv"
@@ -5293,50 +3549,11 @@
       "motion_bed_memory_1": {
         "name": "Memory 1"
       },
-      "motion_bed_night_light_enabled_both": {
-        "name": "Night light enabled (both)"
-      },
-      "motion_bed_left_zero_gravity_right": {
-        "name": "Left zero gravity (right)"
-      },
-      "motion_bed_thermal_module_present_both": {
-        "name": "Thermal module present (both)"
-      },
-      "motion_bed_memory_2_left": {
-        "name": "Memory 2 (left)"
-      },
-      "motion_bed_sensor_present_right": {
-        "name": "Sensor present (right)"
-      },
-      "motion_bed_thermal_module_present_left": {
-        "name": "Thermal module present (left)"
-      },
-      "motion_bed_left_tv_left": {
-        "name": "Left tv (left)"
-      },
-      "motion_bed_thermal_timer_enabled_right": {
-        "name": "Thermal timer enabled (right)"
-      },
-      "motion_bed_alarm_massage_both": {
-        "name": "Alarm massage (both)"
-      },
-      "motion_bed_left_memory_both": {
-        "name": "Left memory (both)"
-      },
       "motion_bed_tv": {
         "name": "Tv"
       },
-      "motion_bed_right_tv_left": {
-        "name": "Right tv (left)"
-      },
       "motion_bed_thermal_module_present": {
         "name": "Thermal module present"
-      },
-      "motion_bed_coupled_left_memory_right": {
-        "name": "Coupled left memory (right)"
-      },
-      "motion_bed_sync_enabled_both": {
-        "name": "Sync enabled (both)"
       },
       "motion_bed_night_light_enabled": {
         "name": "Night light enabled"
@@ -5344,29 +3561,11 @@
       "motion_bed_coupled_left_memory": {
         "name": "Coupled left memory"
       },
-      "motion_bed_zero_gravity_right": {
-        "name": "Zero gravity (right)"
-      },
-      "motion_bed_memory_2_right": {
-        "name": "Memory 2 (right)"
-      },
       "motion_bed_left_memory": {
         "name": "Left memory"
       },
-      "motion_bed_motor_massage_enabled_both": {
-        "name": "Motor massage enabled (both)"
-      },
-      "motion_bed_air_module_present_right": {
-        "name": "Air module present (right)"
-      },
       "motion_bed_air_back_custom": {
         "name": "Air back custom"
-      },
-      "motion_bed_night_light_enabled_right": {
-        "name": "Night light enabled (right)"
-      },
-      "motion_bed_alarm_sound_both": {
-        "name": "Alarm sound (both)"
       },
       "motion_bed_right_tv": {
         "name": "Right tv"
@@ -5374,107 +3573,23 @@
       "motion_bed_right_memory": {
         "name": "Right memory"
       },
-      "motion_bed_zero_gravity_both": {
-        "name": "Zero gravity (both)"
-      },
-      "motion_bed_air_full_custom_left": {
-        "name": "Air full custom (left)"
-      },
-      "motion_bed_sensor_present_both": {
-        "name": "Sensor present (both)"
-      },
-      "motion_bed_calibration_reset_received_right": {
-        "name": "Calibration reset received (right)"
-      },
-      "motion_bed_right_memory_left": {
-        "name": "Right memory (left)"
-      },
-      "motion_bed_motor_sensor_enabled_left": {
-        "name": "Motor sensor enabled (left)"
-      },
       "motion_bed_calibration_reset_received": {
         "name": "Calibration reset received"
-      },
-      "motion_bed_left_zero_gravity_left": {
-        "name": "Left zero gravity (left)"
-      },
-      "motion_bed_alarm_massage_left": {
-        "name": "Alarm massage (left)"
-      },
-      "motion_bed_sleep_enabled_left": {
-        "name": "Sleep enabled (left)"
-      },
-      "motion_bed_motor_module_present_right": {
-        "name": "Motor module present (right)"
-      },
-      "motion_bed_sleep_enabled_right": {
-        "name": "Sleep enabled (right)"
-      },
-      "motion_bed_sensor_present_left": {
-        "name": "Sensor present (left)"
       },
       "motion_bed_motor_sensor_enabled": {
         "name": "Motor sensor enabled"
       },
-      "motion_bed_left_tv_right": {
-        "name": "Left tv (right)"
-      },
-      "motion_bed_thermal_timer_enabled_left": {
-        "name": "Thermal timer enabled (left)"
-      },
-      "motion_bed_air_full_custom_right": {
-        "name": "Air full custom (right)"
-      },
-      "motion_bed_right_memory_both": {
-        "name": "Right memory (both)"
-      },
-      "motion_bed_memory_1_left": {
-        "name": "Memory 1 (left)"
-      },
       "motion_bed_zero_gravity": {
         "name": "Zero gravity"
-      },
-      "motion_bed_air_back_custom_right": {
-        "name": "Air back custom (right)"
       },
       "motion_bed_thermal_low_water": {
         "name": "Thermal low water"
       },
-      "motion_bed_left_zero_gravity_both": {
-        "name": "Left zero gravity (both)"
-      },
-      "motion_bed_memory_2_both": {
-        "name": "Memory 2 (both)"
-      },
-      "motion_bed_right_tv_right": {
-        "name": "Right tv (right)"
-      },
       "motion_bed_right_zero_gravity": {
         "name": "Right zero gravity"
       },
-      "motion_bed_left_memory_left": {
-        "name": "Left memory (left)"
-      },
       "motion_bed_left_zero_gravity": {
         "name": "Left zero gravity"
-      },
-      "motion_bed_coupled_right_memory_both": {
-        "name": "Coupled right memory (both)"
-      },
-      "motion_bed_sync_enabled_left": {
-        "name": "Sync enabled (left)"
-      },
-      "motion_bed_coupled_right_memory_left": {
-        "name": "Coupled right memory (left)"
-      },
-      "motion_bed_thermal_timer_enabled_both": {
-        "name": "Thermal timer enabled (both)"
-      },
-      "motion_bed_motor_massage_visible_both": {
-        "name": "Motor massage visible (both)"
-      },
-      "motion_bed_air_adaptive_left": {
-        "name": "Air adaptive (left)"
       },
       "starcode_massage_active": {
         "name": "Massage active"
@@ -5604,17 +3719,11 @@
       "massage_head_intensity_right": {
         "name": "Right: Massage: Head Intensity"
       },
-      "massage_head_intensity_both": {
-        "name": "Both sides: Massage: Head Intensity"
-      },
       "massage_foot_intensity_left": {
         "name": "Left: Massage: Foot Intensity"
       },
       "massage_foot_intensity_right": {
         "name": "Right: Massage: Foot Intensity"
-      },
-      "massage_foot_intensity_both": {
-        "name": "Both sides: Massage: Foot Intensity"
       },
       "massage_wave_intensity_left": {
         "name": "Left: Massage: Wave Intensity"
@@ -5622,20 +3731,11 @@
       "massage_wave_intensity_right": {
         "name": "Right: Massage: Wave Intensity"
       },
-      "massage_wave_intensity_both": {
-        "name": "Both sides: Massage: Wave Intensity"
-      },
       "light_level_left": {
         "name": "Left: Light Level"
       },
       "light_level_right": {
         "name": "Right: Light Level"
-      },
-      "light_level_both": {
-        "name": "Both sides: Light Level"
-      },
-      "sleep_number_setting_both": {
-        "name": "Both sides: Sleep Number Setting"
       },
       "massage_right_intensity": {
         "name": "Right massage intensity"
@@ -5649,9 +3749,6 @@
       "vibradorm_app_mood_speed_right": {
         "name": "Mood light speed (right)"
       },
-      "vibradorm_app_mood_speed_both": {
-        "name": "Mood light speed (both)"
-      },
       "vibradorm_app_massage_speed": {
         "name": "Massage speed"
       },
@@ -5661,9 +3758,6 @@
       "vibradorm_app_massage_speed_right": {
         "name": "Massage speed (right)"
       },
-      "vibradorm_app_massage_speed_both": {
-        "name": "Massage speed (both)"
-      },
       "vibradorm_app_floor_timer_minutes": {
         "name": "Floor light timer minutes"
       },
@@ -5672,9 +3766,6 @@
       },
       "vibradorm_app_floor_timer_minutes_right": {
         "name": "Floor light timer minutes (right)"
-      },
-      "vibradorm_app_floor_timer_minutes_both": {
-        "name": "Floor light timer minutes (both)"
       },
       "vmatbasic_floor_level": {
         "name": "Requested floor level"
@@ -5756,23 +3847,11 @@
       "massage_timer_right": {
         "name": "Right: Massage: Timer"
       },
-      "massage_timer_both": {
-        "name": "Both sides: Massage: Timer"
-      },
       "light_timer_left": {
         "name": "Left: Light Timer"
       },
       "light_timer_right": {
         "name": "Right: Light Timer"
-      },
-      "light_timer_both": {
-        "name": "Both sides: Light Timer"
-      },
-      "thermal_timer_both": {
-        "name": "Both sides: Climate Timer"
-      },
-      "footwarming_timer_both": {
-        "name": "Both sides: Footwarming Timer"
       },
       "vibradorm_app_mood_palette": {
         "name": "Mood light palette"
@@ -5782,9 +3861,6 @@
       },
       "vibradorm_app_mood_palette_right": {
         "name": "Mood light palette (right)"
-      },
-      "vibradorm_app_mood_palette_both": {
-        "name": "Mood light palette (both)"
       },
       "vibradorm_app_mood_effect": {
         "name": "Mood light effect",
@@ -5804,14 +3880,6 @@
       },
       "vibradorm_app_mood_effect_right": {
         "name": "Mood light effect (right)",
-        "state": {
-          "sunrise": "Sunrise",
-          "rainbow": "Rainbow",
-          "disco": "Disco"
-        }
-      },
-      "vibradorm_app_mood_effect_both": {
-        "name": "Mood light effect (both)",
         "state": {
           "sunrise": "Sunrise",
           "rainbow": "Rainbow",
@@ -5845,15 +3913,6 @@
           "4": "Wave 4"
         }
       },
-      "vibradorm_app_massage_wave_both": {
-        "name": "Massage wave (both)",
-        "state": {
-          "1": "Wave 1",
-          "2": "Wave 2",
-          "3": "Wave 3",
-          "4": "Wave 4"
-        }
-      },
       "vmatbasic_mood_palette": {
         "name": "Mood palette",
         "state": {
@@ -5880,7 +3939,12 @@
         }
       },
       "vmatbasic_mood_effect": {
-        "name": "Mood effect"
+        "name": "Mood effect",
+        "state": {
+          "e1": "Effect 1",
+          "e2": "Effect 2",
+          "e3": "Effect 3"
+        }
       },
       "starcode_abm5_4_massage_timer": {
         "name": "Massage timer",
@@ -5891,7 +3955,7 @@
         }
       },
       "motion_bed_active_module_left": {
-        "name": "Left active hub module",
+        "name": "Active hub module (left)",
         "state": {
           "motor": "Motor",
           "air": "Air massage",
@@ -5906,16 +3970,8 @@
           "thermal": "Heating and cooling"
         }
       },
-      "motion_bed_active_module_both": {
-        "name": "Both active hub modules",
-        "state": {
-          "motor": "Motor",
-          "air": "Air massage",
-          "thermal": "Heating and cooling"
-        }
-      },
       "motion_bed_active_module_right": {
-        "name": "Right active hub module",
+        "name": "Active hub module (right)",
         "state": {
           "motor": "Motor",
           "air": "Air massage",
@@ -5923,7 +3979,17 @@
         }
       },
       "starcode_color": {
-        "name": "RGB palette index"
+        "name": "RGB palette index",
+        "state": {
+          "0": "Off",
+          "1": "White",
+          "2": "Red",
+          "3": "Orange",
+          "4": "Yellow",
+          "5": "Green",
+          "6": "Blue",
+          "7": "Purple"
+        }
       },
       "remacro_control_side": {
         "name": "Control side",
@@ -6088,35 +4154,10 @@
       },
       "footwarming_climate_right": {
         "name": "Footwarming Right"
-      },
-      "sleep_number_thermal_climate_both": {
-        "name": "Both sides: Climate"
-      },
-      "footwarming_climate_both": {
-        "name": "Both sides: Footwarming"
       }
     }
   },
   "services": {
-    "svane_hold_control": {
-      "name": "Hold Svane Remote control",
-      "description": "Hold selected axes or adjust the lamp. Movement releases use the selected app profile.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
-        },
-        "control": {
-          "name": "Control"
-        },
-        "duration": {
-          "name": "Duration",
-          "description": "Bounded host duration in seconds, from 0.1 to 60."
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
-    },
     "svane_release_axis": {
       "name": "Release Svane Remote axis",
       "description": "Signal the active writer to release one axis while the other continues.",
@@ -6126,26 +4167,6 @@
         },
         "motor": {
           "name": "Axis"
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
-    },
-    "serenity_hold_control": {
-      "name": "Hold Serenity control",
-      "description": "Hold one supported Serenity app action, then release it. Save actions can change stored positions.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
-        },
-        "control": {
-          "name": "Control",
-          "description": "Literal action from the Serenity profile held-control options."
-        },
-        "duration": {
-          "name": "Duration",
-          "description": "Hold time in seconds, from 0.1 to 60."
         },
         "side": {
           "name": "Side"
@@ -6219,9 +4240,21 @@
       "name": "Go to Preset",
       "description": "Move bed to a saved memory position.",
       "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
         "preset": {
           "name": "Preset Number",
-          "description": "Memory slot number (1-4)."
+          "description": "Memory slot number, from 1 up to the bed's own slot count (at most 8)."
+        },
+        "duration": {
+          "name": "Hold duration",
+          "description": "Optional recall hold, 0.1 to 60 seconds in whole milliseconds. Only beds whose app recalls a memory by holding its button accept it; leave unset to use the bed's own recall."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed to target. Leave unset to target the whole bed (or the specific side when you target one side's device); single beds always control the whole bed."
         }
       }
     },
@@ -6229,15 +4262,33 @@
       "name": "Save to Preset",
       "description": "Save current bed position to a memory slot.",
       "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
         "preset": {
           "name": "Preset Number",
-          "description": "Memory slot number (1-4)."
+          "description": "Memory slot number, from 1 up to the bed's own slot count (at most 8)."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed to target. Leave unset to target the whole bed (or the specific side when you target one side's device); single beds always control the whole bed."
         }
       }
     },
     "stop_all": {
       "name": "Stop All Motors",
-      "description": "Immediately stop all bed motors."
+      "description": "Immediately stop all bed motors.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed to stop. Leave unset to stop the whole bed (or the specific side when you target one side's device); single beds always stop the whole bed."
+        }
+      }
     },
     "generate_support_bundle": {
       "name": "Generate Support Bundle",
@@ -6271,11 +4322,33 @@
         },
         "motor": {
           "name": "Motor",
-          "description": "The motor to move (back, legs, head, feet, or lumbar)."
+          "description": "The motor to move. Valid motors depend on the bed."
         },
         "position": {
           "name": "Position",
           "description": "Target position (degrees or percentage depending on bed type)."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed to target. Leave unset to target both sides (or the specific side when you target one side's device); single beds use their whole-bed target."
+        }
+      }
+    },
+    "set_positions": {
+      "name": "Set Multiple Motor Positions",
+      "description": "Move several motors to validated target positions in one ordered request. Every target is validated before movement starts.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
+        "positions": {
+          "name": "Positions",
+          "description": "One target per motor. Sleep Number MCR uses left_back, right_back, left_legs, or right_legs with 0-100% targets."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed to target. Leave unset to target both sides (or the specific side when you target one side's device); single beds use their whole-bed target."
         }
       }
     },
@@ -6298,6 +4371,187 @@
         "duration_ms": {
           "name": "Duration (ms)",
           "description": "How long to move the motor in milliseconds."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed to target. Leave unset to target both sides (or the specific side when you target one side's device); single beds use their whole-bed target."
+        }
+      }
+    },
+    "hold_control": {
+      "name": "Hold control",
+      "description": "Hold one control that the bed's app profile declares for a bounded duration, then send that profile's release sequence. Every target is checked before any bed moves; an unsupported control is rejected with the list of valid controls.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "control": {
+          "name": "Control",
+          "description": "Control name from the bed's guide, for example head_up, flat or memory_1. Valid controls depend on the bed and its app profile. Save controls can change stored positions."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Hold for 0.1 to 60 seconds, in whole milliseconds. Some controls use their profile's fixed timing instead."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed to target. Leave unset to target the whole bed, or the side whose device you selected."
+        }
+      }
+    },
+    "rename": {
+      "name": "Rename Bluetooth controller",
+      "description": "Write a new Bluetooth name to each targeted controller that supports it. Each app profile applies its own name rule to every target before any write. This does not rename the Home Assistant device.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "name": {
+          "name": "Name",
+          "description": "New Bluetooth name. Length and allowed characters depend on the bed; see its guide."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed to target. Leave unset to target the whole bed, or the side whose device you selected."
+        }
+      }
+    },
+    "sync_clock": {
+      "name": "Synchronize bed clock",
+      "description": "Set each targeted controller's clock to Home Assistant's local time. Every target is checked before any write.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed to target. Leave unset to target the whole bed, or the side whose device you selected."
+        }
+      }
+    },
+    "linak_move_simultaneously": {
+      "name": "Move Two Sections Together",
+      "description": "Move two different sections with one native command (Linak Bed Control, Jensen JMC400), then send STOP.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A Linak Bed Control or Jensen JMC400 device."
+        },
+        "first_motor": {
+          "name": "First Motor"
+        },
+        "first_direction": {
+          "name": "First Direction"
+        },
+        "second_motor": {
+          "name": "Second Motor"
+        },
+        "second_direction": {
+          "name": "Second Direction"
+        },
+        "duration_ms": {
+          "name": "Duration",
+          "description": "How long to hold the combined movement before STOP."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "linak_rename": {
+      "name": "Rename Linak Controller",
+      "description": "Same as Rename Bluetooth controller (rename), limited to 17 UTF-8 bytes. The controller disconnects afterwards so it can advertise the new name. Kept for existing automations.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A Linak Bed Control device."
+        },
+        "name": {
+          "name": "Name",
+          "description": "New BLE name, limited to 17 UTF-8 bytes."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "linak_set_alarm": {
+      "name": "Set Linak Alarm",
+      "description": "Program a Bed Control alarm with up to four actions, recurrence, and commit.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "An alarm-capable Linak Bed Control device."
+        },
+        "seconds": {
+          "name": "Seconds",
+          "description": "Seconds until the alarm. Zero disables the timer."
+        },
+        "actions": {
+          "name": "Actions",
+          "description": "One to four objects with action, lifetime, and pause fields."
+        },
+        "recurrence_count": {
+          "name": "Recurrence Count"
+        },
+        "recurrence_minutes": {
+          "name": "Recurrence Minutes"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "solace_audio": {
+      "name": "Control Solace audio",
+      "description": "Select or preview MotionFlex music, query volume, or set volume.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "action": {
+          "name": "Action"
+        },
+        "track": {
+          "name": "Track",
+          "description": "Required for select and preview actions."
+        },
+        "volume": {
+          "name": "Volume",
+          "description": "Required for the set_volume action."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "solace_set_alarm": {
+      "name": "Set Solace alarm",
+      "description": "Program the MotionFlex or Woosa Sleep alarm time, recurrence, action, massage, and sound. Woosa supports sound off or alarm only.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Time"
+        },
+        "weekdays": {
+          "name": "Weekdays"
+        },
+        "mode": {
+          "name": "Bed action"
+        },
+        "massage": {
+          "name": "Massage"
+        },
+        "sound": {
+          "name": "Sound"
+        },
+        "side": {
+          "name": "Side"
         }
       }
     },
@@ -6347,7 +4601,7 @@
     },
     "leggett_hold_control": {
       "name": "Hold Leggett control",
-      "description": "Hold a supported control for a bounded duration, then send its release sequence.",
+      "description": "Same as Hold control (hold_control), limited to the Leggett Okin control list. Kept for existing automations.",
       "fields": {
         "device_id": {
           "name": "Device",
@@ -6402,7 +4656,7 @@
     },
     "logicdata_rename": {
       "name": "Rename Logicdata controller",
-      "description": "Change the Bluetooth name of a compatible Logicdata app controller or Sleep Smart air pump.",
+      "description": "Same as Rename Bluetooth controller (rename), limited to the LOGICDATA name characters. Kept for existing automations.",
       "fields": {
         "device_id": {
           "name": "Device",
@@ -6497,7 +4751,7 @@
     },
     "jiecang_rename": {
       "name": "Rename Jiecang controller",
-      "description": "Change the Bluetooth name of a compatible Jiecang app controller.",
+      "description": "Same as Rename Bluetooth controller (rename), limited to 1 to 20 ASCII letters or digits. Kept for existing automations.",
       "fields": {
         "device_id": {
           "name": "Device",
@@ -6506,43 +4760,6 @@
         "name": {
           "name": "Name",
           "description": "New Bluetooth name, using 1 to 20 ASCII letters or digits."
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
-    },
-    "innova_hold_control": {
-      "name": "Hold INNOVA control",
-      "description": "Hold one control the INNOVA app streams while pressed, for a Keeson bed on the INNOVA profile. The key repeats every 100 ms; release sends one zero key 100 ms after the hold ends.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
-        },
-        "control": {
-          "name": "Control",
-          "description": "A control on the selected screen. Combined exists on 2M, waist on 4M and lumbar on 3M and 4M."
-        },
-        "duration": {
-          "name": "Duration",
-          "description": "Hold time in seconds, from 0.1 to 60."
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
-    },
-    "innova_rename": {
-      "name": "Rename INNOVA bed",
-      "description": "Change the Bluetooth name of a bed using the INNOVA app profile.",
-      "fields": {
-        "device_id": {
-          "name": "Device",
-          "description": "A bed using the INNOVA app profile."
-        },
-        "name": {
-          "name": "Name",
-          "description": "New Bluetooth name, 1 to 14 characters after trimming spaces."
         },
         "side": {
           "name": "Side"
@@ -6591,14 +4808,16 @@
           "name": "Device"
         },
         "enabled": {
-          "name": "Enabled"
+          "name": "Enabled",
+          "description": "Turn off to clear the stored alarm."
         },
         "time": {
           "name": "Alarm time",
           "description": "Minute precision. Omit weekdays for the next occurrence."
         },
         "weekdays": {
-          "name": "Repeat on"
+          "name": "Repeat on",
+          "description": "Leave empty for the next occurrence of the selected time."
         },
         "preset": {
           "name": "Alarm position"
@@ -6610,7 +4829,7 @@
     },
     "malouf_sync_clock": {
       "name": "Malouf / Lucid synchronize clock",
-      "description": "Set the supported device clock to the current Home Assistant local time.",
+      "description": "Same as Synchronize bed clock (sync_clock). Kept for existing automations.",
       "fields": {
         "device_id": {
           "name": "Device"
@@ -6664,6 +4883,12 @@
       "name": "FurniMove handset action",
       "description": "Execute an ordered action row from the selected handset. Find row indexes in controller diagnostics. The widget consumer uses the app\u2019s separate fixed timing.",
       "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
         "row_index": {
           "name": "Action row index"
         },
@@ -6673,27 +4898,6 @@
         },
         "consumer": {
           "name": "Consumer"
-        },
-        "device_id": {
-          "name": "Device"
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
-    },
-    "furnimove_rename": {
-      "name": "Rename FurniMove receiver",
-      "description": "Rename one receiver using a unique name, with up to 18 UTF-16 units after trimming. The original text is sent to the receiver.",
-      "fields": {
-        "name": {
-          "name": "New name"
-        },
-        "device_id": {
-          "name": "Device"
-        },
-        "side": {
-          "name": "Side"
         }
       }
     },
@@ -6701,14 +4905,14 @@
       "name": "FurniMove massage program",
       "description": "Select program 1, 2, 3 or 4 (Wave) using the handset\u2019s captured massage queue.",
       "fields": {
-        "program": {
-          "name": "Program"
-        },
         "device_id": {
           "name": "Device"
         },
         "side": {
           "name": "Side"
+        },
+        "program": {
+          "name": "Program"
         }
       }
     },
@@ -6716,14 +4920,14 @@
       "name": "FurniMove advisory massage duration",
       "description": "Set the local app duration preference. This does not program a hardware timer or stop massage when time expires.",
       "fields": {
-        "minutes": {
-          "name": "Advisory duration"
-        },
         "device_id": {
           "name": "Device"
         },
         "side": {
           "name": "Side"
+        },
+        "minutes": {
+          "name": "Advisory duration"
         }
       }
     },
@@ -6731,6 +4935,12 @@
       "name": "Move two FurniMove motors",
       "description": "Hold two supported axes with the app\u2019s combined command and release cleanup.",
       "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
         "first_motor": {
           "name": "First motor"
         },
@@ -6745,87 +4955,315 @@
         },
         "duration_ms": {
           "name": "Duration in milliseconds"
-        },
+        }
+      }
+    },
+    "motion_bed_action": {
+      "name": "Motion Bed app action",
+      "description": "Run a named action listed in controller diagnostics. Persistent save, clear, reset and module changes require confirmation.",
+      "fields": {
         "device_id": {
           "name": "Device"
         },
         "side": {
           "name": "Side"
-        }
-      }
-    },
-    "vibradorm_hold_control": {
-      "name": "Hold Caresse / Werkmeister / VMAT control",
-      "description": "Hold a control supported by the selected app profile, then send its release command.",
-      "fields": {
-        "device_id": {
-          "name": "Device",
-          "description": "Beds configured with an explicit Caresse, Werkmeister or VMAT app profile."
         },
-        "control": {
-          "name": "Control",
-          "description": "Every target must support this control in its app and remote profile."
+        "confirmed": {
+          "name": "Confirm persistent change"
         },
-        "duration": {
-          "name": "Duration",
-          "description": "Hold time in seconds. This host limit does not change the app's refresh interval."
+        "action": {
+          "name": "Action"
         },
-        "side": {
-          "name": "Side",
-          "description": "Physical side to control for a paired bed."
-        }
-      }
-    },
-    "vmatbasic_rename": {
-      "name": "Rename V-MAT Basic receiver",
-      "description": "Write one receiver name and retain it only after success.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
-        },
-        "name": {
-          "name": "New name"
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
-    },
-    "vmatbasic_hold_control": {
-      "name": "Hold V-MAT Basic control",
-      "description": "Hold movement or the XT floor action for a bounded duration. Only movement mirrors both receivers.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
-        },
-        "control": {
-          "name": "Control"
+        "branch": {
+          "name": "Branch"
         },
         "duration": {
           "name": "Duration"
-        },
-        "side": {
-          "name": "Side"
         }
       }
     },
-    "starcode_abm5_4_hold_control": {
-      "name": "Hold AdjustableM5X4 control",
-      "description": "Hold one exact app action. Flat runs 600 ms; save and reset run the six-second local confirmation interval. No device acknowledgement is inferred.",
+    "motion_bed_alarm": {
+      "name": "Motion Bed alarm",
+      "description": "Program the app alarm with all six modes and the current physical target\u2019s reported audio capability.",
       "fields": {
         "device_id": {
           "name": "Device"
         },
-        "control": {
-          "name": "Control",
-          "description": "Exact supported control from the selected app profile."
+        "side": {
+          "name": "Side"
         },
-        "duration": {
-          "name": "Duration",
-          "description": "Hold duration in seconds for movement, presets and wave controls."
+        "confirmed": {
+          "name": "Confirm persistent change"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "hour": {
+          "name": "Hour"
+        },
+        "minute": {
+          "name": "Minute"
+        },
+        "weekdays": {
+          "name": "Weekdays"
+        },
+        "repeat": {
+          "name": "Repeat"
+        },
+        "mode": {
+          "name": "Mode"
+        },
+        "massage": {
+          "name": "Massage"
+        },
+        "sound": {
+          "name": "Sound"
+        },
+        "audio": {
+          "name": "Audio"
+        },
+        "switch": {
+          "name": "Switch"
+        }
+      }
+    },
+    "motion_bed_clock": {
+      "name": "Motion Bed clock",
+      "description": "Set the motor or thermal module clock.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
         },
         "side": {
           "name": "Side"
+        },
+        "confirmed": {
+          "name": "Confirm persistent change"
+        },
+        "timestamp": {
+          "name": "Timestamp"
+        },
+        "thermal": {
+          "name": "Thermal"
+        }
+      }
+    },
+    "motion_bed_sleep_angles": {
+      "name": "Motion Bed sleep positions",
+      "description": "Save four raw flat and four raw side positions. These values have no established angle or percentage units.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "confirmed": {
+          "name": "Confirm persistent change"
+        },
+        "page": {
+          "name": "Page"
+        },
+        "flat": {
+          "name": "Flat"
+        },
+        "side_positions": {
+          "name": "Side positions"
+        }
+      }
+    },
+    "motion_bed_calibration": {
+      "name": "Motion Bed sleep calibration",
+      "description": "Save the app\u2019s flat and side calibration readings. Confirm before changing calibration.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "confirmed": {
+          "name": "Confirm persistent change"
+        },
+        "flat": {
+          "name": "Flat"
+        },
+        "side_position": {
+          "name": "Side position"
+        }
+      }
+    },
+    "motion_bed_sleep_timer": {
+      "name": "Motion Bed sleep timer",
+      "description": "Select an app bedtime or fall timer slot.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "confirmed": {
+          "name": "Confirm persistent change"
+        },
+        "slot": {
+          "name": "Slot"
+        },
+        "fall": {
+          "name": "Fall"
+        }
+      }
+    },
+    "motion_bed_sleep_report": {
+      "name": "Motion Bed sleep report",
+      "description": "Read current, historical day, month or timer data. Historical day selection and graph window offset are separate.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "confirmed": {
+          "name": "Confirm persistent change"
+        },
+        "kind": {
+          "name": "Kind"
+        },
+        "offset": {
+          "name": "Offset"
+        },
+        "window_offset": {
+          "name": "Window offset"
+        }
+      }
+    },
+    "motion_bed_module": {
+      "name": "Motion Bed hub module",
+      "description": "Query, bind or delete a motor, air or thermal module on one BLE hub. Confirm bind and delete.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "confirmed": {
+          "name": "Confirm persistent change"
+        },
+        "operation": {
+          "name": "Operation"
+        },
+        "module_type": {
+          "name": "Module type"
+        },
+        "address": {
+          "name": "Address"
+        }
+      }
+    },
+    "motion_bed_air_setting": {
+      "name": "Motion Bed air settings",
+      "description": "Query or save the selected mode\u2019s upper gear and optional timer. Lower pressure is readback only.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "confirmed": {
+          "name": "Confirm persistent change"
+        },
+        "mode": {
+          "name": "Mode"
+        },
+        "query": {
+          "name": "Query"
+        },
+        "gear": {
+          "name": "Gear"
+        },
+        "timer": {
+          "name": "Timer"
+        }
+      }
+    },
+    "motion_bed_pressure": {
+      "name": "Motion Bed air pressure",
+      "description": "Edit one explicitly bound channel after the app\u2019s 2.5-second quiet check, or save twelve channel values in one whole frame.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "confirmed": {
+          "name": "Confirm persistent change"
+        },
+        "operation": {
+          "name": "Operation"
+        },
+        "channel": {
+          "name": "Channel"
+        },
+        "value": {
+          "name": "Value"
+        },
+        "values": {
+          "name": "Values"
+        }
+      }
+    },
+    "motion_bed_thermal_schedule": {
+      "name": "Motion Bed thermal schedule",
+      "description": "Save a timer with cooling or heating mode and gear, without guessing a thermostat setpoint.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "confirmed": {
+          "name": "Confirm persistent change"
+        },
+        "hour": {
+          "name": "Hour"
+        },
+        "minute": {
+          "name": "Minute"
+        },
+        "mode": {
+          "name": "Mode"
+        },
+        "gear": {
+          "name": "Gear"
+        }
+      }
+    },
+    "motion_bed_audio": {
+      "name": "Motion Bed audio",
+      "description": "Select a track, preview a track, or set volume on a target that reports audio support.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "confirmed": {
+          "name": "Confirm persistent change"
+        },
+        "operation": {
+          "name": "Operation"
+        },
+        "value": {
+          "name": "Value"
+        },
+        "preview": {
+          "name": "Preview"
         }
       }
     },
@@ -6848,6 +5286,22 @@
         "massage": {
           "name": "Massage controls",
           "description": "Show the app\u2019s massage actions."
+        }
+      }
+    },
+    "fsm_relax_calibrate": {
+      "name": "FSM Relax confirmed calibration",
+      "description": "Calibrate using the four configured reversal flags. One write attempt; a failed write does not prove that hardware did nothing.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "confirmed": {
+          "name": "Confirm",
+          "description": "Explicitly confirm calibration before invoking this action."
+        },
+        "side": {
+          "name": "Side"
         }
       }
     },
@@ -6895,81 +5349,17 @@
         }
       }
     },
-    "limoss_remote_recall_memory": {
-      "name": "Hold Limoss Remote Memory",
-      "description": "Recall this physical target\u2019s captured local memory for a bounded duration.",
-      "fields": {
-        "device_id": {
-          "name": "Device",
-          "description": "The adjustable bed device."
-        },
-        "side": {
-          "name": "Side",
-          "description": "Select the physical side of a paired bed."
-        },
-        "preset": {
-          "name": "Memory slot",
-          "description": "Slot 1\u20138, limited by the device reply."
-        },
-        "duration": {
-          "name": "Duration",
-          "description": "Hold time in seconds, 0.1\u201360."
-        }
-      }
-    },
-    "limoss_remote_hold_control": {
-      "name": "Hold Limoss Remote Control",
-      "description": "Hold one rendered app control, then send its five release frames.",
-      "fields": {
-        "device_id": {
-          "name": "Device",
-          "description": "The adjustable bed device."
-        },
-        "side": {
-          "name": "Side",
-          "description": "Select the physical side of a paired bed."
-        },
-        "control": {
-          "name": "Control",
-          "description": "Literal control from this device\u2019s rendered layout."
-        },
-        "duration": {
-          "name": "Duration",
-          "description": "Hold time in seconds, 0.1\u201360."
-        }
-      }
-    },
     "starcode_move_lifts": {
       "name": "Control AdjustableM5X5 lifts",
       "description": "Control the independently addressed accessories configured on one main bed. Flat moves the main before the delayed lift action.",
       "fields": {
         "device_id": {
           "name": "Main bed",
-          "description": "An AdjustableM5X5 main entry with selected lift entries."
+          "description": "An AdjustableM5X5 or DewertOkin ELEVATE main entry with selected lift entries."
         },
         "action": {
           "name": "Action",
           "description": "Up, down, composite flat or STOP."
-        }
-      }
-    },
-    "simmons_hold_control": {
-      "name": "Hold SIMMONS control",
-      "description": "Hold one SIMMONS app control, repeating it every 300 ms, then send its release stops. The app's help says holding Custom Mode for 5 seconds saves the current position; the save on the bed is unverified.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
-        },
-        "control": {
-          "name": "Control",
-          "description": "Zero-gravity, TV and anti-snore exist only on a regular bed; the inclined controls only on an inclined bed."
-        },
-        "duration": {
-          "name": "Duration",
-          "description": "Hold time in seconds, from 0.1 to 60."
-        },
-        "side": {
-          "name": "Side"
         }
       }
     },
@@ -7008,46 +5398,6 @@
         }
       }
     },
-    "tranquil_hold_control": {
-      "name": "Hold Tranquil control",
-      "description": "Hold one supported Tranquil app action, then release it. Save actions can change stored positions.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
-        },
-        "control": {
-          "name": "Control",
-          "description": "Literal action from the selected Tranquil profile held-control options."
-        },
-        "duration": {
-          "name": "Duration",
-          "description": "Hold time in seconds, from 0.1 to 60."
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
-    },
-    "zseries_hold_control": {
-      "name": "Hold Z-Series control",
-      "description": "Hold one supported Z-Series app action, then release it. Save actions can change stored positions.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
-        },
-        "control": {
-          "name": "Control",
-          "description": "Literal action from the selected Z-Series profile held-control options."
-        },
-        "duration": {
-          "name": "Duration",
-          "description": "Hold time in seconds, from 0.1 to 60."
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
-    },
     "zseries_set_alarm": {
       "name": "Set Z-Series alarm",
       "description": "Set or clear the Customatic Z-Series app alarm. The bed clock is set to Home Assistant local time first.",
@@ -7056,7 +5406,8 @@
           "name": "Device"
         },
         "enabled": {
-          "name": "Enabled"
+          "name": "Enabled",
+          "description": "Turn off to clear the alarm."
         },
         "time": {
           "name": "Alarm time",
@@ -7065,58 +5416,6 @@
         "wake_mode": {
           "name": "Wake mode",
           "description": "Required when enabling the alarm."
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
-    },
-    "zseries_sync_clock": {
-      "name": "Synchronize Z-Series clock",
-      "description": "Set the Customatic Z-Series controller clock to the current Home Assistant local time.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
-    },
-    "adjustable_lumbar_hold_control": {
-      "name": "Hold Adjustable bed (Lumbar) control",
-      "description": "Hold one Adjustable bed (Lumbar) app control, repeating it every 100 ms, then send STOP immediately and again after 300 ms. Saving a preset holds Flat with that preset; the app reports it after 6 seconds, and the save on the bed is unverified.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
-        },
-        "control": {
-          "name": "Control",
-          "description": "A motor direction, preset, preset save, light, massage wave or massage intensity control."
-        },
-        "duration": {
-          "name": "Duration",
-          "description": "Hold time in seconds, from 0.1 to 60."
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
-    },
-    "restonic_hold_control": {
-      "name": "Hold Restonic BT control",
-      "description": "Hold one Restonic BT Remote app control for a Keeson bed on a Restonic BT profile. Motor directions and remote A's Zero G repeat every 100 ms; the other controls are sent once. Release sends one zero frame 100 ms after the hold ends.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
-        },
-        "control": {
-          "name": "Control",
-          "description": "A control on the selected remote. Back + Legs, light and ZZZ exist only on remote B."
-        },
-        "duration": {
-          "name": "Duration",
-          "description": "Hold time in seconds, from 0.1 to 60."
         },
         "side": {
           "name": "Side"
@@ -7230,26 +5529,6 @@
           "description": "Target side of a paired bed."
         }
       }
-    },
-    "okin_app_hold_control": {
-      "name": "Hold Okin app control",
-      "description": "Hold one Simon Li, Heal Every Night or OKIN-Seating control, repeating it every 100 ms, then release it with the app's zero frame. Holding a Simon Li memory for 2.1 seconds or more is the app's memory save.",
-      "fields": {
-        "device_id": {
-          "name": "Device"
-        },
-        "control": {
-          "name": "Control",
-          "description": "A control of the selected app. Back and Home belong to Simon Li and OKIN-Seating, lumbar and memory to Simon Li, and head and tilt to Heal Every Night."
-        },
-        "duration": {
-          "name": "Duration",
-          "description": "Hold time in seconds, from 0.1 to 60."
-        },
-        "side": {
-          "name": "Side"
-        }
-      }
     }
   },
   "exceptions": {
@@ -7316,17 +5595,23 @@
     "simmons_alarm_not_reported": {
       "message": "The bed did not report both alarm records in this connection, so nothing was written. Try again, or press Refresh Alarms first."
     },
-    "remacro_model_unknown": {
-      "message": "No advertisement from this Remacro bed has been seen yet, so its model is unknown. Setup retries once the bed is in Bluetooth range."
+    "held_controls_not_supported": {
+      "message": "Device \"{device_name}\" has no held controls."
     },
-    "remacro_model_unmapped": {
-      "message": "The bed advertises company ID {company_id}, which none of the Slumberland, The Brick or Jerome's apps list. The {app} app would not offer this bed."
+    "held_control_not_supported": {
+      "message": "Device \"{device_name}\" does not support held control \"{control}\". Valid controls: {valid_controls}."
     },
-    "remacro_model_not_in_app": {
-      "message": "The {app} app does not list a bed advertising company ID {company_id}. Choose the app this bed uses as the protocol variant in the integration options."
+    "mixed_profile_targets": {
+      "message": "These beds use different app profiles; call {action} separately for each."
     },
-    "remacro_pair_unsupported": {
-      "message": "No side of this combined bed advertises a model its Remacro app lists. See the Repairs issue for each side."
+    "device_rename_not_supported": {
+      "message": "Device \"{device_name}\" does not support Bluetooth rename."
+    },
+    "clock_sync_not_supported": {
+      "message": "Device \"{device_name}\" does not support clock synchronization."
+    },
+    "preset_duration_not_supported": {
+      "message": "Device \"{device_name}\" does not accept a hold duration for preset recall. Leave the duration unset."
     }
   },
   "issues": {
@@ -7440,7 +5725,7 @@
           },
           "handset": {
             "title": "Select the FurniMove handset",
-            "description": "Choose the handset ID used by the FurniMove app, matching its physical remote. Receiver labels such as RF ECO BT and P1103 do not identify the motor layout. No layout is selected automatically.",
+            "description": "Choose the handset ID used by the FurniMove app, matching its physical remote. Receiver labels such as RF ECO BT and P1103 do not identify the motor layout. No layout is selected automatically. Handset codes listed under Okin UUID are not offered here; a full bed with one of those keeps its current configuration and uses that code in the Okin UUID options.",
             "data": {
               "furnimove_remote": "Handset layout"
             }
@@ -7454,13 +5739,93 @@
         }
       }
     },
+    "furnimove_handset_route": {
+      "title": "Use the FurniMove profile for {name}",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Switch {name} to FurniMove",
+            "description": "**{name}** uses Okin DOT with handset {handset}. The FurniMove profile for that handset follows the app exactly, including the frame format of each control and the light state the receiver reports. If the bed already works as expected, keep the current configuration. Your existing device and matching entity IDs will be preserved.",
+            "data": {
+              "route": "Configuration"
+            }
+          }
+        },
+        "abort": {
+          "entry_missing": "The entry or paired side no longer exists. Open its current configuration."
+        }
+      }
+    },
     "remacro_model_unmapped": {
-      "title": "{name} has an unsupported Remacro model",
-      "description": "**{name}** ({address}) advertises company ID {company_id}, which none of the Slumberland, The Brick or Jerome's apps list. Home Assistant does not connect to it."
+      "title": "{name} uses limited Remacro controls",
+      "description": "**{name}** ({address}) advertises company ID {company_id}, which none of the Slumberland, The Brick or Jerome's apps list, so its model is not recognized. Home Assistant uses a limited set of controls common to these beds: Head, Feet and Lumbar movement, Flat, TV and Zero-G, the light and Stop. Some of them may do nothing on this bed. If the bed later advertises a listed model, it reloads with that model's controls."
     },
     "remacro_model_not_in_app": {
       "title": "{name} is not listed by the {app} app",
-      "description": "**{name}** ({address}) advertises company ID {company_id}, which the {app} app does not list. Home Assistant does not connect to it. Choose the app this bed uses as the protocol variant in the integration options."
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Choose the app for {name}",
+            "description": "**{name}** uses limited controls because its current app does not list its model. {apps} list it. Choose the app you use with this bed; it then reloads with that model's controls.",
+            "data": {
+              "protocol_variant": "App"
+            }
+          }
+        },
+        "abort": {
+          "entry_missing": "The entry or paired side no longer exists. Open its current configuration."
+        }
+      }
+    },
+    "app_profile_review": {
+      "title": "New app profiles are available for {name}",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Choose the app for {name}",
+            "description": "**{name}** was set up before these app profiles existed and uses {current}. If you control the bed with one of these apps, its profile follows that app's controls:\n{apps}\n\nChoose the app you use, or keep the current configuration if the bed already works as expected. You are only asked once. Your existing device and matching entity IDs are preserved.",
+            "data": {
+              "choice": "App profile"
+            }
+          },
+          "configure": {
+            "title": "Finish in Configure",
+            "description": "{app} was not applied here because it needs settings or checks that only the settings form provides. Open **Settings > Devices & services > Adjustable Bed**, select **Configure** on **{name}** and choose **{app}** as the bed type. The form asks for anything else it needs and explains anything it cannot accept. Submit to close this repair."
+          },
+          "unpair": {
+            "title": "Split the pair to change the app",
+            "description": "**{name}** is a paired bed. An app profile belongs to each physical bed, and none supports the paired controls, so the pair's shared settings cannot switch to one. If you control the beds with one of these apps:\n{apps}\n\nopen **Configure** on **{name}**, choose **Split into two beds** (or **Restore standalone controls**), then choose the app for each bed. Submit to close this repair and keep the current configuration."
+          }
+        },
+        "abort": {
+          "entry_missing": "The entry no longer exists or was already reviewed. Open its current configuration."
+        }
+      }
+    },
+    "app_profile_match": {
+      "title": "{name} matches the {app} profile",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Switch {name} to {app}",
+            "description": "**{name}** is set up as {current}, but its Bluetooth advertisement now identifies it as {app}. If the bed already works as expected, keep the current configuration. You are only asked once. Your existing device and matching entity IDs are preserved.",
+            "data": {
+              "choice": "Configuration"
+            }
+          },
+          "configure": {
+            "title": "Finish in Configure",
+            "description": "{app} was not applied here because it needs settings or checks that only the settings form provides. Open **Settings > Devices & services > Adjustable Bed**, select **Configure** on **{name}** and choose **{app}** as the bed type. The form asks for anything else it needs and explains anything it cannot accept. Submit to close this repair."
+          },
+          "unpair": {
+            "title": "Split the pair to change the app",
+            "description": "**{name}** is a paired bed. An app profile belongs to each physical bed, and none supports the paired controls, so the pair's shared settings cannot switch to one. If you control the beds with one of these apps:\n{apps}\n\nopen **Configure** on **{name}**, choose **Split into two beds** (or **Restore standalone controls**), then choose the app for each bed. Submit to close this repair and keep the current configuration."
+          }
+        },
+        "abort": {
+          "entry_missing": "The entry no longer exists or was already reviewed. Open its current configuration."
+        }
+      }
     }
   },
   "selector": {
@@ -7481,6 +5846,24 @@
       "options": {
         "retry": "Try again",
         "finish": "Finish setup without pairing"
+      }
+    },
+    "furnimove_layout": {
+      "options": {
+        "furnimove": "FurniMove adjustable bed",
+        "staircase": "Single-actuator staircase",
+        "keep": "Keep current configuration"
+      }
+    },
+    "furnimove_handset_route": {
+      "options": {
+        "furnimove": "Switch to the FurniMove profile",
+        "keep": "Keep current configuration"
+      }
+    },
+    "app_profile_review": {
+      "options": {
+        "keep": "Keep current configuration"
       }
     }
   }

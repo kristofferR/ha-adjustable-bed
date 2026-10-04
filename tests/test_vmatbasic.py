@@ -326,7 +326,7 @@ async def test_all_twenty_palette_controls_use_exact_hsv_packet(option):
 
 
 @pytest.mark.parametrize(
-    "option,packet", [("E1", "00770801"), ("E2", "00770802"), ("E3", "00770803")]
+    "option,packet", [("e1", "00770801"), ("e2", "00770802"), ("e3", "00770803")]
 )
 async def test_three_effect_controls(option, packet):
     controller = make_controller("xtbox")
@@ -377,7 +377,7 @@ async def test_non_xt_profiles_refuse_all_xt_public_routes_before_write(profile)
     controller = make_controller(profile)
     for operation in [
         controller.set_mood_palette("col1"),
-        controller.set_mood_effect("E1"),
+        controller.set_mood_effect("e1"),
         controller.set_mood_speed(1),
         controller.set_mood_brightness(1),
         controller.mood_toggle(),

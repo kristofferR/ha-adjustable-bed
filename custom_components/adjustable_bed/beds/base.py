@@ -1075,6 +1075,11 @@ class BedController(ABC):
         """Recall a local memory with an explicit caller-owned hold policy."""
         raise NotImplementedError("Held local memories are unavailable")
 
+    @property
+    def supports_held_memory_recall(self) -> bool:
+        """Whether ``goto_preset`` may choose the recall hold duration."""
+        return type(self).recall_memory is not BedController.recall_memory
+
     @abstractmethod
     async def program_memory(self, memory_num: int) -> None:
         """Save the current bed position to a memory preset.
@@ -1375,19 +1380,28 @@ class BedController(ABC):
 
     @property
     def persisted_app_state(self) -> Mapping[str, Any] | None:
-        """App-local preferences the phone app keeps across restarts, or None.
+        """App-local state the phone app keeps across restarts, or None.
 
         The coordinator stores a non-None mapping per physical address, bed
-        type and protocol variant (see ``app_state_store``), hands it back to
-        ``restore_persisted_app_state`` whenever a controller is created, and
-        deletes it when no config entry owns the address any more. The address
-        separates the sides of a two-address pair; a profile that offers
-        single-address side controls would need the side in the slot too.
+        type and app profile (``persisted_app_state_key`` or the variant; see
+        ``app_state_store``, which also states what belongs there rather than
+        in the config entry). It hands the mapping back to
+        ``restore_persisted_app_state`` whenever a controller is created, saves
+        it whenever the controller publishes state, and deletes it when no
+        config entry owns the address any more. The address separates the
+        sides of a two-address pair; a profile that offers single-address side
+        controls would need the side in the key too.
         """
         return None
 
+    @property
+    def persisted_app_state_key(self) -> str | None:
+        """The app profile owning ``persisted_app_state`` when the protocol variant
+        does not identify it (a handset, a model selection, an alias-free profile)."""
+        return None
+
     def restore_persisted_app_state(self, state: Mapping[str, Any]) -> None:  # noqa: B027
-        """Apply stored app-local preferences; raise ValueError or TypeError if invalid."""
+        """Apply stored app-local state; raise ValueError or TypeError if invalid."""
 
     async def set_mood_palette(self, option: str) -> None:
         """Select a controller-declared mood palette entry."""
@@ -1590,6 +1604,11 @@ class BedController(ABC):
         return False
 
     @property
+    def disconnects_after_rename(self) -> bool:
+        """Return True if a rename ends with an intentional disconnect."""
+        return False
+
+    @property
     def supports_alarm(self) -> bool:
         """Return True if the controller exposes the BLE timer/alarm service."""
         return False
@@ -1623,6 +1642,13 @@ class BedController(ABC):
     def supports_held_control(self) -> bool:
         """Return True when held controls are available."""
         return bool(self.held_control_options)
+
+    def validate_hold_control(self, control: str, duration_ms: int) -> None:
+        """Reject profile constraints on a declared control before any target moves.
+
+        ``hold_control`` checks membership in ``held_control_options`` first.
+        """
+        return None
 
     def validate_svane_hold_control(self, control: str, duration_ms: int) -> None:
         """Validate exact live Svane roles before any target starts motion."""
@@ -2351,26 +2377,9 @@ class BedController(ABC):
         raise NotImplementedError("Motion Bed callback queries unavailable")
 
     @property
-    def motion_bed_local_state(self) -> dict[str, bool]:
-        """Return remembered app preferences, separate from live feedback."""
-        return {}
-
-    def restore_motion_bed_local_state(self, state: Mapping[str, bool]) -> None:
-        raise NotImplementedError("Motion Bed preferences unavailable")
-
-    @property
     def furnimove_action_specs(self) -> tuple[ControllerActionSpec, ...]:
         """Return reachable rows from the selected FurniMove table."""
         return ()
-
-    @property
-    def furnimove_local_state(self) -> dict[str, int | str | bool]:
-        """Return persisted app preferences, separate from hardware feedback."""
-        return {}
-
-    def restore_furnimove_local_state(self, state: Mapping[str, int | str | bool]) -> None:
-        """Restore only controller-specific local preferences."""
-        raise NotImplementedError("FurniMove preferences not supported on this bed")
 
     def validate_furnimove_action(
         self, row_index: int, *, duration_ms: int | None = None, consumer: str = "app"

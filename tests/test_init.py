@@ -61,6 +61,7 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_PREFERRED_ADAPTER,
+    CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
     DOMAIN,
@@ -966,7 +967,11 @@ class TestMigration:
 
         assert result is True
         assert entry.version == 4
-        assert dict(entry.data) == before  # byte-identical, nothing added/removed
+        # Byte-identical apart from the later minor-version review mark, which
+        # only routes that gained app profiles receive.
+        migrated = dict(entry.data)
+        migrated.pop(CONF_PROFILE_REVIEW_PENDING, None)
+        assert migrated == before
         assert is_paired(entry.data) is False
 
     async def test_migrate_rejects_future_version(

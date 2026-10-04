@@ -3,7 +3,9 @@
 Accepted evidence: cluster-002 / row 050 (``com.cheers.slumber`` 1.0 (2),
 ``com.cheers.brick`` 1.0 (3), ``com.cheers.jewmes`` 1.202112141512 (20)).
 The advertised company ID selects one of the apps' control screens; this
-controller exposes exactly that screen's controls. Hardware is unverified.
+controller exposes exactly that screen's controls. A company ID the selected app
+does not list, or none seen yet, gets the limited fallback screen (see
+``FALLBACK_SCREEN``) instead. Hardware is unverified.
 
 Movement sends one press frame and, after the hold, the axis STOP 120 ms
 later. OneActivity instead repeats three STOPs, and its combined arrows stream
@@ -20,7 +22,8 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from bleak.exc import BleakError
 
-from ..const import DOMAIN, REMACRO_READ_CHAR_UUID, REMACRO_WRITE_CHAR_UUID
+from ..app_session import app_session
+from ..const import REMACRO_READ_CHAR_UUID, REMACRO_WRITE_CHAR_UUID
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -53,10 +56,11 @@ from .remacro_protocol import (
     RemacroSession,
     SideCodes,
     SynDataSerial,
-    session_for,
 )
 
 if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
+
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -91,6 +95,23 @@ async def _set_led_brightness(controller: BedController, value: float) -> None:
     await _remacro(lambda ctrl: ctrl.set_led_brightness(int(value)))(controller)
 
 
+def remacro_session(
+    hass: HomeAssistant, address: str, app: str, model_id: int | None
+) -> RemacroSession:
+    """Return the bed's live session for one app and model.
+
+    Non-exclusive: the stored model (offline) and the advertised one (live) may
+    differ, so both controllers' sessions coexist.
+    """
+    return app_session(
+        hass,
+        address,
+        ("remacro", app, model_id),
+        lambda: RemacroSession(SynDataSerial(cache_hold_serial=app == APP_JEROMES)),
+        exclusive=False,
+    )
+
+
 class RemacroController(BedController):
     """One Remacro bed as shown by one app's model-specific control screen."""
 
@@ -108,8 +129,8 @@ class RemacroController(BedController):
         self._model = model
         # All app state lives in the session so controller rebuilds after a
         # command handoff or idle disconnect do not reset it (see RemacroSession).
-        self._session = session or RemacroSession(
-            SynDataSerial(cache_hold_serial=app == APP_JEROMES)
+        self._session = session or remacro_session(
+            coordinator.hass, coordinator.address, app, model.model_id
         )
         self._serial = self._session.serial
         if self._session.led_brightness is None:
@@ -161,6 +182,7 @@ class RemacroController(BedController):
             "remacro_app": self._app,
             "remacro_model_id": self._model.model_id,
             "remacro_model": self._model.name,
+            "remacro_model_recognized": self._model.recognized,
             "remacro_screen": self._model.screen.name,
             "remacro_control_side": self.control_side if self._model.screen.split else None,
         }
@@ -245,7 +267,9 @@ class RemacroController(BedController):
 
     @property
     def supports_led_brightness(self) -> bool:
-        return self._model.model_id in APP_LED_SETTINGS_MODEL_IDS[self._app]
+        return (
+            self._model.recognized and self._model.model_id in APP_LED_SETTINGS_MODEL_IDS[self._app]
+        )
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -561,12 +585,10 @@ class RemacroController(BedController):
             raise ValueError(f"Unsupported control side: {option}")
         # The entity may hold an older controller; always write the bed's live
         # session, the one every new controller for this address reads.
-        sessions = self._coordinator.hass.data.get(DOMAIN, {}).get("remacro_sessions")
-        if isinstance(sessions, dict):
-            self._session = session_for(
-                sessions, self._coordinator.address, self._app, self._model.model_id
-            )
-            self._serial = self._session.serial
+        self._session = remacro_session(
+            self._coordinator.hass, self._coordinator.address, self._app, self._model.model_id
+        )
+        self._serial = self._session.serial
         self._session.side = option
         self.forward_controller_state_update(SIDE_STATE_KEY, option)
 
@@ -643,7 +665,9 @@ class RemacroController(BedController):
         self._session.head_level = self._next_level(self._session.head_level)
         await self.write_command(
             self._main(
-                self._zone_code(massage.head, massage.head_wave, massage.head_off, self._session.head_level)
+                self._zone_code(
+                    massage.head, massage.head_wave, massage.head_off, self._session.head_level
+                )
             )
         )
 
@@ -652,7 +676,9 @@ class RemacroController(BedController):
         self._session.foot_level = self._next_level(self._session.foot_level)
         await self.write_command(
             self._main(
-                self._zone_code(massage.foot, massage.foot_wave, massage.foot_off, self._session.foot_level)
+                self._zone_code(
+                    massage.foot, massage.foot_wave, massage.foot_off, self._session.foot_level
+                )
             )
         )
 
@@ -697,16 +723,15 @@ class RemacroController(BedController):
 
     async def save_led_brightness(self) -> None:
         """Settings > LED light commit: store the current level after 500 ms."""
-        if not self.supports_led_brightness:
+        model_id = self._model.model_id
+        if not self.supports_led_brightness or model_id is None:
             raise NotImplementedError("This app hides the LED light setting for this model")
         # The app persists the slider value before scheduling the write; it seeds
         # the slider and the next commit when the screen reopens.
         level = self._led_level
-        self._coordinator.remember_remacro_led_level(self._model.model_id, level)
+        self._coordinator.remember_remacro_led_level(model_id, level)
         await self._sleep(LED_SAVE_DELAY_S)
-        await self.write_command(
-            self._serial.tap(LIGHT_RGBV_SAVE, LED_WHITE | level)
-        )
+        await self.write_command(self._serial.tap(LIGHT_RGBV_SAVE, LED_WHITE | level))
 
 
 __all__ = ["APP_JEROMES", "APP_SLUMBERLAND", "APP_THE_BRICK", "RemacroController"]

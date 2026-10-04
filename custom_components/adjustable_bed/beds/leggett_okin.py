@@ -1054,7 +1054,7 @@ class LeggettOkinController(BedController):
             _LOGGER.warning("Invalid memory slot for recall: %d", memory_num)
             return
         if self._app_profile == "useries":
-            raise NotImplementedError("Use leggett_hold_control with an explicit memory duration")
+            raise NotImplementedError("Use hold_control with an explicit memory duration")
         else:
             await self._recall(command)
 
@@ -1116,7 +1116,7 @@ class LeggettOkinController(BedController):
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position (memory slot 3 on this protocol)."""
         if self._app_profile == "useries":
-            raise NotImplementedError("Use leggett_hold_control with an explicit snore duration")
+            raise NotImplementedError("Use hold_control with an explicit snore duration")
         else:
             await self._recall(LeggettOkinCommands.PRESET_ANTI_SNORE)
 

@@ -103,7 +103,7 @@ async def test_missing_massage_program_on_later_target_rejected_before_any_write
 async def test_advisory_duration_accepts_ui_selection_without_wire_or_preemption(hass):
     coordinator, controller = await target("12234")
     await invoke(hass, [coordinator], "furnimove_massage_duration", {"minutes": "20"})
-    assert controller.furnimove_local_state["duration_minutes"] == 20
+    assert controller.persisted_app_state["duration_minutes"] == 20
     assert not written(controller)
     coordinator.async_execute_controller_command.assert_not_awaited()
     coordinator.async_ensure_connected.assert_not_awaited()
@@ -123,11 +123,11 @@ async def test_advisory_duration_updates_disconnected_receiver_and_survives_reco
     coordinator.async_ensure_connected = AsyncMock(return_value=False)
     await invoke(hass, [coordinator], "furnimove_massage_duration", {"minutes": "20"})
     assert coordinator.controller is None and coordinator.client is None
-    assert coordinator.capability_controller.furnimove_local_state == {"duration_minutes": 20}
+    assert coordinator.capability_controller.persisted_app_state == {"duration_minutes": 20}
     coordinator.async_ensure_connected.assert_not_awaited()
     coordinator._controller = FurniMoveController(coordinator, handset_id="12234")
-    await coordinator._async_restore_furnimove_local_state()
-    assert coordinator.controller.furnimove_local_state == {"duration_minutes": 20}
+    await coordinator._async_restore_app_state(coordinator.controller)
+    assert coordinator.controller.persisted_app_state == {"duration_minutes": 20}
 
 
 async def test_advisory_duration_validates_all_profiles_before_updating_any(hass):
@@ -136,14 +136,14 @@ async def test_advisory_duration_validates_all_profiles_before_updating_any(hass
     with pytest.raises(ServiceValidationError, match="no supported local massage duration"):
         await invoke(hass, [first, second], "furnimove_massage_duration", {"minutes": 20})
     first.async_set_furnimove_massage_duration.assert_not_awaited()
-    assert controller.furnimove_local_state == {"duration_minutes": 15}
+    assert controller.persisted_app_state == {"duration_minutes": 15}
 
 
 async def test_rename_connects_for_live_role_then_preserves_wire_text_and_identity(hass):
     entry = MockConfigEntry(domain=DOMAIN, title="Bed", unique_id="original", data={"name": "Bed"})
     entry.add_to_hass(hass)
     coordinator, controller = await target(entry=entry, rename=True)
-    await invoke(hass, [coordinator], "furnimove_rename", {"name": "  New name  "})
+    await invoke(hass, [coordinator], "rename", {"name": "  New name  "})
     coordinator.async_ensure_connected.assert_awaited_once()
     assert controller.client.write_gatt_char.await_args.args[1] == b"  New name  "
     assert entry.title == "New name" and entry.unique_id == "original"
@@ -156,7 +156,7 @@ async def test_duplicate_or_current_rename_rejected_before_any_connection(hass):
     coordinator, controller = await target(rename=True)
     for name in (" bed ", " TAKEN "):
         with pytest.raises(ServiceValidationError, match="unique"):
-            await invoke(hass, [coordinator], "furnimove_rename", {"name": name})
+            await invoke(hass, [coordinator], "rename", {"name": name})
     coordinator.async_ensure_connected.assert_not_awaited()
     assert not written(controller)
 

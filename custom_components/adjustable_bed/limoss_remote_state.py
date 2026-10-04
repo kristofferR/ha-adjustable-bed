@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import TypedDict
+from typing import TYPE_CHECKING, TypedDict
+
+from .app_session import app_session
+
+if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
 
 
 @dataclass(frozen=True, slots=True)
@@ -20,13 +25,10 @@ class LimossRemoteMemoryStore:
     """Owned by one physical target and retained across controller recreation."""
 
     slots: dict[int, LimossRemoteMemory] = field(default_factory=dict)
-    persist: Callable[[dict[str, object]], None] | None = None
 
     @classmethod
-    def restore(
-        cls, raw: object, persist: Callable[[dict[str, object]], None] | None = None
-    ) -> LimossRemoteMemoryStore:
-        store = cls(persist=persist)
+    def restore(cls, raw: object) -> LimossRemoteMemoryStore:
+        store = cls()
         if raw is None:
             return store
         if not isinstance(raw, Mapping):
@@ -61,41 +63,64 @@ class LimossRemoteMemoryStore:
     def save(self, slot: int, positions: tuple[tuple[int, int], ...]) -> None:
         old = self.slots.get(slot)
         self.slots[slot] = LimossRemoteMemory(old.name if old else f"Memory {slot}", positions)
-        if self.persist is not None:
-            self.persist(self.serialize())
 
     def rename(self, slot: int, name: str) -> None:
         old = self.slots.get(slot)
         self.slots[slot] = LimossRemoteMemory(name, old.positions if old else ())
-        if self.persist is not None:
-            self.persist(self.serialize())
+
+
+def validate_limoss_remote_metadata(raw: object) -> dict[str, str]:
+    """Validate the diagnostic versions and serial read from the bed."""
+    if not isinstance(raw, Mapping):
+        raise ValueError("Invalid Limoss Remote diagnostic metadata")
+    parsed: dict[str, str] = {}
+    for key, value in raw.items():
+        if key not in ("hardware_version", "software_version", "serial") or not isinstance(value, str):
+            raise ValueError("Invalid Limoss Remote diagnostic metadata")
+        parsed[key] = value
+    return parsed
+
+
+@dataclass(slots=True)
+class LimossRemoteSession:
+    """App state shared by one address's offline and live controllers.
+
+    Both fields are persisted app state; restoring updates them in place.
+    """
+
+    memories: LimossRemoteMemoryStore = field(default_factory=LimossRemoteMemoryStore)
+    metadata: dict[str, str] = field(default_factory=dict)
+
+    def persisted(self) -> dict[str, object]:
+        return {"memories": self.memories.serialize(), "metadata": dict(self.metadata)}
+
+    def restore(self, state: Mapping[str, object]) -> None:
+        """Validate a stored record completely before replacing anything."""
+        if set(state) - {"memories", "metadata"}:
+            raise ValueError("Invalid Limoss Remote app state fields")
+        memories = LimossRemoteMemoryStore.restore(state.get("memories"))
+        metadata = validate_limoss_remote_metadata(state.get("metadata", {}))
+        self.memories.slots = memories.slots
+        self.metadata.clear()
+        self.metadata.update(metadata)
+
+
+def get_limoss_remote_session(hass: HomeAssistant, address: str) -> LimossRemoteSession:
+    """Return the session one address's controllers share."""
+    return app_session(hass, address, ("limoss_remote",), LimossRemoteSession)
 
 
 class LimossRemotePersistedState(TypedDict, total=False):
-    metadata: dict[str, str]
     capabilities: dict[str, int]
-    memories: dict[str, object]
 
 
 def validate_limoss_remote_state(raw: object) -> LimossRemotePersistedState:
-    """Validate persisted local data before either restoring or updating it."""
+    """Validate the entry's capability record before restoring or updating it."""
     from .beds.limoss_remote_protocol import LimossRemoteCapabilities
 
-    if not isinstance(raw, Mapping) or set(raw) - {"metadata", "capabilities", "memories"}:
+    if not isinstance(raw, Mapping) or set(raw) - {"capabilities"}:
         raise ValueError("Invalid Limoss Remote state fields")
     result: LimossRemotePersistedState = {}
-    if "metadata" in raw:
-        metadata = raw["metadata"]
-        if not isinstance(metadata, Mapping):
-            raise ValueError("Invalid Limoss Remote diagnostic metadata")
-        parsed: dict[str, str] = {}
-        for field, value in metadata.items():
-            if field not in ("hardware_version", "software_version", "serial") or not isinstance(
-                value, str
-            ):
-                raise ValueError("Invalid Limoss Remote diagnostic metadata")
-            parsed[field] = value
-        result["metadata"] = parsed
     if "capabilities" in raw:
         capabilities = raw["capabilities"]
         fields = ("key_count", "system", "vibration", "configuration", "memory_count")
@@ -109,6 +134,4 @@ def validate_limoss_remote_state(raw: object) -> LimossRemotePersistedState:
             parsed_caps[field] = value
         LimossRemoteCapabilities(*(parsed_caps[field] for field in fields))
         result["capabilities"] = parsed_caps
-    if "memories" in raw:
-        result["memories"] = LimossRemoteMemoryStore.restore(raw["memories"]).serialize()
     return result

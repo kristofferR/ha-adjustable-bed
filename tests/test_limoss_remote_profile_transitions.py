@@ -54,7 +54,7 @@ async def test_paired_conversion_away_requires_unpair_before_any_pending_change(
     flow.hass, flow.handler = hass, pair.entry.entry_id
     with patch.object(hass.config_entries, "async_reload", new=AsyncMock()) as reload:
         result = await flow.async_step_settings({const.CONF_BED_TYPE: requested})
-    assert result.get("errors") == {"base": "limoss_remote_pair_settings"}
+    assert result.get("errors") == {const.CONF_BED_TYPE: "app_profile_unpair_first"}
     assert not flow._pending_data and pair.entry.data == before
     reload.assert_not_awaited()
     for side, child in children.items():
@@ -67,8 +67,8 @@ async def test_leaving_remote_finishes_old_native_off_transaction_before_save(ha
     coordinator = actual_coordinator(
         hass,
         **{
-            const.CONF_LIMOSS_REMOTE_LIGHT: True,
-            const.CONF_LIMOSS_REMOTE_MASSAGE: True,
+            const.CONF_HAS_LIGHT: True,
+            const.CONF_HAS_MASSAGE: True,
             const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
         },
     )
@@ -129,7 +129,10 @@ async def test_leaving_remote_finishes_old_native_off_transaction_before_save(ha
             reload.assert_not_awaited()
         else:
             assert coordinator.entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_LIMOSS
-            assert not const.LIMOSS_REMOTE_CONFIG_KEYS.intersection(coordinator.entry.data)
+            # has_massage is a shared setting the new profile reads too.
+            assert not (
+                const.LIMOSS_REMOTE_CONFIG_KEYS - {const.CONF_HAS_MASSAGE}
+            ).intersection(coordinator.entry.data)
             assert coordinator.entry.data[const.CONF_LIMOSS_REMOTE_STATE] == before[const.CONF_LIMOSS_REMOTE_STATE]
             assert not controller.underbed_light and not controller.massage
     assert payloads == ["7100000000"] * 10 + ["6600000000"] * (2 if failure else 10)

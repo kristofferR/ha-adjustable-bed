@@ -62,15 +62,16 @@ data:
   enabled: false
 ```
 
-Use `adjustable_bed.malouf_sync_clock` with `device_id` to synchronize the
-clock separately. Both actions serialize configuration with other commands
-without cancelling active movement. Hardware behavior remains unverified.
+Use [`adjustable_bed.sync_clock`](#sync_clock) with `device_id` to synchronize
+the clock separately; the older `malouf_sync_clock` name still works. Both
+actions serialize configuration with other commands without cancelling active
+movement. Hardware behavior remains unverified.
 
 ## Movement and Memory
 
 | Action | Required fields besides `device_id` | Behavior |
 |--------|------------------------------------|----------|
-| `goto_preset` | `preset` | Recall a memory slot, 1–8 where supported |
+| `goto_preset` | `preset` | Recall a memory slot, 1–8 where supported. Optional `duration` sets the recall hold where the bed supports it |
 | `save_preset` | `preset` | Overwrite a supported memory slot with the current position |
 | `stop_all` | None | Cancel pending/active movement and perform the controller's STOP or release cleanup |
 | `set_position` | `motor`, `position` | Move one supported axis to a target |
@@ -80,6 +81,11 @@ without cancelling active movement. Hardware behavior remains unverified.
 The maximum memory slot depends on the bed; accepting numbers up to 8 does not
 create extra hardware memory. Named presets such as Flat or Zero G are exposed
 as buttons where supported. `save_preset` changes memory stored on the bed.
+
+`goto_preset` accepts an optional `duration` (0.1–60 seconds, whole
+milliseconds) only on beds whose app recalls a memory by holding its button:
+FSM Relax and Limoss Remote. Other beds reject it before any bed moves. Leave
+it unset to use the bed's own recall gesture.
 
 Position targets use the controller's units, which may be degrees or percentages.
 Check the position entity and [protocol guide](SUPPORTED_ACTUATORS.md). Feedback
@@ -143,43 +149,115 @@ data:
   side: both
 ```
 
+## Held Controls, Rename and Clock
+
+These generic actions take `device_id` and optional `side`. Each bed's
+controller declares what it supports, and every physical target is checked
+before any of them is written.
+
+### `hold_control`
+
+Hold one control declared by the bed's app profile for `duration` seconds
+(0.1–60, whole milliseconds), then send that profile's release sequence. A
+control the bed does not declare is rejected with the list of controls the bed
+accepts. Save controls can change stored positions. Svane Remote and Limoss
+Remote beds validate and release through their own live session, so a single
+call cannot mix them with other profiles.
+
+```yaml
+action: adjustable_bed.hold_control
+data:
+  device_id: YOUR_DEVICE_ID
+  control: head_up
+  duration: 2.5
+```
+
+| Profile | Controls | Timing and release |
+|---------|----------|--------------------|
+| [Leggett Okin app profiles](beds/leggett-okin.md) | `flat`, `snore`, `lights_toggle`, `massage_toggle`, `massage_wave`, `massage_head_up`, `massage_head_down`, `massage_foot_up`, `massage_foot_down`; U Series adds `memory_1`, `memory_2`, `store` | See the guide. `leggett_hold_control` remains as an alias limited to this list |
+| [Jordan's Serenity](beds/serenity.md#reachable-commands) | 31 literal app actions | Two-frame release |
+| [Jordan's Tranquil](beds/tranquil.md#reachable-commands) | 30 literal app actions | Two-frame release |
+| [Customatic Z-Series](beds/customatic-z-series.md#reachable-commands) | Literal Z-230 or Z-280 actions | A Z-230 rejects Z-280-only actions and the reverse |
+| [SIMMONS](beds/simmons.md) | `head_up`, `head_down`, `legs_up`, `legs_down`, `flat`, `memory`, `light`, plus `zero_g`, `tv`, `anti_snore` on a regular bed or `inclined_left`, `inclined_middle`, `inclined_right` on an inclined bed | Frame every 300 ms, then STOP at +100 and +400 ms. Holding `memory` for 5 seconds mirrors the app's Custom Mode save; whether the bed stores it is unverified |
+| [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md#timing-and-controls) | `head_up`, `head_down`, `feet_up`, `feet_down`, `lumbar_up`, `lumbar_down`, `flat`, `zero_g`, `lounge`, `incline`, `anti_snore`, `save_zero_g`, `save_lounge`, `save_incline`, `save_anti_snore`, `light`, `wave_1`, `wave_2`, `wave_3`, `massage_up`, `massage_down` | Frame every 100 ms, then STOP immediately and 300 ms later. Whether a save stores the position is unverified |
+| [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles) | Simon Li: `back_up`, `back_down`, `foot_up`, `foot_down`, `lumbar_up`, `lumbar_down`, `home`, `memory_1`, `memory_2`. OKIN-Seating: `back_up`, `back_down`, `foot_up`, `foot_down`, `home`. Heal Every Night: `head_up`, `head_down`, `foot_up`, `foot_down`, plus `tilt_up`, `tilt_down`, `lumbar_up`, `lumbar_down` on Healing 7 and 8 | Key every 100 ms, then the zero frame 10 ms (Simon Li, OKIN-Seating) or 100 ms (Heal Every Night) later. Holding a Simon Li memory for 2.1 seconds or more is the app's memory save |
+| [Restonic BT (Keeson)](beds/keeson.md#restonic-bt-profiles) | Remote A: `head_up`, `head_down`, `feet_up`, `feet_down`, `flat`, `zero_g`. Remote B adds `back_legs_up`, `back_legs_down`, `light`, `zzz` | Directions, remote B's back and legs and remote A's `zero_g` repeat every 100 ms; the others are sent once. One zero frame 100 ms after the hold |
+| [INNOVA](beds/keeson.md#innova-profile) | `back_up`, `back_down`, `legs_up`, `legs_down`, `memory_a`, `memory_b`, `memory_timer`, plus `combined_up`/`combined_down` (2M), `lumbar_up`/`lumbar_down` (3M, 4M) and `waist_up`/`waist_down` (4M) | Key every 100 ms, then the zero key 100 ms later |
+| [AdjustableM5X4](beds/starcode-abm5-4.md) | Movement, preset, save and massage controls | Movement and memory refresh every 100 ms with immediate STOP. Flat runs 600 ms; save and reset run the six-second confirmation interval regardless of `duration`. Positive massage controls require observed active state. One physical address only |
+| [Caresse / Werkmeister](beds/vibradorm_app.md) | Profile motor directions, `all_up`, `all_down`, `memory_1` to `memory_6`, Werkmeister `sync` | Completion-gated refresh, then a fresh release. All-down is a held direction, not a flat preset. Save memory uses the Save buttons |
+| [V-MAT Basic](beds/vmatbasic.md) | `all_up`, `all_down`, `back_up`, `back_down`, `legs_up`, `legs_down`, XT-only `floor_hold` | Movement ends with a fresh `ff` release; both sides need two ready receivers. `floor_hold` ends its refresh without a release and targets one physical receiver |
+| [Svane Remote](beds/svane.md) | `head_up`, `head_down`, `feet_up`, `feet_down`, the four `head_*_feet_*` combinations, `light_adjust` | See [Svane Remote held controls](#svane-remote-held-controls) |
+| [Limoss Remote](beds/limoss-remote.md) | Controls rendered for the receiver's layout | Five-frame release |
+| [FSM Relax](beds/fsm_relax.md) | `command_XX` values from the profile's protocol diagnostics | Replies cannot prove physical arrival |
+
+Customatic Clarity, Remedy and Jerome's C use
+[`customatic_hold_memory` and `customatic_move_simultaneously`](beds/customatic.md),
+which select their memory and motor combinations as lists.
+
+### `rename`
+
+Write a new Bluetooth name to each targeted controller that supports it. This
+does not rename the Home Assistant device or entities. Each controller applies
+its app's name rule to every target before any write:
+
+| Profile | Name rule |
+|---------|-----------|
+| [Linak Bed Control](beds/linak.md) | 1–17 UTF-8 bytes. The controller then disconnects so it can advertise the new name |
+| [LOGICDATA app profiles](beds/logicdata-app.md) | Phone and tablet: 1–255 printable ASCII characters. [Sleep Smart](beds/logicdata-sleep-smart.md) beds and pumps: 1–20 letters, digits, ä, ö, ü or ß |
+| [Jiecang app profiles](beds/jiecang-app.md) | 1–20 ASCII letters or digits |
+| [INNOVA](beds/keeson.md#innova-profile) | At most 14 characters as typed, then trimmed and non-empty |
+| [FurniMove](beds/furnimove.md#controls-and-actions) | One physical receiver; a unique name of at most 18 UTF-16 units after trimming |
+| [V-MAT Basic](beds/vmatbasic.md) | One physical receiver; Java-style trim, at most ten UTF-16 units (empty allowed) and 20 UTF-8 bytes |
+
+```yaml
+action: adjustable_bed.rename
+data:
+  device_id: YOUR_DEVICE_ID
+  name: Bedroom
+```
+
+The released `linak_rename`, `logicdata_rename` and `jiecang_rename` names
+still work, with their original name checks.
+
+### `sync_clock`
+
+Set each targeted controller's clock to Home Assistant's local time. Supported
+by the [Malouf Base / Lucid Base](beds/malouf-app.md) app profile on its OKIN
+transports, [SIMMONS](beds/simmons.md#alarms-and-clock), and
+[Customatic Z-Series](beds/customatic-z-series.md) controllers whose
+manufacturer string enables the alarm page (see
+[`zseries_set_alarm`](#zseries_set_alarm)). Z-Series beds cannot share a call
+with other profiles. The released `malouf_sync_clock` name still works.
+
 ## Bed-Specific Actions
 
 These actions also accept optional paired-bed `side` targeting. Use the linked
-guide for controller requirements, parameter ranges, and examples. App-based
+guide for controller requirements, parameter ranges, and examples. Held
+controls, Bluetooth rename and clock synchronization use the
+[generic actions](#held-controls-rename-and-clock) above. App-based
 profiles must match the actual product; do not substitute another profile to
 enable additional commands.
 
 | Controller/profile | Actions | Guide |
 |--------------------|---------|-------|
-| Linak Bed Control | `linak_move_simultaneously`, `linak_rename`, `linak_set_alarm` | [Linak](beds/linak.md) |
+| Linak Bed Control | `linak_move_simultaneously`, `linak_set_alarm` | [Linak](beds/linak.md) |
 | Jensen JMC400 | `linak_move_simultaneously` (back and legs only; the action keeps its original name) | [Jensen](beds/jensen.md) |
 | Solace MotionFlex | `solace_audio`, `solace_set_alarm` | [Solace](beds/solace.md) |
 | Solace Woosa Sleep | `solace_set_alarm` (sound `none` or `alarm`, no music) | [Woosa](beds/woosa.md) |
-| Leggett Okin app profiles | `leggett_sleep_timer`, `leggett_alarm_timer`, `leggett_hold_control` | [Prodigy / U Series](beds/leggett-okin.md) |
+| Leggett Okin app profiles | `leggett_sleep_timer`, `leggett_alarm_timer` | [Prodigy / U Series](beds/leggett-okin.md) |
 | Customatic Clarity / Remedy | `customatic_hold_memory` (all 31 memory combinations), `customatic_move_simultaneously` (safe motor combinations) | [Customatic](beds/customatic.md) |
 | Customatic Jerome's C | `customatic_move_simultaneously` (back and legs) | [Customatic](beds/customatic.md) |
-| Jordan's Serenity app | `serenity_hold_control` (one of 31 literal app actions) | [Serenity](beds/serenity.md) |
-| Jordan's Tranquil app | `tranquil_hold_control` (one of 30 literal app actions) | [Tranquil](beds/tranquil.md) |
-| Customatic Z-Series app | `zseries_hold_control` (literal Z-230 or Z-280 actions), `zseries_set_alarm`, `zseries_sync_clock` | [Z-Series](beds/customatic-z-series.md) |
-| SIMMONS app | `simmons_hold_control`, `simmons_set_alarm` | [SIMMONS](beds/simmons.md) |
-| Adjustable bed (Lumbar) app | `adjustable_lumbar_hold_control` | [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md) |
-| Simon Li / Heal Every Night / OKIN-Seating apps | `okin_app_hold_control` | [Okin app profiles](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles) |
-| Restonic BT Remote app (Keeson) | `restonic_hold_control` | [Keeson Restonic BT](beds/keeson.md#restonic-bt-profiles) |
-| AdjustableM5X4 app | `starcode_abm5_4_hold_control` (literal held movement, preset, save or massage controls) | [AdjustableM5X4](beds/starcode-abm5-4.md) |
-| Caresse / Werkmeister apps | `vibradorm_hold_control` (profile-specific movement, memory recall or sync) | [Caresse / Werkmeister](beds/vibradorm_app.md) |
-| V-MAT Basic app | `vmatbasic_hold_control`, `vmatbasic_rename` | [V-MAT Basic](beds/vmatbasic.md) |
-| LOGICDATA app profiles | `logicdata_set_alarm`, `logicdata_rename`, `logicdata_hold_preset` | [LOGICDATA](beds/logicdata-app.md) |
-| LOGICDATA Sleep Smart app | `logicdata_hold_preset` (flat, zero gravity, anti-snore, memory 1), `logicdata_rename` (bed and pump) | [Sleep Smart](beds/logicdata-sleep-smart.md) |
-| Jiecang app profiles | `jiecang_set_alarm`, `jiecang_wake`, `jiecang_stop_wake`, `jiecang_rename` | [Jiecang](beds/jiecang-app.md) |
-| INNOVA app profile | `innova_rename`, `innova_hold_control` | [INNOVA](beds/keeson.md#innova-profile) |
+| Customatic Z-Series app | `zseries_set_alarm` | [Z-Series](beds/customatic-z-series.md) |
+| SIMMONS app | `simmons_set_alarm` | [SIMMONS](beds/simmons.md) |
+| LOGICDATA app profiles | `logicdata_set_alarm`, `logicdata_hold_preset` | [LOGICDATA](beds/logicdata-app.md) |
+| LOGICDATA Sleep Smart app | `logicdata_hold_preset` (flat, zero gravity, anti-snore, memory 1) | [Sleep Smart](beds/logicdata-sleep-smart.md) |
+| Jiecang app profiles | `jiecang_set_alarm`, `jiecang_wake`, `jiecang_stop_wake` | [Jiecang](beds/jiecang-app.md) |
 | Richmat RMControl products | `rmcontrol_alarm`, `rmcontrol_anti_snore` | [RMControl](beds/rmcontrol.md) |
 | Richmat app profiles | `richmat_mh_alarm`, `richmat_mh_aroma`, `richmat_mh_waist_alarm`, `richmat_mh_light_color` | [Richmat app profiles](beds/richmat-mh.md#actions) |
 | Sleep Number Fuzion / BAM-MCR | `sleep_number_command` | [Command and parameter reference](beds/sleep-number-services.md) |
 
 Controller alarm actions program the bed itself, rather than creating a Home
-Assistant automation. Rename actions change the controller's Bluetooth name;
-renaming an HA entity or device is a separate operation.
+Assistant automation.
 
 ### `richmat_mh_alarm`, `richmat_mh_aroma`, `richmat_mh_waist_alarm` and `richmat_mh_light_color`
 
@@ -192,53 +270,13 @@ For the explicit Richmat app profiles. Each action checks every targeted bed bef
 
 Alarm countdowns and the waist alarm's current time are read for each bed just before its frames are built, after any reconnect.
 
-### `serenity_hold_control`
+### `zseries_set_alarm`
 
-Hold one literal control from the explicit Jordan's Serenity profile for `duration` seconds (0.1–60), then send its two-frame release sequence. Supply `device_id`, `control`, `duration` and optional `side`. The [Serenity control catalog](beds/serenity.md#reachable-commands) lists the literal action names. The controller validates supported action names before dispatch; arbitrary combinations are rejected. Save controls can change stored positions. This action uses all-target capability preflight and the shared command lock.
+Available only when the controller's Device Information manufacturer string is exactly `CST13` or `CST14`; that string is what makes the app show its alarm page. The last successful read is stored with the entry; if it has never been read, the action reads it on the live connection first. Every targeted bed or side is checked before any of them is written, so one ineligible or unreadable bed fails the whole call without changes. `zseries_set_alarm` takes `device_id`, `enabled`, `time` (minute precision, Home Assistant time zone) and `wake_mode` (`massage` or `memory_1`), both required when enabling, and optional `side`. Like the app, it targets today's weekday, or tomorrow's when the time has already passed; there is no weekday choice. It first sends the clock, then the alarm frame, then two status queries. The app separates the clock and alarm frames by a user tap; HA sends them back-to-back. [`sync_clock`](#sync_clock) sends the clock frame and the same queries. Alarm replies update the **App alarm state** sensor.
 
-### `tranquil_hold_control` and `zseries_hold_control`
+### `simmons_set_alarm`
 
-These work like `serenity_hold_control` for the explicit Tranquil and Z-Series profiles. Each controller accepts only its own literal actions; a Z-230 rejects Z-280-only actions and the reverse. See the [Tranquil](beds/tranquil.md#reachable-commands) and [Z-Series](beds/customatic-z-series.md#reachable-commands) catalogs.
-
-### `zseries_set_alarm` and `zseries_sync_clock`
-
-Available only when the controller's Device Information manufacturer string is exactly `CST13` or `CST14`; that string is what makes the app show its alarm page. The last successful read is stored with the entry; if it has never been read, the action reads it on the live connection first. Every targeted bed or side is checked before any of them is written, so one ineligible or unreadable bed fails the whole call without changes. `zseries_set_alarm` takes `device_id`, `enabled`, `time` (minute precision, Home Assistant time zone) and `wake_mode` (`massage` or `memory_1`), both required when enabling, and optional `side`. Like the app, it targets today's weekday, or tomorrow's when the time has already passed; there is no weekday choice. It first sends the clock, then the alarm frame, then two status queries. The app separates the clock and alarm frames by a user tap; HA sends them back-to-back. `zseries_sync_clock` sends the clock frame and the same queries. Alarm replies update the **App alarm state** sensor.
-
-### `simmons_hold_control` and `simmons_set_alarm`
-
-Hold accepts `device_id`, `control`, `duration` (0.1–60 seconds in whole milliseconds) and optional `side`. The frame repeats every 300 ms, then two STOP frames follow at +100 and +400 ms. Controls are `head_up`, `head_down`, `legs_up`, `legs_down`, `flat`, `memory`, `light`, plus `zero_g`, `tv`, `anti_snore` on a regular bed or `inclined_left`, `inclined_middle`, `inclined_right` on an inclined bed. Holding `memory` for 5 seconds mirrors the app's help text for saving Custom Mode; whether the bed stores the position is unverified.
-
-Set alarm accepts `device_id`, `slot` (1 or 2), `enabled`, `time`, `weekdays` (empty for the next occurrence), `mode` (`custom_mode`, `flat`, or regular-bed `anti_snore`), `confirm_custom_mode` and optional `side`. Custom Mode requires `confirm_custom_mode: true`. An enabled alarm cannot share its time or mode with the other enabled alarm. Both alarm records must be reported on the current connection; HA queries the bed and refuses the call, writing nothing, if it does not answer. With several beds, every bed is checked before any bed is programmed, so one failing bed changes none. See [SIMMONS alarms](beds/simmons.md#alarms-and-clock).
-
-### `adjustable_lumbar_hold_control`
-
-Accepts `device_id`, `control`, `duration` (0.1–60 seconds) and optional `side`. The frame repeats every 100 ms, then STOP is sent immediately and again 300 ms later. Controls are `head_up`, `head_down`, `feet_up`, `feet_down`, `lumbar_up`, `lumbar_down`, `flat`, `zero_g`, `lounge`, `incline`, `anti_snore`, `save_zero_g`, `save_lounge`, `save_incline`, `save_anti_snore`, `light`, `wave_1`, `wave_2`, `wave_3`, `massage_up` and `massage_down`. Every target must use this profile and accept the control before any bed is written. Whether a save stores the position is unverified. See [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md#timing-and-controls).
-
-### `okin_app_hold_control`
-
-Accepts `device_id`, `control`, `duration` (0.1–60 seconds) and optional `side`. The key repeats every 100 ms, then the app's zero frame follows 10 ms (Simon Li, OKIN-Seating) or 100 ms (Heal Every Night) after the hold. Simon Li controls are `back_up`, `back_down`, `foot_up`, `foot_down`, `lumbar_up`, `lumbar_down`, `home`, `memory_1` and `memory_2`; OKIN-Seating has `back_up`, `back_down`, `foot_up`, `foot_down` and `home`; Heal Every Night has `head_up`, `head_down`, `foot_up` and `foot_down` (following its Installation mode and Actuator direction settings), plus `tilt_up`, `tilt_down`, `lumbar_up` and `lumbar_down` on Healing 7 and 8. Holding a Simon Li memory for 2.1 seconds or more is the app's memory save; whether the seat stores the position is unverified. Every target must use one of these profiles and accept the control before any bed is written. See [Okin app profiles](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles).
-
-### `restonic_hold_control`
-
-Accepts `device_id`, `control`, `duration` (0.1–60 seconds) and optional `side`. Head and foot directions, remote B's `back_legs_up`/`back_legs_down` and remote A's `zero_g` repeat every 100 ms while held; `flat`, remote B's `zero_g`, `light` and `zzz` are sent once when the hold starts. When the hold ends, one zero frame follows 100 ms later. Remote A accepts `head_up`, `head_down`, `feet_up`, `feet_down`, `flat` and `zero_g`; remote B adds `back_legs_up`, `back_legs_down`, `light` and `zzz`. Every target must use a Restonic BT profile and accept the control before any bed is written. See [Restonic BT](beds/keeson.md#restonic-bt-profiles).
-
-### `vibradorm_hold_control`
-
-Supply `device_id`, `control`, `duration` in seconds (0.1–60), and optional
-`side`. Every target is checked against its explicit app and remote profile
-before dispatch. Supported controls include its motor directions, all-up and
-all-down, memory recall slots, and Werkmeister four-axis sync. All-down is a
-held direction, not an automatic flat preset. Ordinary movement and recall
-buttons use a bounded one-second hold; this action lets an automation choose
-the hold duration. Both paths retain the app's completion-gated refresh and
-send a fresh release command on completion or cancellation. Memory storage
-uses the separate Save memory buttons, not this action.
-
-### `vmatbasic_hold_control` and `vmatbasic_rename`
-
-Hold accepts `device_id`, `control`, `duration` (0.1–60 seconds in whole milliseconds), and optional `side`. Controls are `all_up`, `all_down`, `back_up`, `back_down`, `legs_up`, `legs_down`, and XT-only `floor_hold`. Admitted movement ends with a fresh `ff` release; floor hold ends its refresh without an invented release. Movement on both sides requires two concurrently ready physical receivers. Floor hold targets one physical receiver only.
-
-Rename accepts `device_id`, `name`, and optional `side`, for one physical receiver. It applies Java-style trim and the ten UTF-16-unit limit, including empty names, with a 20-byte UTF-8 safety limit. The retained name changes only after a successful write. Other floor, mood and massage controls use their named child buttons/selects/numbers; accessory commands do not automatically mirror across linked receivers.
+Accepts `device_id`, `slot` (1 or 2), `enabled`, `time`, `weekdays` (empty for the next occurrence), `mode` (`custom_mode`, `flat`, or regular-bed `anti_snore`), `confirm_custom_mode` and optional `side`. Custom Mode requires `confirm_custom_mode: true`. An enabled alarm cannot share its time or mode with the other enabled alarm. Both alarm records must be reported on the current connection; HA queries the bed and refuses the call, writing nothing, if it does not answer. With several beds, every bed is checked before any bed is programmed, so one failing bed changes none. See [SIMMONS alarms](beds/simmons.md#alarms-and-clock).
 
 ## Support Bundle
 
@@ -259,40 +297,35 @@ and how to download the report.
 ### FurniMove app controls
 
 The [FurniMove guide](beds/furnimove.md#controls-and-actions) describes
-`furnimove_action`, `furnimove_move_simultaneously`, `furnimove_massage_program`,
-`furnimove_massage_duration` and `furnimove_rename`. Every action takes
-`device_id` and optional `side`; rename targets one physical receiver.
+`furnimove_action`, `furnimove_move_simultaneously`, `furnimove_massage_program`
+and `furnimove_massage_duration`; renaming uses [`rename`](#rename). Every
+action takes `device_id` and optional `side`; rename targets one physical
+receiver.
 Ordered action indexes come from diagnostics and the selected handset.
 Hold overrides accept 0.1–60 seconds; widgets use their separate fixed timing.
 All targets validate before movement starts. The advisory massage duration is
 local state, sends no timer packet and does not stop the receiver on expiry.
-
-### `starcode_abm5_4_hold_control`
-
-Hold one exact app action. Flat runs 600 ms; save and reset run the six-second local confirmation interval. No device acknowledgement is inferred.
-
-Target one or more physical devices with `device_id`, an exact supported `control`, `duration` in seconds (0.1–60), and optional paired `side`. Every target’s profile and observed-state gate is checked before any write. Movement and memory refresh every 100 ms with immediate STOP; presets release according to the retained UI selector. Flat runs 600 ms after activation; save/reset stream through the six-second local confirmation interval regardless of the duration field. Positive massage controls require observed active state; this profile has no massage timer Off command. [The protocol document](beds/starcode-abm5-4.md) lists all controls, exact capability gates and exclusions.
-
 
 ## Motion Bed app actions
 
 The [Motion Bed action index](beds/motion_bed.md#actions) covers all 12 typed app actions, including alarms, sleep calibration/reporting, hub modules, pressure, thermal schedules and audio. Named action keys are listed in controller diagnostics. Persistent changes require confirmation; every target is validated before writes, and native paired child targets retain their side.
 ### Svane Remote held controls
 
-`svane_hold_control` holds a selected head/feet axis or combination for `duration` seconds (0.1–60). Feet-only actions and P1 combinations require more than 0.1 seconds to allow the source's 100 ms feet delay; shorter requests are rejected before any target moves. If awaited delivery consumes the remaining budget before feet start, the action fails explicitly and releases any started axis. Its literal dropdown also offers `light_adjust`, which runs the app's triangular lamp preference loop after the source's 200 ms threshold. All physical targets are checked before movement.
+[`hold_control`](#hold_control) holds a selected Svane head/feet axis or combination for `duration` seconds (0.1–60). Feet-only actions and P1 combinations require more than 0.1 seconds to allow the source's 100 ms feet delay; shorter requests are rejected before any target moves. If awaited delivery consumes the remaining budget before feet start, the action fails explicitly and releases any started axis. The `light_adjust` control runs the app's triangular lamp preference loop after the source's 200 ms threshold. All physical targets are checked before movement.
 
 `svane_release_axis` accepts `motor: head` or `motor: feet` during that hold and signals its serialized writer. The remaining axis continues; final release uses the profile's actual STOP. Both actions accept the normal `device_id` and paired `side` fields. The literal Svane position, Read/TV, toggle and refresh buttons, local intensity number and diagnostic records are described in the [profile guide](beds/svane.md).
 
 
 ## Limoss Remote app
 
-The explicit [Limoss Remote app profile](beds/limoss-remote.md) adds `limoss_remote_hold_control`, `limoss_remote_recall_memory`, `limoss_remote_rename_memory`, `limoss_remote_calibrate` and `limoss_remote_features`. Holds accept 0.1–60 seconds. Calibration requires `confirmed: true`. Memory actions accept slots 1–8 within the live capacity; `save_preset` and `goto_preset` expose the same local slots. Rename permits an empty name. All selected targets are validated before writes; paired child targets and `side` retain their physical-target settings.
+The explicit [Limoss Remote app profile](beds/limoss-remote.md) adds `limoss_remote_rename_memory`, `limoss_remote_calibrate` and `limoss_remote_features`, and supports [`hold_control`](#hold_control) and `goto_preset` with an optional recall `duration`. Holds accept 0.1–60 seconds. Calibration requires `confirmed: true`. Memory actions accept slots 1–8 within the live capacity; `save_preset` and `goto_preset` expose the same local slots. Rename permits an empty name. All selected targets are validated before writes; paired child targets and `side` retain their physical-target settings.
 
 ### FSM Relax app actions
 
-`fsm_relax_hold_control` accepts a supported `command_XX` and explicit `duration`
-in seconds. `fsm_relax_recall_memory` accepts local `preset` 1–8 and `duration`;
-`fsm_relax_calibrate` requires `confirmed: true` and makes one write attempt.
+[`hold_control`](#hold_control) accepts a supported `command_XX` and explicit
+`duration` in seconds. `goto_preset` accepts local `preset` 1–8 and an optional
+`duration`; `fsm_relax_calibrate` requires `confirmed: true` and makes one
+write attempt.
 Native Save/Memory buttons and generic memory actions expose up to eight slots
 subject to the reported count. All actions use the serialized coordinator path.
 Duration is local gesture policy and replies cannot prove physical arrival.
@@ -300,7 +333,7 @@ See [FSM Relax](beds/fsm_relax.md) for profile gates and reply ambiguity.
 
 ### `starcode_move_lifts`
 
-Controls the accessories configured on an AdjustableM5X5 main entry. Choose one main `device_id` and `action`: `up`, `down`, `flat` or `stop`. Movement preflights every selected address and interrupts the conflicting main. `flat` interrupts the selected group, sends main flat, waits 1600 ms and sends lift flat. STOP, unloading or a changed selection cancels the retained delay. If a member fails, every admitted target receives cleanup. The action supports one main plus up to three distinct lifts and never fans out lighting, massage or programming.
+Controls the accessories configured on an AdjustableM5X5 or DewertOkin ELEVATE main entry; lifts may be either type. Choose one main `device_id` and `action`: `up`, `down`, `flat` or `stop`. Movement preflights every selected address and interrupts the conflicting main. `flat` interrupts the selected group, sends main flat, waits 1600 ms and sends lift flat. STOP, unloading or a changed selection cancels the retained delay. If a member fails, every admitted target receives cleanup. The action supports one main plus up to three distinct lifts and never fans out lighting, massage or programming.
 
 ```yaml
 action: adjustable_bed.starcode_move_lifts

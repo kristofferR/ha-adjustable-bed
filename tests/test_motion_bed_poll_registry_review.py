@@ -25,7 +25,7 @@ from tests.test_paired_setup import _paired_entry
 async def test_motion_layout_covers_retire_without_losing_active_customization(hass, replacement):
     coord = await real_coordinator(hass, "QMS-IQ")
     registry = er.async_get(hass)
-    old_key = "motion_bed_weitiao_w1fragment_back"
+    old_key = "motion_bed_hip"  # W1-only axis
     old = registry.async_get_or_create("cover", DOMAIN, coord.entity_unique_id(old_key), config_entry=coord.entry)
     if replacement == "W2":
         coord._controller = MotionBedController(coord, selection=select_motion_bed("QMS-IQ", movement_override="W2"))
@@ -55,7 +55,7 @@ async def test_motion_cover_cleanup_keeps_other_single_address_side(hass):
     pair = SingleAddressPairedCoordinator(hass, _paired_entry(hass), coord)
     left, right = pair._children["left"], pair._children["right"]
     registry = er.async_get(hass)
-    key = "motion_bed_weitiao_w1fragment_back"
+    key = "motion_bed_hip"  # W1-only axis
     old_left = registry.async_get_or_create("cover", DOMAIN, left.entity_unique_id(key), config_entry=coord.entry)
     old_right = registry.async_get_or_create("cover", DOMAIN, right.entity_unique_id(key), config_entry=coord.entry)
     coord._controller = MotionBedController(coord, selection=select_motion_bed("QMS-IQ", movement_override="W2"))

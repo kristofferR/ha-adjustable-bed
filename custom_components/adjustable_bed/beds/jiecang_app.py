@@ -705,6 +705,10 @@ class JiecangAppController(BedController):
     def supports_device_rename(self) -> bool:
         return self._name_uuid is not None
 
+    def validate_device_rename(self, name: str) -> None:
+        # The G1 framing is the bare name, so this applies only the name rule.
+        protocol.rename_command(name, True, False)
+
     async def rename_device(self, name: str) -> None:
         if self.client is None or not self._name_uuid:
             raise ValueError("Selected transport has no name characteristic")

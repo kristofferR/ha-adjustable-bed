@@ -116,7 +116,9 @@ def _normal_and_sonic(data: bytes) -> dict[str, StateValue]:
         "light_mode": data[15] >> 4,
         "light_brightness": data[14] >> 4,
         "light_on": color > 0,
-        "light_color_index": _closest_color(rgb) if direct else color,
+        # Report direct RGB in the wire numbering the palette select uses
+        # (0 = off, 1 = white): palette position p is wire index p + 1.
+        "light_color_index": _closest_color(rgb) + 1 if direct else color,
         "light_rgb": rgb,
         "light_rgb_mode": int(direct),
         "sonic_head_level": sonic_head,
@@ -200,13 +202,13 @@ def parse_notification(
     """Return only delivered fields, without mutating previous or inventing ACKs.
 
     Delta application preserves prior alarm slots and sonic fields, including on
-    EQ's USB-only sonic update. Elevate only logs notifications in this artifact.
+    EQ's USB-only sonic update. ELEVATE lifts use the separate star_elevate type.
     No app debounce suppression is carried into Home Assistant.
     """
     star = _is_star(dialect)
-    if profile not in ("cb25", "f23", "kneading", "elevate"):
+    if profile not in ("cb25", "f23", "kneading"):
         raise ValueError(f"Unknown AdjustableM5X5 profile: {profile}")
-    if profile == "elevate" or len(data) < 2 or data[0] != 0xA5:
+    if len(data) < 2 or data[0] != 0xA5:
         return {}
     match data[1]:
         case 0x0D if len(data) >= 18:

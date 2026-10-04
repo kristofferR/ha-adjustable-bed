@@ -628,30 +628,6 @@ class TestKeesonLights:
         await coordinator.controller.lights_off()
         assert coordinator.controller.led_on is False
 
-    async def test_legacy_ore_variant_maps_to_sino(
-        self,
-        hass: HomeAssistant,
-        mock_keeson_config_entry_data: dict,
-        mock_coordinator_connected,
-    ):
-        """Test legacy 'ore' protocol variant is normalized to Sino controller behavior."""
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="Keeson ORE Alias Test Bed",
-            data={
-                **mock_keeson_config_entry_data,
-                CONF_PROTOCOL_VARIANT: "ore",
-            },
-            unique_id="AA:BB:CC:DD:EE:FF",
-            entry_id="keeson_ore_alias",
-        )
-        entry.add_to_hass(hass)
-        coordinator = AdjustableBedCoordinator(hass, entry)
-        await coordinator.async_connect()
-
-        assert isinstance(coordinator.controller, KeesonController)
-        assert coordinator.controller._variant == "sino"
-
 
 class TestKeesonMassage:
     """Test Keeson massage commands."""

@@ -1,31 +1,24 @@
 """Public conversion, queued group dispatch and profile registry boundaries."""
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
-from homeassistant.helpers import entity_registry as er
 
-from custom_components.adjustable_bed.beds.starcode_m5x5 import StarcodeM5X5Controller
-from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
 )
 from custom_components.adjustable_bed.const import (
-    CONF_DISABLE_ANGLE_SENSING,
-    CONF_STARCODE_DEVICE_NAME,
+    CONF_BLE_DEVICE_NAME,
     CONF_STARCODE_LIFT_ENTRIES,
     CONF_STARCODE_M5X5_PROFILE,
-    DOMAIN,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.pairing_candidates import active_pairing_candidates
-from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.starcode_accessory_group import _GROUP_DISPATCH, run_group
 from tests.test_starcode_accessory_group import group, target
 
@@ -128,52 +121,18 @@ async def test_ordinary_queued_intent_leaves_group_context_and_interrupts_retain
 
 
 @pytest.mark.parametrize("profile", ["cb25", "f23", "kneading"])
-async def test_options_elevate_reload_removes_all_old_position_and_telemetry_rows(
+async def test_options_reject_an_elevate_name_for_an_app_bed_class(
     hass: HomeAssistant, profile: str
 ) -> None:
+    """ELEVATE lifts use the DewertOkin ELEVATE bed type, never an app bed class."""
     old = target(hass, 1, profile)
-    old._disable_angle_sensing = False
-    registry = er.async_get(hass)
-    removed_ids: set[str] = set()
-    for domain, entities in (
-        ("number", _number_entities_for(hass, old)),
-        ("sensor", _sensor_entities_for(hass, old)),
-        ("binary_sensor", _binary_sensor_entities_for(hass, old)),
-    ):
-        for entity in entities:
-            unique_id = entity.unique_id
-            assert isinstance(unique_id, str)
-            row = registry.async_get_or_create(domain, DOMAIN, unique_id, config_entry=old.entry)
-            if (
-                unique_id.endswith(("back_position", "legs_position", "lumbar_position"))
-                or "_starcode_" in unique_id
-            ):
-                removed_ids.add(row.entity_id)
-    assert any("firmware" in row for row in removed_ids)
-    assert (
-        len([row for row in removed_ids if row.startswith("number.")]) == 4
-    )  # three positions and brightness
-    connection_id = registry.async_get_entity_id(
-        "binary_sensor", DOMAIN, old.entity_unique_id("ble_connection")
-    )
-    # Submit the real public options transition, then reconstruct its runtime as on reload.
+    before = dict(old.entry.data)
     flow = AdjustableBedOptionsFlow(old.entry)
     flow.handler = old.entry.entry_id
     flow.hass = hass
     result = await flow.async_step_settings(
-        {CONF_STARCODE_M5X5_PROFILE: "elevate", CONF_STARCODE_DEVICE_NAME: "ELEVATE123456"}
+        {CONF_STARCODE_M5X5_PROFILE: profile, CONF_BLE_DEVICE_NAME: "ELEVATE123456"}
     )
-    assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert old.entry.data[CONF_DISABLE_ANGLE_SENSING] is True
-    current = AdjustableBedCoordinator(hass, old.entry)
-    current._client = MagicMock(is_connected=True)
-    controller = StarcodeM5X5Controller(current, profile="elevate")
-    controller._ready = True
-    current._controller = controller
-    _number_entities_for(hass, current)
-    _sensor_entities_for(hass, current)
-    _binary_sensor_entities_for(hass, current)
-    remaining = [entity_id for entity_id in removed_ids if registry.async_get(entity_id) is not None]
-    assert remaining == []
-    if connection_id is not None:
-        assert registry.async_get(connection_id) is not None
+    assert result["type"] == FlowResultType.FORM
+    assert result["errors"] == {CONF_STARCODE_M5X5_PROFILE: "starcode_elevate_bed_type"}
+    assert dict(old.entry.data) == before

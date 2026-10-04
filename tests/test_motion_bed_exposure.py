@@ -16,8 +16,8 @@ from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTION_BED,
     CONF_BED_TYPE,
+    CONF_BLE_DEVICE_NAME,
     CONF_MOTION_BED_MOVEMENT,
-    CONF_MOTION_BED_NAME,
     CONF_MOTION_BED_PRESET,
     CONF_MOTION_BED_RESTORED,
     DOMAIN,
@@ -27,13 +27,13 @@ from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
 
 
 @pytest.mark.parametrize("input_data,valid", [
-    ({CONF_MOTION_BED_NAME: "QMS-IQ"}, True),
-    ({CONF_MOTION_BED_NAME: "qms-iq"}, False),
-    ({CONF_MOTION_BED_NAME: "unknown"}, False),
-    ({CONF_MOTION_BED_NAME: "unknown", CONF_MOTION_BED_RESTORED: True}, True),
-    ({CONF_MOTION_BED_NAME: "TL-Q", CONF_MOTION_BED_PRESET: "K1"}, False),
-    ({CONF_MOTION_BED_NAME: "QMS-IQ", CONF_MOTION_BED_MOVEMENT: "modular"}, False),
-    ({CONF_MOTION_BED_NAME: "QMS-IQ", CONF_MOTION_BED_PRESET: "auto", CONF_MOTION_BED_MOVEMENT: "auto"}, True),
+    ({CONF_BLE_DEVICE_NAME: "QMS-IQ"}, True),
+    ({CONF_BLE_DEVICE_NAME: "qms-iq"}, False),
+    ({CONF_BLE_DEVICE_NAME: "unknown"}, False),
+    ({CONF_BLE_DEVICE_NAME: "unknown", CONF_MOTION_BED_RESTORED: True}, True),
+    ({CONF_BLE_DEVICE_NAME: "TL-Q", CONF_MOTION_BED_PRESET: "K1"}, False),
+    ({CONF_BLE_DEVICE_NAME: "QMS-IQ", CONF_MOTION_BED_MOVEMENT: "modular"}, False),
+    ({CONF_BLE_DEVICE_NAME: "QMS-IQ", CONF_MOTION_BED_PRESET: "auto", CONF_MOTION_BED_MOVEMENT: "auto"}, True),
 ])
 async def test_explicit_app_step_checks_identity_and_retained_layout_before_connection(hass, input_data, valid):
     flow = AdjustableBedConfigFlow()
@@ -44,7 +44,7 @@ async def test_explicit_app_step_checks_identity_and_retained_layout_before_conn
     if valid:
         flow._finish_with_verify.assert_awaited_once()
         data = flow._finish_with_verify.call_args.args[0]
-        assert data[CONF_MOTION_BED_NAME] == input_data[CONF_MOTION_BED_NAME]
+        assert data[CONF_BLE_DEVICE_NAME] == input_data[CONF_BLE_DEVICE_NAME]
         assert data.get(CONF_MOTION_BED_PRESET) != "auto"
         assert data.get(CONF_MOTION_BED_MOVEMENT) != "auto"
     else:
@@ -53,7 +53,7 @@ async def test_explicit_app_step_checks_identity_and_retained_layout_before_conn
 
 
 async def test_new_hub_modules_add_buttons_once_disable_removed_modules_and_unsubscribe(hass):
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_MOTION_BED, CONF_MOTION_BED_NAME: "TL-Q"})
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_MOTION_BED, CONF_BLE_DEVICE_NAME: "TL-Q"})
     entry.add_to_hass(hass)
     coord = AdjustableBedCoordinator(hass, entry)
     controller = MotionBedController(coord, selection=select_motion_bed("TL-Q"))
@@ -67,7 +67,7 @@ async def test_new_hub_modules_add_buttons_once_disable_removed_modules_and_unsu
     controller._publish()
     assert additions
     assert len({entity.unique_id for entity in initial + additions}) == len(initial + additions)
-    air_buttons = [entity for entity in additions if "qinang_fragment" in entity.unique_id]
+    air_buttons = [entity for entity in additions if "_motion_bed_air_" in entity.unique_id]
     assert air_buttons and all(entity.available for entity in air_buttons)
     before = len(additions)
     controller._publish()
@@ -80,7 +80,7 @@ async def test_new_hub_modules_add_buttons_once_disable_removed_modules_and_unsu
 
 
 async def test_hub_surface_select_requires_present_module_and_changes_only_thermal_poll_focus(hass):
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_MOTION_BED, CONF_MOTION_BED_NAME: "TL-Q"})
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_MOTION_BED, CONF_BLE_DEVICE_NAME: "TL-Q"})
     coord = AdjustableBedCoordinator(hass, entry)
     controller = MotionBedController(coord, selection=select_motion_bed("TL-Q"))
     controller._spawn = MagicMock()

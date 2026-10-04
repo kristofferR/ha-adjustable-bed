@@ -10,7 +10,6 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-import yaml
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 
@@ -22,19 +21,21 @@ from custom_components.adjustable_bed.config_flow import (
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_DIAGNOSTIC,
-    BED_TYPE_SERENITY,
     BED_TYPE_TRANQUIL,
-    BED_TYPE_ZSERIES_Z230,
-    BED_TYPE_ZSERIES_Z280,
+    BED_TYPE_ZSERIES,
     DOMAIN,
     SIDE_BOTH,
     bed_type_has_position_feedback,
     get_motor_pulse_defaults,
     requires_pairing,
 )
-from custom_components.adjustable_bed.controller_factory import _create_from_registry
+from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.detection import detect_bed_type, get_bed_type_options
+from custom_components.adjustable_bed.detection import (
+    bed_type_choice,
+    detect_bed_type,
+    get_bed_type_options,
+)
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.services import async_register_services
 from tests.conftest import make_controller_mock
@@ -44,21 +45,21 @@ from tests.test_okin_bedding_apps import tranquil, written, zseries
 
 ROOT = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
 LABELS = {
-    BED_TYPE_TRANQUIL: ("tranquil", "Jordan's Tranquil app", 2),
-    BED_TYPE_ZSERIES_Z230: ("zseries_z230", "Customatic Z-Series app (Z-230)", 1),
-    BED_TYPE_ZSERIES_Z280: ("zseries_z280", "Customatic Z-Series app (Z-280)", 2),
+    (BED_TYPE_TRANQUIL, None): ("tranquil", ("okin", "Jordan's Tranquil app"), 2),
+    (BED_TYPE_ZSERIES, "z230"): ("zseries_z230", ("customatic", "Z-Series (Z-230)"), 1),
+    (BED_TYPE_ZSERIES, "z280"): ("zseries_z280", ("customatic", "Z-Series (Z-230)"), 2),
 }
 
 
-@pytest.mark.parametrize("bed_type", list(LABELS))
-async def test_explicit_profile_is_offline_constructible_and_never_auto_detected(bed_type):
-    profile, label, slots = LABELS[bed_type]
-    controller = await _create_from_registry(_FactoryCoordinator(), bed_type)
+@pytest.mark.parametrize(("bed_type", "variant"), list(LABELS))
+async def test_explicit_profile_is_offline_constructible_and_never_auto_detected(bed_type, variant):
+    profile, group, slots = LABELS[bed_type, variant]
+    controller = await create_controller(_FactoryCoordinator(), bed_type, variant, None)
     assert controller is not None
     assert controller.protocol_diagnostics["cst_profile"] == profile
     assert controller.memory_slot_count == slots
-    assert get_actuator_group_for_bed_type(bed_type) == ("okin", label)
-    assert next(o for o in get_bed_type_options() if o["value"] == bed_type)["label"] == label
+    assert get_actuator_group_for_bed_type(bed_type) == group
+    assert bed_type_choice(bed_type, variant) in {option["value"] for option in get_bed_type_options()}
     assert _motor_count_options(bed_type) == [2]
     assert _normalize_fixed_motor_count(bed_type, "auto", 4) == 2
     assert get_motor_pulse_defaults(bed_type) == (10, 100)
@@ -73,7 +74,16 @@ async def test_explicit_profile_is_offline_constructible_and_never_auto_detected
         assert detect_bed_type(info) != bed_type
 
 
-@pytest.mark.parametrize("bed_type", list(LABELS))
+async def test_zseries_page_has_no_automatic_choice():
+    from custom_components.adjustable_bed.validators import is_valid_variant_for_bed_type
+
+    assert not is_valid_variant_for_bed_type(BED_TYPE_ZSERIES, "auto")
+    assert is_valid_variant_for_bed_type(BED_TYPE_ZSERIES, "z280")
+    with pytest.raises(ValueError, match="Z-230 or Z-280"):
+        await create_controller(_FactoryCoordinator(), BED_TYPE_ZSERIES, "auto", None)
+
+
+@pytest.mark.parametrize("bed_type", [BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES])
 async def test_setup_hides_fixed_layout_and_refresh_delay(hass, bed_type):
     from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
     from custom_components.adjustable_bed.const import CONF_MOTOR_COUNT, CONF_MOTOR_PULSE_DELAY_MS
@@ -99,7 +109,7 @@ async def test_setup_hides_fixed_layout_and_refresh_delay(hass, bed_type):
 
 @pytest.mark.parametrize(
     ("factory", "bed_type", "prefix"),
-    [(tranquil, BED_TYPE_TRANQUIL, "tranquil"), (lambda: zseries("z280"), BED_TYPE_ZSERIES_Z280, "zseries")],
+    [(tranquil, BED_TYPE_TRANQUIL, "tranquil"), (lambda: zseries("z280"), BED_TYPE_ZSERIES, "zseries")],
 )
 async def test_profile_change_retires_previous_app_buttons_and_sensors(hass, factory, bed_type, prefix):
     runtime = configure_entity_runtime(hass, factory(), bed_type)
@@ -138,7 +148,7 @@ async def test_discrete_light_switch_only_where_the_app_has_on_off(hass, factory
     from custom_components.adjustable_bed.switch import _switch_entities_for
 
     controller = factory()
-    bed_type = BED_TYPE_TRANQUIL if has_switch else BED_TYPE_ZSERIES_Z230
+    bed_type = BED_TYPE_TRANQUIL if has_switch else BED_TYPE_ZSERIES
     runtime = configure_entity_runtime(hass, controller, bed_type)
     runtime.bed_type = bed_type
     switches = [
@@ -170,11 +180,9 @@ def _target(bed_type, controller):
 @pytest.mark.parametrize(
     ("service", "bed_type", "factory", "control", "error"),
     [
-        ("tranquil_hold_control", BED_TYPE_TRANQUIL, tranquil, "save_lounge", None),
-        ("tranquil_hold_control", BED_TYPE_SERENITY, tranquil, "save_lounge", "Tranquil action"),
-        ("zseries_hold_control", BED_TYPE_ZSERIES_Z230, lambda: zseries("z230"), "head_foot_up", None),
-        ("zseries_hold_control", BED_TYPE_ZSERIES_Z230, lambda: zseries("z230"), "memory_2", "combination"),
-        ("zseries_hold_control", BED_TYPE_TRANQUIL, tranquil, "head_up", "Z-Series action"),
+        ("hold_control", BED_TYPE_TRANQUIL, tranquil, "save_lounge", None),
+        ("hold_control", BED_TYPE_ZSERIES, lambda: zseries("z230"), "head_foot_up", None),
+        ("hold_control", BED_TYPE_ZSERIES, lambda: zseries("z230"), "memory_2", "does not support held control"),
     ],
 )
 async def test_hold_services_preflight_profile_and_literal_action(
@@ -201,8 +209,8 @@ async def test_hold_services_preflight_profile_and_literal_action(
 @pytest.mark.parametrize(
     ("bed_type", "available", "error"),
     [
-        (BED_TYPE_ZSERIES_Z280, True, None),
-        (BED_TYPE_ZSERIES_Z280, False, "does not support"),
+        (BED_TYPE_ZSERIES, True, None),
+        (BED_TYPE_ZSERIES, False, "does not support"),
         (BED_TYPE_TRANQUIL, True, "not a Customatic Z-Series"),
     ],
 )
@@ -239,7 +247,7 @@ async def test_alarm_service_requires_zseries_and_manufacturer_enabled_page(
             )
         assert written(controller) == []
         await hass.services.async_call(DOMAIN, "zseries_set_alarm", data, blocking=True)
-        await hass.services.async_call(DOMAIN, "zseries_sync_clock", {"device_id": "bed"}, blocking=True)
+        await hass.services.async_call(DOMAIN, "sync_clock", {"device_id": "bed"}, blocking=True)
     clock = "07061a0a01040d2f3b"
     assert written(controller) == [
         clock, "07052002072d000101", "00c0", "00c0", clock, "00c0", "00c0"
@@ -247,26 +255,24 @@ async def test_alarm_service_requires_zseries_and_manufacturer_enabled_page(
     assert coordinator.async_execute_controller_command.await_args.kwargs["cancel_running"]
 
 
-def test_service_selectors_and_translations_match_controller_catalogs():
-    services = yaml.safe_load((ROOT / "services.yaml").read_text())
-    assert services["tranquil_hold_control"]["fields"]["control"]["selector"]["select"][
-        "options"
-    ] == list(tranquil().held_control_options)
-    zseries_options = services["zseries_hold_control"]["fields"]["control"]["selector"]["select"]["options"]
-    assert set(zseries_options) == {
-        *zseries("z230").held_control_options,
-        *zseries("z280").held_control_options,
-    }
+def test_state_sensor_translations_match_controller_catalogs():
     for filename in ("strings.json", "translations/en.json"):
         metadata = json.loads((ROOT / filename).read_text())
-        for name in ("tranquil_hold_control", "zseries_hold_control", "zseries_set_alarm", "zseries_sync_clock"):
-            assert set(metadata["services"][name]["fields"]) == set(services[name]["fields"])
         for prefix in ("tranquil", "zseries"):
             for spec in (tranquil() if prefix == "tranquil" else zseries("z280")).controller_state_sensor_specs:
                 assert spec.translation_key in metadata["entity"]["sensor"]
 
 
-@pytest.mark.parametrize("bed_type", list(LABELS))
+def test_app_sensors_share_translations_and_keep_app_identities():
+    tranquil_specs = tranquil().controller_state_sensor_specs
+    zseries_specs = zseries("z280").controller_state_sensor_specs
+    assert [s.translation_key for s in tranquil_specs] == [s.translation_key for s in zseries_specs]
+    assert all(s.translation_key.startswith("okin_bedding_app_") for s in tranquil_specs)
+    assert all(s.key.startswith("tranquil_") for s in tranquil_specs)
+    assert all(s.key.startswith("zseries_") for s in zseries_specs)
+
+
+@pytest.mark.parametrize("bed_type", [BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES])
 async def test_options_switch_from_generic_okin_profile_applies_fixed_defaults(hass, bed_type):
     from homeassistant.const import CONF_ADDRESS
     from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -318,16 +324,20 @@ async def test_zseries_pulse_count_range_is_validated_in_setup_and_options(hass,
         AdjustableBedOptionsFlow,
         _invalid_pulse_count,
     )
-    from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_MOTOR_PULSE_COUNT
+    from custom_components.adjustable_bed.const import (
+        CONF_BED_TYPE,
+        CONF_MOTOR_PULSE_COUNT,
+        CONF_PROTOCOL_VARIANT,
+    )
 
-    assert _invalid_pulse_count(BED_TYPE_ZSERIES_Z230, int(count)) is error
+    assert _invalid_pulse_count(BED_TYPE_ZSERIES, int(count)) is error
     assert not _invalid_pulse_count(BED_TYPE_TRANQUIL, int(count))  # Other profiles unchanged.
 
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
-    flow._selected_bed_type = BED_TYPE_ZSERIES_Z230
-    flow._disambiguated_bed_type = BED_TYPE_ZSERIES_Z230
+    flow._selected_bed_type = BED_TYPE_ZSERIES
+    flow._disambiguated_bed_type = BED_TYPE_ZSERIES
     info = MagicMock()
     info.name = "OKIN-003444"
     info.address = "AA:BB:CC:DD:EE:FF"
@@ -338,21 +348,25 @@ async def test_zseries_pulse_count_range_is_validated_in_setup_and_options(hass,
     flow._async_transport_note = AsyncMock(return_value="")
     if error:
         form = await flow.async_step_bluetooth_confirm(
-            {CONF_BED_TYPE: BED_TYPE_ZSERIES_Z230, CONF_NAME: "Bed", CONF_MOTOR_PULSE_COUNT: count}
+            {CONF_BED_TYPE: BED_TYPE_ZSERIES, CONF_NAME: "Bed", CONF_MOTOR_PULSE_COUNT: count}
         )
         assert form["type"] == "form"
         assert form["errors"][CONF_MOTOR_PULSE_COUNT] == "invalid_pulse_count_range"
 
     entry = MockConfigEntry(
         domain=DOMAIN,
-        data={CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_ZSERIES_Z230},
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
+            CONF_BED_TYPE: BED_TYPE_ZSERIES,
+            CONF_PROTOCOL_VARIANT: "z230",
+        },
     )
     entry.add_to_hass(hass)
     options = AdjustableBedOptionsFlow(entry)
     options.hass = hass
     options.handler = entry.entry_id
     result = await options._async_options_form(
-        {CONF_BED_TYPE: BED_TYPE_ZSERIES_Z230, CONF_MOTOR_PULSE_COUNT: count}, step_id="settings"
+        {CONF_BED_TYPE: BED_TYPE_ZSERIES, CONF_MOTOR_PULSE_COUNT: count}, step_id="settings"
     )
     if error:
         assert result["errors"] == {CONF_MOTOR_PULSE_COUNT: "invalid_pulse_count_range"}
@@ -365,7 +379,7 @@ async def test_enabling_alarm_requires_time_and_clearing_does_not(hass):
     await async_register_services(hass)
     controller = zseries("z230")
     controller._alarm_available = True
-    coordinator = _target(BED_TYPE_ZSERIES_Z230, controller)
+    coordinator = _target(BED_TYPE_ZSERIES, controller)
     with (
         patch(
             "custom_components.adjustable_bed.services._resolve_sided_targets",
@@ -407,7 +421,7 @@ def _persisting(controller, data: dict):
 
 async def _set_alarm(hass, controller):
     await async_register_services(hass)
-    target = _target(BED_TYPE_ZSERIES_Z280, controller)
+    target = _target(BED_TYPE_ZSERIES, controller)
     with (
         patch(
             "custom_components.adjustable_bed.services._resolve_sided_targets",
@@ -490,7 +504,7 @@ def _known_and_unknown(second_read):
 def _paired(first, second):
     from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 
-    children = {"left": _target(BED_TYPE_ZSERIES_Z280, first), "right": _target(BED_TYPE_ZSERIES_Z280, second)}
+    children = {"left": _target(BED_TYPE_ZSERIES, first), "right": _target(BED_TYPE_ZSERIES, second)}
     paired = MagicMock(spec=PairedBedCoordinator)
     paired.name = "Pair"
     paired.children = children
@@ -504,7 +518,7 @@ def _paired(first, second):
 
 
 def _two_devices(first, second):
-    targets = [_target(BED_TYPE_ZSERIES_Z280, first), _target(BED_TYPE_ZSERIES_Z280, second)]
+    targets = [_target(BED_TYPE_ZSERIES, first), _target(BED_TYPE_ZSERIES, second)]
     return None, [(target, SIDE_BOTH) for target in targets], targets
 
 
@@ -521,7 +535,7 @@ async def _call(hass, resolved, service="zseries_set_alarm"):
 
 
 @pytest.mark.parametrize("layout", [_two_devices, _paired])
-@pytest.mark.parametrize("service", ["zseries_set_alarm", "zseries_sync_clock"])
+@pytest.mark.parametrize("service", ["zseries_set_alarm", "sync_clock"])
 @pytest.mark.parametrize(
     ("second_read", "error"),
     [([b"CST20"], "does not support"), (TimeoutError("unreadable"), "Could not read")],
@@ -546,7 +560,7 @@ async def test_unknown_later_target_is_resolved_before_any_bed_is_written(
 async def test_unknown_later_cst_target_is_resolved_then_both_beds_are_written(hass, layout):
     first, second = _known_and_unknown([b"CST14"])
     _, resolved, _children = layout(first, second)
-    await _call(hass, resolved, "zseries_sync_clock")
+    await _call(hass, resolved, "sync_clock")
     assert written(first)[1:] == ["00c0", "00c0"] and written(second)[1:] == ["00c0", "00c0"]
     assert second._coordinator.entry.data["zseries_alarm_available"] is True
 
@@ -577,7 +591,7 @@ class _OneSlotChild:
 
     def __init__(self, name: str, store: dict) -> None:
         self.name = name
-        self.bed_type = BED_TYPE_ZSERIES_Z280
+        self.bed_type = BED_TYPE_ZSERIES
         self.live = zseries("z280")
         _persisting(self.live, store)
         self.entry = self.live._coordinator.entry
@@ -649,7 +663,7 @@ async def test_capability_probe_releases_each_link_on_a_one_slot_path(hass, pair
         if paired
         else [coordinator],
     ):
-        await _call(hass, resolved, "zseries_sync_clock")
+        await _call(hass, resolved, "sync_clock")
     for child in (left, right):
         assert child.disconnects[0] == "capability_probe"
         assert child.entry.data["zseries_alarm_available"] is True
@@ -668,21 +682,34 @@ async def test_pair_profile_changes_to_or_from_these_apps_require_unpair(hass):
         CONF_MOTOR_COUNT,
         CONF_MOTOR_PULSE_COUNT,
         CONF_PAIR_CHILDREN,
+        CONF_PROTOCOL_VARIANT,
     )
     from custom_components.adjustable_bed.pairing import build_pair_entry_data
 
+    z230, z280 = (BED_TYPE_ZSERIES, "z230"), (BED_TYPE_ZSERIES, "z280")
+    cst, tranquil_app = (BED_TYPE_OKIN_CST, "auto"), (BED_TYPE_TRANQUIL, "auto")
     cases = [
-        # (left type, right type, requested type, refused)
-        (BED_TYPE_OKIN_CST, BED_TYPE_OKIN_CST, BED_TYPE_TRANQUIL, True),
-        (BED_TYPE_ZSERIES_Z230, BED_TYPE_ZSERIES_Z230, BED_TYPE_ZSERIES_Z280, True),
-        (BED_TYPE_ZSERIES_Z280, BED_TYPE_ZSERIES_Z280, BED_TYPE_OKIN_CST, True),
-        (BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES_Z280, BED_TYPE_TRANQUIL, True),  # Mixed pair.
-        (BED_TYPE_OKIN_CST, BED_TYPE_ZSERIES_Z230, BED_TYPE_OKIN_CST, True),  # Mixed pair.
-        (BED_TYPE_TRANQUIL, BED_TYPE_TRANQUIL, BED_TYPE_TRANQUIL, False),  # Same type kept.
+        # (left profile, right profile, requested profile, refused)
+        (cst, cst, tranquil_app, True),
+        (z230, z230, z280, True),
+        (z280, z280, cst, True),
+        (tranquil_app, z280, tranquil_app, True),  # Mixed pair.
+        (cst, z230, cst, True),  # Mixed pair.
+        (tranquil_app, tranquil_app, tranquil_app, False),  # Same profile kept.
     ]
-    for index, (left_type, right_type, requested, refused) in enumerate(cases):
-        left = {CONF_ADDRESS: f"11:22:33:44:55:{index:02d}", CONF_BED_TYPE: left_type, CONF_MOTOR_COUNT: 2}
-        right = {**left, CONF_ADDRESS: f"11:22:33:44:66:{index:02d}", CONF_BED_TYPE: right_type}
+    for index, ((left_type, left_variant), (right_type, right_variant), (requested, variant), refused) in enumerate(cases):
+        left = {
+            CONF_ADDRESS: f"11:22:33:44:55:{index:02d}",
+            CONF_BED_TYPE: left_type,
+            CONF_PROTOCOL_VARIANT: left_variant,
+            CONF_MOTOR_COUNT: 2,
+        }
+        right = {
+            **left,
+            CONF_ADDRESS: f"11:22:33:44:66:{index:02d}",
+            CONF_BED_TYPE: right_type,
+            CONF_PROTOCOL_VARIANT: right_variant,
+        }
         entry = MockConfigEntry(domain=DOMAIN, data=build_pair_entry_data(left, right, name="Pair"))
         entry.add_to_hass(hass)
         children = [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]]
@@ -690,10 +717,10 @@ async def test_pair_profile_changes_to_or_from_these_apps_require_unpair(hass):
         flow.handler = entry.entry_id
         flow.hass = hass
         result = await flow.async_step_settings(
-            {CONF_BED_TYPE: requested, CONF_MOTOR_PULSE_COUNT: "10"}
+            {CONF_BED_TYPE: requested, CONF_PROTOCOL_VARIANT: variant, CONF_MOTOR_PULSE_COUNT: "10"}
         )
         if refused:
-            assert result["errors"] == {CONF_BED_TYPE: "okin_bedding_app_unpair_first"}, cases[index]
+            assert "app_profile_unpair_first" in result["errors"].values(), cases[index]
             assert [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]] == children
         else:
-            assert result.get("errors") != {CONF_BED_TYPE: "okin_bedding_app_unpair_first"}
+            assert "app_profile_unpair_first" not in (result.get("errors") or {}).values()

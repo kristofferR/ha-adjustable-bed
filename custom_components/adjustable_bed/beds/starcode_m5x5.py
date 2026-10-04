@@ -1,4 +1,8 @@
-"""The explicitly selected AdjustableM5X5 app's four bedding profiles."""
+"""The explicitly selected AdjustableM5X5 app's bed profiles.
+
+ELEVATE lifts use the released ``star_elevate`` bed type and join these beds'
+groups through ``starcode_accessory_group``.
+"""
 
 from __future__ import annotations
 
@@ -44,7 +48,7 @@ WRITE: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 NOTIFY: Final = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
 FIRMWARE: Final = "00002a28-0000-1000-8000-00805f9b34fb"
 MANUFACTURER: Final = "00002a29-0000-1000-8000-00805f9b34fb"
-PROFILES: Final = ("cb25", "f23", "kneading", "elevate")
+PROFILES: Final = ("cb25", "f23", "kneading")
 SPECIAL_REMOTES: Final = frozenset(("252201", "254202", "352201"))
 # P1/P2 keys are paired only where the frozen app implements the same action.
 KEYS: Final = {
@@ -89,8 +93,6 @@ def profile_from_name(name: str) -> str | None:
         return "kneading"
     if name.startswith("STAR25"):
         return "cb25"
-    if name.startswith("ELEVATE"):
-        return "elevate"
     return None
 
 
@@ -181,37 +183,33 @@ class StarcodeM5X5Controller(BedController):
 
     @property
     def has_lumbar_support(self) -> bool:
-        return self.profile != "elevate"
+        return True
 
     @property
     def supports_position_feedback(self) -> bool:
-        return self.profile != "elevate"
+        return True
 
     @property
     def reports_percentage_position(self) -> bool:
-        return self.supports_position_feedback
+        return True
 
     @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
-        return (
-            tuple(
-                build_position_number_spec(axis, max_value=100, unit=POSITION_UNIT_PERCENT)
-                for axis in ("back", "legs", "lumbar")
-            )
-            if self.supports_position_feedback
-            else ()
+        return tuple(
+            build_position_number_spec(axis, max_value=100, unit=POSITION_UNIT_PERCENT)
+            for axis in ("back", "legs", "lumbar")
         )
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
-        specs: tuple[MotorControlSpec, ...] = (
+        return (
             MotorControlSpec(
                 "back",
                 "back",
                 lambda c: c.move_back_up(),
                 lambda c: c.move_back_down(),
                 lambda c: c.move_back_stop(),
-                position_key="back" if self.supports_position_feedback else None,
+                position_key="back",
             ),
             MotorControlSpec(
                 "legs",
@@ -219,7 +217,7 @@ class StarcodeM5X5Controller(BedController):
                 lambda c: c.move_legs_up(),
                 lambda c: c.move_legs_down(),
                 lambda c: c.move_legs_stop(),
-                position_key="legs" if self.supports_position_feedback else None,
+                position_key="legs",
             ),
             MotorControlSpec(
                 "starcode_union",
@@ -228,103 +226,95 @@ class StarcodeM5X5Controller(BedController):
                 _action("union_down"),
                 lambda c: c.stop_all(),
             ),
+            MotorControlSpec(
+                "lumbar",
+                "lumbar",
+                _action("lumbar_up"),
+                _action("lumbar_down"),
+                lambda c: c.stop_all(),
+                position_key="lumbar",
+            ),
         )
-        if self.has_lumbar_support:
-            specs += (
-                MotorControlSpec(
-                    "lumbar",
-                    "lumbar",
-                    _action("lumbar_up"),
-                    _action("lumbar_down"),
-                    lambda c: c.stop_all(),
-                    position_key="lumbar",
-                ),
-            )
-        return specs
 
     @property
     def stale_motor_entity_keys(self) -> frozenset[str]:
-        return (
-            frozenset(("head", "feet", "lumbar"))
-            if self.profile == "elevate"
-            else frozenset(("head", "feet"))
-        )
+        return frozenset(("head", "feet"))
 
     @property
     def memory_slot_count(self) -> int:
-        return 0 if self.profile == "elevate" else 2
+        return 2
 
     @property
     def supports_memory_programming(self) -> bool:
-        return self.profile != "elevate"
+        return True
 
     @property
     def supports_preset_zero_g(self) -> bool:
-        return self.profile != "elevate"
+        return True
 
     @property
     def supports_memory_presets(self) -> bool:
-        return self.profile != "elevate"
+        return True
 
     @property
     def supports_preset_anti_snore(self) -> bool:
-        return self.profile != "elevate"
+        return True
 
     @property
     def supports_preset_tv(self) -> bool:
-        return self.profile != "elevate"
+        return True
 
     @property
     def supports_preset_lounge(self) -> bool:
-        return self.profile != "elevate"
+        return True
 
     @property
     def supports_massage(self) -> bool:
-        return self.profile != "elevate"
+        return True
 
     @property
     def auto_enable_massage(self) -> bool:
-        return self.profile != "elevate"
+        return True
 
     @property
     def supports_lights(self) -> bool:
-        return self.profile != "elevate"
+        return True
 
     @property
     def supports_light(self) -> bool:
-        return self.profile != "elevate"
+        return True
 
     @property
     def supports_discrete_light_control(self) -> bool:
-        return self.profile != "elevate"
+        return True
 
     @property
     def supports_light_state_feedback(self) -> bool:
-        return self.profile != "elevate"
+        return True
 
     @property
     def supports_massage_timer(self) -> bool:
-        return self.profile != "elevate"
+        return True
 
     @property
     def supports_massage_wave_direction_control(self) -> bool:
-        return self.profile != "elevate"
+        return True
 
     @property
     def supports_head_massage_intensity_step_control(self) -> bool:
-        return self.profile != "elevate"
+        return True
 
     @property
     def supports_foot_massage_intensity_step_control(self) -> bool:
-        return self.profile != "elevate"
+        return True
 
     @property
     def supports_massage_off_control(self) -> bool:
-        return self.profile != "elevate"
+        return True
 
     @property
     def supports_massage_toggle_control(self) -> bool:
-        return self.profile != "elevate"
+        return True
 
     @property
     def massage_timer_options(self) -> list[int]:
@@ -388,8 +378,6 @@ class StarcodeM5X5Controller(BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        if self.profile == "elevate":
-            return ()
         return tuple(
             ControllerButtonSpec(
                 f"starcode_{key}", label, _action(key), translation_key=f"starcode_{key}"
@@ -407,8 +395,6 @@ class StarcodeM5X5Controller(BedController):
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
-        if self.profile == "elevate":
-            return ()
 
         async def brightness(c: BedController, value: float) -> None:
             await _app(c).set_brightness(value)
@@ -427,8 +413,6 @@ class StarcodeM5X5Controller(BedController):
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        if self.profile == "elevate":
-            return ()
 
         async def color(c: BedController, option: str) -> None:
             await _app(c).set_color_index(int(option))
@@ -445,8 +429,6 @@ class StarcodeM5X5Controller(BedController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        if self.profile == "elevate":
-            return ()
         keys: tuple[str, ...] = (
             "firmware",
             "massage_time_raw",
@@ -497,8 +479,6 @@ class StarcodeM5X5Controller(BedController):
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        if self.profile == "elevate":
-            return ()
         keys: tuple[str, ...] = (
             "motor_stopped",
             "massage_active",
@@ -632,15 +612,14 @@ class StarcodeM5X5Controller(BedController):
             self.forward_controller_state_updates(
                 {"firmware": self._firmware, "firmware_read_ok": self._firmware_read_ok}
             )
-            if self.dialect == "star" or self.profile == "elevate":
+            if self.dialect == "star":
                 await self.write_command(bytes.fromhex("5a0b00a5"))
                 require_owned_session()
             if self.profile in ("f23", "kneading"):
                 await self.write_command(clock_packet(dt_util.now()))
                 require_owned_session()
-            if self.profile != "elevate":
-                await self.query_status()
-                require_owned_session()
+            await self.query_status()
+            require_owned_session()
         except BaseException:
             if generation == self._generation and self._subscription_client is client:
                 await self.stop_notify()
@@ -726,28 +705,12 @@ class StarcodeM5X5Controller(BedController):
 
     def packet(self, action: str, *, rgb: bool = False) -> bytes:
         dialect = "star" if rgb and self.profile in ("f23", "kneading") else self.dialect
-        if self.profile == "elevate":
-            keys = {
-                "head_up": 0x40,
-                "head_down": 0x41,
-                "foot_up": 0x42,
-                "foot_down": 0x43,
-                "union_up": 0x44,
-                "union_down": 0x45,
-                "flat": 0x46,
-            }
-            if action not in keys:
-                raise ValueError("Elevate does not support this bedding action")
-            return normal_packet(0x03103000 | keys[action], "star")
         legacy, star = KEYS[action]
         return normal_packet((0x03103000 | star) if dialect == "star" else legacy, dialect)
 
     async def _send_stop(self) -> None:
-        key = 0x0310300F if self.dialect == "star" or self.profile == "elevate" else 0
-        await self.write_command(
-            normal_packet(key, "star" if self.profile == "elevate" else self.dialect),
-            cancel_event=asyncio.Event(),
-        )
+        key = 0x0310300F if self.dialect == "star" else 0
+        await self.write_command(normal_packet(key, self.dialect), cancel_event=asyncio.Event())
 
     async def stop_all(self) -> None:
         from ..starcode_accessory_group import cancel_group_operations
@@ -756,9 +719,8 @@ class StarcodeM5X5Controller(BedController):
         await self._send_stop()
 
     async def interrupt(self) -> None:
-        dialect = "star" if self.profile == "elevate" else self.dialect
-        key = (0x0310304F if self.profile == "elevate" else 0x0310301F) if dialect == "star" else 0
-        await self.write_command(normal_packet(key, dialect), cancel_event=asyncio.Event())
+        key = 0x0310301F if self.dialect == "star" else 0
+        await self.write_command(normal_packet(key, self.dialect), cancel_event=asyncio.Event())
 
     async def app_action(self, action: str) -> None:
         if action == "query":
@@ -770,16 +732,6 @@ class StarcodeM5X5Controller(BedController):
         if action == "light_mode":
             await self.light_mode()
             return
-        if self.profile == "elevate" and action not in (
-            "head_up",
-            "head_down",
-            "foot_up",
-            "foot_down",
-            "union_up",
-            "union_down",
-            "flat",
-        ):
-            raise ValueError("This action is unavailable for Elevate")
         if action.startswith("save_") or action == "reset":
             await self.stop_all()
             try:
@@ -801,32 +753,21 @@ class StarcodeM5X5Controller(BedController):
 
             await interrupt_conflicting_group(self._coordinator)
         count = (
-            self.motor_pulse_settings()[0]
-            if held
-            else 1
-            if self.profile == "elevate"
-            else 2
-            if action.startswith("massage_")
-            else 3
+            self.motor_pulse_settings()[0] if held else 2 if action.startswith("massage_") else 3
         )
         try:
             await self.write_command(self.packet(action), repeat_count=count)
         finally:
-            if not (self.profile == "elevate" and action == "flat"):
-                await self._send_stop()
+            await self._send_stop()
             if held and action.startswith("massage_"):
                 await self.write_command(query_packet(self.dialect), cancel_event=asyncio.Event())
 
     async def query_status(self) -> None:
-        if self.profile == "elevate":
-            raise ValueError("Elevate has no semantic status query")
         await self.write_command(
             query_packet("star" if self.profile in ("f23", "kneading") else self.dialect)
         )
 
     async def _rgb(self, command: bytes, count: int = 1, *, dialect: str | None = None) -> None:
-        if self.profile == "elevate":
-            raise ValueError("Elevate has no RGB controls")
         actual = dialect or ("star" if self.profile in ("f23", "kneading") else self.dialect)
         try:
             await self.write_command(command, repeat_count=count)
@@ -874,8 +815,6 @@ class StarcodeM5X5Controller(BedController):
         await self._rgb(extended_packet(1, index, dialect))
 
     async def light_mode(self) -> None:
-        if self.profile == "elevate":
-            raise ValueError("Elevate has no light mode")
         name = self.device_name
         remote = name[4:10] if len(name) > 14 else ""
         if self.profile == "cb25" and remote in SPECIAL_REMOTES:

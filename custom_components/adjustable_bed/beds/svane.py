@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
@@ -286,8 +286,21 @@ class SvaneController(BedController):
             state["light_level"] = self.session.intensity if self.session.light_on else 0
         self.forward_controller_state_updates(state)
 
+    @property
+    def persisted_app_state_key(self) -> str:
+        """The variant has aliases (none, auto, multi); the effective profile does not."""
+        return self.profile
+
+    @property
+    def persisted_app_state(self) -> dict[str, object]:
+        return self.session.preferences()
+
+    def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
+        self.session.restore(state)
+        self._publish_intent()
+
     def _remember(self) -> None:
-        self._coordinator.remember_svane_preferences(self.session.preferences())
+        self._coordinator.save_app_state(self)
         self._publish_intent()
 
     def _role(self, service: str, char: str) -> BleakGATTCharacteristic | None:
@@ -601,7 +614,6 @@ class SvaneController(BedController):
         if control == "light_adjust":
             if not self.session.light_on or duration_ms <= 200 or not await self._wait(0.2):
                 return
-            previous_preferences = self.session.preferences()
             try:
                 while not cancel.is_set() and asyncio.get_running_loop().time() < deadline:
                     if (self.session.intensity >= 100 and self.session.light_step > 0) or (
@@ -619,9 +631,7 @@ class SvaneController(BedController):
                     ):
                         return
             finally:
-                preferences = self.session.preferences()
-                if preferences != previous_preferences:
-                    self._coordinator.remember_svane_preferences(preferences)
+                self._coordinator.save_app_state(self)
             return
         self._active_head, self._active_feet = MOTIONS[control]
         admission = _hold_admission.get() or self.prepare_svane_hold_admission()

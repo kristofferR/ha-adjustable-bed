@@ -20,8 +20,8 @@ from custom_components.adjustable_bed.const import (
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
-    CONF_JIECANG_APP_HAS_LIGHT,
     CONF_JIECANG_APP_LAYOUT,
     CONF_JIECANG_APP_PROFILE,
     CONF_JIECANG_APP_TRANSPORT,
@@ -77,7 +77,7 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
     assert saved[CONF_JIECANG_APP_PROFILE] == "dreamask"
     assert saved[CONF_JIECANG_APP_LAYOUT] == "split_after_bilateral"
     assert saved[CONF_JIECANG_APP_TRANSPORT] == "auto"
-    assert saved[CONF_JIECANG_APP_HAS_LIGHT] is True
+    assert saved[CONF_HAS_LIGHT] is True
     assert saved[CONF_DISABLE_ANGLE_SENSING] is True
     assert saved[CONF_HAS_MASSAGE] is True
 
@@ -109,7 +109,7 @@ async def test_options_keep_app_layout_and_transport(hass):
             CONF_JIECANG_APP_PROFILE: "dreamotion",
             CONF_JIECANG_APP_LAYOUT: "standard_4_bilateral",
             CONF_JIECANG_APP_TRANSPORT: "g3",
-            CONF_JIECANG_APP_HAS_LIGHT: False,
+            CONF_HAS_LIGHT: False,
         },
     )
     entry.add_to_hass(hass)
@@ -119,13 +119,13 @@ async def test_options_keep_app_layout_and_transport(hass):
     result = await flow.async_step_settings()
     defaults = {marker.schema: marker.default() for marker in result["data_schema"].schema}
     assert defaults[CONF_JIECANG_APP_LAYOUT] == "standard_4_bilateral"
-    assert defaults[CONF_JIECANG_APP_HAS_LIGHT] is False
+    assert defaults[CONF_HAS_LIGHT] is False
     result = await flow.async_step_settings(
         {
             CONF_JIECANG_APP_PROFILE: "dreamotion",
             CONF_JIECANG_APP_LAYOUT: "standard_3_hi_low",
             CONF_JIECANG_APP_TRANSPORT: "g2",
-            CONF_JIECANG_APP_HAS_LIGHT: True,
+            CONF_HAS_LIGHT: True,
         }
     )
     assert result["type"] == FlowResultType.CREATE_ENTRY
@@ -158,7 +158,7 @@ async def test_factory_passes_explicit_settings_without_affecting_legacy(hass):
                 CONF_JIECANG_APP_PROFILE: "dreamotion",
                 CONF_JIECANG_APP_LAYOUT: "standard_3_hi_low",
                 CONF_JIECANG_APP_TRANSPORT: "g2",
-                CONF_JIECANG_APP_HAS_LIGHT: False,
+                CONF_HAS_LIGHT: False,
             }
         )
     )
@@ -182,7 +182,7 @@ async def test_paired_options_preserve_each_sides_app_profile(hass):
         CONF_JIECANG_APP_PROFILE,
         CONF_JIECANG_APP_LAYOUT,
         CONF_JIECANG_APP_TRANSPORT,
-        CONF_JIECANG_APP_HAS_LIGHT,
+        CONF_HAS_LIGHT,
     )
     left = {
         CONF_ADDRESS: "AA:BB:CC:DD:EE:01",
@@ -190,7 +190,7 @@ async def test_paired_options_preserve_each_sides_app_profile(hass):
         CONF_JIECANG_APP_PROFILE: "dreamask",
         CONF_JIECANG_APP_LAYOUT: "standard_3_neck",
         CONF_JIECANG_APP_TRANSPORT: "g1",
-        CONF_JIECANG_APP_HAS_LIGHT: True,
+        CONF_HAS_LIGHT: True,
     }
     right = {
         **left,
@@ -198,7 +198,7 @@ async def test_paired_options_preserve_each_sides_app_profile(hass):
         CONF_JIECANG_APP_PROFILE: "dreamotion",
         CONF_JIECANG_APP_LAYOUT: "standard_4_bilateral",
         CONF_JIECANG_APP_TRANSPORT: "g3",
-        CONF_JIECANG_APP_HAS_LIGHT: False,
+        CONF_HAS_LIGHT: False,
     }
     entry = MockConfigEntry(domain=DOMAIN, data=build_pair_entry_data(left, right, name="Pair"))
     entry.add_to_hass(hass)
@@ -208,7 +208,10 @@ async def test_paired_options_preserve_each_sides_app_profile(hass):
     result = await flow.async_step_settings()
     shown = {marker.schema for marker in result["data_schema"].schema}
     assert shown.isdisjoint(app_fields)
-    result = await flow.async_step_settings({CONF_MOTOR_PULSE_COUNT: "20", **right})
+    # A side's own app profile is not part of the shared form.
+    refused = await flow.async_step_settings({CONF_MOTOR_PULSE_COUNT: "20", **right})
+    assert refused["errors"] == {"base": "app_profile_unpair_first"}
+    result = await flow.async_step_settings({CONF_MOTOR_PULSE_COUNT: "20"})
     assert result["type"] == FlowResultType.CREATE_ENTRY
     for child, original in zip(entry.data[CONF_PAIR_CHILDREN], (left, right), strict=True):
         assert {key: child[key] for key in app_fields} == {key: original[key] for key in app_fields}
@@ -228,5 +231,5 @@ async def test_paired_options_cannot_create_unconfigured_app_sides(hass):
     flow.handler = entry.entry_id
     flow.hass = hass
     result = await flow.async_step_settings({CONF_BED_TYPE: BED_TYPE_JIECANG_APP})
-    assert result["errors"] == {"base": "jiecang_app_pair_settings"}
+    assert result["errors"] == {CONF_BED_TYPE: "app_profile_unpair_first"}
     assert entry.data == data

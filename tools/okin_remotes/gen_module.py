@@ -7,11 +7,29 @@ Outputs (single source for all so labels always agree):
 - okin_uuid_remotes.py    -> copy to custom_components/adjustable_bed/beds/
 - gen_okimat_variants.py  -> OKIMAT_VARIANTS + OKIN_DOT_VARIANTS bodies to
                              sync into const.py
+
+Codes present in the pinned FurniMove production catalog
+(``custom_components/adjustable_bed/furnimove_profiles.py``) keep their labels
+here, but their keycodes come only from that catalog: ``okin_uuid.py`` derives
+them at import, so they are left out of ``OKIN_UUID_REMOTE_DATA``.
 """
+import importlib.util
 import json
 import re
+import sys
+from pathlib import Path
 
 master = json.load(open("master.json"))
+
+_spec = importlib.util.spec_from_file_location(
+    "furnimove_profiles",
+    Path(__file__).resolve().parents[2] / "custom_components/adjustable_bed/furnimove_profiles.py",
+)
+assert _spec is not None and _spec.loader is not None
+_furnimove = importlib.util.module_from_spec(_spec)
+sys.modules[_spec.name] = _furnimove  # dataclasses resolve annotations through it
+_spec.loader.exec_module(_furnimove)
+FURNIMOVE_CODES = _furnimove.FURNIMOVE_PRODUCTION_IDS
 
 
 def h(v):
@@ -130,6 +148,10 @@ Source of truth: the DewertOkin FurniMove handset backend
 serves. Regenerate with ``tools/okin_remotes/gen_module.py`` (see the README
 there for the full pipeline).
 
+Codes in the pinned FurniMove production catalog (``furnimove_profiles.py``)
+are labelled here but have no data row: ``okin_uuid.py`` derives their
+keycodes from that catalog, the single source for those handsets.
+
 Each entry is keyword arguments for ``OkinUuidRemoteConfig`` (see
 ``okin_uuid.py``). Keycodes are the 32-bit Okin command values; the standard
 controller wraps them as ``[0x04, 0x02, <4-byte big-endian>]``. ``memory_save``
@@ -178,9 +200,9 @@ lines.append("OKIN_DOT_VARIANT_LABELS: dict[str, str] = {")
 for c in dot_codes:
     lines.append(f'    "{c}": "{label_of(c)}",')
 lines.append("}\n")
-lines.append("# code -> OkinUuidRemoteConfig kwargs")
+lines.append("# code -> OkinUuidRemoteConfig kwargs (FurniMove catalog codes excluded)")
 lines.append("OKIN_UUID_REMOTE_DATA: dict[str, dict] = {")
-for c in codes:
+for c in (c for c in codes if c not in FURNIMOVE_CODES):
     lines.append(f'    "{c}": {{{kwargs_of(c)}}},  # {master[c].get("source", "")}')
 lines.append("}")
 open("okin_uuid_remotes.py", "w").write("\n".join(lines) + "\n")

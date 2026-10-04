@@ -13,9 +13,13 @@ backend as the [Okimat](okimat.md) codes, but the box itself is a CB24-family
 receiver: it exposes the Nordic UART service instead of the Okin `62741523`
 service and takes CB24-style 7-byte frames.
 
-If the code printed on your remote is one of **90167, 91983, 93558, 97450,
-97544, 98035**, select the **Okin DOT** bed type and pick that code as the
-protocol variant. Entries configured as Okimat/Okin UUID are also rescued
+If the code printed on your remote is **97450, 97544 or 98035**, select the
+**Okin DOT** bed type and pick that code as the protocol variant. For
+**90167, 91983 or 93558**, new setups use the [FurniMove](furnimove.md) app
+profile instead: its pinned catalog covers those handsets and follows the
+app's per-control frame format. Existing Okin DOT entries with those codes keep
+working and receive a repair offering the switch. Their keycodes come from the
+FurniMove catalog either way. Entries configured as Okimat/Okin UUID are also rescued
 automatically: if the connected box has no Okin `62741525` characteristic but
 does expose Nordic UART, the integration promotes the entry to the Okin DOT
 bed type (persisted, which also drops the Okimat pairing requirement) and
@@ -50,9 +54,13 @@ connection as DOT when it is present (`BluetoothLeService.setCharacteristics`).
 
 ### Handshake
 
-On discovering the write characteristic, FurniMove immediately writes the
-ASCII string `affirm` to it. The integration mirrors this once per connection
-before the first command.
+The earlier FurniMove analysis this bed type came from recorded an ASCII
+`affirm` write to the write characteristic on discovery. The integration
+mirrors it once per connection before the first command. The accepted
+FurniMove 2.2.0 audit has no such write, and it also sends memory save,
+massage and some utility controls in the six-byte `04 02` format even on a DOT
+receiver. Okin DOT keeps its released behavior for existing entries; the
+FurniMove profile follows 2.2.0 exactly.
 
 ### Packet Format
 

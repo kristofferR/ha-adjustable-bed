@@ -453,22 +453,21 @@ class TestDetectBedTypeByServiceUUID:
         assert result.ambiguous_types == [BED_TYPE_STARCODE_ABM5_4]
 
     def test_detect_star_elevate_by_name_and_nordic_uart(self):
-        """An exact Elevate name still requires explicit app selection."""
+        """ELEVATE is one route for both apps, including AdjustableM5X5 lifts."""
         service_info = _make_service_info(
             name="ELEVATE-01",
             service_uuids=[NORDIC_UART_SERVICE_UUID],
         )
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type == BED_TYPE_STAR_ELEVATE
-        assert result.confidence == 0.65
-        assert result.ambiguous_types == [BED_TYPE_STARCODE_M5X5]
-        assert result.signals == ["name:starcode_bedding_app_choices"]
+        assert result.confidence == 0.95
+        assert not result.ambiguous_types
+        assert result.signals == ["name:star_elevate", "uuid:nordic_uart"]
 
     @pytest.mark.parametrize("service_uuids", [[], [NORDIC_UART_SERVICE_UUID]])
     @pytest.mark.parametrize(
         ("name", "legacy_type", "other_app"),
         [
-            ("ELEVATE123456", BED_TYPE_STAR_ELEVATE, None),
             ("STAR252201123456", BED_TYPE_SLEEPYS_BOX25, BED_TYPE_STARCODE_ABM5_4),
             ("STAR254205123456", BED_TYPE_SLEEPYS_BOX25, BED_TYPE_STARCODE_ABM5_4),
             ("STAR255402123456", BED_TYPE_SLEEPYS_BOX25, BED_TYPE_STARCODE_ABM5_4),
@@ -885,7 +884,7 @@ class TestDetectBedTypeByManufacturerData:
         )
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type == BED_TYPE_DEWERTOKIN
-        assert result.confidence == 0.6
+        assert result.confidence == 0.95
         assert BED_TYPE_FURNIMOVE in result.ambiguous_types
         assert result.manufacturer_id == MANUFACTURER_ID_DEWERTOKIN
 
@@ -1128,7 +1127,7 @@ class TestOkinUUIDDisambiguation:
         result = detect_bed_type_detailed(service_info)
 
         assert result.bed_type == BED_TYPE_DEWERTOKIN
-        assert result.confidence == 0.6
+        assert result.confidence == 0.9
         assert BED_TYPE_FURNIMOVE in result.ambiguous_types
         assert "uuid:dewertokin_rf_gateway" in result.signals
 
@@ -2524,13 +2523,13 @@ class TestDetectionConfidenceScores:
         assert result.confidence == 1.0
 
     def test_manufacturer_data_high_confidence(self):
-        """A shared manufacturer ID requires an explicit app profile."""
+        """DewertOkin keeps its confident route; FurniMove stays an explicit app candidate."""
         service_info = _make_service_info(
             name="Unknown",
             manufacturer_data={MANUFACTURER_ID_DEWERTOKIN: b"\x01"},
         )
         result = detect_bed_type_detailed(service_info)
-        assert result.confidence == 0.6
+        assert result.confidence == 0.95
         assert BED_TYPE_FURNIMOVE in result.ambiguous_types
 
     def test_name_pattern_medium_confidence(self):

@@ -115,7 +115,7 @@ Tests: [tests/test_malouf_app.py:338 (test_new_telemetry_query_only_after_reacha
 
 ### CLOCK
 
-Code: [custom_components/adjustable_bed/malouf_app_protocol.py:219 (clock_frame)](../../../custom_components/adjustable_bed/malouf_app_protocol.py#L219); [custom_components/adjustable_bed/beds/malouf_app.py:731 (sync_clock)](../../../custom_components/adjustable_bed/beds/malouf_app.py#L731); [custom_components/adjustable_bed/services.py:1660 (handle_malouf_sync_clock)](../../../custom_components/adjustable_bed/services.py#L1660).
+Code: [custom_components/adjustable_bed/malouf_app_protocol.py:219 (clock_frame)](../../../custom_components/adjustable_bed/malouf_app_protocol.py#L219); [custom_components/adjustable_bed/beds/malouf_app.py:731 (sync_clock)](../../../custom_components/adjustable_bed/beds/malouf_app.py#L731); [custom_components/adjustable_bed/services.py:2695 (handle_sync_clock, also registered as malouf_sync_clock)](../../../custom_components/adjustable_bed/services.py#L2695).
 
 Tests: [tests/test_malouf_app.py:112 (test_artifact_clock_alarm_vectors)](../../../tests/test_malouf_app.py#L112); [tests/test_malouf_app.py:470 (test_alarm_sync_then_weekly_program_and_exact_clear)](../../../tests/test_malouf_app.py#L470); [tests/test_malouf_app_services.py:95 (test_clock_sync_is_serialized)](../../../tests/test_malouf_app_services.py#L95).
 

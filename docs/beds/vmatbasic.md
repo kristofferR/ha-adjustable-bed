@@ -14,7 +14,7 @@ The protocol comes from the accepted `com.vibradorm.vmatbasic` 2.4.3 APK, versio
 
 These are two named movement groups, not proof of physical motor topology. No head/feet/extra-axis, position slider, automatic flat preset, memory, arbitrary RGB, massage intensity or measured massage state is exposed. Generic motor count, angle sensing and pulse settings do not override the app profile.
 
-Ordinary movement buttons hold for one second as a bounded Home Assistant policy. `vmatbasic_hold_control` accepts `all_up`, `all_down`, `back_up`, `back_down`, `legs_up`, `legs_down`, and XT-only `floor_hold`, with 0.1–60 seconds in whole milliseconds. The source refreshes held movement at 30 ms scheduling attempts; this is not a guaranteed on-air cadence. A fresh `ff` release follows admitted movement on completion, cancellation or failure, with bounded cleanup. All-down is a direction, not a measured flat position. XT floor hold repeats `00 11` and stops by ending the stream; no separate release frame is proven.
+Ordinary movement buttons hold for one second as a bounded Home Assistant policy. `hold_control` accepts `all_up`, `all_down`, `back_up`, `back_down`, `legs_up`, `legs_down`, and XT-only `floor_hold`, with 0.1–60 seconds in whole milliseconds. The source refreshes held movement at 30 ms scheduling attempts; this is not a guaranteed on-air cadence. A fresh `ff` release follows admitted movement on completion, cancellation or failure, with bounded cleanup. All-down is a direction, not a measured flat position. XT floor hold repeats `00 11` and stops by ending the stream; no separate release frame is proven.
 
 ## Exact GATT and packets
 
@@ -58,9 +58,9 @@ Bonded status is advisory in this app. The integration does not invent native bo
 
 Combine two independently configured CBI or CBI with XT-Box receivers at distinct addresses only when linked movement is wanted. The Basic profile has no linked control. Each side retains its explicit profile and settings. Movement on both sides requires both concurrent physical GATT sessions validated before either starts. A failed receiver, cancellation, disconnect or sequential fallback cannot release a partial group. Separate-side commands remain independent. Single-address pairing is unsupported.
 
-Only movement and its release mirror across a linked pair. Floor, mood, massage, reads and rename belong to one physical child unless the user explicitly addresses another independently configured child. `floor_hold` and `vmatbasic_rename` reject a multi-target request before writing. Split a pair to change its per-side profile, then combine it again.
+Only movement and its release mirror across a linked pair. Floor, mood, massage, reads and rename belong to one physical child unless the user explicitly addresses another independently configured child. `floor_hold` and `rename` reject a multi-target request before writing. Split a pair to change its per-side profile, then combine it again.
 
-`vmatbasic_rename` trims code points up to U+0020, allows an empty name, and limits the result to ten UTF-16 units. UTF-8 is written without a terminator. A further host safety limit of 20 encoded bytes avoids inventing fragmentation. Save the confirmed name only after the write succeeds; failed delivery leaves the stored name unchanged.
+`rename` trims code points up to U+0020, allows an empty name, and limits the result to ten UTF-16 units. UTF-8 is written without a terminator. A further host safety limit of 20 encoded bytes avoids inventing fragmentation. Save the confirmed name only after the write succeeds; failed delivery leaves the stored name unchanged.
 
 Physical packet delivery, movement effects, floor timing/scales, mood and massage effects, rename persistence, temperature interpretation, optional read support, dual connection behavior and security remain deferred user validation after beta/release. Static acceptance does not claim those hardware outcomes.
 

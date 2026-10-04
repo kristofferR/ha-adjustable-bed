@@ -15,7 +15,10 @@ from custom_components.adjustable_bed.beds.limoss import LimossController
 from custom_components.adjustable_bed.beds.limoss_remote_protocol import format_command
 from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 from custom_components.adjustable_bed.controller_factory import create_controller
-from custom_components.adjustable_bed.limoss_remote_state import LimossRemoteMemory
+from custom_components.adjustable_bed.limoss_remote_state import (
+    LimossRemoteMemory,
+    get_limoss_remote_session,
+)
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote_review_lifecycle import (
@@ -44,8 +47,8 @@ async def prepare_live(coordinator):
 @pytest.mark.parametrize("interrupt", [None, "stop", "replace"])
 async def test_options_off_must_finish_before_persist_even_after_scheduler_replacement(hass, interrupt):
     coordinator = actual_coordinator(hass, **{
-        const.CONF_LIMOSS_REMOTE_LIGHT: True,
-        const.CONF_LIMOSS_REMOTE_MASSAGE: True,
+        const.CONF_HAS_LIGHT: True,
+        const.CONF_HAS_MASSAGE: True,
         const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
     })
     controller, client = await prepare_live(coordinator)
@@ -112,7 +115,8 @@ async def test_registered_sequential_pair_rejects_fresh_second_profile_before_an
     trace = []
     awaiting_capability = asyncio.Event()
     for side, child in children.items():
-        child.limoss_remote_memory_store.slots[8] = LimossRemoteMemory("Eight", ((0, -1),))
+        get_limoss_remote_session(child.hass, child.address).memories.slots[8] = LimossRemoteMemory("Eight", ((0, -1),))
+        child.save_app_state()
         child._client = child._controller = None
         child._post_connect_delay = 0
         child._max_retries = 1
@@ -173,11 +177,11 @@ async def test_registered_sequential_pair_rejects_fresh_second_profile_before_an
             stack.enter_context(patch(module + "create_controller", side_effect=factory))
             stack.enter_context(patch.object(hass.config_entries, "async_reload", new=AsyncMock()))
             data = {"duration": 0.1}
-            service = {"recall": "limoss_remote_recall_memory", "hold": "limoss_remote_hold_control", "goto": "goto_preset", "save": "save_preset"}[route]
+            service = {"recall": "goto_preset", "hold": "hold_control", "goto": "goto_preset", "save": "save_preset"}[route]
             if route in {"goto", "save"}:
                 data = {}
             if change == "layout":
-                service, data = "limoss_remote_hold_control", {**data, "control": "motor_2_up"}
+                service, data = "hold_control", {**data, "control": "motor_2_up"}
             else:
                 data["preset"] = 8
             error = None
@@ -216,8 +220,8 @@ async def test_feature_service_interrupted_off_never_commits_selected_flags(hass
         side = const.SIDE_LEFT
     else:
         coordinator = actual_coordinator(hass, **{
-            const.CONF_LIMOSS_REMOTE_LIGHT: True,
-            const.CONF_LIMOSS_REMOTE_MASSAGE: True,
+            const.CONF_HAS_LIGHT: True,
+            const.CONF_HAS_MASSAGE: True,
             const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
         })
         target, side = coordinator, const.SIDE_BOTH
@@ -258,8 +262,8 @@ async def test_feature_service_interrupted_off_never_commits_selected_flags(hass
 
 async def test_queued_off_replaced_before_callback_does_not_save_options(hass):
     coordinator = actual_coordinator(hass, **{
-        const.CONF_LIMOSS_REMOTE_LIGHT: True,
-        const.CONF_LIMOSS_REMOTE_MASSAGE: True,
+        const.CONF_HAS_LIGHT: True,
+        const.CONF_HAS_MASSAGE: True,
         const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
     })
     controller, client = await prepare_live(coordinator)

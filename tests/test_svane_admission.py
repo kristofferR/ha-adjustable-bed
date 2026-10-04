@@ -22,7 +22,7 @@ def hold_data(control="head_up"):
 
 
 @pytest.mark.parametrize("runtime", ["multi", "jmc"], indirect=True)
-@pytest.mark.parametrize("endpoint", ["svane_hold_control", "timed_move"])
+@pytest.mark.parametrize("endpoint", ["hold_control", "timed_move"])
 async def test_registered_release_survives_scheduler_admission(hass, runtime, endpoint):
     coordinator, controller = runtime
     ready = asyncio.Event()
@@ -33,7 +33,7 @@ async def test_registered_release_survives_scheduler_admission(hass, runtime, en
         ready.set()
         return result
 
-    data = hold_data() if endpoint == "svane_hold_control" else {
+    data = hold_data() if endpoint == "hold_control" else {
         "device_id": "bed", "motor": "back", "direction": "up", "duration_ms": 200,
     }
     with (
@@ -94,7 +94,7 @@ async def test_release_during_later_target_preflight_suppresses_only_selected_ax
         patch("custom_components.adjustable_bed.services._get_controller_for_service", live),
         patch("custom_components.adjustable_bed.beds.svane.asyncio", local_asyncio),
     ):
-        task = asyncio.create_task(hass.services.async_call(DOMAIN, "svane_hold_control", {
+        task = asyncio.create_task(hass.services.async_call(DOMAIN, "hold_control", {
             "device_id": ["first", "second"], "control": "head_up_feet_down", "duration": 0.2,
         }, blocking=True))
         try:
@@ -132,7 +132,7 @@ async def test_idle_release_is_not_replayed_by_next_public_hold(hass, runtime):
         await hass.services.async_call(DOMAIN, "svane_release_axis", {
             "device_id": "bed", "motor": "head",
         }, blocking=True)
-        await hass.services.async_call(DOMAIN, "svane_hold_control", hold_data(), blocking=True)
+        await hass.services.async_call(DOMAIN, "hold_control", hold_data(), blocking=True)
     assert written(controller)[0][2] == ("0100" if controller.profile == "multi" else "100100000000")
     assert not controller._started
 
@@ -212,7 +212,7 @@ async def test_session_reconstruction_keeps_admitted_release_boundary(hass, runt
         patch("custom_components.adjustable_bed.services._get_controller_for_service", live),
     ):
         task = asyncio.create_task(hass.services.async_call(
-            DOMAIN, "svane_hold_control", hold_data(), blocking=True,
+            DOMAIN, "hold_control", hold_data(), blocking=True,
         ))
         try:
             await ready.wait()
@@ -231,7 +231,7 @@ async def test_session_reconstruction_keeps_admitted_release_boundary(hass, runt
             await coordinator._command_scheduler.async_shutdown()
 
 
-@pytest.mark.parametrize("endpoint", ["svane_hold_control", "timed_move"])
+@pytest.mark.parametrize("endpoint", ["hold_control", "timed_move"])
 async def test_caller_cancel_during_later_preflight_restores_idle_without_motion(hass, endpoint):
     from custom_components.adjustable_bed.services import async_register_services
 
@@ -250,7 +250,7 @@ async def test_caller_cancel_during_later_preflight_restores_idle_without_motion
             await asyncio.Event().wait()
         return target.controller
 
-    data = hold_data() if endpoint == "svane_hold_control" else {
+    data = hold_data() if endpoint == "hold_control" else {
         "device_id": "bed", "motor": "back", "direction": "up", "duration_ms": 200,
     }
     with (
@@ -269,7 +269,7 @@ async def test_caller_cancel_during_later_preflight_restores_idle_without_motion
     second.async_ensure_connected.assert_awaited_with(reset_timer=True)
 
 
-@pytest.mark.parametrize("endpoint", ["svane_hold_control", "timed_move"])
+@pytest.mark.parametrize("endpoint", ["hold_control", "timed_move"])
 async def test_later_session_replacement_aborts_all_targets_before_dispatch(hass, endpoint):
     from custom_components.adjustable_bed.services import async_register_services
 
@@ -286,7 +286,7 @@ async def test_later_session_replacement_aborts_all_targets_before_dispatch(hass
             second.controller = replacement
         return target.controller
 
-    data = hold_data() if endpoint == "svane_hold_control" else {
+    data = hold_data() if endpoint == "hold_control" else {
         "device_id": "bed", "motor": "back", "direction": "up", "duration_ms": 200,
     }
     with (

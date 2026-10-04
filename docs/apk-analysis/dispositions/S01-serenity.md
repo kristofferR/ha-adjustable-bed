@@ -74,7 +74,7 @@ Every ledger row uses the code (`C`) and focused test (`T`) references below. `S
 | C37 | [custom_components/adjustable_bed/beds/serenity.py:350 (OkinBeddingAppController.requires_notification_channel)](../../../custom_components/adjustable_bed/beds/serenity.py#L350) |
 | C38 | [custom_components/adjustable_bed/beds/serenity.py:445 (OkinBeddingAppController.start_notify)](../../../custom_components/adjustable_bed/beds/serenity.py#L445) |
 | C39 | [custom_components/adjustable_bed/beds/serenity.py:428 (OkinBeddingAppController.write_command)](../../../custom_components/adjustable_bed/beds/serenity.py#L428) |
-| C40 | [custom_components/adjustable_bed/config_flow.py:1863 (AdjustableBedConfigFlow._async_rebuild_changed_serenity_form)](../../../custom_components/adjustable_bed/config_flow.py#L1863) |
+| C40 | [custom_components/adjustable_bed/config_flow.py:2809 (AdjustableBedConfigFlow._async_fit_setup_form)](../../../custom_components/adjustable_bed/config_flow.py#L2809) |
 | C41 | [custom_components/adjustable_bed/config_flow.py:1896 (AdjustableBedConfigFlow.async_step_bluetooth_confirm)](../../../custom_components/adjustable_bed/config_flow.py#L1896) |
 | C42 | [custom_components/adjustable_bed/config_flow.py:2882 (AdjustableBedConfigFlow.async_step_manual_config)](../../../custom_components/adjustable_bed/config_flow.py#L2882) |
 | C43 | [custom_components/adjustable_bed/config_flow.py:3185 (AdjustableBedConfigFlow.async_step_manual_entry)](../../../custom_components/adjustable_bed/config_flow.py#L3185) |
@@ -86,8 +86,8 @@ Every ledger row uses the code (`C`) and focused test (`T`) references below. `S
 | C49 | [custom_components/adjustable_bed/controller_factory.py:350 (_create_from_registry)](../../../custom_components/adjustable_bed/controller_factory.py#L350) |
 | C50 | [custom_components/adjustable_bed/sensor.py:407 (AdjustableBedControllerStateSensor)](../../../custom_components/adjustable_bed/sensor.py#L407) |
 | C51 | [custom_components/adjustable_bed/sensor.py:153 (_sensor_entities_for)](../../../custom_components/adjustable_bed/sensor.py#L153) |
-| C52 | [custom_components/adjustable_bed/services.py:1660 (_handle_customatic_hold)](../../../custom_components/adjustable_bed/services.py#L1660) |
-| C53 | [custom_components/adjustable_bed/services.py:1653 (handle_serenity_hold_control)](../../../custom_components/adjustable_bed/services.py#L1653) |
+| C52 | [custom_components/adjustable_bed/services.py:1763 (_hold_targets)](../../../custom_components/adjustable_bed/services.py#L1763) |
+| C53 | [custom_components/adjustable_bed/services.py:1713 (handle_hold_control)](../../../custom_components/adjustable_bed/services.py#L1713) |
 | C54 | [custom_components/adjustable_bed/switch.py:160 (AdjustableBedSwitch)](../../../custom_components/adjustable_bed/switch.py#L160) |
 | T01 | [tests/test_cluster_011_convergence.py:234 (test_frozen_cluster_vectors_build_exact_frames)](../../../tests/test_cluster_011_convergence.py#L234) |
 | T02 | [tests/test_serenity.py:637 (test_aborted_save_retains_artifact_local_intent_without_storage_ack)](../../../tests/test_serenity.py#L637) |
@@ -117,7 +117,7 @@ Every ledger row uses the code (`C`) and focused test (`T`) references below. `S
 | T26 | [tests/test_serenity.py:137 (test_signed_status_change_only_save_diversion_and_short_input)](../../../tests/test_serenity.py#L137) |
 | T27 | [tests/test_serenity.py:329 (test_unsupported_actions_no_write)](../../../tests/test_serenity.py#L329) |
 | T28 | [tests/test_serenity.py:604 (test_write_timeout_is_not_mistaken_for_elapsed_hold_deadline)](../../../tests/test_serenity.py#L604) |
-| T29 | [tests/test_serenity_config.py:146 (test_changing_setup_profile_restores_choices_and_keeps_entered_values)](../../../tests/test_serenity_config.py#L146) |
+| T29 | [tests/test_serenity_config.py:184 (test_changing_setup_profile_restores_choices_and_keeps_entered_values)](../../../tests/test_serenity_config.py#L184) |
 | T30 | [tests/test_serenity_config.py:26 (test_explicit_profile_builds_fixed_controls_without_live_advertisement)](../../../tests/test_serenity_config.py#L26) |
 | T31 | [tests/test_serenity_config.py:46 (test_fixed_named_axis_layout_normalizes_old_generic_motor_setting)](../../../tests/test_serenity_config.py#L46) |
 | T32 | [tests/test_serenity_config.py:93 (test_options_switch_from_generic_profile_preserves_explicit_serenity_defaults)](../../../tests/test_serenity_config.py#L93) |
@@ -128,7 +128,7 @@ Every ledger row uses the code (`C`) and focused test (`T`) references below. `S
 | T37 | [tests/test_serenity_entities.py:215 (test_parser_publishes_native_diagnostic_values_and_signed_alarm_attributes)](../../../tests/test_serenity_entities.py#L215) |
 | T38 | [tests/test_serenity_entities.py:95 (test_profile_retires_old_lumbar_cover_without_guessing_auxiliary_axes)](../../../tests/test_serenity_entities.py#L95) |
 | T39 | [tests/test_serenity_entities.py:29 (test_status_sensor_reload_reconciles_only_the_current_side)](../../../tests/test_serenity_entities.py#L29) |
-| T40 | [tests/test_serenity_services.py:212 (test_action_selector_and_service_translation_use_the_real_control_catalog)](../../../tests/test_serenity_services.py#L212) |
+| T40 | [tests/test_generic_services.py:105 (test_hold_control_lists_valid_controls_before_any_write)](../../../tests/test_generic_services.py#L105) |
 | T41 | [tests/test_serenity_services.py:165 (test_cancelled_dispatch_restores_later_preflighted_target_idle_timer)](../../../tests/test_serenity_services.py#L165) |
 | T42 | [tests/test_serenity_services.py:97 (test_later_incompatible_target_rejects_before_any_write)](../../../tests/test_serenity_services.py#L97) |
 | T43 | [tests/test_serenity_services.py:120 (test_real_pair_preserves_requested_side_and_literal_action)](../../../tests/test_serenity_services.py#L120) |
