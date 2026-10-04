@@ -5795,6 +5795,72 @@ class TestDeviceInfoCache:
             assert coordinator._ble_manufacturer == "OKIN"
             assert coordinator._ble_model == "Model X"
 
+    async def test_link_lost_during_device_info_read_is_a_dropped_connection(
+        self,
+        hass: HomeAssistant,
+        mock_bleak_client: MagicMock,
+    ):
+        """Issue #633: a drop mid-read is retried as a drop, not an AttributeError."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_LINAK,
+                CONF_MOTOR_COUNT: 2,
+                CONF_DISABLE_ANGLE_SENSING: True,
+            },
+            unique_id=TEST_ADDRESS,
+        )
+        entry.add_to_hass(hass)
+        adapter_result = MagicMock()
+        adapter_result.device.address = TEST_ADDRESS
+        adapter_result.device.name = TEST_NAME
+        adapter_result.device.details = {}
+        adapter_result.source = "local"
+        adapter_result.connectable = True
+
+        async def establish_connection(*_args, **_kwargs):
+            mock_bleak_client.is_connected = True
+            return mock_bleak_client
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        coordinator._max_retries = 1
+
+        async def lose_link(*_args):
+            # What _on_disconnect does when the bed drops the link.
+            mock_bleak_client.is_connected = False
+            coordinator._client = None
+            return None, None
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.select_adapter",
+                new_callable=AsyncMock,
+                return_value=adapter_result,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.establish_connection",
+                new_callable=AsyncMock,
+                side_effect=establish_connection,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+                side_effect=lose_link,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_controller",
+                new_callable=AsyncMock,
+            ) as create_controller,
+        ):
+            assert await coordinator.async_connect() is False
+
+        create_controller.assert_not_awaited()
+        attempt = coordinator._connection_attempt_details[-1]
+        assert attempt["error_category"] == "CONNECTION DROPPED"
+        assert attempt["error"] == "Connection dropped during post-connect setup"
+
     @pytest.mark.parametrize(
         "bed_type",
         [

@@ -3230,6 +3230,28 @@ class AdjustableBedCoordinator:
             self.hass, request(), f"adjustable_bed_furnimove_bond_{self._address}"
         )
 
+    def _record_dropped_connection(
+        self, stage: str, attempt_details: dict[str, Any], attempt_start: float
+    ) -> None:
+        """Record a connect attempt whose link dropped before startup finished."""
+        _LOGGER.warning("Connection to %s dropped during %s", self._address, stage)
+        self._connecting = False
+        self._last_connection_error = f"Connection dropped during {stage}"
+        self._last_connection_error_type = ConnectionError.__name__
+        # A failed (re)connect is not an intentional/idle disconnect; clear the
+        # prior reason so the connectivity sensor doesn't keep reporting "idle"
+        # after the attempt failed (issue #385 review).
+        self._last_disconnect_reason = "connect_failed"
+        attempt_details["total_elapsed_seconds"] = round(time.monotonic() - attempt_start, 3)
+        attempt_details["result"] = "failed"
+        attempt_details["error"] = self._last_connection_error
+        attempt_details["error_type"] = self._last_connection_error_type
+        attempt_details["error_category"] = "CONNECTION DROPPED"
+        self._client = None
+        self._controller = None
+        self._notify_connection_state_change(False)
+        self._connection_attempt_details.append(attempt_details)
+
     async def _async_cleanup_failed_connection(self) -> None:
         """Release a failed-attempt client without scheduling auto-reconnect."""
         await self._async_cancel_furnimove_bond_request()
@@ -3544,6 +3566,8 @@ class AdjustableBedCoordinator:
                 device_source = None
                 if hasattr(device, "details") and isinstance(device.details, dict):
                     device_source = device.details.get("source")
+                # Local BlueZ devices carry no "source" in their details.
+                device_source = device_source or adapter_result.source
 
                 lookup_elapsed = time.monotonic() - attempt_start
                 attempt_details["lookup_elapsed_seconds"] = round(lookup_elapsed, 3)
@@ -4092,6 +4116,14 @@ class AdjustableBedCoordinator:
                         )
                         self._store_ble_device_info(ble_manufacturer, ble_model)
 
+                # The awaited bond probe and device-info reads can lose the link,
+                # and _on_disconnect then clears the client used below.
+                if self._client is None or not self._client.is_connected:
+                    self._record_dropped_connection(
+                        "post-connect setup", attempt_details, attempt_start
+                    )
+                    continue
+
                 previous_bed_type = self._bed_type
                 observed_device_name = self._observed_ble_device_name or device.name
                 corrected_bed_type = refine_malouf_protocol_from_gatt(
@@ -4358,28 +4390,9 @@ class AdjustableBedCoordinator:
                     await self._async_refresh_readable_light_state()
 
                 if self._client is None or not self._client.is_connected:
-                    _LOGGER.warning(
-                        "Connection to %s dropped during controller startup",
-                        self._address,
+                    self._record_dropped_connection(
+                        "controller startup", attempt_details, attempt_start
                     )
-                    self._connecting = False
-                    self._last_connection_error = "Connection dropped during controller startup"
-                    self._last_connection_error_type = ConnectionError.__name__
-                    # A failed (re)connect is not an intentional/idle disconnect;
-                    # clear the prior reason so the connectivity sensor doesn't keep
-                    # reporting "idle" after the attempt failed (issue #385 review).
-                    self._last_disconnect_reason = "connect_failed"
-                    attempt_details["total_elapsed_seconds"] = round(
-                        time.monotonic() - attempt_start, 3
-                    )
-                    attempt_details["result"] = "failed"
-                    attempt_details["error"] = self._last_connection_error
-                    attempt_details["error_type"] = self._last_connection_error_type
-                    attempt_details["error_category"] = "CONNECTION DROPPED"
-                    self._client = None
-                    self._controller = None
-                    self._notify_connection_state_change(False)
-                    self._connection_attempt_details.append(attempt_details)
                     continue
 
                 if reset_timer:
