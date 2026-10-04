@@ -536,8 +536,8 @@ class VMatBasicController(BedController):
 
     async def set_mood_effect(self, option: str) -> None:
         self._require("xtbox")
-        if option not in ("E1", "E2", "E3"):
-            raise ValueError("Choose effect E1, E2 or E3")
+        if option not in ("e1", "e2", "e3"):
+            raise ValueError("Choose effect e1, e2 or e3")
         await self._write(
             protocol.CONTROL_SERVICE, protocol.XT_CHAR, protocol.effect(int(option[1]))
         )
@@ -693,7 +693,7 @@ class VMatBasicController(BedController):
                 _PREFIX + "mood_effect",
                 _PREFIX + "mood_effect",
                 _PREFIX + "mood_effect",
-                ("E1", "E2", "E3"),
+                ("e1", "e2", "e3"),
                 lambda ctrl, value: ctrl.set_mood_effect(value),
             ),
         )

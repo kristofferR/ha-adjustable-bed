@@ -3941,9 +3941,9 @@
       "vmatbasic_mood_effect": {
         "name": "Mood effect",
         "state": {
-          "E1": "Effect 1",
-          "E2": "Effect 2",
-          "E3": "Effect 3"
+          "e1": "Effect 1",
+          "e2": "Effect 2",
+          "e3": "Effect 3"
         }
       },
       "starcode_abm5_4_massage_timer": {
