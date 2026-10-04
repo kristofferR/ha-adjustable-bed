@@ -83,10 +83,21 @@ def target(hass: HomeAssistant, index: int, profile: str) -> AdjustableBedCoordi
     return coordinator
 
 
-def flat_frame(controller: StarcodeM5X5Controller | StarElevateController) -> bytes:
+def action_frame(
+    controller: StarcodeM5X5Controller | StarElevateController, action: str
+) -> bytes:
+    """The frame a group action sends to this member."""
     if isinstance(controller, StarElevateController):
-        return StarElevateCommands.FLAT
-    return controller.packet("flat")
+        return {
+            "union_up": StarElevateCommands.BOTH_UP,
+            "union_down": StarElevateCommands.BOTH_DOWN,
+            "flat": StarElevateCommands.FLAT,
+        }[action]
+    return controller.packet(action)
+
+
+def flat_frame(controller: StarcodeM5X5Controller | StarElevateController) -> bytes:
+    return action_frame(controller, "flat")
 
 
 def group(

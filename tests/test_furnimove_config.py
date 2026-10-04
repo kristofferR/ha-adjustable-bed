@@ -140,7 +140,7 @@ async def test_each_handset_is_offered_by_one_bed_type_for_new_setups(hass):
 async def test_dot_options_keep_a_stored_furnimove_handset_only_for_that_entry(hass):
     from custom_components.adjustable_bed.const import BED_TYPE_OKIN_DOT
 
-    def variants_for(stored: str) -> set[str]:
+    def options_flow(stored: str) -> AdjustableBedOptionsFlow:
         entry = MockConfigEntry(domain=DOMAIN, data={
             CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_OKIN_DOT,
             CONF_PROTOCOL_VARIANT: stored, CONF_MOTOR_COUNT: 2,
@@ -152,7 +152,7 @@ async def test_dot_options_keep_a_stored_furnimove_handset_only_for_that_entry(h
         return flow
 
     for stored, expected in (("93558", True), ("97450", False)):
-        flow = variants_for(stored)
+        flow = options_flow(stored)
         form = await flow._async_options_form(None, step_id="settings")
         marker = next(m for m in form["data_schema"].schema if m.schema == CONF_PROTOCOL_VARIANT)
         container = form["data_schema"].schema[marker].container
