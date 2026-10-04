@@ -29,12 +29,14 @@ validation limits; the feature summaries below depend on the selected controller
 | [BedTech](beds/bedtech.md) | 5 presets, 4 massage modes, dual-base support |
 | [Sleep Number](beds/sleep_number.md) | Fuzion and BAM/MCR: capability-dependent position, firmness, presets, lighting and thermal controls |
 | [Sleepy's Elite](beds/sleepys.md) | BOX15/24/25 variants, presets, BOX25 position sliders including lumbar |
+| [AdjustableM5X4](beds/starcode-abm5-4.md) / [AdjustableM5X5](beds/starcode-m5x5.md) apps | StarCode Star-name beds: M5X4 command and transport selectors; M5X5 CB25/F23/kneading layouts and up to three [ELEVATE](beds/star-elevate.md) lift entries |
 | [SleepSpa S9000AI](beds/sleepstar.md) | CB37 sleep monitor, five app-addressable actuators, position feedback, sonic massage, RGB lighting |
 | [Svane](beds/svane.md) | Svane Remote multi-service / JMC400 profiles, opaque software memories, local lamp preference; separate Jensen LinOn |
 | [Vibradorm](beds/vibradorm.md) | Position feedback, memory and lights; [Caresse / Werkmeister](beds/vibradorm_app.md), [VMAT](beds/vmat.md) and [V-MAT Basic](beds/vmatbasic.md) remote-specific controls |
 | [SUTA Smart Home](beds/suta.md) | AT command protocol, 4 memory slots, discrete lights |
 | [TiMOTION AHF](beds/timotion-ahf.md) | 5-motor bitmask protocol, toggle lights, AHF name detection |
-| [Limoss](beds/limoss.md) | TEA-encrypted packets, position feedback, dynamic capabilities; [Limoss Remote](beds/limoss-remote.md) bed/chair layouts and local memories |
+| [Limoss](beds/limoss.md) | TEA-encrypted packets, position feedback, dynamic capabilities; [Limoss Remote](beds/limoss-remote.md) and [FSM Relax](beds/fsm_relax.md) bed/chair layouts and local memories |
+| [Motion Bed app](beds/motion_bed.md) | Layouts chosen by the app's Bluetooth name, named presets, massage, lighting, sync, audio and sleep controls, module selection |
 | [Cool Base](beds/coolbase.md) | Keeson BaseI5 with fan control |
 | [Scott Living](beds/scott-living.md) | 9-byte protocol |
 | [SBI/Q-Plus](beds/sbi.md) | Position feedback via pulse lookup |
@@ -42,6 +44,9 @@ validation limits; the feature summaries below depend on the selected controller
 | [Remacro](beds/remacro.md) | Slumberland, The Brick and Jerome's app screens: up to 3 motors, split sides, presets, memory, massage, light |
 | [Logicdata](beds/logicdata.md) | SILVERmotion / SimplicityFrame memory, lights and massage; [MOTIONrelax](beds/logicdata-app.md) layouts and alarms; [Sleep Smart](beds/logicdata-sleep-smart.md) bed controls and separate air mattress pump |
 | [Okin CB35](beds/okin-cb35.md) | 7-byte Nordic UART (Sealy Posturematic), 6 motors, massage, lights |
+| [Customatic](beds/customatic.md) | Clarity, Jerome's C and Remedy apps: back and legs (Remedy adds lumbar), memory page, light toggle |
+| [Customatic Z-Series](beds/customatic-z-series.md), [Jordan's Serenity](beds/serenity.md), [Jordan's Tranquil](beds/tranquil.md) | OKIN CST 14-byte apps: head/foot and selector controls, presets, saved positions, massage; Z-230/Z-280 pages |
+| [SIMMONS](beds/simmons.md) / [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md) apps | OKIN apps whose command table follows the Bluetooth name: regular or inclined SIMMONS beds; head, foot and lumbar |
 | [Okin CST](beds/okin-cst.md) | 14-byte dual-field protocol (Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; Nectar Motion) |
 | [FurniMove / OKIN Smart Remote app](beds/furnimove.md) | Explicit handset layouts from production API tables; RF, ordinary and DOT transports |
 | [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md) | Single stair actuator for Elda BTH / MEGAMAT |
