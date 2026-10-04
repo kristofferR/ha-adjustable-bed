@@ -1705,6 +1705,8 @@ _OPTIONS_APP_FIELDS: Final[
     BED_TYPE_VMATBASIC: _add_vmatbasic_schema_fields,
     BED_TYPE_LIMOSS_REMOTE: _add_limoss_remote_schema_fields,
 }
+# Bed types whose own app settings only a setup step or Configure can collect.
+APP_SETTINGS_BED_TYPES: Final = frozenset(_APP_SETUP_STEPS) | frozenset(_OPTIONS_APP_FIELDS)
 
 
 def _skips_setup_connection_probe(bed_type: str | None, variant: str | None) -> bool:
@@ -1755,9 +1757,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
     # v4 introduces the paired-bed schema (Dual Bed 4.0). The v3->v4 migration is
     # a strict no-op for non-paired entries; see async_migrate_entry. Minor
-    # version 2 stores v4.0.2 aliases and per-app keys under one name.
+    # version 2 stores v4.0.2 aliases and per-app keys under one name. Minor
+    # version 3 marks older entries for the one-time app profile review.
     VERSION = 4
-    MINOR_VERSION = 2
+    MINOR_VERSION = 3
 
     @staticmethod
     def _mark_ble_bond_established(entry_data: dict[str, Any]) -> dict[str, Any]:

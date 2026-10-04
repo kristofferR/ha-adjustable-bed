@@ -49,6 +49,7 @@ from .const import (
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
     CONF_PAIR_MODE,
+    CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
     CONF_SIDE,
@@ -93,6 +94,11 @@ from .pairing import (
     iter_children,
     pair_member_addresses,
     with_updated_child,
+)
+from .profile_review import (
+    async_clear_profile_review_issue,
+    async_refresh_profile_review_issue,
+    profile_review_mark,
 )
 from .remacro_discovery import (
     async_watch_remacro_fallback,
@@ -352,6 +358,14 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             options=migrate_v4_2_data(entry.options),
             minor_version=2,
         )
+
+    if entry.minor_version < 3:
+        # v4.2 -> v4.3: entries from before the explicit app profiles are asked
+        # once whether one fits; later entries chose from the full list.
+        data = dict(entry.data)
+        if (mark := profile_review_mark(data)) is not None:
+            data[CONF_PROFILE_REVIEW_PENDING] = mark
+        hass.config_entries.async_update_entry(entry, data=data, minor_version=3)
 
     _LOGGER.debug(
         "Migration complete for config entry %s (%s), now at version %s",
@@ -1024,6 +1038,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     async_track_combine_beds_issue(hass, entry)
     async_refresh_furnimove_layout_issues(hass, entry)
+    async_refresh_profile_review_issue(hass, entry)
     await async_register_services(hass)
 
     # Paired beds (Dual Bed 4.0) route to a dedicated setup path; single-bed
@@ -1100,6 +1115,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             "Check that the bed is powered on and in range of your Bluetooth adapter/proxy."
         )
 
+    # The connection proves an advertisement, which the review may still need.
+    async_refresh_profile_review_issue(hass, entry)
     # Register the reload listener only after the first successful connect.
     # Setup-time connection logic may persist inferred bond state onto the entry,
     # and we do not want that one-time migration to trigger an immediate reload.
@@ -1206,6 +1223,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Clean up Repairs issues that would otherwise outlive the entry."""
     async_clear_furnimove_layout_issues(hass, entry.entry_id)
+    async_clear_profile_review_issue(hass, entry.entry_id)
     address = entry.data.get(CONF_ADDRESS)
     if address:
         clear_octo_pin_required_issue(hass, address)

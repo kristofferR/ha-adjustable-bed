@@ -33,6 +33,57 @@ page so it loads the matching card version. For paired-bed conversion, existing
 side entity IDs should survive. Report missing entities with diagnostics before
 deleting and recreating entries.
 
+### "New app profiles are available" repair
+
+Beds added before 4.1.0 keep the bed type they were set up with. Version 4.1.0
+adds app profiles for beds that the earlier generic routes controlled only
+partly, or with the wrong commands. Bluetooth advertisements cannot tell these
+apps apart, so an upgraded bed whose bed type gained app profiles shows one
+repair under **Settings > System > Repairs**. It lists only the apps that fit
+that bed type and asks once:
+
+- **Choose the app you use.** Most apps are applied right away, with the same
+  checks as **Configure**. The bed reloads with that app's controls and keeps
+  its device and matching entity IDs.
+- Apps with their own settings (FSM Relax, Limoss Remote, Motion Bed, the
+  Vibradorm apps, V-MAT Basic, AdjustableM5X4, AdjustableM5X5, LOGICDATA
+  Sleep Smart), or a change **Configure** would refuse, are not applied here.
+  The repair tells you to open **Configure** and choose the app there.
+- **Keep current configuration** if the bed already works. The repair does
+  not come back.
+- A paired bed cannot switch app in its shared settings, because app profiles
+  belong to one physical bed and none supports paired controls. In
+  **Configure**, choose **Split into two beds** (or **Restore standalone
+  controls**), then choose the app for each bed.
+
+The repair reads **"... matches the ... profile"** instead when the bed's
+advertisement now identifies another bed type than the one it was set up
+with. So far this applies to Keeson beds whose name contains, but does not
+start with, `base-i5`; they are Cool Base beds.
+
+| Bed type set up before 4.1.0 | Apps offered |
+|------------------------------|--------------|
+| Keeson (Auto or Base variant) | Adjustable Lite (Auto only), Simon Li, Heal Every Night, OKIN-Seating, INNOVA, MaxCoil Una, Dynasty Bases, Bedsense Bases, Restonic BT A/B, SIMMONS |
+| Keeson (KSBT variant) | Adjustable Lite |
+| Keeson (Sino variant) | Simon Li, Heal Every Night, OKIN-Seating, INNOVA, MaxCoil Una, Dynasty Bases, Bedsense Bases |
+| Okin ORE | INNOVA, Dynasty Bases |
+| Cool Base | Restonic BT A/B |
+| Okimat / Okin UUID | Jordan's Serenity, Jordan's Tranquil, Customatic Z-Series (Z-230, Z-280), Adjustable bed (Lumbar) |
+| Okin CST | Jordan's Serenity, Jordan's Tranquil, Customatic Z-Series (Z-230, Z-280) |
+| DewertOkin | SIMMONS, Jordan's Tranquil, Customatic Z-Series (Z-230, Z-280) |
+| Okin 64-Bit | Adjustable bed (Lumbar) |
+| Okin CB35, Sleepy's BOX25 | Adjustable bed (Lumbar); with a `Star` name also AdjustableM5X4, and with a `STAR25` name AdjustableM5X5 |
+| Okin FFE, Okin CB24 | SIMMONS |
+| Richmat | Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed, SIMMONS |
+| Limoss | Limoss Remote, FSM Relax |
+| Vibradorm | Caresse / Werkmeister / VMAT apps, V-MAT Basic |
+| Comfort Motion | LOGICDATA Sleep Smart (LOGICDATA app profile) |
+| Remacro (Slumberland) | The Brick, Jerome's |
+| Solace, Octo | Motion Bed, only when the bed's Bluetooth name is one the Motion Bed app accepts |
+
+FurniMove is not listed: older RF ECO BT and Okin DOT entries get their own
+[FurniMove repair](beds/furnimove.md#repairing-existing-configurations).
+
 ## Dashboard Card Missing or Configuration Error
 
 If the card is missing from the picker or says **Custom element doesn't exist:

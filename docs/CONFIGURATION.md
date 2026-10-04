@@ -369,9 +369,11 @@ listed together below, with links to their setup instructions.
 3. Match any requested model or remote to your physical bed. Shared Bluetooth
    names and services do not always identify the right layout.
 
-Existing entries keep their selection until you change it. For a two-address
-pair, settings belong to each physical bed. If the shared form refuses a change,
-split the pair, configure each side, then combine them again.
+Existing entries keep their selection until you change it. Beds added before
+4.1.0 whose bed type gained app profiles are asked once, through a repair,
+which app they use; see [the upgrade prompt](TROUBLESHOOTING.md#new-app-profiles-are-available-repair).
+For a two-address pair, settings belong to each physical bed. If the shared form
+refuses a change, split the pair, configure each side, then combine them again.
 
 | Bed or brand | Model and remote settings |
 |--------------|---------------------------|

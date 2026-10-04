@@ -5776,6 +5776,56 @@
           "entry_missing": "The entry or paired side no longer exists. Open its current configuration."
         }
       }
+    },
+    "app_profile_review": {
+      "title": "New app profiles are available for {name}",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Choose the app for {name}",
+            "description": "**{name}** was set up before these app profiles existed and uses {current}. If you control the bed with one of these apps, its profile follows that app's controls:\n{apps}\n\nChoose the app you use, or keep the current configuration if the bed already works as expected. You are only asked once. Your existing device and matching entity IDs are preserved.",
+            "data": {
+              "choice": "App profile"
+            }
+          },
+          "configure": {
+            "title": "Finish in Configure",
+            "description": "{app} was not applied here because it needs settings or checks that only the settings form provides. Open **Settings > Devices & services > Adjustable Bed**, select **Configure** on **{name}** and choose **{app}** as the bed type. The form asks for anything else it needs and explains anything it cannot accept. Submit to close this repair."
+          },
+          "unpair": {
+            "title": "Split the pair to change the app",
+            "description": "**{name}** is a paired bed. An app profile belongs to each physical bed, and none supports the paired controls, so the pair's shared settings cannot switch to one. If you control the beds with one of these apps:\n{apps}\n\nopen **Configure** on **{name}**, choose **Split into two beds** (or **Restore standalone controls**), then choose the app for each bed. Submit to close this repair and keep the current configuration."
+          }
+        },
+        "abort": {
+          "entry_missing": "The entry no longer exists or was already reviewed. Open its current configuration."
+        }
+      }
+    },
+    "app_profile_match": {
+      "title": "{name} matches the {app} profile",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Switch {name} to {app}",
+            "description": "**{name}** is set up as {current}, but its Bluetooth advertisement now identifies it as {app}. If the bed already works as expected, keep the current configuration. You are only asked once. Your existing device and matching entity IDs are preserved.",
+            "data": {
+              "choice": "Configuration"
+            }
+          },
+          "configure": {
+            "title": "Finish in Configure",
+            "description": "{app} was not applied here because it needs settings or checks that only the settings form provides. Open **Settings > Devices & services > Adjustable Bed**, select **Configure** on **{name}** and choose **{app}** as the bed type. The form asks for anything else it needs and explains anything it cannot accept. Submit to close this repair."
+          },
+          "unpair": {
+            "title": "Split the pair to change the app",
+            "description": "**{name}** is a paired bed. An app profile belongs to each physical bed, and none supports the paired controls, so the pair's shared settings cannot switch to one. If you control the beds with one of these apps:\n{apps}\n\nopen **Configure** on **{name}**, choose **Split into two beds** (or **Restore standalone controls**), then choose the app for each bed. Submit to close this repair and keep the current configuration."
+          }
+        },
+        "abort": {
+          "entry_missing": "The entry no longer exists or was already reviewed. Open its current configuration."
+        }
+      }
     }
   },
   "selector": {
@@ -5808,6 +5858,11 @@
     "furnimove_handset_route": {
       "options": {
         "furnimove": "Switch to the FurniMove profile",
+        "keep": "Keep current configuration"
+      }
+    },
+    "app_profile_review": {
+      "options": {
         "keep": "Keep current configuration"
       }
     }

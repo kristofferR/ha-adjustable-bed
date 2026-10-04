@@ -45,6 +45,7 @@ from .const import (
     CONF_PAIR_MODE,
     CONF_PAIR_SCHEMA_VERSION,
     CONF_PRODUCT_TYPE,
+    CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
     CONF_REVERSE_MOTORS,
     CONF_SIDE,
@@ -211,6 +212,8 @@ CHILD_INHERITANCE_EXCLUDED_KEYS: Final = frozenset(
         # as has_massage and has_light are stored on every side anyway.
         CONF_PRODUCT_TYPE, *CONF_REVERSE_MOTORS,
         CONF_FSM_RELAX_MEMORY_NAMES, CONF_LIMOSS_REMOTE_THEME,
+        # The upgrade review belongs to the entry, not to either side.
+        CONF_PROFILE_REVIEW_PENDING,
         CONF_PAIR_ID,
         CONF_PAIR_MODE,
         CONF_PAIR_CHILDREN,

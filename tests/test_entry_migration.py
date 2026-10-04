@@ -38,7 +38,7 @@ async def test_ore_alias_becomes_sino(hass: HomeAssistant) -> None:
 
     assert await async_migrate_entry(hass, entry) is True
 
-    assert entry.minor_version == 2
+    assert entry.minor_version == 3
     assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SINO
 
 
@@ -93,5 +93,5 @@ async def test_other_entries_are_unchanged(hass: HomeAssistant) -> None:
 
     assert await async_migrate_entry(hass, entry) is True
 
-    assert (entry.version, entry.minor_version) == (4, 2)
+    assert (entry.version, entry.minor_version) == (4, 3)
     assert dict(entry.data) == data

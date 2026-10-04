@@ -305,6 +305,11 @@ CONF_PAIR_SCHEMA_VERSION: Final = "pair_schema_version"
 # Per-child descriptor key for which physical side the child drives.
 CONF_SIDE: Final = "side"
 
+# Set by the minor-version 3 migration on entries from before the explicit app
+# profiles whose route gained some, to the reviewed bed types and variants;
+# cleared once the review is answered or the route changes.
+CONF_PROFILE_REVIEW_PENDING: Final = "profile_review_pending"
+
 # pair_mode values: one shared BLE link vs two separate per-side links.
 PAIR_MODE_SINGLE_ADDRESS: Final = "single_address"
 PAIR_MODE_SEPARATE_ADDRESS: Final = "separate_address"
