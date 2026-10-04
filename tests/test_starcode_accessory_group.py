@@ -1,4 +1,7 @@
-"""Main plus three independent lifts, readiness and delayed-flat cancellation."""
+"""Main plus three independent lifts, readiness and delayed-flat cancellation.
+
+The "elevate" member is a released ``star_elevate`` entry, as in production.
+"""
 
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -8,8 +11,13 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.star_elevate import (
+    StarElevateCommands,
+    StarElevateController,
+)
 from custom_components.adjustable_bed.beds.starcode_m5x5 import StarcodeM5X5Controller
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_M5X5,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
@@ -33,6 +41,12 @@ def target(hass: HomeAssistant, index: int, profile: str) -> AdjustableBedCoordi
         "kneading": "STAR255402123456",
         "elevate": "ELEVATE123456",
     }[profile]
+    elevate = profile == "elevate"
+    app_fields = (
+        {}
+        if elevate
+        else {CONF_STARCODE_M5X5_PROFILE: profile, CONF_BLE_DEVICE_NAME: name}
+    )
     entry = MockConfigEntry(
         domain=DOMAIN,
         title=name,
@@ -40,18 +54,22 @@ def target(hass: HomeAssistant, index: int, profile: str) -> AdjustableBedCoordi
         data={
             CONF_ADDRESS: f"AA:00:00:00:00:{index:02X}",
             CONF_NAME: name,
-            CONF_BED_TYPE: BED_TYPE_STARCODE_M5X5,
-            CONF_STARCODE_M5X5_PROFILE: profile,
-            CONF_BLE_DEVICE_NAME: name,
+            CONF_BED_TYPE: BED_TYPE_STAR_ELEVATE if elevate else BED_TYPE_STARCODE_M5X5,
+            **app_fields,
             CONF_STARCODE_LIFT_ENTRIES: [],
         },
     )
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)
     coordinator._client = MagicMock(is_connected=True)
-    controller = StarcodeM5X5Controller(coordinator, profile=profile)
-    controller._ready = True
-    controller.dialect = "star"
+    controller: StarcodeM5X5Controller | StarElevateController
+    if elevate:
+        controller = StarElevateController(coordinator)
+        controller._initialized = True
+    else:
+        controller = StarcodeM5X5Controller(coordinator, profile=profile)
+        controller._ready = True
+        controller.dialect = "star"
     controller.write_command = AsyncMock()
     coordinator._controller = controller
     coordinator.async_ensure_connected = AsyncMock(return_value=True)
@@ -63,6 +81,12 @@ def target(hass: HomeAssistant, index: int, profile: str) -> AdjustableBedCoordi
     coordinator.async_stop_command = AsyncMock()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     return coordinator
+
+
+def flat_frame(controller: StarcodeM5X5Controller | StarElevateController) -> bytes:
+    if isinstance(controller, StarElevateController):
+        return StarElevateCommands.FLAT
+    return controller.packet("flat")
 
 
 def group(
@@ -104,7 +128,8 @@ async def test_all_four_bed_classes_in_main_and_lift_slots(
         "5a010310304fa5" if profile == "elevate" else "5a010310301fa5"
     )
     for lift in lifts:
-        expected = "5a0103103044a5" if lift.controller.profile == "elevate" else "5a010310300ca5"
+        elevate = isinstance(lift.controller, StarElevateController)
+        expected = "5a0103103044a5" if elevate else "5a010310300ca5"
         assert any(
             call.args[0] == bytes.fromhex(expected)
             for call in lift.controller.write_command.await_args_list
@@ -315,7 +340,7 @@ async def test_delayed_flat_holds_quick_handoff_connections(hass: HomeAssistant)
             member._client.disconnect.assert_not_awaited()
             assert member._command_connection_holds == 0
         for lift in lifts:
-            assert lift.controller.packet("flat") in {
+            assert flat_frame(lift.controller) in {
                 call.args[0] for call in lift.controller.write_command.await_args_list
             }
     finally:
@@ -357,7 +382,7 @@ async def test_delayed_flat_aborts_after_any_retained_session_changes(
     ):
         await run_group(main, "flat")
     for controller in retained_lift_controllers:
-        assert controller.packet("flat") not in {
+        assert flat_frame(controller) not in {
             call.args[0] for call in controller.write_command.await_args_list
         }
     assert all(member._command_connection_holds == 0 for member in (main, *lifts))

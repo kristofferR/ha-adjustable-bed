@@ -487,13 +487,13 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
             {
                 "type": BED_TYPE_STARCODE_M5X5,
                 "label": "AdjustableM5X5 app",
-                "description": "CB25, F23, kneading and Elevate with independently addressed lifts",
+                "description": "CB25, F23 and kneading beds with independently addressed lifts",
                 "hint": "Select the app class and exact Bluetooth name in the next step",
             },
             {
                 "type": BED_TYPE_STAR_ELEVATE,
                 "label": "ELEVATE two-actuator lift",
-                "description": "Separate ELEVATE accessory used with M1X12/M5X5 systems",
+                "description": "Separate ELEVATE accessory, also an AdjustableM5X5 group lift",
                 "hint": "Device name starts with 'ELEVATE' and advertises Nordic UART",
             },
         ],

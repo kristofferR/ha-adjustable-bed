@@ -601,8 +601,8 @@
         },
         "data_description": {
           "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. A friendly display name cannot identify the app class or remote.",
-          "starcode_m5x5_profile": "Choose CB25, F23, kneading or Elevate to match the exact Bluetooth name.",
-          "starcode_lift_entries": "Choose up to three other configured AdjustableM5X5 entries. This main and the three lifts keep separate Bluetooth addresses and controls."
+          "starcode_m5x5_profile": "Choose CB25, F23 or kneading to match the exact Bluetooth name. ELEVATE lifts use the DewertOkin ELEVATE bed type.",
+          "starcode_lift_entries": "Choose up to three other configured AdjustableM5X5 or DewertOkin ELEVATE entries. This main and the three lifts keep separate Bluetooth addresses and controls."
         }
       },
       "fsm_relax": {
@@ -702,7 +702,8 @@
       "starcode_app_invalid": "Choose a supported app selector and a live Bluetooth transport.",
       "motion_bed_profile": "Choose a supported Motion Bed name or an explicit app-restored profile, with layouts belonging to the same surface.",
       "starcode_profile_mismatch": "Choose the bed class matching the exact case-sensitive Bluetooth name.",
-      "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 entries with different Bluetooth addresses.",
+      "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 or DewertOkin ELEVATE entries with different Bluetooth addresses.",
+      "starcode_elevate_bed_type": "ELEVATE lifts use the DewertOkin ELEVATE bed type. Set them up with it, then select them as lifts here.",
       "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each).",
       "limoss_remote_product_required": "Select bed or chair for this app profile.",
       "limoss_remote_feature_update_failed": "The feature OFF commands could not complete. Settings were not saved.",
@@ -854,8 +855,8 @@
           "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. Motion Bed and AdjustableM5X5 profiles are identified from it, not from a friendly display name.",
           "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
           "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
-          "starcode_lift_entries": "Choose up to three other configured AdjustableM5X5 entries. This main and the three lifts keep separate Bluetooth addresses and controls.",
-          "starcode_m5x5_profile": "Choose CB25, F23, kneading or Elevate to match the exact Bluetooth name."
+          "starcode_lift_entries": "Choose up to three other configured AdjustableM5X5 or DewertOkin ELEVATE entries. This main and the three lifts keep separate Bluetooth addresses and controls.",
+          "starcode_m5x5_profile": "Choose CB25, F23 or kneading to match the exact Bluetooth name. ELEVATE lifts use the DewertOkin ELEVATE bed type."
         }
       },
       "remove_bond": {
@@ -938,7 +939,8 @@
       "starcode_app_invalid": "Choose a supported app selector and a live Bluetooth transport.",
       "motion_bed_profile": "Choose a supported Motion Bed name or an explicit app-restored profile, with layouts belonging to the same surface.",
       "starcode_profile_mismatch": "Choose the bed class matching the exact case-sensitive Bluetooth name.",
-      "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 entries with different Bluetooth addresses.",
+      "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 or DewertOkin ELEVATE entries with different Bluetooth addresses.",
+      "starcode_elevate_bed_type": "ELEVATE lifts use the DewertOkin ELEVATE bed type. Set them up with it, then select them as lifts here.",
       "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each).",
       "invalid_pulse_count_range": "For this app profile, the motor pulse count must be between 1 and 600.",
       "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses.",
@@ -5353,7 +5355,7 @@
       "fields": {
         "device_id": {
           "name": "Main bed",
-          "description": "An AdjustableM5X5 main entry with selected lift entries."
+          "description": "An AdjustableM5X5 or DewertOkin ELEVATE main entry with selected lift entries."
         },
         "action": {
           "name": "Action",

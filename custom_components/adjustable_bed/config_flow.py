@@ -128,6 +128,7 @@ from .const import (
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SOLACE,
+    BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SVANE,
@@ -275,6 +276,7 @@ from .const import (
     SOLACE_VARIANT_WOOSA,
     STARCODE_APP_CONFIG_KEYS,
     STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
+    STARCODE_GROUP_BED_TYPES,
     SVANE_VARIANT_JENSEN_LINON,
     SVANE_VARIANT_JMC,
     SVANE_VARIANTS,
@@ -1178,8 +1180,6 @@ def _add_starcode_schema_fields(
     hass: HomeAssistant,
     main_entry_id: str | None = None,
 ) -> None:
-    from .starcode_accessory_group import lift_choices
-
     schema[vol.Required(
         CONF_BLE_DEVICE_NAME,
         default=data.get(CONF_BLE_DEVICE_NAME, data.get(CONF_NAME, vol.UNDEFINED)),
@@ -1187,7 +1187,19 @@ def _add_starcode_schema_fields(
     schema[vol.Required(
         CONF_STARCODE_M5X5_PROFILE,
         default=data.get(CONF_STARCODE_M5X5_PROFILE, vol.UNDEFINED),
-    )] = vol.In({"cb25": "CB25", "f23": "F23", "kneading": "Kneading", "elevate": "Elevate"})
+    )] = vol.In({"cb25": "CB25", "f23": "F23", "kneading": "Kneading"})
+    _add_starcode_lift_field(schema, data, hass, main_entry_id)
+
+
+def _add_starcode_lift_field(
+    schema: dict[vol.Marker, Any],
+    data: Mapping[str, Any],
+    hass: HomeAssistant,
+    main_entry_id: str | None = None,
+) -> None:
+    """Select lifts for an AdjustableM5X5 main, which may itself be an ELEVATE."""
+    from .starcode_accessory_group import lift_choices
+
     schema[vol.Optional(
         CONF_STARCODE_LIFT_ENTRIES, default=data.get(CONF_STARCODE_LIFT_ENTRIES, []),
     )] = SelectSelector(SelectSelectorConfig(
@@ -1204,11 +1216,20 @@ def _starcode_errors(
     hass: HomeAssistant, data: Mapping[str, Any], main_entry_id: str | None = None,
 ) -> dict[str, str]:
     from .beds.starcode_m5x5 import profile_from_name
-    from .starcode_accessory_group import validate_lift_entries
 
     name = data.get(CONF_BLE_DEVICE_NAME)
+    if isinstance(name, str) and name.startswith("ELEVATE"):
+        return {CONF_STARCODE_M5X5_PROFILE: "starcode_elevate_bed_type"}
     if not isinstance(name, str) or profile_from_name(name) != data.get(CONF_STARCODE_M5X5_PROFILE):
         return {CONF_STARCODE_M5X5_PROFILE: "starcode_profile_mismatch"}
+    return _starcode_lift_errors(hass, data, main_entry_id)
+
+
+def _starcode_lift_errors(
+    hass: HomeAssistant, data: Mapping[str, Any], main_entry_id: str | None = None,
+) -> dict[str, str]:
+    from .starcode_accessory_group import validate_lift_entries
+
     try:
         validate_lift_entries(
             hass, data, data.get(CONF_STARCODE_LIFT_ENTRIES, []), main_entry_id=main_entry_id,
@@ -2097,8 +2118,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         errors = _starcode_errors(self.hass, data) if user_input is not None else {}
         if user_input is not None and not errors:
             data[CONF_MOTOR_COUNT] = 2
-            data[CONF_HAS_MASSAGE] = data[CONF_STARCODE_M5X5_PROFILE] != "elevate"
-            data[CONF_DISABLE_ANGLE_SENSING] = data[CONF_STARCODE_M5X5_PROFILE] == "elevate"
+            data[CONF_HAS_MASSAGE] = True
+            data[CONF_DISABLE_ANGLE_SENSING] = False
             self._manual_data = data
             return await self._finish_with_verify(data, data.get(CONF_NAME, "AdjustableM5X5"))
         schema: dict[vol.Marker, Any] = {}
@@ -6552,8 +6573,9 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 data.pop(key, None)
 
         if bed_type != BED_TYPE_STARCODE_M5X5:
-            for key in (CONF_STARCODE_M5X5_PROFILE, CONF_STARCODE_LIFT_ENTRIES):
-                data.pop(key, None)
+            data.pop(CONF_STARCODE_M5X5_PROFILE, None)
+        if bed_type not in STARCODE_GROUP_BED_TYPES:
+            data.pop(CONF_STARCODE_LIFT_ENTRIES, None)
         if bed_type != BED_TYPE_VIBRADORM_APP:
             for key in VIBRADORM_APP_CONFIG_KEYS:
                 data.pop(key, None)
@@ -7036,6 +7058,10 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 _add_starcode_schema_fields(
                     schema_dict, current_data, self.hass, self.config_entry.entry_id
                 )
+            elif bed_type == BED_TYPE_STAR_ELEVATE:
+                _add_starcode_lift_field(
+                    schema_dict, current_data, self.hass, self.config_entry.entry_id
+                )
             elif bed_type == BED_TYPE_MALOUF_APP:
                 _add_malouf_app_schema_fields(
                     schema_dict, current_data, persisted_data=self.config_entry.data
@@ -7439,9 +7465,14 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 app_errors = _starcode_errors(self.hass, {**current_data, **user_input}, self.config_entry.entry_id)
                 if app_errors:
                     return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors)
-                selected = user_input.get(CONF_STARCODE_M5X5_PROFILE, current_data.get(CONF_STARCODE_M5X5_PROFILE))
-                user_input[CONF_HAS_MASSAGE] = selected != "elevate"
-                user_input[CONF_DISABLE_ANGLE_SENSING] = selected == "elevate"
+                user_input[CONF_HAS_MASSAGE] = True
+                user_input[CONF_DISABLE_ANGLE_SENSING] = False
+            if bed_type == BED_TYPE_STAR_ELEVATE and not separate_address_pair:
+                lift_errors = _starcode_lift_errors(
+                    self.hass, {**current_data, **user_input}, self.config_entry.entry_id
+                )
+                if lift_errors:
+                    return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors=lift_errors)
             if bed_type == BED_TYPE_VIBRADORM_APP and not separate_address_pair:
                 app_data = _vibradorm_app_data(current_data, user_input)
                 if _vibradorm_app_form_changed(current_data, user_input):

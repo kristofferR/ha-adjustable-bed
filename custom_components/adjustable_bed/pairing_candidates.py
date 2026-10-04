@@ -17,7 +17,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 
-from .const import BED_TYPE_STARCODE_M5X5, CONF_BED_TYPE, CONF_STARCODE_LIFT_ENTRIES, DOMAIN
+from .const import CONF_BED_TYPE, CONF_STARCODE_LIFT_ENTRIES, DOMAIN, STARCODE_GROUP_BED_TYPES
 from .pairing import is_paired, pair_member_addresses
 
 CONF_PAIR_SELECTION = "pair_selection"
@@ -44,7 +44,7 @@ def active_pairing_candidates(hass: HomeAssistant) -> list[ConfigEntry]:
     for entry in entries:
         lifts = entry.data.get(CONF_STARCODE_LIFT_ENTRIES)
         if (
-            entry.data.get(CONF_BED_TYPE) == BED_TYPE_STARCODE_M5X5
+            entry.data.get(CONF_BED_TYPE) in STARCODE_GROUP_BED_TYPES
             and isinstance(lifts, (tuple, list))
             and lifts
         ):

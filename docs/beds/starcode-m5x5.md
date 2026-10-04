@@ -1,6 +1,6 @@
 # AdjustableM5X5 app
 
-Select **AdjustableM5X5 app** for the artifact-verified behavior of `com.starcode.abm5_5` 1.2.3 (version code 6). Hardware validation remains unverified. The generic BOX25 and Elevate routes retain their other app contracts.
+Select **AdjustableM5X5 app** for the artifact-verified behavior of `com.starcode.abm5_5` 1.2.3 (version code 6). Hardware validation remains unverified. The generic BOX25 route retains its other app contracts. ELEVATE lifts use the [DewertOkin ELEVATE](star-elevate.md) bed type, which joins this app's lift groups.
 
 ## Exact profile and session
 
@@ -11,15 +11,14 @@ Enter the exact case-sensitive Bluetooth name separately from a friendly name:
 | `STAR254205`, `STAR255401` | F23 |
 | `STAR255402`, `STAR255403` | Kneading |
 | Remaining `STAR25` | CB25 |
-| `ELEVATE` | Elevate |
 
-These names and the shared transport cannot distinguish the app from other software. Discovery asks the user to choose the app. All four bedding classes may occupy either the main or an independently addressed lift slot. Desk, TV, seating and unknown fallback classes fail the artifact's bedding feature guards.
+These names and the shared transport cannot distinguish the app from other software. Discovery asks the user to choose the app. A name starting `ELEVATE` is rejected here with a pointer to the DewertOkin ELEVATE bed type. The three bed classes and ELEVATE entries may each occupy either the main or an independently addressed lift slot. Desk, TV, seating and unknown fallback classes fail the artifact's bedding feature guards.
 
 Required services/roles are Nordic UART `6e400001-b5a3-f393-e0a9-e50e24dcca9e`, write `6e400002-…`, notify `6e400003-…`, Device Information `0000180a-0000-1000-8000-00805f9b34fb`, and readable firmware `00002a28-…`. Optional manufacturer is `00002a29-…`. RX subscribes before the sender initializes. Every write uses **without response**. Bleak selects notification/indication subscription from actual properties; the Android request for MTU 512 does not establish a mandatory peripheral MTU.
 
 Each manufacturer byte becomes a character, is lowercased and is compared **exactly** with `star`. Equal selects the Star dialect; empty, missing, failure or other strings select legacy. No substring match or whitespace stripping occurs. Firmware uses the same character-code concatenation; a failed five-second read is explicit diagnostic state. Manufacturer has a one-second read budget. No custom PIN or owned bonding call is inferred.
 
-Star CB25/F23/kneading and Elevate enqueue one `5a0b00a5` initialization frame on the next 100 ms tick. Legacy CB25/F23/kneading do not unconditionally wake. F23/kneading then send local-clock correction. RGB query follows settled manufacturer selection. Every session owns its callbacks; old subscriptions cannot publish into a replacement session.
+Star CB25/F23/kneading enqueue one `5a0b00a5` initialization frame on the next 100 ms tick. Legacy CB25/F23/kneading do not unconditionally wake. F23/kneading then send local-clock correction. RGB query follows settled manufacturer selection. Every session owns its callbacks; old subscriptions cannot publish into a replacement session.
 
 ## Packets and commands
 
@@ -49,7 +48,7 @@ Legacy light on/off uses `08 02 00 00 00 00 BE32(key)`, with keys `40` and `80`.
 | Massage toggle/off | `0100` / `02000000` | `5a` / `6f` |
 | Light cycle | `040000` | `70` |
 
-Elevate uses Star low bytes `40/41` for actuator 1, `42/43` for actuator 2, `44/45` for both, `46` for one-shot flat, `0f` STOP and `4f` interrupt. It has no inferred lumbar, programming, massage, RGB or semantic notification state.
+The app's ELEVATE class uses Star low bytes `40/41` for actuator 1, `42/43` for actuator 2, `44/45` for both, `46` for one-shot flat, `0f` STOP and `4f` interrupt, the same table as the released [ELEVATE](star-elevate.md) controller. That bed type now carries these vectors and the group behavior below.
 
 Commands run on the next available **100 ms** sender tick, with one write in flight. Held app actions become bounded HA pulses and remain cancellable. Movement always releases with a fresh STOP event; relative massage adds the manufacturer-selected **base** query after neutral, including on F23/kneading. No configurable delay replaces the artifact's cadence.
 
@@ -84,7 +83,7 @@ Read results stay local until ownership is checked before publication. Queued wr
 
 ## One main plus three lifts
 
-Configure up to three other AdjustableM5X5 entries on the main entry. This supports **four physical targets**, one main plus three lifts, each with its own BLE coordinator. Use `adjustable_bed.starcode_move_lifts` with `up`, `down`, `flat` or `stop`. Each lift may be any of the four bedding classes; lift fanout uses only native union movement, STOP/interrupt and flat. Individual Elevate actuator controls remain available when restored in a main slot.
+Configure up to three other AdjustableM5X5 or DewertOkin ELEVATE entries on the main entry. An ELEVATE main selects its lifts in its own options. This supports **four physical targets**, one main plus three lifts, each with its own BLE coordinator. Use `adjustable_bed.starcode_move_lifts` with `up`, `down`, `flat` or `stop`. Each lift may be any of the three bed classes or an ELEVATE; lift fanout uses only native union movement, STOP/interrupt and flat. An ELEVATE main keeps its individual actuator controls.
 
 All selected targets must be ready before group writes. Individual main movement interrupts reachable ready lifts; individual lift movement interrupts its reachable ready main. Unloaded, disconnected or unready peers, and peer write failures, do not block a healthy individual control. Related pending group admissions are cancelled before peer writes, without requiring an offline peer to reconnect. Dedicated group movement still requires every selected member to be ready. Composite flat interrupts the group, sends main flat, waits **1600 ms**, then sends lift flat. Every target's connection is held through dispatch, delay and cleanup, including with Disconnect After Command enabled. STOP, changed selection, lost transport, replacement coordinator/controller/client/session or unload cancels delayed writes. Failure/cancellation cleans every admitted target. Group STOP first cancels retained delayed operations and attempts STOP on every reachable configured member, even if the main or another lift is unavailable. It reports missing members or transport errors after attempting the remaining targets. Movement admission still requires the complete selection to be ready. Successful Elevate flat receives no invented immediate STOP. Grouping does not transfer entity/device ownership into the Left/Right paired registry, and never fans out RGB, massage, programming or firmware updates.
 
@@ -115,7 +114,3 @@ cleanup cannot cancel its new movement. Caller cancellation leaves old cleanup
 running; explicit STOP, changed selection, unload or a newer individual request
 invalidates a waiting admission. Failed cleanup on an unavailable peer does not
 block the healthy individual target.
-
-Selecting Elevate retires the previous back, legs and lumbar position sliders
-and every M5X5 telemetry entity. The BLE connection sensor and unrelated registry
-rows retain their identities. Other profiles keep their active feedback entities.

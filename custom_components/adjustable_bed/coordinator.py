@@ -123,7 +123,6 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SOLACE,
     BED_TYPE_STARCODE_ABM5_4,
-    BED_TYPE_STARCODE_M5X5,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
@@ -205,6 +204,7 @@ from .const import (
     RUNTIME_BOND_KEYS,
     SOLACE_VARIANT_WOOSA,
     STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
+    STARCODE_GROUP_BED_TYPES,
     VARIANT_AUTO,
     VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS,
     VIBRADORM_VMAT_ONBOARDING_TIMEOUT_SECONDS,
@@ -6065,7 +6065,7 @@ class AdjustableBedCoordinator:
                 context.pulse_delay_ms = previous_pulse_delay_ms
             return
 
-        if self._bed_type == BED_TYPE_STARCODE_M5X5:
+        if self._bed_type in STARCODE_GROUP_BED_TYPES:
             from .starcode_accessory_group import prepare_individual_command
 
             await prepare_individual_command(self, controller_command)

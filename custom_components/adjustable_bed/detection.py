@@ -546,7 +546,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
 
     BED_TYPE_FSM_RELAX: "FSM Relax app (explicit chair/bed profile)",
 
-    BED_TYPE_STARCODE_M5X5: "AdjustableM5X5 app (CB25 / F23 / kneading / Elevate)",
+    BED_TYPE_STARCODE_M5X5: "AdjustableM5X5 app (CB25 / F23 / kneading)",
     BED_TYPE_FURNIMOVE: "FurniMove / OKIN Smart Remote (choose handset ID)",
     BED_TYPE_SERENITY: "Jordan's Serenity app",
     BED_TYPE_TRANQUIL: "Jordan's Tranquil app",
@@ -1591,16 +1591,17 @@ def _detect_bed_type_detailed(
             ),
         )
 
-    if (service_info.name or "").startswith(("STAR25", "ELEVATE")):
-        other = BED_TYPE_STAR_ELEVATE if (service_info.name or "").startswith("ELEVATE") else BED_TYPE_SLEEPYS_BOX25
+    if (service_info.name or "").startswith("STAR25"):
         return DetectionResult(
-            bed_type=other, confidence=0.65,
+            bed_type=BED_TYPE_SLEEPYS_BOX25, confidence=0.65,
             signals=[*signals, "name:starcode_bedding_app_choices"],
             ambiguous_types=[BED_TYPE_STARCODE_M5X5],
         )
 
     # ELEVATE is a separate StarCode controller with a dedicated 0x40-0x4F
-    # command range. Check it before the generic Star controller family.
+    # command range. Check it before the generic Star controller family. It is
+    # the one route for both apps' ELEVATE lifts, including AdjustableM5X5
+    # groups, so the app does not make this name ambiguous.
     if any(device_name.startswith(pattern) for pattern in STAR_ELEVATE_NAME_PATTERNS):
         signals.append("name:star_elevate")
         if NORDIC_UART_SERVICE_UUID.lower() in service_uuids:

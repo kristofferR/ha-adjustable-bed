@@ -202,13 +202,13 @@ def parse_notification(
     """Return only delivered fields, without mutating previous or inventing ACKs.
 
     Delta application preserves prior alarm slots and sonic fields, including on
-    EQ's USB-only sonic update. Elevate only logs notifications in this artifact.
+    EQ's USB-only sonic update. ELEVATE lifts use the separate star_elevate type.
     No app debounce suppression is carried into Home Assistant.
     """
     star = _is_star(dialect)
-    if profile not in ("cb25", "f23", "kneading", "elevate"):
+    if profile not in ("cb25", "f23", "kneading"):
         raise ValueError(f"Unknown AdjustableM5X5 profile: {profile}")
-    if profile == "elevate" or len(data) < 2 or data[0] != 0xA5:
+    if len(data) < 2 or data[0] != 0xA5:
         return {}
     match data[1]:
         case 0x0D if len(data) >= 18:

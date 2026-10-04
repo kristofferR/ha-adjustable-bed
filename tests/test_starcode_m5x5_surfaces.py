@@ -50,7 +50,7 @@ def _entity_strings() -> dict:
 async def test_paired_generic_settings_preserve_child_app_profiles(hass: HomeAssistant) -> None:
     main, *lifts = group(hass)
     left = {**main.entry.data, CONF_STARCODE_LIFT_ENTRIES: []}
-    right = dict(lifts[0].entry.data)
+    right = dict(lifts[1].entry.data)
     entry = MockConfigEntry(domain=DOMAIN, data=build_pair_entry_data(left, right, name="Pair"))
     entry.add_to_hass(hass)
     original = entry.data[CONF_PAIR_CHILDREN]
@@ -70,7 +70,6 @@ async def test_paired_generic_settings_preserve_child_app_profiles(hass: HomeAss
         ("cb25", "STAR252201123456"),
         ("f23", "STAR254205123456"),
         ("kneading", "STAR255402123456"),
-        ("elevate", "ELEVATE123456"),
     ],
 )
 async def test_explicit_setup_and_factory(hass: HomeAssistant, profile: str, name: str) -> None:
@@ -92,8 +91,8 @@ async def test_explicit_setup_and_factory(hass: HomeAssistant, profile: str, nam
             {CONF_STARCODE_M5X5_PROFILE: profile, CONF_BLE_DEVICE_NAME: name}
         )
     data = finish.await_args.args[0]
-    assert data[CONF_DISABLE_ANGLE_SENSING] == (profile == "elevate")
-    assert data[CONF_HAS_MASSAGE] == (profile != "elevate")
+    assert data[CONF_DISABLE_ANGLE_SENSING] is False
+    assert data[CONF_HAS_MASSAGE] is True
     c = target(hass, 10, profile)
     controller = await create_controller(c, BED_TYPE_STARCODE_M5X5, "auto", None)
     assert controller.profile == profile
@@ -214,3 +213,36 @@ async def test_registered_group_service_and_schema(hass: HomeAssistant) -> None:
             {CONF_DEVICE_ID: device.id, "action": "program"},
             blocking=True,
         )
+
+
+async def test_elevate_name_points_to_the_elevate_bed_type(hass: HomeAssistant) -> None:
+    """ELEVATE lifts are set up as DewertOkin ELEVATE, then selected as lifts."""
+    flow = AdjustableBedConfigFlow()
+    flow.hass = hass
+    flow._manual_data = {
+        CONF_ADDRESS: "AA:00:00:00:00:05",
+        CONF_NAME: "Lift",
+        CONF_BED_TYPE: BED_TYPE_STARCODE_M5X5,
+    }
+    result = await flow.async_step_starcode_m5x5(
+        {CONF_STARCODE_M5X5_PROFILE: "cb25", CONF_BLE_DEVICE_NAME: "ELEVATE123456"}
+    )
+    assert result["errors"] == {CONF_STARCODE_M5X5_PROFILE: "starcode_elevate_bed_type"}
+
+
+async def test_elevate_main_selects_lifts_in_its_options(hass: HomeAssistant) -> None:
+    """The app's restored ELEVATE main slot keeps its lift group on the ELEVATE type."""
+    main = target(hass, 1, "elevate")
+    lift = target(hass, 2, "cb25")
+    flow = AdjustableBedOptionsFlow(main.entry)
+    flow.handler = main.entry.entry_id
+    flow.hass = hass
+    form = await flow.async_step_settings()
+    assert CONF_STARCODE_LIFT_ENTRIES in {marker.schema for marker in form["data_schema"].schema}
+    rejected = await flow.async_step_settings(
+        {CONF_STARCODE_LIFT_ENTRIES: [main.entry.entry_id]}
+    )
+    assert rejected["errors"] == {CONF_STARCODE_LIFT_ENTRIES: "starcode_invalid_lifts"}
+    saved = await flow.async_step_settings({CONF_STARCODE_LIFT_ENTRIES: [lift.entry.entry_id]})
+    assert saved["type"] == FlowResultType.CREATE_ENTRY
+    assert main.entry.data[CONF_STARCODE_LIFT_ENTRIES] == [lift.entry.entry_id]

@@ -496,6 +496,9 @@ BED_TYPE_STAR_ELEVATE: Final = "star_elevate"  # ELEVATE two-actuator StarCode a
 BED_TYPE_SVANE: Final = "svane"  # Svane LinonPI multi-service protocol
 BED_TYPE_VIBRADORM: Final = "vibradorm"  # Vibradorm VMAT protocol
 BED_TYPE_STARCODE_M5X5: Final = "starcode_m5x5"
+# AdjustableM5X5 groups: a main plus independently addressed lifts. ELEVATE
+# accessories join through their own bed type.
+STARCODE_GROUP_BED_TYPES: Final = frozenset({BED_TYPE_STARCODE_M5X5, BED_TYPE_STAR_ELEVATE})
 BED_TYPE_VIBRADORM_APP: Final = "vibradorm_app"
 BED_TYPE_VMATBASIC: Final = "vmatbasic"
 BED_TYPE_STARCODE_ABM5_4: Final = "starcode_abm5_4"

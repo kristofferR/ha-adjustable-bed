@@ -1,4 +1,8 @@
-"""AdjustableM5X5's main plus up to three independently addressed lifts."""
+"""AdjustableM5X5's main plus up to three independently addressed lifts.
+
+Members are AdjustableM5X5 bed entries or ELEVATE accessories, which keep their
+released ``star_elevate`` bed type and controller.
+"""
 
 from __future__ import annotations
 
@@ -20,13 +24,16 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.service import async_get_device_and_config_entry
 
 from .beds.base import BedController
+from .beds.star_elevate import StarElevateController
 from .beds.starcode_m5x5 import PROFILES, StarcodeM5X5Controller
 from .const import (
+    BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_M5X5,
     CONF_BED_TYPE,
     CONF_STARCODE_LIFT_ENTRIES,
     CONF_STARCODE_M5X5_PROFILE,
     DOMAIN,
+    STARCODE_GROUP_BED_TYPES,
 )
 from .coordinator import AdjustableBedCoordinator
 from .pairing import is_paired
@@ -36,6 +43,17 @@ _LOGGER = logging.getLogger(__name__)
 _OPERATIONS = f"{DOMAIN}_starcode_group_operations"
 _GROUP_DISPATCH: ContextVar[bool] = ContextVar("starcode_group_dispatch", default=False)
 type GroupTasks = dict[str, set[asyncio.Task[object]]]
+type GroupController = StarcodeM5X5Controller | StarElevateController
+
+
+def is_group_member(data: Mapping[str, object]) -> bool:
+    """Return whether an entry is one of the app's bed classes or an ELEVATE."""
+    if data.get(CONF_BED_TYPE) == BED_TYPE_STAR_ELEVATE:
+        return True
+    return (
+        data.get(CONF_BED_TYPE) == BED_TYPE_STARCODE_M5X5
+        and data.get(CONF_STARCODE_M5X5_PROFILE) in PROFILES
+    )
 
 
 @dataclass
@@ -76,7 +94,7 @@ def validate_lift_entries(
     *,
     main_entry_id: str | None = None,
 ) -> tuple[str, ...]:
-    """Validate offline identity and the app's four bedding classes in either slot."""
+    """Validate offline identity and the app's bed classes or ELEVATE in either slot."""
     if (
         not isinstance(entries, (tuple, list))
         or len(entries) > 3
@@ -89,13 +107,8 @@ def validate_lift_entries(
         if entry_id in result or entry_id == main_entry_id:
             raise ValueError("The main and each lift must be distinct")
         entry = hass.config_entries.async_get_entry(entry_id)
-        if (
-            entry is None
-            or entry.domain != DOMAIN
-            or entry.data.get(CONF_BED_TYPE) != BED_TYPE_STARCODE_M5X5
-            or entry.data.get(CONF_STARCODE_M5X5_PROFILE) not in PROFILES
-        ):
-            raise ValueError("Each lift must use an AdjustableM5X5 bedding profile")
+        if entry is None or entry.domain != DOMAIN or not is_group_member(entry.data):
+            raise ValueError("Each lift must use an AdjustableM5X5 bedding profile or ELEVATE")
         address = str(entry.data.get(CONF_ADDRESS, "")).upper()
         if not address or address in addresses:
             raise ValueError("Each group member must have a distinct Bluetooth address")
@@ -111,21 +124,25 @@ def lift_choices(hass: HomeAssistant, main_entry_id: str | None = None) -> dict[
     return {
         entry.entry_id: entry.title
         for entry in hass.config_entries.async_entries(DOMAIN)
-        if entry.entry_id != main_entry_id
-        and entry.data.get(CONF_BED_TYPE) == BED_TYPE_STARCODE_M5X5
-        and entry.data.get(CONF_STARCODE_M5X5_PROFILE) in PROFILES
+        if entry.entry_id != main_entry_id and is_group_member(entry.data)
     }
 
 
 def _resolve(hass: HomeAssistant, entry_id: str) -> AdjustableBedCoordinator:
     value = hass.data.get(DOMAIN, {}).get(entry_id)
-    if not isinstance(value, AdjustableBedCoordinator) or value.bed_type != BED_TYPE_STARCODE_M5X5:
+    if (
+        not isinstance(value, AdjustableBedCoordinator)
+        or value.bed_type not in STARCODE_GROUP_BED_TYPES
+    ):
         raise ServiceValidationError("The selected AdjustableM5X5 bed is unavailable")
     return value
 
 
-def _controller(controller: BedController | None) -> StarcodeM5X5Controller:
-    if not isinstance(controller, StarcodeM5X5Controller) or not controller.ready:
+def _controller(controller: BedController | None) -> GroupController:
+    if (
+        not isinstance(controller, (StarcodeM5X5Controller, StarElevateController))
+        or not controller.ready
+    ):
         raise ConnectionError("An AdjustableM5X5 group member is not ready")
     return controller
 
