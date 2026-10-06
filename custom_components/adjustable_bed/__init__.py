@@ -96,6 +96,7 @@ from .pairing import (
     pair_member_addresses,
     with_updated_child,
 )
+from .profile_recommendations import async_watch_profile_recommendations
 from .profile_review import (
     async_clear_profile_review_issue,
     async_refresh_profile_review_issue,
@@ -746,6 +747,10 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     if not children:
         raise ConfigEntryNotReady("Paired bed has no child sides configured")
 
+    # Observe the first connection too: sequential pairing may disconnect one
+    # side before platform setup, taking its live controller with it.
+    await async_watch_profile_recommendations(hass, entry, children.items())
+
     # Seed persisted capability snapshots before a live connection can cache an
     # incomplete discovery over them. Complete live discovery still refreshes
     # this fallback through cache_capability_controller().
@@ -1088,6 +1093,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     coordinator = AdjustableBedCoordinator(hass, entry)
     _async_ensure_device_registry_entry(hass, entry, coordinator)
+    await async_watch_profile_recommendations(hass, entry, ((None, coordinator),))
 
     # Connect to the bed with a timeout to avoid blocking startup forever
     _LOGGER.debug("Attempting initial connection to bed (timeout: %.0fs)...", SETUP_TIMEOUT)

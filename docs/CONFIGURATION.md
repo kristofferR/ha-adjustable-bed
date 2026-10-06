@@ -49,6 +49,24 @@ To adjust settings after setup:
 
 ---
 
+## Profile recommendations
+
+Home Assistant may show **A better profile may be available** under
+**Settings → System → Repairs** when observations from a normal connection
+match a verified recommendation. The notice explains the evidence and controls
+you would gain or lose. **Review suggested profile** opens its settings; nothing
+is saved until you submit them. Closing settings leaves your current profile.
+
+**Keep current profile** (or Ignore) dismisses that recommendation across restarts
+and updates. Only a materially different recommendation may ask again. For a
+paired bed, the notice identifies the affected side and explains any required
+split; neither side changes automatically.
+
+The initial rule covers the specific Star254202 identity reported with the
+Adjustable bed (Lumbar) profile. A shared Bluetooth service or a newly available
+app alone does not mean another profile is better. See
+[matching evidence and limits](design/profile-recommendations.md).
+
 ## Basic Settings
 
 | Setting | Options | Default | Description |

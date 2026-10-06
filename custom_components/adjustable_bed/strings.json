@@ -5845,7 +5845,7 @@
         "step": {
           "init": {
             "title": "Choose the app for {name}",
-            "description": "**{name}** was set up before these app profiles existed and uses {current}. If you control the bed with one of these apps, its profile follows that app's controls:\n{apps}\n\nChoose the app you use, or keep the current configuration if the bed already works as expected. You are only asked once. Your existing device and matching entity IDs are preserved.",
+            "description": "**{name}** was set up before these app profiles existed and uses {current}. If you control the bed with one of these apps, its profile follows that app's controls:\n{apps}\n\nA newly available app profile is not necessarily a better match and may expose fewer controls. Choose one only if you use that app and want its controls; otherwise keep the current configuration. You are only asked once. Your existing device and matching entity IDs are preserved.",
             "data": {
               "choice": "App profile"
             }
@@ -5906,6 +5906,34 @@
           "vibradorm_setup_unavailable": "The guided setup could not open. Your current setup and this review were kept. Open Reconfigure from the entry\u2019s three-dot menu."
         }
       }
+    },
+    "lumbar_star254202_box25": {
+      "title": "A better profile may be available for {target}",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Review the profile for {name}",
+            "description": "**{name}** currently uses **{current}**. Its observed Star254202 Bluetooth name and manufacturer match a reported bed where switching to **{suggested}** restored Memory 1 saving and recall. This is a possible match, not a guarantee for every bed with that identity.\n\nThe suggested profile exposes numbered memory controls. Lumbar-specific Save Zero Gravity, Save Lounge, Save Incline, Save Anti-Snore, Wave 1, Wave 2, Wave 3, Massage On and Check Massage buttons will no longer be available. The Incline preset is replaced by TV. Automations using removed controls will need updating. Existing device and matching entity IDs are preserved.\n\nReview opens the suggested profile\u2019s settings. Check them and submit to apply the change. Closing settings keeps your current profile. Choose Keep current profile to dismiss this suggestion across restarts and updates.",
+            "data": {
+              "action": "Profile choice"
+            }
+          },
+          "paired": {
+            "title": "Review the {side} bed in {name}",
+            "description": "**{name}**, {side} side ({address}):\n\n**{name}** currently uses **{current}**. Its observed Star254202 Bluetooth name and manufacturer match a reported bed where switching to **{suggested}** restored Memory 1 saving and recall. This is a possible match, not a guarantee for every bed with that identity.\n\nThe suggested profile exposes numbered memory controls. Lumbar-specific Save Zero Gravity, Save Lounge, Save Incline, Save Anti-Snore, Wave 1, Wave 2, Wave 3, Massage On and Check Massage buttons will no longer be available. The Incline preset is replaced by TV. Automations using removed controls will need updating. Existing device and matching entity IDs are preserved.\n\nThis recommendation applies only to this physical bed. Changing this app profile requires splitting the pair first. Review opens Configure: choose Split into two beds, then change only the affected bed to the suggested profile. No split or profile change happens automatically. Keep current profile dismisses this suggestion for this bed only.",
+            "data": {
+              "action": "Profile choice"
+            }
+          }
+        },
+        "error": {
+          "save_failed": "Your choice could not be saved. Please try again."
+        },
+        "abort": {
+          "recommendation_changed": "This recommendation is no longer available or the configuration changed. Open the current notice to review it.",
+          "review_started": "Continue in settings. Nothing changes until you submit them."
+        }
+      }
     }
   },
   "selector": {
@@ -5946,6 +5974,12 @@
     "app_profile_review": {
       "options": {
         "keep": "Keep current configuration"
+      }
+    },
+    "profile_recommendation_action": {
+      "options": {
+        "review": "Review suggested profile",
+        "keep": "Keep current profile"
       }
     }
   }
