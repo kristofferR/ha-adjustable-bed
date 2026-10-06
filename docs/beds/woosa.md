@@ -9,9 +9,9 @@ Use bed type **Solace** and explicitly select protocol variant **`woosa`** (Woos
 
 Automatic `QMS-MQ` and `QMS2` discovery retains the conservative common Solace profile. Those names are shared across apps and do not identify a Woosa product. An nRF Connect scan proves an advertised name, address and GATT structure, not which app's commands or physical layout a bed implements. Select this profile from the app/product you use, not merely from its BLE name.
 
-The profile supplies back and leg controls, Flat, Favourite (Memory 1), Anti-Snore / Love, TV and Zero-G presets, save actions for all four stored presets, dimmable lighting, timed lighting, massage levels/modes/timers, and a controller alarm. It has no measured position feedback, second numbered memory slot, audio player, or wire-level side selector.
+The profile supplies back and leg controls, Flat, Favourite (Memory 1), Anti-Snore, TV and Zero-G presets, save actions for all four stored presets, dimmable lighting, timed lighting, massage levels/modes/timers, and a controller alarm. It has no measured position feedback, second numbered memory slot, audio player, or wire-level side selector.
 
-The [remote illustration supplied with issue #606](https://github.com/user-attachments/assets/b3752885-7151-4b51-9649-eb0ec4b3ad62) labels the remaining preset **Anti-Snore**. The [reporter's iOS Dashboard screenshot](https://github.com/user-attachments/assets/f81a2d68-083a-477f-9dd5-f6a74cbfd99d) likewise shows **Preset 1 / ANTI SNORE**, alongside Favourite, TV and Zero Gravity. The audited Android app calls Preset 1 **Love**. HA displays **Anti-Snore / Love** and **Save Anti-Snore / Love position** so users of either app can recognize the control. This is a presentation alias based on those labels, not proof of equivalent iOS BLE commands or physical preset angles. Existing entity IDs and command behavior are preserved.
+The [remote illustration supplied with issue #606](https://github.com/user-attachments/assets/b3752885-7151-4b51-9649-eb0ec4b3ad62) labels the remaining preset **Anti-Snore**. The [reporter's iOS Dashboard screenshot](https://github.com/user-attachments/assets/f81a2d68-083a-477f-9dd5-f6a74cbfd99d) likewise shows **Preset 1 / ANTI SNORE**, alongside Favourite, TV and Zero Gravity. HA displays **Anti-Snore** and **Save Anti-Snore position** to match the reporter's iOS app and remote. The audited Android app calls the same preset category **Love**; that name is retained in this documentation only. This is a presentation correction based on those labels, not proof of equivalent iOS BLE commands or physical preset angles. Existing entity IDs and command behavior are preserved.
 
 ## Movement and presets
 
@@ -22,7 +22,7 @@ The app sends the **same frame for leg down and Flat** (`FF FF FF FF 05 00 00 00
 | HA action | Woosa app label |
 |---|---|
 | Memory 1 recall/save | CUSTOM / Favourite |
-| Anti-Snore / Love recall/save | Preset 1 / Anti-Snore (reporter's iOS app), Love (audited Android app) |
+| Anti-Snore recall/save | Preset 1 / Anti-Snore (reporter's iOS app), Love (audited Android app) |
 | TV recall/save | Preset 2 / TV |
 | Zero-G recall/save | Preset 3 / Zero gravity |
 
@@ -49,7 +49,7 @@ The existing **Adjustable Bed: Set Solace alarm** action (`adjustable_bed.solace
 | `zero_g` | Recall Zero gravity |
 | `no_action` | No preset movement; massage and sound can still be selected |
 
-Favourite and Zero gravity are also the preset choices in [the reporter's iOS alarm screenshot](https://github.com/user-attachments/assets/25224a7f-13cb-4b6e-9e2b-fce0a6dc3939). For Favourite, save the desired position using **Save to Memory 1** before setting the alarm. The controller alarm does not offer TV or Anti-Snore / Love. Music tracks belong to the MotionFlex profile and are rejected for Woosa.
+Favourite and Zero gravity are also the preset choices in [the reporter's iOS alarm screenshot](https://github.com/user-attachments/assets/25224a7f-13cb-4b6e-9e2b-fce0a6dc3939). For Favourite, save the desired position using **Save to Memory 1** before setting the alarm. The controller alarm does not offer TV or Anti-Snore. Music tracks belong to the MotionFlex profile and are rejected for Woosa.
 
 The same action can be used in a script or automation. This example sets a weekday alarm for Zero gravity at 07:30:
 

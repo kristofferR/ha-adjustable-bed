@@ -137,7 +137,7 @@ class WoosaController(SolaceController):
 
     @property
     def supports_preset_anti_snore(self) -> bool:
-        # The app labels this command Love, not anti-snore.
+        # Keep the app-specific action separate from the generic anti-snore capability.
         return False
 
     @property
@@ -215,8 +215,8 @@ class WoosaController(SolaceController):
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         actions = (
-            ("love", "Anti-Snore / Love"),
-            ("save_love", "Save Anti-Snore / Love position"),
+            ("love", "Anti-Snore"),
+            ("save_love", "Save Anti-Snore position"),
             ("save_tv", "Save TV position"),
             ("save_zero_g", "Save zero-gravity position"),
             *((f"mode_{mode}", f"Massage mode {mode}") for mode in range(1, 5)),

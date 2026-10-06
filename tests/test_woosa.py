@@ -682,8 +682,8 @@ async def test_woosa_setup_restores_light_and_exposes_profile_controls(
     entry.add_to_hass(hass)
     registry = er.async_get(hass)
     preset_labels = {
-        "woosa_love": "Anti-Snore / Love",
-        "woosa_program_love": "Save Anti-Snore / Love position",
+        "woosa_love": "Anti-Snore",
+        "woosa_program_love": "Save Anti-Snore position",
     }
     existing_preset_ids = {
         key: registry.async_get_or_create(
