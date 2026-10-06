@@ -8,9 +8,11 @@ app or its remote layout.
 
 ## Setup and remote selection
 
-Choose **VMAT** in the explicit app controller, then the same zero-based remote
-ordinal used by the app. Resource names identify shipped images, not proven
-physical products. Controls and features follow this exact selection.
+Choose **Vibradorm apps (Caresse Diamant, Werkmeister, VMAT)** in the bed-type
+picker, then **VMAT** and the same zero-based remote ordinal used by the app.
+**Vibradorm (VMAT)** is the separate generic controller. Resource names identify
+shipped images, not proven physical products. Controls and features follow this
+exact selection.
 Switching to Caresse or Werkmeister removes the VMAT remote from the saved
 profile. Separate-address sides keep their own remote selections.
 
@@ -168,3 +170,42 @@ presentation and unsafe queue/parser/cancellation behavior. Hardware absence
 does not defer implementation. Focused tests exercise real controller/setup
 delivery, frozen vectors, native-proof gates, timing and failure cleanup.
 Physical validation remains for users after beta/release.
+
+## Issue #403 reconciliation
+
+The original [parity request](https://github.com/kristofferR/ha-adjustable-bed/issues/403)
+predates the accepted independent app audits. Its assumption that Caresse,
+Werkmeister, VMAT and V-MAT Basic expose one interchangeable contract is
+superseded by their explicit profiles. The VMAT profile shipped in
+[v4.1.0](https://github.com/kristofferR/ha-adjustable-bed/releases/tag/v4.1.0).
+The outcomes below describe existing implementation and accepted exclusions;
+they do not change the frozen audit ledger.
+
+| Original request | Current outcome | Existing evidence |
+| --- | --- | --- |
+| Live positions, initialization flags and raw motor counts | EXCLUDED as a VMAT app feature: no reachable live position parser is proven. The generic controller retains its separate historical parser and angle estimates. | `VibradormAppController.supports_position_feedback`; `test_remote_contract_and_no_guessed_capabilities`; [generic controller](vibradorm.md#position-feedback) |
+| Full EEPROM collection and diagnostic field sensors | EXCLUDED as a supported app operation: unsolicited EEPROM/log recognition does not establish a reachable collector or query. | Accepted VMAT notification/capability dispositions; Caresse dead parser routes `R031-0548`–`R031-0550` in the [row031 ledger](../apk-analysis/row031-dispositions.md) |
+| Memory recall M1–M6 and store handshake | ALREADY_IMPLEMENTED where the selected remote enables memory, with the exact nine-frame save sequence. | `hold_control`, `program_memory`; `test_every_reachable_held_control_releases`, `test_complete_nine_frame_save_sequence` |
+| Status request and sync | ALREADY_IMPLEMENTED for the VMAT sync remotes as a reply-gated held action. The observed sync flag is exposed; it is not a position measurement. | `hold_control`, `_notification`, `controller_state_sensor_specs`; `test_sync_only_streams_while_response_is_pending_and_held`, `test_registered_notifications_are_bound_to_live_role_and_generation` |
+| Floor light, level and timer | ALREADY_IMPLEMENTED for selectable floor remotes, with their exact LIGHT or CBI route and pending timer state. | `_floor`, `set_pending_floor_timer`; `test_floor_delivery_full_shipped_range` |
+| Mood color, effects, speed and toggle | ALREADY_IMPLEMENTED for remotes 12/13, using the shipped palette and effect choices. | `_mood`, `set_mood_palette`, `set_mood_effect`, `set_mood_speed`; `test_all_shipped_palette_packets`, `test_all_mood_speed_positions` |
+| Unrestricted RGB color | EXCLUDED from app parity: the shipped UI supplies palette choices, not an arbitrary RGB control. | Accepted VMAT light/profile contract and palette vectors |
+| Massage modes, speed and two intensity zones | ALREADY_IMPLEMENTED for remotes 12/13, with full current/saved state and exact mode/off/restore ordering. | `_plan_massage_mode`, `_write_massage_packets`; `test_full_massage_state_packets_from_frozen_builder_vectors`, `test_automatic_individual_restore_clamps_and_exact_off_restore_order` |
+| Massage timer and OFF-command payload `01` | EXCLUDED from app parity: neither is exposed by a reachable shipped control. | Accepted VMAT massage contract and disabled-action gates |
+| Toggle, accessory bus selection, refresh and STOP | ALREADY_IMPLEMENTED per selected remote. Logical construction advances the toggle; held repeats reuse the packet. | `_header`, `_write`, `_release`; `test_every_reachable_held_control_releases`, `test_single_shots_wait_after_success_completion_and_stop_bypasses_delay` |
+| Automatic generic layout from control-version metadata | EXCLUDED: shared metadata does not select the app's remote or establish physical actuator identity. All fourteen shipped VMAT selections are explicitly available. | `VMAT_REMOTES`; `test_remote_contract_and_no_guessed_capabilities`, `test_remote_flags_cannot_be_spoofed` |
+
+Code references above are in
+[`vibradorm_app.py`](../../custom_components/adjustable_bed/beds/vibradorm_app.py)
+and [`vibradorm_vmat_profiles.py`](../../custom_components/adjustable_bed/vibradorm_vmat_profiles.py).
+Test references are in
+[`test_vibradorm_vmat.py`](../../tests/test_vibradorm_vmat.py); the
+[VMAT ledger](vmat-dispositions.json) retains the exact accepted source bindings.
+[Caresse / Werkmeister](vibradorm_app.md) and [V-MAT Basic](vmatbasic.md)
+have their own independent feature gates, vectors and dispositions.
+
+The requested MC4-MD08 retest remains deferred physical validation for its
+owner after release. The accepted app implementation does not prove that
+[issue #162](https://github.com/kristofferR/ha-adjustable-bed/issues/162) is fixed
+or that a particular controller reports positions. No in-scope implementation
+item is deferred for lack of maintainer hardware.

@@ -1,6 +1,7 @@
-# Vibradorm
+# Vibradorm: generic controller
 
-**Status:** ✅ Tested
+**Status:** ✅ Tested generic controller. The separate app profiles below have
+artifact-verified behavior; physical operation remains unverified.
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -9,27 +10,51 @@
 - Vibradorm VMAT series beds
 - Device names starting with "VMAT" (e.g., "VMATMEM047")
 
-## Apps
+This page describes the existing generic Vibradorm route. Existing entries keep
+that controller unless you explicitly select an app profile. Shared Bluetooth
+identifiers, device names and model strings do not identify an app or its remote
+layout.
 
-| Analyzed | App | Package ID |
-|----------|-----|------------|
-| ✅ | VIBRADORM Remote | `de.vibradorm.vra` |
-| ✅ | VIBRADORM Remote for Beds | `com.vibradorm.vmatbasic` |
+The bed-type picker calls this route **Vibradorm (VMAT)**. For the separate
+VMAT app profile, choose **Vibradorm apps (Caresse Diamant, Werkmeister, VMAT)**,
+then **VMAT** and the remote selection used by that app.
 
-## Features
+## App profiles
+
+[v4.1.0](https://github.com/kristofferR/ha-adjustable-bed/releases/tag/v4.1.0)
+includes separate, explicitly selected app profiles. Follow the guide for the
+app and remote you use; capabilities and packet behavior are profile-specific.
+
+| Guide | App | Package ID |
+|-------|-----|------------|
+| [Caresse / Werkmeister](vibradorm_app.md) | Caresse Remote; Werkmeister Unterfederung | `de.vibradorm.diamant`; `de.vibradorm.werkmeister` |
+| [VMAT](vmat.md) | VMAT, fourteen shipped remote selections | `de.vibradorm.vmat` |
+| [V-MAT Basic](vmatbasic.md) | VIBRADORM Remote for Beds, Basic / CBI / XT-Box | `com.vibradorm.vmatbasic` |
+
+The [issue #403 reconciliation](vmat.md#issue-403-reconciliation) explains which
+parts of the original parity request shipped and which were ruled out by the
+accepted app audits. Those audits do not establish live position or EEPROM
+support for the Caresse, Werkmeister or VMAT app profiles.
+
+## Generic controller features
 
 | Feature | Supported |
 |---------|-----------|
 | Motor Control | ✅ |
-| Position Feedback | ✅ |
+| Position Feedback | Legacy notification handling on compatible variants |
 | Memory Presets | ✅ (6 slots) |
 | Flat Preset | ✅ |
 | Light Control | ✅ |
 | Massage | ✅ (vibration toggle via CBI characteristic) |
 
-**Position Feedback:** The bed reports motor positions via BLE notifications. Position values are raw encoder counts that are converted to percentages.
+**Position Feedback:** The generic controller decodes raw encoder counts and
+scales them into angle estimates using estimated raw travel limits and the
+configured maximum angles. These are not measured degrees or device-reported
+percentages. This path is disabled for the `VMAT-BASIC-RF-CBI` model. It is
+separate from the explicitly selected app profiles.
 
-**Motor Configurations:** The bed supports 2, 3, or 4 motor configurations. The standard 2-motor config has head/back and legs motors.
+**Motor Configurations:** The generic controller offers 2, 3, or 4 configured
+motor groups. The standard 2-motor configuration has back and legs controls.
 
 ## Protocol Details
 
@@ -70,12 +95,27 @@ Light commands are 3 bytes written to the light characteristic:
 - `brightness`: 0 = off, 0xFF = full brightness
 - `timer`: Auto-off timer value (0 = no timer)
 
+The generic on/off actions send only levels 0/0xFF and timer 0. Adjustable
+brightness and timers belong to the app profiles that explicitly support them.
+
 ### Position Feedback
 
-Notifications provide motor positions as 16-bit little-endian values:
-- Bytes 3-4: Motor 1 (head/back) position
-- Bytes 5-6: Motor 2 (legs) position
-- Higher values = more raised, 0 = flat
+The existing generic parser accepts `20 3f flags` followed by big-endian
+16-bit counts, or the short `3f flags` form:
+
+| Axis | Long-form bytes | Short-form bytes |
+|------|-----------------|------------------|
+| Back | 3–4 | 2–3 |
+| Legs | 5–6 | 4–5 |
+| Head, when configured | 7–8 | 6–7 |
+| Feet, when configured | 9–10 | 8–9 |
+
+Byte indices are zero-based. This describes the current implementation in
+[`VibradormController`](../../custom_components/adjustable_bed/beds/vibradorm.py),
+covered by `TestVibradormPositionFeedback` in
+[`test_vibradorm.py`](../../tests/test_vibradorm.py). It does not establish a
+calibrated physical angle, initialization-state handling or equivalent position
+support in another app profile.
 
 ## Detection
 
@@ -83,6 +123,9 @@ The bed is detected by:
 1. **Manufacturer ID:** 944 (0x03B0) - highest priority
 2. **Service UUID:** `00001525-...` or `00001527-...`
 3. **Device name pattern:** Names starting with "VMAT"
+
+These are generic discovery hints, not proof of an app, remote layout or every
+optional feature.
 
 ## Troubleshooting
 
@@ -97,4 +140,6 @@ The bed is detected by:
 ## References
 
 - [GitHub Issue #162](https://github.com/kristofferR/ha-adjustable-bed/issues/162)
-- APK analysis in `disassembly/output/de.vibradorm.vra/ANALYSIS.md`
+- [GitHub Issue #403](https://github.com/kristofferR/ha-adjustable-bed/issues/403)
+- [Accepted Caresse / Werkmeister dispositions](../apk-analysis/row031-dispositions.md)
+- [Accepted VMAT dispositions](vmat-dispositions.json)
