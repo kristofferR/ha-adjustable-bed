@@ -680,9 +680,23 @@ async def test_woosa_setup_restores_light_and_exposes_profile_controls(
         },
     )
     entry.add_to_hass(hass)
+    registry = er.async_get(hass)
+    preset_labels = {
+        "woosa_love": "Anti-Snore / Love",
+        "woosa_program_love": "Save Anti-Snore / Love position",
+    }
+    existing_preset_ids = {
+        key: registry.async_get_or_create(
+            "button",
+            DOMAIN,
+            f"AA:BB:CC:DD:EE:FF_{key}",
+            config_entry=entry,
+            suggested_object_id=key,
+        ).entity_id
+        for key in preset_labels
+    }
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    registry = er.async_get(hass)
 
     def entity_id(platform, key):
         found = registry.async_get_entity_id(platform, DOMAIN, f"AA:BB:CC:DD:EE:FF_{key}")
@@ -691,8 +705,12 @@ async def test_woosa_setup_restores_light_and_exposes_profile_controls(
 
     light = entity_id("switch", "under_bed_lights")
     entity_id("number", "light_level")
-    entity_id("button", "woosa_love")
-    entity_id("button", "woosa_program_love")
+    for key, label in preset_labels.items():
+        preset_id = entity_id("button", key)
+        assert preset_id == existing_preset_ids[key]
+        state = hass.states.get(preset_id)
+        assert state is not None
+        assert state.attributes["friendly_name"] == f"Woosa {label}"
     entity_id("button", "woosa_massage_mode_4")
     entity_id("button", "massage_mode_step")
     entity_id("binary_sensor", "solace_alarm_enabled")

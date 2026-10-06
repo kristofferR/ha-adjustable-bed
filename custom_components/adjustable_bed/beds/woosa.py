@@ -215,8 +215,8 @@ class WoosaController(SolaceController):
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         actions = (
-            ("love", "Love"),
-            ("save_love", "Save Love position"),
+            ("love", "Anti-Snore / Love"),
+            ("save_love", "Save Anti-Snore / Love position"),
             ("save_tv", "Save TV position"),
             ("save_zero_g", "Save zero-gravity position"),
             *((f"mode_{mode}", f"Massage mode {mode}") for mode in range(1, 5)),
