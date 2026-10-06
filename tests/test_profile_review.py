@@ -369,7 +369,14 @@ async def test_paired_bed_explains_splitting_instead_of_switching(
 def test_every_offered_app_is_a_selectable_profile() -> None:
     selectable = {option["value"] for option in get_bed_type_options()}
     offered = {choice for route in _ROUTE_APPS for choice in route.choices}
-    assert offered <= selectable
+    from custom_components.adjustable_bed.const import (
+        BED_TYPE_VIBRADORM,
+        BED_TYPE_VIBRADORM_APP,
+        BED_TYPE_VMATBASIC,
+    )
+
+    assert BED_TYPE_VIBRADORM in selectable
+    assert offered - {BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC} <= selectable
     # FurniMove's own repairs cover the routes its handsets used.
     assert not any(choice.startswith(BED_TYPE_FURNIMOVE) for choice in offered)
     # Why a paired bed is split first: no offered app keeps paired controls.
@@ -386,7 +393,7 @@ def test_review_text_is_translated_identically() -> None:
     for key in ("app_profile_review", "app_profile_match"):
         issue = strings["issues"][key]
         assert issue == english["issues"][key]
-        assert set(issue["fix_flow"]["step"]) == {"init", "configure", "unpair"}
+        assert set(issue["fix_flow"]["step"]) == {"init", "configure", "unpair", "vibradorm"}
         assert "entry_missing" in issue["fix_flow"]["abort"]
         assert "—" not in json.dumps(issue, ensure_ascii=False)
     assert strings["selector"]["app_profile_review"] == {

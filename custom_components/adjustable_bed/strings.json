@@ -632,6 +632,27 @@
           "reverse_motor_3": "Reverse motor channel 3",
           "reverse_motor_4": "Reverse motor channel 4"
         }
+      },
+      "vibradorm": {
+        "title": "Vibradorm setup",
+        "description": "Choose the app you normally use on your phone. We\u2019ll ask for the matching remote or product next. You can keep your current setup, or choose Legacy setup for the previous controls.",
+        "data": {
+          "app": "App or current setup"
+        }
+      },
+      "vibradorm_confirm": {
+        "title": "Apply the verified Vibradorm setup?",
+        "description": "**{selection}** passed the Bluetooth setup check. Your controls will follow this app, and previous angle estimates may disappear. Your existing bed and unchanged entities keep their IDs. The current setup remains saved until you confirm.",
+        "data": {
+          "confirm": "Apply the selected setup"
+        }
+      },
+      "vibradorm_unpair": {
+        "title": "Configure each receiver separately",
+        "description": "A combined bed cannot change its app here. Split into separate beds first, or restore standalone controls for a one-address pair. This preserves the existing receiver settings and device identities. Then open Reconfigure on the receiver you want to change, choose its own app and remote, and combine compatible beds again afterwards. Nothing changes until you select the checkbox below.",
+        "data": {
+          "confirm": "Split the pair or restore standalone controls"
+        }
       }
     },
     "progress": {
@@ -653,7 +674,13 @@
       "discovery_disabled": "Automatic discovery is turned off for the Adjustable Bed integration. Re-enable it in any bed's options if you want new devices to be discovered.",
       "diagnostic_browser_ready": "**{name}**\n\nAddress: `{address}`\nSource: `{source}`\nScanner connectable: `{connectable}`\n\nRun `adjustable_bed.generate_support_bundle` with `target_address: {address}` to capture the full support bundle.",
       "not_enough_beds": "You need at least two set-up beds of the same type to combine.",
-      "combine_cleanup_failed": "Couldn't remove one of the original beds, so the combined bed wasn't created. Try again or remove the beds manually first."
+      "combine_cleanup_failed": "Couldn't remove one of the original beds, so the combined bed wasn't created. Try again or remove the beds manually first.",
+      "reconfigure_not_supported": "This setup has no guided reconfigure flow. Use Configure to change its settings.",
+      "reconfigure_successful": "The verified Vibradorm setup was saved.",
+      "vibradorm_configuration_changed": "The saved configuration changed while this wizard was open. Nothing was overwritten. Open Reconfigure again.",
+      "vibradorm_legacy_kept": "Your current setup was kept.",
+      "vibradorm_pair_split_started": "Restoring standalone beds. When it completes, open Reconfigure on the receiver you want to change.",
+      "vibradorm_verification_required": "The selected setup was not verified. Your current configuration was kept."
     },
     "error": {
       "scan_failed": "Bluetooth scanning is unavailable. Check your adapters and try again, or choose a device from the list.",
@@ -713,7 +740,8 @@
       "logicdata_app_sleep_smart_layout": "Sleep Smart beds use the two-motor standard or split-series layout.",
       "richmat_mh_choose_model": "The app asks for the model for this Bluetooth name. Choose the model in the protocol variant.",
       "richmat_mh_no_name": "The app selects the model from the Bluetooth name, which is unavailable. Choose the model in the protocol variant.",
-      "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant."
+      "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant.",
+      "vibradorm_verification_required": "The selected app could not be verified or its connection could not be released. Retry, or keep your current setup."
     }
   },
   "options": {
@@ -728,7 +756,8 @@
           "unpair": "Split into two beds",
           "remove_bond": "Remove the Bluetooth bond",
           "left_settings": "Change left receiver settings",
-          "right_settings": "Change right receiver settings"
+          "right_settings": "Change right receiver settings",
+          "vibradorm_setup": "Choose Vibradorm app and remote"
         }
       },
       "settings": {
@@ -938,6 +967,10 @@
           "disconnect_after_command": "Disconnect after each command",
           "idle_disconnect_seconds": "Idle disconnect timeout (seconds)"
         }
+      },
+      "vibradorm_setup": {
+        "title": "Guided Vibradorm setup",
+        "description": "Close this window. Under Settings > Devices & services > Adjustable Bed, open the three-dot menu for this entry and select Reconfigure. Choose your app and remote there. The wizard verifies the selection before offering to save it. Your current setup remains saved until you confirm."
       }
     },
     "error": {
@@ -974,7 +1007,8 @@
       "richmat_mh_choose_model": "The app asks for the model for this Bluetooth name. Choose the model in the protocol variant.",
       "richmat_mh_no_name": "The app selects the model from the Bluetooth name, which is unavailable. Choose the model in the protocol variant.",
       "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant.",
-      "app_profile_unpair_first": "Each side keeps its own {profile} settings. Unpair the beds, change each side separately, then combine them again."
+      "app_profile_unpair_first": "Each side keeps its own {profile} settings. Unpair the beds, change each side separately, then combine them again.",
+      "vibradorm_reconfigure_required": "To change the Vibradorm app, remote or product, close Configure and select Reconfigure from this entry\u2019s three-dot menu. The guided setup verifies it before saving."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond\u2026",
@@ -987,7 +1021,8 @@
       "remove_bond_bluez_unavailable": "Home Assistant could not read the Bluetooth bonds on this host, so it will not try to remove one. This usually means it has no local Bluetooth adapter, or no access to the system D-Bus.",
       "remove_bond_ambiguous": "Home Assistant cannot tell which Bluetooth bond you mean for **{name}** ({address}). Either more than one adapter on this host is bonded to it, or the adapter it was paired through no longer holds a bond. Set the bed's preferred adapter to the one you want to clear, then try again.",
       "remove_bond_changed": "The Bluetooth bonds on this host changed while the confirmation was open, so nothing was removed. Open **Remove the Bluetooth bond** again to see the current state and confirm from there.",
-      "pair_side_not_found": "This paired receiver is no longer available. Reopen the integration settings."
+      "pair_side_not_found": "This paired receiver is no longer available. Reopen the integration settings.",
+      "vibradorm_reconfigure_required": "To change the Vibradorm app, remote or product, close Configure and select Reconfigure from this entry\u2019s three-dot menu. The guided setup verifies it before saving."
     }
   },
   "entity": {
@@ -5822,10 +5857,19 @@
           "unpair": {
             "title": "Split the pair to change the app",
             "description": "**{name}** is a paired bed. An app profile belongs to each physical bed, and none supports the paired controls, so the pair's shared settings cannot switch to one. If you control the beds with one of these apps:\n{apps}\n\nopen **Configure** on **{name}**, choose **Split into two beds** (or **Restore standalone controls**), then choose the app for each bed. Submit to close this repair and keep the current configuration."
+          },
+          "vibradorm": {
+            "title": "Review Vibradorm setup",
+            "description": "Choose your app and remote in the guided setup, or keep the current controls. The current configuration is kept until verification succeeds and you confirm. A paired bed must first be split explicitly. Closing the wizard leaves this review available.",
+            "data": {
+              "choice": "Setup choice"
+            }
           }
         },
         "abort": {
-          "entry_missing": "The entry no longer exists or was already reviewed. Open its current configuration."
+          "entry_missing": "The entry no longer exists or was already reviewed. Open its current configuration.",
+          "vibradorm_setup_started": "Continue with the guided Vibradorm setup.",
+          "vibradorm_setup_unavailable": "The guided setup could not open. Your current setup and this review were kept. Open Reconfigure from the entry\u2019s three-dot menu."
         }
       }
     },
@@ -5847,10 +5891,19 @@
           "unpair": {
             "title": "Split the pair to change the app",
             "description": "**{name}** is a paired bed. An app profile belongs to each physical bed, and none supports the paired controls, so the pair's shared settings cannot switch to one. If you control the beds with one of these apps:\n{apps}\n\nopen **Configure** on **{name}**, choose **Split into two beds** (or **Restore standalone controls**), then choose the app for each bed. Submit to close this repair and keep the current configuration."
+          },
+          "vibradorm": {
+            "title": "Review Vibradorm setup",
+            "description": "Choose your app and remote in the guided setup, or keep the current controls. The current configuration is kept until verification succeeds and you confirm. A paired bed must first be split explicitly. Closing the wizard leaves this review available.",
+            "data": {
+              "choice": "Setup choice"
+            }
           }
         },
         "abort": {
-          "entry_missing": "The entry no longer exists or was already reviewed. Open its current configuration."
+          "entry_missing": "The entry no longer exists or was already reviewed. Open its current configuration.",
+          "vibradorm_setup_started": "Continue with the guided Vibradorm setup.",
+          "vibradorm_setup_unavailable": "The guided setup could not open. Your current setup and this review were kept. Open Reconfigure from the entry\u2019s three-dot menu."
         }
       }
     }
@@ -5859,7 +5912,8 @@
     "verify_action": {
       "options": {
         "finish": "Finish setup anyway",
-        "retry": "Check again"
+        "retry": "Check again",
+        "keep": "Keep current setup"
       }
     },
     "pairing_action": {
@@ -5872,7 +5926,8 @@
     "pairing_result_action": {
       "options": {
         "retry": "Try again",
-        "finish": "Finish setup without pairing"
+        "finish": "Finish setup without pairing",
+        "keep": "Keep current setup"
       }
     },
     "furnimove_layout": {

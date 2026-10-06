@@ -414,7 +414,15 @@ Choose **Adjustable bed (Lumbar) app** manually. OKIN and Star names and the sha
 
 ### V-MAT Basic app profiles
 
-Choose **V-MAT Basic app**, then the exact Basic, CBI or CBI with XT-Box product. Bluetooth identifiers and diagnostic model strings do not choose this profile. CBI exposes saved floor level 0–255 and timer 0–1439 minutes; XT exposes level 1–6 and timer 0–255 minutes. Leaving the optional level unset preserves the source distinction between the ON-button default and settings-screen default. Timer defaults to zero. Profile changes rebuild the form and discard old dependent floor values. These settings belong to each physical side of a two-address pair; split the pair before changing them. Existing generic Vibradorm entries retain their controller.
+Choose **Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic**, then
+**V-MAT Basic** and the exact Basic, CBI or CBI with XT-Box product. Bluetooth
+identifiers and diagnostic model strings do not choose this profile. CBI exposes
+saved floor level 0–255 and timer 0–1439 minutes; XT exposes level 1–6 and timer
+0–255 minutes. Leaving the optional level unset preserves the source distinction
+between the ON-button default and settings-screen default. Timer defaults to zero.
+Product changes use the guided reconfigure flow and discard incompatible floor
+values. Ordinary brightness/timer changes remain in Configure. Product profiles
+belong to one physical receiver; split a pair before changing them.
 
 ### FurniMove app profile
 
@@ -443,11 +451,48 @@ Select **Jordan's Tranquil app** for `com.okin.bedding.tranquil` 1.0.2 (3). For 
 
 Choose the AdjustableM5X4 app profile explicitly. Star names offer this app as a candidate, while existing receiver detection remains available. The original Bluetooth name chooses transport independently of the saved command/parser selector. Manufacturer classification can update the command selector without changing the retained UI selector. “Use detected transport profile” copies the current transport into both app selectors while retaining this physical bed’s observed timer/light/massage state. Single-address side control is unsupported; two-address pairs retain each child’s settings. See the [complete selector and capability contract](beds/starcode-abm5-4.md).
 
+### Vibradorm guided setup and migration
+
+The bed-type list has one **Vibradorm: VMAT, Caresse Diamant, Werkmeister,
+V-MAT Basic** choice. Choose the app you use on your phone, then its remote or
+product. **Legacy setup** remains available inside this choice for fresh setup.
+The family choice shares setup navigation, while each selected app keeps its
+existing controller, features and Bluetooth pairing requirements.
+
+For an existing bed, open **Settings → Devices & services → Adjustable Bed**,
+then the entry's three-dot menu and **Reconfigure**. The one-time app review in
+Repairs opens the same wizard. Choose **Keep current setup** to keep your
+working controls and dismiss the review, or choose your app and remote/product.
+Keeping the same app seeds the form with your saved settings.
+
+The wizard temporarily releases Home Assistant's connection to check the chosen
+setup. It checks the exact app's required Bluetooth roles and existing pairing
+requirements, without moving the bed. A missing scanner, failed check or link
+that cannot be closed cannot save the new selection. Retry or keep the current
+setup. Closing the wizard leaves the saved configuration and pending review
+unchanged. A failed connection remains owned until it is observed closed, so
+another setup attempt cannot overlap it.
+
+After a successful check, a final confirmation shows the chosen app and
+remote/product. Saving keeps the entry, address, device and unchanged entity
+IDs. Controls follow the selected profile; obsolete controls and angle estimates
+may disappear. This check does not prove physical movement, lighting or massage
+behavior. If settings changed in another window, the wizard refuses to overwrite
+them. Routine brightness, timer and connection changes remain in **Configure**.
+
+A paired bed must first be split explicitly, or have its standalone controls
+restored for a one-address pair. The wizard offers the existing reversible split
+action and preserves each receiver's settings and identities. Afterwards,
+reconfigure the intended receiver separately and combine compatible beds again
+if needed. It never assigns one app/remote to both receivers or guesses from
+Bluetooth identifiers or motor count.
+
 ### Caresse / Werkmeister app profiles
 
-Select **Caresse / Werkmeister apps** explicitly, then choose the app. Existing
-generic Vibradorm entries keep their original route. Bluetooth identifiers do
-not select an app or remote layout. Werkmeister offers its two proven remote
+Select **Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic** in the
+bed-type picker, then choose Caresse Diamant or Werkmeister. Existing generic
+entries keep their legacy setup until explicitly reconfigured. Bluetooth identifiers do not select an app
+or remote layout. Werkmeister offers its two proven remote
 layouts. Fresh Caresse uses its basic two-axis layout; enable retained settings
 only when you know the app's saved remote type and independent floor-light,
 mood-light, massage and light-extension settings. The `other` retained type has
@@ -468,9 +513,10 @@ remains unverified. App metadata is diagnostic information, not bond proof.
 
 ### VMAT app profile
 
-Choose **VMAT** in the explicit app controller and select the same remote
-ordinal as the app. Its fourteen shipped selections derive the logical axes,
-memory, sync, floor, mood and massage controls. Independent feature overrides
+Choose **Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic** in the
+bed-type picker, then **VMAT** and the same remote ordinal as the app. Its fourteen
+shipped selections derive the logical axes, memory, sync, floor, mood and
+massage controls. Independent feature overrides
 and inferred product identification are unavailable. Setup requires positive
 native bond evidence for the exact address and actual host adapter; an
 unverified proxy pairing request cannot finish setup. Ordinary sessions do not
