@@ -314,6 +314,43 @@ async def test_ksbt03c_token_is_case_sensitive_like_the_app(coordinator):
     assert _lite(coordinator, "X" + KSBT03C).supports_preset_anti_snore
 
 
+@pytest.mark.parametrize("name", [KSBT01C, "KSSF05C201000322"])
+async def test_explicit_massage_option_restores_proven_controls_without_remapping_remote(
+    coordinator, name, mock_bleak_client, no_sleep
+):
+    """Issue #669: an app name fallback must not discard configured hardware features."""
+    from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS, _should_add_button
+
+    coordinator._has_massage = True
+    controller = _lite(coordinator, name)
+    massage_buttons = {
+        description.key: description
+        for description in BUTTON_DESCRIPTIONS
+        if description.requires_massage and _should_add_button(description, controller, True)
+    }
+    assert set(massage_buttons) == {
+        "massage_head_up", "massage_head_down", "massage_foot_up", "massage_foot_down",
+        "massage_mode_step",
+    }
+    for key, frame in (
+        ("massage_head_up", "040200000800"),
+        ("massage_head_down", "040200800000"),
+        ("massage_foot_up", "040200000400"),
+        ("massage_foot_down", "040201000000"),
+        ("massage_mode_step", "040200000200"),
+    ):
+        mock_bleak_client.write_gatt_char.reset_mock()
+        press = massage_buttons[key].press_fn
+        assert press is not None
+        await press(controller)
+        assert mock_bleak_client.write_gatt_char.call_args_list == [_frame(frame)]
+    # The option is affirmative hardware evidence, not a KSBT03C identity or parser proof.
+    assert controller.protocol_diagnostics == {"adjustable_lite_remote": "KSBT01C"}
+    assert not controller.auto_enable_massage
+    assert not controller.supports_preset_anti_snore
+    assert controller.controller_state_sensor_specs == ()
+
+
 async def test_other_keeson_profiles_drop_adjustable_lite_state_entities(coordinator):
     controller = KeesonController(coordinator, variant=KEESON_VARIANT_KSBT, device_name=KSBT03C)
     assert controller.controller_state_binary_sensor_specs == ()
@@ -528,6 +565,39 @@ async def test_switching_to_the_profile_removes_generic_ksbt_entities(
     ):
         assert not _exists(hass, address, platform, key), key
     assert _exists(hass, address, "binary_sensor", STATE_ADJUSTABLE_LITE_LIGHT)
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+
+
+async def test_switching_to_lite_retains_configured_massage_entity_identities(
+    hass, mock_coordinator_connected, mock_async_ble_device_from_address,
+    enable_custom_integrations,
+):
+    from homeassistant.helpers import entity_registry as er
+
+    name = "KSSF05C201000322"
+    mock_async_ble_device_from_address.return_value.name = name
+    address = "AA:BB:CC:DD:EE:69"
+    entry = _keeson_entry(hass, address, name, KEESON_VARIANT_KSBT, 2)
+    hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_HAS_MASSAGE: True})
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    registry = er.async_get(hass)
+    keys = ("massage_head_up", "massage_head_down", "massage_foot_up", "massage_foot_down", "massage_mode_step")
+    before = {}
+    for key in keys:
+        entity_id = registry.async_get_entity_id("button", DOMAIN, f"{address}_{key}")
+        assert entity_id is not None
+        entity = registry.async_get(entity_id)
+        assert entity is not None
+        before[key] = (entity.id, entity.entity_id, entity.device_id)
+    await _switch_variant(hass, entry, KEESON_VARIANT_ADJUSTABLE_LITE)
+    for key in keys:
+        entity_id = registry.async_get_entity_id("button", DOMAIN, f"{address}_{key}")
+        assert entity_id is not None
+        entity = registry.async_get(entity_id)
+        assert entity is not None
+        assert (entity.id, entity.entity_id, entity.device_id) == before[key]
     assert await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
 

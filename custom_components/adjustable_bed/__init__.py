@@ -24,6 +24,7 @@ from .combine_suggestion import async_load_dismissal
 from .const import (
     BED_TYPE_BEDTECH,
     BED_TYPE_DIAGNOSTIC,
+    BED_TYPE_FURNIMOVE,
     BED_TYPE_KAIDI,
     BED_TYPE_OCTO,
     BED_TYPE_REMACRO,
@@ -550,6 +551,31 @@ async def _async_setup_offline_diagnostic_entry(
     )
 
 
+async def _async_setup_offline_furnimove_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    coordinator: AdjustableBedCoordinator,
+) -> bool:
+    """Expose the selected catalog layout even when the first link fails."""
+    # A failed cleanup must not turn a half-initialized live session into a
+    # successfully loaded entry. This path requires a client-free controller.
+    if coordinator.client is not None or coordinator.controller is not None:
+        return False
+    await coordinator.async_prime_offline_controller()
+    if coordinator.capability_controller is None:
+        return False
+    _LOGGER.warning(
+        "Loading FurniMove entry %s without an initial BLE connection. Controls use "
+        "the selected handset layout and retry the connection when used; receiver "
+        "compatibility remains unverified.",
+        entry.title,
+    )
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+    return await _async_finish_entry_setup(
+        hass, entry, coordinator, schedule_initial_position_read=False
+    )
+
+
 def _shared_child_fields(parent_data: Mapping[str, Any]) -> dict[str, Any]:
     """Parent-level config inherited by every child (each descriptor overrides)."""
     return inheritable_child_fields(parent_data)
@@ -1065,6 +1091,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Connect to the bed with a timeout to avoid blocking startup forever
     _LOGGER.debug("Attempting initial connection to bed (timeout: %.0fs)...", SETUP_TIMEOUT)
+    initial_connection_timed_out = False
     try:
         async with asyncio.timeout(SETUP_TIMEOUT):
             connected = await coordinator.async_connect()
@@ -1083,18 +1110,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 entry.title,
                 err,
             )
-        await _maybe_create_pairing_issue_for(hass, coordinator)
-        if entry.data.get(CONF_BED_TYPE) == BED_TYPE_DIAGNOSTIC:
-            return await _async_setup_offline_diagnostic_entry(
-                hass,
-                entry,
-                coordinator,
-                reason=f"initial connection timed out after {SETUP_TIMEOUT:.0f}s",
-            )
-        raise ConfigEntryNotReady(
-            f"Connection to bed at {entry.data.get(CONF_ADDRESS)} timed out after "
-            f"{SETUP_TIMEOUT:.0f}s.{_connection_failure_hint(coordinator)}"
-        ) from None
+        initial_connection_timed_out = True
+        connected = False
 
     if not connected:
         await _maybe_create_pairing_issue_for(hass, coordinator)
@@ -1103,8 +1120,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 hass,
                 entry,
                 coordinator,
-                reason="device was not reachable during initial setup",
+                reason=(
+                    f"initial connection timed out after {SETUP_TIMEOUT:.0f}s"
+                    if initial_connection_timed_out
+                    else "device was not reachable during initial setup"
+                ),
             )
+        if coordinator.bed_type == BED_TYPE_FURNIMOVE and await _async_setup_offline_furnimove_entry(
+            hass, entry, coordinator
+        ):
+            return True
+        if initial_connection_timed_out:
+            raise ConfigEntryNotReady(
+                f"Connection to bed at {entry.data.get(CONF_ADDRESS)} timed out after "
+                f"{SETUP_TIMEOUT:.0f}s.{_connection_failure_hint(coordinator)}"
+            ) from None
         if _bond_gated_unbonded(coordinator):
             raise ConfigEntryNotReady(
                 f"Failed to connect to bed at {entry.data.get(CONF_ADDRESS)}."

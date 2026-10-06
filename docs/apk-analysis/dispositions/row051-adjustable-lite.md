@@ -21,6 +21,23 @@ The public contract is the [Adjustable Lite profile](../../beds/keeson.md#adjust
 
 Attempt 001 stopped on a harness input mismatch and produced no accepted report. IA001-001 (eight Bluetooth instruction sites wrongly marked reachable) was repaired in attempt 003 and closed by audit 002. Raw artifacts, reports and decompiled sources remain machine-local.
 
+## Hardware-configuration compatibility follow-up
+
+[Issue #669](https://github.com/kristofferR/ha-adjustable-bed/issues/669) reports
+working massage on 4.0.1/4.0.2 and its loss on 4.1.0 for an MC232SC advertising
+`KSSF05C201000322`, despite `has_massage: true`. The app's remote-name choice
+does not negate that explicit hardware configuration. The integration now
+retains head/foot massage steps and the timer button when the option is enabled,
+reusing D22/D24–D27's exact frames. It adds no name-to-model mapping, generic
+toggle/off command, anti-snore capability or feedback-parser assumption.
+
+`tests/test_keeson_adjustable_lite.py::test_explicit_massage_option_restores_proven_controls_without_remapping_remote`
+checks all five literal frames and the unchanged remote/feedback gates;
+`test_switching_to_lite_retains_configured_massage_entity_identities` checks that
+the working entity IDs survive the profile change. The frozen report, audit
+acceptance and original 93-item totals are unchanged. Physical behavior of the
+compatibility restoration awaits the reporter's validation.
+
 ## What changed
 
 - New explicit Keeson protocol variant `adjustable_lite`, also offered in the setup wizard. Auto keeps the generic KSBT profile for `KSBT01C`/`KSBT03C` names.

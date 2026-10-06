@@ -33,6 +33,27 @@ For configuration help or general "how do I..." questions, ask in **[Help & ques
 If connection, pairing, or controls fail, use a [Bug Report](https://github.com/kristofferR/ha-adjustable-bed/issues/new?template=bug-report.yml).
 You do not need to know whether the cause is configuration or a software bug.
 
+### Connected OKIN receiver, but commands do nothing
+
+A successful connection or confirmed bond proves transport/security, not the
+selected command profile. Shared OKIN services and a box/handset label (for
+example CB3633 and RF52) cannot identify an app profile by themselves. Include:
+
+- The exact official app name, store link or Android package ID, and app version.
+  If no app is known or used, say that explicitly, with the bed brand/model.
+- The selected integration bed type and variant, integration/HA versions, and
+  one current support bundle for each affected physical receiver.
+- A debug log from one connection attempt and one short head-up/light test,
+  with the test time and which commands worked. Close phone apps first.
+
+If reads now fail with **Insufficient authentication**, capture that failure
+separately: it blocks command validation and does not prove a different profile
+is needed. Use the integration's pairing repair on the same adapter/proxy that
+owns the bond when it is required. Do not delete entries, manually edit saved
+bond flags or cycle through unrelated profiles to identify the protocol.
+For a disabled entry, a support bundle can target its device or its raw address;
+exactly one target is required. See the support-bundle steps below.
+
 ## Requesting a Feature
 
 Use the [Feature Request](https://github.com/kristofferR/ha-adjustable-bed/issues/new?template=feature-request.yml)

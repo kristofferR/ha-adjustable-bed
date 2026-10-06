@@ -226,6 +226,14 @@ therefore writes without response when the characteristic offers it, as
 Android does by default. It has two remotes, chosen by the case-sensitive
 token `KSBT03C` in the device name; any other name gets the KSBT01C remote.
 
+**Has massage** also exposes the proven head/foot massage increase/decrease
+and timer buttons, even when the name does not contain `KSBT03C`. This retains
+explicit hardware configuration for the MC232SC / `KSSF05C` regression reported
+in [issue #669](https://github.com/kristofferR/ha-adjustable-bed/issues/669).
+It does not identify that box as KSBT03C: anti-snore, automatic massage enablement
+and the massage-timer feedback sensor still require the app's name match.
+The option adds no generic toggle/off commands or new hardware mapping.
+
 | Control | Frame | KSBT01C | KSBT03C |
 |---------|-------|---------|---------|
 | Head/back up / down | `04 02 00 00 00 01` / `04 02 00 00 00 02` | ✅ | ✅ |
