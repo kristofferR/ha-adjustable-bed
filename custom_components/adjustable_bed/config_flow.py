@@ -2073,6 +2073,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if not same_profile:
                 for key in (*VIBRADORM_APP_CONFIG_KEYS, *VMATBASIC_CONFIG_KEYS):
                     self._manual_data.pop(key, None)
+                self._manual_data.pop(CONF_VIBRADORM_APP_METADATA, None)
             if choice == "vmatbasic":
                 self._manual_data[CONF_BED_TYPE] = BED_TYPE_VMATBASIC
                 return await self.async_step_vmatbasic()

@@ -168,6 +168,37 @@ async def select_app(hass, entry, app):
 
 
 @pytest.mark.parametrize("app", ["caresse", "werkmeister", "vmat", "vmatbasic"])
+@pytest.mark.parametrize("original_app", ["caresse", "werkmeister", "vmat"])
+async def test_family_selection_retains_metadata_only_for_unchanged_app(
+    hass, original_app, app
+):
+    original = _vibradorm_app_data(
+        {
+            CONF_ADDRESS: ADDRESS,
+            const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM_APP,
+            const.CONF_VIBRADORM_APP_PROFILE: original_app,
+        },
+        {const.CONF_VIBRADORM_VMAT_REMOTE: "07"} if original_app == "vmat" else {},
+    )
+    original[const.CONF_VIBRADORM_APP_METADATA] = {"model": "previous profile model"}
+    entry = entry_for(hass, original)
+    flow = AdjustableBedConfigFlow()
+    flow.hass = hass
+    flow.context = {"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
+    await flow.async_step_reconfigure()
+    result = await flow.async_step_vibradorm({"app": app})
+    assert result["step_id"] == ("vmatbasic" if app == "vmatbasic" else "vibradorm_app")
+    assert flow._manual_data is not None
+    if app == original_app:
+        assert flow._manual_data[const.CONF_VIBRADORM_APP_METADATA] == original[
+            const.CONF_VIBRADORM_APP_METADATA
+        ]
+    else:
+        assert const.CONF_VIBRADORM_APP_METADATA not in flow._manual_data
+    assert entry.data == original
+
+
+@pytest.mark.parametrize("app", ["caresse", "werkmeister", "vmat", "vmatbasic"])
 async def test_managed_reconfigure_verifies_then_updates_same_entry_and_ids(
     hass, enable_custom_integrations, app
 ):
