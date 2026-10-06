@@ -31,12 +31,12 @@ from typing import Any, Final
 
 import voluptuous as vol
 from homeassistant.components import bluetooth
-from homeassistant.components.repairs import RepairsFlow
+from homeassistant.components.repairs import RepairsFlow, RepairsFlowResult
 from homeassistant.components.repairs.const import FlowType
 from homeassistant.config_entries import SOURCE_RECONFIGURE, ConfigEntry
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.data_entry_flow import FlowResult, FlowResultType, UnknownFlow
+from homeassistant.data_entry_flow import FlowResultType, UnknownFlow
 from homeassistant.helpers import selector
 from homeassistant.helpers.issue_registry import (
     IssueSeverity,
@@ -533,7 +533,7 @@ class ProfileReviewRepairFlow(RepairsFlow):
             return None
         return entry
 
-    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
         entry = self._entry()
         if entry is None:
             return self.async_abort(reason="entry_missing")
@@ -599,7 +599,7 @@ class ProfileReviewRepairFlow(RepairsFlow):
             ),
         )
 
-    async def async_step_configure(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_configure(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
         """Point to Configure for an app this flow cannot apply by itself."""
         entry = self._entry()
         if entry is None or self._choice is None:
@@ -611,7 +611,7 @@ class ProfileReviewRepairFlow(RepairsFlow):
             description_placeholders=_placeholders(entry, (self._choice,), self._choice),
         )
 
-    async def async_step_unpair(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_unpair(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
         """Explain that a paired bed changes its app after the pair is split."""
         entry = self._entry()
         if entry is None:
@@ -624,7 +624,7 @@ class ProfileReviewRepairFlow(RepairsFlow):
             description_placeholders=_placeholders(entry, choices, choices[0]),
         )
 
-    def _finish(self, entry: ConfigEntry) -> FlowResult:
+    def _finish(self, entry: ConfigEntry) -> RepairsFlowResult:
         """Record the answer so this entry is never asked again."""
         async_keep_current_profile(self.hass, entry)
         return self.async_create_entry(title="", data={})

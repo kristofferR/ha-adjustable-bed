@@ -539,7 +539,9 @@ async def test_unchanged_rendered_options_keep_internal_family_route(hass, bed_t
     flow.handler, flow.hass = entry.entry_id, hass
     result = await flow.async_step_settings()
     schema = result["data_schema"]
+    assert schema is not None
     values = schema({})
+    assert isinstance(values, dict)
     rows = schema.schema[const.CONF_BED_TYPE].config["options"]
     assert sum("Vibradorm:" in row["label"] for row in rows) == 1
     assert values[const.CONF_BED_TYPE] == bed_type
@@ -625,7 +627,9 @@ async def test_options_can_correct_a_mistaken_bed_family(hass, source, target):
         if result["type"] == FlowResultType.CREATE_ENTRY:
             break
         assert not result.get("errors")
-        result = await flow.async_step_settings(result["data_schema"]({}))
+        schema = result["data_schema"]
+        assert schema is not None
+        result = await flow.async_step_settings(schema({}))
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert entry.data[const.CONF_BED_TYPE] == target
 
