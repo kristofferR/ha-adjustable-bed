@@ -51,20 +51,22 @@ To adjust settings after setup:
 
 ## Profile recommendations
 
-Home Assistant may show **A better profile may be available** under
-**Settings → System → Repairs** when observations from a normal connection
-match a verified recommendation. The notice explains the evidence and controls
-you would gain or lose. **Review suggested profile** opens its settings; nothing
-is saved until you submit them. Closing settings leaves your current profile.
+Every configured bed is checked against the integration's existing Bluetooth
+identity and app-profile metadata. Under **Settings → System → Repairs**, Home
+Assistant may suggest **A better profile may be available**, or ask you to **Check
+the app or product profile** when several profiles fit. Weak or unknown identities
+stay quiet. A shared Bluetooth service or a new app alone does not prove that
+another profile works better.
 
-**Keep current profile** (or Ignore) dismisses that recommendation across restarts
-and updates. Only a materially different recommendation may ask again. For a
-paired bed, the notice identifies the affected side and explains any required
-split; neither side changes automatically.
+**Review profile settings** opens Configure. A clear suggestion shows its settings;
+an ambiguous match keeps your current selection so you can check your app, physical
+remote and product. Nothing changes until you submit settings. Closing them keeps
+your profile. Saving this review confirms your selection.
 
-The initial rule covers the specific Star254202 identity reported with the
-Adjustable bed (Lumbar) profile. A shared Bluetooth service or a newly available
-app alone does not mean another profile is better. See
+**Keep current profile** (or Ignore) dismisses the assessment across restarts and
+updates. Only a materially different profile or candidate set may ask again.
+Paired notices identify the physical bed and explain any required split or restore
+standalone action; neither side changes automatically. See the
 [matching evidence and limits](design/profile-recommendations.md).
 
 ## Basic Settings

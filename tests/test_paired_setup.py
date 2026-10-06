@@ -117,6 +117,7 @@ from custom_components.adjustable_bed.pairing_candidates import (
     decode_pair_selection,
     encode_pair_selection,
 )
+from custom_components.adjustable_bed.profile_recommendations import _watches
 
 LEFT_ADDR = "AA:BB:CC:DD:EE:01"
 RIGHT_ADDR = "AA:BB:CC:DD:EE:02"
@@ -444,7 +445,12 @@ class TestPairedSetup:
         assert entry.entry_id == "single_address_sbi"
         assert entry.unique_id == LEFT_ADDR
         assert entry.data[CONF_PAIR_MODE] == PAIR_MODE_SINGLE_ADDRESS
-        assert isinstance(hass.data[DOMAIN][entry.entry_id], SingleAddressPairedCoordinator)
+        paired = hass.data[DOMAIN][entry.entry_id]
+        assert isinstance(paired, SingleAddressPairedCoordinator)
+        observers = list(_watches(hass).values())
+        assert len(observers) == 1
+        assert observers[0].side is None
+        assert observers[0].coordinator is paired._single_inner
         rows = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
         assert any(row.unique_id.endswith("_left") for row in rows)
         assert any(row.unique_id.endswith("_right") for row in rows)
@@ -495,6 +501,9 @@ class TestPairedSetup:
         coordinator = hass.data[DOMAIN][entry.entry_id]
         assert isinstance(coordinator, PairedBedCoordinator)
         assert set(coordinator.sides) == {SIDE_LEFT, SIDE_RIGHT}
+        observers = list(_watches(hass).values())
+        assert {watch.side for watch in observers} == {SIDE_LEFT, SIDE_RIGHT}
+        assert {watch.coordinator.address for watch in observers} == {LEFT_ADDR, RIGHT_ADDR}
 
     async def test_splitting_a_bed_is_not_removing_its_bluetooth_bond(
         self,

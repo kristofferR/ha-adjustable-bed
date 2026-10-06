@@ -8243,6 +8243,17 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             if any(new_data.get(key) != self.config_entry.data.get(key) for key in (CONF_STARCODE_M5X5_PROFILE, CONF_BLE_DEVICE_NAME, CONF_STARCODE_LIFT_ENTRIES)):
                 from .starcode_accessory_group import cancel_group_operations
                 cancel_group_operations(self.hass, self.config_entry.entry_id)
+            from .profile_recommendations import async_confirm_profile_review
+
+            try:
+                await async_confirm_profile_review(
+                    self.hass, self.config_entry, self.flow_id, new_data
+                )
+            except OSError:
+                return self.async_show_form(
+                    step_id=step_id, data_schema=vol.Schema(schema_dict),
+                    errors={"base": "profile_review_save_failed"},
+                )
             self.hass.config_entries.async_update_entry(
                 self.config_entry,
                 data=new_data,

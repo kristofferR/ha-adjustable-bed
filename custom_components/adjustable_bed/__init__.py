@@ -945,6 +945,7 @@ async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: C
         model_id=info.get("model_id"),
     )
     async_register_children(hass, coordinator)
+    await async_watch_profile_recommendations(hass, entry, ((None, inner),))
     try:
         async with asyncio.timeout(SETUP_TIMEOUT):
             connected = await coordinator.async_connect()

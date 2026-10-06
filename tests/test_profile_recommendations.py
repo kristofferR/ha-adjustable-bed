@@ -431,3 +431,238 @@ async def test_configuration_change_during_handoff_aborts_without_submitting_pro
     assert target.entry.data[CONF_ADDRESS] == OTHER
     assert target.entry.data[CONF_BED_TYPE] == BED_TYPE_ADJUSTABLE_LUMBAR
     assert not manager.async_progress()
+
+
+def advertisement(name, services):
+    observed = info(name)
+    observed.service_uuids = services
+    return observed
+
+
+@pytest.mark.parametrize(
+    "selected", ["adjustable_lumbar", "keeson", "richmat", "vibradorm_app", "sleepys_box25"]
+)
+def test_dedicated_identity_assesses_unrelated_configured_profiles(selected):
+    from custom_components.adjustable_bed.const import LINAK_CONTROL_SERVICE_UUID
+
+    result = recommend_profile(
+        {CONF_BED_TYPE: selected}, advertisement("Bed 1234", [LINAK_CONTROL_SERVICE_UUID]), {}
+    )
+    assert result is not None
+    assert result.translation_key == "profile_mismatch"
+    assert result.suggested == "linak"
+
+
+def test_already_matching_dedicated_profile_is_quiet():
+    from custom_components.adjustable_bed.const import LINAK_CONTROL_SERVICE_UUID
+
+    assert (
+        recommend_profile(
+            {CONF_BED_TYPE: "linak"}, advertisement("Bed 1234", [LINAK_CONTROL_SERVICE_UUID]), {}
+        )
+        is None
+    )
+
+
+def test_shared_named_identity_offers_app_review_without_a_winner():
+    result = recommend_profile({CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25}, info(), {})
+    assert result is not None
+    assert result.translation_key == "profile_ambiguous"
+    assert result.suggested is None
+    assert "starcode_abm5_4" in result.choices
+    assert BED_TYPE_ADJUSTABLE_LUMBAR in result.choices
+
+
+@pytest.mark.parametrize("selected", [BED_TYPE_ADJUSTABLE_LUMBAR, "starcode_abm5_4"])
+def test_explicit_matching_app_is_not_overridden_by_generic_detection(selected):
+    assert recommend_profile({CONF_BED_TYPE: selected}, info(), {}) is None
+
+
+def test_explicit_app_variant_resolves_its_generic_route():
+    from custom_components.adjustable_bed.const import REMACRO_SERVICE_UUID
+
+    assert (
+        recommend_profile(
+            {CONF_BED_TYPE: "remacro", CONF_PROTOCOL_VARIANT: "the_brick"},
+            advertisement("Remacro", [REMACRO_SERVICE_UUID]),
+            {},
+        )
+        is None
+    )
+
+
+@pytest.mark.parametrize("services", [[], [NORDIC_UART_SERVICE_UUID]])
+def test_unknown_name_and_shared_transport_do_not_question_a_profile(services):
+    assert (
+        recommend_profile({CONF_BED_TYPE: "linak"}, advertisement("Unknown", services), {}) is None
+    )
+
+
+def test_legacy_alias_does_not_offer_the_same_controller_as_an_improvement():
+    from custom_components.adjustable_bed.const import OKIMAT_SERVICE_UUID
+
+    assert (
+        recommend_profile(
+            {CONF_BED_TYPE: "okin_7byte"}, advertisement("Nectar bed", [OKIMAT_SERVICE_UUID]), {}
+        )
+        is None
+    )
+
+
+def test_generic_decision_survives_name_changes_but_not_changed_profile():
+    from custom_components.adjustable_bed.const import LINAK_CONTROL_SERVICE_UUID
+
+    original = recommend_profile(
+        {CONF_BED_TYPE: "richmat"}, advertisement("Bed 1234", [LINAK_CONTROL_SERVICE_UUID]), {}
+    )
+    renamed = recommend_profile(
+        {CONF_BED_TYPE: "richmat"}, advertisement("Bed 4321", [LINAK_CONTROL_SERVICE_UUID]), {}
+    )
+    changed = recommend_profile(
+        {CONF_BED_TYPE: "keeson"}, advertisement("Bed 1234", [LINAK_CONTROL_SERVICE_UUID]), {}
+    )
+    assert original is not None and renamed is not None and changed is not None
+    assert original.rule == renamed.rule
+    assert original.rule != changed.rule
+
+
+async def test_non_lumbar_observer_and_ambiguous_handoff_do_not_save_or_preselect(
+    hass, enable_custom_integrations
+):
+    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25})
+    coord = coordinator()
+    coord.bed_type = BED_TYPE_SLEEPYS_BOX25
+    coord.controller.protocol_diagnostics = {}
+    target = await watch(hass, config_entry, coord)
+    assert issue(hass, target).translation_key == "profile_ambiguous"
+    before = dict(config_entry.data)
+    flow = await open_flow(hass, target)
+    manager = hass.config_entries.options
+    with (
+        patch(HISTORY, return_value=info()),
+        patch.object(manager, "async_configure", wraps=manager.async_configure) as configure,
+    ):
+        result = await flow.async_step_init({"action": "review"})
+    configure.assert_called_once_with(result["next_flow"][1], {"next_step_id": "settings"})
+    assert config_entry.data == before
+    manager.async_abort(result["next_flow"][1])
+
+
+async def test_new_notice_suppresses_duplicate_upgrade_review_even_after_keep(hass):
+    from custom_components.adjustable_bed.profile_review import (
+        CONF_PROFILE_REVIEW_PENDING,
+        async_refresh_profile_review_issue,
+        profile_review_mark,
+    )
+
+    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25})
+    hass.config_entries.async_update_entry(
+        config_entry,
+        data={
+            **config_entry.data,
+            CONF_PROFILE_REVIEW_PENDING: profile_review_mark(config_entry.data),
+        },
+    )
+    coord = coordinator()
+    coord.bed_type = BED_TYPE_SLEEPYS_BOX25
+    coord.controller.protocol_diagnostics = {}
+    target = await watch(hass, config_entry, coord)
+    with patch(HISTORY, return_value=info()):
+        await target.async_keep(target.recommendation)
+        async_refresh_profile_review_issue(hass, config_entry)
+    assert issue(hass, target) is None
+    assert (
+        ir.async_get(hass).async_get_issue(DOMAIN, f"app_profile_review_{config_entry.entry_id}")
+        is None
+    )
+
+
+async def test_partial_advertisement_cannot_break_setup(hass):
+    config_entry = entry(hass)
+    observed = info()
+    observed.service_uuids = None
+    observed.manufacturer_data = None
+    observed.service_data = None
+    with patch(HISTORY, return_value=observed), patch(REGISTER):
+        await async_watch_profile_recommendations(hass, config_entry, ((None, coordinator()),))
+    target = _watches(hass)[f"{ISSUE_PREFIX}{config_entry.entry_id}_standalone"]
+    assert issue(hass, target) is None
+
+
+async def test_expired_history_still_allows_review_and_keep(hass):
+    target = await watch(hass)
+    with patch(HISTORY, return_value=None):
+        flow = await open_flow(hass, target)
+        form = await flow.async_step_init()
+        assert form["type"] == "form"
+        result = await flow.async_step_init({"action": "keep"})
+    assert result["type"] == "create_entry"
+    assert issue(hass, target) is None
+
+
+async def test_same_mac_with_different_case_keeps_the_recommendation(hass):
+    target = await watch(hass)
+    hass.config_entries.async_update_entry(
+        target.entry, data={**target.entry.data, CONF_ADDRESS: ADDRESS.lower()}
+    )
+    target.seen(info(address=ADDRESS.lower()), MagicMock())
+    assert issue(hass, target) is not None
+
+
+async def test_single_address_pair_has_one_physical_notice(hass, enable_custom_integrations):
+    from custom_components.adjustable_bed.const import PAIR_MODE_SINGLE_ADDRESS
+
+    config_entry = entry(
+        hass,
+        **{
+            CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25,
+            CONF_PAIR_ID: "single",
+            CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS,
+        },
+    )
+    coord = coordinator()
+    coord.bed_type = BED_TYPE_SLEEPYS_BOX25
+    coord.controller.protocol_diagnostics = {}
+    target = await watch(hass, config_entry, coord)
+    assert len(_watches(hass)) == 1
+    flow = await open_flow(hass, target)
+    with patch(HISTORY, return_value=info()):
+        form = await flow.async_step_init()
+        result = await flow.async_step_paired({"action": "review"})
+    assert form["step_id"] == "paired"
+    assert form["description_placeholders"]["pair_action"] == "Restore standalone controls"
+    hass.config_entries.options.async_abort(result["next_flow"][1])
+
+
+async def test_saving_ambiguous_review_confirms_current_route(hass, enable_custom_integrations):
+    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25})
+    coord = coordinator()
+    coord.bed_type = BED_TYPE_SLEEPYS_BOX25
+    coord.controller.protocol_diagnostics = {}
+    target = await watch(hass, config_entry, coord)
+    flow = await open_flow(hass, target)
+    with patch(HISTORY, return_value=info()):
+        result = await flow.async_step_init({"action": "review"})
+        with patch.object(hass.config_entries, "async_schedule_reload"):
+            result = await hass.config_entries.options.async_configure(result["next_flow"][1], {})
+        target.refresh()
+    assert result["type"] == "create_entry"
+    assert config_entry.data[CONF_BED_TYPE] == BED_TYPE_SLEEPYS_BOX25
+    assert issue(hass, target) is None
+    assert await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
+
+
+async def test_failed_review_confirmation_keeps_original_profile(hass, enable_custom_integrations):
+    target = await watch(hass)
+    flow = await open_flow(hass, target)
+    before = dict(target.entry.data)
+    with patch(HISTORY, return_value=info()):
+        result = await flow.async_step_init({"action": "review"})
+        flow_id = result["next_flow"][1]
+        with patch.object(AppStateStore, "async_write", side_effect=OSError):
+            result = await hass.config_entries.options.async_configure(flow_id, {})
+    assert result["type"] == "form"
+    assert result["errors"] == {"base": "profile_review_save_failed"}
+    assert target.entry.data == before
+    assert issue(hass, target) is not None
+    hass.config_entries.options.async_abort(flow_id)

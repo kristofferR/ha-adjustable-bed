@@ -1008,7 +1008,8 @@
       "richmat_mh_no_name": "The app selects the model from the Bluetooth name, which is unavailable. Choose the model in the protocol variant.",
       "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant.",
       "app_profile_unpair_first": "Each side keeps its own {profile} settings. Unpair the beds, change each side separately, then combine them again.",
-      "vibradorm_reconfigure_required": "To change the Vibradorm app, remote or product, close Configure and select Reconfigure from this entry\u2019s three-dot menu. The guided setup verifies it before saving."
+      "vibradorm_reconfigure_required": "To change the Vibradorm app, remote or product, close Configure and select Reconfigure from this entry\u2019s three-dot menu. The guided setup verifies it before saving.",
+      "profile_review_save_failed": "Your profile review choice could not be saved. Please try again. Settings were not saved."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond\u2026",
@@ -5934,6 +5935,62 @@
           "review_started": "Continue in settings. Nothing changes until you submit them."
         }
       }
+    },
+    "profile_mismatch": {
+      "title": "A better profile may be available for {target}",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Review the profile for {name}",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed\u2019s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens Configure. Check your app, remote and product settings before submitting. Nothing changes until you save. Closing settings keeps the current profile. Keep current profile dismisses this assessment across restarts and updates.",
+            "data": {
+              "action": "Profile choice"
+            }
+          },
+          "paired": {
+            "title": "Review the profile for {target}",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed\u2019s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nThis assessment applies to this physical bed. Review opens the pair\u2019s Configure menu. To choose a different profile, select {pair_action} first, then configure the affected bed. No pair or profile changes happen automatically. Keep current profile dismisses this assessment for this physical bed only.",
+            "data": {
+              "action": "Profile choice"
+            }
+          }
+        },
+        "error": {
+          "save_failed": "Your choice could not be saved. Please try again."
+        },
+        "abort": {
+          "recommendation_changed": "This recommendation is no longer available or the configuration changed. Open the current notice to review it.",
+          "review_started": "Continue in settings. Nothing changes until you submit them."
+        }
+      }
+    },
+    "profile_ambiguous": {
+      "title": "Check the app or product profile for {target}",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Review the profile for {name}",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) can fit more than one app or product profile. It cannot establish which controls your bed has. Check the app and physical remote you use against these choices:\n\n{choices}\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens Configure. Check your app, remote and product settings before submitting. Nothing changes until you save. Closing settings keeps the current profile. Keep current profile dismisses this assessment across restarts and updates.",
+            "data": {
+              "action": "Profile choice"
+            }
+          },
+          "paired": {
+            "title": "Review the profile for {target}",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) can fit more than one app or product profile. It cannot establish which controls your bed has. Check the app and physical remote you use against these choices:\n\n{choices}\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nThis assessment applies to this physical bed. Review opens the pair\u2019s Configure menu. To choose a different profile, select {pair_action} first, then configure the affected bed. No pair or profile changes happen automatically. Keep current profile dismisses this assessment for this physical bed only.",
+            "data": {
+              "action": "Profile choice"
+            }
+          }
+        },
+        "error": {
+          "save_failed": "Your choice could not be saved. Please try again."
+        },
+        "abort": {
+          "recommendation_changed": "This recommendation is no longer available or the configuration changed. Open the current notice to review it.",
+          "review_started": "Continue in settings. Nothing changes until you submit them."
+        }
+      }
     }
   },
   "selector": {
@@ -5978,7 +6035,7 @@
     },
     "profile_recommendation_action": {
       "options": {
-        "review": "Review suggested profile",
+        "review": "Review profile settings",
         "keep": "Keep current profile"
       }
     }

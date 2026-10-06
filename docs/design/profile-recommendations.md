@@ -1,39 +1,70 @@
-# Evidence-backed profile recommendations
+# Profile recommendations
 
 Ref [#677](https://github.com/kristofferR/ha-adjustable-bed/issues/677).
 
-`profile_recommendations.py` evaluates observations from normal connections and
-passive advertisements for existing and newly configured beds. It never opens a
-connection, probes a command, or changes a profile to test a hypothesis. This
-operates independently of `profile_review.py`'s one-time upgrade review.
+`profile_recommendations.py` checks every configured bed profile, including fresh
+entries and paired beds. It reuses the existing advertisement detector and the
+known app choices in `profile_review.py`. It never opens a connection, probes a
+command, reads another characteristic, or switches protocols to test a hypothesis.
+No detection predicate or bed protocol changes are introduced by this feature.
 
-A Repairs notice explains the current profile, the suggested profile, the reason,
-and known changes to controls. Review hands off to the existing options flow:
-selecting the suggested bed type re-renders its settings, and only the user's
-subsequent submission saves them. Cancelling leaves both the configuration and
-notice intact. Existing device and matching entity IDs use the options flow's
-normal preservation behavior. Removed controls can affect automations.
+## Assessment
+
+- A high-confidence, unambiguous detector disagreement with no required
+  characteristic check or related app alternatives offers a **possible better
+  match**. Detection confidence ranks existing signatures; it does not prove the
+  bed's controls or quantify a probability of compatibility.
+- A corroborated identity with multiple supported routes or known related app
+  choices offers **app/product review**, without selecting a winner. This also
+  covers generic profiles whose correct app cannot be determined over Bluetooth.
+- An explicitly selected matching app, an accepted alternative, or an existing
+  legacy alias is kept. No known match, a weak match, or a bare ambiguous shared
+  service produces no notice. A new app's existence alone is insufficient.
+- More specific, verified evidence can improve an assessment. The reported
+  Star254202 case below remains one such rule, rather than the feature's scope.
+
+Generic assessment uses the detector's existing confidence categories: below 0.6
+is insufficient; below 0.9 also needs a name, manufacturer or MAC signal. A clear
+suggestion needs at least 0.9, no ambiguity, no characteristic-check requirement,
+and no known related app choices. App candidates come from existing supported
+profile metadata, never assumed controller-family equivalence.
+
+## Review and dismissal
+
+Repairs explains the current profile and either a proposed match or the available
+app/product choices. Generic notices explain that controls and automations may
+change; verified rules can give a specific controls comparison. Standalone Review
+hands off to Configure. A unique suggestion re-renders its settings without saving;
+an ambiguous assessment keeps the current selection. Only the user's subsequent
+submission applies settings. Closing settings keeps the current profile and notice.
+Saving a Repairs handoff confirms the selected route, including a choice to keep
+an ambiguous generic profile, so it does not immediately ask again.
 
 Keep current profile, including Home Assistant's native Ignore action, stores a
-decision in the reserved `profile_recommendations` slot of the existing per-address
-app-state store. It does not reload the entry or disconnect the bed. Decisions
-survive restart, integration/HA updates and pair/split ownership transfers. Removing
-the last entry owning an address removes its app-state store as usual.
+decision in the reserved `profile_recommendations` slot of the per-address app-state
+store. It does not reload or disconnect the bed. Decisions survive restarts,
+integration/HA updates and pair/split ownership transfers. Removing the last entry
+owning an address removes its app-state store as usual. An ongoing assessment also
+suppresses a duplicate one-time upgrade notice without mutating its migration mark.
 
-Rule IDs identify materially distinct recommendations. Do not change them for a
-release, wording change, RSSI, display-name change, or serial suffix. A new rule
-requires new evidence and a documented reason to ask again. A dropped connection
-retains the last observation within the setup session; the next successful
-connection replaces it, including an unsuccessful manufacturer read. Setup waits
-for normal observations again after a restart. Conflicting observations withdraw
-the notice. Repeated advertisements do not repeat detection or its log messages.
+Generic decision keys include the assessment kind, configured route/variant and
+sorted candidates. A materially different selection or candidate set can ask
+again; RSSI, serial suffixes, translated labels and release versions cannot.
+Verified rules retain their own stable evidence keys.
 
-Two-address pairs have independent observers and decisions per physical address.
-The notice names the affected side. Review opens the existing Configure menu and
-explains the required explicit split; it never changes or splits either side.
-The initial source profile does not support single-address pairing.
+Observers retain the last advertisement and connected controller diagnostics
+within the setup session while Bluetooth history expires or the bed disconnects.
+New observations replace them, including failed manufacturer reads and conflicting
+identities. A restart waits for observations again. Missing optional advertisement
+fields are normalized, addresses are compared case-insensitively, and unchanged
+advertisements do not repeat detection/logging.
 
-## Initial rule: Lumbar to BOX25 for Star254202
+Two-address pairs have independent observers and decisions per physical address;
+notices identify the affected side. Single-address pairs observe their one physical
+coordinator once. Paired Review opens Configure and explains the existing explicit
+split or restore-standalone action. It never changes either side or splits a pair.
+
+## Specific verified rule: Lumbar to BOX25 for Star254202
 
 This deliberately narrow rule requires all of:
 
@@ -83,8 +114,9 @@ hardware capability is inferred and no packet, timing or controller is changed.
 
 ### Feature dispositions and verification
 
-- `IMPLEMENTED`: the narrow recommendation, passive observation, persistent
-  dismissal, stale-notice rejection, configuration handoff and paired-side isolation.
+- `IMPLEMENTED`: universal assessment, the specific recommendation, passive
+  observation, persistent dismissal, stale-notice rejection, configuration handoff
+  and paired-side isolation.
   Covered by `tests/test_profile_recommendations.py`.
 - `ALREADY_IMPLEMENTED`: current-profile table/manufacturer selection and controls,
   `beds/adjustable_lumbar.py`, `tests/test_adjustable_lumbar.py`; target-profile
@@ -93,6 +125,6 @@ hardware capability is inferred and no packet, timing or controller is changed.
   remain unsupported by this rule because there is no equivalent matching evidence;
   they are not declared incompatible or queued for guessed protocol changes.
 
-Future rules need their own exact evidence, controls comparison and focused tests.
-Shared UUIDs, newly released app profiles, and generic confidence thresholds are
-not substitutes for that evidence.
+Additional verified overrides need their own exact evidence, controls comparison
+and focused tests. Generic assessment remains advisory; it does not create new
+protocol facts or establish physical compatibility.

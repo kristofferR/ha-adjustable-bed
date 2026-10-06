@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
+from hashlib import sha256
 from typing import TYPE_CHECKING, Any, Final
 
 import voluptuous as vol
@@ -32,11 +33,17 @@ from .const import (
     CONF_BED_TYPE,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
+    LEGACY_BED_TYPE_MAPPING,
+    SUPPORTED_BED_TYPES,
     VARIANT_AUTO,
 )
-from .detection import detect_bed_type_detailed
+from .detection import (
+    APP_VARIANT_CHOICES,
+    bed_type_choice,
+    detect_bed_type_detailed,
+)
 from .pairing import effective_child_data, get_child, is_paired
-from .profile_review import choice_label
+from .profile_review import async_clear_profile_review_issue, choice_label, related_app_choices
 
 if TYPE_CHECKING:
     from .coordinator import AdjustableBedCoordinator
@@ -52,10 +59,12 @@ class Recommendation:
 
     rule: str
     current: str
-    suggested: str
+    suggested: str | None
+    choices: tuple[str, ...] = ()
+    translation_key: str = "lumbar_star254202_box25"
 
 
-def recommend_profile(
+def _reported_recommendation(
     data: Mapping[str, object],
     info: bluetooth.BluetoothServiceInfoBleak | None,
     protocol_state: Mapping[str, object],
@@ -71,7 +80,7 @@ def recommend_profile(
         or data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
         not in (None, VARIANT_AUTO, ADJUSTABLE_LUMBAR_VARIANT_STAR)
         or info is None
-        or re.fullmatch(r"Star254202[0-9]{6}", info.name, re.IGNORECASE) is None
+        or re.fullmatch(r"Star254202[0-9]{6}", info.name or "", re.IGNORECASE) is None
         or protocol_state.get("adjustable_lumbar_branch") != "star"
         or protocol_state.get("adjustable_lumbar_table") != "35_22_01"
         or protocol_state.get("adjustable_lumbar_manufacturer") != "53 54 41 52"
@@ -89,6 +98,87 @@ def recommend_profile(
     return Recommendation(
         "lumbar_star254202_box25", BED_TYPE_ADJUSTABLE_LUMBAR, BED_TYPE_SLEEPYS_BOX25
     )
+
+
+def recommend_profile(
+    data: Mapping[str, object],
+    info: bluetooth.BluetoothServiceInfoBleak | None,
+    protocol_state: Mapping[str, object],
+) -> Recommendation | None:
+    """Assess any configured route using existing detection and app metadata.
+
+    Detection confidence ranks known matches; it is not a probability of correct
+    controls. Ambiguous routes therefore offer review without choosing a winner.
+    """
+    if info is None:
+        return None
+    reported = _reported_recommendation(data, info, protocol_state)
+    if reported is not None:
+        return reported
+    bed_type = data.get(CONF_BED_TYPE)
+    variant = data.get(CONF_PROTOCOL_VARIANT)
+    if not isinstance(bed_type, str) or bed_type not in SUPPORTED_BED_TYPES:
+        return None
+    current = bed_type_choice(bed_type, variant if isinstance(variant, str) else None)
+    detected = detect_bed_type_detailed(info)
+    if detected.bed_type not in SUPPORTED_BED_TYPES or detected.confidence < 0.6:
+        return None
+    assert detected.bed_type is not None
+    # A bare shared service is not enough to question a configured bed. Name,
+    # manufacturer or a high-confidence dedicated signature must corroborate it.
+    if detected.confidence < 0.9 and not any(
+        signal.startswith(("name:", "manufacturer", "mac:")) for signal in detected.signals
+    ):
+        return None
+    matches = {detected.bed_type, *(detected.ambiguous_types or ())}
+    apps = related_app_choices(
+        detected.bed_type, variant if bed_type == detected.bed_type else VARIANT_AUTO
+    )
+    if current in apps or (current != bed_type and bed_type in matches):
+        # An explicitly selected app already resolves this generic identity.
+        return None
+    if bed_type in matches and bed_type != detected.bed_type:
+        return None  # Detection explicitly accepts the selected alternative.
+    if variant in (None, VARIANT_AUTO) and (
+        LEGACY_BED_TYPE_MAPPING.get(bed_type, bed_type)
+        == LEGACY_BED_TYPE_MAPPING.get(detected.bed_type, detected.bed_type)
+        and bed_type != detected.bed_type
+    ):
+        return None  # Existing aliases already use the same protocol route.
+    choices = tuple(
+        sorted(
+            choice
+            for choice in {*matches, *apps}
+            if choice != current
+            and (
+                choice in SUPPORTED_BED_TYPES
+                or any(choice == f"{bed}:{app}" for bed, app in APP_VARIANT_CHOICES)
+            )
+        )
+    )
+    if not choices:
+        return None
+    suggested = (
+        detected.bed_type
+        if bed_type != detected.bed_type
+        and detected.confidence >= 0.9
+        and not detected.ambiguous_types
+        and not detected.requires_characteristic_check
+        and not apps
+        else None
+    )
+    kind = "profile_mismatch" if suggested else "profile_ambiguous"
+    # Dismissals change only with the selected route/variant or available choices.
+    identity = repr((kind, bed_type, variant or VARIANT_AUTO, choices)).encode()
+    return Recommendation(
+        f"{kind}_{sha256(identity).hexdigest()[:20]}", current, suggested, choices, kind
+    )
+
+
+@callback
+def has_profile_assessment(hass: HomeAssistant, entry_id: str) -> bool:
+    """Avoid a duplicate upgrade notice, including after keeping this assessment."""
+    return any(watch.entry.entry_id == entry_id for watch in _watches(hass).values())
 
 
 def _watches(hass: HomeAssistant) -> dict[str, ProfileRecommendationWatch]:
@@ -115,6 +205,9 @@ class ProfileRecommendationWatch:
         self.recommendation: Recommendation | None = None
         self._protocol_state: Mapping[str, object] = {}
         self._last_evidence: object = None
+        self._observed_name = ""
+        self._last_info: bluetooth.BluetoothServiceInfoBleak | None = None
+        self.review_flow_id: str | None = None
 
     @callback
     def refresh(self, info: bluetooth.BluetoothServiceInfoBleak | None = None) -> None:
@@ -123,6 +216,10 @@ class ProfileRecommendationWatch:
             info = bluetooth.async_last_service_info(
                 self.hass, self.coordinator.address, connectable=True
             )
+            if info is None:
+                info = self._last_info
+        if info is not None and info.address.upper() == self.coordinator.address.upper():
+            self._last_info = info
         if self.side is not None and get_child(self.entry.data, self.side) is None:
             self.recommendation = None
             self._last_evidence = None
@@ -133,6 +230,7 @@ class ProfileRecommendationWatch:
             if self.side is not None
             else {**self.entry.data, **self.entry.options}
         )
+        self._observed_name = (info.name if info is not None else None) or self.coordinator.address
         # Keep observations over an idle disconnect; an offline capability
         # controller has not read the manufacturer. A later connection replaces
         # this evidence even when its manufacturer read fails or changes.
@@ -146,9 +244,9 @@ class ProfileRecommendationWatch:
             (
                 info.address,
                 info.name,
-                tuple(info.service_uuids),
-                dict(info.manufacturer_data),
-                dict(info.service_data),
+                tuple(info.service_uuids or ()),
+                dict(info.manufacturer_data or {}),
+                dict(info.service_data or {}),
             )
             if info is not None
             else None,
@@ -160,12 +258,14 @@ class ProfileRecommendationWatch:
             self._last_evidence = evidence
             self.recommendation = (
                 recommend_profile(data, info, self._protocol_state)
-                if data.get(CONF_ADDRESS) == self.coordinator.address
+                if isinstance(data.get(CONF_ADDRESS), str)
+                and str(data[CONF_ADDRESS]).upper() == self.coordinator.address.upper()
                 and info is not None
-                and info.address == self.coordinator.address
+                and info.address.upper() == self.coordinator.address.upper()
                 else None
             )
         recommendation = self.recommendation
+        async_clear_profile_review_issue(self.hass, self.entry.entry_id)
         if recommendation is None or self.dismissed.get(recommendation.rule):
             ir.async_delete_issue(self.hass, DOMAIN, self.issue_id)
             return
@@ -176,7 +276,7 @@ class ProfileRecommendationWatch:
             is_fixable=True,
             is_persistent=False,
             severity=ir.IssueSeverity.WARNING,
-            translation_key=recommendation.rule,
+            translation_key=recommendation.translation_key,
             translation_placeholders=self.placeholders(),
             data={"rule": recommendation.rule},
         )
@@ -189,8 +289,15 @@ class ProfileRecommendationWatch:
             "target": f"{self.entry.title} ({self.side})" if self.side else self.entry.title,
             "side": self.side or "",
             "address": self.coordinator.address,
+            "bluetooth_name": self._observed_name,
             "current": choice_label(self.recommendation.current),
-            "suggested": choice_label(self.recommendation.suggested),
+            "suggested": choice_label(self.recommendation.suggested)
+            if self.recommendation.suggested
+            else "",
+            "choices": "\n".join(
+                f"- {choice_label(choice)}" for choice in self.recommendation.choices
+            ),
+            "pair_action": "Split into two beds" if self.side else "Restore standalone controls",
         }
 
     async def async_keep(self, recommendation: Recommendation) -> None:
@@ -231,8 +338,6 @@ async def async_watch_profile_recommendations(
 ) -> None:
     """Check after setup and on normal connections or passive advertisements."""
     for side, coordinator in coordinators:
-        if coordinator.bed_type != BED_TYPE_ADJUSTABLE_LUMBAR:
-            continue
         decisions = await app_state_store(hass, coordinator.address).async_slot(_SLOT)
         watch = ProfileRecommendationWatch(hass, entry, coordinator, side, decisions)
         _watches(hass)[watch.issue_id] = watch
@@ -252,6 +357,37 @@ async def async_watch_profile_recommendations(
             )
         )
         watch.refresh()
+
+
+async def async_confirm_profile_review(
+    hass: HomeAssistant, entry: ConfigEntry, flow_id: str, data: Mapping[str, object]
+) -> None:
+    """A saved Repairs handoff confirms the selected route, including ambiguity.
+
+    Cancellation never reaches this hook. Keep dismissal separate from options
+    so no confirmation flag leaks into paired-side configuration.
+    """
+    for watch in tuple(_watches(hass).values()):
+        if (
+            watch.entry is not entry
+            or watch.review_flow_id != flow_id
+            or watch.side is not None
+            or not isinstance(data.get(CONF_ADDRESS), str)
+            or str(data[CONF_ADDRESS]).upper() != watch.coordinator.address.upper()
+        ):
+            continue
+        recommendation = recommend_profile(
+            data,
+            watch._last_info,
+            watch._protocol_state
+            if data.get(CONF_BED_TYPE) == entry.data.get(CONF_BED_TYPE)
+            else {},
+        )
+        if recommendation is not None:
+            store = app_state_store(hass, watch.coordinator.address)
+            decisions = {**await store.async_slot(_SLOT), recommendation.rule: True}
+            await store.async_write(_SLOT, decisions)
+            watch.dismissed = decisions
 
 
 class ProfileRecommendationRepairFlow(RepairsFlow):
@@ -306,9 +442,10 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
                         return self.async_abort(reason="recommendation_changed")
                     # A bed-type change only re-renders settings. The user must
                     # submit that form to apply it, exactly as in Configure.
-                    result = await manager.async_configure(
-                        flow_id, {CONF_BED_TYPE: recommendation.suggested}
-                    )
+                    if recommendation.suggested is not None:
+                        result = await manager.async_configure(
+                            flow_id, {CONF_BED_TYPE: recommendation.suggested}
+                        )
                 except BaseException:
                     try:
                         manager.async_abort(flow_id)
@@ -316,6 +453,7 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
                         pass
                     raise
             if result.get("type") in (FlowResultType.FORM, FlowResultType.MENU):
+                watch.review_flow_id = result["flow_id"]
                 return self.async_abort(
                     reason="review_started", next_flow=(FlowType.OPTIONS_FLOW, result["flow_id"])
                 )
