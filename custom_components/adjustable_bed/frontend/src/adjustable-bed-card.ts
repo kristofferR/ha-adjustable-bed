@@ -29,7 +29,7 @@ import {
   pairedChildDeviceIds,
   resolvePairedParentId,
 } from "./discovery";
-import { MotorHold } from "./hold";
+import { MotorHold, movementPulse } from "./hold";
 import { cardNavigationPath, compactActions, compactStopEntities } from "./compact";
 import { localize } from "./localize";
 import {
@@ -89,21 +89,7 @@ export class AdjustableBedCard extends LitElement {
   // Press-and-hold rules live in MotorHold; this class owns only the event
   // wiring and the service calls it drives.
   private readonly _hold = new MotorHold({
-    pulse: (m, dir) => {
-      if (m.cover) {
-        return this.hass?.callService(
-          "cover",
-          dir === "up" ? "open_cover" : "close_cover",
-          { entity_id: m.cover },
-        ) as Promise<void> | undefined;
-      }
-      const id = dir === "up" ? m.up : m.down;
-      return id
-        ? (this.hass?.callService("button", "press", {
-            entity_id: id,
-          }) as Promise<void> | undefined)
-        : undefined;
-    },
+    pulse: (m, dir) => movementPulse(this.hass, m, dir),
     stopCover: (cover, stopEntityId) =>
       this._stopCompactTarget(cover, stopEntityId ?? cover),
     // Which stop applies depends on the bed the held motor belongs to, so it is
@@ -443,7 +429,8 @@ export class AdjustableBedCard extends LitElement {
           ${this._lighting(bed)}
           ${paired && active?.key === "both" ? this._combinedLighting(bed, sides) : nothing}
         ` : nothing}
-        ${c.show_connection === true ? html`<div class="compact-connections">
+        ${c.show_connection === true ? paired && active?.key === "both"
+          ? this._combinedBluetooth(sides) : html`<div class="compact-connections">
           ${sides.map((pane) => {
             const status = this._connectionStatus(pane.bed);
             return status ? html`<span>${this._connectionDot(pane.bed)}
@@ -798,6 +785,7 @@ export class AdjustableBedCard extends LitElement {
           const state = this._state(entityId);
           const rssi = state?.attributes.rssi;
           return html`
+            <div class="bluetooth-receiver" role="group" aria-label=${pane.label}>
             <button
               class="bluetooth-status ${status}"
               @click=${() => this._moreInfo(entityId)}
@@ -820,6 +808,13 @@ export class AdjustableBedCard extends LitElement {
                 </span>
               </span>
             </button>
+            <div class="tiles">
+              ${pane.bed.connect ? this._tile(pane.bed.connect,
+                () => this._press(pane.bed.connect!), { icon: "mdi:bluetooth-connect", cls: "success" }) : nothing}
+              ${pane.bed.disconnect ? this._tile(pane.bed.disconnect,
+                () => this._press(pane.bed.disconnect!), { icon: "mdi:bluetooth-off" }) : nothing}
+            </div>
+            </div>
           `;
         })}
       </div>
@@ -2279,8 +2274,14 @@ export class AdjustableBedCard extends LitElement {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: var(--ab-gap);
     }
+    .bluetooth-receiver {
+      min-width: 0;
+      display: grid;
+      gap: var(--ab-gap);
+    }
     .bluetooth-status {
       min-width: 0;
+      width: 100%;
       display: flex;
       align-items: center;
       gap: 10px;

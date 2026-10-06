@@ -674,7 +674,7 @@
       "mismatched_bed_types": "Those two beds are different models and can't be combined. Add them as separate devices.",
       "pairing_needs_capabilities": "Connect both beds once before combining them so their motor layouts can be verified.",
       "mismatched_motor_layouts": "Those beds expose different motor layouts and can't be combined safely.",
-      "octo_pairing_needs_connection": "Both Octo beds must be connected before combining them \u2014 their capabilities (lights, memory presets, etc.) are read from the live beds and saved for the paired device. Connect each Octo side, then try again.",
+      "octo_pairing_needs_connection": "An OCTO receiver still needs its controls checked before combining. Connect that receiver and try again. If both need checking, you can connect them one at a time; this wizard remembers each result. Star2 receivers use their configured layout and do not need this check.",
       "pairing_unsupported_entities": "One of these beds has extra controls (such as climate, lights, or selectors) that combining doesn't support yet. Those would be lost, so pairing is blocked for now.",
       "same_address": "Both selections point at the same bed (same Bluetooth address). Pick two different beds to combine.",
       "auto_detect_failed": "Couldn't identify this bed automatically. Pick a protocol from the list, or choose \"Diagnostic (unknown bed)\" to capture data for support.",
@@ -726,7 +726,9 @@
           "pair_sides": "Enable Left / Right / Both controls",
           "revert_sides": "Restore standalone controls",
           "unpair": "Split into two beds",
-          "remove_bond": "Remove the Bluetooth bond"
+          "remove_bond": "Remove the Bluetooth bond",
+          "left_settings": "Change left receiver settings",
+          "right_settings": "Change right receiver settings"
         }
       },
       "settings": {
@@ -912,6 +914,30 @@
           "starcode_abm5_4_command_selector": "Saved command/parser selector",
           "starcode_abm5_4_transport_selector": "Bluetooth transport selector"
         }
+      },
+      "left_settings": {
+        "title": "Left receiver settings",
+        "description": "Change connection and movement settings for **{name}**. Only this receiver is updated.",
+        "data": {
+          "preferred_adapter": "Bluetooth adapter",
+          "connection_profile": "Connection profile",
+          "motor_pulse_count": "Motor pulse count",
+          "motor_pulse_delay_ms": "Motor pulse delay (ms)",
+          "disconnect_after_command": "Disconnect after each command",
+          "idle_disconnect_seconds": "Idle disconnect timeout (seconds)"
+        }
+      },
+      "right_settings": {
+        "title": "Right receiver settings",
+        "description": "Change connection and movement settings for **{name}**. Only this receiver is updated.",
+        "data": {
+          "preferred_adapter": "Bluetooth adapter",
+          "connection_profile": "Connection profile",
+          "motor_pulse_count": "Motor pulse count",
+          "motor_pulse_delay_ms": "Motor pulse delay (ms)",
+          "disconnect_after_command": "Disconnect after each command",
+          "idle_disconnect_seconds": "Idle disconnect timeout (seconds)"
+        }
       }
     },
     "error": {
@@ -960,7 +986,8 @@
       "remove_bond_no_bond": "This Home Assistant host has no Bluetooth bond stored for **{name}** ({address}), so there is nothing to remove.",
       "remove_bond_bluez_unavailable": "Home Assistant could not read the Bluetooth bonds on this host, so it will not try to remove one. This usually means it has no local Bluetooth adapter, or no access to the system D-Bus.",
       "remove_bond_ambiguous": "Home Assistant cannot tell which Bluetooth bond you mean for **{name}** ({address}). Either more than one adapter on this host is bonded to it, or the adapter it was paired through no longer holds a bond. Set the bed's preferred adapter to the one you want to clear, then try again.",
-      "remove_bond_changed": "The Bluetooth bonds on this host changed while the confirmation was open, so nothing was removed. Open **Remove the Bluetooth bond** again to see the current state and confirm from there."
+      "remove_bond_changed": "The Bluetooth bonds on this host changed while the confirmation was open, so nothing was removed. Open **Remove the Bluetooth bond** again to see the current state and confirm from there.",
+      "pair_side_not_found": "This paired receiver is no longer available. Reopen the integration settings."
     }
   },
   "entity": {

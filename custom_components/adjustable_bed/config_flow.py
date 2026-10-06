@@ -273,6 +273,8 @@ from .const import (
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
     RUNTIME_BOND_KEYS,
+    SIDE_LEFT,
+    SIDE_RIGHT,
     SOLACE_VARIANT_WOOSA,
     STARCODE_APP_CONFIG_KEYS,
     STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
@@ -328,6 +330,7 @@ from .pairing import (
     build_single_address_pair_entry_data,
     effective_child_data,
     get_child,
+    inheritable_child_fields,
     is_paired,
     iter_children,
     pair_member_addresses,
@@ -6683,6 +6686,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         menu_options = ["settings"]
         data = self.config_entry.data
         if is_paired(data):
+            if data.get(CONF_PAIR_MODE) == PAIR_MODE_SEPARATE_ADDRESS:
+                menu_options.extend(["left_settings", "right_settings"])
             menu_options.append(
                 "revert_sides"
                 if data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS
@@ -6710,6 +6715,110 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
     ) -> ConfigFlowResult:
         """Manage the options."""
         return await self._async_options_form(user_input, step_id="settings")
+
+    async def async_step_left_settings(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        return await self._async_receiver_settings(SIDE_LEFT, user_input)
+
+    async def async_step_right_settings(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        return await self._async_receiver_settings(SIDE_RIGHT, user_input)
+
+    async def _async_receiver_settings(
+        self, side: str, user_input: dict[str, Any] | None
+    ) -> ConfigFlowResult:
+        """Edit one physical receiver without changing its partner or profile."""
+        data = self.config_entry.data
+        child = get_child(data, side)
+        if data.get(CONF_PAIR_MODE) != PAIR_MODE_SEPARATE_ADDRESS or child is None:
+            return self.async_abort(reason="pair_side_not_found")
+        current = effective_child_data(data, side, self.config_entry.options)
+        bed_type = current.get(CONF_BED_TYPE, BED_TYPE_DIAGNOSTIC)
+        variant = current.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
+        pulse_defaults = get_motor_pulse_defaults(bed_type, variant)
+        adapters = get_available_adapters(self.hass)
+        adapter = current.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
+        if adapter not in adapters:
+            adapter = ADAPTER_AUTO
+        schema: dict[vol.Marker, Any] = {
+            vol.Optional(CONF_PREFERRED_ADAPTER, default=adapter): vol.In(adapters),
+            vol.Optional(
+                CONF_CONNECTION_PROFILE,
+                default=current.get(CONF_CONNECTION_PROFILE, DEFAULT_CONNECTION_PROFILE),
+            ): vol.In(CONNECTION_PROFILE_OPTIONS),
+            vol.Optional(
+                CONF_MOTOR_PULSE_COUNT,
+                default=str(current.get(CONF_MOTOR_PULSE_COUNT, pulse_defaults[0])),
+            ): TextSelector(TextSelectorConfig()),
+            vol.Optional(
+                CONF_MOTOR_PULSE_DELAY_MS,
+                default=str(current.get(CONF_MOTOR_PULSE_DELAY_MS, pulse_defaults[1])),
+            ): TextSelector(TextSelectorConfig()),
+            vol.Optional(
+                CONF_DISCONNECT_AFTER_COMMAND,
+                default=current.get(
+                    CONF_DISCONNECT_AFTER_COMMAND,
+                    disconnect_after_command_default_enabled(bed_type, variant),
+                ),
+            ): bool,
+            vol.Optional(
+                CONF_IDLE_DISCONNECT_SECONDS,
+                default=current.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
+            ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
+        }
+        _hide_owned_generic_fields(schema, bed_type, variant)
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            changes = dict(user_input)
+            for field, default in zip(
+                (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS), pulse_defaults, strict=True
+            ):
+                if field not in changes:
+                    continue
+                try:
+                    changes[field] = int(changes[field] or default)
+                    if changes[field] < 1:
+                        errors[field] = "invalid_number"
+                except ValueError, TypeError:
+                    errors[field] = "invalid_number"
+            if not errors and _invalid_pulse_count(
+                bed_type, changes.get(CONF_MOTOR_PULSE_COUNT, pulse_defaults[0])
+            ):
+                errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
+            if not errors:
+                shown = _shown_option_values(schema)
+                for field in (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS):
+                    if field in shown:
+                        shown[field] = int(shown[field])
+                changes = {key: value for key, value in changes.items() if shown.get(key) != value}
+                if (
+                    CONF_PREFERRED_ADAPTER in user_input
+                    and current.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO) not in adapters
+                ):
+                    changes[CONF_PREFERRED_ADAPTER] = adapter
+                if changes.keys() & {CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS}:
+                    changes[CONF_MOTOR_PULSE_USER_SET] = True
+                # Move shared overrides into both receivers before changing
+                # one side, keeping unrelated entry-level options intact.
+                options = inheritable_child_fields(self.config_entry.options)
+                for receiver_side in PAIR_SIDES:
+                    if options and get_child(data, receiver_side) is not None:
+                        data = with_updated_child(data, receiver_side, options)
+                self.hass.config_entries.async_update_entry(
+                    self.config_entry, data=with_updated_child(data, side, changes)
+                )
+                return self.async_create_entry(
+                    title="", data={
+                        key: value for key, value in self.config_entry.options.items()
+                        if key not in options
+                    },
+                )
+        return self.async_show_form(
+            step_id=f"{side}_settings", data_schema=vol.Schema(schema), errors=errors,
+            description_placeholders={"name": child.get(CONF_NAME, side.title())},
+        )
 
     def _starcode_live_transport_valid(self, selector: str) -> bool | None:
         """Check the current receiver without connecting or disturbing its link."""

@@ -4,8 +4,8 @@
 // Every case here is a defect that was found in review while building this, so
 // they are regression tests rather than illustrative examples.
 import { expect, test } from "bun:test";
-import { type Direction, type HoldActions, MotorHold } from "./hold";
-import type { MotorEntity } from "./types";
+import { type Direction, type HoldActions, MotorHold, movementPulse } from "./hold";
+import type { HomeAssistant, MotorEntity } from "./types";
 
 interface Recorder {
   actions: HoldActions;
@@ -68,6 +68,40 @@ const coverMotor: MotorEntity = { key: "legs", cover: "cover.legs" };
 const rebuiltButtonMotor: MotorEntity = { ...buttonMotor };
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+test("eligible Both holds use the parent timed action and retain combined Stop", async () => {
+  const calls: unknown[] = [];
+  let finish!: () => void;
+  const hass = { callService: (...args: unknown[]) => {
+    calls.push(args);
+    return new Promise<void>((resolve) => { finish = resolve; });
+  } } as HomeAssistant;
+  const motor: MotorEntity = { key: "back", up: "button.pair_back_up",
+    timedMove: { deviceId: "pair", motor: "back" } };
+  const rec = recorder();
+  const hold = new MotorHold({ ...rec.actions, pulse: (m, dir) => movementPulse(hass, m, dir) });
+  hold.start(motor, "up", 1, "button.pair_stop");
+  expect(calls).toEqual([["adjustable_bed", "timed_move", {
+    device_id: "pair", side: "both", motor: "back", direction: "up", duration_ms: 1000,
+  }]]);
+  hold.end({ ...motor });
+  finish();
+  await tick();
+  expect(calls).toHaveLength(1);
+  expect(rec.stoppedBeds).toEqual(["button.pair_stop"]);
+});
+
+test("ordinary covers, buttons and unsupported directions keep their finite actions", async () => {
+  const calls: unknown[] = [];
+  const hass = { callService: async (...args: unknown[]) => { calls.push(args); } } as HomeAssistant;
+  await movementPulse(hass, coverMotor, "down");
+  await movementPulse(hass, buttonMotor, "up");
+  expect(movementPulse(hass, { key: "back_legs" }, "down")).toBeUndefined();
+  expect(calls).toEqual([
+    ["cover", "close_cover", { entity_id: "cover.legs" }],
+    ["button", "press", { entity_id: "button.head_up" }],
+  ]);
+});
 
 test("a hold repeats until it is released", async () => {
   const rec = recorder();
