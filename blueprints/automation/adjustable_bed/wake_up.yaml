@@ -101,16 +101,17 @@ blueprint:
     bed_lights:
       name: Under-bed lights (optional)
       description: >-
-        Select lights on the intended side(s), independently of the movement
-        target. Only lights known to be off are turned on. Unknown, unavailable,
-        and already-on lights are left unchanged. Toggle-only switches are excluded.
+        Select only Under-bed lights light or switch entities on the intended
+        side(s), not massage or other bed switches. Selection is independent of
+        the movement target. Only lights known to be off are turned on. Unknown,
+        unavailable, and already-on lights are left unchanged.
       default: []
       selector:
         entity:
           multiple: true
           filter:
             - integration: adjustable_bed
-              domain: light
+              domain: [light, switch]
 
 mode: single
 
@@ -150,6 +151,6 @@ actions:
       sequence:
         - if: "{{ is_state(repeat.item, 'off') }}"
           then:
-            - action: light.turn_on
+            - action: "{{ repeat.item.split('.')[0] }}.turn_on"
               target:
                 entity_id: "{{ repeat.item }}"

@@ -153,22 +153,27 @@ async def test_memory_recall_does_not_apply_raise_duration(
     bed_actions["timed_move"].assert_not_awaited()
 
 
-async def test_only_known_off_lights_run_after_movement(
+async def test_only_known_off_light_and_switch_lighting_runs_after_movement(
     hass: HomeAssistant, installed_blueprint: None, bed_actions: dict[str, AsyncMock]
 ) -> None:
-    lights = [f"light.bed_{state}" for state in ("off", "on", "unknown", "unavailable")]
-    for entity_id, state in zip(lights, ("off", "on", "unknown", "unavailable"), strict=True):
-        hass.states.async_set(entity_id, state)
-    lights.append("light.bed_missing")
-    calls = async_mock_service(hass, "light", "turn_on")
+    lights = []
+    calls = {}
+    for domain in ("light", "switch"):
+        for state in ("off", "on", "unknown", "unavailable"):
+            entity_id = f"{domain}.bed_{state}"
+            hass.states.async_set(entity_id, state)
+            lights.append(entity_id)
+        lights.append(f"{domain}.bed_missing")
+        calls[domain] = async_mock_service(hass, domain, "turn_on")
 
     async def move(call: ServiceCall) -> None:
-        assert calls == []
+        assert all(domain_calls == [] for domain_calls in calls.values())
 
     bed_actions["timed_move"].side_effect = move
     await setup_wake_up(hass, bed_lights=lights)
     await run_actions(hass)
-    assert [call.data for call in calls] == [{"entity_id": ["light.bed_off"]}]
+    for domain, domain_calls in calls.items():
+        assert [call.data for call in domain_calls] == [{"entity_id": [f"{domain}.bed_off"]}]
     bed_actions["timed_move"].assert_awaited_once()
 
 
@@ -180,16 +185,49 @@ async def test_failed_movement_stops_without_lights_or_retry(
     caplog: pytest.LogCaptureFixture,
     failure: str,
 ) -> None:
-    hass.states.async_set("light.bed", "off")
-    lights = async_mock_service(hass, "light", "turn_on")
+    lighting = ["light.bed", "switch.bed_lights"]
+    for entity_id in lighting:
+        hass.states.async_set(entity_id, "off")
+    light_calls = async_mock_service(hass, "light", "turn_on")
+    switch_calls = async_mock_service(hass, "switch", "turn_on")
     if failure == "bed":
         bed_actions["timed_move"].side_effect = HomeAssistantError("Bed unavailable")
     else:
         hass.services.async_remove("adjustable_bed", "timed_move")
-    await setup_wake_up(hass, bed_lights=["light.bed"])
+    await setup_wake_up(hass, bed_lights=lighting)
     await run_actions(hass)
-    assert lights == []
+    assert light_calls == []
+    assert switch_calls == []
     assert bed_actions["timed_move"].await_count == (1 if failure == "bed" else 0)
+    assert "Error" in caplog.text
+
+
+@pytest.mark.parametrize("domain", ["light", "switch"])
+@pytest.mark.parametrize("failure", ["action", "missing_service"])
+async def test_lighting_failure_remains_an_error_without_retry(
+    hass: HomeAssistant,
+    installed_blueprint: None,
+    bed_actions: dict[str, AsyncMock],
+    caplog: pytest.LogCaptureFixture,
+    domain: str,
+    failure: str,
+) -> None:
+    """Domain dispatch must preserve failures, including a missing turn-on action."""
+    next_domain = "switch" if domain == "light" else "light"
+    lighting = [f"{domain}.bed_lights", f"{next_domain}.other_bed_lights"]
+    for entity_id in lighting:
+        hass.states.async_set(entity_id, "off")
+    failed_calls = async_mock_service(
+        hass, domain, "turn_on", raise_exception=HomeAssistantError("Lighting unavailable")
+    )
+    next_calls = async_mock_service(hass, next_domain, "turn_on")
+    if failure == "missing_service":
+        hass.services.async_remove(domain, "turn_on")
+    await setup_wake_up(hass, bed_lights=lighting)
+    await run_actions(hass)
+    assert len(failed_calls) == (1 if failure == "action" else 0)
+    assert next_calls == []
+    bed_actions["timed_move"].assert_awaited_once()
     assert "Error" in caplog.text
 
 

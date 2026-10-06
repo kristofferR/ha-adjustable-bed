@@ -13,8 +13,10 @@ Importing the blueprint does not move the bed.
    child. A paired parent defaults to both sides; choose **Left** or **Right**
    to narrow it. Conflicting child-side selections are rejected.
 3. Choose **Timed raise** or **Recall hardware memory**, using the requirements below.
-4. Optionally select the under-bed light entities for the intended side(s).
-   Light selection is independent of the movement target. Leave it empty to skip lighting.
+4. Optionally select **Under-bed lights** light or switch entities for the intended
+   side(s). The picker also shows other bed switches; select only lighting, not
+   massage, synchronization or automatic-drive controls. Light selection is independent
+   of the movement target. Leave it empty to skip lighting.
 5. Save with a clear name, then test the movement while awake before relying on
    its schedule. **Run actions** moves the bed immediately and bypasses the weekday condition.
 
@@ -22,7 +24,7 @@ Importing the blueprint does not move the bed.
 |--------|----------------------------------|
 | Timed raise | A supported `back` or `head` axis and timed movement. Back is usually the main upper-body section; Head is a separate head/neck axis where available. Raises once for a ceiling of 100–30000 ms, default 1000 ms. Unsupported axes/durations are rejected by the integration before movement. |
 | Recall hardware memory | A previously saved, tested slot supported by every selected side. Recalls memory 1–8 where available using the controller's finite recall action. It may move several sections. Raise duration does not apply, and accepting a slot number does not create memory support. |
-| Under-bed lights | Adjustable Bed `light` entities with an on action. Only entities whose HA state is `off` receive `light.turn_on`, after the movement action finishes. Already-on, missing, unknown and unavailable lights are skipped. Toggle-only light switches are not offered. |
+| Under-bed lights | Adjustable Bed **Under-bed lights** entities, exposed as `light` entities or `switch` entities with explicit on/off control. Only entities whose HA state is `off` receive their corresponding `light.turn_on` or `switch.turn_on` action, after the movement action finishes. Already-on, missing, unknown and unavailable lights are skipped. Toggle-only lighting buttons are not offered. |
 
 The automation uses existing [`timed_move` and `goto_preset` actions](SERVICES.md#movement-and-memory).
 It does not require position feedback, estimated percentages or software presets.
