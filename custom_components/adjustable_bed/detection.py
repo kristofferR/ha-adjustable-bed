@@ -619,9 +619,9 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SUTA: "SUTA Smart Home (AT protocol)",
     BED_TYPE_SVANE: "Svane Remote app",
     BED_TYPE_TIMOTION_AHF: "TiMOTION AHF",
-    BED_TYPE_VIBRADORM: "Vibradorm (VMAT)",
-    BED_TYPE_VIBRADORM_APP: "Vibradorm apps (Caresse Diamant, Werkmeister, VMAT)",
-    BED_TYPE_VMATBASIC: "V-MAT Basic app (explicit product profile)",
+    BED_TYPE_VIBRADORM: "Vibradorm (legacy setup)",
+    BED_TYPE_VIBRADORM_APP: "Vibradorm apps: VMAT, Caresse Diamant or Werkmeister",
+    BED_TYPE_VMATBASIC: "V-MAT Basic app",
     BED_TYPE_STARCODE_ABM5_4: "AdjustableM5X4 app (explicit profile)",
     BED_TYPE_MOTION_BED: "Motion Bed app",
     # Diagnostic

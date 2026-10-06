@@ -445,9 +445,10 @@ Choose the AdjustableM5X4 app profile explicitly. Star names offer this app as a
 
 ### Caresse / Werkmeister app profiles
 
-Select **Caresse / Werkmeister apps** explicitly, then choose the app. Existing
-generic Vibradorm entries keep their original route. Bluetooth identifiers do
-not select an app or remote layout. Werkmeister offers its two proven remote
+Select **Vibradorm apps: VMAT, Caresse Diamant or Werkmeister** in the bed-type
+picker, then choose Caresse or Werkmeister. Existing generic entries keep their
+**Vibradorm (legacy setup)** route. Bluetooth identifiers do not select an app
+or remote layout. Werkmeister offers its two proven remote
 layouts. Fresh Caresse uses its basic two-axis layout; enable retained settings
 only when you know the app's saved remote type and independent floor-light,
 mood-light, massage and light-extension settings. The `other` retained type has
@@ -468,9 +469,10 @@ remains unverified. App metadata is diagnostic information, not bond proof.
 
 ### VMAT app profile
 
-Choose **VMAT** in the explicit app controller and select the same remote
-ordinal as the app. Its fourteen shipped selections derive the logical axes,
-memory, sync, floor, mood and massage controls. Independent feature overrides
+Choose **Vibradorm apps: VMAT, Caresse Diamant or Werkmeister** in the bed-type
+picker, then **VMAT** and the same remote ordinal as the app. Its fourteen
+shipped selections derive the logical axes, memory, sync, floor, mood and
+massage controls. Independent feature overrides
 and inferred product identification are unavailable. Setup requires positive
 native bond evidence for the exact address and actual host adapter; an
 unverified proxy pairing request cannot finish setup. Ordinary sessions do not

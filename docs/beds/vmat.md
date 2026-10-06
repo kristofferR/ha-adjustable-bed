@@ -8,9 +8,10 @@ app or its remote layout.
 
 ## Setup and remote selection
 
-Choose **Vibradorm apps (Caresse Diamant, Werkmeister, VMAT)** in the bed-type
+Choose **Vibradorm apps: VMAT, Caresse Diamant or Werkmeister** in the bed-type
 picker, then **VMAT** and the same zero-based remote ordinal used by the app.
-**Vibradorm (VMAT)** is the separate generic controller. Resource names identify
+**Vibradorm (legacy setup)** keeps the older generic controller. These labels
+distinguish setup choices; some command paths overlap. Resource names identify
 shipped images, not proven physical products. Controls and features follow this
 exact selection.
 Switching to Caresse or Werkmeister removes the VMAT remote from the saved

@@ -15,8 +15,8 @@ that controller unless you explicitly select an app profile. Shared Bluetooth
 identifiers, device names and model strings do not identify an app or its remote
 layout.
 
-The bed-type picker calls this route **Vibradorm (VMAT)**. For the separate
-VMAT app profile, choose **Vibradorm apps (Caresse Diamant, Werkmeister, VMAT)**,
+The bed-type picker calls this route **Vibradorm (legacy setup)**. For the separate
+VMAT app profile, choose **Vibradorm apps: VMAT, Caresse Diamant or Werkmeister**,
 then **VMAT** and the remote selection used by that app.
 
 ## App profiles
