@@ -18,6 +18,14 @@ transport, not its number of motors or command layout. Issue #633 establishes
 use of FurniMove; #556's receiver label alone does not establish its app.
 For another app, select that app's documented integration profile.
 
+A configured catalog layout loads its control and diagnostic entities even
+if the first BLE connection fails or times out. Commands and **Connect** retry
+the connection on demand. **BLE Connection** remains disconnected and live
+feedback stays unknown until startup succeeds. This uses the selected handset
+table; it does not confirm that the receiver supports it. An unknown/missing
+handset ID still prevents setup. The RF ECO BT label alone cannot select `90167`
+or another layout, including when no physical wireless handset is present.
+
 The integration includes **87 production IDs, 39 distinct tables and 1,092
 ordered rows**, plus the two shipped local aliases `280702`/`280703` and the
 five-row offline table `00000`. All known IDs and metadata references were
@@ -185,6 +193,13 @@ as a Bleak adaptation. Failure, unsupported backends or the operational five-sec
 bound leave ordinary control available. Client replacement, disconnect and unload
 cancel and join that task. An existing OS bond or an `okinmat`-prefixed name skips
 it; request completion never becomes a persisted bond-proof marker.
+
+The controller owns Device Information reads: it subscribes first, then reads
+model, hardware, software and firmware in the app's staggered order. The generic
+manufacturer/model read pass is skipped for this profile. Debug logs identify
+each subscription and information/feedback read by characteristic, so a startup
+drop can be correlated with the last attempted operation. No extra handshake or
+command is sent to compensate for a disconnect.
 
 ## Feedback
 

@@ -70,6 +70,14 @@ Held app controls write immediately and then every 100 ms. Releasing writes STOP
 | Check Massage | The massage page's raw query, written once. No reply is parsed. |
 | Stop | The release STOPs. STOP has no side parameter; its physical scope is unverified. |
 
-The app has no numbered memories, position feedback, light on/off, timers, alarms or firmware update path. Constants for those in its tables are never sent.
+The app has no reachable numbered-memory action, position feedback, light on/off,
+timers, alarms or firmware update path. Constants for those in its tables are
+never sent. This describes the shipped app, not a hardware capability verdict.
+[Issue #670](https://github.com/kristofferR/ha-adjustable-bed/issues/670) reports
+working numbered memory controls before 4.1.0, so their loss is a compatibility
+regression requiring the previous working bed type/variant, exact recall/save
+buttons and current diagnostics. The accepted app report alone supplies no
+numbered-memory save sequence; named preset saves above must not be presented
+as equivalent replacements or guessed numbered-slot mappings.
 
 Not exposed: the app's speech-recognition commands (the same frames are available as buttons; voice movement is excluded because the app sends no STOP after it), and its chord edge cases (the first held preset briefly recalls before the save starts; an unsupported chord only stops).

@@ -8,6 +8,7 @@ reproduce the Android global-handler races or unbounded held-command refresh.
 from __future__ import annotations
 
 import asyncio
+import logging
 import math
 import unicodedata
 from collections.abc import Callable, Mapping, Sequence
@@ -30,6 +31,8 @@ if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
     from ..coordinator import AdjustableBedCoordinator
+
+_LOGGER = logging.getLogger(__name__)
 
 WRITE = "62741525-52f9-8864-b1ab-3b3a8d65950b"
 FEEDBACK = "62741625-52f9-8864-b1ab-3b3a8d65950b"
@@ -320,6 +323,7 @@ class FurniMoveController(BedController):
                 if characteristic.uuid.lower() in supported and {"notify", "indicate"}.intersection(
                     characteristic.properties
                 ):
+                    _LOGGER.debug("FurniMove startup: subscribe %s", characteristic.uuid)
                     async with self._ble_lock:
                         await client.start_notify(characteristic, self._handle_notification)
                     self._notifying.append(characteristic)
@@ -350,6 +354,7 @@ class FurniMoveController(BedController):
         client = self.client
         if characteristic is None or client is None or not client.is_connected:
             return
+        _LOGGER.debug("FurniMove startup: read %s (%s)", key, characteristic.uuid)
         async with self._ble_lock:
             data = await client.read_gatt_char(characteristic)
         self._publish("furnimove_" + key, bytes(data).decode("utf-8", errors="replace"))
@@ -358,6 +363,7 @@ class FurniMoveController(BedController):
         client = self.client
         if self._feedback_characteristic is None or client is None or not client.is_connected:
             return
+        _LOGGER.debug("FurniMove feedback: read %s", self._feedback_characteristic.uuid)
         async with self._ble_lock:
             data = await client.read_gatt_char(self._feedback_characteristic)
         self._parse_feedback(bytes(data))

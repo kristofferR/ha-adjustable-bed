@@ -16,6 +16,24 @@ Raw artifacts, API responses, decompilation, audit reports and per-observation l
 
 Hardware behavior remains unverified. Physical checks are deferred to real users after beta/release, not an implementation blocker. #633 establishes FurniMove use; #556 establishes a shared receiver, not its app or handset ID.
 
+## Startup compatibility follow-up
+
+The 2026-10-06 retest in [issue #633](https://github.com/kristofferR/ha-adjustable-bed/issues/633)
+still loses its link before controller setup and creates no entities. D029/D030's
+controller-owned, subscription-first information reads now replace the generic
+manufacturer/model pass for FurniMove. Individual subscription/read debug lines
+identify the last operation attempted. This removes redundant startup work; it
+does not establish which operation causes the physical disconnect.
+
+A valid selected catalog layout can create entities after initial connection
+failure or timeout, using the existing offline capability controller. It retries
+on command/Connect, preserves entity identities when a live controller takes
+over, and refuses unknown IDs or a half-initialized client left by failed cleanup.
+`tests/test_furnimove_startup.py` covers these paths and subscription/read order.
+The report's frames, timing, bond policy, catalog and original 60-item totals are
+unchanged. RF ECO BT part 88802 does not identify handset 90167; the actual
+FurniMove layout and receiver stability still require user evidence.
+
 ## Behavior decisions
 
 | ID | Behavior | Disposition and evidence |

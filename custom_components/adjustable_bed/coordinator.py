@@ -4100,6 +4100,8 @@ class AdjustableBedCoordinator:
                     BED_TYPE_LIMOSS_REMOTE,
                     # Its controller performs the app's single raw 2A29 read.
                     BED_TYPE_ADJUSTABLE_LUMBAR,
+                    # FurniMove owns its staggered reads after subscriptions.
+                    BED_TYPE_FURNIMOVE,
                 }:
                     if self._device_info_read_done:
                         ble_manufacturer = self._ble_manufacturer
