@@ -619,7 +619,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SUTA: "SUTA Smart Home (AT protocol)",
     BED_TYPE_SVANE: "Svane Remote app",
     BED_TYPE_TIMOTION_AHF: "TiMOTION AHF",
-    BED_TYPE_VIBRADORM: "Vibradorm (legacy setup)",
+    BED_TYPE_VIBRADORM: "Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic",
     BED_TYPE_VIBRADORM_APP: "Vibradorm apps: VMAT, Caresse Diamant or Werkmeister",
     BED_TYPE_VMATBASIC: "V-MAT Basic app",
     BED_TYPE_STARCODE_ABM5_4: "AdjustableM5X4 app (explicit profile)",
@@ -679,12 +679,13 @@ def get_bed_type_options() -> list[SelectOptionDict]:
     """Get bed type and app choices sorted alphabetically by label.
 
     A bed type whose variant has no automatic choice is offered only through
-    its app entries.
+    its app entries. Vibradorm's app/product profiles share one family wizard.
     """
     choices = {
         bed_type: label
         for bed_type, label in BED_TYPE_DISPLAY_NAMES.items()
         if bed_type not in VARIANT_REQUIRED_BED_TYPES
+        and bed_type not in (BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC)
     }
     choices.update(
         {bed_type_choice(*key): label for key, label in APP_VARIANT_CHOICES.items()}

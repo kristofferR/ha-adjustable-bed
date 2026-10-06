@@ -242,6 +242,18 @@ def _characteristic(client: BleakClient, uuid: str, operation: str) -> BleakGATT
     return selected
 
 
+def validate_profile_roles(client: BleakClient, profile: VibradormAppProfile) -> None:
+    """Validate the same selected GATT roles during setup and runtime."""
+    if profile.app_profile == "vmat":
+        from ..vibradorm_vmat_setup import validate_vmat_roles
+
+        validate_vmat_roles(client, basic=profile.basic)
+        return
+    _characteristic(client, COMMAND if profile.basic else CBI, "write")
+    if not profile.basic:
+        _characteristic(client, RESPONSE, "notify")
+
+
 def _write_response(client: BleakClient, uuid: str) -> bool:
     # Android inherits the runtime mode. This preference is the host policy.
     return "write" in _characteristic(client, uuid, "write").properties
@@ -954,14 +966,7 @@ class VibradormAppController(BedController):
         client = self.client
         if client is None:
             raise ConnectionError("Not connected")
-        if self.profile.app_profile == "vmat":
-            from ..vibradorm_vmat_setup import validate_vmat_roles
-
-            validate_vmat_roles(client, basic=self.profile.basic)
-            return
-        _characteristic(client, self.control_characteristic_uuid, "write")
-        if self.requires_notification_channel:
-            _characteristic(client, RESPONSE, "notify")
+        validate_profile_roles(client, self.profile)
 
     def _notification(self, sender: BleakGATTCharacteristic, data: bytearray) -> None:
         raw = bytes(data)

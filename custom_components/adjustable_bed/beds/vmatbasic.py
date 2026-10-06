@@ -54,6 +54,30 @@ def get_vmatbasic_session_intent(
 _PREFIX = "vmatbasic_"
 
 
+def _profile_characteristic(client: BleakClient, service_uuid: str, uuid: str, operation: str) -> BleakGATTCharacteristic:
+    if not client.is_connected:
+        raise ConnectionError("V-MAT Basic receiver is not connected")
+    service = next((item for item in client.services if item.uuid.lower() == service_uuid), None)
+    if service is None:
+        raise ValueError(f"Missing exact V-MAT Basic service {service_uuid}")
+    characteristic = next((item for item in service.characteristics if item.uuid.lower() == uuid), None)
+    if characteristic is None or operation not in characteristic.properties:
+        raise ValueError(f"Exact V-MAT Basic characteristic {uuid} cannot {operation}")
+    return characteristic
+
+
+def validate_profile_roles(client: BleakClient, profile: str) -> None:
+    """Validate the selected product using the runtime's exact service roles."""
+    services = {item.uuid.lower() for item in client.services}
+    if not set(protocol.REQUIRED_SERVICES) <= services:
+        raise ValueError("V-MAT Basic requires its control, status and GAP services")
+    _profile_characteristic(client, protocol.CONTROL_SERVICE, protocol.MOTOR_CHAR, "write")
+    if profile == "cbi":
+        _profile_characteristic(client, protocol.CONTROL_SERVICE, protocol.FLOOR_CHAR, "write")
+    elif profile == "xtbox":
+        _profile_characteristic(client, protocol.CONTROL_SERVICE, protocol.XT_CHAR, "write")
+
+
 async def _cancellable[T](operation: Coroutine[Any, Any, T], event: asyncio.Event) -> T:
     if event.is_set():
         operation.close()
@@ -219,28 +243,11 @@ class VMatBasicController(BedController):
         self, service_uuid: str, uuid: str, operation: str
     ) -> BleakGATTCharacteristic:
         client = self._client()
-        service = next(
-            (item for item in client.services if item.uuid.lower() == service_uuid), None
-        )
-        if service is None:
-            raise ValueError(f"Missing exact V-MAT Basic service {service_uuid}")
-        characteristic = next(
-            (item for item in service.characteristics if item.uuid.lower() == uuid), None
-        )
-        if characteristic is None or operation not in characteristic.properties:
-            raise ValueError(f"Exact V-MAT Basic characteristic {uuid} cannot {operation}")
-        return characteristic
+        return _profile_characteristic(client, service_uuid, uuid, operation)
 
     async def async_discover_capabilities(self) -> None:
         client = self._client()
-        services = {item.uuid.lower() for item in client.services}
-        if not set(protocol.REQUIRED_SERVICES) <= services:
-            raise ValueError("V-MAT Basic requires its control, status and GAP services")
-        self._characteristic(protocol.CONTROL_SERVICE, protocol.MOTOR_CHAR, "write")
-        if self.profile == "cbi":
-            self._characteristic(protocol.CONTROL_SERVICE, protocol.FLOOR_CHAR, "write")
-        elif self.profile == "xtbox":
-            self._characteristic(protocol.CONTROL_SERVICE, protocol.XT_CHAR, "write")
+        validate_profile_roles(client, self.profile)
 
     async def _write(
         self,

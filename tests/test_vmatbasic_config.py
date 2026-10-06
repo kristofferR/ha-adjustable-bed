@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 import voluptuous as vol
+from homeassistant.config_entries import SOURCE_RECONFIGURE
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -12,7 +13,6 @@ from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.config_flow import (
     CONF_PAIR_SELECTION,
     AdjustableBedConfigFlow,
-    AdjustableBedOptionsFlow,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -58,6 +58,8 @@ async def test_all_setup_routes_collect_explicit_profile_without_bond(
         assert const.CONF_MOTOR_COUNT not in values
         assert const.CONF_MOTOR_PULSE_DELAY_MS not in values
         result = await getattr(flow, "async_step_" + step)(values)
+    assert result["step_id"] == "vibradorm"
+    result = await flow.async_step_vibradorm({"app": "vmatbasic"})
     assert result["step_id"] == "vmatbasic"
     with patch.object(
         flow,
@@ -109,9 +111,11 @@ async def test_full_rendered_profile_change_discards_all_old_dependent_defaults(
     if options:
         entry = MockConfigEntry(domain=const.DOMAIN, data=data)
         entry.add_to_hass(hass)
-        flow = AdjustableBedOptionsFlow(entry)
-        flow.handler, flow.hass = entry.entry_id, hass
-        step = flow.async_step_settings
+        flow = AdjustableBedConfigFlow()
+        flow.context, flow.hass = {"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}, hass
+        await flow.async_step_reconfigure()
+        await flow.async_step_vibradorm({"app": "vmatbasic"})
+        step = flow.async_step_vmatbasic
     else:
         flow = AdjustableBedConfigFlow()
         flow.context, flow.hass, flow._manual_data = {}, hass, data
@@ -128,27 +132,30 @@ async def test_full_rendered_profile_change_discards_all_old_dependent_defaults(
             "_finish_with_verify",
             new=AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY}),
         )
-        if not options
-        else patch("custom_components.adjustable_bed.config_flow._LOGGER")
     ):
         rebuilt = await step(submitted)
-    retained = flow._pending_data if options else flow._manual_data
+    retained = flow._manual_data
     assert retained[const.CONF_VMATBASIC_PROFILE] == new
     assert const.CONF_VMATBASIC_FLOOR_LEVEL not in retained
     assert const.CONF_VMATBASIC_FLOOR_MINUTES not in retained
-    if options or new != "basic":
+    if new != "basic":
         assert rebuilt["type"] == FlowResultType.FORM
         assert not rebuilt["errors"]
     if options:
-        schema = rebuilt["data_schema"]
-        assert isinstance(schema, vol.Schema)
-        next_submission = schema({})
-        assert isinstance(next_submission, dict)
-        assert const.CONF_VMATBASIC_FLOOR_LEVEL not in next_submission
         if new != "basic":
+            schema = rebuilt["data_schema"]
+            assert isinstance(schema, vol.Schema)
+            next_submission = schema({})
+            assert isinstance(next_submission, dict)
+            assert const.CONF_VMATBASIC_FLOOR_LEVEL not in next_submission
             assert next_submission[const.CONF_VMATBASIC_FLOOR_MINUTES] == 0
-        completed = await step(next_submission)
-        assert completed["type"] == FlowResultType.CREATE_ENTRY
+            with patch.object(flow, "_finish_with_verify", new=AsyncMock()):
+                await step(next_submission)
+        assert entry.data == data
+        flow._vibradorm_verified = True
+        flow._create_selected_app_entry(title="Basic", data=flow._manual_data)
+        completed = await flow.async_step_vibradorm_confirm({"confirm": True})
+        assert completed["type"] == FlowResultType.ABORT
         assert entry is not None
         assert entry.data[const.CONF_VMATBASIC_PROFILE] == new
         assert const.CONF_VMATBASIC_FLOOR_LEVEL not in entry.data

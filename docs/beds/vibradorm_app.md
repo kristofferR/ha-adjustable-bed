@@ -7,6 +7,12 @@ defaults merely because transport identifiers match.
 
 The accepted static protocol/profile behavior is implemented with concrete code and executed-test bindings in the [row031 disposition ledger](../apk-analysis/row031-dispositions.md). Existing generic Vibradorm entries retain their current controller and position behavior.
 
+For fresh setup, choose **Vibradorm: VMAT, Caresse Diamant, Werkmeister,
+V-MAT Basic**, then **Caresse Diamant** or **Werkmeister** and the matching
+remote/settings. Existing entries use the
+[guided reconfigure](../CONFIGURATION.md#vibradorm-guided-setup-and-migration),
+which keeps the current configuration saved until verification and confirmation.
+
 | Accepted artifact | Version | APK SHA-256 |
 |---|---|---|
 | `de.vibradorm.diamant` (Caresse Remote) | 0.3, code 3 | `61073fa141df96bc40cbdd5820e64e2fb19c53cb88334baeaf6772493cfd97c2` |

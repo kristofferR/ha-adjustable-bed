@@ -15,7 +15,9 @@ listing only the relevant apps:
 
 Switching submits the chosen app to the options flow, so the change is
 validated and stored exactly as Configure stores it, keeping device and entity
-IDs. Apps with their own settings are left to Configure. Keeping the current
+IDs. Vibradorm hands off to its managed, verified reconfigure wizard; closing
+that wizard leaves the review pending. Other apps with their own settings are
+left to Configure. Keeping the current
 configuration, finishing the flow in any other way, or any later change of bed
 type or variant removes the mark; entries created later never get it. FurniMove is not offered: its own repairs cover the
 routes its handsets used.
@@ -30,7 +32,8 @@ from typing import Any, Final
 import voluptuous as vol
 from homeassistant.components import bluetooth
 from homeassistant.components.repairs import RepairsFlow
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.components.repairs.const import FlowType
+from homeassistant.config_entries import SOURCE_RECONFIGURE, ConfigEntry
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult, FlowResultType, UnknownFlow
@@ -471,6 +474,13 @@ def _clear_mark(hass: HomeAssistant, entry: ConfigEntry) -> None:
     hass.config_entries.async_update_entry(entry, data=data)
 
 
+@callback
+def async_keep_current_profile(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Record an explicit decision to keep the current setup."""
+    _clear_mark(hass, entry)
+    async_clear_profile_review_issue(hass, entry.entry_id)
+
+
 # A bed type change re-renders the form once, and a variant can re-render it
 # for its own fields; a form still open after this needs real input.
 _MAX_OPTIONS_SUBMISSIONS: Final = 4
@@ -504,7 +514,7 @@ async def _async_switch_via_options(hass: HomeAssistant, entry: ConfigEntry, cho
 
 
 def _needs_app_settings(choice: str) -> bool:
-    """Return True for apps whose own settings only Configure can collect."""
+    """Return True for apps whose own settings this shared repair cannot collect."""
     from .config_flow import APP_SETTINGS_BED_TYPES
 
     return resolve_bed_type_choice(choice)[0] in APP_SETTINGS_BED_TYPES
@@ -530,6 +540,23 @@ class ProfileReviewRepairFlow(RepairsFlow):
         choices = _review(self.hass, entry.data).choices
         if not choices:
             return self._finish(entry)
+        if any(target.get(CONF_BED_TYPE) == BED_TYPE_VIBRADORM for target in _targets(entry.data)):
+            if (user_input or {}).get("choice") == _KEEP:
+                return self._finish(entry)
+            if (user_input or {}).get("choice") == "configure":
+                result = await self.hass.config_entries.flow.async_init(
+                    DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
+                )
+                if result.get("type") is not FlowResultType.FORM:
+                    return self.async_abort(reason="vibradorm_setup_unavailable")
+                return self.async_abort(
+                    reason="vibradorm_setup_started",
+                    next_flow=(FlowType.CONFIG_FLOW, result["flow_id"]),
+                )
+            return self.async_show_form(
+                step_id="vibradorm",
+                data_schema=vol.Schema({vol.Required("choice"): selector.SelectSelector(selector.SelectSelectorConfig(options=[selector.SelectOptionDict(value="configure", label="Choose my app and remote"), selector.SelectOptionDict(value=_KEEP, label="Keep current setup")], mode=selector.SelectSelectorMode.DROPDOWN))}),
+            )
         if is_paired(entry.data):
             # App profiles are per physical bed and none supports paired
             # controls, so Configure refuses the switch until the pair is split.
@@ -599,6 +626,5 @@ class ProfileReviewRepairFlow(RepairsFlow):
 
     def _finish(self, entry: ConfigEntry) -> FlowResult:
         """Record the answer so this entry is never asked again."""
-        _clear_mark(self.hass, entry)
-        async_delete_issue(self.hass, DOMAIN, _issue_id(entry.entry_id))
+        async_keep_current_profile(self.hass, entry)
         return self.async_create_entry(title="", data={})

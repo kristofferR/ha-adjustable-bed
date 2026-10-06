@@ -280,10 +280,11 @@ def test_normalization_uses_remote_not_submitted_capability_flags(remote):
 
 @pytest.mark.parametrize("app", ["caresse", "werkmeister"])
 async def test_public_options_switch_from_vmat_removes_remote_before_factory(hass, app):
+    """The profile switch now uses guided setup, retaining this ledger binding."""
+    from homeassistant.config_entries import SOURCE_RECONFIGURE
     from homeassistant.data_entry_flow import FlowResultType
     from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
     from custom_components.adjustable_bed.controller_factory import create_controller
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -294,16 +295,17 @@ async def test_public_options_switch_from_vmat_removes_remote_before_factory(has
     data[const.CONF_VIBRADORM_APP_METADATA] = {"device_name": "old VMAT"}
     entry = MockConfigEntry(domain=const.DOMAIN, data=data)
     entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
+    flow = AdjustableBedConfigFlow()
+    flow.context = {"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
     flow.hass = hass
-    initial = await flow.async_step_settings()
+    await flow.async_step_reconfigure()
+    initial = await flow.async_step_vibradorm({"app": "vmat"})
     schema = initial["data_schema"]
     assert callable(schema)
     submission = schema({})
     assert isinstance(submission, dict)
     submission[const.CONF_VIBRADORM_APP_PROFILE] = app
-    rebuilt = await flow.async_step_settings(submission)
+    rebuilt = await flow.async_step_vibradorm_app(submission)
     assert rebuilt["type"] == FlowResultType.FORM
     assert not rebuilt["errors"]
     schema = rebuilt["data_schema"]
@@ -311,8 +313,12 @@ async def test_public_options_switch_from_vmat_removes_remote_before_factory(has
     defaults = schema({})
     assert isinstance(defaults, dict)
     assert const.CONF_VIBRADORM_VMAT_REMOTE not in defaults
-    finished = await flow.async_step_settings(defaults)
-    assert finished["type"] == FlowResultType.CREATE_ENTRY
+    with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()):
+        await flow.async_step_vibradorm_app(defaults)
+    flow._vibradorm_verified = True
+    flow._create_selected_app_entry(title="Bed", data=flow._manual_data)
+    finished = await flow.async_step_vibradorm_confirm({"confirm": True})
+    assert finished["type"] == FlowResultType.ABORT
     assert entry.data[const.CONF_VIBRADORM_APP_PROFILE] == app
     assert const.CONF_VIBRADORM_VMAT_REMOTE not in entry.data
     assert const.CONF_VIBRADORM_APP_METADATA not in entry.data

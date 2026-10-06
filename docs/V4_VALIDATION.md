@@ -6,6 +6,7 @@ replace installed release-candidate, backup-restore, or physical beta testing.
 | Scenario | Automated evidence | Invariant |
 | --- | --- | --- |
 | Standalone v3 upgrade | `tests/test_init.py::TestMigration::test_migrate_v3_to_v4_is_byte_identical` | Only the schema version changes; entry data and options survive. |
+| Guided Vibradorm profile migration | `tests/test_vibradorm_family_flow.py`; app configuration tests | Existing entry/address/device and unchanged entity IDs survive. Exact selected roles and required bond proof precede confirmation; failure/cancellation preserves saved configuration, retained links block overlapping setup, and concurrent edits are not overwritten. Paired receivers require explicit split first. |
 | Combine two existing addresses | `tests/test_paired_setup.py` conversion tests; `tests/test_paired_devices.py` | Existing entity IDs and device IDs survive ownership transfer to parent/children. |
 | Existing paired beta | `tests/test_paired_setup.py` paired-entry setup tests | Existing side devices become native children with preserved identities and physical metadata. |
 | Single-address combination and unpair | `tests/test_paired_setup.py` enable/revert tests; `tests/test_paired_registry.py` | One physical parent and original entities survive; failures restore config ownership. |
