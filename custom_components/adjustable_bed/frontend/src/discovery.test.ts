@@ -34,6 +34,18 @@ function hassWith(entries: EntityRegistryDisplayEntry[]): HomeAssistant {
   };
 }
 
+test("paired hold routing comes from backend metadata, not translated motor names", () => {
+  const hass = hassWith([entry("button.pair_head_up", "head_up", "pair")]);
+  hass.states["button.pair_head_up"] = {
+    entity_id: "button.pair_head_up", state: "unknown", last_changed: "", last_updated: "",
+    attributes: { paired_hold_motor: "back" },
+  };
+  expect(bedEntitiesForDevice(hass, "pair").motors[0].timedMove)
+    .toEqual({ deviceId: "pair", motor: "back" });
+  delete hass.states["button.pair_head_up"].attributes.paired_hold_motor;
+  expect(bedEntitiesForDevice(hass, "pair").motors[0].timedMove).toBeUndefined();
+});
+
 test("Motion hub module selector is a nonempty utility control", () => {
   const bed = bedEntitiesForDevice(hassWith([
     entry("select.hub_module", "motion_bed_active_module"),

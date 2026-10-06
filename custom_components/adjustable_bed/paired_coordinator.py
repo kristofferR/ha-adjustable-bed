@@ -1226,6 +1226,7 @@ class PairedBedCoordinator:
                     ):
                         return True
                 self._connection_mode = PAIR_CONNECTION_MODE_SEQUENTIAL
+                self._on_child_connection_change(self.is_connected)
             return await self.async_connect()
         return any(result is True for result in results)
 
@@ -1424,6 +1425,7 @@ class PairedBedCoordinator:
                     return
 
             self._connection_mode = PAIR_CONNECTION_MODE_SEQUENTIAL
+            self._on_child_connection_change(self.is_connected)
             _LOGGER.warning(
                 "Automatic paired connection fell back to sequential mode "
                 "after a command reconnect exhausted an adapter's connection slots"

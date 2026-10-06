@@ -689,6 +689,23 @@ a successful connection first to discover their capabilities. One-motor OCTO
 TV/bed lifts remain standalone. Combined controls use capabilities shared by both
 sides; side-specific controls retain each side's own features.
 
+For two receivers, open **Configure → Change left receiver settings** or
+**Change right receiver settings** to adjust its adapter, connection profile,
+motor pulses, Disconnect After Command, and idle timeout. These changes apply
+only to the selected receiver, without splitting the bed. **Change settings**
+retains the shared form; changed values there apply to both receivers.
+The card's **Both** view also offers each receiver's Connect and Disconnect
+buttons next to its connection status.
+
+On concurrent two-receiver OCTO pairs, holding Back or Legs in **Both** uses
+one-second timed movement windows for both receivers, each at its own existing
+command cadence. This avoids waiting out the slower receiver's configured pulse
+after the faster one has finished. Releasing the control or selecting Stop
+cancels both sides. Single-side controls, discrete button presses, other motors,
+and explicitly sequential pairs keep their existing movement behavior. Commands
+and cleanup remain bounded; connection delays and brief cleanup gaps can still
+occur, and simultaneous physical movement is not guaranteed.
+
 Beds whose extra controls require live discovery, including Sleepy's BOX25,
 can also be combined. Each such side must connect during paired setup, including
 after a Home Assistant restart or integration reload. Otherwise setup retries

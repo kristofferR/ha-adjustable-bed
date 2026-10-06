@@ -84,9 +84,11 @@ from custom_components.adjustable_bed.const import (
     LINAK_VARIANT_PERFORMANCE,
     OCTO_VARIANT_STAR2,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
+    PAIR_CONNECTION_MODE_CONCURRENT,
     PAIR_CONNECTION_MODE_SEQUENTIAL,
     PAIR_MODE_SEPARATE_ADDRESS,
     PAIR_MODE_SINGLE_ADDRESS,
+    PAIR_SIDES,
     SBI_VARIANT_BOTH,
     SIDE_BOTH,
     SIDE_LEFT,
@@ -543,6 +545,8 @@ class TestPairedSetup:
         assert result["type"] == FlowResultType.MENU
         assert set(result["menu_options"]) == {
             "settings",
+            "left_settings",
+            "right_settings",
             "unpair",
             "remove_bond",
         }
@@ -3210,6 +3214,240 @@ class TestSideServiceRouting:
         # combined motor controls until both sources are known.
         unknown = SimpleNamespace(capability_controller=None)
         assert _combined_motor_buttons_for(coord, [left, unknown]) == []
+
+
+class TestPairedReceiverSettings:
+    @pytest.mark.parametrize("failed_release", [False, True])
+    async def test_timed_pair_failure_stops_both_and_reports_failed_cleanup(
+        self, hass, mock_coordinator_connected, enable_custom_integrations, failed_release
+    ):
+        from bleak.exc import BleakError
+
+        from custom_components.adjustable_bed.beds.octo import OctoStar2Controller
+        from custom_components.adjustable_bed.paired_coordinator import PairedSideError
+
+        entry = _paired_entry(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        pair = hass.data[DOMAIN][entry.entry_id]
+        left, right = pair.children[SIDE_LEFT], pair.children[SIDE_RIGHT]
+        right_started = asyncio.Event()
+
+        async def fail_write(*_args, **_kwargs):
+            await right_started.wait()
+            raise BleakError("movement failed")
+
+        async def wait_for_stop(*_args, **_kwargs):
+            right_started.set()
+            await right.cancel_command.wait()
+
+        for child, write in ((left, fail_write), (right, wait_for_stop)):
+            child._controller = OctoStar2Controller(child)
+            child._controller.write_command = AsyncMock(side_effect=write)
+            child._controller.stop_all = AsyncMock()
+        if failed_release:
+            left.controller.stop_all.side_effect = BleakError("release failed")
+        parent = _device_for_entry_and_identifier(
+            dr.async_get(hass), entry.entry_id, (DOMAIN, PAIR_ID)
+        )
+        async with asyncio.timeout(1):
+            with pytest.raises(PairedSideError) as failure:
+                await hass.services.async_call(DOMAIN, "timed_move", {
+                    "device_id": [parent.id], "side": SIDE_BOTH, "motor": "back",
+                    "direction": "up", "duration_ms": 1000,
+                }, blocking=True)
+        assert "left" in failure.value.side_errors
+        assert ("left (stop)" in failure.value.side_errors) is failed_release
+        left.controller.stop_all.assert_awaited()
+        right.controller.stop_all.assert_awaited()
+        assert left._command_scheduler.diagnostics["active_intents"] == []
+        assert right._command_scheduler.diagnostics["active_intents"] == []
+
+    @pytest.mark.parametrize("release_during_setup", [False, True])
+    async def test_common_timed_window_keeps_each_receiver_cadence_and_cancellation(
+        self, hass, mock_coordinator_connected, enable_custom_integrations, release_during_setup
+    ):
+        from custom_components.adjustable_bed.beds.octo import OctoStar2Controller
+
+        entry = _paired_entry(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        pair = hass.data[DOMAIN][entry.entry_id]
+        for child, count, delay in zip(pair.children.values(), (3, 7), (50, 500), strict=True):
+            child._controller = OctoStar2Controller(child)
+            child._controller.write_command = AsyncMock()
+            child._motor_pulse_count = count
+            child._motor_pulse_delay_ms = delay
+        parent = _device_for_entry_and_identifier(
+            dr.async_get(hass), entry.entry_id, (DOMAIN, PAIR_ID)
+        )
+        preparing, prepared = asyncio.Event(), asyncio.Event()
+        if release_during_setup:
+            child = pair.children[SIDE_LEFT]
+
+            async def cold_prepare(_name):
+                preparing.set()
+                await prepared.wait()
+                return child.controller
+
+            child._async_prepare_controller_operation = AsyncMock(side_effect=cold_prepare)
+        movement = hass.async_create_task(hass.services.async_call(
+            DOMAIN, "timed_move", {
+                "device_id": [parent.id], "side": SIDE_BOTH, "motor": "back",
+                "direction": "up", "duration_ms": 1000,
+            }, blocking=True,
+        ))
+        stop = None
+        try:
+            async with asyncio.timeout(1):
+                if release_during_setup:
+                    await preparing.wait()
+                    stop = hass.async_create_task(pair.async_stop_command())
+                    await asyncio.sleep(0)
+                    prepared.set()
+                await movement
+                if stop is not None:
+                    await stop
+            for child, count, delay, planned in zip(
+                pair.children.values(), (3, 7), (50, 500), (21, 3), strict=True
+            ):
+                if release_during_setup:
+                    # The left side was still preparing when release arrived.
+                    if child is pair.children[SIDE_LEFT]:
+                        child.controller.write_command.assert_not_awaited()
+                else:
+                    writes = child.controller.write_command.await_args_list
+                    assert len(writes) == 1
+                    assert writes[0].kwargs["repeat_count"] == planned
+                    assert writes[0].kwargs["repeat_delay_ms"] == delay
+                assert (child.motor_pulse_count, child.motor_pulse_delay_ms) == (count, delay)
+        finally:
+            prepared.set()
+            if not movement.done():
+                movement.cancel()
+            await asyncio.gather(movement, *([stop] if stop else []), return_exceptions=True)
+
+    @pytest.mark.parametrize(
+        ("motor", "mode", "bed_type", "eligible"),
+        [
+            ("back", "concurrent", BED_TYPE_OCTO, True),
+            ("legs", "concurrent", BED_TYPE_OCTO, True),
+            ("back_legs", "concurrent", BED_TYPE_OCTO, False),
+            ("back", "sequential", BED_TYPE_OCTO, False),
+            ("back", "concurrent", BED_TYPE_LINAK, False),
+        ],
+    )
+    def test_timed_hold_metadata_only_for_supported_concurrent_motors(
+        self, motor, mode, bed_type, eligible
+    ):
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
+
+        from custom_components.adjustable_bed.beds.base import MotorControlSpec
+        from custom_components.adjustable_bed.button import PairedBedCombinedMotorButton
+
+        coord = MagicMock(pair_id="pair_x", device_info={}, connection_mode=mode)
+        coord.children = {side: SimpleNamespace(bed_type=bed_type) for side in PAIR_SIDES}
+        spec = MotorControlSpec(
+            key=motor, translation_key=motor,
+            open_fn=AsyncMock(), close_fn=AsyncMock(), stop_fn=AsyncMock(),
+        )
+        entity = PairedBedCombinedMotorButton(coord, spec, "up")
+        assert entity.extra_state_attributes == ({"paired_hold_motor": motor} if eligible else {})
+        coord.connection_mode = "sequential"
+        assert entity.extra_state_attributes == {}
+
+    @pytest.mark.parametrize("side", [SIDE_LEFT, SIDE_RIGHT])
+    async def test_receiver_edit_preserves_other_side_and_survives_split(
+        self, hass, enable_custom_integrations, side
+    ):
+        from custom_components.adjustable_bed.const import (
+            CONF_IDLE_DISCONNECT_SECONDS,
+            CONF_MOTOR_PULSE_COUNT,
+            CONF_MOTOR_PULSE_DELAY_MS,
+            CONF_MOTOR_PULSE_USER_SET,
+            CONF_PROTOCOL_VARIANT,
+            OCTO_VARIANT_STAR2,
+        )
+        from custom_components.adjustable_bed.pairing import effective_child_data
+
+        data = _paired_entry_data()
+        for index, child in enumerate(data[CONF_PAIR_CHILDREN]):
+            child.update({
+                CONF_BED_TYPE: BED_TYPE_OCTO,
+                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STAR2 if index == 0 else "standard",
+                CONF_MOTOR_PULSE_COUNT: 3 if index == 0 else 7,
+                CONF_MOTOR_PULSE_DELAY_MS: 50 if index == 0 else 500,
+                CONF_IDLE_DISCONNECT_SECONDS: 40 if index == 0 else 80,
+            })
+        entry = _paired_entry(hass)
+        hass.config_entries.async_update_entry(entry, data=data)
+        other = SIDE_RIGHT if side == SIDE_LEFT else SIDE_LEFT
+        unchanged = effective_child_data(entry.data, other)
+        menu = await hass.config_entries.options.async_init(entry.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            menu["flow_id"], {"next_step_id": f"{side}_settings"}
+        )
+        defaults = result["data_schema"]({})
+        assert int(defaults[CONF_MOTOR_PULSE_COUNT]) == effective_child_data(entry.data, side)[CONF_MOTOR_PULSE_COUNT]
+        assert CONF_PROTOCOL_VARIANT not in defaults
+        submitted = {**defaults, CONF_MOTOR_PULSE_COUNT: "5", CONF_IDLE_DISCONNECT_SECONDS: 90}
+        result = await hass.config_entries.options.async_configure(result["flow_id"], submitted)
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert effective_child_data(entry.data, other) == unchanged
+        assert CONF_MOTOR_PULSE_COUNT not in entry.data
+        updated = effective_child_data(entry.data, side)
+        assert updated[CONF_MOTOR_PULSE_COUNT] == 5
+        assert updated[CONF_MOTOR_PULSE_USER_SET] is True
+        assert updated[CONF_IDLE_DISCONNECT_SECONDS] == 90
+        assert effective_child_data(entry.data, side, entry.options)[CONF_MOTOR_PULSE_COUNT] == 5
+
+        # Splitting must restore the edited values, rather than the old lineage.
+        await async_unpair_entry(hass, entry)
+        restored = hass.config_entries.async_entries(DOMAIN)
+        by_address = {item.data[CONF_ADDRESS]: item.data for item in restored}
+        assert by_address[updated[CONF_ADDRESS]][CONF_MOTOR_PULSE_COUNT] == 5
+        assert by_address[unchanged[CONF_ADDRESS]][CONF_MOTOR_PULSE_COUNT] == unchanged[CONF_MOTOR_PULSE_COUNT]
+
+    async def test_unchanged_receiver_form_preserves_defaults_and_other_options(
+        self, hass, enable_custom_integrations
+    ):
+        from custom_components.adjustable_bed.const import CONF_IDLE_DISCONNECT_SECONDS
+        from custom_components.adjustable_bed.pairing import effective_child_data, get_child
+
+        entry = _paired_entry(hass)
+        hass.config_entries.async_update_entry(entry, options={
+            CONF_IDLE_DISCONNECT_SECONDS: 95,
+            CONF_PAIR_CONNECTION_MODE: PAIR_CONNECTION_MODE_CONCURRENT,
+        })
+        expected = {side: effective_child_data(entry.data, side, entry.options) for side in PAIR_SIDES}
+        menu = await hass.config_entries.options.async_init(entry.entry_id)
+        form = await hass.config_entries.options.async_configure(
+            menu["flow_id"], {"next_step_id": "right_settings"}
+        )
+        await hass.config_entries.options.async_configure(form["flow_id"], {})
+        assert entry.options == {CONF_PAIR_CONNECTION_MODE: PAIR_CONNECTION_MODE_CONCURRENT}
+        for side in PAIR_SIDES:
+            actual = effective_child_data(entry.data, side, entry.options)
+            assert actual == expected[side]
+            assert "motor_pulse_user_set" not in get_child(entry.data, side)
+
+    @pytest.mark.parametrize("value", ["invalid", "-1", "0"])
+    async def test_invalid_receiver_pulses_do_not_change_either_side(
+        self, hass, enable_custom_integrations, value
+    ):
+        entry = _paired_entry(hass)
+        before = dict(entry.data)
+        menu = await hass.config_entries.options.async_init(entry.entry_id)
+        form = await hass.config_entries.options.async_configure(
+            menu["flow_id"], {"next_step_id": "left_settings"}
+        )
+        result = await hass.config_entries.options.async_configure(
+            form["flow_id"], {"motor_pulse_count": value}
+        )
+        assert result["type"] == FlowResultType.FORM
+        assert result["errors"] == {"motor_pulse_count": "invalid_number"}
+        assert entry.data == before
 
 
 class TestCombinedPositionSliders:

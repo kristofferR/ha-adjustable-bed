@@ -4,14 +4,39 @@
 // the card owns the event wiring and the service calls, this owns the rules
 // about who holds what and when a hold ends. Nearly every defect found while
 // building press-and-hold lived in these rules rather than in the wiring.
-import type { MotorEntity } from "./types";
+import type { HomeAssistant, MotorEntity } from "./types";
 
 export type Direction = "up" | "down";
+
+export function movementPulse(
+  hass: HomeAssistant | undefined,
+  motor: MotorEntity,
+  direction: Direction,
+): Promise<unknown> | undefined {
+  if (motor.timedMove) {
+    // A shared movement window preserves each receiver's cadence without
+    // making the faster side wait out its partner's configured finite pulse.
+    return hass?.callService("adjustable_bed", "timed_move", {
+      device_id: motor.timedMove.deviceId,
+      side: "both",
+      motor: motor.timedMove.motor,
+      direction,
+      duration_ms: 1000,
+    });
+  }
+  if (motor.cover) {
+    return hass?.callService("cover", direction === "up" ? "open_cover" : "close_cover", {
+      entity_id: motor.cover,
+    });
+  }
+  const entityId = direction === "up" ? motor.up : motor.down;
+  return entityId ? hass?.callService("button", "press", { entity_id: entityId }) : undefined;
+}
 
 export interface HoldActions {
   // Runs one finite movement pulse and resolves when the bed has finished it.
   // Resolving is what paces the repeat loop; rejecting stops it.
-  pulse: (motor: MotorEntity, dir: Direction) => Promise<void> | undefined;
+  pulse: (motor: MotorEntity, dir: Direction) => Promise<unknown> | undefined;
   // Stops a cover-backed motor, which is the only kind with its own stop. The
   // bed stop identifies the compact target retained when the hold began.
   stopCover: (coverEntityId: string, stopEntityId?: string) => void;

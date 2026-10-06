@@ -19,7 +19,9 @@ from .beds.base import ProductButtonSpec, SideBoundController
 from .const import (
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_MOTION_BED,
+    BED_TYPE_OCTO,
     DOMAIN,
+    PAIR_CONNECTION_MODE_CONCURRENT,
     SIDE_BOTH,
 )
 from .entity import AdjustableBedEntity
@@ -1419,6 +1421,7 @@ class PairedBedCombinedMotorButton(ButtonEntity):
         """
         self._coordinator = coordinator
         self._direction = direction
+        self._motor_key = spec.key
         self._move_fn = spec.open_fn if direction == "up" else spec.close_fn
         self._resource = spec.scheduler_resource or f"motor:{spec.position_key or spec.key}"
         # Translation key from spec.translation_key (preserves controller-specific
@@ -1431,8 +1434,32 @@ class PairedBedCombinedMotorButton(ButtonEntity):
         )
         self._attr_unique_id = _paired_entity_unique_id(coordinator, f"{spec.key}_{direction}_both")
         self._attr_device_info = coordinator.device_info
-        if isinstance(coordinator, SingleAddressPairedCoordinator):
-            self._attr_extra_state_attributes = {"bed_side": SIDE_BOTH}
+        self._attr_extra_state_attributes = (
+            {"bed_side": SIDE_BOTH}
+            if isinstance(coordinator, SingleAddressPairedCoordinator) else {}
+        )
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self.async_on_remove(
+            self._coordinator.register_connection_state_callback(
+                lambda _connected: self.async_write_ha_state()
+            )
+        )
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Advertise the existing timed action for held OCTO pair movement."""
+        attributes = dict(self._attr_extra_state_attributes or {})
+        if (
+            not isinstance(self._coordinator, SingleAddressPairedCoordinator)
+            and len(self._coordinator.children) == 2
+            and self._coordinator.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
+            and self._motor_key in {"back", "legs"}
+            and all(child.bed_type == BED_TYPE_OCTO for child in self._coordinator.children.values())
+        ):
+            attributes["paired_hold_motor"] = self._motor_key
+        return attributes
 
     @property
     def available(self) -> bool:

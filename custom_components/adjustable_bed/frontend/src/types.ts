@@ -104,6 +104,8 @@ export interface MotorEntity {
   // Discrete up/down buttons, used by beds that expose buttons instead of covers.
   up?: string;
   down?: string;
+  // Offered by the backend only for eligible concurrent two-receiver holds.
+  timedMove?: { deviceId: string; motor: "back" | "legs" };
   angle?: string; // sensor.* angle in degrees
   position?: string; // number.* position
 }

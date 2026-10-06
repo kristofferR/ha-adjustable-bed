@@ -309,7 +309,12 @@ export function bedEntitiesForDevice(
         } else if (key.startsWith("massage_")) {
           bed.massage.buttons.push(id);
         } else if ((match = key.match(/^(.+)_(up|down)$/))) {
-          motor(match[1])[match[2] as "up" | "down"] = id;
+          const m = motor(match[1]);
+          m[match[2] as "up" | "down"] = id;
+          const heldMotor = hass.states[id]?.attributes.paired_hold_motor;
+          if (heldMotor === "back" || heldMotor === "legs") {
+            m.timedMove = { deviceId, motor: heldMotor };
+          }
         }
         break;
 
