@@ -45,7 +45,11 @@ decision in the reserved `profile_recommendations` slot of the per-address app-s
 store. It does not reload or disconnect the bed. Decisions survive restarts,
 integration/HA updates and pair/split ownership transfers. Removing the last entry
 owning an address removes its app-state store as usual. An ongoing assessment also
-suppresses a duplicate one-time upgrade notice without mutating its migration mark.
+suppresses a duplicate one-time upgrade notice only when the relevant physical beds
+have a replacement assessment or a saved decision confirming that upgrade review.
+Offline or unassessed beds retain their pending upgrade review. Confirmation keys
+include the physical bed's route/variant and known app choices, so unrelated old
+decisions cannot suppress it. The migration mark is not mutated.
 
 Generic decision keys include the assessment kind, configured route/variant and
 sorted candidates. A materially different selection or candidate set can ask

@@ -43,7 +43,12 @@ from .detection import (
     detect_bed_type_detailed,
 )
 from .pairing import effective_child_data, get_child, is_paired
-from .profile_review import async_clear_profile_review_issue, choice_label, related_app_choices
+from .profile_review import (
+    async_clear_profile_review_issue,
+    choice_label,
+    profile_review_mark,
+    related_app_choices,
+)
 
 if TYPE_CHECKING:
     from .coordinator import AdjustableBedCoordinator
@@ -178,7 +183,33 @@ def recommend_profile(
 @callback
 def has_profile_assessment(hass: HomeAssistant, entry_id: str) -> bool:
     """Avoid a duplicate upgrade notice, including after keeping this assessment."""
-    return any(watch.entry.entry_id == entry_id for watch in _watches(hass).values())
+    relevant = [
+        watch
+        for watch in _watches(hass).values()
+        if watch.entry.entry_id == entry_id
+        and (watch.side is None or get_child(watch.entry.data, watch.side) is not None)
+        and watch.upgrade_review_key is not None
+    ]
+    return bool(relevant) and all(
+        watch.recommendation is not None or watch.dismissed.get(watch.upgrade_review_key or "")
+        for watch in relevant
+    )
+
+
+def _upgrade_review_key(data: Mapping[str, object]) -> str | None:
+    """Identify the upgrade review an explicit decision also confirms."""
+    profile = {
+        CONF_BED_TYPE: data.get(CONF_BED_TYPE),
+        CONF_PROTOCOL_VARIANT: data.get(CONF_PROTOCOL_VARIANT),
+    }
+    mark = profile_review_mark(profile)
+    if mark is None:
+        return None
+    choices = tuple(
+        sorted(related_app_choices(data.get(CONF_BED_TYPE), data.get(CONF_PROTOCOL_VARIANT)))
+    )
+    identity = repr((mark, choices)).encode()
+    return f"upgrade_review_{sha256(identity).hexdigest()[:20]}"
 
 
 def _watches(hass: HomeAssistant) -> dict[str, ProfileRecommendationWatch]:
@@ -209,6 +240,19 @@ class ProfileRecommendationWatch:
         self._last_info: bluetooth.BluetoothServiceInfoBleak | None = None
         self.review_flow_id: str | None = None
 
+    @property
+    def profile_data(self) -> Mapping[str, object]:
+        """Return this physical bed's effective configuration."""
+        return (
+            effective_child_data(self.entry.data, self.side, self.entry.options)
+            if self.side is not None
+            else {**self.entry.data, **self.entry.options}
+        )
+
+    @property
+    def upgrade_review_key(self) -> str | None:
+        return _upgrade_review_key(self.profile_data)
+
     @callback
     def refresh(self, info: bluetooth.BluetoothServiceInfoBleak | None = None) -> None:
         """Re-evaluate observed evidence without reading or writing the bed."""
@@ -225,11 +269,7 @@ class ProfileRecommendationWatch:
             self._last_evidence = None
             ir.async_delete_issue(self.hass, DOMAIN, self.issue_id)
             return
-        data = (
-            effective_child_data(self.entry.data, self.side, self.entry.options)
-            if self.side is not None
-            else {**self.entry.data, **self.entry.options}
-        )
+        data = self.profile_data
         self._observed_name = (info.name if info is not None else None) or self.coordinator.address
         # Keep observations over an idle disconnect; an offline capability
         # controller has not read the manufacturer. A later connection replaces
@@ -265,7 +305,8 @@ class ProfileRecommendationWatch:
                 else None
             )
         recommendation = self.recommendation
-        async_clear_profile_review_issue(self.hass, self.entry.entry_id)
+        if has_profile_assessment(self.hass, self.entry.entry_id):
+            async_clear_profile_review_issue(self.hass, self.entry.entry_id)
         if recommendation is None or self.dismissed.get(recommendation.rule):
             ir.async_delete_issue(self.hass, DOMAIN, self.issue_id)
             return
@@ -304,6 +345,8 @@ class ProfileRecommendationWatch:
         """Persist the exact recommendation before closing its notice."""
         store = app_state_store(self.hass, self.coordinator.address)
         decisions = {**await store.async_slot(_SLOT), recommendation.rule: True}
+        if (key := self.upgrade_review_key) is not None:
+            decisions[key] = True
         await store.async_write(_SLOT, decisions)
         self.dismissed = decisions
         self.refresh()
@@ -337,10 +380,14 @@ async def async_watch_profile_recommendations(
     coordinators: Iterable[tuple[str | None, AdjustableBedCoordinator]],
 ) -> None:
     """Check after setup and on normal connections or passive advertisements."""
+    watches: list[ProfileRecommendationWatch] = []
     for side, coordinator in coordinators:
         decisions = await app_state_store(hass, coordinator.address).async_slot(_SLOT)
         watch = ProfileRecommendationWatch(hass, entry, coordinator, side, decisions)
         _watches(hass)[watch.issue_id] = watch
+        watches.append(watch)
+    for watch in watches:
+        coordinator = watch.coordinator
         entry.async_on_unload(watch.unload)
         entry.async_on_unload(coordinator.register_connection_state_callback(watch.connected))
         entry.async_on_unload(
@@ -386,6 +433,8 @@ async def async_confirm_profile_review(
         if recommendation is not None:
             store = app_state_store(hass, watch.coordinator.address)
             decisions = {**await store.async_slot(_SLOT), recommendation.rule: True}
+            if (key := _upgrade_review_key(data)) is not None:
+                decisions[key] = True
             await store.async_write(_SLOT, decisions)
             watch.dismissed = decisions
 

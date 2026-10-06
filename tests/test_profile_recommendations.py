@@ -575,6 +575,94 @@ async def test_new_notice_suppresses_duplicate_upgrade_review_even_after_keep(ha
         ir.async_get(hass).async_get_issue(DOMAIN, f"app_profile_review_{config_entry.entry_id}")
         is None
     )
+    await config_entry._async_process_on_unload(hass)
+    hass.data[DOMAIN]["app_state_stores"].clear()
+    with patch(HISTORY, return_value=None), patch(REGISTER):
+        async_refresh_profile_review_issue(hass, config_entry)
+        await async_watch_profile_recommendations(hass, config_entry, ((None, coord),))
+    assert (
+        ir.async_get(hass).async_get_issue(DOMAIN, f"app_profile_review_{config_entry.entry_id}")
+        is None
+    )
+
+
+@pytest.mark.parametrize("observed", [None, "unknown"])
+async def test_pending_upgrade_review_survives_without_a_replacement(hass, observed):
+    from custom_components.adjustable_bed.profile_review import (
+        CONF_PROFILE_REVIEW_PENDING,
+        async_refresh_profile_review_issue,
+        profile_review_mark,
+    )
+
+    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25})
+    hass.config_entries.async_update_entry(
+        config_entry,
+        data={
+            **config_entry.data,
+            CONF_PROFILE_REVIEW_PENDING: profile_review_mark(config_entry.data),
+        },
+    )
+    coord = coordinator()
+    coord.bed_type = BED_TYPE_SLEEPYS_BOX25
+    coord.controller.protocol_diagnostics = {}
+    with patch(HISTORY, return_value=info(observed) if observed else None), patch(REGISTER):
+        async_refresh_profile_review_issue(hass, config_entry)
+        await async_watch_profile_recommendations(hass, config_entry, ((None, coord),))
+        async_refresh_profile_review_issue(hass, config_entry)
+    assert (
+        ir.async_get(hass).async_get_issue(DOMAIN, f"app_profile_review_{config_entry.entry_id}")
+        is not None
+    )
+    assert all(watch.recommendation is None for watch in _watches(hass).values())
+
+
+async def test_pair_upgrade_review_remains_for_an_unassessed_physical_side(hass):
+    from custom_components.adjustable_bed.profile_review import (
+        CONF_PROFILE_REVIEW_PENDING,
+        async_refresh_profile_review_issue,
+        profile_review_mark,
+    )
+
+    config_entry = entry(
+        hass,
+        **{
+            CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25,
+            CONF_PAIR_ID: "review_pair",
+            CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
+            CONF_PAIR_CHILDREN: [
+                {CONF_SIDE: side, CONF_ADDRESS: address, CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25}
+                for side, address in (("left", ADDRESS), ("right", OTHER))
+            ],
+        },
+    )
+    hass.config_entries.async_update_entry(
+        config_entry,
+        data={
+            **config_entry.data,
+            CONF_PROFILE_REVIEW_PENDING: profile_review_mark(config_entry.data),
+        },
+    )
+    left, right = coordinator(), coordinator(OTHER)
+    for coord in (left, right):
+        coord.bed_type = BED_TYPE_SLEEPYS_BOX25
+        coord.controller.protocol_diagnostics = {}
+    with (
+        patch(
+            HISTORY,
+            side_effect=lambda _hass, address, connectable: info() if address == ADDRESS else None,
+        ),
+        patch(REGISTER),
+    ):
+        async_refresh_profile_review_issue(hass, config_entry)
+        await async_watch_profile_recommendations(
+            hass, config_entry, (("left", left), ("right", right))
+        )
+        async_refresh_profile_review_issue(hass, config_entry)
+    old_id = f"app_profile_review_{config_entry.entry_id}"
+    assert ir.async_get(hass).async_get_issue(DOMAIN, old_id) is not None
+    right_watch = _watches(hass)[f"{ISSUE_PREFIX}{config_entry.entry_id}_right"]
+    right_watch.seen(info(address=OTHER), MagicMock())
+    assert ir.async_get(hass).async_get_issue(DOMAIN, old_id) is None
 
 
 async def test_partial_advertisement_cannot_break_setup(hass):
