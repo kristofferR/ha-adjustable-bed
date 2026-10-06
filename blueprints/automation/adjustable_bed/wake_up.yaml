@@ -1,0 +1,156 @@
+blueprint:
+  name: Adjustable Bed wake-up
+  description: >-
+    At a chosen time on selected days, raise one bed section for a bounded
+    duration or recall a supported hardware memory. Optionally turn on selected
+    under-bed lights after the movement action finishes. Stop with the bed's
+    existing Stop control. No estimated positions or movement retry loop.
+  domain: automation
+  source_url: https://github.com/kristofferR/ha-adjustable-bed/blob/main/blueprints/automation/adjustable_bed/wake_up.yaml
+  homeassistant:
+    min_version: "2026.9.0"
+  input:
+    wake_time:
+      name: Wake-up time
+      description: Home Assistant's local time. Home Assistant must be running.
+      default: "07:00:00"
+      selector:
+        time:
+    weekdays:
+      name: Days of the week
+      description: Select the days to run. An empty selection disables scheduled runs.
+      default: [mon, tue, wed, thu, fri]
+      selector:
+        select:
+          multiple: true
+          options:
+            - {label: Monday, value: mon}
+            - {label: Tuesday, value: tue}
+            - {label: Wednesday, value: wed}
+            - {label: Thursday, value: thu}
+            - {label: Friday, value: fri}
+            - {label: Saturday, value: sat}
+            - {label: Sunday, value: sun}
+    bed_device:
+      name: Bed
+      description: Select a standalone bed, a combined parent, or one side's child device.
+      selector:
+        device:
+          filter:
+            - integration: adjustable_bed
+    bed_side:
+      name: Side(s)
+      description: >-
+        Use selected device respects a child side and defaults to both for a
+        combined parent. Choose Left, Right, or Both only with a combined parent;
+        a conflicting child-side selection is rejected.
+      default: auto
+      selector:
+        select:
+          options:
+            - {label: Use selected device, value: auto}
+            - {label: Left, value: left}
+            - {label: Right, value: right}
+            - {label: Both sides, value: both}
+    wake_action:
+      name: Movement
+      default: raise
+      selector:
+        select:
+          options:
+            - {label: Timed raise, value: raise}
+            - {label: Recall hardware memory, value: memory}
+    raise_motor:
+      name: Section to raise
+      description: >-
+        Used only for Timed raise. Back is the main upper-body section on most
+        beds. Head is a separate head/neck section where supported. Select an
+        axis your bed exposes; unsupported axes are rejected before movement.
+      default: back
+      selector:
+        select:
+          options:
+            - {label: Back, value: back}
+            - {label: Head, value: head}
+    raise_duration_ms:
+      name: Raise duration
+      description: >-
+        Used only for Timed raise. Movement ceiling after connection, not a
+        target position. Start short and test while awake; some beds stop earlier.
+      default: 1000
+      selector:
+        number:
+          min: 100
+          max: 30000
+          step: 100
+          unit_of_measurement: ms
+          mode: box
+    memory_slot:
+      name: Hardware memory slot
+      description: >-
+        Used only for Recall hardware memory. Save and test this slot on the
+        bed first. Every selected side must support it. Recall can move several
+        sections and uses the controller's finite recall action, not Raise duration.
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 8
+          step: 1
+          mode: box
+    bed_lights:
+      name: Under-bed lights (optional)
+      description: >-
+        Select only Under-bed lights light or switch entities on the intended
+        side(s), not massage or other bed switches. Selection is independent of
+        the movement target. Only lights known to be off are turned on. Unknown,
+        unavailable, and already-on lights are left unchanged.
+      default: []
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - integration: adjustable_bed
+              domain: [light, switch]
+
+mode: single
+
+triggers:
+  - trigger: time
+    at: !input wake_time
+
+conditions:
+  - condition: time
+    weekday: !input weekdays
+
+variables:
+  bed_device: !input bed_device
+  bed_side: !input bed_side
+  wake_action: !input wake_action
+  raise_motor: !input raise_motor
+  raise_duration_ms: !input raise_duration_ms
+  memory_slot: !input memory_slot
+  bed_target: >-
+    {{ {'device_id': bed_device} if bed_side == 'auto'
+       else {'device_id': bed_device, 'side': bed_side} }}
+
+actions:
+  - choose:
+      - conditions: "{{ wake_action == 'raise' }}"
+        sequence:
+          - action: adjustable_bed.timed_move
+            data: >-
+              {{ bed_target | combine({'motor': raise_motor, 'direction': 'up',
+                 'duration_ms': raise_duration_ms}) }}
+      - conditions: "{{ wake_action == 'memory' }}"
+        sequence:
+          - action: adjustable_bed.goto_preset
+            data: "{{ bed_target | combine({'preset': memory_slot}) }}"
+  - repeat:
+      for_each: !input bed_lights
+      sequence:
+        - if: "{{ is_state(repeat.item, 'off') }}"
+          then:
+            - action: "{{ repeat.item.split('.')[0] }}.turn_on"
+              target:
+                entity_id: "{{ repeat.item }}"
