@@ -1182,15 +1182,16 @@ async def create_controller(
 
         # Auto-detect KSBT sub-variant from device name
         if keeson_variant in (None, "", VARIANT_AUTO):
-            normalized_name = (device_name or "").lower()
-            if normalized_name.startswith("ksbt03cr"):
+            from .detection import keeson_variant_from_device_name
+
+            keeson_variant = keeson_variant_from_device_name(device_name)
+            if keeson_variant == KEESON_VARIANT_KSBT_CR:
                 _LOGGER.info(
                     "Auto-detected KSBT03CR variant for %s (name: %s)",
                     coordinator.address,
                     device_name,
                 )
-                keeson_variant = KEESON_VARIANT_KSBT_CR
-            elif normalized_name.startswith("ksbt04c") or normalized_name == "smart_dfu":
+            elif keeson_variant == KEESON_VARIANT_KSBT04C:
                 _LOGGER.warning(
                     "Device %s advertises the ambiguous name %s; using the "
                     "legacy generic KSBT04C profile. Select Purple or Sleep "
@@ -1198,9 +1199,6 @@ async def create_controller(
                     coordinator.address,
                     device_name,
                 )
-                keeson_variant = KEESON_VARIANT_KSBT04C
-            elif normalized_name.startswith("ksbt"):
-                keeson_variant = KEESON_VARIANT_KSBT
 
         # Use configured variant or default to base
         if keeson_variant == KEESON_VARIANT_JSON:

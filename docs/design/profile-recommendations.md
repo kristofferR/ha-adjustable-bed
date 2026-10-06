@@ -7,6 +7,8 @@ entries and paired beds. It reuses the existing advertisement detector and the
 known app choices in `profile_review.py`. It never opens a connection, probes a
 command, reads another characteristic, or switches protocols to test a hypothesis.
 No detection predicate or bed protocol changes are introduced by this feature.
+The [closed-issue audit](profile-recommendation-issue-audit.md) records historical
+selection failures and the evidence available to assess them.
 
 ## Assessment
 
@@ -28,6 +30,21 @@ is insufficient; below 0.9 also needs a name, manufacturer or MAC signal. A clea
 suggestion needs at least 0.9, no ambiguity, no characteristic-check requirement,
 and no known related app choices. App candidates come from existing supported
 profile metadata, never assumed controller-family equivalence.
+
+Ordinary protocol variants can also need review. The existing dedicated Octo
+Star2 detector signal questions an explicit Standard selection. Keeson's existing
+KSBT name resolver, shared with the controller factory, questions a conflicting
+explicit generic KSBT variant. Both list Auto and the observed generic variant,
+open settings unchanged, and require user confirmation. Auto is not questioned
+for these transport differences; it already resolves them on normal connection.
+
+QRRM does not identify the physical Richmat remote layout. A corroborated Richmat
+QRRM identity with Auto/generic QRRM remote settings includes the existing L&P
+QRRM and BT6500 remote selections alongside app candidates. Closed issues confirm
+both layouts on QRRM receivers, but neither is selected or presented as a unique
+match. An explicit remote setting is respected. Remote candidates are labels for
+Configure's separate remote field, never submitted as bed-type selector values.
+Legacy aliases resolving to the current protocol are excluded from candidates.
 
 ## Review and dismissal
 

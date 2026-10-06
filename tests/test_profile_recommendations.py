@@ -548,6 +548,50 @@ async def test_non_lumbar_observer_and_ambiguous_handoff_do_not_save_or_preselec
     manager.async_abort(result["next_flow"][1])
 
 
+@pytest.mark.parametrize(
+    "selected,variant,name", [("octo", "standard", "DA1458x"), ("richmat", "auto", "QRRM106475")]
+)
+async def test_variant_and_remote_reviews_open_valid_settings_without_submitting_candidate_values(
+    hass, enable_custom_integrations, selected, variant, name
+):
+    from custom_components.adjustable_bed.const import OCTO_STAR2_SERVICE_UUID
+
+    config_entry = entry(hass, **{CONF_BED_TYPE: selected, CONF_PROTOCOL_VARIANT: variant})
+    coord = coordinator()
+    coord.bed_type = selected
+    coord.controller.protocol_diagnostics = {}
+    observed = advertisement(name, [OCTO_STAR2_SERVICE_UUID] if selected == "octo" else [])
+    with patch(HISTORY, return_value=observed), patch(REGISTER):
+        await async_watch_profile_recommendations(hass, config_entry, ((None, coord),))
+        target = _watches(hass)[f"{ISSUE_PREFIX}{config_entry.entry_id}_standalone"]
+        assert target.recommendation is not None
+        assert any(":" in choice for choice in target.recommendation.choices)
+        flow = await open_flow(hass, target)
+        before = dict(config_entry.data)
+        manager = hass.config_entries.options
+        with patch.object(manager, "async_configure", wraps=manager.async_configure) as configure:
+            result = await flow.async_step_init({"action": "review"})
+        configure.assert_called_once_with(result["next_flow"][1], {"next_step_id": "settings"})
+        assert config_entry.data == before
+        manager.async_abort(result["next_flow"][1])
+
+
+async def test_explicit_remote_change_reassesses_unchanged_qrrm_advertisement(hass):
+    config_entry = entry(hass, **{CONF_BED_TYPE: "richmat", "richmat_remote": "auto"})
+    coord = coordinator()
+    coord.controller.protocol_diagnostics = {}
+    observed = advertisement("QRRM106475", [])
+    with patch(HISTORY, return_value=observed), patch(REGISTER):
+        await async_watch_profile_recommendations(hass, config_entry, ((None, coord),))
+        target = _watches(hass)[f"{ISSUE_PREFIX}{config_entry.entry_id}_standalone"]
+        assert "richmat_remote:LP-QRRM" in target.recommendation.choices
+        hass.config_entries.async_update_entry(
+            config_entry, data={**config_entry.data, "richmat_remote": "LP-QRRM"}
+        )
+        target.refresh(observed)
+    assert not any(choice.startswith("richmat_remote:") for choice in target.recommendation.choices)
+
+
 async def test_new_notice_suppresses_duplicate_upgrade_review_even_after_keep(hass):
     from custom_components.adjustable_bed.profile_review import (
         CONF_PROFILE_REVIEW_PENDING,

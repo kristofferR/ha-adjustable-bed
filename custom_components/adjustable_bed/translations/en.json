@@ -5965,19 +5965,19 @@
       }
     },
     "profile_ambiguous": {
-      "title": "Check the app or product profile for {target}",
+      "title": "Check the profile or protocol variant for {target}",
       "fix_flow": {
         "step": {
           "init": {
             "title": "Review the profile for {name}",
-            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) can fit more than one app or product profile. It cannot establish which controls your bed has. Check the app and physical remote you use against these choices:\n\n{choices}\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens Configure. Check your app, remote and product settings before submitting. Nothing changes until you save. Closing settings keeps the current profile. Keep current profile dismisses this assessment across restarts and updates.",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) suggests reviewing the selected profile or protocol variant. It cannot establish which controls your bed has. Check the app and physical remote you use against these choices:\n\n{choices}\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens Configure. Check your app, remote and product settings before submitting. Nothing changes until you save. Closing settings keeps the current profile. Keep current profile dismisses this assessment across restarts and updates.",
             "data": {
               "action": "Profile choice"
             }
           },
           "paired": {
             "title": "Review the profile for {target}",
-            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) can fit more than one app or product profile. It cannot establish which controls your bed has. Check the app and physical remote you use against these choices:\n\n{choices}\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nThis assessment applies to this physical bed. Review opens the pair\u2019s Configure menu. To choose a different profile, select {pair_action} first, then configure the affected bed. No pair or profile changes happen automatically. Keep current profile dismisses this assessment for this physical bed only.",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) suggests reviewing the selected profile or protocol variant. It cannot establish which controls your bed has. Check the app and physical remote you use against these choices:\n\n{choices}\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nThis assessment applies to this physical bed. Review opens the pair\u2019s Configure menu. To choose a different profile, select {pair_action} first, then configure the affected bed. No pair or profile changes happen automatically. Keep current profile dismisses this assessment for this physical bed only.",
             "data": {
               "action": "Profile choice"
             }

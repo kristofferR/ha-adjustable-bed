@@ -28,12 +28,25 @@ from .app_state_store import app_state_store
 from .const import (
     ADJUSTABLE_LUMBAR_VARIANT_STAR,
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_KEESON,
+    BED_TYPE_OCTO,
+    BED_TYPE_RICHMAT,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_STARCODE_ABM5_4,
     CONF_BED_TYPE,
     CONF_PROTOCOL_VARIANT,
+    CONF_RICHMAT_REMOTE,
     DOMAIN,
+    KEESON_VARIANT_KSBT,
+    KEESON_VARIANT_KSBT04C,
+    KEESON_VARIANT_KSBT_CR,
     LEGACY_BED_TYPE_MAPPING,
+    OCTO_VARIANT_STANDARD,
+    OCTO_VARIANT_STAR2,
+    RICHMAT_REMOTE_AUTO,
+    RICHMAT_REMOTE_BT6500,
+    RICHMAT_REMOTE_LP_QRRM,
+    RICHMAT_REMOTES,
     SUPPORTED_BED_TYPES,
     VARIANT_AUTO,
 )
@@ -41,6 +54,8 @@ from .detection import (
     APP_VARIANT_CHOICES,
     bed_type_choice,
     detect_bed_type_detailed,
+    detect_richmat_remote_from_name,
+    keeson_variant_from_device_name,
 )
 from .pairing import effective_child_data, get_child, is_paired
 from .profile_review import (
@@ -49,6 +64,7 @@ from .profile_review import (
     profile_review_mark,
     related_app_choices,
 )
+from .validators import get_variants_for_bed_type
 
 if TYPE_CHECKING:
     from .coordinator import AdjustableBedCoordinator
@@ -56,6 +72,7 @@ if TYPE_CHECKING:
 ISSUE_PREFIX: Final = "profile_recommendation_"
 _WATCHES: Final = f"{DOMAIN}_profile_recommendations"
 _SLOT: Final = "profile_recommendations"
+_REMOTE_PREFIX: Final = "richmat_remote:"
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,6 +84,32 @@ class Recommendation:
     suggested: str | None
     choices: tuple[str, ...] = ()
     translation_key: str = "lumbar_star254202_box25"
+
+
+def _recommendation_label(choice: str) -> str:
+    """Label app selector values and ordinary Configure protocol variants."""
+    if choice.startswith(_REMOTE_PREFIX):
+        return f"Richmat remote, {RICHMAT_REMOTES[choice.removeprefix(_REMOTE_PREFIX)]}"
+    bed_type, separator, variant = choice.partition(":")
+    if (bed_type, variant) in APP_VARIANT_CHOICES:
+        return choice_label(choice)
+    variants = get_variants_for_bed_type(bed_type) or {}
+    if separator and variant in variants:
+        return f"{choice_label(bed_type)}, {variants[variant]}"
+    return choice_label(choice)
+
+
+def _variant_review(bed_type: str, variant: str, observed: str) -> Recommendation:
+    """Offer existing variants without submitting a non-app selector value."""
+    choices = (f"{bed_type}:{VARIANT_AUTO}", f"{bed_type}:{observed}")
+    identity = repr((bed_type, variant, choices)).encode()
+    return Recommendation(
+        f"profile_variant_{sha256(identity).hexdigest()[:20]}",
+        f"{bed_type}:{variant}",
+        None,
+        choices,
+        "profile_ambiguous",
+    )
 
 
 def _reported_recommendation(
@@ -129,6 +172,20 @@ def recommend_profile(
     if detected.bed_type not in SUPPORTED_BED_TYPES or detected.confidence < 0.6:
         return None
     assert detected.bed_type is not None
+    if bed_type == detected.bed_type:
+        if (
+            bed_type == BED_TYPE_OCTO
+            and variant == OCTO_VARIANT_STANDARD
+            and "uuid:octo_star2" in detected.signals
+        ):
+            return _variant_review(bed_type, OCTO_VARIANT_STANDARD, OCTO_VARIANT_STAR2)
+        if (
+            bed_type == BED_TYPE_KEESON
+            and variant in {KEESON_VARIANT_KSBT, KEESON_VARIANT_KSBT_CR, KEESON_VARIANT_KSBT04C}
+            and (observed := keeson_variant_from_device_name(info.name)) is not None
+            and observed != variant
+        ):
+            return _variant_review(bed_type, str(variant), observed)
     # A bare shared service is not enough to question a configured bed. Name,
     # manufacturer or a high-confidence dedicated signature must corroborate it.
     if detected.confidence < 0.9 and not any(
@@ -150,13 +207,29 @@ def recommend_profile(
         and bed_type != detected.bed_type
     ):
         return None  # Existing aliases already use the same protocol route.
+    remote_choices: set[str] = set()
+    if (
+        bed_type == detected.bed_type == BED_TYPE_RICHMAT
+        and detect_richmat_remote_from_name(info.name) == "qrrm"
+        and str(data.get(CONF_RICHMAT_REMOTE) or RICHMAT_REMOTE_AUTO).lower()
+        in {RICHMAT_REMOTE_AUTO, "qrrm"}
+    ):
+        # QRRM identifies neither layout. #194 and #504 confirm these existing
+        # surfaces on QRRM receivers; ask the user to compare physical controls.
+        remote_choices = {
+            f"{_REMOTE_PREFIX}{RICHMAT_REMOTE_BT6500}",
+            f"{_REMOTE_PREFIX}{RICHMAT_REMOTE_LP_QRRM}",
+        }
     choices = tuple(
         sorted(
             choice
-            for choice in {*matches, *apps}
+            for choice in {*matches, *apps, *remote_choices}
             if choice != current
+            and LEGACY_BED_TYPE_MAPPING.get(choice, choice)
+            != LEGACY_BED_TYPE_MAPPING.get(bed_type, bed_type)
             and (
                 choice in SUPPORTED_BED_TYPES
+                or choice in remote_choices
                 or any(choice == f"{bed}:{app}" for bed, app in APP_VARIANT_CHOICES)
             )
         )
@@ -280,6 +353,7 @@ class ProfileRecommendationWatch:
         evidence = (
             data.get(CONF_BED_TYPE),
             data.get(CONF_PROTOCOL_VARIANT),
+            data.get(CONF_RICHMAT_REMOTE),
             data.get(CONF_ADDRESS),
             (
                 info.address,
@@ -331,12 +405,12 @@ class ProfileRecommendationWatch:
             "side": self.side or "",
             "address": self.coordinator.address,
             "bluetooth_name": self._observed_name,
-            "current": choice_label(self.recommendation.current),
+            "current": _recommendation_label(self.recommendation.current),
             "suggested": choice_label(self.recommendation.suggested)
             if self.recommendation.suggested
             else "",
             "choices": "\n".join(
-                f"- {choice_label(choice)}" for choice in self.recommendation.choices
+                f"- {_recommendation_label(choice)}" for choice in self.recommendation.choices
             ),
             "pair_action": "Split into two beds" if self.side else "Restore standalone controls",
         }
