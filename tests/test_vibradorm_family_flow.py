@@ -244,13 +244,16 @@ async def test_missing_selected_roles_cannot_finish_even_with_native_bond(
 
 
 @pytest.mark.parametrize("app", ["caresse", "vmatbasic"])
+@pytest.mark.parametrize("disconnect_raises", [False, True])
 async def test_migration_retains_unclosed_link_and_refuses_second_connect(
-    hass, enable_custom_integrations, app
+    hass, enable_custom_integrations, app, disconnect_raises: bool
 ):
     entry = entry_for(hass)
     before = dict(entry.data)
     client = client_for(app)
-    client.disconnect = AsyncMock()
+    client.disconnect = AsyncMock(
+        side_effect=RuntimeError("Disconnect failed") if disconnect_raises else None
+    )
     manager = hass.config_entries.flow
     lock = async_get_connect_lock(hass, ADDRESS)
     with ExitStack() as stack:

@@ -6330,8 +6330,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         _report(SetupAction.DISCONNECTING)
                         try:
                             await client.disconnect()
-                        except Exception:  # noqa: BLE001 - cleanup must not raise
-                            pass
+                        except Exception:  # noqa: BLE001 - generic probes are best-effort
+                            if vibradorm_setup_data is not None and client.is_connected:
+                                raise
                         else:
                             # Only cleared once the link is really closed, so a
                             # cancellation during the disconnect still leaves
