@@ -36,6 +36,25 @@ Legacy RF ECO BT entries receive an offline layout repair, including entries
 with a configured count of one. Explicit staircase confirmation prevents the
 repair from returning while preserving the existing Stair entity.
 
+### Connection behavior
+
+Home Assistant keeps this staircase profile's BLE connection open, including
+when **Disconnect After Command** is enabled. In the reporter's
+[4.1.1 test](https://github.com/kristofferR/ha-adjustable-bed/issues/344#issuecomment-6036101893),
+the normal 40-second idle disconnect left the receiver advertising but unable
+to reconnect, with GATT timeouts. Retaining the connection worked reliably,
+including after a Home Assistant restart. This connection policy applies to
+the staircase profile; a shared RF ECO BT receiver label does not establish the
+same requirement for other profiles.
+
+Keeping the link open occupies a Bluetooth connection slot and may prevent a
+companion app from connecting. Manual Disconnect remains available. After a
+manual or unexpected disconnect, the next command or **Connect** action tries
+to reconnect on demand; no background reconnect loop runs. The receiver may
+still require a power cycle if GATT timeouts recur.
+
+### Device identification
+
 The reported device advertises as `OKIN-050226` with no service UUIDs, so the
 integration cannot safely auto-detect it from advertisements alone. Diagnostics
 can identify it after connecting when this GATT signature is present:

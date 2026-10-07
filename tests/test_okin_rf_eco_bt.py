@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_RF_ECO_BT,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
@@ -64,6 +65,75 @@ def _payloads(mock_bleak_client: MagicMock) -> list[bytes]:
 
 class TestOkinRfEcoBtController:
     """Test OKIN RF ECO BT profile behavior."""
+
+    @pytest.mark.parametrize("disconnect_after_command", [False, True])
+    async def test_connection_remains_open_after_commands(
+        self,
+        hass: HomeAssistant,
+        mock_okin_rf_eco_bt_config_entry: MockConfigEntry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        mock_establish_connection: AsyncMock,
+        disconnect_after_command: bool,
+    ) -> None:
+        """Neither idle timeout nor quick handoff should release the stair link."""
+        hass.config_entries.async_update_entry(
+            mock_okin_rf_eco_bt_config_entry,
+            data={
+                **mock_okin_rf_eco_bt_config_entry.data,
+                CONF_DISCONNECT_AFTER_COMMAND: disconnect_after_command,
+            },
+        )
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_rf_eco_bt_config_entry)
+        assert await coordinator.async_connect()
+        try:
+            assert coordinator._disconnect_timer is None
+
+            await coordinator.async_execute_controller_command(
+                lambda controller: controller.move_back_up(),
+            )
+            await coordinator.async_stop_command()
+            coordinator.resume_disconnect_timer()
+
+            assert coordinator.is_connected
+            assert coordinator._disconnect_timer is None
+            mock_bleak_client.disconnect.assert_not_awaited()
+            mock_establish_connection.assert_awaited_once()
+            assert _payloads(mock_bleak_client) == [STAIR_OUT_PACKET]
+        finally:
+            await coordinator.async_disconnect()
+
+    async def test_unexpected_disconnect_reconnects_on_next_command(
+        self,
+        hass: HomeAssistant,
+        mock_okin_rf_eco_bt_config_entry: MockConfigEntry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        mock_establish_connection: AsyncMock,
+    ) -> None:
+        """A lost persistent link permits command recovery without a retry loop."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_rf_eco_bt_config_entry)
+        assert await coordinator.async_connect()
+        try:
+            mock_bleak_client.is_connected = False
+            coordinator._on_disconnect(mock_bleak_client)
+
+            assert coordinator.client is None
+            assert coordinator.controller is None
+            assert coordinator._reconnect_timer is None
+            mock_establish_connection.assert_awaited_once()
+            assert _payloads(mock_bleak_client) == []
+
+            await coordinator.async_execute_controller_command(
+                lambda controller: controller.move_back_down(),
+            )
+
+            assert coordinator.is_connected
+            assert mock_establish_connection.await_count == 2
+            assert coordinator._disconnect_timer is None
+            assert _payloads(mock_bleak_client) == [STAIR_IN_PACKET]
+        finally:
+            await coordinator.async_disconnect()
 
     async def test_control_characteristic_and_capabilities(
         self,
