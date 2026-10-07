@@ -41,6 +41,7 @@ from .const import (
 )
 from .diagnostics_utils import get_gatt_summary
 from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
+from .profile_decisions import async_profile_decision_history
 from .redaction import redact_data, redact_pins_only
 from .support_logs import DATA_SUPPORT_LOGS
 
@@ -90,6 +91,7 @@ async def generate_support_report(
         "generated_at": timestamp.isoformat(),
         "system": _get_system_info(hass, integration_version),
         "integration": _get_integration_info(entry),
+        "profile_recommendations": await async_profile_decision_history(hass, coordinator.address),
         "connection": _get_connection_info(coordinator),
         "connection_history": coordinator.connection_history,
         "pairing": _get_pairing_info(entry, coordinator),

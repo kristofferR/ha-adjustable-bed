@@ -8,6 +8,8 @@ address share one instance, so their saves never overwrite each other's slot.
 The coordinator restores a slot into every new controller and saves it whenever
 the controller publishes state. Changing profile keeps every profile's slot,
 so changing back restores that profile's preferences.
+The reserved profile-recommendation slot retains support decision history even
+after the last config entry is removed; ordinary app preferences are forgotten.
 
 Where a value belongs:
 
@@ -23,8 +25,8 @@ Where a value belongs:
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Iterable, Mapping
-from typing import Any
+from collections.abc import Callable, Iterable, Mapping
+from typing import Any, Final
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
@@ -33,6 +35,7 @@ from .app_session import drop_app_sessions
 from .const import DOMAIN
 
 _REGISTRY_KEY = "app_state_stores"
+PROFILE_DECISIONS_SLOT: Final = "profile_recommendations"
 
 
 def app_state_storage_key(address: str) -> str:
@@ -79,24 +82,40 @@ class AppStateStore:
 
     async def async_write(self, slot: str, state: Mapping[str, Any]) -> None:
         """Write one slot now; on failure raise and keep the previous value."""
+        await self.async_update(slot, lambda _: state)
+
+    async def async_update(
+        self, slot: str, update: Callable[[dict[str, Any]], Mapping[str, Any]]
+    ) -> dict[str, Any]:
+        """Read, update and save a slot under one lock, without losing concurrent edits."""
         async with self._lock:
             data = await self._async_load()
+            state = dict(update(dict(data.get(slot, {}))))
             if data.get(slot) == state:
-                return
-            await self._store.async_save({**data, slot: dict(state)})
-            data[slot] = dict(state)
+                return dict(state)
+            await self._store.async_save({**data, slot: state})
+            data[slot] = state
             # The write included every pending change and cancelled the delayed one.
             self._pending = False
+            return dict(state)
 
     async def async_save(self) -> None:
         """Write pending changes now (entry unload)."""
         if self._data is not None and self._pending:
             await self._store.async_save(self._snapshot())
 
-    async def async_remove(self) -> None:
-        """Delete the stored file, cancel pending writes and make later saves no-ops."""
-        self._data = None
-        await self._store.async_remove()
+    async def async_remove(self, *, keep_slots: Iterable[str] = ()) -> None:
+        """Forget app preferences, optionally retaining durable support evidence."""
+        async with self._lock:
+            slots = frozenset(keep_slots)
+            data = await self._async_load() if slots else {}
+            retained = {slot: state for slot, state in data.items() if slot in slots}
+            if retained:
+                await self._store.async_save(retained)
+            else:
+                await self._store.async_remove()
+            self._data = None
+            self._pending = False
 
     def _schedule_save(self) -> None:
         self._pending = True
@@ -130,4 +149,4 @@ async def async_remove_app_states(hass: HomeAssistant, addresses: Iterable[str])
         drop_app_sessions(hass, address)
     for address in addresses:
         store = registry.pop(address.upper(), None) or AppStateStore(hass, address)
-        await store.async_remove()
+        await store.async_remove(keep_slots=(PROFILE_DECISIONS_SLOT,))

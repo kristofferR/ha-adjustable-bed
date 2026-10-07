@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -9,6 +10,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.storage import Store
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.app_state_store import AppStateStore, app_state_storage_key
@@ -207,7 +209,13 @@ async def test_keep_survives_storage_reload_without_changing_configuration(hass)
     assert target.entry.data == before
     # New store instance reads the disk-backed HA storage, not watcher memory.
     decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
-    assert decisions == {"lumbar_star254202_box25": True}
+    assert decisions["lumbar_star254202_box25"] is True
+    record = decisions["history"][0]
+    assert record["decision"] == "dismissed" and record["source"] == "keep"
+    assert record["current"] == BED_TYPE_ADJUSTABLE_LUMBAR
+    assert record["suggested"] == BED_TYPE_SLEEPYS_BOX25
+    assert record["previous_profile"] == record["selected_profile"]
+    assert datetime.fromisoformat(record["decided_at"]).utcoffset() == timedelta(0)
     await target.entry._async_process_on_unload(hass)
     hass.data[DOMAIN]["app_state_stores"].clear()
     target = await watch(hass, target.entry, target.coordinator)
@@ -221,7 +229,9 @@ async def test_native_ignore_persists_the_same_decision(hass):
         await hass.async_block_till_done()
     assert issue(hass, target) is None
     decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
-    assert decisions == {"lumbar_star254202_box25": True}
+    assert decisions["lumbar_star254202_box25"] is True
+    assert decisions["history"][0]["source"] == "ignore"
+    assert decisions["history"][0]["decision"] == "dismissed"
 
 
 async def test_failed_save_keeps_the_notice_open(hass):
@@ -229,12 +239,13 @@ async def test_failed_save_keeps_the_notice_open(hass):
     flow = await open_flow(hass, target)
     with (
         patch(HISTORY, return_value=info()),
-        patch.object(AppStateStore, "async_write", side_effect=OSError),
+        patch.object(Store, "async_save", side_effect=OSError),
     ):
         result = await flow.async_step_init({"action": "keep"})
     assert result["errors"] == {"base": "save_failed"}
     assert issue(hass, target) is not None
     assert target.dismissed == {}
+    assert await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations") == {}
 
 
 async def test_review_hands_off_without_saving_and_options_confirms(
@@ -257,6 +268,12 @@ async def test_review_hands_off_without_saving_and_options_confirms(
         result = await manager.async_configure(flow_id, {})
     assert result["type"] == "create_entry"
     assert target.entry.data[CONF_BED_TYPE] == BED_TYPE_SLEEPYS_BOX25
+    decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
+    record = decisions["history"][0]
+    assert record["decision"] == "accepted" and record["source"] == "configure"
+    assert record["rule"] == "lumbar_star254202_box25"
+    assert record["previous_profile"][CONF_BED_TYPE] == BED_TYPE_ADJUSTABLE_LUMBAR
+    assert record["selected_profile"][CONF_BED_TYPE] == BED_TYPE_SLEEPYS_BOX25
     with patch(HISTORY, return_value=info()):
         target.refresh()
     assert issue(hass, target) is None
@@ -272,7 +289,38 @@ async def test_cancelled_review_keeps_configuration_and_suggestion(
         result = await flow.async_step_init({"action": "review"})
     hass.config_entries.options.async_abort(result["next_flow"][1])
     assert target.entry.data == before
+    assert await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations") == {}
     assert issue(hass, target) is not None
+
+
+async def test_accepted_unique_match_is_recorded_even_when_selected_profile_has_no_assessment(
+    hass, enable_custom_integrations
+):
+    from custom_components.adjustable_bed.const import LINAK_CONTROL_SERVICE_UUID
+
+    config_entry = entry(hass, **{CONF_BED_TYPE: "richmat", CONF_MOTOR_COUNT: 2})
+    coord = coordinator()
+    coord.controller.protocol_diagnostics = {}
+    observed = advertisement("Bed 1234", [LINAK_CONTROL_SERVICE_UUID])
+    with patch(HISTORY, return_value=observed), patch(REGISTER):
+        await async_watch_profile_recommendations(hass, config_entry, ((None, coord),))
+        target = _watches(hass)[f"{ISSUE_PREFIX}{config_entry.entry_id}_standalone"]
+        original = target.recommendation
+        assert original is not None
+        flow = await open_flow(hass, target)
+        result = await flow.async_step_init({"action": "review"})
+        with patch.object(hass.config_entries, "async_schedule_reload"):
+            result = await hass.config_entries.options.async_configure(result["next_flow"][1], {})
+        target.refresh()
+    assert result["type"] == "create_entry"
+    assert config_entry.data[CONF_BED_TYPE] == "linak"
+    assert target.recommendation is None
+    decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
+    assert decisions[original.rule] is True
+    record = decisions["history"][0]
+    assert record["decision"] == "accepted" and record["suggested"] == "linak"
+    assert record["previous_profile"][CONF_BED_TYPE] == "richmat"
+    assert record["selected_profile"][CONF_BED_TYPE] == "linak"
 
 
 @pytest.mark.parametrize("change", [{CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25}, {CONF_ADDRESS: OTHER}])
@@ -324,7 +372,8 @@ async def test_pair_reviews_and_dismissals_are_per_physical_side(hass, enable_cu
     assert config_entry.data == before
     # Split/recombine does not alter the physical bed's decision.
     decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
-    assert decisions == {"lumbar_star254202_box25": True}
+    assert decisions["lumbar_star254202_box25"] is True
+    assert decisions["history"][0]["previous_profile"][CONF_BED_TYPE] == BED_TYPE_ADJUSTABLE_LUMBAR
     assert await AppStateStore(hass, OTHER).async_slot("profile_recommendations") == {}
 
 
@@ -630,6 +679,30 @@ async def test_new_notice_suppresses_duplicate_upgrade_review_even_after_keep(ha
     )
 
 
+async def test_pending_upgrade_review_returns_when_replacement_evidence_changes(hass):
+    from custom_components.adjustable_bed.profile_review import (
+        CONF_PROFILE_REVIEW_PENDING,
+        profile_review_mark,
+    )
+
+    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25})
+    hass.config_entries.async_update_entry(
+        config_entry,
+        data={
+            **config_entry.data,
+            CONF_PROFILE_REVIEW_PENDING: profile_review_mark(config_entry.data),
+        },
+    )
+    target = await watch(hass, config_entry)
+    old_id = f"app_profile_review_{config_entry.entry_id}"
+    assert ir.async_get(hass).async_get_issue(DOMAIN, old_id) is None
+    changed = advertisement("unknown", [])
+    with patch(HISTORY, return_value=changed):
+        target.seen(changed, MagicMock())
+    assert target.recommendation is None and issue(hass, target) is None
+    assert ir.async_get(hass).async_get_issue(DOMAIN, old_id) is not None
+
+
 @pytest.mark.parametrize("observed", [None, "unknown"])
 async def test_pending_upgrade_review_survives_without_a_replacement(hass, observed):
     from custom_components.adjustable_bed.profile_review import (
@@ -768,20 +841,31 @@ async def test_single_address_pair_has_one_physical_notice(hass, enable_custom_i
 
 async def test_saving_ambiguous_review_confirms_current_route(hass, enable_custom_integrations):
     config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25})
+    # Populate the normal options defaults before testing a truly unchanged save.
+    initial = await hass.config_entries.options.async_init(config_entry.entry_id)
+    await hass.config_entries.options.async_configure(
+        initial["flow_id"], {"next_step_id": "settings"}
+    )
+    await hass.config_entries.options.async_configure(initial["flow_id"], {})
     coord = coordinator()
     coord.bed_type = BED_TYPE_SLEEPYS_BOX25
     coord.controller.protocol_diagnostics = {}
     target = await watch(hass, config_entry, coord)
+    config_entry.mock_state(hass, ConfigEntryState.LOADED)
+    before = dict(config_entry.data)
     flow = await open_flow(hass, target)
     with patch(HISTORY, return_value=info()):
         result = await flow.async_step_init({"action": "review"})
         with patch.object(hass.config_entries, "async_schedule_reload"):
             result = await hass.config_entries.options.async_configure(result["next_flow"][1], {})
-        target.refresh()
+    config_entry.mock_state(hass, ConfigEntryState.SETUP_RETRY)
     assert result["type"] == "create_entry"
+    assert config_entry.data == before
     assert config_entry.data[CONF_BED_TYPE] == BED_TYPE_SLEEPYS_BOX25
     assert issue(hass, target) is None
-    assert await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
+    decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
+    assert decisions["history"][0]["decision"] == "dismissed"
+    assert decisions["history"][0]["source"] == "configure"
 
 
 async def test_failed_review_confirmation_keeps_original_profile(hass, enable_custom_integrations):
@@ -791,8 +875,16 @@ async def test_failed_review_confirmation_keeps_original_profile(hass, enable_cu
     with patch(HISTORY, return_value=info()):
         result = await flow.async_step_init({"action": "review"})
         flow_id = result["next_flow"][1]
-        with patch.object(AppStateStore, "async_write", side_effect=OSError):
-            result = await hass.config_entries.options.async_configure(flow_id, {})
+        with (
+            patch.object(Store, "async_save", side_effect=OSError),
+            patch(
+                "custom_components.adjustable_bed.config_flow.async_set_discovery_disabled"
+            ) as change_discovery,
+        ):
+            result = await hass.config_entries.options.async_configure(
+                flow_id, {"disable_discovery": True}
+            )
+        change_discovery.assert_not_called()
     assert result["type"] == "form"
     assert result["errors"] == {"base": "profile_review_save_failed"}
     assert target.entry.data == before

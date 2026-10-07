@@ -990,6 +990,17 @@ class TestPairedSetup:
         diag = await async_get_config_entry_diagnostics(hass, entry)
         assert diag["paired"] is True
         assert set(diag["sides"]) == {SIDE_LEFT, SIDE_RIGHT}
+        from custom_components.adjustable_bed.app_state_store import app_state_store
+
+        child = hass.data[DOMAIN][entry.entry_id].children[SIDE_LEFT]
+        await app_state_store(hass, child.address).async_write(
+            "profile_recommendations", {"left_dismissal": True}
+        )
+        diag = await async_get_config_entry_diagnostics(hass, entry)
+        assert diag["sides"][SIDE_LEFT]["profile_recommendations"]["legacy_dismissed_rules"] == [
+            "left_dismissal"
+        ]
+        assert diag["sides"][SIDE_RIGHT]["profile_recommendations"]["legacy_dismissed_rules"] == []
 
     async def test_stop_all_on_child_device_infers_that_side(
         self,

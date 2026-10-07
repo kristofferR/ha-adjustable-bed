@@ -11,7 +11,7 @@ import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from hashlib import sha256
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 import voluptuous as vol
 from homeassistant.components import bluetooth
@@ -58,8 +58,15 @@ from .detection import (
     keeson_variant_from_device_name,
 )
 from .pairing import effective_child_data, get_child, is_paired
+from .profile_decisions import (
+    PROFILE_DECISIONS_SLOT,
+    async_record_profile_decision,
+    decision_timestamp,
+    profile_selection,
+)
 from .profile_review import (
     async_clear_profile_review_issue,
+    async_refresh_profile_review_issue,
     choice_label,
     profile_review_mark,
     related_app_choices,
@@ -71,7 +78,7 @@ if TYPE_CHECKING:
 
 ISSUE_PREFIX: Final = "profile_recommendation_"
 _WATCHES: Final = f"{DOMAIN}_profile_recommendations"
-_SLOT: Final = "profile_recommendations"
+_SLOT: Final = PROFILE_DECISIONS_SLOT
 _REMOTE_PREFIX: Final = "richmat_remote:"
 
 
@@ -312,6 +319,8 @@ class ProfileRecommendationWatch:
         self._observed_name = ""
         self._last_info: bluetooth.BluetoothServiceInfoBleak | None = None
         self.review_flow_id: str | None = None
+        self.review_recommendation: Recommendation | None = None
+        self.review_profile: dict[str, str] | None = None
 
     @property
     def profile_data(self) -> Mapping[str, object]:
@@ -381,6 +390,8 @@ class ProfileRecommendationWatch:
         recommendation = self.recommendation
         if has_profile_assessment(self.hass, self.entry.entry_id):
             async_clear_profile_review_issue(self.hass, self.entry.entry_id)
+        else:
+            async_refresh_profile_review_issue(self.hass, self.entry)
         if recommendation is None or self.dismissed.get(recommendation.rule):
             ir.async_delete_issue(self.hass, DOMAIN, self.issue_id)
             return
@@ -415,15 +426,50 @@ class ProfileRecommendationWatch:
             "pair_action": "Split into two beds" if self.side else "Restore standalone controls",
         }
 
-    async def async_keep(self, recommendation: Recommendation) -> None:
+    async def async_keep(
+        self, recommendation: Recommendation, *, source: Literal["keep", "ignore"] = "keep"
+    ) -> None:
         """Persist the exact recommendation before closing its notice."""
-        store = app_state_store(self.hass, self.coordinator.address)
-        decisions = {**await store.async_slot(_SLOT), recommendation.rule: True}
-        if (key := self.upgrade_review_key) is not None:
-            decisions[key] = True
-        await store.async_write(_SLOT, decisions)
-        self.dismissed = decisions
+        await self.async_record_decision(
+            recommendation, source=source, selected_data=self.profile_data
+        )
         self.refresh()
+
+    async def async_record_decision(
+        self,
+        recommendation: Recommendation,
+        *,
+        source: Literal["keep", "ignore", "configure"],
+        selected_data: Mapping[str, object],
+        previous_profile: dict[str, str] | None = None,
+        confirmed_rules: tuple[str, ...] = (),
+    ) -> None:
+        """Retain the original suggestion even when the new profile needs no notice."""
+        previous = (
+            previous_profile
+            if previous_profile is not None
+            else profile_selection(self.profile_data)
+        )
+        selected = profile_selection(selected_data)
+        rules = [recommendation.rule, *confirmed_rules]
+        if (key := _upgrade_review_key(selected_data)) is not None:
+            rules.append(key)
+        self.dismissed = await async_record_profile_decision(
+            self.hass,
+            self.coordinator.address,
+            {
+                "decided_at": decision_timestamp(),
+                "decision": "accepted" if selected != previous else "dismissed",
+                "source": source,
+                "rule": recommendation.rule,
+                "current": recommendation.current,
+                "suggested": recommendation.suggested,
+                "choices": list(recommendation.choices),
+                "previous_profile": previous,
+                "selected_profile": selected,
+            },
+            rules,
+        )
 
     @callback
     def seen(self, info: bluetooth.BluetoothServiceInfoBleak, _: bluetooth.BluetoothChange) -> None:
@@ -440,7 +486,7 @@ class ProfileRecommendationWatch:
             return
         issue = ir.async_get(self.hass).async_get_issue(DOMAIN, self.issue_id)
         if issue is not None and issue.dismissed_version and self.recommendation is not None:
-            await self.async_keep(self.recommendation)
+            await self.async_keep(self.recommendation, source="ignore")
 
     @callback
     def unload(self) -> None:
@@ -493,6 +539,8 @@ async def async_confirm_profile_review(
             watch.entry is not entry
             or watch.review_flow_id != flow_id
             or watch.side is not None
+            or watch.review_recommendation is None
+            or watch.review_profile is None
             or not isinstance(data.get(CONF_ADDRESS), str)
             or str(data[CONF_ADDRESS]).upper() != watch.coordinator.address.upper()
         ):
@@ -504,13 +552,24 @@ async def async_confirm_profile_review(
             if data.get(CONF_BED_TYPE) == entry.data.get(CONF_BED_TYPE)
             else {},
         )
-        if recommendation is not None:
-            store = app_state_store(hass, watch.coordinator.address)
-            decisions = {**await store.async_slot(_SLOT), recommendation.rule: True}
-            if (key := _upgrade_review_key(data)) is not None:
-                decisions[key] = True
-            await store.async_write(_SLOT, decisions)
-            watch.dismissed = decisions
+        await watch.async_record_decision(
+            watch.review_recommendation,
+            source="configure",
+            selected_data=data,
+            previous_profile=watch.review_profile,
+            confirmed_rules=(recommendation.rule,) if recommendation is not None else (),
+        )
+
+
+@callback
+def async_complete_profile_review(hass: HomeAssistant, entry: ConfigEntry, flow_id: str) -> None:
+    """Retire the notice even when an unchanged save fires no update listener."""
+    for watch in tuple(_watches(hass).values()):
+        if watch.entry is entry and watch.review_flow_id == flow_id:
+            watch.review_flow_id = None
+            watch.review_recommendation = None
+            watch.review_profile = None
+            watch.refresh()
 
 
 class ProfileRecommendationRepairFlow(RepairsFlow):
@@ -577,6 +636,8 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
                     raise
             if result.get("type") in (FlowResultType.FORM, FlowResultType.MENU):
                 watch.review_flow_id = result["flow_id"]
+                watch.review_recommendation = recommendation
+                watch.review_profile = profile_selection(watch.profile_data)
                 return self.async_abort(
                     reason="review_started", next_flow=(FlowType.OPTIONS_FLOW, result["flow_id"])
                 )

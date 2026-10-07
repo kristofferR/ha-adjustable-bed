@@ -107,6 +107,12 @@ class TestDiagnosticsOutput:
         # Mock disconnected state
         mock_bleak_client.is_connected = False
 
+        from custom_components.adjustable_bed.app_state_store import app_state_store
+
+        await app_state_store(hass, coordinator.address).async_write(
+            "profile_recommendations", {"older_dismissal": True}
+        )
+
         result = await async_get_config_entry_diagnostics(hass, mock_diagnostics_config_entry)
 
         # Check structure
@@ -118,6 +124,10 @@ class TestDiagnosticsOutput:
         assert "controller" in result
         assert "position_data" in result
         assert "supported_bed_types" in result
+        assert result["profile_recommendations"] == {
+            "history": [],
+            "legacy_dismissed_rules": ["older_dismissal"],
+        }
 
     async def test_diagnostics_connected(
         self,

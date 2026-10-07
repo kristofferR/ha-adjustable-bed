@@ -14,6 +14,7 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
+from custom_components.adjustable_bed.app_state_store import app_state_store
 from custom_components.adjustable_bed.ble_diagnostics import (
     MAX_DIAGNOSTIC_QUERY_PREEMPTIONS,
     BLEDiagnosticRunner,
@@ -1179,6 +1180,92 @@ class TestBleDiagnosticsRunner:
 
 class TestSupportBundle:
     """Test support bundle orchestration."""
+
+    @pytest.mark.parametrize("configured", [False, True])
+    async def test_every_bundle_exports_persisted_decisions_for_only_the_captured_address(
+        self, hass, mock_config_entry, enable_custom_integrations, configured
+    ):
+        address = mock_config_entry.data[CONF_ADDRESS]
+        history = [
+            {
+                "rule": "dismissed_rule",
+                "decision": "dismissed",
+                "source": "keep",
+                "decided_at": "2026-10-07T00:00:00+00:00",
+                "current": "richmat",
+                "suggested": "octo",
+                "choices": ["octo"],
+                "previous_profile": {"bed_type": "richmat"},
+                "selected_profile": {"bed_type": "richmat"},
+            },
+            {
+                "rule": "accepted_rule",
+                "decision": "accepted",
+                "source": "configure",
+                "decided_at": "2026-10-07T01:00:00+00:00",
+                "current": "richmat",
+                "suggested": "linak",
+                "choices": ["linak"],
+                "previous_profile": {"bed_type": "richmat"},
+                "selected_profile": {"bed_type": "linak"},
+            },
+        ]
+        await app_state_store(hass, address).async_write(
+            "profile_recommendations",
+            {
+                "history": history,
+                "dismissed_rule": True,
+                "accepted_rule": True,
+            },
+        )
+        await app_state_store(hass, "AA:BB:CC:DD:EE:00").async_write(
+            "profile_recommendations",
+            {
+                "history": [{"rule": "unrelated_bed"}],
+            },
+        )
+        # Simulate restart: neither an observer nor its in-memory store is required.
+        hass.data[DOMAIN]["app_state_stores"].clear()
+        diagnostic_report = DiagnosticReport(
+            metadata={},
+            device={"address": address},
+            advertisement={},
+            advertisements_by_source=[],
+            detection={},
+            gatt_services=[],
+            gatt_summary={},
+            device_information={},
+            notifications=[],
+            notification_summary={},
+            adapter_details={},
+            connection_history={},
+            connection_attempt_details=[],
+            command_trace=[],
+            errors=[],
+        )
+        with (
+            patch.object(
+                BLEDiagnosticRunner,
+                "run_diagnostics",
+                new=AsyncMock(return_value=diagnostic_report),
+            ),
+            patch(
+                "custom_components.adjustable_bed.support_bundle.bluetooth.async_current_scanners",
+                return_value=[],
+            ),
+        ):
+            for target in (address, address.lower()):
+                report = await generate_support_bundle(
+                    hass,
+                    address=target,
+                    capture_duration=0,
+                    include_logs=False,
+                    entry=mock_config_entry if configured else None,
+                )
+                assert report["profile_recommendations"] == {
+                    "history": history,
+                    "legacy_dismissed_rules": [],
+                }
 
     async def test_command_timing_uses_same_diagnostic_snapshot_as_trace(
         self,

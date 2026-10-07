@@ -61,7 +61,9 @@ Keep current profile, including Home Assistant's native Ignore action, stores a
 decision in the reserved `profile_recommendations` slot of the per-address app-state
 store. It does not reload or disconnect the bed. Decisions survive restarts,
 integration/HA updates and pair/split ownership transfers. Removing the last entry
-owning an address removes its app-state store as usual. An ongoing assessment also
+owning an address clears app preferences but retains the reserved decision slot,
+so re-adding the bed or capturing its raw address preserves support evidence.
+An ongoing assessment also
 suppresses a duplicate one-time upgrade notice only when the relevant physical beds
 have a replacement assessment or a saved decision confirming that upgrade review.
 Offline or unassessed beds retain their pending upgrade review. Confirmation keys
@@ -72,6 +74,37 @@ Generic decision keys include the assessment kind, configured route/variant and
 sorted candidates. A materially different selection or candidate set can ask
 again; RSSI, serial suffixes, translated labels and release versions cannot.
 Verified rules retain their own stable evidence keys.
+
+## Decision history in support exports
+
+The same per-address slot retains an append-only history alongside suppression
+flags. Every Keep, native Ignore, or validated settings submission through Review
+records a UTC timestamp, the decision source, original rule/current profile,
+suggested profile/candidate list, and the previous and selected profile selectors.
+Changing selectors records `accepted`; keeping them records `dismissed`.
+Cancelling or failing validation/storage records neither. Acceptance means the
+user chose those settings, not that the controls were physically verified.
+PINs, names and unrelated entry data are not copied into decision history.
+
+History and flags are saved atomically before settings commit actions. An accepted
+unique match is retained even if the new route needs no further assessment.
+After a successful settings save, the notice is refreshed immediately, including
+when unchanged entry data produces no Home Assistant update-listener event.
+If an unconfirmed assessment loses its qualifying evidence, the still-pending
+upgrade review is restored during the same setup session.
+
+Every support bundle includes `profile_recommendations.history`, loaded from the
+capture's physical address, independent of runtime observers or logging options.
+This covers configured devices, paired physical-side targets and raw-address
+captures. HA diagnostics and the older support-report format export it too, with
+paired diagnostics keeping each address's history in its own side section.
+Legacy boolean dismissals are exported in `legacy_dismissed_rules`; their missing
+timestamps and profile details are not reconstructed or invented.
+
+`tests/test_profile_decisions.py` covers durable append, concurrent decisions,
+address isolation, removal/re-add retention, legacy flags and selector-only data.
+Recommendation, support-bundle and diagnostics tests cover the actual UI actions,
+successful/failed saves, cancellation and future captures after storage reload.
 
 Observers retain the last advertisement and connected controller diagnostics
 within the setup session while Bluetooth history expires or the bed disconnects.
