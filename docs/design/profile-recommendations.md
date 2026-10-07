@@ -82,12 +82,17 @@ flags. Every Keep, native Ignore, or validated settings submission through Revie
 records a UTC timestamp, the decision source, original rule/current profile,
 suggested profile/candidate list, and the previous and selected profile selectors.
 Changing selectors records `accepted`; keeping them records `dismissed`.
-Cancelling or failing validation/storage records neither. Acceptance means the
+Cancelling or failing validation/hardware commit records neither. Acceptance means the
 user chose those settings, not that the controls were physically verified.
 PINs, names and unrelated entry data are not copied into decision history.
 
-History and flags are saved atomically before settings commit actions. An accepted
-unique match is retained even if the new route needs no further assessment.
+History and flags are saved atomically after settings commit actions. A failed
+hardware transaction never confirms the review. If the subsequent history write
+fails, the completed choice stays in memory for support exports and a delayed
+storage write is scheduled; it does not abort already committed settings.
+Keep/Ignore require a successful immediate write. A failed native Ignore resets
+HA's ignored state so the user can retry the notice without losing the decision.
+An accepted unique match is retained even if the new route needs no further assessment.
 After a successful settings save, the notice is refreshed immediately, including
 when unchanged entry data produces no Home Assistant update-listener event.
 If an unconfirmed assessment loses its qualifying evidence, the still-pending

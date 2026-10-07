@@ -7,6 +7,7 @@ so reloads, upgrades and pairing do not reset them.
 
 from __future__ import annotations
 
+import logging
 import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
@@ -80,6 +81,7 @@ ISSUE_PREFIX: Final = "profile_recommendation_"
 _WATCHES: Final = f"{DOMAIN}_profile_recommendations"
 _SLOT: Final = PROFILE_DECISIONS_SLOT
 _REMOTE_PREFIX: Final = "richmat_remote:"
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -443,6 +445,7 @@ class ProfileRecommendationWatch:
         selected_data: Mapping[str, object],
         previous_profile: dict[str, str] | None = None,
         confirmed_rules: tuple[str, ...] = (),
+        defer_on_error: bool = False,
     ) -> None:
         """Retain the original suggestion even when the new profile needs no notice."""
         previous = (
@@ -469,6 +472,7 @@ class ProfileRecommendationWatch:
                 "selected_profile": selected,
             },
             rules,
+            defer_on_error=defer_on_error,
         )
 
     @callback
@@ -486,7 +490,16 @@ class ProfileRecommendationWatch:
             return
         issue = ir.async_get(self.hass).async_get_issue(DOMAIN, self.issue_id)
         if issue is not None and issue.dismissed_version and self.recommendation is not None:
-            await self.async_keep(self.recommendation, source="ignore")
+            try:
+                await self.async_keep(self.recommendation, source="ignore")
+            except OSError:
+                _LOGGER.warning(
+                    "Unable to save ignored profile recommendation; restoring notice", exc_info=True
+                )
+                # HA ignored the issue before firing this event. Undo that state
+                # so the user can retry; Keep already exposes a retry form.
+                if ir.async_get(self.hass).async_get_issue(DOMAIN, self.issue_id) is not None:
+                    ir.async_ignore_issue(self.hass, DOMAIN, self.issue_id, False)
 
     @callback
     def unload(self) -> None:
@@ -549,7 +562,7 @@ async def async_confirm_profile_review(
             data,
             watch._last_info,
             watch._protocol_state
-            if data.get(CONF_BED_TYPE) == entry.data.get(CONF_BED_TYPE)
+            if data.get(CONF_BED_TYPE) == watch.review_profile.get(CONF_BED_TYPE)
             else {},
         )
         await watch.async_record_decision(
@@ -558,6 +571,7 @@ async def async_confirm_profile_review(
             selected_data=data,
             previous_profile=watch.review_profile,
             confirmed_rules=(recommendation.rule,) if recommendation is not None else (),
+            defer_on_error=True,
         )
 
 

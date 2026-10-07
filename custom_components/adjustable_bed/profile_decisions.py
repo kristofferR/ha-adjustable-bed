@@ -67,6 +67,8 @@ async def async_record_profile_decision(
     address: str,
     decision: ProfileDecision,
     confirmed_rules: Iterable[str],
+    *,
+    defer_on_error: bool = False,
 ) -> dict[str, Any]:
     """Save history and suppression flags together before confirming the action."""
     rules = tuple(confirmed_rules)
@@ -79,7 +81,9 @@ async def async_record_profile_decision(
             _HISTORY: [*history, deepcopy(decision)],
         }
 
-    return await app_state_store(hass, address).async_update(PROFILE_DECISIONS_SLOT, update)
+    return await app_state_store(hass, address).async_update(
+        PROFILE_DECISIONS_SLOT, update, defer_on_error=defer_on_error
+    )
 
 
 async def async_profile_decision_history(hass: HomeAssistant, address: str) -> dict[str, Any]:

@@ -25,6 +25,7 @@ Where a value belongs:
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Callable, Iterable, Mapping
 from typing import Any, Final
 
@@ -35,6 +36,7 @@ from .app_session import drop_app_sessions
 from .const import DOMAIN
 
 _REGISTRY_KEY = "app_state_stores"
+_LOGGER = logging.getLogger(__name__)
 PROFILE_DECISIONS_SLOT: Final = "profile_recommendations"
 
 
@@ -85,7 +87,11 @@ class AppStateStore:
         await self.async_update(slot, lambda _: state)
 
     async def async_update(
-        self, slot: str, update: Callable[[dict[str, Any]], Mapping[str, Any]]
+        self,
+        slot: str,
+        update: Callable[[dict[str, Any]], Mapping[str, Any]],
+        *,
+        defer_on_error: bool = False,
     ) -> dict[str, Any]:
         """Read, update and save a slot under one lock, without losing concurrent edits."""
         async with self._lock:
@@ -93,7 +99,19 @@ class AppStateStore:
             state = dict(update(dict(data.get(slot, {}))))
             if data.get(slot) == state:
                 return dict(state)
-            await self._store.async_save({**data, slot: state})
+            try:
+                await self._store.async_save({**data, slot: state})
+            except OSError:
+                if not defer_on_error:
+                    raise
+                # The associated settings have already committed. Retain their
+                # history in memory and retry rather than pretending they failed.
+                data[slot] = state
+                self._schedule_save()
+                _LOGGER.warning(
+                    "Unable to persist committed profile history; retry scheduled", exc_info=True
+                )
+                return dict(state)
             data[slot] = state
             # The write included every pending change and cancelled the delayed one.
             self._pending = False

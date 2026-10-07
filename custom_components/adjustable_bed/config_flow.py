@@ -8085,7 +8085,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                         errors={CONF_LEGS_MAX_ANGLE: "invalid_angle"},
                     )
             async def commit_global_settings() -> ConfigFlowResult | None:
-                """Apply global and hardware changes after decision storage succeeds."""
+                """Apply global and hardware changes before confirming the review."""
                 if not separate_address_pair and BED_TYPE_LIMOSS_REMOTE in (
                     bed_type, self.config_entry.data.get(CONF_BED_TYPE)
                 ):
@@ -8217,15 +8217,6 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 async_confirm_profile_review,
             )
 
-            try:
-                await async_confirm_profile_review(
-                    self.hass, self.config_entry, self.flow_id, new_data
-                )
-            except OSError:
-                return self.async_show_form(
-                    step_id=step_id, data_schema=vol.Schema(schema_dict),
-                    errors={"base": "profile_review_save_failed"},
-                )
             if (commit_error := await commit_global_settings()) is not None:
                 return commit_error
             if not separate_address_pair and (
@@ -8267,6 +8258,9 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             self.hass.config_entries.async_update_entry(
                 self.config_entry,
                 data=new_data,
+            )
+            await async_confirm_profile_review(
+                self.hass, self.config_entry, self.flow_id, new_data
             )
             async_complete_profile_review(self.hass, self.config_entry, self.flow_id)
             # A failed or retrying entry has no update listener yet, so a fix made

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.config_entries import ConfigEntryState
@@ -232,6 +232,24 @@ async def test_native_ignore_persists_the_same_decision(hass):
     assert decisions["lumbar_star254202_box25"] is True
     assert decisions["history"][0]["source"] == "ignore"
     assert decisions["history"][0]["decision"] == "dismissed"
+
+
+async def test_failed_native_ignore_restores_notice_and_can_be_retried(hass):
+    target = await watch(hass)
+    with patch(HISTORY, return_value=info()):
+        with patch.object(Store, "async_save", side_effect=OSError):
+            ir.async_ignore_issue(hass, DOMAIN, target.issue_id, True)
+            await hass.async_block_till_done()
+        current = issue(hass, target)
+        assert current is not None and current.dismissed_version is None
+        assert target.dismissed == {}
+        assert await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations") == {}
+        ir.async_ignore_issue(hass, DOMAIN, target.issue_id, True)
+        await hass.async_block_till_done()
+    assert issue(hass, target) is None
+    decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
+    assert len(decisions["history"]) == 1
+    assert decisions["history"][0]["source"] == "ignore"
 
 
 async def test_failed_save_keeps_the_notice_open(hass):
@@ -868,10 +886,14 @@ async def test_saving_ambiguous_review_confirms_current_route(hass, enable_custo
     assert decisions["history"][0]["source"] == "configure"
 
 
-async def test_failed_review_confirmation_keeps_original_profile(hass, enable_custom_integrations):
+async def test_failed_history_write_does_not_abort_committed_settings(
+    hass, enable_custom_integrations
+):
+    from custom_components.adjustable_bed.app_state_store import app_state_store
+    from custom_components.adjustable_bed.profile_decisions import async_profile_decision_history
+
     target = await watch(hass)
     flow = await open_flow(hass, target)
-    before = dict(target.entry.data)
     with patch(HISTORY, return_value=info()):
         result = await flow.async_step_init({"action": "review"})
         flow_id = result["next_flow"][1]
@@ -884,9 +906,42 @@ async def test_failed_review_confirmation_keeps_original_profile(hass, enable_cu
             result = await hass.config_entries.options.async_configure(
                 flow_id, {"disable_discovery": True}
             )
-        change_discovery.assert_not_called()
-    assert result["type"] == "form"
-    assert result["errors"] == {"base": "profile_review_save_failed"}
-    assert target.entry.data == before
-    assert issue(hass, target) is not None
-    hass.config_entries.options.async_abort(flow_id)
+        change_discovery.assert_awaited_once_with(hass, True)
+    assert result["type"] == "create_entry"
+    assert target.entry.data[CONF_BED_TYPE] == BED_TYPE_SLEEPYS_BOX25
+    assert issue(hass, target) is None
+    # Immediate exports include the completed choice, and the retry makes it durable.
+    history = (await async_profile_decision_history(hass, ADDRESS))["history"]
+    assert len(history) == 1 and history[0]["decision"] == "accepted"
+    await app_state_store(hass, ADDRESS).async_save()
+    assert (await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations"))[
+        "history"
+    ] == history
+
+
+async def test_failed_hardware_commit_leaves_review_and_history_unconfirmed(
+    hass, enable_custom_integrations
+):
+    from custom_components.adjustable_bed.const import CONF_HAS_LIGHT, LINAK_CONTROL_SERVICE_UUID
+    from tests.test_coordinator_limoss_remote import actual_coordinator
+
+    coord = actual_coordinator(hass, **{CONF_ADDRESS: ADDRESS, CONF_HAS_LIGHT: True})
+    coord.entry.mock_state(hass, ConfigEntryState.SETUP_RETRY)
+    observed = advertisement("Bed 1234", [LINAK_CONTROL_SERVICE_UUID])
+    with patch(HISTORY, return_value=observed), patch(REGISTER):
+        await async_watch_profile_recommendations(hass, coord.entry, ((None, coord),))
+        target = _watches(hass)[f"{ISSUE_PREFIX}{coord.entry.entry_id}_standalone"]
+        flow = await open_flow(hass, target)
+        result = await flow.async_step_init({"action": "review"})
+        before = dict(coord.entry.data)
+        with patch.object(
+            coord, "async_execute_controller_command", new=AsyncMock(side_effect=ConnectionError)
+        ):
+            result = await hass.config_entries.options.async_configure(result["next_flow"][1], {})
+        assert result["errors"] == {"base": "limoss_remote_feature_update_failed"}
+        assert coord.entry.data == before
+        assert target.dismissed == {}
+        assert await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations") == {}
+        target.refresh()
+        assert issue(hass, target) is not None
+        hass.config_entries.options.async_abort(result["flow_id"])
