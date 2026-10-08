@@ -126,7 +126,11 @@ async def test_ver1_page_entities(hass) -> None:
     assert any("richmat_mh_motor_mode" in key for key in selects)
     sensors = {e.unique_id for e in _sensor_entities_for(hass, runtime)}
     assert "bed_richmat_mh_memory_arrival_left" in sensors
-    assert _light_entities_for(hass, runtime) == []  # no LED reply in this snapshot
+    # No LED reply: only the disabled on/off estimate is offered, never RGB.
+    light, = _light_entities_for(hass, runtime)
+    assert light.unique_id == "bed_under_bed_lights_assumed_left"
+    assert light.assumed_state
+    assert not light.entity_registry_enabled_default
 
 
 @pytest.mark.parametrize(

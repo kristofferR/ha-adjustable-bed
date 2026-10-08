@@ -24,14 +24,19 @@ from tests.test_malouf_app_entities import configure_entity_runtime
     ("jeromes", BED_TYPE_CUSTOMATIC_JEROMES, {"back", "legs"}),
     ("remedy", BED_TYPE_CUSTOMATIC_REMEDY, {"back", "legs", "lumbar"}),
 ])
-async def test_only_selected_profile_axes_and_light_button_exist(hass, profile, bed_type, expected):
+async def test_only_selected_profile_axes_and_light_controls_exist(hass, profile, bed_type, expected):
     controller = make_controller(profile)
     runtime = configure_entity_runtime(hass, controller, bed_type)
     covers = _cover_entities_for(hass, runtime)
     assert {cover.entity_description.key for cover in covers} == expected
     buttons = _button_entities_for(hass, runtime)
     assert any(button.unique_id == "bed_toggle_light_left" for button in buttons) is (profile != "jeromes")
-    assert _light_entities_for(hass, runtime) == []
+    lights = _light_entities_for(hass, runtime)
+    assert len(lights) == int(profile != "jeromes")
+    for light in lights:
+        assert light.unique_id == "bed_under_bed_lights_assumed_left"
+        assert light.assumed_state
+        assert not light.entity_registry_enabled_default
     assert not any("memory_" in button.unique_id for button in buttons)
 
 

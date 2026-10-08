@@ -148,9 +148,12 @@ async def test_selected_layout_exposes_only_proven_motors_and_two_memories(
         # RGB capability flags do not expose the standard-only light settings here.
         assert not any(
             entity.unique_id.removeprefix(f"{ADDRESS}_") in {"automatic_light", "light_timer"}
-            or entity.domain == "light"
+            or (entity.domain == "light" and not entity.unique_id.endswith("_under_bed_lights_assumed"))
             for entity in entries
         )
+        light_id = _entity_id(hass, "light", "under_bed_lights_assumed")
+        assert er.async_get(hass).async_get(light_id).disabled_by is er.RegistryEntryDisabler.INTEGRATION
+        assert hass.states.get(light_id) is None
 
 
 async def test_live_light_capabilities_and_serialized_entity_actions(
