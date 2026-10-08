@@ -186,7 +186,10 @@ async def test_raw_status_is_published_without_guessing_light_or_position_state(
     status_id = _entity_id(hass, "sensor", "leggett_status")
     assert int(hass.states.get(mask_id).state) == 0x077F0003
     assert int(hass.states.get(status_id).state) == 127
-    assert not _keys(hass, entry, "light")
+    assert _keys(hass, entry, "light") == {"under_bed_lights_assumed"}
+    light_id = _entity_id(hass, "light", "under_bed_lights_assumed")
+    assert er.async_get(hass).async_get(light_id).disabled_by is er.RegistryEntryDisabler.INTEGRATION
+    assert hass.states.get(light_id) is None
     assert "under_bed_lights" not in _keys(hass, entry, "switch")
 
     callback = app_ble.start_notify.await_args_list[0].args[1]
@@ -197,6 +200,7 @@ async def test_raw_status_is_published_without_guessing_light_or_position_state(
     await hass.async_block_till_done()
     assert int(hass.states.get(mask_id).state) == 0x55AA0000
     assert int(hass.states.get(status_id).state) == -2
+    assert hass.states.get(light_id) is None
 
 
 async def test_protocol_change_removes_leggett_state_entities(

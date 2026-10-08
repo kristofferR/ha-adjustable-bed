@@ -41,6 +41,13 @@ LIGHT_DESCRIPTION = LightEntityDescription(
     icon="mdi:led-strip-variant",
 )
 
+ASSUMED_LIGHT_DESCRIPTION = LightEntityDescription(
+    key="under_bed_lights_assumed",
+    translation_key="under_bed_lights",
+    icon="mdi:led-strip-variant",
+    entity_registry_enabled_default=False,
+)
+
 
 def _normalize_rgb_color(value: Any) -> tuple[int, int, int] | None:
     """Normalize an RGB-like value to a strict 3-tuple."""
@@ -100,6 +107,16 @@ def _light_entities_for(
         # until the side reconnects and the platform re-runs.
         return []
 
+    toggle_only = (
+        controller.supports_light_toggle_control
+        and not controller.supports_discrete_light_control
+        and not controller.supports_light_color_control
+        and not controller.supports_light_state_feedback
+        and not controller.light_color_control_pending
+    )
+    if not toggle_only:
+        _async_remove_stale_light_entity(hass, coordinator, ASSUMED_LIGHT_DESCRIPTION)
+
     if controller.supports_light_color_control:
         _async_remove_stale_switch_entity(hass, coordinator)
         return [AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)]
@@ -114,18 +131,22 @@ def _light_entities_for(
 
     if not controller.light_color_control_pending:
         _async_remove_stale_light_entity(hass, coordinator)
+    if toggle_only:
+        return [AdjustableBedAssumedLight(coordinator)]
     return []
 
 
 def _async_remove_stale_light_entity(
-    hass: HomeAssistant, coordinator: EntityRuntime
+    hass: HomeAssistant,
+    coordinator: EntityRuntime,
+    description: LightEntityDescription = LIGHT_DESCRIPTION,
 ) -> None:
     """Remove stale light entities when the controller no longer supports them."""
     registry = er.async_get(hass)
     entity_id = registry.async_get_entity_id(
         "light",
         DOMAIN,
-        coordinator.entity_unique_id(LIGHT_DESCRIPTION.key),
+        coordinator.entity_unique_id(description.key),
     )
     if entity_id is not None:
         registry.async_remove(entity_id)
@@ -143,6 +164,60 @@ def _async_remove_stale_switch_entity(
     )
     if entity_id is not None:
         registry.async_remove(entity_id)
+
+
+class AdjustableBedAssumedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
+    """Opt-in light state estimated from HA commands to a toggle-only controller."""
+
+    entity_description = ASSUMED_LIGHT_DESCRIPTION
+    _attr_should_poll = False
+    _attr_assumed_state = True
+    _attr_color_mode = ColorMode.ONOFF
+    _attr_supported_color_modes = {ColorMode.ONOFF}
+
+    def __init__(self, coordinator: EntityRuntime) -> None:
+        """Start with an off estimate without sending a command to the bed."""
+        super().__init__(coordinator)
+        description = self.entity_description
+        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_unique_id = coordinator.entity_unique_id(description.key)
+        self._attr_is_on = False
+
+    async def async_added_to_hass(self) -> None:
+        """Restore only valid on/off estimates, without changing the bed."""
+        await super().async_added_to_hass()
+        if (
+            (last_state := await self.async_get_last_state()) is not None
+            and last_state.state in (STATE_ON, STATE_OFF)
+        ):
+            self._attr_is_on = last_state.state == STATE_ON
+
+    async def async_turn_on(self, **kwargs: object) -> None:
+        """Toggle only when the current estimate is off."""
+        await self._async_set_state(True)
+
+    async def async_turn_off(self, **kwargs: object) -> None:
+        """Toggle only when the current estimate is on."""
+        await self._async_set_state(False)
+
+    async def _async_set_state(self, is_on: bool) -> None:
+        """Check and update the estimate inside the coordinator's command lock."""
+        async def set_state(ctrl: BedController) -> None:
+            if self._attr_is_on != is_on:
+                await ctrl.lights_toggle()
+                self._attr_is_on = is_on
+                self.async_write_ha_state()
+
+        await self._coordinator.async_execute_controller_command(set_state, cancel_running=False)
+
+    async def async_toggle(self, **kwargs: object) -> None:
+        """Always send one native toggle, then invert the estimate."""
+        async def toggle(ctrl: BedController) -> None:
+            await ctrl.lights_toggle()
+            self._attr_is_on = not self._attr_is_on
+            self.async_write_ha_state()
+
+        await self._coordinator.async_execute_controller_command(toggle, cancel_running=False)
 
 
 class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):

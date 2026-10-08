@@ -38,10 +38,12 @@ from .const import (
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
     DOMAIN,
+    KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_KSBT_CR,
     LEGACY_BED_TYPE_MAPPING,
+    NORDIC_UART_SERVICE_UUID,
     OCTO_VARIANT_STANDARD,
     OCTO_VARIANT_STAR2,
     RICHMAT_REMOTE_AUTO,
@@ -81,6 +83,9 @@ ISSUE_PREFIX: Final = "profile_recommendation_"
 _WATCHES: Final = f"{DOMAIN}_profile_recommendations"
 _SLOT: Final = PROFILE_DECISIONS_SLOT
 _REMOTE_PREFIX: Final = "richmat_remote:"
+_TEMPUR_PROCESSOR_RULE: Final = "tempur_sleeptracker_processor"
+# The companion processor profile is registered independently by PR #684.
+_SLEEPTRACKER_PROFILE: Final = "sleeptracker"
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -169,6 +174,23 @@ def recommend_profile(
     """
     if info is None:
         return None
+    if (
+        _SLEEPTRACKER_PROFILE in SUPPORTED_BED_TYPES
+        and data.get(CONF_BED_TYPE) == BED_TYPE_KEESON
+        and data.get(CONF_PROTOCOL_VARIANT) == KEESON_VARIANT_ADJUSTABLE_LITE
+        and re.fullmatch(r"KSSF05C[0-9]{9}", info.name or "", re.IGNORECASE) is not None
+        and NORDIC_UART_SERVICE_UUID in {uuid.lower() for uuid in info.service_uuids or ()}
+    ):
+        # #681 confirms this compatibility setup, not an app or endpoint identity
+        # for every receiver with this name. Ask about the app and guide adding
+        # its separate processor; never preselect JSON for the UART address.
+        return Recommendation(
+            _TEMPUR_PROCESSOR_RULE,
+            bed_type_choice(BED_TYPE_KEESON, KEESON_VARIANT_ADJUSTABLE_LITE),
+            None,
+            (_SLEEPTRACKER_PROFILE,),
+            _TEMPUR_PROCESSOR_RULE,
+        )
     reported = _reported_recommendation(data, info, protocol_state)
     if reported is not None:
         return reported
@@ -615,6 +637,12 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
             else:
                 return self.async_create_entry(title="", data={})
         elif action == "review":
+            if recommendation.rule == _TEMPUR_PROCESSOR_RULE:
+                return self.async_show_form(
+                    step_id="processor",
+                    description_placeholders=watch.placeholders(),
+                    data_schema=vol.Schema({}),
+                )
             if is_paired(watch.entry.data):
                 # Existing per-side profile restrictions require an explicit split.
                 # Open the menu; never split or change either side from this repair.
@@ -665,7 +693,11 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
                     vol.Required("action"): selector.SelectSelector(
                         selector.SelectSelectorConfig(
                             options=["review", "keep"],
-                            translation_key="profile_recommendation_action",
+                            translation_key=(
+                                "tempur_processor_action"
+                                if recommendation.rule == _TEMPUR_PROCESSOR_RULE
+                                else "profile_recommendation_action"
+                            ),
                             mode=selector.SelectSelectorMode.LIST,
                         )
                     )
@@ -677,3 +709,11 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> RepairsFlowResult:
         return await self.async_step_init(user_input)
+
+    async def async_step_processor(
+        self, user_input: dict[str, Any] | None = None
+    ) -> RepairsFlowResult:
+        """Acknowledge setup guidance, without claiming the processor was added."""
+        return await self.async_step_init(
+            {"action": "keep" if user_input is not None else "review"}
+        )

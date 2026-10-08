@@ -5991,6 +5991,37 @@
           "review_started": "Continue in settings. Nothing changes until you submit them."
         }
       }
+    },
+    "tempur_sleeptracker_processor": {
+      "title": "Review the Tempur app profile for {target}",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Review the app for {target}",
+            "description": "**{target}** ({bluetooth_name}, {address}) uses **{current}**. This matches a reported TEMPUR-Ergo ProSmart Air / ActiveBreeze setup that used Adjustable Lite for compatibility. If your official app is **Tempur Sleeptracker-AI**, use **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** for the app\u2019s presets, ActiveBreeze heat/cooling and premium massage controls. A similar Bluetooth name alone does not confirm that app or its processor.\n\nThe app controls a separate Bluetooth endpoint. Review shows how to add that processor. Keep current profile dismisses this notice for this physical bed across restarts and updates.",
+            "data": {
+              "action": "Profile choice"
+            }
+          },
+          "paired": {
+            "title": "Review the app for {target}",
+            "description": "**{target}** ({bluetooth_name}, {address}) uses **{current}**. This matches a reported TEMPUR-Ergo ProSmart Air / ActiveBreeze setup that used Adjustable Lite for compatibility. If your official app is **Tempur Sleeptracker-AI**, use **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** for the app\u2019s presets, ActiveBreeze heat/cooling and premium massage controls. A similar Bluetooth name alone does not confirm that app or its processor.\n\nThe app controls a separate Bluetooth endpoint. Review shows how to add that processor. Keep current profile dismisses this notice for this physical bed across restarts and updates.",
+            "data": {
+              "action": "Profile choice"
+            }
+          },
+          "processor": {
+            "title": "Add the Tempur Sleeptracker processor",
+            "description": "If you use **Tempur Sleeptracker-AI**, open **Settings > Devices & services > Add integration > Adjustable Bed** and add the **Sleeptracker processor\u2019s actual Bluetooth endpoint**. Choose **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** and follow its verification and product settings. Automatic discovery can offer the processor; manual setup requires its actual Bluetooth address.\n\nThe existing **{target}** ({address}) is a UART receiver. Changing its bed type alone cannot select the processor. Verify the new processor\u2019s controls before retiring these compatibility controls. The new entry has its own device and entity IDs, so update affected dashboards and automations. For a paired bed, review each physical bed separately; this notice does not split the pair or identify the processor\u2019s physical sides.\n\n[Processor setup guide](https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/beds/sleeptracker.md)\n\nSubmit to acknowledge these instructions and dismiss this notice. Adding or verifying a processor is a separate setup action; acknowledging this guide keeps the current profile."
+          }
+        },
+        "error": {
+          "save_failed": "Your choice could not be saved. Please try again."
+        },
+        "abort": {
+          "recommendation_changed": "This recommendation is no longer available or the configuration changed. Open the current notice to review it."
+        }
+      }
     }
   },
   "selector": {
@@ -6036,6 +6067,12 @@
     "profile_recommendation_action": {
       "options": {
         "review": "Review profile settings",
+        "keep": "Keep current profile"
+      }
+    },
+    "tempur_processor_action": {
+      "options": {
+        "review": "Show processor setup",
         "keep": "Keep current profile"
       }
     }

@@ -48,6 +48,30 @@ Legacy aliases resolving to the current protocol are excluded from candidates.
 
 ## Review and dismissal
 
+### Tempur compatibility entries
+
+The [ProSmart Air report in #681](https://github.com/kristofferR/ha-adjustable-bed/issues/681)
+identifies two `KSSF05C` receivers, advertising Nordic UART and configured with
+Adjustable Lite. Once the separately registered Tempur Sleeptracker-AI profile
+is available, that combination receives a targeted app review. The bounded
+name shape and selected variant identify a reported compatibility setup, not
+the official app or a processor endpoint for every similarly named bed. The
+notice asks the user to confirm they use Tempur Sleeptracker-AI.
+
+The [accepted processor implementation in #684](https://github.com/kristofferR/ha-adjustable-bed/pull/684)
+uses a different BLE endpoint. Review therefore shows instructions to add the
+actual processor with its own profile and verify its controls before retiring
+the UART entries. It does not open their options flow, split a pair, send a
+command, or claim preserved entity IDs on the newly added device. Paired notices
+remain scoped to each physical address. Acknowledging the guide records a
+durable dismissal, not a completed or verified processor migration. Closing it
+records nothing. The rule stays silent until the companion profile is registered,
+so either PR can merge first. Focused tests replay both reported names, negative
+identities, profile availability, safe setup guidance and paired-side isolation.
+No APK was reanalyzed and no protocol behavior changes in this notification rule.
+
+### Existing endpoint reviews
+
 Repairs explains the current profile and either a proposed match or the available
 app/product choices. Generic notices explain that controls and automations may
 change; verified rules can give a specific controls comparison. Standalone Review

@@ -9,6 +9,7 @@ upgrading from v3.
 
 - [Accessing Configuration](#accessing-configuration)
 - [Basic Settings](#basic-settings)
+- [Toggle-Only Under-Bed Lights](#toggle-only-under-bed-lights)
 - [Advanced Settings](#advanced-settings)
 - [Motor Pulse Settings](#motor-pulse-settings)
 - [Protocol Variants](#protocol-variants)
@@ -123,6 +124,33 @@ position; other layouts default to two.
 These settings are intentionally independent of protocol detection. **Lucid
 L600 is not a protocol name**: confirmed L600 hardware includes both OKIN CB24
 7-byte and legacy Malouf/OKIN 9-byte controllers.
+
+---
+
+## Toggle-Only Under-Bed Lights
+
+Beds whose existing light control is **Toggle light**, including Tempur/Keeson
+profiles without light-state feedback, also offer an optional **Under-bed lights**
+light entity. It is disabled by default because its on/off state is an estimate.
+To enable it, open the bed's device page under **Settings → Devices & Services**,
+show disabled entities, select **Under-bed lights**, and enable it.
+
+On first use, set the physical light off with the remote before enabling the
+entity. Home Assistant initially assumes off and restores its last estimate on
+later loads. Enabling or loading the entity sends no light command. Use
+`light.turn_on`, `light.turn_off`, and `light.toggle` for subsequent control.
+Repeated on or off requests do not toggle the light again; a failed command
+leaves the estimate unchanged. The bed card uses the light once enabled.
+
+Home Assistant marks this entity's state as **assumed**. It cannot detect changes
+made with the physical remote, the manufacturer's app, the existing Toggle light
+button, or a hardware auto-off timer. Those changes can make its estimate wrong,
+and later on/off actions then rely on that incorrect estimate. Keep the existing
+toggle button if you need direct control without an estimated state. For a
+combined bed, each side has its own optional light and estimate.
+
+This option uses the existing toggle command. It does not add physical state
+feedback or change which commands a bed supports.
 
 ---
 

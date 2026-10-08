@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.const import (
     ADJUSTABLE_LUMBAR_VARIANT_OKIN,
     ADJUSTABLE_LUMBAR_VARIANT_STAR,
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_KEESON,
     BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
     CONF_MOTOR_COUNT,
@@ -27,8 +28,10 @@ from custom_components.adjustable_bed.const import (
     CONF_PROTOCOL_VARIANT,
     CONF_SIDE,
     DOMAIN,
+    KEESON_VARIANT_ADJUSTABLE_LITE,
     NORDIC_UART_SERVICE_UUID,
     PAIR_MODE_SEPARATE_ADDRESS,
+    SUPPORTED_BED_TYPES,
 )
 from custom_components.adjustable_bed.profile_recommendations import (
     ISSUE_PREFIX,
@@ -111,6 +114,161 @@ async def open_flow(hass, target):
     assert isinstance(flow, ProfileRecommendationRepairFlow)
     flow.hass = hass
     return flow
+
+
+@pytest.fixture
+def tempur_processor_available(monkeypatch):
+    """Exercise the companion profile's registration without depending on PR order."""
+    monkeypatch.setattr(
+        "custom_components.adjustable_bed.profile_recommendations.SUPPORTED_BED_TYPES",
+        [*SUPPORTED_BED_TYPES, "sleeptracker"],
+    )
+
+
+@pytest.mark.parametrize(
+    "name", ["KSSF05C201000322", "KSSF05C201000282", "kssf05c201000001"]
+)
+def test_reported_tempur_lite_entries_offer_separate_processor_guidance(
+    tempur_processor_available, name
+):
+    result = recommend_profile(
+        {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: KEESON_VARIANT_ADJUSTABLE_LITE},
+        info(name),
+        {},
+    )
+    assert result is not None
+    assert result.rule == result.translation_key == "tempur_sleeptracker_processor"
+    assert result.current == "keeson:adjustable_lite"
+    assert result.choices == ("sleeptracker",)
+    assert result.suggested is None  # A different endpoint cannot be preselected in Configure.
+
+
+@pytest.mark.parametrize(
+    ("name", "bed_type", "variant", "services"),
+    [
+        ("KSSF05C201000001", "keeson", "ksbt", [NORDIC_UART_SERVICE_UUID]),
+        ("KSSF05C201000001", "keeson", "auto", [NORDIC_UART_SERVICE_UUID]),
+        ("KSSF05C201000001", "sleeptracker", "auto", [NORDIC_UART_SERVICE_UUID]),
+        ("KSSF05C201000001", "keeson", "adjustable_lite", []),
+        ("KSSF05C", "keeson", "adjustable_lite", [NORDIC_UART_SERVICE_UUID]),
+        ("KSSF05C201000001extra", "keeson", "adjustable_lite", [NORDIC_UART_SERVICE_UUID]),
+        ("KSSF06C201000001", "keeson", "adjustable_lite", [NORDIC_UART_SERVICE_UUID]),
+        ("KSBT03C201000001", "keeson", "adjustable_lite", [NORDIC_UART_SERVICE_UUID]),
+    ],
+)
+def test_other_identities_do_not_get_the_tempur_processor_notice(
+    tempur_processor_available, name, bed_type, variant, services
+):
+    observed = info(name)
+    observed.service_uuids = services
+    result = recommend_profile(
+        {CONF_BED_TYPE: bed_type, CONF_PROTOCOL_VARIANT: variant}, observed, {}
+    )
+    assert result is None or result.rule != "tempur_sleeptracker_processor"
+
+
+def test_tempur_processor_notice_waits_until_the_profile_is_registered(monkeypatch):
+    monkeypatch.setattr(
+        "custom_components.adjustable_bed.profile_recommendations.SUPPORTED_BED_TYPES",
+        [bed_type for bed_type in SUPPORTED_BED_TYPES if bed_type != "sleeptracker"],
+    )
+    result = recommend_profile(
+        {CONF_BED_TYPE: "keeson", CONF_PROTOCOL_VARIANT: "adjustable_lite"},
+        info("KSSF05C201000001"),
+        {},
+    )
+    assert result is None or result.rule != "tempur_sleeptracker_processor"
+
+
+async def test_tempur_review_guides_new_setup_and_acknowledges_without_reconfiguring_uart(
+    hass, tempur_processor_available
+):
+    config_entry = entry(
+        hass, **{CONF_BED_TYPE: "keeson", CONF_PROTOCOL_VARIANT: "adjustable_lite"}
+    )
+    observed = info("KSSF05C201000001")
+    target = await watch(hass, config_entry)
+    target.seen(observed, MagicMock())
+    assert issue(hass, target).translation_key == "tempur_sleeptracker_processor"
+    original = dict(config_entry.data)
+    flow = await open_flow(hass, target)
+    with (
+        patch(HISTORY, return_value=observed),
+        patch.object(hass.config_entries.options, "async_init", AsyncMock()) as configure,
+    ):
+        result = await flow.async_step_init({"action": "review"})
+        assert result["type"] == "form" and result["step_id"] == "processor"
+        assert not result["data_schema"].schema
+        assert config_entry.data == original
+        assert await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations") == {}
+        result = await flow.async_step_processor({})
+        configure.assert_not_called()
+    assert result["type"] == "create_entry"
+    assert config_entry.data == original
+    assert issue(hass, target) is None
+    target.coordinator.async_connect.assert_not_called()
+    target.coordinator.async_execute_controller_command.assert_not_called()
+    decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
+    record = decisions["history"][0]
+    assert record["decision"] == "dismissed" and record["source"] == "keep"
+    assert record["choices"] == ["sleeptracker"]
+    assert record["previous_profile"] == record["selected_profile"]
+
+
+async def test_tempur_processor_guide_rejects_a_changed_configuration(
+    hass, tempur_processor_available
+):
+    config_entry = entry(
+        hass, **{CONF_BED_TYPE: "keeson", CONF_PROTOCOL_VARIANT: "adjustable_lite"}
+    )
+    observed = info("KSSF05C201000001")
+    target = await watch(hass, config_entry)
+    target.seen(observed, MagicMock())
+    flow = await open_flow(hass, target)
+    with patch(HISTORY, return_value=observed):
+        await flow.async_step_init({"action": "review"})
+        hass.config_entries.async_update_entry(
+            config_entry, data={**config_entry.data, CONF_PROTOCOL_VARIANT: "ksbt"}
+        )
+        result = await flow.async_step_processor({})
+    assert result["reason"] == "recommendation_changed"
+    assert await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations") == {}
+
+
+async def test_tempur_pair_notice_guides_each_side_without_splitting(
+    hass, tempur_processor_available
+):
+    config_entry = entry(
+        hass,
+        **{
+            CONF_BED_TYPE: "keeson",
+            CONF_PROTOCOL_VARIANT: "adjustable_lite",
+            CONF_PAIR_ID: "pair",
+            CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
+            CONF_PAIR_CHILDREN: [
+                {CONF_SIDE: "left", CONF_ADDRESS: ADDRESS, CONF_BED_TYPE: "keeson"},
+                {CONF_SIDE: "right", CONF_ADDRESS: OTHER, CONF_BED_TYPE: "keeson"},
+            ],
+        },
+    )
+    left = await watch(hass, config_entry, coordinator(), "left")
+    right = await watch(hass, config_entry, coordinator(OTHER), "right")
+    left_info = info("KSSF05C201000001")
+    right_info = info("KSSF05C201000002", OTHER)
+    left.seen(left_info, MagicMock())
+    right.seen(right_info, MagicMock())
+    before = dict(config_entry.data)
+    flow = await open_flow(hass, left)
+    with patch(HISTORY, return_value=left_info):
+        form = await flow.async_step_init()
+        assert form["step_id"] == "paired"
+        assert form["description_placeholders"]["side"] == "left"
+        result = await flow.async_step_paired({"action": "review"})
+        assert result["step_id"] == "processor"
+        await flow.async_step_processor({})
+    assert config_entry.data == before
+    assert issue(hass, left) is None
+    assert issue(hass, right) is not None
 
 
 @pytest.mark.parametrize("variant", [None, "auto", ADJUSTABLE_LUMBAR_VARIANT_STAR])
