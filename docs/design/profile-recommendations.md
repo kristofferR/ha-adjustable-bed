@@ -26,10 +26,14 @@ selection failures and the evidence available to assess them.
   Star254202 case below remains one such rule, rather than the feature's scope.
 
 Generic assessment uses the detector's existing confidence categories: below 0.6
-is insufficient; below 0.9 also needs a name, manufacturer or MAC signal. A clear
-suggestion needs at least 0.9, no ambiguity, no characteristic-check requirement,
+is insufficient; below 0.9 or any ambiguity also needs a name, manufacturer or MAC
+signal. A shared service with ambiguous alternatives stays quiet even at 0.9.
+A clear suggestion needs at least 0.9, no ambiguity, no characteristic-check requirement,
 and no known related app choices. App candidates come from existing supported
 profile metadata, never assumed controller-family equivalence.
+For Keeson Auto, the existing dedicated JSON detector signal resolves the app
+lookup to the JSON variant, matching the controller factory. It cannot offer
+app profiles for the unrelated transport behind the generic Auto label.
 
 Ordinary protocol variants can also need review. The existing dedicated Octo
 Star2 detector signal questions an explicit Standard selection. Keeson's existing
@@ -114,6 +118,8 @@ History and flags are saved atomically after settings commit actions. A failed
 hardware transaction never confirms the review. If the subsequent history write
 fails, the completed choice stays in memory for support exports and a delayed
 storage write is scheduled; it does not abort already committed settings.
+Entry-unload saves share the decision-update lock, so a reload cannot queue an
+older app-state snapshot that loses a decision while its write is in progress.
 Keep/Ignore require a successful immediate write. A failed native Ignore resets
 HA's ignored state so the user can retry the notice without losing the decision.
 An accepted unique match is retained even if the new route needs no further assessment.

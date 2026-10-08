@@ -2,8 +2,12 @@
 
 import asyncio
 import json
+from unittest.mock import patch
+
+from homeassistant.helpers.storage import Store
 
 from custom_components.adjustable_bed.app_state_store import (
+    AppStateStore,
     app_state_store,
     async_remove_app_states,
 )
@@ -47,6 +51,47 @@ async def test_concurrent_decisions_survive_restart_and_are_isolated_by_address(
     # Redaction or a consumer changing its copy cannot rewrite stored history.
     exported["history"][0]["selected_profile"]["bed_type"] = "modified"
     assert "modified" not in json.dumps(await async_profile_decision_history(hass, ADDRESS))
+
+
+async def test_unload_cannot_overwrite_a_decision_with_an_older_app_state_snapshot(hass):
+    store = app_state_store(hass, ADDRESS)
+    await store.async_slot("linak:auto")
+    store.update("linak:auto", {"memory_name": "Latest preference"})
+    write_started = asyncio.Event()
+    finish_write = asyncio.Event()
+    unload_started = asyncio.Event()
+    snapshots = []
+    save = Store.async_save
+
+    async def held_save(storage, data):
+        snapshots.append(data)
+        if len(snapshots) == 1:
+            write_started.set()
+            await finish_write.wait()
+        await save(storage, data)
+
+    async def unload():
+        unload_started.set()
+        await store.async_save()
+
+    with patch.object(Store, "async_save", new=held_save):
+        decision = asyncio.create_task(
+            async_record_profile_decision(hass, ADDRESS, record("first"), ("first",))
+        )
+        await write_started.wait()
+        shutdown = asyncio.create_task(unload())
+        await unload_started.wait()
+        try:
+            assert len(snapshots) == 1
+        finally:
+            finish_write.set()
+            await asyncio.gather(decision, shutdown)
+
+    restored = AppStateStore(hass, ADDRESS)
+    assert await restored.async_slot("linak:auto") == {"memory_name": "Latest preference"}
+    decisions = await restored.async_slot(PROFILE_DECISIONS_SLOT)
+    assert decisions["first"] is True
+    assert decisions["history"] == [record("first")]
 
 
 async def test_legacy_boolean_dismissals_export_without_fabricating_decision_details(hass):

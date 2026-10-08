@@ -40,6 +40,7 @@ from .const import (
     CONF_RICHMAT_REMOTE,
     DOMAIN,
     KEESON_VARIANT_ADJUSTABLE_LITE,
+    KEESON_VARIANT_JSON,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_KSBT_CR,
@@ -220,14 +221,20 @@ def recommend_profile(
             return _variant_review(bed_type, str(variant), observed)
     # A bare shared service is not enough to question a configured bed. Name,
     # manufacturer or a high-confidence dedicated signature must corroborate it.
-    if detected.confidence < 0.9 and not any(
+    if (detected.confidence < 0.9 or detected.ambiguous_types) and not any(
         signal.startswith(("name:", "manufacturer", "mac:")) for signal in detected.signals
     ):
         return None
     matches = {detected.bed_type, *(detected.ambiguous_types or ())}
-    apps = related_app_choices(
-        detected.bed_type, variant if bed_type == detected.bed_type else VARIANT_AUTO
-    )
+    observed_variant = variant if bed_type == detected.bed_type else VARIANT_AUTO
+    if (
+        detected.bed_type == BED_TYPE_KEESON
+        and observed_variant in (None, "", VARIANT_AUTO)
+        and "uuid:keeson_json" in detected.signals
+    ):
+        # Auto resolves this dedicated transport to JSON in the controller factory.
+        observed_variant = KEESON_VARIANT_JSON
+    apps = related_app_choices(detected.bed_type, observed_variant)
     if current in apps or (current != bed_type and bed_type in matches):
         # An explicitly selected app already resolves this generic identity.
         return None

@@ -119,8 +119,10 @@ class AppStateStore:
 
     async def async_save(self) -> None:
         """Write pending changes now (entry unload)."""
-        if self._data is not None and self._pending:
-            await self._store.async_save(self._snapshot())
+        # Reloads can unload the entry while a profile decision is being saved.
+        async with self._lock:
+            if self._data is not None and self._pending:
+                await self._store.async_save(self._snapshot())
 
     async def async_remove(self, *, keep_slots: Iterable[str] = ()) -> None:
         """Forget app preferences, optionally retaining durable support evidence."""

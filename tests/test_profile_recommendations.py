@@ -755,6 +755,44 @@ def test_unknown_name_and_shared_transport_do_not_question_a_profile(services):
     )
 
 
+@pytest.mark.parametrize("gateway", [False, True])
+def test_bare_dewertokin_services_do_not_offer_ambiguous_profiles(gateway):
+    from custom_components.adjustable_bed.const import (
+        DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
+        DEWERTOKIN_SERVICE_UUID,
+    )
+
+    service = DEWERTOKIN_RF_GATEWAY_SERVICE_UUID if gateway else DEWERTOKIN_SERVICE_UUID
+    assert (
+        recommend_profile({CONF_BED_TYPE: "dewertokin"}, advertisement("", [service]), {}) is None
+    )
+
+
+@pytest.mark.parametrize("variant", [None, "auto", "json"])
+def test_matching_keeson_json_does_not_offer_other_transport_apps(variant):
+    from custom_components.adjustable_bed.const import KEESON_JSON_SERVICE_UUID
+
+    assert (
+        recommend_profile(
+            {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: variant},
+            advertisement("", [KEESON_JSON_SERVICE_UUID]),
+            {},
+        )
+        is None
+    )
+
+
+def test_keeson_json_mismatch_offers_only_its_detected_route():
+    from custom_components.adjustable_bed.const import KEESON_JSON_SERVICE_UUID
+
+    result = recommend_profile(
+        {CONF_BED_TYPE: "linak"}, advertisement("", [KEESON_JSON_SERVICE_UUID]), {}
+    )
+    assert result is not None
+    assert result.suggested == BED_TYPE_KEESON
+    assert result.choices == (BED_TYPE_KEESON,)
+
+
 def test_legacy_alias_does_not_offer_the_same_controller_as_an_improvement():
     from custom_components.adjustable_bed.const import OKIMAT_SERVICE_UUID
 
@@ -1022,20 +1060,26 @@ async def test_same_mac_with_different_case_keeps_the_recommendation(hass):
     assert issue(hass, target) is not None
 
 
-async def test_single_address_pair_has_one_physical_notice(hass, enable_custom_integrations):
+@pytest.mark.parametrize("selected", [BED_TYPE_SLEEPYS_BOX25, BED_TYPE_ADJUSTABLE_LUMBAR])
+async def test_single_address_pair_has_one_physical_notice(
+    hass, enable_custom_integrations, selected
+):
+    import json
+    from pathlib import Path
+
     from custom_components.adjustable_bed.const import PAIR_MODE_SINGLE_ADDRESS
 
     config_entry = entry(
         hass,
         **{
-            CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25,
+            CONF_BED_TYPE: selected,
             CONF_PAIR_ID: "single",
             CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS,
         },
     )
     coord = coordinator()
-    coord.bed_type = BED_TYPE_SLEEPYS_BOX25
-    coord.controller.protocol_diagnostics = {}
+    coord.bed_type = selected
+    coord.controller.protocol_diagnostics = STATE if selected == BED_TYPE_ADJUSTABLE_LUMBAR else {}
     target = await watch(hass, config_entry, coord)
     assert len(_watches(hass)) == 1
     flow = await open_flow(hass, target)
@@ -1043,7 +1087,19 @@ async def test_single_address_pair_has_one_physical_notice(hass, enable_custom_i
         form = await flow.async_step_init()
         result = await flow.async_step_paired({"action": "review"})
     assert form["step_id"] == "paired"
-    assert form["description_placeholders"]["pair_action"] == "Restore standalone controls"
+    placeholders = form["description_placeholders"]
+    assert placeholders is not None
+    assert placeholders["pair_action"] == "Restore standalone controls"
+    assert placeholders["target"] == "Bedroom"
+    assert target.recommendation is not None
+    for path in ("strings.json", "translations/en.json"):
+        strings = json.loads((Path("custom_components/adjustable_bed") / path).read_text())
+        step = strings["issues"][target.recommendation.translation_key]["fix_flow"]["step"]["paired"]
+        assert step["title"].format(**placeholders) == "Review the profile for Bedroom"
+        description = step["description"].format(**placeholders)
+        assert "Restore standalone controls" in description
+        assert "Split into two beds" not in description
+        assert ",  side" not in description
     hass.config_entries.options.async_abort(result["next_flow"][1])
 
 
