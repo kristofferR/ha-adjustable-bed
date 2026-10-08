@@ -198,7 +198,10 @@ async def test_tempur_review_guides_new_setup_and_acknowledges_without_reconfigu
     ):
         result = await flow.async_step_init({"action": "review"})
         assert result["type"] == "form" and result["step_id"] == "processor"
-        assert not result["data_schema"].schema
+        assert result["data_schema"] is None
+        assert result["description_placeholders"]["processor_guide_url"].endswith(
+            "/docs/beds/sleeptracker.md"
+        )
         assert config_entry.data == original
         assert await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations") == {}
         result = await flow.async_step_processor({})

@@ -448,6 +448,9 @@ class ProfileRecommendationWatch:
                 f"- {_recommendation_label(choice)}" for choice in self.recommendation.choices
             ),
             "pair_action": "Split into two beds" if self.side else "Restore standalone controls",
+            "processor_guide_url": (
+                "https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/beds/sleeptracker.md"
+            ),
         }
 
     async def async_keep(
@@ -641,7 +644,6 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
                 return self.async_show_form(
                     step_id="processor",
                     description_placeholders=watch.placeholders(),
-                    data_schema=vol.Schema({}),
                 )
             if is_paired(watch.entry.data):
                 # Existing per-side profile restrictions require an explicit split.
