@@ -424,6 +424,57 @@ async def test_native_ignore_persists_the_same_decision(hass):
     assert decisions["history"][0]["decision"] == "dismissed"
 
 
+@pytest.mark.parametrize("new_rule", [False, True])
+@pytest.mark.parametrize("write_fails", [False, True])
+async def test_pending_ignore_cannot_dismiss_a_new_rule(hass, new_rule, write_fails):
+    import asyncio
+
+    from custom_components.adjustable_bed.const import LINAK_CONTROL_SERVICE_UUID
+
+    target = await watch(hass)
+    original = target.recommendation
+    assert original is not None
+    observed = info()
+    started, finish = asyncio.Event(), asyncio.Event()
+    save = Store.async_save
+
+    async def held_save(storage, data):
+        if storage.key == app_state_storage_key(ADDRESS) and not started.is_set():
+            started.set()
+            await finish.wait()
+            if write_fails:
+                raise OSError("storage unavailable")
+        await save(storage, data)
+
+    with patch(HISTORY, side_effect=lambda *args, **kwargs: observed), patch.object(
+        Store, "async_save", new=held_save
+    ):
+        ir.async_ignore_issue(hass, DOMAIN, target.issue_id, True)
+        await started.wait()
+        try:
+            if new_rule:
+                observed = advertisement("Bed 1234", [LINAK_CONTROL_SERVICE_UUID])
+            else:
+                observed.rssi = -60
+            target.seen(observed, MagicMock())
+            current = target.recommendation
+            assert current is not None
+        finally:
+            finish.set()
+        await hass.async_block_till_done()
+
+    decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
+    expected = [] if write_fails else [original.rule]
+    assert [record["rule"] for record in decisions.get("history", [])] == expected
+    if new_rule:
+        assert current.rule != original.rule and current.rule not in decisions
+    if new_rule or write_fails:
+        assert issue(hass, target) is not None
+        assert issue(hass, target).dismissed_version is None
+    else:
+        assert issue(hass, target) is None
+
+
 async def test_failed_native_ignore_restores_notice_and_can_be_retried(hass):
     target = await watch(hass)
     with patch(HISTORY, return_value=info()):

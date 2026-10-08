@@ -143,6 +143,9 @@ Entry-unload saves share the decision-update lock, so a reload cannot queue an
 older app-state snapshot that loses a decision while its write is in progress.
 Keep/Ignore require a successful immediate write. A failed native Ignore resets
 HA's ignored state so the user can retry the notice without losing the decision.
+When evidence changes during an Ignore write, the replacement rule clears the
+old native Ignore flag before publication. The original decision still records
+only the rule presented to the user; the replacement remains visible.
 An accepted unique match is retained even if the new route needs no further assessment.
 After a successful settings save, the notice is refreshed immediately, including
 when unchanged entry data produces no Home Assistant update-listener event.

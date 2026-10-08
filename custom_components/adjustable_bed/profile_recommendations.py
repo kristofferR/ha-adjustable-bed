@@ -466,6 +466,14 @@ class ProfileRecommendationWatch:
         if recommendation is None or self.dismissed.get(recommendation.rule):
             ir.async_delete_issue(self.hass, DOMAIN, self.issue_id)
             return
+        current = ir.async_get(self.hass).async_get_issue(DOMAIN, self.issue_id)
+        if (
+            current is not None
+            and current.dismissed_version
+            and (current.data or {}).get("rule") != recommendation.rule
+        ):
+            # A new rule cannot inherit a native Ignore still being saved for the old rule.
+            ir.async_ignore_issue(self.hass, DOMAIN, self.issue_id, False)
         ir.async_create_issue(
             self.hass,
             DOMAIN,
