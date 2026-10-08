@@ -5,10 +5,12 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import probatio
 import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.storage import Store
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -330,6 +332,33 @@ async def test_watch_uses_existing_evidence_without_connecting_or_writing(hass):
     coord.async_execute_controller_command.assert_not_called()
     assert config_entry.data == before
     coord.register_connection_state_callback.assert_called_once_with(target.connected)
+
+
+@pytest.mark.parametrize("tempur", [False, True])
+async def test_repair_action_form_serializes_a_required_choice(
+    hass, tempur_processor_available, tempur
+):
+    config_entry = entry(hass, **{
+        CONF_BED_TYPE: BED_TYPE_KEESON,
+        CONF_PROTOCOL_VARIANT: KEESON_VARIANT_ADJUSTABLE_LITE,
+    }) if tempur else entry(hass)
+    target = await watch(hass, config_entry)
+    observed = info("KSSF05C201000001") if tempur else info()
+    target.seen(observed, MagicMock())
+    flow = await open_flow(hass, target)
+    with patch(HISTORY, return_value=observed):
+        form = await flow.async_step_init()
+    schema = form["data_schema"]
+    assert schema is not None
+    fields = probatio.to_field_list(schema, custom_serializer=cv.custom_serializer)
+    assert len(fields) == 1
+    assert fields[0]["name"] == "action" and fields[0]["required"] is True
+    assert fields[0]["selector"]["select"]["options"] == ["review", "keep"]
+    assert schema({"action": "review"}) == {"action": "review"}
+    with pytest.raises(probatio.Invalid):
+        schema({})
+    with pytest.raises(probatio.Invalid):
+        schema({"action": "automatic_switch"})
 
 
 async def test_idle_disconnect_keeps_evidence_but_a_new_connection_replaces_it(hass):
