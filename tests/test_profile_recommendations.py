@@ -889,6 +889,46 @@ def test_keeson_json_does_not_replace_explicit_app_selection():
     )
 
 
+@pytest.mark.parametrize("variant", ["base", "sino"])
+@pytest.mark.parametrize(
+    "name,observed",
+    [("KSBT03CR123456789", "ksbt_cr"), ("smart_dfu", "ksbt04c"), ("KSBT03C123456789", "ksbt")],
+)
+def test_keeson_generic_variant_reviews_conflicting_ksbt_name(variant, name, observed):
+    result = recommend_profile(
+        {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: variant},
+        advertisement(name, [NORDIC_UART_SERVICE_UUID]),
+        {},
+    )
+    assert result is not None and result.suggested is None
+    assert result.current == f"keeson:{variant}"
+    assert result.choices == ("keeson:auto", f"keeson:{observed}")
+
+
+def test_keeson_selected_json_signature_precedes_conflicting_ksbt_name():
+    from custom_components.adjustable_bed.const import KEESON_JSON_SERVICE_UUID
+
+    assert (
+        recommend_profile(
+            {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "json"},
+            advertisement("KSBT03CR123456789", [KEESON_JSON_SERVICE_UUID]),
+            {},
+        )
+        is None
+    )
+
+
+def test_keeson_ksbt_name_does_not_replace_explicit_app_selection():
+    assert (
+        recommend_profile(
+            {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: KEESON_VARIANT_ADJUSTABLE_LITE},
+            advertisement("KSBT03CR123456789", [NORDIC_UART_SERVICE_UUID]),
+            {},
+        )
+        is None
+    )
+
+
 def test_legacy_alias_does_not_offer_the_same_controller_as_an_improvement():
     from custom_components.adjustable_bed.const import OKIMAT_SERVICE_UUID
 
@@ -1290,12 +1330,13 @@ async def test_single_address_pair_has_one_physical_notice(
 
 async def test_saving_ambiguous_review_confirms_current_route(hass, enable_custom_integrations):
     config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25})
-    # Populate the normal options defaults before testing a truly unchanged save.
+    # Populate defaults without starting BLE setup before the unchanged-save check.
     initial = await hass.config_entries.options.async_init(config_entry.entry_id)
     await hass.config_entries.options.async_configure(
         initial["flow_id"], {"next_step_id": "settings"}
     )
-    await hass.config_entries.options.async_configure(initial["flow_id"], {})
+    with patch.object(hass.config_entries, "async_schedule_reload"):
+        await hass.config_entries.options.async_configure(initial["flow_id"], {})
     coord = coordinator()
     coord.bed_type = BED_TYPE_SLEEPYS_BOX25
     coord.controller.protocol_diagnostics = {}
@@ -1362,6 +1403,11 @@ async def test_single_address_settings_records_review_decision(
     assert record["decision"] == ("dismissed" if variant == "auto" else "accepted")
     assert record["previous_profile"][CONF_PROTOCOL_VARIANT] == "auto"
     assert record["selected_profile"][CONF_PROTOCOL_VARIANT] == variant
+    assert target.recommendation is not None
+    assert set(record["confirmed_rules"]) == {original.rule, target.recommendation.rule}
+    from custom_components.adjustable_bed.profile_decisions import async_profile_decision_history
+
+    assert (await async_profile_decision_history(hass, ADDRESS))["legacy_dismissed_rules"] == []
 
 
 async def test_options_save_does_not_confirm_new_advertisement_assessment(

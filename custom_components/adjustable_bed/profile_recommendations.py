@@ -42,9 +42,6 @@ from .const import (
     KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_JSON,
-    KEESON_VARIANT_KSBT,
-    KEESON_VARIANT_KSBT04C,
-    KEESON_VARIANT_KSBT_CR,
     KEESON_VARIANT_SINO,
     LEGACY_BED_TYPE_MAPPING,
     NORDIC_UART_SERVICE_UUID,
@@ -211,26 +208,24 @@ def recommend_profile(
     if bed_type == detected.bed_type:
         if (
             bed_type == BED_TYPE_KEESON
-            and "uuid:keeson_json" in detected.signals
             and isinstance(variant, str)
             and variant in (get_variants_for_bed_type(bed_type) or {})
-            and variant not in (VARIANT_AUTO, KEESON_VARIANT_JSON)
+            and variant != VARIANT_AUTO
             and current == bed_type
         ):
-            return _variant_review(bed_type, variant, KEESON_VARIANT_JSON)
+            observed = (
+                KEESON_VARIANT_JSON
+                if "uuid:keeson_json" in detected.signals
+                else keeson_variant_from_device_name(info.name)
+            )
+            if observed is not None and observed != variant:
+                return _variant_review(bed_type, variant, observed)
         if (
             bed_type == BED_TYPE_OCTO
             and variant == OCTO_VARIANT_STANDARD
             and "uuid:octo_star2" in detected.signals
         ):
             return _variant_review(bed_type, OCTO_VARIANT_STANDARD, OCTO_VARIANT_STAR2)
-        if (
-            bed_type == BED_TYPE_KEESON
-            and variant in {KEESON_VARIANT_KSBT, KEESON_VARIANT_KSBT_CR, KEESON_VARIANT_KSBT04C}
-            and (observed := keeson_variant_from_device_name(info.name)) is not None
-            and observed != variant
-        ):
-            return _variant_review(bed_type, str(variant), observed)
     # A bare shared service is not enough to question a configured bed. Name,
     # manufacturer or a high-confidence dedicated signature must corroborate it.
     if (detected.confidence < 0.9 or detected.ambiguous_types) and not any(

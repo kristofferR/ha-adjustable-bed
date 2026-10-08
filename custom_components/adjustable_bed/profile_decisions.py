@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from copy import deepcopy
 from datetime import UTC, datetime
-from typing import Any, Final, Literal, TypedDict
+from typing import Any, Final, Literal, NotRequired, TypedDict
 
 from homeassistant.core import HomeAssistant
 
@@ -37,6 +37,7 @@ class ProfileDecision(TypedDict):
     choices: list[str]
     previous_profile: dict[str, str]
     selected_profile: dict[str, str]
+    confirmed_rules: NotRequired[list[str]]
 
 
 def profile_selection(data: Mapping[str, object]) -> dict[str, str]:
@@ -71,14 +72,14 @@ async def async_record_profile_decision(
     defer_on_error: bool = False,
 ) -> dict[str, Any]:
     """Save history and suppression flags together before confirming the action."""
-    rules = tuple(confirmed_rules)
+    rules = tuple(dict.fromkeys(confirmed_rules))
 
     def update(stored: dict[str, Any]) -> dict[str, Any]:
         history = list(stored.get(_HISTORY, []))
         return {
             **stored,
             **dict.fromkeys(rules, True),
-            _HISTORY: [*history, deepcopy(decision)],
+            _HISTORY: [*history, {**deepcopy(decision), "confirmed_rules": list(rules)}],
         }
 
     return await app_state_store(hass, address).async_update(
@@ -90,7 +91,11 @@ async def async_profile_decision_history(hass: HomeAssistant, address: str) -> d
     """Export this address only, including old flags whose details were never stored."""
     stored = await app_state_store(hass, address).async_slot(PROFILE_DECISIONS_SLOT)
     history = stored.get(_HISTORY, [])
-    recorded_rules = {record["rule"] for record in history}
+    recorded_rules = {
+        rule
+        for record in history
+        for rule in (record["rule"], *record.get("confirmed_rules", ()))
+    }
     return {
         "history": deepcopy(history),
         "legacy_dismissed_rules": sorted(

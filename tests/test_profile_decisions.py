@@ -34,6 +34,7 @@ def record(rule: str) -> ProfileDecision:
         "choices": ["linak"],
         "previous_profile": {"bed_type": "richmat", "protocol_variant": "auto"},
         "selected_profile": {"bed_type": "linak", "protocol_variant": "auto"},
+        "confirmed_rules": [rule],
     }
 
 
@@ -110,6 +111,40 @@ async def test_legacy_boolean_dismissals_export_without_fabricating_decision_det
     exported = await async_profile_decision_history(hass, ADDRESS)
     assert exported["legacy_dismissed_rules"] == ["old_rule"]
     assert exported["history"] == [record("new_rule")]
+
+
+async def test_all_newly_confirmed_rules_keep_their_decision_provenance(hass):
+    await app_state_store(hass, ADDRESS).async_write(
+        PROFILE_DECISIONS_SLOT, {"old_rule": True}
+    )
+    await async_record_profile_decision(
+        hass,
+        ADDRESS,
+        record("presented_rule"),
+        ("presented_rule", "selected_rule", "upgrade_review_current"),
+    )
+    hass.data["adjustable_bed"]["app_state_stores"].clear()
+    exported = await async_profile_decision_history(hass, ADDRESS)
+    assert exported["legacy_dismissed_rules"] == ["old_rule"]
+    event = exported["history"][0]
+    assert event["confirmed_rules"] == [
+        "presented_rule", "selected_rule", "upgrade_review_current"
+    ]
+    assert event["decided_at"] == record("presented_rule")["decided_at"]
+    assert event["selected_profile"] == record("presented_rule")["selected_profile"]
+
+
+async def test_old_history_without_confirmed_rules_exports_unchanged(hass):
+    old_event = record("documented_rule")
+    old_event.pop("confirmed_rules")
+    await app_state_store(hass, ADDRESS).async_write(
+        PROFILE_DECISIONS_SLOT,
+        {"documented_rule": True, "unrecorded_rule": True, "history": [old_event]},
+    )
+    assert await async_profile_decision_history(hass, ADDRESS) == {
+        "history": [old_event],
+        "legacy_dismissed_rules": ["unrecorded_rule"],
+    }
 
 
 async def test_removing_and_readding_a_bed_keeps_support_history_but_clears_app_preferences(hass):

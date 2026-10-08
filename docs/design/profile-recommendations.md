@@ -41,7 +41,7 @@ These are advisory candidates, not proof of a particular app or control layout.
 Ordinary protocol variants can also need review. The existing dedicated Octo
 Star2 detector signal questions an explicit Standard selection. Keeson's existing
 KSBT name resolver, shared with the controller factory, questions a conflicting
-explicit generic KSBT variant. Its dedicated JSON service also questions a
+explicit generic variant, including Base and Sino. Its dedicated JSON service also questions a
 conflicting explicit generic variant and takes precedence over KSBT names.
 These reviews list Auto and the observed generic variant,
 open settings unchanged, and require user confirmation. Auto is not questioned
@@ -121,7 +121,7 @@ Verified rules retain their own stable evidence keys.
 The same per-address slot retains an append-only history alongside suppression
 flags. Every Keep, native Ignore, or validated settings submission through Review
 records a UTC timestamp, the decision source, original rule/current profile,
-suggested profile/candidate list, and the previous and selected profile selectors.
+suggested profile/candidate list, every confirmed rule, and the previous and selected profile selectors.
 Changing selectors records `accepted`; keeping them records `dismissed`.
 Cancelling or failing validation/hardware commit records neither. Acceptance means the
 user chose those settings, not that the controls were physically verified.
@@ -148,6 +148,9 @@ captures. HA diagnostics and the older support-report format export it too, with
 paired diagnostics keeping each address's history in its own side section.
 Legacy boolean dismissals are exported in `legacy_dismissed_rules`; their missing
 timestamps and profile details are not reconstructed or invented.
+Newly confirmed rules remain associated with their history event, including
+rules recomputed for the selected profile. Older events lacking that rule list
+are exported unchanged.
 
 `tests/test_profile_decisions.py` covers durable append, concurrent decisions,
 address isolation, removal/re-add retention, legacy flags and selector-only data.
