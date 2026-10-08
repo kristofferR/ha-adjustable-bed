@@ -8,10 +8,9 @@ from typing import TYPE_CHECKING, Any
 
 import voluptuous as vol
 from homeassistant.components import bluetooth
-from homeassistant.components.repairs import RepairsFlow
+from homeassistant.components.repairs import RepairsFlow, RepairsFlowResult
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.issue_registry import (
     IssueSeverity,
     async_create_issue,
@@ -197,7 +196,7 @@ class RemacroAppRepairFlow(RepairsFlow):
             return None
         return entry
 
-    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
         entry = self._entry()
         if entry is None or not self._apps:
             return self.async_abort(reason="entry_missing")

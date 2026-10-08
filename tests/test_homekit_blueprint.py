@@ -10,7 +10,11 @@ from pathlib import Path
 from unittest.mock import AsyncMock
 
 import pytest
-from homeassistant.components.cover import DATA_COMPONENT
+
+# HA 2026.9 defines this here; 2026.10 re-exports it from const.
+from homeassistant.components.cover import (
+    DATA_COMPONENT,  # pyright: ignore[reportPrivateImportUsage]
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
