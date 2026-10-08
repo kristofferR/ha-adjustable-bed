@@ -845,6 +845,53 @@ def test_keeson_auto_corroborated_sino_uses_its_existing_app_candidates(both_ser
     assert "simmons" not in result.choices
 
 
+@pytest.mark.parametrize("variant", ["base", "json", "ksbt", "ksbt_cr", "ksbt04c"])
+@pytest.mark.parametrize("both_services", [False, True])
+def test_keeson_explicit_generic_variant_reviews_corroborated_sino(variant, both_services):
+    from custom_components.adjustable_bed.const import KEESON_FALLBACK_GATT_PAIRS
+
+    services = [pair[0] for pair in KEESON_FALLBACK_GATT_PAIRS]
+    result = recommend_profile(
+        {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: variant},
+        advertisement("OKIN-BLE00000", services if both_services else services[:1]),
+        {},
+    )
+    assert result is not None and result.suggested is None
+    assert result.current == f"keeson:{variant}"
+    assert result.choices == ("keeson:auto", "keeson:sino")
+
+
+def test_keeson_explicit_sino_keeps_its_existing_app_candidates():
+    from custom_components.adjustable_bed.const import KEESON_FALLBACK_GATT_PAIRS
+
+    result = recommend_profile(
+        {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "sino"},
+        advertisement("OKIN-BLE00000", [KEESON_FALLBACK_GATT_PAIRS[0][0]]),
+        {},
+    )
+    assert result is not None and result.suggested is None
+    assert "keeson:dynasty_bases" in result.choices
+    assert "keeson:restonic_a" not in result.choices
+    assert "simmons" not in result.choices
+
+
+def test_keeson_json_signature_precedes_sino_name():
+    from custom_components.adjustable_bed.const import (
+        KEESON_FALLBACK_GATT_PAIRS,
+        KEESON_JSON_SERVICE_UUID,
+    )
+
+    result = recommend_profile(
+        {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "base"},
+        advertisement(
+            "OKIN-BLE00000", [KEESON_JSON_SERVICE_UUID, KEESON_FALLBACK_GATT_PAIRS[0][0]]
+        ),
+        {},
+    )
+    assert result is not None and result.suggested is None
+    assert result.choices == ("keeson:auto", "keeson:json")
+
+
 def test_keeson_json_signature_takes_precedence_over_ksbt_name():
     from custom_components.adjustable_bed.const import KEESON_JSON_SERVICE_UUID
 
@@ -923,6 +970,31 @@ def test_keeson_ksbt_name_does_not_replace_explicit_app_selection():
         recommend_profile(
             {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: KEESON_VARIANT_ADJUSTABLE_LITE},
             advertisement("KSBT03CR123456789", [NORDIC_UART_SERVICE_UUID]),
+            {},
+        )
+        is None
+    )
+
+
+@pytest.mark.parametrize("variant", ["sleep_harmony", "purple", "ergomotion", "okin", "serta"])
+@pytest.mark.parametrize("name", ["KSBT04C123456789", "smart_dfu"])
+def test_keeson_shared_ksbt_name_keeps_explicit_protocol_app(variant, name):
+    assert (
+        recommend_profile(
+            {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: variant},
+            advertisement(name, [NORDIC_UART_SERVICE_UUID]),
+            {},
+        )
+        is None
+    )
+
+
+@pytest.mark.parametrize("variant", ["sleep_harmony", "purple"])
+def test_keeson_shared_ksbt03c_name_keeps_explicit_protocol_app(variant):
+    assert (
+        recommend_profile(
+            {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: variant},
+            advertisement("KSBT03C123456789", [NORDIC_UART_SERVICE_UUID]),
             {},
         )
         is None

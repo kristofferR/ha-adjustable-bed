@@ -40,9 +40,13 @@ These are advisory candidates, not proof of a particular app or control layout.
 
 Ordinary protocol variants can also need review. The existing dedicated Octo
 Star2 detector signal questions an explicit Standard selection. Keeson's existing
-KSBT name resolver, shared with the controller factory, questions a conflicting
-explicit generic variant, including Base and Sino. Its dedicated JSON service also questions a
-conflicting explicit generic variant and takes precedence over KSBT names.
+KSBT name resolver, shared with the controller factory, and corroborated Sino
+detector signal question a conflicting explicit generic variant, including Base.
+Auto and explicit reviews use the same observed-transport resolver. Its dedicated
+JSON service takes precedence over Sino and KSBT names and can also question an
+explicit app variant configured through the protocol-variant selector. Shared
+names preserve those explicit app selections, including Sleep Harmony and Purple;
+the selector's app metadata alone does not identify every app-specific variant.
 These reviews list Auto and the observed generic variant,
 open settings unchanged, and require user confirmation. Auto is not questioned
 for these transport differences; it already resolves them on normal connection.

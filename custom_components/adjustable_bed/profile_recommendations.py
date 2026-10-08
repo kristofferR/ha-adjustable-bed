@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import re
-from collections.abc import Iterable, Mapping
+from collections.abc import Collection, Iterable, Mapping
 from dataclasses import dataclass
 from hashlib import sha256
 from typing import TYPE_CHECKING, Any, Final, Literal
@@ -42,6 +42,9 @@ from .const import (
     KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_JSON,
+    KEESON_VARIANT_KSBT,
+    KEESON_VARIANT_KSBT04C,
+    KEESON_VARIANT_KSBT_CR,
     KEESON_VARIANT_SINO,
     LEGACY_BED_TYPE_MAPPING,
     NORDIC_UART_SERVICE_UUID,
@@ -126,6 +129,15 @@ def _variant_review(bed_type: str, variant: str, observed: str) -> Recommendatio
         choices,
         "profile_ambiguous",
     )
+
+
+def _keeson_observed_variant(name: str | None, signals: Collection[str]) -> str | None:
+    """Resolve existing transport evidence in the detector's precedence order."""
+    if "uuid:keeson_json" in signals:
+        return KEESON_VARIANT_JSON
+    if "name:keeson_sino" in signals:
+        return KEESON_VARIANT_SINO
+    return keeson_variant_from_device_name(name)
 
 
 def _reported_recommendation(
@@ -213,12 +225,22 @@ def recommend_profile(
             and variant != VARIANT_AUTO
             and current == bed_type
         ):
-            observed = (
-                KEESON_VARIANT_JSON
-                if "uuid:keeson_json" in detected.signals
-                else keeson_variant_from_device_name(info.name)
+            observed = _keeson_observed_variant(info.name, detected.signals)
+            # Shared names cannot distinguish explicitly selected app layouts,
+            # including apps configured through the protocol-variant selector.
+            generic_variant = variant in (
+                KEESON_VARIANT_BASE,
+                KEESON_VARIANT_JSON,
+                KEESON_VARIANT_KSBT,
+                KEESON_VARIANT_KSBT_CR,
+                KEESON_VARIANT_KSBT04C,
+                KEESON_VARIANT_SINO,
             )
-            if observed is not None and observed != variant:
+            if (
+                observed is not None
+                and observed != variant
+                and (generic_variant or observed == KEESON_VARIANT_JSON)
+            ):
                 return _variant_review(bed_type, variant, observed)
         if (
             bed_type == BED_TYPE_OCTO
@@ -234,17 +256,10 @@ def recommend_profile(
         return None
     matches = {detected.bed_type, *(detected.ambiguous_types or ())}
     observed_variant = variant if bed_type == detected.bed_type else VARIANT_AUTO
-    if (
-        detected.bed_type == BED_TYPE_KEESON
-        and observed_variant in (None, "", VARIANT_AUTO)
-    ):
-        # Narrow app candidates using the existing detector and factory name resolver.
-        if "uuid:keeson_json" in detected.signals:
-            observed_variant = KEESON_VARIANT_JSON
-        elif "name:keeson_sino" in detected.signals:
-            observed_variant = KEESON_VARIANT_SINO
-        else:
-            observed_variant = keeson_variant_from_device_name(info.name) or KEESON_VARIANT_BASE
+    if detected.bed_type == BED_TYPE_KEESON and observed_variant in (None, "", VARIANT_AUTO):
+        observed_variant = (
+            _keeson_observed_variant(info.name, detected.signals) or KEESON_VARIANT_BASE
+        )
     apps = related_app_choices(detected.bed_type, observed_variant)
     if current in apps or (current != bed_type and bed_type in matches):
         # An explicitly selected app already resolves this generic identity.
