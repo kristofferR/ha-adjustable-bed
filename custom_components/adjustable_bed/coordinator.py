@@ -3015,6 +3015,10 @@ class AdjustableBedCoordinator:
         if self._disconnect_after_operation_enabled():
             return False
 
+        # Retaining the staircase link must not disable recovery from an unexpected drop.
+        if self._bed_type == BED_TYPE_OKIN_RF_ECO_BT:
+            return True
+
         # LP Comfort Connect is kept connected conservatively, and the new bond
         # makes an unexpected drop recoverable. Reconnect promptly while leaving
         # the established lifecycle behavior of other persistent protocols (such

@@ -6,6 +6,7 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from bleak_retry_connector import BleakNotFoundError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -103,15 +104,24 @@ class TestOkinRfEcoBtController:
         finally:
             await coordinator.async_disconnect()
 
-    async def test_unexpected_disconnect_reconnects_on_next_command(
+    @pytest.mark.parametrize("disconnect_after_command", [False, True])
+    async def test_unexpected_disconnect_recovers_without_movement(
         self,
         hass: HomeAssistant,
         mock_okin_rf_eco_bt_config_entry: MockConfigEntry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
         mock_establish_connection: AsyncMock,
+        disconnect_after_command: bool,
     ) -> None:
-        """A lost persistent link permits command recovery without a retry loop."""
+        """Recover a lost persistent link without waiting for or replaying movement."""
+        hass.config_entries.async_update_entry(
+            mock_okin_rf_eco_bt_config_entry,
+            data={
+                **mock_okin_rf_eco_bt_config_entry.data,
+                CONF_DISCONNECT_AFTER_COMMAND: disconnect_after_command,
+            },
+        )
         coordinator = AdjustableBedCoordinator(hass, mock_okin_rf_eco_bt_config_entry)
         assert await coordinator.async_connect()
         try:
@@ -120,18 +130,90 @@ class TestOkinRfEcoBtController:
 
             assert coordinator.client is None
             assert coordinator.controller is None
-            assert coordinator._reconnect_timer is None
+            assert coordinator._reconnect_timer is not None
             mock_establish_connection.assert_awaited_once()
             assert _payloads(mock_bleak_client) == []
 
+            coordinator._reconnect_timer.cancel()
+            coordinator._schedule_auto_reconnect()
+            await hass.async_block_till_done(wait_background_tasks=True)
+
+            assert coordinator.is_connected
+            assert mock_establish_connection.await_count == 2
+            assert coordinator._disconnect_timer is None
+            assert coordinator._reconnect_timer is None
+            assert _payloads(mock_bleak_client) == []
+        finally:
+            await coordinator.async_disconnect()
+
+    async def test_failed_automatic_recovery_leaves_command_reconnect_available(
+        self,
+        hass: HomeAssistant,
+        mock_okin_rf_eco_bt_config_entry: MockConfigEntry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        mock_establish_connection: AsyncMock,
+    ) -> None:
+        """Failed recovery spends one retry budget, then waits for an explicit command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_rf_eco_bt_config_entry)
+        assert await coordinator.async_connect()
+        try:
+            establish = mock_establish_connection.side_effect
+            mock_establish_connection.side_effect = BleakNotFoundError(
+                "Failed to connect after 1 attempt(s): TimeoutError"
+            )
+            mock_bleak_client.is_connected = False
+            coordinator._on_disconnect(mock_bleak_client)
+
+            assert coordinator._reconnect_timer is not None
+            coordinator._reconnect_timer.cancel()
+            coordinator._schedule_auto_reconnect()
+            await hass.async_block_till_done(wait_background_tasks=True)
+
+            assert not coordinator.is_connected
+            assert mock_establish_connection.await_count == 1 + coordinator._max_retries
+            assert coordinator._reconnect_timer is None
+            assert coordinator._disconnect_timer is None
+            assert _payloads(mock_bleak_client) == []
+
+            mock_establish_connection.side_effect = establish
             await coordinator.async_execute_controller_command(
                 lambda controller: controller.move_back_down(),
             )
 
             assert coordinator.is_connected
-            assert mock_establish_connection.await_count == 2
+            assert mock_establish_connection.await_count == 2 + coordinator._max_retries
             assert coordinator._disconnect_timer is None
             assert _payloads(mock_bleak_client) == [STAIR_IN_PACKET]
+        finally:
+            await coordinator.async_disconnect()
+
+    async def test_manual_disconnect_does_not_schedule_recovery(
+        self,
+        hass: HomeAssistant,
+        mock_okin_rf_eco_bt_config_entry: MockConfigEntry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        mock_establish_connection: AsyncMock,
+    ) -> None:
+        """An explicit handoff must stay disconnected even when native callbacks fire."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_rf_eco_bt_config_entry)
+        assert await coordinator.async_connect()
+
+        async def disconnect() -> None:
+            mock_bleak_client.is_connected = False
+            coordinator._on_disconnect(mock_bleak_client)
+
+        mock_bleak_client.disconnect.side_effect = disconnect
+        try:
+            assert await coordinator.async_disconnect()
+            await hass.async_block_till_done()
+
+            assert not coordinator.is_connected
+            assert coordinator._reconnect_timer is None
+            assert coordinator._disconnect_timer is None
+            mock_establish_connection.assert_awaited_once()
+            assert _payloads(mock_bleak_client) == []
         finally:
             await coordinator.async_disconnect()
 
