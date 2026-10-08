@@ -506,6 +506,7 @@ class AdjustableBedCoordinator:
         self._persistent_connection_resolved: bool | None = None
         self._disconnect_timer: asyncio.TimerHandle | None = None
         self._reconnect_timer: asyncio.TimerHandle | None = None
+        self._reconnect_task: asyncio.Task[None] | None = None
         self._lock = asyncio.Lock()
         self._command_lock = asyncio.Lock()  # Separate lock for command serialization
         self._command_connection_holds = 0
@@ -4714,17 +4715,37 @@ class AdjustableBedCoordinator:
         The task is tied to the config entry so it is tracked by HA and
         cancelled automatically if the entry unloads before it finishes.
         """
-        self.entry.async_create_background_task(
+        self._reconnect_timer = None
+        if self._reconnect_task is not None and not self._reconnect_task.done():
+            return
+        task = self.entry.async_create_background_task(
             self.hass,
             self._async_auto_reconnect(),
             name=f"adjustable_bed_auto_reconnect_{self._address}",
         )
+        self._reconnect_task = task
+        task.add_done_callback(self._auto_reconnect_done)
+
+    def _auto_reconnect_done(self, task: asyncio.Task[None]) -> None:
+        if self._reconnect_task is task:
+            self._reconnect_task = None
+
+    def _cancel_auto_reconnect(self) -> None:
+        """Cancel delayed and launched recovery without interrupting its own cleanup."""
+        if self._reconnect_timer is not None:
+            self._reconnect_timer.cancel()
+            self._reconnect_timer = None
+        task = self._reconnect_task
+        if (
+            task is not None
+            and task is not asyncio.current_task()
+            and not task.done()
+            and not task.cancelling()
+        ):
+            task.cancel()
 
     async def _async_auto_reconnect(self) -> None:
         """Attempt automatic reconnection after unexpected disconnect."""
-        # Timer has fired, clear the reference
-        self._reconnect_timer = None
-
         # Don't reconnect if we're already connected or connecting
         if self._connecting or (self._client is not None and self._client.is_connected):
             _LOGGER.debug("Skipping auto-reconnect: already connected or connecting")
@@ -5167,6 +5188,8 @@ class AdjustableBedCoordinator:
                     the command lock, such as disconnect-after-command.
         """
         _LOGGER.debug("async_disconnect called for %s", self._address)
+        # Stop recovery before waiting for the connection lane it may already own.
+        self._cancel_auto_reconnect()
         if serialize_with_commands:
             # Without this, a disconnect requested while a connect is in flight
             # queues on self._lock and then tears the link down in the same tick
@@ -5330,9 +5353,7 @@ class AdjustableBedCoordinator:
         # A callback that landed before the flag was set may have queued a
         # reconnect already. This gate promises the bed stays released for the
         # whole operation, so nothing may be waiting to undo that.
-        if self._reconnect_timer is not None:
-            self._reconnect_timer.cancel()
-            self._reconnect_timer = None
+        self._cancel_auto_reconnect()
 
     async def _async_disconnect_locked(self, reason: str = "intentional") -> bool:
         """Disconnect from the bed. The caller MUST already hold ``self._lock``.
@@ -5341,6 +5362,8 @@ class AdjustableBedCoordinator:
         ``_async_connect_locked`` (lock already held) and would otherwise
         deadlock on the public ``async_disconnect`` re-acquiring the lock.
         """
+        # Recovery may have launched while this caller waited for the lock.
+        self._cancel_auto_reconnect()
         await self._async_cancel_furnimove_bond_request()
         self._cancel_diagnostic_polling()
         self._cancel_disconnect_timer()
@@ -5350,10 +5373,6 @@ class AdjustableBedCoordinator:
             with contextlib.suppress(asyncio.CancelledError):
                 await self._controller_state_refresh_task
             self._controller_state_refresh_task = None
-        # Cancel any pending reconnect timer
-        if self._reconnect_timer is not None:
-            self._reconnect_timer.cancel()
-            self._reconnect_timer = None
         if self._client is not None:
             # Intentional disconnects (manual, idle timeout, disconnect-after-command)
             # are routine for non-persistent beds; keep them at DEBUG so normal use

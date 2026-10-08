@@ -52,8 +52,9 @@ companion app from connecting. After an unexpected drop, Home Assistant schedule
 one automatic reconnect operation using the configured connection profile's
 bounded retry budget. Recovery sends no movement command. If it fails, the next
 command or **Connect** action can try again; no background retry loop runs.
-Manual Disconnect remains available and suppresses automatic recovery. The
-receiver may still require a power cycle if GATT timeouts recur; keeping the link
+Manual Disconnect remains available and cancels both scheduled and in-progress
+automatic recovery. The receiver may still require a power cycle if GATT
+timeouts recur; keeping the link
 open is a tested workaround, not an established explanation of those timeouts.
 
 ### Device identification
