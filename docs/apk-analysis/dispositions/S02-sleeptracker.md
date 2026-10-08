@@ -99,11 +99,11 @@ Tests: [tests/test_sleeptracker_protocol.py](../../../tests/test_sleeptracker_pr
 
 ### wave
 
-Five exact frequency-to-pulse values, 500 ms second-statement delay, minutes*600 duration and local finite selectors.
+Five exact frequency-to-pulse values, 500 ms second-statement delay, minutes*600 duration and local finite selectors. Builder choices are shared across offline/live controllers and persisted per physical address and layout; reported remote state is not restored.
 
-Code: [custom_components/adjustable_bed/sleeptracker_protocol.py](../../../custom_components/adjustable_bed/sleeptracker_protocol.py) `wave`; [custom_components/adjustable_bed/beds/sleeptracker.py](../../../custom_components/adjustable_bed/beds/sleeptracker.py) `controller_select_specs`; [custom_components/adjustable_bed/beds/sleeptracker.py](../../../custom_components/adjustable_bed/beds/sleeptracker.py) `controller_number_specs`.
+Code: [custom_components/adjustable_bed/sleeptracker_protocol.py](../../../custom_components/adjustable_bed/sleeptracker_protocol.py) `wave`; [custom_components/adjustable_bed/beds/sleeptracker.py](../../../custom_components/adjustable_bed/beds/sleeptracker.py) `controller_select_specs`, `controller_number_specs`, `persisted_app_state`, `restore_persisted_app_state`; [custom_components/adjustable_bed/controller_factory.py](../../../custom_components/adjustable_bed/controller_factory.py) Sleeptracker shared app session.
 
-Tests: [tests/test_sleeptracker_protocol.py](../../../tests/test_sleeptracker_protocol.py) `test_relaxation_wave`; [tests/test_sleeptracker_controller.py](../../../tests/test_sleeptracker_controller.py) `test_number_callbacks_reject_fractional_or_unsupported_values`; [tests/test_sleeptracker_exposure.py](../../../tests/test_sleeptracker_exposure.py) `test_platform_entities_route_actions_and_show_only_published_state`.
+Tests: [tests/test_sleeptracker_protocol.py](../../../tests/test_sleeptracker_protocol.py) `test_relaxation_wave`; [tests/test_sleeptracker_controller.py](../../../tests/test_sleeptracker_controller.py) `test_number_callbacks_reject_fractional_or_unsupported_values`; [tests/test_sleeptracker_exposure.py](../../../tests/test_sleeptracker_exposure.py) `test_platform_entities_route_actions_and_show_only_published_state`; [tests/test_sleeptracker_exposure.py](../../../tests/test_sleeptracker_exposure.py) `test_wave_entities_keep_shared_settings_across_reconnect_and_restart`.
 
 ### animation
 

@@ -107,7 +107,8 @@ The existing generic memory actions also work within the selected capacity.
 All layouts have pattern massage and local safety-light toggle. Lighting uses
 the app-specific toggle button and reported-state sensor; an assumed-state light
 and duplicate generic toggle button are not exposed. Controls removed by a layout,
-processor type or restricted-session change are retired from the entity registry
+processor type or restricted-session change, including timer and wind-down state
+sensors, are retired from the entity registry
 for the affected physical bed. Supported
 layouts add head/foot massage steps. Premium layouts add **28 Hz**, **40 Hz**,
 wave frequency/duration selectors, wind-down 1/2 and local motor/massage
@@ -138,7 +139,9 @@ pattern and reset the other remote values, matching the app parser. Climate
 updates only from a single snapshot's nested fan object, clamps levels to 0–3
 and retains absent fields. There is no invented frequency, timer or axis
 feedback. Disconnect clears remote state and authentication; local wave
-preferences survive within the controller instance.
+preferences are shared by offline and connected controllers and saved per
+physical address and app layout. Reconnecting or restarting Home Assistant
+retains the selected frequency and duration, without restoring remote state.
 
 Identify split light sends the app's literal unit-1 light request at 1500 ms,
 bounded to four cycles by HA, and sends explicit light off during cleanup.

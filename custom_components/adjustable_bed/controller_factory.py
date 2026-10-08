@@ -751,18 +751,23 @@ async def create_controller(
         await coordinator.hass.async_add_import_executor_job(
             import_module, ".beds.sleeptracker", __package__
         )
-        from .beds.sleeptracker import SleeptrackerController
+        from .beds.sleeptracker import SleeptrackerController, SleeptrackerWaveSettings
 
         data = coordinator.entry.data
+        model = data.get(CONF_PRODUCT_TYPE, "unknown")
         return SleeptrackerController(
             coordinator,
-            model=data.get(CONF_PRODUCT_TYPE, "unknown"),
+            model=model,
             unit_number=data.get(CONF_SLEEPTRACKER_UNIT, 0),
             snapshot_side=data.get(CONF_SLEEPTRACKER_SNAPSHOT_SIDE, 0),
             restricted=data.get(CONF_SLEEPTRACKER_RESTRICTED, False),
             processor_type=data.get(CONF_SLEEPTRACKER_PROCESSOR_TYPE, 0),
             manufacturer_data=manufacturer_data,
             foundation=data.get(CONF_SLEEPTRACKER_FOUNDATION, "Unspecified"),
+            wave_settings=app_session(
+                coordinator.hass, coordinator.address, ("sleeptracker", model),
+                SleeptrackerWaveSettings,
+            ),
         )
 
     if bed_type == BED_TYPE_MOTION_BED:

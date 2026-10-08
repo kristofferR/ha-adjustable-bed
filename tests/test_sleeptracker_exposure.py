@@ -203,6 +203,145 @@ async def test_profile_change_retires_sleeptracker_buttons_for_only_the_affected
     assert registry.async_get(unrelated.entity_id) is not None
 
 
+@pytest.mark.parametrize("model", ["ergo_smart", "ergo_prosmart"])
+async def test_profile_change_retires_sleeptracker_state_for_only_the_affected_side(hass, model):
+    from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for
+    from custom_components.adjustable_bed.sensor import _sensor_entities_for
+
+    runtime, old = target(hass, "activebreeze_large")
+    runtime.device_info = {}
+    runtime.entity_side = "left"
+    runtime.entity_unique_id.side_effect = lambda key: f"processor_{key}_left"
+    runtime.entity_translation_key.side_effect = lambda key: key
+    registry = er.async_get(hass)
+    previous = {
+        (domain, spec.key): registry.async_get_or_create(
+            domain, const.DOMAIN, runtime.entity_unique_id(spec.key), config_entry=runtime.entry
+        )
+        for domain, specs in (
+            ("sensor", old.controller_state_sensor_specs),
+            ("binary_sensor", old.controller_state_binary_sensor_specs),
+        )
+        for spec in specs
+    }
+    others = [
+        registry.async_get_or_create(
+            domain, const.DOMAIN, unique_id, config_entry=runtime.entry
+        )
+        for domain, unique_id in (
+            ("sensor", "processor_sleeptracker_left_commanded_timer_seconds_right"),
+            ("binary_sensor", "processor_sleeptracker_wind_down_running_right"),
+            ("sensor", "processor_other_state_left"),
+            ("binary_sensor", "processor_other_state_left"),
+        )
+    ]
+    current = SleeptrackerController(runtime, model=model)
+    runtime.controller = runtime.capability_controller = current
+    remaining = {
+        (domain, spec.key)
+        for domain, specs in (
+            ("sensor", current.controller_state_sensor_specs),
+            ("binary_sensor", current.controller_state_binary_sensor_specs),
+        )
+        for spec in specs
+    }
+    _sensor_entities_for(hass, runtime)
+    _binary_sensor_entities_for(hass, runtime)
+    for key, entity in previous.items():
+        assert (registry.async_get(entity.entity_id) is not None) is (key in remaining)
+    assert all(registry.async_get(entity.entity_id) is not None for entity in others)
+
+
+async def test_wave_entities_keep_shared_settings_across_reconnect_and_restart(hass):
+    from custom_components.adjustable_bed.button import _button_entities_for
+    from custom_components.adjustable_bed.controller_factory import create_controller
+    from custom_components.adjustable_bed.number import _number_entities_for
+    from custom_components.adjustable_bed.select import _select_entities_for
+    from tests.app_state_helpers import restart_app_state, stored_app_state
+
+    entry = MockConfigEntry(domain=const.DOMAIN, data={
+        "address": "AA:BB:CC:01:02:03", "name": "Processor",
+        "bed_type": const.BED_TYPE_SLEEPTRACKER, "product_type": "ergo_prosmart",
+        "disconnect_after_command": True,
+    })
+    entry.add_to_hass(hass)
+    runtime = AdjustableBedCoordinator(hass, entry)
+    await runtime.async_prime_offline_controller()
+    selects = {e.translation_key: e for e in _select_entities_for(hass, runtime)}
+    numbers = {e.translation_key: e for e in _number_entities_for(hass, runtime)}
+    buttons = {e.translation_key: e for e in _button_entities_for(hass, runtime)}
+    requests = []
+
+    async def reconnect_and_execute(fn, **kwargs):
+        runtime._controller = await create_controller(
+            runtime, const.BED_TYPE_SLEEPTRACKER, "auto", None
+        )
+        await runtime._async_restore_app_state(runtime.controller)
+        runtime.controller.async_execute_sleeptracker_request = AsyncMock(
+            side_effect=lambda request: requests.append(request)
+        )
+        await fn(runtime.controller)
+        runtime.controller.on_disconnect()
+        runtime._controller = None
+
+    with patch.object(runtime, "async_execute_controller_command", side_effect=reconnect_and_execute) as execute:
+        await selects["sleeptracker_wave_frequency"].async_select_option("40")
+        execute.assert_not_awaited()
+        await numbers["sleeptracker_wave_minutes"].async_set_native_value(45)
+        # The original offline selector must retain the live controller's duration.
+        await selects["sleeptracker_wave_frequency"].async_select_option("88")
+        assert execute.await_count == 1
+        assert selects["sleeptracker_wave_frequency"].current_option == "88"
+        assert numbers["sleeptracker_wave_minutes"].native_value == 45
+        await buttons["sleeptracker_wave_start"].async_press()
+    assert [(request.frequency, request.minutes) for request in requests] == [(88, 45)]
+    assert await stored_app_state(runtime) == {"wave_frequency": 88, "wave_minutes": 45}
+
+    await restart_app_state(hass, runtime.address)
+    restarted = AdjustableBedCoordinator(hass, entry)
+    await restarted.async_prime_offline_controller()
+    assert restarted.capability_controller.persisted_app_state == {
+        "wave_frequency": 88, "wave_minutes": 45,
+    }
+    assert restarted.controller_state["sleeptracker_wave_frequency"] == "88"
+    assert restarted.controller_state["sleeptracker_wave_minutes"] == 45
+    assert "sleeptracker_light_on" not in restarted.controller_state
+
+    for address, model in (
+        ("AA:BB:CC:01:02:04", "ergo_prosmart"),
+        (runtime.address, "activebreeze_large"),
+    ):
+        other_entry = MockConfigEntry(domain=const.DOMAIN, data={
+            **entry.data, "address": address, "product_type": model,
+        })
+        other_entry.add_to_hass(hass)
+        other = AdjustableBedCoordinator(hass, other_entry)
+        await other.async_prime_offline_controller()
+        assert other.capability_controller.persisted_app_state == {
+            "wave_frequency": 52, "wave_minutes": 30,
+        }
+    assert await stored_app_state(restarted) == {"wave_frequency": 88, "wave_minutes": 45}
+
+
+@pytest.mark.parametrize("invalid", [
+    {"wave_frequency": 41}, {"wave_frequency": True},
+    {"wave_minutes": 6}, {"wave_minutes": 45.5}, {"token": "not-persistable"},
+])
+async def test_invalid_saved_wave_settings_reset_without_restoring_remote_state(hass, invalid):
+    from tests.app_state_helpers import stored_app_state, write_app_state
+
+    entry = MockConfigEntry(domain=const.DOMAIN, data={
+        "address": "AA:BB:CC:01:02:03", "bed_type": const.BED_TYPE_SLEEPTRACKER,
+        "product_type": "ergo_prosmart",
+    })
+    entry.add_to_hass(hass)
+    runtime = AdjustableBedCoordinator(hass, entry)
+    await write_app_state(runtime, invalid, "19")
+    await runtime.async_prime_offline_controller()
+    assert await stored_app_state(runtime) == {"wave_frequency": 52, "wave_minutes": 30}
+    assert "sleeptracker_light_on" not in runtime.controller_state
+
+
 async def invoke(hass, targets, service, data):
     await async_register_services(hass)
     with patch(

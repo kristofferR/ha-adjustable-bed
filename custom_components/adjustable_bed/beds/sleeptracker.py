@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable, Mapping
 from contextlib import suppress
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from .. import sleeptracker_protocol as p
@@ -27,6 +28,14 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 REPLY_TIMEOUT = 60.0
+
+
+@dataclass(slots=True)
+class SleeptrackerWaveSettings:
+    """Local builder choices shared by offline and connected controllers."""
+
+    frequency: int = 52
+    minutes: int = 30
 
 
 def _controller(controller: BedController) -> SleeptrackerController:
@@ -67,6 +76,7 @@ class SleeptrackerController(BedController):
         processor_type: int = 0,
         manufacturer_data: Mapping[int, bytes] | None = None,
         foundation: str = "Unspecified",
+        wave_settings: SleeptrackerWaveSettings | None = None,
     ) -> None:
         super().__init__(coordinator)
         if (
@@ -99,7 +109,8 @@ class SleeptrackerController(BedController):
         self._pending: dict[str, asyncio.Future[bytes]] = {}
         self._buffers: dict[str, p.Reassembler] = {}
         self._reads: dict[str, asyncio.Task[None]] = {}
-        self._state: dict[str, p.Json] = {"wave_frequency": 52, "wave_minutes": 30}
+        self._state: dict[str, p.Json] = {}
+        self._wave_settings = wave_settings or SleeptrackerWaveSettings()
         self._advertisement_metadata = p.manufacturer_metadata(
             manufacturer_data or {}, coordinator.address
         )
@@ -121,6 +132,40 @@ class SleeptrackerController(BedController):
     @property
     def supports_sleeptracker_controls(self) -> bool:
         return True
+
+    @property
+    def persisted_app_state_key(self) -> str:
+        return str(self._model.id)
+
+    @property
+    def persisted_app_state(self) -> dict[str, int]:
+        return {
+            "wave_frequency": self._wave_settings.frequency,
+            "wave_minutes": self._wave_settings.minutes,
+        }
+
+    def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
+        frequency = state.get("wave_frequency", 52)
+        minutes = state.get("wave_minutes", 30)
+        if (
+            set(state) - {"wave_frequency", "wave_minutes"}
+            or type(frequency) is not int
+            or frequency not in p.FREQUENCIES
+            or type(minutes) is not int
+            or minutes not in range(5, 106, 5)
+        ):
+            raise ValueError("Invalid saved Sleeptracker wave settings")
+        self._wave_settings.frequency = frequency
+        self._wave_settings.minutes = minutes
+        self._publish()
+
+    def _choose_wave_frequency(self, option: str) -> None:
+        frequency = int(option)
+        if frequency not in p.FREQUENCIES:
+            raise ValueError("Unsupported wave frequency")
+        self._wave_settings.frequency = frequency
+        self._coordinator.save_app_state(self)
+        self._publish()
 
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
@@ -156,7 +201,8 @@ class SleeptrackerController(BedController):
             "sleeptracker_" + key: value for key, value in self._state.items()
         }
         # HA select options are strings; retain the numeric builder setting locally.
-        updates["sleeptracker_wave_frequency"] = str(self._state["wave_frequency"])
+        updates["sleeptracker_wave_frequency"] = str(self._wave_settings.frequency)
+        updates["sleeptracker_wave_minutes"] = self._wave_settings.minutes
         self.forward_controller_state_updates(updates)
 
     async def async_discover_capabilities(self) -> None:
@@ -462,11 +508,7 @@ class SleeptrackerController(BedController):
             task.cancel()
         self._reads.clear()
         self._buffers.clear()
-        self._state = {
-            **dict.fromkeys(self._state),
-            "wave_frequency": self._state.get("wave_frequency", 52),
-            "wave_minutes": self._state.get("wave_minutes", 30),
-        }
+        self._state = dict.fromkeys(self._state)
         self._metadata = dict(self._advertisement_metadata)
         self._publish()
 
@@ -903,8 +945,8 @@ class SleeptrackerController(BedController):
                 await selected.async_execute_sleeptracker_request(
                     p.Request(
                         "wave",
-                        frequency=p.integer(selected._state.get("wave_frequency"), 52),
-                        minutes=p.integer(selected._state.get("wave_minutes"), 30),
+                        frequency=selected._wave_settings.frequency,
+                        minutes=selected._wave_settings.minutes,
                     )
                 )
 
@@ -923,13 +965,8 @@ class SleeptrackerController(BedController):
         specs: list[ControllerSelectSpec] = []
         if self._model.premium:
 
-            def choose(option: str) -> None:
-                self._state["wave_frequency"] = int(option)
-                self._publish()
-
             async def choose_connected(ctrl: BedController, option: str) -> None:
-                _controller(ctrl)._state["wave_frequency"] = int(option)
-                _controller(ctrl)._publish()
+                _controller(ctrl)._choose_wave_frequency(option)
 
             specs.append(
                 ControllerSelectSpec(
@@ -938,7 +975,7 @@ class SleeptrackerController(BedController):
                     "sleeptracker_wave_frequency",
                     tuple(str(hz) for hz in p.FREQUENCIES),
                     choose_connected,
-                    local_select_fn=choose,
+                    local_select_fn=self._choose_wave_frequency,
                 )
             )
         if self._model.breeze:
@@ -1005,7 +1042,8 @@ class SleeptrackerController(BedController):
                 selected = _controller(ctrl)
                 if value not in range(5, 106, 5):
                     raise ValueError("Wave duration must be 5–105 minutes in steps of 5")
-                selected._state["wave_minutes"] = int(value)
+                selected._wave_settings.minutes = int(value)
+                selected._coordinator.save_app_state(selected)
                 selected._publish()
 
             specs.append(
