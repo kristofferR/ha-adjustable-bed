@@ -11,6 +11,7 @@ import pytest
 import voluptuous as vol
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
+from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
@@ -128,6 +129,78 @@ def target(hass: HomeAssistant, model: str):
 
     coordinator.async_execute_controller_command = AsyncMock(side_effect=execute)
     return coordinator, controller
+
+
+@pytest.mark.parametrize("model", ["ergo", "activebreeze_large"])
+@pytest.mark.parametrize("restricted", [False, True])
+async def test_safety_light_uses_app_button_without_an_inferred_assumed_light(
+    hass, model, restricted
+):
+    from custom_components.adjustable_bed.button import _button_entities_for
+    from custom_components.adjustable_bed.light import _light_entities_for
+
+    runtime, controller = target(hass, model)
+    runtime.device_info = {}
+    runtime.entity_side = None
+    runtime.has_massage = True
+    runtime.entity_unique_id.side_effect = lambda key: "processor_" + key
+    runtime.entity_translation_key.side_effect = lambda key: key
+    controller._restricted = restricted
+    controller._control = AsyncMock()
+    registry = er.async_get(hass)
+    assumed = registry.async_get_or_create(
+        "light", const.DOMAIN, "processor_under_bed_lights_assumed", config_entry=runtime.entry
+    )
+    generic = registry.async_get_or_create(
+        "button", const.DOMAIN, "processor_toggle_light", config_entry=runtime.entry
+    )
+    buttons = {entity.translation_key: entity for entity in _button_entities_for(hass, runtime)}
+    assert "sleeptracker_light_toggle" in buttons
+    assert "toggle_light" not in buttons
+    assert _light_entities_for(hass, runtime) == []
+    assert registry.async_get(assumed.entity_id) is None
+    assert registry.async_get(generic.entity_id) is None
+    await buttons["sleeptracker_light_toggle"].async_press()
+    controller._control.assert_awaited_once()
+
+
+async def test_profile_change_retires_sleeptracker_buttons_for_only_the_affected_side(hass):
+    from custom_components.adjustable_bed.button import _button_entities_for
+
+    runtime, old = target(hass, "activebreeze_large")
+    runtime.device_info = {}
+    runtime.entity_side = "left"
+    runtime.has_massage = True
+    runtime.entity_unique_id.side_effect = lambda key: f"processor_{key}_left"
+    runtime.entity_translation_key.side_effect = lambda key: key
+    old._restricted = True
+    registry = er.async_get(hass)
+    previous = {
+        spec.key: registry.async_get_or_create(
+            "button", const.DOMAIN, runtime.entity_unique_id(spec.key), config_entry=runtime.entry
+        )
+        for spec in old.controller_button_specs
+    }
+    other = registry.async_get_or_create(
+        "button", const.DOMAIN, "processor_sleeptracker_light_off_right", config_entry=runtime.entry
+    )
+    unrelated = registry.async_get_or_create(
+        "button", const.DOMAIN, "processor_other_action_left", config_entry=runtime.entry
+    )
+    current = SleeptrackerController(runtime, model="ergo", restricted=False)
+    current._processor_type = 5
+    runtime.controller = runtime.capability_controller = current
+    remaining = {spec.key for spec in current.controller_button_specs}
+    retired = previous.keys() - remaining
+    assert retired >= {
+        "sleeptracker_identify_local", "sleeptracker_light_off", "sleeptracker_save_zero_g",
+        "sleeptracker_massage_28hz", "sleeptracker_massage_40hz",
+    }
+    _button_entities_for(hass, runtime)
+    for key, entity in previous.items():
+        assert (registry.async_get(entity.entity_id) is not None) is (key in remaining)
+    assert registry.async_get(other.entity_id) is not None
+    assert registry.async_get(unrelated.entity_id) is not None
 
 
 async def invoke(hass, targets, service, data):

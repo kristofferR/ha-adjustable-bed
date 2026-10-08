@@ -104,7 +104,11 @@ and `favorite_2` where available. Save Zero G, Anti-Snore and TV buttons plus
 `sleeptracker_preset` expose the supported save builders. Flat cannot be saved.
 The existing generic memory actions also work within the selected capacity.
 
-All layouts have pattern massage and local safety-light toggle. Supported
+All layouts have pattern massage and local safety-light toggle. Lighting uses
+the app-specific toggle button and reported-state sensor; an assumed-state light
+and duplicate generic toggle button are not exposed. Controls removed by a layout,
+processor type or restricted-session change are retired from the entity registry
+for the affected physical bed. Supported
 layouts add head/foot massage steps. Premium layouts add **28 Hz**, **40 Hz**,
 wave frequency/duration selectors, wind-down 1/2 and local motor/massage
 animation. Wave choices are 28, 40, 52, 68 and 88 Hz, with 5–105 minutes in

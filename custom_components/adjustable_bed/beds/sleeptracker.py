@@ -714,6 +714,11 @@ class SleeptrackerController(BedController):
             p.light(self._unit, self._token, restricted=self._restricted), fast=True
         )
 
+    @property
+    def supports_light_toggle_control(self) -> bool:
+        """Use the app action and reported sensor instead of an assumed light."""
+        return False
+
     def validate_sleeptracker_request(self, request: p.Request) -> None:
         p.validate_request(request, self._model)
         if request.kind == "identify" and request.mode == 2 and not self._restricted:

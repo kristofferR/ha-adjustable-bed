@@ -117,6 +117,12 @@ Tests: [tests/test_sleeptracker_protocol.py](../../../tests/test_sleeptracker_pr
 
 Normal selected-unit safety-light toggle, restricted bare toggle/off, four reply-driven local identification commands and literal side-1 split identification with explicit off cleanup.
 
+The app action and reported sensor own lighting. `supports_light_toggle_control`
+is explicitly false so HA does not infer a duplicate generic toggle or an
+assumed-state light from the underlying command method. The platform behavior is
+verified by [tests/test_sleeptracker_exposure.py](../../../tests/test_sleeptracker_exposure.py)
+`test_safety_light_uses_app_button_without_an_inferred_assumed_light`.
+
 Code: [custom_components/adjustable_bed/sleeptracker_protocol.py](../../../custom_components/adjustable_bed/sleeptracker_protocol.py) `light`; [custom_components/adjustable_bed/beds/sleeptracker.py](../../../custom_components/adjustable_bed/beds/sleeptracker.py) `async_execute_sleeptracker_request`; [custom_components/adjustable_bed/beds/sleeptracker.py](../../../custom_components/adjustable_bed/beds/sleeptracker.py) `controller_button_specs`.
 
 Tests: [tests/test_sleeptracker_controller.py](../../../tests/test_sleeptracker_controller.py) `test_restricted_session_and_explicit_light_route`; [tests/test_sleeptracker_controller.py](../../../tests/test_sleeptracker_controller.py) `test_identify_cancellation_sends_literal_light_off`; [tests/test_sleeptracker_controller.py](../../../tests/test_sleeptracker_controller.py) `test_local_identification_uses_four_response_driven_bare_lights_and_cleanup`.
@@ -156,6 +162,12 @@ Tests: [tests/test_sleeptracker_controller.py](../../../tests/test_sleeptracker_
 ### exposure
 
 Finite typed public actions, all-target preflight, shared two-address side routing, entities, English labels and existing card buckets.
+
+The `sleeptracker_` namespace in [button.py](../../../custom_components/adjustable_bed/button.py)
+retires actions no longer returned after layout, processor type or restricted-session
+changes. [tests/test_sleeptracker_exposure.py](../../../tests/test_sleeptracker_exposure.py)
+`test_profile_change_retires_sleeptracker_buttons_for_only_the_affected_side`
+verifies removal while preserving active actions, the other side and unrelated controls.
 
 Code: [custom_components/adjustable_bed/sleeptracker_services.py](../../../custom_components/adjustable_bed/sleeptracker_services.py) `handle_sleeptracker`; [custom_components/adjustable_bed/sleeptracker_services.py](../../../custom_components/adjustable_bed/sleeptracker_services.py) `async_register_sleeptracker_services`; [custom_components/adjustable_bed/beds/base.py](../../../custom_components/adjustable_bed/beds/base.py) `supports_sleeptracker_controls`; [custom_components/adjustable_bed/frontend/src/discovery.ts](../../../custom_components/adjustable_bed/frontend/src/discovery.ts) `sleeptracker_`.
 
