@@ -17,11 +17,11 @@ from typing import TYPE_CHECKING, Any
 
 import voluptuous as vol
 from homeassistant.components import bluetooth
-from homeassistant.components.repairs import RepairsFlow, repairs_flow_manager
+from homeassistant.components.repairs import RepairsFlow, RepairsFlowResult, repairs_flow_manager
 from homeassistant.config_entries import SOURCE_USER, ConfigEntry
 from homeassistant.const import CONF_ADDRESS, EVENT_HOMEASSISTANT_STARTED
 from homeassistant.core import CoreState, Event, HomeAssistant, callback
-from homeassistant.data_entry_flow import FlowResult, FlowResultType
+from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers.issue_registry import (
     IssueSeverity,
     async_create_issue,
@@ -187,7 +187,7 @@ class CombineBedsRepairFlow(RepairsFlow):
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> RepairsFlowResult:
         """Ask which of the two answers applies before showing any form.
 
         A fixable Repairs issue gets no Ignore action from Home Assistant, so
@@ -212,7 +212,7 @@ class CombineBedsRepairFlow(RepairsFlow):
 
     async def async_step_separate_beds(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> RepairsFlowResult:
         """Record that these beds are separate and stop suggesting them."""
         current_addresses = normalize_addresses(
             entry.data[CONF_ADDRESS]
@@ -231,7 +231,7 @@ class CombineBedsRepairFlow(RepairsFlow):
 
     async def async_step_pair_beds(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> RepairsFlowResult:
         """Select sides and delegate validation/creation to the config flow."""
         if len(active_pairing_candidates(self.hass)) < 2:
             self._pairing_flow_id = None
@@ -508,7 +508,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> RepairsFlowResult:
         """Entry point — offer the branch that fits the evidence."""
         bed_type, variant = self._bed_type()
         if not self._combined_target_is_resolved():
@@ -538,7 +538,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
 
     async def async_step_proxy_pairing(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> RepairsFlowResult:
         """Retry pairing, with recovery guidance for the proxy that failed."""
         issue_id = f"pairing_required_{self._address.replace(':', '_').lower()}"
 
@@ -628,7 +628,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
 
     async def async_step_stale_bond_confirm(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> RepairsFlowResult:
         """Confirm replacing a host bond the bed no longer honours."""
         offer = self._offer
         record = offer.record if offer is not None else None
@@ -711,7 +711,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
 
     async def async_step_stale_bond_progress(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> RepairsFlowResult:
         """Run the recovery behind a live progress view."""
         return await self.async_run_operation_step(
             step_id="stale_bond_progress",
@@ -721,7 +721,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
 
     async def async_step_stale_bond_result(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> RepairsFlowResult:
         """Resolve the repair only when the new bond was actually proven."""
         result = self.operation.result
         succeeded = result is not None and result.succeeded
@@ -809,7 +809,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
 
     async def async_step_confirm(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> RepairsFlowResult:
         """Pair with the bed when the user confirms."""
         if user_input is not None:
             if await self._async_try_pair():
