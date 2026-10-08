@@ -75,6 +75,7 @@ from .profile_review import (
     async_clear_profile_review_issue,
     async_refresh_profile_review_issue,
     choice_label,
+    covers_profile_review,
     profile_review_mark,
     related_app_choices,
 )
@@ -309,7 +310,11 @@ def has_profile_assessment(hass: HomeAssistant, entry_id: str) -> bool:
         and watch.upgrade_review_key is not None
     ]
     return bool(relevant) and all(
-        watch.recommendation is not None or watch.dismissed.get(watch.upgrade_review_key or "")
+        (
+            watch.recommendation is not None
+            and not watch.dismissed.get(watch.recommendation.rule)
+        )
+        or watch.dismissed.get(watch.upgrade_review_key or "")
         for watch in relevant
     )
 
@@ -494,7 +499,9 @@ class ProfileRecommendationWatch:
         )
         selected = profile_selection(selected_data)
         rules = [recommendation.rule, *confirmed_rules]
-        if (key := _upgrade_review_key(selected_data)) is not None:
+        if (key := _upgrade_review_key(selected_data)) is not None and covers_profile_review(
+            self.hass, selected_data, recommendation.choices
+        ):
             rules.append(key)
         self.dismissed = await async_record_profile_decision(
             self.hass,
@@ -597,12 +604,19 @@ async def async_confirm_profile_review(
             or str(data[CONF_ADDRESS]).upper() != watch.coordinator.address.upper()
         ):
             continue
-        recommendation = recommend_profile(
-            data,
-            watch._last_info,
-            watch._protocol_state
-            if data.get(CONF_BED_TYPE) == watch.review_profile.get(CONF_BED_TYPE)
-            else {},
+        # Reassess the original selectors before confirming a rule for the new
+        # selection. Later passive evidence must not dismiss an unseen notice.
+        reviewed = recommend_profile(watch.review_profile, watch._last_info, watch._protocol_state)
+        recommendation = (
+            recommend_profile(
+                data,
+                watch._last_info,
+                watch._protocol_state
+                if data.get(CONF_BED_TYPE) == watch.review_profile.get(CONF_BED_TYPE)
+                else {},
+            )
+            if reviewed == watch.review_recommendation
+            else None
         )
         await watch.async_record_decision(
             watch.review_recommendation,

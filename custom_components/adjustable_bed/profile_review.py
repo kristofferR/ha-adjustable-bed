@@ -367,6 +367,18 @@ def _review(hass: HomeAssistant, entry_data: Mapping[str, Any]) -> _Review:
     return _Review((drift, *choices), drift=drift if not choices else None, complete=complete)
 
 
+def covers_profile_review(
+    hass: HomeAssistant, data: Mapping[str, Any], presented_choices: Iterable[str]
+) -> bool:
+    """Confirm an upgrade review only when its candidates were all presented."""
+    review = _review(hass, data)
+    return (
+        review.complete
+        and bool(review.choices)
+        and set(review.choices).issubset(presented_choices)
+    )
+
+
 def _route_signature(entry_data: Mapping[str, Any]) -> str:
     """Return the bed type and variant of every physical bed, in side order."""
     return "|".join(

@@ -1014,6 +1014,50 @@ async def test_pending_upgrade_review_returns_when_replacement_evidence_changes(
     assert ir.async_get(hass).async_get_issue(DOMAIN, old_id) is not None
 
 
+@pytest.mark.parametrize("source", ["keep", "ignore"])
+async def test_unrelated_mismatch_does_not_confirm_pending_app_review(hass, source):
+    from custom_components.adjustable_bed.const import LINAK_CONTROL_SERVICE_UUID
+    from custom_components.adjustable_bed.profile_review import (
+        CONF_PROFILE_REVIEW_PENDING,
+        profile_review_mark,
+    )
+
+    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_KEESON, CONF_MOTOR_COUNT: 2})
+    hass.config_entries.async_update_entry(
+        config_entry,
+        data={
+            **config_entry.data,
+            CONF_PROFILE_REVIEW_PENDING: profile_review_mark(config_entry.data),
+        },
+    )
+    coord = coordinator()
+    coord.controller.protocol_diagnostics = {}
+    observed = advertisement("Bed 1234", [LINAK_CONTROL_SERVICE_UUID])
+    with patch(HISTORY, return_value=observed), patch(REGISTER):
+        await async_watch_profile_recommendations(hass, config_entry, ((None, coord),))
+        target = _watches(hass)[f"{ISSUE_PREFIX}{config_entry.entry_id}_standalone"]
+        recommendation = target.recommendation
+        assert recommendation is not None and recommendation.choices == ("linak",)
+        await target.async_keep(recommendation, source=source)
+    decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
+    assert decisions[recommendation.rule] is True
+    assert not any(key.startswith("upgrade_review_") for key in decisions)
+    assert decisions["history"][0]["source"] == source
+    assert (
+        ir.async_get(hass).async_get_issue(DOMAIN, f"app_profile_review_{config_entry.entry_id}")
+        is not None
+    )
+
+    await config_entry._async_process_on_unload(hass)
+    hass.data[DOMAIN]["app_state_stores"].clear()
+    with patch(HISTORY, return_value=None), patch(REGISTER):
+        await async_watch_profile_recommendations(hass, config_entry, ((None, coord),))
+    assert (
+        ir.async_get(hass).async_get_issue(DOMAIN, f"app_profile_review_{config_entry.entry_id}")
+        is not None
+    )
+
+
 @pytest.mark.parametrize("observed", [None, "unknown"])
 async def test_pending_upgrade_review_survives_without_a_replacement(hass, observed):
     from custom_components.adjustable_bed.profile_review import (
@@ -1195,6 +1239,44 @@ async def test_saving_ambiguous_review_confirms_current_route(hass, enable_custo
     decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
     assert decisions["history"][0]["decision"] == "dismissed"
     assert decisions["history"][0]["source"] == "configure"
+
+
+async def test_options_save_does_not_confirm_new_advertisement_assessment(
+    hass, enable_custom_integrations
+):
+    from custom_components.adjustable_bed.const import LINAK_CONTROL_SERVICE_UUID
+
+    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25})
+    coord = coordinator()
+    coord.controller.protocol_diagnostics = {}
+    target = await watch(hass, config_entry, coord)
+    original = target.recommendation
+    assert original is not None and original.suggested is None
+    flow = await open_flow(hass, target)
+    with patch(HISTORY, return_value=info()):
+        result = await flow.async_step_init({"action": "review"})
+    changed = advertisement("Bed 1234", [LINAK_CONTROL_SERVICE_UUID])
+    with patch(HISTORY, return_value=changed):
+        target.seen(changed, MagicMock())
+        unseen = target.recommendation
+        assert unseen is not None and unseen.rule != original.rule
+        with patch.object(hass.config_entries, "async_schedule_reload"):
+            result = await hass.config_entries.options.async_configure(result["next_flow"][1], {})
+    assert result["type"] == "create_entry"
+    assert config_entry.data[CONF_BED_TYPE] == BED_TYPE_SLEEPYS_BOX25
+    decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
+    assert decisions[original.rule] is True
+    assert unseen.rule not in decisions
+    assert [record["rule"] for record in decisions["history"]] == [original.rule]
+    assert issue(hass, target) is not None
+
+    await config_entry._async_process_on_unload(hass)
+    hass.data[DOMAIN]["app_state_stores"].clear()
+    with patch(HISTORY, return_value=changed), patch(REGISTER):
+        await async_watch_profile_recommendations(hass, config_entry, ((None, coord),))
+    restarted = _watches(hass)[target.issue_id]
+    assert restarted.recommendation == unseen
+    assert issue(hass, restarted) is not None
 
 
 async def test_failed_history_write_does_not_abort_committed_settings(

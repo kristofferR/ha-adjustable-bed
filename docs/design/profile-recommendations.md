@@ -86,7 +86,9 @@ hands off to Configure. A unique suggestion re-renders its settings without savi
 an ambiguous assessment keeps the current selection. Only the user's subsequent
 submission applies settings. Closing settings keeps the current profile and notice.
 Saving a Repairs handoff confirms the selected route, including a choice to keep
-an ambiguous generic profile, so it does not immediately ask again.
+an ambiguous generic profile, so it does not immediately ask again. A rule for
+the selected route is confirmed only while the evidence still produces the
+assessment presented at handoff. New assessments remain visible after saving.
 
 Keep current profile, including Home Assistant's native Ignore action, stores a
 decision in the reserved `profile_recommendations` slot of the per-address app-state
@@ -99,7 +101,9 @@ suppresses a duplicate one-time upgrade notice only when the relevant physical b
 have a replacement assessment or a saved decision confirming that upgrade review.
 Offline or unassessed beds retain their pending upgrade review. Confirmation keys
 include the physical bed's route/variant and known app choices, so unrelated old
-decisions cannot suppress it. The migration mark is not mutated.
+decisions cannot suppress it. A decision confirms the upgrade review only when
+the assessment presented every candidate in that review. Keeping an unrelated
+mismatch restores the pending app review. The migration mark is not mutated.
 
 Generic decision keys include the assessment kind, configured route/variant and
 sorted candidates. A materially different selection or candidate set can ask
