@@ -41,7 +41,9 @@ These are advisory candidates, not proof of a particular app or control layout.
 Ordinary protocol variants can also need review. The existing dedicated Octo
 Star2 detector signal questions an explicit Standard selection. Keeson's existing
 KSBT name resolver, shared with the controller factory, questions a conflicting
-explicit generic KSBT variant. Both list Auto and the observed generic variant,
+explicit generic KSBT variant. Its dedicated JSON service also questions a
+conflicting explicit generic variant and takes precedence over KSBT names.
+These reviews list Auto and the observed generic variant,
 open settings unchanged, and require user confirmation. Auto is not questioned
 for these transport differences; it already resolves them on normal connection.
 
@@ -89,6 +91,8 @@ Saving a Repairs handoff confirms the selected route, including a choice to keep
 an ambiguous generic profile, so it does not immediately ask again. A rule for
 the selected route is confirmed only while the evidence still produces the
 assessment presented at handoff. New assessments remain visible after saving.
+Single-address paired settings run the same decision and completion hooks as
+standalone settings, including unchanged saves.
 
 Keep current profile, including Home Assistant's native Ignore action, stores a
 decision in the reserved `profile_recommendations` slot of the per-address app-state
@@ -104,6 +108,8 @@ include the physical bed's route/variant and known app choices, so unrelated old
 decisions cannot suppress it. A decision confirms the upgrade review only when
 the assessment presented every candidate in that review. Keeping an unrelated
 mismatch restores the pending app review. The migration mark is not mutated.
+Coverage uses the watcher's retained advertisement when global Bluetooth history
+expires, matching the evidence used to present the assessment.
 
 Generic decision keys include the assessment kind, configured route/variant and
 sorted candidates. A materially different selection or candidate set can ask

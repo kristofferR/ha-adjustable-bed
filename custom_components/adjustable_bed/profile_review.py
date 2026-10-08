@@ -313,7 +313,12 @@ class _Review:
     complete: bool = True
 
 
-def _review_target(hass: HomeAssistant, data: Mapping[str, Any]) -> _Review:
+def _review_target(
+    hass: HomeAssistant,
+    data: Mapping[str, Any],
+    *,
+    info: bluetooth.BluetoothServiceInfoBleak | None = None,
+) -> _Review:
     bed_type = data.get(CONF_BED_TYPE)
     choices = related_app_choices(bed_type, data.get(CONF_PROTOCOL_VARIANT))
     address = data.get(CONF_ADDRESS)
@@ -323,7 +328,8 @@ def _review_target(hass: HomeAssistant, data: Mapping[str, Any]) -> _Review:
         or not isinstance(address, str)
     ):
         return _Review(tuple(choices))
-    info = _last_service_info(hass, address)
+    if info is None:
+        info = _last_service_info(hass, address)
     if info is None:
         return _Review(tuple(choices), complete=False)
     result = detect_bed_type_detailed(info)
@@ -368,10 +374,14 @@ def _review(hass: HomeAssistant, entry_data: Mapping[str, Any]) -> _Review:
 
 
 def covers_profile_review(
-    hass: HomeAssistant, data: Mapping[str, Any], presented_choices: Iterable[str]
+    hass: HomeAssistant,
+    data: Mapping[str, Any],
+    presented_choices: Iterable[str],
+    *,
+    info: bluetooth.BluetoothServiceInfoBleak | None = None,
 ) -> bool:
-    """Confirm an upgrade review only when its candidates were all presented."""
-    review = _review(hass, data)
+    """Confirm this physical bed's review using the assessment's evidence."""
+    review = _review_target(hass, data, info=info)
     return (
         review.complete
         and bool(review.choices)

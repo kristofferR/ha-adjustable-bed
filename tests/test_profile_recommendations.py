@@ -858,6 +858,37 @@ def test_keeson_json_signature_takes_precedence_over_ksbt_name():
     )
 
 
+@pytest.mark.parametrize(
+    "variant",
+    ["base", "ksbt", "ksbt_cr", "ksbt04c", "sino", "sleep_harmony", "ergomotion", "okin", "serta", "purple"],
+)
+@pytest.mark.parametrize("name", ["", "KSBT03CR123456789"])
+def test_keeson_json_reviews_conflicting_explicit_transport(variant, name):
+    from custom_components.adjustable_bed.const import KEESON_JSON_SERVICE_UUID
+
+    result = recommend_profile(
+        {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: variant},
+        advertisement(name, [KEESON_JSON_SERVICE_UUID]),
+        {},
+    )
+    assert result is not None and result.suggested is None
+    assert result.current == f"keeson:{variant}"
+    assert result.choices == ("keeson:auto", "keeson:json")
+
+
+def test_keeson_json_does_not_replace_explicit_app_selection():
+    from custom_components.adjustable_bed.const import KEESON_JSON_SERVICE_UUID
+
+    assert (
+        recommend_profile(
+            {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: KEESON_VARIANT_ADJUSTABLE_LITE},
+            advertisement("", [KEESON_JSON_SERVICE_UUID]),
+            {},
+        )
+        is None
+    )
+
+
 def test_legacy_alias_does_not_offer_the_same_controller_as_an_improvement():
     from custom_components.adjustable_bed.const import OKIMAT_SERVICE_UUID
 
@@ -1160,6 +1191,51 @@ async def test_expired_history_still_allows_review_and_keep(hass):
     assert issue(hass, target) is None
 
 
+@pytest.mark.parametrize("action", ["keep", "configure"])
+async def test_expired_history_keeps_upgrade_review_confirmation(
+    hass, enable_custom_integrations, action
+):
+    from custom_components.adjustable_bed.profile_review import (
+        CONF_PROFILE_REVIEW_PENDING,
+        profile_review_mark,
+    )
+
+    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25})
+    hass.config_entries.async_update_entry(
+        config_entry,
+        data={
+            **config_entry.data,
+            CONF_PROFILE_REVIEW_PENDING: profile_review_mark(config_entry.data),
+        },
+    )
+    coord = coordinator()
+    coord.controller.protocol_diagnostics = {}
+    target = await watch(hass, config_entry, coord)
+    with patch(HISTORY, return_value=None):
+        flow = await open_flow(hass, target)
+        if action == "keep":
+            result = await flow.async_step_init({"action": "keep"})
+        else:
+            result = await flow.async_step_init({"action": "review"})
+            with patch.object(hass.config_entries, "async_schedule_reload"):
+                result = await hass.config_entries.options.async_configure(
+                    result["next_flow"][1], {}
+                )
+    assert result["type"] == "create_entry"
+    assert issue(hass, target) is None
+    decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
+    assert any(key.startswith("upgrade_review_") for key in decisions)
+
+    await config_entry._async_process_on_unload(hass)
+    hass.data[DOMAIN]["app_state_stores"].clear()
+    with patch(HISTORY, return_value=None), patch(REGISTER):
+        await async_watch_profile_recommendations(hass, config_entry, ((None, coord),))
+    assert (
+        ir.async_get(hass).async_get_issue(DOMAIN, f"app_profile_review_{config_entry.entry_id}")
+        is None
+    )
+
+
 async def test_same_mac_with_different_case_keeps_the_recommendation(hass):
     target = await watch(hass)
     hass.config_entries.async_update_entry(
@@ -1239,6 +1315,53 @@ async def test_saving_ambiguous_review_confirms_current_route(hass, enable_custo
     decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
     assert decisions["history"][0]["decision"] == "dismissed"
     assert decisions["history"][0]["source"] == "configure"
+
+
+@pytest.mark.parametrize("variant", ["auto", "cb24"])
+async def test_single_address_settings_records_review_decision(
+    hass, enable_custom_integrations, variant
+):
+    from custom_components.adjustable_bed.const import (
+        BED_TYPE_OKIN_CB24,
+        LINAK_CONTROL_SERVICE_UUID,
+        PAIR_MODE_SINGLE_ADDRESS,
+    )
+
+    config_entry = entry(
+        hass,
+        **{
+            CONF_BED_TYPE: BED_TYPE_OKIN_CB24,
+            CONF_MOTOR_COUNT: 2,
+            CONF_PAIR_ID: "single",
+            CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS,
+        },
+    )
+    coord = coordinator()
+    coord.controller.protocol_diagnostics = {}
+    observed = advertisement("Bed 1234", [LINAK_CONTROL_SERVICE_UUID])
+    with patch(HISTORY, return_value=observed), patch(REGISTER):
+        await async_watch_profile_recommendations(hass, config_entry, ((None, coord),))
+        target = _watches(hass)[f"{ISSUE_PREFIX}{config_entry.entry_id}_standalone"]
+        original = target.recommendation
+        assert original is not None
+        flow = await open_flow(hass, target)
+        result = await flow.async_step_paired({"action": "review"})
+        flow_id = result["next_flow"][1]
+        manager = hass.config_entries.options
+        await manager.async_configure(flow_id, {"next_step_id": "settings"})
+        with patch.object(hass.config_entries, "async_schedule_reload"):
+            result = await manager.async_configure(flow_id, {CONF_PROTOCOL_VARIANT: variant})
+        assert result["type"] == "create_entry"
+        assert config_entry.data[CONF_PAIR_MODE] == PAIR_MODE_SINGLE_ADDRESS
+        assert config_entry.data[CONF_PROTOCOL_VARIANT] == variant
+        assert target.review_flow_id is None
+        assert issue(hass, target) is None
+    decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
+    record = decisions["history"][0]
+    assert record["rule"] == original.rule and record["source"] == "configure"
+    assert record["decision"] == ("dismissed" if variant == "auto" else "accepted")
+    assert record["previous_profile"][CONF_PROTOCOL_VARIANT] == "auto"
+    assert record["selected_profile"][CONF_PROTOCOL_VARIANT] == variant
 
 
 async def test_options_save_does_not_confirm_new_advertisement_assessment(

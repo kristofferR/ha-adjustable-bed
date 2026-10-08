@@ -8138,6 +8138,11 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 field in user_input and vol.Optional(field) in schema_dict
                 for field in (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS)
             )
+            from .profile_recommendations import (
+                async_complete_profile_review,
+                async_confirm_profile_review,
+            )
+
             if is_paired(self.config_entry.data):
                 # For a paired bed, ONLY the keys the user actually changed go
                 # anywhere. "Changed" is measured against the value the form
@@ -8171,6 +8176,10 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     self.hass.config_entries.async_update_entry(
                         self.config_entry, data=new_data
                     )
+                    await async_confirm_profile_review(
+                        self.hass, self.config_entry, self.flow_id, new_data
+                    )
+                    async_complete_profile_review(self.hass, self.config_entry, self.flow_id)
                     return self.async_create_entry(title="", data={})
                 submitted_adapter = user_input.get(CONF_PREFERRED_ADAPTER)
                 for side in PAIR_SIDES:
@@ -8212,11 +8221,6 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 for key in (CONF_VIBRADORM_APP_PROFILE, CONF_VIBRADORM_CONTROL_TYPE, CONF_VIBRADORM_VMAT_REMOTE)
             ):
                 new_data.pop(CONF_VIBRADORM_APP_METADATA, None)
-            from .profile_recommendations import (
-                async_complete_profile_review,
-                async_confirm_profile_review,
-            )
-
             if (commit_error := await commit_global_settings()) is not None:
                 return commit_error
             if not separate_address_pair and (

@@ -210,6 +210,15 @@ def recommend_profile(
     assert detected.bed_type is not None
     if bed_type == detected.bed_type:
         if (
+            bed_type == BED_TYPE_KEESON
+            and "uuid:keeson_json" in detected.signals
+            and isinstance(variant, str)
+            and variant in (get_variants_for_bed_type(bed_type) or {})
+            and variant not in (VARIANT_AUTO, KEESON_VARIANT_JSON)
+            and current == bed_type
+        ):
+            return _variant_review(bed_type, variant, KEESON_VARIANT_JSON)
+        if (
             bed_type == BED_TYPE_OCTO
             and variant == OCTO_VARIANT_STANDARD
             and "uuid:octo_star2" in detected.signals
@@ -500,7 +509,7 @@ class ProfileRecommendationWatch:
         selected = profile_selection(selected_data)
         rules = [recommendation.rule, *confirmed_rules]
         if (key := _upgrade_review_key(selected_data)) is not None and covers_profile_review(
-            self.hass, selected_data, recommendation.choices
+            self.hass, selected_data, recommendation.choices, info=self._last_info
         ):
             rules.append(key)
         self.dismissed = await async_record_profile_decision(
