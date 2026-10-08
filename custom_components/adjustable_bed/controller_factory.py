@@ -78,6 +78,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPSTAR,
+    BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
@@ -125,6 +126,11 @@ from .const import (
     CONF_PRODUCT_TYPE,
     CONF_REMACRO_MODEL,
     CONF_REVERSE_MOTORS,
+    CONF_SLEEPTRACKER_FOUNDATION,
+    CONF_SLEEPTRACKER_PROCESSOR_TYPE,
+    CONF_SLEEPTRACKER_RESTRICTED,
+    CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
+    CONF_SLEEPTRACKER_UNIT,
     CONF_STARCODE_COMMAND_SELECTOR,
     CONF_STARCODE_M5X5_PROFILE,
     CONF_STARCODE_TRANSPORT_SELECTOR,
@@ -739,6 +745,24 @@ async def create_controller(
             command_selector=data.get(CONF_STARCODE_COMMAND_SELECTOR, "none"),
             ui_selector=data.get(CONF_STARCODE_UI_SELECTOR),
             transport_selector=data.get(CONF_STARCODE_TRANSPORT_SELECTOR),
+        )
+
+    if bed_type == BED_TYPE_SLEEPTRACKER:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.sleeptracker", __package__
+        )
+        from .beds.sleeptracker import SleeptrackerController
+
+        data = coordinator.entry.data
+        return SleeptrackerController(
+            coordinator,
+            model=data.get(CONF_PRODUCT_TYPE, "unknown"),
+            unit_number=data.get(CONF_SLEEPTRACKER_UNIT, 0),
+            snapshot_side=data.get(CONF_SLEEPTRACKER_SNAPSHOT_SIDE, 0),
+            restricted=data.get(CONF_SLEEPTRACKER_RESTRICTED, False),
+            processor_type=data.get(CONF_SLEEPTRACKER_PROCESSOR_TYPE, 0),
+            manufacturer_data=manufacturer_data,
+            foundation=data.get(CONF_SLEEPTRACKER_FOUNDATION, "Unspecified"),
         )
 
     if bed_type == BED_TYPE_MOTION_BED:

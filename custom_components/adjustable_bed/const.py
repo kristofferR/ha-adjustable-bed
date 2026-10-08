@@ -507,6 +507,21 @@ STARCODE_GROUP_BED_TYPES: Final = frozenset({BED_TYPE_STARCODE_M5X5, BED_TYPE_ST
 BED_TYPE_VIBRADORM_APP: Final = "vibradorm_app"
 BED_TYPE_VMATBASIC: Final = "vmatbasic"
 BED_TYPE_STARCODE_ABM5_4: Final = "starcode_abm5_4"
+BED_TYPE_SLEEPTRACKER: Final = "sleeptracker"
+CONF_SLEEPTRACKER_FOUNDATION: Final = "sleeptracker_foundation"
+CONF_SLEEPTRACKER_UNIT: Final = "sleeptracker_unit_number"
+CONF_SLEEPTRACKER_SNAPSHOT_SIDE: Final = "sleeptracker_snapshot_side"
+CONF_SLEEPTRACKER_RESTRICTED: Final = "sleeptracker_restricted"
+CONF_SLEEPTRACKER_PROCESSOR_TYPE: Final = "sleeptracker_processor_type"
+SLEEPTRACKER_CONFIG_KEYS: Final = frozenset({
+    CONF_PRODUCT_TYPE,
+    CONF_SLEEPTRACKER_FOUNDATION,
+    CONF_SLEEPTRACKER_UNIT,
+    CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
+    CONF_SLEEPTRACKER_RESTRICTED,
+    CONF_SLEEPTRACKER_PROCESSOR_TYPE,
+})
+SLEEPTRACKER_SERVICE_UUID: Final = "f6380280-6d90-442c-8feb-3aec76948f06"
 BED_TYPE_MOTION_BED: Final = "motion_bed"
 BED_TYPE_RONDURE: Final = "rondure"  # 1500 Tilt Base / Rondure Hump (8/9-byte FurniBus protocol)
 BED_TYPE_REMACRO: Final = (
@@ -628,6 +643,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     BED_TYPE_MOTION_BED,
+    BED_TYPE_SLEEPTRACKER,
     # Rondure / 1500 Tilt Base
     BED_TYPE_RONDURE,
     # Remacro (CheersSleep / Jeromes / Slumberland / The Brick)
@@ -711,6 +727,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         # can gain controls from live manufacturer classification.
         BED_TYPE_STARCODE_ABM5_4,
         BED_TYPE_MOTION_BED,
+        BED_TYPE_SLEEPTRACKER,
         BED_TYPE_LIMOSS_REMOTE,
     }
 )
@@ -2757,6 +2774,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_VMATBASIC,
         BED_TYPE_STARCODE_ABM5_4,
         BED_TYPE_MOTION_BED,
+        BED_TYPE_SLEEPTRACKER,
         BED_TYPE_OKIN_CST,
         BED_TYPE_OKIN_RF_ECO_BT,
     }

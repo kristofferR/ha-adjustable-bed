@@ -1905,3 +1905,120 @@ richmat_mh_light_color:
       selector:
         select:
           options: [both, left, right]
+
+sleeptracker_preset:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+    preset:
+      required: true
+      selector:
+        select:
+          options: [all_flat, zero_g, anti_snore, user_favorite, tv_pc, favorite_2]
+    save:
+      default: false
+      selector:
+        boolean:
+
+sleeptracker_climate:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+    fan_side:
+      default: both
+      selector:
+        select:
+          options: [left, right, both]
+    mode:
+      required: true
+      selector:
+        select:
+          options: [heat, cool]
+    level:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 3
+          step: 1
+    constant:
+      default: true
+      selector:
+        boolean:
+
+sleeptracker_wave:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+    frequency:
+      required: true
+      selector:
+        select:
+          options: ["28", "40", "52", "68", "88"]
+    minutes:
+      default: 30
+      selector:
+        number:
+          min: 5
+          max: 105
+          step: 5
+
+sleeptracker_massage:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+    action:
+      required: true
+      selector:
+        select:
+          options: [head, foot, pattern, 28Hz, 40Hz, "off"]
+
+sleeptracker_relaxation:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+    action:
+      required: true
+      selector:
+        select:
+          options: [wind_down_1, wind_down_2, local_animation]

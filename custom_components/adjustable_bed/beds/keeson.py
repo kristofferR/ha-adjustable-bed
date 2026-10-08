@@ -121,8 +121,6 @@ _PURPLE_MEMORY_PROGRAM_DELAY_SECONDS = 0.2
 # KSBT01C remote otherwise. Both remotes poll the 00 B0 status query every 500 ms
 # while connected and read notifications longer than 12 bytes.
 _ADJUSTABLE_LITE_KSBT03C_TOKEN = "KSBT03C"
-# MC232SC hardware reported in #681 retains these presets on the Lite profile.
-_ADJUSTABLE_LITE_LEGACY_PRESET_PREFIX = "KSSF05C"
 _ADJUSTABLE_LITE_STATUS_POLL_SECONDS = 0.5
 _ADJUSTABLE_LITE_STATUS_MIN_LENGTH = 13
 STATE_ADJUSTABLE_LITE_LIGHT = "adjustable_lite_light"
@@ -369,9 +367,6 @@ class KeesonController(BedController):
             self._is_adjustable_lite
             and _ADJUSTABLE_LITE_KSBT03C_TOKEN in (resolved_device_name or "")
         )
-        self._is_adjustable_lite_legacy_presets = self._is_adjustable_lite and (
-            resolved_device_name or ""
-        ).startswith(_ADJUSTABLE_LITE_LEGACY_PRESET_PREFIX)
         self._is_restonic = variant in _RESTONIC_VARIANTS
         self._is_restonic_b = variant == KEESON_VARIANT_RESTONIC_B
         self._restonic_controls = (
@@ -630,7 +625,6 @@ class KeesonController(BedController):
         """Return True when the 0x2000 preset should be exposed."""
         return (
             self._is_ksbt
-            or self._is_adjustable_lite_legacy_presets
             or self._is_json_variant
             or self._variant == "ergomotion"
             or (self._variant == KEESON_VARIANT_PURPLE and not self._is_purple_plus)
@@ -639,12 +633,7 @@ class KeesonController(BedController):
     @property
     def supports_preset_tv(self) -> bool:
         """Return True when the 0x4000 preset should be exposed."""
-        return (
-            self._is_ksbt
-            or self._is_adjustable_lite_legacy_presets
-            or self._is_json_variant
-            or self._variant == "ergomotion"
-        )
+        return self._is_ksbt or self._is_json_variant or self._variant == "ergomotion"
 
     @property
     def supports_preset_anti_snore(self) -> bool:
@@ -654,7 +643,6 @@ class KeesonController(BedController):
             or self._is_json_variant
             or self._betterliving_presets
             or self._is_adjustable_lite_ksbt03c
-            or self._is_adjustable_lite_legacy_presets
             or self._variant in {"ergomotion", KEESON_VARIANT_PURPLE}
         )
 
@@ -913,13 +901,6 @@ class KeesonController(BedController):
         return self._is_adjustable_lite or self._is_restonic
 
     @property
-    def _adjustable_lite_massage_controls_enabled(self) -> bool:
-        """Respect affirmative hardware configuration even outside the app's name gate."""
-        return self._is_adjustable_lite_ksbt03c or (
-            self._is_adjustable_lite and self._coordinator.has_massage
-        )
-
-    @property
     def supports_massage_toggle_control(self) -> bool:
         return not self._app_without_generic_massage and super().supports_massage_toggle_control
 
@@ -947,19 +928,19 @@ class KeesonController(BedController):
     @property
     def supports_head_massage_intensity_step_control(self) -> bool:
         if self._app_without_generic_massage:
-            return self._adjustable_lite_massage_controls_enabled
+            return self._is_adjustable_lite_ksbt03c
         return super().supports_head_massage_intensity_step_control
 
     @property
     def supports_foot_massage_intensity_step_control(self) -> bool:
         if self._app_without_generic_massage:
-            return self._adjustable_lite_massage_controls_enabled
+            return self._is_adjustable_lite_ksbt03c
         return super().supports_foot_massage_intensity_step_control
 
     @property
     def supports_massage_mode_step_control(self) -> bool:
         if self._app_without_generic_massage:
-            return self._adjustable_lite_massage_controls_enabled
+            return self._is_adjustable_lite_ksbt03c
         return super().supports_massage_mode_step_control
 
     # Massage timer - Keeson only has step command, no direct timer set
@@ -1981,18 +1962,23 @@ class KeesonController(BedController):
 
     async def preset_lounge(self) -> None:
         """Go to lounge position (KSBT 'Read' button / Memory 1, Lounge on Purple)."""
-        if not self.supports_preset_lounge:
+        if (
+            not self._is_ksbt
+            and not self._is_json_variant
+            and self._variant != "ergomotion"
+            and (self._variant != KEESON_VARIANT_PURPLE or self._is_purple_plus)
+        ):
             _LOGGER.warning("Lounge preset is not available on %s beds", self._variant)
             return
         await self._write_single_shot(self._build_command(KeesonCommands.PRESET_LOUNGE))
 
     async def preset_tv(self) -> None:
-        """Go to TV position on profiles with the corresponding preset."""
-        if (
-            self._is_restonic
-            or self._variant in {"base", KEESON_VARIANT_PURPLE}
-            or (self._is_adjustable_lite and not self._is_adjustable_lite_legacy_presets)
-        ):
+        """Go to TV position (KSBT/Ergomotion only)."""
+        if self._is_restonic or self._variant in [
+            "base",
+            KEESON_VARIANT_PURPLE,
+            KEESON_VARIANT_ADJUSTABLE_LITE,
+        ]:
             _LOGGER.warning("TV preset is not available on %s beds", self._variant)
             return
         await self._write_single_shot(self._build_command(KeesonCommands.PRESET_TV))
