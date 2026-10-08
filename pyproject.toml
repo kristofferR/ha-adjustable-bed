@@ -47,6 +47,7 @@ pythonVersion = "3.14"
 typeCheckingMode = "standard"
 venvPath = "."
 venv = ".venv"
+stubPath = "typings"  # Mirror HA's runtime Voluptuous/Probatio alias
 include = ["custom_components", "tests"]
 reportIncompatibleVariableOverride = "none"  # HA entities use @property over cached_property
 reportUnusedImport = "none"  # Covered by ruff F401; pyright also flags TYPE_CHECKING-only imports

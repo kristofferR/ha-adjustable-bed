@@ -14,11 +14,10 @@ from __future__ import annotations
 from typing import Any
 
 import voluptuous as vol
-from homeassistant.components.repairs import RepairsFlow
+from homeassistant.components.repairs import RepairsFlow, RepairsFlowResult
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import selector
 from homeassistant.helpers.issue_registry import (
     IssueSeverity,
@@ -158,7 +157,7 @@ class FurniMoveLayoutRepairFlow(RepairsFlow):
             return None
         return entry
 
-    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
         entry = self._entry()
         if entry is None:
             return self.async_abort(reason="entry_missing")
@@ -188,7 +187,7 @@ class FurniMoveLayoutRepairFlow(RepairsFlow):
 
     async def _route_step(
         self, entry: ConfigEntry, data: dict[str, Any], user_input: dict[str, Any] | None
-    ) -> FlowResult:
+    ) -> RepairsFlowResult:
         """Offer the FurniMove profile to an Okin DOT entry, or keep it as is."""
         handset = str(data.get(CONF_PROTOCOL_VARIANT))
         if user_input is not None and user_input.get("route") == "furnimove":
@@ -201,7 +200,7 @@ class FurniMoveLayoutRepairFlow(RepairsFlow):
             data_schema=_choice_schema("route", ["furnimove", "keep"], _ROUTE),
         )
 
-    async def _keep_current(self, entry: ConfigEntry, confirmed: dict[str, Any]) -> FlowResult:
+    async def _keep_current(self, entry: ConfigEntry, confirmed: dict[str, Any]) -> RepairsFlowResult:
         """Dismiss the repair for a working setup without rewriting its settings.
 
         A full OKIMAT bed saved as RF ECO BT is promoted at runtime (#406); the
@@ -216,7 +215,7 @@ class FurniMoveLayoutRepairFlow(RepairsFlow):
         async_refresh_furnimove_layout_issues(self.hass, entry)
         return self.async_create_entry(title="", data={})
 
-    async def async_step_handset(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_handset(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
         entry = self._entry()
         if entry is None:
             return self.async_abort(reason="entry_missing")
@@ -238,7 +237,7 @@ class FurniMoveLayoutRepairFlow(RepairsFlow):
             )}),
         )
 
-    async def _save(self, patch: dict[str, Any]) -> FlowResult:
+    async def _save(self, patch: dict[str, Any]) -> RepairsFlowResult:
         entry = self._entry()
         if entry is None:
             return self.async_abort(reason="entry_missing")

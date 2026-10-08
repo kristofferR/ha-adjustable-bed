@@ -123,6 +123,8 @@ jobs:
           uv pip install 'homeassistant==2026.9.0' 'pytest-homeassistant-custom-component==0.13.363'
           uv run --no-sync python scripts/ha_bluetooth_test_requirements.py > /tmp/ha-bluetooth-requirements.txt
           uv pip install -r /tmp/ha-bluetooth-requirements.txt
+      - name: Pyright against minimum HA
+        run: uvx pyright@1.1.411 custom_components tests
       - name: Validate minimum registry, flow, Bluetooth, and service APIs
         run: >-
           uv run --no-sync pytest -q

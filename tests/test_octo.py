@@ -8,7 +8,11 @@ from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from homeassistant.components.light import ATTR_RGBW_COLOR
+
+# HA 2026.9 defines this here; 2026.10 re-exports it from const.
+from homeassistant.components.light import (
+    ATTR_RGBW_COLOR,  # pyright: ignore[reportPrivateImportUsage]
+)
 from homeassistant.components.light.const import ColorMode
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant

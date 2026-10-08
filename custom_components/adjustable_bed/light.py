@@ -8,9 +8,11 @@ from functools import partial
 from typing import TYPE_CHECKING, Any
 
 from bleak.exc import BleakError
+
+# These constants are defined here in HA 2026.9 and re-exported in 2026.10.
 from homeassistant.components.light import (
-    ATTR_RGB_COLOR,
-    ATTR_RGBW_COLOR,
+    ATTR_RGB_COLOR,  # pyright: ignore[reportPrivateImportUsage]
+    ATTR_RGBW_COLOR,  # pyright: ignore[reportPrivateImportUsage]
     LightEntity,
     LightEntityDescription,
 )
