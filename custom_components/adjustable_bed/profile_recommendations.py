@@ -40,10 +40,12 @@ from .const import (
     CONF_RICHMAT_REMOTE,
     DOMAIN,
     KEESON_VARIANT_ADJUSTABLE_LITE,
+    KEESON_VARIANT_BASE,
     KEESON_VARIANT_JSON,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_KSBT_CR,
+    KEESON_VARIANT_SINO,
     LEGACY_BED_TYPE_MAPPING,
     NORDIC_UART_SERVICE_UUID,
     OCTO_VARIANT_STANDARD,
@@ -230,10 +232,14 @@ def recommend_profile(
     if (
         detected.bed_type == BED_TYPE_KEESON
         and observed_variant in (None, "", VARIANT_AUTO)
-        and "uuid:keeson_json" in detected.signals
     ):
-        # Auto resolves this dedicated transport to JSON in the controller factory.
-        observed_variant = KEESON_VARIANT_JSON
+        # Narrow app candidates using the existing detector and factory name resolver.
+        if "uuid:keeson_json" in detected.signals:
+            observed_variant = KEESON_VARIANT_JSON
+        elif "name:keeson_sino" in detected.signals:
+            observed_variant = KEESON_VARIANT_SINO
+        else:
+            observed_variant = keeson_variant_from_device_name(info.name) or KEESON_VARIANT_BASE
     apps = related_app_choices(detected.bed_type, observed_variant)
     if current in apps or (current != bed_type and bed_type in matches):
         # An explicitly selected app already resolves this generic identity.

@@ -31,9 +31,12 @@ signal. A shared service with ambiguous alternatives stays quiet even at 0.9.
 A clear suggestion needs at least 0.9, no ambiguity, no characteristic-check requirement,
 and no known related app choices. App candidates come from existing supported
 profile metadata, never assumed controller-family equivalence.
-For Keeson Auto, the existing dedicated JSON detector signal resolves the app
-lookup to the JSON variant, matching the controller factory. It cannot offer
-app profiles for the unrelated transport behind the generic Auto label.
+For Keeson Auto, app lookup uses the existing dedicated JSON detector signal,
+corroborated Sino detector signal, or generic KSBT name resolver shared with the
+controller factory, with Base as its fallback. KSBT04C and KSBT03CR stay quiet;
+generic KSBT offers only its existing Adjustable Lite candidate. Base and Sino
+use their narrower app lists instead of the broad historical Auto upgrade list.
+These are advisory candidates, not proof of a particular app or control layout.
 
 Ordinary protocol variants can also need review. The existing dedicated Octo
 Star2 detector signal questions an explicit Standard selection. Keeson's existing

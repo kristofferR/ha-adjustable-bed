@@ -793,6 +793,71 @@ def test_keeson_json_mismatch_offers_only_its_detected_route():
     assert result.choices == (BED_TYPE_KEESON,)
 
 
+@pytest.mark.parametrize("variant", [None, "auto"])
+@pytest.mark.parametrize("name", ["KSBT04C123456789", "smart_dfu", "KSBT03CR123456789"])
+def test_keeson_auto_named_transports_do_not_offer_unrelated_apps(variant, name):
+    assert (
+        recommend_profile(
+            {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: variant},
+            advertisement(name, [NORDIC_UART_SERVICE_UUID]),
+            {},
+        )
+        is None
+    )
+
+
+def test_keeson_auto_generic_ksbt_offers_only_adjustable_lite():
+    result = recommend_profile(
+        {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "auto"},
+        advertisement("KSBT03C123456789", [NORDIC_UART_SERVICE_UUID]),
+        {},
+    )
+    assert result is not None and result.suggested is None
+    assert result.choices == ("keeson:adjustable_lite",)
+
+
+def test_keeson_auto_base_does_not_offer_uart_apps():
+    result = recommend_profile(
+        {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "auto"},
+        advertisement("ORE-ac2170000d", []),
+        {},
+    )
+    assert result is not None and result.suggested is None
+    assert "keeson:adjustable_lite" not in result.choices
+    assert "keeson:restonic_a" in result.choices
+
+
+@pytest.mark.parametrize("both_services", [False, True])
+def test_keeson_auto_corroborated_sino_uses_its_existing_app_candidates(both_services):
+    from custom_components.adjustable_bed.const import KEESON_FALLBACK_GATT_PAIRS
+
+    services = [pair[0] for pair in KEESON_FALLBACK_GATT_PAIRS]
+    result = recommend_profile(
+        {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "auto"},
+        advertisement("OKIN-BLE00000", services if both_services else services[:1]),
+        {},
+    )
+    assert result is not None and result.suggested is None
+    assert "keeson:dynasty_bases" in result.choices
+    assert "keeson:adjustable_lite" not in result.choices
+    assert "keeson:restonic_a" not in result.choices
+    assert "keeson:restonic_b" not in result.choices
+    assert "simmons" not in result.choices
+
+
+def test_keeson_json_signature_takes_precedence_over_ksbt_name():
+    from custom_components.adjustable_bed.const import KEESON_JSON_SERVICE_UUID
+
+    assert (
+        recommend_profile(
+            {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "auto"},
+            advertisement("KSBT03C123456789", [KEESON_JSON_SERVICE_UUID]),
+            {},
+        )
+        is None
+    )
+
+
 def test_legacy_alias_does_not_offer_the_same_controller_as_an_improvement():
     from custom_components.adjustable_bed.const import OKIMAT_SERVICE_UUID
 
