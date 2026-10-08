@@ -183,7 +183,7 @@ async def test_memory_names_come_from_config_without_app_state_writes(
     store = coordinator._app_state_store._store
     with (
         patch.object(store, "async_save", AsyncMock(side_effect=OSError("names are config"))) as save,
-        patch.object(store, "async_delay_save") as delay,
+        patch.object(coordinator._app_state_store, "_schedule_save") as delay,
     ):
         for _ in range(2):
             controller = await create_controller(coordinator, const.BED_TYPE_FSM_RELAX, None, None)
@@ -217,7 +217,7 @@ async def test_actual_reconnect_and_repeated_serial_skip_unchanged_storage(
     store = coordinator._app_state_store._store
     with (
         patch.object(store, "async_save", AsyncMock(side_effect=OSError("redundant write"))) as save,
-        patch.object(store, "async_delay_save") as delay,
+        patch.object(coordinator._app_state_store, "_schedule_save") as delay,
         patch.object(coordinator, "_async_persist_config") as persist,
     ):
         try:

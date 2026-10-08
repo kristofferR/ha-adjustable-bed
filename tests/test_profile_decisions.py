@@ -2,10 +2,15 @@
 
 import asyncio
 import json
+from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
+from homeassistant.const import EVENT_HOMEASSISTANT_FINAL_WRITE
+from homeassistant.core import CoreState
 from homeassistant.helpers.storage import Store
+from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
 from custom_components.adjustable_bed.app_state_store import (
     AppStateStore,
@@ -94,6 +99,86 @@ async def test_unload_cannot_overwrite_a_decision_with_an_older_app_state_snapsh
     decisions = await restored.async_slot(PROFILE_DECISIONS_SLOT)
     assert decisions["first"] is True
     assert decisions["history"] == [record("first")]
+
+
+async def test_delayed_app_write_cannot_replace_a_waiting_decision(hass):
+    store = app_state_store(hass, ADDRESS)
+    await store.async_slot("linak:auto")
+    write_started = asyncio.Event()
+    finish_write = asyncio.Event()
+    decision_started = asyncio.Event()
+    write_data = Store._async_write_data
+
+    async def held_write(storage, data):
+        if not write_started.is_set():
+            write_started.set()
+            await finish_write.wait()
+        await write_data(storage, data)
+
+    async def decide():
+        decision_started.set()
+        await async_record_profile_decision(hass, ADDRESS, record("first"), ("first",))
+
+    with patch.object(Store, "_async_write_data", new=held_write):
+        store.update("linak:auto", {"memory_name": "Earlier preference"})
+        async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=2))
+        await write_started.wait()
+        decision = asyncio.create_task(decide())
+        await decision_started.wait()
+        try:
+            store.update("linak:auto", {"memory_name": "Latest preference"})
+            async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=2))
+        finally:
+            finish_write.set()
+            await decision
+            await hass.async_block_till_done()
+
+    restored = AppStateStore(hass, ADDRESS)
+    assert await restored.async_slot("linak:auto") == {"memory_name": "Latest preference"}
+    decisions = await restored.async_slot(PROFILE_DECISIONS_SLOT)
+    assert decisions["first"] is True
+    assert decisions["history"] == [record("first")]
+
+
+async def test_app_update_during_decision_write_remains_pending_for_unload(hass):
+    store = app_state_store(hass, ADDRESS)
+    await store.async_write("linak:auto", {"memory_name": "Earlier preference"})
+    write_started = asyncio.Event()
+    finish_write = asyncio.Event()
+    save = Store.async_save
+
+    async def held_save(storage, data):
+        if PROFILE_DECISIONS_SLOT in data:
+            write_started.set()
+            await finish_write.wait()
+        await save(storage, data)
+
+    with patch.object(Store, "async_save", new=held_save):
+        decision = asyncio.create_task(
+            async_record_profile_decision(hass, ADDRESS, record("first"), ("first",))
+        )
+        await write_started.wait()
+        try:
+            store.update("linak:auto", {"memory_name": "Latest preference"})
+        finally:
+            finish_write.set()
+            await decision
+        await store.async_save()
+
+    restored = AppStateStore(hass, ADDRESS)
+    assert await restored.async_slot("linak:auto") == {"memory_name": "Latest preference"}
+    assert (await restored.async_slot(PROFILE_DECISIONS_SLOT))["history"] == [record("first")]
+
+
+async def test_pending_app_state_flushes_at_home_assistant_final_write(hass):
+    store = app_state_store(hass, ADDRESS)
+    await store.async_slot("linak:auto")
+    store.update("linak:auto", {"memory_name": "Latest preference"})
+    hass.set_state(CoreState.final_write)
+    hass.bus.async_fire(EVENT_HOMEASSISTANT_FINAL_WRITE)
+    await hass.async_block_till_done()
+    restored = AppStateStore(hass, ADDRESS)
+    assert await restored.async_slot("linak:auto") == {"memory_name": "Latest preference"}
 
 
 @pytest.mark.parametrize("delayed_snapshot", [False, True])

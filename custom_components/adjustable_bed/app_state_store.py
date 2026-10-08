@@ -27,9 +27,12 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable, Iterable, Mapping
+from datetime import datetime
 from typing import Any, Final
 
-from homeassistant.core import HomeAssistant
+from homeassistant.const import EVENT_HOMEASSISTANT_FINAL_WRITE
+from homeassistant.core import Event, HomeAssistant
+from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.storage import Store
 
 from .app_session import drop_app_sessions
@@ -58,6 +61,8 @@ class AppStateStore:
         self._data: dict[str, dict[str, Any]] | None = None
         self._pending = False
         self._lock = asyncio.Lock()
+        self._cancel_save: Callable[[], None] | None = None
+        self._cancel_final_write: Callable[[], None] | None = None
 
     async def _async_load(self) -> dict[str, dict[str, Any]]:
         if self._data is None:
@@ -99,10 +104,15 @@ class AppStateStore:
             state = dict(update(dict(data.get(slot, {}))))
             if data.get(slot) == state:
                 return dict(state)
+            pending = self._pending
+            self._pending = False
+            self._cancel_scheduled_save()
             try:
                 await self._store.async_save({**data, slot: state})
             except OSError:
                 if not defer_on_error:
+                    if pending:
+                        self._schedule_save()
                     raise
                 # The associated settings have already committed. Retain their
                 # history in memory and retry rather than pretending they failed.
@@ -113,8 +123,7 @@ class AppStateStore:
                 )
                 return dict(state)
             data[slot] = state
-            # The write included every pending change and cancelled the delayed one.
-            self._pending = False
+            # Updates during the write remain pending for the next locked save.
             return dict(state)
 
     async def async_save(self) -> None:
@@ -123,6 +132,7 @@ class AppStateStore:
         async with self._lock:
             if self._data is not None and self._pending:
                 self._pending = False
+                self._cancel_scheduled_save()
                 try:
                     await self._store.async_save(self._snapshot())
                 except OSError:
@@ -143,10 +153,31 @@ class AppStateStore:
                 await self._store.async_remove()
             self._data = None
             self._pending = False
+            self._cancel_scheduled_save()
 
     def _schedule_save(self) -> None:
         self._pending = True
-        self._store.async_delay_save(self._snapshot, 1)
+        if self._cancel_save is not None:
+            self._cancel_save()
+        self._cancel_save = async_call_later(self._store.hass, 1, self._async_delayed_save)
+        if self._cancel_final_write is None:
+            self._cancel_final_write = self._store.hass.bus.async_listen_once(
+                EVENT_HOMEASSISTANT_FINAL_WRITE, self._async_final_write
+            )
+
+    async def _async_delayed_save(self, _event: datetime) -> None:
+        """Take the delayed snapshot only after obtaining the decision-update lock."""
+        await self.async_save()
+
+    async def _async_final_write(self, _event: Event) -> None:
+        self._cancel_final_write = None
+        await self.async_save()
+
+    def _cancel_scheduled_save(self) -> None:
+        for cancel in (self._cancel_save, self._cancel_final_write):
+            if cancel is not None:
+                cancel()
+        self._cancel_save = self._cancel_final_write = None
 
     def _snapshot(self) -> dict[str, dict[str, Any]]:
         """Copy loaded slots; taking a delayed snapshot cannot confirm persistence."""

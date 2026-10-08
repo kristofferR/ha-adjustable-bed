@@ -91,6 +91,8 @@ change; verified rules can give a specific controls comparison. Standalone Revie
 hands off to Configure. A unique suggestion re-renders its settings without saving;
 an ambiguous assessment keeps the current selection. Only the user's subsequent
 submission applies settings. Closing settings keeps the current profile and notice.
+If options initialization aborts, Review leaves existing Configure flows and the
+notice unchanged; it never submits settings to a finished flow.
 Saving a Repairs handoff confirms the selected route, including a choice to keep
 an ambiguous generic profile, so it does not immediately ask again. A rule for
 the selected route is confirmed only while the evidence still produces the
@@ -139,8 +141,9 @@ fails, the completed choice stays in memory for support exports and a delayed
 storage write is scheduled; it does not abort already committed settings or their
 entry unload. A failed unload flush retains the pending data and schedules another
 retry. Taking a background snapshot does not clear its pending state.
-Entry-unload saves share the decision-update lock, so a reload cannot queue an
-older app-state snapshot that loses a decision while its write is in progress.
+Delayed and entry-unload saves take snapshots under the decision-update lock,
+so neither can replace a waiting decision with older state. App updates arriving
+during a write remain pending for the next flush, including HA's final write.
 Keep/Ignore require a successful immediate write. A failed native Ignore resets
 HA's ignored state so the user can retry the notice without losing the decision.
 When evidence changes during an Ignore write, the replacement rule clears the

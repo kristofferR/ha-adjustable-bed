@@ -552,6 +552,38 @@ async def test_cancelled_review_keeps_configuration_and_suggestion(
     assert issue(hass, target) is not None
 
 
+async def test_aborted_options_init_preserves_an_existing_configure_flow(
+    hass, enable_custom_integrations
+):
+    target = await watch(hass)
+    manager = hass.config_entries.options
+    existing = await manager.async_init(target.entry.entry_id)
+    before = dict(target.entry.data)
+    flow = await open_flow(hass, target)
+    with (
+        patch(HISTORY, return_value=info()),
+        patch.object(
+            manager,
+            "async_init",
+            return_value={
+                "type": "abort",
+                "flow_id": "already_finished",
+                "reason": "already_in_progress",
+            },
+        ),
+        patch.object(manager, "async_configure", wraps=manager.async_configure) as configure,
+    ):
+        result = await flow.async_step_init({"action": "review"})
+    assert result["type"] == "abort" and result["reason"] == "recommendation_changed"
+    configure.assert_not_called()
+    assert [item["flow_id"] for item in manager.async_progress()] == [existing["flow_id"]]
+    assert target.entry.data == before
+    assert target.review_flow_id is None
+    assert issue(hass, target) is not None
+    assert await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations") == {}
+    manager.async_abort(existing["flow_id"])
+
+
 async def test_accepted_unique_match_is_recorded_even_when_selected_profile_has_no_assessment(
     hass, enable_custom_integrations
 ):

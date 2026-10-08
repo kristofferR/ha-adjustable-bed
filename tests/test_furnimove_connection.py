@@ -229,13 +229,14 @@ async def test_feedback_does_not_rearm_local_preference_save(hass):
     ctrl = coordinator(hass)
     ctrl._controller = FurniMoveController(ctrl, handset_id="12234")
     await ctrl._async_restore_app_state(ctrl._controller)
-    ctrl._app_state_store._store.async_delay_save = MagicMock()
+    store = ctrl._app_state_store
+    store._schedule_save = MagicMock(wraps=store._schedule_save)
     ctrl.handle_controller_state_update("furnimove_sync", True)
-    ctrl._app_state_store._store.async_delay_save.assert_not_called()
+    store._schedule_save.assert_not_called()
     await ctrl._controller.set_massage_timer(20)
-    ctrl._app_state_store._store.async_delay_save.assert_called_once()
+    store._schedule_save.assert_called_once()
     ctrl.handle_controller_state_update("furnimove_sync", False)
-    ctrl._app_state_store._store.async_delay_save.assert_called_once()
+    store._schedule_save.assert_called_once()
 
 
 async def test_local_duration_waits_for_command_lock_without_connecting(hass):

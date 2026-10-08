@@ -717,6 +717,8 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
                 manager = self.hass.config_entries.options
                 original_data, original_options = watch.entry.data, watch.entry.options
                 result = await manager.async_init(watch.entry.entry_id)
+                if result.get("type") not in (FlowResultType.FORM, FlowResultType.MENU):
+                    return self.async_abort(reason="recommendation_changed")
                 flow_id = result["flow_id"]
                 try:
                     result = await manager.async_configure(flow_id, {"next_step_id": "settings"})
