@@ -57,6 +57,7 @@ for all 128 exclusions and exact accepted evidence.
 | ✅ | Juna Sleep | `com.keeson.junasleep` |
 | ✅ | [Purple Smart Base](https://play.google.com/store/apps/details?id=com.keeson.purpleBase) | `com.keeson.purpleBase` |
 | ✅ | [Adjustable Lite](https://play.google.com/store/apps/details?id=com.keeson.adjustablelite) | `com.keeson.adjustablelite` |
+| ❌ | [Tempur Sleeptracker-AI (2023 and newer smart bases)](https://play.google.com/store/apps/details?id=com.fullpower.applications.horizon) | `com.fullpower.applications.horizon` |
 | ✅ | Bedsense Bases ([profile](ore-comfort-bed.md)) | `com.ore.sfmc2bedsence` |
 | ✅ | INNOVA ([profile](#innova-profile)) | `com.ore.sfm` |
 | ✅ | MaxCoil Una ([profile](ore-comfort-bed.md)) | `com.ore.maxcoil` |
@@ -231,8 +232,47 @@ and timer buttons, even when the name does not contain `KSBT03C`. This retains
 explicit hardware configuration for the MC232SC / `KSSF05C` regression reported
 in [issue #669](https://github.com/kristofferR/ha-adjustable-bed/issues/669).
 It does not identify that box as KSBT03C: anti-snore, automatic massage enablement
-and the massage-timer feedback sensor still require the app's name match.
+and the massage-timer feedback sensor are not inferred from **Has massage**.
 The option adds no generic toggle/off commands or new hardware mapping.
+
+**TEMPUR-Ergo ProSmart Air / MC232SC compatibility:** On the reported
+`KSSF05C` control boxes, the integration also exposes **TV**, **Lounge** and
+**Anti-Snore**, restoring the presets that worked before the profile change in
+[issue #681](https://github.com/kristofferR/ha-adjustable-bed/issues/681).
+Their frames are already covered by the accepted app audit: TV sends
+`04 02 00 00 40 00`, Lounge sends `04 02 00 00 20 00`, and Anti-Snore sends
+`04 02 00 00 80 00`. On this profile, **Memory 3 and TV address the same
+position**, as do **Memory 2 and Lounge**. Memory 1 remains `0x10000`.
+The compatibility rule applies only to raw names beginning with `KSSF05C`;
+it does not select the KSBT03C remote or enable its massage-timer parser.
+Restarting after the update creates missing preset buttons. Existing preset
+entity identities survive a switch from generic KSBT to Adjustable Lite.
+The reporter's confirmation covers the earlier working presets; the restored
+buttons still await validation on the reporter's hardware.
+
+Generic **KSBT (Nordic UART)** also exposes these presets, but its memory
+numbering and release behavior differ. Keeping Adjustable Lite with this
+compatibility restoration avoids changing those behaviors just to restore
+the preset names.
+
+#### ProSmart Air heating/cooling and massage frequency
+
+The preset compatibility above does not establish commands for
+TEMPUR-ActiveBreeze heating/cooling or 28 Hz / 40 Hz massage. Those features
+remain unsupported, tracked in [issue #682](https://github.com/kristofferR/ha-adjustable-bed/issues/682)
+and [issue #683](https://github.com/kristofferR/ha-adjustable-bed/issues/683).
+[Tempur's app download guide](https://help.tempurpedic.com/hc/en-us/articles/4404727699351-Where-do-I-download-the-Tempur-Pedic-Sleeptracker-AI-app)
+identifies the second-generation app as `com.fullpower.applications.horizon`.
+This is separate from Adjustable Lite and the older Tempur Curve / Zero G apps.
+
+Acquisition checked on 2026-10-08: the complete Google Play delivery of
+**3.6.2 (262)** was obtained and both APK signatures were verified. A fresh
+isolated FULL audit is in progress before adding commands or selecting a
+control module. The earlier mirror delivery **3.3.12 (248)** remains
+preserved locally and excluded from the latest-artifact analysis.
+The issue's support bundle records status polling only, with no heat/cool or
+frequency action to correlate. No command bytes or feedback state are inferred
+from those notifications.
 
 | Control | Frame | KSBT01C | KSBT03C |
 |---------|-------|---------|---------|
@@ -253,7 +293,8 @@ The option adds no generic toggle/off commands or new hardware mapping.
 The shipped MI/MII/MIII labels take precedence over the app's internal
 `m`/`read`/`tv` names, so memory slots 1-3 differ from the generic KSBT
 mapping. The app has no memory save, lounge, TV, tilt, lumbar, massage
-toggle or massage off control, and the profile exposes none. Movement
+toggle or massage off control. Apart from the hardware compatibility presets
+above, the profile exposes none of those controls. Movement
 repeats at 0 ms and then every 300 ms. Release only cancels that timer: no
 STOP or release frame exists, so the integration sends none. One-shot
 controls are written once.

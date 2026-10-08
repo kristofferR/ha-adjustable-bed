@@ -314,7 +314,7 @@ async def test_ksbt03c_token_is_case_sensitive_like_the_app(coordinator):
     assert _lite(coordinator, "X" + KSBT03C).supports_preset_anti_snore
 
 
-@pytest.mark.parametrize("name", [KSBT01C, "KSSF05C201000322"])
+@pytest.mark.parametrize("name", [KSBT01C, "OtherMassageBed"])
 async def test_explicit_massage_option_restores_proven_controls_without_remapping_remote(
     coordinator, name, mock_bleak_client, no_sleep
 ):
@@ -349,6 +349,61 @@ async def test_explicit_massage_option_restores_proven_controls_without_remappin
     assert not controller.auto_enable_massage
     assert not controller.supports_preset_anti_snore
     assert controller.controller_state_sensor_specs == ()
+
+
+@pytest.mark.parametrize("name", ["KSSF05C201000322", "KSSF05C201000282"])
+async def test_kssf05c_restores_legacy_presets_with_literal_frames(
+    coordinator, name, mock_bleak_client, no_sleep
+):
+    """Reported working presets use D02/D03/D23 without changing the app remote."""
+    from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS, _should_add_button
+
+    controller = _lite(coordinator, name)
+    buttons = {description.key: description for description in BUTTON_DESCRIPTIONS}
+    for key, frame in (
+        ("preset_tv", "040200004000"),
+        ("preset_lounge", "040200002000"),
+        ("preset_anti_snore", "040200008000"),
+    ):
+        description = buttons[key]
+        assert _should_add_button(description, controller, False)
+        press = description.press_fn
+        assert press is not None
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await press(controller)
+        assert mock_bleak_client.write_gatt_char.await_args_list == [_frame(frame)]
+
+    # TV and Lounge alias Lite's third and second memory slots, respectively.
+    for slot, frame in ((2, "040200002000"), (3, "040200004000")):
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await controller.preset_memory(slot)
+        assert mock_bleak_client.write_gatt_char.await_args_list == [_frame(frame)]
+    assert controller.protocol_diagnostics == {"adjustable_lite_remote": "KSBT01C"}
+    assert not controller.auto_enable_massage
+    assert controller.controller_state_sensor_specs == ()
+
+
+@pytest.mark.parametrize("name", [KSBT01C, "KSSF04C123", "XKSSF05C123", "kssf05c123"])
+async def test_other_lite_names_do_not_gain_legacy_presets(
+    coordinator, name, mock_bleak_client
+):
+    coordinator._has_massage = True
+    controller = _lite(coordinator, name)
+    assert not controller.supports_preset_tv
+    assert not controller.supports_preset_lounge
+    assert not controller.supports_preset_anti_snore
+    await controller.preset_tv()
+    await controller.preset_lounge()
+    await controller.preset_anti_snore()
+    mock_bleak_client.write_gatt_char.assert_not_awaited()
+
+
+async def test_live_name_overrides_configured_kssf05c_preset_identity(coordinator):
+    coordinator._name = "KSSF05C201000322"
+    controller = _lite(coordinator, KSBT01C)
+    assert not controller.supports_preset_tv
+    assert not controller.supports_preset_lounge
+    assert not controller.supports_preset_anti_snore
 
 
 async def test_other_keeson_profiles_drop_adjustable_lite_state_entities(coordinator):
@@ -584,6 +639,39 @@ async def test_switching_to_lite_retains_configured_massage_entity_identities(
     await hass.async_block_till_done()
     registry = er.async_get(hass)
     keys = ("massage_head_up", "massage_head_down", "massage_foot_up", "massage_foot_down", "massage_mode_step")
+    before = {}
+    for key in keys:
+        entity_id = registry.async_get_entity_id("button", DOMAIN, f"{address}_{key}")
+        assert entity_id is not None
+        entity = registry.async_get(entity_id)
+        assert entity is not None
+        before[key] = (entity.id, entity.entity_id, entity.device_id)
+    await _switch_variant(hass, entry, KEESON_VARIANT_ADJUSTABLE_LITE)
+    for key in keys:
+        entity_id = registry.async_get_entity_id("button", DOMAIN, f"{address}_{key}")
+        assert entity_id is not None
+        entity = registry.async_get(entity_id)
+        assert entity is not None
+        assert (entity.id, entity.entity_id, entity.device_id) == before[key]
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+
+
+@pytest.mark.parametrize("starting_variant", [KEESON_VARIANT_KSBT, KEESON_VARIANT_ADJUSTABLE_LITE])
+async def test_switching_to_lite_retains_kssf05c_preset_entity_identities(
+    hass, mock_coordinator_connected, mock_async_ble_device_from_address,
+    enable_custom_integrations, starting_variant,
+):
+    from homeassistant.helpers import entity_registry as er
+
+    name = "KSSF05C201000322"
+    mock_async_ble_device_from_address.return_value.name = name
+    address = "AA:BB:CC:DD:EE:81"
+    entry = _keeson_entry(hass, address, name, starting_variant, 2)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    registry = er.async_get(hass)
+    keys = ("preset_tv", "preset_lounge", "preset_anti_snore")
     before = {}
     for key in keys:
         entity_id = registry.async_get_entity_id("button", DOMAIN, f"{address}_{key}")

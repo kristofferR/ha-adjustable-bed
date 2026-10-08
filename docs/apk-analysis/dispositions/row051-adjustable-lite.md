@@ -38,6 +38,26 @@ the working entity IDs survive the profile change. The frozen report, audit
 acceptance and original 93-item totals are unchanged. Physical behavior of the
 compatibility restoration awaits the reporter's validation.
 
+[Issue #681](https://github.com/kristofferR/ha-adjustable-bed/issues/681) supplies
+additional hardware evidence: the two TEMPUR-Ergo ProSmart Air MC232SC boxes
+advertising `KSSF05C201000322` and `KSSF05C201000282` had working TV, Lounge
+and Anti-Snore presets before their profile changed. A separate hardware
+compatibility gate retains those controls for `KSSF05C`-prefixed names. TV
+and Lounge reuse the exact D03/D02 frames (also D14/D13); Anti-Snore reuses
+D23. This does not change the frozen app's remote choice, parser, cadence,
+memory numbering, or any original discovery disposition.
+
+`tests/test_keeson_adjustable_lite.py::test_kssf05c_restores_legacy_presets_with_literal_frames`
+checks all three frames, their entity capability gates and the Memory 2/3
+aliases. `test_switching_to_lite_retains_kssf05c_preset_entity_identities`
+checks registry identity preservation. Other name families and a live
+KSBT01C overriding a configured KSSF05C name keep their original gates.
+The support bundle accompanying #681 contains only status queries and one
+unchanging notification payload; it supplies no heat/cool or massage-frequency
+command evidence. Hardware validation of the restored controls is deferred
+to the reporter after a beta or release. The original 93-item ledger and its
+33 exclusions remain unchanged.
+
 ## What changed
 
 - New explicit Keeson protocol variant `adjustable_lite`, also offered in the setup wizard. Auto keeps the generic KSBT profile for `KSBT01C`/`KSBT03C` names.
