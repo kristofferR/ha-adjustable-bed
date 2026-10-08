@@ -79,8 +79,13 @@ async def test_actual_HA_light_catalog_does_not_claim_impossible_fresh_feedback(
         assert isinstance(controller, StarcodeAbm5_4Controller)
         registry = er.async_get(hass)
         rows = er.async_entries_for_config_entry(registry, entry.entry_id)
-        lights = [row for row in rows if row.domain == "light"]
+        assumed = [row for row in rows if row.unique_id.endswith("_under_bed_lights_assumed")]
+        lights = [row for row in rows if row.domain == "light" and row not in assumed]
         assert len(lights) == int(feedback)
+        assert len(assumed) == int(not feedback)
+        for row in assumed:
+            assert row.disabled_by is er.RegistryEntryDisabler.INTEGRATION
+            assert hass.states.get(row.entity_id) is None
         assert not any(
             row.domain == "switch" and row.translation_key == "under_bed_lights" for row in rows
         )
@@ -284,7 +289,10 @@ async def test_actual_HA_positive_C_feedback_boundary_reloads_exact_child_catalo
             current = {
                 (row.domain, row.unique_id): (row.entity_id, row.device_id) for row in current_rows
             }
-            retired = {("light", coordinator.entity_unique_id("under_bed_lights"))} | {
+            retired = {
+                ("light", coordinator.entity_unique_id(key))
+                for key in ("under_bed_lights", "under_bed_lights_assumed")
+            } | {
                 ("button", coordinator.entity_unique_id(key))
                 for key in ("toggle_light", "starcode_abm5_4_light_on", "starcode_abm5_4_light_off")
             }
@@ -292,7 +300,16 @@ async def test_actual_HA_positive_C_feedback_boundary_reloads_exact_child_catalo
                 current.get(key) == value for key, value in identities.items() if key not in retired
             )
             left_rows = [row for row in current_rows if left in row.unique_id]
-            assert sum(row.domain == "light" for row in left_rows) == int(transition == "gain")
+            assumed = [
+                row for row in left_rows if row.unique_id.endswith("_under_bed_lights_assumed")
+            ]
+            assert sum(row.domain == "light" and row not in assumed for row in left_rows) == int(
+                transition == "gain"
+            )
+            assert len(assumed) == int(transition == "lose")
+            for row in assumed:
+                assert row.disabled_by is er.RegistryEntryDisabler.INTEGRATION
+                assert hass.states.get(row.entity_id) is None
             assert sum(row.translation_key == "toggle_light" for row in left_rows) == int(
                 transition == "lose"
             )
@@ -432,7 +449,15 @@ async def test_actual_HA_reconnect_classification_adds_power_buttons_without_pos
                 )
                 == 2
             )
-            assert not any(row.domain in ("light", "switch") for row in current_rows)
+            assumed = [
+                row for row in current_rows if row.unique_id.endswith("_under_bed_lights_assumed")
+            ]
+            assert len(assumed) == 1
+            assert assumed[0].disabled_by is er.RegistryEntryDisabler.INTEGRATION
+            assert hass.states.get(assumed[0].entity_id) is None
+            assert not any(
+                row.domain in ("light", "switch") and row not in assumed for row in current_rows
+            )
             assert entry.data[const.CONF_STARCODE_UI_SELECTOR] == "BOX1220"
             assert entry.data[const.CONF_STARCODE_TRANSPORT_SELECTOR] == "BOX25"
         assert await hass.config_entries.async_unload(entry.entry_id)
