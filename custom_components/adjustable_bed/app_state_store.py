@@ -118,11 +118,18 @@ class AppStateStore:
             return dict(state)
 
     async def async_save(self) -> None:
-        """Write pending changes now (entry unload)."""
+        """Flush pending changes at unload; retain failures for a later retry."""
         # Reloads can unload the entry while a profile decision is being saved.
         async with self._lock:
             if self._data is not None and self._pending:
-                await self._store.async_save(self._snapshot())
+                self._pending = False
+                try:
+                    await self._store.async_save(self._snapshot())
+                except OSError:
+                    self._schedule_save()
+                    _LOGGER.warning(
+                        "Unable to persist app state during unload; retry scheduled", exc_info=True
+                    )
 
     async def async_remove(self, *, keep_slots: Iterable[str] = ()) -> None:
         """Forget app preferences, optionally retaining durable support evidence."""
@@ -142,8 +149,7 @@ class AppStateStore:
         self._store.async_delay_save(self._snapshot, 1)
 
     def _snapshot(self) -> dict[str, dict[str, Any]]:
-        """Return the data to write; the write it is taken for clears the pending flag."""
-        self._pending = False
+        """Copy loaded slots; taking a delayed snapshot cannot confirm persistence."""
         return dict(self._data or {})
 
 

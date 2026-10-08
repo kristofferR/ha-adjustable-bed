@@ -611,14 +611,20 @@ async def test_first_normal_connection_supplies_missing_evidence(hass):
 
 async def test_repeated_advertisements_do_not_repeat_detection(hass):
     target = await watch(hass)
-    with patch(
-        "custom_components.adjustable_bed.profile_recommendations.detect_bed_type_detailed"
-    ) as detect:
+    with (
+        patch(
+            "custom_components.adjustable_bed.profile_recommendations.detect_bed_type_detailed"
+        ) as detect,
+        patch(
+            "custom_components.adjustable_bed.profile_recommendations.covers_profile_review"
+        ) as covers,
+    ):
         for rssi in (-55, -56, -57):
             observation = info()
             observation.rssi = rssi
             target.seen(observation, MagicMock())
     detect.assert_not_called()
+    covers.assert_not_called()
     assert issue(hass, target) is not None
 
 
@@ -1181,6 +1187,10 @@ async def test_unrelated_mismatch_does_not_confirm_pending_app_review(hass, sour
         target = _watches(hass)[f"{ISSUE_PREFIX}{config_entry.entry_id}_standalone"]
         recommendation = target.recommendation
         assert recommendation is not None and recommendation.choices == ("linak",)
+        assert (
+            ir.async_get(hass).async_get_issue(DOMAIN, f"app_profile_review_{config_entry.entry_id}")
+            is not None
+        )
         await target.async_keep(recommendation, source=source)
     decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
     assert decisions[recommendation.rule] is True
@@ -1232,6 +1242,7 @@ async def test_pending_upgrade_review_survives_without_a_replacement(hass, obser
 
 
 async def test_pair_upgrade_review_remains_for_an_unassessed_physical_side(hass):
+    from custom_components.adjustable_bed.const import LINAK_CONTROL_SERVICE_UUID
     from custom_components.adjustable_bed.profile_review import (
         CONF_PROFILE_REVIEW_PENDING,
         async_refresh_profile_review_issue,
@@ -1276,6 +1287,10 @@ async def test_pair_upgrade_review_remains_for_an_unassessed_physical_side(hass)
     old_id = f"app_profile_review_{config_entry.entry_id}"
     assert ir.async_get(hass).async_get_issue(DOMAIN, old_id) is not None
     right_watch = _watches(hass)[f"{ISSUE_PREFIX}{config_entry.entry_id}_right"]
+    unrelated = advertisement("Bed 1234", [LINAK_CONTROL_SERVICE_UUID])
+    unrelated.address = OTHER
+    right_watch.seen(unrelated, MagicMock())
+    assert ir.async_get(hass).async_get_issue(DOMAIN, old_id) is not None
     right_watch.seen(info(address=OTHER), MagicMock())
     assert ir.async_get(hass).async_get_issue(DOMAIN, old_id) is None
 

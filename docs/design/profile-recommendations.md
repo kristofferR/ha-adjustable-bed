@@ -106,7 +106,9 @@ owning an address clears app preferences but retains the reserved decision slot,
 so re-adding the bed or capturing its raw address preserves support evidence.
 An ongoing assessment also
 suppresses a duplicate one-time upgrade notice only when the relevant physical beds
-have a replacement assessment or a saved decision confirming that upgrade review.
+have a replacement assessment covering that review or a saved decision confirming it.
+An unrelated active recommendation leaves the upgrade notice visible; coverage
+is cached with the assessment's evidence so RSSI updates do not repeat detection.
 Offline or unassessed beds retain their pending upgrade review. Confirmation keys
 include the physical bed's route/variant and known app choices, so unrelated old
 decisions cannot suppress it. A decision confirms the upgrade review only when
@@ -134,7 +136,9 @@ PINs, names and unrelated entry data are not copied into decision history.
 History and flags are saved atomically after settings commit actions. A failed
 hardware transaction never confirms the review. If the subsequent history write
 fails, the completed choice stays in memory for support exports and a delayed
-storage write is scheduled; it does not abort already committed settings.
+storage write is scheduled; it does not abort already committed settings or their
+entry unload. A failed unload flush retains the pending data and schedules another
+retry. Taking a background snapshot does not clear its pending state.
 Entry-unload saves share the decision-update lock, so a reload cannot queue an
 older app-state snapshot that loses a decision while its write is in progress.
 Keep/Ignore require a successful immediate write. A failed native Ignore resets

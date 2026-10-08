@@ -4,6 +4,7 @@ import asyncio
 import json
 from unittest.mock import patch
 
+import pytest
 from homeassistant.helpers.storage import Store
 
 from custom_components.adjustable_bed.app_state_store import (
@@ -93,6 +94,37 @@ async def test_unload_cannot_overwrite_a_decision_with_an_older_app_state_snapsh
     decisions = await restored.async_slot(PROFILE_DECISIONS_SLOT)
     assert decisions["first"] is True
     assert decisions["history"] == [record("first")]
+
+
+@pytest.mark.parametrize("delayed_snapshot", [False, True])
+async def test_deferred_history_failure_cannot_abort_unload_or_lose_retry(
+    hass, mock_config_entry, delayed_snapshot
+):
+    from custom_components.adjustable_bed import async_unload_entry
+    from custom_components.adjustable_bed.const import DOMAIN
+    from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+    coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+    address = coordinator.address
+    store = app_state_store(hass, address)
+    hass.data[DOMAIN][mock_config_entry.entry_id] = coordinator
+    await store.async_slot("linak:auto")
+    store.update("linak:auto", {"memory_name": "Latest preference"})
+    with patch.object(Store, "async_save", side_effect=OSError("storage unavailable")):
+        await async_record_profile_decision(
+            hass, address, record("first"), ("first",), defer_on_error=True
+        )
+        if delayed_snapshot:
+            # A background retry can take its snapshot before unload starts.
+            assert store._snapshot()[PROFILE_DECISIONS_SLOT]["first"] is True
+        with patch.object(hass.config_entries, "async_unload_platforms", return_value=True):
+            assert await async_unload_entry(hass, mock_config_entry)
+    assert mock_config_entry.entry_id not in hass.data[DOMAIN]
+    assert (await async_profile_decision_history(hass, address))["history"] == [record("first")]
+    await store.async_save()
+    restored = AppStateStore(hass, address)
+    assert await restored.async_slot("linak:auto") == {"memory_name": "Latest preference"}
+    assert (await restored.async_slot(PROFILE_DECISIONS_SLOT))["history"] == [record("first")]
 
 
 async def test_legacy_boolean_dismissals_export_without_fabricating_decision_details(hass):

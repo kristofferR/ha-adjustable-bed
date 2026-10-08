@@ -332,6 +332,7 @@ def has_profile_assessment(hass: HomeAssistant, entry_id: str) -> bool:
         (
             watch.recommendation is not None
             and not watch.dismissed.get(watch.recommendation.rule)
+            and watch._covers_upgrade_review
         )
         or watch.dismissed.get(watch.upgrade_review_key or "")
         for watch in relevant
@@ -380,6 +381,7 @@ class ProfileRecommendationWatch:
         self._last_evidence: object = None
         self._observed_name = ""
         self._last_info: bluetooth.BluetoothServiceInfoBleak | None = None
+        self._covers_upgrade_review = False
         self.review_flow_id: str | None = None
         self.review_recommendation: Recommendation | None = None
         self.review_profile: dict[str, str] | None = None
@@ -448,6 +450,13 @@ class ProfileRecommendationWatch:
                 and info is not None
                 and info.address.upper() == self.coordinator.address.upper()
                 else None
+            )
+            self._covers_upgrade_review = (
+                self.recommendation is not None
+                and self.upgrade_review_key is not None
+                and covers_profile_review(
+                    self.hass, data, self.recommendation.choices, info=self._last_info
+                )
             )
         recommendation = self.recommendation
         if has_profile_assessment(self.hass, self.entry.entry_id):
