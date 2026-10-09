@@ -1,18 +1,20 @@
 """FurniMove handset identity is independent of receiver identity and transport."""
 
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.adjustable_bed.bluetooth_freshness import FreshnessStatus
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
     _motor_count_options,
 )
 from custom_components.adjustable_bed.const import (
+    ADAPTER_AUTO,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_SERENITY,
@@ -105,8 +107,8 @@ async def test_options_change_from_stair_requires_a_handset_then_derives_layout(
     assert _motor_count_options(BED_TYPE_OKIN_RF_ECO_BT) == [1]
 
 
-async def test_each_handset_is_offered_by_one_bed_type_for_new_setups(hass):
-    """Okin UUID keeps its catalog handsets; FurniMove takes the DOT ones."""
+async def test_explicit_furnimove_offers_all_captured_handsets_without_a_bond_gate(hass):
+    """A shared handset ID must not force the app onto a different bond policy."""
     from custom_components.adjustable_bed.beds.okin_uuid import (
         FURNIMOVE_DOT_HANDSETS,
         FURNIMOVE_STANDARD_HANDSETS,
@@ -116,25 +118,65 @@ async def test_each_handset_is_offered_by_one_bed_type_for_new_setups(hass):
         OKIMAT_VARIANTS,
         OKIN_DOT_FURNIMOVE_VARIANTS,
     )
-    from custom_components.adjustable_bed.furnimove_profiles import furnimove_handset_choices
+    from custom_components.adjustable_bed.furnimove_profiles import FURNIMOVE_PROFILES
 
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
+    flow._verification_possible = lambda: False
     flow._manual_data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_FURNIMOVE}
     result = await flow.async_step_furnimove()
     marker = next(iter(result["data_schema"].schema))
     offered = set(result["data_schema"].schema[marker].container)
-    rejected = await flow.async_step_furnimove({CONF_FURNIMOVE_REMOTE: "82417"})
-    assert rejected["errors"] == {CONF_FURNIMOVE_REMOTE: "furnimove_remote_required"}
-    assert offered == {"00000", "12234", "90167", "91983", "93558", "280702", "280703"}
+    saved = await flow.async_step_furnimove({CONF_FURNIMOVE_REMOTE: "82417"})
+    assert saved["type"] == "create_entry"
+    assert saved["data"][CONF_FURNIMOVE_REMOTE] == "82417"
+    assert saved["data"][CONF_MOTOR_COUNT] == 2
+    assert saved["data"][CONF_HAS_MASSAGE] is False
+    assert not requires_pairing(saved["data"][CONF_BED_TYPE])
+    assert offered == set(FURNIMOVE_PROFILES)
     assert len(FURNIMOVE_STANDARD_HANDSETS) == 83
-    assert offered.isdisjoint(FURNIMOVE_STANDARD_HANDSETS)
+    assert FURNIMOVE_STANDARD_HANDSETS.issubset(offered)
     assert FURNIMOVE_STANDARD_HANDSETS.issubset(OKIMAT_VARIANTS)
     assert OKIN_DOT_FURNIMOVE_VARIANTS == FURNIMOVE_DOT_HANDSETS
     assert OKIN_DOT_FURNIMOVE_VARIANTS.isdisjoint(ALL_PROTOCOL_VARIANTS)
-    # A stored choice is never silently replaced by the narrower picker.
-    assert "82417" in furnimove_handset_choices("82417")
+
+
+async def test_furnimove_options_can_correct_90167_to_the_app_82417(hass):
+    entry = MockConfigEntry(domain=DOMAIN, data={
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_FURNIMOVE,
+        CONF_FURNIMOVE_REMOTE: "90167", CONF_HAS_MASSAGE: True,
+    })
+    entry.add_to_hass(hass)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass = hass
+    flow.handler = entry.entry_id
+    saved = await flow._async_options_form({
+        CONF_BED_TYPE: BED_TYPE_FURNIMOVE, CONF_FURNIMOVE_REMOTE: "82417",
+    }, step_id="settings")
+    assert saved["type"] == "create_entry"
+    assert entry.data[CONF_FURNIMOVE_REMOTE] == "82417"
+    assert entry.data[CONF_HAS_MASSAGE] is False
+    assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+
+
+async def test_furnimove_setup_probe_waits_for_live_services(hass, mock_bleak_client):
+    flow = AdjustableBedConfigFlow()
+    flow.hass = hass
+    flow.context = {}
+    evidence = SimpleNamespace(
+        status=FreshnessStatus.FRESH, is_fresh=True, rssi=-50, source=None, path=None,
+    )
+    device = MagicMock(address="AA:BB:CC:DD:EE:FF", name="OKIN-560024")
+    with (
+        patch("custom_components.adjustable_bed.config_flow.async_gate_connection", return_value=(evidence, device)),
+        patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=mock_bleak_client)) as establish,
+    ):
+        report = await flow._probe_capabilities(device.address, ADAPTER_AUTO, BED_TYPE_FURNIMOVE)
+    assert report.connected
+    assert establish.await_args.kwargs["use_services_cache"] is False
+    assert "pair" not in establish.await_args.kwargs
+    mock_bleak_client.disconnect.assert_awaited_once()
 
 
 async def test_dot_options_keep_a_stored_furnimove_handset_only_for_that_entry(hass):

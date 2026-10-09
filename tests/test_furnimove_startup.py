@@ -47,10 +47,10 @@ def furnish_services(client):
 
 
 async def test_controller_owns_info_reads_after_subscription(
-    hass, mock_coordinator_connected, mock_bleak_client
+    hass, mock_coordinator_connected, mock_bleak_client, mock_establish_connection
 ):
     """Issue #633: no generic DIS reads may precede the accepted app startup."""
-    entry = furnimove_entry(hass)
+    entry = furnimove_entry(hass, "82417")
     ctrl = AdjustableBedCoordinator(hass, entry)
     ctrl._max_retries = 1
     characteristics = furnish_services(mock_bleak_client)
@@ -77,6 +77,8 @@ async def test_controller_owns_info_reads_after_subscription(
     ) as generic_read:
         try:
             assert await ctrl.async_connect()
+            assert mock_establish_connection.await_args.kwargs["use_services_cache"] is False
+            assert mock_establish_connection.await_args.kwargs["pair"] is False
             generic_read.assert_not_awaited()
             assert calls[:5] == [("notify", FEEDBACK)] + [
                 ("read", characteristic.uuid) for characteristic in characteristics[2:]

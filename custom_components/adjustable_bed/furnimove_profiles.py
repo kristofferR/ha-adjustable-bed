@@ -1714,17 +1714,8 @@ def get_furnimove_profile(handset_id: str) -> FurniMoveProfile:
 
 
 def furnimove_handset_choices(current: object = None) -> dict[str, str]:
-    """Label the handsets a FurniMove picker offers.
-
-    Standard handsets that the released Okin UUID route also lists stay on that
-    route for new setups (see ``beds/okin_uuid.py``). A stored choice stays
-    selectable so an existing entry is never silently changed.
-    """
-    # Imported here so this table stays loadable on its own by the generators.
-    from .beds.okin_uuid import FURNIMOVE_STANDARD_HANDSETS
-
+    """Offer every captured handset for the explicitly selected FurniMove app."""
     return {
         key: f"{key}: {profile.description or 'Shipped offline table'}"
         for key, profile in FURNIMOVE_PROFILES.items()
-        if key not in FURNIMOVE_STANDARD_HANDSETS or key == current
     }

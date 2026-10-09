@@ -758,10 +758,27 @@ def _build_evidence_summary(
             "Home Assistant command before generating the bundle."
         )
     if capture_duration > 0 and not notification_count:
-        warnings.append(
-            "No BLE notifications were captured. Operate the physical remote during "
-            "the capture window when protocol traffic is needed."
-        )
+        subscriptions = [
+            char.get("notify_subscription", {})
+            for service in diagnostic_report.get("gatt_services", [])
+            for char in service.get("characteristics", [])
+            if char.get("notify_subscription", {}).get("attempted")
+        ]
+        if diagnostic_report.get("gatt_services") == []:
+            warnings.append(
+                "No usable GATT services were captured. The bundle was saved, but "
+                "the Bluetooth connection/service discovery did not succeed."
+            )
+        elif subscriptions and not any(item.get("success") for item in subscriptions):
+            warnings.append(
+                "No BLE notification subscription succeeded. The bundle was saved, "
+                "but remote activity could not be captured. See the subscription errors."
+            )
+        else:
+            warnings.append(
+                "No BLE notifications were captured. Operate the physical remote during "
+                "the capture window when protocol traffic is needed."
+            )
     if pairing_logs_truncated:
         warnings.append("The pairing attempt produced more than 200 HA log entries; its earliest entries were dropped.")
     if log_status == "not_requested":

@@ -34,6 +34,21 @@ The report's frames, timing, bond policy, catalog and original 60-item totals ar
 unchanged. RF ECO BT part 88802 does not identify handset 90167; the actual
 FurniMove layout and receiver stability still require user evidence.
 
+The issue's screenshots identify the app's handset as **82417**, while the
+integration selected **90167**. Explicit FurniMove pickers now offer every
+already captured handset, including 82417, without imposing the Okin UUID
+route's mandatory bond gate. No catalog rows, command frames or app bond policy
+change. Setup/options/repair tests cover the exact selection and correction.
+
+The morning support bundle also shows cached services returned before BlueZ
+published its live GATT objects: reads and subscriptions failed with
+`UnknownObject` before `ServicesResolved=True`. FurniMove startup/setup and
+standalone diagnostics disable the early service-cache shortcut. Diagnostic
+reads and notification operations are bounded, retaining errors and service
+structure when a read does not answer. The evening capture disconnects before
+service resolution; its local connection abort remains unverified hardware
+behavior, rather than evidence of an unsupported command.
+
 ## Behavior decisions
 
 | ID | Behavior | Disposition and evidence |
