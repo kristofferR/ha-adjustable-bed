@@ -279,7 +279,8 @@ def _is_app_choice(bed_type: str, variant: object) -> bool:
     return isinstance(variant, str) and (bed_type, variant) in APP_VARIANT_CHOICES
 
 
-def _static_choices(bed_type: object, variant: object) -> list[str]:
+def related_app_choices(bed_type: object, variant: object) -> list[str]:
+    """Known app choices for a generic route, not proof of a better match."""
     if not isinstance(bed_type, str) or _is_app_choice(bed_type, variant):
         return []
     stored_variant = variant if isinstance(variant, str) else VARIANT_AUTO
@@ -312,9 +313,14 @@ class _Review:
     complete: bool = True
 
 
-def _review_target(hass: HomeAssistant, data: Mapping[str, Any]) -> _Review:
+def _review_target(
+    hass: HomeAssistant,
+    data: Mapping[str, Any],
+    *,
+    info: bluetooth.BluetoothServiceInfoBleak | None = None,
+) -> _Review:
     bed_type = data.get(CONF_BED_TYPE)
-    choices = _static_choices(bed_type, data.get(CONF_PROTOCOL_VARIANT))
+    choices = related_app_choices(bed_type, data.get(CONF_PROTOCOL_VARIANT))
     address = data.get(CONF_ADDRESS)
     if (
         bed_type not in _ADVERTISED_ROUTES
@@ -322,7 +328,8 @@ def _review_target(hass: HomeAssistant, data: Mapping[str, Any]) -> _Review:
         or not isinstance(address, str)
     ):
         return _Review(tuple(choices))
-    info = _last_service_info(hass, address)
+    if info is None:
+        info = _last_service_info(hass, address)
     if info is None:
         return _Review(tuple(choices), complete=False)
     result = detect_bed_type_detailed(info)
@@ -366,6 +373,22 @@ def _review(hass: HomeAssistant, entry_data: Mapping[str, Any]) -> _Review:
     return _Review((drift, *choices), drift=drift if not choices else None, complete=complete)
 
 
+def covers_profile_review(
+    hass: HomeAssistant,
+    data: Mapping[str, Any],
+    presented_choices: Iterable[str],
+    *,
+    info: bluetooth.BluetoothServiceInfoBleak | None = None,
+) -> bool:
+    """Confirm this physical bed's review using the assessment's evidence."""
+    review = _review_target(hass, data, info=info)
+    return (
+        review.complete
+        and bool(review.choices)
+        and set(review.choices).issubset(presented_choices)
+    )
+
+
 def _route_signature(entry_data: Mapping[str, Any]) -> str:
     """Return the bed type and variant of every physical bed, in side order."""
     return "|".join(
@@ -377,7 +400,7 @@ def _route_signature(entry_data: Mapping[str, Any]) -> str:
 def profile_review_mark(entry_data: Mapping[str, Any]) -> str | None:
     """Return the review mark for an older entry whose route gained app profiles."""
     if any(
-        _static_choices(target.get(CONF_BED_TYPE), target.get(CONF_PROTOCOL_VARIANT))
+        related_app_choices(target.get(CONF_BED_TYPE), target.get(CONF_PROTOCOL_VARIANT))
         or (
             target.get(CONF_BED_TYPE) in _ADVERTISED_ROUTES
             and not _is_app_choice(target[CONF_BED_TYPE], target.get(CONF_PROTOCOL_VARIANT))
@@ -433,7 +456,12 @@ def async_refresh_profile_review_issue(hass: HomeAssistant, entry: ConfigEntry) 
     Runs during setup before the update listener exists, so retiring the mark
     does not reload the entry.
     """
+    from .profile_recommendations import has_profile_assessment
+
     issue_id = _issue_id(entry.entry_id)
+    if has_profile_assessment(hass, entry.entry_id):
+        async_delete_issue(hass, DOMAIN, issue_id)
+        return
     if CONF_PROFILE_REVIEW_PENDING not in entry.data:
         async_delete_issue(hass, DOMAIN, issue_id)
         return

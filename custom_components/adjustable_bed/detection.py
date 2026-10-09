@@ -138,6 +138,9 @@ from .const import (
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_INNOVA,
+    KEESON_VARIANT_KSBT,
+    KEESON_VARIANT_KSBT04C,
+    KEESON_VARIANT_KSBT_CR,
     KEESON_VARIANT_MAXCOIL_UNA,
     KEESON_VARIANT_OKIN_SEATING,
     KEESON_VARIANT_RESTONIC_A,
@@ -661,6 +664,18 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z280): "Customatic Z-Series app (Z-280)",
 }
 _CHOICE_SEPARATOR = ":"
+
+
+def keeson_variant_from_device_name(device_name: str | None) -> str | None:
+    """Return the existing generic KSBT transport selected by auto configuration."""
+    name = (device_name or "").lower()
+    if name.startswith("ksbt03cr"):
+        return KEESON_VARIANT_KSBT_CR
+    if name.startswith("ksbt04c") or name == "smart_dfu":
+        return KEESON_VARIANT_KSBT04C
+    if name.startswith("ksbt"):
+        return KEESON_VARIANT_KSBT
+    return None
 
 
 def bed_type_choice(bed_type: str, variant: str | None) -> str:

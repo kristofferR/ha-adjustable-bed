@@ -8207,48 +8207,51 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                         data_schema=vol.Schema(schema_dict),
                         errors={CONF_LEGS_MAX_ANGLE: "invalid_angle"},
                     )
-            # All validations passed - now it is safe to commit global state.
-            if not separate_address_pair and BED_TYPE_LIMOSS_REMOTE in (
-                bed_type, self.config_entry.data.get(CONF_BED_TYPE)
-            ):
-                from .beds.limoss_remote import apply_limoss_remote_features
-                from .coordinator import AdjustableBedCoordinator
+            async def commit_global_settings() -> ConfigFlowResult | None:
+                """Apply global and hardware changes before confirming the review."""
+                if not separate_address_pair and BED_TYPE_LIMOSS_REMOTE in (
+                    bed_type, self.config_entry.data.get(CONF_BED_TYPE)
+                ):
+                    from .beds.limoss_remote import apply_limoss_remote_features
+                    from .coordinator import AdjustableBedCoordinator
 
-                runtime = self._bond_target_coordinator()
-                previous = runtime.entry.data if isinstance(runtime, AdjustableBedCoordinator) else self.config_entry.data
-                light = bed_type == BED_TYPE_LIMOSS_REMOTE and user_input.get(CONF_HAS_LIGHT, False)
-                massage = bed_type == BED_TYPE_LIMOSS_REMOTE and user_input.get(CONF_HAS_MASSAGE, False)
-                # Only an enabled Limoss Remote feature has OFF commands to send.
-                disabling = previous.get(CONF_BED_TYPE) == BED_TYPE_LIMOSS_REMOTE and (
-                    (previous.get(CONF_HAS_LIGHT, False) and not light)
-                    or (previous.get(CONF_HAS_MASSAGE, False) and not massage)
-                )
-                if disabling:
-                    if not isinstance(runtime, AdjustableBedCoordinator):
-                        return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors={"base": "limoss_remote_feature_update_failed"})
-                    completed = False
-                    off_runtime = runtime
+                    runtime = self._bond_target_coordinator()
+                    previous = runtime.entry.data if isinstance(runtime, AdjustableBedCoordinator) else self.config_entry.data
+                    light = bed_type == BED_TYPE_LIMOSS_REMOTE and user_input.get(CONF_HAS_LIGHT, False)
+                    massage = bed_type == BED_TYPE_LIMOSS_REMOTE and user_input.get(CONF_HAS_MASSAGE, False)
+                    # Only an enabled Limoss Remote feature has OFF commands to send.
+                    disabling = previous.get(CONF_BED_TYPE) == BED_TYPE_LIMOSS_REMOTE and (
+                        (previous.get(CONF_HAS_LIGHT, False) and not light)
+                        or (previous.get(CONF_HAS_MASSAGE, False) and not massage)
+                    )
+                    if disabling:
+                        if not isinstance(runtime, AdjustableBedCoordinator):
+                            return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors={"base": "limoss_remote_feature_update_failed"})
+                        completed = False
+                        off_runtime = runtime
 
-                    async def disable_features(controller: BedController) -> None:
-                        nonlocal completed
-                        await apply_limoss_remote_features(controller, light, massage, persist=False)
-                        if off_runtime.cancel_command.is_set():
-                            raise asyncio.CancelledError
-                        completed = True
+                        async def disable_features(controller: BedController) -> None:
+                            nonlocal completed
+                            await apply_limoss_remote_features(controller, light, massage, persist=False)
+                            if off_runtime.cancel_command.is_set():
+                                raise asyncio.CancelledError
+                            completed = True
 
-                    try:
-                        await runtime.async_execute_controller_command(
-                            disable_features, cancel_running=True,
-                        )
-                        # Replaced scheduler tickets return normally without
-                        # completing their callback. They cannot commit options.
-                        if not completed:
-                            raise RuntimeError("Limoss Remote OFF transaction was interrupted")
-                    except Exception:
-                        _LOGGER.warning("Unable to complete Limoss Remote feature OFF transaction", exc_info=True)
-                        return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors={"base": "limoss_remote_feature_update_failed"})
-            if discovery_disabled_input is not None:
-                await async_set_discovery_disabled(self.hass, discovery_disabled_input)
+                        try:
+                            await runtime.async_execute_controller_command(
+                                disable_features, cancel_running=True,
+                            )
+                            # Replaced scheduler tickets return normally without
+                            # completing their callback. They cannot commit options.
+                            if not completed:
+                                raise RuntimeError("Limoss Remote OFF transaction was interrupted")
+                        except Exception:
+                            _LOGGER.warning("Unable to complete Limoss Remote feature OFF transaction", exc_info=True)
+                            return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors={"base": "limoss_remote_feature_update_failed"})
+                if discovery_disabled_input is not None:
+                    await async_set_discovery_disabled(self.hass, discovery_disabled_input)
+                return None
+
             # Update the config entry with new options
             # Record that the stored cadence is the user's choice rather than a
             # value the flow generated, so protocol migrations leave it alone.
@@ -8258,6 +8261,11 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 field in user_input and vol.Optional(field) in schema_dict
                 for field in (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS)
             )
+            from .profile_recommendations import (
+                async_complete_profile_review,
+                async_confirm_profile_review,
+            )
+
             if is_paired(self.config_entry.data):
                 # For a paired bed, ONLY the keys the user actually changed go
                 # anywhere. "Changed" is measured against the value the form
@@ -8286,9 +8294,15 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     self._apply_bed_type_change_cleanup(new_data, bed_type, requested_variant)
                     for key in stale_vibradorm_keys:
                         new_data.pop(key, None)
+                    if (commit_error := await commit_global_settings()) is not None:
+                        return commit_error
                     self.hass.config_entries.async_update_entry(
                         self.config_entry, data=new_data
                     )
+                    await async_confirm_profile_review(
+                        self.hass, self.config_entry, self.flow_id, new_data
+                    )
+                    async_complete_profile_review(self.hass, self.config_entry, self.flow_id)
                     return self.async_create_entry(title="", data={})
                 submitted_adapter = user_input.get(CONF_PREFERRED_ADAPTER)
                 for side in PAIR_SIDES:
@@ -8330,6 +8344,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 for key in (CONF_VIBRADORM_APP_PROFILE, CONF_VIBRADORM_CONTROL_TYPE, CONF_VIBRADORM_VMAT_REMOTE)
             ):
                 new_data.pop(CONF_VIBRADORM_APP_METADATA, None)
+            if (commit_error := await commit_global_settings()) is not None:
+                return commit_error
             if not separate_address_pair and (
                 bed_type == BED_TYPE_VIBRADORM_APP
                 or self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_VIBRADORM_APP
@@ -8370,6 +8386,10 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                 self.config_entry,
                 data=new_data,
             )
+            await async_confirm_profile_review(
+                self.hass, self.config_entry, self.flow_id, new_data
+            )
+            async_complete_profile_review(self.hass, self.config_entry, self.flow_id)
             # A failed or retrying entry has no update listener yet, so a fix made
             # here (for example a Remacro app that lists the model) would not apply.
             if self.config_entry.state in (

@@ -39,6 +39,7 @@ from .discovery_log import async_get_discovery_log
 from .discovery_settings import async_is_discovery_disabled
 from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
 from .paired_coordinator import PairedBedCoordinator
+from .profile_decisions import async_profile_decision_history
 from .redaction import redact_data
 from .vibradorm_app_discovery import manufacturer_discovery_diagnostics
 from .vibradorm_vmat_discovery import vmat_manufacturer_diagnostics
@@ -86,6 +87,7 @@ async def _async_paired_diagnostics(
             "position_data": getattr(child, "position_data", None),
             "command_timing": child.command_timing,
             "config": dict(child.entry.data),
+            "profile_recommendations": await async_profile_decision_history(hass, child.address),
         }
         if child.bed_type in {BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC}:
             service_info, connectable = find_service_info_by_address(
@@ -312,6 +314,7 @@ async def async_get_config_entry_diagnostics(
         "controller": controller_info,
         "position_data": position_data,
         "supported_bed_types": list(SUPPORTED_BED_TYPES),
+        "profile_recommendations": await async_profile_decision_history(hass, coordinator.address),
         "auto_discovery_disabled": await async_is_discovery_disabled(hass),
         "auto_discovery_log": auto_discovery_log,
     }

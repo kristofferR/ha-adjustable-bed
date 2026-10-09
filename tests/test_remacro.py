@@ -847,6 +847,8 @@ def watchers():
     callbacks: dict = {}
 
     def register(_hass, seen, matcher, _mode):
+        if seen.__module__ != "custom_components.adjustable_bed.remacro_discovery":
+            return lambda: None
         callbacks[matcher["address"]] = seen
 
         def unsubscribe() -> None:

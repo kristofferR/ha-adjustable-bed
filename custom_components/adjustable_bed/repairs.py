@@ -1194,6 +1194,16 @@ async def async_create_fix_flow(
         return CombineBedsRepairFlow()
 
     payload = data or {}
+    from .profile_recommendations import (
+        ISSUE_PREFIX as RECOMMENDATION_ISSUE_PREFIX,
+    )
+    from .profile_recommendations import (
+        ProfileRecommendationRepairFlow,
+    )
+
+    if issue_id.startswith(RECOMMENDATION_ISSUE_PREFIX):
+        return ProfileRecommendationRepairFlow(issue_id, payload.get("rule", ""))
+
     from .furnimove_repair import ISSUE_PREFIX, FurniMoveLayoutRepairFlow
 
     if issue_id.startswith(ISSUE_PREFIX):

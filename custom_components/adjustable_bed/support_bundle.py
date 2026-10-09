@@ -40,6 +40,7 @@ from .const import (
 )
 from .detection import detect_bed_type_detailed
 from .diagnostic_payloads import format_mapping_payloads
+from .profile_decisions import async_profile_decision_history
 from .redaction import redact_pins_only, redact_sleep_number_sessions, redact_sleeptracker_sessions
 from .support_logs import async_setup_support_logs
 from .support_proxy_logs import DATA_PAIRING_PROXY_LOGS, capture_proxy_logs
@@ -184,6 +185,7 @@ async def generate_support_bundle(
         },
         "system": _get_system_info(hass, integration_version),
         "integration": _get_integration_info(entry) if entry is not None else _empty_integration_info(address),
+        "profile_recommendations": await async_profile_decision_history(hass, address),
         "device": diagnostics_report.device,
         "detection": diagnostics_report.detection,
         "connection": connection,

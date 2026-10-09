@@ -50,6 +50,26 @@ To adjust settings after setup:
 
 ---
 
+## Profile recommendations
+
+Every configured bed is checked against the integration's existing Bluetooth
+identity and app-profile metadata. Under **Settings → System → Repairs**, Home
+Assistant may suggest **A better profile may be available**, or ask you to **Check
+the app or product profile** when several profiles fit. Weak or unknown identities
+stay quiet. A shared Bluetooth service or a new app alone does not prove that
+another profile works better.
+
+**Review profile settings** opens Configure. A clear suggestion shows its settings;
+an ambiguous match keeps your current selection so you can check your app, physical
+remote and product. Nothing changes until you submit settings. Closing them keeps
+your profile. Saving this review confirms your selection.
+
+**Keep current profile** (or Ignore) dismisses the assessment across restarts and
+updates. Only a materially different profile or candidate set may ask again.
+Paired notices identify the physical bed and explain any required split or restore
+standalone action; neither side changes automatically. See the
+[matching evidence and limits](design/profile-recommendations.md).
+
 ## Basic Settings
 
 | Setting | Options | Default | Description |

@@ -830,6 +830,7 @@ def mock_async_ble_device_from_address() -> Generator[MagicMock]:
 def mock_bluetooth_adapters() -> Generator[None]:
     """Mock bluetooth adapter functions."""
     patches = [
+        patch("homeassistant.components.bluetooth.async_register_callback"),
         patch(
             "custom_components.adjustable_bed.coordinator.bluetooth.async_scanner_count",
             return_value=1,

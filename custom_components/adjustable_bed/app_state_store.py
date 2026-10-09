@@ -8,6 +8,8 @@ address share one instance, so their saves never overwrite each other's slot.
 The coordinator restores a slot into every new controller and saves it whenever
 the controller publishes state. Changing profile keeps every profile's slot,
 so changing back restores that profile's preferences.
+The reserved profile-recommendation slot retains support decision history even
+after the last config entry is removed; ordinary app preferences are forgotten.
 
 Where a value belongs:
 
@@ -23,16 +25,22 @@ Where a value belongs:
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Iterable, Mapping
-from typing import Any
+import logging
+from collections.abc import Callable, Iterable, Mapping
+from datetime import datetime
+from typing import Any, Final
 
-from homeassistant.core import HomeAssistant
+from homeassistant.const import EVENT_HOMEASSISTANT_FINAL_WRITE
+from homeassistant.core import Event, HomeAssistant
+from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.storage import Store
 
 from .app_session import drop_app_sessions
 from .const import DOMAIN
 
 _REGISTRY_KEY = "app_state_stores"
+_LOGGER = logging.getLogger(__name__)
+PROFILE_DECISIONS_SLOT: Final = "profile_recommendations"
 
 
 def app_state_storage_key(address: str) -> str:
@@ -53,6 +61,8 @@ class AppStateStore:
         self._data: dict[str, dict[str, Any]] | None = None
         self._pending = False
         self._lock = asyncio.Lock()
+        self._cancel_save: Callable[[], None] | None = None
+        self._cancel_final_write: Callable[[], None] | None = None
 
     async def _async_load(self) -> dict[str, dict[str, Any]]:
         if self._data is None:
@@ -79,32 +89,98 @@ class AppStateStore:
 
     async def async_write(self, slot: str, state: Mapping[str, Any]) -> None:
         """Write one slot now; on failure raise and keep the previous value."""
+        await self.async_update(slot, lambda _: state)
+
+    async def async_update(
+        self,
+        slot: str,
+        update: Callable[[dict[str, Any]], Mapping[str, Any]],
+        *,
+        defer_on_error: bool = False,
+    ) -> dict[str, Any]:
+        """Read, update and save a slot under one lock, without losing concurrent edits."""
         async with self._lock:
             data = await self._async_load()
+            state = dict(update(dict(data.get(slot, {}))))
             if data.get(slot) == state:
-                return
-            await self._store.async_save({**data, slot: dict(state)})
-            data[slot] = dict(state)
-            # The write included every pending change and cancelled the delayed one.
+                return dict(state)
+            pending = self._pending
             self._pending = False
+            self._cancel_scheduled_save()
+            try:
+                await self._store.async_save({**data, slot: state})
+            except OSError:
+                if not defer_on_error:
+                    if pending:
+                        self._schedule_save()
+                    raise
+                # The associated settings have already committed. Retain their
+                # history in memory and retry rather than pretending they failed.
+                data[slot] = state
+                self._schedule_save()
+                _LOGGER.warning(
+                    "Unable to persist committed profile history; retry scheduled", exc_info=True
+                )
+                return dict(state)
+            data[slot] = state
+            # Updates during the write remain pending for the next locked save.
+            return dict(state)
 
     async def async_save(self) -> None:
-        """Write pending changes now (entry unload)."""
-        if self._data is not None and self._pending:
-            await self._store.async_save(self._snapshot())
+        """Flush pending changes at unload; retain failures for a later retry."""
+        # Reloads can unload the entry while a profile decision is being saved.
+        async with self._lock:
+            if self._data is not None and self._pending:
+                self._pending = False
+                self._cancel_scheduled_save()
+                try:
+                    await self._store.async_save(self._snapshot())
+                except OSError:
+                    self._schedule_save()
+                    _LOGGER.warning(
+                        "Unable to persist app state during unload; retry scheduled", exc_info=True
+                    )
 
-    async def async_remove(self) -> None:
-        """Delete the stored file, cancel pending writes and make later saves no-ops."""
-        self._data = None
-        await self._store.async_remove()
+    async def async_remove(self, *, keep_slots: Iterable[str] = ()) -> None:
+        """Forget app preferences, optionally retaining durable support evidence."""
+        async with self._lock:
+            slots = frozenset(keep_slots)
+            data = await self._async_load() if slots else {}
+            retained = {slot: state for slot, state in data.items() if slot in slots}
+            if retained:
+                await self._store.async_save(retained)
+            else:
+                await self._store.async_remove()
+            self._data = None
+            self._pending = False
+            self._cancel_scheduled_save()
 
     def _schedule_save(self) -> None:
         self._pending = True
-        self._store.async_delay_save(self._snapshot, 1)
+        if self._cancel_save is not None:
+            self._cancel_save()
+        self._cancel_save = async_call_later(self._store.hass, 1, self._async_delayed_save)
+        if self._cancel_final_write is None:
+            self._cancel_final_write = self._store.hass.bus.async_listen_once(
+                EVENT_HOMEASSISTANT_FINAL_WRITE, self._async_final_write
+            )
+
+    async def _async_delayed_save(self, _event: datetime) -> None:
+        """Take the delayed snapshot only after obtaining the decision-update lock."""
+        await self.async_save()
+
+    async def _async_final_write(self, _event: Event) -> None:
+        self._cancel_final_write = None
+        await self.async_save()
+
+    def _cancel_scheduled_save(self) -> None:
+        for cancel in (self._cancel_save, self._cancel_final_write):
+            if cancel is not None:
+                cancel()
+        self._cancel_save = self._cancel_final_write = None
 
     def _snapshot(self) -> dict[str, dict[str, Any]]:
-        """Return the data to write; the write it is taken for clears the pending flag."""
-        self._pending = False
+        """Copy loaded slots; taking a delayed snapshot cannot confirm persistence."""
         return dict(self._data or {})
 
 
@@ -130,4 +206,4 @@ async def async_remove_app_states(hass: HomeAssistant, addresses: Iterable[str])
         drop_app_sessions(hass, address)
     for address in addresses:
         store = registry.pop(address.upper(), None) or AppStateStore(hass, address)
-        await store.async_remove()
+        await store.async_remove(keep_slots=(PROFILE_DECISIONS_SLOT,))

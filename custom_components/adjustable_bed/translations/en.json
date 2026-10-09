@@ -1060,6 +1060,7 @@
       "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant.",
       "app_profile_unpair_first": "Each side keeps its own {profile} settings. Unpair the beds, change each side separately, then combine them again.",
       "vibradorm_reconfigure_required": "To change the Vibradorm app, remote or product, close Configure and select Reconfigure from this entry\u2019s three-dot menu. The guided setup verifies it before saving.",
+      "profile_review_save_failed": "Your profile review choice could not be saved. Please try again. Settings were not saved.",
       "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0."
     },
     "progress": {
@@ -6102,7 +6103,7 @@
         "step": {
           "init": {
             "title": "Choose the app for {name}",
-            "description": "**{name}** was set up before these app profiles existed and uses {current}. If you control the bed with one of these apps, its profile follows that app's controls:\n{apps}\n\nChoose the app you use, or keep the current configuration if the bed already works as expected. You are only asked once. Your existing device and matching entity IDs are preserved.",
+            "description": "**{name}** was set up before these app profiles existed and uses {current}. If you control the bed with one of these apps, its profile follows that app's controls:\n{apps}\n\nA newly available app profile is not necessarily a better match and may expose fewer controls. Choose one only if you use that app and want its controls; otherwise keep the current configuration. You are only asked once. Your existing device and matching entity IDs are preserved.",
             "data": {
               "choice": "App profile"
             }
@@ -6163,6 +6164,121 @@
           "vibradorm_setup_unavailable": "The guided setup could not open. Your current setup and this review were kept. Open Reconfigure from the entry\u2019s three-dot menu."
         }
       }
+    },
+    "lumbar_star254202_box25": {
+      "title": "A better profile may be available for {target}",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Review the profile for {name}",
+            "description": "**{name}** currently uses **{current}**. Its observed Star254202 Bluetooth name and manufacturer match a reported bed where switching to **{suggested}** restored Memory 1 saving and recall. This is a possible match, not a guarantee for every bed with that identity.\n\nThe suggested profile exposes numbered memory controls. Lumbar-specific Save Zero Gravity, Save Lounge, Save Incline, Save Anti-Snore, Wave 1, Wave 2, Wave 3, Massage On and Check Massage buttons will no longer be available. The Incline preset is replaced by TV. Automations using removed controls will need updating. Existing device and matching entity IDs are preserved.\n\nReview opens the suggested profile\u2019s settings. Check them and submit to apply the change. Closing settings keeps your current profile. Choose Keep current profile to dismiss this suggestion across restarts and updates.",
+            "data": {
+              "action": "Profile choice"
+            }
+          },
+          "paired": {
+            "title": "Review the profile for {target}",
+            "description": "**{target}** ({address}):\n\n**{name}** currently uses **{current}**. Its observed Star254202 Bluetooth name and manufacturer match a reported bed where switching to **{suggested}** restored Memory 1 saving and recall. This is a possible match, not a guarantee for every bed with that identity.\n\nThe suggested profile exposes numbered memory controls. Lumbar-specific Save Zero Gravity, Save Lounge, Save Incline, Save Anti-Snore, Wave 1, Wave 2, Wave 3, Massage On and Check Massage buttons will no longer be available. The Incline preset is replaced by TV. Automations using removed controls will need updating. Existing device and matching entity IDs are preserved.\n\nThis recommendation applies only to this physical bed. Changing this app profile requires restoring standalone controls first. Review opens Configure: choose {pair_action}, then change only the affected bed to the suggested profile. No split or profile change happens automatically. Keep current profile dismisses this suggestion for this bed only.",
+            "data": {
+              "action": "Profile choice"
+            }
+          }
+        },
+        "error": {
+          "save_failed": "Your choice could not be saved. Please try again."
+        },
+        "abort": {
+          "recommendation_changed": "This recommendation is no longer available or the configuration changed. Open the current notice to review it.",
+          "review_started": "Continue in settings. Nothing changes until you submit them."
+        }
+      }
+    },
+    "profile_mismatch": {
+      "title": "A better profile may be available for {target}",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Review the profile for {name}",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed\u2019s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens Configure. Check your app, remote and product settings before submitting. Nothing changes until you save. Closing settings keeps the current profile. Keep current profile dismisses this assessment across restarts and updates.",
+            "data": {
+              "action": "Profile choice"
+            }
+          },
+          "paired": {
+            "title": "Review the profile for {target}",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed\u2019s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nThis assessment applies to this physical bed. Review opens the pair\u2019s Configure menu. To choose a different profile, select {pair_action} first, then configure the affected bed. No pair or profile changes happen automatically. Keep current profile dismisses this assessment for this physical bed only.",
+            "data": {
+              "action": "Profile choice"
+            }
+          }
+        },
+        "error": {
+          "save_failed": "Your choice could not be saved. Please try again."
+        },
+        "abort": {
+          "recommendation_changed": "This recommendation is no longer available or the configuration changed. Open the current notice to review it.",
+          "review_started": "Continue in settings. Nothing changes until you submit them."
+        }
+      }
+    },
+    "profile_ambiguous": {
+      "title": "Check the profile or protocol variant for {target}",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Review the profile for {name}",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) suggests reviewing the selected profile or protocol variant. It cannot establish which controls your bed has. Check the app and physical remote you use against these choices:\n\n{choices}\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens Configure. Check your app, remote and product settings before submitting. Nothing changes until you save. Closing settings keeps the current profile. Keep current profile dismisses this assessment across restarts and updates.",
+            "data": {
+              "action": "Profile choice"
+            }
+          },
+          "paired": {
+            "title": "Review the profile for {target}",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) suggests reviewing the selected profile or protocol variant. It cannot establish which controls your bed has. Check the app and physical remote you use against these choices:\n\n{choices}\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nThis assessment applies to this physical bed. Review opens the pair\u2019s Configure menu. To choose a different profile, select {pair_action} first, then configure the affected bed. No pair or profile changes happen automatically. Keep current profile dismisses this assessment for this physical bed only.",
+            "data": {
+              "action": "Profile choice"
+            }
+          }
+        },
+        "error": {
+          "save_failed": "Your choice could not be saved. Please try again."
+        },
+        "abort": {
+          "recommendation_changed": "This recommendation is no longer available or the configuration changed. Open the current notice to review it.",
+          "review_started": "Continue in settings. Nothing changes until you submit them."
+        }
+      }
+    },
+    "tempur_sleeptracker_processor": {
+      "title": "Review the Tempur app profile for {target}",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Review the app for {target}",
+            "description": "**{target}** ({bluetooth_name}, {address}) uses **{current}**. This matches a reported TEMPUR-Ergo ProSmart Air / ActiveBreeze setup that used Adjustable Lite for compatibility. If your official app is **Tempur Sleeptracker-AI**, use **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** for the app\u2019s presets, ActiveBreeze heat/cooling and premium massage controls. A similar Bluetooth name alone does not confirm that app or its processor.\n\nThe app controls a separate Bluetooth endpoint. Review shows how to add that processor. Keep current profile dismisses this notice for this physical bed across restarts and updates.",
+            "data": {
+              "action": "Profile choice"
+            }
+          },
+          "paired": {
+            "title": "Review the app for {target}",
+            "description": "**{target}** ({bluetooth_name}, {address}) uses **{current}**. This matches a reported TEMPUR-Ergo ProSmart Air / ActiveBreeze setup that used Adjustable Lite for compatibility. If your official app is **Tempur Sleeptracker-AI**, use **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** for the app\u2019s presets, ActiveBreeze heat/cooling and premium massage controls. A similar Bluetooth name alone does not confirm that app or its processor.\n\nThe app controls a separate Bluetooth endpoint. Review shows how to add that processor. Keep current profile dismisses this notice for this physical bed across restarts and updates.",
+            "data": {
+              "action": "Profile choice"
+            }
+          },
+          "processor": {
+            "title": "Add the Tempur Sleeptracker processor",
+            "description": "If you use **Tempur Sleeptracker-AI**, open **Settings > Devices & services > Add integration > Adjustable Bed** and add the **Sleeptracker processor\u2019s actual Bluetooth endpoint**. Choose **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** and follow its verification and product settings. Automatic discovery can offer the processor; manual setup requires its actual Bluetooth address.\n\nThe existing **{target}** ({address}) is a UART receiver. Changing its bed type alone cannot select the processor. Verify the new processor\u2019s controls before retiring these compatibility controls. The new entry has its own device and entity IDs, so update affected dashboards and automations. For a paired bed, review each physical bed separately; this notice does not split the pair or identify the processor\u2019s physical sides.\n\n[Processor setup guide]({processor_guide_url})\n\nSubmit to acknowledge these instructions and dismiss this notice. Adding or verifying a processor is a separate setup action; acknowledging this guide keeps the current profile."
+          }
+        },
+        "error": {
+          "save_failed": "Your choice could not be saved. Please try again."
+        },
+        "abort": {
+          "recommendation_changed": "This recommendation is no longer available or the configuration changed. Open the current notice to review it."
+        }
+      }
     }
   },
   "selector": {
@@ -6203,6 +6319,18 @@
     "app_profile_review": {
       "options": {
         "keep": "Keep current configuration"
+      }
+    },
+    "profile_recommendation_action": {
+      "options": {
+        "review": "Review profile settings",
+        "keep": "Keep current profile"
+      }
+    },
+    "tempur_processor_action": {
+      "options": {
+        "review": "Show processor setup",
+        "keep": "Keep current profile"
       }
     }
   }
