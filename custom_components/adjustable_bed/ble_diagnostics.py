@@ -65,6 +65,8 @@ DEFAULT_CAPTURE_DURATION = 120  # 2 minutes
 MAX_CAPTURED_NOTIFICATIONS = 5000
 MAX_RECONNECT_ATTEMPTS = 2
 MAX_DIAGNOSTIC_QUERY_PREEMPTIONS = 3
+GATT_OPERATION_TIMEOUT = 5.0
+GATT_READ_BUDGET = 30.0
 
 _SKIPPED_READ_ERROR = "Skipped: connection lost during service enumeration"
 
@@ -219,6 +221,7 @@ class BLEDiagnosticRunner:
         self._configured_connection_attempt_details: list[dict[str, Any]] = []
         self._background_tasks: set[asyncio.Task[None]] = set()
         self._reconnect_count: int = 0
+        self._read_deadline: float | None = None
 
     async def run_diagnostics(self) -> DiagnosticReport:
         """Run full diagnostic capture on the device."""
@@ -548,6 +551,8 @@ class BLEDiagnosticRunner:
                         f"diagnostic_{self.address}",
                         max_attempts=1,
                         timeout=CONNECTION_TIMEOUT,
+                        # Cached BlueZ objects may not exist on the live link yet.
+                        use_services_cache=False,
                     )
                 attempt_details["connect_elapsed_seconds"] = round(
                     time.monotonic() - connect_start, 3
@@ -627,6 +632,7 @@ class BLEDiagnosticRunner:
             return []
 
         enumeration_client = self._client
+        self._read_deadline = time.monotonic() + GATT_READ_BUDGET
         services: list[ServiceInfo] = []
         reads_aborted = False
 
@@ -698,7 +704,7 @@ class BLEDiagnosticRunner:
                 return True
 
         try:
-            value = await self._client.read_gatt_char(target)
+            value = await self._read_gatt_char(target)
             char_info.read_result = (
                 {"hex": "**REDACTED**", "length": len(value), "ascii_preview": None}
                 if char_info.uuid.lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS
@@ -714,6 +720,22 @@ class BLEDiagnosticRunner:
                 err,
             )
         return True
+
+    async def _read_gatt_char(self, target: Any) -> bytearray:
+        """Bound each read and the total enumeration/device-information reads."""
+        if self._client is None:
+            raise BleakError("Not connected")
+        timeout = GATT_OPERATION_TIMEOUT
+        if self._read_deadline is not None:
+            remaining = self._read_deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError("Skipped: diagnostic read budget exhausted")
+            timeout = min(timeout, remaining)
+        try:
+            async with asyncio.timeout(timeout):
+                return await self._client.read_gatt_char(target)
+        except TimeoutError as err:
+            raise TimeoutError(f"Read timed out after {timeout:g}s") from err
 
     def _find_current_characteristic(self, char_info: CharacteristicInfo) -> Any | None:
         """Look up a characteristic in the current client's service collection."""
@@ -826,7 +848,7 @@ class BLEDiagnosticRunner:
 
         for name, uuid in DEVICE_INFO_CHARS.items():
             try:
-                value = await self._client.read_gatt_char(uuid)
+                value = await self._read_gatt_char(uuid)
                 try:
                     info[name] = value.decode("utf-8").rstrip("\x00")
                 except UnicodeDecodeError:
@@ -911,12 +933,14 @@ class BLEDiagnosticRunner:
 
                 try:
                     handler = functools.partial(self._notification_handler_sync, char.uuid)
-                    await self._client.start_notify(bleak_characteristic, handler)
+                    async with asyncio.timeout(GATT_OPERATION_TIMEOUT):
+                        await self._client.start_notify(bleak_characteristic, handler)
                     char.notify_subscription["success"] = True
                 except Exception as err:
-                    error = f"Failed to subscribe to {char.uuid}: {err}"
+                    detail = str(err) or type(err).__name__
+                    error = f"Failed to subscribe to {char.uuid}: {detail}"
                     char.notify_subscription["success"] = False
-                    char.notify_subscription["error"] = str(err)
+                    char.notify_subscription["error"] = detail
                     _LOGGER.debug(error)
                     self._errors.append(error)
 
@@ -977,7 +1001,8 @@ class BLEDiagnosticRunner:
                             if getattr(candidate, "handle", None) == char.handle:
                                 bleak_characteristic = candidate
                                 break
-                    await self._client.stop_notify(bleak_characteristic or char.uuid)
+                    async with asyncio.timeout(GATT_OPERATION_TIMEOUT):
+                        await self._client.stop_notify(bleak_characteristic or char.uuid)
                 except Exception as err:
                     _LOGGER.debug(
                         "Error unsubscribing from %s: %s",

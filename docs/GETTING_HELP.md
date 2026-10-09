@@ -115,6 +115,14 @@ The support bundle includes everything we need in one file:
 6. A notification will appear with a **download link** — click it to save the file.
 7. Attach the JSON file to your GitHub issue. Check its `evidence.warnings` section for anything that could not be captured.
 
+A saved bundle or a successful action means the report was generated, even when
+the Bluetooth connection failed. The warnings distinguish missing services and
+failed notification subscriptions from a capture with no remote activity.
+Standalone capture waits for live GATT services. Individual reads and
+notification operations have a five-second timeout, and enumeration plus Device
+Information reads share a 30-second read budget. An unanswered read is recorded
+in the report so notification capture can still proceed.
+
 For a **two-address combined bed**, select the affected Left or Right child
 device; the parent alone is ambiguous for a support capture. Generate one bundle
 per side when both are involved. A single-address parent resolves to its shared

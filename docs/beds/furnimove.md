@@ -34,23 +34,38 @@ brand/active queries found no further referenced production mappings.
 Alternate debug-environment tables do not replace missing production IDs.
 The captured catalog is finite, not a claim to enumerate every future API ID.
 
-### One bed type per handset
+### Select the app as well as the handset
 
 This catalog is also the keycode source for the 86 handsets that the
 [Okin UUID](okimat.md) and [Okin DOT](okin-dot.md) bed types list. Their
 earlier backend capture matched it byte for byte, including memory-save
-timing, so those bed types now derive the keycodes from here. New setups offer
-each handset under one bed type only:
+timing, so those bed types now derive the keycodes from here. Shared keycodes
+do not establish the same bonding or feedback requirements. Explicit FurniMove
+setup offers every captured handset, including `82417`:
 
 | Handsets | New setups use | Why |
 |---|---|---|
-| 83 standard handsets also listed under Okin UUID | Okin UUID | It adds the mandatory BLE bond and FFE4 position feedback that this app profile lacks, so FurniMove is not a superset there. |
+| 83 standard handsets also listed under Okin UUID | FurniMove when using that app; Okin UUID for its documented setup | FurniMove follows the app's advisory bond policy and has no motor positions. Okin UUID requires a BLE bond and adds FFE4 position feedback. |
 | DOT handsets 90167, 91983, 93558 | FurniMove | Neither route bonds or reports positions. FurniMove adds the app's per-control frame format and reported light state. |
 | 12234, `00000`, `280702`, `280703` | FurniMove | No other bed type lists them. |
 | DOT handsets 97450, 97544, 98035 | Okin DOT | They are not in the FurniMove capture. |
 
 Existing entries keep working unchanged. An Okin DOT entry using 90167, 91983
 or 93558 receives the repair described below.
+
+For the FurniMove app showing handset **82417**, choose **FurniMove / OKIN Smart
+Remote → 82417: RF TOPLINE SI/BK/BK/07**. This table exposes Back and Legs,
+with no massage or memory slots. `90167: RF1058` is a different layout and is
+not a fallback for this receiver. Correct an existing entry through its
+integration options; selecting `82417` does not require replacing the entry or
+removing an operating-system bond.
+
+FurniMove connections and setup verification wait for live GATT service
+discovery before starting subscriptions. A cached BlueZ service collection can
+otherwise arrive before its characteristic objects exist, producing
+`org.freedesktop.DBus.Error.UnknownObject` on reads and notifications. This fixes
+the race observed in #633, but does not establish the cause of a link that
+disconnects before service discovery completes.
 
 Discovery follows the same split. DewertOkin manufacturer data, the `1523`
 service and the RF-Gateway service keep their confident DewertOkin route, with
@@ -72,7 +87,7 @@ System → Repairs**, even if connection fails. A saved count of one motor does
 not establish the product. The repair offers these choices:
 
 - **FurniMove adjustable bed:** choose the exact handset layout, restoring the
-  selected axes. Handsets that stay on the Okin UUID route are not listed.
+  selected axes. Every captured FurniMove handset is listed.
 - **Single-actuator staircase:** retain its one Stair cover.
 - **Keep current configuration:** dismiss the repair without changing any
   setting. A full OKIMAT bed saved as RF ECO BT is promoted at runtime (#406);

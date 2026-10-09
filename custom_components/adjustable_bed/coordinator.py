@@ -3765,7 +3765,9 @@ class AdjustableBedCoordinator:
                     # the post-connect bond probe) fail. This also covers the
                     # no-pair verify retry after a failed pair attempt, which must
                     # see live services to confirm the bond instead of looping.
-                    disable_cache = bed_requires_pairing
+                    # FurniMove startup subscribes immediately. On BlueZ a
+                    # cached collection can precede the live GATT objects (#633).
+                    disable_cache = bed_requires_pairing or self._bed_type == BED_TYPE_FURNIMOVE
                     onboarding_deadline = (
                         asyncio.get_running_loop().time() + (
                             VIBRADORM_VMAT_ONBOARDING_TIMEOUT_SECONDS
