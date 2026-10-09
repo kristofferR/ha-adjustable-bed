@@ -14,8 +14,11 @@ from .const import (
     SLEEP_NUMBER_AUTH_CHAR_UUID,
 )
 
-# Keys to fully redact
-KEYS_TO_REDACT = {CONF_NAME, CONF_JENSEN_PIN, CONF_OCTO_PIN, "title", "serial", "serial_number", "configuration_url"}
+# Credentials are secret even in support bundles that retain device identities.
+_CREDENTIAL_KEYS = {CONF_JENSEN_PIN, CONF_OCTO_PIN, "authcode", "authtoken", "token", "password"}
+KEYS_TO_REDACT = {
+    CONF_NAME, "title", "serial", "serial_number", "configuration_url"
+} | _CREDENTIAL_KEYS
 
 # Keys containing MAC addresses (partial redaction - keep OUI)
 MAC_ADDRESS_KEYS = {CONF_ADDRESS, "address"}
@@ -97,12 +100,8 @@ def redact_data(data: Any, depth: int = 0) -> Any:
         return data
 
 
-# Keys that contain actual secrets (PINs)
-_PIN_KEYS = {CONF_JENSEN_PIN, CONF_OCTO_PIN}
-
-
 def redact_pins_only(data: Any, depth: int = 0) -> Any:
-    """Recursively redact only PIN fields, leaving names/addresses/MACs intact.
+    """Redact credentials, leaving names/addresses/MACs intact.
 
     Used for support bundles where BLE device names and MAC addresses are
     essential debugging information and should not be stripped.
@@ -114,7 +113,7 @@ def redact_pins_only(data: Any, depth: int = 0) -> Any:
         result = {}
         for key, value in data.items():
             key_lower = key.lower() if isinstance(key, str) else key
-            if key in _PIN_KEYS or key_lower in _PIN_KEYS:
+            if key in _CREDENTIAL_KEYS or key_lower in _CREDENTIAL_KEYS:
                 result[key] = "**REDACTED**"
             else:
                 result[key] = redact_pins_only(value, depth + 1)
@@ -148,3 +147,28 @@ def redact_sleep_number_sessions(report: dict[str, Any]) -> None:
     for summary in report.get("notification_summary", {}).get("by_characteristic", {}).values():
         summary["top_repeated_payloads"] = []
         summary["ascii_previews"] = []
+
+
+SLEEPTRACKER_SECRET_CHARACTERISTICS = frozenset({
+    "4bc4783d-64a3-45b0-9a4a-06cb7713e32b",
+    "a5a25fb5-500f-436b-8d36-447bc5f30a29",
+    "3d91d13b-2310-43d1-b991-9e915b047653",
+})
+
+
+def redact_sleeptracker_sessions(report: dict[str, Any]) -> None:
+    """Retain lengths/counts without publishing framed challenges or tokens."""
+    for service in report.get("gatt_services", []):
+        for characteristic in service.get("characteristics", []):
+            if str(characteristic.get("uuid", "")).lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS:
+                result = characteristic.get("read_result")
+                if isinstance(result, dict):
+                    result["hex"] = "**REDACTED**"
+                    result["ascii_preview"] = None
+    for notification in report.get("notifications", []):
+        if str(notification.get("characteristic", "")).lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS:
+            notification["data_hex"] = "**REDACTED**"
+    for uuid, summary in report.get("notification_summary", {}).get("by_characteristic", {}).items():
+        if uuid.lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS:
+            summary["top_repeated_payloads"] = []
+            summary["ascii_previews"] = []

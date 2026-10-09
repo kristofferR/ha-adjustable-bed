@@ -353,6 +353,10 @@
     {
       "local_name": "STAR25*",
       "connectable": true
+    },
+    {
+      "service_uuid": "f6380280-6d90-442c-8feb-3aec76948f06",
+      "connectable": true
     }
   ],
   "codeowners": [

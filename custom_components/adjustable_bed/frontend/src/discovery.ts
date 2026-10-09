@@ -196,6 +196,8 @@ export function bedEntitiesForDevice(
         else if (key === "vibradorm_app_mood_speed") mood().numbers.push(id);
         else if (key === "vmatbasic_mood_speed" || key === "vmatbasic_mood_brightness") mood().numbers.push(id);
         else if (key === "vibradorm_app_massage_speed") bed.massage.numbers.push(id);
+        else if (key === "sleeptracker_wave_minutes") bed.massage.numbers.push(id);
+        else if (/^sleeptracker_(left|right)_level$/.test(key)) bed.climate.numbers.push(id);
         else if (key === "fan_level") bed.climate.numbers.push(id);
         else if (key.startsWith("sleep_number_setting")) bed.firmness.push(id);
         break;
@@ -214,6 +216,14 @@ export function bedEntitiesForDevice(
           bed.connect = id;
         } else if (key === "disconnect") {
           bed.disconnect = id;
+        } else if (key === "sleeptracker_light_toggle") {
+          bed.lights.toggle = id;
+        } else if (key === "sleeptracker_light_off") {
+          (bed.lights.buttons ??= []).push(id);
+        } else if (/^sleeptracker_(massage_|wave_start|wind_down_|local_animation)/.test(key)) {
+          bed.massage.buttons.push(id);
+        } else if (key.startsWith("sleeptracker_")) {
+          bed.utility.push(id);
         } else if (key === "toggle_light") {
           bed.lights.toggle = id;
         } else if (key === "light_cycle" || key === "starcode_light_cycle") {
@@ -331,7 +341,8 @@ export function bedEntitiesForDevice(
 
       case "binary_sensor":
         if (key === "ble_connection") bed.connectivity = id;
-        else if (key === "under_bed_lights" || key === "adjustable_lite_light" || key === "innova_light") bed.lights.state = id;
+        else if (key === "sleeptracker_wind_down_running") (bed.massage.states ??= []).push(id);
+        else if (key === "under_bed_lights" || key === "adjustable_lite_light" || key === "innova_light" || key === "sleeptracker_light_on") bed.lights.state = id;
         else if (key.startsWith("bed_presence")) bed.presence.push(id);
         break;
 
@@ -344,6 +355,10 @@ export function bedEntitiesForDevice(
         else if (key === "starcode_color") mood().selects.push(id);
         else if (key === "vibradorm_app_mood_palette" || key === "vibradorm_app_mood_effect" || key === "vmatbasic_mood_palette" || key === "vmatbasic_mood_effect")
           mood().selects.push(id);
+        else if (key === "sleeptracker_wave_frequency")
+          (bed.massage.selects ??= []).push(id);
+        else if (/^sleeptracker_(left|right)_(mode|curve)$/.test(key))
+          bed.climate.selects.push(id);
         else if (key === "vibradorm_app_massage_wave")
           (bed.massage.selects ??= []).push(id);
         // Richmat MH: motor mode and snore intervention are device settings;
@@ -470,6 +485,7 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     bed.massage.buttons.length === 0 &&
     bed.massage.numbers.length === 0 &&
     !bed.massage.selects?.length &&
+    !bed.massage.states?.length &&
     !bed.massage.timer &&
     bed.climate.entities.length === 0 &&
     bed.climate.selects.length === 0 &&

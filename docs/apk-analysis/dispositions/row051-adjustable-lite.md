@@ -21,22 +21,23 @@ The public contract is the [Adjustable Lite profile](../../beds/keeson.md#adjust
 
 Attempt 001 stopped on a harness input mismatch and produced no accepted report. IA001-001 (eight Bluetooth instruction sites wrongly marked reachable) was repaired in attempt 003 and closed by audit 002. Raw artifacts, reports and decompiled sources remain machine-local.
 
-## Hardware-configuration compatibility follow-up
+## Tempur profile correction
 
-[Issue #669](https://github.com/kristofferR/ha-adjustable-bed/issues/669) reports
-working massage on 4.0.1/4.0.2 and its loss on 4.1.0 for an MC232SC advertising
-`KSSF05C201000322`, despite `has_massage: true`. The app's remote-name choice
-does not negate that explicit hardware configuration. The integration now
-retains head/foot massage steps and the timer button when the option is enabled,
-reusing D22/D24–D27's exact frames. It adds no name-to-model mapping, generic
-toggle/off command, anti-snore capability or feedback-parser assumption.
+The Adjustable Lite massage override introduced for
+[issue #669](https://github.com/kristofferR/ha-adjustable-bed/issues/669) in
+[PR #671](https://github.com/kristofferR/ha-adjustable-bed/pull/671), and the
+local KSSF05C preset workaround for
+[issue #681](https://github.com/kristofferR/ha-adjustable-bed/issues/681), are
+removed. The reported TEMPUR-Ergo ProSmart Air uses Tempur Sleeptracker-AI;
+Adjustable Lite was a compatibility selection, not its official app profile.
+Select the [Tempur Sleeptracker-AI processor profile](../../beds/sleeptracker.md)
+for that app's bed controls, using its verified processor endpoint.
 
-`tests/test_keeson_adjustable_lite.py::test_explicit_massage_option_restores_proven_controls_without_remapping_remote`
-checks all five literal frames and the unchanged remote/feedback gates;
-`test_switching_to_lite_retains_configured_massage_entity_identities` checks that
-the working entity IDs survive the profile change. The frozen report, audit
-acceptance and original 93-item totals are unchanged. Physical behavior of the
-compatibility restoration awaits the reporter's validation.
+Adjustable Lite again follows its accepted app's case-sensitive remote-name
+selection and capability gates. **Has massage** does not substitute for the
+KSBT03C remote. The frozen report, original 93-item ledger and 33 exclusions
+remain unchanged. The separate [S02 ledger](S02-sleeptracker.md) accounts for the
+accepted Tempur app route. No Tempur name remaps a UART endpoint to framed JSON.
 
 ## What changed
 

@@ -653,6 +653,24 @@
         "data": {
           "confirm": "Split the pair or restore standalone controls"
         }
+      },
+      "sleeptracker": {
+        "title": "Tempur Sleeptracker-AI processor",
+        "description": "Choose this profile for TEMPUR-Ergo ProSmart Air / ActiveBreeze beds using Tempur Sleeptracker-AI. Select the Sleeptracker processor Bluetooth address, then your app layout and recorded processor unit number. Existing UART control-box addresses require a separate processor entry. Authentication is the default; restricted mode is an explicit app route.",
+        "data": {
+          "product_type": "App layout",
+          "sleeptracker_unit_number": "Processor unit number (wire side)",
+          "sleeptracker_snapshot_side": "Status snapshot side ordinal",
+          "sleeptracker_restricted": "Restricted app session (no authentication)",
+          "sleeptracker_processor_type": "Processor type (0 if unknown)",
+          "sleeptracker_foundation": "Foundation size (app metadata)"
+        },
+        "data_description": {
+          "sleeptracker_unit_number": "Use the app-recorded integer. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
+          "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
+          "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
+          "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides."
+        }
       }
     },
     "progress": {
@@ -741,7 +759,9 @@
       "richmat_mh_choose_model": "The app asks for the model for this Bluetooth name. Choose the model in the protocol variant.",
       "richmat_mh_no_name": "The app selects the model from the Bluetooth name, which is unavailable. Choose the model in the protocol variant.",
       "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant.",
-      "vibradorm_verification_required": "The selected app could not be verified or its connection could not be released. Retry, or keep your current setup."
+      "vibradorm_verification_required": "The selected app could not be verified or its connection could not be released. Retry, or keep your current setup.",
+      "sleeptracker_profile": "Select a supported Sleeptracker layout and numeric processor selectors.",
+      "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0."
     }
   },
   "options": {
@@ -831,7 +851,12 @@
           "reverse_motor_2": "Reverse motor channel 2",
           "reverse_motor_3": "Reverse motor channel 3",
           "reverse_motor_4": "Reverse motor channel 4",
-          "limoss_remote_theme": "App artwork theme"
+          "limoss_remote_theme": "App artwork theme",
+          "sleeptracker_foundation": "Foundation size (app metadata)",
+          "sleeptracker_unit_number": "Processor unit number (wire side)",
+          "sleeptracker_snapshot_side": "Status snapshot side ordinal",
+          "sleeptracker_restricted": "Restricted app session (no authentication)",
+          "sleeptracker_processor_type": "Processor type (0 if unknown)"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -887,7 +912,11 @@
           "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
           "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
           "starcode_lift_entries": "Choose up to three other configured AdjustableM5X5 or DewertOkin ELEVATE entries. This main and the three lifts keep separate Bluetooth addresses and controls.",
-          "starcode_m5x5_profile": "Choose CB25, F23 or kneading to match the exact Bluetooth name. ELEVATE lifts use the DewertOkin ELEVATE bed type."
+          "starcode_m5x5_profile": "Choose CB25, F23 or kneading to match the exact Bluetooth name. ELEVATE lifts use the DewertOkin ELEVATE bed type.",
+          "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
+          "sleeptracker_unit_number": "Use the app-recorded integer. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
+          "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
+          "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count."
         }
       },
       "remove_bond": {
@@ -953,7 +982,18 @@
           "motor_pulse_count": "Motor pulse count",
           "motor_pulse_delay_ms": "Motor pulse delay (ms)",
           "disconnect_after_command": "Disconnect after each command",
-          "idle_disconnect_seconds": "Idle disconnect timeout (seconds)"
+          "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
+          "sleeptracker_foundation": "Foundation size (app metadata)",
+          "sleeptracker_unit_number": "Processor unit number (wire side)",
+          "sleeptracker_snapshot_side": "Status snapshot side ordinal",
+          "sleeptracker_restricted": "Restricted app session (no authentication)",
+          "sleeptracker_processor_type": "Processor type (0 if unknown)"
+        },
+        "data_description": {
+          "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
+          "sleeptracker_unit_number": "Use the app-recorded integer. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
+          "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
+          "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count."
         }
       },
       "right_settings": {
@@ -965,7 +1005,18 @@
           "motor_pulse_count": "Motor pulse count",
           "motor_pulse_delay_ms": "Motor pulse delay (ms)",
           "disconnect_after_command": "Disconnect after each command",
-          "idle_disconnect_seconds": "Idle disconnect timeout (seconds)"
+          "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
+          "sleeptracker_foundation": "Foundation size (app metadata)",
+          "sleeptracker_unit_number": "Processor unit number (wire side)",
+          "sleeptracker_snapshot_side": "Status snapshot side ordinal",
+          "sleeptracker_restricted": "Restricted app session (no authentication)",
+          "sleeptracker_processor_type": "Processor type (0 if unknown)"
+        },
+        "data_description": {
+          "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
+          "sleeptracker_unit_number": "Use the app-recorded integer. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
+          "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
+          "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count."
         }
       },
       "vibradorm_setup": {
@@ -1009,7 +1060,8 @@
       "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant.",
       "app_profile_unpair_first": "Each side keeps its own {profile} settings. Unpair the beds, change each side separately, then combine them again.",
       "vibradorm_reconfigure_required": "To change the Vibradorm app, remote or product, close Configure and select Reconfigure from this entry\u2019s three-dot menu. The guided setup verifies it before saving.",
-      "profile_review_save_failed": "Your profile review choice could not be saved. Please try again. Settings were not saved."
+      "profile_review_save_failed": "Your profile review choice could not be saved. Please try again. Settings were not saved.",
+      "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond\u2026",
@@ -2221,6 +2273,48 @@
       },
       "okin_app_home": {
         "name": "Home"
+      },
+      "sleeptracker_light_toggle": {
+        "name": "Toggle safety light"
+      },
+      "sleeptracker_light_off": {
+        "name": "Safety light off"
+      },
+      "sleeptracker_refresh": {
+        "name": "Refresh bed state"
+      },
+      "sleeptracker_identify": {
+        "name": "Identify split light (wire unit 1)"
+      },
+      "sleeptracker_save_zero_g": {
+        "name": "Save zero gravity"
+      },
+      "sleeptracker_save_anti_snore": {
+        "name": "Save anti-snore"
+      },
+      "sleeptracker_save_tv_pc": {
+        "name": "Save TV position"
+      },
+      "sleeptracker_massage_28hz": {
+        "name": "28 Hz massage"
+      },
+      "sleeptracker_massage_40hz": {
+        "name": "40 Hz massage"
+      },
+      "sleeptracker_wind_down_1": {
+        "name": "Wind down 1 (app 16 min)"
+      },
+      "sleeptracker_wind_down_2": {
+        "name": "Wind down 2 (app 10 min)"
+      },
+      "sleeptracker_local_animation": {
+        "name": "Local bed animation"
+      },
+      "sleeptracker_wave_start": {
+        "name": "Start relaxation wave"
+      },
+      "sleeptracker_identify_local": {
+        "name": "Identify local safety light"
       }
     },
     "cover": {
@@ -3440,6 +3534,24 @@
         "state": {
           "off": "Off"
         }
+      },
+      "sleeptracker_layout": {
+        "name": "Sleeptracker layout"
+      },
+      "sleeptracker_massage_pattern": {
+        "name": "Massage pattern (reported)"
+      },
+      "sleeptracker_massage_head_strength": {
+        "name": "Head massage strength (raw)"
+      },
+      "sleeptracker_massage_foot_strength": {
+        "name": "Foot massage strength (raw)"
+      },
+      "sleeptracker_left_commanded_timer_seconds": {
+        "name": "Left ActiveBreeze timer (last command)"
+      },
+      "sleeptracker_right_commanded_timer_seconds": {
+        "name": "Right ActiveBreeze timer (last command)"
       }
     },
     "light": {
@@ -3689,6 +3801,12 @@
       },
       "richmat_mh_smart_light_lock": {
         "name": "Smart light lock"
+      },
+      "sleeptracker_light_on": {
+        "name": "Safety light (reported)"
+      },
+      "sleeptracker_wind_down_running": {
+        "name": "Wind-down running (reported)"
       }
     },
     "number": {
@@ -3871,6 +3989,15 @@
       },
       "richmat_mh_foot_massage_intensity": {
         "name": "Foot massage intensity"
+      },
+      "sleeptracker_wave_minutes": {
+        "name": "Relaxation duration"
+      },
+      "sleeptracker_left_level": {
+        "name": "Left ActiveBreeze level"
+      },
+      "sleeptracker_right_level": {
+        "name": "Right ActiveBreeze level"
       }
     },
     "select": {
@@ -4196,6 +4323,46 @@
         "state": {
           "normal": "Normal",
           "reversed": "Reversed"
+        }
+      },
+      "sleeptracker_wave_frequency": {
+        "name": "Relaxation frequency",
+        "state": {
+          "28": "28 Hz",
+          "40": "40 Hz",
+          "52": "52 Hz",
+          "68": "68 Hz",
+          "88": "88 Hz"
+        }
+      },
+      "sleeptracker_left_mode": {
+        "name": "Left ActiveBreeze mode",
+        "state": {
+          "off": "Off",
+          "cool": "Cool",
+          "heat": "Heat"
+        }
+      },
+      "sleeptracker_right_mode": {
+        "name": "Right ActiveBreeze mode",
+        "state": {
+          "off": "Off",
+          "cool": "Cool",
+          "heat": "Heat"
+        }
+      },
+      "sleeptracker_left_curve": {
+        "name": "Left ActiveBreeze curve",
+        "state": {
+          "constant": "Constant",
+          "curve": "Curve"
+        }
+      },
+      "sleeptracker_right_curve": {
+        "name": "Right ActiveBreeze curve",
+        "state": {
+          "constant": "Constant",
+          "curve": "Curve"
         }
       }
     },
@@ -5590,6 +5757,96 @@
         "side": {
           "name": "Side",
           "description": "Target side of a paired bed."
+        }
+      }
+    },
+    "sleeptracker_preset": {
+      "name": "Sleeptracker: recall or save preset",
+      "description": "Operate a named preset on the framed JSON processor. Available presets and saves depend on the selected app layout.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Paired integration side"
+        },
+        "preset": {
+          "name": "Preset"
+        },
+        "save": {
+          "name": "Save current position"
+        }
+      }
+    },
+    "sleeptracker_climate": {
+      "name": "Sleeptracker: ActiveBreeze climate",
+      "description": "Set local left/right/both fan modes and levels. Level 0 stops the selected fans. Heat sends a 3600 second timer; cool sends a 36000 second timer. Timers and curve are commanded settings, not reported remaining time.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Paired integration side"
+        },
+        "fan_side": {
+          "name": "Fan zone"
+        },
+        "mode": {
+          "name": "Mode"
+        },
+        "level": {
+          "name": "Level (0 off, 1\u20133)"
+        },
+        "constant": {
+          "name": "Constant level (off selects curve)"
+        }
+      }
+    },
+    "sleeptracker_wave": {
+      "name": "Sleeptracker: relaxation wave",
+      "description": "Start local massage at a proven frequency and duration on ProSmart or ActiveBreeze. The app encodes minutes \u00d7 600; hardware duration units remain unverified. Use Stop massage to end early.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Paired integration side"
+        },
+        "frequency": {
+          "name": "Frequency (Hz)"
+        },
+        "minutes": {
+          "name": "Duration (minutes)"
+        }
+      }
+    },
+    "sleeptracker_massage": {
+      "name": "Sleeptracker: massage",
+      "description": "Step a zone or pattern, select 28/40 Hz, or stop local massage. Available controls depend on the app layout.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Paired integration side"
+        },
+        "action": {
+          "name": "Action"
+        }
+      }
+    },
+    "sleeptracker_relaxation": {
+      "name": "Sleeptracker: local relaxation",
+      "description": "Start wind-down or the local motor/massage subset of the shipped animation. Speaker, audio and media statements are excluded. Stop ends the selected processor unit; physical stop scope remains unverified.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Paired integration side"
+        },
+        "action": {
+          "name": "Action"
         }
       }
     }

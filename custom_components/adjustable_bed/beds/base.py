@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 
     from ..coordinator import AdjustableBedCoordinator
     from ..motion_bed_requests import MotionBedWrite
+    from ..sleeptracker_protocol import Request as SleeptrackerRequest
 
 from ..const import (
     POSITION_CHECK_INTERVAL,
@@ -1541,6 +1542,19 @@ class BedController(ABC):
     ) -> None:
         """Write the Richmat MH aroma timing triplet."""
         raise NotImplementedError("Richmat MH aroma timing is not supported")
+
+    @property
+    def supports_sleeptracker_controls(self) -> bool:
+        """Whether typed local Sleeptracker processor actions are available."""
+        return False
+
+    def validate_sleeptracker_request(self, request: SleeptrackerRequest) -> None:
+        """Preflight every target before sending local processor controls."""
+        raise NotImplementedError("Sleeptracker controls are unavailable")
+
+    async def async_execute_sleeptracker_request(self, request: SleeptrackerRequest) -> None:
+        """Execute one validated, finite Sleeptracker action."""
+        raise NotImplementedError("Sleeptracker controls are unavailable")
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:

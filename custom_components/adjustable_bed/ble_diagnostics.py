@@ -51,6 +51,7 @@ from .diagnostic_payloads import (
     summarize_repeated_payloads,
 )
 from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
+from .redaction import SLEEPTRACKER_SECRET_CHARACTERISTICS
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -698,7 +699,11 @@ class BLEDiagnosticRunner:
 
         try:
             value = await self._client.read_gatt_char(target)
-            char_info.read_result = format_payload(value)
+            char_info.read_result = (
+                {"hex": "**REDACTED**", "length": len(value), "ascii_preview": None}
+                if char_info.uuid.lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS
+                else format_payload(value)
+            )
         except asyncio.CancelledError:
             raise
         except Exception as err:
@@ -984,12 +989,15 @@ class BLEDiagnosticRunner:
         """Handle an incoming notification."""
         timestamp = datetime.now(UTC).isoformat()
         payload = bytes(data)
+        sensitive = characteristic_uuid.lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS
+        if sensitive:
+            payload = bytes(len(payload))
 
         async with self._notification_lock:
             notification = CapturedNotification(
                 characteristic=characteristic_uuid,
                 timestamp=timestamp,
-                data_hex=payload.hex(),
+                data_hex="**REDACTED**" if sensitive else payload.hex(),
             )
             self._notifications.append(notification)
             if characteristic_uuid not in self._notification_payloads:
@@ -999,7 +1007,7 @@ class BLEDiagnosticRunner:
         _LOGGER.debug(
             "Notification on %s: %s",
             characteristic_uuid,
-            payload.hex(),
+            "**REDACTED**" if sensitive else payload.hex(),
         )
 
     def _build_gatt_summary(self, services: list[ServiceInfo]) -> dict[str, Any]:

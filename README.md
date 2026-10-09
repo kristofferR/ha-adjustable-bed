@@ -121,6 +121,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Malouf/Lucid](docs/beds/malouf.md) | Malouf, Lucid, Structures; [Malouf Base / Lucid Base apps](docs/beds/malouf-app.md) |
 | ✅ [BedTech](docs/beds/bedtech.md) | BedTech |
 | ✅ [Sleep Number](docs/beds/sleep_number.md) | Climate 360, FlexFit, FlexFit Smart, i8 / 360 FlexFit 2 |
+| 🧪 [Tempur Sleeptracker-AI](docs/beds/sleeptracker.md) | Select for ProSmart / ProSmart Air and ActiveBreeze beds using this app; verified processor endpoint required; artifact-proven, hardware unverified |
 | ✅ [Sleepy's Elite](docs/beds/sleepys.md) | Sleepy's |
 | ✅ AdjustableM5X4 / M5X5 | [M5X4](docs/beds/starcode-abm5-4.md); [M5X5](docs/beds/starcode-m5x5.md) CB25, F23 and kneading layouts, with ELEVATE lifts |
 | ✅ [SleepSpa S9000AI](docs/beds/sleepstar.md) | SleepSpa S9000AI (`SLEEPSTAR`) |

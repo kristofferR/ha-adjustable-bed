@@ -68,6 +68,7 @@ if TYPE_CHECKING:
     from .sleep_number import SleepNumberController as SleepNumberController
     from .sleep_number_mcr import SleepNumberMcrController as SleepNumberMcrController
     from .sleepstar import SleepStarController as SleepStarController
+    from .sleeptracker import SleeptrackerController as SleeptrackerController
     from .sleepys_box25 import SleepysBox25Controller as SleepysBox25Controller
     from .sleepys_box25 import SleepysBox25LegacyController as SleepysBox25LegacyController
     from .solace import SolaceController as SolaceController
@@ -137,6 +138,7 @@ _EXPORT_MODULES = {
     "ScottLivingController": "scott_living",
     "SleepNumberController": "sleep_number",
     "SleepNumberMcrController": "sleep_number_mcr",
+    "SleeptrackerController": ("sleeptracker", "SleeptrackerController"),
     "SleepStarController": "sleepstar",
     "SleepysBox25Controller": "sleepys_box25",
     "SleepysBox25LegacyController": "sleepys_box25",
