@@ -40,7 +40,7 @@ from .const import (
 )
 from .detection import detect_bed_type_detailed
 from .diagnostic_payloads import format_mapping_payloads
-from .redaction import redact_pins_only, redact_sleep_number_sessions
+from .redaction import redact_pins_only, redact_sleep_number_sessions, redact_sleeptracker_sessions
 from .support_logs import async_setup_support_logs
 from .support_proxy_logs import DATA_PAIRING_PROXY_LOGS, capture_proxy_logs
 from .support_report import (
@@ -209,6 +209,7 @@ async def generate_support_bundle(
     }
 
     redact_sleep_number_sessions(report)
+    redact_sleeptracker_sessions(report)
     return redact_pins_only(report)  # type: ignore[no-any-return]
 
 

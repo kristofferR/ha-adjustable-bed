@@ -901,13 +901,6 @@ class KeesonController(BedController):
         return self._is_adjustable_lite or self._is_restonic
 
     @property
-    def _adjustable_lite_massage_controls_enabled(self) -> bool:
-        """Respect affirmative hardware configuration even outside the app's name gate."""
-        return self._is_adjustable_lite_ksbt03c or (
-            self._is_adjustable_lite and self._coordinator.has_massage
-        )
-
-    @property
     def supports_massage_toggle_control(self) -> bool:
         return not self._app_without_generic_massage and super().supports_massage_toggle_control
 
@@ -935,19 +928,19 @@ class KeesonController(BedController):
     @property
     def supports_head_massage_intensity_step_control(self) -> bool:
         if self._app_without_generic_massage:
-            return self._adjustable_lite_massage_controls_enabled
+            return self._is_adjustable_lite_ksbt03c
         return super().supports_head_massage_intensity_step_control
 
     @property
     def supports_foot_massage_intensity_step_control(self) -> bool:
         if self._app_without_generic_massage:
-            return self._adjustable_lite_massage_controls_enabled
+            return self._is_adjustable_lite_ksbt03c
         return super().supports_foot_massage_intensity_step_control
 
     @property
     def supports_massage_mode_step_control(self) -> bool:
         if self._app_without_generic_massage:
-            return self._adjustable_lite_massage_controls_enabled
+            return self._is_adjustable_lite_ksbt03c
         return super().supports_massage_mode_step_control
 
     # Massage timer - Keeson only has step command, no direct timer set

@@ -19,6 +19,7 @@ export function presentSections(
     massage:
       bed.massage.buttons.length > 0 ||
       bed.massage.numbers.length > 0 ||
+      Boolean(bed.massage.states?.length) ||
       !!bed.massage.selects?.length ||
       !!bed.massage.timer,
     utility: bed.utility.length > 0,

@@ -958,3 +958,37 @@ test("Okin app Home joins presets and Heal Every Night settings are utility sele
   expect(bed.massage.timer).toBe("select.heal_timer");
   expect(bed.utility).toEqual([]);
 });
+
+test("Sleeptracker local controls appear in their existing card sections", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.hz", "sleeptracker_massage_28hz"),
+    entry("button.wave", "sleeptracker_wave_start"),
+    entry("select.hz", "sleeptracker_wave_frequency"),
+    entry("number.minutes", "sleeptracker_wave_minutes"),
+    entry("select.heat", "sleeptracker_left_mode"),
+    entry("select.curve", "sleeptracker_left_curve"),
+    entry("number.level", "sleeptracker_right_level"),
+    entry("button.light", "sleeptracker_light_toggle"),
+    entry("binary_sensor.light", "sleeptracker_light_on"),
+    entry("binary_sensor.wind_down", "sleeptracker_wind_down_running"),
+    entry("button.refresh", "sleeptracker_refresh"),
+  ]), "dev1");
+  expect(bed.massage.buttons).toEqual(["button.hz", "button.wave"]);
+  expect(bed.massage.selects).toEqual(["select.hz"]);
+  expect(bed.massage.numbers).toEqual(["number.minutes"]);
+  expect(bed.massage.states).toEqual(["binary_sensor.wind_down"]);
+  expect(bed.climate.selects).toEqual(["select.heat", "select.curve"]);
+  expect(bed.climate.numbers).toEqual(["number.level"]);
+  expect(bed.lights.toggle).toBe("button.light");
+  expect(bed.lights.state).toBe("binary_sensor.light");
+  expect(bed.utility).toEqual(["button.refresh"]);
+});
+
+test("a Sleeptracker reported-state-only registry surface is not empty", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("binary_sensor.wind_down", "sleeptracker_wind_down_running"),
+  ]), "dev1");
+  expect(bed.massage.states).toEqual(["binary_sensor.wind_down"]);
+  expect(bedIsEmpty(bed)).toBe(false);
+  expect(bedIsEmpty(bedEntitiesForDevice(hassWith([]), "dev1"))).toBe(true);
+});

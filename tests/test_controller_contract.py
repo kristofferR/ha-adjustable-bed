@@ -181,6 +181,8 @@ async def _create_controller_for_bed_type(bed_type: str) -> BedController:
     """Create a controller through the factory for the given bed type."""
     coordinator = _FactoryCoordinator()
     client = _make_connected_client()
+    if bed_type == const.BED_TYPE_SLEEPTRACKER:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "unknown"
 
     if bed_type == BED_TYPE_RICHMAT:
         return await create_controller(

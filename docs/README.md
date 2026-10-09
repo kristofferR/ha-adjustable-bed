@@ -31,6 +31,10 @@ to identify your controller and compare features. The detailed guides in
 App-disposition ledgers in `beds/` and implementation records in `apk-analysis/`
 preserve the scope and evidence of individual audits.
 
+The [S02 Sleeptracker disposition ledger](apk-analysis/dispositions/S02-sleeptracker.md)
+maps the accepted 3.6.2 audit to the separate [processor integration](beds/sleeptracker.md),
+including direct BLE controls, explicit exclusions and hardware validation status.
+
 ## Development and Validation
 
 Work from `main` for v4 changes. Development uses Python **3.14.2+** with

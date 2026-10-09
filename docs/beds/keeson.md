@@ -57,6 +57,7 @@ for all 128 exclusions and exact accepted evidence.
 | ✅ | Juna Sleep | `com.keeson.junasleep` |
 | ✅ | [Purple Smart Base](https://play.google.com/store/apps/details?id=com.keeson.purpleBase) | `com.keeson.purpleBase` |
 | ✅ | [Adjustable Lite](https://play.google.com/store/apps/details?id=com.keeson.adjustablelite) | `com.keeson.adjustablelite` |
+| Separate processor | Tempur Sleeptracker-AI ([framed-JSON processor guide](sleeptracker.md)) | `com.fullpower.applications.horizon` |
 | ✅ | Bedsense Bases ([profile](ore-comfort-bed.md)) | `com.ore.sfmc2bedsence` |
 | ✅ | INNOVA ([profile](#innova-profile)) | `com.ore.sfm` |
 | ✅ | MaxCoil Una ([profile](ore-comfort-bed.md)) | `com.ore.maxcoil` |
@@ -226,13 +227,26 @@ therefore writes without response when the characteristic offers it, as
 Android does by default. It has two remotes, chosen by the case-sensitive
 token `KSBT03C` in the device name; any other name gets the KSBT01C remote.
 
-**Has massage** also exposes the proven head/foot massage increase/decrease
-and timer buttons, even when the name does not contain `KSBT03C`. This retains
-explicit hardware configuration for the MC232SC / `KSSF05C` regression reported
-in [issue #669](https://github.com/kristofferR/ha-adjustable-bed/issues/669).
-It does not identify that box as KSBT03C: anti-snore, automatic massage enablement
-and the massage-timer feedback sensor still require the app's name match.
-The option adds no generic toggle/off commands or new hardware mapping.
+#### TEMPUR-Ergo ProSmart Air / ActiveBreeze
+
+For beds operated with **Tempur Sleeptracker-AI**, select
+[Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)](sleeptracker.md).
+That profile provides the app's named presets, ActiveBreeze heat/cool controls
+and premium 28 Hz / 40 Hz massage. Adjustable Lite is not the Tempur app profile.
+
+The Adjustable Lite massage override from
+[PR #671](https://github.com/kristofferR/ha-adjustable-bed/pull/671) and the local
+KSSF05C preset workaround are removed. This profile follows the accepted
+Adjustable Lite app's remote gates: massage steps, timer and Anti-Snore require
+its case-sensitive `KSBT03C` name token; **Has massage** does not override that
+selection. TV and Lounge are not controls offered by this app profile.
+
+Select the Sleeptracker processor's actual Bluetooth endpoint when adding the
+Tempur profile. A `KSSF05C` / MC232SC name identifies neither that endpoint nor
+the app layout. Changing an existing UART entry's profile alone cannot turn it
+into the framed-JSON processor. See the [processor setup guide](sleeptracker.md#select-the-processor)
+and [S02 discovery ledger](../apk-analysis/dispositions/S02-sleeptracker.md).
+Hardware behavior remains unverified until real users validate a beta/release.
 
 | Control | Frame | KSBT01C | KSBT03C |
 |---------|-------|---------|---------|
@@ -253,7 +267,7 @@ The option adds no generic toggle/off commands or new hardware mapping.
 The shipped MI/MII/MIII labels take precedence over the app's internal
 `m`/`read`/`tv` names, so memory slots 1-3 differ from the generic KSBT
 mapping. The app has no memory save, lounge, TV, tilt, lumbar, massage
-toggle or massage off control, and the profile exposes none. Movement
+toggle or massage off control. The profile exposes none of those controls. Movement
 repeats at 0 ms and then every 300 ms. Release only cancels that timer: no
 STOP or release frame exists, so the integration sends none. One-shot
 controls are written once.

@@ -33,6 +33,53 @@ both sides.
 `target_address` and has no `side` parameter. Select a child device for a
 two-address pair. See [support capture](GETTING_HELP.md#generating-a-support-bundle).
 
+## Sleeptracker Smart Bed
+
+These actions require the separate [Sleeptracker framed-JSON processor](beds/sleeptracker.md).
+They reject Adjustable Lite UART entries and validate every selected layout
+before the first write. All accept `device_id` and optional paired-device `side`.
+ActiveBreeze `fan_side` separately chooses the processor's fan fields.
+
+| Action | Fields besides `device_id` | Behavior |
+|--------|---------------------------|----------|
+| `sleeptracker_preset` | `preset`; optional `save: false` | Recall `all_flat`, `zero_g`, `anti_snore`, `user_favorite`, `tv_pc` or `favorite_2`, subject to layout. `save: true` programs a supported preset; Flat is recall only. Processor types 5–7 reject saving. |
+| `sleeptracker_climate` | `mode: heat` or `cool`, `level: 0`–`3`; optional `fan_side: both`, `constant: true` | ActiveBreeze only. Level 0 turns the selected fan off. Heat sends a fixed 3600-second timer, cool 36000 seconds; timers are not configurable. |
+| `sleeptracker_wave` | `frequency`; optional `minutes: 30` | Premium layouts: 28, 40, 52, 68 or 88 Hz and 5–105 minutes in steps of five. |
+| `sleeptracker_massage` | `action` | `head`, `foot`, `pattern`, `28Hz`, `40Hz` or `off`, subject to layout. `off` uses selected-unit massage stop. |
+| `sleeptracker_relaxation` | `action` | Premium layouts: `wind_down_1`, `wind_down_2` or `local_animation`. Local animation contains motor/massage statements only. |
+
+```yaml
+action: adjustable_bed.sleeptracker_climate
+data:
+  device_id: YOUR_PROCESSOR_DEVICE_ID
+  fan_side: left
+  mode: cool
+  level: 2
+  constant: false
+```
+
+```yaml
+action: adjustable_bed.sleeptracker_massage
+data:
+  device_id: YOUR_PROCESSOR_DEVICE_ID
+  action: 40Hz
+```
+
+```yaml
+action: adjustable_bed.sleeptracker_wave
+data:
+  device_id: YOUR_PROCESSOR_DEVICE_ID
+  frequency: 52
+  minutes: 30
+```
+
+Use `sleeptracker_massage` with `action: "off"` to stop massage, wave or
+wind-down. Use `stop_all` to cancel movement and stop the local motor/massage
+animation. Wave duration units, physical side mapping and hardware effects
+remain unverified. Last commanded climate timers describe acknowledged writes,
+not countdown readback. No service accepts arbitrary JSON, network configuration
+or speaker/audio commands.
+
 ## Malouf Base / Lucid Base Clock and Alarm
 
 The explicit [app profile](beds/malouf-app.md) exposes clock actions only for

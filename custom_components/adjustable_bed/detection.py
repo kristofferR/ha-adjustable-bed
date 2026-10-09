@@ -88,6 +88,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPSTAR,
+    BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
@@ -193,6 +194,7 @@ from .const import (
     SLEEPSTAR_MANUFACTURER_ID,
     SLEEPSTAR_NAME_PATTERNS,
     SLEEPSTAR_SINGLE_SUBTYPE,
+    SLEEPTRACKER_SERVICE_UUID,
     SLEEPYS_BOX25_NAME_PATTERNS,
     SLEEPYS_NAME_PATTERNS,
     SOLACE_NAME_PATTERNS,
@@ -624,6 +626,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_VMATBASIC: "V-MAT Basic app",
     BED_TYPE_STARCODE_ABM5_4: "AdjustableM5X4 app (explicit profile)",
     BED_TYPE_MOTION_BED: "Motion Bed app",
+    BED_TYPE_SLEEPTRACKER: "Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)",
     # Diagnostic
     BED_TYPE_DIAGNOSTIC: "Diagnostic (unknown bed)",
 }
@@ -1402,6 +1405,14 @@ def _detect_bed_type_detailed(
             bed_type=BED_TYPE_JENSEN,
             confidence=0.9,
             signals=signals,
+        )
+
+    # Unique app processor service. Do not identify UART bases by KSSF names.
+    if SLEEPTRACKER_SERVICE_UUID in service_uuids:
+        return DetectionResult(
+            bed_type=BED_TYPE_SLEEPTRACKER,
+            confidence=1.0,
+            signals=[f"uuid:{SLEEPTRACKER_SERVICE_UUID}"],
         )
 
     # Check for Keeson JSON/A00A protocol family (Juna Sleep, Linx, Ergo Health)
