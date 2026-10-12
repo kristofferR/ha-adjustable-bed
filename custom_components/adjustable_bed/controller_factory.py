@@ -16,6 +16,7 @@ from .app_session import app_session
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
+    BED_TYPE_BEDJET_POWERLAYER,
     BED_TYPE_BEDSENSE,
     # Legacy/brand-specific bed types
     BED_TYPE_BEDTECH,
@@ -415,6 +416,9 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     ),
     BED_TYPE_SUTA: _ControllerSpec("suta", "SutaController"),
     BED_TYPE_TIMOTION_AHF: _ControllerSpec("timotion_ahf", "TiMOTIONAhfController"),
+    BED_TYPE_BEDJET_POWERLAYER: _ControllerSpec(
+        "bedjet_powerlayer", "BedJetPowerLayerController"
+    ),
     BED_TYPE_COMFORT_MOTION: _ControllerSpec("jiecang", "JiecangController"),
     # Ergomotion is the Keeson protocol with position feedback; Serta Motion
     # Perfect is the same protocol with its own variant.
