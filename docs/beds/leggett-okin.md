@@ -192,9 +192,12 @@ There is **no position, angle, percentage or motor-state feedback**. The
 [CU170 hardware report in #368](https://github.com/kristofferR/ha-adjustable-bed/issues/368#issuecomment-5481326088)
 provides the physical meaning absent from the app analysis. In the Prodigy CE
 profile, the integration recognizes a 20-byte status frame on the main status
-characteristic: `09 0B`, two identical big-endian status dwords, `FF`, and nine
-uninterpreted trailing bytes. Invalid length, footer or duplicated fields are
-ignored. Other app profiles retain their artifact-derived parser.
+characteristic: `09 0B`, two identical big-endian status dwords, and ten
+trailing bytes the integration does not interpret. The first of these reads `01`
+while massage wave mode runs and `FF` in every other frame observed (CU170
+owner's captures and debug log, 2026-07 to 2026-10). Frames of another length or
+with mismatched dwords are ignored.
+Other app profiles retain their artifact-derived parser.
 
 | CU170 status mask | Meaning |
 |---|---|
