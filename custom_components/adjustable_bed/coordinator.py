@@ -121,6 +121,7 @@ from .const import (
     BED_TYPE_SERTA,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
+    BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_VIBRADORM,
@@ -592,6 +593,9 @@ class AdjustableBedCoordinator:
         # the name immediately, but defer the resulting reload until this link is
         # released so discovery cannot unload us halfway through a connection.
         self._pending_capability_reload = False
+        # BOX25 auto selects its dialect from Device Information, which may first
+        # become readable on a later connection; the dialects expose different lights.
+        self._box25_dialect: type[BedController] | None = None
         self._capability_reload_scheduled = False
         self._capability_reload_deferrals = 0
         self._shutting_down = False
@@ -4278,6 +4282,11 @@ class AdjustableBedCoordinator:
                     manufacturer_data=manufacturer_data,
                     capability_snapshot=stored_capability_snapshot,
                 )
+                if self._bed_type == BED_TYPE_SLEEPYS_BOX25:
+                    dialect = type(self._controller)
+                    if self._box25_dialect not in (None, dialect):
+                        self._pending_capability_reload = True
+                    self._box25_dialect = dialect
                 await self._async_restore_app_state(self._controller)
                 discovery_result = cast(Any, self._controller).async_discover_capabilities()
                 if inspect.isawaitable(discovery_result):

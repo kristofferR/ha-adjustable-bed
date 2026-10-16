@@ -95,6 +95,8 @@ class Box25Commands:
     STAR_STORE_MEMORY_2 = _star_command(0x95)
     STAR_MEMORY_STORE = (STAR_STORE_MEMORY_1, STAR_STORE_MEMORY_2)
 
+    # The dedicated ON resets the LEDs to white. An RGB frame also lights them
+    # from OFF, so turning on with a selected colour skips ON entirely (#557).
     LIGHT_ON_WHITE = _star_command(0x73)
     LIGHT_OFF = _star_command(0x74)
     LIGHT_TOGGLE = _star_command(0x71)
@@ -122,6 +124,8 @@ _PRESET_REPEAT_COUNT = 3
 _PRESET_REPEAT_DELAY_MS = 100
 _PRESET_COMMIT_DELAY = 0.1
 _MEMORY_STORE_REPEAT_COUNT = 110
+
+_DEFAULT_LIGHT_RGB = (255, 255, 255)
 
 
 class SleepysBox25Controller(BedController):
@@ -152,6 +156,7 @@ class SleepysBox25Controller(BedController):
         self._massage_intensity = 0
         self._massage_timer_minutes = 0
         self._light_level: int | None = None
+        self._light_rgb: tuple[int, int, int] = _DEFAULT_LIGHT_RGB
 
     # ─── BLE Properties ──────────────────────────────────────────────────
 
@@ -209,6 +214,23 @@ class SleepysBox25Controller(BedController):
     @property
     def supports_discrete_light_control(self) -> bool:
         return True
+
+    @property
+    def supports_explicit_light_on_control(self) -> bool:
+        """Light the LEDs through RGB instead of the white-resetting ON frame."""
+        return False
+
+    @property
+    def supports_light_color_control(self) -> bool:
+        return True
+
+    @property
+    def supported_color_mode(self) -> str | None:
+        return "rgb"
+
+    @property
+    def default_light_rgb_color(self) -> tuple[int, int, int] | None:
+        return _DEFAULT_LIGHT_RGB
 
     @property
     def supports_massage(self) -> bool:
@@ -640,13 +662,32 @@ class SleepysBox25Controller(BedController):
     # ─── Lights ──────────────────────────────────────────────────────────
 
     async def lights_on(self) -> None:
-        await self._write_massage_light_command(Box25Commands.LIGHT_ON_WHITE)
+        """Turn on in the last colour and level, without the white ON flash.
+
+        Hardware-tested by the #557 reporter: the RGB frame turns the LEDs on
+        from OFF, and a following brightness frame keeps the colour.
+        """
+        await self.set_light_color(self._light_rgb)
+        if self._light_level:
+            await self.set_light_level(self._light_level)
 
     async def lights_off(self) -> None:
         await self._write_massage_light_command(Box25Commands.LIGHT_OFF)
+        self.forward_controller_state_update("under_bed_lights_on", False)
 
     async def lights_toggle(self) -> None:
         await self._write_massage_light_command(Box25Commands.LIGHT_TOGGLE)
+
+    async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
+        """Show an RGB colour; this also lights the LEDs from OFF."""
+        red, green, blue = (max(0, min(255, int(channel))) for channel in rgb_color)
+        await self._write_massage_light_command(
+            bytes([0x5A, 0xE0, 0x04, 0x02, red, green, blue, 0xA5])
+        )
+        self._light_rgb = (red, green, blue)
+        self.forward_controller_state_updates(
+            {"under_bed_lights_on": True, "under_bed_lights_rgb": self._light_rgb}
+        )
 
     async def set_light_level(self, level: int) -> None:
         """Set the exact OEM 0-6 under-bed light brightness value."""
@@ -845,6 +886,29 @@ class SleepysBox25LegacyController(SleepysBox25Controller):
             cancel_event=cancel_event,
             response=False,
         )
+
+    @property
+    def supports_explicit_light_on_control(self) -> bool:
+        return True
+
+    @property
+    def supports_light_color_control(self) -> bool:
+        """RGB is only proven for StarCode; legacy extended frames carry two values."""
+        return False
+
+    @property
+    def supported_color_mode(self) -> str | None:
+        return None
+
+    @property
+    def default_light_rgb_color(self) -> tuple[int, int, int] | None:
+        return None
+
+    async def lights_on(self) -> None:
+        await self._write_massage_light_command(Box25Commands.LIGHT_ON_WHITE)
+
+    async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
+        raise NotImplementedError("Light color control not supported on legacy BOX25")
 
     async def _ensure_initialized(self, cancel_event: asyncio.Event | None = None) -> None:
         """Send the common transport wake without translating it recursively."""

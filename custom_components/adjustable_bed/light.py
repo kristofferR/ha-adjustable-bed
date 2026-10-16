@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import math
 from collections.abc import Callable
 from functools import partial
 from typing import TYPE_CHECKING, Any
@@ -11,6 +12,7 @@ from bleak.exc import BleakError
 
 # These constants are defined here in HA 2026.9 and re-exported in 2026.10.
 from homeassistant.components.light import (
+    ATTR_BRIGHTNESS,  # pyright: ignore[reportPrivateImportUsage]
     ATTR_RGB_COLOR,  # pyright: ignore[reportPrivateImportUsage]
     ATTR_RGBW_COLOR,  # pyright: ignore[reportPrivateImportUsage]
     LightEntity,
@@ -64,6 +66,16 @@ def _normalize_rgb_color(value: Any) -> tuple[int, int, int] | None:
     if any(channel < 0 or channel > 255 for channel in rgb):
         return None
     return rgb
+
+
+def _brightness_to_level(brightness: int, max_level: int) -> int:
+    """Map HA brightness 1-255 onto equal buckets of native levels 1..max."""
+    return max(1, math.ceil(brightness * max_level / 255))
+
+
+def _level_to_brightness(level: int, max_level: int) -> int:
+    """Report a native level as the top of its bucket, so it maps back exactly."""
+    return level * 255 // max_level
 
 
 def _normalize_rgbw_color(value: Any) -> tuple[int, int, int, int] | None:
@@ -257,6 +269,12 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             controller is not None and controller.supports_discrete_light_control
         )
         self._default_rgb_color = _normalize_rgb_color(default_rgb)
+        # HA brightness maps onto the bed's native 1..max levels when it has them.
+        self._light_level_max: int | None = (
+            controller.light_level_max
+            if controller is not None and controller.supports_light_level_control
+            else None
+        )
         self._attr_is_on = False
         if self._attr_color_mode == ColorMode.RGBW:
             # Default RGBW: use default RGB + white=255
@@ -285,6 +303,9 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 restored_rgb = _normalize_rgb_color(last_state.attributes.get(ATTR_RGB_COLOR))
                 if restored_rgb is not None:
                     self._attr_rgb_color = restored_rgb
+            restored_brightness = last_state.attributes.get(ATTR_BRIGHTNESS)
+            if self._light_level_max is not None and type(restored_brightness) is int:
+                self._attr_brightness = restored_brightness
 
         # Reflect bed-reported on/off + colour where the controller publishes it
         # (e.g. Leggett Gen2). No-op for controllers that don't report light state.
@@ -325,6 +346,12 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             elif (r, g, b) != self._attr_rgb_color:
                 self._attr_rgb_color = (r, g, b)
                 changed = True
+        level = state.get("light_level")
+        if self._light_level_max is not None and type(level) is int and level > 0:
+            brightness = _level_to_brightness(level, self._light_level_max)
+            if brightness != self._attr_brightness:
+                self._attr_brightness = brightness
+                changed = True
         if changed:
             self.async_write_ha_state()
 
@@ -339,22 +366,43 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         """Turn on with RGB color mode."""
         requested_rgb = _normalize_rgb_color(kwargs.get(ATTR_RGB_COLOR))
         target_rgb = requested_rgb or self._attr_rgb_color or self._default_rgb_color
+        # Turning on from off resends the known brightness: the bed may not keep
+        # its level across an RGB power-on, or may have lost it across an HA restart.
+        requested_brightness = kwargs.get(ATTR_BRIGHTNESS)
+        brightness = requested_brightness or (None if self._attr_is_on else self._attr_brightness)
+        level = (
+            _brightness_to_level(brightness, self._light_level_max)
+            if self._light_level_max is not None and isinstance(brightness, int) and brightness > 0
+            else None
+        )
+        # A brightness-only change on a lit light needs no colour write.
+        brightness_only = (
+            level is not None
+            and requested_brightness is not None
+            and requested_rgb is None
+            and self._attr_is_on
+        )
 
         async def _turn_on(ctrl: BedController) -> None:
-            if getattr(ctrl, "supports_explicit_light_on_control", False):
-                await ctrl.lights_on()
-            elif target_rgb is None:
-                if ctrl.supports_light_toggle_control:
-                    if not self._attr_is_on:
-                        await ctrl.lights_toggle()
-                else:
-                    raise ValueError("No RGB color available for this light")
-            if target_rgb is not None:
-                await ctrl.set_light_color(target_rgb)
+            if not brightness_only:
+                if getattr(ctrl, "supports_explicit_light_on_control", False):
+                    await ctrl.lights_on()
+                elif target_rgb is None:
+                    if ctrl.supports_light_toggle_control:
+                        if not self._attr_is_on:
+                            await ctrl.lights_toggle()
+                    else:
+                        raise ValueError("No RGB color available for this light")
+                if target_rgb is not None:
+                    await ctrl.set_light_color(target_rgb)
+            if level is not None:
+                await ctrl.set_light_level(level)
 
         await self._coordinator.async_execute_controller_command(_turn_on, cancel_running=False)
         self._attr_is_on = True
         self._attr_rgb_color = target_rgb
+        if level is not None and self._light_level_max is not None:
+            self._attr_brightness = _level_to_brightness(level, self._light_level_max)
         self.async_write_ha_state()
 
     async def _turn_on_rgbw(self, **kwargs: Any) -> None:

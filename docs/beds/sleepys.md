@@ -56,7 +56,7 @@ Use the separate [SleepSpa S9000AI protocol](sleepstar.md) for that device name.
 | Zero-G Preset | ✅ | ✅ | ✅ |
 | Anti-Snore Preset | ❌ | ❌ | ✅ |
 | Lounge Preset | ❌ | ❌ | ✅ |
-| Under-Bed Lights | ❌ | ❌ | ✅ (on/off and level 0-6) |
+| Under-Bed Lights | ❌ | ❌ | ✅ (RGB color, on/off and level 0-6; legacy CB25: on/off and level) |
 | Massage | ❌ | ❌ | ✅ (toggle/off, 3 wave modes, timer) |
 | Massage Intensity | ❌ | ❌ | ✅ (head/foot steps and combined level 0-7) |
 
@@ -239,6 +239,29 @@ query is `5A B0 00 A5`.
 | `0x74` | Turn under-bed light off |
 
 Direct brightness uses `5A E0 04 00 [level 0-6] 00 00 A5`.
+
+Arbitrary color uses `5A E0 04 02 [R] [G] [B] A5`, for example
+`5A E0 04 02 00 FF FF A5` for cyan. These observations come from a reporter's
+hardware tests on a Sleepy's Elite (#557), not from the Sleepy's app, which only
+offers preset colors:
+
+- The ON frame (`0x73`) resets the LEDs to white. An RGB frame also lights the
+  LEDs from OFF, so the integration turns them on with the last selected color
+  (default white) and never sends ON. This avoids a white flash.
+- After the RGB frame, the integration resends the last selected level 1-6 to
+  restore brightness. Brightness frames keep the current color.
+- Levels above 6 (`07` through `FF`) had no effect on the hardware.
+- The RGB light entity maps Home Assistant brightness onto levels 1-6. The light
+  level number entity still covers 0-6.
+- RX notifications appear to carry the current RGB value and brightness. The
+  reported fragments (`... 18 11 00 FF FF ...` at level 1, `... 68 11 00 FF FF ...`
+  at level 6) lack a frame header and offsets, so the integration does not parse
+  them. Light state stays assumed.
+
+The legacy CB25 dialect has no proven color frame. Its extended frame carries
+only two values, so legacy beds keep the on/off switch. With the auto variant, a
+later connection that resolves the other dialect reloads the entities once the
+link is released.
 
 #### Massage Commands
 
