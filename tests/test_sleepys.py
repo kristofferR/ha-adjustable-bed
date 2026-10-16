@@ -1321,7 +1321,8 @@ class TestSleepysBox25Controller:
             (controller.move_lumbar_down, "5A0103103007A5"),
             (controller.move_tilt_up, "5A010310300AA5"),
             (controller.move_tilt_down, "5A010310300BA5"),
-            (controller.lights_on, "5A0103103073A5"),
+            # ON resets the LEDs to white; turning on uses the RGB frame (#557).
+            (controller.lights_on, "5AE00402FFFFFFA5"),
             (controller.lights_off, "5A0103103074A5"),
             (controller.lights_toggle, "5A0103103071A5"),
             (controller.massage_off, "5A010310306FA5"),
@@ -1433,6 +1434,73 @@ class TestSleepysBox25Controller:
 
         assert coordinator.controller_state["light_level"] == 0
         assert coordinator.controller_state["under_bed_lights_on"] is False
+
+    async def test_rgb_light_turns_on_in_colour_and_restores_brightness(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Hardware-tested #557 sequence: RGB lights the LEDs, then the level is restored."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        assert controller.supports_light_color_control
+        assert controller.supported_color_mode == "rgb"
+        assert not controller.supports_explicit_light_on_control
+
+        with patch.object(controller, "write_command", AsyncMock()) as mock_write:
+            await controller.set_light_color((0, 255, 255))
+            await controller.set_light_level(3)
+            await controller.lights_off()
+            await controller.lights_on()
+
+        assert [call.args[0] for call in mock_write.await_args_list] == [
+            bytes.fromhex("5A E0 04 02 00 FF FF A5"),
+            bytes.fromhex("5A E0 04 00 03 00 00 A5"),
+            bytes.fromhex("5A 01 03 10 30 74 A5"),
+            bytes.fromhex("5A E0 04 02 00 FF FF A5"),
+            bytes.fromhex("5A E0 04 00 03 00 00 A5"),
+        ]
+        assert coordinator.controller_state["under_bed_lights_on"] is True
+        assert coordinator.controller_state["under_bed_lights_rgb"] == (0, 255, 255)
+
+    async def test_rgb_light_entity_maps_brightness_to_six_levels(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """HA brightness drives the 1-6 level; brightness-only changes skip the colour."""
+        from custom_components.adjustable_bed.light import (
+            LIGHT_DESCRIPTION,
+            AdjustableBedLight,
+        )
+
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        light = AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)
+        light.async_write_ha_state = MagicMock()
+
+        with patch.object(controller, "write_command", AsyncMock()) as mock_write:
+            await light.async_turn_on(rgb_color=(255, 0, 0), brightness=255)
+            await light.async_turn_on(brightness=1)
+
+        # The coordinator refreshes positions around commands; keep light frames.
+        assert [
+            call.args[0]
+            for call in mock_write.await_args_list
+            if call.args[0] != Box25Commands.QUERY_STATUS
+        ] == [
+            bytes.fromhex("5A E0 04 02 FF 00 00 A5"),
+            bytes.fromhex("5A E0 04 00 06 00 00 A5"),
+            bytes.fromhex("5A E0 04 00 01 00 00 A5"),
+        ]
+        assert light.is_on
+        assert light.rgb_color == (255, 0, 0)
+        assert light.brightness == 42  # level 1 of 6, quantized
 
     async def test_massage_notification_maps_exact_duration_buckets(
         self,
@@ -1751,6 +1819,21 @@ class TestSleepysBox25RuntimeDialect:
             cancel_event=None,
             response=False,
         )
+
+    async def test_legacy_keeps_on_frame_and_has_no_rgb(self) -> None:
+        """RGB is only hardware-proven for StarCode; legacy keeps the white ON frame."""
+        controller = SleepysBox25LegacyController(self._factory_coordinator())
+        controller._initialized = True
+
+        assert not controller.supports_light_color_control
+        with patch.object(controller, "_write_gatt_with_retry", AsyncMock()) as write:
+            await controller.lights_on()
+            with pytest.raises(NotImplementedError):
+                await controller.set_light_color((0, 255, 255))
+
+        assert [call.args[1] for call in write.await_args_list] == [
+            bytes.fromhex("04E001010000")
+        ]
 
     async def test_pre_cancelled_legacy_write_skips_translation(self) -> None:
         """Unsupported input must not raise when cancellation already won."""
