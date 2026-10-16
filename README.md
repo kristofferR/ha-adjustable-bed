@@ -16,10 +16,6 @@
 
 ## Quick Start
 
-v4 requires **Home Assistant 2026.9.0+**.
-Back up Home Assistant before upgrading from v3;
-see [compatibility and rollback](docs/HA_2026_9.md).
-
 1. **Install** via [HACS](https://hacs.xyz): Search for "Adjustable Bed" and install
 2. **Discover** your bed automatically, or add manually via Settings → Integrations
 3. **Control** your bed from Home Assistant dashboards, automations, and voice assistants!
