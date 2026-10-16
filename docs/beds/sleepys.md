@@ -259,7 +259,9 @@ offers preset colors:
   them. Light state stays assumed.
 
 The legacy CB25 dialect has no proven color frame. Its extended frame carries
-only two values, so legacy beds keep the on/off switch.
+only two values, so legacy beds keep the on/off switch. With the auto variant, a
+later connection that resolves the other dialect reloads the entities once the
+link is released.
 
 #### Massage Commands
 

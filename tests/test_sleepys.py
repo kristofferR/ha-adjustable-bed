@@ -1454,6 +1454,7 @@ class TestSleepysBox25Controller:
             await controller.set_light_color((0, 255, 255))
             await controller.set_light_level(3)
             await controller.lights_off()
+            assert coordinator.controller_state["under_bed_lights_on"] is False
             await controller.lights_on()
 
         assert [call.args[0] for call in mock_write.await_args_list] == [
@@ -1501,6 +1502,60 @@ class TestSleepysBox25Controller:
         assert light.is_on
         assert light.rgb_color == (255, 0, 0)
         assert light.brightness == 42  # level 1 of 6, quantized
+
+    async def test_rgb_light_entity_resends_restored_brightness(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """After an HA restart the fresh controller knows no level; the entity resends it."""
+        from custom_components.adjustable_bed.light import (
+            LIGHT_DESCRIPTION,
+            AdjustableBedLight,
+        )
+
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        light = AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)
+        light.async_write_ha_state = MagicMock()
+        light._attr_brightness = 127  # restored level 3 of 6
+
+        with patch.object(controller, "write_command", AsyncMock()) as mock_write:
+            await light.async_turn_on()
+
+        assert [
+            call.args[0]
+            for call in mock_write.await_args_list
+            if call.args[0] != Box25Commands.QUERY_STATUS
+        ] == [
+            bytes.fromhex("5A E0 04 02 FF FF FF A5"),
+            bytes.fromhex("5A E0 04 00 03 00 00 A5"),
+        ]
+        assert light.brightness == 127
+
+    async def test_dialect_change_reloads_entities_after_release(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Auto may pick legacy until Device Information reads; the light entity differs."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        assert not coordinator._pending_capability_reload
+
+        legacy = SleepysBox25LegacyController(coordinator)
+        await coordinator.async_disconnect()
+        with patch(
+            "custom_components.adjustable_bed.coordinator.create_controller",
+            AsyncMock(return_value=legacy),
+        ):
+            await coordinator.async_connect()
+
+        assert coordinator.controller is legacy
+        assert coordinator._pending_capability_reload
 
     async def test_massage_notification_maps_exact_duration_buckets(
         self,

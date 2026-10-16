@@ -662,28 +662,29 @@ class SleepysBox25Controller(BedController):
     # ─── Lights ──────────────────────────────────────────────────────────
 
     async def lights_on(self) -> None:
-        """Turn on in the last selected colour without the white ON flash."""
+        """Turn on in the last colour and level, without the white ON flash.
+
+        Hardware-tested by the #557 reporter: the RGB frame turns the LEDs on
+        from OFF, and a following brightness frame keeps the colour.
+        """
         await self.set_light_color(self._light_rgb)
+        if self._light_level:
+            await self.set_light_level(self._light_level)
 
     async def lights_off(self) -> None:
         await self._write_massage_light_command(Box25Commands.LIGHT_OFF)
+        self.forward_controller_state_update("under_bed_lights_on", False)
 
     async def lights_toggle(self) -> None:
         await self._write_massage_light_command(Box25Commands.LIGHT_TOGGLE)
 
     async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
-        """Light the LEDs in an RGB colour, then restore the selected brightness.
-
-        Hardware-tested by the #557 reporter: the RGB frame turns the LEDs on
-        from OFF, and a following brightness frame keeps the colour.
-        """
+        """Show an RGB colour; this also lights the LEDs from OFF."""
         red, green, blue = (max(0, min(255, int(channel))) for channel in rgb_color)
         await self._write_massage_light_command(
             bytes([0x5A, 0xE0, 0x04, 0x02, red, green, blue, 0xA5])
         )
         self._light_rgb = (red, green, blue)
-        if self._light_level:
-            await self._write_massage_light_command(_star_extended(0x00, self._light_level))
         self.forward_controller_state_updates(
             {"under_bed_lights_on": True, "under_bed_lights_rgb": self._light_rgb}
         )
