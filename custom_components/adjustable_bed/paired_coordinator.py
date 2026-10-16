@@ -223,14 +223,10 @@ class PairedBedCoordinator:
     def device_info(self) -> DeviceInfo:
         """Synthetic parent device; children nest under it via ``via_device``."""
         first = next(iter(self._children.values()))
-        child_info = first.device_info
-        manufacturer = (
-            child_info.get("manufacturer") if isinstance(child_info, dict) else None
-        )
         return DeviceInfo(
             identifiers={(DOMAIN, self._pair_id)},
             name=self._name,
-            manufacturer=manufacturer,
+            manufacturer=first.device_info.get("manufacturer"),
             model="Adjustable Bed (paired)",
         )
 
