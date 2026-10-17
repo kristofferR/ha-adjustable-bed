@@ -247,6 +247,14 @@ class TestIntegrationSetup:
                 [{"connect_elapsed_seconds": 1.2, "error": "processor rejected the request"}],
                 "but its startup failed: processor rejected the request.",
             ),
+            (
+                [{"connect_elapsed_seconds": 0.0, "error": "processor rejected the request"}],
+                "but its startup failed: processor rejected the request.",
+            ),
+            (
+                [{"connect_elapsed_seconds": None, "error": "connection timed out"}],
+                "powered on and in range",
+            ),
             ([{"result": "device_not_found"}], "powered on and in range"),
         ],
     )

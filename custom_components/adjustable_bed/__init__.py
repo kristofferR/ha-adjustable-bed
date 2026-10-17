@@ -1148,7 +1148,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 f"{_connection_failure_hint(coordinator)}"
             )
         last_attempt = (coordinator.connection_attempt_details or [{}])[-1]
-        if "connect_elapsed_seconds" in last_attempt and last_attempt.get("error"):
+        if last_attempt.get("connect_elapsed_seconds") is not None and last_attempt.get("error"):
             # The link came up, so range/power advice would mislead.
             raise ConfigEntryNotReady(
                 f"Connected to bed at {entry.data.get(CONF_ADDRESS)}, but its startup "
