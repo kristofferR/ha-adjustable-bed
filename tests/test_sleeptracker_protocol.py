@@ -155,6 +155,55 @@ def test_authentication_fixed_salt_accepted_vector() -> None:
     assert wire.endswith(b'", "clientId" : "sleeptracker-android-tsi"}')
 
 
+def test_authentication_matches_issue691_artifact_vector() -> None:
+    wire = p.authentication("AA:BB:CC:DD:EE:FF", "hello123", b"$2a$10$......................")
+    assert (
+        base64.b64decode(json.loads(wire)["password"])
+        == b"$2a$10$......................h3MHuN8vTuGfFl9beWxDVsymo/RkWVO"
+    )
+
+
+@pytest.mark.parametrize(
+    "hello,expected",
+    [
+        ({"macAddress": "54-ef-fe-25-00-e3"}, "54-ef-fe-25-00-e3"),
+        ({"macAddress": ""}, None),
+        ({"macAddress": 7}, None),
+        ({}, None),
+    ],
+)
+def test_auth_identifier_is_the_processor_hello_mac_text(hello, expected) -> None:
+    assert p.hello_mac(hello) == expected
+
+
+@pytest.mark.parametrize(
+    "reply,token",
+    [
+        ({"details": {"token": "secret", "validUntil": 1}}, "secret"),
+        ({"details": {"token": 42}}, "42"),
+        ({"details": {"token": True}}, "true"),
+        ({"details": {"validUntil": 1}}, None),
+        ({"details": "login failed"}, None),
+        ({"details": 3}, None),
+        ({"details": ["x"]}, None),
+        ({"code": 1}, None),
+    ],
+)
+def test_rejected_login_yields_no_token_instead_of_failing(reply, token) -> None:
+    assert p.session_token(reply) == token
+
+
+def test_oversized_token_is_rejected() -> None:
+    with pytest.raises(ConnectionError):
+        p.session_token({"details": {"token": "x" * 4097}})
+
+
+def test_rejection_excerpt_is_short_and_printable() -> None:
+    assert p.rejection("bad\npassword") == "badpassword"
+    assert p.rejection(5) == "5"
+    assert p.rejection("x" * 200) == "x" * 120 + "…"
+
+
 @pytest.mark.parametrize(
     "action,location",
     [("step", "head"), ("step", "foot"), ("pattern", None), ("28Hz", None), ("40Hz", None)],

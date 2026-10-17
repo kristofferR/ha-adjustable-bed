@@ -13,6 +13,8 @@ Implementation candidate for the full standalone work unit, ready for independen
 
 - Scoped missing-state addendum independently ACCEPTED: 13 discoveries, manifest `36c07b6237104be8b18d270e20ace923632eca171984837db879f7340f35e841`; discovery digest `bf2e70a13305bb374fba256725d0a386de44972e324aace6dbf1e6992a5f16e0`; independent audit digest `7d0c8a813a16563f518d3a480fc76df6f4bbc085ddaf50fd74b63e091d071154`. Original report bytes remain unchanged. `ADD/D##` refers to exact method-hashed discoveries in that addendum.
 
+- Issue #691 reply/identity addendum, from a fresh Google Play acquisition of the same 3.6.2 (262) base on 2026-10-17. The 2026-10-08 workspace no longer exists. Base APK `c918b5aaa785ad1f01cae55d52da115f2c12d28dc53f23f47aae98b579b57662`, density split `c4e34fda99f7b3ad5a567ac047600bf24b627f4c922e5a78da55ee45405850a1` (xxhdpi), artifact-set digest `cd14ac83131f2072d078872e6525d406f08a67001a9c259bc5adbea1dc65db1e`. Workspace `disassembly/output/phase4-early/com.fullpower.applications.horizon-3.6.2-2026-10-17-issue691-addendum/`. Isolated analysis `report/REPORT.SHA256` digest `e679e18ca436d69887eec8fb382a777a770e9769acb61d32327be64213fb08c7`; independent audit ACCEPT_WITH_CORRECTIONS plus identity discoveries, `review-001/AUDIT.SHA256` digest `323db7c907c96f85a0efff0e29f31238cd0ce766d17be5d9cac24ebc6e617c13`; identifier-origin round `review-002/REVIEW.SHA256` digest `a415ad147c9efd02f8b5964398b4e6754c38720b94dd0358958219021e7c2c7d`. `I691/D##`, `R##` and `S##` refer to those rounds.
+
 ## Accounting
 
 The **238 canonical candidates** have exactly one disposition each: **109 IMPLEMENTED**, **10 ALREADY_IMPLEMENTED**, **119 EXCLUDED**. They include all **102 selectors/actions** and all **102 transport callsites**. The separate **42-command crosswalk** is an alias index, not additional discoveries.
@@ -43,11 +45,11 @@ Tests: [tests/test_sleeptracker_controller.py](../../../tests/test_sleeptracker_
 
 ### auth
 
-Fresh-salt bcrypt 2a/cost 10, uppercase configured MAC plus challenge, Base64 hash, literal client ID, token in memory only.
+Fresh-salt bcrypt 2a/cost 10 over the uppercase processor MAC text plus challenge, Base64 hash, literal client ID, token in memory only. The MAC text is the hello `macAddress`, separators preserved; the configured address is only a fallback when the hello omits it. A login reply without object `details` yields no token, and the status request follows without one, as in the app. See the [issue #691 addendum](#issue-691-addendum).
 
 Code: [custom_components/adjustable_bed/sleeptracker_protocol.py](../../../custom_components/adjustable_bed/sleeptracker_protocol.py) `authentication`; [custom_components/adjustable_bed/beds/sleeptracker.py](../../../custom_components/adjustable_bed/beds/sleeptracker.py) `start_notify`; [custom_components/adjustable_bed/beds/sleeptracker.py](../../../custom_components/adjustable_bed/beds/sleeptracker.py) `on_disconnect`.
 
-Tests: [tests/test_sleeptracker_protocol.py](../../../tests/test_sleeptracker_protocol.py) `test_authentication_fixed_salt_accepted_vector`; [tests/test_sleeptracker_controller.py](../../../tests/test_sleeptracker_controller.py) `test_explicit_write_cancel_releases_all_and_reauthenticates`.
+Tests: [tests/test_sleeptracker_protocol.py](../../../tests/test_sleeptracker_protocol.py) `test_authentication_fixed_salt_accepted_vector`; [tests/test_sleeptracker_protocol.py](../../../tests/test_sleeptracker_protocol.py) `test_authentication_matches_issue691_artifact_vector`; [tests/test_sleeptracker_controller.py](../../../tests/test_sleeptracker_controller.py) `test_login_hashes_the_processor_hello_mac_text`; [tests/test_sleeptracker_controller.py](../../../tests/test_sleeptracker_controller.py) `test_explicit_write_cancel_releases_all_and_reauthenticates`.
 
 ### frame
 
@@ -265,7 +267,7 @@ Android navigation/images/spinners, gesture/vibration/confirmation and UI countd
 
 ### excluded-identity
 
-Persisting processor MAC/serial or challenge/token secrets is unnecessary for local control. Configured address identifies the target, while credentials stay ephemeral and raw captures are redacted.
+Persisting processor MAC/serial or challenge/token secrets is unnecessary for local control. Configured address identifies the connection target, while credentials stay ephemeral and raw captures are redacted. Authentication still hashes the processor's own MAC text, which HA reads from each session's hello instead of persisting it (issue #691).
 
 ### excluded-flags
 
@@ -626,12 +628,39 @@ Every command row in the accepted report maps below, including reads and builder
 - **Framing/session:** reject nonadvancing nested arrays at the lossless raw-pair JSON boundary, including unused and duplicate-overwritten fields, before independent consumers can acknowledge them. Every awaited exchange returns a validated object and marks decode failures tainted, including final identification off. Preserve LE header masks, outgoing sequence zero, request byte grammar and same-channel read continuation. Fragment capacity follows negotiated ATT limits rather than blindly assuming 500 bytes. Channels have bounded independent buffers. A stale/cancelled/invalid/timed-out exchange is ambiguous without request IDs, so HA attempts release and closes before reuse. Standard CCCD setup belongs to Bleak; app blind writes, descriptor semaphore hangs, stale mutable dispatch and immediate API retry loops are excluded safety quirks.
 - **Movement:** use artifact axes and ticks 4, repeating only after a reply. HA pulse/timed settings bound elapsed hold duration, not protocol refresh cadence. Fresh cancellation events protect axis release/all-stop cleanup; disconnected hardware cannot acknowledge receipt. Main app ACTION_CANCEL and disconnect cleanup omissions are not reproduced. HA idle timers and command serialization remain existing infrastructure.
 - **Metadata/model gates:** persist an explicit layout, unit, snapshot ordinal, processor type and foundation choice per physical entry. Hello Slim aliases stay separate from persisted Slim IDs. Raw bitfields, both sensor-count rule variants, model comparison and thresholds 66/83/97/113 are diagnostic; app readiness, smartCable/cloud setup and firmware update gates do not block proven BLE requests. No physical axes/position decoder or unit-to-half inference is invented. Restricted sessions use unit 0 and do not require an unused authentication characteristic.
-- **Auth/privacy:** only the configured target MAC is used for authentication. Challenges, generated passwords and tokens are ephemeral and redactable, including raw-address captures. `validUntil` is not a proven expiry requirement (the app never checks it) and is not persisted. App hello MAC/serial and XOR preference persistence are excluded; the effective restricted route is explicitly selectable.
+- **Auth/privacy:** the configured address selects the connection target; authentication hashes the hello's processor MAC text, falling back to the configured address only when the hello omits it. Challenges, generated passwords and tokens are ephemeral and redactable, including raw-address captures. `validUntil` is not a proven expiry requirement (the app never checks it) and is not persisted. App hello MAC/serial and XOR preference persistence are excluded; the effective restricted route is explicitly selectable.
 - **Climate:** fixed heating 3600 and cooling 36000 second fields, complete selected left/right groups and constant/curve modes. Levels 0–3 are proven builder values; stock heat UI chooses 0/3. Last commanded timer and curve state are labelled as such; no readback or arbitrary timer is invented.
 - **Relaxation:** wave uses mapped pulse strength, frequency after 500 ms, and minutes*600. Wind-down sends only modes 1/2 and exposes the first parsed snapshot numeric running state. Absent/empty snapshots retain state; disconnect makes it unknown. Modes, side ordinals and local countdowns are distinct. The 16/10 minutes are UI countdowns, whose completion recheck always uses the excluded cloud task, not BLE. No stop is invented at countdown completion. Local animation retains six bed statements and individual delays; speaker statement removal means media timing equivalence is not claimed. Explicit massage/all-stop remains available.
 - **Local identification:** restricted add/edit sends four reply-driven toggle/off requests. Split setup uses literal side 1 and 1500 ms toggles; HA bounds the otherwise screen-owned loop to four cycles and always attempts explicit off cleanup.
 - **Network exclusion:** AP characteristic `34c0cf2d-69de-4860-91c5-6f7021c2dd30` is not subscribed or read by this controller. The CONFIG channel is used only for authentication, never AP/config/reboot. Frozen excluded `SleepZConfig` fields are `lan_encryption_type`, `lan_key_b64`, `lan_essid_b64`, `lan_ssid_b64`, `replacement_bed`, `oauth_token`, `oauth_token_refresh`, `server_config_url`, `sku_model_string`, `sku_part_string`, `sku_sensor_count`, `sku_serial_string`, `time_gmt_secs`, `tz_setting`, `country_code`, `smart_cable_unsynchronized`; `isSplitKing`/`serverEnvironment` are not serialized. E32 supplies the exact builders, including reboot. No credential values are reproduced here.
 - **Other exclusions:** all six firmware/DFU routes and their 58 transport callsites; HTTP/WebSocket/cloud/account/sleep/alarm-only flows; WebView help/coaching/keyboard/media; all speaker/audio control and feedback; all dead enum actions, nine unused UUID constants, unassigned reads, prototype/stage/platform-None routes and the unapplied connection-profile object. These are final exclusions, not future feature work.
+
+## Issue #691 addendum
+
+Reported failure: both STS-60 processors reply to login and to restricted `motor-status` with non-object `details`. The app never decodes string-encoded nested JSON (I691/D03, D06, R12), so accepting a string `details` would not match it. The app authenticates with its stored processor record's MAC text, uppercased with separators preserved (R01, R02, S09). That record comes from the server, which expects the processor-reported hyphen form (S02, `actrack/a.java:641-653`), and setup treats a hello `macAddress` that is not `String.equals` to the record as a replacement bed (`horizon/l.java:575-578`). HA previously hashed its colon-form BLE address, which cannot equal hyphenated processor text, so the processor would refuse every login.
+
+Accounting: **16 items**, **5 IMPLEMENTED**, **6 ALREADY_IMPLEMENTED**, **5 EXCLUDED**. The original 265 dispositions are unchanged apart from the `B/AUTH` identifier source.
+
+| Item | Disposition | Evidence | Code and tests / reason |
+|------|-------------|----------|-------------------------|
+| `I691/AUTH_IDENTIFIER_HELLO_MAC` | `IMPLEMENTED` | R01, R02, S01-S03, S09; `horizon/l.java:575-578` | `hello_mac`, `start_notify`; `test_auth_identifier_is_the_processor_hello_mac_text`, `test_login_hashes_the_processor_hello_mac_text` |
+| `I691/AUTH_IDENTIFIER_FALLBACK` | `IMPLEMENTED` | R01 (an empty record hashes empty text) | HA has no server record; it keeps the configured address when the hello omits `macAddress` and reports `auth_identifier_source`. Same tests. |
+| `I691/AUTH_BCRYPT_VECTOR` | `ALREADY_IMPLEMENTED` | R03, R04 | `authentication`; `test_authentication_matches_issue691_artifact_vector` reproduces the audit's fixed-salt vector |
+| `I691/LOGIN_NON_OBJECT_DETAILS` | `IMPLEMENTED` | D11, R09 | `session_token`; `test_rejected_login_yields_no_token_instead_of_failing`, `test_rejected_login_continues_tokenless_and_reports_the_refusal` |
+| `I691/TOKEN_SCALAR_TEXT` | `IMPLEMENTED` | D07, D11 (`o()` uses `toString`) | Integer and boolean tokens become their Java text. `session_token`; same protocol test |
+| `I691/STATUS_NON_OBJECT_DETAILS` | `IMPLEMENTED` | D14, D15 | The app cannot consume it either. HA fails the session with the processor's refusal text instead of a generic shape error. `_update_status`; `test_restricted_status_refusal_names_the_processor_reply` |
+| `I691/NO_STRING_JSON_DECODING` | `ALREADY_IMPLEMENTED` | D03, D06, R12 | `child` rejects non-object values; no lazy decode exists. `test_rejected_login_continues_tokenless_and_reports_the_refusal` |
+| `I691/COMMAND_RAW_DETAILS_FALLBACK` | `ALREADY_IMPLEMENTED` | D16, R10 | App command handlers report a parse error and keep local state; HA fails the acknowledgement without publishing state. `_update_status`; `test_nested_array_reply_cannot_publish_acknowledged_state` |
+| `I691/REJECTION_FIELDS_UNREAD` | `ALREADY_IMPLEMENTED` | R09, R11 | Login reads only `details`; HA reads no success/code/message fields on the session path. `start_notify` |
+| `I691/RESTRICTED_HELLO_IDENTIFIER` | `ALREADY_IMPLEMENTED` | R05 | The restricted route uses hello `macAddress` without hashing; HA's restricted route skips authentication. `test_restricted_session_and_explicit_light_route` |
+| `I691/SETUP_SIDE_LIGHT` | `ALREADY_IMPLEMENTED` | R07 | Identify split light literal. `test_identify_cancellation_sends_literal_light_off` |
+| `I691/RESTRICTED_STALE_TOKEN` | `EXCLUDED` | R06 | [unsafe_session](#excluded-unsafe_session): a token from an earlier session is stale state; HA clears tokens on disconnect and restricted sessions never authenticate. |
+| `I691/SETUP_CONFIG_RESULT_FIELDS` | `EXCLUDED` | R08, R11 | [network](#excluded-network): provisioning replies and their success/code/message mapping. |
+| `I691/CLOUD_RECORD_LOADERS` | `EXCLUDED` | S01-S03 | [cloud](#excluded-cloud): account record download and Station persistence. Only the identifier text they prove is used. |
+| `I691/BOARD_ID_SCAN_SELECTION` | `EXCLUDED` | S07, S08 | [inference](#excluded-inference): HA connects to the configured address; the advertised board ID stays diagnostic metadata. |
+| `I691/STALE_LISTENERS_AND_HANGS` | `EXCLUDED` | D04, D13 | [unsafe_session](#excluded-unsafe_session): unregistered reply listeners and the nested-array parser stall. |
+
+Setup also reports a failure after an established link as a startup failure with the controller's error, not as a range problem (`async_setup_entry`; `test_setup_retry_reason_distinguishes_startup_from_reachability`). Whether a given processor's hello text equals its server record remains hardware-unverified; the reporter's rerun validates it.
 
 ## Validation and hardware-only follow-up
 

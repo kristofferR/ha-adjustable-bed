@@ -457,6 +457,65 @@ async def test_authenticated_handshake_and_transport_bounded_frames() -> None:
     await target.bed.stop_notify()
 
 
+def with_hello(target: Processor, **fields) -> None:
+    async def read(char):
+        if char.uuid != p.HELLO_UUID:
+            return await target.read(char)
+        hello = json.loads(p.Reassembler().feed(await target.read(char)))
+        hello.update(fields)
+        for key in [key for key, value in fields.items() if value is None]:
+            del hello[key]
+        return p.frames(json.dumps(hello).encode(), 500)[0]
+
+    target.client.read_gatt_char.side_effect = read
+
+
+@pytest.mark.parametrize(
+    "mac,identifier,source",
+    [
+        ("54-ef-fe-25-00-e3", "54-ef-fe-25-00-e3", "hello"),
+        (None, "AA:BB:CC:01:02:03", "configured_address"),
+    ],
+)
+async def test_login_hashes_the_processor_hello_mac_text(mac, identifier, source) -> None:
+    target = Processor()
+    with_hello(target, macAddress=mac)
+    with patch.object(p, "authentication", wraps=p.authentication) as authentication:
+        await target.bed.start_notify()
+    assert authentication.call_args.args == (identifier, "synthetic-secret")
+    assert target.bed.protocol_diagnostics["auth_identifier_source"] == source
+    await target.bed.stop_notify()
+
+
+async def test_rejected_login_continues_tokenless_and_reports_the_refusal() -> None:
+    target = Processor()
+
+    async def write(char, data, response):
+        target.frames.append((char.uuid, bytes(data), response))
+        if (payload := target.outgoing[char.uuid].feed(bytes(data))) is None:
+            return
+        target.requests.append((char.uuid, json.loads(payload)))
+        reply = b'{"details":"login failed"}' if char.uuid == p.AUTH_UUID else b'{"details":"denied"}'
+        for frame in p.frames(reply, 500):
+            target.receivers[char.uuid](char, bytearray(frame))
+
+    target.client.write_gatt_char.side_effect = write
+    with pytest.raises(
+        ValueError, match="after authentication returned no session token: denied"
+    ):
+        await target.bed.start_notify()
+    # As in the app, a refused login still sends status, without a token.
+    assert target.requests[1] == (p.CONTROL_UUID, {"wsCommand": "motor-status"})
+    assert not target.client.is_connected
+
+
+async def test_restricted_status_refusal_names_the_processor_reply() -> None:
+    target = Processor(restricted=True)
+    reply_with(target, {"details": "not allowed"})
+    with pytest.raises(ValueError, match=r"rejected the request: not allowed$"):
+        await target.bed.start_notify()
+
+
 async def test_restricted_session_and_explicit_light_route() -> None:
     target = Processor(restricted=True)
     await target.bed.start_notify()

@@ -386,17 +386,12 @@ class SleeptrackerController(BedController):
                 challenge = hello.get("authCode", "")
                 if not isinstance(challenge, str):
                     raise ValueError("Sleeptracker auth challenge must be text")
+                mac = p.hello_mac(hello)
+                self._metadata["auth_identifier_source"] = "hello" if mac else "configured_address"
                 payload = await self._coordinator.hass.async_add_executor_job(
-                    p.authentication, self._coordinator.address, challenge
+                    p.authentication, mac or self._coordinator.address, challenge
                 )
-                auth = await self._exchange(p.AUTH_UUID, payload)
-                details = p.child(auth, "details")
-                token = details.get("token")
-                if not isinstance(token, str) or not token or len(token.encode()) > 4096:
-                    raise ConnectionError(
-                        "Sleeptracker authentication did not return a usable token"
-                    )
-                self._token = token
+                self._token = p.session_token(await self._exchange(p.AUTH_UUID, payload))
             self._update_status(
                 await self._exchange(
                     p.CONTROL_UUID, p.envelope(None, self._token, operation="motor-status")
@@ -462,7 +457,15 @@ class SleeptrackerController(BedController):
         self._state["metadata"] = dict(self._metadata)
 
     def _update_status(self, value: dict[str, p.Json]) -> None:
-        # A result envelope may carry the motor status under details.
+        # A result envelope may carry the motor status under details. The app
+        # cannot consume non-object details either; it is the processor's refusal.
+        if (details := value.get("details")) is not None and not isinstance(details, dict):
+            unauthenticated = not self._restricted and self._token is None
+            raise ValueError(
+                "Sleeptracker processor rejected the request"
+                + (" after authentication returned no session token" if unauthenticated else "")
+                + f": {p.rejection(details)}"
+            )
         details = p.child(value, "details")
         body = details if details else value
         running = p.wind_down_running(details)

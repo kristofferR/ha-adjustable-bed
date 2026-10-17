@@ -152,9 +152,15 @@ identification route proves physical left/right mapping.
 ## Session and privacy
 
 HA subscribes hello, authentication and control, reads hello, authenticates
-using bcrypt `$2a$`, cost 10, a fresh salt and the uppercase configured MAC plus
-hello challenge, then reads motor status. Tokens stay in memory and are cleared
-on disconnect. Raw hello/auth/control reads, notifications and command traces
+using bcrypt `$2a$`, cost 10, a fresh salt and the processor's own MAC text plus
+hello challenge, then reads motor status. The MAC text is the hello's
+`macAddress`, uppercased with its separators kept, because the app hashes that
+text rather than the colon form of the Bluetooth address. The configured
+address is used only when the hello omits it; diagnostics report
+`auth_identifier_source`. As in the app, a login reply without a token does not
+end setup by itself. Status is requested without a token, and the processor's
+refusal text is reported as the startup error. Tokens stay in memory and are
+cleared on disconnect. Raw hello/auth/control reads, notifications and command traces
 are redacted, including raw-address support captures.
 
 Frames use a two-byte little-endian header: nine length bits, five sequence

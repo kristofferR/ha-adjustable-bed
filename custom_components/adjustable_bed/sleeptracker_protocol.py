@@ -311,6 +311,46 @@ def local_animation(side: int, token: str | None) -> bytes:
     )
 
 
+def hello_mac(hello: dict[str, Json]) -> str | None:
+    """The processor's own MAC text, which the app hashes with separators intact.
+
+    The app authenticates with its stored processor record, which setup
+    requires to equal the hello macAddress exactly (otherwise it is a
+    replacement bed). The colon form of the BLE address does not match the
+    processor's own text, so the configured address is only a fallback.
+    """
+    mac = hello.get("macAddress")
+    return mac if isinstance(mac, str) and mac else None
+
+
+def session_token(reply: dict[str, Json]) -> str | None:
+    """Token from an authentication reply; a rejected login has none.
+
+    The app ignores non-object details and continues to the status request
+    without a token, so a rejection is decided by the processor's next reply.
+    """
+    details = reply.get("details")
+    if not isinstance(details, dict):
+        return None
+    token = details.get("token")
+    if isinstance(token, bool):
+        token = "true" if token else "false"
+    elif isinstance(token, int) or (isinstance(token, float) and token.is_integer()):
+        token = str(int(token))
+    if not isinstance(token, str):
+        return None
+    if len(token.encode()) > 4096:
+        raise ConnectionError("Sleeptracker authentication returned an oversized token")
+    return token
+
+
+def rejection(details: Json) -> str:
+    """Short printable excerpt of a non-object details value for error messages."""
+    text = details if isinstance(details, str) else json.dumps(details)
+    text = "".join(char for char in text if char.isprintable())
+    return text[:120] + ("…" if len(text) > 120 else "")
+
+
 def authentication(mac: str, challenge: str, salt: bytes | None = None) -> bytes:
     """Run in an executor: bcrypt is CPU work, and the result is secret."""
     import bcrypt

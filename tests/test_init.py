@@ -7,7 +7,7 @@ from collections.abc import Awaitable, Callable
 from pathlib import Path
 from types import SimpleNamespace
 from typing import cast
-from unittest.mock import AsyncMock, MagicMock, call, patch
+from unittest.mock import AsyncMock, MagicMock, PropertyMock, call, patch
 
 import pytest
 from homeassistant.config_entries import ConfigEntryState
@@ -239,6 +239,52 @@ class TestIntegrationSetup:
 
         assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
         mock_disconnect.assert_awaited_once_with(reason="setup timeout cleanup")
+
+    @pytest.mark.parametrize(
+        "attempts,expected",
+        [
+            (
+                [{"connect_elapsed_seconds": 1.2, "error": "processor rejected the request"}],
+                "but its startup failed: processor rejected the request.",
+            ),
+            (
+                [{"connect_elapsed_seconds": 0.0, "error": "processor rejected the request"}],
+                "but its startup failed: processor rejected the request.",
+            ),
+            (
+                [{"connect_elapsed_seconds": None, "error": "connection timed out"}],
+                "powered on and in range",
+            ),
+            ([{"result": "device_not_found"}], "powered on and in range"),
+        ],
+    )
+    async def test_setup_retry_reason_distinguishes_startup_from_reachability(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_bluetooth_adapters,
+        enable_custom_integrations,
+        attempts,
+        expected,
+    ):
+        """A link that came up must not be reported as out of range."""
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.AdjustableBedCoordinator.async_connect",
+                new_callable=AsyncMock,
+                return_value=False,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.AdjustableBedCoordinator.connection_attempt_details",
+                new_callable=PropertyMock,
+                return_value=attempts,
+            ),
+        ):
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
+        assert expected in mock_config_entry.reason
 
     async def test_setup_entry_connection_failed(
         self,
