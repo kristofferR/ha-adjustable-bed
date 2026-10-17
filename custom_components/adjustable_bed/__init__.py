@@ -1147,6 +1147,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 f"Failed to connect to bed at {entry.data.get(CONF_ADDRESS)}."
                 f"{_connection_failure_hint(coordinator)}"
             )
+        last_attempt = (coordinator.connection_attempt_details or [{}])[-1]
+        if "connect_elapsed_seconds" in last_attempt and last_attempt.get("error"):
+            # The link came up, so range/power advice would mislead.
+            raise ConfigEntryNotReady(
+                f"Connected to bed at {entry.data.get(CONF_ADDRESS)}, but its startup "
+                f"failed: {last_attempt['error']}.{_connection_failure_hint(coordinator)}"
+            )
         raise ConfigEntryNotReady(
             f"Failed to connect to bed at {entry.data.get(CONF_ADDRESS)}. "
             "Check that the bed is powered on and in range of your Bluetooth adapter/proxy."
