@@ -5829,7 +5829,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 await budget.enter_async_context(asyncio.timeout_at(onboarding_deadline))
             self.async_report_action(SetupAction.CONNECTING)
             connect_kwargs: dict[str, Any] = {
-                "use_services_cache": not pair_after_service_discovery,
+                "use_services_cache": not (
+                    pair_after_service_discovery or bed_type == BED_TYPE_FURNIMOVE
+                ),
             }
             if request_bond and not pair_after_service_discovery:
                 # Passed only when a bond is wanted. Older bleak-retry-connector
@@ -6372,6 +6374,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             if bed_type == BED_TYPE_STARCODE_ABM5_4
                             else _PROBE_TIMEOUT_SECONDS
                         ),
+                        use_services_cache=bed_type != BED_TYPE_FURNIMOVE,
                     )
                     if client_tracker is not None:
                         # Registered before anything else can fail or be

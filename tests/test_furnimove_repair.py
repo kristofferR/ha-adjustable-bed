@@ -157,8 +157,9 @@ async def test_one_motor_does_not_prove_that_a_legacy_entry_is_a_staircase(hass)
     assert ir.async_get(hass).async_get_issue(DOMAIN, f"furnimove_layout_{entry.entry_id}_standalone")
 
 
-async def test_handset_step_offers_only_furnimove_route_handsets(hass):
-    """Okin UUID catalog handsets stay on that route; they are not offered here."""
+async def test_handset_repair_accepts_the_exact_furnimove_app_82417(hass):
+    """Repair must offer the captured layout shown in the user's FurniMove app."""
+    from custom_components.adjustable_bed.furnimove_profiles import FURNIMOVE_PROFILES
     entry = _legacy(hass)
     flow = FurniMoveLayoutRepairFlow(entry.entry_id, None)
     flow.hass = hass
@@ -167,10 +168,11 @@ async def test_handset_step_offers_only_furnimove_route_handsets(hass):
         option["value"]
         for option in form["data_schema"].schema[CONF_FURNIMOVE_REMOTE].config["options"]
     }
-    assert {"00000", "12234", "90167", "91983", "93558", "280702", "280703"} == offered
-    rejected = await flow.async_step_handset({CONF_FURNIMOVE_REMOTE: "82417"})
-    assert rejected["errors"] == {CONF_FURNIMOVE_REMOTE: "handset_required"}
-    assert entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_RF_ECO_BT
+    assert offered == set(FURNIMOVE_PROFILES)
+    saved = await flow.async_step_handset({CONF_FURNIMOVE_REMOTE: "82417"})
+    assert saved["type"] == "create_entry"
+    assert entry.data[CONF_BED_TYPE] == BED_TYPE_FURNIMOVE
+    assert entry.data[CONF_FURNIMOVE_REMOTE] == "82417"
 
 
 def _dot(hass, variant: str):

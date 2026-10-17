@@ -199,8 +199,116 @@ def _build_diagnostic_client(services: _FakeServices) -> MagicMock:
     return client
 
 
+@pytest.mark.parametrize(
+    ("services", "expected"),
+    [
+        ([], "No usable GATT services were captured."),
+        ([{"characteristics": [{"notify_subscription": {"attempted": True, "success": False}}]}],
+         "No BLE notification subscription succeeded."),
+    ],
+)
+def test_capture_failure_warning_does_not_ask_for_remote_activity(services, expected):
+    """Saving the failed captures from #633 must not imply working Bluetooth."""
+    evidence = _build_evidence_summary(
+        capture_duration=120,
+        include_logs=False,
+        recent_logs=[],
+        diagnostic_report={"gatt_services": services},
+        reproduction_command_trace=[],
+        pairing={},
+        bluetooth_info={},
+        configured=False,
+        controller={},
+    )
+    assert any(warning.startswith(expected) for warning in evidence["warnings"])
+    assert not any("Operate the physical remote" in warning for warning in evidence["warnings"])
+    assert evidence["complete"] is False
+
+
 class TestBleDiagnosticsRunner:
     """Test enriched BLE diagnostics output."""
+
+    async def test_stalled_reads_preserve_gatt_and_notification_capture(self, hass):
+        """Issue #633: an unanswered read must not consume the whole capture."""
+        service = _build_reconnect_test_service()
+        device_info_service = MagicMock(uuid="0000180a-0000-1000-8000-00805f9b34fb", characteristics=[])
+        client = _build_diagnostic_client(_FakeServices([service, device_info_service]))
+        cancelled = []
+        manufacturer_uuid = DEVICE_INFO_CHARS["manufacturer_name"]
+
+        async def read(target):
+            uuid = getattr(target, "uuid", target)
+            if uuid in (service.characteristics[0].uuid, manufacturer_uuid):
+                try:
+                    await asyncio.Event().wait()
+                finally:
+                    cancelled.append(uuid)
+            return bytearray(b"OK")
+
+        async def notify(target, handler):
+            handler(target, bytearray(b"feedback"))
+
+        client.read_gatt_char.side_effect = read
+        client.start_notify.side_effect = notify
+        runner = BLEDiagnosticRunner(hass, "AA:BB:CC:DD:EE:FF", capture_duration=0)
+        runner._client = client
+        with patch("custom_components.adjustable_bed.ble_diagnostics.GATT_OPERATION_TIMEOUT", 0):
+            services = await runner._enumerate_services()
+            info = await runner._read_device_information()
+            await runner._subscribe_to_notifications(services)
+            await runner._unsubscribe_from_notifications(services)
+        await asyncio.gather(*runner._background_tasks)
+
+        assert len(services) == 2
+        assert services[0].characteristics[0].read_error == "Read timed out after 0s"
+        assert services[0].characteristics[1].read_result["hex"] == "4f4b"
+        assert info["manufacturer_name"] is None
+        assert cancelled == [service.characteristics[0].uuid, manufacturer_uuid]
+        assert services[0].characteristics[0].notify_subscription["success"] is True
+        assert runner._notifications[0].data_hex == b"feedback".hex()
+        client.stop_notify.assert_awaited_once()
+
+    async def test_total_read_budget_skips_reads_but_preserves_the_service_table(self, hass):
+        service = _build_reconnect_test_service()
+        client = _build_diagnostic_client(_FakeServices([service]))
+        clock = SimpleNamespace(now=0.0)
+
+        async def read(target):
+            clock.now = 31.0
+            return bytearray(b"OK")
+
+        client.read_gatt_char.side_effect = read
+        runner = BLEDiagnosticRunner(hass, "AA:BB:CC:DD:EE:FF", capture_duration=0)
+        runner._client = client
+        with patch(
+            "custom_components.adjustable_bed.ble_diagnostics.time",
+            SimpleNamespace(monotonic=lambda: clock.now),
+        ):
+            services = await runner._enumerate_services()
+        assert len(services[0].characteristics) == 3
+        assert services[0].characteristics[0].read_result["hex"] == "4f4b"
+        assert services[0].characteristics[1].read_error == "Skipped: diagnostic read budget exhausted"
+        assert services[0].characteristics[2].read_error == "Skipped: diagnostic read budget exhausted"
+        client.read_gatt_char.assert_awaited_once()
+
+    async def test_stalled_notification_subscription_is_reported_and_cleanup_is_bounded(self, hass):
+        service = _build_reconnect_test_service()
+        client = _build_diagnostic_client(_FakeServices([service]))
+
+        async def hang(*_args):
+            await asyncio.Event().wait()
+
+        client.start_notify.side_effect = hang
+        client.stop_notify.side_effect = hang
+        runner = BLEDiagnosticRunner(hass, "AA:BB:CC:DD:EE:FF", capture_duration=0)
+        runner._client = client
+        services = await runner._enumerate_services()
+        with patch("custom_components.adjustable_bed.ble_diagnostics.GATT_OPERATION_TIMEOUT", 0):
+            await runner._subscribe_to_notifications(services)
+            await runner._unsubscribe_from_notifications(services)
+        assert services[0].characteristics[0].notify_subscription["success"] is False
+        assert services[0].characteristics[0].notify_subscription["error"] == "TimeoutError"
+        assert any("Failed to subscribe" in error for error in runner._errors)
 
     async def test_diagnostic_query_retries_after_command_preemption(
         self,
@@ -410,7 +518,7 @@ class TestBleDiagnosticsRunner:
             patch(
                 "custom_components.adjustable_bed.ble_diagnostics.establish_connection",
                 new=AsyncMock(return_value=client),
-            ),
+            ) as establish,
             patch(
                 "custom_components.adjustable_bed.ble_diagnostics.bluetooth.async_scanner_count",
                 return_value=2,
@@ -422,6 +530,7 @@ class TestBleDiagnosticsRunner:
                 capture_duration=0,
             ).run_diagnostics()
 
+        assert establish.await_args.kwargs["use_services_cache"] is False
         assert report.detection["bed_type"] == "motosleep"
         assert report.detection["supported_match"] is True
         assert len(report.advertisements_by_source) == 2
