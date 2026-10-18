@@ -83,8 +83,8 @@ Premium layouts expose **Wind-down running (reported)** from the first parsed
 status snapshot, independent of the configured snapshot side. A numeric mode
 truncates toward zero and is running when the converted integer is nonzero;
 missing or invalid mode values on a present snapshot mean idle. Missing/empty
-snapshots retain the previous state. The sensor is unknown before observation
-and after disconnect. Later ordinary scalar entries do not invalidate this
+snapshots retain the previous state. The sensor is unknown before observation;
+disconnect keeps the last reported value. Later ordinary scalar entries do not invalidate this
 independent first-snapshot consumer or close its session. If those entries
 cannot be interpreted by the remote/climate consumer, its last safe values
 remain unchanged. Malformed consumed fields and nested-array shapes still
@@ -110,7 +110,13 @@ and duplicate generic toggle button are not exposed. Controls removed by a layou
 processor type or restricted-session change, including timer and wind-down state
 sensors, are retired from the entity registry
 for the affected physical bed. Supported
-layouts add head/foot massage steps. Premium layouts add **28 Hz**, **40 Hz**,
+layouts add head/foot massage steps. Premium layouts also add **Head/Foot
+massage strength** (Off, 1, 2, 3) and **Massage pattern** (Off, Wave Form One,
+Two, Three) selects. The app has no direct setter for either: it steps, and
+draws reported strengths 0/4/6/8 as zero to three bars and patterns 0–3 as off
+and One to Three. A select sends one step per reply until the processor reports
+the chosen value, at most three steps. It refuses when the current reply carries
+no value, for example a two-snapshot reply's reset strengths. Premium layouts add **28 Hz**, **40 Hz**,
 wave frequency/duration selectors, wind-down 1/2 and local motor/massage
 animation. Wave choices are 28, 40, 52, 68 and 88 Hz, with 5–105 minutes in
 steps of five. The wire duration is minutes times 600; its physical tick unit
@@ -138,7 +144,9 @@ strength and safety light. Two snapshots report only the selected ordinal's
 pattern and reset the other remote values, matching the app parser. Climate
 updates only from a single snapshot's nested fan object, clamps levels to 0–3
 and retains absent fields. There is no invented frequency, timer or axis
-feedback. Disconnect clears remote state and authentication; local wave
+feedback. Disconnect clears authentication but keeps the last reported state,
+because the processor drops the link shortly after each command; the next
+connection's status replaces it. Local wave
 preferences are shared by offline and connected controllers and saved per
 physical address and app layout. Reconnecting or restarting Home Assistant
 retains the selected frequency and duration, without restoring remote state.
@@ -161,7 +169,8 @@ address is used only when the hello omits it; diagnostics report
 end setup by itself. Status is requested without a token, and the processor's
 refusal text is reported as the startup error. Tokens stay in memory and are
 cleared on disconnect. Raw hello/auth/control reads, notifications and command traces
-are redacted, including raw-address support captures.
+are redacted, including raw-address support captures. Debug logs name each
+control reply's snapshot sides and field names, never their values.
 
 Frames use a two-byte little-endian header: nine length bits, five sequence
 bits, first `0x8000` and last `0x4000`. Outgoing sequence is zero. HA uses a

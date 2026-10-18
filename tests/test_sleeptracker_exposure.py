@@ -607,5 +607,6 @@ async def test_platform_entities_route_actions_and_show_only_published_state(has
     )
     assert wind_down.is_on is False
     controller.on_disconnect()
-    assert sensor.native_value is None and light.is_on is None
-    assert wind_down.is_on is None
+    # The processor drops the link after each command; keep what it last reported.
+    assert sensor.native_value == 0 and light.is_on is False
+    assert wind_down.is_on is False

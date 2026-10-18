@@ -343,7 +343,7 @@ async def test_wind_down_transaction_rejects_malformed_consumed_shapes(snapshots
     with pytest.raises(ValueError):
         await target.bed.read_positions()
     assert not target.client.is_connected
-    assert target.states["sleeptracker_wind_down_running"] is None
+    assert target.states["sleeptracker_wind_down_running"] is False
 
 
 @pytest.mark.parametrize(
@@ -377,7 +377,7 @@ async def test_nested_array_reply_cannot_publish_acknowledged_state(model, opera
             )
     assert not target.client.is_connected
     assert not target.bed.protocol_diagnostics["session_ready"]
-    assert target.states["sleeptracker_wind_down_running"] is None
+    assert target.states["sleeptracker_wind_down_running"] is False
     assert target.states.get("sleeptracker_left_commanded_timer_seconds") is None
 
 
@@ -414,7 +414,7 @@ async def test_duplicate_key_reply_cannot_publish_acknowledged_state(model, oper
                 p.Request("climate", fan_side="left", heating=True, level=3)
             )
     assert not target.client.is_connected
-    assert target.states["sleeptracker_wind_down_running"] is None
+    assert target.states["sleeptracker_wind_down_running"] is False
     assert target.states.get("sleeptracker_left_commanded_timer_seconds") is None
 
 
@@ -717,8 +717,9 @@ async def test_explicit_write_cancel_releases_all_and_reauthenticates() -> None:
     with pytest.raises(asyncio.CancelledError):
         await task
     assert target.requests[-1][1]["request"]["stop"]["action"] == "all"
-    assert target.states["sleeptracker_massage_head_strength"] is None
-    assert target.states["sleeptracker_left_mode"] is None
+    # The cancelled session keeps its last reported state; nothing is invented.
+    assert target.states["sleeptracker_massage_head_strength"] == 4
+    assert target.states["sleeptracker_left_mode"] == "heat"
     target.client.is_connected = True
     await target.bed.start_notify()
     assert sum(uuid == p.AUTH_UUID for uuid, _ in target.requests) == 2
@@ -799,7 +800,7 @@ async def test_identification_final_off_validates_reply_before_session_reuse(mod
     assert target.bed.protocol_diagnostics["session_ready"] is (not invalid)
     if invalid:
         assert target.bed._token is None
-        assert target.states["sleeptracker_wind_down_running"] is None
+        assert target.states["sleeptracker_wind_down_running"] is False
         with pytest.raises(ConnectionError):
             await target.bed.lights_toggle()
     else:
@@ -882,3 +883,90 @@ async def test_number_callbacks_reject_fractional_or_unsupported_values(key, val
     with pytest.raises(ValueError):
         await spec.set_fn(target.bed, value)
     assert not target.client.write_gatt_char.called
+
+
+def stepping_processor(target: Processor, *, head: int = 4, pattern: int = 1, moves: bool = True):
+    """Reply to each massage step with the next app-expected state (0/4/6/8, 0-3)."""
+    state = {"head": head, "pattern": pattern}
+    original = target.client.write_gatt_char.side_effect
+
+    async def write(char, data, response):
+        if char.uuid != p.CONTROL_UUID:
+            return await original(char, data, response)
+        target.frames.append((char.uuid, bytes(data), response))
+        if (payload := target.outgoing[char.uuid].feed(bytes(data))) is None:
+            return
+        value = json.loads(payload)
+        target.requests.append((char.uuid, value))
+        massage = value.get("request", {}).get("massage", {})
+        if moves and massage.get("action") == "step":
+            state["head"] = {0: 4, 4: 6, 6: 8, 8: 0}[state["head"]]
+        elif moves and massage.get("action") == "pattern":
+            state["pattern"] = (state["pattern"] + 1) % 4
+        snapshot = {"massagePattern": state["pattern"], "head": {"massage": {"strength": state["head"]}}}
+        reply = {"details": {"body": {"snapshots": [snapshot]}}}
+        for frame in p.frames(json.dumps(reply).encode(), 500):
+            target.receivers[char.uuid](char, bytearray(frame))
+
+    target.client.write_gatt_char.side_effect = write
+
+
+def massage_select(target: Processor, key: str):
+    return next(s for s in target.bed.controller_select_specs if s.key == key)
+
+
+@pytest.mark.parametrize(
+    ("key", "option", "steps"),
+    [
+        ("sleeptracker_massage_head_level", "3", 2),
+        ("sleeptracker_massage_head_level", "off", 3),
+        ("sleeptracker_massage_head_level", "1", 0),
+        ("sleeptracker_massage_pattern_option", "off", 3),
+    ],
+)
+async def test_massage_select_steps_until_the_processor_reports_the_choice(key, option, steps) -> None:
+    target = Processor()
+    await target.bed.start_notify()
+    stepping_processor(target)
+    await massage_select(target, key).select_fn(target.bed, option)
+    sent = [v["request"]["massage"] for _, v in target.requests if "massage" in v.get("request", {})]
+    assert len(sent) == steps
+    assert target.states[key] == option
+
+
+async def test_massage_select_refuses_without_a_reported_value() -> None:
+    target = Processor()
+    await target.bed.start_notify()
+    reply_with(target, {"details": {"body": {"snapshots": [{"side": 0}, {"side": 1}]}}})
+    await target.bed.read_positions()
+    target.requests.clear()
+    with pytest.raises(ValueError, match="has not reported"):
+        await massage_select(target, "sleeptracker_massage_head_level").select_fn(target.bed, "2")
+    assert target.requests == []
+
+
+async def test_massage_select_stops_when_the_processor_does_not_advance() -> None:
+    target = Processor()
+    await target.bed.start_notify()
+    stepping_processor(target, moves=False)
+    with pytest.raises(ValueError, match="did not report"):
+        await massage_select(target, "sleeptracker_massage_pattern_option").select_fn(
+            target.bed, "three"
+        )
+    assert sum("massage" in v.get("request", {}) for _, v in target.requests) == 3
+
+
+async def test_reported_state_survives_disconnect_and_a_fresh_controller() -> None:
+    target = Processor(model="activebreeze_large")
+    await target.bed.start_notify()
+    await target.bed.stop_notify()
+    published = dict(target.states)
+    assert published["sleeptracker_layout"] == "ActiveBreeze large"
+    assert published["sleeptracker_left_mode"] == "heat"
+    assert published["sleeptracker_massage_head_level"] == "1"
+    # The coordinator builds a new controller per connection; one whose reply
+    # lacks the climate fields must not erase the previous session's values.
+    fresh = SleeptrackerController(target.coordinator, model="activebreeze_large", unit_number=2)
+    fresh._update_status({"details": {"body": {"snapshots": [{"massagePattern": 2}]}}})
+    assert target.states["sleeptracker_left_mode"] == "heat"
+    assert target.states["sleeptracker_massage_pattern_option"] == "two"

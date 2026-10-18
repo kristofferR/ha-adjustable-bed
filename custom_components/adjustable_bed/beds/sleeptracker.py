@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Callable, Mapping
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from .. import sleeptracker_protocol as p
 from .base import (
@@ -26,6 +27,8 @@ if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
     from ..coordinator import AdjustableBedCoordinator
+
+_LOGGER = logging.getLogger(__name__)
 
 REPLY_TIMEOUT = 60.0
 
@@ -185,18 +188,16 @@ class SleeptrackerController(BedController):
         return {"hex": "**REDACTED**", "length": len(command)}
 
     def _publish(self) -> None:
+        # Each connection gets a fresh controller. Derive only what this session
+        # knows, so values published by an earlier session are not reset.
         for side in ("left", "right"):
             level = self._state.get(side + "_level")
             heating = self._state.get(side + "_heating")
-            self._state[side + "_mode"] = (
-                ("off" if level == 0 else "heat" if heating else "cool")
-                if level is not None and heating is not None
-                else None
-            )
+            if level is not None and heating is not None:
+                self._state[side + "_mode"] = "off" if level == 0 else "heat" if heating else "cool"
             constant = self._state.get(side + "_commanded_constant")
-            self._state[side + "_curve"] = (
-                ("constant" if constant else "curve") if constant is not None else None
-            )
+            if constant is not None:
+                self._state[side + "_curve"] = "constant" if constant else "curve"
         updates: dict[str, p.Json] = {
             "sleeptracker_" + key: value for key, value in self._state.items()
         }
@@ -468,6 +469,7 @@ class SleeptrackerController(BedController):
             )
         details = p.child(value, "details")
         body = details if details else value
+        _LOGGER.debug("Sleeptracker %s reply: %s", self._coordinator.address, p.reply_shape(body))
         running = p.wind_down_running(details)
         try:
             self._state = p.status(body, self._snapshot_side, self._state)
@@ -511,9 +513,9 @@ class SleeptrackerController(BedController):
             task.cancel()
         self._reads.clear()
         self._buffers.clear()
-        self._state = dict.fromkeys(self._state)
+        # Keep the last reported state: the processor drops the link shortly
+        # after each command, and the next session's status replaces it.
         self._metadata = dict(self._advertisement_metadata)
-        self._publish()
 
     async def stop_notify(self) -> None:
         client = self._session_client
@@ -754,6 +756,26 @@ class SleeptrackerController(BedController):
     async def massage_off(self) -> None:
         await self._release(massage_only=True)
 
+    async def _step_massage_to(
+        self, key: str, option: str, action: Literal["head", "foot", "pattern"]
+    ) -> None:
+        """The app only steps; repeat one step per reply until it reports the choice.
+
+        Strength and pattern each cycle through four states, so three steps
+        reach any of them.
+        """
+        for _ in range(3):
+            current = self._state.get(key)
+            if current == option:
+                return
+            if current is None:
+                raise ValueError("The Sleeptracker processor has not reported this massage setting")
+            await self.async_execute_sleeptracker_request(
+                p.Request("massage", massage_action=action)
+            )
+        if self._state.get(key) != option:
+            raise ValueError(f"The Sleeptracker processor did not report {option} after stepping")
+
     async def lights_toggle(self) -> None:
         await self._control(
             p.light(self._unit, self._token, restricted=self._restricted), fast=True
@@ -981,6 +1003,30 @@ class SleeptrackerController(BedController):
                     local_select_fn=self._choose_wave_frequency,
                 )
             )
+            steps: tuple[tuple[str, tuple[str, ...], Literal["head", "foot", "pattern"]], ...] = (
+                ("massage_head_level", tuple(p.STRENGTH_LEVELS.values()), "head"),
+                ("massage_foot_level", tuple(p.STRENGTH_LEVELS.values()), "foot"),
+                ("massage_pattern_option", p.PATTERNS, "pattern"),
+            )
+            for key, options, action in steps:
+
+                async def step_to(
+                    ctrl: BedController,
+                    option: str,
+                    key: str = key,
+                    action: Literal["head", "foot", "pattern"] = action,
+                ) -> None:
+                    await _controller(ctrl)._step_massage_to(key, option, action)
+
+                specs.append(
+                    ControllerSelectSpec(
+                        "sleeptracker_" + key,
+                        "sleeptracker_" + key,
+                        "sleeptracker_" + key,
+                        options,
+                        step_to,
+                    )
+                )
         if self._model.breeze:
             fan_sides: tuple[p.FanSide, ...] = ("left", "right")
             for side in fan_sides:

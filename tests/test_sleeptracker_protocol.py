@@ -274,6 +274,9 @@ def test_remote_and_climate_parser_rules_stay_distinct() -> None:
         "massage_head_strength": 4,
         "massage_foot_strength": 6,
         "light_on": True,
+        "massage_pattern_option": "three",
+        "massage_head_level": "1",
+        "massage_foot_level": "2",
         "left_level": 3,
         "right_level": 0,
         "right_heating": False,
@@ -291,7 +294,10 @@ def test_remote_and_climate_parser_rules_stay_distinct() -> None:
         state,
     )
     assert split["massage_pattern"] == 2
+    assert split["massage_pattern_option"] == "two"
     assert split["massage_head_strength"] == split["massage_foot_strength"] == 0
+    # The app's split reset is not a reported strength, so no level is chosen.
+    assert split["massage_head_level"] is split["massage_foot_level"] is None
     assert split["light_on"] is False
     assert split["left_level"] == 3
     reset = p.status({}, 0, split)
@@ -444,3 +450,29 @@ def test_manufacturer_fields_are_metadata_not_axis_decoders(company):
         "advertised_version_octets": [1, 2, 3],
     }
     assert not p.manufacturer_metadata({company: b"\x01\x02"}, "AA:BB:CC:01:02:03")
+
+
+@pytest.mark.parametrize(
+    ("strength", "level"), [(0, "off"), (4, "1"), (6, "2"), (8, "3"), (5, None), (10, None)]
+)
+def test_reported_strength_maps_to_the_app_bars(strength, level) -> None:
+    value = {"body": {"snapshots": [{"head": {"massage": {"strength": strength}}}]}}
+    assert p.status(value, 0, {})["massage_head_level"] == level
+
+
+@pytest.mark.parametrize(("pattern", "option"), [(0, "off"), (1, "one"), (3, "three"), (4, None)])
+def test_reported_pattern_maps_to_wave_form_names(pattern, option) -> None:
+    value = {"body": {"snapshots": [{"massagePattern": pattern}]}}
+    assert p.status(value, 0, {})["massage_pattern_option"] == option
+
+
+def test_reply_without_snapshots_reports_no_massage_choice() -> None:
+    state = p.status({"body": {}}, 0, {"massage_head_level": "2"})
+    assert state["massage_head_level"] is None and state["massage_pattern_option"] is None
+
+
+def test_reply_shape_names_fields_without_values() -> None:
+    value = {"body": {"snapshots": [{"side": 1, "massagePattern": 2, "fan": {"leftLevel": 3}}]}}
+    assert p.reply_shape(value) == "snapshot side=1 keys=['fan', 'massagePattern', 'side']"
+    assert p.reply_shape({"code": 0}) == "keys=['code']"
+    assert p.reply_shape({"body": {"snapshots": []}}) == "no snapshots"

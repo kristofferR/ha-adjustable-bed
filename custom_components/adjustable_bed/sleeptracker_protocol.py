@@ -34,6 +34,10 @@ FOUNDATIONS = (
 )
 FREQUENCIES = (28, 40, 52, 68, 88)
 PRESETS = ("all_flat", "zero_g", "anti_snore", "user_favorite", "tv_pc", "favorite_2")
+# The premium remote draws reported strengths 0/4/6/8 as zero to three bars.
+STRENGTH_LEVELS = {0: "off", 4: "1", 6: "2", 8: "3"}
+# Reported massagePattern 0-3: off, then Wave Form One/Two/Three.
+PATTERNS = ("off", "one", "two", "three")
 
 
 @dataclass(frozen=True, slots=True)
@@ -458,6 +462,25 @@ def boolean(value: Json) -> bool:
     return str(value).lower() == "true"
 
 
+def reply_shape(value: dict[str, Json]) -> str:
+    """Field names and snapshot sides only, so debug logs carry no values."""
+    body = value.get("body")
+    if not isinstance(body, dict):
+        return f"keys={sorted(value)}"
+    snapshots = body.get("snapshots")
+    if not isinstance(snapshots, list):
+        return f"body keys={sorted(body)}"
+    return (
+        "; ".join(
+            f"snapshot side={item.get('side')} keys={sorted(item)}"
+            if isinstance(item, dict)
+            else f"snapshot {type(item).__name__}"
+            for item in snapshots
+        )
+        or "no snapshots"
+    )
+
+
 def wind_down_running(details: dict[str, Json]) -> bool | None:
     """The Wind Down screen consumes the first parsed snapshot, without side matching."""
     snapshots = child(details, "body").get("snapshots")
@@ -494,14 +517,20 @@ def status(
         "massage_head_strength": 0,
         "massage_foot_strength": 0,
         "light_on": False,
+        # Choices are None unless this reply actually carried them, since the
+        # app's zero defaults would otherwise read as a reported "off".
+        "massage_pattern_option": None,
+        "massage_head_level": None,
+        "massage_foot_level": None,
     }
     if len(snapshots) == 1 and isinstance(snapshot := snapshots[0], dict):
         updates["massage_pattern"] = integer(snapshot.get("massagePattern"))
+        updates["massage_pattern_option"] = _pattern(updates["massage_pattern"])
         updates["light_on"] = boolean(snapshot.get("safetyLightOn"))
         for axis in ("head", "foot"):
-            updates["massage_" + axis + "_strength"] = integer(
-                child(child(snapshot, axis), "massage").get("strength")
-            )
+            strength = integer(child(child(snapshot, axis), "massage").get("strength"))
+            updates["massage_" + axis + "_strength"] = strength
+            updates["massage_" + axis + "_level"] = STRENGTH_LEVELS.get(strength)
         fan_value = child(snapshot, "fan")
         for side in ("left", "right"):
             if (key := side + "IsHeating") in fan_value:
@@ -516,7 +545,12 @@ def status(
                 and "massagePattern" in snapshot
             ):
                 updates["massage_pattern"] = integer(snapshot["massagePattern"])
+                updates["massage_pattern_option"] = _pattern(updates["massage_pattern"])
     return {**previous, **updates}
+
+
+def _pattern(value: Json) -> str | None:
+    return PATTERNS[value] if isinstance(value, int) and value in range(len(PATTERNS)) else None
 
 
 def manufacturer_metadata(data: Mapping[int, bytes], address: str) -> dict[str, Json]:
