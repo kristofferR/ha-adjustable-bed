@@ -121,6 +121,17 @@ their generic QRRM profiles contain no controls. On the hardware from
 issue #504, Flat is confirmed. The other command frames are statically verified
 across the apps but have not yet been validated on that physical bed.
 
+The QRRM receiver in issue #695 (Sven & Son, `WLT825X_H35_S`) is paired with an
+HJH89 remote whose label prints, and QR-encodes, `GGRM`. Choose **GGRM / HJH89**
+for that handset: head, feet, pillow (head tilt) and lumbar motors, Flat, Zero G,
+Anti-snore, one memory, massage and a white light toggle. The Revive Control,
+Blvd Home and HARMONY catalogs define the same GGRM controls and release with
+`0x6E`, so this profile does not use the `0x5E` compatibility stop, which those
+catalogs send as massage All Off. Hardware validation is pending.
+With massage enabled, GGRM exposes All Off (`0x5E`), head/foot intensity steps
+and mode stepping. It does not expose the generic all-massage toggle (`0x5D`),
+which is absent from those GGRM catalogs.
+
 ### Prefix55 Variant
 **Format:** 5 bytes `[0x55, 0x01, 0x00, command, checksum]`
 **Checksum:** `(command + 0x56) & 0xFF`

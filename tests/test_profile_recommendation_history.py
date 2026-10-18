@@ -143,8 +143,10 @@ def test_issue116_does_not_offer_identical_alias_as_a_remote_profile_improvement
     assert "okimat" not in result.choices
 
 
-@pytest.mark.parametrize("remote", ["auto", "qrrm", "LP-QRRM", "lp-qrrm", "BT6500"])
-def test_issues194_504_560_review_unresolved_qrrm_layout_without_overriding_explicit_remote(remote):
+@pytest.mark.parametrize("remote", ["auto", "qrrm", "LP-QRRM", "lp-qrrm", "BT6500", "GGRM"])
+def test_issues194_504_560_695_review_unresolved_qrrm_layout_without_overriding_explicit_remote(
+    remote,
+):
     result = recommend_profile(
         {CONF_BED_TYPE: "richmat", CONF_PROTOCOL_VARIANT: "auto", "richmat_remote": remote},
         observed("QRRM106475"),
@@ -153,8 +155,13 @@ def test_issues194_504_560_review_unresolved_qrrm_layout_without_overriding_expl
     assert result is not None and result.suggested is None
     remote_choices = {choice for choice in result.choices if choice.startswith("richmat_remote:")}
     if remote in {"auto", "qrrm"}:
-        assert remote_choices == {"richmat_remote:LP-QRRM", "richmat_remote:BT6500"}
+        assert remote_choices == {
+            "richmat_remote:LP-QRRM",
+            "richmat_remote:BT6500",
+            "richmat_remote:GGRM",
+        }
         assert "Custom 1/2" in _recommendation_label("richmat_remote:LP-QRRM")
+        assert "HJH89" in _recommendation_label("richmat_remote:GGRM")
     else:
         assert not remote_choices
 

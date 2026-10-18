@@ -1845,6 +1845,10 @@ RICHMAT_REMOTE_I7RM: Final = "I7RM"
 RICHMAT_REMOTE_190_0055: Final = "190-0055"
 RICHMAT_REMOTE_BT6500: Final = "BT6500"
 RICHMAT_REMOTE_LP_QRRM: Final = "LP-QRRM"
+# Printed and QR-encoded on the HJH89 handset of a QRRM receiver (#695). The
+# features come from the generated table; the Revive Control, Blvd Home and
+# HARMONY catalogs (row055) define the same GGRM controls.
+RICHMAT_REMOTE_GGRM: Final = "GGRM"
 
 # Richmat WiLinke stop-byte compatibility.
 # Most Richmat remotes use END=0x6E, but some devices require 0x5E to stop
@@ -1864,6 +1868,7 @@ RICHMAT_REMOTES: Final = {
     RICHMAT_REMOTE_BT6500: "BT6500 (Head, Feet, Pillow, Lumbar, M1/M2, ZG, Anti-snore, TV, Lights)",
     RICHMAT_REMOTE_BURM: "BURM (Head, Feet, Massage, Lights)",
     RICHMAT_REMOTE_BVRM: "BVRM (Head, Feet, Massage)",
+    RICHMAT_REMOTE_GGRM: "GGRM / HJH89 (Head, Feet, Pillow, Lumbar, M1, ZG, Anti-snore, Lights, Massage)",
     RICHMAT_REMOTE_VIRM: "VIRM (Head, Feet, Pillow, Lumbar, Massage, Lights)",
     RICHMAT_REMOTE_V1RM: "V1RM (Head, Feet)",
     RICHMAT_REMOTE_W6RM: "W6RM (Head, Feet, Massage, Lights)",

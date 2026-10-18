@@ -52,6 +52,7 @@ from .const import (
     OCTO_VARIANT_STAR2,
     RICHMAT_REMOTE_AUTO,
     RICHMAT_REMOTE_BT6500,
+    RICHMAT_REMOTE_GGRM,
     RICHMAT_REMOTE_LP_QRRM,
     RICHMAT_REMOTES,
     SUPPORTED_BED_TYPES,
@@ -279,10 +280,11 @@ def recommend_profile(
         and str(data.get(CONF_RICHMAT_REMOTE) or RICHMAT_REMOTE_AUTO).lower()
         in {RICHMAT_REMOTE_AUTO, "qrrm"}
     ):
-        # QRRM identifies neither layout. #194 and #504 confirm these existing
+        # QRRM identifies no layout. #194, #504 and #695 confirm these existing
         # surfaces on QRRM receivers; ask the user to compare physical controls.
         remote_choices = {
             f"{_REMOTE_PREFIX}{RICHMAT_REMOTE_BT6500}",
+            f"{_REMOTE_PREFIX}{RICHMAT_REMOTE_GGRM}",
             f"{_REMOTE_PREFIX}{RICHMAT_REMOTE_LP_QRRM}",
         }
     choices = tuple(

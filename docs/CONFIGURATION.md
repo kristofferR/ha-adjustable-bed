@@ -653,6 +653,7 @@ Richmat beds have different feature sets based on the remote model. Selecting yo
 | **BT6500** | Head, Feet, Pillow, Lumbar, memory/presets, Massage, Lights |
 | **BURM** | Head, Feet, Massage, Lights |
 | **BVRM** | Head, Feet, Massage |
+| **GGRM / HJH89** | Head, Feet, Pillow (head tilt), Lumbar, Flat, Zero G, Anti-snore, Memory, Massage, Lights |
 | **VIRM** | Head, Feet, Pillow, Lumbar, Massage, Lights |
 | **V1RM** | Head, Feet |
 | **W6RM** | Head, Feet, Massage, Lights |
@@ -664,6 +665,9 @@ Richmat beds have different feature sets based on the remote model. Selecting yo
 | **L&P QRRM** | Head, Feet, Flat, Zero G, Custom 1/2 |
 
 **Note:** The remote code is usually printed on the back of your physical remote.
+A bed that advertises as `QRRM` does not identify its remote, so check the
+label. The HJH89 remote, for example, prints `GGRM` beside a QR code that
+encodes the same code; select **GGRM / HJH89** for it.
 For an L&P bed that advertises as `QRRM` and has Flat, Zero G, Custom 1, and
 Custom 2 buttons, select **L&P QRRM**. Current L&P and Richmat apps also require
 a physical remote or product selection for QRRM devices. The BLE name and GATT
