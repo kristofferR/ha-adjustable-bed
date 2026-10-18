@@ -964,6 +964,8 @@ test("Sleeptracker local controls appear in their existing card sections", () =>
     entry("button.hz", "sleeptracker_massage_28hz"),
     entry("button.wave", "sleeptracker_wave_start"),
     entry("select.hz", "sleeptracker_wave_frequency"),
+    entry("select.head_level", "sleeptracker_massage_head_level"),
+    entry("select.pattern", "sleeptracker_massage_pattern_option"),
     entry("number.minutes", "sleeptracker_wave_minutes"),
     entry("select.heat", "sleeptracker_left_mode"),
     entry("select.curve", "sleeptracker_left_curve"),
@@ -974,7 +976,7 @@ test("Sleeptracker local controls appear in their existing card sections", () =>
     entry("button.refresh", "sleeptracker_refresh"),
   ]), "dev1");
   expect(bed.massage.buttons).toEqual(["button.hz", "button.wave"]);
-  expect(bed.massage.selects).toEqual(["select.hz"]);
+  expect(bed.massage.selects).toEqual(["select.hz", "select.head_level", "select.pattern"]);
   expect(bed.massage.numbers).toEqual(["number.minutes"]);
   expect(bed.massage.states).toEqual(["binary_sensor.wind_down"]);
   expect(bed.climate.selects).toEqual(["select.heat", "select.curve"]);

@@ -15,6 +15,8 @@ Implementation candidate for the full standalone work unit, ready for independen
 
 - Issue #691 reply/identity addendum, from a fresh Google Play acquisition of the same 3.6.2 (262) base on 2026-10-17. The 2026-10-08 workspace no longer exists. Base APK `c918b5aaa785ad1f01cae55d52da115f2c12d28dc53f23f47aae98b579b57662`, density split `c4e34fda99f7b3ad5a567ac047600bf24b627f4c922e5a78da55ee45405850a1` (xxhdpi), artifact-set digest `cd14ac83131f2072d078872e6525d406f08a67001a9c259bc5adbea1dc65db1e`. Workspace `disassembly/output/phase4-early/com.fullpower.applications.horizon-3.6.2-2026-10-17-issue691-addendum/`. Isolated analysis `report/REPORT.SHA256` digest `e679e18ca436d69887eec8fb382a777a770e9769acb61d32327be64213fb08c7`; independent audit ACCEPT_WITH_CORRECTIONS plus identity discoveries, `review-001/AUDIT.SHA256` digest `323db7c907c96f85a0efff0e29f31238cd0ce766d17be5d9cac24ebc6e617c13`; identifier-origin round `review-002/REVIEW.SHA256` digest `a415ad147c9efd02f8b5964398b4e6754c38720b94dd0358958219021e7c2c7d`. `I691/D##`, `R##` and `S##` refer to those rounds.
 
+- Issue #693 state/control addendum, from the same 2026-10-17 artifact set (`cd14ac83…`, member hashes re-verified). Workspace `disassembly/output/phase4-early/com.fullpower.applications.horizon-3.6.2-2026-10-18-issue693-addendum/`. Isolated analysis COMPLETE, 30 discoveries, `report/REPORT.SHA256` digest `c4d2a68f48349aee597a50865370dd0b32f7b34f2f8fc52fc19fd0423e315dc0`; independent review ACCEPT_WITH_CORRECTIONS, `review-001/REVIEW.SHA256` digest `5cda86e1b40c2de7bc000b9a90c83db5efd0a8af1969bdde965cdf9df2b573e8`. `I693/D##` refers to that report and `I693/R#` to the review's corrections.
+
 ## Accounting
 
 The **238 canonical candidates** have exactly one disposition each: **109 IMPLEMENTED**, **10 ALREADY_IMPLEMENTED**, **119 EXCLUDED**. They include all **102 selectors/actions** and all **102 transport callsites**. The separate **42-command crosswalk** is an alias index, not additional discoveries.
@@ -131,7 +133,7 @@ Tests: [tests/test_sleeptracker_controller.py](../../../tests/test_sleeptracker_
 
 ### state
 
-One/two/other snapshot remote rules, raw strengths/pattern/light, separate single-snapshot fan parser and disconnect invalidation. Audio feedback has its own exclusion.
+One/two/other snapshot remote rules, raw strengths/pattern/light, separate single-snapshot fan parser, and last reported state kept across disconnect ([issue #693 addendum](#issue-693-addendum)). Audio feedback has its own exclusion.
 
 Code: [custom_components/adjustable_bed/sleeptracker_protocol.py](../../../custom_components/adjustable_bed/sleeptracker_protocol.py) `status`; [custom_components/adjustable_bed/beds/sleeptracker.py](../../../custom_components/adjustable_bed/beds/sleeptracker.py) `_update_status`; [custom_components/adjustable_bed/beds/sleeptracker.py](../../../custom_components/adjustable_bed/beds/sleeptracker.py) `_publish`; [custom_components/adjustable_bed/beds/sleeptracker.py](../../../custom_components/adjustable_bed/beds/sleeptracker.py) `on_disconnect`.
 
@@ -193,7 +195,7 @@ Tests: [tests/test_coordinator.py](../../../tests/test_coordinator.py) `test_con
 
 ### wind_down
 
-Accepted scoped addendum D05-D10/D12: only details.body snapshots; first non-null snapshot numeric mode with default/range rules, no ordinal filter; absent/empty retain, initially/disconnected unknown. Later ordinary scalar snapshots cannot invalidate the independent running state; retain the last remote/climate values when their consumer cannot parse those entries. Malformed consumed structures still reject. The response boundary recursively validates every raw key/value pair before duplicate merging, rejecting nonadvancing nested arrays even in discarded unused fields. Every awaited exchange returns a validated object; final identification off cannot bypass decoding or taint cleanup. Null object fields are skipped, including duplicate-null keys. Premium translated binary state is displayed in the card.
+Accepted scoped addendum D05-D10/D12: only details.body snapshots; first non-null snapshot numeric mode with default/range rules, no ordinal filter; absent/empty retain, initially unknown, kept across disconnect. Later ordinary scalar snapshots cannot invalidate the independent running state; retain the last remote/climate values when their consumer cannot parse those entries. Malformed consumed structures still reject. The response boundary recursively validates every raw key/value pair before duplicate merging, rejecting nonadvancing nested arrays even in discarded unused fields. Every awaited exchange returns a validated object; final identification off cannot bypass decoding or taint cleanup. Null object fields are skipped, including duplicate-null keys. Premium translated binary state is displayed in the card.
 
 Code: [custom_components/adjustable_bed/sleeptracker_protocol.py](../../../custom_components/adjustable_bed/sleeptracker_protocol.py) `wind_down_running`; [custom_components/adjustable_bed/sleeptracker_protocol.py](../../../custom_components/adjustable_bed/sleeptracker_protocol.py) `_non_null_fields`; [custom_components/adjustable_bed/beds/sleeptracker.py](../../../custom_components/adjustable_bed/beds/sleeptracker.py) `_update_status`; [custom_components/adjustable_bed/beds/sleeptracker.py](../../../custom_components/adjustable_bed/beds/sleeptracker.py) `controller_state_binary_sensor_specs`.
 
@@ -630,7 +632,7 @@ Every command row in the accepted report maps below, including reads and builder
 - **Metadata/model gates:** persist an explicit layout, unit, snapshot ordinal, processor type and foundation choice per physical entry. Hello Slim aliases stay separate from persisted Slim IDs. Raw bitfields, both sensor-count rule variants, model comparison and thresholds 66/83/97/113 are diagnostic; app readiness, smartCable/cloud setup and firmware update gates do not block proven BLE requests. No physical axes/position decoder or unit-to-half inference is invented. Restricted sessions use unit 0 and do not require an unused authentication characteristic.
 - **Auth/privacy:** the configured address selects the connection target; authentication hashes the hello's processor MAC text, falling back to the configured address only when the hello omits it. Challenges, generated passwords and tokens are ephemeral and redactable, including raw-address captures. `validUntil` is not a proven expiry requirement (the app never checks it) and is not persisted. App hello MAC/serial and XOR preference persistence are excluded; the effective restricted route is explicitly selectable.
 - **Climate:** fixed heating 3600 and cooling 36000 second fields, complete selected left/right groups and constant/curve modes. Levels 0–3 are proven builder values; stock heat UI chooses 0/3. Last commanded timer and curve state are labelled as such; no readback or arbitrary timer is invented.
-- **Relaxation:** wave uses mapped pulse strength, frequency after 500 ms, and minutes*600. Wind-down sends only modes 1/2 and exposes the first parsed snapshot numeric running state. Absent/empty snapshots retain state; disconnect makes it unknown. Modes, side ordinals and local countdowns are distinct. The 16/10 minutes are UI countdowns, whose completion recheck always uses the excluded cloud task, not BLE. No stop is invented at countdown completion. Local animation retains six bed statements and individual delays; speaker statement removal means media timing equivalence is not claimed. Explicit massage/all-stop remains available.
+- **Relaxation:** wave uses mapped pulse strength, frequency after 500 ms, and minutes*600. Wind-down sends only modes 1/2 and exposes the first parsed snapshot numeric running state. Absent/empty snapshots retain state, including across disconnect. Modes, side ordinals and local countdowns are distinct. The 16/10 minutes are UI countdowns, whose completion recheck always uses the excluded cloud task, not BLE. No stop is invented at countdown completion. Local animation retains six bed statements and individual delays; speaker statement removal means media timing equivalence is not claimed. Explicit massage/all-stop remains available.
 - **Local identification:** restricted add/edit sends four reply-driven toggle/off requests. Split setup uses literal side 1 and 1500 ms toggles; HA bounds the otherwise screen-owned loop to four cycles and always attempts explicit off cleanup.
 - **Network exclusion:** AP characteristic `34c0cf2d-69de-4860-91c5-6f7021c2dd30` is not subscribed or read by this controller. The CONFIG channel is used only for authentication, never AP/config/reboot. Frozen excluded `SleepZConfig` fields are `lan_encryption_type`, `lan_key_b64`, `lan_essid_b64`, `lan_ssid_b64`, `replacement_bed`, `oauth_token`, `oauth_token_refresh`, `server_config_url`, `sku_model_string`, `sku_part_string`, `sku_sensor_count`, `sku_serial_string`, `time_gmt_secs`, `tz_setting`, `country_code`, `smart_cable_unsynchronized`; `isSplitKing`/`serverEnvironment` are not serialized. E32 supplies the exact builders, including reboot. No credential values are reproduced here.
 - **Other exclusions:** all six firmware/DFU routes and their 58 transport callsites; HTTP/WebSocket/cloud/account/sleep/alarm-only flows; WebView help/coaching/keyboard/media; all speaker/audio control and feedback; all dead enum actions, nine unused UUID constants, unassigned reads, prototype/stage/platform-None routes and the unapplied connection-profile object. These are final exclusions, not future feature work.
@@ -661,6 +663,53 @@ Accounting: **16 items**, **5 IMPLEMENTED**, **6 ALREADY_IMPLEMENTED**, **5 EXCL
 | `I691/STALE_LISTENERS_AND_HANGS` | `EXCLUDED` | D04, D13 | [unsafe_session](#excluded-unsafe_session): unregistered reply listeners and the nested-array parser stall. |
 
 Setup also reports a failure after an established link as a startup failure with the controller's error, not as a range problem (`async_setup_entry`; `test_setup_retry_reason_distinguishes_startup_from_reachability`). Whether a given processor's hello text equals its server record remains hardware-unverified; the reporter's rerun validates it.
+
+## Issue #693 addendum
+
+Reported state: after the #691 fix, every reported Sleeptracker entity on a two-processor ActiveBreeze base stayed unknown, including the configured layout. The parser already matched the app (`I693/D04`-`D06`, `D14`). The cause was HA's own disconnect handling: the processor drops the link shortly after each command, and disconnect replaced every published value with unknown. The app keeps showing its last parsed values and has no periodic BLE poll (`I693/D03`, `D14`).
+
+Accounting: **36 items**, **5 IMPLEMENTED**, **24 ALREADY_IMPLEMENTED**, **7 EXCLUDED**. The original 265 dispositions are unchanged apart from the `state` group's disconnect rule.
+
+| Item | Disposition | Evidence | Code and tests / reason |
+|------|-------------|----------|-------------------------|
+| `I693/RETAIN_REPORTED_STATE` | `IMPLEMENTED` | D03, D14 | Disconnect clears the session and token but keeps published state; a fresh controller derives climate mode/curve only from what its own session saw. `on_disconnect`, `_publish`; `test_reported_state_survives_disconnect_and_a_fresh_controller`, `test_platform_entities_route_actions_and_show_only_published_state` |
+| `I693/D08` strength bars | `IMPLEMENTED` | D08 | `STRENGTH_LEVELS`, `status`; `test_reported_strength_maps_to_the_app_bars`, `test_remote_and_climate_parser_rules_stay_distinct` |
+| `I693/D09` pattern names | `IMPLEMENTED` | D09 | `PATTERNS`, `status`; `test_reported_pattern_maps_to_wave_form_names`, `test_reply_without_snapshots_reports_no_massage_choice` |
+| `I693/STEPPED_MASSAGE_SELECTS` | `IMPLEMENTED` | D07, D08, D09, D25 | Premium head/foot strength and pattern selects send the app's step, one per reply, until the processor reports the choice (at most three), and refuse without a reported value. `_step_massage_to`, `controller_select_specs`; `test_massage_select_steps_until_the_processor_reports_the_choice`, `test_massage_select_refuses_without_a_reported_value`, `test_massage_select_stops_when_the_processor_does_not_advance` |
+| `I693/REPLY_SHAPE_DEBUG` | `IMPLEMENTED` | D04, D05 | Debug logs name snapshot sides and field names only, so the next report can show the real reply shape. `reply_shape`; `test_reply_shape_names_fields_without_values` |
+| `I693/D01` bare motor-status | `ALREADY_IMPLEMENTED` | D01 | `read_positions`, `start_notify`; `test_authenticated_handshake_and_transport_bounded_frames` |
+| `I693/D02` status after login | `ALREADY_IMPLEMENTED` | D02 | `start_notify`; same test |
+| `I693/D03` no periodic poll | `ALREADY_IMPLEMENTED` | D03 | Startup, refresh and command replies only; no polling interval is declared. `test_completed_movement_has_axis_release_and_no_fixed_refresh_delay` |
+| `I693/D04` details unwrap | `ALREADY_IMPLEMENTED` | D04 | `_update_status`; `test_nonempty_partial_reply_remains_valid` |
+| `I693/D05` single-snapshot remote | `ALREADY_IMPLEMENTED` | D05 | `status`; `test_remote_and_climate_parser_rules_stay_distinct` |
+| `I693/D06` two-snapshot remote | `ALREADY_IMPLEMENTED` | D06 | `status`; same test. Per R1, the app sets the ordinal only on its legacy layout path; ProSmart/ActiveBreeze screens leave it unset and show no pattern from two snapshots. HA keeps its explicit snapshot-side setting. |
+| `I693/R2a` direct 28/40 Hz actions | `ALREADY_IMPLEMENTED` | R2a | `massage`; `test_massage_frequency_and_zone_wire` |
+| `I693/D07` head/foot step | `ALREADY_IMPLEMENTED` | D07 | `massage`, `massage_head_toggle`; `test_massage_frequency_and_zone_wire` |
+| `I693/D11` massage/all stop | `ALREADY_IMPLEMENTED` | D11 | `stop`, `_release`; `test_selected_unit_stop_wire` |
+| `I693/D12` fan left/right/sync | `ALREADY_IMPLEMENTED` | D12 | `fan`, `sleeptracker_climate` with `fan_side: both`; `test_breeze_complete_field_groups` |
+| `I693/D13` cooling/heating UI values | `ALREADY_IMPLEMENTED` | D13 | `fan`; `test_breeze_complete_field_groups`, `test_service_and_entity_climate_model_gates` |
+| `I693/D14` fan readback | `ALREADY_IMPLEMENTED` | D14 | `status`; `test_remote_and_climate_parser_rules_stay_distinct` |
+| `I693/D15` no curve/timer readback | `ALREADY_IMPLEMENTED` | D15 | Curve and timer stay last-commanded values. `async_execute_sleeptracker_request`; `test_service_and_entity_climate_model_gates` |
+| `I693/D16` per-processor routing | `ALREADY_IMPLEMENTED` | D16 | One entry per processor; `fan_side` is independent of HA's side. `test_two_address_service_targets_only_the_selected_physical_processor` |
+| `I693/D17` controller invariants | `ALREADY_IMPLEMENTED` | D17 | `_update_status`; `test_metadata_preserves_optional_sensor_count_rule_and_firmware_ui_gates` |
+| `I693/D18` layout from metadata | `ALREADY_IMPLEMENTED` | D18 | The configured layout, now kept across disconnect. `_parse_hello`; `test_reported_state_survives_disconnect_and_a_fresh_controller` |
+| `I693/D19` wind-down | `ALREADY_IMPLEMENTED` | D19 | `wind_down_running`; `test_wind_down_first_snapshot_numeric_rule` |
+| `I693/D21` safety light toggle | `ALREADY_IMPLEMENTED` | D21 | `light`; `test_safety_light_uses_app_button_without_an_inferred_assumed_light` |
+| `I693/D22` read and notify channel | `ALREADY_IMPLEMENTED` | D22 | `_accept`, `_continue_read`; `test_read_continuation_uses_same_channel` |
+| `I693/D23` fragment header | `ALREADY_IMPLEMENTED` | D23 | `frames`, `Reassembler`; `test_frames_reassemble_with_transport_capacity` |
+| `I693/D24` pending-operation correlation | `ALREADY_IMPLEMENTED` | D24 | `_exchange`; `test_reply_timeout_releases_and_closes_ambiguous_session` |
+| `I693/D27` RLB local mode | `ALREADY_IMPLEMENTED` | D27 | The explicit restricted session: hello identity, unit 0, no authentication. `test_restricted_session_and_explicit_light_route` |
+| `I693/D28` Relax Wave Form animation | `ALREADY_IMPLEMENTED` | D28 | `wave`; `test_relaxation_wave` |
+| `I693/D25` product gates | `ALREADY_IMPLEMENTED` | D25 | `Model.premium` is exactly products 19/20/21/24; `test_exact_layout_gates` |
+| `I693/D10` absolute strength/pattern setter | `EXCLUDED` | D10 | [inference](#excluded-inference): the app has none (R2 confirms, beyond the separate 28/40 Hz and animation actions), so no direct request is invented. The stepped selects above use only proven steps and readback. |
+| `I693/SPEAKER_SYNC` | `EXCLUDED` | D05, D09, D21 | [audio](#excluded-audio): `speakerSync` state, its pattern-display override and its on/off commands. |
+| `I693/D20` wind-down countdown | `EXCLUDED` | D20 | [timing_ui](#excluded-timing_ui) and [cloud](#excluded-cloud): local countdown and its cloud recheck. |
+| `I693/D26` cloud status and routines | `EXCLUDED` | D26 | [cloud](#excluded-cloud) |
+| `I693/D29` massage timer enum | `EXCLUDED` | D29 | [dead](#excluded-dead): no payload builder or live caller. |
+| `I693/R2b` demo-video massage toggle | `EXCLUDED` | R2b | [media](#excluded-media): part of the demo video's animation sequence. |
+| `I693/D30` AP-list channel | `EXCLUDED` | D30 | [network](#excluded-network) |
+
+Hardware status: the reporter's processors are unverified for single versus two-snapshot replies; the new debug line shows which.
 
 ## Validation and hardware-only follow-up
 

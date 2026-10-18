@@ -355,7 +355,7 @@ export function bedEntitiesForDevice(
         else if (key === "starcode_color") mood().selects.push(id);
         else if (key === "vibradorm_app_mood_palette" || key === "vibradorm_app_mood_effect" || key === "vmatbasic_mood_palette" || key === "vmatbasic_mood_effect")
           mood().selects.push(id);
-        else if (key === "sleeptracker_wave_frequency")
+        else if (key === "sleeptracker_wave_frequency" || /^sleeptracker_massage_(head_level|foot_level|pattern_option)$/.test(key))
           (bed.massage.selects ??= []).push(id);
         else if (/^sleeptracker_(left|right)_(mode|curve)$/.test(key))
           bed.climate.selects.push(id);

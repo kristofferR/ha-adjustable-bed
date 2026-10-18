@@ -4335,6 +4335,33 @@
           "88": "88 Hz"
         }
       },
+      "sleeptracker_massage_head_level": {
+        "name": "Head massage strength",
+        "state": {
+          "off": "Off",
+          "1": "1",
+          "2": "2",
+          "3": "3"
+        }
+      },
+      "sleeptracker_massage_foot_level": {
+        "name": "Foot massage strength",
+        "state": {
+          "off": "Off",
+          "1": "1",
+          "2": "2",
+          "3": "3"
+        }
+      },
+      "sleeptracker_massage_pattern_option": {
+        "name": "Massage pattern",
+        "state": {
+          "off": "Off",
+          "one": "Wave Form One",
+          "two": "Wave Form Two",
+          "three": "Wave Form Three"
+        }
+      },
       "sleeptracker_left_mode": {
         "name": "Left ActiveBreeze mode",
         "state": {
