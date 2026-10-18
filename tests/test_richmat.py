@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -14,6 +14,7 @@ from custom_components.adjustable_bed.beds.richmat import (
     RichmatCommands,
     RichmatController,
 )
+from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS, _should_add_button
 from custom_components.adjustable_bed.const import (
     BED_TYPE_RICHMAT,
     CONF_BED_TYPE,
@@ -1161,6 +1162,40 @@ class TestRichmatLights:
 
 class TestRichmatMassage:
     """Test Richmat massage commands."""
+
+    @pytest.mark.parametrize(
+        ("remote_code", "button_key", "frame", "unsupported_method"),
+        [
+            (RICHMAT_REMOTE_GGRM, "massage_all_off", "6e01005ecd", "massage_toggle"),
+            ("ggrm", "massage_all_off", "6e01005ecd", "massage_toggle"),
+            ("auto", "massage_all_toggle", "6e01005dcc", "massage_off"),
+            ("bt6500", "massage_all_toggle", "6e01005dcc", "massage_off"),
+        ],
+    )
+    async def test_all_massage_button_matches_remote(
+        self, remote_code, button_key, frame, unsupported_method
+    ):
+        """GGRM offers the catalog's All Off instead of the legacy toggle."""
+        controller = RichmatController(MagicMock(), is_wilinke=True, remote_code=remote_code)
+        controller.write_command = AsyncMock()
+        buttons = {
+            description.key: description
+            for description in BUTTON_DESCRIPTIONS
+            if description.key in {"massage_all_off", "massage_all_toggle"}
+            and _should_add_button(description, controller, has_massage=True)
+        }
+        assert set(buttons) == {button_key}
+        assert not _should_add_button(buttons[button_key], controller, has_massage=False)
+
+        press_fn = buttons[button_key].press_fn
+        assert press_fn is not None
+        await press_fn(controller)
+        controller.write_command.assert_awaited_once_with(bytes.fromhex(frame))
+
+        controller.write_command.reset_mock()
+        with pytest.raises(NotImplementedError):
+            await getattr(controller, unsupported_method)()
+        controller.write_command.assert_not_awaited()
 
     async def test_massage_toggle(
         self,

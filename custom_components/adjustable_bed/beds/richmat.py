@@ -25,6 +25,7 @@ from ..const import (
     RICHMAT_PROTOCOL_SINGLE,
     RICHMAT_PROTOCOL_WILINKE,
     RICHMAT_REMOTE_AUTO,
+    RICHMAT_REMOTE_GGRM,
     RICHMAT_REMOTE_LP_QRRM,
     RICHMAT_WILINKE_CHAR_UUIDS,
     RICHMAT_WILINKE_SERVICE_UUIDS,
@@ -116,6 +117,7 @@ class RichmatCommands:
     MASSAGE_FOOT_STEP = 0x4E
     MASSAGE_PATTERN_STEP = 0x48
     MASSAGE_TOGGLE = 0x5D
+    MASSAGE_ALL_OFF = 0x5E
     MASSAGE_HEAD_OFF = 0x98
     MASSAGE_HEAD_1 = 0x99
     MASSAGE_HEAD_2 = 0x9A
@@ -299,6 +301,14 @@ class RichmatController(BedController):
         return self._features
 
     # Capability properties based on remote code features
+    @property
+    def supports_massage_toggle_control(self) -> bool:
+        return self._remote_code.upper() != RICHMAT_REMOTE_GGRM
+
+    @property
+    def supports_massage_off_control(self) -> bool:
+        return self._remote_code.upper() == RICHMAT_REMOTE_GGRM
+
     @property
     def supports_preset_zero_g(self) -> bool:
         return bool(self._features & RichmatFeatures.PRESET_ZERO_G)
@@ -906,7 +916,15 @@ class RichmatController(BedController):
     # Massage methods
     async def massage_toggle(self) -> None:
         """Toggle massage."""
+        if not self.supports_massage_toggle_control:
+            raise NotImplementedError("Massage toggle not supported for this Richmat remote")
         await self.write_command(self._build_command(RichmatCommands.MASSAGE_TOGGLE))
+
+    async def massage_off(self) -> None:
+        """Turn off all massage using the GGRM app catalogs' All Off command."""
+        if not self.supports_massage_off_control:
+            raise NotImplementedError("Massage off not supported for this Richmat remote")
+        await self.write_command(self._build_command(RichmatCommands.MASSAGE_ALL_OFF))
 
     async def massage_head_toggle(self) -> None:
         """Toggle head massage."""

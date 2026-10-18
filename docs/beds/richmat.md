@@ -128,6 +128,9 @@ Anti-snore, one memory, massage and a white light toggle. The Revive Control,
 Blvd Home and HARMONY catalogs define the same GGRM controls and release with
 `0x6E`, so this profile does not use the `0x5E` compatibility stop, which those
 catalogs send as massage All Off. Hardware validation is pending.
+With massage enabled, GGRM exposes All Off (`0x5E`), head/foot intensity steps
+and mode stepping. It does not expose the generic all-massage toggle (`0x5D`),
+which is absent from those GGRM catalogs.
 
 ### Prefix55 Variant
 **Format:** 5 bytes `[0x55, 0x01, 0x00, command, checksum]`
