@@ -934,6 +934,20 @@ async def test_massage_select_steps_until_the_processor_reports_the_choice(key, 
     assert target.states[key] == option
 
 
+async def test_pattern_select_steps_from_an_idle_unlisted_pattern() -> None:
+    """Split processors report 4 while idle; the app draws that as off (#693)."""
+    target = Processor()
+    await target.bed.start_notify()
+    stepping_processor(target, pattern=4)
+    await target.bed.read_positions()
+    assert target.states["sleeptracker_massage_pattern_option"] == "off"
+    target.requests.clear()
+    select = massage_select(target, "sleeptracker_massage_pattern_option")
+    await select.select_fn(target.bed, "two")
+    assert sum("massage" in v.get("request", {}) for _, v in target.requests) == 2
+    assert target.states["sleeptracker_massage_pattern_option"] == "two"
+
+
 async def test_massage_select_refuses_without_a_reported_value() -> None:
     target = Processor()
     await target.bed.start_notify()

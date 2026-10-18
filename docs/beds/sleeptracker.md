@@ -113,8 +113,8 @@ for the affected physical bed. Supported
 layouts add head/foot massage steps. Premium layouts also add **Head/Foot
 massage strength** (Off, 1, 2, 3) and **Massage pattern** (Off, Wave Form One,
 Two, Three) selects. The app has no direct setter for either: it steps, and
-draws reported strengths 0/4/6/8 as zero to three bars and patterns 0–3 as off
-and One to Three. A select sends one step per reply until the processor reports
+draws reported strengths 4/6/8 as one to three bars and patterns 1–3 as One to
+Three, and any other reported value as off. A select sends one step per reply until the processor reports
 the chosen value, at most three steps. It refuses when the current reply carries
 no value, for example a two-snapshot reply's reset strengths. Premium layouts add **28 Hz**, **40 Hz**,
 wave frequency/duration selectors, wind-down 1/2 and local motor/massage

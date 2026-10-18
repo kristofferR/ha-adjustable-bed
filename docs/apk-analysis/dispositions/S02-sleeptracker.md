@@ -673,8 +673,8 @@ Accounting: **36 items**, **5 IMPLEMENTED**, **24 ALREADY_IMPLEMENTED**, **7 EXC
 | Item | Disposition | Evidence | Code and tests / reason |
 |------|-------------|----------|-------------------------|
 | `I693/RETAIN_REPORTED_STATE` | `IMPLEMENTED` | D03, D14 | Disconnect clears the session and token but keeps published state; a fresh controller derives climate mode/curve only from what its own session saw. `on_disconnect`, `_publish`; `test_reported_state_survives_disconnect_and_a_fresh_controller`, `test_platform_entities_route_actions_and_show_only_published_state` |
-| `I693/D08` strength bars | `IMPLEMENTED` | D08 | `STRENGTH_LEVELS`, `status`; `test_reported_strength_maps_to_the_app_bars`, `test_remote_and_climate_parser_rules_stay_distinct` |
-| `I693/D09` pattern names | `IMPLEMENTED` | D09 | `PATTERNS`, `status`; `test_reported_pattern_maps_to_wave_form_names`, `test_reply_without_snapshots_reports_no_massage_choice` |
+| `I693/D08` strength bars | `IMPLEMENTED` | D08 | 4/6/8 are one to three bars; the app draws any other value as none, so HA reports off. `STRENGTH_LEVELS`, `status`; `test_reported_strength_maps_to_the_app_bars`, `test_remote_and_climate_parser_rules_stay_distinct` |
+| `I693/D09` pattern names | `IMPLEMENTED` | D09 | 1-3 are Wave Form One to Three; the app draws any other value as off, so HA reports off (the reporter's processors idle at 4). `PATTERNS`, `status`; `test_reported_pattern_maps_to_wave_form_names`, `test_reply_without_snapshots_reports_no_massage_choice`, `test_pattern_select_steps_from_an_idle_unlisted_pattern` |
 | `I693/STEPPED_MASSAGE_SELECTS` | `IMPLEMENTED` | D07, D08, D09, D25 | Premium head/foot strength and pattern selects send the app's step, one per reply, until the processor reports the choice (at most three), and refuse without a reported value. `_step_massage_to`, `controller_select_specs`; `test_massage_select_steps_until_the_processor_reports_the_choice`, `test_massage_select_refuses_without_a_reported_value`, `test_massage_select_stops_when_the_processor_does_not_advance` |
 | `I693/REPLY_SHAPE_DEBUG` | `IMPLEMENTED` | D04, D05 | Debug logs name snapshot sides and field names only, so the next report can show the real reply shape. `reply_shape`; `test_reply_shape_names_fields_without_values` |
 | `I693/D01` bare motor-status | `ALREADY_IMPLEMENTED` | D01 | `read_positions`, `start_notify`; `test_authenticated_handshake_and_transport_bounded_frames` |
@@ -709,7 +709,7 @@ Accounting: **36 items**, **5 IMPLEMENTED**, **24 ALREADY_IMPLEMENTED**, **7 EXC
 | `I693/R2b` demo-video massage toggle | `EXCLUDED` | R2b | [media](#excluded-media): part of the demo video's animation sequence. |
 | `I693/D30` AP-list channel | `EXCLUDED` | D30 | [network](#excluded-network) |
 
-Hardware status: the reporter's processors are unverified for single versus two-snapshot replies; the new debug line shows which.
+Hardware status: the reporter's debug lines show both processors answer with one `side=0` snapshot, and the strength and climate readback now hold their values. Both processors usually report pattern `4`, which the app draws as off; whether a step from 4 reaches Wave Form One is unverified.
 
 ## Validation and hardware-only follow-up
 

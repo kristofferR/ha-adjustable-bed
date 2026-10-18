@@ -34,10 +34,12 @@ FOUNDATIONS = (
 )
 FREQUENCIES = (28, 40, 52, 68, 88)
 PRESETS = ("all_flat", "zero_g", "anti_snore", "user_favorite", "tv_pc", "favorite_2")
-# The premium remote draws reported strengths 0/4/6/8 as zero to three bars.
-STRENGTH_LEVELS = {0: "off", 4: "1", 6: "2", 8: "3"}
-# Reported massagePattern 0-3: off, then Wave Form One/Two/Three.
-PATTERNS = ("off", "one", "two", "three")
+# The premium remote draws reported strengths 4/6/8 as one to three bars and
+# any other value as none.
+STRENGTH_LEVELS = {4: "1", 6: "2", 8: "3"}
+# Reported massagePattern 1-3 is Wave Form One/Two/Three; the app draws any
+# other value as off (split processors were seen idling at 4).
+PATTERNS = {1: "one", 2: "two", 3: "three"}
 
 
 @dataclass(frozen=True, slots=True)
@@ -530,7 +532,7 @@ def status(
         for axis in ("head", "foot"):
             strength = integer(child(child(snapshot, axis), "massage").get("strength"))
             updates["massage_" + axis + "_strength"] = strength
-            updates["massage_" + axis + "_level"] = STRENGTH_LEVELS.get(strength)
+            updates["massage_" + axis + "_level"] = STRENGTH_LEVELS.get(strength, "off")
         fan_value = child(snapshot, "fan")
         for side in ("left", "right"):
             if (key := side + "IsHeating") in fan_value:
@@ -549,8 +551,8 @@ def status(
     return {**previous, **updates}
 
 
-def _pattern(value: Json) -> str | None:
-    return PATTERNS[value] if isinstance(value, int) and value in range(len(PATTERNS)) else None
+def _pattern(value: int) -> str:
+    return PATTERNS.get(value, "off")
 
 
 def manufacturer_metadata(data: Mapping[int, bytes], address: str) -> dict[str, Json]:

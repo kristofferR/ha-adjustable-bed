@@ -453,14 +453,16 @@ def test_manufacturer_fields_are_metadata_not_axis_decoders(company):
 
 
 @pytest.mark.parametrize(
-    ("strength", "level"), [(0, "off"), (4, "1"), (6, "2"), (8, "3"), (5, None), (10, None)]
+    ("strength", "level"), [(0, "off"), (4, "1"), (6, "2"), (8, "3"), (5, "off"), (10, "off")]
 )
 def test_reported_strength_maps_to_the_app_bars(strength, level) -> None:
     value = {"body": {"snapshots": [{"head": {"massage": {"strength": strength}}}]}}
     assert p.status(value, 0, {})["massage_head_level"] == level
 
 
-@pytest.mark.parametrize(("pattern", "option"), [(0, "off"), (1, "one"), (3, "three"), (4, None)])
+@pytest.mark.parametrize(
+    ("pattern", "option"), [(0, "off"), (1, "one"), (3, "three"), (4, "off"), (-1, "off")]
+)
 def test_reported_pattern_maps_to_wave_form_names(pattern, option) -> None:
     value = {"body": {"snapshots": [{"massagePattern": pattern}]}}
     assert p.status(value, 0, {})["massage_pattern_option"] == option

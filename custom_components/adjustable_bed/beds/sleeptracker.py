@@ -1004,9 +1004,9 @@ class SleeptrackerController(BedController):
                 )
             )
             steps: tuple[tuple[str, tuple[str, ...], Literal["head", "foot", "pattern"]], ...] = (
-                ("massage_head_level", tuple(p.STRENGTH_LEVELS.values()), "head"),
-                ("massage_foot_level", tuple(p.STRENGTH_LEVELS.values()), "foot"),
-                ("massage_pattern_option", p.PATTERNS, "pattern"),
+                ("massage_head_level", ("off", *p.STRENGTH_LEVELS.values()), "head"),
+                ("massage_foot_level", ("off", *p.STRENGTH_LEVELS.values()), "foot"),
+                ("massage_pattern_option", ("off", *p.PATTERNS.values()), "pattern"),
             )
             for key, options, action in steps:
 
