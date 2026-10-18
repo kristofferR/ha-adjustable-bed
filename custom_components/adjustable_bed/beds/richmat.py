@@ -44,7 +44,8 @@ _LOGGER = logging.getLogger(__name__)
 RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB = "legacy_rgb"
 RICHMAT_LIGHT_PROTOCOL_RGB_STRIP = "rgb_strip"
 
-RICHMAT_TOGGLE_LIGHT_REMOTE_CODES = frozenset({"bt6500"})
+# GGRM's app layouts only send the 0x3C toggle; its handset has no colour control.
+RICHMAT_TOGGLE_LIGHT_REMOTE_CODES = frozenset({"bt6500", "ggrm"})
 RICHMAT_RGB_STRIP_LIGHT_REMOTE_CODES = frozenset({"qrrm"})
 RICHMAT_RGB_STRIP_LIGHT_NAME_HINTS = ("casper",)
 RICHMAT_LIGHT_TIMER_ALWAYS_ON = "Always On"

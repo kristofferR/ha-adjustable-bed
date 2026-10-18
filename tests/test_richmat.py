@@ -27,6 +27,7 @@ from custom_components.adjustable_bed.const import (
     RICHMAT_NORDIC_CHAR_UUID,
     RICHMAT_PROTOCOL_PREFIX55,
     RICHMAT_PROTOCOL_PREFIXAA,
+    RICHMAT_REMOTE_GGRM,
     RICHMAT_REMOTE_LP_QRRM,
     RICHMAT_VARIANT_NORDIC,
     get_richmat_features,
@@ -682,6 +683,47 @@ class TestRichmatFeatureDetection:
         assert controller.supports_explicit_light_on_control is False
         assert controller.default_light_rgb_color is None
         assert controller.light_timer_options == []
+
+    def test_ggrm_profile_matches_hjh89_handset(self):
+        """GGRM on a QRRM receiver (#695) exposes the HJH89 handset surface."""
+        coordinator = MagicMock()
+        controller = RichmatController(
+            coordinator, is_wilinke=True, remote_code=RICHMAT_REMOTE_GGRM
+        )
+
+        assert controller.supports_preset_flat is True
+        assert controller.supports_preset_zero_g is True
+        assert controller.supports_preset_anti_snore is True
+        assert controller.supports_preset_tv is False
+        assert controller.supports_preset_lounge is False
+        assert controller.memory_slot_count == 1
+        assert controller.supports_memory_programming is True
+        assert controller.has_pillow_support is True
+        assert controller.has_lumbar_support is True
+        # The app layouts only send the 0x3C toggle, never RGB light packets.
+        assert controller.supports_lights is True
+        assert controller.light_protocol_family is None
+        assert controller.supports_explicit_light_on_control is False
+        assert controller.supports_light_color_control is False
+
+    def test_ggrm_profile_uses_app_catalog_frames(self):
+        """GGRM frames match the Revive Control/Blvd Home/HARMONY GGRM catalog."""
+        coordinator = MagicMock()
+        controller = RichmatController(
+            coordinator, is_wilinke=True, remote_code=RICHMAT_REMOTE_GGRM
+        )
+
+        expected = {
+            RichmatCommands.MOTOR_PILLOW_UP: "6e01003fae",
+            RichmatCommands.MOTOR_LUMBAR_UP: "6e010041b0",
+            RichmatCommands.PRESET_ANTI_SNORE: "6e010046b5",
+            RichmatCommands.PROGRAM_MEMORY_1: "6e01002b9a",
+            RichmatCommands.LIGHTS_TOGGLE: "6e01003cab",
+        }
+        for command, frame in expected.items():
+            assert controller._build_command(command) == bytes.fromhex(frame)
+        # The apps release with 0x6E; 0x5E is their massage "All Off".
+        assert controller._build_stop_command() == bytes.fromhex("6e01006edd")
 
     def test_i7rm_sleep_function_prefers_rgb_strip_protocol(self):
         """Sleep Function 2.0 aliases should stay on the newer RGB-strip family."""
