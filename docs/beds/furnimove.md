@@ -209,6 +209,16 @@ bound leave ordinary control available. Client replacement, disconnect and unloa
 cancel and join that task. An existing OS bond or an `okinmat`-prefixed name skips
 it; request completion never becomes a persisted bond-proof marker.
 
+An RF eco BT receiver (Device Information model `RF eco BT`, part 88802) is
+held connected, overriding **Disconnect After Command** and the idle timeout.
+These receivers keep advertising after a disconnect but often refuse or time
+out reconnects ([#344](https://github.com/kristofferR/ha-adjustable-bed/issues/344),
+[#633](https://github.com/kristofferR/ha-adjustable-bed/issues/633)).
+The policy applies once the first connection has read the model, and an
+unexpected drop schedules one automatic reconnect. Holding the link blocks the
+FurniMove app; press **Disconnect** to hand the receiver back. Other receivers
+keep the configured handoff.
+
 The controller owns Device Information reads: it subscribes first, then reads
 model, hardware, software and firmware in the app's staggered order. The generic
 manufacturer/model read pass is skipped for this profile. Debug logs identify
