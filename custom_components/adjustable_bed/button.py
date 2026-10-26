@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, cast
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import UndefinedType
@@ -20,6 +20,7 @@ from .const import (
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_OCTO,
+    BED_TYPE_TIMOTION_AHF,
     DOMAIN,
     PAIR_CONNECTION_MODE_CONCURRENT,
     SIDE_BOTH,
@@ -829,7 +830,7 @@ def _button_entities_for(
                 registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
         # Named app actions disappear when their profile or transport changes.
-        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_", "remacro_", "fsm_relax_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_", "richmat_mh_", "svane_", "motion_bed_", "limoss_remote_", "okin_app_", "restonic_", "ore_comfort_", "innova_", "sleeptracker_"):
+        for namespace in ("woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_", "remacro_", "fsm_relax_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_", "richmat_mh_", "svane_", "motion_bed_", "limoss_remote_", "okin_app_", "restonic_", "ore_comfort_", "innova_", "sleeptracker_", "timotion_ahf_"):
             desired_actions = {
                 coordinator.entity_unique_id(spec.key)
                 for spec in controller.controller_button_specs
@@ -930,6 +931,8 @@ def _massage_entities_enabled(
     controller: BedController | SideBoundController | None,
 ) -> bool:
     """Return the effective configured or protocol-declared massage capability."""
+    if coordinator.bed_type == BED_TYPE_TIMOTION_AHF:
+        return False
     return coordinator.has_massage or bool(controller and controller.auto_enable_massage)
 
 
@@ -1278,6 +1281,31 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
             self._attr_name = None
             if spec.translation_placeholders is not None:
                 self._attr_translation_placeholders = dict(spec.translation_placeholders)
+
+    async def async_added_to_hass(self) -> None:
+        """Refresh availability when the controller publishes new state."""
+        await super().async_added_to_hass()
+        self.async_on_remove(
+            self._coordinator.register_controller_state_callback(
+                self._handle_controller_state_update
+            )
+        )
+        if self._spec.key.startswith("timotion_ahf_"):
+            self.async_on_remove(
+                self._coordinator.register_connection_state_callback(
+                    self._handle_connection_state_update
+                )
+            )
+
+    @callback
+    def _handle_controller_state_update(self, _state: dict[str, Any]) -> None:
+        """Re-evaluate controller-declared action availability."""
+        self.async_write_ha_state()
+
+    @callback
+    def _handle_connection_state_update(self, _connected: bool) -> None:
+        """Refresh AHF availability when its on-demand link opens or closes."""
+        self.async_write_ha_state()
 
     @property
     def available(self) -> bool:
