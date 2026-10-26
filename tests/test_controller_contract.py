@@ -115,6 +115,7 @@ class _FactoryCoordinator(SimpleNamespace):
                     const.CONF_MALOUF_APP_MODEL: "L600",
                     const.CONF_MALOUF_APP_TRANSPORT: "okin_new",
                     const.CONF_STARCODE_M5X5_PROFILE: "cb25",
+                    const.CONF_STARCODE_M1X12_PROFILE: "cb25",
                     const.CONF_BLE_DEVICE_NAME: "STAR252201123456",
                     const.CONF_PRODUCT_TYPE: "bed",
                     const.CONF_VIBRADORM_APP_PROFILE: "caresse",
@@ -183,6 +184,14 @@ async def _create_controller_for_bed_type(bed_type: str) -> BedController:
     client = _make_connected_client()
     if bed_type == const.BED_TYPE_SLEEPTRACKER:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "unknown"
+
+    if bed_type == const.BED_TYPE_STARCODE_M1X12:
+        coordinator.entry.data.update(
+            {
+                const.CONF_STARCODE_M1X12_PROFILE: "cb25",
+                const.CONF_BLE_DEVICE_NAME: "STAR252201123456",
+            }
+        )
 
     if bed_type == BED_TYPE_RICHMAT:
         return await create_controller(

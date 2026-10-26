@@ -16,14 +16,19 @@ from custom_components.adjustable_bed.beds.star_elevate import (
     StarElevateController,
 )
 from custom_components.adjustable_bed.beds.starcode_m5x5 import StarcodeM5X5Controller
+from custom_components.adjustable_bed.config_flow import _starcode_m1x12_errors
 from custom_components.adjustable_bed.const import (
     BED_TYPE_STAR_ELEVATE,
+    BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
+    CONF_PROTOCOL_VARIANT,
     CONF_STARCODE_LIFT_ENTRIES,
+    CONF_STARCODE_M1X12_PROFILE,
     CONF_STARCODE_M5X5_PROFILE,
     DOMAIN,
+    STAR_ELEVATE_VARIANT_M1X12,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.starcode_accessory_group import (
@@ -159,6 +164,67 @@ async def test_selection_duplicates_addresses_and_limit(hass: HomeAssistant) -> 
     )
     with pytest.raises(ValueError, match="distinct Bluetooth"):
         validate_lift_entries(hass, main.entry.data, ids)
+
+
+async def test_m1x12_group_requires_explicit_elevate_variant_and_limits_two(
+    hass: HomeAssistant,
+) -> None:
+    main = MockConfigEntry(
+        domain=DOMAIN,
+        title="STAR252201123456",
+        unique_id="AA:10:00:00:00:01",
+        data={
+            CONF_ADDRESS: "AA:10:00:00:00:01",
+            CONF_NAME: "STAR252201123456",
+            CONF_BLE_DEVICE_NAME: "STAR252201123456",
+            CONF_BED_TYPE: BED_TYPE_STARCODE_M1X12,
+            CONF_STARCODE_M1X12_PROFILE: "cb25",
+            CONF_STARCODE_LIFT_ENTRIES: [],
+        },
+    )
+    main.add_to_hass(hass)
+    legacy = MockConfigEntry(
+        domain=DOMAIN,
+        title="ELEVATE123456",
+        unique_id="AA:10:00:00:00:02",
+        data={
+            CONF_ADDRESS: "AA:10:00:00:00:02",
+            CONF_NAME: "ELEVATE123456",
+            CONF_BED_TYPE: BED_TYPE_STAR_ELEVATE,
+        },
+    )
+    legacy.add_to_hass(hass)
+    with pytest.raises(
+        ValueError, match="Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE first"
+    ):
+        validate_lift_entries(hass, main.data, [legacy.entry_id])
+    assert CONF_PROTOCOL_VARIANT not in legacy.data
+    assert _starcode_m1x12_errors(
+        hass,
+        {**main.data, CONF_STARCODE_LIFT_ENTRIES: [legacy.entry_id]},
+    ) == {CONF_STARCODE_LIFT_ENTRIES: "starcode_m1x12_elevate_reconfigure"}
+
+    lifts = []
+    for index in (3, 4, 5):
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=f"ELEVATE{index:06d}",
+            unique_id=f"AA:10:00:00:00:{index:02X}",
+            data={
+                CONF_ADDRESS: f"AA:10:00:00:00:{index:02X}",
+                CONF_NAME: f"ELEVATE{index:06d}",
+                CONF_BED_TYPE: BED_TYPE_STAR_ELEVATE,
+                CONF_PROTOCOL_VARIANT: STAR_ELEVATE_VARIANT_M1X12,
+            },
+        )
+        entry.add_to_hass(hass)
+        lifts.append(entry)
+
+    assert validate_lift_entries(hass, main.data, [lift.entry_id for lift in lifts[:2]]) == tuple(
+        lift.entry_id for lift in lifts[:2]
+    )
+    with pytest.raises(ValueError, match="Select at most 2 independently configured lift beds"):
+        validate_lift_entries(hass, main.data, [lift.entry_id for lift in lifts])
 
 
 async def test_unrelated_and_unready_rejected_before_movement(hass: HomeAssistant) -> None:

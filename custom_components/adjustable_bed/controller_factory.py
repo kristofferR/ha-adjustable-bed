@@ -85,6 +85,7 @@ from .const import (
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
@@ -132,6 +133,7 @@ from .const import (
     CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
     CONF_SLEEPTRACKER_UNIT,
     CONF_STARCODE_COMMAND_SELECTOR,
+    CONF_STARCODE_M1X12_PROFILE,
     CONF_STARCODE_M5X5_PROFILE,
     CONF_STARCODE_TRANSPORT_SELECTOR,
     CONF_STARCODE_UI_SELECTOR,
@@ -209,6 +211,7 @@ from .const import (
     SLEEPYS_BOX25_VARIANT_LEGACY,
     SLEEPYS_BOX25_VARIANT_STAR,
     SOLACE_VARIANT_WOOSA,
+    STAR_ELEVATE_VARIANT_M1X12,
     SVANE_VARIANT_JENSEN_LINON,
     SVANE_VARIANT_JMC,
     SVANE_VARIANT_MULTI,
@@ -404,7 +407,6 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_BEDTECH: _ControllerSpec("bedtech", "BedTechController"),
     BED_TYPE_SLEEPYS_BOX15: _ControllerSpec("sleepys", "SleepysBox15Controller"),
     BED_TYPE_SLEEPYS_BOX24: _ControllerSpec("sleepys", "SleepysBox24Controller"),
-    BED_TYPE_STAR_ELEVATE: _ControllerSpec("star_elevate", "StarElevateController"),
     BED_TYPE_VIBRADORM: _ControllerSpec("vibradorm", "VibradormController"),
     BED_TYPE_SCOTT_LIVING: _ControllerSpec("scott_living", "ScottLivingController"),
 }
@@ -840,6 +842,33 @@ async def create_controller(
             profile=coordinator.entry.data[CONF_STARCODE_M5X5_PROFILE],
             device_name=coordinator.entry.data[CONF_BLE_DEVICE_NAME],
         )
+
+    if bed_type == BED_TYPE_STARCODE_M1X12:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.starcode_m1x12", __package__
+        )
+        from .beds.starcode_m1x12 import StarcodeM1X12Controller
+
+        return StarcodeM1X12Controller(
+            coordinator,
+            profile=coordinator.entry.data[CONF_STARCODE_M1X12_PROFILE],
+            device_name=coordinator.entry.data[CONF_BLE_DEVICE_NAME],
+        )
+
+    if bed_type == BED_TYPE_STAR_ELEVATE:
+        if protocol_variant == STAR_ELEVATE_VARIANT_M1X12:
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.starcode_m1x12", __package__
+            )
+            from .beds.starcode_m1x12 import StarElevateM1X12Controller
+
+            return StarElevateM1X12Controller(coordinator)
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.star_elevate", __package__
+        )
+        from .beds.star_elevate import StarElevateController
+
+        return StarElevateController(coordinator)
 
     if bed_type == BED_TYPE_VIBRADORM_APP:
         await coordinator.hass.async_add_import_executor_job(

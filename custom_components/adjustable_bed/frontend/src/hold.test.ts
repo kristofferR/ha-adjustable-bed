@@ -4,7 +4,15 @@
 // Every case here is a defect that was found in review while building this, so
 // they are regression tests rather than illustrative examples.
 import { expect, test } from "bun:test";
-import { type Direction, type HoldActions, MotorHold, movementPulse } from "./hold";
+import {
+  type Direction,
+  type HoldActions,
+  MotorHold,
+  heldButtonMotor,
+  movementHold,
+  movementPulse,
+} from "./hold";
+import { bedEntitiesForDevice } from "./discovery";
 import type { HomeAssistant, MotorEntity } from "./types";
 
 interface Recorder {
@@ -47,6 +55,7 @@ function recorder(opts: { reject?: boolean; missingEntity?: boolean } = {}): Rec
           resolvePending = resolve;
         });
       },
+      holdControl: () => undefined,
       stopCover: (cover, stopEntityId) => {
         stoppedCovers.push(cover);
         rec.stoppedCoverTargets.push(stopEntityId);
@@ -101,6 +110,217 @@ test("ordinary covers, buttons and unsupported directions keep their finite acti
     ["cover", "close_cover", { entity_id: "cover.legs" }],
     ["button", "press", { entity_id: "button.head_up" }],
   ]);
+});
+
+test("combined ELEVATE without common hold metadata uses the finite parent button", async () => {
+  const calls: unknown[][] = [];
+  const hass = {
+    entities: {
+      "button.elevate_actuator_1_up": {
+        entity_id: "button.elevate_actuator_1_up",
+        translation_key: "elevate_actuator_1_up",
+        device_id: "pair",
+        platform: "adjustable_bed",
+      },
+      "button.elevate_actuator_1_down": {
+        entity_id: "button.elevate_actuator_1_down",
+        translation_key: "elevate_actuator_1_down",
+        device_id: "pair",
+        platform: "adjustable_bed",
+      },
+    },
+    states: {},
+    devices: {},
+    callService: async (...args: unknown[]) => { calls.push(args); },
+  } as HomeAssistant;
+  const motor = bedEntitiesForDevice(hass, "pair").motors[0];
+
+  expect(motor.heldControls).toBeUndefined();
+  await movementPulse(hass, motor, "up");
+  expect(calls).toEqual([[
+    "button", "press", { entity_id: "button.elevate_actuator_1_up" },
+  ]]);
+});
+
+test("M1X12 cover hold starts one bounded shared service window", async () => {
+  const calls: unknown[] = [];
+  const hass = {
+    entities: { "cover.part_1": { entity_id: "cover.part_1", device_id: "m1x12" } },
+    states: {
+      "cover.part_1": {
+        entity_id: "cover.part_1", state: "unknown", last_changed: "", last_updated: "",
+        attributes: {
+          bed_side: "left",
+          held_control_up: "part_1_up",
+          held_control_down: "part_1_down",
+          hold_start_delay_ms: 100,
+          hold_release_delay_ms: 100,
+        },
+      },
+    },
+    callService: async (...args: unknown[]) => { calls.push(args); },
+  } as HomeAssistant;
+  const motor: MotorEntity = {
+    key: "part_1",
+    cover: "cover.part_1",
+    deviceId: "m1x12",
+    heldControls: {
+      up: { control: "part_1_up", startDelayMs: 100, releaseDelayMs: 100 },
+      down: { control: "part_1_down", startDelayMs: 100, releaseDelayMs: 100 },
+    },
+  };
+
+  await movementHold(hass, motor, "down");
+
+  expect(calls).toEqual([[
+    "adjustable_bed", "hold_control", {
+      device_id: ["m1x12"], control: "part_1_down", duration: 60, side: "left",
+    },
+  ]]);
+});
+
+test("M1X12 hold release cancels the one service window and sends cover STOP", async () => {
+  let resolveService!: () => void;
+  const stopped: string[] = [];
+  const motor: MotorEntity = {
+    key: "part_1", cover: "cover.part_1", deviceId: "m1x12",
+    heldControls: {
+      up: { control: "part_1_up", startDelayMs: 100, releaseDelayMs: 100 },
+      down: { control: "part_1_down", startDelayMs: 100, releaseDelayMs: 100 },
+    },
+  };
+  const hold = new MotorHold({
+    pulse: () => undefined,
+    holdControl: () => new Promise<void>((resolve) => { resolveService = resolve; }),
+    stopCover: (cover) => stopped.push(cover),
+    stopBed: () => undefined,
+  });
+
+  hold.start(motor, "up", 3);
+  expect(hold.heldKey).toBe("part_1");
+  hold.end(motor);
+  expect(stopped).toEqual(["cover.part_1"]);
+  resolveService();
+  await tick();
+  expect(hold.heldKey).toBeNull();
+});
+
+test("held M1X12 massage button uses one bounded service and its paired-side STOP", async () => {
+  const calls: unknown[] = [];
+  let finish!: () => void;
+  const hass = {
+    entities: {
+      "button.massage_wave_up": { entity_id: "button.massage_wave_up", device_id: "left-device" },
+    },
+    states: {
+      "button.massage_wave_up": {
+        entity_id: "button.massage_wave_up", state: "unknown", last_changed: "", last_updated: "",
+        attributes: {
+          bed_side: "left",
+          held_control: "massage_wave_up",
+          hold_start_delay_ms: 100,
+          hold_release_delay_ms: 100,
+        },
+      },
+    },
+    callService: async (...args: unknown[]) => {
+      calls.push(args);
+      return new Promise<void>((resolve) => { finish = resolve; });
+    },
+  } as HomeAssistant;
+  const motor = heldButtonMotor(hass, "button.massage_wave_up");
+  expect(motor).toEqual({
+    key: "button.massage_wave_up",
+    up: "button.massage_wave_up",
+    deviceId: "left-device",
+    holdEntityId: "button.massage_wave_up",
+    heldControl: { control: "massage_wave_up", startDelayMs: 100, releaseDelayMs: 100 },
+  });
+  if (!motor) throw new Error("Flat button hold metadata was not discovered");
+  const stops: Array<string | undefined> = [];
+  const hold = new MotorHold({
+    pulse: () => undefined,
+    holdControl: (entity, direction) => movementHold(hass, entity, direction),
+    stopCover: () => undefined,
+    stopBed: (stopEntityId) => stops.push(stopEntityId),
+  });
+
+  hold.start(motor, "up", 5, "button.left_stop");
+  expect(calls).toEqual([[
+    "adjustable_bed", "hold_control", {
+      device_id: ["left-device"], control: "massage_wave_up", duration: 60, side: "left",
+    },
+  ]]);
+  hold.end({ ...motor });
+  expect(stops).toEqual(["button.left_stop"]);
+  finish();
+  await tick();
+  expect(hold.heldKey).toBeNull();
+});
+
+test("paired M1X12 and ELEVATE motor holds use the shared service and parent STOP", async () => {
+  for (const item of [
+    {
+      entityId: "button.part_1_up",
+      translationKey: "starcode_m1x12_part_1_up",
+      control: "part_1_up",
+    },
+    {
+      entityId: "button.actuator_1_up",
+      translationKey: "elevate_actuator_1_up",
+      control: "actuator_1_up",
+    },
+  ]) {
+    const calls: unknown[] = [];
+    const hass = {
+      entities: {
+        [item.entityId]: {
+          entity_id: item.entityId,
+          translation_key: item.translationKey,
+          device_id: "pair",
+          platform: "adjustable_bed",
+        },
+      },
+      states: {
+        [item.entityId]: {
+          entity_id: item.entityId,
+          state: "unknown",
+          last_changed: "",
+          last_updated: "",
+          attributes: {
+            held_control: item.control,
+            hold_start_delay_ms: 100,
+            hold_release_delay_ms: 100,
+          },
+        },
+      },
+      devices: {},
+      callService: async (...args: unknown[]) => { calls.push(args); },
+    } as HomeAssistant;
+    const motor = bedEntitiesForDevice(hass, "pair").motors[0];
+    const stopped: Array<string | undefined> = [];
+    const hold = new MotorHold({
+      pulse: () => undefined,
+      holdControl: (entity, direction) => movementHold(hass, entity, direction),
+      stopCover: () => undefined,
+      stopBed: (stopEntityId) => stopped.push(stopEntityId),
+    });
+
+    expect(motor.heldControls?.up).toEqual({
+      control: item.control,
+      startDelayMs: 100,
+      releaseDelayMs: 100,
+    });
+    hold.start(motor, "up", 7, "button.pair_stop");
+    expect(calls).toEqual([[
+      "adjustable_bed", "hold_control", {
+        device_id: ["pair"], control: item.control, duration: 60,
+      },
+    ]]);
+    hold.end({ ...motor });
+    expect(stopped).toEqual(["button.pair_stop"]);
+    await tick();
+  }
 });
 
 test("a hold repeats until it is released", async () => {

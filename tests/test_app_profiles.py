@@ -19,6 +19,8 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_FSM_RELAX,
     BED_TYPE_KEESON,
     BED_TYPE_LINAK,
+    BED_TYPE_STAR_ELEVATE,
+    BED_TYPE_STARCODE_M1X12,
     BED_TYPE_SVANE,
     BED_TYPE_ZSERIES,
     CONF_BED_TYPE,
@@ -26,10 +28,13 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_COUNT,
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
+    CONF_STARCODE_LIFT_ENTRIES,
+    CONF_STARCODE_M1X12_PROFILE,
     DOMAIN,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_SINO,
+    STAR_ELEVATE_VARIANT_M1X12,
     SVANE_VARIANT_JENSEN_LINON,
     VARIANT_AUTO,
     ZSERIES_VARIANT_Z280,
@@ -120,6 +125,38 @@ def test_apps_chosen_by_a_variant_are_listed_by_name() -> None:
     # Z-Series has no automatic page, so only its app entries are offered.
     assert BED_TYPE_ZSERIES not in options
     assert bed_type_choice(BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z280) in options
+
+
+def test_m1x12_main_and_elevate_profiles_are_explicit_and_findable() -> None:
+    options = {option["value"]: option["label"] for option in get_bed_type_options()}
+    elevate_app = bed_type_choice(BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12)
+    assert options[BED_TYPE_STARCODE_M1X12] == (
+        "Adjustable Comfort M1X12 app (CB25 / F23 / kneading)"
+    )
+    assert options[elevate_app] == "Adjustable Comfort M1X12 ELEVATE"
+    assert resolve_bed_type_choice(elevate_app) == (
+        BED_TYPE_STAR_ELEVATE,
+        STAR_ELEVATE_VARIANT_M1X12,
+    )
+
+    main_profile = per_side_profile(BED_TYPE_STARCODE_M1X12, None)
+    elevate_profile = per_side_profile(BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12)
+    assert main_profile is not None and CONF_STARCODE_M1X12_PROFILE in main_profile.keys
+    assert main_profile is not None and CONF_STARCODE_LIFT_ENTRIES in main_profile.keys
+    assert elevate_profile is not None and CONF_PROTOCOL_VARIANT in elevate_profile.keys
+    assert _per_side_refusal(
+        (BED_TYPE_STARCODE_M1X12, None),
+        [(BED_TYPE_STARCODE_M1X12, None), (BED_TYPE_STARCODE_M1X12, None)],
+        {CONF_STARCODE_M1X12_PROFILE: "kneading"},
+    ) == (CONF_STARCODE_M1X12_PROFILE, "Adjustable Comfort M1X12")
+    assert _per_side_refusal(
+        (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12),
+        [
+            (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12),
+            (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12),
+        ],
+        {CONF_PROTOCOL_VARIANT: STAR_ELEVATE_VARIANT_M1X12},
+    ) == (CONF_PROTOCOL_VARIANT, "Adjustable Comfort M1X12 ELEVATE")
 
 
 async def test_setup_resolves_an_app_entry_to_its_bed_type_and_variant(hass: HomeAssistant) -> None:

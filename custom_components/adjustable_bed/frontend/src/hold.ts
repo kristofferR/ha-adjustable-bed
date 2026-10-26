@@ -8,6 +8,28 @@ import type { HomeAssistant, MotorEntity } from "./types";
 
 export type Direction = "up" | "down";
 
+export function heldButtonMotor(
+  hass: HomeAssistant | undefined,
+  entityId: string,
+): MotorEntity | undefined {
+  const deviceId = hass?.entities[entityId]?.device_id;
+  const attributes = hass?.states[entityId]?.attributes;
+  const control = attributes?.held_control;
+  const startDelayMs = attributes?.hold_start_delay_ms;
+  const releaseDelayMs = attributes?.hold_release_delay_ms;
+  if (
+    !deviceId || typeof control !== "string" ||
+    typeof startDelayMs !== "number" || typeof releaseDelayMs !== "number"
+  ) return undefined;
+  return {
+    key: entityId,
+    up: entityId,
+    deviceId,
+    holdEntityId: entityId,
+    heldControl: { control, startDelayMs, releaseDelayMs },
+  };
+}
+
 export function movementPulse(
   hass: HomeAssistant | undefined,
   motor: MotorEntity,
@@ -33,10 +55,33 @@ export function movementPulse(
   return entityId ? hass?.callService("button", "press", { entity_id: entityId }) : undefined;
 }
 
+// A refresh-based held control uses the shared bounded service. The service
+// owns the controller cadence and release frame; the card starts one maximum
+// 60-second window and routes STOP through the held entity's owning device.
+export function movementHold(
+  hass: HomeAssistant | undefined,
+  motor: MotorEntity,
+  direction: Direction,
+): Promise<unknown> | undefined {
+  const spec = motor.heldControl ?? motor.heldControls?.[direction];
+  if (!spec || !motor.deviceId) return undefined;
+  const side = hass?.states[motor.holdEntityId ?? motor.cover ?? ""]?.attributes.bed_side;
+  const serviceData: Record<string, unknown> = {
+    device_id: [motor.deviceId],
+    control: spec.control,
+    duration: 60,
+  };
+  if (side === "left" || side === "right" || side === "both") {
+    serviceData.side = side;
+  }
+  return hass?.callService("adjustable_bed", "hold_control", serviceData);
+}
+
 export interface HoldActions {
   // Runs one finite movement pulse and resolves when the bed has finished it.
   // Resolving is what paces the repeat loop; rejecting stops it.
   pulse: (motor: MotorEntity, dir: Direction) => Promise<unknown> | undefined;
+  holdControl: (motor: MotorEntity, dir: Direction) => Promise<unknown> | undefined;
   // Stops a cover-backed motor, which is the only kind with its own stop. The
   // bed stop identifies the compact target retained when the hold began.
   stopCover: (coverEntityId: string, stopEntityId?: string) => void;
@@ -86,7 +131,30 @@ export class MotorHold {
     this._cover = motor.cover ?? null;
     this._stop = stopEntityId ?? null;
     this._pointerId = pointerId;
-    void this._repeat(motor, dir, ++this._generation);
+    const generation = ++this._generation;
+    if (motor.heldControl || motor.heldControls?.[dir]) {
+      void this._holdControl(motor, dir, generation);
+      return;
+    }
+    void this._repeat(motor, dir, generation);
+  }
+
+  private async _holdControl(
+    motor: MotorEntity,
+    dir: Direction,
+    generation: number,
+  ): Promise<void> {
+    try {
+      const pending = this.actions.holdControl(motor, dir);
+      if (pending) await pending;
+    } catch {
+      // The service reports the failure through Home Assistant. This card
+      // should stop retaining the control and allow another press.
+    } finally {
+      // The bounded service sends its release frame when its window expires.
+      // A normal pointer release sends STOP and invalidates this generation.
+      if (generation === this._generation) this._reset();
+    }
   }
 
   // One iteration moves the bed for a single configured pulse and then stops,

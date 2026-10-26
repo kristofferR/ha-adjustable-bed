@@ -1,0 +1,2128 @@
+[
+  {
+    "id": "V-S-HEAD",
+    "protocol": "P1",
+    "action": "head up",
+    "inputs": {
+      "key": "03103000",
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103000a5",
+    "evidence": [
+      "E-MOTOR",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-S-STOP",
+    "protocol": "P1",
+    "action": "STOP",
+    "inputs": {
+      "key": "0310300f",
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300fa5",
+    "evidence": [
+      "E-MOTOR",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-C-SIGNED",
+    "protocol": "P1",
+    "action": "normal unsigned high-bit example",
+    "inputs": {
+      "key": "80000000",
+      "encoding": "C"
+    },
+    "expected_bytes": "05028000000000",
+    "evidence": [
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-C-COMB",
+    "protocol": "P1",
+    "action": "head+foot up",
+    "inputs": {
+      "key": "00000005",
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000000500",
+    "evidence": [
+      "E-MOTOR",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-S-TIMER",
+    "protocol": "P1",
+    "action": "10 minute massage",
+    "inputs": {
+      "command": 7,
+      "value": 1,
+      "encoding": "S"
+    },
+    "expected_bytes": "5ae00407010000a5",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-C-BRIGHT",
+    "protocol": "P1",
+    "action": "brightness6",
+    "inputs": {
+      "command": 0,
+      "value": 6,
+      "encoding": "C"
+    },
+    "expected_bytes": "04e000060000",
+    "evidence": [
+      "E-LIGHT",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-LONG-ON",
+    "protocol": "P1",
+    "action": "C light on",
+    "inputs": {
+      "key": 64
+    },
+    "expected_bytes": "08020000000000000040",
+    "evidence": [
+      "E-LIGHT",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-LONG-OFF",
+    "protocol": "P1",
+    "action": "C light off",
+    "inputs": {
+      "key": 128
+    },
+    "expected_bytes": "08020000000000000080",
+    "evidence": [
+      "E-LIGHT",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-POS",
+    "protocol": "P1",
+    "action": "internal axis2 target50",
+    "inputs": {
+      "axis": 2,
+      "target": 50,
+      "encoding": "S"
+    },
+    "expected_bytes": "5af003023200a5",
+    "evidence": [
+      "E-PARSE",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-POS-CLAMP",
+    "protocol": "P1",
+    "action": "internal builder bounds",
+    "inputs": {
+      "axis": -2,
+      "target": 300,
+      "encoding": "C"
+    },
+    "expected_bytes": "03f000ff00",
+    "evidence": [
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-TIME-BUILDER",
+    "protocol": "P3",
+    "action": "builder with full year argument",
+    "inputs": {
+      "yearArgument": 2026,
+      "month": 10,
+      "day": 26,
+      "weekday": 1,
+      "hour": 14,
+      "minute": 25,
+      "second": 30
+    },
+    "expected_bytes": "5a14071a0a1a010e191ea5",
+    "evidence": [
+      "E-SESSION",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-TIME-CALLER",
+    "protocol": "P3",
+    "action": "actual double-year subtraction",
+    "inputs": {
+      "localYear": 2026,
+      "month": 10,
+      "day": 26,
+      "weekday": 1,
+      "hour": 14,
+      "minute": 25,
+      "second": 30
+    },
+    "expected_bytes": "5a14074a0a1a010e191ea5",
+    "evidence": [
+      "E-SESSION",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-ELEVATE",
+    "protocol": "P2",
+    "action": "combined elevation up",
+    "inputs": {
+      "key": "03103044"
+    },
+    "expected_bytes": "5a0103103044a5",
+    "evidence": [
+      "E-MOTOR",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-P4-QUERY",
+    "protocol": "P4",
+    "action": "inherited status query",
+    "inputs": {},
+    "expected_bytes": "5ab000a5",
+    "evidence": [
+      "E-PARSE-ADVANCED",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-C-INT-0",
+    "protocol": "P1",
+    "action": "maker C intensity still S frame",
+    "inputs": {
+      "key": "00000800",
+      "encoding": "S",
+      "maker": "C"
+    },
+    "expected_bytes": "5a0100000800a5",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-C-INT-1",
+    "protocol": "P1",
+    "action": "maker C intensity still S frame",
+    "inputs": {
+      "key": "00000400",
+      "encoding": "S",
+      "maker": "C"
+    },
+    "expected_bytes": "5a0100000400a5",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-C-INT-2",
+    "protocol": "P1",
+    "action": "maker C intensity still S frame",
+    "inputs": {
+      "key": "00000c00",
+      "encoding": "S",
+      "maker": "C"
+    },
+    "expected_bytes": "5a0100000c00a5",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-C-INT-3",
+    "protocol": "P1",
+    "action": "maker C intensity still S frame",
+    "inputs": {
+      "key": "00800000",
+      "encoding": "S",
+      "maker": "C"
+    },
+    "expected_bytes": "5a0100800000a5",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-C-INT-4",
+    "protocol": "P1",
+    "action": "maker C intensity still S frame",
+    "inputs": {
+      "key": "01000000",
+      "encoding": "S",
+      "maker": "C"
+    },
+    "expected_bytes": "5a0101000000a5",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-C-INT-5",
+    "protocol": "P1",
+    "action": "maker C intensity still S frame",
+    "inputs": {
+      "key": "01800000",
+      "encoding": "S",
+      "maker": "C"
+    },
+    "expected_bytes": "5a0101800000a5",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-000",
+    "protocol": "shared-builder",
+    "action": "_ decreaseBasicMassageMode(/* No info */) {",
+    "inputs": {
+      "key": 51392601,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103059a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:833",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-001",
+    "protocol": "shared-builder",
+    "action": "_ decreaseBasicMassageMode(/* No info */) {",
+    "inputs": {
+      "key": 67108864,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020400000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:839",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-002",
+    "protocol": "shared-builder",
+    "action": "_ increaseBasicMassageMode(/* No info */) {",
+    "inputs": {
+      "key": 51392600,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103058a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:880",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-003",
+    "protocol": "shared-builder",
+    "action": "_ increaseBasicMassageMode(/* No info */) {",
+    "inputs": {
+      "key": 268435456,
+      "encoding": "C"
+    },
+    "expected_bytes": "05021000000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:886",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-004",
+    "protocol": "shared-builder",
+    "action": "_ decreaseBasicMassageIntensity(/* No info */) {",
+    "inputs": {
+      "key": 51392615,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103067a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:941",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-005",
+    "protocol": "shared-builder",
+    "action": "_ decreaseBasicMassageIntensity(/* No info */) {",
+    "inputs": {
+      "key": 51392617,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103069a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:949",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-006",
+    "protocol": "shared-builder",
+    "action": "_ decreaseBasicMassageIntensity(/* No info */) {",
+    "inputs": {
+      "key": 8388608,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0100800000a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:968",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-007",
+    "protocol": "shared-builder",
+    "action": "_ decreaseBasicMassageIntensity(/* No info */) {",
+    "inputs": {
+      "key": 16777216,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0101000000a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:975",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-008",
+    "protocol": "shared-builder",
+    "action": "_ decreaseBasicMassageIntensity(/* No info */) {",
+    "inputs": {
+      "key": 25165824,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0101800000a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:993",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-009",
+    "protocol": "shared-builder",
+    "action": "_ increaseBasicMassageIntensity(/* No info */) {",
+    "inputs": {
+      "key": 51392614,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103066a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1055",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-010",
+    "protocol": "shared-builder",
+    "action": "_ increaseBasicMassageIntensity(/* No info */) {",
+    "inputs": {
+      "key": 51392616,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103068a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1063",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-011",
+    "protocol": "shared-builder",
+    "action": "_ increaseBasicMassageIntensity(/* No info */) {",
+    "inputs": {
+      "key": 2048,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0100000800a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1082",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-012",
+    "protocol": "shared-builder",
+    "action": "_ increaseBasicMassageIntensity(/* No info */) {",
+    "inputs": {
+      "key": 1024,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0100000400a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1089",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-013",
+    "protocol": "shared-builder",
+    "action": "_ increaseBasicMassageIntensity(/* No info */) {",
+    "inputs": {
+      "key": 3072,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0100000c00a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1107",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-014",
+    "protocol": "shared-builder",
+    "action": "_ resetMemory(/* No info */) {",
+    "inputs": {
+      "key": 51392662,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103096a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1210",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-015",
+    "protocol": "shared-builder",
+    "action": "_ resetMemory(/* No info */) {",
+    "inputs": {
+      "key": 2281701376,
+      "encoding": "C"
+    },
+    "expected_bytes": "05028800000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1215",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-016",
+    "protocol": "shared-builder",
+    "action": "_ savePositionWithFlat(/* No info */) {",
+    "inputs": {
+      "key": 51392658,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103092a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1468",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-017",
+    "protocol": "shared-builder",
+    "action": "_ savePositionWithFlat(/* No info */) {",
+    "inputs": {
+      "key": 134234112,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020800400000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1474",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-018",
+    "protocol": "shared-builder",
+    "action": "_ savePositionWithFlat(/* No info */) {",
+    "inputs": {
+      "key": 51392656,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103090a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1491",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-019",
+    "protocol": "shared-builder",
+    "action": "_ savePositionWithFlat(/* No info */) {",
+    "inputs": {
+      "key": 134221824,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020800100000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1497",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-020",
+    "protocol": "shared-builder",
+    "action": "_ savePositionWithFlat(/* No info */) {",
+    "inputs": {
+      "key": 51392657,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103091a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1514",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-021",
+    "protocol": "shared-builder",
+    "action": "_ savePositionWithFlat(/* No info */) {",
+    "inputs": {
+      "key": 134225920,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020800200000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1520",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-022",
+    "protocol": "shared-builder",
+    "action": "_ savePositionWithFlat(/* No info */) {",
+    "inputs": {
+      "key": 51392660,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103094a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1537",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-023",
+    "protocol": "shared-builder",
+    "action": "_ savePositionWithFlat(/* No info */) {",
+    "inputs": {
+      "key": 134283264,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020801000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1542",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-024",
+    "protocol": "shared-builder",
+    "action": "_ savePositionWithFlat(/* No info */) {",
+    "inputs": {
+      "key": 51392661,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103095a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1559",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-025",
+    "protocol": "shared-builder",
+    "action": "_ savePositionWithFlat(/* No info */) {",
+    "inputs": {
+      "key": 134479872,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020804000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1564",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-026",
+    "protocol": "shared-builder",
+    "action": "_ callMemory(/* No info */) {",
+    "inputs": {
+      "key": 51392529,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103011a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1786",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-027",
+    "protocol": "shared-builder",
+    "action": "_ callMemory(/* No info */) {",
+    "inputs": {
+      "key": 16384,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000400000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1791",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-028",
+    "protocol": "shared-builder",
+    "action": "_ callMemory(/* No info */) {",
+    "inputs": {
+      "key": 51392531,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103013a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1808",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-029",
+    "protocol": "shared-builder",
+    "action": "_ callMemory(/* No info */) {",
+    "inputs": {
+      "key": 4096,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000100000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1813",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-030",
+    "protocol": "shared-builder",
+    "action": "_ callMemory(/* No info */) {",
+    "inputs": {
+      "key": 51392534,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103016a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1830",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-031",
+    "protocol": "shared-builder",
+    "action": "_ callMemory(/* No info */) {",
+    "inputs": {
+      "key": 32768,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000800000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1835",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-032",
+    "protocol": "shared-builder",
+    "action": "_ callMemory(/* No info */) {",
+    "inputs": {
+      "key": 51392535,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103017a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1852",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-033",
+    "protocol": "shared-builder",
+    "action": "_ callMemory(/* No info */) {",
+    "inputs": {
+      "key": 8192,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000200000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1857",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-034",
+    "protocol": "shared-builder",
+    "action": "_ callMemory(/* No info */) {",
+    "inputs": {
+      "key": 51392536,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103018a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1874",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-035",
+    "protocol": "shared-builder",
+    "action": "_ callMemory(/* No info */) {",
+    "inputs": {
+      "key": 16384,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000400000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1879",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-036",
+    "protocol": "shared-builder",
+    "action": "_ callMemory(/* No info */) {",
+    "inputs": {
+      "key": 51392538,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310301aa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1896",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-037",
+    "protocol": "shared-builder",
+    "action": "_ callMemory(/* No info */) {",
+    "inputs": {
+      "key": 65536,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020001000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1901",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-038",
+    "protocol": "shared-builder",
+    "action": "_ callMemory(/* No info */) {",
+    "inputs": {
+      "key": 51392539,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310301ba5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1918",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-039",
+    "protocol": "shared-builder",
+    "action": "_ callMemory(/* No info */) {",
+    "inputs": {
+      "key": 262144,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020004000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1923",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-040",
+    "protocol": "shared-builder",
+    "action": "_ callMemory(/* No info */) {",
+    "inputs": {
+      "key": 51392527,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1951",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-041",
+    "protocol": "shared-builder",
+    "action": "_ callMemory(/* No info */) {",
+    "inputs": {
+      "key": 0,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:1957",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-048",
+    "protocol": "shared-builder",
+    "action": "_ changeNormalMassageTime(/* No info */) {",
+    "inputs": {
+      "key": 51392527,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:2153",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-049",
+    "protocol": "shared-builder",
+    "action": "_ changeNormalMassageTime(/* No info */) {",
+    "inputs": {
+      "key": 0,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:2159",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-050",
+    "protocol": "shared-builder",
+    "action": "_ turnOffNormalMassage(/* No info */) {",
+    "inputs": {
+      "key": 51392623,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310306fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:2205",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-051",
+    "protocol": "shared-builder",
+    "action": "_ turnOffNormalMassage(/* No info */) {",
+    "inputs": {
+      "key": 33554432,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020200000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:2211",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-052",
+    "protocol": "shared-builder",
+    "action": "_ turnOffNormalMassage(/* No info */) {",
+    "inputs": {
+      "key": 51392623,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310306fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:2227",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-053",
+    "protocol": "shared-builder",
+    "action": "_ turnOffNormalMassage(/* No info */) {",
+    "inputs": {
+      "key": 33554432,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020200000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:2233",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-054",
+    "protocol": "shared-builder",
+    "action": "_ turnOffNormalMassage(/* No info */) {",
+    "inputs": {
+      "key": 51392527,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:2249",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-055",
+    "protocol": "shared-builder",
+    "action": "_ turnOffNormalMassage(/* No info */) {",
+    "inputs": {
+      "key": 0,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:2255",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-056",
+    "protocol": "shared-builder",
+    "action": "_ switchBasicMassageState(/* No info */) {",
+    "inputs": {
+      "key": 51392602,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310305aa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:2294",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-057",
+    "protocol": "shared-builder",
+    "action": "_ switchBasicMassageState(/* No info */) {",
+    "inputs": {
+      "key": 256,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000010000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:2300",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-058",
+    "protocol": "shared-builder",
+    "action": "_ switchBasicMassageState(/* No info */) {",
+    "inputs": {
+      "key": 51392602,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310305aa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:2316",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-059",
+    "protocol": "shared-builder",
+    "action": "_ switchBasicMassageState(/* No info */) {",
+    "inputs": {
+      "key": 256,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000010000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:2322",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-060",
+    "protocol": "shared-builder",
+    "action": "_ switchBasicMassageState(/* No info */) {",
+    "inputs": {
+      "key": 51392527,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:2338",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-061",
+    "protocol": "shared-builder",
+    "action": "_ switchBasicMassageState(/* No info */) {",
+    "inputs": {
+      "key": 0,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:2344",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-063",
+    "protocol": "shared-builder",
+    "action": "_ turnOffRGBLight(/* No info */) {",
+    "inputs": {
+      "key": 51392628,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103074a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5008",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-065",
+    "protocol": "shared-builder",
+    "action": "_ turnOffRGBLight(/* No info */) {",
+    "inputs": {
+      "key": 51392628,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103074a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5030",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-067",
+    "protocol": "shared-builder",
+    "action": "_ turnOffRGBLight(/* No info */) {",
+    "inputs": {
+      "key": 51392527,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5052",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-068",
+    "protocol": "shared-builder",
+    "action": "_ turnOffRGBLight(/* No info */) {",
+    "inputs": {
+      "key": 0,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5058",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-071",
+    "protocol": "shared-builder",
+    "action": "_ turnOnRGBLight(/* No info */) {",
+    "inputs": {
+      "key": 51392627,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103073a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5136",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-073",
+    "protocol": "shared-builder",
+    "action": "_ turnOnRGBLight(/* No info */) {",
+    "inputs": {
+      "key": 51392627,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103073a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5158",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-075",
+    "protocol": "shared-builder",
+    "action": "_ turnOnRGBLight(/* No info */) {",
+    "inputs": {
+      "key": 51392527,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5180",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-076",
+    "protocol": "shared-builder",
+    "action": "_ turnOnRGBLight(/* No info */) {",
+    "inputs": {
+      "key": 0,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5186",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-077",
+    "protocol": "shared-builder",
+    "action": "_ toggleColor(/* No info */) {",
+    "inputs": {
+      "key": 51392624,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103070a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5225",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-078",
+    "protocol": "shared-builder",
+    "action": "_ toggleColor(/* No info */) {",
+    "inputs": {
+      "key": 262144,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020004000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5231",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-079",
+    "protocol": "shared-builder",
+    "action": "_ toggleColor(/* No info */) {",
+    "inputs": {
+      "key": 51392624,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103070a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5247",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-080",
+    "protocol": "shared-builder",
+    "action": "_ toggleColor(/* No info */) {",
+    "inputs": {
+      "key": 262144,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020004000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5253",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-081",
+    "protocol": "shared-builder",
+    "action": "_ toggleColor(/* No info */) {",
+    "inputs": {
+      "key": 51392527,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5269",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-082",
+    "protocol": "shared-builder",
+    "action": "_ toggleColor(/* No info */) {",
+    "inputs": {
+      "key": 0,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5275",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-083",
+    "protocol": "shared-builder",
+    "action": "_ changeRGBLightMode(/* No info */) {",
+    "inputs": {
+      "key": 51392633,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103079a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5457",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-084",
+    "protocol": "shared-builder",
+    "action": "_ changeRGBLightMode(/* No info */) {",
+    "inputs": {
+      "key": 131076,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020002000400",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5463",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-085",
+    "protocol": "shared-builder",
+    "action": "_ changeRGBLightMode(/* No info */) {",
+    "inputs": {
+      "key": 51392634,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310307aa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5477",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-086",
+    "protocol": "shared-builder",
+    "action": "_ changeRGBLightMode(/* No info */) {",
+    "inputs": {
+      "key": 131076,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020002000400",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5483",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-087",
+    "protocol": "shared-builder",
+    "action": "_ changeRGBLightMode(/* No info */) {",
+    "inputs": {
+      "key": 51392649,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103089a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5545",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-088",
+    "protocol": "shared-builder",
+    "action": "_ changeRGBLightMode(/* No info */) {",
+    "inputs": {
+      "key": 51392650,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310308aa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5557",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-089",
+    "protocol": "shared-builder",
+    "action": "_ changeRGBLightMode(/* No info */) {",
+    "inputs": {
+      "key": 51392527,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5566",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-090",
+    "protocol": "shared-builder",
+    "action": "_ interruptMotor(/* No info */) {",
+    "inputs": {
+      "key": 51392543,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310301fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5748",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-091",
+    "protocol": "shared-builder",
+    "action": "_ interruptMotor(/* No info */) {",
+    "inputs": {
+      "key": 0,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5754",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-092",
+    "protocol": "shared-builder",
+    "action": "_ flat(/* No info */) {",
+    "inputs": {
+      "key": 51392528,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103010a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5797",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-093",
+    "protocol": "shared-builder",
+    "action": "_ flat(/* No info */) {",
+    "inputs": {
+      "key": 134217728,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020800000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5803",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-094",
+    "protocol": "shared-builder",
+    "action": "_ flat(/* No info */) {",
+    "inputs": {
+      "key": 51392528,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103010a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5819",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-095",
+    "protocol": "shared-builder",
+    "action": "_ flat(/* No info */) {",
+    "inputs": {
+      "key": 134217728,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020800000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5825",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-096",
+    "protocol": "shared-builder",
+    "action": "_ flat(/* No info */) {",
+    "inputs": {
+      "key": 51392528,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103010a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5841",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-097",
+    "protocol": "shared-builder",
+    "action": "_ flat(/* No info */) {",
+    "inputs": {
+      "key": 134217728,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020800000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5847",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-098",
+    "protocol": "shared-builder",
+    "action": "_ flat(/* No info */) {",
+    "inputs": {
+      "key": 51392527,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5863",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-099",
+    "protocol": "shared-builder",
+    "action": "_ flat(/* No info */) {",
+    "inputs": {
+      "key": 0,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5869",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-100",
+    "protocol": "shared-builder",
+    "action": "_ motorOut(/* No info */) {",
+    "inputs": {
+      "key": 51392512,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103000a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5919",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-101",
+    "protocol": "shared-builder",
+    "action": "_ motorOut(/* No info */) {",
+    "inputs": {
+      "key": 1,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000000100",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5925",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-102",
+    "protocol": "shared-builder",
+    "action": "_ motorOut(/* No info */) {",
+    "inputs": {
+      "key": 51392514,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103002a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5945",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-103",
+    "protocol": "shared-builder",
+    "action": "_ motorOut(/* No info */) {",
+    "inputs": {
+      "key": 4,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000000400",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5951",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-104",
+    "protocol": "shared-builder",
+    "action": "_ motorOut(/* No info */) {",
+    "inputs": {
+      "key": 51392516,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103004a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5971",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-105",
+    "protocol": "shared-builder",
+    "action": "_ motorOut(/* No info */) {",
+    "inputs": {
+      "key": 16,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000001000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5977",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-106",
+    "protocol": "shared-builder",
+    "action": "_ motorOut(/* No info */) {",
+    "inputs": {
+      "key": 51392520,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103008a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:5997",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-107",
+    "protocol": "shared-builder",
+    "action": "_ motorOut(/* No info */) {",
+    "inputs": {
+      "key": 64,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000004000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:6003",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-108",
+    "protocol": "shared-builder",
+    "action": "_ motorOut(/* No info */) {",
+    "inputs": {
+      "key": 51392522,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300aa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:6017",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-109",
+    "protocol": "shared-builder",
+    "action": "_ motorOut(/* No info */) {",
+    "inputs": {
+      "key": 51392524,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300ca5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:6048",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-110",
+    "protocol": "shared-builder",
+    "action": "_ motorOut(/* No info */) {",
+    "inputs": {
+      "key": 5,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000000500",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:6054",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-113",
+    "protocol": "shared-builder",
+    "action": "_ changeBrightnessLevel(/* No info */) {",
+    "inputs": {
+      "key": 51392527,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:6134",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-114",
+    "protocol": "shared-builder",
+    "action": "_ changeBrightnessLevel(/* No info */) {",
+    "inputs": {
+      "key": 0,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:6140",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-115",
+    "protocol": "shared-builder",
+    "action": "_ motorIn(/* No info */) {",
+    "inputs": {
+      "key": 51392513,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103001a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:6190",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-116",
+    "protocol": "shared-builder",
+    "action": "_ motorIn(/* No info */) {",
+    "inputs": {
+      "key": 2,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000000200",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:6196",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-117",
+    "protocol": "shared-builder",
+    "action": "_ motorIn(/* No info */) {",
+    "inputs": {
+      "key": 51392515,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103003a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:6216",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-118",
+    "protocol": "shared-builder",
+    "action": "_ motorIn(/* No info */) {",
+    "inputs": {
+      "key": 8,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000000800",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:6222",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-119",
+    "protocol": "shared-builder",
+    "action": "_ motorIn(/* No info */) {",
+    "inputs": {
+      "key": 51392517,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103005a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:6242",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-120",
+    "protocol": "shared-builder",
+    "action": "_ motorIn(/* No info */) {",
+    "inputs": {
+      "key": 32,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000002000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:6248",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-121",
+    "protocol": "shared-builder",
+    "action": "_ motorIn(/* No info */) {",
+    "inputs": {
+      "key": 51392521,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103009a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:6268",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-122",
+    "protocol": "shared-builder",
+    "action": "_ motorIn(/* No info */) {",
+    "inputs": {
+      "key": 128,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000008000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:6274",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-123",
+    "protocol": "shared-builder",
+    "action": "_ motorIn(/* No info */) {",
+    "inputs": {
+      "key": 51392523,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300ba5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:6288",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-124",
+    "protocol": "shared-builder",
+    "action": "_ motorIn(/* No info */) {",
+    "inputs": {
+      "key": 51392525,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300da5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:6319",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-125",
+    "protocol": "shared-builder",
+    "action": "_ motorIn(/* No info */) {",
+    "inputs": {
+      "key": 10,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000000a00",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:6325",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-136",
+    "protocol": "shared-builder",
+    "action": "_ stop(/* No info */) {",
+    "inputs": {
+      "key": 51392527,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:8333",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-137",
+    "protocol": "shared-builder",
+    "action": "_ stop(/* No info */) {",
+    "inputs": {
+      "key": 0,
+      "encoding": "C"
+    },
+    "expected_bytes": "05020000000000",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/cb25_base_ble_device.dart:8339",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-139",
+    "protocol": "shared-builder",
+    "action": "_ turnOffRGBLight(/* No info */) {",
+    "inputs": {
+      "key": 51392628,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103074a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/f23_star_ble_device.dart:781",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-140",
+    "protocol": "shared-builder",
+    "action": "_ turnOffRGBLight(/* No info */) {",
+    "inputs": {
+      "key": 51392527,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/f23_star_ble_device.dart:790",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-142",
+    "protocol": "shared-builder",
+    "action": "_ turnOnRGBLight(/* No info */) {",
+    "inputs": {
+      "key": 51392627,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103073a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/f23_star_ble_device.dart:854",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-143",
+    "protocol": "shared-builder",
+    "action": "_ turnOnRGBLight(/* No info */) {",
+    "inputs": {
+      "key": 51392527,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/f23_star_ble_device.dart:863",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-144",
+    "protocol": "shared-builder",
+    "action": "_ toggleColor(/* No info */) {",
+    "inputs": {
+      "key": 51392624,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103070a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/f23_star_ble_device.dart:897",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-145",
+    "protocol": "shared-builder",
+    "action": "_ toggleColor(/* No info */) {",
+    "inputs": {
+      "key": 51392527,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/f23_star_ble_device.dart:906",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-146",
+    "protocol": "shared-builder",
+    "action": "_ changeRGBLightMode(/* No info */) {",
+    "inputs": {
+      "key": 51392649,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103089a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/f23_star_ble_device.dart:940",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-147",
+    "protocol": "shared-builder",
+    "action": "_ changeRGBLightMode(/* No info */) {",
+    "inputs": {
+      "key": 51392527,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/f23_star_ble_device.dart:949",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-149",
+    "protocol": "shared-builder",
+    "action": "_ changeBrightnessLevel(/* No info */) {",
+    "inputs": {
+      "key": 51392527,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb25/f23_star_ble_device.dart:1002",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-151",
+    "protocol": "shared-builder",
+    "action": "_ interruptMotor(/* No info */) {",
+    "inputs": {
+      "key": 51392591,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310304fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb46/star_elevate_ble_device.dart:2180",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-152",
+    "protocol": "shared-builder",
+    "action": "_ flat(/* No info */) {",
+    "inputs": {
+      "key": 51392582,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103046a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb46/star_elevate_ble_device.dart:2214",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-153",
+    "protocol": "shared-builder",
+    "action": "_ motorOut(/* No info */) {",
+    "inputs": {
+      "key": 51392576,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103040a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb46/star_elevate_ble_device.dart:2253",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-154",
+    "protocol": "shared-builder",
+    "action": "_ motorOut(/* No info */) {",
+    "inputs": {
+      "key": 51392578,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103042a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb46/star_elevate_ble_device.dart:2267",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-155",
+    "protocol": "shared-builder",
+    "action": "_ motorOut(/* No info */) {",
+    "inputs": {
+      "key": 51392580,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103044a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb46/star_elevate_ble_device.dart:2292",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-156",
+    "protocol": "shared-builder",
+    "action": "_ motorIn(/* No info */) {",
+    "inputs": {
+      "key": 51392577,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103041a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb46/star_elevate_ble_device.dart:2340",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-157",
+    "protocol": "shared-builder",
+    "action": "_ motorIn(/* No info */) {",
+    "inputs": {
+      "key": 51392579,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103043a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb46/star_elevate_ble_device.dart:2354",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-158",
+    "protocol": "shared-builder",
+    "action": "_ motorIn(/* No info */) {",
+    "inputs": {
+      "key": 51392581,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a0103103045a5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb46/star_elevate_ble_device.dart:2379",
+      "E-BUILD"
+    ]
+  },
+  {
+    "id": "V-CALL-159",
+    "protocol": "shared-builder",
+    "action": "_ stop(/* No info */) {",
+    "inputs": {
+      "key": 51392527,
+      "encoding": "S"
+    },
+    "expected_bytes": "5a010310300fa5",
+    "evidence": [
+      "work/blutter/asm/dot_bluetooth_manager/device/bedding/cb46/star_elevate_ble_device.dart:2440",
+      "E-BUILD"
+    ]
+  }
+]

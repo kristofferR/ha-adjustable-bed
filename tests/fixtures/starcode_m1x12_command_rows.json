@@ -1,0 +1,1322 @@
+[
+  {
+    "id": "CMD-P1-001",
+    "protocol": "P1",
+    "action": "head out/up",
+    "bytes": "select(S: N_S(0x03103000), C: N_C(0x00000001))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P1-002",
+    "protocol": "P1",
+    "action": "head in/down",
+    "bytes": "select(S: N_S(0x03103001), C: N_C(0x00000002))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P1-003",
+    "protocol": "P1",
+    "action": "foot out/up",
+    "bytes": "select(S: N_S(0x03103002), C: N_C(0x00000004))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P1-004",
+    "protocol": "P1",
+    "action": "foot in/down",
+    "bytes": "select(S: N_S(0x03103003), C: N_C(0x00000008))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P1-005",
+    "protocol": "P1",
+    "action": "lumbar out/up",
+    "bytes": "select(S: N_S(0x03103004), C: N_C(0x00000010))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P1-006",
+    "protocol": "P1",
+    "action": "lumbar in/down",
+    "bytes": "select(S: N_S(0x03103005), C: N_C(0x00000020))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P1-007",
+    "protocol": "P1",
+    "action": "part4 out/up",
+    "bytes": "select(S: N_S(0x03103008), C: N_C(0x00000040))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P1-008",
+    "protocol": "P1",
+    "action": "part4 in/down",
+    "bytes": "select(S: N_S(0x03103009), C: N_C(0x00000080))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P1-009",
+    "protocol": "P1",
+    "action": "part5 out/up",
+    "bytes": "N_S(0x0310300a)",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P1-010",
+    "protocol": "P1",
+    "action": "part5 in/down",
+    "bytes": "N_S(0x0310300b)",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P1-011",
+    "protocol": "P1",
+    "action": "head+foot out/up",
+    "bytes": "select(S: N_S(0x0310300c), C: N_C(0x00000005))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P1-012",
+    "protocol": "P1",
+    "action": "head+foot in/down",
+    "bytes": "select(S: N_S(0x0310300d), C: N_C(0x0000000a))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P1-013",
+    "protocol": "P1",
+    "action": "STOP",
+    "bytes": "N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "This is the release frame. clear=true also clears pending one-shot queue; HomeController::_stop supplies clear=false."
+  },
+  {
+    "id": "CMD-P1-014",
+    "protocol": "P1",
+    "action": "interrupt movement",
+    "bytes": "select(S: N_S(0x0310301f), C: N_C(0))",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "Clears internal progress queue and pending sender queue; sends one interrupt frame."
+  },
+  {
+    "id": "CMD-P1-015",
+    "protocol": "P1",
+    "action": "flat",
+    "bytes": "3 copies of select(S: N_S(0x03103010), C: N_C(0x08000000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "STOP is the fourth queued frame."
+  },
+  {
+    "id": "CMD-P1-016",
+    "protocol": "P1",
+    "action": "recall TV (UI ascent)",
+    "bytes": "3 copies of select(S: N_S(0x03103011), C: N_C(0x00004000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P1-017",
+    "protocol": "P1",
+    "action": "recall zero gravity",
+    "bytes": "3 copies of select(S: N_S(0x03103013), C: N_C(0x00001000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P1-018",
+    "protocol": "P1",
+    "action": "recall anti-snore",
+    "bytes": "3 copies of select(S: N_S(0x03103016), C: N_C(0x00008000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P1-019",
+    "protocol": "P1",
+    "action": "recall reading/lounge",
+    "bytes": "3 copies of select(S: N_S(0x03103017), C: N_C(0x00002000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P1-020",
+    "protocol": "P1",
+    "action": "recall MemoryType(8), no current UI caller",
+    "bytes": "3 copies of select(S: N_S(0x03103018), C: N_C(0x00004000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P1-021",
+    "protocol": "P1",
+    "action": "recall memory A/M1",
+    "bytes": "3 copies of select(S: N_S(0x0310301a), C: N_C(0x00010000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P1-022",
+    "protocol": "P1",
+    "action": "recall memory B/M2",
+    "bytes": "3 copies of select(S: N_S(0x0310301b), C: N_C(0x00040000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P1-023",
+    "protocol": "P1",
+    "action": "program TV",
+    "bytes": "select(S: N_S(0x03103092), C: N_C(0x08004000))",
+    "timing": "55 repeats at 100 ms ticks. Named count is tagged Smi 110, decoded with arithmetic shift right 1.",
+    "release_behavior": "Finite repeating stream ends at count 55. Callback updates saved/isSaving state; no new release packet in callback. UI flat+selected-preset chord calls _stop before programming and suppresses ordinary release handling while the chord runs."
+  },
+  {
+    "id": "CMD-P1-024",
+    "protocol": "P1",
+    "action": "program zero gravity",
+    "bytes": "select(S: N_S(0x03103090), C: N_C(0x08001000))",
+    "timing": "55 repeats at 100 ms ticks. Named count is tagged Smi 110, decoded with arithmetic shift right 1.",
+    "release_behavior": "Finite repeating stream ends at count 55. Callback updates saved/isSaving state; no new release packet in callback. UI flat+selected-preset chord calls _stop before programming and suppresses ordinary release handling while the chord runs."
+  },
+  {
+    "id": "CMD-P1-025",
+    "protocol": "P1",
+    "action": "program reading",
+    "bytes": "select(S: N_S(0x03103091), C: N_C(0x08002000))",
+    "timing": "55 repeats at 100 ms ticks. Named count is tagged Smi 110, decoded with arithmetic shift right 1.",
+    "release_behavior": "Finite repeating stream ends at count 55. Callback updates saved/isSaving state; no new release packet in callback. UI flat+selected-preset chord calls _stop before programming and suppresses ordinary release handling while the chord runs."
+  },
+  {
+    "id": "CMD-P1-026",
+    "protocol": "P1",
+    "action": "program M1",
+    "bytes": "select(S: N_S(0x03103094), C: N_C(0x08010000))",
+    "timing": "55 repeats at 100 ms ticks. Named count is tagged Smi 110, decoded with arithmetic shift right 1.",
+    "release_behavior": "Finite repeating stream ends at count 55. Callback updates saved/isSaving state; no new release packet in callback. UI flat+selected-preset chord calls _stop before programming and suppresses ordinary release handling while the chord runs."
+  },
+  {
+    "id": "CMD-P1-027",
+    "protocol": "P1",
+    "action": "program M2",
+    "bytes": "select(S: N_S(0x03103095), C: N_C(0x08040000))",
+    "timing": "55 repeats at 100 ms ticks. Named count is tagged Smi 110, decoded with arithmetic shift right 1.",
+    "release_behavior": "Finite repeating stream ends at count 55. Callback updates saved/isSaving state; no new release packet in callback. UI flat+selected-preset chord calls _stop before programming and suppresses ordinary release handling while the chord runs."
+  },
+  {
+    "id": "CMD-P1-028",
+    "protocol": "P1",
+    "action": "reset programmed positions",
+    "bytes": "select(S: N_S(0x03103096), C: N_C(0x88000000))",
+    "timing": "55 repeats at 100 ms ticks.",
+    "release_behavior": "Finite repeat ends; callback updates isResetting. Flat+underLight chord triggers it."
+  },
+  {
+    "id": "CMD-P1-029",
+    "protocol": "P1",
+    "action": "massage wave increase",
+    "bytes": "select(S: N_S(0x03103058), C: N_C(0x10000000))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P1-030",
+    "protocol": "P1",
+    "action": "massage wave decrease",
+    "bytes": "select(S: N_S(0x03103059), C: N_C(0x04000000))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P1-031",
+    "protocol": "P1",
+    "action": "head massage intensity increase",
+    "bytes": "select(S: N_S(0x03103066), C: N_S(0x00000800))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P1-032",
+    "protocol": "P1",
+    "action": "head massage intensity decrease",
+    "bytes": "select(S: N_S(0x03103067), C: N_S(0x00800000))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P1-033",
+    "protocol": "P1",
+    "action": "foot massage intensity increase",
+    "bytes": "select(S: N_S(0x03103068), C: N_S(0x00000400))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P1-034",
+    "protocol": "P1",
+    "action": "foot massage intensity decrease",
+    "bytes": "select(S: N_S(0x03103069), C: N_S(0x01000000))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P1-035",
+    "protocol": "P1",
+    "action": "both-zone massage intensity increase",
+    "bytes": "N_S(0x00000c00); maker-selector S branch returns without a write for Part(3)",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P1-036",
+    "protocol": "P1",
+    "action": "both-zone massage intensity decrease",
+    "bytes": "N_S(0x01800000); maker-selector S branch returns without a write for Part(3)",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P1-037",
+    "protocol": "P1",
+    "action": "massage toggle",
+    "bytes": "2 copies of select(S: N_S(0x0310305a), C: N_C(0x00000100)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Three FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP."
+  },
+  {
+    "id": "CMD-P1-038",
+    "protocol": "P1",
+    "action": "massage off",
+    "bytes": "2 copies of select(S: N_S(0x0310306f), C: N_C(0x02000000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Three FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP."
+  },
+  {
+    "id": "CMD-P1-039",
+    "protocol": "P1",
+    "action": "light/color cycle",
+    "bytes": "2 copies of select(S: N_S(0x03103070), C: N_C(0x00040000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Three FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP."
+  },
+  {
+    "id": "CMD-P1-040",
+    "protocol": "P1",
+    "action": "light on",
+    "bytes": "2 copies of select(S: N_S(0x03103073), C: LONG_C(0x00000040)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Three FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP."
+  },
+  {
+    "id": "CMD-P1-041",
+    "protocol": "P1",
+    "action": "light off",
+    "bytes": "2 copies of select(S: N_S(0x03103074), C: LONG_C(0x00000080)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Three FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP."
+  },
+  {
+    "id": "CMD-P1-042",
+    "protocol": "P1",
+    "action": "massage duration 600 seconds",
+    "bytes": "select(S: E_S(7,1), C: E_C(7,1)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Two FIFO frames.",
+    "release_behavior": "Final queued STOP."
+  },
+  {
+    "id": "CMD-P1-043",
+    "protocol": "P1",
+    "action": "massage duration 1200 seconds",
+    "bytes": "select(S: E_S(7,2), C: E_C(7,2)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Two FIFO frames.",
+    "release_behavior": "Final queued STOP."
+  },
+  {
+    "id": "CMD-P1-044",
+    "protocol": "P1",
+    "action": "massage duration 1800 seconds",
+    "bytes": "select(S: E_S(7,3), C: E_C(7,3)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Two FIFO frames.",
+    "release_behavior": "Final queued STOP."
+  },
+  {
+    "id": "CMD-P1-045",
+    "protocol": "P1",
+    "action": "massage duration zero",
+    "bytes": "Delegates to massage off (two identical normal frames and STOP).",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "See massage off. Other nonzero values except 600/1200/1800 return without writing."
+  },
+  {
+    "id": "CMD-P1-046",
+    "protocol": "P1",
+    "action": "brightness level 1..6",
+    "bytes": "select(S: E_S(0,level), C: E_C(0,level)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "Final queued STOP. Values outside 1..6 are ignored."
+  },
+  {
+    "id": "CMD-P1-047",
+    "protocol": "P1",
+    "action": "light mode 0, special model",
+    "bytes": "select(S: N_S(0x03103079), C: N_C(0x00020004))",
+    "timing": "35 repeats at 100 ms ticks; tagged count 70 decodes to 35.",
+    "release_behavior": "No explicit final release in completion callback; stream ends and isChangingMode/currentMode are updated."
+  },
+  {
+    "id": "CMD-P1-048",
+    "protocol": "P1",
+    "action": "light mode 1, special model",
+    "bytes": "select(S: N_S(0x0310307a), C: N_C(0x00020004))",
+    "timing": "35 repeats at 100 ms ticks; tagged count 70 decodes to 35.",
+    "release_behavior": "No explicit final release in completion callback; stream ends and isChangingMode/currentMode are updated."
+  },
+  {
+    "id": "CMD-P1-049",
+    "protocol": "P1",
+    "action": "light mode 0, other model",
+    "bytes": "N_S(0x03103089)",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One frame; this branch does not append STOP."
+  },
+  {
+    "id": "CMD-P1-050",
+    "protocol": "P1",
+    "action": "light mode 1, other model",
+    "bytes": "N_S(0x0310308a), then N_S(0x0310300f)",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "Explicit S STOP follows."
+  },
+  {
+    "id": "CMD-P1-051",
+    "protocol": "P1",
+    "action": "query status",
+    "bytes": "select(S: 5a b0 00 a5, C: 00 b0)",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One query, no release."
+  },
+  {
+    "id": "CMD-P1-052",
+    "protocol": "P1",
+    "action": "connection keep-open",
+    "bytes": "5a 0b 00 a5",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One initialization frame; no periodic keep-open timer found."
+  },
+  {
+    "id": "CMD-P1-053",
+    "protocol": "P1",
+    "action": "internal progress target",
+    "bytes": "select(S: P_S(axis,target), C: P_C(axis,target)); axis 0..4 selected by Part 1/2/4/8/16",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One target, progression waits for A5 0D stopped status; new manual movement/STOP clears internal progress queue."
+  },
+  {
+    "id": "CMD-P2-001",
+    "protocol": "P2",
+    "action": "elevation Part(1) out/up",
+    "bytes": "N_S(0x03103040)",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI stopElevate -> stop(clear default true) -> N_S(0x0310300f); interruption uses 0x0310304f."
+  },
+  {
+    "id": "CMD-P2-002",
+    "protocol": "P2",
+    "action": "elevation Part(1) in/down",
+    "bytes": "N_S(0x03103041)",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI stopElevate -> stop(clear default true) -> N_S(0x0310300f); interruption uses 0x0310304f."
+  },
+  {
+    "id": "CMD-P2-003",
+    "protocol": "P2",
+    "action": "elevation Part(2) out/up",
+    "bytes": "N_S(0x03103042)",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI stopElevate -> stop(clear default true) -> N_S(0x0310300f); interruption uses 0x0310304f."
+  },
+  {
+    "id": "CMD-P2-004",
+    "protocol": "P2",
+    "action": "elevation Part(2) in/down",
+    "bytes": "N_S(0x03103043)",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI stopElevate -> stop(clear default true) -> N_S(0x0310300f); interruption uses 0x0310304f."
+  },
+  {
+    "id": "CMD-P2-005",
+    "protocol": "P2",
+    "action": "elevation Part(3) out/up",
+    "bytes": "N_S(0x03103044)",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI stopElevate -> stop(clear default true) -> N_S(0x0310300f); interruption uses 0x0310304f."
+  },
+  {
+    "id": "CMD-P2-006",
+    "protocol": "P2",
+    "action": "elevation Part(3) in/down",
+    "bytes": "N_S(0x03103045)",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI stopElevate -> stop(clear default true) -> N_S(0x0310300f); interruption uses 0x0310304f."
+  },
+  {
+    "id": "CMD-P2-007",
+    "protocol": "P2",
+    "action": "elevation flat",
+    "bytes": "N_S(0x03103046)",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One frame. STOP optionally clears pending one-shot queue, and sendSingleData cancels repetition."
+  },
+  {
+    "id": "CMD-P2-008",
+    "protocol": "P2",
+    "action": "elevation interrupt",
+    "bytes": "N_S(0x0310304f)",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One frame. STOP optionally clears pending one-shot queue, and sendSingleData cancels repetition."
+  },
+  {
+    "id": "CMD-P2-009",
+    "protocol": "P2",
+    "action": "elevation STOP",
+    "bytes": "N_S(0x0310300f)",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One frame. STOP optionally clears pending one-shot queue, and sendSingleData cancels repetition."
+  },
+  {
+    "id": "CMD-P2-010",
+    "protocol": "P2",
+    "action": "elevation connection keep-open",
+    "bytes": "5a 0b 00 a5",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One initialization frame after required characteristics and sender setup, no periodic keep-open timer."
+  },
+  {
+    "id": "CMD-P3-001",
+    "protocol": "P3",
+    "action": "head out/up",
+    "bytes": "select(S: N_S(0x03103000), C: N_C(0x00000001))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P3-002",
+    "protocol": "P3",
+    "action": "head in/down",
+    "bytes": "select(S: N_S(0x03103001), C: N_C(0x00000002))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P3-003",
+    "protocol": "P3",
+    "action": "foot out/up",
+    "bytes": "select(S: N_S(0x03103002), C: N_C(0x00000004))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P3-004",
+    "protocol": "P3",
+    "action": "foot in/down",
+    "bytes": "select(S: N_S(0x03103003), C: N_C(0x00000008))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P3-005",
+    "protocol": "P3",
+    "action": "lumbar out/up",
+    "bytes": "select(S: N_S(0x03103004), C: N_C(0x00000010))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P3-006",
+    "protocol": "P3",
+    "action": "lumbar in/down",
+    "bytes": "select(S: N_S(0x03103005), C: N_C(0x00000020))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P3-007",
+    "protocol": "P3",
+    "action": "part4 out/up",
+    "bytes": "select(S: N_S(0x03103008), C: N_C(0x00000040))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P3-008",
+    "protocol": "P3",
+    "action": "part4 in/down",
+    "bytes": "select(S: N_S(0x03103009), C: N_C(0x00000080))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P3-009",
+    "protocol": "P3",
+    "action": "part5 out/up",
+    "bytes": "N_S(0x0310300a)",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P3-010",
+    "protocol": "P3",
+    "action": "part5 in/down",
+    "bytes": "N_S(0x0310300b)",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P3-011",
+    "protocol": "P3",
+    "action": "head+foot out/up",
+    "bytes": "select(S: N_S(0x0310300c), C: N_C(0x00000005))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P3-012",
+    "protocol": "P3",
+    "action": "head+foot in/down",
+    "bytes": "select(S: N_S(0x0310300d), C: N_C(0x0000000a))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P3-013",
+    "protocol": "P3",
+    "action": "STOP",
+    "bytes": "N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "This is the release frame. clear=true also clears pending one-shot queue; HomeController::_stop supplies clear=false."
+  },
+  {
+    "id": "CMD-P3-014",
+    "protocol": "P3",
+    "action": "interrupt movement",
+    "bytes": "select(S: N_S(0x0310301f), C: N_C(0))",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "Clears internal progress queue and pending sender queue; sends one interrupt frame."
+  },
+  {
+    "id": "CMD-P3-015",
+    "protocol": "P3",
+    "action": "flat",
+    "bytes": "3 copies of select(S: N_S(0x03103010), C: N_C(0x08000000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "STOP is the fourth queued frame."
+  },
+  {
+    "id": "CMD-P3-016",
+    "protocol": "P3",
+    "action": "recall TV (UI ascent)",
+    "bytes": "3 copies of select(S: N_S(0x03103011), C: N_C(0x00004000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P3-017",
+    "protocol": "P3",
+    "action": "recall zero gravity",
+    "bytes": "3 copies of select(S: N_S(0x03103013), C: N_C(0x00001000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P3-018",
+    "protocol": "P3",
+    "action": "recall anti-snore",
+    "bytes": "3 copies of select(S: N_S(0x03103016), C: N_C(0x00008000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P3-019",
+    "protocol": "P3",
+    "action": "recall reading/lounge",
+    "bytes": "3 copies of select(S: N_S(0x03103017), C: N_C(0x00002000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P3-020",
+    "protocol": "P3",
+    "action": "recall MemoryType(8), no current UI caller",
+    "bytes": "3 copies of select(S: N_S(0x03103018), C: N_C(0x00004000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P3-021",
+    "protocol": "P3",
+    "action": "recall memory A/M1",
+    "bytes": "3 copies of select(S: N_S(0x0310301a), C: N_C(0x00010000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P3-022",
+    "protocol": "P3",
+    "action": "recall memory B/M2",
+    "bytes": "3 copies of select(S: N_S(0x0310301b), C: N_C(0x00040000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P3-023",
+    "protocol": "P3",
+    "action": "program TV",
+    "bytes": "select(S: N_S(0x03103092), C: N_C(0x08004000))",
+    "timing": "55 repeats at 100 ms ticks. Named count is tagged Smi 110, decoded with arithmetic shift right 1.",
+    "release_behavior": "Finite repeating stream ends at count 55. Callback updates saved/isSaving state; no new release packet in callback. UI flat+selected-preset chord calls _stop before programming and suppresses ordinary release handling while the chord runs."
+  },
+  {
+    "id": "CMD-P3-024",
+    "protocol": "P3",
+    "action": "program zero gravity",
+    "bytes": "select(S: N_S(0x03103090), C: N_C(0x08001000))",
+    "timing": "55 repeats at 100 ms ticks. Named count is tagged Smi 110, decoded with arithmetic shift right 1.",
+    "release_behavior": "Finite repeating stream ends at count 55. Callback updates saved/isSaving state; no new release packet in callback. UI flat+selected-preset chord calls _stop before programming and suppresses ordinary release handling while the chord runs."
+  },
+  {
+    "id": "CMD-P3-025",
+    "protocol": "P3",
+    "action": "program reading",
+    "bytes": "select(S: N_S(0x03103091), C: N_C(0x08002000))",
+    "timing": "55 repeats at 100 ms ticks. Named count is tagged Smi 110, decoded with arithmetic shift right 1.",
+    "release_behavior": "Finite repeating stream ends at count 55. Callback updates saved/isSaving state; no new release packet in callback. UI flat+selected-preset chord calls _stop before programming and suppresses ordinary release handling while the chord runs."
+  },
+  {
+    "id": "CMD-P3-026",
+    "protocol": "P3",
+    "action": "program M1",
+    "bytes": "select(S: N_S(0x03103094), C: N_C(0x08010000))",
+    "timing": "55 repeats at 100 ms ticks. Named count is tagged Smi 110, decoded with arithmetic shift right 1.",
+    "release_behavior": "Finite repeating stream ends at count 55. Callback updates saved/isSaving state; no new release packet in callback. UI flat+selected-preset chord calls _stop before programming and suppresses ordinary release handling while the chord runs."
+  },
+  {
+    "id": "CMD-P3-027",
+    "protocol": "P3",
+    "action": "program M2",
+    "bytes": "select(S: N_S(0x03103095), C: N_C(0x08040000))",
+    "timing": "55 repeats at 100 ms ticks. Named count is tagged Smi 110, decoded with arithmetic shift right 1.",
+    "release_behavior": "Finite repeating stream ends at count 55. Callback updates saved/isSaving state; no new release packet in callback. UI flat+selected-preset chord calls _stop before programming and suppresses ordinary release handling while the chord runs."
+  },
+  {
+    "id": "CMD-P3-028",
+    "protocol": "P3",
+    "action": "reset programmed positions",
+    "bytes": "select(S: N_S(0x03103096), C: N_C(0x88000000))",
+    "timing": "55 repeats at 100 ms ticks.",
+    "release_behavior": "Finite repeat ends; callback updates isResetting. Flat+underLight chord triggers it."
+  },
+  {
+    "id": "CMD-P3-029",
+    "protocol": "P3",
+    "action": "massage wave increase",
+    "bytes": "select(S: N_S(0x03103058), C: N_C(0x10000000))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P3-030",
+    "protocol": "P3",
+    "action": "massage wave decrease",
+    "bytes": "select(S: N_S(0x03103059), C: N_C(0x04000000))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P3-031",
+    "protocol": "P3",
+    "action": "head massage intensity increase",
+    "bytes": "select(S: N_S(0x03103066), C: N_S(0x00000800))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P3-032",
+    "protocol": "P3",
+    "action": "head massage intensity decrease",
+    "bytes": "select(S: N_S(0x03103067), C: N_S(0x00800000))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P3-033",
+    "protocol": "P3",
+    "action": "foot massage intensity increase",
+    "bytes": "select(S: N_S(0x03103068), C: N_S(0x00000400))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P3-034",
+    "protocol": "P3",
+    "action": "foot massage intensity decrease",
+    "bytes": "select(S: N_S(0x03103069), C: N_S(0x01000000))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P3-035",
+    "protocol": "P3",
+    "action": "both-zone massage intensity increase",
+    "bytes": "N_S(0x00000c00); maker-selector S branch returns without a write for Part(3)",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P3-036",
+    "protocol": "P3",
+    "action": "both-zone massage intensity decrease",
+    "bytes": "N_S(0x01800000); maker-selector S branch returns without a write for Part(3)",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P3-037",
+    "protocol": "P3",
+    "action": "massage toggle",
+    "bytes": "2 copies of select(S: N_S(0x0310305a), C: N_C(0x00000100)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Three FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP."
+  },
+  {
+    "id": "CMD-P3-038",
+    "protocol": "P3",
+    "action": "massage off",
+    "bytes": "2 copies of select(S: N_S(0x0310306f), C: N_C(0x02000000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Three FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP."
+  },
+  {
+    "id": "CMD-P3-039",
+    "protocol": "P3",
+    "action": "massage duration 600 seconds",
+    "bytes": "select(S: E_S(7,1), C: E_C(7,1)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Two FIFO frames.",
+    "release_behavior": "Final queued STOP."
+  },
+  {
+    "id": "CMD-P3-040",
+    "protocol": "P3",
+    "action": "massage duration 1200 seconds",
+    "bytes": "select(S: E_S(7,2), C: E_C(7,2)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Two FIFO frames.",
+    "release_behavior": "Final queued STOP."
+  },
+  {
+    "id": "CMD-P3-041",
+    "protocol": "P3",
+    "action": "massage duration 1800 seconds",
+    "bytes": "select(S: E_S(7,3), C: E_C(7,3)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Two FIFO frames.",
+    "release_behavior": "Final queued STOP."
+  },
+  {
+    "id": "CMD-P3-042",
+    "protocol": "P3",
+    "action": "massage duration zero",
+    "bytes": "Delegates to massage off (two identical normal frames and STOP).",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "See massage off. Other nonzero values except 600/1200/1800 return without writing."
+  },
+  {
+    "id": "CMD-P3-043",
+    "protocol": "P3",
+    "action": "internal progress target",
+    "bytes": "select(S: P_S(axis,target), C: P_C(axis,target)); axis 0..4 selected by Part 1/2/4/8/16",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One target, progression waits for A5 0D stopped status; new manual movement/STOP clears internal progress queue."
+  },
+  {
+    "id": "CMD-P3-044",
+    "protocol": "P3",
+    "action": "light/color cycle",
+    "bytes": "N_S(0x03103070), then N_S(0x0310300f)",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One action frame then one S STOP; both maker-selector states use S."
+  },
+  {
+    "id": "CMD-P3-045",
+    "protocol": "P3",
+    "action": "light on",
+    "bytes": "N_S(0x03103073), then N_S(0x0310300f)",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One action frame then one S STOP; both maker-selector states use S."
+  },
+  {
+    "id": "CMD-P3-046",
+    "protocol": "P3",
+    "action": "light off",
+    "bytes": "N_S(0x03103074), then N_S(0x0310300f)",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One action frame then one S STOP; both maker-selector states use S."
+  },
+  {
+    "id": "CMD-P3-047",
+    "protocol": "P3",
+    "action": "light mode (argument ignored)",
+    "bytes": "N_S(0x03103089), then N_S(0x0310300f)",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One action frame then one S STOP; both maker-selector states use S."
+  },
+  {
+    "id": "CMD-P3-048",
+    "protocol": "P3",
+    "action": "brightness level 1..6",
+    "bytes": "E_S(0,level), then N_S(0x0310300f)",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "S STOP follows; invalid levels ignored."
+  },
+  {
+    "id": "CMD-P3-049",
+    "protocol": "P3",
+    "action": "query status",
+    "bytes": "5a b0 00 a5",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One query; no release."
+  },
+  {
+    "id": "CMD-P3-050",
+    "protocol": "P3",
+    "action": "connection keep-open",
+    "bytes": "5a 0b 00 a5",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One initialization frame, conditional on maker selector S."
+  },
+  {
+    "id": "CMD-P3-051",
+    "protocol": "P3",
+    "action": "clock correction at connection",
+    "bytes": "Uint8List([0x5a,0x14,7,(localYear-4000),month,day,weekday,hour,minute,second,0xa5]); byte narrowing modulo 256",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One frame, no STOP; calibrationTime runs after superclass initialization returns, retaining its success boolean."
+  },
+  {
+    "id": "CMD-P4-001",
+    "protocol": "P4",
+    "action": "head out/up",
+    "bytes": "select(S: N_S(0x03103000), C: N_C(0x00000001))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P4-002",
+    "protocol": "P4",
+    "action": "head in/down",
+    "bytes": "select(S: N_S(0x03103001), C: N_C(0x00000002))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P4-003",
+    "protocol": "P4",
+    "action": "foot out/up",
+    "bytes": "select(S: N_S(0x03103002), C: N_C(0x00000004))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P4-004",
+    "protocol": "P4",
+    "action": "foot in/down",
+    "bytes": "select(S: N_S(0x03103003), C: N_C(0x00000008))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P4-005",
+    "protocol": "P4",
+    "action": "lumbar out/up",
+    "bytes": "select(S: N_S(0x03103004), C: N_C(0x00000010))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P4-006",
+    "protocol": "P4",
+    "action": "lumbar in/down",
+    "bytes": "select(S: N_S(0x03103005), C: N_C(0x00000020))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P4-007",
+    "protocol": "P4",
+    "action": "part4 out/up",
+    "bytes": "select(S: N_S(0x03103008), C: N_C(0x00000040))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P4-008",
+    "protocol": "P4",
+    "action": "part4 in/down",
+    "bytes": "select(S: N_S(0x03103009), C: N_C(0x00000080))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P4-009",
+    "protocol": "P4",
+    "action": "part5 out/up",
+    "bytes": "N_S(0x0310300a)",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P4-010",
+    "protocol": "P4",
+    "action": "part5 in/down",
+    "bytes": "N_S(0x0310300b)",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P4-011",
+    "protocol": "P4",
+    "action": "head+foot out/up",
+    "bytes": "select(S: N_S(0x0310300c), C: N_C(0x00000005))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P4-012",
+    "protocol": "P4",
+    "action": "head+foot in/down",
+    "bytes": "select(S: N_S(0x0310300d), C: N_C(0x0000000a))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P4-013",
+    "protocol": "P4",
+    "action": "STOP",
+    "bytes": "N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "This is the release frame. clear=true also clears pending one-shot queue; HomeController::_stop supplies clear=false."
+  },
+  {
+    "id": "CMD-P4-014",
+    "protocol": "P4",
+    "action": "interrupt movement",
+    "bytes": "select(S: N_S(0x0310301f), C: N_C(0))",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "Clears internal progress queue and pending sender queue; sends one interrupt frame."
+  },
+  {
+    "id": "CMD-P4-015",
+    "protocol": "P4",
+    "action": "flat",
+    "bytes": "3 copies of select(S: N_S(0x03103010), C: N_C(0x08000000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "STOP is the fourth queued frame."
+  },
+  {
+    "id": "CMD-P4-016",
+    "protocol": "P4",
+    "action": "recall TV (UI ascent)",
+    "bytes": "3 copies of select(S: N_S(0x03103011), C: N_C(0x00004000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P4-017",
+    "protocol": "P4",
+    "action": "recall zero gravity",
+    "bytes": "3 copies of select(S: N_S(0x03103013), C: N_C(0x00001000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P4-018",
+    "protocol": "P4",
+    "action": "recall anti-snore",
+    "bytes": "3 copies of select(S: N_S(0x03103016), C: N_C(0x00008000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P4-019",
+    "protocol": "P4",
+    "action": "recall reading/lounge",
+    "bytes": "3 copies of select(S: N_S(0x03103017), C: N_C(0x00002000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P4-020",
+    "protocol": "P4",
+    "action": "recall MemoryType(8), no current UI caller",
+    "bytes": "3 copies of select(S: N_S(0x03103018), C: N_C(0x00004000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P4-021",
+    "protocol": "P4",
+    "action": "recall memory A/M1",
+    "bytes": "3 copies of select(S: N_S(0x0310301a), C: N_C(0x00010000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P4-022",
+    "protocol": "P4",
+    "action": "recall memory B/M2",
+    "bytes": "3 copies of select(S: N_S(0x0310301b), C: N_C(0x00040000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Four FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP; preset continues/stops according to hardware, unverified."
+  },
+  {
+    "id": "CMD-P4-023",
+    "protocol": "P4",
+    "action": "program TV",
+    "bytes": "select(S: N_S(0x03103092), C: N_C(0x08004000))",
+    "timing": "55 repeats at 100 ms ticks. Named count is tagged Smi 110, decoded with arithmetic shift right 1.",
+    "release_behavior": "Finite repeating stream ends at count 55. Callback updates saved/isSaving state; no new release packet in callback. UI flat+selected-preset chord calls _stop before programming and suppresses ordinary release handling while the chord runs."
+  },
+  {
+    "id": "CMD-P4-024",
+    "protocol": "P4",
+    "action": "program zero gravity",
+    "bytes": "select(S: N_S(0x03103090), C: N_C(0x08001000))",
+    "timing": "55 repeats at 100 ms ticks. Named count is tagged Smi 110, decoded with arithmetic shift right 1.",
+    "release_behavior": "Finite repeating stream ends at count 55. Callback updates saved/isSaving state; no new release packet in callback. UI flat+selected-preset chord calls _stop before programming and suppresses ordinary release handling while the chord runs."
+  },
+  {
+    "id": "CMD-P4-025",
+    "protocol": "P4",
+    "action": "program reading",
+    "bytes": "select(S: N_S(0x03103091), C: N_C(0x08002000))",
+    "timing": "55 repeats at 100 ms ticks. Named count is tagged Smi 110, decoded with arithmetic shift right 1.",
+    "release_behavior": "Finite repeating stream ends at count 55. Callback updates saved/isSaving state; no new release packet in callback. UI flat+selected-preset chord calls _stop before programming and suppresses ordinary release handling while the chord runs."
+  },
+  {
+    "id": "CMD-P4-026",
+    "protocol": "P4",
+    "action": "program M1",
+    "bytes": "select(S: N_S(0x03103094), C: N_C(0x08010000))",
+    "timing": "55 repeats at 100 ms ticks. Named count is tagged Smi 110, decoded with arithmetic shift right 1.",
+    "release_behavior": "Finite repeating stream ends at count 55. Callback updates saved/isSaving state; no new release packet in callback. UI flat+selected-preset chord calls _stop before programming and suppresses ordinary release handling while the chord runs."
+  },
+  {
+    "id": "CMD-P4-027",
+    "protocol": "P4",
+    "action": "program M2",
+    "bytes": "select(S: N_S(0x03103095), C: N_C(0x08040000))",
+    "timing": "55 repeats at 100 ms ticks. Named count is tagged Smi 110, decoded with arithmetic shift right 1.",
+    "release_behavior": "Finite repeating stream ends at count 55. Callback updates saved/isSaving state; no new release packet in callback. UI flat+selected-preset chord calls _stop before programming and suppresses ordinary release handling while the chord runs."
+  },
+  {
+    "id": "CMD-P4-028",
+    "protocol": "P4",
+    "action": "reset programmed positions",
+    "bytes": "select(S: N_S(0x03103096), C: N_C(0x88000000))",
+    "timing": "55 repeats at 100 ms ticks.",
+    "release_behavior": "Finite repeat ends; callback updates isResetting. Flat+underLight chord triggers it."
+  },
+  {
+    "id": "CMD-P4-029",
+    "protocol": "P4",
+    "action": "massage wave increase",
+    "bytes": "select(S: N_S(0x03103058), C: N_C(0x10000000))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P4-030",
+    "protocol": "P4",
+    "action": "massage wave decrease",
+    "bytes": "select(S: N_S(0x03103059), C: N_C(0x04000000))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P4-031",
+    "protocol": "P4",
+    "action": "head massage intensity increase",
+    "bytes": "select(S: N_S(0x03103066), C: N_S(0x00000800))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P4-032",
+    "protocol": "P4",
+    "action": "head massage intensity decrease",
+    "bytes": "select(S: N_S(0x03103067), C: N_S(0x00800000))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P4-033",
+    "protocol": "P4",
+    "action": "foot massage intensity increase",
+    "bytes": "select(S: N_S(0x03103068), C: N_S(0x00000400))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P4-034",
+    "protocol": "P4",
+    "action": "foot massage intensity decrease",
+    "bytes": "select(S: N_S(0x03103069), C: N_S(0x01000000))",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P4-035",
+    "protocol": "P4",
+    "action": "both-zone massage intensity increase",
+    "bytes": "N_S(0x00000c00); maker-selector S branch returns without a write for Part(3)",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P4-036",
+    "protocol": "P4",
+    "action": "both-zone massage intensity decrease",
+    "bytes": "N_S(0x01800000); maker-selector S branch returns without a write for Part(3)",
+    "timing": "Repeat every 100 ms, count=-1, until replaced or cancelled. First timer tick is 100 ms after start; busy ticks are skipped.",
+    "release_behavior": "UI release/cancel calls HomeController::_stop(clear=false), replacing repetition with queued STOP N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise. Disposal ends repetition without a guaranteed hardware STOP."
+  },
+  {
+    "id": "CMD-P4-037",
+    "protocol": "P4",
+    "action": "massage toggle",
+    "bytes": "2 copies of select(S: N_S(0x0310305a), C: N_C(0x00000100)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Three FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP."
+  },
+  {
+    "id": "CMD-P4-038",
+    "protocol": "P4",
+    "action": "massage off",
+    "bytes": "2 copies of select(S: N_S(0x0310306f), C: N_C(0x02000000)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Three FIFO frames at available 100 ms ticks.",
+    "release_behavior": "Final queued STOP."
+  },
+  {
+    "id": "CMD-P4-039",
+    "protocol": "P4",
+    "action": "massage duration 600 seconds",
+    "bytes": "select(S: E_S(7,1), C: E_C(7,1)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Two FIFO frames.",
+    "release_behavior": "Final queued STOP."
+  },
+  {
+    "id": "CMD-P4-040",
+    "protocol": "P4",
+    "action": "massage duration 1200 seconds",
+    "bytes": "select(S: E_S(7,2), C: E_C(7,2)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Two FIFO frames.",
+    "release_behavior": "Final queued STOP."
+  },
+  {
+    "id": "CMD-P4-041",
+    "protocol": "P4",
+    "action": "massage duration 1800 seconds",
+    "bytes": "select(S: E_S(7,3), C: E_C(7,3)), then N_S(0x0310300f) when manufacturer selector is S; N_C(0) otherwise",
+    "timing": "Two FIFO frames.",
+    "release_behavior": "Final queued STOP."
+  },
+  {
+    "id": "CMD-P4-042",
+    "protocol": "P4",
+    "action": "massage duration zero",
+    "bytes": "Delegates to massage off (two identical normal frames and STOP).",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "See massage off. Other nonzero values except 600/1200/1800 return without writing."
+  },
+  {
+    "id": "CMD-P4-043",
+    "protocol": "P4",
+    "action": "internal progress target",
+    "bytes": "select(S: P_S(axis,target), C: P_C(axis,target)); axis 0..4 selected by Part 1/2/4/8/16",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One target, progression waits for A5 0D stopped status; new manual movement/STOP clears internal progress queue."
+  },
+  {
+    "id": "CMD-P4-044",
+    "protocol": "P4",
+    "action": "light/color cycle",
+    "bytes": "N_S(0x03103070), then N_S(0x0310300f)",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One action frame then one S STOP; both maker-selector states use S."
+  },
+  {
+    "id": "CMD-P4-045",
+    "protocol": "P4",
+    "action": "light on",
+    "bytes": "N_S(0x03103073), then N_S(0x0310300f)",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One action frame then one S STOP; both maker-selector states use S."
+  },
+  {
+    "id": "CMD-P4-046",
+    "protocol": "P4",
+    "action": "light off",
+    "bytes": "N_S(0x03103074), then N_S(0x0310300f)",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One action frame then one S STOP; both maker-selector states use S."
+  },
+  {
+    "id": "CMD-P4-047",
+    "protocol": "P4",
+    "action": "light mode (argument ignored)",
+    "bytes": "N_S(0x03103089), then N_S(0x0310300f)",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One action frame then one S STOP; both maker-selector states use S."
+  },
+  {
+    "id": "CMD-P4-048",
+    "protocol": "P4",
+    "action": "brightness level 1..6",
+    "bytes": "E_S(0,level), then N_S(0x0310300f)",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "S STOP follows; invalid levels ignored."
+  },
+  {
+    "id": "CMD-P4-049",
+    "protocol": "P4",
+    "action": "query status",
+    "bytes": "5a b0 00 a5",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One query; no release."
+  },
+  {
+    "id": "CMD-P4-050",
+    "protocol": "P4",
+    "action": "connection keep-open",
+    "bytes": "5a 0b 00 a5",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One initialization frame, conditional on maker selector S."
+  },
+  {
+    "id": "CMD-P4-051",
+    "protocol": "P4",
+    "action": "clock correction at connection",
+    "bytes": "Uint8List([0x5a,0x14,7,(localYear-4000),month,day,weekday,hour,minute,second,0xa5]); byte narrowing modulo 256",
+    "timing": "Queue one frame; sender writes at the next available 100 ms tick.",
+    "release_behavior": "One frame, no STOP; calibrationTime runs after superclass initialization returns, retaining its success boolean."
+  }
+]

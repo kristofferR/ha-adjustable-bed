@@ -29,7 +29,7 @@ import {
   pairedChildDeviceIds,
   resolvePairedParentId,
 } from "./discovery";
-import { MotorHold, movementPulse } from "./hold";
+import { MotorHold, heldButtonMotor, movementHold, movementPulse } from "./hold";
 import { cardNavigationPath, compactActions, compactStopEntities } from "./compact";
 import { localize } from "./localize";
 import {
@@ -90,6 +90,7 @@ export class AdjustableBedCard extends LitElement {
   // wiring and the service calls it drives.
   private readonly _hold = new MotorHold({
     pulse: (m, dir) => movementPulse(this.hass, m, dir),
+    holdControl: (m, dir) => movementHold(this.hass, m, dir),
     stopCover: (cover, stopEntityId) =>
       this._stopCompactTarget(cover, stopEntityId ?? cover),
     // Which stop applies depends on the bed the held motor belongs to, so it is
@@ -1046,7 +1047,7 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _utility(bed: BedEntities): typeof nothing | TemplateResult {
-    if (bed.utility.length === 0 && !bed.utilitySelects?.length) return nothing;
+    if (bed.utility.length === 0 && !bed.utilitySelects?.length && !bed.utilityStates?.length) return nothing;
     return html`
       ${this._heading("section.utility")}
       <div class="tiles">
@@ -1059,6 +1060,7 @@ export class AdjustableBedCard extends LitElement {
         )}
       </div>
       ${bed.utilitySelects?.map((id) => this._moreInfoRow(id))}
+      ${bed.utilityStates?.map((id) => this._moreInfoRow(id))}
     `;
   }
 
@@ -1144,6 +1146,7 @@ export class AdjustableBedCard extends LitElement {
       ${l.mood && floor ? this._subheading("lighting.floor") : nothing}
       ${main ? this._toggleRow(main) : nothing}
       ${l.state ? this._moreInfoRow(l.state) : nothing}
+      ${l.states?.map((id) => this._moreInfoRow(id))}
       ${l.level ? this._moreInfoRow(l.level) : nothing}
       ${l.timer ? this._moreInfoRow(l.timer) : nothing}
       ${l.timerMinutes ? this._moreInfoRow(l.timerMinutes) : nothing}
@@ -1181,7 +1184,12 @@ export class AdjustableBedCard extends LitElement {
       ${
         m.buttons.length
           ? html`<div class="tiles">
-              ${m.buttons.map((id) => this._tile(id, () => this._press(id)))}
+              ${m.buttons.map((id) => {
+                const held = heldButtonMotor(this.hass, id);
+                return held
+                  ? this._heldActionTile(id, held, bed.stop)
+                  : this._tile(id, () => this._press(id));
+              })}
             </div>`
           : nothing
       }
@@ -1190,6 +1198,26 @@ export class AdjustableBedCard extends LitElement {
       ${m.states?.map((id) => this._moreInfoRow(id))}
       ${m.timer ? this._moreInfoRow(m.timer) : nothing}
     `;
+  }
+
+  private _heldActionTile(
+    entityId: string,
+    motor: MotorEntity,
+    stopId?: string,
+  ): TemplateResult {
+    return html`<button class="tile"
+      aria-label=${this._name(entityId)}
+      @pointerdown=${(e: PointerEvent) => this._startHold(e, motor, "up", stopId)}
+      @pointerup=${(e: PointerEvent) => this._endPointerHold(e, motor)}
+      @pointercancel=${(e: PointerEvent) => this._endPointerHold(e, motor)}
+      @keydown=${(e: KeyboardEvent) => this._startHold(e, motor, "up", stopId)}
+      @keyup=${(e: KeyboardEvent) => this._endKeyHold(e, motor)}
+      @blur=${() => this._endHold(motor)}
+      @click=${(e: MouseEvent) => this._activateWithoutPointer(e, motor, "up", stopId)}
+      ?disabled=${!stopId || !this._available(entityId)}>
+      ${this._icon(entityId)}
+      <span class="tile-label">${this._name(entityId)}</span>
+    </button>`;
   }
 
   private _climate(bed: BedEntities): typeof nothing | TemplateResult {
@@ -1417,6 +1445,7 @@ export class AdjustableBedCard extends LitElement {
       bed.lights.light,
       bed.lights.switch,
       bed.lights.state,
+      ...(bed.lights.states ?? []),
       bed.lights.level,
       bed.lights.toggle,
       bed.lights.cycle,
@@ -1437,6 +1466,7 @@ export class AdjustableBedCard extends LitElement {
     bed.lights.mood?.buttons?.forEach((x) => ids.add(x));
     bed.utility.forEach((x) => ids.add(x));
     bed.utilitySelects?.forEach((x) => ids.add(x));
+    bed.utilityStates?.forEach((x) => ids.add(x));
     bed.climate.entities.forEach((x) => ids.add(x));
     bed.climate.selects.forEach((x) => ids.add(x));
     bed.climate.numbers.forEach((x) => ids.add(x));
