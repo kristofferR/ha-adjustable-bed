@@ -3020,10 +3020,8 @@ class AdjustableBedCoordinator:
         if self._disconnect_after_operation_enabled():
             return False
 
-        # Retaining an RF eco BT link (staircase, or FurniMove on that receiver)
-        # must not disable recovery from an unexpected drop. Other FurniMove
-        # receivers are not persistent, so this changes nothing for them.
-        if self._bed_type in (BED_TYPE_OKIN_RF_ECO_BT, BED_TYPE_FURNIMOVE):
+        # Retaining the staircase link must not disable recovery from an unexpected drop.
+        if self._bed_type == BED_TYPE_OKIN_RF_ECO_BT:
             return True
 
         # LP Comfort Connect is kept connected conservatively, and the new bond
@@ -4414,11 +4412,6 @@ class AdjustableBedCoordinator:
                         "controller startup", attempt_details, attempt_start
                     )
                     continue
-
-                # Startup reads can settle persistence (FurniMove's receiver model).
-                self._persistent_connection_resolved = (
-                    self._controller.requires_persistent_connection
-                )
 
                 if reset_timer:
                     self._reset_disconnect_timer()
