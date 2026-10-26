@@ -1046,7 +1046,7 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _utility(bed: BedEntities): typeof nothing | TemplateResult {
-    if (bed.utility.length === 0 && !bed.utilitySelects?.length) return nothing;
+    if (bed.utility.length === 0 && !bed.utilitySelects?.length && !bed.utilityInfo?.length) return nothing;
     return html`
       ${this._heading("section.utility")}
       <div class="tiles">
@@ -1059,6 +1059,7 @@ export class AdjustableBedCard extends LitElement {
         )}
       </div>
       ${bed.utilitySelects?.map((id) => this._moreInfoRow(id))}
+      ${bed.utilityInfo?.map((id) => this._moreInfoRow(id))}
     `;
   }
 
@@ -1437,6 +1438,7 @@ export class AdjustableBedCard extends LitElement {
     bed.lights.mood?.buttons?.forEach((x) => ids.add(x));
     bed.utility.forEach((x) => ids.add(x));
     bed.utilitySelects?.forEach((x) => ids.add(x));
+    bed.utilityInfo?.forEach((x) => ids.add(x));
     bed.climate.entities.forEach((x) => ids.add(x));
     bed.climate.selects.forEach((x) => ids.add(x));
     bed.climate.numbers.forEach((x) => ids.add(x));

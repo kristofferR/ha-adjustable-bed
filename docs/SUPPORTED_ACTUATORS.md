@@ -47,7 +47,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Customatic](beds/customatic.md) | Clarity, Jerome's C and Remedy apps: back and legs (Remedy adds lumbar), memory page, light toggle |
 | [Customatic Z-Series](beds/customatic-z-series.md), [Jordan's Serenity](beds/serenity.md), [Jordan's Tranquil](beds/tranquil.md) | OKIN CST 14-byte apps: head/foot and selector controls, presets, saved positions, massage; Z-230/Z-280 pages |
 | [SIMMONS](beds/simmons.md) / [Adjustable bed (Lumbar)](beds/adjustable-lumbar.md) apps | OKIN apps whose command table follows the Bluetooth name: regular or inclined SIMMONS beds; head, foot and lumbar |
-| [Okin CST](beds/okin-cst.md) | 14-byte dual-field protocol (Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; Nectar Motion) |
+| [Okin CST](beds/okin-cst.md) | 14-byte dual-field protocol (Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; explicit Nectar Move app profile) |
 | [FurniMove / OKIN Smart Remote app](beds/furnimove.md) | Explicit handset layouts from production API tables; RF, ordinary and DOT transports |
 | [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md) | Single stair actuator for Elda BTH / MEGAMAT |
 | [Okin DOT](beds/okin-dot.md) | Handset-specific motor, memory and light controls (RF34/RF6707; new RF1058 setups use FurniMove) |
@@ -81,7 +81,7 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
 | [Malouf](beds/malouf.md) | 8-byte New OKIN / 9-byte Legacy OKIN | Nordic UART or FFE5 | ❌ No | Service UUID detection |
 | [Keeson/Ergomotion](beds/keeson.md) | 8-byte (32-bit cmd) | Nordic UART | ❌ No | Name patterns |
 | [Okin CB35](beds/okin-cb35.md) | 7-byte (1-byte cmd) | Nordic UART | ❌ No | Name starts with "Star35" |
-| [Okin CST](beds/okin-cst.md) | 14-byte (dual 32-bit) | UUID `62741525-...` | ✅ Yes | Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; Nectar Motion; some `OKIN-*` bases |
+| [Okin CST](beds/okin-cst.md) | 14-byte (dual 32-bit) | UUID `62741525-...` | Most profiles | Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; explicit Nectar Move app profile; some `OKIN-*` bases |
 | [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md) | 6-byte (32-bit cmd) | UUID `62741525-...` | Unknown | Manual selection; diagnostics can match CSS GATT signature |
 
 **Key differences:**

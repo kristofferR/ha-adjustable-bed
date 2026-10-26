@@ -1110,6 +1110,9 @@
       "preset_lounge": {
         "name": "Lounge"
       },
+      "preset_reading": {
+        "name": "Reading"
+      },
       "preset_swing": {
         "name": "Swing"
       },
@@ -3612,6 +3615,9 @@
       },
       "ble_connection": {
         "name": "BLE Connection"
+      },
+      "memory_save_response_observed": {
+        "name": "Memory save response observed"
       },
       "bed_presence": {
         "name": "Bed Presence"

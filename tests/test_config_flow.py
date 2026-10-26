@@ -139,6 +139,7 @@ from custom_components.adjustable_bed.const import (
     OCTO_VARIANT_STAR2,
     OKIN_CST_VARIANT_CAREFREE,
     OKIN_CST_VARIANT_MF900,
+    OKIN_CST_VARIANT_NECTAR_MOVE,
     PAIR_MODE_SEPARATE_ADDRESS,
     RICHMAT_REMOTE_LP_QRRM,
     RICHMAT_WILINKE_SERVICE_UUIDS,
@@ -152,7 +153,11 @@ from custom_components.adjustable_bed.const import (
     get_motor_pulse_defaults,
     requires_pairing,
 )
-from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES, detect_bed_type
+from custom_components.adjustable_bed.detection import (
+    BED_TYPE_DISPLAY_NAMES,
+    bed_type_choice,
+    detect_bed_type,
+)
 from custom_components.adjustable_bed.discovery_settings import (
     async_is_discovery_disabled,
     async_set_discovery_disabled,
@@ -2385,6 +2390,43 @@ class TestBluetoothDiscoveryFlow:
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_BED_TYPE] == BED_TYPE_OKIN_64BIT
 
+    async def test_bluetooth_confirm_explicitly_selects_nectar_move_without_pairing(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_ambiguous_okin: MagicMock,
+        enable_custom_integrations,
+    ) -> None:
+        """The app profile is selectable after ambiguity and skips only app bonding."""
+        del enable_custom_integrations
+        choice = bed_type_choice(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE)
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info_ambiguous_okin,
+        )
+        assert result["step_id"] == "bluetooth_disambiguate"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={"bed_type_choice": "show_all"}
+        )
+        assert result["step_id"] == "bluetooth_confirm"
+
+        with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={
+                    CONF_BED_TYPE: choice,
+                    CONF_NAME: "Nectar Move",
+                    CONF_MOTOR_COUNT: 2,
+                    CONF_HAS_MASSAGE: False,
+                    CONF_DISABLE_ANGLE_SENSING: True,
+                    CONF_PREFERRED_ADAPTER: "auto",
+                },
+            )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_BED_TYPE] == BED_TYPE_OKIN_CST
+        assert result["data"][CONF_PROTOCOL_VARIANT] == OKIN_CST_VARIANT_NECTAR_MOVE
+
     async def test_bluetooth_confirm_auto_detect_ambiguous_reprompts(
         self,
         hass: HomeAssistant,
@@ -2862,6 +2904,100 @@ class TestManualFlow:
         result = await _complete_setup_pairing(hass, result)
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_MOTOR_COUNT] == 3
+
+    async def test_manual_entry_selects_nectar_move_without_pairing(
+        self, hass: HomeAssistant, enable_custom_integrations
+    ) -> None:
+        """The manual app choice persists the variant and does not request bonding."""
+        del enable_custom_integrations
+        with patch(
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+            return_value=[],
+        ):
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_USER},
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], user_input={CONF_ADDRESS: "manual"}
+            )
+
+        choice = bed_type_choice(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE)
+        with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={
+                    CONF_ADDRESS: "11:22:33:44:55:67",
+                    CONF_BED_TYPE: choice,
+                    CONF_NAME: "Nectar Move",
+                    CONF_MOTOR_COUNT: 3,
+                    CONF_HAS_MASSAGE: False,
+                    CONF_DISABLE_ANGLE_SENSING: True,
+                    CONF_PREFERRED_ADAPTER: "auto",
+                },
+            )
+            result = await _advance_progress(hass, result)
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_BED_TYPE] == BED_TYPE_OKIN_CST
+        assert result["data"][CONF_PROTOCOL_VARIANT] == OKIN_CST_VARIANT_NECTAR_MOVE
+        assert result["data"][CONF_MOTOR_COUNT] == 2
+
+    async def test_two_tier_okin_choice_sets_up_nectar_move(
+        self, hass: HomeAssistant, enable_custom_integrations
+    ) -> None:
+        """The app is findable by name in the Okin two-tier setup path."""
+        del enable_custom_integrations
+        from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
+
+        variants = ACTUATOR_GROUPS["okin"]["variants"]
+        assert variants is not None
+        nectar_index = next(
+            index
+            for index, variant in enumerate(variants)
+            if variant.get("variant") == OKIN_CST_VARIANT_NECTAR_MOVE
+        )
+        with patch(
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+            return_value=[],
+        ):
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_USER},
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], user_input={CONF_ADDRESS: "select_by_brand"}
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], user_input={"actuator_brand": "okin"}
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], user_input={"variant": str(nectar_index)}
+            )
+
+        assert result["step_id"] == "manual_entry"
+        markers = {marker.schema for marker in result["data_schema"].schema}
+        assert CONF_MOTOR_COUNT not in markers
+        assert CONF_HAS_MASSAGE not in markers
+        assert CONF_MOTOR_PULSE_COUNT not in markers
+        assert CONF_MOTOR_PULSE_DELAY_MS not in markers
+
+        choice = bed_type_choice(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE)
+        with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={
+                    CONF_ADDRESS: "11:22:33:44:55:68",
+                    CONF_BED_TYPE: choice,
+                    CONF_NAME: "Nectar Move",
+                    CONF_PREFERRED_ADAPTER: "auto",
+                },
+            )
+            result = await _advance_progress(hass, result)
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_BED_TYPE] == BED_TYPE_OKIN_CST
+        assert result["data"][CONF_PROTOCOL_VARIANT] == OKIN_CST_VARIANT_NECTAR_MOVE
 
     async def test_manual_entry_malouf_collects_layout(
         self, hass: HomeAssistant, enable_custom_integrations
@@ -3800,6 +3936,55 @@ class TestOptionsFlow:
         assert entry.data[CONF_MOTOR_PULSE_COUNT] == 10
         assert entry.data[CONF_MOTOR_PULSE_DELAY_MS] == 100
 
+    async def test_options_flow_reconfigures_to_nectar_move_profile(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ) -> None:
+        """Nectar Move can be selected in Configure and hides app-owned fields."""
+        del enable_custom_integrations
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="OKIN CST",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:96",
+                CONF_NAME: "OKIN Receiver",
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_MF900,
+                CONF_MOTOR_COUNT: 3,
+                CONF_HAS_MASSAGE: False,
+            },
+            unique_id="AA:BB:CC:DD:EE:96",
+        )
+        entry.add_to_hass(hass)
+
+        choice = bed_type_choice(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE)
+        initial = await _open_options_form(hass, entry.entry_id)
+        bed_type_marker = next(
+            marker for marker in initial["data_schema"].schema if marker.schema == CONF_BED_TYPE
+        )
+        selector = initial["data_schema"].schema[bed_type_marker]
+        assert choice in {option["value"] for option in selector.config["options"]}
+
+        rebuilt = await hass.config_entries.options.async_configure(
+            initial["flow_id"], user_input={CONF_BED_TYPE: choice}
+        )
+        assert rebuilt["type"] == FlowResultType.FORM
+        markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
+        assert CONF_MOTOR_COUNT not in markers
+        assert CONF_HAS_MASSAGE not in markers
+        assert CONF_DISABLE_ANGLE_SENSING not in markers
+        assert CONF_MOTOR_PULSE_COUNT not in markers
+        assert CONF_MOTOR_PULSE_DELAY_MS not in markers
+
+        saved = await hass.config_entries.options.async_configure(
+            rebuilt["flow_id"], user_input={CONF_BED_TYPE: choice}
+        )
+        assert saved["type"] == FlowResultType.CREATE_ENTRY
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_CST
+        assert entry.data[CONF_PROTOCOL_VARIANT] == OKIN_CST_VARIANT_NECTAR_MOVE
+        assert entry.data[CONF_MOTOR_COUNT] == 2
+
     async def test_options_flow_rebuilds_position_fields_for_variant_change(
         self,
         hass: HomeAssistant,
@@ -3945,6 +4130,70 @@ class TestOptionsFlow:
             assert child[CONF_MOTOR_COUNT] == expected_count
             if bed_type == BED_TYPE_KEESON:
                 assert child[CONF_DISABLE_ANGLE_SENSING] is False
+
+    async def test_mixed_nectar_move_pair_refuses_shared_variant_change(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """A shared options form cannot overwrite either side's app variant."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Mixed OKIN CST Bed",
+            data={
+                CONF_NAME: "Mixed OKIN CST Bed",
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_MOTOR_COUNT: 2,
+                CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_NECTAR_MOVE,
+                CONF_PAIR_ID: "pair_mixed_nectar_move",
+                CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
+                CONF_PAIR_MEMBER_ADDRESSES: [
+                    "AA:BB:CC:DD:EE:91",
+                    "AA:BB:CC:DD:EE:92",
+                ],
+                CONF_PAIR_CHILDREN: [
+                    {
+                        CONF_SIDE: SIDE_LEFT,
+                        CONF_ADDRESS: "AA:BB:CC:DD:EE:91",
+                        CONF_NAME: "Nectar Move",
+                        CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                        CONF_MOTOR_COUNT: 2,
+                        CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_NECTAR_MOVE,
+                    },
+                    {
+                        CONF_SIDE: SIDE_RIGHT,
+                        CONF_ADDRESS: "AA:BB:CC:DD:EE:92",
+                        CONF_NAME: "MF900",
+                        CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                        CONF_MOTOR_COUNT: 3,
+                        CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_MF900,
+                    },
+                ],
+            },
+            unique_id="pair_mixed_nectar_move",
+            entry_id="pair_mixed_nectar_move",
+        )
+        entry.add_to_hass(hass)
+        flow = AdjustableBedOptionsFlow(entry)
+        flow.hass = hass
+        flow.handler = entry.entry_id
+
+        form = await flow._async_options_form(None, step_id="settings")
+        refused = await flow._async_options_form(
+            {
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_MF900,
+            },
+            step_id="settings",
+        )
+
+        assert form["type"] == FlowResultType.FORM
+        assert refused["type"] == FlowResultType.FORM
+        assert refused["errors"][CONF_PROTOCOL_VARIANT] == "app_profile_unpair_first"
+        assert refused["description_placeholders"]["profile"] == "Nectar Move"
+        assert [child[CONF_PROTOCOL_VARIANT] for child in entry.data[CONF_PAIR_CHILDREN]] == [
+            OKIN_CST_VARIANT_NECTAR_MOVE,
+            OKIN_CST_VARIANT_MF900,
+        ]
 
     async def test_paired_bed_type_change_uses_new_protocol_defaults(
         self,

@@ -153,6 +153,7 @@ export interface BedEntities {
   climate: { entities: string[]; selects: string[]; numbers: string[] }; // numbers: fan_level
   utility: string[]; // button.* sync_positions / child_lock_toggle
   utilitySelects?: string[]; // select.* active app/module surface
+  utilityInfo?: string[]; // read-only binary_sensor.* controller diagnostics
 }
 
 // Replaced at build time with the integration version (see build.mjs).

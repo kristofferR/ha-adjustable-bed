@@ -1577,6 +1577,7 @@ OKIN_CST_VARIANT_CAREFREE: Final = "cst_carefree"
 OKIN_CST_VARIANT_CLARITY: Final = "cst_clarity"
 OKIN_CST_VARIANT_MF900: Final = "cst_mf900"
 OKIN_CST_VARIANT_SUPPORT: Final = "cst_support"
+OKIN_CST_VARIANT_NECTAR_MOVE: Final = "cst_nectar_move"
 OKIN_CST_VARIANTS: Final = {
     VARIANT_AUTO: "Auto (MF900 profile)",
     OKIN_CST_VARIANT_SANCTUARY: "Rize Sanctuary",
@@ -1588,6 +1589,7 @@ OKIN_CST_VARIANTS: Final = {
     OKIN_CST_VARIANT_CLARITY: "Rize II Clarity",
     OKIN_CST_VARIANT_MF900: "Rize MF900 / Mattress Firm 900-O",
     OKIN_CST_VARIANT_SUPPORT: "Support",
+    OKIN_CST_VARIANT_NECTAR_MOVE: "Nectar Move",
 }
 OKIN_CST_THREE_MOTOR_VARIANTS: Final = frozenset(
     {
@@ -2629,6 +2631,10 @@ def requires_pairing(bed_type: str, protocol_variant: str | None = None) -> bool
     Returns:
         True if this bed/variant combination requires OS-level BLE pairing
     """
+    # The app has no bond request; a real GATT auth failure still uses HA recovery.
+    if bed_type == BED_TYPE_OKIN_CST and protocol_variant == OKIN_CST_VARIANT_NECTAR_MOVE:
+        return False
+
     # Direct bed type match
     if bed_type in BEDS_REQUIRING_PAIRING:
         return True
@@ -2637,6 +2643,15 @@ def requires_pairing(bed_type: str, protocol_variant: str | None = None) -> bool
         if protocol_variant in BED_TYPE_VARIANTS_REQUIRING_PAIRING[bed_type]:
             return True
     return False
+
+
+def supports_runtime_authentication_recovery(
+    bed_type: str, protocol_variant: str | None = None
+) -> bool:
+    """Return whether an observed GATT auth failure should offer bond repair."""
+    return requires_pairing(bed_type, protocol_variant) or (
+        bed_type == BED_TYPE_OKIN_CST and protocol_variant == OKIN_CST_VARIANT_NECTAR_MOVE
+    )
 
 
 def requires_pairing_after_service_discovery(

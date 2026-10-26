@@ -180,6 +180,14 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         required_capability="supports_preset_lounge",
     ),
     AdjustableBedButtonEntityDescription(
+        key="preset_reading",
+        translation_key="preset_reading",
+        icon="mdi:book-open-page-variant",
+        press_fn=lambda ctrl: ctrl.preset_reading(),
+        cancel_movement=True,
+        required_capability="supports_preset_reading",
+    ),
+    AdjustableBedButtonEntityDescription(
         key="preset_swing",
         translation_key="preset_swing",
         icon="mdi:bed-clock",
@@ -445,7 +453,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_intensity_up(),
-        required_capability="supports_massage_intensity_step_control",
+        required_capability="supports_massage_intensity_up_control",
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_all_down",

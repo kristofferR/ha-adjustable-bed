@@ -1127,6 +1127,11 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_preset_reading(self) -> bool:
+        """Return True if bed supports a Reading preset."""
+        return False
+
+    @property
     def supports_preset_swing(self) -> bool:
         """Return True if bed supports a physical swing/rocking mode."""
         return False
@@ -1771,6 +1776,11 @@ class BedController(ABC):
         )
 
     @property
+    def supports_massage_intensity_up_control(self) -> bool:
+        """Return True if the controller exposes an overall massage increase."""
+        return self.supports_massage_intensity_step_control
+
+    @property
     def supports_head_massage_toggle_control(self) -> bool:
         """Return True if the controller exposes head-zone massage toggle control."""
         return type(self).massage_head_toggle is not BedController.massage_head_toggle
@@ -2302,6 +2312,10 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't support this preset
         """
         raise NotImplementedError("Anti-snore preset not supported on this bed")
+
+    async def preset_reading(self) -> None:
+        """Move bed to a Reading position when the selected app exposes it."""
+        raise NotImplementedError("Reading preset not supported on this bed")
 
     async def preset_tv(self) -> None:
         """Move bed to TV/lounge position.

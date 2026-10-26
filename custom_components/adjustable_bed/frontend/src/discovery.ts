@@ -63,6 +63,7 @@ export const PRESET_ORDER = [
   "preset_anti_snore",
   "preset_tv",
   "preset_lounge",
+  "preset_reading",
   "preset_swing",
   "preset_incline",
   "preset_both_up",
@@ -341,6 +342,7 @@ export function bedEntitiesForDevice(
 
       case "binary_sensor":
         if (key === "ble_connection") bed.connectivity = id;
+        else if (key === "memory_save_response_observed") (bed.utilityInfo ??= []).push(id);
         else if (key === "sleeptracker_wind_down_running") (bed.massage.states ??= []).push(id);
         else if (key === "under_bed_lights" || key === "adjustable_lite_light" || key === "innova_light" || key === "sleeptracker_light_on") bed.lights.state = id;
         else if (key.startsWith("bed_presence")) bed.presence.push(id);
@@ -492,6 +494,7 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     bed.climate.numbers.length === 0 &&
     bed.utility.length === 0 &&
     !bed.utilitySelects?.length
+    && !bed.utilityInfo?.length
   );
 }
 

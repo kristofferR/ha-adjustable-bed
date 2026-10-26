@@ -35,6 +35,9 @@ The [S02 Sleeptracker disposition ledger](apk-analysis/dispositions/S02-sleeptra
 maps the accepted 3.6.2 audit to the separate [processor integration](beds/sleeptracker.md),
 including direct BLE controls, explicit exclusions and hardware validation status.
 
+The [row042 Nectar Move ledger](apk-analysis/dispositions/row042-nectar-motion.md)
+maps all 43 accepted comparison rows to implementation proof or exact exclusions.
+
 ## Development and Validation
 
 Work from `main` for v4 changes. Development uses Python **3.14.2+** with

@@ -10,7 +10,7 @@ cluster reconciliation
 - Rize Sanctuary, Resident, Aviada, Bob, and Contempo
 - Rize II Carefree and Rize II Clarity
 - Support
-- Nectar Motion / some `OKIN-*` Nectar bases
+- Nectar Motion using the Nectar Move app profile
 
 ## Detection
 
@@ -19,7 +19,7 @@ cluster reconciliation
 | Service UUID | `62741523-52f9-8864-b1ab-3b3a8d65950b` (standard OKIN) |
 | Name patterns | Varies (shared UUID requires disambiguation; some report as `OKIN-XXXXXX`) |
 | Connected GATT hint | CSS `90311623-...` plus Nordic DFU `00001530-...` is ambiguous and requires another identity signal |
-| BLE Pairing | Required |
+| BLE Pairing | Required for most profiles; Nectar Move does not proactively request a bond |
 
 Manual selection may be needed since the service UUID is shared with other Okin protocols.
 The shared UUID and the official apps' common `OKIN-*` name filter do not
@@ -56,6 +56,11 @@ re-pairs on the next attempt, and surfaces a **"Bluetooth pairing required"** re
 with a guided **Fix** button. ESPHome Bluetooth proxies can pair only on ESPHome
 ≥ 2024.3.0; a local adapter near the bed is the most reliable for the first bond.
 
+Nectar Move's accepted app has no app-issued bond request or authentication gate. Its
+profile therefore skips proactive pairing. Home Assistant still routes an
+actual GATT authentication failure through the existing bond-recovery repair;
+this does not change pairing policy for other CST profiles.
+
 ## Protocol
 
 Uses a 14-byte command format with two separate 32-bit fields:
@@ -67,9 +72,10 @@ Uses a 14-byte command format with two separate 32-bit fields:
 - **Primary field** (bytes 2-5): Head, foot, and lumbar motor control plus
   presets, memory-save chords, light toggle, massage stop, and intensity
 - **Secondary field** (bytes 6-9): Discrete light on/off and massage wave modes
-- **Write characteristic:** `62741525-...`; the app leaves the characteristic's
-  runtime/default write type unchanged, while the captured hardware advertises
-  the `write` property
+- **Write characteristic:** `62741525-...`; the accepted Android app does not
+  set a numeric write type. Home Assistant retains its existing
+  write-with-response integration policy; the effective hardware behavior is
+  deferred for real-user validation.
 - **Notify characteristic:** `62741625-...`; the app only watches byte 10 for a
   generic change and does not decode motor positions
 
@@ -136,7 +142,7 @@ Bob and Support use the same primary-only zone-increase fields as Sanctuary and
 Resident. Every product with massage uses the shared wave and massage-off
 fields above.
 
-### Timing
+### Timing for cluster 011 profiles
 
 The Android app sends the active command immediately and every 100 ms while a
 button is held. On release it sends the all-zero STOP frame twice, at +100 ms and
@@ -144,6 +150,12 @@ button is held. On release it sends the all-zero STOP frame twice, at +100 ms an
 streams for 500 ms before the same delayed STOP cleanup. Home Assistant uses that
 fixed one-shot cadence for button entities and keeps motor movement duration
 configurable.
+
+Nectar Move uses the same 100 ms held-command refresh and delayed STOP pair, but
+its app also repeats every other reachable action only while held. Home
+Assistant motors use coordinator cancellation for that held stream. Stateless
+preset, save, light, and massage buttons send one selected frame, then STOP at
++100 ms and +200 ms as a bounded Home Assistant tap mapping.
 
 ### Memory Slots
 
@@ -173,6 +185,7 @@ exposes only Zero-G. The other profiles use the three MF900 mappings above.
 | Clarity II | Head, foot | Anti-snore, lounge, Zero-G, incline | 3 | Global intensity, 3 waves, off | Toggle and discrete on/off |
 | MF900 | Head, foot, lumbar | Anti-snore, lounge, Zero-G, incline | 3 | Global intensity, 3 waves, off | Toggle and discrete on/off |
 | Support | Head, foot, lumbar | Anti-snore, lounge, Zero-G, incline | 3 | Head/foot intensity, 3 waves, off | Toggle and discrete on/off |
+| Nectar Move | Head, feet (app axes; physical semantics unverified) | Anti, Zero Gravity, Reading | 2: Zero Gravity, Reading | Increase only | Toggle only |
 
 The zoned decrease frames are not interchangeable. Bob routes both zone-down
 commands through both CST fields, Support routes foot-down through only the
@@ -187,6 +200,35 @@ the product profile is therefore required for safe zoned massage controls.
 - Under-bed light controls on every profile except Resident
 - No decoded motor-position feedback
 
+## Nectar Move profile
+
+Choose **Nectar Move** in setup or the Protocol variant options. No shared OKIN
+name, UUID, or Device Information result selects it. The profile is opt-in and
+keeps the other CST application profiles unchanged.
+
+The app exposes two axes labelled Head and Feet. Those are app-control labels;
+the receiver's physical actuator semantics have not been verified. Position
+feedback is not supported. The preset buttons are Flat, Anti, Zero Gravity, and
+Reading. The two saveable slots are Zero Gravity and Reading. Reading has its
+own stable entity name and does not rename Lounge in other profiles.
+
+Under-bed lighting is an assumed-state toggle only. Massage exposes one
+combined intensity-increase button. It has no decrease, off, start/toggle,
+head/foot, wave, timer, level, or state action. Notification byte 10 is tracked
+only while a memory save is pending; a changed signed byte emits the
+`Memory save response observed` diagnostic. That signal is not proof that a
+physical memory was stored, and no position or device state is inferred from
+the byte.
+
+The Android app leaves the write characteristic's write type at its runtime
+default. The integration continues to use the existing write-with-response
+policy; the accepted artifact does not establish the receiver's effective
+write mode or required characteristic properties.
+
+Hardware checks remain deferred for real users after a beta or release:
+effective write behavior, physical axis and preset meaning, notification byte
+meaning, and receiver repeat/STOP semantics. They are not implementation work.
+
 ## Relationship to Other Okin Protocols
 
 Many command values match Okimat/Okin UUID values. CST differs in packet framing
@@ -195,8 +237,8 @@ and in which 32-bit field carries each remote action.
 ## App
 
 - **Android:** the nine product packages listed in the source table below
-- **Android:** `com.okin.bedding.nectarmotion` (historically associated with this
-  profile; not part of this clean-room run)
+- **Android:** `com.okin.bedding.nectarmotion` 1.0.1 (2), Nectar Move profile;
+  row042 accepted audit and convergence proof
 
 ## Source
 
