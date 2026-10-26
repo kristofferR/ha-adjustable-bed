@@ -13,8 +13,12 @@ from bleak.exc import BleakError
 from .beds.octo import (
     OCTO_FEATURE_END,
     OCTO_FEATURE_PIN,
+    OCTO_SESSION_RESPONSE_TIMEOUT,
     OCTO_SYSTEM_FROM_DEVICE,
+    OCTO_SYSTEM_GET_CAPS,
+    OCTO_SYSTEM_GET_DEVICEINFO,
     OCTO_SYSTEM_PIN_STATE,
+    OCTO_SYSTEM_PING,
     OctoPacketCodec,
 )
 from .const import (
@@ -50,9 +54,9 @@ async def async_verify_octo_pin(
 ) -> OctoPinStatus:
     """Discover PIN requirements, then wait for the submitted PIN's reply.
 
-    Uses the frozen OCTO Smart Control 1.03.01 PIN report: discovery precedes
-    authentication, and SYSTEM/PIN_STATE value 1 proves acceptance. This sends
-    no movement, PIN-setting, or PIN-clearing commands and starts no keepalive.
+    Replays the app's ordered ping, exact device-info response, capability
+    discovery and PIN state proof. This sends no movement or PIN-setting
+    command and starts no periodic authentication task.
     The caller owns connecting and disconnecting, including cancellation.
     """
     if variant == OCTO_VARIANT_STAR2:
@@ -70,30 +74,40 @@ async def async_verify_octo_pin(
 
     codec = OctoPacketCodec()
     features_complete = asyncio.Event()
+    ping_accepted = asyncio.Event()
+    device_info_ready = asyncio.Event()
+    device_info_valid = False
     pin_required = False
     malformed_pin_feature = False
     pin_sent = False
     reply: asyncio.Future[OctoPinStatus] = asyncio.get_running_loop().create_future()
 
     def notified(_char: BleakGATTCharacteristic, data: bytearray) -> None:
-        nonlocal pin_required, malformed_pin_feature
+        nonlocal pin_required, malformed_pin_feature, device_info_valid
         for packet in codec._extract_response_packets(bytes(data)):
             command, payload = packet["command"], packet["data"]
-            if command == [OCTO_SYSTEM_FROM_DEVICE, 0x71] and not pin_sent:
+            if (
+                command == [OCTO_SYSTEM_FROM_DEVICE, OCTO_SYSTEM_PING]
+                and packet["wire_command"] == command
+                and not payload
+            ):
+                ping_accepted.set()
+            elif command == [OCTO_SYSTEM_FROM_DEVICE, OCTO_SYSTEM_GET_DEVICEINFO]:
+                device_info_valid = len(payload) == 10
+                device_info_ready.set()
+            elif command == [OCTO_SYSTEM_FROM_DEVICE, OCTO_SYSTEM_GET_CAPS] and not pin_sent:
                 feature = codec._extract_feature_value_pair(payload)
                 if feature is None:
-                    # A malformed PIN record must not look like an absent one.
                     if payload[:3] == [0, 0, OCTO_FEATURE_PIN]:
                         malformed_pin_feature = True
                     continue
-                feature_id, value, _ = feature
-                if feature_id == OCTO_FEATURE_END:
+                if feature.feature_id == OCTO_FEATURE_END:
                     features_complete.set()
-                elif feature_id == OCTO_FEATURE_PIN:
-                    if payload[4] < 1 or len(value) < 2:
+                elif feature.feature_id == OCTO_FEATURE_PIN:
+                    if not feature.characteristic or len(feature.value) < 2:
                         malformed_pin_feature = True
                     else:
-                        pin_required = payload[5] == 1 and value[0] == 1
+                        pin_required = feature.characteristic[0] == 1 and feature.value[0] == 1
             elif (
                 pin_sent
                 and command == [OCTO_SYSTEM_FROM_DEVICE, OCTO_SYSTEM_PIN_STATE]
@@ -110,7 +124,24 @@ async def async_verify_octo_pin(
             await client.start_notify(OCTO_CHAR_UUID, notified)
             subscribed = True
             await client.write_gatt_char(
-                OCTO_CHAR_UUID, codec._build_packet([0x20, 0x71]), response=False
+                OCTO_CHAR_UUID,
+                codec._build_packet([0x20, OCTO_SYSTEM_PING]),
+                response=False,
+            )
+            await asyncio.wait_for(ping_accepted.wait(), timeout=OCTO_SESSION_RESPONSE_TIMEOUT)
+            await client.write_gatt_char(
+                OCTO_CHAR_UUID,
+                codec._build_packet([0x20, OCTO_SYSTEM_GET_DEVICEINFO]),
+                response=False,
+            )
+            await asyncio.wait_for(device_info_ready.wait(), timeout=OCTO_SESSION_RESPONSE_TIMEOUT)
+            if not device_info_valid:
+                return OctoPinStatus.INCONCLUSIVE
+            codec._response_buffer.clear()
+            await client.write_gatt_char(
+                OCTO_CHAR_UUID,
+                codec._build_packet([0x20, OCTO_SYSTEM_GET_CAPS]),
+                response=False,
             )
             await features_complete.wait()
             if malformed_pin_feature or codec.invalid_response_received:

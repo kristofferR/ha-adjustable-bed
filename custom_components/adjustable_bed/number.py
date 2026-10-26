@@ -43,6 +43,7 @@ from .const import (
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
+from .octo_runtime import octo_controller
 from .paired_coordinator import (
     PairedBedCoordinator,
     SingleAddressPairedCoordinator,
@@ -336,9 +337,7 @@ async def async_setup_entry(
             async_add_entities(paired_entities)
 
 
-def _number_entities_for(
-    hass: HomeAssistant, coordinator: EntityRuntime
-) -> list[NumberEntity]:
+def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> list[NumberEntity]:
     """Build number entities for a single (child or standalone) coordinator."""
     entry = coordinator.entry  # ChildEntryView for a paired child; real entry otherwise
     bed_type = entry.data.get(CONF_BED_TYPE)
@@ -367,9 +366,7 @@ def _number_entities_for(
         _async_remove_stale_position_entities(
             hass,
             coordinator,
-            stale_keys=frozenset(
-                key for key in position_keys if key not in supported_keys
-            ),
+            stale_keys=frozenset(key for key in position_keys if key not in supported_keys),
         )
     elif bed_type == BED_TYPE_SLEEPSTAR:
         _async_remove_stale_position_entities(
@@ -471,11 +468,12 @@ def _number_entities_for(
                     LIGHT_LEVEL_DESCRIPTION,
                     native_min_value=controller.light_level_min,
                     native_max_value=max_level,
-                )
+                ),
             )
         )
     elif (
-        bed_type in (
+        bed_type
+        in (
             BED_TYPE_SOLACE,
             BED_TYPE_STARCODE_M5X5,
             BED_TYPE_JIECANG_APP,
@@ -607,6 +605,13 @@ class AdjustableBedControllerNumber(AdjustableBedEntity, NumberEntity):
         self._set_sided_translation_key(spec.translation_key, spec.key)
         self._unregister_callback: Callable[[], None] | None = None
 
+    @property
+    def available(self) -> bool:
+        """Respect Octo's PIN gate for live settings."""
+        controller = self._coordinator.capability_controller
+        octo = octo_controller(controller)
+        return super().available and (octo is None or octo.normal_controls_available)
+
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
         self._unregister_callback = self._coordinator.register_controller_state_callback(
@@ -697,9 +702,7 @@ def _combined_position_entities_for(
             native_max_value=min(candidate.native_max_value for candidate in matching_specs),
         )
         entities.append(
-            PairedBedCombinedPositionNumber(
-                coordinator, _build_position_description(reconciled)
-            )
+            PairedBedCombinedPositionNumber(coordinator, _build_position_description(reconciled))
         )
     return entities
 
@@ -719,12 +722,8 @@ def _async_remove_stale_combined_number_entities(
         if (unique_id := entity.unique_id) is not None and unique_id.endswith("_both")
     }
     candidate_keys = {description.key for description in NUMBER_DESCRIPTIONS}
-    candidate_keys.update(
-        spec.key for child in children for spec in _position_number_specs(child)
-    )
-    candidate_unique_ids = {
-        coordinator.entity_unique_id(f"{key}_both") for key in candidate_keys
-    }
+    candidate_keys.update(spec.key for child in children for spec in _position_number_specs(child))
+    candidate_unique_ids = {coordinator.entity_unique_id(f"{key}_both") for key in candidate_keys}
     registry = er.async_get(hass)
     for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
         translation_key = (row.translation_key or "").removesuffix("_both")
@@ -732,10 +731,7 @@ def _async_remove_stale_combined_number_entities(
             row.domain == "number"
             and (
                 row.unique_id in candidate_unique_ids
-                or (
-                    row.unique_id.endswith("_both")
-                    and translation_key.endswith("_position")
-                )
+                or (row.unique_id.endswith("_both") and translation_key.endswith("_position"))
             )
             and row.unique_id not in desired_unique_ids
         ):
@@ -1096,7 +1092,9 @@ class AdjustableBedLevelNumber(AdjustableBedEntity, NumberEntity):
             self.entity_description.key == "light_level"
             and self.native_min_value > 0
             and not _valid_positive_light_level(
-                value, self.native_min_value, self.native_max_value,
+                value,
+                self.native_min_value,
+                self.native_max_value,
             )
         ):
             raise ServiceValidationError("Value is outside this light slider's integer range")
@@ -1113,7 +1111,9 @@ class AdjustableBedLevelNumber(AdjustableBedEntity, NumberEntity):
             if (
                 self.entity_description.key == "light_level"
                 and ctrl.light_level_min > 0
-                and not _valid_positive_light_level(value, ctrl.light_level_min, ctrl.light_level_max)
+                and not _valid_positive_light_level(
+                    value, ctrl.light_level_min, ctrl.light_level_max
+                )
             ):
                 raise ServiceValidationError("Value is outside the current light slider's range")
             await self.entity_description.set_fn(ctrl, level)

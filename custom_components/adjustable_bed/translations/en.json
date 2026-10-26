@@ -47,6 +47,7 @@
           "bed_type": "Bed type",
           "name": "Name",
           "motor_count": "Number of motors",
+          "octo_motor_count_override": "OCTO motor count",
           "malouf_layout": "Malouf/Lucid actuator layout",
           "malouf_memory_slots": "Malouf/Lucid memory positions",
           "has_massage": "Has massage feature",
@@ -80,6 +81,7 @@
         "data_description": {
           "bed_type": "Auto-detected bed type. Change if detection was incorrect. Options are controller protocols, not mattress brands; example beds are shown in parentheses. See the Supported Actuators guide if unsure.",
           "motor_count": "Number of physical actuators. Malouf/Lucid beds use the separate actuator-layout setting below.",
+          "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
           "malouf_layout": "Physical controls on the remote. This is independent of BLE protocol: Lucid L600 beds have shipped with multiple protocols.",
           "malouf_memory_slots": "Number of memory buttons on the physical remote. Auto exposes one for a two-motor L600-style layout and two for other layouts.",
           "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
@@ -92,20 +94,20 @@
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
           "disconnect_after_command": "Release the BLE connection one second after commands finish so the physical remote can reconnect. Rapid commands share this short window; periodic position polling stays off while idle. Recommended for beds that only allow one connection at a time.",
           "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (10-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead.",
-          "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection. Leave empty if your bed doesn't require a PIN.",
+          "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
           "transport_direct": "Direct Bluetooth",
           "transport_proxy": "Bluetooth proxy",
           "transport_unknown": "Bluetooth",
-          "transport_likely": "Likely connection: {kind} \u00b7 {scanner}{signal}",
-          "transport_signal": "\u00b7 {rssi} dBm",
-          "transport_none": "\u26a0\ufe0f No Bluetooth adapter or proxy can currently see this device. You can still finish setup; Home Assistant will connect when it appears.",
+          "transport_likely": "Likely connection: {kind} · {scanner}{signal}",
+          "transport_signal": "· {rssi} dBm",
+          "transport_none": "⚠️ No Bluetooth adapter or proxy can currently see this device. You can still finish setup; Home Assistant will connect when it appears.",
           "transport_local_alternative": "A Bluetooth adapter on this Home Assistant host ({scanner}) can also see it.",
-          "transport_preferred_unavailable": "\u26a0\ufe0f The selected adapter ({adapter}) is not currently available for this connection. Select Automatic to let Home Assistant choose another path, or restore the selected adapter before continuing.",
+          "transport_preferred_unavailable": "⚠️ The selected adapter ({adapter}) is not currently available for this connection. Select Automatic to let Home Assistant choose another path, or restore the selected adapter before continuing.",
           "transport_not_guaranteed": "Home Assistant picks the path when it connects, so this is a prediction rather than a guarantee.",
-          "transport_proxy_pairing_warning": "\u26a0\ufe0f This bed needs Bluetooth pairing, and pairing over a proxy stores the bond on the proxy rather than on Home Assistant. If you later move the bed to a different proxy or to a Home Assistant adapter, you will have to pair again. Home Assistant also cannot remove a bond that lives on a proxy.",
-          "transport_all_busy": "\u26a0\ufe0f Every adapter that can see this device is currently out of free Bluetooth connections.",
-          "transport_actual": "Connected over: {kind} \u00b7 {scanner}{signal}",
+          "transport_proxy_pairing_warning": "⚠️ This bed needs Bluetooth pairing, and pairing over a proxy stores the bond on the proxy rather than on Home Assistant. If you later move the bed to a different proxy or to a Home Assistant adapter, you will have to pair again. Home Assistant also cannot remove a bond that lives on a proxy.",
+          "transport_all_busy": "⚠️ Every adapter that can see this device is currently out of free Bluetooth connections.",
+          "transport_actual": "Connected over: {kind} · {scanner}{signal}",
           "transport_actual_differs": "Home Assistant used a different path than predicted ({predicted})."
         }
       },
@@ -199,7 +201,7 @@
           "octo_pin": "Octo PIN"
         },
         "data_description": {
-          "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection."
+          "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured."
         }
       },
       "manual_richmat": {
@@ -235,7 +237,7 @@
           "octo_pin": "Octo PIN"
         },
         "data_description": {
-          "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection."
+          "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured."
         }
       },
       "bluetooth_richmat": {
@@ -288,13 +290,13 @@
           "pairing_instructions_sleep_number": "1. Put your bed in pairing mode (hold the side pairing button until the blue light blinks)\n2. Click 'Pair Now'",
           "pairing_instructions_leggett_gen2": "1. Unplug your bed's power cord and remove any batteries from the power supply.\n2. Plug the bed back in. Wait for a small chime and a pulsing blue light under the bed.\n3. While the light is pulsing, promptly click 'Pair Now'.",
           "bond_state": "What this Home Assistant host already knows about a bond for this bed.",
-          "bond_state_proxy": "\u2139\ufe0f This bed will pair through a Bluetooth proxy, which keeps the bond itself. Home Assistant cannot read or remove a bond stored on a proxy, so it cannot tell you whether one already exists.",
-          "bond_state_unreadable": "\u2139\ufe0f Home Assistant could not read the Bluetooth bonds on this host, so it cannot tell whether this bed is already paired.",
-          "bond_state_existing": "\u2705 This Home Assistant host already has a Bluetooth bond for this bed. The actions below reflect whether the selected adapter can use it and whether it can be replaced safely.",
-          "bond_state_multiple": "\u26a0\ufe0f More than one Bluetooth adapter on this host is bonded to this bed. Pairing again will use whichever adapter Home Assistant connects through.",
-          "bond_state_none": "\u2139\ufe0f This Home Assistant host has no Bluetooth bond for this bed yet.",
-          "bond_state_route_uncertain": "\u2139\ufe0f This Home Assistant host has a Bluetooth bond for this bed, but more than one adapter or proxy could take the connection, and Home Assistant chooses which when it connects. Setting up with the existing bond would assume a route it cannot guarantee, so pair again instead and let the connection record which transport really owns the bond.",
-          "bond_state_mismatched": "\u2139\ufe0f This Home Assistant host has a Bluetooth bond for this bed, but on a different adapter from the one this connection will use. Bonds belong to one adapter, so that one cannot be used here. Pair again to create a bond on this adapter, or select the bonded adapter instead."
+          "bond_state_proxy": "ℹ️ This bed will pair through a Bluetooth proxy, which keeps the bond itself. Home Assistant cannot read or remove a bond stored on a proxy, so it cannot tell you whether one already exists.",
+          "bond_state_unreadable": "ℹ️ Home Assistant could not read the Bluetooth bonds on this host, so it cannot tell whether this bed is already paired.",
+          "bond_state_existing": "✅ This Home Assistant host already has a Bluetooth bond for this bed. The actions below reflect whether the selected adapter can use it and whether it can be replaced safely.",
+          "bond_state_multiple": "⚠️ More than one Bluetooth adapter on this host is bonded to this bed. Pairing again will use whichever adapter Home Assistant connects through.",
+          "bond_state_none": "ℹ️ This Home Assistant host has no Bluetooth bond for this bed yet.",
+          "bond_state_route_uncertain": "ℹ️ This Home Assistant host has a Bluetooth bond for this bed, but more than one adapter or proxy could take the connection, and Home Assistant chooses which when it connects. Setting up with the existing bond would assume a route it cannot guarantee, so pair again instead and let the connection record which transport really owns the bond.",
+          "bond_state_mismatched": "ℹ️ This Home Assistant host has a Bluetooth bond for this bed, but on a different adapter from the one this connection will use. Bonds belong to one adapter, so that one cannot be used here. Pair again to create a bond on this adapter, or select the bonded adapter instead."
         }
       },
       "manual_pairing": {
@@ -346,15 +348,15 @@
       },
       "scan": {
         "title": "Scanning for beds",
-        "description": "Looking for nearby Bluetooth beds\u2026"
+        "description": "Looking for nearby Bluetooth beds…"
       },
       "setup_progress": {
         "title": "Checking the connection",
-        "description": "Checking **{name}** ({address})\u2026"
+        "description": "Checking **{name}** ({address})…"
       },
       "pairing_progress": {
         "title": "Pairing",
-        "description": "Pairing with **{name}** ({address})\u2026"
+        "description": "Pairing with **{name}** ({address})…"
       },
       "pairing_result": {
         "title": "Pairing result",
@@ -387,29 +389,29 @@
         },
         "data_description": {
           "action": "Try again keeps the bed type, adapter and protocol settings you already chose.",
-          "outcome_no_run": "\u274c Pairing did not run. Select **Try again**.",
-          "outcome_verified_local": "\u2705 Paired, and the bond was confirmed. It is stored on this Home Assistant host ({transport}).",
-          "outcome_verified_proxy": "\u2705 Paired, and the bond was confirmed. It is stored on the Bluetooth proxy {transport}, not on Home Assistant, so moving this bed to a different proxy will mean pairing again.",
-          "outcome_verified_unknown": "\u2705 Paired, and the bond was confirmed. Home Assistant could not tell which adapter or proxy carried it, so it does not know where the bond is stored.",
-          "outcome_existing_verified_local": "\u2705 The existing bond works. It is stored on this Home Assistant host ({transport}), and setup will use it as it is.",
-          "outcome_existing_verified_proxy": "\u2705 The existing bond works. It is stored on the Bluetooth proxy {transport}, so moving this bed to a different proxy will mean pairing again.",
-          "outcome_existing_verified_unknown": "\u2705 The existing bond works, but Home Assistant could not tell which adapter or proxy carried the check, so it does not know where the bond is stored.",
-          "outcome_unproven": "\u26a0\ufe0f Pairing completed, but this bed gives Home Assistant no way to confirm the bond. Setup will finish and record that pairing happened, so the first connection does not try to pair on top of it. If the bond did not really form, Home Assistant will raise a repair asking you to pair again.",
-          "outcome_not_advertising": "\u274c The bed is not advertising, so no connection was attempted. Put it into pairing mode or move it closer to an adapter or proxy, then select **Try again**.",
-          "outcome_auth_failed": "\u274c The bed connected, but the link is still unauthenticated, so the bond did not form. Put the bed back into pairing mode and select **Try again**.",
-          "outcome_inconclusive": "\u26a0\ufe0f Home Assistant could not confirm the existing bond either way: the check timed out or the bed does not answer it. The bond may well be fine. You can try again, or pair from scratch if the bed does not respond afterwards.",
-          "outcome_unsupported": "\u274c This Bluetooth adapter or proxy cannot pair. ESPHome proxies need ESPHome 2024.3.0 or newer; otherwise pair through a Bluetooth adapter on the Home Assistant host.",
-          "outcome_removal_failed": "\u274c The existing bond could not be removed, so pairing was not attempted and the old bond is still in place. Try again, and use Remove the Bluetooth bond from the device's options if it persists.",
-          "outcome_in_use": "\u274c The bed's Bluetooth connection is already in use. Beds allow only one connection at a time, so close the manufacturer's app and put the physical remote down, then select **Try again**.",
-          "outcome_no_slots": "\u274c Every Bluetooth adapter and proxy that can reach this bed is out of free connections. Free one up, or add another proxy, then select **Try again**.",
-          "outcome_timed_out": "\u274c The bed stopped responding partway through. Put it back into pairing mode and select **Try again**.",
-          "outcome_cancelled": "\u274c Pairing was cancelled.",
-          "outcome_connection_failed": "\u274c Could not pair. Another app or the bed's own remote may be holding the bed's connection, or it may be out of range. Select **Try again**.",
-          "outcome_route_mismatch": "\u274c Home Assistant connected through a different Bluetooth path. No new pairing was attempted. Check that the selected adapter or proxy can reach the bed, then select **Try again**.",
-          "outcome_removal_unconfirmed": "\u26a0\ufe0f Home Assistant could not confirm what happened to the existing bond, so pairing was not attempted and the bond may still be in place. Check the host's Bluetooth settings, then select **Try again**.",
-          "outcome_auth_failed_proxy": "\u274c The bed connected through Bluetooth proxy **{transport}**, but authentication failed. Close the bed's phone app, put the bed back into Bluetooth pairing mode, and select **Try again** using the same proxy.\n\nIf the same authentication error returns, saved pairing keys on the proxy may be stale. Follow the [step-by-step recovery guide]({recovery_url}). A normal wireless firmware update does not erase these keys. A full flash erase is a last resort: it removes the proxy's settings and ALL Bluetooth pairings, so save its configuration first.",
+          "outcome_no_run": "❌ Pairing did not run. Select **Try again**.",
+          "outcome_verified_local": "✅ Paired, and the bond was confirmed. It is stored on this Home Assistant host ({transport}).",
+          "outcome_verified_proxy": "✅ Paired, and the bond was confirmed. It is stored on the Bluetooth proxy {transport}, not on Home Assistant, so moving this bed to a different proxy will mean pairing again.",
+          "outcome_verified_unknown": "✅ Paired, and the bond was confirmed. Home Assistant could not tell which adapter or proxy carried it, so it does not know where the bond is stored.",
+          "outcome_existing_verified_local": "✅ The existing bond works. It is stored on this Home Assistant host ({transport}), and setup will use it as it is.",
+          "outcome_existing_verified_proxy": "✅ The existing bond works. It is stored on the Bluetooth proxy {transport}, so moving this bed to a different proxy will mean pairing again.",
+          "outcome_existing_verified_unknown": "✅ The existing bond works, but Home Assistant could not tell which adapter or proxy carried the check, so it does not know where the bond is stored.",
+          "outcome_unproven": "⚠️ Pairing completed, but this bed gives Home Assistant no way to confirm the bond. Setup will finish and record that pairing happened, so the first connection does not try to pair on top of it. If the bond did not really form, Home Assistant will raise a repair asking you to pair again.",
+          "outcome_not_advertising": "❌ The bed is not advertising, so no connection was attempted. Put it into pairing mode or move it closer to an adapter or proxy, then select **Try again**.",
+          "outcome_auth_failed": "❌ The bed connected, but the link is still unauthenticated, so the bond did not form. Put the bed back into pairing mode and select **Try again**.",
+          "outcome_inconclusive": "⚠️ Home Assistant could not confirm the existing bond either way: the check timed out or the bed does not answer it. The bond may well be fine. You can try again, or pair from scratch if the bed does not respond afterwards.",
+          "outcome_unsupported": "❌ This Bluetooth adapter or proxy cannot pair. ESPHome proxies need ESPHome 2024.3.0 or newer; otherwise pair through a Bluetooth adapter on the Home Assistant host.",
+          "outcome_removal_failed": "❌ The existing bond could not be removed, so pairing was not attempted and the old bond is still in place. Try again, and use Remove the Bluetooth bond from the device's options if it persists.",
+          "outcome_in_use": "❌ The bed's Bluetooth connection is already in use. Beds allow only one connection at a time, so close the manufacturer's app and put the physical remote down, then select **Try again**.",
+          "outcome_no_slots": "❌ Every Bluetooth adapter and proxy that can reach this bed is out of free connections. Free one up, or add another proxy, then select **Try again**.",
+          "outcome_timed_out": "❌ The bed stopped responding partway through. Put it back into pairing mode and select **Try again**.",
+          "outcome_cancelled": "❌ Pairing was cancelled.",
+          "outcome_connection_failed": "❌ Could not pair. Another app or the bed's own remote may be holding the bed's connection, or it may be out of range. Select **Try again**.",
+          "outcome_route_mismatch": "❌ Home Assistant connected through a different Bluetooth path. No new pairing was attempted. Check that the selected adapter or proxy can reach the bed, then select **Try again**.",
+          "outcome_removal_unconfirmed": "⚠️ Home Assistant could not confirm what happened to the existing bond, so pairing was not attempted and the bond may still be in place. Check the host's Bluetooth settings, then select **Try again**.",
+          "outcome_auth_failed_proxy": "❌ The bed connected through Bluetooth proxy **{transport}**, but authentication failed. Close the bed's phone app, put the bed back into Bluetooth pairing mode, and select **Try again** using the same proxy.\n\nIf the same authentication error returns, saved pairing keys on the proxy may be stale. Follow the [step-by-step recovery guide]({recovery_url}). A normal wireless firmware update does not erase these keys. A full flash erase is a last resort: it removes the proxy's settings and ALL Bluetooth pairings, so save its configuration first.",
           "outcome_native_verified_local": "A stored bond was confirmed on this Home Assistant adapter ({transport}).",
-          "outcome_native_absent": "\u274c No stored bond was found for this bed on this Home Assistant adapter ({transport}). Put the bed back into Bluetooth pairing mode and select **Try again**."
+          "outcome_native_absent": "❌ No stored bond was found for this bed on this Home Assistant adapter ({transport}). Put the bed back into Bluetooth pairing mode and select **Try again**."
         }
       },
       "pairing_replace_confirm": {
@@ -418,7 +420,7 @@
       },
       "pair_beds": {
         "title": "Combine two beds",
-        "description": "Combine two existing beds into one paired device with Left, Right and combined controls. The two original beds are removed; their entity history follows. Pairing is for sides that move independently \u2014 if a sync cable already keeps both sides together, keep a single bed instead.",
+        "description": "Combine two existing beds into one paired device with Left, Right and combined controls. The two original beds are removed; their entity history follows. Pairing is for sides that move independently — if a sync cable already keeps both sides together, keep a single bed instead.",
         "data": {
           "pair_selection": "Left and Right sides",
           "name": "Name for the combined bed"
@@ -545,7 +547,7 @@
           "vibradorm_app_profile": "Choose the app used with this bed. Bluetooth identifiers cannot identify the app or its controls.",
           "vibradorm_restored": "Advanced: match settings already saved by the Caresse app. Standard controls match a fresh app setup. Retained controls and feature flags do not verify your bed model.",
           "vibradorm_control_type": "Choose the control layout already used in your app. Each choice defines the available movement groups and memory controls.",
-          "vibradorm_floor_default": "Advanced: the floor-light level remembered by your app (1\u20138). This is a local setting, not a measured light state. A retained level of 8 is valid even when the lighting extension limits the level slider to 6.",
+          "vibradorm_floor_default": "Advanced: the floor-light level remembered by your app (1–8). This is a local setting, not a measured light state. A retained level of 8 is valid even when the lighting extension limits the level slider to 6.",
           "vibradorm_vmat_remote": "Choose the same remote ordinal shown in VMAT. This sets its controls and features; Bluetooth metadata cannot identify the remote."
         }
       },
@@ -559,8 +561,8 @@
         },
         "data_description": {
           "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
-          "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0\u2013255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1\u20136. This is not measured brightness.",
-          "vmatbasic_floor_minutes": "CBI accepts 0\u20131439 minutes; XT-Box accepts 0\u2013255. Zero is an explicit timer setting."
+          "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0–255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1–6. This is not measured brightness.",
+          "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting."
         }
       },
       "starcode_app": {
@@ -635,7 +637,7 @@
       },
       "vibradorm": {
         "title": "Vibradorm setup",
-        "description": "Choose the app you normally use on your phone. We\u2019ll ask for the matching remote or product next. You can keep your current setup, or choose Legacy setup for the previous controls.",
+        "description": "Choose the app you normally use on your phone. We’ll ask for the matching remote or product next. You can keep your current setup, or choose Legacy setup for the previous controls.",
         "data": {
           "app": "App or current setup"
         }
@@ -674,15 +676,15 @@
       }
     },
     "progress": {
-      "locating": "Looking for the bed\u2026",
-      "connecting": "Connecting over Bluetooth\u2026",
-      "discovering_services": "Discovering Bluetooth services\u2026",
-      "reading_capabilities": "Reading device information\u2026",
-      "pairing": "Pairing with the bed\u2026",
-      "verifying_bond": "Verifying the Bluetooth bond\u2026",
-      "disconnecting": "Disconnecting\u2026",
-      "unpairing": "Removing the Bluetooth bond\u2026",
-      "verifying_pin": "Checking PIN acceptance\u2026"
+      "locating": "Looking for the bed…",
+      "connecting": "Connecting over Bluetooth…",
+      "discovering_services": "Discovering Bluetooth services…",
+      "reading_capabilities": "Reading device information…",
+      "pairing": "Pairing with the bed…",
+      "verifying_bond": "Verifying the Bluetooth bond…",
+      "disconnecting": "Disconnecting…",
+      "unpairing": "Removing the Bluetooth bond…",
+      "verifying_pin": "Checking PIN acceptance…"
     },
     "abort": {
       "already_configured": "This Bluetooth address already belongs to an Adjustable Bed entry. Check both active and ignored Adjustable Bed entries under Settings > Devices & services, then reload or reconfigure that entry instead of adding it again.",
@@ -715,7 +717,7 @@
       "pairing_not_confirmed": "Please confirm that you have paired the bed before continuing.",
       "pairing_failed": "Pairing failed. Make sure the bed is in pairing mode and try again.",
       "pairing_not_supported": "Pairing not supported by this Bluetooth adapter. If using ESPHome proxy, update to ESPHome >= 2024.3.0.",
-      "same_device": "Pick two different beds \u2014 you selected the same one for both sides.",
+      "same_device": "Pick two different beds — you selected the same one for both sides.",
       "mismatched_bed_types": "Those two beds are different models and can't be combined. Add them as separate devices.",
       "pairing_needs_capabilities": "Connect both beds once before combining them so their motor layouts can be verified.",
       "mismatched_motor_layouts": "Those beds expose different motor layouts and can't be combined safely.",
@@ -878,7 +880,7 @@
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
           "disconnect_after_command": "Release the BLE connection one second after commands finish so the physical remote can reconnect. Rapid commands share this short window; periodic position polling stays off while idle.",
           "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (10-300).",
-          "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection. Leave empty if your bed doesn't require a PIN.",
+          "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
           "back_max_angle": "Maximum angle for back/head motors. Adjust if position readings don't match your bed's actual range.",
           "legs_max_angle": "Maximum angle for legs/feet motors. Adjust if position readings don't match your bed's actual range.",
@@ -902,10 +904,10 @@
           "vibradorm_app_profile": "Choose the app used with this bed. Bluetooth identifiers cannot identify the app or its controls.",
           "vibradorm_restored": "Advanced: match settings already saved by the Caresse app. Standard controls match a fresh app setup. Retained controls and feature flags do not verify your bed model.",
           "vibradorm_control_type": "Choose the control layout already used in your app. Each choice defines the available movement groups and memory controls.",
-          "vibradorm_floor_default": "Advanced: the floor-light level remembered by your app (1\u20138). This is a local setting, not a measured light state. A retained level of 8 is valid even when the lighting extension limits the level slider to 6.",
+          "vibradorm_floor_default": "Advanced: the floor-light level remembered by your app (1–8). This is a local setting, not a measured light state. A retained level of 8 is valid even when the lighting extension limits the level slider to 6.",
           "vibradorm_vmat_remote": "Choose the same remote ordinal shown in VMAT. This sets its controls and features; Bluetooth metadata cannot identify the remote.",
-          "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0\u2013255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1\u20136. This is not measured brightness.",
-          "vmatbasic_floor_minutes": "CBI accepts 0\u20131439 minutes; XT-Box accepts 0\u2013255. Zero is an explicit timer setting.",
+          "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0–255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1–6. This is not measured brightness.",
+          "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting.",
           "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
           "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
           "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. Motion Bed and AdjustableM5X5 profiles are identified from it, not from a friendly display name.",
@@ -929,8 +931,8 @@
           "starcode_abm5_4_transport_selector": "Bluetooth transport selector"
         },
         "data_description": {
-          "outcome_removed": "\u2705 The Bluetooth bond was removed and the removal was confirmed.",
-          "outcome_failed": "\u274c The bond was not removed ({reason})."
+          "outcome_removed": "✅ The Bluetooth bond was removed and the removal was confirmed.",
+          "outcome_failed": "❌ The bond was not removed ({reason})."
         }
       },
       "remove_bond_side": {
@@ -1059,14 +1061,14 @@
       "richmat_mh_no_name": "The app selects the model from the Bluetooth name, which is unavailable. Choose the model in the protocol variant.",
       "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant.",
       "app_profile_unpair_first": "Each side keeps its own {profile} settings. Unpair the beds, change each side separately, then combine them again.",
-      "vibradorm_reconfigure_required": "To change the Vibradorm app, remote or product, close Configure and select Reconfigure from this entry\u2019s three-dot menu. The guided setup verifies it before saving.",
+      "vibradorm_reconfigure_required": "To change the Vibradorm app, remote or product, close Configure and select Reconfigure from this entry’s three-dot menu. The guided setup verifies it before saving.",
       "profile_review_save_failed": "Your profile review choice could not be saved. Please try again. Settings were not saved.",
       "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0."
     },
     "progress": {
-      "unpairing": "Removing the Bluetooth bond\u2026",
-      "disconnecting": "Disconnecting\u2026",
-      "verifying_pin": "Checking PIN acceptance\u2026"
+      "unpairing": "Removing the Bluetooth bond…",
+      "disconnecting": "Disconnecting…",
+      "verifying_pin": "Checking PIN acceptance…"
     },
     "abort": {
       "remove_bond_proxy_owned": "**{name}** is paired through a Bluetooth proxy ({transport}), not through this Home Assistant host, so Home Assistant cannot remove that bond. The bond lives on the proxy itself: clear it there (an ESPHome proxy forgets its bonds when it is reflashed or factory reset), or set the bed's preferred adapter to a Bluetooth adapter on this host and pair again.",
@@ -1075,7 +1077,7 @@
       "remove_bond_ambiguous": "Home Assistant cannot tell which Bluetooth bond you mean for **{name}** ({address}). Either more than one adapter on this host is bonded to it, or the adapter it was paired through no longer holds a bond. Set the bed's preferred adapter to the one you want to clear, then try again.",
       "remove_bond_changed": "The Bluetooth bonds on this host changed while the confirmation was open, so nothing was removed. Open **Remove the Bluetooth bond** again to see the current state and confirm from there.",
       "pair_side_not_found": "This paired receiver is no longer available. Reopen the integration settings.",
-      "vibradorm_reconfigure_required": "To change the Vibradorm app, remote or product, close Configure and select Reconfigure from this entry\u2019s three-dot menu. The guided setup verifies it before saving."
+      "vibradorm_reconfigure_required": "To change the Vibradorm app, remote or product, close Configure and select Reconfigure from this entry’s three-dot menu. The guided setup verifies it before saving."
     }
   },
   "entity": {
@@ -1121,6 +1123,9 @@
       },
       "preset_both_up": {
         "name": "Back + Legs Up"
+      },
+      "octo_all_down": {
+        "name": "All motors down"
       },
       "preset_yoga": {
         "name": "Yoga"
@@ -2341,6 +2346,9 @@
       },
       "back_legs": {
         "name": "Back + Legs"
+      },
+      "octo_motors_1_2": {
+        "name": "Motors 1 + 2"
       },
       "feet": {
         "name": "Feet"
@@ -4921,7 +4929,7 @@
         },
         "name": {
           "name": "Name",
-          "description": "MotionRelax phone and tablet controllers accept 1 to 255 printable ASCII characters. Sleep Smart beds and pumps accept 1 to 20 letters, digits, \u00e4, \u00f6, \u00fc or \u00df."
+          "description": "MotionRelax phone and tablet controllers accept 1 to 255 printable ASCII characters. Sleep Smart beds and pumps accept 1 to 20 letters, digits, ä, ö, ü or ß."
         },
         "side": {
           "name": "Side"
@@ -5059,7 +5067,7 @@
     },
     "malouf_set_alarm": {
       "name": "Malouf / Lucid alarm",
-      "description": "Set or clear the selected app model\u2019s alarm. Time uses the Home Assistant time zone.",
+      "description": "Set or clear the selected app model’s alarm. Time uses the Home Assistant time zone.",
       "fields": {
         "device_id": {
           "name": "Device"
@@ -5138,7 +5146,7 @@
     },
     "furnimove_action": {
       "name": "FurniMove handset action",
-      "description": "Execute an ordered action row from the selected handset. Find row indexes in controller diagnostics. The widget consumer uses the app\u2019s separate fixed timing.",
+      "description": "Execute an ordered action row from the selected handset. Find row indexes in controller diagnostics. The widget consumer uses the app’s separate fixed timing.",
       "fields": {
         "device_id": {
           "name": "Device"
@@ -5160,7 +5168,7 @@
     },
     "furnimove_massage_program": {
       "name": "FurniMove massage program",
-      "description": "Select program 1, 2, 3 or 4 (Wave) using the handset\u2019s captured massage queue.",
+      "description": "Select program 1, 2, 3 or 4 (Wave) using the handset’s captured massage queue.",
       "fields": {
         "device_id": {
           "name": "Device"
@@ -5190,7 +5198,7 @@
     },
     "furnimove_move_simultaneously": {
       "name": "Move two FurniMove motors",
-      "description": "Hold two supported axes with the app\u2019s combined command and release cleanup.",
+      "description": "Hold two supported axes with the app’s combined command and release cleanup.",
       "fields": {
         "device_id": {
           "name": "Device"
@@ -5241,7 +5249,7 @@
     },
     "motion_bed_alarm": {
       "name": "Motion Bed alarm",
-      "description": "Program the app alarm with all six modes and the current physical target\u2019s reported audio capability.",
+      "description": "Program the app alarm with all six modes and the current physical target’s reported audio capability.",
       "fields": {
         "device_id": {
           "name": "Device"
@@ -5331,7 +5339,7 @@
     },
     "motion_bed_calibration": {
       "name": "Motion Bed sleep calibration",
-      "description": "Save the app\u2019s flat and side calibration readings. Confirm before changing calibration.",
+      "description": "Save the app’s flat and side calibration readings. Confirm before changing calibration.",
       "fields": {
         "device_id": {
           "name": "Device"
@@ -5421,7 +5429,7 @@
     },
     "motion_bed_air_setting": {
       "name": "Motion Bed air settings",
-      "description": "Query or save the selected mode\u2019s upper gear and optional timer. Lower pressure is readback only.",
+      "description": "Query or save the selected mode’s upper gear and optional timer. Lower pressure is readback only.",
       "fields": {
         "device_id": {
           "name": "Device"
@@ -5448,7 +5456,7 @@
     },
     "motion_bed_pressure": {
       "name": "Motion Bed air pressure",
-      "description": "Edit one explicitly bound channel after the app\u2019s 2.5-second quiet check, or save twelve channel values in one whole frame.",
+      "description": "Edit one explicitly bound channel after the app’s 2.5-second quiet check, or save twelve channel values in one whole frame.",
       "fields": {
         "device_id": {
           "name": "Device"
@@ -5538,11 +5546,11 @@
         },
         "underbed_light": {
           "name": "Lamp controls",
-          "description": "Show the app\u2019s lamp action."
+          "description": "Show the app’s lamp action."
         },
         "massage": {
           "name": "Massage controls",
-          "description": "Show the app\u2019s massage actions."
+          "description": "Show the app’s massage actions."
         }
       }
     },
@@ -5580,7 +5588,7 @@
         },
         "duration": {
           "name": "Duration",
-          "description": "Hold time in seconds, 0.1\u201360."
+          "description": "Hold time in seconds, 0.1–60."
         }
       }
     },
@@ -5598,7 +5606,7 @@
         },
         "preset": {
           "name": "Memory slot",
-          "description": "Slot 1\u20138, limited by the device reply."
+          "description": "Slot 1–8, limited by the device reply."
         },
         "name": {
           "name": "Name",
@@ -5822,7 +5830,7 @@
           "name": "Mode"
         },
         "level": {
-          "name": "Level (0 off, 1\u20133)"
+          "name": "Level (0 off, 1–3)"
         },
         "constant": {
           "name": "Constant level (off selects curve)"
@@ -5831,7 +5839,7 @@
     },
     "sleeptracker_wave": {
       "name": "Sleeptracker: relaxation wave",
-      "description": "Start local massage at a proven frequency and duration on ProSmart or ActiveBreeze. The app encodes minutes \u00d7 600; hardware duration units remain unverified. Use Stop massage to end early.",
+      "description": "Start local massage at a proven frequency and duration on ProSmart or ActiveBreeze. The app encodes minutes × 600; hardware duration units remain unverified. Use Stop massage to end early.",
       "fields": {
         "device_id": {
           "name": "Device"
@@ -5874,6 +5882,46 @@
         },
         "action": {
           "name": "Action"
+        }
+      }
+    },
+    "octo_enroll_pin": {
+      "name": "Enroll OCTO PIN",
+      "description": "Set a new four-digit PIN on one unlocked OCTO Smart Control receiver. Enter the same PIN twice. Home Assistant saves it for reconnects after sending the command.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Choose one OCTO receiver or one side of a paired bed."
+        },
+        "octo_pin": {
+          "name": "New PIN",
+          "description": "The four ASCII digits to set on the receiver."
+        },
+        "octo_pin_confirmation": {
+          "name": "Confirm PIN",
+          "description": "Enter the same four digits again."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Choose one side when targeting a paired bed. Both is not allowed."
+        }
+      }
+    },
+    "octo_reset_defaults": {
+      "name": "Reset OCTO receiver",
+      "description": "Restore receiver defaults after explicit confirmation. The receiver disconnects five seconds after the reset command.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Choose one OCTO receiver or one side of a paired bed."
+        },
+        "confirmed": {
+          "name": "Confirm reset",
+          "description": "Set to true only when you intend to reset this receiver."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Choose one side when targeting a paired bed. Both is not allowed."
         }
       }
     }
@@ -5968,7 +6016,7 @@
         "step": {
           "confirm": {
             "title": "Pair your adjustable bed",
-            "description": "**{name}** ({address}) requires a Bluetooth bond before it can be controlled.\n\n1. Put the bed into pairing mode. **OKIN bases** (Okimat, Okin CST, Nectar OKIN-*, Mattress Firm 900-O): power-cycle the control box \u2014 unplug it for ~30 seconds, then plug it back in (the light blinks blue, then turns green); they have no Bluetooth pairing button. **Leggett & Platt Smart Bed (LP Comfort Connect)**: unplug the bed's power cord, remove any batteries from the power supply, then plug it back in \u2014 wait for a chime and a pulsing blue light under the bed. **Other beds**: hold the pairing button on the control box or remote until its light blinks.\n2. While the bed is in pairing mode, promptly press **Submit** to pair.\n\nPairing happens on your Home Assistant host or Bluetooth proxy \u2014 not your phone. ESPHome proxies must run ESPHome 2024.3.0 or newer.\n\nIf pairing keeps failing and the log names `AuthenticationFailed` or `AuthenticationRejected`, the bond is failing at the authentication stage rather than timing out, and retrying unchanged rarely helps. One common cause is stored pairing keys that no longer match: the bed still stores a pairing for the adapter you are connecting from, while that adapter no longer has the matching key. Clearing only one side does not help in that case.\n\nRemove the stored pairing on the adapter that connects to the bed: on a Home Assistant host that is `bluetoothctl remove {address}`; if you connect through an ESPHome Bluetooth proxy the bond is stored on the proxy and has to be cleared there. Then clear the bed's own stored pairings the way its manufacturer documents, and pair again."
+            "description": "**{name}** ({address}) requires a Bluetooth bond before it can be controlled.\n\n1. Put the bed into pairing mode. **OKIN bases** (Okimat, Okin CST, Nectar OKIN-*, Mattress Firm 900-O): power-cycle the control box — unplug it for ~30 seconds, then plug it back in (the light blinks blue, then turns green); they have no Bluetooth pairing button. **Leggett & Platt Smart Bed (LP Comfort Connect)**: unplug the bed's power cord, remove any batteries from the power supply, then plug it back in — wait for a chime and a pulsing blue light under the bed. **Other beds**: hold the pairing button on the control box or remote until its light blinks.\n2. While the bed is in pairing mode, promptly press **Submit** to pair.\n\nPairing happens on your Home Assistant host or Bluetooth proxy — not your phone. ESPHome proxies must run ESPHome 2024.3.0 or newer.\n\nIf pairing keeps failing and the log names `AuthenticationFailed` or `AuthenticationRejected`, the bond is failing at the authentication stage rather than timing out, and retrying unchanged rarely helps. One common cause is stored pairing keys that no longer match: the bed still stores a pairing for the adapter you are connecting from, while that adapter no longer has the matching key. Clearing only one side does not help in that case.\n\nRemove the stored pairing on the adapter that connects to the bed: on a Home Assistant host that is `bluetoothctl remove {address}`; if you connect through an ESPHome Bluetooth proxy the bond is stored on the proxy and has to be cleared there. Then clear the bed's own stored pairings the way its manufacturer documents, and pair again."
           },
           "proxy_pairing": {
             "title": "Pair your bed through the Bluetooth proxy",
@@ -5980,7 +6028,7 @@
           },
           "stale_bond_progress": {
             "title": "Replacing the bond",
-            "description": "Replacing the Bluetooth bond for **{name}** ({address})\u2026"
+            "description": "Replacing the Bluetooth bond for **{name}** ({address})…"
           },
           "stale_bond_result": {
             "title": "Bond recovery",
@@ -5988,25 +6036,25 @@
           }
         },
         "progress": {
-          "locating": "Looking for the bed\u2026",
-          "connecting": "Connecting over Bluetooth\u2026",
-          "pairing": "Pairing with the bed\u2026",
-          "verifying_bond": "Verifying the Bluetooth bond\u2026",
-          "disconnecting": "Disconnecting\u2026",
-          "unpairing": "Removing the Bluetooth bond\u2026"
+          "locating": "Looking for the bed…",
+          "connecting": "Connecting over Bluetooth…",
+          "pairing": "Pairing with the bed…",
+          "verifying_bond": "Verifying the Bluetooth bond…",
+          "disconnecting": "Disconnecting…",
+          "unpairing": "Removing the Bluetooth bond…"
         },
         "abort": {
           "pairing_failed": "Pairing didn't complete. Put the bed back into pairing mode (OKIN bases: unplug the control box ~30s, then plug it back in; Leggett & Platt Smart Bed: unplug the bed and remove the power-supply batteries, then plug it back in and wait for the chime and pulsing blue light; other beds: hold the pairing button), make sure it is in range of your Home Assistant adapter or an ESPHome proxy on 2024.3.0+, then run this repair again. If the log names `AuthenticationFailed` or `AuthenticationRejected`, the bond failed to authenticate. If it keeps happening, clear the stored pairing both on the adapter you connect from and on the bed itself, then try again.",
           "proxy_pairing_requires_setup": "This bed permits only one connection during pairing, and its setup has no active connection for this repair to reuse. Select **{transport}** as the bed's preferred Bluetooth adapter, put the bed in pairing mode, then reload the integration entry. A preferred adapter does not guarantee the connection route. Check the Bluetooth connection sensor's `connection_source` attribute before concluding that the named proxy was repaired. If authentication still fails through that proxy, follow the [proxy recovery guide]({recovery_url}). A full flash erase removes every pairing stored on the proxy.",
           "proxy_pairing_issue_changed": "The pairing issue changed while this repair was open. Open the current repair to retry through the proxy that most recently failed.",
           "stale_bond_recovery_failed": "The bond could not be recovered, so this repair stays open. Put the bed into pairing mode and run it again.",
-          "recovery_success": "\u2705 The Bluetooth bond was confirmed. The bed should respond normally now.",
-          "recovery_not_run": "\u274c The recovery did not run.",
-          "recovery_not_advertising": "\u274c The bed is not advertising, so nothing was changed and the old bond is still in place. Put the bed into pairing mode and run this repair again.",
-          "recovery_unpair_failed": "\u274c The old bond could not be removed, so nothing else was attempted.",
-          "recovery_unpair_unconfirmed": "\u274c Removing the old bond could not be confirmed, so it may or may not still be there and no new one was made. Put the bed into pairing mode and run this repair again.",
-          "recovery_failed_unchanged": "\u274c The existing bond could not be checked safely, so nothing was changed. Make sure the bed is in range and run this repair again.",
-          "recovery_partial": "\u274c The old bond was removed but the new one could not be confirmed, so this repair stays open. Put the bed into pairing mode and run it again."
+          "recovery_success": "✅ The Bluetooth bond was confirmed. The bed should respond normally now.",
+          "recovery_not_run": "❌ The recovery did not run.",
+          "recovery_not_advertising": "❌ The bed is not advertising, so nothing was changed and the old bond is still in place. Put the bed into pairing mode and run this repair again.",
+          "recovery_unpair_failed": "❌ The old bond could not be removed, so nothing else was attempted.",
+          "recovery_unpair_unconfirmed": "❌ Removing the old bond could not be confirmed, so it may or may not still be there and no new one was made. Put the bed into pairing mode and run this repair again.",
+          "recovery_failed_unchanged": "❌ The existing bond could not be checked safely, so nothing was changed. Make sure the bed is in range and run this repair again.",
+          "recovery_partial": "❌ The old bond was removed but the new one could not be confirmed, so this repair stays open. Put the bed into pairing mode and run it again."
         },
         "error": {
           "pairing_failed": "Pairing did not complete. Check that the bed is still in pairing mode and the same proxy is online, then retry. Use the recovery guide below only if authentication keeps failing.",
@@ -6057,7 +6105,7 @@
     },
     "octo_pin_required": {
       "title": "PIN required for {name}",
-      "description": "**{name}** ({address}) is an Octo receiver whose PIN lock is engaged, and no PIN is configured in Home Assistant.\n\nA locked receiver still connects and still reports its capabilities, but it will not act on commands until it is authenticated, so the controls appear to work while the bed does nothing.\n\n**If you know the PIN:** open the OCTO Smart Control app (or your bed brand's version of it) to look it up, then enter it under **Settings \u2192 Devices & services \u2192 Adjustable Bed \u2192 Configure \u2192 Octo PIN**.\n\n**If the PIN is lost:** there is no factory-default PIN. OCTO publishes a reset procedure per receiver at {recovery_url} \u2014 select yours by its photo. The two common ones are pressing the button on the controller *10 times in quick succession* (Receiver II / RC2, BrickMini Basic), or *once briefly then once long for about 10 seconds* (Brick 2 and others). Micro Lift receivers are reset from the remote instead.\n\n\u26a0\ufe0f Every one of those is a full factory reset: all settings are irrevocably deleted and the remotes must be re-taught. A reset receiver has no PIN and is no longer locked."
+      "description": "**{name}** ({address}) reports that PIN control is enabled, a PIN is configured, and the receiver is locked. Normal controls remain unavailable until the receiver is unlocked.\n\nIf you know the PIN, enter it under **Settings → Devices & services → Adjustable Bed → Configure → OCTO PIN**. If you do not know it, follow the receiver manufacturer's instructions."
     },
     "furnimove_layout": {
       "title": "Confirm the control layout for {name}",
@@ -6154,7 +6202,7 @@
         "abort": {
           "entry_missing": "The entry no longer exists or was already reviewed. Open its current configuration.",
           "vibradorm_setup_started": "Continue with the guided Vibradorm setup.",
-          "vibradorm_setup_unavailable": "The guided setup could not open. Your current setup and this review were kept. Open Reconfigure from the entry\u2019s three-dot menu."
+          "vibradorm_setup_unavailable": "The guided setup could not open. Your current setup and this review were kept. Open Reconfigure from the entry’s three-dot menu."
         }
       }
     },
@@ -6188,7 +6236,7 @@
         "abort": {
           "entry_missing": "The entry no longer exists or was already reviewed. Open its current configuration.",
           "vibradorm_setup_started": "Continue with the guided Vibradorm setup.",
-          "vibradorm_setup_unavailable": "The guided setup could not open. Your current setup and this review were kept. Open Reconfigure from the entry\u2019s three-dot menu."
+          "vibradorm_setup_unavailable": "The guided setup could not open. Your current setup and this review were kept. Open Reconfigure from the entry’s three-dot menu."
         }
       }
     },
@@ -6198,7 +6246,7 @@
         "step": {
           "init": {
             "title": "Review the profile for {name}",
-            "description": "**{name}** currently uses **{current}**. Its observed Star254202 Bluetooth name and manufacturer match a reported bed where switching to **{suggested}** restored Memory 1 saving and recall. This is a possible match, not a guarantee for every bed with that identity.\n\nThe suggested profile exposes numbered memory controls. Lumbar-specific Save Zero Gravity, Save Lounge, Save Incline, Save Anti-Snore, Wave 1, Wave 2, Wave 3, Massage On and Check Massage buttons will no longer be available. The Incline preset is replaced by TV. Automations using removed controls will need updating. Existing device and matching entity IDs are preserved.\n\nReview opens the suggested profile\u2019s settings. Check them and submit to apply the change. Closing settings keeps your current profile. Choose Keep current profile to dismiss this suggestion across restarts and updates.",
+            "description": "**{name}** currently uses **{current}**. Its observed Star254202 Bluetooth name and manufacturer match a reported bed where switching to **{suggested}** restored Memory 1 saving and recall. This is a possible match, not a guarantee for every bed with that identity.\n\nThe suggested profile exposes numbered memory controls. Lumbar-specific Save Zero Gravity, Save Lounge, Save Incline, Save Anti-Snore, Wave 1, Wave 2, Wave 3, Massage On and Check Massage buttons will no longer be available. The Incline preset is replaced by TV. Automations using removed controls will need updating. Existing device and matching entity IDs are preserved.\n\nReview opens the suggested profile’s settings. Check them and submit to apply the change. Closing settings keeps your current profile. Choose Keep current profile to dismiss this suggestion across restarts and updates.",
             "data": {
               "action": "Profile choice"
             }
@@ -6226,14 +6274,14 @@
         "step": {
           "init": {
             "title": "Review the profile for {name}",
-            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed\u2019s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens Configure. Check your app, remote and product settings before submitting. Nothing changes until you save. Closing settings keeps the current profile. Keep current profile dismisses this assessment across restarts and updates.",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed’s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens Configure. Check your app, remote and product settings before submitting. Nothing changes until you save. Closing settings keeps the current profile. Keep current profile dismisses this assessment across restarts and updates.",
             "data": {
               "action": "Profile choice"
             }
           },
           "paired": {
             "title": "Review the profile for {target}",
-            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed\u2019s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nThis assessment applies to this physical bed. Review opens the pair\u2019s Configure menu. To choose a different profile, select {pair_action} first, then configure the affected bed. No pair or profile changes happen automatically. Keep current profile dismisses this assessment for this physical bed only.",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed’s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nThis assessment applies to this physical bed. Review opens the pair’s Configure menu. To choose a different profile, select {pair_action} first, then configure the affected bed. No pair or profile changes happen automatically. Keep current profile dismisses this assessment for this physical bed only.",
             "data": {
               "action": "Profile choice"
             }
@@ -6261,7 +6309,7 @@
           },
           "paired": {
             "title": "Review the profile for {target}",
-            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) suggests reviewing the selected profile or protocol variant. It cannot establish which controls your bed has. Check the app and physical remote you use against these choices:\n\n{choices}\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nThis assessment applies to this physical bed. Review opens the pair\u2019s Configure menu. To choose a different profile, select {pair_action} first, then configure the affected bed. No pair or profile changes happen automatically. Keep current profile dismisses this assessment for this physical bed only.",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) suggests reviewing the selected profile or protocol variant. It cannot establish which controls your bed has. Check the app and physical remote you use against these choices:\n\n{choices}\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nThis assessment applies to this physical bed. Review opens the pair’s Configure menu. To choose a different profile, select {pair_action} first, then configure the affected bed. No pair or profile changes happen automatically. Keep current profile dismisses this assessment for this physical bed only.",
             "data": {
               "action": "Profile choice"
             }
@@ -6282,21 +6330,21 @@
         "step": {
           "init": {
             "title": "Review the app for {target}",
-            "description": "**{target}** ({bluetooth_name}, {address}) uses **{current}**. This matches a reported TEMPUR-Ergo ProSmart Air / ActiveBreeze setup that used Adjustable Lite for compatibility. If your official app is **Tempur Sleeptracker-AI**, use **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** for the app\u2019s presets, ActiveBreeze heat/cooling and premium massage controls. A similar Bluetooth name alone does not confirm that app or its processor.\n\nThe app controls a separate Bluetooth endpoint. Review shows how to add that processor. Keep current profile dismisses this notice for this physical bed across restarts and updates.",
+            "description": "**{target}** ({bluetooth_name}, {address}) uses **{current}**. This matches a reported TEMPUR-Ergo ProSmart Air / ActiveBreeze setup that used Adjustable Lite for compatibility. If your official app is **Tempur Sleeptracker-AI**, use **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** for the app’s presets, ActiveBreeze heat/cooling and premium massage controls. A similar Bluetooth name alone does not confirm that app or its processor.\n\nThe app controls a separate Bluetooth endpoint. Review shows how to add that processor. Keep current profile dismisses this notice for this physical bed across restarts and updates.",
             "data": {
               "action": "Profile choice"
             }
           },
           "paired": {
             "title": "Review the app for {target}",
-            "description": "**{target}** ({bluetooth_name}, {address}) uses **{current}**. This matches a reported TEMPUR-Ergo ProSmart Air / ActiveBreeze setup that used Adjustable Lite for compatibility. If your official app is **Tempur Sleeptracker-AI**, use **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** for the app\u2019s presets, ActiveBreeze heat/cooling and premium massage controls. A similar Bluetooth name alone does not confirm that app or its processor.\n\nThe app controls a separate Bluetooth endpoint. Review shows how to add that processor. Keep current profile dismisses this notice for this physical bed across restarts and updates.",
+            "description": "**{target}** ({bluetooth_name}, {address}) uses **{current}**. This matches a reported TEMPUR-Ergo ProSmart Air / ActiveBreeze setup that used Adjustable Lite for compatibility. If your official app is **Tempur Sleeptracker-AI**, use **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** for the app’s presets, ActiveBreeze heat/cooling and premium massage controls. A similar Bluetooth name alone does not confirm that app or its processor.\n\nThe app controls a separate Bluetooth endpoint. Review shows how to add that processor. Keep current profile dismisses this notice for this physical bed across restarts and updates.",
             "data": {
               "action": "Profile choice"
             }
           },
           "processor": {
             "title": "Add the Tempur Sleeptracker processor",
-            "description": "If you use **Tempur Sleeptracker-AI**, open **Settings > Devices & services > Add integration > Adjustable Bed** and add the **Sleeptracker processor\u2019s actual Bluetooth endpoint**. Choose **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** and follow its verification and product settings. Automatic discovery can offer the processor; manual setup requires its actual Bluetooth address.\n\nThe existing **{target}** ({address}) is a UART receiver. Changing its bed type alone cannot select the processor. Verify the new processor\u2019s controls before retiring these compatibility controls. The new entry has its own device and entity IDs, so update affected dashboards and automations. For a paired bed, review each physical bed separately; this notice does not split the pair or identify the processor\u2019s physical sides.\n\n[Processor setup guide]({processor_guide_url})\n\nSubmit to acknowledge these instructions and dismiss this notice. Adding or verifying a processor is a separate setup action; acknowledging this guide keeps the current profile."
+            "description": "If you use **Tempur Sleeptracker-AI**, open **Settings > Devices & services > Add integration > Adjustable Bed** and add the **Sleeptracker processor’s actual Bluetooth endpoint**. Choose **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** and follow its verification and product settings. Automatic discovery can offer the processor; manual setup requires its actual Bluetooth address.\n\nThe existing **{target}** ({address}) is a UART receiver. Changing its bed type alone cannot select the processor. Verify the new processor’s controls before retiring these compatibility controls. The new entry has its own device and entity IDs, so update affected dashboards and automations. For a paired bed, review each physical bed separately; this notice does not split the pair or identify the processor’s physical sides.\n\n[Processor setup guide]({processor_guide_url})\n\nSubmit to acknowledge these instructions and dismiss this notice. Adding or verifying a processor is a separate setup action; acknowledging this guide keeps the current profile."
           }
         },
         "error": {

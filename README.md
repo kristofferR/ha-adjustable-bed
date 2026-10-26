@@ -94,7 +94,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Keeson](docs/beds/keeson.md) | Ergomotion, Tempur, Beautyrest, King Koil, Member's Mark, Purple, GhostBed, ErgoSportive; [Adjustable Lite](docs/beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](docs/beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](docs/beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases](docs/beds/ore-comfort-bed.md), [Restonic BT](docs/beds/keeson.md#restonic-bt-profiles) |
 | ✅ [Richmat](docs/beds/richmat.md) | Casper, MLILY, Sven & Son, Avocado, Luuna, Jerome's; [RMControl](docs/beds/rmcontrol.md), [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](docs/beds/richmat-mh.md) |
 | ✅ [MotoSleep](docs/beds/motosleep.md) | HHC, Power Bob, binary MOTO models |
-| ✅ [Octo](docs/beds/octo.md) | Octo |
+| ✅ [OCTO Smart Control](docs/beds/octo.md) | OCTO Smart Control; Star2 is a separate variant |
 | ✅ [Solace](docs/beds/solace.md) | Solace, Sealy, QMS, [Woosa Sleep](docs/beds/woosa.md) |
 | ✅ [Leggett & Platt](docs/beds/leggett-platt.md) | Prodigy LBR (LP Comfort Connect), Prodigy Comfort Elite / CE; [Prodigy 2L / 2 / 4 and U / Ultra Series](docs/beds/leggett-okin.md), [L&P Adjustable Base](docs/beds/lp-legacy.md) |
 | ✅ [Reverie](docs/beds/reverie.md) | Reverie |
@@ -199,7 +199,7 @@ integration entry in Settings → Devices & Services, then **Change settings**.
 
 | Setting | Description |
 |---------|-------------|
-| Motor Count | 2 (back/legs), 3 (adds head), or 4 (adds feet); Standard Octo RTV TV lifts use 1 |
+| Motor Count | Layout for profiles that expose a configurable count; Standard OCTO follows its advertised count unless an explicit override is selected |
 | Has Massage | Enable if your bed has massage |
 | Protocol Variant | Usually auto-detected, override if needed |
 | Motor Pulse Settings | Fine-tune movement timing |

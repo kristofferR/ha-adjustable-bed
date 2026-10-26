@@ -12,7 +12,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Keeson](beds/keeson.md) | Position feedback (Ergomotion), presets, massage, lights; [Adjustable Lite](beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](beds/keeson.md#innova-profile), [MaxCoil / Dynasty / Bedsense](beds/ore-comfort-bed.md), [Restonic BT](beds/keeson.md#restonic-bt-profiles) |
 | [Richmat](beds/richmat.md) | Model-dependent motors, memory, massage, lighting, alarms and reported state; [RMControl](beds/rmcontrol.md), [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat-mh.md) |
 | [MotoSleep](beds/motosleep.md) | Model-dependent HHC/MOTO controls, memory, massage and lighting |
-| [Octo](beds/octo.md) | Two protocol variants, optional PIN auth, RGBW lights. Sold as bett1.de, Dunlopillo, Hüsler Nest, Swiss Sense, Velda, Werkmeister, sleepling and more ([known brand list](beds/octo.md#bed-brands-that-ship-octo-actuators)) |
+| [OCTO Smart Control](beds/octo.md) | Standard OCTO capability-advertised motor, memory, light and setting controls; separate Star2 variant. Hardware validation is deferred |
 | [Solace](beds/solace.md) | Name-based profiles, named presets, optional massage/lights, exact S4-Y lift/tilt; explicit [Woosa Sleep](beds/woosa.md) profile with one Favourite memory |
 | [Leggett & Platt](beds/leggett-platt.md) | Gen2 motor control and RGB lighting; Okin tilt/lumbar and massage; [Prodigy / U Series](beds/leggett-okin.md) layouts and timers, [L&P legacy](beds/lp-legacy.md) model settings |
 | [Reverie](beds/reverie.md) | Position control (0-100%), 4 presets, wave massage |

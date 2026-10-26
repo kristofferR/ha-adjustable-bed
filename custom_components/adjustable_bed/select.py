@@ -22,6 +22,7 @@ from .const import (
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
+from .octo_runtime import octo_controller
 from .paired_coordinator import entity_runtimes
 
 if TYPE_CHECKING:
@@ -149,14 +150,14 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id]
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
-            entry, runtime, async_add_entities,
+            entry,
+            runtime,
+            async_add_entities,
             partial(_select_entities_for, hass, runtime),
         )
 
 
-def _select_entities_for(
-    hass: HomeAssistant, coordinator: EntityRuntime
-) -> list[SelectEntity]:
+def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> list[SelectEntity]:
     """Build select entities for a single (child or standalone) coordinator."""
     has_massage = coordinator.has_massage
     controller = coordinator.capability_controller
@@ -207,7 +208,9 @@ def _select_entities_for(
             # control doesn't linger in the UI and card.
             _async_remove_stale_select_entity(hass, coordinator, LIGHT_TIMER_DESCRIPTION.key)
 
-        thermal_timer_options = list(getattr(controller, THERMAL_TIMER_DESCRIPTION.options_attr, []))
+        thermal_timer_options = list(
+            getattr(controller, THERMAL_TIMER_DESCRIPTION.options_attr, [])
+        )
         thermal_sides = controller.thermal_climate_sides
         if thermal_sides and thermal_timer_options:
             _LOGGER.debug(
@@ -510,6 +513,13 @@ class AdjustableBedControllerStateSelect(AdjustableBedEntity, SelectEntity):
     """Select entity backed by controller state updates."""
 
     entity_description: AdjustableBedControllerStateSelectDescription
+
+    @property
+    def available(self) -> bool:
+        """Respect Octo's PIN gate for live settings."""
+        controller = self._coordinator.capability_controller
+        octo = octo_controller(controller)
+        return super().available and (octo is None or octo.normal_controls_available)
 
     def __init__(
         self,

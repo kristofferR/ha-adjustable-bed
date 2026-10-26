@@ -33,6 +33,7 @@ from .const import (
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MOTION_BED,
+    BED_TYPE_OCTO,
     BED_TYPE_REMACRO,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
@@ -112,6 +113,9 @@ _APP_DEFINED: Final = GENERIC_FIELDS
 _ALWAYS_MASSAGE: Final = frozenset({CONF_HAS_MASSAGE})
 
 _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
+    # OCTO motor layout comes from its advertised capability record, with an
+    # OCTO-specific explicit override in the profile's own setup/options UI.
+    BED_TYPE_OCTO: frozenset({CONF_MOTOR_COUNT}),
     BED_TYPE_SERENITY: _FIXED_LAYOUT,
     BED_TYPE_TRANQUIL: _FIXED_LAYOUT,
     BED_TYPE_ZSERIES: _FIXED_LAYOUT,
@@ -174,7 +178,13 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_FSM_RELAX: SideProfile(
         "FSM Relax",
         frozenset(
-            {CONF_PRODUCT_TYPE, CONF_HAS_LIGHT, CONF_HAS_MASSAGE, CONF_FSM_RELAX_MEMORY_NAMES, *CONF_REVERSE_MOTORS}
+            {
+                CONF_PRODUCT_TYPE,
+                CONF_HAS_LIGHT,
+                CONF_HAS_MASSAGE,
+                CONF_FSM_RELAX_MEMORY_NAMES,
+                *CONF_REVERSE_MOTORS,
+            }
         ),
     ),
     BED_TYPE_LIMOSS_REMOTE: SideProfile("Limoss Remote", LIMOSS_REMOTE_CONFIG_KEYS),
@@ -194,22 +204,39 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_JIECANG_APP: SideProfile(
         "Jiecang app",
         frozenset(
-            {CONF_JIECANG_APP_PROFILE, CONF_JIECANG_APP_LAYOUT, CONF_JIECANG_APP_TRANSPORT, CONF_HAS_LIGHT}
+            {
+                CONF_JIECANG_APP_PROFILE,
+                CONF_JIECANG_APP_LAYOUT,
+                CONF_JIECANG_APP_TRANSPORT,
+                CONF_HAS_LIGHT,
+            }
         ),
     ),
     BED_TYPE_MALOUF_APP: SideProfile(
         "Malouf / Lucid app",
         frozenset(
-            {CONF_MALOUF_APP_PROFILE, CONF_MALOUF_APP_MODEL, CONF_MALOUF_APP_TRANSPORT, CONF_MALOUF_APP_PRIMARY}
+            {
+                CONF_MALOUF_APP_PROFILE,
+                CONF_MALOUF_APP_MODEL,
+                CONF_MALOUF_APP_TRANSPORT,
+                CONF_MALOUF_APP_PRIMARY,
+            }
         ),
     ),
     BED_TYPE_LEGGETT_LP_LEGACY: SideProfile(
         "L&P legacy app",
         frozenset(
-            {CONF_LP_LEGACY_MODEL, CONF_LP_LEGACY_MODE, CONF_LP_LEGACY_WRITE_UUID, CONF_LP_LEGACY_READ_UUID}
+            {
+                CONF_LP_LEGACY_MODEL,
+                CONF_LP_LEGACY_MODE,
+                CONF_LP_LEGACY_WRITE_UUID,
+                CONF_LP_LEGACY_READ_UUID,
+            }
         ),
     ),
-    BED_TYPE_LEGGETT_OKIN: SideProfile("Leggett & Platt app", frozenset({CONF_LEGGETT_APP_PROFILE})),
+    BED_TYPE_LEGGETT_OKIN: SideProfile(
+        "Leggett & Platt app", frozenset({CONF_LEGGETT_APP_PROFILE})
+    ),
     BED_TYPE_SLEEPTRACKER: SideProfile("Sleeptracker Smart Bed", SLEEPTRACKER_CONFIG_KEYS),
     BED_TYPE_MOTION_BED: SideProfile("Motion Bed", MOTION_BED_CONFIG_KEYS | {CONF_BLE_DEVICE_NAME}),
     BED_TYPE_STARCODE_ABM5_4: SideProfile("AdjustableM5X4", STARCODE_APP_CONFIG_KEYS),
@@ -217,7 +244,9 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
         "AdjustableM5X5",
         frozenset({CONF_STARCODE_M5X5_PROFILE, CONF_BLE_DEVICE_NAME, CONF_STARCODE_LIFT_ENTRIES}),
     ),
-    BED_TYPE_VIBRADORM_APP: SideProfile("Vibradorm app", VIBRADORM_APP_CONFIG_KEYS | {CONF_HAS_MASSAGE}),
+    BED_TYPE_VIBRADORM_APP: SideProfile(
+        "Vibradorm app", VIBRADORM_APP_CONFIG_KEYS | {CONF_HAS_MASSAGE}
+    ),
     BED_TYPE_VMATBASIC: SideProfile("V-MAT Basic", VMATBASIC_CONFIG_KEYS),
     BED_TYPE_TRANQUIL: SideProfile("Tranquil"),
     BED_TYPE_ZSERIES: SideProfile("Customatic Z-Series", variant_owned=True),

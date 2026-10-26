@@ -24,7 +24,9 @@ from .const import (
     OKIN_BEDDING_APP_BED_TYPES,
 )
 from .entity import AdjustableBedEntity
+from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
+from .octo_runtime import octo_controller
 from .paired_coordinator import entity_runtimes
 
 if TYPE_CHECKING:
@@ -89,6 +91,17 @@ SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
         required_capability="supports_synchro",
         entity_registry_enabled_default=False,
         has_discrete_control=True,
+        state_key="synchro_mode",
+    ),
+    AdjustableBedSwitchEntityDescription(
+        key="remote_control_lock",
+        translation_key="remote_control_lock",
+        icon="mdi:remote-lock",
+        turn_on_fn=lambda ctrl: ctrl.set_remote_control_lock(True),
+        turn_off_fn=lambda ctrl: ctrl.set_remote_control_lock(False),
+        required_capability="supports_remote_control_lock",
+        has_discrete_control=True,
+        state_key="remote_control_lock",
     ),
 )
 
@@ -100,11 +113,13 @@ async def async_setup_entry(
 ) -> None:
     """Set up Adjustable Bed switch entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([
-        entity
-        for runtime in entity_runtimes(coordinator)
-        for entity in _switch_entities_for(hass, runtime)
-    ])
+    for runtime in entity_runtimes(coordinator):
+        async_setup_dynamic_entities(
+            entry,
+            runtime,
+            async_add_entities,
+            lambda runtime=runtime: _switch_entities_for(hass, runtime),
+        )
 
 
 def _switch_entities_for(
@@ -115,7 +130,11 @@ def _switch_entities_for(
     # still gets its switches built from a client-free controller minted from
     # config (see coordinator).
     controller = coordinator.capability_controller
+    octo = octo_controller(controller)
     registry = er.async_get(hass)
+
+    if octo is not None and not octo.controller_entity_discovery_complete:
+        return []
 
     entities = []
     for description in SWITCH_DESCRIPTIONS:
@@ -125,6 +144,7 @@ def _switch_entities_for(
             and (
                 controller.supports_light_color_control
                 or controller.supports_light_state_feedback
+                or controller.supported_color_modes == frozenset(("onoff",))
                 or (
                     coordinator.bed_type in (BED_TYPE_LINAK, BED_TYPE_SLEEP_NUMBER_MCR)
                     and controller.supports_discrete_light_control
@@ -171,6 +191,13 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
 
     entity_description: AdjustableBedSwitchEntityDescription
 
+    @property
+    def available(self) -> bool:
+        """Keep Octo setting switches unavailable while its PIN gate is locked."""
+        controller = self._coordinator.capability_controller
+        octo = octo_controller(controller)
+        return super().available and (octo is None or octo.normal_controls_available)
+
     def __init__(
         self,
         coordinator: EntityRuntime,
@@ -188,7 +215,8 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         if description.state_key is None:
             self._attr_is_on = False
             if description.key == "under_bed_lights" and (
-                coordinator.bed_type in {*OKIN_BEDDING_APP_BED_TYPES, BED_TYPE_REMACRO, BED_TYPE_SVANE}
+                coordinator.bed_type
+                in {*OKIN_BEDDING_APP_BED_TYPES, BED_TYPE_REMACRO, BED_TYPE_SVANE}
                 or (controller is not None and controller.light_state_is_assumed)
             ):
                 # These apps have on/off commands but no physical state response.

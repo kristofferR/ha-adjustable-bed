@@ -10,6 +10,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 from .entity_runtime import EntityRuntime
+from .octo_runtime import octo_controller
 
 
 def async_setup_dynamic_entities(
@@ -27,7 +28,16 @@ def async_setup_dynamic_entities(
         return
 
     def discover(_state: object) -> None:
-        additions = [entity for entity in build_entities() if entity.unique_id not in known]
+        entities = list(build_entities())
+        controller = coordinator.capability_controller
+        octo = octo_controller(controller)
+        if octo is not None and octo.controller_entity_discovery_complete:
+            # Platform builders retire Octo registry rows only after a complete
+            # capability list. Forget those IDs too, so a later complete list
+            # can add the same stable identities again. Other controllers remain
+            # add-only.
+            known.intersection_update(entity.unique_id for entity in entities)
+        additions = [entity for entity in entities if entity.unique_id not in known]
         if additions:
             known.update(entity.unique_id for entity in additions)
             async_add_entities(additions)

@@ -13,6 +13,21 @@ export function movementPulse(
   motor: MotorEntity,
   direction: Direction,
 ): Promise<unknown> | undefined {
+  const heldControl = motor.heldControls?.[direction];
+  if (heldControl) {
+    const entityId = motor.cover ?? motor[direction];
+    const deviceId = entityId ? hass?.entities[entityId]?.device_id : undefined;
+    if (!deviceId) return undefined;
+    const side = entityId ? hass?.states[entityId]?.attributes.bed_side : undefined;
+    return hass?.callService("adjustable_bed", "hold_control", {
+      device_id: [deviceId],
+      control: heldControl.control,
+      // Each operation is host-bounded and cleans up with STOP. The card can
+      // safely start another bounded operation if the user is still holding.
+      duration: 60,
+      ...(side === "left" || side === "right" || side === "both" ? { side } : {}),
+    });
+  }
   if (motor.timedMove) {
     // A shared movement window preserves each receiver's cadence without
     // making the faster side wait out its partner's configured finite pulse.
@@ -65,6 +80,9 @@ export class MotorHold {
   // Bumping this is what stops an in-flight repeat loop: the loop's next
   // iteration sees a stale value and exits.
   private _generation = 0;
+  private _activeHeldControl: { startDelayMs: number; releaseDelayMs: number } | null = null;
+  private _releaseTimer: ReturnType<typeof setTimeout> | null = null;
+  private _pendingRelease: { generation: number; stop?: string } | null = null;
 
   constructor(private readonly actions: HoldActions) {}
 
@@ -81,30 +99,60 @@ export class MotorHold {
     pointerId: number | null,
     stopEntityId?: string,
   ): void {
-    if (this._key !== null) return;
+    this._begin(motor, dir, pointerId, stopEntityId);
+  }
+
+  // A semantic click has no down/up interval. Start the same held service and
+  // release it just after its controller-declared start guard.
+  activateForTap(motor: MotorEntity, dir: Direction, stopEntityId?: string): void {
+    const generation = this._begin(motor, dir, null, stopEntityId);
+    if (generation === null) return;
+    const startDelayMs = this._activeHeldControl?.startDelayMs ?? 0;
+    setTimeout(() => {
+      if (generation === this._generation && this._key === motor.key) {
+        this.end(motor);
+      }
+    }, startDelayMs + 1);
+  }
+
+  private _begin(
+    motor: MotorEntity,
+    dir: Direction,
+    pointerId: number | null,
+    stopEntityId?: string,
+  ): number | null {
+    if (this._key !== null) return null;
+    // Finish a prior delayed release before starting a new hold. The next
+    // controller-declared start guard keeps that STOP ahead of its first write.
+    this._flushPendingRelease();
     this._key = motor.key;
     this._cover = motor.cover ?? null;
     this._stop = stopEntityId ?? null;
     this._pointerId = pointerId;
-    void this._repeat(motor, dir, ++this._generation);
+    this._activeHeldControl = motor.heldControls?.[dir] ?? null;
+    if (this._releaseTimer !== null) clearTimeout(this._releaseTimer);
+    this._releaseTimer = null;
+    const generation = ++this._generation;
+    void this._repeat(motor, dir, generation);
+    return generation;
   }
 
-  // One iteration moves the bed for a single configured pulse and then stops,
-  // for cover-backed motors too: cover.py runs open_cover/close_cover as one
-  // finite controller command that performs its own STOP/release cleanup rather
-  // than running until stop_cover. So both kinds of motor need re-issuing.
+  // Each iteration is one bounded backend operation. Most controls run one
+  // configured pulse; controllers with a held service run until their declared
+  // safety bound. Both paths clean up, and the card repeats only while held.
   private async _repeat(
     motor: MotorEntity,
     dir: Direction,
     generation: number,
   ): Promise<void> {
-    // Awaiting each call before issuing the next keeps commands from queueing
-    // up behind each other, so the integration never has to cancel one
-    // mid-flight. It does not make the motion continuous: each backend command
-    // is finite and ends with the protocol's release burst, so a hold is a
-    // train of pulses with a short stop between them. Making it continuous
-    // needs a hold-until-released primitive in the integration, which does not
-    // exist yet: see issue #483.
+    const startDelayMs = this._activeHeldControl?.startDelayMs ?? 0;
+    if (startDelayMs > 0) {
+      await new Promise<void>((resolve) => setTimeout(resolve, startDelayMs));
+      if (generation !== this._generation) return;
+    }
+    // Awaiting each operation before starting the next prevents commands from
+    // queueing. If the user releases or the card disappears, the current call
+    // still ends at its controller-declared bound and performs its cleanup.
     while (generation === this._generation) {
       try {
         const pending = this.actions.pulse(motor, dir);
@@ -135,7 +183,21 @@ export class MotorHold {
   // stop the motor that is running.
   end(motor: MotorEntity): void {
     const stop = this._stop ?? undefined;
+    const heldControl = this._activeHeldControl;
     if (!this.cancel(motor)) return;
+    if (heldControl) {
+      const pendingRelease = { generation: this._generation, stop };
+      this._pendingRelease = pendingRelease;
+      this._releaseTimer = setTimeout(() => {
+        if (this._pendingRelease !== pendingRelease) return;
+        this._pendingRelease = null;
+        this._releaseTimer = null;
+        if (this._generation === pendingRelease.generation && this._key === null) {
+          this.actions.stopBed(stop);
+        }
+      }, heldControl.releaseDelayMs);
+      return;
+    }
     if (motor.cover) {
       this.actions.stopCover(motor.cover, stop);
       return;
@@ -163,7 +225,8 @@ export class MotorHold {
   // whatever is moving. `stopEntityId` is the pressed button's own stop; it
   // wins over the held motor's, which may belong to a different side.
   stopAll(stopEntityId?: string): void {
-    const stop = stopEntityId ?? this._stop ?? undefined;
+    const stop = stopEntityId ?? this._stop ?? this._pendingRelease?.stop;
+    this._discardPendingRelease();
     this._reset();
     this.actions.stopBed(stop);
   }
@@ -173,21 +236,50 @@ export class MotorHold {
   // nothing left to stop it, and the pulse already in flight on a button-backed
   // motor keeps moving the bed for the rest of its duration, which is a second
   // or more and longer still with customised pulse settings.
-  abandon(): void {
+  abandon(): string | undefined {
     const cover = this._cover;
     const stop = this._stop ?? undefined;
+    const heldControl = this._activeHeldControl;
     const wasHolding = this._key !== null;
+    const pendingStop = this._flushPendingRelease();
     this._reset();
-    if (!wasHolding) return;
-    if (cover) this.actions.stopCover(cover, stop);
-    else this.actions.stopBed(stop);
+    if (!wasHolding) return pendingStop;
+    if (heldControl) {
+      this.actions.stopBed(stop);
+      return stop;
+    }
+    if (cover) {
+      this.actions.stopCover(cover, stop);
+      return cover;
+    }
+    this.actions.stopBed(stop);
+    return stop;
   }
 
   private _reset(): void {
+    if (this._releaseTimer !== null) clearTimeout(this._releaseTimer);
+    this._releaseTimer = null;
     this._key = null;
     this._cover = null;
     this._stop = null;
     this._pointerId = null;
+    this._activeHeldControl = null;
     this._generation++;
+  }
+
+  private _flushPendingRelease(): string | undefined {
+    const pending = this._pendingRelease;
+    if (!pending) return undefined;
+    if (this._releaseTimer !== null) clearTimeout(this._releaseTimer);
+    this._releaseTimer = null;
+    this._pendingRelease = null;
+    this.actions.stopBed(pending.stop);
+    return pending.stop;
+  }
+
+  private _discardPendingRelease(): void {
+    if (this._releaseTimer !== null) clearTimeout(this._releaseTimer);
+    this._releaseTimer = null;
+    this._pendingRelease = null;
   }
 }

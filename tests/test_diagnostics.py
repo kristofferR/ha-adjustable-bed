@@ -32,6 +32,7 @@ from custom_components.adjustable_bed.redaction import (
     KEYS_TO_REDACT,
     MAC_ADDRESS_KEYS,
     _redact_mac_address,
+    redact_data,
 )
 
 
@@ -75,6 +76,12 @@ class TestDiagnosticsRedaction:
         # MAC address should be partially redacted (OUI kept)
         assert CONF_ADDRESS in MAC_ADDRESS_KEYS
         assert "address" in MAC_ADDRESS_KEYS
+
+    def test_octo_enrollment_pin_and_confirmation_are_redacted(self) -> None:
+        assert redact_data({"octo_pin": "1234", "octo_pin_confirmation": "1234"}) == {
+            "octo_pin": "**REDACTED**",
+            "octo_pin_confirmation": "**REDACTED**",
+        }
 
     def test_mac_address_partial_redaction(self):
         """Test that MAC addresses are partially redacted, keeping the OUI."""
@@ -170,14 +177,8 @@ class TestDiagnosticsOutput:
         # Pairing diagnostics distinguish integration decisions from backend state.
         assert result["pairing"]["required"] is False
         assert result["pairing"]["persisted_bond_marker"] is False
-        assert (
-            result["pairing"]["last_bond_verification"]["status"]
-            == "not_attempted"
-        )
-        assert (
-            result["pairing"]["connection_attempts"][0]["pairing"]["decision"]
-            == "not_required"
-        )
+        assert result["pairing"]["last_bond_verification"]["status"] == "not_attempted"
+        assert result["pairing"]["connection_attempts"][0]["pairing"]["decision"] == "not_required"
 
         # Check controller info
         assert "initialized" in result["controller"]

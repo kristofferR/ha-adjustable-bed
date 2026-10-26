@@ -23,12 +23,19 @@ from .const import (
     DOMAIN,
 )
 from .entity import AdjustableBedEntity
+from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .logicdata_app_protocol import LAYOUTS, layout_axes
+from .octo_runtime import octo_controller
 from .paired_coordinator import entity_runtimes
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, MotorControlSpec, SideBoundController
+    from .beds.base import (
+        BedController,
+        ControllerMotorHoldSpec,
+        MotorControlSpec,
+        SideBoundController,
+    )
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,6 +53,7 @@ class AdjustableBedCoverEntityDescription(CoverEntityDescription):
     # Maximum angle for percentage calculation (default 68 degrees)
     max_angle: float = 68
     scheduler_resource: str | None = None
+    hold: ControllerMotorHoldSpec | None = None
 
 
 # Note: For Linak beds:
@@ -189,11 +197,13 @@ async def async_setup_entry(
 ) -> None:
     """Set up Adjustable Bed cover entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([
-        entity
-        for runtime in entity_runtimes(coordinator)
-        for entity in _cover_entities_for(hass, runtime)
-    ])
+    for runtime in entity_runtimes(coordinator):
+        async_setup_dynamic_entities(
+            entry,
+            runtime,
+            async_add_entities,
+            lambda runtime=runtime: _cover_entities_for(hass, runtime),
+        )
 
 
 def _cover_entities_for(
@@ -208,6 +218,10 @@ def _cover_entities_for(
 
     if controller is None:
         _LOGGER.warning("Skipping motor covers for %s - controller not available", coordinator.name)
+        return []
+
+    octo = octo_controller(controller)
+    if octo is not None and not octo.controller_entity_discovery_complete:
         return []
 
     _async_remove_stale_cover_entities(hass, coordinator, controller)
@@ -259,6 +273,7 @@ def _build_cover_description(
         position_key=spec.position_key,
         max_angle=spec.max_angle,
         scheduler_resource=spec.scheduler_resource,
+        hold=spec.hold,
     )
 
 
@@ -275,13 +290,25 @@ def _async_remove_stale_cover_entities(
         else set()
     )
     # App-specific covers must retire when a different protocol replaces them.
-    stale_keys = controller.stale_motor_entity_keys | {
-        axis for layout in LAYOUTS for axis in layout_axes(layout)
-    } | {
-        "both", "right_back", "right_legs", "both_backs", "both_legs", "waist",
-        "malouf_tilt_head", "malouf_full_tilt", "back_legs",
-        "motor_1", "motor_2", "motor_3", "motor_4",
-    }
+    stale_keys = (
+        controller.stale_motor_entity_keys
+        | {axis for layout in LAYOUTS for axis in layout_axes(layout)}
+        | {
+            "both",
+            "right_back",
+            "right_legs",
+            "both_backs",
+            "both_legs",
+            "waist",
+            "malouf_tilt_head",
+            "malouf_full_tilt",
+            "back_legs",
+            "motor_1",
+            "motor_2",
+            "motor_3",
+            "motor_4",
+        }
+    )
 
     for key in stale_keys:
         if key in active_keys:
@@ -299,9 +326,13 @@ def _async_remove_stale_cover_entities(
     prefix += namespace
     active_ids = {coordinator.entity_unique_id(key) for key in active_keys}
     for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
-        if (row.domain == "cover" and row.platform == DOMAIN
-                and row.unique_id.startswith(prefix) and row.unique_id.endswith(suffix)
-                and row.unique_id not in active_ids):
+        if (
+            row.domain == "cover"
+            and row.platform == DOMAIN
+            and row.unique_id.startswith(prefix)
+            and row.unique_id.endswith(suffix)
+            and row.unique_id not in active_ids
+        ):
             registry.async_remove(row.entity_id)
 
 
@@ -327,6 +358,24 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         self._move_direction: str | None = None
         self._movement_generation: int = 0  # Track active movement to handle cancellation
 
+    async def async_added_to_hass(self) -> None:
+        """Refresh availability when an Octo PIN lock changes."""
+        await super().async_added_to_hass()
+        controller = self._coordinator.capability_controller
+        if octo_controller(controller) is not None:
+            self.async_on_remove(
+                self._coordinator.register_controller_state_callback(
+                    lambda _state: self.async_write_ha_state()
+                )
+            )
+
+    @property
+    def available(self) -> bool:
+        """Hide Octo motor controls while the live PIN gate is locked."""
+        controller = self._coordinator.capability_controller
+        octo = octo_controller(controller)
+        return super().available and (octo is None or octo.normal_controls_available)
+
     @property
     def _position_key(self) -> str:
         """Return the key to look up in position_data."""
@@ -336,6 +385,22 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
     def _motor_resource(self) -> str:
         """Return the scheduler resource for this physical position axis."""
         return self.entity_description.scheduler_resource or f"motor:{self._position_key}"
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose controller-declared card hold controls and host safety timing."""
+        attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        hold = self.entity_description.hold
+        if hold is not None:
+            attributes.update(
+                {
+                    "held_control_up": hold.up_control,
+                    "held_control_down": hold.down_control,
+                    "hold_start_delay_ms": hold.start_delay_ms,
+                    "hold_release_delay_ms": hold.release_delay_ms,
+                }
+            )
+        return attributes
 
     @property
     def is_closed(self) -> bool | None:

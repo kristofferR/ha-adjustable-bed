@@ -115,7 +115,6 @@ export class AdjustableBedCard extends LitElement {
   public setConfig(config: AdjustableBedCardConfig): void {
     if (!config) throw new Error("Invalid configuration");
     if (this._config) {
-      this._hold.abandon();
       this._stopCompact();
     }
     if (config.device_id !== this._config?.device_id ||
@@ -496,11 +495,13 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _stopCompact(bed?: BedEntities): void {
-    this._hold.abandon();
+    const alreadyStopped = this._hold.abandon();
     for (const id of bed ? compactStopEntities(bed) : []) {
       if (!this._compactStopTargets.has(id)) this._compactStopTargets.set(id, Symbol());
     }
-    for (const id of this._compactStopTargets.keys()) this._stopCompactTarget(id);
+    for (const id of this._compactStopTargets.keys()) {
+      if (id !== alreadyStopped) this._stopCompactTarget(id);
+    }
     if (this._compactStopTargets.size) this.requestUpdate();
   }
 
@@ -1050,15 +1051,43 @@ export class AdjustableBedCard extends LitElement {
     return html`
       ${this._heading("section.utility")}
       <div class="tiles">
-        ${bed.utility.map((id) =>
-          this._tile(id, () =>
-            id.startsWith("switch.")
-              ? this._call("switch", "toggle", id)
-              : this._press(id),
-          ),
-        )}
+        ${bed.utility.map((id) => this._utilityAction(id, bed.stop))}
       </div>
       ${bed.utilitySelects?.map((id) => this._moreInfoRow(id))}
+    `;
+  }
+
+  private _utilityAction(id: string, stopId?: string): TemplateResult {
+    const attributes = this.hass?.states[id]?.attributes;
+    const control = attributes?.held_control;
+    if (typeof control !== "string") {
+      return this._tile(id, () =>
+        id.startsWith("switch.")
+          ? this._call("switch", "toggle", id)
+          : this._press(id),
+      );
+    }
+    const motor: MotorEntity = {
+      key: `utility:${id}`,
+      up: id,
+      heldControls: {
+        up: {
+          control,
+          startDelayMs: Number(attributes?.hold_start_delay_ms ?? 0),
+          releaseDelayMs: Number(attributes?.hold_release_delay_ms ?? 0),
+        },
+      },
+    };
+    return html`
+      <button class="tile"
+        @pointerdown=${(e: PointerEvent) => this._startHold(e, motor, "up", stopId)}
+        @pointerup=${(e: PointerEvent) => this._endPointerHold(e, motor)}
+        @pointercancel=${(e: PointerEvent) => this._endPointerHold(e, motor)}
+        @keydown=${(e: KeyboardEvent) => this._startHold(e, motor, "up", stopId)}
+        @keyup=${(e: KeyboardEvent) => this._endKeyHold(e, motor)}
+        @blur=${() => this._endHold(motor)}
+        @click=${(e: MouseEvent) => this._activateWithoutPointer(e, motor, "up", stopId)}
+      >${this._icon(id)}<span class="tile-label">${this._name(id)}</span></button>
     `;
   }
 
@@ -1100,11 +1129,11 @@ export class AdjustableBedCard extends LitElement {
           ? html`<div class="hint">${localize(this.hass, "memory.set_hint")}</div>`
           : nothing
       }
-      <div class="tiles">${slots.map((s) => this._memoryTile(s, saveMode))}</div>
+      <div class="tiles">${slots.map((s) => this._memoryTile(s, saveMode, bed.stop))}</div>
     `;
   }
 
-  private _memoryTile(slot: MemorySlot, saveMode: boolean): TemplateResult {
+  private _memoryTile(slot: MemorySlot, saveMode: boolean, stopId?: string): TemplateResult {
     const labelId = slot.goto ?? slot.save!;
     if (saveMode) {
       const savable = !!slot.save;
@@ -1122,6 +1151,29 @@ export class AdjustableBedCard extends LitElement {
     // Only a real goto recalls; a save-only slot must not be saved by a plain
     // tap (that requires Save mode), so its tile is disabled here.
     const canRecall = !!slot.goto;
+    if (slot.goto && slot.heldControl) {
+      const motor: MotorEntity = {
+        key: `memory_${slot.slot}`,
+        up: slot.goto,
+        heldControls: { up: slot.heldControl },
+      };
+      return html`
+        <button
+          class="tile"
+          ?disabled=${!canRecall}
+          @pointerdown=${(e: PointerEvent) => this._startHold(e, motor, "up", stopId)}
+          @pointerup=${(e: PointerEvent) => this._endPointerHold(e, motor)}
+          @pointercancel=${(e: PointerEvent) => this._endPointerHold(e, motor)}
+          @keydown=${(e: KeyboardEvent) => this._startHold(e, motor, "up")}
+          @keyup=${(e: KeyboardEvent) => this._endKeyHold(e, motor)}
+          @blur=${() => this._endHold(motor)}
+          @click=${(e: MouseEvent) => this._activateWithoutPointer(e, motor, "up", stopId)}
+        >
+          ${this._icon(labelId)}
+          <span class="tile-label">${this._name(labelId)}</span>
+        </button>
+      `;
+    }
     return html`
       <button
         class="tile ${canRecall ? "" : "is-disabled"}"
@@ -1491,6 +1543,10 @@ export class AdjustableBedCard extends LitElement {
     stopId?: string,
   ): void {
     if (e.detail !== 0 || this._hold.heldKey !== null) return;
+    if (m.heldControls?.[dir]) {
+      this._hold.activateForTap(m, dir, stopId);
+      return;
+    }
     if (this._config?.layout === "compact") {
       if (stopId) this._compactStopTargets.set(stopId, Symbol());
       else if (m.cover) this._compactStopTargets.set(m.cover, Symbol());

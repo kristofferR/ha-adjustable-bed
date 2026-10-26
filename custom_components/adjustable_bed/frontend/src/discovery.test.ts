@@ -46,6 +46,44 @@ test("paired hold routing comes from backend metadata, not translated motor name
   expect(bedEntitiesForDevice(hass, "pair").motors[0].timedMove).toBeUndefined();
 });
 
+test("Octo backend motor and dynamic memory metadata is retained for the card", () => {
+  const hass = hassWith([
+    entry("cover.octo_back", "back", "octo"),
+    entry("button.octo_memory_9", "preset_memory_9", "octo"),
+    entry("button.octo_save_memory_9", "program_memory_9", "octo"),
+  ]);
+  hass.states["cover.octo_back"] = {
+    entity_id: "cover.octo_back", state: "closed", last_changed: "", last_updated: "",
+    attributes: {
+      held_control_up: "back_up", held_control_down: "back_down",
+      hold_start_delay_ms: 100, hold_release_delay_ms: 100,
+    },
+  };
+  hass.states["button.octo_memory_9"] = {
+    entity_id: "button.octo_memory_9", state: "unknown", last_changed: "", last_updated: "",
+    attributes: {
+      held_control: "memory_9", hold_start_delay_ms: 100, hold_release_delay_ms: 200,
+    },
+  };
+  hass.states["button.octo_save_memory_9"] = {
+    entity_id: "button.octo_save_memory_9", state: "unknown", last_changed: "", last_updated: "",
+    attributes: {},
+  };
+  const bed = bedEntitiesForDevice(hass, "octo");
+  expect(bed.motors[0].heldControls).toEqual({
+    up: { control: "back_up", startDelayMs: 100, releaseDelayMs: 100 },
+    down: { control: "back_down", startDelayMs: 100, releaseDelayMs: 100 },
+  });
+  expect(bed.memory[0].heldControl).toEqual({
+    control: "memory_9", startDelayMs: 100, releaseDelayMs: 200,
+  });
+  expect(bed.memory[0]).toMatchObject({
+    slot: 9,
+    goto: "button.octo_memory_9",
+    save: "button.octo_save_memory_9",
+  });
+});
+
 test("Motion hub module selector is a nonempty utility control", () => {
   const bed = bedEntitiesForDevice(hassWith([
     entry("select.hub_module", "motion_bed_active_module"),

@@ -106,14 +106,22 @@ export interface MotorEntity {
   down?: string;
   // Offered by the backend only for eligible concurrent two-receiver holds.
   timedMove?: { deviceId: string; motor: "back" | "legs" };
+  heldControls?: Partial<Record<"up" | "down", HeldControl>>;
   angle?: string; // sensor.* angle in degrees
   position?: string; // number.* position
+}
+
+export interface HeldControl {
+  control: string;
+  startDelayMs: number;
+  releaseDelayMs: number;
 }
 
 export interface MemorySlot {
   slot: number;
   goto?: string; // button.* preset_memory_N
   save?: string; // button.* program_memory_N
+  heldControl?: HeldControl;
 }
 
 export interface LightEntities {

@@ -63,6 +63,7 @@ from custom_components.adjustable_bed.const import (
     CONF_LP_LEGACY_MODEL,
     CONF_LP_LEGACY_WRITE_UUID,
     CONF_MOTOR_COUNT,
+    CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
@@ -244,9 +245,7 @@ class TestPairedSetup:
             if child.address == LEFT_ADDR and attempts[child.address] == 1:
                 return False
             child._client = MagicMock(is_connected=True)
-            child._controller = SimpleNamespace(
-                controller_entity_discovery_complete=True
-            )
+            child._controller = SimpleNamespace(controller_entity_discovery_complete=True)
             return True
 
         with (
@@ -287,9 +286,7 @@ class TestPairedSetup:
             config_entry=retained,
         )
 
-        assert async_has_side_controller_entities(
-            hass, pair, LEFT_ADDR
-        )
+        assert async_has_side_controller_entities(hass, pair, LEFT_ADDR)
 
     async def test_pair_setup_clears_pending_member_discoveries(
         self,
@@ -315,8 +312,7 @@ class TestPairedSetup:
 
         assert entry.state == ConfigEntryState.LOADED
         remaining = {
-            flow["flow_id"]
-            for flow in hass.config_entries.flow.async_progress_by_handler(DOMAIN)
+            flow["flow_id"] for flow in hass.config_entries.flow.async_progress_by_handler(DOMAIN)
         }
         assert remaining == {flows["AA:BB:CC:DD:EE:03"]}
 
@@ -823,7 +819,9 @@ class TestPairedSetup:
         row = ent_reg.async_get(row_id)
         assert row is not None
         assert row.config_entry_id == entry.entry_id
-        device = dr.async_get(hass).async_get_child_device_by_identifier((DOMAIN, LEFT_ADDR), entry.entry_id)
+        device = dr.async_get(hass).async_get_child_device_by_identifier(
+            (DOMAIN, LEFT_ADDR), entry.entry_id
+        )
         assert device is not None
         assert device.config_entry_id == entry.entry_id
 
@@ -1019,7 +1017,10 @@ class TestPairedSetup:
         dev_reg = dr.async_get(hass)
         left_device = next(
             device
-            for device in (*dr.async_entries_for_config_entry(dev_reg, entry.entry_id), *dr.async_child_entries_for_config_entry(dev_reg, entry.entry_id))
+            for device in (
+                *dr.async_entries_for_config_entry(dev_reg, entry.entry_id),
+                *dr.async_child_entries_for_config_entry(dev_reg, entry.entry_id),
+            )
             if any(i[0] == DOMAIN and i[1].upper() == LEFT_ADDR.upper() for i in device.identifiers)
         )
 
@@ -1048,7 +1049,10 @@ class TestPairedSetup:
         def device_for(addr: str):
             return next(
                 device
-                for device in (*dr.async_entries_for_config_entry(dev_reg, entry.entry_id), *dr.async_child_entries_for_config_entry(dev_reg, entry.entry_id))
+                for device in (
+                    *dr.async_entries_for_config_entry(dev_reg, entry.entry_id),
+                    *dr.async_child_entries_for_config_entry(dev_reg, entry.entry_id),
+                )
                 if any(i[0] == DOMAIN and i[1].upper() == addr.upper() for i in device.identifiers)
             )
 
@@ -1075,7 +1079,10 @@ class TestPairedSetup:
         dev_reg = dr.async_get(hass)
         parent = next(
             device
-            for device in (*dr.async_entries_for_config_entry(dev_reg, entry.entry_id), *dr.async_child_entries_for_config_entry(dev_reg, entry.entry_id))
+            for device in (
+                *dr.async_entries_for_config_entry(dev_reg, entry.entry_id),
+                *dr.async_child_entries_for_config_entry(dev_reg, entry.entry_id),
+            )
             if (DOMAIN, PAIR_ID) in device.identifiers
         )
         with pytest.raises(ServiceValidationError, match="Angle sensing is disabled"):
@@ -1336,8 +1343,13 @@ class TestPairBedsConversion:
         )
 
     async def _setup_single(
-        self, hass: HomeAssistant, address: str, name: str,
-        *, bed_type: str = BED_TYPE_LINAK, has_massage: bool = False,
+        self,
+        hass: HomeAssistant,
+        address: str,
+        name: str,
+        *,
+        bed_type: str = BED_TYPE_LINAK,
+        has_massage: bool = False,
     ) -> MockConfigEntry:
         """Set up a single bed so it owns real entity/device rows."""
         entry = MockConfigEntry(
@@ -1482,21 +1494,29 @@ class TestPairBedsConversion:
         new=AsyncMock(return_value=("Star", None)),
     )
     async def test_box25_combine_preserves_controls_and_retries_offline_setup(
-        self, hass: HomeAssistant, mock_coordinator_connected,
-        enable_custom_integrations, right_offline: bool,
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+        right_offline: bool,
     ):
         """Ref #617: discovery happens before ownership transfer, also on reload."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
         singles = [
             await self._setup_single(
-                hass, address, name, bed_type=BED_TYPE_SLEEPYS_BOX25, has_massage=True,
+                hass,
+                address,
+                name,
+                bed_type=BED_TYPE_SLEEPYS_BOX25,
+                has_massage=True,
             )
             for address, name in ((LEFT_ADDR, "Left"), (RIGHT_ADDR, "Right"))
         ]
         registry = er.async_get(hass)
         rows = [
-            row for single in singles
+            row
+            for single in singles
             for row in er.async_entries_for_config_entry(registry, single.entry_id)
         ]
         assert any(row.domain == "select" for row in rows)
@@ -1567,12 +1587,16 @@ class TestPairBedsConversion:
         await hass.async_block_till_done()
         assert paired.state == ConfigEntryState.LOADED
         coordinator = hass.data[DOMAIN][paired.entry_id]
-        assert all(child.capability_controller is not None for child in coordinator.children.values())
+        assert all(
+            child.capability_controller is not None for child in coordinator.children.values()
+        )
         assert all(not child.is_connected for child in coordinator.children.values())
 
     @pytest.mark.parametrize("has_snapshot", [False, True])
     async def test_linak_light_pairing_requires_saved_capabilities(
-        self, hass: HomeAssistant, has_snapshot: bool,
+        self,
+        hass: HomeAssistant,
+        has_snapshot: bool,
     ):
         """A saved Linak snapshot lets an offline side keep its light entity."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -1582,15 +1606,23 @@ class TestPairBedsConversion:
             data={
                 CONF_ADDRESS: LEFT_ADDR,
                 CONF_BED_TYPE: BED_TYPE_LINAK,
-                "capabilities": {"linak": {
-                    "profile": "bed_control", "model_variant": "standard",
-                    "discovery_complete": True,
-                }} if has_snapshot else {},
+                "capabilities": {
+                    "linak": {
+                        "profile": "bed_control",
+                        "model_variant": "standard",
+                        "discovery_complete": True,
+                    }
+                }
+                if has_snapshot
+                else {},
             },
         )
         entry.add_to_hass(hass)
         er.async_get(hass).async_get_or_create(
-            "light", DOMAIN, f"{LEFT_ADDR}_under_bed_lights", config_entry=entry,
+            "light",
+            DOMAIN,
+            f"{LEFT_ADDR}_under_bed_lights",
+            config_entry=entry,
         )
         coordinator = AdjustableBedCoordinator(hass, entry)
         await coordinator.async_prime_offline_controller()
@@ -1728,7 +1760,8 @@ class TestPairBedsConversion:
                 entry,
                 data={
                     **entry.data,
-                    CONF_MOTOR_COUNT: 1,
+                    CONF_MOTOR_COUNT: 2,
+                    CONF_OCTO_MOTOR_COUNT_OVERRIDE: "1",
                 },
             )
 
@@ -1736,6 +1769,56 @@ class TestPairBedsConversion:
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             {CONF_PAIR_SELECTION: encode_pair_selection(left.entry_id, right.entry_id)},
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["errors"]["base"] == "octo_tv_lift_pairing_unsupported"
+
+    async def test_auto_octo_one_motor_snapshot_lifts_cannot_be_paired(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """The decimal CAP_MOTORCOUNT snapshot key still identifies TV lifts."""
+        from types import SimpleNamespace
+
+        snapshot = {
+            "has_pin": False,
+            "pin_locked": False,
+            "has_lights": False,
+            "memory_count": 0,
+            "discovered_motor_count": 1,
+            "capability_records": {
+                "1": {
+                    "feature_id": 1,
+                    "readonly": 0,
+                    "characteristic": [1],
+                    "value_type": 1,
+                    "value": [0],
+                }
+            },
+        }
+        entries = []
+        for address, name in ((LEFT_ADDR, "Lift Left"), (RIGHT_ADDR, "Lift Right")):
+            entry = self._single(hass, address, name, bed_type=BED_TYPE_OCTO)
+            hass.config_entries.async_update_entry(
+                entry,
+                data={
+                    **entry.data,
+                    CONF_OCTO_MOTOR_COUNT_OVERRIDE: "auto",
+                    "capabilities": {"octo": snapshot},
+                },
+            )
+            entries.append(entry)
+            hass.data.setdefault(DOMAIN, {})[entry.entry_id] = SimpleNamespace(
+                controller=SimpleNamespace(capability_snapshot=lambda: dict(snapshot))
+            )
+
+        result = await self._reach_pair_step(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_PAIR_SELECTION: encode_pair_selection(entries[0].entry_id, entries[1].entry_id)},
         )
 
         assert result["type"] == FlowResultType.FORM
@@ -2112,7 +2195,9 @@ class TestPairBedsConversion:
             (DOMAIN, pair.data[CONF_PAIR_ID]),
         )
         assert parent is not None
-        left_after = dev_reg.async_get_child_device_by_identifier((DOMAIN, LEFT_ADDR), pair.entry_id)
+        left_after = dev_reg.async_get_child_device_by_identifier(
+            (DOMAIN, LEFT_ADDR), pair.entry_id
+        )
         assert left_after is not None
         assert left_after.id == left_device_id  # same device, not recreated
         assert left_after.config_entry_id == pair.entry_id
@@ -2324,9 +2409,7 @@ class TestPairBedsConversion:
         single.add_to_hass(hass)
         coord = AdjustableBedCoordinator(hass, single)
         client = MagicMock(is_connected=True)
-        client.disconnect = AsyncMock(
-            side_effect=lambda: setattr(client, "is_connected", False)
-        )
+        client.disconnect = AsyncMock(side_effect=lambda: setattr(client, "is_connected", False))
         coord._client = client
         coord._controller = SimpleNamespace(
             manual_disconnect_strands_connection=False,
@@ -2364,9 +2447,7 @@ class TestPairBedsConversion:
         # ...but the original entry is still present (released, not removed).
         assert single.entry_id in {e.entry_id for e in hass.config_entries.async_entries(DOMAIN)}
 
-    @pytest.mark.parametrize(
-        ("standalone_survives", "reload_count"), [(True, 1), (False, 0)]
-    )
+    @pytest.mark.parametrize(("standalone_survives", "reload_count"), [(True, 1), (False, 0)])
     async def test_pairing_transfer_defers_pending_capability_reload(
         self,
         hass: HomeAssistant,
@@ -2390,9 +2471,7 @@ class TestPairBedsConversion:
         single.add_to_hass(hass)
         coord = AdjustableBedCoordinator(hass, single)
         client = MagicMock(is_connected=True)
-        client.disconnect = AsyncMock(
-            side_effect=lambda: setattr(client, "is_connected", False)
-        )
+        client.disconnect = AsyncMock(side_effect=lambda: setattr(client, "is_connected", False))
         coord._client = client
         coord._controller = SimpleNamespace(
             manual_disconnect_strands_connection=False,
@@ -2419,9 +2498,7 @@ class TestPairBedsConversion:
 
             assert reload_entry.await_count == reload_count
 
-    async def test_release_refuses_to_strand_pairing_only_original(
-        self, hass: HomeAssistant
-    ):
+    async def test_release_refuses_to_strand_pairing_only_original(self, hass: HomeAssistant):
         """A live pairing-window-only receiver must remain under its original entry."""
         from types import SimpleNamespace
         from unittest.mock import MagicMock
@@ -2441,9 +2518,7 @@ class TestPairBedsConversion:
         single.add_to_hass(hass)
         coord = AdjustableBedCoordinator(hass, single)
         coord._client = MagicMock(is_connected=True)
-        coord._controller = SimpleNamespace(
-            manual_disconnect_strands_connection=True
-        )
+        coord._controller = SimpleNamespace(manual_disconnect_strands_connection=True)
         hass.data.setdefault(DOMAIN, {})[single.entry_id] = coord
         pair_data = build_pair_entry_data(
             {CONF_ADDRESS: LEFT_ADDR, CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2},
@@ -2464,9 +2539,7 @@ class TestPairBedsConversion:
 
         assert coord.is_connected
 
-    async def test_release_failure_clears_started_pairing_transfer(
-        self, hass: HomeAssistant
-    ):
+    async def test_release_failure_clears_started_pairing_transfer(self, hass: HomeAssistant):
         """A release that leaves its link up must not leave reconnects latched off."""
         from unittest.mock import MagicMock
 
@@ -2549,18 +2622,14 @@ class TestPairBedsConversion:
         assert not release_task.done()
 
         coord._client = MagicMock(is_connected=True)
-        coord._controller = SimpleNamespace(
-            manual_disconnect_strands_connection=True
-        )
+        coord._controller = SimpleNamespace(manual_disconnect_strands_connection=True)
         coord._lock.release()
 
         with pytest.raises(ConfigEntryNotReady, match="pairing-only connection"):
             await release_task
         assert coord.is_connected
 
-    async def test_pair_setup_bounds_absorbed_single_release(
-        self, hass: HomeAssistant
-    ):
+    async def test_pair_setup_bounds_absorbed_single_release(self, hass: HomeAssistant):
         """A stalled original-link teardown shares the paired setup deadline."""
         cancelled = False
 
@@ -2688,8 +2757,7 @@ class TestPairBedsConversion:
         coord._controller = controller
 
         with patch(
-            "custom_components.adjustable_bed.coordinator."
-            "_PAIRING_RELEASE_RESTORE_TIMEOUT",
+            "custom_components.adjustable_bed.coordinator._PAIRING_RELEASE_RESTORE_TIMEOUT",
             0.01,
         ):
             release = asyncio.create_task(coord.async_release_for_pairing_transfer())
@@ -2726,11 +2794,7 @@ class TestPairBedsConversion:
         right = await self._setup_single(hass, RIGHT_ADDR, "Bed 4587")
 
         releases = [
-            AsyncMock(
-                wraps=hass.data[DOMAIN][
-                    entry.entry_id
-                ].async_release_for_pairing_transfer
-            )
+            AsyncMock(wraps=hass.data[DOMAIN][entry.entry_id].async_release_for_pairing_transfer)
             for entry in (left, right)
         ]
         calls: dict[str, int] = {}
@@ -3203,7 +3267,9 @@ class TestSideServiceRouting:
         coord.async_execute_controller_command = AsyncMock()
         await btn.async_press()
         coord.async_execute_controller_command.assert_awaited_once_with(
-            motor3_up, side="both", cancel_running=True,
+            motor3_up,
+            side="both",
+            cancel_running=True,
             resource=scheduler_resource or "motor:back",
         )
         assert btn._attr_unique_id == "pair_x_head_up_both"
@@ -3272,10 +3338,18 @@ class TestPairedReceiverSettings:
         )
         async with asyncio.timeout(1):
             with pytest.raises(PairedSideError) as failure:
-                await hass.services.async_call(DOMAIN, "timed_move", {
-                    "device_id": [parent.id], "side": SIDE_BOTH, "motor": "back",
-                    "direction": "up", "duration_ms": 1000,
-                }, blocking=True)
+                await hass.services.async_call(
+                    DOMAIN,
+                    "timed_move",
+                    {
+                        "device_id": [parent.id],
+                        "side": SIDE_BOTH,
+                        "motor": "back",
+                        "direction": "up",
+                        "duration_ms": 1000,
+                    },
+                    blocking=True,
+                )
         assert "left" in failure.value.side_errors
         assert ("left (stop)" in failure.value.side_errors) is failed_release
         left.controller.stop_all.assert_awaited()
@@ -3311,12 +3385,20 @@ class TestPairedReceiverSettings:
                 return child.controller
 
             child._async_prepare_controller_operation = AsyncMock(side_effect=cold_prepare)
-        movement = hass.async_create_task(hass.services.async_call(
-            DOMAIN, "timed_move", {
-                "device_id": [parent.id], "side": SIDE_BOTH, "motor": "back",
-                "direction": "up", "duration_ms": 1000,
-            }, blocking=True,
-        ))
+        movement = hass.async_create_task(
+            hass.services.async_call(
+                DOMAIN,
+                "timed_move",
+                {
+                    "device_id": [parent.id],
+                    "side": SIDE_BOTH,
+                    "motor": "back",
+                    "direction": "up",
+                    "duration_ms": 1000,
+                },
+                blocking=True,
+            )
+        )
         stop = None
         try:
             async with asyncio.timeout(1):
@@ -3369,8 +3451,11 @@ class TestPairedReceiverSettings:
         coord = MagicMock(pair_id="pair_x", device_info={}, connection_mode=mode)
         coord.children = {side: SimpleNamespace(bed_type=bed_type) for side in PAIR_SIDES}
         spec = MotorControlSpec(
-            key=motor, translation_key=motor,
-            open_fn=AsyncMock(), close_fn=AsyncMock(), stop_fn=AsyncMock(),
+            key=motor,
+            translation_key=motor,
+            open_fn=AsyncMock(),
+            close_fn=AsyncMock(),
+            stop_fn=AsyncMock(),
         )
         entity = PairedBedCombinedMotorButton(coord, spec, "up")
         assert entity.extra_state_attributes == ({"paired_hold_motor": motor} if eligible else {})
@@ -3393,13 +3478,15 @@ class TestPairedReceiverSettings:
 
         data = _paired_entry_data()
         for index, child in enumerate(data[CONF_PAIR_CHILDREN]):
-            child.update({
-                CONF_BED_TYPE: BED_TYPE_OCTO,
-                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STAR2 if index == 0 else "standard",
-                CONF_MOTOR_PULSE_COUNT: 3 if index == 0 else 7,
-                CONF_MOTOR_PULSE_DELAY_MS: 50 if index == 0 else 500,
-                CONF_IDLE_DISCONNECT_SECONDS: 40 if index == 0 else 80,
-            })
+            child.update(
+                {
+                    CONF_BED_TYPE: BED_TYPE_OCTO,
+                    CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STAR2 if index == 0 else "standard",
+                    CONF_MOTOR_PULSE_COUNT: 3 if index == 0 else 7,
+                    CONF_MOTOR_PULSE_DELAY_MS: 50 if index == 0 else 500,
+                    CONF_IDLE_DISCONNECT_SECONDS: 40 if index == 0 else 80,
+                }
+            )
         entry = _paired_entry(hass)
         hass.config_entries.async_update_entry(entry, data=data)
         other = SIDE_RIGHT if side == SIDE_LEFT else SIDE_LEFT
@@ -3409,7 +3496,10 @@ class TestPairedReceiverSettings:
             menu["flow_id"], {"next_step_id": f"{side}_settings"}
         )
         defaults = result["data_schema"]({})
-        assert int(defaults[CONF_MOTOR_PULSE_COUNT]) == effective_child_data(entry.data, side)[CONF_MOTOR_PULSE_COUNT]
+        assert (
+            int(defaults[CONF_MOTOR_PULSE_COUNT])
+            == effective_child_data(entry.data, side)[CONF_MOTOR_PULSE_COUNT]
+        )
         assert CONF_PROTOCOL_VARIANT not in defaults
         submitted = {**defaults, CONF_MOTOR_PULSE_COUNT: "5", CONF_IDLE_DISCONNECT_SECONDS: 90}
         result = await hass.config_entries.options.async_configure(result["flow_id"], submitted)
@@ -3427,7 +3517,10 @@ class TestPairedReceiverSettings:
         restored = hass.config_entries.async_entries(DOMAIN)
         by_address = {item.data[CONF_ADDRESS]: item.data for item in restored}
         assert by_address[updated[CONF_ADDRESS]][CONF_MOTOR_PULSE_COUNT] == 5
-        assert by_address[unchanged[CONF_ADDRESS]][CONF_MOTOR_PULSE_COUNT] == unchanged[CONF_MOTOR_PULSE_COUNT]
+        assert (
+            by_address[unchanged[CONF_ADDRESS]][CONF_MOTOR_PULSE_COUNT]
+            == unchanged[CONF_MOTOR_PULSE_COUNT]
+        )
 
     async def test_unchanged_receiver_form_preserves_defaults_and_other_options(
         self, hass, enable_custom_integrations
@@ -3436,11 +3529,16 @@ class TestPairedReceiverSettings:
         from custom_components.adjustable_bed.pairing import effective_child_data, get_child
 
         entry = _paired_entry(hass)
-        hass.config_entries.async_update_entry(entry, options={
-            CONF_IDLE_DISCONNECT_SECONDS: 95,
-            CONF_PAIR_CONNECTION_MODE: PAIR_CONNECTION_MODE_CONCURRENT,
-        })
-        expected = {side: effective_child_data(entry.data, side, entry.options) for side in PAIR_SIDES}
+        hass.config_entries.async_update_entry(
+            entry,
+            options={
+                CONF_IDLE_DISCONNECT_SECONDS: 95,
+                CONF_PAIR_CONNECTION_MODE: PAIR_CONNECTION_MODE_CONCURRENT,
+            },
+        )
+        expected = {
+            side: effective_child_data(entry.data, side, entry.options) for side in PAIR_SIDES
+        }
         menu = await hass.config_entries.options.async_init(entry.entry_id)
         form = await hass.config_entries.options.async_configure(
             menu["flow_id"], {"next_step_id": "right_settings"}
@@ -3522,12 +3620,10 @@ class TestCombinedPositionSliders:
         assert entities[0].translation_key == "back_position"
         assert entities[0].native_max_value == 55
 
-        incompatible_back = build_position_number_spec(
-            "back", max_value=100, unit="%"
+        incompatible_back = build_position_number_spec("back", max_value=100, unit="%")
+        assert (
+            _combined_position_entities_for(coord, [left, self._side((incompatible_back,))]) == []
         )
-        assert _combined_position_entities_for(
-            coord, [left, self._side((incompatible_back,))]
-        ) == []
 
         # An unknown side could have a different layout: build nothing yet.
         assert (
@@ -3578,18 +3674,12 @@ class TestCombinedPositionSliders:
         assert kwargs["move_stop_fn"] is back.stop_fn
 
         single = SingleAddressPairedCoordinator.__new__(SingleAddressPairedCoordinator)
-        single._single_inner = SimpleNamespace(
-            address="AA:BB:CC:DD:EE:50", device_info={}
-        )
-        single_entity = PairedBedCombinedPositionNumber(
-            single, _build_position_description(back)
-        )
+        single._single_inner = SimpleNamespace(address="AA:BB:CC:DD:EE:50", device_info={})
+        single_entity = PairedBedCombinedPositionNumber(single, _build_position_description(back))
         assert single_entity.translation_key == "back_position_both"
         assert single_entity.extra_state_attributes == {"bed_side": SIDE_BOTH}
 
-    async def test_stale_cleanup_only_removes_combined_position_numbers(
-        self, hass: HomeAssistant
-    ):
+    async def test_stale_cleanup_only_removes_combined_position_numbers(self, hass: HomeAssistant):
         from unittest.mock import MagicMock
 
         from custom_components.adjustable_bed.beds.base import build_position_number_spec
@@ -3639,9 +3729,7 @@ class TestCombinedPositionSliders:
             translation_key="lumbar_position",
         )
 
-        _async_remove_stale_combined_number_entities(
-            hass, coordinator, children, entities
-        )
+        _async_remove_stale_combined_number_entities(hass, coordinator, children, entities)
 
         assert registry.async_get(stale_position.entity_id) is None
         assert registry.async_get(unrelated.entity_id) is not None
@@ -3830,7 +3918,9 @@ class TestOfflineSideEntities:
         assert child.capability_controller is live
 
     @pytest.mark.parametrize("bed_type", [BED_TYPE_OCTO, "sleep_number_mcr"])
-    async def test_unsafe_bed_type_side_is_not_offline_minted(self, hass: HomeAssistant, bed_type: str):
+    async def test_unsafe_bed_type_side_is_not_offline_minted(
+        self, hass: HomeAssistant, bed_type: str
+    ):
         # A bed type that is NOT capability-deterministic offline (auto-variant /
         # connect-corrected / post-connect query) must NOT be offline-minted, so
         # it can't register entities from a wrong profile. It keeps today's
@@ -3971,18 +4061,22 @@ class TestOfflineSafeBedTypes:
             elif bed_type == "furnimove":
                 child["furnimove_remote"] = "00000"
             elif bed_type == BED_TYPE_VIBRADORM_APP:
-                child.update({
-                    CONF_VIBRADORM_APP_PROFILE: "caresse",
-                    CONF_VIBRADORM_CONTROL_TYPE: "2",
-                })
+                child.update(
+                    {
+                        CONF_VIBRADORM_APP_PROFILE: "caresse",
+                        CONF_VIBRADORM_CONTROL_TYPE: "2",
+                    }
+                )
             elif bed_type == BED_TYPE_VMATBASIC:
                 child[CONF_VMATBASIC_PROFILE] = "cbi"
             elif bed_type == "starcode_abm5_4":
-                child.update({
-                    "starcode_abm5_4_command_selector": "none",
-                    "starcode_abm5_4_ui_selector": "none",
-                    "starcode_abm5_4_transport_selector": "BOX3633",
-                })
+                child.update(
+                    {
+                        "starcode_abm5_4_command_selector": "none",
+                        "starcode_abm5_4_ui_selector": "none",
+                        "starcode_abm5_4_transport_selector": "BOX3633",
+                    }
+                )
             elif bed_type == BED_TYPE_MOTION_BED:
                 child[CONF_BLE_DEVICE_NAME] = (
                     "QMS4-left" if child[CONF_SIDE] == SIDE_LEFT else "SealyMF-right"

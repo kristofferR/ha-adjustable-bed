@@ -6,6 +6,7 @@
 import type {
   BedEntities,
   EntityRegistryDisplayEntry,
+  HeldControl,
   HomeAssistant,
   LightEntities,
   MemorySlot,
@@ -159,7 +160,21 @@ export function bedEntitiesForDevice(
 
     switch (domain) {
       case "cover":
-        motor(key).cover = id;
+        {
+          const current = motor(key);
+          current.cover = id;
+          const attributes = hass.states[id]?.attributes;
+          const up = attributes?.held_control_up;
+          const down = attributes?.held_control_down;
+          if (typeof up === "string" && typeof down === "string") {
+            const startDelayMs = Number(attributes?.hold_start_delay_ms ?? 0);
+            const releaseDelayMs = Number(attributes?.hold_release_delay_ms ?? 0);
+            current.heldControls = {
+              up: { control: up, startDelayMs, releaseDelayMs },
+              down: { control: down, startDelayMs, releaseDelayMs },
+            };
+          }
+        }
         break;
 
       case "sensor":
@@ -204,8 +219,19 @@ export function bedEntitiesForDevice(
 
       case "button":
         if (PRESET_ORDER.includes(key) || key.startsWith("preset_")) {
-          if ((match = key.match(/^preset_memory_(\d+)$/)))
-            memory(Number(match[1])).goto = id;
+          if ((match = key.match(/^preset_memory_(\d+)$/))) {
+            const slot = memory(Number(match[1]));
+            slot.goto = id;
+            const attributes = hass.states[id]?.attributes;
+            const control = attributes?.held_control;
+            if (typeof control === "string") {
+              slot.heldControl = {
+                control,
+                startDelayMs: Number(attributes?.hold_start_delay_ms ?? 0),
+                releaseDelayMs: Number(attributes?.hold_release_delay_ms ?? 0),
+              };
+            }
+          }
           else presetMap.set(key, id);
         } else if ((match = key.match(/^program_memory_(\d+)$/))) {
           memory(Number(match[1])).save = id;
@@ -303,6 +329,7 @@ export function bedEntitiesForDevice(
           key === "solace_music_toggle" ||
           key === "solace_music_off" ||
           key === "wake_controller" ||
+          key === "octo_all_down" ||
           key === "reset_defaults" ||
           key === "factory_reset" ||
           key === "vibradorm_app_all_up" ||
@@ -321,6 +348,16 @@ export function bedEntitiesForDevice(
         } else if ((match = key.match(/^(.+)_(up|down)$/))) {
           const m = motor(match[1]);
           m[match[2] as "up" | "down"] = id;
+          const attributes = hass.states[id]?.attributes;
+          const control = attributes?.held_control;
+          if (typeof control === "string") {
+            const held: HeldControl = {
+              control,
+              startDelayMs: Number(attributes?.hold_start_delay_ms ?? 0),
+              releaseDelayMs: Number(attributes?.hold_release_delay_ms ?? 0),
+            };
+            m.heldControls = { ...m.heldControls, [match[2] as "up" | "down"]: held };
+          }
           const heldMotor = hass.states[id]?.attributes.paired_hold_motor;
           if (heldMotor === "back" || heldMotor === "legs") {
             m.timedMove = { deviceId, motor: heldMotor };
@@ -331,6 +368,7 @@ export function bedEntitiesForDevice(
       case "switch":
         if (key === "under_bed_lights") bed.lights.switch = id;
         else if (key === "synchro_mode") bed.synchro = id;
+        else if (key === "remote_control_lock") bed.utility.push(id);
         else if (key === "linak_automatic_drive" || key === "automatic_light")
           bed.utility.push(id);
         break;

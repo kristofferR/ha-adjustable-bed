@@ -103,6 +103,31 @@ test("ordinary covers, buttons and unsupported directions keep their finite acti
   ]);
 });
 
+test("Octo held controls use the bounded service and retain the selected side", async () => {
+  const calls: unknown[] = [];
+  const hass = {
+    entities: { "cover.left_back": { entity_id: "cover.left_back", device_id: "left-device" } },
+    states: {
+      "cover.left_back": {
+        entity_id: "cover.left_back", state: "closed", last_changed: "", last_updated: "",
+        attributes: { bed_side: "left" },
+      },
+    },
+    callService: async (...args: unknown[]) => { calls.push(args); },
+  } as HomeAssistant;
+  const motor: MotorEntity = {
+    key: "back",
+    cover: "cover.left_back",
+    heldControls: { up: { control: "back_up", startDelayMs: 100, releaseDelayMs: 100 } },
+  };
+  await movementPulse(hass, motor, "up");
+  expect(calls).toEqual([[
+    "adjustable_bed", "hold_control", {
+      device_id: ["left-device"], control: "back_up", duration: 60, side: "left",
+    },
+  ]]);
+});
+
 test("a hold repeats until it is released", async () => {
   const rec = recorder();
   const hold = new MotorHold(rec.actions);
@@ -123,6 +148,99 @@ test("a hold repeats until it is released", async () => {
   expect(rec.pulses.length).toBe(2);
   expect(rec.bedStops).toBe(1);
 });
+
+test("Octo start and release guards are cancellable and an old release cannot stop a new hold", async () => {
+  const rec = recorder();
+  const hold = new MotorHold(rec.actions);
+  const octoMotor: MotorEntity = {
+    key: "back",
+    cover: "cover.back",
+    heldControls: { up: { control: "back_up", startDelayMs: 20, releaseDelayMs: 30 } },
+  };
+
+  hold.start(octoMotor, "up", 1, "button.left_stop");
+  hold.end(octoMotor);
+  await new Promise((resolve) => setTimeout(resolve, 35));
+  expect(rec.pulses).toHaveLength(0);
+  expect(rec.stoppedBeds).toEqual(["button.left_stop"]);
+
+  hold.start({ ...octoMotor, heldControls: { up: { control: "back_up", startDelayMs: 0, releaseDelayMs: 30 } } }, "up", 1, "button.left_stop");
+  await tick();
+  hold.end(octoMotor);
+  hold.start({ ...octoMotor, heldControls: { up: { control: "back_up", startDelayMs: 0, releaseDelayMs: 30 } } }, "up", 2, "button.right_stop");
+  rec.release();
+  await new Promise((resolve) => setTimeout(resolve, 35));
+  // The new hold flushes the prior release once before issuing its first
+  // operation. Its canceled timer cannot issue a duplicate STOP afterward.
+  expect(rec.stoppedBeds).toEqual(["button.left_stop", "button.left_stop"]);
+  hold.end(octoMotor);
+  await new Promise((resolve) => setTimeout(resolve, 35));
+  expect(rec.stoppedBeds).toEqual([
+    "button.left_stop", "button.left_stop", "button.right_stop",
+  ]);
+});
+
+for (const releaseDelayMs of [100, 200]) {
+  test(`Octo ${releaseDelayMs}ms release survives card abandonment and stops once`, async () => {
+    const originalSetTimeout = globalThis.setTimeout;
+    const originalClearTimeout = globalThis.clearTimeout;
+    const timers: Array<{
+      id: number;
+      delay: number;
+      callback: () => void;
+      cancelled: boolean;
+    }> = [];
+    let nextId = 1;
+    globalThis.setTimeout = ((handler: TimerHandler, timeout?: number) => {
+      if (typeof handler !== "function") throw new Error("Expected a timer callback");
+      const timer = {
+        id: nextId++,
+        delay: timeout ?? 0,
+        callback: handler as () => void,
+        cancelled: false,
+      };
+      timers.push(timer);
+      return timer.id as ReturnType<typeof setTimeout>;
+    }) as typeof setTimeout;
+    globalThis.clearTimeout = ((handle: ReturnType<typeof setTimeout>) => {
+      const timer = timers.find((candidate) => candidate.id === Number(handle));
+      if (timer) timer.cancelled = true;
+    }) as typeof clearTimeout;
+
+    try {
+      const rec = recorder();
+      const hold = new MotorHold(rec.actions);
+      const motor: MotorEntity = {
+        key: `octo-${releaseDelayMs}`,
+        cover: "cover.octo",
+        heldControls: {
+          up: { control: "back_up", startDelayMs: 100, releaseDelayMs },
+        },
+      };
+
+      hold.start(motor, "up", 1, "button.octo_stop");
+      const startTimer = timers.find((timer) => timer.delay === 100 && !timer.cancelled);
+      expect(startTimer).toBeDefined();
+      startTimer!.callback();
+      await Promise.resolve();
+
+      hold.end(motor);
+      const releaseTimer = [...timers].reverse().find((timer) => timer.delay === releaseDelayMs);
+      expect(releaseTimer).toBeDefined();
+      expect(rec.stoppedBeds).toEqual([]);
+
+      hold.abandon();
+      expect(rec.stoppedBeds).toEqual(["button.octo_stop"]);
+      expect(releaseTimer!.cancelled).toBe(true);
+      // Simulate the queued callback racing with navigation after clearTimeout.
+      releaseTimer!.callback();
+      expect(rec.stoppedBeds).toEqual(["button.octo_stop"]);
+    } finally {
+      globalThis.setTimeout = originalSetTimeout;
+      globalThis.clearTimeout = originalClearTimeout;
+    }
+  });
+}
 
 test("ownership survives the card rebuilding the motor object", async () => {
   const rec = recorder();
