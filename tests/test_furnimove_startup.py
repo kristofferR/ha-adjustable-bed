@@ -12,6 +12,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_FURNIMOVE,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_FURNIMOVE_REMOTE,
     DOMAIN,
 )
@@ -85,6 +86,30 @@ async def test_controller_owns_info_reads_after_subscription(
             ]
         finally:
             await ctrl.async_shutdown()
+
+
+@pytest.mark.parametrize(("model", "persistent"), [(b"RF eco BT", True), (b"CU170", False)])
+async def test_rf_eco_bt_receiver_keeps_its_link_and_recovers_from_drops(
+    hass, mock_coordinator_connected, mock_bleak_client, mock_establish_connection, model, persistent
+):
+    """Issue #633: RF eco BT stalls reconnects (#344), so hold it open despite quick handoff."""
+    entry = furnimove_entry(hass, "82417")
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_DISCONNECT_AFTER_COMMAND: True}
+    )
+    ctrl = AdjustableBedCoordinator(hass, entry)
+    furnish_services(mock_bleak_client)
+    mock_bleak_client.read_gatt_char.return_value = model
+    try:
+        assert await ctrl.async_connect()
+        assert ctrl._disconnect_after_operation_enabled() is not persistent
+        assert (ctrl._disconnect_timer is None) is persistent
+
+        mock_bleak_client.is_connected = False
+        ctrl._on_disconnect(mock_bleak_client)
+        assert (ctrl._reconnect_timer is not None) is persistent
+    finally:
+        await ctrl.async_shutdown()
 
 
 @pytest.mark.parametrize("failure", ["disconnected", "timed_out"])

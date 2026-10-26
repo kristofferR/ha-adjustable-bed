@@ -48,6 +48,8 @@ INFO = {
     "software": "00002a28-0000-1000-8000-00805f9b34fb",
     "firmware": "00002a26-0000-1000-8000-00805f9b34fb",
 }
+# Device Information model reported by OKIN RF eco BT receivers (part 88802).
+_RF_ECO_BT_MODEL = "rf eco bt"
 _AXES = {"head": "M1", "back": "M2", "legs": "M3", "feet": "M4"}
 _WIDGET = frozenset(
     {"TV", "Flat", "Memo1", "Memo2", "Memo3", "Memo4", "Snore", "ZeroGravity", "QuietSleep", "UBL"}
@@ -199,6 +201,14 @@ class FurniMoveController(BedController):
     @property
     def requires_notification_channel(self) -> bool:
         return True  # State/info/query startup is independent of angle sensing.
+
+    @property
+    def requires_persistent_connection(self) -> bool:
+        """Hold RF eco BT receivers open: they stall reconnects after a disconnect.
+
+        Known only once startup has read the receiver model (#344, #633).
+        """
+        return str(self._state["furnimove_model"]).strip().casefold() == _RF_ECO_BT_MODEL
 
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
