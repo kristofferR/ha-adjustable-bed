@@ -60,6 +60,7 @@ test("cover hold metadata stays attached to the selected raw Part motor", () => 
 
   expect(bedEntitiesForDevice(hass, "m1x12").motors).toEqual([{
     key: "starcode_m1x12_part_1",
+    coverStopScope: "side",
     cover: "cover.part_1",
     deviceId: "m1x12",
     heldControls: {
@@ -67,6 +68,21 @@ test("cover hold metadata stays attached to the selected raw Part motor", () => 
       down: { control: "part_1_down", startDelayMs: 100, releaseDelayMs: 100 },
     },
   }]);
+});
+
+test("explicit ELEVATE actuator covers stay motor-scoped while its union stop is side-wide", () => {
+  const hass = hassWith([
+    entry("cover.actuator_1", "elevate_actuator_1", "elevate"),
+    entry("cover.actuator_2", "elevate_actuator_2", "elevate"),
+    entry("cover.elevate_both", "elevate_both", "elevate"),
+  ]);
+  const motors = bedEntitiesForDevice(hass, "elevate").motors;
+  expect(motors.find((motor) => motor.key === "elevate_actuator_1")?.coverStopScope)
+    .toBeUndefined();
+  expect(motors.find((motor) => motor.key === "elevate_actuator_2")?.coverStopScope)
+    .toBeUndefined();
+  expect(motors.find((motor) => motor.key === "elevate_both")?.coverStopScope)
+    .toBe("side");
 });
 
 test("paired M1X12 and explicit ELEVATE motor buttons expose directional holds", () => {
@@ -168,6 +184,7 @@ test("M1X12 telemetry and controls stay in side-owned existing card rows", () =>
   const left = bedEntitiesForDevice(hass, "m1-side", "left");
   expect(left.motors).toEqual([{
     key: "starcode_m1x12_part_1",
+    coverStopScope: "side",
     cover: "cover.part_1_left",
     deviceId: "m1-side",
     heldControls: {

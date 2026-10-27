@@ -7,6 +7,8 @@ import type {
   BedEntities,
   EntityRegistryDisplayEntry,
   HomeAssistant,
+  HoldTarget,
+  HoldTargetSide,
   LightEntities,
   MemorySlot,
   MotorEntity,
@@ -83,6 +85,44 @@ const domainOf = (entityId: string): string => entityId.split(".", 1)[0];
 const keyOf = (entry: EntityRegistryDisplayEntry): string =>
   entry.translation_key ?? "";
 
+// These controller keys are backed by stop_all in their actual MotorControlSpec.
+// Every other cover keeps the conservative motor-specific STOP scope.
+const SIDE_WIDE_STOP_KEYS = new Set([
+  "elevate_both",
+  "starcode_m1x12_part_1",
+  "starcode_m1x12_part_2",
+  "starcode_m1x12_part_4",
+  "starcode_m1x12_part_8",
+  "starcode_m1x12_part_16",
+]);
+
+function controllerStopScope(key: string): "motor" | "side" {
+  return SIDE_WIDE_STOP_KEYS.has(key) ? "side" : "motor";
+}
+
+function declaredSide(
+  hass: HomeAssistant,
+  entry: EntityRegistryDisplayEntry,
+): HoldTargetSide | undefined {
+  const value = hass.states[entry.entity_id]?.attributes.bed_side ??
+    hass.states[entry.entity_id]?.attributes.side;
+  if (value === "left" || value === "right" || value === "both") return value;
+  return splitSide(keyOf(entry)).side;
+}
+
+function deviceSide(
+  hass: HomeAssistant,
+  deviceId: string,
+): HoldTargetSide | undefined {
+  for (const entry of Object.values(hass.entities ?? {})) {
+    if (entry.device_id === deviceId && entry.platform === PLATFORM) {
+      const side = declaredSide(hass, entry);
+      if (side) return side;
+    }
+  }
+  return undefined;
+}
+
 function emptyBed(): BedEntities {
   return {
     motors: [],
@@ -121,7 +161,8 @@ export function bedEntitiesForDevice(
   const motor = (key: string): MotorEntity => {
     let m = motorMap.get(key);
     if (!m) {
-      m = { key };
+      const scope = controllerStopScope(key);
+      m = scope === "side" ? { key, coverStopScope: scope } : { key };
       motorMap.set(key, m);
     }
     return m;
@@ -518,6 +559,69 @@ export function resolvePairedParentId(
     return parentId;
   }
   return deviceId;
+}
+
+// Resolve a runtime entity to its command owner. Paired child entities carry
+// their logical side, while a combined parent control owns both sides. A
+// child without side metadata remains keyed to its own device ID rather than
+// being widened to the parent.
+export function holdTargetForEntity(
+  hass: HomeAssistant | undefined,
+  entityId: string | undefined,
+): HoldTarget | undefined {
+  if (!hass || !entityId) return undefined;
+  const entry = hass.entities[entityId];
+  const deviceId = entry?.device_id;
+  if (!entry || !deviceId) return undefined;
+
+  const devices = hass.devices ?? {};
+  const ownSide = declaredSide(hass, entry) ?? deviceSide(hass, deviceId);
+  const parentId = devices[deviceId]?.parent_device_id ??
+    devices[deviceId]?.via_device_id;
+  if (parentId) {
+    return ownSide ? { deviceId: parentId, side: ownSide } : { deviceId };
+  }
+
+  const hasChildren = Object.values(devices).some(
+    (device) => (device.parent_device_id ?? device.via_device_id) === deviceId,
+  );
+  if (hasChildren) return { deviceId, side: ownSide ?? "both" };
+  if (ownSide || isSingleAddressPairedDevice(hass, deviceId)) {
+    return { deviceId, side: ownSide ?? "both" };
+  }
+  return { deviceId };
+}
+
+// Find a same-side cleanup target for an interrupted combined hold. Prefer the
+// matching controller motor's cover STOP so a motor-scoped stop stays narrow;
+// fall back to that side's explicit STOP button for button-only surfaces.
+export function pairedStopEntityForSide(
+  hass: HomeAssistant | undefined,
+  motorKey: string,
+  owner: HoldTarget,
+  side: Exclude<HoldTargetSide, "both">,
+): string | undefined {
+  if (!hass) return undefined;
+  const target: HoldTarget = { deviceId: owner.deviceId, side };
+  const entries = Object.values(hass.entities ?? {}).filter(
+    (entry) => entry.platform === PLATFORM,
+  );
+  const matchesTarget = (entry: EntityRegistryDisplayEntry): boolean => {
+    const candidate = holdTargetForEntity(hass, entry.entity_id);
+    return candidate?.deviceId === target.deviceId && candidate.side === target.side;
+  };
+  const matchingCover = entries.find((entry) =>
+    domainOf(entry.entity_id) === "cover" &&
+    splitSide(keyOf(entry)).key === motorKey &&
+    matchesTarget(entry),
+  );
+  if (matchingCover) return matchingCover.entity_id;
+
+  return entries.find((entry) =>
+    domainOf(entry.entity_id) === "button" &&
+    splitSide(keyOf(entry)).key === "stop" &&
+    matchesTarget(entry),
+  )?.entity_id;
 }
 
 // True when the bed exposes nothing the card renders. Presence sensors are not

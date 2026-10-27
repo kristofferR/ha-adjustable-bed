@@ -1,10 +1,9 @@
 // Press-and-hold state machine for the motor controls.
 //
 // Kept free of DOM and Home Assistant dependencies so it can be unit tested:
-// the card owns the event wiring and the service calls, this owns the rules
-// about who holds what and when a hold ends. Nearly every defect found while
-// building press-and-hold lived in these rules rather than in the wiring.
-import type { HomeAssistant, MotorEntity } from "./types";
+// the card owns the event wiring and service calls, this owns hold ownership,
+// timing, and invalidation when a STOP overlaps a held target.
+import type { HomeAssistant, HoldTarget, HoldTargetSide, MotorEntity } from "./types";
 
 export type Direction = "up" | "down";
 
@@ -82,61 +81,108 @@ export interface HoldActions {
   // Resolving is what paces the repeat loop; rejecting stops it.
   pulse: (motor: MotorEntity, dir: Direction) => Promise<unknown> | undefined;
   holdControl: (motor: MotorEntity, dir: Direction) => Promise<unknown> | undefined;
-  // Stops a cover-backed motor, which is the only kind with its own stop. The
-  // bed stop identifies the compact target retained when the hold began.
+  // Stops a cover-backed motor through its exact cover entity.
   stopCover: (coverEntityId: string, stopEntityId?: string) => void;
-  // The stop that covers the held motor. Cancels the command in flight.
-  // `stopEntityId` is the stop belonging to the bed the motor is on, which on a
-  // paired bed is the side's own stop rather than the parent's; omitted falls
-  // back to the single bed's stop.
+  // Stops the held motor through the exact bed or side Stop entity retained at start.
   stopBed: (stopEntityId?: string) => void;
 }
 
+export interface HoldTimers {
+  setTimeout: (callback: () => void, delayMs: number) => ReturnType<typeof setTimeout>;
+  clearTimeout: (timer: ReturnType<typeof setTimeout>) => void;
+}
+
+interface PendingRelease {
+  id: number;
+  motor: MotorEntity;
+  stopEntityId?: string;
+  target?: HoldTarget;
+  timer?: ReturnType<typeof setTimeout>;
+}
+
+interface ReleaseTarget {
+  motor: MotorEntity;
+  cover?: string;
+  stopEntityId?: string;
+  target?: HoldTarget;
+}
+
+export interface PartialHoldCleanup {
+  motor: MotorEntity;
+  target: HoldTarget;
+  side: Exclude<HoldTargetSide, "both">;
+}
+
 export class MotorHold {
-  // Ownership is tracked by MotorEntity.key rather than object identity: the
-  // first pulse completing updates that entity, which re-renders the card and
-  // rebuilds every MotorEntity, so a release handler would otherwise hold a
-  // different object for the same motor and never stop the loop.
+  // Ownership uses stable controller keys and typed registry targets, not
+  // object identity: HA rebuilds these objects whenever an entity updates.
   private _key: string | null = null;
   private _cover: string | null = null;
-  // The stop entity that covers the held motor. Tracked per hold because a
-  // paired bed renders one section per side, each with its own stop, so there
-  // is no single bed-wide stop to fall back on.
   private _stop: string | null = null;
-  // The pointer that owns the hold. Pointer-end events from any other pointer
-  // must be ignored: a second touch on the same control would otherwise cancel
-  // the primary hold and stop the motor early.
+  private _target?: HoldTarget;
+  private _motor?: MotorEntity;
+  private _heldControl?: MotorEntity["heldControl"];
+  private _started = false;
+  private _startTimer?: ReturnType<typeof setTimeout>;
   private _pointerId: number | null = null;
-  // Bumping this is what stops an in-flight repeat loop: the loop's next
-  // iteration sees a stale value and exits.
   private _generation = 0;
+  private _releaseId = 0;
+  private readonly _pendingReleases = new Map<number, PendingRelease>();
 
-  constructor(private readonly actions: HoldActions) {}
+  constructor(
+    private readonly actions: HoldActions,
+    public readonly timers: HoldTimers = {
+      setTimeout: (callback, delayMs) => globalThis.setTimeout(callback, delayMs),
+      clearTimeout: (timer) => globalThis.clearTimeout(timer),
+    },
+  ) {}
 
   get heldKey(): string | null {
     return this._key;
   }
 
-  // Begin a hold. `pointerId` is null for keyboard activation, which has no
-  // owning pointer. `stopEntityId` is the stop for the bed this motor belongs
-  // to. Ignored when another motor already holds.
   start(
     motor: MotorEntity,
     dir: Direction,
     pointerId: number | null,
     stopEntityId?: string,
+    target?: HoldTarget,
   ): void {
     if (this._key !== null) return;
+    this._flushPendingForTarget(target, stopEntityId ?? motor.cover ?? motor.key);
     this._key = motor.key;
     this._cover = motor.cover ?? null;
     this._stop = stopEntityId ?? null;
+    this._target = target;
+    this._motor = motor;
+    this._heldControl = motor.heldControl ?? motor.heldControls?.[dir];
     this._pointerId = pointerId;
     const generation = ++this._generation;
-    if (motor.heldControl || motor.heldControls?.[dir]) {
-      void this._holdControl(motor, dir, generation);
+    if (this._heldControl) {
+      const delay = this._heldControl.startDelayMs;
+      if (delay <= 0) {
+        this._startHeldControl(motor, dir, generation);
+      } else {
+        this._startTimer = this.timers.setTimeout(
+          () => this._startHeldControl(motor, dir, generation),
+          delay,
+        );
+      }
       return;
     }
+    this._started = true;
     void this._repeat(motor, dir, generation);
+  }
+
+  private _startHeldControl(
+    motor: MotorEntity,
+    dir: Direction,
+    generation: number,
+  ): void {
+    this._startTimer = undefined;
+    if (generation !== this._generation || this._key !== motor.key) return;
+    this._started = true;
+    void this._holdControl(motor, dir, generation);
   }
 
   private async _holdControl(
@@ -148,114 +194,273 @@ export class MotorHold {
       const pending = this.actions.holdControl(motor, dir);
       if (pending) await pending;
     } catch {
-      // The service reports the failure through Home Assistant. This card
-      // should stop retaining the control and allow another press.
+      // Home Assistant reports service errors; allow a later press to retry.
     } finally {
-      // The bounded service sends its release frame when its window expires.
-      // A normal pointer release sends STOP and invalidates this generation.
       if (generation === this._generation) this._reset();
     }
   }
 
-  // One iteration moves the bed for a single configured pulse and then stops,
-  // for cover-backed motors too: cover.py runs open_cover/close_cover as one
-  // finite controller command that performs its own STOP/release cleanup rather
-  // than running until stop_cover. So both kinds of motor need re-issuing.
   private async _repeat(
     motor: MotorEntity,
     dir: Direction,
     generation: number,
   ): Promise<void> {
-    // Awaiting each call before issuing the next keeps commands from queueing
-    // up behind each other, so the integration never has to cancel one
-    // mid-flight. It does not make the motion continuous: each backend command
-    // is finite and ends with the protocol's release burst, so a hold is a
-    // train of pulses with a short stop between them. Making it continuous
-    // needs a hold-until-released primitive in the integration, which does not
-    // exist yet: see issue #483.
+    // Await each finite pulse so a STOP invalidates work before another pulse
+    // can be queued behind the integration's command lane.
     while (generation === this._generation) {
       try {
         const pending = this.actions.pulse(motor, dir);
         if (!pending) return;
         await pending;
       } catch {
-        // The bed rejected the command (usually a dropped BLE link). Stop
-        // hammering it; the user can press again.
         return;
       }
     }
   }
 
-  // A pointer-driven release. Only the pointer that started the hold may end
-  // it, and a non-primary button release must not.
   endFromPointer(
     motor: MotorEntity,
     pointerId: number,
     isPrimaryButtonRelease: boolean,
+    target?: HoldTarget,
   ): void {
     if (this._pointerId !== null && pointerId !== this._pointerId) return;
     if (!isPrimaryButtonRelease) return;
-    this.end(motor);
+    this.end(motor, target);
   }
 
-  // End a hold and stop the motor. Releasing one control must not end a hold
-  // another control owns: a blur on some other motor's button would otherwise
-  // stop the motor that is running.
-  end(motor: MotorEntity): void {
-    const stop = this._stop ?? undefined;
-    if (!this.cancel(motor)) return;
-    if (motor.cover) {
-      this.actions.stopCover(motor.cover, stop);
-      return;
+  end(motor: MotorEntity, target?: HoldTarget): void {
+    if (!this._owns(motor, target)) return;
+    const started = this._started;
+    const heldControl = this._heldControl;
+    const release = this._captureRelease();
+    this._reset();
+    if (!started) return;
+    if (heldControl) {
+      this._scheduleRelease(release, heldControl.releaseDelayMs);
+    } else {
+      this._release(release);
     }
-    // Cancelling the loop does not touch the pulse already in flight, and each
-    // pulse is a second or more, so without this the bed keeps moving well
-    // after the control is released. The stop cancels the running command,
-    // which is also what makes a short tap move the bed briefly rather than
-    // for a full pulse.
-    this.actions.stopBed(stop);
   }
 
-  // Stop re-issuing pulses for this motor without sending anything to the bed.
-  // Returns whether there was a matching hold to cancel.
-  cancel(motor: MotorEntity | null): boolean {
-    if (!motor || this._key !== motor.key) return false;
+  cancel(motor: MotorEntity | null, target?: HoldTarget): boolean {
+    if (!motor || !this._owns(motor, target)) return false;
     this._reset();
     return true;
   }
 
-  // A stop button. Invalidating first matters: otherwise the in-flight pulse
-  // resolves after the stop lands and the loop issues another pulse, so the bed
-  // starts moving again right after the user asked it to stop. It also has to
-  // invalidate *any* hold, not just one motor's, because this stop halts
-  // whatever is moving. `stopEntityId` is the pressed button's own stop; it
-  // wins over the held motor's, which may belong to a different side.
-  stopAll(stopEntityId?: string): void {
-    const stop = stopEntityId ?? this._stop ?? undefined;
-    this._reset();
-    this.actions.stopBed(stop);
+  // Invalidate only active and pending work whose real stop scope overlaps this
+  // cover. The caller still issues the clicked cover's own stop service.
+  stopCover(motor: MotorEntity, target?: HoldTarget): PartialHoldCleanup[] {
+    const scope = motor.coverStopScope ?? "motor";
+    const cleanup: PartialHoldCleanup[] = [];
+    if (
+      this._motor && this._key !== null &&
+      this._coverStopMatches(this._motor, this._target, motor, target, scope)
+    ) {
+      const started = this._started;
+      const active = this._captureRelease();
+      const partial = started
+        ? this._partialTargetSide(active.motor, active.target, target)
+        : undefined;
+      if (partial) cleanup.push(partial);
+      this._reset();
+    }
+    for (const release of [...this._pendingReleases.values()]) {
+      if (!this._coverStopMatches(release.motor, release.target, motor, target, scope)) continue;
+      const partial = this._partialTargetSide(release.motor, release.target, target);
+      if (partial) cleanup.push(partial);
+      this._discardRelease(release);
+    }
+    return cleanup;
   }
 
-  // The card left the DOM mid-hold, so no pointer release will ever arrive.
-  // Stops the loop and the bed: a cover would otherwise keep running with
-  // nothing left to stop it, and the pulse already in flight on a button-backed
-  // motor keeps moving the bed for the rest of its duration, which is a second
-  // or more and longer still with customised pulse settings.
+  stopAll(stopEntityId?: string, stopTarget?: HoldTarget): PartialHoldCleanup[] {
+    if (stopEntityId === undefined) {
+      const hadWork = this._key !== null || this._pendingReleases.size > 0;
+      this.abandon();
+      if (!hadWork) this.actions.stopBed();
+      return [];
+    }
+
+    const cleanup: PartialHoldCleanup[] = [];
+    for (const release of [...this._pendingReleases.values()]) {
+      const ownsRetainedStop = release.stopEntityId === stopEntityId;
+      if (!ownsRetainedStop && !targetsOverlap(
+        release.target,
+        stopTarget,
+        release.stopEntityId ?? release.motor.cover ?? release.motor.key,
+        stopEntityId,
+      )) continue;
+      const partial = this._partialTargetSide(release.motor, release.target, stopTarget);
+      if (partial) cleanup.push(partial);
+      this._discardRelease(release);
+    }
+    const ownsRetainedStop = this._stop === stopEntityId;
+    if (
+      this._motor && this._key !== null &&
+      (ownsRetainedStop || targetsOverlap(
+        this._target,
+        stopTarget,
+        this._stop ?? this._cover ?? this._key,
+        stopEntityId,
+      ))
+    ) {
+      const started = this._started;
+      const active = this._captureRelease();
+      const partial = started
+        ? this._partialTargetSide(active.motor, active.target, stopTarget)
+        : undefined;
+      if (partial) cleanup.push(partial);
+      this._reset();
+    }
+    this.actions.stopBed(stopEntityId);
+    return cleanup;
+  }
+
+  // A disappearing card must release every callback it still owns. Flush a
+  // delayed release now so its timer cannot fire into a newly mounted card.
   abandon(): void {
-    const cover = this._cover;
-    const stop = this._stop ?? undefined;
-    const wasHolding = this._key !== null;
+    for (const release of [...this._pendingReleases.values()]) {
+      this._discardRelease(release);
+      this._release({
+        motor: release.motor,
+        cover: release.motor.cover,
+        stopEntityId: release.stopEntityId,
+        target: release.target,
+      });
+    }
+    if (!this._motor || this._key === null) return;
+    const release = this._captureRelease();
+    const started = this._started;
     this._reset();
-    if (!wasHolding) return;
-    if (cover) this.actions.stopCover(cover, stop);
-    else this.actions.stopBed(stop);
+    if (started) this._release(release);
+  }
+
+  private _owns(motor: MotorEntity, target?: HoldTarget): boolean {
+    if (this._key !== motor.key) return false;
+    if (!target || !this._target) return true;
+    return this._target.deviceId === target.deviceId && this._target.side === target.side;
+  }
+
+  private _captureRelease(): ReleaseTarget {
+    return {
+      motor: this._motor!,
+      cover: this._cover ?? undefined,
+      stopEntityId: this._stop ?? undefined,
+      target: this._target,
+    };
+  }
+
+  private _coverStopMatches(
+    ownedMotor: MotorEntity,
+    ownedTarget: HoldTarget | undefined,
+    stoppedMotor: MotorEntity,
+    stopTarget: HoldTarget | undefined,
+    scope: "motor" | "side",
+  ): boolean {
+    return (scope === "side" || ownedMotor.key === stoppedMotor.key) &&
+      targetsOverlap(
+        ownedTarget,
+        stopTarget,
+        ownedMotor.cover ?? ownedMotor.holdEntityId ?? ownedMotor.key,
+        stoppedMotor.cover ?? stoppedMotor.key,
+      );
+  }
+
+  private _partialTargetSide(
+    motor: MotorEntity,
+    operationTarget: HoldTarget | undefined,
+    stopTarget: HoldTarget | undefined,
+  ): PartialHoldCleanup | undefined {
+    if (
+      !operationTarget || !stopTarget ||
+      operationTarget.deviceId !== stopTarget.deviceId ||
+      operationTarget.side !== "both" ||
+      (stopTarget.side !== "left" && stopTarget.side !== "right")
+    ) return undefined;
+    return {
+      motor,
+      target: operationTarget,
+      side: stopTarget.side === "left" ? "right" : "left",
+    };
+  }
+
+  private _scheduleRelease(release: ReleaseTarget, delayMs: number): void {
+    if (delayMs <= 0) {
+      this._release(release);
+      return;
+    }
+    const pending: PendingRelease = {
+      id: ++this._releaseId,
+      motor: release.motor,
+      stopEntityId: release.stopEntityId,
+      target: release.target,
+    };
+    pending.timer = this.timers.setTimeout(() => {
+      this._discardRelease(pending);
+      this._release(release);
+    }, delayMs);
+    this._pendingReleases.set(pending.id, pending);
+  }
+
+  private _flushPendingForTarget(
+    target: HoldTarget | undefined,
+    fallbackKey: string,
+  ): void {
+    for (const release of [...this._pendingReleases.values()]) {
+      if (!targetsOverlap(
+        release.target,
+        target,
+        release.stopEntityId ?? release.motor.cover ?? release.motor.key,
+        fallbackKey,
+      )) continue;
+      this._discardRelease(release);
+      this._release({
+        motor: release.motor,
+        cover: release.motor.cover,
+        stopEntityId: release.stopEntityId,
+        target: release.target,
+      });
+    }
+  }
+
+  private _discardRelease(release: PendingRelease): void {
+    this._pendingReleases.delete(release.id);
+    if (release.timer !== undefined) this.timers.clearTimeout(release.timer);
+  }
+
+  private _release(release: ReleaseTarget): void {
+    if (release.cover) {
+      this.actions.stopCover(release.cover, release.stopEntityId);
+    } else {
+      this.actions.stopBed(release.stopEntityId);
+    }
   }
 
   private _reset(): void {
+    if (this._startTimer !== undefined) this.timers.clearTimeout(this._startTimer);
     this._key = null;
     this._cover = null;
     this._stop = null;
+    this._target = undefined;
+    this._motor = undefined;
+    this._heldControl = undefined;
+    this._started = false;
+    this._startTimer = undefined;
     this._pointerId = null;
     this._generation++;
   }
+}
+
+function targetsOverlap(
+  left: HoldTarget | undefined,
+  right: HoldTarget | undefined,
+  leftFallback: string,
+  rightFallback: string,
+): boolean {
+  if (!left || !right) return leftFallback === rightFallback;
+  if (left.deviceId !== right.deviceId) return false;
+  return !left.side || !right.side || left.side === "both" ||
+    right.side === "both" || left.side === right.side;
 }

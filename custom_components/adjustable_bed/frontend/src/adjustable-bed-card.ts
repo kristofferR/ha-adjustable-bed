@@ -25,11 +25,19 @@ import {
   bedEntitiesForDevice,
   bedIsEmpty,
   hasLightingControls,
+  holdTargetForEntity,
   isSingleAddressPairedDevice,
+  pairedStopEntityForSide,
   pairedChildDeviceIds,
   resolvePairedParentId,
 } from "./discovery";
-import { MotorHold, heldButtonMotor, movementHold, movementPulse } from "./hold";
+import {
+  MotorHold,
+  heldButtonMotor,
+  movementHold,
+  movementPulse,
+  type PartialHoldCleanup,
+} from "./hold";
 import { cardNavigationPath, compactActions, compactStopEntities } from "./compact";
 import { localize } from "./localize";
 import {
@@ -38,6 +46,7 @@ import {
   CARD_VERSION,
   type HassEntity,
   type HomeAssistant,
+  type HoldTarget,
   type MemorySlot,
   type MotorEntity,
 } from "./types";
@@ -964,7 +973,7 @@ export class AdjustableBedCard extends LitElement {
       }
       ${
         bed.stop
-          ? html`<button class="stop-all" @click=${() => this._hold.stopAll(bed.stop)}>
+          ? html`<button class="stop-all" @click=${() => this._stopAll(bed.stop)}>
               <ha-icon icon="mdi:stop"></ha-icon>
               <span>${localize(this.hass, "action.stop_all")}</span>
             </button>`
@@ -1505,7 +1514,13 @@ export class AdjustableBedCard extends LitElement {
       else if (m.cover) this._compactStopTargets.set(m.cover, Symbol());
       this.requestUpdate();
     }
-    this._hold.start(m, dir, ownerPointerId, stopId);
+    this._hold.start(
+      m,
+      dir,
+      ownerPointerId,
+      stopId,
+      this._holdTarget(m, dir),
+    );
   }
 
   // Screen readers, voice control and switch devices activate a native button
@@ -1541,28 +1556,55 @@ export class AdjustableBedCard extends LitElement {
       m,
       e.pointerId,
       e.type !== "pointerup" || e.button === 0,
+      this._holdTarget(m),
     );
   }
 
   private _endKeyHold(e: KeyboardEvent, m: MotorEntity): void {
     if (e.key !== "Enter" && e.key !== " ") return;
-    this._hold.end(m);
+    this._hold.end(m, this._holdTarget(m));
   }
 
   private _endHold(m: MotorEntity): void {
-    this._hold.end(m);
+    this._hold.end(m, this._holdTarget(m));
   }
 
   private _motorStop(m: MotorEntity, stopId?: string): void {
     if (m.cover) {
-      this._hold.cancel(m);
+      const target = holdTargetForEntity(this.hass, m.cover);
+      const cleanup = this._hold.stopCover(m, target);
       this._cover(m.cover, "stop_cover");
+      this._finishPartialHoldCleanup(cleanup);
       return;
     }
     // A button-backed row has no stop of its own and falls through to the stop
     // of the bed it belongs to, which halts whatever is moving on that bed. So
     // it has to invalidate any active hold, not just this row's.
-    this._hold.stopAll(stopId);
+    this._stopAll(stopId);
+  }
+
+  private _holdTarget(m: MotorEntity, dir?: "up" | "down"): HoldTarget | undefined {
+    const entityId = m.holdEntityId ?? m.cover ??
+      (dir ? m[dir] : undefined) ?? m.up ?? m.down;
+    return holdTargetForEntity(this.hass, entityId);
+  }
+
+  private _stopAll(stopEntityId?: string): void {
+    const target = holdTargetForEntity(this.hass, stopEntityId);
+    const cleanup = this._hold.stopAll(stopEntityId, target);
+    this._finishPartialHoldCleanup(cleanup);
+  }
+
+  private _finishPartialHoldCleanup(cleanups: PartialHoldCleanup[]): void {
+    for (const cleanup of cleanups) {
+      const entityId = pairedStopEntityForSide(
+        this.hass,
+        cleanup.motor.key,
+        cleanup.target,
+        cleanup.side,
+      );
+      if (entityId) this._stopCompactTarget(entityId);
+    }
   }
 
   // Toggle save mode for ONE section: entering it on a section cancels any other

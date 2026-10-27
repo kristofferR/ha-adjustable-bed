@@ -153,8 +153,8 @@ test("M1X12 cover hold starts one bounded shared service window", async () => {
           bed_side: "left",
           held_control_up: "part_1_up",
           held_control_down: "part_1_down",
-          hold_start_delay_ms: 100,
-          hold_release_delay_ms: 100,
+          hold_start_delay_ms: 0,
+          hold_release_delay_ms: 0,
         },
       },
     },
@@ -165,8 +165,8 @@ test("M1X12 cover hold starts one bounded shared service window", async () => {
     cover: "cover.part_1",
     deviceId: "m1x12",
     heldControls: {
-      up: { control: "part_1_up", startDelayMs: 100, releaseDelayMs: 100 },
-      down: { control: "part_1_down", startDelayMs: 100, releaseDelayMs: 100 },
+      up: { control: "part_1_up", startDelayMs: 0, releaseDelayMs: 0 },
+      down: { control: "part_1_down", startDelayMs: 0, releaseDelayMs: 0 },
     },
   };
 
@@ -185,8 +185,8 @@ test("M1X12 hold release cancels the one service window and sends cover STOP", a
   const motor: MotorEntity = {
     key: "part_1", cover: "cover.part_1", deviceId: "m1x12",
     heldControls: {
-      up: { control: "part_1_up", startDelayMs: 100, releaseDelayMs: 100 },
-      down: { control: "part_1_down", startDelayMs: 100, releaseDelayMs: 100 },
+      up: { control: "part_1_up", startDelayMs: 0, releaseDelayMs: 0 },
+      down: { control: "part_1_down", startDelayMs: 0, releaseDelayMs: 0 },
     },
   };
   const hold = new MotorHold({
@@ -218,8 +218,8 @@ test("held M1X12 massage button uses one bounded service and its paired-side STO
         attributes: {
           bed_side: "left",
           held_control: "massage_wave_up",
-          hold_start_delay_ms: 100,
-          hold_release_delay_ms: 100,
+          hold_start_delay_ms: 0,
+          hold_release_delay_ms: 0,
         },
       },
     },
@@ -234,7 +234,7 @@ test("held M1X12 massage button uses one bounded service and its paired-side STO
     up: "button.massage_wave_up",
     deviceId: "left-device",
     holdEntityId: "button.massage_wave_up",
-    heldControl: { control: "massage_wave_up", startDelayMs: 100, releaseDelayMs: 100 },
+    heldControl: { control: "massage_wave_up", startDelayMs: 0, releaseDelayMs: 0 },
   });
   if (!motor) throw new Error("Flat button hold metadata was not discovered");
   const stops: Array<string | undefined> = [];
@@ -289,8 +289,8 @@ test("paired M1X12 and ELEVATE motor holds use the shared service and parent STO
           last_updated: "",
           attributes: {
             held_control: item.control,
-            hold_start_delay_ms: 100,
-            hold_release_delay_ms: 100,
+            hold_start_delay_ms: 0,
+            hold_release_delay_ms: 0,
           },
         },
       },
@@ -308,8 +308,8 @@ test("paired M1X12 and ELEVATE motor holds use the shared service and parent STO
 
     expect(motor.heldControls?.up).toEqual({
       control: item.control,
-      startDelayMs: 100,
-      releaseDelayMs: 100,
+      startDelayMs: 0,
+      releaseDelayMs: 0,
     });
     hold.start(motor, "up", 7, "button.pair_stop");
     expect(calls).toEqual([[
@@ -585,17 +585,32 @@ test("releasing a hold stops the side the motor belongs to", async () => {
   expect(rec.stoppedBeds).toEqual(["button.left_stop"]);
 });
 
-test("a side's stop button stops that side, not the held one", async () => {
+test("a different side's stop does not cancel the held side's owner", async () => {
+  const rec = recorder();
+  const hold = new MotorHold(rec.actions);
+  const left = { deviceId: "pair", side: "left" as const };
+  const right = { deviceId: "pair", side: "right" as const };
+
+  hold.start(buttonMotor, "up", 1, "button.left_stop", left);
+  await tick();
+  hold.stopAll("button.right_stop", right);
+
+  expect(rec.stoppedBeds).toEqual(["button.right_stop"]);
+  expect(hold.heldKey).toBe(buttonMotor.key);
+  hold.end(buttonMotor, left);
+  expect(rec.stoppedBeds).toEqual(["button.right_stop", "button.left_stop"]);
+  expect(hold.heldKey).toBeNull();
+});
+
+test("an explicit STOP uses the exact retained ID when target metadata is absent", async () => {
   const rec = recorder();
   const hold = new MotorHold(rec.actions);
 
-  hold.start(buttonMotor, "up", 1, "button.left_stop");
+  hold.start(buttonMotor, "up", 1, "button.retained_stop");
   await tick();
-  // The pressed button carries its own stop, which wins: it is the bed the
-  // user actually asked to stop.
-  hold.stopAll("button.right_stop");
+  hold.stopAll("button.retained_stop");
 
-  expect(rec.stoppedBeds).toEqual(["button.right_stop"]);
+  expect(rec.stoppedBeds).toEqual(["button.retained_stop"]);
   expect(hold.heldKey).toBeNull();
 });
 

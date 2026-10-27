@@ -104,10 +104,22 @@ export interface HeldControl {
   releaseDelayMs: number;
 }
 
+export type HoldTargetSide = "left" | "right" | "both";
+
+export interface HoldTarget {
+  deviceId: string;
+  side?: HoldTargetSide;
+}
+
+export type CoverStopScope = "motor" | "side";
+
 export interface MotorEntity {
   key: string;
   cover?: string;
   deviceId?: string;
+  // Derived from the stable controller key and its actual stop callback. Most
+  // cover STOPs are motor-scoped; a small set of controllers declares stop_all.
+  coverStopScope?: CoverStopScope;
   heldControls?: Partial<Record<"up" | "down", HeldControl>>;
   heldControl?: HeldControl;
   // Entity carrying button hold metadata when this MotorEntity adapts a held
