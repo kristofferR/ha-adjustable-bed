@@ -98,9 +98,33 @@ export interface LovelaceCardEditor extends HTMLElement {
 }
 
 // One controllable motor and its related feedback entities.
+export interface HeldControl {
+  control: string;
+  startDelayMs: number;
+  releaseDelayMs: number;
+}
+
+export type HoldTargetSide = "left" | "right" | "both";
+
+export interface HoldTarget {
+  deviceId: string;
+  side?: HoldTargetSide;
+}
+
+export type CoverStopScope = "motor" | "side";
+
 export interface MotorEntity {
   key: string;
   cover?: string;
+  deviceId?: string;
+  // Derived from the stable controller key and its actual stop callback. Most
+  // cover STOPs are motor-scoped; a small set of controllers declares stop_all.
+  coverStopScope?: CoverStopScope;
+  heldControls?: Partial<Record<"up" | "down", HeldControl>>;
+  heldControl?: HeldControl;
+  // Entity carrying button hold metadata when this MotorEntity adapts a held
+  // app action. Cover-backed holds use `cover` for the same state lookup.
+  holdEntityId?: string;
   // Discrete up/down buttons, used by beds that expose buttons instead of covers.
   up?: string;
   down?: string;
@@ -121,6 +145,7 @@ export interface LightEntities {
   light?: string; // light.* under_bed_lights (color)
   switch?: string; // switch.* under_bed_lights
   state?: string; // binary_sensor.* under_bed_lights (read-only)
+  states?: string[]; // read-only light telemetry
   level?: string; // number.* light_level (brightness)
   toggle?: string; // button.* toggle_light
   cycle?: string; // button.* light_cycle
@@ -153,6 +178,7 @@ export interface BedEntities {
   climate: { entities: string[]; selects: string[]; numbers: string[] }; // numbers: fan_level
   utility: string[]; // button.* sync_positions / child_lock_toggle
   utilitySelects?: string[]; // select.* active app/module surface
+  utilityStates?: string[]; // read-only app/device state
 }
 
 // Replaced at build time with the integration version (see build.mjs).

@@ -86,7 +86,7 @@ label wherever it appears:
 | **Enable light controls** (`has_light`) | Logicdata and Jiecang bed apps (default on), FSM Relax and Limoss Remote (default off) | Expose the app's light controls |
 | **Bed or chair** (`product_type`) | FSM Relax, Limoss Remote | The product chosen in the app |
 | **Reverse motor channel 1–4** (`reverse_motor_1` to `reverse_motor_4`) | FSM Relax, Limoss Remote | The app's per-channel direction flags, sent with every movement |
-| **Exact Bluetooth name** (`ble_device_name`) | Motion Bed, AdjustableM5X5 | The unchanged advertised name that identifies the app profile |
+| **Exact Bluetooth name** (`ble_device_name`) | Motion Bed, AdjustableM5X5, Adjustable Comfort M1X12 | The unchanged advertised name that identifies the app profile |
 
 Entries that stored `logicdata_app_has_light` or `jiecang_app_has_light` are
 migrated to `has_light` when the integration loads.
@@ -589,6 +589,14 @@ Select **AdjustableM5X5** (`starcode_m5x5`) and enter the exact Bluetooth name, 
 On the main entry, select up to **three other configured AdjustableM5X5 or DewertOkin ELEVATE entries** as lifts. This supports four independent Bluetooth addresses: one main and three lifts. The three bed classes and ELEVATE can occupy either slot; an ELEVATE main selects its lifts in its own options. Duplicate addresses and unrelated products are rejected. This group keeps each device's existing coordinator and entities. It does not convert them into Left/Right paired devices.
 
 Use `adjustable_bed.starcode_move_lifts` for native lift-union movement, STOP or composite flat. A profile or group-selection edit cancels retained delayed writes. Individual controls remain on each physical device. See [protocol and control details](beds/starcode-m5x5.md).
+
+### Adjustable Comfort M1X12 app
+
+Select **Adjustable Comfort M1X12 app** explicitly, then enter the exact Bluetooth name and choose CB25, F23 or kneading. Specific F23 and kneading prefixes take precedence over generic `STAR25`; the app identity is not inferred from Nordic UART, manufacturer, firmware or the name alone. Existing AdjustableM5X5 entries retain their current controller and configuration.
+
+An M1X12 main can include up to **two separately configured ELEVATE accessories**. Each ELEVATE entry must be explicitly reconfigured to **Adjustable Comfort M1X12 ELEVATE** before it can be linked. Linking never changes that entry. Existing ELEVATE defaults and AdjustableM5X5 groups keep their current behavior. These entries remain independent devices and do not become Left/Right paired beds. The M1X12 profile and accessory list belong to one physical side and cannot be changed from a shared two-address pair form.
+
+The optional manufacturer read selects its normal command framing only inside the chosen M1X12 profile. The required Device Information 2A28 characteristic supplies the firmware version state; firmware text does not select capabilities. See [M1X12 protocol, controls and lifecycle](beds/starcode-m1x12.md).
 
 ### FSM Relax app
 

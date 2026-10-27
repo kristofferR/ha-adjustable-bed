@@ -10,6 +10,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.adjustable_bed.beds.base import (
     BedController,
     ControllerButtonSpec,
+    ControllerHoldSpec,
     ProductButtonSpec,
 )
 from custom_components.adjustable_bed.button import (
@@ -169,6 +170,34 @@ async def test_custom_translation_key_and_live_side_bound_controller_dispatch(ha
     assert written(current) == ["00ff"]
     assert written(previous) == []
     assert current.command_side is None
+
+
+async def test_held_action_publishes_the_card_hold_contract_with_side(hass):
+    coordinator = MagicMock()
+    coordinator.device_info = {}
+    coordinator.entity_side = "right"
+    coordinator.entity_unique_id.side_effect = lambda key: f"bed_{key}_right"
+    coordinator.entity_translation_key.side_effect = lambda key: f"{key}_right"
+    button = ControllerActionButton(
+        coordinator,
+        ControllerButtonSpec(
+            "starcode_m1x12_hold_massage_wave_up",
+            "Hold to increase massage wave",
+            AsyncMock(),
+            hold=ControllerHoldSpec(
+                control="massage_wave_up",
+                start_delay_ms=100,
+                release_delay_ms=100,
+            ),
+        ),
+    )
+
+    assert button.extra_state_attributes == {
+        "bed_side": "right",
+        "held_control": "massage_wave_up",
+        "hold_start_delay_ms": 100,
+        "hold_release_delay_ms": 100,
+    }
 
 
 async def test_app_action_namespace_cleanup_preserves_current_other_side_and_unrelated(hass):

@@ -42,6 +42,25 @@ _LOGGER = logging.getLogger(__name__)
 MotorCommandCallable = Callable[["BedController"], Coroutine[Any, Any, None]]
 
 
+@dataclass(frozen=True, slots=True)
+class ControllerHoldSpec:
+    """Finite hold metadata for a controller button action."""
+
+    control: str
+    start_delay_ms: int
+    release_delay_ms: int
+
+
+@dataclass(frozen=True, slots=True)
+class ControllerMotorHoldSpec:
+    """Finite hold metadata for a motor's up and down controls."""
+
+    up_control: str
+    down_control: str
+    start_delay_ms: int
+    release_delay_ms: int
+
+
 class SideBoundController:
     """View of one controller with a per-call logical bed side.
 
@@ -101,6 +120,7 @@ class ControllerButtonSpec:
     translation_key: str | None = None
     cancel_movement: bool = field(default=True, kw_only=True)
     scheduler_resource: str | None = field(default=None, kw_only=True)
+    hold: ControllerHoldSpec | None = field(default=None, kw_only=True)
     # Fills a translated name template, e.g. ``{action}``, with an app label.
     translation_placeholders: Mapping[str, str] | None = field(default=None, kw_only=True)
 
@@ -163,6 +183,7 @@ class MotorControlSpec:
     position_key: str | None = None
     max_angle: float = 68
     scheduler_resource: str | None = None
+    hold: ControllerMotorHoldSpec | None = None
 
 
 # Units a position slider can be scaled in.

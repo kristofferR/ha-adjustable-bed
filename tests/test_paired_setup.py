@@ -3200,6 +3200,7 @@ class TestSideServiceRouting:
         coord = MagicMock(pair_id="pair_x", device_info={})
         btn = PairedBedCombinedMotorButton(coord, head_spec, "up")
         assert btn._move_fn is motor3_up
+        assert btn.extra_state_attributes == {}
         coord.async_execute_controller_command = AsyncMock()
         await btn.async_press()
         coord.async_execute_controller_command.assert_awaited_once_with(

@@ -7,6 +7,8 @@ import type {
   BedEntities,
   EntityRegistryDisplayEntry,
   HomeAssistant,
+  HoldTarget,
+  HoldTargetSide,
   LightEntities,
   MemorySlot,
   MotorEntity,
@@ -83,6 +85,44 @@ const domainOf = (entityId: string): string => entityId.split(".", 1)[0];
 const keyOf = (entry: EntityRegistryDisplayEntry): string =>
   entry.translation_key ?? "";
 
+// These controller keys are backed by stop_all in their actual MotorControlSpec.
+// Every other cover keeps the conservative motor-specific STOP scope.
+const SIDE_WIDE_STOP_KEYS = new Set([
+  "elevate_both",
+  "starcode_m1x12_part_1",
+  "starcode_m1x12_part_2",
+  "starcode_m1x12_part_4",
+  "starcode_m1x12_part_8",
+  "starcode_m1x12_part_16",
+]);
+
+function controllerStopScope(key: string): "motor" | "side" {
+  return SIDE_WIDE_STOP_KEYS.has(key) ? "side" : "motor";
+}
+
+function declaredSide(
+  hass: HomeAssistant,
+  entry: EntityRegistryDisplayEntry,
+): HoldTargetSide | undefined {
+  const value = hass.states[entry.entity_id]?.attributes.bed_side ??
+    hass.states[entry.entity_id]?.attributes.side;
+  if (value === "left" || value === "right" || value === "both") return value;
+  return splitSide(keyOf(entry)).side;
+}
+
+function deviceSide(
+  hass: HomeAssistant,
+  deviceId: string,
+): HoldTargetSide | undefined {
+  for (const entry of Object.values(hass.entities ?? {})) {
+    if (entry.device_id === deviceId && entry.platform === PLATFORM) {
+      const side = declaredSide(hass, entry);
+      if (side) return side;
+    }
+  }
+  return undefined;
+}
+
 function emptyBed(): BedEntities {
   return {
     motors: [],
@@ -94,6 +134,7 @@ function emptyBed(): BedEntities {
     massage: { buttons: [], numbers: [] },
     climate: { entities: [], selects: [], numbers: [] },
     utility: [],
+    utilityStates: [],
   };
 }
 
@@ -120,10 +161,41 @@ export function bedEntitiesForDevice(
   const motor = (key: string): MotorEntity => {
     let m = motorMap.get(key);
     if (!m) {
-      m = { key };
+      const scope = controllerStopScope(key);
+      m = scope === "side" ? { key, coverStopScope: scope } : { key };
       motorMap.set(key, m);
     }
     return m;
+  };
+  const motorButton = (
+    id: string,
+    key: string,
+    direction: "up" | "down",
+    ownerDeviceId: string | undefined,
+  ): void => {
+    const item = motor(key);
+    item[direction] = id;
+    const attributes = hass.states[id]?.attributes;
+    const heldControl = attributes?.held_control;
+    const startDelayMs = attributes?.hold_start_delay_ms;
+    const releaseDelayMs = attributes?.hold_release_delay_ms;
+    if (
+      typeof heldControl === "string" &&
+      typeof startDelayMs === "number" &&
+      typeof releaseDelayMs === "number" &&
+      ownerDeviceId
+    ) {
+      item.deviceId = ownerDeviceId;
+      item.holdEntityId = id;
+      item.heldControls = {
+        ...item.heldControls,
+        [direction]: { control: heldControl, startDelayMs, releaseDelayMs },
+      };
+    }
+    const heldMotor = attributes?.paired_hold_motor;
+    if (heldMotor === "back" || heldMotor === "legs") {
+      item.timedMove = { deviceId, motor: heldMotor };
+    }
   };
   const presetMap = new Map<string, string>();
   const memoryMap = new Map<number, MemorySlot>();
@@ -159,15 +231,37 @@ export function bedEntitiesForDevice(
 
     switch (domain) {
       case "cover":
-        motor(key).cover = id;
+        {
+          const item = motor(key);
+          item.cover = id;
+          const attributes = hass.states[id]?.attributes;
+          const up = attributes?.held_control_up;
+          const down = attributes?.held_control_down;
+          if (typeof up === "string" && typeof down === "string") {
+            if (entry.device_id) item.deviceId = entry.device_id;
+            const startDelayMs = Number(attributes?.hold_start_delay_ms ?? 0);
+            const releaseDelayMs = Number(attributes?.hold_release_delay_ms ?? 0);
+            item.heldControls = {
+              up: { control: up, startDelayMs, releaseDelayMs },
+              down: { control: down, startDelayMs, releaseDelayMs },
+            };
+          }
+        }
         break;
 
       case "sensor":
-        if (key.endsWith("_angle")) motor(key.slice(0, -6)).angle = id;
+        if (key.startsWith("starcode_m1x12_part_") && key.endsWith("_position"))
+          motor(key.slice(0, -9)).position = id;
+        else if (key.endsWith("_angle")) motor(key.slice(0, -6)).angle = id;
         // The Sleep Smart pump's pressure reading sits with firmness controls.
         else if (key === "logicdata_air_pump_pressure") bed.firmness.push(id);
         // INNOVA reports its massage timer indicator; the app has no timer select.
         else if (key === "innova_massage_timer") bed.massage.timer = id;
+        else if (key.startsWith("starcode_m1x12_light_"))
+          (bed.lights.states ??= []).push(id);
+        else if (/^starcode_m1x12_(massage_|sonic_|kneading_)/.test(key))
+          (bed.massage.states ??= []).push(id);
+        else if (key.startsWith("starcode_m1x12_")) bed.utilityStates?.push(id);
         break;
 
       case "number":
@@ -176,7 +270,7 @@ export function bedEntitiesForDevice(
           motor(`${split.key.slice(0, -9)}_${split.side}`).position = id;
         else if (key.startsWith("massage_") && key.endsWith("_intensity"))
           bed.massage.numbers.push(id);
-        else if (key === "light_level" || key === "svane_intensity" || key === "starcode_brightness" || key === "vmatbasic_floor_level" || key === "starcode_abm5_4_light_level") bed.lights.level = id;
+        else if (key === "light_level" || key === "svane_intensity" || key === "starcode_brightness" || key === "starcode_m1x12_brightness" || key === "vmatbasic_floor_level" || key === "starcode_abm5_4_light_level") bed.lights.level = id;
         else if (key === "vmatbasic_floor_minutes") {
           bed.lights.timerMinutes = id;
           bed.lights.timerAppliesImmediately = true;
@@ -295,6 +389,10 @@ export function bedEntitiesForDevice(
           key === "vibradorm_app_massage_individual"
         ) {
           bed.massage.buttons.push(id);
+        } else if (key.startsWith("starcode_m1x12_hold_")) {
+          bed.massage.buttons.push(id);
+        } else if ((match = key.match(/^(starcode_m1x12_part_\d+)_(up|down)$/))) {
+          motorButton(id, match[1], match[2] as "up" | "down", entry.device_id);
         } else if (
           key === "sync_positions" ||
           key === "child_lock_toggle" ||
@@ -313,18 +411,14 @@ export function bedEntitiesForDevice(
           key.startsWith("starcode_save_") ||
           key === "starcode_reset" ||
           key === "starcode_query" ||
-          key === "starcode_light_mode"
+          key === "starcode_light_mode" ||
+          key.startsWith("starcode_m1x12_")
         ) {
           bed.utility.push(id);
         } else if (key.startsWith("massage_")) {
           bed.massage.buttons.push(id);
         } else if ((match = key.match(/^(.+)_(up|down)$/))) {
-          const m = motor(match[1]);
-          m[match[2] as "up" | "down"] = id;
-          const heldMotor = hass.states[id]?.attributes.paired_hold_motor;
-          if (heldMotor === "back" || heldMotor === "legs") {
-            m.timedMove = { deviceId, motor: heldMotor };
-          }
+          motorButton(id, match[1], match[2] as "up" | "down", entry.device_id);
         }
         break;
 
@@ -342,7 +436,10 @@ export function bedEntitiesForDevice(
       case "binary_sensor":
         if (key === "ble_connection") bed.connectivity = id;
         else if (key === "sleeptracker_wind_down_running") (bed.massage.states ??= []).push(id);
-        else if (key === "under_bed_lights" || key === "adjustable_lite_light" || key === "innova_light" || key === "sleeptracker_light_on") bed.lights.state = id;
+        else if (key === "under_bed_lights" || key === "adjustable_lite_light" || key === "innova_light" || key === "sleeptracker_light_on" || key === "starcode_m1x12_light_on") bed.lights.state = id;
+        else if (/^starcode_m1x12_(massage_|sonic_|kneading_)/.test(key))
+          (bed.massage.states ??= []).push(id);
+        else if (key.startsWith("starcode_m1x12_")) bed.utilityStates?.push(id);
         else if (key.startsWith("bed_presence")) bed.presence.push(id);
         break;
 
@@ -464,6 +561,69 @@ export function resolvePairedParentId(
   return deviceId;
 }
 
+// Resolve a runtime entity to its command owner. Paired child entities carry
+// their logical side, while a combined parent control owns both sides. A
+// child without side metadata remains keyed to its own device ID rather than
+// being widened to the parent.
+export function holdTargetForEntity(
+  hass: HomeAssistant | undefined,
+  entityId: string | undefined,
+): HoldTarget | undefined {
+  if (!hass || !entityId) return undefined;
+  const entry = hass.entities[entityId];
+  const deviceId = entry?.device_id;
+  if (!entry || !deviceId) return undefined;
+
+  const devices = hass.devices ?? {};
+  const ownSide = declaredSide(hass, entry) ?? deviceSide(hass, deviceId);
+  const parentId = devices[deviceId]?.parent_device_id ??
+    devices[deviceId]?.via_device_id;
+  if (parentId) {
+    return ownSide ? { deviceId: parentId, side: ownSide } : { deviceId };
+  }
+
+  const hasChildren = Object.values(devices).some(
+    (device) => (device.parent_device_id ?? device.via_device_id) === deviceId,
+  );
+  if (hasChildren) return { deviceId, side: ownSide ?? "both" };
+  if (ownSide || isSingleAddressPairedDevice(hass, deviceId)) {
+    return { deviceId, side: ownSide ?? "both" };
+  }
+  return { deviceId };
+}
+
+// Find a same-side cleanup target for an interrupted combined hold. Prefer the
+// matching controller motor's cover STOP so a motor-scoped stop stays narrow;
+// fall back to that side's explicit STOP button for button-only surfaces.
+export function pairedStopEntityForSide(
+  hass: HomeAssistant | undefined,
+  motorKey: string,
+  owner: HoldTarget,
+  side: Exclude<HoldTargetSide, "both">,
+): string | undefined {
+  if (!hass) return undefined;
+  const target: HoldTarget = { deviceId: owner.deviceId, side };
+  const entries = Object.values(hass.entities ?? {}).filter(
+    (entry) => entry.platform === PLATFORM,
+  );
+  const matchesTarget = (entry: EntityRegistryDisplayEntry): boolean => {
+    const candidate = holdTargetForEntity(hass, entry.entity_id);
+    return candidate?.deviceId === target.deviceId && candidate.side === target.side;
+  };
+  const matchingCover = entries.find((entry) =>
+    domainOf(entry.entity_id) === "cover" &&
+    splitSide(keyOf(entry)).key === motorKey &&
+    matchesTarget(entry),
+  );
+  if (matchingCover) return matchingCover.entity_id;
+
+  return entries.find((entry) =>
+    domainOf(entry.entity_id) === "button" &&
+    splitSide(keyOf(entry)).key === "stop" &&
+    matchesTarget(entry),
+  )?.entity_id;
+}
+
 // True when the bed exposes nothing the card renders. Presence sensors are not
 // counted because the card has no presence section (it would otherwise produce a
 // header-only card with no controls).
@@ -491,14 +651,15 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     bed.climate.selects.length === 0 &&
     bed.climate.numbers.length === 0 &&
     bed.utility.length === 0 &&
-    !bed.utilitySelects?.length
+    !bed.utilitySelects?.length &&
+    !bed.utilityStates?.length
   );
 }
 
 export function hasLightingControls(lights: LightEntities): boolean {
   return !!(
     lights.light || lights.switch || lights.level || lights.toggle ||
-    lights.buttons?.length || lights.cycle || lights.timer || lights.timerMinutes || lights.timerToggle ||
+    lights.buttons?.length || lights.states?.length || lights.cycle || lights.timer || lights.timerMinutes || lights.timerToggle ||
     lights.mood?.toggle || lights.mood?.selects.length || lights.mood?.numbers.length || lights.mood?.buttons?.length
   );
 }

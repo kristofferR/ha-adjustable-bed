@@ -35,6 +35,9 @@ The [S02 Sleeptracker disposition ledger](apk-analysis/dispositions/S02-sleeptra
 maps the accepted 3.6.2 audit to the separate [processor integration](beds/sleeptracker.md),
 including direct BLE controls, explicit exclusions and hardware validation status.
 
+The [Adjustable Comfort M1X12 protocol guide](beds/starcode-m1x12.md) links its
+sealed accepted evidence to the complete 970-ID implementation ledger.
+
 ## Development and Validation
 
 Work from `main` for v4 changes. Development uses Python **3.14.2+** with

@@ -671,6 +671,20 @@
           "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides."
         }
+      },
+      "starcode_m1x12": {
+        "title": "Adjustable Comfort M1X12 app",
+        "description": "Select this app explicitly. The shared Bluetooth service, manufacturer and ELEVATE name do not identify the app.",
+        "data": {
+          "ble_device_name": "Exact Bluetooth name",
+          "starcode_m1x12_profile": "M1X12 app profile",
+          "starcode_lift_entries": "M1X12 ELEVATE accessories (up to two)"
+        },
+        "data_description": {
+          "ble_device_name": "Enter the unchanged Bluetooth name. The exact prefix selects CB25, F23 or kneading after you choose this app.",
+          "starcode_m1x12_profile": "Choose the profile matching the exact Bluetooth name; this app choice is never inferred from shared services or manufacturer data.",
+          "starcode_lift_entries": "Choose up to two separately configured ELEVATE entries explicitly set to Adjustable Comfort M1X12 ELEVATE. Existing ELEVATE entries are not changed when linking."
+        }
       }
     },
     "progress": {
@@ -761,7 +775,10 @@
       "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant.",
       "vibradorm_verification_required": "The selected app could not be verified or its connection could not be released. Retry, or keep your current setup.",
       "sleeptracker_profile": "Select a supported Sleeptracker layout and numeric processor selectors.",
-      "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0."
+      "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0.",
+      "starcode_m1x12_profile_mismatch": "Choose the M1X12 profile matching the exact Bluetooth name.",
+      "starcode_invalid_m1x12_lifts": "Select up to two distinct configured Adjustable Comfort M1X12 ELEVATE entries with different Bluetooth addresses.",
+      "starcode_m1x12_elevate_reconfigure": "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE before linking it."
     }
   },
   "options": {
@@ -1061,7 +1078,10 @@
       "app_profile_unpair_first": "Each side keeps its own {profile} settings. Unpair the beds, change each side separately, then combine them again.",
       "vibradorm_reconfigure_required": "To change the Vibradorm app, remote or product, close Configure and select Reconfigure from this entry\u2019s three-dot menu. The guided setup verifies it before saving.",
       "profile_review_save_failed": "Your profile review choice could not be saved. Please try again. Settings were not saved.",
-      "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0."
+      "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0.",
+      "starcode_m1x12_profile_mismatch": "Choose the M1X12 profile matching the exact Bluetooth name.",
+      "starcode_invalid_m1x12_lifts": "Select up to two distinct configured Adjustable Comfort M1X12 ELEVATE entries with different Bluetooth addresses.",
+      "starcode_m1x12_elevate_reconfigure": "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE before linking it."
     },
     "progress": {
       "unpairing": "Removing the Bluetooth bond\u2026",
@@ -2172,6 +2192,60 @@
       "starcode_query": {
         "name": "Refresh massage and RGB"
       },
+      "starcode_m1x12_memory_8": {
+        "name": "Recall MemoryType 8"
+      },
+      "starcode_m1x12_save_tv": {
+        "name": "Save TV position"
+      },
+      "starcode_m1x12_save_zero_g": {
+        "name": "Save zero gravity position"
+      },
+      "starcode_m1x12_save_lounge": {
+        "name": "Save reading or lounge position"
+      },
+      "starcode_m1x12_save_memory_1": {
+        "name": "Save M1 position"
+      },
+      "starcode_m1x12_save_memory_2": {
+        "name": "Save M2 position"
+      },
+      "starcode_m1x12_reset": {
+        "name": "Reset saved positions"
+      },
+      "starcode_m1x12_light_mode_0": {
+        "name": "Light mode 0"
+      },
+      "starcode_m1x12_light_mode_1": {
+        "name": "Light mode 1"
+      },
+      "starcode_m1x12_query": {
+        "name": "Refresh bed state"
+      },
+      "starcode_m1x12_hold_massage_wave_up": {
+        "name": "Hold to increase massage wave"
+      },
+      "starcode_m1x12_hold_massage_wave_down": {
+        "name": "Hold to decrease massage wave"
+      },
+      "starcode_m1x12_hold_massage_head_up": {
+        "name": "Hold to increase head massage"
+      },
+      "starcode_m1x12_hold_massage_head_down": {
+        "name": "Hold to decrease head massage"
+      },
+      "starcode_m1x12_hold_massage_foot_up": {
+        "name": "Hold to increase foot massage"
+      },
+      "starcode_m1x12_hold_massage_foot_down": {
+        "name": "Hold to decrease foot massage"
+      },
+      "starcode_m1x12_hold_massage_both_up": {
+        "name": "Hold to increase both-zone massage"
+      },
+      "starcode_m1x12_hold_massage_both_down": {
+        "name": "Hold to decrease both-zone massage"
+      },
       "simmons_inclined_left": {
         "name": "Inclined left"
       },
@@ -2680,6 +2754,21 @@
       },
       "richmat_mh_pillow_lumbar": {
         "name": "Pillow and lumbar"
+      },
+      "starcode_m1x12_part_1": {
+        "name": "Part 1"
+      },
+      "starcode_m1x12_part_2": {
+        "name": "Part 2"
+      },
+      "starcode_m1x12_part_4": {
+        "name": "Part 4"
+      },
+      "starcode_m1x12_part_8": {
+        "name": "Part 8"
+      },
+      "starcode_m1x12_part_16": {
+        "name": "Part 16"
       }
     },
     "sensor": {
@@ -3552,6 +3641,117 @@
       },
       "sleeptracker_right_commanded_timer_seconds": {
         "name": "Right ActiveBreeze timer (last command)"
+      },
+      "starcode_m1x12_firmware": {
+        "name": "Firmware version"
+      },
+      "starcode_m1x12_massage_time_raw": {
+        "name": "Massage time (raw)"
+      },
+      "starcode_m1x12_massage_head_level": {
+        "name": "Head massage level"
+      },
+      "starcode_m1x12_massage_foot_level": {
+        "name": "Foot massage level"
+      },
+      "starcode_m1x12_massage_mode": {
+        "name": "Massage mode"
+      },
+      "starcode_m1x12_light_brightness": {
+        "name": "Light brightness (raw)"
+      },
+      "starcode_m1x12_light_color_index": {
+        "name": "Light color index"
+      },
+      "starcode_m1x12_light_rgb_mode": {
+        "name": "Direct RGB mode"
+      },
+      "starcode_m1x12_light_mode": {
+        "name": "Light mode"
+      },
+      "starcode_m1x12_sonic_time_raw": {
+        "name": "Sonic time (raw)"
+      },
+      "starcode_m1x12_sonic_frequency": {
+        "name": "Sonic frequency"
+      },
+      "starcode_m1x12_sonic_head_level": {
+        "name": "Head sonic level"
+      },
+      "starcode_m1x12_sonic_foot_level": {
+        "name": "Foot sonic level"
+      },
+      "starcode_m1x12_sonic_mode": {
+        "name": "Sonic mode"
+      },
+      "starcode_m1x12_sonic_massage_type": {
+        "name": "Sonic massage type"
+      },
+      "starcode_m1x12_part_1_position": {
+        "name": "Part 1 position (%)"
+      },
+      "starcode_m1x12_part_2_position": {
+        "name": "Part 2 position (%)"
+      },
+      "starcode_m1x12_part_4_position": {
+        "name": "Part 4 position (%)"
+      },
+      "starcode_m1x12_part_8_position": {
+        "name": "Part 8 position (%)"
+      },
+      "starcode_m1x12_part_16_position": {
+        "name": "Part 16 position (%)"
+      },
+      "starcode_m1x12_part_32_position": {
+        "name": "Part 32 position (%)"
+      },
+      "starcode_m1x12_alarm_0": {
+        "name": "Alarm 1 enabled"
+      },
+      "starcode_m1x12_alarm_1": {
+        "name": "Alarm 2 enabled"
+      },
+      "starcode_m1x12_eq_volume": {
+        "name": "Equalizer volume"
+      },
+      "starcode_m1x12_eq_preset": {
+        "name": "Equalizer preset"
+      },
+      "starcode_m1x12_eq_low_frequency": {
+        "name": "Equalizer low frequency"
+      },
+      "starcode_m1x12_eq_high_frequency": {
+        "name": "Equalizer high frequency"
+      },
+      "starcode_m1x12_eq_band_0": {
+        "name": "Equalizer 32 Hz"
+      },
+      "starcode_m1x12_eq_band_1": {
+        "name": "Equalizer 64 Hz"
+      },
+      "starcode_m1x12_eq_band_2": {
+        "name": "Equalizer 125 Hz"
+      },
+      "starcode_m1x12_eq_band_3": {
+        "name": "Equalizer 250 Hz"
+      },
+      "starcode_m1x12_eq_band_4": {
+        "name": "Equalizer 500 Hz"
+      },
+      "starcode_m1x12_eq_band_5": {
+        "name": "Equalizer 1 kHz"
+      },
+      "starcode_m1x12_eq_band_6": {
+        "name": "Equalizer 2 kHz"
+      },
+      "starcode_m1x12_eq_band_7": {
+        "name": "Equalizer 4 kHz"
+      },
+      "starcode_m1x12_kneading_time_raw": {
+        "name": "Kneading time (raw)"
+      },
+      "starcode_m1x12_kneading_mode": {
+        "name": "Kneading mode"
       }
     },
     "light": {
@@ -3807,6 +4007,27 @@
       },
       "sleeptracker_wind_down_running": {
         "name": "Wind-down running (reported)"
+      },
+      "starcode_m1x12_motor_stopped": {
+        "name": "Motor stopped"
+      },
+      "starcode_m1x12_massage_active": {
+        "name": "Massage active"
+      },
+      "starcode_m1x12_light_on": {
+        "name": "Light on"
+      },
+      "starcode_m1x12_sonic_active": {
+        "name": "Sonic active"
+      },
+      "starcode_m1x12_usb_on": {
+        "name": "USB on"
+      },
+      "starcode_m1x12_kneading_on": {
+        "name": "Kneading active"
+      },
+      "starcode_m1x12_kneading_demo": {
+        "name": "Kneading demo available"
       }
     },
     "number": {
@@ -3998,6 +4219,9 @@
       },
       "sleeptracker_right_level": {
         "name": "Right ActiveBreeze level"
+      },
+      "starcode_m1x12_brightness": {
+        "name": "RGB brightness level"
       }
     },
     "select": {

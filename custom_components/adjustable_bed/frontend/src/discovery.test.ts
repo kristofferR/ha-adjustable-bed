@@ -46,6 +46,177 @@ test("paired hold routing comes from backend metadata, not translated motor name
   expect(bedEntitiesForDevice(hass, "pair").motors[0].timedMove).toBeUndefined();
 });
 
+test("cover hold metadata stays attached to the selected raw Part motor", () => {
+  const hass = hassWith([entry("cover.part_1", "starcode_m1x12_part_1", "m1x12")]);
+  hass.states["cover.part_1"] = {
+    entity_id: "cover.part_1", state: "unknown", last_changed: "", last_updated: "",
+    attributes: {
+      held_control_up: "part_1_up",
+      held_control_down: "part_1_down",
+      hold_start_delay_ms: 100,
+      hold_release_delay_ms: 100,
+    },
+  };
+
+  expect(bedEntitiesForDevice(hass, "m1x12").motors).toEqual([{
+    key: "starcode_m1x12_part_1",
+    coverStopScope: "side",
+    cover: "cover.part_1",
+    deviceId: "m1x12",
+    heldControls: {
+      up: { control: "part_1_up", startDelayMs: 100, releaseDelayMs: 100 },
+      down: { control: "part_1_down", startDelayMs: 100, releaseDelayMs: 100 },
+    },
+  }]);
+});
+
+test("explicit ELEVATE actuator covers stay motor-scoped while its union stop is side-wide", () => {
+  const hass = hassWith([
+    entry("cover.actuator_1", "elevate_actuator_1", "elevate"),
+    entry("cover.actuator_2", "elevate_actuator_2", "elevate"),
+    entry("cover.elevate_both", "elevate_both", "elevate"),
+  ]);
+  const motors = bedEntitiesForDevice(hass, "elevate").motors;
+  expect(motors.find((motor) => motor.key === "elevate_actuator_1")?.coverStopScope)
+    .toBeUndefined();
+  expect(motors.find((motor) => motor.key === "elevate_actuator_2")?.coverStopScope)
+    .toBeUndefined();
+  expect(motors.find((motor) => motor.key === "elevate_both")?.coverStopScope)
+    .toBe("side");
+});
+
+test("paired M1X12 and explicit ELEVATE motor buttons expose directional holds", () => {
+  const rows = [
+    ["button.part_1_up", "starcode_m1x12_part_1_up", "part_1_up"],
+    ["button.part_1_down", "starcode_m1x12_part_1_down", "part_1_down"],
+    ["button.actuator_1_up", "elevate_actuator_1_up", "actuator_1_up"],
+    ["button.actuator_1_down", "elevate_actuator_1_down", "actuator_1_down"],
+  ] as const;
+  const hass = hassWith(rows.map(([id, key]) => entry(id, key, "pair")));
+  for (const [id, _key, control] of rows) {
+    hass.states[id] = {
+      entity_id: id,
+      state: "unknown",
+      last_changed: "",
+      last_updated: "",
+      attributes: {
+        held_control: control,
+        hold_start_delay_ms: 100,
+        hold_release_delay_ms: 100,
+      },
+    };
+  }
+
+  const bed = bedEntitiesForDevice(hass, "pair");
+  expect(bed.utility).toEqual([]);
+  expect(bed.motors).toHaveLength(2);
+  expect(bed.motors.find((item) => item.key === "starcode_m1x12_part_1")).toMatchObject({
+    up: "button.part_1_up",
+    down: "button.part_1_down",
+    deviceId: "pair",
+    heldControls: {
+      up: { control: "part_1_up", startDelayMs: 100, releaseDelayMs: 100 },
+      down: { control: "part_1_down", startDelayMs: 100, releaseDelayMs: 100 },
+    },
+  });
+  expect(bed.motors.find((item) => item.key === "elevate_actuator_1")).toMatchObject({
+    up: "button.actuator_1_up",
+    down: "button.actuator_1_down",
+    deviceId: "pair",
+    heldControls: {
+      up: { control: "actuator_1_up", startDelayMs: 100, releaseDelayMs: 100 },
+      down: { control: "actuator_1_down", startDelayMs: 100, releaseDelayMs: 100 },
+    },
+  });
+});
+
+test("legacy paired motor buttons remain finite without hold metadata", () => {
+  const hass = hassWith([
+    entry("button.back_up", "back_up", "pair"),
+    entry("button.back_down", "back_down", "pair"),
+  ]);
+
+  expect(bedEntitiesForDevice(hass, "pair").motors).toEqual([
+    { key: "back", up: "button.back_up", down: "button.back_down" },
+  ]);
+});
+
+test("combined ELEVATE buttons without a shared hold stay in finite motor slots", () => {
+  const hass = hassWith([
+    entry("button.elevate_actuator_1_up", "elevate_actuator_1_up", "pair"),
+    entry("button.elevate_actuator_1_down", "elevate_actuator_1_down", "pair"),
+  ]);
+
+  expect(bedEntitiesForDevice(hass, "pair").motors).toEqual([{
+    key: "elevate_actuator_1",
+    up: "button.elevate_actuator_1_up",
+    down: "button.elevate_actuator_1_down",
+  }]);
+});
+
+test("M1X12 telemetry and controls stay in side-owned existing card rows", () => {
+  const entries = [
+    entry("cover.part_1_left", "starcode_m1x12_part_1", "m1-side"),
+    entry("sensor.part_1_position_left", "starcode_m1x12_part_1_position", "m1-side"),
+    entry("number.brightness_left", "starcode_m1x12_brightness", "m1-side"),
+    entry("sensor.alarm_0_left", "starcode_m1x12_alarm_0", "m1-side"),
+    entry("sensor.light_brightness_left", "starcode_m1x12_light_brightness", "m1-side"),
+    entry("sensor.sonic_mode_left", "starcode_m1x12_sonic_mode", "m1-side"),
+    entry("binary_sensor.light_on_left", "starcode_m1x12_light_on", "m1-side"),
+    entry("binary_sensor.sonic_active_left", "starcode_m1x12_sonic_active", "m1-side"),
+    entry("binary_sensor.motor_stopped_left", "starcode_m1x12_motor_stopped", "m1-side"),
+    entry("button.wave_up_left", "starcode_m1x12_hold_massage_wave_up", "m1-side"),
+  ];
+  const hass = hassWith(entries);
+  for (const e of entries) {
+    hass.states[e.entity_id] = {
+      entity_id: e.entity_id, state: "unknown", last_changed: "", last_updated: "",
+      attributes: { bed_side: "left" },
+    };
+  }
+  Object.assign(hass.states["cover.part_1_left"].attributes, {
+    held_control_up: "part_1_up",
+    held_control_down: "part_1_down",
+    hold_start_delay_ms: 100,
+    hold_release_delay_ms: 100,
+  });
+
+  const left = bedEntitiesForDevice(hass, "m1-side", "left");
+  expect(left.motors).toEqual([{
+    key: "starcode_m1x12_part_1",
+    coverStopScope: "side",
+    cover: "cover.part_1_left",
+    deviceId: "m1-side",
+    heldControls: {
+      up: { control: "part_1_up", startDelayMs: 100, releaseDelayMs: 100 },
+      down: { control: "part_1_down", startDelayMs: 100, releaseDelayMs: 100 },
+    },
+    position: "sensor.part_1_position_left",
+  }]);
+  expect(left.lights.level).toBe("number.brightness_left");
+  expect(left.lights.state).toBe("binary_sensor.light_on_left");
+  expect(left.lights.states).toEqual(["sensor.light_brightness_left"]);
+  expect(left.massage.states).toEqual([
+    "sensor.sonic_mode_left", "binary_sensor.sonic_active_left",
+  ]);
+  expect(left.massage.buttons).toEqual(["button.wave_up_left"]);
+  expect(left.utilityStates).toEqual([
+    "sensor.alarm_0_left", "binary_sensor.motor_stopped_left",
+  ]);
+  expect(bedEntitiesForDevice(hass, "m1-side", "right").motors).toEqual([]);
+});
+
+test("M1X12 held massage actions and setup controls land in their card sections", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.wave_up", "starcode_m1x12_hold_massage_wave_up", "m1x12"),
+    entry("button.head_down", "starcode_m1x12_hold_massage_head_down", "m1x12"),
+    entry("button.memory_8", "starcode_m1x12_memory_8", "m1x12"),
+    entry("button.query", "starcode_m1x12_query", "m1x12"),
+  ]), "m1x12");
+  expect(bed.massage.buttons).toEqual(["button.wave_up", "button.head_down"]);
+  expect(bed.utility).toEqual(["button.memory_8", "button.query"]);
+});
+
 test("Motion hub module selector is a nonempty utility control", () => {
   const bed = bedEntitiesForDevice(hassWith([
     entry("select.hub_module", "motion_bed_active_module"),
