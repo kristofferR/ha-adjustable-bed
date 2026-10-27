@@ -197,6 +197,7 @@ from .const import (
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     OFFLINE_CAPABILITY_SAFE_VARIANTS,
     OKIMAT_SERVICE_UUID,
+    OKIN_CST_VARIANT_NECTAR_MOVE,
     POSITION_FEEDBACK_TIMEOUT,
     POSITION_MODE_ACCURACY,
     REVERIE_BACK_MAX_ANGLE,
@@ -220,6 +221,7 @@ from .const import (
     requires_pairing_after_service_discovery,
     resolve_explicit_bed_type,
     resolve_richmat_remote_code,
+    supports_runtime_authentication_recovery,
 )
 from .controller_factory import create_controller
 from .detection import (
@@ -612,6 +614,10 @@ class AdjustableBedCoordinator:
         # marker, this never poisons the config entry, so a transient pairing
         # failure cannot permanently prevent future pairing attempts.
         self._skip_pair_next_attempt: bool = False
+        # Pair Now is an explicit user repair for Nectar Move, whose ordinary
+        # profile deliberately does not request a bond. Scope this override to
+        # that locked repair operation only.
+        self._force_pairing_requested: bool = False
         # True when the most recent attempt skipped pair=True purely because
         # CONF_BLE_BOND_ESTABLISHED said we were already bonded. An auth failure
         # under that condition is what proves the marker unreliable.
@@ -1795,7 +1801,11 @@ class AdjustableBedCoordinator:
 
     async def async_clear_obsolete_pairing_state(self) -> None:
         """Remove stale pairing state when this protocol no longer requires it."""
-        if requires_pairing(self._bed_type, self._protocol_variant):
+        if (
+            self._force_pairing_requested
+            and self._bed_type == BED_TYPE_OKIN_CST
+            and self._protocol_variant == OKIN_CST_VARIANT_NECTAR_MOVE
+        ) or requires_pairing(self._bed_type, self._protocol_variant):
             return
         self._discard_bond_tracking()
         await delete_pairing_required_issue(self.hass, self._address)
@@ -1841,7 +1851,7 @@ class AdjustableBedCoordinator:
         Connection retries defer the repair until their final outcome; runtime
         command failures still report it immediately.
         """
-        if not requires_pairing(self._bed_type, self._protocol_variant):
+        if not supports_runtime_authentication_recovery(self._bed_type, self._protocol_variant):
             return
 
         keep_link = retain_link and grants_one_connection_per_pairing_window(
@@ -2395,13 +2405,23 @@ class AdjustableBedCoordinator:
                         return await self._async_pair_live_and_verify()
                 return await self._async_pair_live_and_verify()
 
-            if not await self._async_connect_locked():
+            self._force_pairing_requested = (
+                self._bed_type == BED_TYPE_OKIN_CST
+                and self._protocol_variant == OKIN_CST_VARIANT_NECTAR_MOVE
+            )
+            try:
+                if not await self._async_connect_locked():
+                    if self._bed_type == BED_TYPE_VIBRADORM_APP:
+                        self._persist_bond_flags(established=False)
+                    return False
                 if self._bed_type == BED_TYPE_VIBRADORM_APP:
-                    self._persist_bond_flags(established=False)
-                return False
-            if self._bed_type == BED_TYPE_VIBRADORM_APP:
-                return self._last_bond_evidence is not None and self._last_bond_evidence.proves_bond
-            return self._ble_bond_established
+                    return (
+                        self._last_bond_evidence is not None
+                        and self._last_bond_evidence.proves_bond
+                    )
+                return self._ble_bond_established
+            finally:
+                self._force_pairing_requested = False
 
     async def _async_pair_live_and_verify(self) -> bool:
         """Pair and verify the live link while the coordinator lock is held."""
@@ -3078,10 +3098,21 @@ class AdjustableBedCoordinator:
         source: str | None = None,
     ) -> tuple[bool, bool, bool]:
         """Resolve pairing policy and diagnostics for one connection attempt."""
-        bed_requires_pairing = requires_pairing(self._bed_type, self._protocol_variant)
+        force_pairing = (
+            self._force_pairing_requested
+            and self._bed_type == BED_TYPE_OKIN_CST
+            and self._protocol_variant == OKIN_CST_VARIANT_NECTAR_MOVE
+        )
+        bed_requires_pairing = force_pairing or requires_pairing(
+            self._bed_type, self._protocol_variant
+        )
         bond_marker_before_attempt = self._ble_bond_established
         transient_skip_was_set = self._skip_pair_next_attempt
-        os_bond_reported = bed_requires_pairing and self._device_reports_existing_bond(device)
+        os_bond_reported = (
+            bed_requires_pairing
+            and not force_pairing
+            and self._device_reports_existing_bond(device)
+        )
         if bed_requires_pairing and not self._ble_bond_established and os_bond_reported:
             _LOGGER.info(
                 "Existing BLE bond detected for %s; skipping pair=True",
@@ -3103,11 +3134,13 @@ class AdjustableBedCoordinator:
             )
         bond_marker_trusted = self._ble_bond_established and not marker_out_of_scope
 
-        use_pairing = (
-            bed_requires_pairing
-            and not bond_marker_trusted
-            and not self._skip_pair_next_attempt
-            and self._pairing_supported is not False
+        use_pairing = (force_pairing and not self._skip_pair_next_attempt) or (
+            self._pairing_supported is not False
+            and (
+                bed_requires_pairing
+                and not bond_marker_trusted
+                and not self._skip_pair_next_attempt
+            )
         )
         pair_after_service_discovery = bool(
             use_pairing
@@ -3121,7 +3154,9 @@ class AdjustableBedCoordinator:
             pairing_ordering = (
                 "connect_discover_then_pair" if pair_after_service_discovery else "backend_default"
             )
-        if not bed_requires_pairing:
+        if force_pairing and use_pairing:
+            pairing_decision = "explicit_pair_repair"
+        elif not bed_requires_pairing:
             pairing_decision = "not_required"
         elif self._ble_bond_marker_unreliable:
             pairing_decision = "bond_marker_unreliable"
@@ -3331,7 +3366,7 @@ class AdjustableBedCoordinator:
             # A verified retry clears this evidence. An inconclusive retry,
             # exhausted attempts or cancellation must still surface the repair.
             if (
-                requires_pairing(self._bed_type, self._protocol_variant)
+                supports_runtime_authentication_recovery(self._bed_type, self._protocol_variant)
                 and self._last_bond_evidence is not None
                 and self._last_bond_evidence.status is BondVerificationStatus.AUTH_FAILED
             ):

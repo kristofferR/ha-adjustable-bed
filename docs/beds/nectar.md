@@ -1,6 +1,11 @@
 # Nectar
 
-**Status:** ❓ Needs testing
+This page describes the legacy seven-byte Nectar protocol. The newer Nectar
+Motion app is a separate, explicit **Nectar Move** profile of [Okin CST](okin-cst.md).
+An `OKIN-*` name, shared OKIN UUID, or Device Information value does not select
+that app profile automatically.
+
+**Legacy protocol status:** ❓ Needs testing
 
 **Credit:** Reverse engineering by [MaximumWorf](https://github.com/MaximumWorf) - [homeassistant-nectar](https://github.com/MaximumWorf/homeassistant-nectar)
 
@@ -10,8 +15,8 @@
 - Nectar adjustable bases
 - Other beds using Okin controllers with 7-byte command format
 
-Some newer Nectar Motion bases advertise only as `OKIN-XXXXXX` and use the
-[Okin CST](okin-cst.md) 14-byte protocol instead of this 7-byte protocol.
+Some Nectar Motion bases use the [Okin CST](okin-cst.md) 14-byte protocol
+instead of this 7-byte protocol.
 The `62741523-...` OKIN service, `90311623-...` CSS service, and Nordic DFU
 service `00001530-...` are not sufficient by themselves to identify CST because
 RF ECO BT stair actuators share that GATT inventory. Choose **Okin CST / Nectar
@@ -23,13 +28,13 @@ Information model `MEGAMAT MBZ` identifies RF ECO BT instead.
 | Analyzed | App | Package ID |
 |----------|-----|------------|
 | ⬜ | Nectar Adjustable | (no longer available) |
-| ✅ | Nectar Motion | `com.okin.bedding.nectarmotion` (uses Okin CST) |
+| ✅ | Nectar Motion / Nectar Move | `com.okin.bedding.nectarmotion` (select **Nectar Move** under Okin CST) |
 
 ## Features
 
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | ✅ (Head, Feet, Lumbar) |
+| Motor Control | ✅ (legacy seven-byte profile; see below) |
 | Position Feedback | ❌ |
 | Memory Presets | ❌ |
 | Massage | ✅ |
@@ -43,7 +48,9 @@ Information model `MEGAMAT MBZ` identifies RF ECO BT instead.
 **Format:** 7-byte commands: `5A 01 03 10 30 [XX] A5`
 **Write Mode:** write without response
 
-**Note:** Nectar beds share the Okin service UUID with Okimat but use a **7-byte command format** (vs Okimat's 6-byte format). This means commands are not interchangeable - if your bed is detected as the wrong type, change it in integration settings.
+These command details apply only to the legacy `nectar` integration profile.
+Nectar Move uses the separate Okin CST framing and actions documented on the
+[Okin CST page](okin-cst.md). Do not interchange the command sets.
 
 ### Motor Commands
 
@@ -83,14 +90,15 @@ Information model `MEGAMAT MBZ` identifies RF ECO BT instead.
 
 ## Detection
 
-Detected by device name containing: `nectar` (case-insensitive) AND Okin service UUID present.
+The legacy protocol may be detected by a device name containing `nectar`
+(case-insensitive) with the Okin service UUID. That signal does not identify
+the Nectar Move app profile.
 
 Some Nectar bases advertise only as `OKIN-XXXXXX`. Those names are ambiguous
-with classic Okimat, 7-byte Nectar, and newer CST controllers, so setup prompts
-for the Okin-family protocol. Choose `Nectar` only for the 7-byte protocol.
-Do not choose `Okin CST / Nectar Motion` from CSS plus Nordic DFU alone. Choose
-it only when a known Nectar Motion base or app identity corroborates CST; Device
-Information model `MEGAMAT MBZ` identifies RF ECO BT instead.
+with classic Okimat, 7-byte Nectar, and newer CST controllers. Select **Nectar
+Move** explicitly when setting up that app profile; shared advertisements and
+Device Information are not sufficient to choose it. Device Information model
+`MEGAMAT MBZ` identifies RF ECO BT instead.
 
 Or manually configured with bed type: `nectar`
 
@@ -106,6 +114,6 @@ Nectar is part of the [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-prot
 
 - Nectar beds share the Okin service UUID with Okimat beds but use a different command protocol
 - Generic `OKIN-XXXXXX` names require user confirmation because several Okin protocols share the same advertised UUID
-- Newer Nectar Motion `OKIN-XXXXXX` bases may use [Okin CST](okin-cst.md) instead
+- Nectar Motion using the newer app uses the explicit [Nectar Move profile](okin-cst.md#nectar-move-profile) under Okin CST
 - Massage control is global (no separate head/foot control)
 - Lights have separate on/off commands (no toggle)

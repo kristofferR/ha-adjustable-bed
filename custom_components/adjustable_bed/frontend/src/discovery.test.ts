@@ -100,6 +100,24 @@ test("2-motor bed with light switch and no massage/climate", () => {
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
+test("Nectar Move Reading and save-response state are discoverable in their own sections", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.preset_flat", "preset_flat"),
+    entry("button.preset_lounge", "preset_lounge"),
+    entry("button.preset_reading", "preset_reading"),
+    entry("binary_sensor.save_response", "memory_save_response_observed"),
+  ]), "dev1");
+
+  expect(bed.presets).toEqual([
+    "button.preset_flat",
+    "button.preset_lounge",
+    "button.preset_reading",
+  ]);
+  expect(bed.utilityInfo).toEqual(["binary_sensor.save_response"]);
+  expect(bed.utility).toEqual([]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
 test("read-only light state is visible independently of light controls", () => {
   const hass = hassWith([
     entry("binary_sensor.bed_light", "under_bed_lights"),

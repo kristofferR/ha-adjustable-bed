@@ -77,6 +77,7 @@ from .const import (
     KEESON_VARIANT_RESTONIC_B,
     KEESON_VARIANT_SERTA,
     KEESON_VARIANT_SIMON_LI,
+    OKIN_CST_VARIANT_NECTAR_MOVE,
     ZSERIES_VARIANT_Z230,
     ZSERIES_VARIANT_Z280,
 )
@@ -417,9 +418,9 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
             },
             {
                 "type": BED_TYPE_OKIN_7BYTE,
-                "label": "Nectar beds",
-                "description": "Nectar Move and similar models",
-                "hint": "Device name contains 'Nectar'",
+                "label": "Legacy Nectar (7-byte)",
+                "description": "Older Nectar bases using the legacy seven-byte protocol",
+                "hint": "Choose only when the installed bed uses the legacy Nectar protocol",
             },
             {
                 "type": BED_TYPE_OKIN_CST,
@@ -429,6 +430,13 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                     "II Clarity, Rize MF900, Support, newer Nectar Motion, and some OKIN-* bases"
                 ),
                 "hint": "Try this for OKIN-* beds with 62741525 plus 90311625/00001530 GATT services",
+            },
+            {
+                "type": BED_TYPE_OKIN_CST,
+                "variant": OKIN_CST_VARIANT_NECTAR_MOVE,
+                "label": "Nectar Move app",
+                "description": "Explicit two-axis profile for the Nectar Move app, using Okin CST",
+                "hint": "Choose the Nectar Move app profile; shared OKIN identity is not enough",
             },
             {
                 "type": BED_TYPE_OKIN_NORDIC,
