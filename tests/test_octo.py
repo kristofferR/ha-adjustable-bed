@@ -80,6 +80,10 @@ from custom_components.adjustable_bed.light import (
     AdjustableBedLight,
     _light_entities_for,
 )
+from custom_components.adjustable_bed.switch import (
+    SWITCH_DESCRIPTIONS,
+    AdjustableBedSwitch,
+)
 
 _REAL_OCTO_DISCOVER_FEATURES = OctoController.discover_features
 
@@ -2523,6 +2527,77 @@ class TestOctoCapabilityControls:
             coordinator.handle_controller_state_updates.call_args.args[0]["octo_light_duration"]
             == 0
         )
+
+    async def test_remote_lock_switch_ignores_light_auto_off_timer(
+        self,
+        hass: HomeAssistant,
+        mock_octo_config_entry,
+        mock_octo_ready_transport,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
+        await coordinator.async_connect()
+        controller = cast(OctoController, coordinator.controller)
+        _activate_capabilities(
+            controller,
+            _capability(OCTO_FEATURE_PIN, b"\x01", b"\x00\x01"),
+            _capability(OCTO_FEATURE_REMOTE_CONTROL_LOCK, b"\x01", b"\x00"),
+            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05"),
+        )
+        assert controller.light_auto_off_seconds == 300
+        controller.write_command = AsyncMock()
+
+        async def execute(command, **_kwargs):
+            await command(controller)
+
+        coordinator.async_execute_controller_command = AsyncMock(side_effect=execute)
+        lock_description = next(
+            description
+            for description in SWITCH_DESCRIPTIONS
+            if description.key == "remote_control_lock"
+        )
+        lock_switch = AdjustableBedSwitch(coordinator, lock_description)
+        lock_switch.hass = hass
+        await lock_switch.async_added_to_hass()
+        auto_off_callbacks: list[Callable[[], None]] = []
+        original_call_later = hass.loop.call_later
+
+        def capture_auto_off(
+            delay: float,
+            callback: Callable[..., None],
+            *args: object,
+        ) -> object:
+            if getattr(callback, "__name__", "") == "auto_off_callback":
+                auto_off_callbacks.append(lambda: callback(*args))
+                return MagicMock()
+            return original_call_later(delay, callback, *args)
+
+        auto_off_handler = MagicMock(wraps=controller.on_light_auto_off)
+        monkeypatch.setattr(controller, "on_light_auto_off", auto_off_handler)
+        try:
+            with (
+                patch.object(hass.loop, "call_later", side_effect=capture_auto_off),
+                patch.object(lock_switch, "async_write_ha_state"),
+            ):
+                await lock_switch.async_turn_on()
+                assert lock_switch.is_on is True
+
+                controller._remote_lock_active = False
+                controller._publish_capability_state()
+                assert lock_switch.is_on is False
+                controller._remote_lock_active = True
+                controller._publish_capability_state()
+                assert lock_switch.is_on is True
+
+                for callback in auto_off_callbacks:
+                    callback()
+                await hass.async_block_till_done()
+
+            assert auto_off_callbacks == []
+            auto_off_handler.assert_not_called()
+            assert lock_switch.is_on is True
+        finally:
+            await lock_switch.async_will_remove_from_hass()
 
     async def test_confirmed_reset_packet_disconnects_after_five_seconds(
         self, monkeypatch: pytest.MonkeyPatch

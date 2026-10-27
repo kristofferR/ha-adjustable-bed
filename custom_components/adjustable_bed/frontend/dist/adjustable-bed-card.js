@@ -624,7 +624,7 @@ var be=Object.defineProperty;var ve=Object.getOwnPropertyDescriptor;var S=(n,s,t
           @pointerdown=${c=>this._startHold(c,a,"up",i)}
           @pointerup=${c=>this._endPointerHold(c,a)}
           @pointercancel=${c=>this._endPointerHold(c,a)}
-          @keydown=${c=>this._startHold(c,a,"up")}
+          @keydown=${c=>this._startHold(c,a,"up",i)}
           @keyup=${c=>this._endKeyHold(c,a)}
           @blur=${()=>this._endHold(a)}
           @click=${c=>this._activateWithoutPointer(c,a,"up",i)}

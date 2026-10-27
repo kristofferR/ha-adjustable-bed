@@ -298,6 +298,9 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         lights automatically turn off after a fixed duration. This method
         schedules a timer to update the HA state to reflect the hardware behavior.
         """
+        if self.entity_description.key != "under_bed_lights":
+            return
+
         controller = self._coordinator.controller
         if controller is None:
             return

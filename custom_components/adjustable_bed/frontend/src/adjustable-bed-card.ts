@@ -1164,7 +1164,7 @@ export class AdjustableBedCard extends LitElement {
           @pointerdown=${(e: PointerEvent) => this._startHold(e, motor, "up", stopId)}
           @pointerup=${(e: PointerEvent) => this._endPointerHold(e, motor)}
           @pointercancel=${(e: PointerEvent) => this._endPointerHold(e, motor)}
-          @keydown=${(e: KeyboardEvent) => this._startHold(e, motor, "up")}
+          @keydown=${(e: KeyboardEvent) => this._startHold(e, motor, "up", stopId)}
           @keyup=${(e: KeyboardEvent) => this._endKeyHold(e, motor)}
           @blur=${() => this._endHold(motor)}
           @click=${(e: MouseEvent) => this._activateWithoutPointer(e, motor, "up", stopId)}
