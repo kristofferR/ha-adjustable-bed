@@ -294,22 +294,41 @@ class DeviceCommandScheduler:
             ),
         }
 
-    async def execute(self, intent: CommandIntent) -> None:
+    async def execute(
+        self, intent: CommandIntent, *, expected_stop_epoch: int | None = None
+    ) -> None:
         """Admit an ordinary intent and wait for its terminal result."""
-        handle = await self.enqueue(intent)
+        handle = await self.enqueue(intent, expected_stop_epoch=expected_stop_epoch)
         try:
             await asyncio.shield(handle.future)
         except asyncio.CancelledError:
             await self.cancel(handle, CommandOutcome.CALLER_CANCELLED)
             raise
 
-    async def enqueue(self, intent: CommandIntent, *, prepared: bool = False) -> CommandHandle:
+    async def enqueue(
+        self,
+        intent: CommandIntent,
+        *,
+        prepared: bool = False,
+        expected_stop_epoch: int | None = None,
+    ) -> CommandHandle:
         """Admit an intent and return its handle without waiting for execution."""
-        handle = self._new_handle(intent, prepared=prepared)
+        handle = self._new_handle(
+            intent,
+            prepared=prepared,
+            admitted_stop_epoch=expected_stop_epoch,
+        )
 
         async with self._lock:
             if self._closed:
                 raise RuntimeError(f"Command scheduler for {self._name} is shut down")
+            if expected_stop_epoch is not None and expected_stop_epoch != self._stop_epoch:
+                self._finish_locked(
+                    handle,
+                    CommandOutcome.STOPPED,
+                    invalidated_stop_epoch=self._stop_epoch,
+                )
+                return handle
             replaces_active = False
             if intent.cancel_running:
                 active = self._active

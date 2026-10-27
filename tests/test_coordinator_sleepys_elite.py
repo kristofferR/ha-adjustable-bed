@@ -848,6 +848,239 @@ async def test_sequential_both_button_is_finite_and_drops_stale_hold_metadata(
     await right.async_shutdown()
 
 
+async def test_stale_both_hold_preflight_preserves_new_left_hold(
+    hass: HomeAssistant,
+    sleepys_runtime: SleepysRuntime,
+) -> None:
+    """A STOP during Both-side preflight cannot replace a newer Left hold."""
+    from custom_components.adjustable_bed.const import (
+        CONF_PAIR_CONNECTION_MODE,
+        CONF_PAIR_ID,
+        PAIR_CONNECTION_MODE_CONCURRENT,
+        SIDE_BOTH,
+        SIDE_LEFT,
+        SIDE_RIGHT,
+    )
+    from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
+
+    _hass, left, left_controller, left_client = sleepys_runtime
+    right_entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Sleepy's right side",
+        unique_id="AA:BB:CC:DD:EE:03",
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:03",
+            CONF_NAME: "Sleepy's right side",
+            CONF_BED_TYPE: BED_TYPE_SLEEPYS_ELITE_APP,
+            CONF_SLEEPYS_ELITE_SELECTOR: "BOX25",
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_DISCONNECT_AFTER_COMMAND: False,
+        },
+    )
+    right_entry.add_to_hass(hass)
+    right = AdjustableBedCoordinator(hass, right_entry)
+    right._connection_path = _LOCAL
+    right._max_retries = 1
+    right._post_connect_delay = 0
+    right_client = _FakeGattClient()
+    keep_route = ROUTES[("keepConnect", "BOX25")]
+    _, notify_characteristic = keep_route.notify_target.split("/", 1)
+    right_service = _FakeGattService(
+        keep_route.write_service,
+        (keep_route.write_characteristic, notify_characteristic),
+    )
+    right_client.services = [right_service]
+    right_controller = SleepysEliteAppController(right, "BOX25")
+    right_controller._initialized = True
+    right_controller._write_characteristic = right_service.characteristics[0]
+    right._client = right_client
+    right._controller = right_controller
+    hass.data.setdefault(DOMAIN, {})[right_entry.entry_id] = right
+
+    pair_entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Sleepy's paired admission test",
+        unique_id="sleepys-admission-pair",
+        data={
+            CONF_PAIR_ID: "sleepys-admission-pair",
+            CONF_PAIR_CONNECTION_MODE: PAIR_CONNECTION_MODE_CONCURRENT,
+            CONF_NAME: "Sleepy's paired admission test",
+        },
+    )
+    pair_entry.add_to_hass(hass)
+    pair = PairedBedCoordinator(
+        hass,
+        pair_entry,
+        {SIDE_LEFT: left, SIDE_RIGHT: right},
+        connection_mode=PAIR_CONNECTION_MODE_CONCURRENT,
+    )
+
+    preflight_started = asyncio.Event()
+    resume_preflight = asyncio.Event()
+    newer_left_started = asyncio.Event()
+    right_connect_calls = 0
+    writes: list[tuple[str, bytes]] = []
+
+    async def connect_right(*, reset_timer: bool = True) -> bool:
+        nonlocal right_connect_calls
+        del reset_timer
+        right_connect_calls += 1
+        if right_connect_calls == 1:
+            preflight_started.set()
+            await resume_preflight.wait()
+        right_client.is_connected = True
+        right._controller = right_controller
+        return True
+
+    async def block_refresh(_seconds: float) -> None:
+        await asyncio.Future()
+
+    async def write_left(
+        _characteristic: object, payload: bytes, *, response: bool = True
+    ) -> None:
+        del response
+        frame = bytes(payload)
+        writes.append((SIDE_LEFT, frame))
+        if frame == left_controller._route("headUp").payload:
+            newer_left_started.set()
+
+    async def write_right(
+        _characteristic: object, payload: bytes, *, response: bool = True
+    ) -> None:
+        del response
+        writes.append((SIDE_RIGHT, bytes(payload)))
+
+    left_client.write_gatt_char.side_effect = write_left
+    right_client.write_gatt_char.side_effect = write_right
+    right_client.is_connected = False
+    right._controller = None
+    right._offline_controller = None
+
+    def resolve_targets(
+        _hass: HomeAssistant, _device_ids: list[str], explicit_side: str | None = None
+    ) -> tuple[list[tuple[PairedBedCoordinator, str]], list[str]]:
+        return [(pair, explicit_side or SIDE_BOTH)], []
+
+    old_both_hold: asyncio.Task[object] | None = None
+    new_left_hold: asyncio.Task[object] | None = None
+    try:
+        with (
+            _ready_command_lane(left),
+            patch.object(
+                right,
+                "async_ensure_connected",
+                new=AsyncMock(side_effect=connect_right),
+            ),
+            patch.object(right, "_async_refresh_controller_auth", new=AsyncMock()),
+            patch.object(left_controller, "_sleep", block_refresh),
+            patch.object(right_controller, "_sleep", block_refresh),
+            patch(
+                "custom_components.adjustable_bed.services._resolve_sided_targets",
+                side_effect=resolve_targets,
+            ),
+        ):
+            old_both_hold = asyncio.create_task(
+                hass.services.async_call(
+                    DOMAIN,
+                    "hold_control",
+                    {
+                        "device_id": ["sleepys-admission-pair"],
+                        "control": "headUp",
+                        "duration": 60,
+                        "side": SIDE_BOTH,
+                    },
+                    blocking=True,
+                )
+            )
+            await preflight_started.wait()
+
+            await hass.services.async_call(
+                DOMAIN,
+                "stop_all",
+                {"device_id": ["sleepys-admission-pair"], "side": SIDE_LEFT},
+                blocking=True,
+            )
+            new_left_hold = asyncio.create_task(
+                hass.services.async_call(
+                    DOMAIN,
+                    "hold_control",
+                    {
+                        "device_id": ["sleepys-admission-pair"],
+                        "control": "headUp",
+                        "duration": 60,
+                        "side": SIDE_LEFT,
+                    },
+                    blocking=True,
+                )
+            )
+            await newer_left_started.wait()
+            assert not new_left_hold.done()
+
+            resume_preflight.set()
+            for _ in range(100):
+                if old_both_hold.done():
+                    break
+                await asyncio.sleep(0)
+            assert old_both_hold.done(), "stale Both hold entered a held controller operation"
+            assert old_both_hold is not None
+            await old_both_hold
+
+            assert not new_left_hold.done()
+            assert writes == [
+                (SIDE_LEFT, left_controller._route("stop").payload),
+                (SIDE_LEFT, left_controller._route("headUp").payload),
+            ]
+            assert right_connect_calls >= 2
+
+            await hass.services.async_call(
+                DOMAIN,
+                "stop_all",
+                {"device_id": ["sleepys-admission-pair"], "side": SIDE_LEFT},
+                blocking=True,
+            )
+            assert new_left_hold is not None
+            await new_left_hold
+            assert writes == [
+                (SIDE_LEFT, left_controller._route("stop").payload),
+                (SIDE_LEFT, left_controller._route("headUp").payload),
+                (SIDE_LEFT, left_controller._route("stop").payload),
+            ]
+    finally:
+        resume_preflight.set()
+        pending = [
+            task
+            for task in (old_both_hold, new_left_hold)
+            if task is not None and not task.done()
+        ]
+        if pending:
+            from contextlib import suppress
+
+            with (
+                _ready_command_lane(left),
+                patch.object(
+                    right,
+                    "async_ensure_connected",
+                    new=AsyncMock(side_effect=connect_right),
+                ),
+                patch.object(right, "_async_refresh_controller_auth", new=AsyncMock()),
+                patch.object(left_controller, "_sleep", block_refresh),
+                patch.object(right_controller, "_sleep", block_refresh),
+                patch(
+                    "custom_components.adjustable_bed.services._resolve_sided_targets",
+                    side_effect=resolve_targets,
+                ),
+            ):
+                with suppress(Exception, asyncio.CancelledError):
+                    await hass.services.async_call(
+                        DOMAIN,
+                        "stop_all",
+                        {"device_id": ["sleepys-admission-pair"], "side": SIDE_BOTH},
+                        blocking=True,
+                    )
+                await asyncio.gather(*pending, return_exceptions=True)
+        await right.async_shutdown()
+
+
 @pytest.mark.usefixtures("mock_coordinator_connected")
 async def test_disconnect_during_first_dis_read_stops_stale_session_reads(
     sleepys_coordinator: AdjustableBedCoordinator,
