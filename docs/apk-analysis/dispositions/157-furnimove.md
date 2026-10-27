@@ -49,6 +49,22 @@ structure when a read does not answer. The evening capture disconnects before
 service resolution; its local connection abort remains unverified hardware
 behavior, rather than evidence of an unsupported command.
 
+The 4.2.0 retest with 82417 still did not move the bed. Its bundle never
+connected: every attempt ended in `le-connection-abort-by-local` or a timeout,
+while links that did come up in earlier captures stayed stable for minutes.
+That matches the receiver behavior reported in
+[issue #344](https://github.com/kristofferR/ha-adjustable-bed/issues/344):
+RF eco BT receivers (part 88802) keep advertising after a disconnect but
+refuse or time out reconnects, and holding the link open fixed it on hardware.
+This entry used Disconnect After Command, which reconnects for every command.
+FurniMove therefore holds the link open when the controller's own model read
+reports `RF eco BT` and a connect in this Home Assistant session has timed out
+or aborted, and recovers after an unexpected drop. Receivers that reconnect
+normally keep their handoff, so the FurniMove app stays usable alongside Home
+Assistant (#336). **Disconnect** clears the stall until the next one. This is receiver
+connection policy, not app behavior: frames, timing, bond policy and the
+ledger totals are unchanged. Other receivers keep their configured handoff.
+
 ## Behavior decisions
 
 | ID | Behavior | Disposition and evidence |
