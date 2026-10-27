@@ -505,6 +505,10 @@ class AdjustableBedCoordinator:
         # resolved value so connection-lifecycle checks stay correct across the
         # disconnect (issue #385 review).
         self._persistent_connection_resolved: bool | None = None
+        # A connect in this session timed out or aborted, and whether the last
+        # resolved controller holds its link after that (cached like the above).
+        self._reconnect_stalled = False
+        self._holds_link_after_stall_resolved = False
         self._disconnect_timer: asyncio.TimerHandle | None = None
         self._reconnect_timer: asyncio.TimerHandle | None = None
         self._reconnect_task: asyncio.Task[None] | None = None
@@ -2969,14 +2973,26 @@ class AdjustableBedCoordinator:
         """
         controller = self._controller
         if controller is not None:
-            return controller.requires_persistent_connection
+            return controller.requires_persistent_connection or (
+                self._reconnect_stalled and controller.holds_link_after_stalled_reconnect
+            )
         if self._persistent_connection_resolved is not None:
-            return self._persistent_connection_resolved
+            return self._persistent_connection_resolved or (
+                self._reconnect_stalled and self._holds_link_after_stall_resolved
+            )
         if self._bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_LEGGETT_GEN2):
             return True
         if self._bed_type == BED_TYPE_LEGGETT_PLATT:
             return self._protocol_variant in (VARIANT_AUTO, LEGGETT_VARIANT_GEN2)
         return False
+
+    def _cache_persistent_connection_policy(self) -> None:
+        """Cache the live controller's persistence for decisions after a drop."""
+        controller = self._controller
+        if controller is None:
+            return
+        self._persistent_connection_resolved = controller.requires_persistent_connection
+        self._holds_link_after_stall_resolved = controller.holds_link_after_stalled_reconnect
 
     def _disconnect_after_operation_enabled(self) -> bool:
         """Return True when completed commands should promptly release the connection."""
@@ -4304,9 +4320,7 @@ class AdjustableBedCoordinator:
                 self._position_connection_generation += 1
                 # Remember the resolved persistence so reconnect/idle decisions are
                 # correct even after _on_disconnect clears the controller.
-                self._persistent_connection_resolved = (
-                    self._controller.requires_persistent_connection
-                )
+                self._cache_persistent_connection_policy()
                 _LOGGER.debug("Controller created successfully")
 
                 if self._bed_type == BED_TYPE_SLEEP_NUMBER_MCR:
@@ -4416,9 +4430,7 @@ class AdjustableBedCoordinator:
                     continue
 
                 # Startup reads can settle persistence (FurniMove's receiver model).
-                self._persistent_connection_resolved = (
-                    self._controller.requires_persistent_connection
-                )
+                self._cache_persistent_connection_policy()
 
                 if reset_timer:
                     self._reset_disconnect_timer()
@@ -4529,6 +4541,11 @@ class AdjustableBedCoordinator:
                 else:
                     error_category = "BLE ERROR"
                 attempt_details["error_category"] = error_category
+                # A receiver that is visible but times out or aborts the connect
+                # is stalling. "Not found" and refusals (another device holds the
+                # link) are not stalls.
+                if error_category == "CONNECTION TIMEOUT" or "abort" in err_str:
+                    self._reconnect_stalled = True
 
                 # Detect connection slot exhaustion and exclude the adapter
                 # on subsequent retries so we try an alternative (issue #152).
@@ -5206,6 +5223,10 @@ class AdjustableBedCoordinator:
                     the command lock, such as disconnect-after-command.
         """
         _LOGGER.debug("async_disconnect called for %s", self._address)
+        if reason == "intentional":
+            # A user releasing the link (e.g. for the bed's phone app) wants the
+            # configured handoff again until another connect stalls.
+            self._reconnect_stalled = False
         # Stop recovery before waiting for the connection lane it may already own.
         self._cancel_auto_reconnect()
         if serialize_with_commands:

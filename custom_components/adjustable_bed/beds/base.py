@@ -432,6 +432,16 @@ class BedController(ABC):
         return False
 
     @property
+    def holds_link_after_stalled_reconnect(self) -> bool:
+        """Return True to hold the link once a connect has stalled this session.
+
+        For receivers that keep advertising but often refuse or time out
+        reconnects. Until a connect times out or aborts, the configured handoff
+        applies, so receivers that reconnect normally stay free for their apps.
+        """
+        return False
+
+    @property
     def manual_disconnect_strands_connection(self) -> bool:
         """Return True if a manual disconnect would leave the bed unrecoverable.
 

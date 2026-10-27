@@ -44,9 +44,9 @@ when **Disconnect After Command** is enabled. In the reporter's
 the normal 40-second idle disconnect left the receiver advertising but unable
 to reconnect, with GATT timeouts. Retaining the connection worked reliably,
 including after a Home Assistant restart. The FurniMove profile applies the
-same policy when the receiver reports the `RF eco BT` model, after a bed
-receiver showed the same reconnect failures
-([#633](https://github.com/kristofferR/ha-adjustable-bed/issues/633)).
+same policy when the receiver reports the `RF eco BT` model and a connect to it
+has timed out or aborted, after a bed receiver showed the same reconnect
+failures ([#633](https://github.com/kristofferR/ha-adjustable-bed/issues/633)).
 Other profiles are unchanged.
 
 Keeping the link open occupies a Bluetooth connection slot and may prevent a

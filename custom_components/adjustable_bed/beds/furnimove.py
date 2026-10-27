@@ -203,10 +203,10 @@ class FurniMoveController(BedController):
         return True  # State/info/query startup is independent of angle sensing.
 
     @property
-    def requires_persistent_connection(self) -> bool:
-        """Hold RF eco BT receivers open: they stall reconnects after a disconnect.
+    def holds_link_after_stalled_reconnect(self) -> bool:
+        """RF eco BT receivers can stall reconnects after a disconnect (#344, #633).
 
-        Known only once startup has read the receiver model (#344, #633).
+        Known only once startup has read the receiver model.
         """
         return str(self._state["furnimove_model"]).strip().casefold() == _RF_ECO_BT_MODEL
 

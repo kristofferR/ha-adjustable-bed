@@ -88,11 +88,24 @@ async def test_controller_owns_info_reads_after_subscription(
             await ctrl.async_shutdown()
 
 
-@pytest.mark.parametrize(("model", "persistent"), [(b"RF eco BT", True), (b"CU170", False)])
-async def test_rf_eco_bt_receiver_keeps_its_link_and_recovers_from_drops(
-    hass, mock_coordinator_connected, mock_bleak_client, mock_establish_connection, model, persistent
+@pytest.mark.parametrize(
+    ("model", "stalled", "persistent"),
+    [(b"RF eco BT", True, True), (b"RF eco BT", False, False), (b"CU170", True, False)],
+)
+async def test_rf_eco_bt_receiver_holds_its_link_after_a_stalled_connect(
+    hass,
+    mock_coordinator_connected,
+    mock_bleak_client,
+    mock_establish_connection,
+    model,
+    stalled,
+    persistent,
 ):
-    """Issue #633: RF eco BT stalls reconnects (#344), so hold it open despite quick handoff."""
+    """Issue #633: RF eco BT stalls reconnects (#344), so hold it open once it has.
+
+    Receivers that reconnect normally keep quick handoff, leaving the FurniMove
+    app usable (#336, #556).
+    """
     entry = furnimove_entry(hass, "82417")
     hass.config_entries.async_update_entry(
         entry, data={**entry.data, CONF_DISCONNECT_AFTER_COMMAND: True}
@@ -100,6 +113,17 @@ async def test_rf_eco_bt_receiver_keeps_its_link_and_recovers_from_drops(
     ctrl = AdjustableBedCoordinator(hass, entry)
     furnish_services(mock_bleak_client)
     mock_bleak_client.read_gatt_char.return_value = model
+    establish = mock_establish_connection.side_effect
+    attempts = 0
+
+    async def stall_first_attempt(*args, **kwargs):
+        nonlocal attempts
+        attempts += 1
+        if stalled and attempts == 1:
+            raise TimeoutError
+        return await establish(*args, **kwargs)
+
+    mock_establish_connection.side_effect = stall_first_attempt
     try:
         assert await ctrl.async_connect()
         assert ctrl._disconnect_after_operation_enabled() is not persistent
@@ -108,6 +132,10 @@ async def test_rf_eco_bt_receiver_keeps_its_link_and_recovers_from_drops(
         mock_bleak_client.is_connected = False
         ctrl._on_disconnect(mock_bleak_client)
         assert (ctrl._reconnect_timer is not None) is persistent
+
+        # Disconnect hands the receiver back to its app until the next stall.
+        await ctrl.async_disconnect()
+        assert ctrl._disconnect_after_operation_enabled()
     finally:
         await ctrl.async_shutdown()
 
