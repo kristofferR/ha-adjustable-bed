@@ -85,6 +85,7 @@ from custom_components.adjustable_bed.const import (
     LINAK_VARIANT_PERFORMANCE,
     OCTO_VARIANT_STAR2,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
+    PAIR_CONNECTION_MODE_AUTO,
     PAIR_CONNECTION_MODE_CONCURRENT,
     PAIR_CONNECTION_MODE_SEQUENTIAL,
     PAIR_MODE_SEPARATE_ADDRESS,
@@ -3435,7 +3436,7 @@ class TestPairedReceiverSettings:
             ("back", "concurrent", BED_TYPE_OCTO, True),
             ("legs", "concurrent", BED_TYPE_OCTO, True),
             ("back_legs", "concurrent", BED_TYPE_OCTO, False),
-            ("back", "sequential", BED_TYPE_OCTO, False),
+            ("back", "sequential", BED_TYPE_OCTO, True),
             ("back", "concurrent", BED_TYPE_LINAK, False),
         ],
     )
@@ -3449,7 +3450,6 @@ class TestPairedReceiverSettings:
         from custom_components.adjustable_bed.button import PairedBedCombinedMotorButton
 
         coord = MagicMock(pair_id="pair_x", device_info={}, connection_mode=mode)
-        coord.children = {side: SimpleNamespace(bed_type=bed_type) for side in PAIR_SIDES}
         spec = MotorControlSpec(
             key=motor,
             translation_key=motor,
@@ -3457,10 +3457,18 @@ class TestPairedReceiverSettings:
             close_fn=AsyncMock(),
             stop_fn=AsyncMock(),
         )
+        controller = SimpleNamespace(motor_control_specs=(spec,), held_control_options=())
+        coord.children = {
+            side: SimpleNamespace(bed_type=bed_type, capability_controller=controller)
+            for side in PAIR_SIDES
+        }
         entity = PairedBedCombinedMotorButton(coord, spec, "up")
         assert entity.extra_state_attributes == ({"paired_hold_motor": motor} if eligible else {})
         coord.connection_mode = "sequential"
-        assert entity.extra_state_attributes == {}
+        finite_octo_move = bed_type == BED_TYPE_OCTO and motor in {"back", "legs"}
+        assert entity.extra_state_attributes == (
+            {"paired_hold_motor": motor} if finite_octo_move else {}
+        )
 
     @pytest.mark.parametrize("side", [SIDE_LEFT, SIDE_RIGHT])
     async def test_receiver_edit_preserves_other_side_and_survives_split(
@@ -4365,6 +4373,322 @@ class TestOctoOfflineSnapshot:
         assert ctrl is not None
         assert ctrl.supports_lights is True
         assert ctrl.supports_memory_presets is True
+
+    async def test_legacy_octo_snapshot_keeps_known_entities_until_complete_discovery(
+        self, hass: HomeAssistant
+    ) -> None:
+        """Old paired snapshots retain known registry rows but grant no write access."""
+        from custom_components.adjustable_bed.beds.octo import (
+            OCTO_FEATURE_LIGHT,
+            OctoCapabilityRecord,
+            OctoController,
+        )
+        from custom_components.adjustable_bed.light import (
+            LIGHT_DESCRIPTION,
+            AdjustableBedLight,
+            _light_entities_for,
+        )
+        from custom_components.adjustable_bed.switch import (
+            SWITCH_DESCRIPTIONS,
+            AdjustableBedSwitch,
+            _switch_entities_for,
+        )
+
+        legacy_snapshot = {
+            "has_lights": True,
+            "has_rgbwi": True,
+            "rgbwi_value_type": 5,
+            "memory_count": 4,
+            "discovered_motor_count": 2,
+            "has_synchro": True,
+            "synchro_active": True,
+        }
+        data = _paired_entry_data()
+        data[CONF_BED_TYPE] = BED_TYPE_OCTO
+        for descriptor in data[CONF_PAIR_CHILDREN]:
+            descriptor[CONF_BED_TYPE] = BED_TYPE_OCTO
+        data[CONF_PAIR_CHILDREN][0]["capabilities"] = {"octo": legacy_snapshot}
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Octo legacy pair",
+            data=data,
+            unique_id="pair_octo_legacy",
+            version=4,
+        )
+        entry.add_to_hass(hass)
+        left = _build_paired_children(hass, entry)[SIDE_LEFT]
+        await left.async_prime_offline_controller()
+        controller = left.capability_controller
+        assert isinstance(controller, OctoController)
+        assert controller._features_complete.is_set()
+        assert controller.controller_entity_discovery_complete is False
+        assert controller.capability_snapshot() is None
+
+        registry = er.async_get(hass)
+        light_unique_id = left.entity_unique_id(LIGHT_DESCRIPTION.key)
+        synchro_description = next(
+            description for description in SWITCH_DESCRIPTIONS if description.key == "synchro_mode"
+        )
+        synchro_unique_id = left.entity_unique_id(synchro_description.key)
+        light_row = registry.async_get_or_create(
+            "light", DOMAIN, light_unique_id, config_entry=entry
+        )
+        registry.async_update_entity(
+            light_row.entity_id,
+            name="Legacy custom light",
+            icon="mdi:bed",
+        )
+        registry.async_get_or_create("switch", DOMAIN, synchro_unique_id, config_entry=entry)
+
+        light_entities = _light_entities_for(hass, left)
+        switch_entities = _switch_entities_for(hass, left)
+        assert light_entities == []
+        assert len(switch_entities) == 1 and isinstance(switch_entities[0], AdjustableBedSwitch)
+        assert switch_entities[0].available is False
+        retained_light = registry.async_get(light_row.entity_id)
+        assert retained_light is not None
+        assert retained_light.unique_id == light_unique_id
+        assert retained_light.name == "Legacy custom light"
+        assert retained_light.icon == "mdi:bed"
+        assert registry.async_get_entity_id("switch", DOMAIN, synchro_unique_id) is not None
+        assert controller._capability_records == {}
+        assert data[CONF_PAIR_CHILDREN][0]["capabilities"]["octo"] == legacy_snapshot
+
+        light_record = OctoCapabilityRecord(
+            feature_id=OCTO_FEATURE_LIGHT,
+            readonly=0,
+            characteristic=b"\x01",
+            value_type=1,
+            value=b"\x00",
+        )
+        controller._pending_capability_records = {OCTO_FEATURE_LIGHT: light_record}
+        controller._handle_feature_response([0xFF, 0xFF, 0xFF, 0, 0, 0])
+        assert controller.controller_entity_discovery_complete is True
+        discovered_lights = _light_entities_for(hass, left)
+        assert len(discovered_lights) == 1
+        assert isinstance(discovered_lights[0], AdjustableBedLight)
+        assert discovered_lights[0].unique_id == light_unique_id
+        retained_light = registry.async_get(light_row.entity_id)
+        assert retained_light is not None
+        assert retained_light.name == "Legacy custom light"
+        assert retained_light.icon == "mdi:bed"
+        assert _switch_entities_for(hass, left) == []
+        assert registry.async_get_entity_id("switch", DOMAIN, synchro_unique_id) is None
+
+        controller._pending_capability_records = {}
+        controller._handle_feature_response([0xFF, 0xFF, 0xFF, 0, 0, 0])
+        assert _light_entities_for(hass, left) == []
+        assert _switch_entities_for(hass, left) == []
+        assert registry.async_get_entity_id("light", DOMAIN, light_unique_id) is None
+        assert registry.async_get_entity_id("switch", DOMAIN, synchro_unique_id) is None
+        assert data[CONF_PAIR_CHILDREN][0]["capabilities"]["octo"] == legacy_snapshot
+
+    @pytest.mark.parametrize(
+        ("connection_mode", "has_held_metadata"),
+        [
+            (PAIR_CONNECTION_MODE_SEQUENTIAL, False),
+            (PAIR_CONNECTION_MODE_CONCURRENT, True),
+        ],
+    )
+    async def test_octo_combined_motor_hold_metadata_matches_pair_execution_mode(
+        self,
+        hass: HomeAssistant,
+        connection_mode: str,
+        has_held_metadata: bool,
+    ) -> None:
+        """Real paired Octo buttons keep sequential cards on finite timed moves."""
+        from custom_components.adjustable_bed.beds.octo import OCTO_FEATURE_MOTORCOUNT
+        from custom_components.adjustable_bed.button import (
+            PairedBedCombinedMotorButton,
+            _combined_button_entities_for,
+        )
+
+        data = _paired_entry_data()
+        data[CONF_BED_TYPE] = BED_TYPE_OCTO
+        data[CONF_PAIR_CONNECTION_MODE] = connection_mode
+        motor_count_snapshot = {
+            "capability_records": {
+                str(OCTO_FEATURE_MOTORCOUNT): {
+                    "readonly": 0,
+                    "characteristic": [2],
+                    "value_type": 1,
+                    "value": [0],
+                }
+            }
+        }
+        for descriptor in data[CONF_PAIR_CHILDREN]:
+            descriptor[CONF_BED_TYPE] = BED_TYPE_OCTO
+            descriptor["capabilities"] = {"octo": motor_count_snapshot}
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Octo paired hold",
+            data=data,
+            unique_id=f"pair_octo_hold_{connection_mode}",
+            version=4,
+        )
+        entry.add_to_hass(hass)
+        children = _build_paired_children(hass, entry)
+        for child in children.values():
+            await child.async_prime_offline_controller()
+        coordinator = PairedBedCoordinator(hass, entry, children, connection_mode=connection_mode)
+
+        buttons = _combined_button_entities_for(coordinator, list(children.values()))
+        back_up = next(
+            button
+            for button in buttons
+            if isinstance(button, PairedBedCombinedMotorButton)
+            and button.unique_id == f"{coordinator.pair_id}_back_up_both"
+        )
+        attributes = back_up.extra_state_attributes
+        assert attributes["paired_hold_motor"] == "back"
+        assert ("held_control" in attributes) is has_held_metadata
+        if has_held_metadata:
+            assert attributes["held_control"] == "back_up"
+            assert attributes["hold_start_delay_ms"] == 100
+            assert attributes["hold_release_delay_ms"] == 100
+
+    async def test_auto_octo_fallback_updates_existing_combined_button_metadata(
+        self,
+        hass: HomeAssistant,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """An existing Auto button switches to its finite card route after fallback."""
+        from custom_components.adjustable_bed.beds.octo import OCTO_FEATURE_MOTORCOUNT
+        from custom_components.adjustable_bed.button import (
+            PairedBedCombinedMotorButton,
+            _combined_button_entities_for,
+        )
+
+        data = _paired_entry_data()
+        data[CONF_BED_TYPE] = BED_TYPE_OCTO
+        data[CONF_PAIR_CONNECTION_MODE] = PAIR_CONNECTION_MODE_AUTO
+        motor_count_snapshot = {
+            "capability_records": {
+                str(OCTO_FEATURE_MOTORCOUNT): {
+                    "readonly": 0,
+                    "characteristic": [2],
+                    "value_type": 1,
+                    "value": [0],
+                }
+            }
+        }
+        for descriptor in data[CONF_PAIR_CHILDREN]:
+            descriptor[CONF_BED_TYPE] = BED_TYPE_OCTO
+            descriptor["capabilities"] = {"octo": motor_count_snapshot}
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Octo auto pair",
+            data=data,
+            unique_id="pair_octo_auto_hold_fallback",
+            version=4,
+        )
+        entry.add_to_hass(hass)
+        children = _build_paired_children(hass, entry)
+        for child in children.values():
+            await child.async_prime_offline_controller()
+        coordinator = PairedBedCoordinator(
+            hass, entry, children, connection_mode=PAIR_CONNECTION_MODE_AUTO
+        )
+        button = next(
+            candidate
+            for candidate in _combined_button_entities_for(coordinator, list(children.values()))
+            if isinstance(candidate, PairedBedCombinedMotorButton)
+            and candidate.unique_id == f"{coordinator.pair_id}_back_up_both"
+        )
+        assert button.extra_state_attributes["held_control"] == "back_up"
+        button.hass = hass
+        await button.async_added_to_hass()
+
+        monkeypatch.setattr(coordinator, "_shared_connection_slot_pressure", lambda *_args: True)
+        attempt_cursors = {
+            side: coordinator._connection_attempt_cursor(child)
+            for side, child in coordinator.children.items()
+        }
+        published_attributes: list[dict[str, Any]] = []
+        try:
+            with patch.object(
+                button,
+                "async_write_ha_state",
+                side_effect=lambda: published_attributes.append(button.extra_state_attributes),
+            ):
+                await coordinator._async_fallback_after_connection_slot_exhaustion(
+                    ConnectionError("connection slot exhausted"), attempt_cursors
+                )
+
+            finite_metadata = {"paired_hold_motor": "back"}
+            assert coordinator.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL
+            assert button.extra_state_attributes == finite_metadata
+            assert published_attributes[-1] == finite_metadata
+        finally:
+            await button.async_will_remove_from_hass()
+
+    async def test_single_address_octo_keeps_native_both_hold_metadata(
+        self, hass: HomeAssistant
+    ) -> None:
+        """Current per-side specs retain native Both held controls."""
+        from custom_components.adjustable_bed.beds.octo import (
+            OCTO_FEATURE_MOTORCOUNT,
+            OctoController,
+        )
+        from custom_components.adjustable_bed.button import (
+            PairedBedCombinedMotorButton,
+            _combined_button_entities_for,
+        )
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Single-address Octo",
+            data={
+                CONF_ADDRESS: LEFT_ADDR,
+                CONF_NAME: "Single-address Octo",
+                CONF_BED_TYPE: BED_TYPE_OCTO,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PROTOCOL_VARIANT: "standard",
+            },
+            unique_id="single_address_octo_hold",
+        )
+        entry.add_to_hass(hass)
+        inner = AdjustableBedCoordinator(hass, entry)
+        controller = OctoController(
+            inner,
+            capability_snapshot={
+                "capability_records": {
+                    str(OCTO_FEATURE_MOTORCOUNT): {
+                        "readonly": 0,
+                        "characteristic": [2],
+                        "value_type": 1,
+                        "value": [0],
+                    }
+                }
+            },
+        )
+        controller._session_ready = True
+        inner._controller = controller
+        inner._offline_controller = controller
+        hass.config_entries.async_update_entry(
+            entry,
+            data={
+                **entry.data,
+                CONF_PAIR_ID: "single-address-octo-hold-pair",
+                CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS,
+            },
+        )
+        coordinator = SingleAddressPairedCoordinator(hass, entry, inner)
+        button = next(
+            candidate
+            for candidate in _combined_button_entities_for(
+                coordinator, list(coordinator.children.values())
+            )
+            if isinstance(candidate, PairedBedCombinedMotorButton)
+            and candidate.unique_id.endswith("_back_up_both")
+        )
+
+        assert button.extra_state_attributes == {
+            "bed_side": SIDE_BOTH,
+            "held_control": "back_up",
+            "hold_start_delay_ms": 100,
+            "hold_release_delay_ms": 100,
+        }
 
     async def test_octo_side_without_snapshot_not_minted(self, hass: HomeAssistant):
         left = self._octo_children(hass, left_snapshot=None)[SIDE_LEFT]

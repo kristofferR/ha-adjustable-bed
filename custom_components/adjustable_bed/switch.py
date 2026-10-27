@@ -134,7 +134,20 @@ def _switch_entities_for(
     registry = er.async_get(hass)
 
     if octo is not None and not octo.controller_entity_discovery_complete:
-        return []
+        # Legacy paired Octo snapshots contain capability booleans but no
+        # complete record set. Keep previously registered switches available to
+        # HA as offline entity rows, while the entity availability gate below
+        # prevents writes until live discovery provides authoritative records.
+        return [
+            AdjustableBedSwitch(coordinator, description)
+            for description in SWITCH_DESCRIPTIONS
+            if registry.async_get_entity_id(
+                "switch",
+                DOMAIN,
+                coordinator.entity_unique_id(description.key),
+            )
+            is not None
+        ]
 
     entities = []
     for description in SWITCH_DESCRIPTIONS:
@@ -196,7 +209,11 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         """Keep Octo setting switches unavailable while its PIN gate is locked."""
         controller = self._coordinator.capability_controller
         octo = octo_controller(controller)
-        return super().available and (octo is None or octo.normal_controls_available)
+        return super().available and (
+            octo is None
+            or octo.controller_entity_discovery_complete
+            and octo.normal_controls_available
+        )
 
     def __init__(
         self,

@@ -2023,8 +2023,7 @@ class TestOctoRGBWILightEntity:
 
         controller._features_complete.clear()
         incomplete = _light_entities_for(hass, coordinator)
-        assert len(incomplete) == 1
-        assert incomplete[0].unique_id == unique_id
+        assert incomplete == []
         assert registry.async_get_entity_id("light", DOMAIN, unique_id) is not None
 
         _activate_capabilities(controller)
@@ -2599,6 +2598,173 @@ class TestOctoCapabilityControls:
         finally:
             await lock_switch.async_will_remove_from_hass()
 
+    async def test_octo_light_expiry_tracks_only_light_state_and_cleans_up(
+        self,
+        hass: HomeAssistant,
+        mock_octo_config_entry,
+        mock_octo_ready_transport,
+        mock_bleak_client: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """The replacement light owns expiry, duration changes, and stale cleanup."""
+        coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
+        await coordinator.async_connect()
+        controller = cast(OctoController, coordinator.controller)
+        _activate_capabilities(
+            controller,
+            _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00"),
+            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05"),
+        )
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        light_unique_id = coordinator.entity_unique_id(LIGHT_DESCRIPTION.key)
+        registry.async_get_or_create(
+            "switch",
+            DOMAIN,
+            light_unique_id,
+            config_entry=mock_octo_config_entry,
+        )
+        lights = _light_entities_for(hass, coordinator)
+        assert len(lights) == 1 and isinstance(lights[0], AdjustableBedLight)
+        assert registry.async_get_entity_id("switch", DOMAIN, light_unique_id) is None
+        light = lights[0]
+        light.hass = hass
+        await light.async_added_to_hass()
+
+        timers: list[tuple[float, Callable[[], None], MagicMock]] = []
+        original_call_later = hass.loop.call_later
+
+        def capture_auto_off(
+            delay: float,
+            callback: Callable[..., None],
+            *args: object,
+        ) -> object:
+            if getattr(callback, "__name__", "") == "auto_off_callback":
+                handle = MagicMock()
+                timers.append((delay, lambda: callback(*args), handle))
+                return handle
+            return original_call_later(delay, callback, *args)
+
+        auto_off_handler = MagicMock(wraps=controller.on_light_auto_off)
+        monkeypatch.setattr(controller, "on_light_auto_off", auto_off_handler)
+        mock_bleak_client.write_gatt_char.reset_mock()
+        try:
+            with (
+                patch.object(hass.loop, "call_later", side_effect=capture_auto_off),
+                patch.object(light, "async_write_ha_state"),
+            ):
+                await light.async_turn_on()
+                assert light.is_on is True
+                assert len(timers) == 1 and timers[0][0] == 300
+
+                controller._publish_capability_state()
+                controller.forward_controller_state_updates({"automatic_light": True})
+                assert len(timers) == 1
+                assert timers[0][2].cancel.called is False
+
+                await controller.set_light_duration(6)
+                assert len(timers) == 2 and timers[1][0] == 360
+                assert timers[0][2].cancel.called
+
+                await light.async_turn_off()
+                assert light.is_on is False
+                assert timers[1][2].cancel.called
+
+                current_light_record = controller._capability_records[OCTO_FEATURE_LIGHT]
+                controller._capability_records[OCTO_FEATURE_LIGHT] = (
+                    current_light_record.with_value(b"\x01")
+                )
+                controller._publish_capability_state()
+                assert light.is_on is True
+                assert len(timers) == 3 and timers[2][0] == 360
+
+                timers[1][1]()  # canceled callbacks are still guarded by generation
+                auto_off_handler.assert_not_called()
+                writes_before_expiry = mock_bleak_client.write_gatt_char.call_count
+                timers[2][1]()
+                assert light.is_on is False
+                auto_off_handler.assert_called_once()
+                assert mock_bleak_client.write_gatt_char.call_count == writes_before_expiry
+
+                await light.async_turn_on()
+                assert len(timers) == 4
+                await light.async_will_remove_from_hass()
+                assert timers[3][2].cancel.called
+                timers[3][1]()
+                assert light.is_on is True
+        finally:
+            if getattr(light, "_unregister_light_state", None) is not None:
+                await light.async_will_remove_from_hass()
+
+    async def test_octo_light_expiry_survives_equivalent_controller_reconnect(
+        self,
+        hass: HomeAssistant,
+        mock_octo_config_entry,
+        mock_octo_ready_transport,
+        mock_bleak_client: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """An unchanged deadline expires against the new authoritative controller."""
+        coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
+        await coordinator.async_connect()
+        original = cast(OctoController, coordinator.controller)
+        _activate_capabilities(
+            original,
+            _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00"),
+            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05"),
+        )
+        lights = _light_entities_for(hass, coordinator)
+        assert len(lights) == 1 and isinstance(lights[0], AdjustableBedLight)
+        light = lights[0]
+        light.hass = hass
+        await light.async_added_to_hass()
+
+        timers: list[tuple[float, Callable[[], None], MagicMock]] = []
+        original_call_later = hass.loop.call_later
+
+        def capture_auto_off(
+            delay: float,
+            callback: Callable[..., None],
+            *args: object,
+        ) -> object:
+            if getattr(callback, "__name__", "") == "auto_off_callback":
+                handle = MagicMock()
+                timers.append((delay, lambda: callback(*args), handle))
+                return handle
+            return original_call_later(delay, callback, *args)
+
+        try:
+            with (
+                patch.object(hass.loop, "call_later", side_effect=capture_auto_off),
+                patch.object(light, "async_write_ha_state"),
+            ):
+                await light.async_turn_on()
+                assert light.is_on is True
+                assert len(timers) == 1 and timers[0][0] == 300
+                assert timers[0][2].cancel.called is False
+
+                replacement = OctoController(
+                    coordinator, capability_snapshot=original.capability_snapshot()
+                )
+                replacement._session_ready = True
+                coordinator._controller = replacement
+                coordinator._offline_controller = replacement
+                replacement._publish_capability_state()
+
+                assert light.is_on is True
+                assert len(timers) == 1
+                assert timers[0][2].cancel.called is False
+                writes_before_expiry = mock_bleak_client.write_gatt_char.call_count
+                timers[0][1]()
+
+                assert light.is_on is False
+                assert light._light_auto_off_timer is None
+                assert replacement._capability_records[OCTO_FEATURE_LIGHT].value == b"\x00"
+                assert mock_bleak_client.write_gatt_char.call_count == writes_before_expiry
+        finally:
+            await light.async_will_remove_from_hass()
+
     async def test_confirmed_reset_packet_disconnects_after_five_seconds(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2655,7 +2821,11 @@ class TestCapabilitySnapshot:
     def _coord():
         from types import SimpleNamespace
 
-        return SimpleNamespace(motor_count=2, entry=SimpleNamespace(data={}))
+        return SimpleNamespace(
+            motor_count=2,
+            entry=SimpleNamespace(data={}),
+            handle_controller_state_updates=lambda _updates: None,
+        )
 
     def test_snapshot_roundtrip_restores_entity_gating(self):
         live = OctoController(self._coord())
@@ -2675,8 +2845,9 @@ class TestCapabilitySnapshot:
         live._capability_records = {record.feature_id: record for record in records}
         live._apply_capability_records(live._capability_records)
         # A real discovery completes by receiving the 0xFFFFFF CAP_END sentinel,
-        # which sets _features_complete; only then is the snapshot real.
-        live._features_complete.set()
+        # which proves the record set is complete and makes the snapshot real.
+        live._pending_capability_records = dict(live._capability_records)
+        live._handle_feature_response([0xFF, 0xFF, 0xFF, 0, 0, 0])
 
         snap = live.capability_snapshot()
         assert snap is not None
@@ -2718,10 +2889,10 @@ class TestCapabilitySnapshot:
         assert controller._features_complete.is_set() is False
         assert controller.capability_snapshot() is None
 
-        # Once discovery actually completes (sentinel → _features_complete), the
-        # very same fields DO produce a snapshot.
-        controller._features_complete.set()
+        # Only the real sentinel makes a complete current record set authoritative.
+        controller._handle_feature_response([0xFF, 0xFF, 0xFF, 0, 0, 0])
         assert controller.controller_entity_discovery_complete
+        assert controller.capability_snapshot() is not None
 
     def test_snapshots_keep_each_physical_receivers_records_independent(self) -> None:
         left_coordinator = self._coord()
@@ -2740,8 +2911,10 @@ class TestCapabilitySnapshot:
         right._apply_capability_records(right._capability_records)
         left._device_info = {"cid": 1, "firmware": 2, "pid": 3, "hardware": 4}
         right._device_info = {"cid": 5, "firmware": 6, "pid": 7, "hardware": 8}
-        left._features_complete.set()
-        right._features_complete.set()
+        left._pending_capability_records = dict(left._capability_records)
+        right._pending_capability_records = dict(right._capability_records)
+        left._handle_feature_response([0xFF, 0xFF, 0xFF, 0, 0, 0])
+        right._handle_feature_response([0xFF, 0xFF, 0xFF, 0, 0, 0])
 
         left_offline = OctoController(
             left_coordinator, capability_snapshot=left.capability_snapshot()
@@ -2769,6 +2942,7 @@ class TestOctoDynamicEntities:
         controller = OctoController(coordinator)
         controller._apply_capability_records({})
         controller._features_complete.set()
+        controller._capability_records_authoritative = True
         coordinator.capability_controller = controller
         coordinator.register_controller_state_callback = MagicMock()
         entry = MagicMock()
@@ -2786,7 +2960,7 @@ class TestOctoDynamicEntities:
         callback({})  # failed/incomplete discovery retains the prior surface
         assert add.call_count == 1
 
-        controller._features_complete.set()
+        controller._handle_feature_response([0xFF, 0xFF, 0xFF, 0, 0, 0])
         current.clear()  # the complete capability set retires the Octo-owned row
         callback({})
         assert add.call_count == 1
@@ -3049,6 +3223,7 @@ class TestOctoPinLockDiagnostics:
         controller._memory_count = 2
         controller._discovered_motor_count = 2
         controller._features_complete.set()
+        controller._capability_records_authoritative = True
 
         state = controller.protocol_diagnostics
 

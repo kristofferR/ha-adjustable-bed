@@ -6075,6 +6075,7 @@ class AdjustableBedCoordinator:
         group_id: str | None = None,
         kind: CommandKind = CommandKind.COMMAND,
         read_positions_after_operation: bool = True,
+        expected_stop_epoch: int | None = None,
     ) -> None:
         """Execute an opaque controller command through the device scheduler."""
 
@@ -6100,6 +6101,7 @@ class AdjustableBedCoordinator:
             pulse_delay_ms=pulse_delay_ms,
             group_id=group_id,
             controller_command=command_fn,
+            expected_stop_epoch=expected_stop_epoch,
         )
 
     async def _async_schedule_command_operation(
@@ -6114,8 +6116,14 @@ class AdjustableBedCoordinator:
         pulse_delay_ms: int | None = None,
         group_id: str | None = None,
         controller_command: Callable[[BedController], Awaitable[None]] | None = None,
+        expected_stop_epoch: int | None = None,
     ) -> None:
         """Schedule an operation, or run inline inside this scheduler's reservation."""
+        if (
+            expected_stop_epoch is not None
+            and self._command_scheduler.stop_epoch != expected_stop_epoch
+        ):
+            return
         context = current_command_context()
         if context is not None and context.scheduler_token is self._command_scheduler.token:
             previous_pulse_count = context.pulse_count
@@ -6136,6 +6144,12 @@ class AdjustableBedCoordinator:
 
             await prepare_individual_command(self, controller_command)
 
+        if (
+            expected_stop_epoch is not None
+            and self._command_scheduler.stop_epoch != expected_stop_epoch
+        ):
+            return
+
         intent = self._build_command_intent(
             operation,
             resource=resource,
@@ -6145,8 +6159,9 @@ class AdjustableBedCoordinator:
             pulse_count=pulse_count,
             pulse_delay_ms=pulse_delay_ms,
             group_id=group_id,
+            expected_stop_epoch=expected_stop_epoch,
         )
-        await self._command_scheduler.execute(intent)
+        await self._command_scheduler.execute(intent, expected_stop_epoch=expected_stop_epoch)
 
     def _build_command_intent(
         self,
@@ -6159,6 +6174,7 @@ class AdjustableBedCoordinator:
         pulse_count: int | None = None,
         pulse_delay_ms: int | None = None,
         group_id: str | None = None,
+        expected_stop_epoch: int | None = None,
     ) -> CommandIntent:
         """Build one device intent while preserving legacy cancellation signals."""
         if resource is not None and resources is not None:
@@ -6168,7 +6184,9 @@ class AdjustableBedCoordinator:
             if resources is not None
             else command_resources(resource or "*")
         )
-        if cancel_running:
+        if cancel_running and (
+            expected_stop_epoch is None or self._command_scheduler.stop_epoch == expected_stop_epoch
+        ):
             # Keep preemptible non-scheduler work (queries and legacy direct
             # writes) responsive. Scheduler-owned operations use their private
             # ticket event and are replaced only when resources overlap.
@@ -6198,6 +6216,7 @@ class AdjustableBedCoordinator:
         kind: CommandKind = CommandKind.GROUP,
         cancel_running: bool = True,
         group_id: str,
+        expected_stop_epoch: int | None = None,
     ) -> CommandHandle:
         """Queue a linked operation without allowing controller execution yet."""
         intent = self._build_command_intent(
@@ -6207,8 +6226,13 @@ class AdjustableBedCoordinator:
             kind=kind,
             cancel_running=cancel_running,
             group_id=group_id,
+            expected_stop_epoch=expected_stop_epoch,
         )
-        return await self._command_scheduler.enqueue(intent, prepared=True)
+        return await self._command_scheduler.enqueue(
+            intent,
+            prepared=True,
+            expected_stop_epoch=expected_stop_epoch,
+        )
 
     async def async_validate_linked_command_readiness(self) -> None:
         """Prepare actual GATT without starting a reserved linked command."""

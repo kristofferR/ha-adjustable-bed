@@ -36,7 +36,13 @@ from .paired_coordinator import (
 from .remacro_discovery import remacro_side_lacks_global_stop
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, ControllerButtonSpec, MotorControlSpec
+    from .beds.base import (
+        BedController,
+        ControllerButtonSpec,
+        ControllerMotorHoldSpec,
+        MotorControlSpec,
+        SideBoundController,
+    )
     from .coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -1585,7 +1591,6 @@ class PairedBedCombinedMotorButton(ButtonEntity):
         self._coordinator = coordinator
         self._direction = direction
         self._motor_key = spec.key
-        self._hold = spec.hold
         self._move_fn = spec.open_fn if direction == "up" else spec.close_fn
         self._resource = spec.scheduler_resource or f"motor:{spec.position_key or spec.key}"
         # Translation key from spec.translation_key (preserves controller-specific
@@ -1619,14 +1624,13 @@ class PairedBedCombinedMotorButton(ButtonEntity):
         if (
             not isinstance(self._coordinator, SingleAddressPairedCoordinator)
             and len(self._coordinator.children) == 2
-            and self._coordinator.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
             and self._motor_key in {"back", "legs"}
             and all(
                 child.bed_type == BED_TYPE_OCTO for child in self._coordinator.children.values()
             )
         ):
             attributes["paired_hold_motor"] = self._motor_key
-        hold = self._hold
+        hold = _combined_motor_hold_spec(self._coordinator, self._motor_key)
         if hold is not None:
             attributes.update(
                 {
@@ -1652,3 +1656,44 @@ class PairedBedCombinedMotorButton(ButtonEntity):
             cancel_running=True,
             resource=self._resource,
         )
+
+
+def _combined_motor_hold_spec(
+    coordinator: PairedBedCoordinator,
+    motor_key: str,
+) -> ControllerMotorHoldSpec | None:
+    """Return current held metadata only when every physical side supports it."""
+    if not isinstance(coordinator, SingleAddressPairedCoordinator) and (
+        coordinator.connection_mode != PAIR_CONNECTION_MODE_CONCURRENT
+    ):
+        return None
+
+    current_specs: list[tuple[MotorControlSpec, BedController | SideBoundController]] = []
+    for child in coordinator.children.values():
+        controller = child.capability_controller
+        if controller is None:
+            return None
+        child_spec = next(
+            (
+                candidate
+                for candidate in controller.motor_control_specs
+                if candidate.key == motor_key
+            ),
+            None,
+        )
+        if child_spec is None or child_spec.hold is None:
+            return None
+        current_specs.append((child_spec, controller))
+
+    if not current_specs:
+        return None
+    hold = current_specs[0][0].hold
+    if hold is None:
+        return None
+    required_controls = {hold.up_control, hold.down_control}
+    if any(
+        spec.hold != hold or not required_controls.issubset(controller.held_control_options)
+        for spec, controller in current_specs
+    ):
+        return None
+    return hold

@@ -474,6 +474,7 @@ class OctoController(BedController, OctoPacketCodec):
         self._features_complete: asyncio.Event = (
             asyncio.Event()
         )  # Set once a complete list has ever been received/restored
+        self._capability_records_authoritative = False
         self._pin_sent: bool = False  # True once a PIN packet was written this session
 
         if capability_snapshot:
@@ -483,6 +484,9 @@ class OctoController(BedController, OctoPacketCodec):
             self._apply_capability_snapshot(capability_snapshot)
             self._features_loaded.set()
             self._features_complete.set()
+            self._capability_records_authoritative = isinstance(
+                capability_snapshot.get("capability_records"), Mapping
+            )
 
         _LOGGER.debug(
             "OctoController initialized (PIN %s%s)",
@@ -503,7 +507,7 @@ class OctoController(BedController, OctoPacketCodec):
         — so guarding on it prevents those fallback values from being persisted
         over a real snapshot (or minting a reduced offline profile on reload).
         """
-        if not self._features_complete.is_set():
+        if not self.controller_entity_discovery_complete:
             return None
         snap = {
             key: (
@@ -529,8 +533,8 @@ class OctoController(BedController, OctoPacketCodec):
 
     @property
     def controller_entity_discovery_complete(self) -> bool:
-        """Return whether the complete feature list has been received."""
-        return self._features_complete.is_set()
+        """Return whether current, complete capability records are authoritative."""
+        return self._features_complete.is_set() and self._capability_records_authoritative
 
     @property
     def has_dynamic_controller_entities(self) -> bool:
@@ -595,6 +599,7 @@ class OctoController(BedController, OctoPacketCodec):
             self._capability_records = dict(self._pending_capability_records)
             self._apply_capability_records(self._capability_records)
             self._features_complete.set()
+            self._capability_records_authoritative = True
             self._feature_discovery_event.set()
             self._publish_capability_state()
             return
@@ -1106,7 +1111,8 @@ class OctoController(BedController, OctoPacketCodec):
         rather than device-reported state. The configured PIN is never included.
         """
         return {
-            "feature_discovery_complete": self._features_complete.is_set(),
+            "feature_discovery_complete": self.controller_entity_discovery_complete,
+            "capability_records_authoritative": self._capability_records_authoritative,
             "session_ready": self._session_ready,
             "device_info": self._device_info,
             "capability_records": {
@@ -1252,6 +1258,15 @@ class OctoController(BedController, OctoPacketCodec):
         """Return an active positive timeout; zero means permanent lighting."""
         minutes = self._light_duration_minutes
         return minutes * 60 if minutes is not None and minutes > 0 else None
+
+    def on_light_auto_off(self) -> None:
+        """Publish the expected light expiry without sending a bed command."""
+        if not self.controller_entity_discovery_complete:
+            return
+        record = self._capability_records.get(OCTO_FEATURE_LIGHT)
+        if record is not None and self.supports_discrete_light_control and record.value != b"\x00":
+            self._capability_records[OCTO_FEATURE_LIGHT] = record.with_value(b"\x00")
+        self._publish_capability_state()
 
     @property
     def supports_automatic_light(self) -> bool:
