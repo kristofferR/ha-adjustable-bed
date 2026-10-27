@@ -2683,6 +2683,15 @@
       }
     },
     "sensor": {
+      "timotion_ahf_status": {
+        "name": "AHF status communication"
+      },
+      "timotion_ahf_lock_mask": {
+        "name": "AHF raw lock mask"
+      },
+      "timotion_ahf_lamp_display_code": {
+        "name": "AHF lamp display code"
+      },
       "rmcontrol_protocol_version": {
         "name": "RMControl protocol version"
       },

@@ -1,5 +1,6 @@
 """Named remote actions retain their identity across controller reconnects."""
 
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -12,6 +13,7 @@ from custom_components.adjustable_bed.beds.base import (
     ControllerButtonSpec,
     ProductButtonSpec,
 )
+from custom_components.adjustable_bed.beds.timotion_ahf import TiMOTIONAhfController
 from custom_components.adjustable_bed.button import (
     AdjustableBedProductButton,
     ControllerActionButton,
@@ -60,11 +62,7 @@ async def test_remote_action_dispatches_to_current_controller(hass):
     assert len(products) == 1
     assert products[0].unique_id == "device_product_action_example_action"
     assert not products[0].entity_registry_enabled_default
-    actions = [
-        entity
-        for entity in entities
-        if isinstance(entity, ControllerActionButton)
-    ]
+    actions = [entity for entity in entities if isinstance(entity, ControllerActionButton)]
     assert len(actions) == 1
     assert actions[0].unique_id == "device_example_action"
     assert actions[0].name == "Remote control"
@@ -73,6 +71,83 @@ async def test_remote_action_dispatches_to_current_controller(hass):
     await actions[0].async_press()
     current.stop_all.assert_awaited_once()
     previous.stop_all.assert_not_awaited()
+
+
+async def test_controller_action_availability_refreshes_and_unsubscribes(hass):
+    """Named actions follow controller state and release their callback on removal."""
+    callbacks = set()
+    connection_callbacks = set()
+
+    def register(callback_fn):
+        callbacks.add(callback_fn)
+
+        def unregister():
+            callbacks.discard(callback_fn)
+
+        return unregister
+
+    def register_connection(callback_fn):
+        connection_callbacks.add(callback_fn)
+
+        def unregister():
+            connection_callbacks.discard(callback_fn)
+
+        return unregister
+
+    controller_runtime = MagicMock()
+    client = SimpleNamespace(is_connected=True)
+    controller_runtime.client = client
+
+    def publish(state):
+        for callback_fn in tuple(callbacks):
+            callback_fn(state)
+
+    controller_runtime.handle_controller_state_updates.side_effect = publish
+    controller = TiMOTIONAhfController(controller_runtime)
+    controller._status_ready = True
+    controller._feature_mask = 0
+    controller._lamp_display_code = 0
+    coordinator = MagicMock()
+    coordinator.capability_controller = controller
+    coordinator.device_info = {}
+    coordinator.entity_side = None
+    coordinator.client = client
+    coordinator.entity_unique_id.side_effect = lambda key: f"device_{key}"
+    coordinator.register_controller_state_callback.side_effect = register
+    coordinator.register_connection_state_callback.side_effect = register_connection
+    button = ControllerActionButton(
+        coordinator,
+        ControllerButtonSpec("timotion_ahf_control_1_up", "Control 1 Up", AsyncMock()),
+    )
+    button.hass = hass
+    button.async_write_ha_state = MagicMock()
+
+    await button.async_added_to_hass()
+    assert button.available
+
+    def status_frame(lock_mask):
+        values = bytearray([0x9D, 0xA5, lock_mask, 0, *([0x11] * 10), 0])
+        values[14] = sum(values[2:14]) & 0x7F
+        return bytes(values)
+
+    controller._process_status_frame(status_frame(0x01))
+    assert not button.available
+    button.async_write_ha_state.assert_called_once()
+
+    client.is_connected = False
+    for callback_fn in tuple(connection_callbacks):
+        callback_fn(False)
+    assert button.available
+    assert button.async_write_ha_state.call_count == 2
+
+    await button.async_will_remove_from_hass()
+    button._call_on_remove_callbacks()
+    assert not callbacks
+    assert not connection_callbacks
+    controller._process_status_frame(status_frame(0x00))
+    for callback_fn in tuple(connection_callbacks):
+        callback_fn(True)
+    assert button.async_write_ha_state.call_count == 2
 
 
 async def test_deselected_woosa_actions_are_removed_for_only_that_side(
@@ -152,7 +227,9 @@ async def test_custom_translation_key_and_live_side_bound_controller_dispatch(ha
     button = ControllerActionButton(
         coordinator,
         ControllerButtonSpec(
-            "vibradorm_app_sync", "Named action", stop,
+            "vibradorm_app_sync",
+            "Named action",
+            stop,
             translation_key="vibradorm_app_sync",
         ),
     )
@@ -197,12 +274,22 @@ async def test_app_action_namespace_cleanup_preserves_current_other_side_and_unr
         coordinator.device_info = {}
         coordinator.entity_side = "left"
         coordinator.has_massage = False
-        coordinator.entity_unique_id.side_effect = lambda key, prefix=identity: f"{prefix}{key}_left"
+        coordinator.entity_unique_id.side_effect = lambda key, prefix=identity: (
+            f"{prefix}{key}_left"
+        )
         coordinator.entity_translation_key.side_effect = lambda key: key
-        specs = (ControllerButtonSpec(
-            "vibradorm_app_mood_toggle", "Mood", AsyncMock(),
-            translation_key="vibradorm_app_mood_toggle",
-        ),) if retain else ()
+        specs = (
+            (
+                ControllerButtonSpec(
+                    "vibradorm_app_mood_toggle",
+                    "Mood",
+                    AsyncMock(),
+                    translation_key="vibradorm_app_mood_toggle",
+                ),
+            )
+            if retain
+            else ()
+        )
         coordinator.capability_controller = make_controller_mock(controller_button_specs=specs)
         _button_entities_for(hass, coordinator)
         assert (registry.async_get(active.entity_id) is not None) is retain

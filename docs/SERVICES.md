@@ -236,6 +236,7 @@ data:
 | [Svane Remote](beds/svane.md) | `head_up`, `head_down`, `feet_up`, `feet_down`, the four `head_*_feet_*` combinations, `light_adjust` | See [Svane Remote held controls](#svane-remote-held-controls) |
 | [Limoss Remote](beds/limoss-remote.md) | Controls rendered for the receiver's layout | Five-frame release |
 | [FSM Relax](beds/fsm_relax.md) | `command_XX` values from the profile's protocol diagnostics | Replies cannot prove physical arrival |
+| [TiMOTION AHF](beds/timotion-ahf.md) | `control_1_up`/`control_1_down` through `control_5_up`/`control_5_down`, `night`, `light`, `chair` | First 100 ms wait is inside the requested bound; a 100 ms wait separates writes, plus BLE write latency. Release sends three neutral STOP writes. This is bounded HA behavior, not Android timing parity or a firmware maximum |
 
 Customatic Clarity, Remedy and Jerome's C use
 [`customatic_hold_memory` and `customatic_move_simultaneously`](beds/customatic.md),

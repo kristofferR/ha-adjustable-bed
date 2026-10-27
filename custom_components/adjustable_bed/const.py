@@ -3071,8 +3071,8 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # SUTA: 150ms delay → 7 repeats = 1.05s total
     # Source: com.shuta.smart_home ANALYSIS.md
     BED_TYPE_SUTA: (7, 150),
-    # TiMOTION AHF: 100ms delay → 10 repeats = 1.0s total
-    # Source: com.timotion.ahf ANALYSIS.md
+    # HA button.press defaults: ten finite writes, starting immediately, with a
+    # 100 ms delay between repeats. Held AHF controls use a separate cadence.
     BED_TYPE_TIMOTION_AHF: (10, 100),
     # Logicdata: 30ms delay → 10 repeats = 0.3s total
     # Source: at.silvermotion APK analysis (SF_GetPipelineTx sendCount=10, delay=30ms)
