@@ -50,7 +50,7 @@ from .paired_coordinator import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController
+    from .beds.base import BedController, SideBoundController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -547,12 +547,23 @@ def _number_entities_for(
         )
 
     if controller is not None:
-        specs = controller.controller_number_specs
+        specs = _controller_number_specs_for_entities(controller)
         if controller.controller_entity_discovery_complete:
             _async_remove_stale_controller_numbers(hass, coordinator, specs)
         entities.extend(AdjustableBedControllerNumber(coordinator, spec) for spec in specs)
 
     return entities
+
+
+def _controller_number_specs_for_entities(
+    controller: BedController | SideBoundController,
+) -> tuple[ControllerNumberSpec, ...]:
+    """Keep a controller-owned generic level setter off the duplicate entity list."""
+    specs = controller.controller_number_specs
+    if not controller.supports_light_level_control:
+        return specs
+    generic_level_key = LIGHT_LEVEL_DESCRIPTION.key
+    return tuple(spec for spec in specs if spec.key != generic_level_key)
 
 
 def _valid_controller_number_value(spec: ControllerNumberSpec, value: float) -> bool:
@@ -1116,6 +1127,21 @@ class AdjustableBedLevelNumber(AdjustableBedEntity, NumberEntity):
                 and not _valid_positive_light_level(value, ctrl.light_level_min, ctrl.light_level_max)
             ):
                 raise ServiceValidationError("Value is outside the current light slider's range")
+            number_spec = next(
+                (
+                    spec
+                    for spec in ctrl.controller_number_specs
+                    if spec.key == self.entity_description.key
+                ),
+                None,
+            )
+            if number_spec is not None:
+                if not _valid_controller_number_value(number_spec, value):
+                    raise ServiceValidationError(
+                        "Value is outside the current controller's light level range"
+                    )
+                await number_spec.set_fn(ctrl, value)
+                return
             await self.entity_description.set_fn(ctrl, level)
 
         await self._coordinator.async_execute_controller_command(_set_level)

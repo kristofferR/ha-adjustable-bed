@@ -19,8 +19,10 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
+    BED_TYPE_SLEEPYS_ELITE_APP,
     BEDS_WITH_PERCENTAGE_POSITIONS,
     DOMAIN,
+    SLEEPYS_ELITE_NATIVE_ACTION_MS,
 )
 from .entity import AdjustableBedEntity
 from .entity_runtime import EntityRuntime
@@ -28,7 +30,12 @@ from .logicdata_app_protocol import LAYOUTS, layout_axes
 from .paired_coordinator import entity_runtimes
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, MotorControlSpec, SideBoundController
+    from .beds.base import (
+        BedController,
+        ControllerMotorHoldSpec,
+        MotorControlSpec,
+        SideBoundController,
+    )
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,6 +53,7 @@ class AdjustableBedCoverEntityDescription(CoverEntityDescription):
     # Maximum angle for percentage calculation (default 68 degrees)
     max_angle: float = 68
     scheduler_resource: str | None = None
+    hold: ControllerMotorHoldSpec | None = None
 
 
 # Note: For Linak beds:
@@ -259,6 +267,7 @@ def _build_cover_description(
         position_key=spec.position_key,
         max_angle=spec.max_angle,
         scheduler_resource=spec.scheduler_resource,
+        hold=spec.hold,
     )
 
 
@@ -326,6 +335,22 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         self._is_moving = False
         self._move_direction: str | None = None
         self._movement_generation: int = 0  # Track active movement to handle cancellation
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Expose declared held controls for the shared card."""
+        attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        hold = self.entity_description.hold
+        if hold is not None:
+            attributes.update(
+                {
+                    "held_control_up": hold.up_control,
+                    "held_control_down": hold.down_control,
+                    "hold_start_delay_ms": hold.start_delay_ms,
+                    "hold_release_delay_ms": hold.release_delay_ms,
+                }
+            )
+        return attributes or None
 
     @property
     def _position_key(self) -> str:
@@ -415,14 +440,28 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                 direction,
                 self.entity_description.key,
             )
+            hold = self.entity_description.hold
+            if hold is not None and self._coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP:
+                control = hold.up_control if direction == "open" else hold.down_control
+
+                async def finite_app_move(controller: BedController) -> None:
+                    await controller.hold_control(control, SLEEPYS_ELITE_NATIVE_ACTION_MS)
+
+                move_fn = finite_app_move
+            else:
+                move_fn = (
+                    self.entity_description.open_fn
+                    if direction == "open"
+                    else self.entity_description.close_fn
+                )
             if direction == "open":
                 await self._coordinator.async_execute_controller_command(
-                    self.entity_description.open_fn,
+                    move_fn,
                     resource=self._motor_resource,
                 )
             else:
                 await self._coordinator.async_execute_controller_command(
-                    self.entity_description.close_fn,
+                    move_fn,
                     resource=self._motor_resource,
                 )
             _LOGGER.debug(

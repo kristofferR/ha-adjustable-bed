@@ -283,6 +283,10 @@ timing; these settings do not replace it. Use the matching [protocol guide](SUPP
 | Logicdata | 10 | 30ms |
 | All others | 10 | 100ms |
 
+The **Sleepy's Elite app** profile uses its selector-specific app timing and
+release behavior; the BOX15/BOX24 values above describe the existing protocol
+profiles. Its cadence is not controlled by the generic motor pulse settings.
+
 ### When to Adjust
 
 | Symptom | Solution |
@@ -302,6 +306,7 @@ controller-specific choices are documented here:
 
 | Bed type | Choices covered by its guide |
 |----------|-----------------------------|
+| [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Explicit control-box selector for each physical bed |
 | [Linak](beds/linak.md#profiles-and-model-variants) | Bed Control and Performance Series |
 | [Kaidi](beds/kaidi.md#command-families) | Seat 1, Seat 2, Seat 3, Seat 1+2 |
 | [Okin CST](beds/okin-cst.md) | Rize and Support product profiles; Auto retains MF900 behavior |
@@ -425,6 +430,7 @@ refuses a change, split the pair, configure each side, then combine them again.
 
 | Bed or brand | Model and remote settings |
 |--------------|---------------------------|
+| Sleepy's Elite app | [Explicit app profile](beds/sleepys.md#explicit-sleepys-elite-app-profile): select the app's control-box selector independently for each physical receiver. The existing BOX15, BOX24 and BOX25 profiles remain available. |
 | Keeson | Choose the matching protocol variant: [Adjustable Lite](beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases](beds/ore-comfort-bed.md), or [Restonic BT](beds/keeson.md#restonic-bt-profiles). Match motor count or remote style where offered. |
 | Tempur Sleeptracker-AI | [Processor setup](beds/sleeptracker.md): choose this app profile for ProSmart / ProSmart Air and ActiveBreeze. Select the actual processor endpoint and app layout, unit number, snapshot ordinal, restricted session, processor type and foundation metadata. Add a separate processor entry when the current address exposes UART. Axes and massage come from the app layout; position feedback is unavailable. |
 | Richmat | [RMControl](beds/rmcontrol.md): product code and side. [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat-mh.md): app and model. |

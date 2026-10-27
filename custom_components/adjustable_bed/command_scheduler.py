@@ -76,6 +76,11 @@ class CommandContext:
     pulse_count: int | None = None
     pulse_delay_ms: int | None = None
     cancel_reason: CommandOutcome | None = None
+    # A protocol cleanup frame belongs to the operation that is leaving the
+    # lane. The immediately admitted replacement can use this acknowledgement
+    # to avoid sending a duplicate STOP after it acquires the lane.
+    preempted_contexts: tuple[CommandContext, ...] = ()
+    cleanup_stop_sent: bool = False
     active: bool = True
     defer_disconnect: bool = False
 
@@ -307,6 +312,9 @@ class DeviceCommandScheduler:
                 raise RuntimeError(f"Command scheduler for {self._name} is shut down")
             replaces_active = False
             if intent.cancel_running:
+                active = self._active
+                if active is not None and self._handles_conflict(active, handle):
+                    handle.context.preempted_contexts = (active.context,)
                 replaces_active = self._replace_conflicts_locked(handle)
             # A replacement for the operation currently owning the link must be
             # next after that operation's cleanup. Otherwise an older,
@@ -333,6 +341,13 @@ class DeviceCommandScheduler:
         if self._closed:
             raise RuntimeError(f"Command scheduler for {self._name} is shut down")
         normalized_resources = command_resources(*resources)
+        active = self._active
+        preempted_contexts = (
+            (active.context,)
+            if active is not None
+            and _resources_overlap(active.intent.resources, normalized_resources)
+            else ()
+        )
         stop_epoch = self.request_stop(normalized_resources)
         handle = self._new_handle(
             CommandIntent(
@@ -345,6 +360,7 @@ class DeviceCommandScheduler:
             prepared=False,
             admitted_stop_epoch=stop_epoch,
         )
+        handle.context.preempted_contexts = preempted_contexts
         task = asyncio.create_task(
             self._execute_admitted_stop(handle),
             name=f"adjustable_bed_stop_{self._name}",

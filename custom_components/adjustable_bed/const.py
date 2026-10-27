@@ -69,6 +69,21 @@ MOTION_BED_CONFIG_KEYS: Final = frozenset({CONF_MOTION_BED_PRESET, CONF_MOTION_B
 CONF_STARCODE_M5X5_PROFILE: Final = "starcode_m5x5_profile"
 CONF_STARCODE_LIFT_ENTRIES: Final = "starcode_lift_entries"
 CONF_VIBRADORM_APP_PROFILE: Final = "vibradorm_app_profile"
+CONF_SLEEPYS_ELITE_SELECTOR: Final = "sleepys_elite_selector"
+SLEEPYS_ELITE_SELECTORS: Final = (
+    "none",
+    "BOX15",
+    "BOX24",
+    "BOX1220",
+    "BOX1221",
+    "BOX2422",
+    "BOX2442",
+    "BOX3633",
+    "BOX25",
+    "BOX25_STAR",
+)
+# Bound for ordinary HA button, cover and value commits on this source-held profile.
+SLEEPYS_ELITE_NATIVE_ACTION_MS: Final = 300
 CONF_VMATBASIC_PROFILE: Final = "vmatbasic_profile"
 CONF_VMATBASIC_FLOOR_LEVEL: Final = "vmatbasic_floor_level"
 CONF_VMATBASIC_FLOOR_MINUTES: Final = "vmatbasic_floor_minutes"
@@ -496,6 +511,7 @@ BED_TYPE_SLEEPYS_BOX15: Final = (
 )
 BED_TYPE_SLEEPYS_BOX24: Final = "sleepys_box24"  # Sleepy's Elite BOX24 protocol (7-byte)
 BED_TYPE_SLEEPYS_BOX25: Final = "sleepys_box25"  # Sleepy's Elite BOX25 Star (NUS multi-subsystem)
+BED_TYPE_SLEEPYS_ELITE_APP: Final = "sleepys_elite_app"
 BED_TYPE_SLEEPSTAR: Final = "sleepstar"  # SleepSpa S9000AI / SLEEPSTAR transparent StarCode
 BED_TYPE_STAR_ELEVATE: Final = "star_elevate"  # ELEVATE two-actuator StarCode accessory
 BED_TYPE_SVANE: Final = "svane"  # Svane LinonPI multi-service protocol
@@ -631,6 +647,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SLEEPYS_BOX24,
     # Sleepy's Elite BOX25 Star
     BED_TYPE_SLEEPYS_BOX25,
+    BED_TYPE_SLEEPYS_ELITE_APP,
     # SleepSpa S9000AI / SLEEPSTAR
     BED_TYPE_SLEEPSTAR,
     # Separate ELEVATE two-actuator accessory
@@ -707,6 +724,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_BEDTECH,
         BED_TYPE_SLEEPYS_BOX15,
         BED_TYPE_SLEEPYS_BOX24,
+        BED_TYPE_SLEEPYS_ELITE_APP,
         BED_TYPE_SVANE,
         BED_TYPE_RONDURE,
         BED_TYPE_SCOTT_LIVING,

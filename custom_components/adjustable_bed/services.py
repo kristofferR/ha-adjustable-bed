@@ -27,6 +27,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.service import async_get_device_and_config_entry
 
 from .beds.linak_protocol import LinakAlarmAction, LinakAlarmStep
+from .command_scheduler import current_command_context
 from .const import (
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
@@ -45,6 +46,7 @@ from .const import (
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
+    BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SVANE,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
@@ -1129,7 +1131,19 @@ async def _timed_move_plan(
                 f"{'head' if motor == 'back' else 'feet'}_{direction}", duration_ms,
             )
 
-        # Get the appropriate move function based on direction
+        # The explicit app profile's direction is a held route. timed_move has
+        # an elapsed duration, so delegate its bounded window and release to
+        # the controller instead of treating one press frame as a full move.
+        hold_control = None
+        if coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP and spec.hold is not None:
+            hold_control = (
+                spec.hold.up_control if direction == "up" else spec.hold.down_control
+            )
+            try:
+                controller.validate_hold_control(hold_control, duration_ms)
+            except ValueError as err:
+                raise ServiceValidationError(str(err)) from err
+
         move_fn = spec.open_fn if direction == "up" else spec.close_fn
         stop_fn = spec.stop_fn
 
@@ -1160,6 +1174,7 @@ async def _timed_move_plan(
             *,
             _move_fn: Callable[..., Coroutine[Any, Any, None]] = move_fn,
             _stop_fn: Callable[..., Coroutine[Any, Any, None]] = stop_fn,
+            _hold_control: str | None = hold_control,
         ) -> None:
             """Execute movement for specified duration, always sending stop."""
             with contextlib.ExitStack() as admission_scope:
@@ -1168,28 +1183,35 @@ async def _timed_move_plan(
                 controller_timed_out = False
                 try:
                     await ctrl.prepare_for_movement()
-                    deadline = asyncio.timeout(duration_ms / 1000)
-                    try:
-                        async with deadline:
-                            try:
-                                await _move_fn(ctrl)
-                            except TimeoutError:
-                                # Controller cleanup can time out while responding
-                                # to our cancellation; that is still a real failure.
-                                controller_timed_out = True
+                    if _hold_control is not None:
+                        await ctrl.hold_control(_hold_control, duration_ms)
+                    else:
+                        deadline = asyncio.timeout(duration_ms / 1000)
+                        try:
+                            async with deadline:
+                                try:
+                                    await _move_fn(ctrl)
+                                except TimeoutError:
+                                    # Controller cleanup can time out while responding
+                                    # to our cancellation; that is still a real failure.
+                                    controller_timed_out = True
+                                    raise
+                        except TimeoutError:
+                            if controller_timed_out or not deadline.expired():
                                 raise
-                    except TimeoutError:
-                        if controller_timed_out or not deadline.expired():
-                            raise
                 finally:
                     # Release is outside the movement ceiling. Keep the wire lane
                     # until it settles even if the caller is cancelled during STOP.
-                    stop_task = asyncio.create_task(_stop_fn(ctrl))
-                    try:
-                        await asyncio.shield(stop_task)
-                    except asyncio.CancelledError:
-                        await stop_task
-                        raise
+                    context = current_command_context()
+                    # Leave a completed controller release for its admitted
+                    # external STOP owner to consume after this wrapper returns.
+                    if context is None or not context.cleanup_stop_sent:
+                        stop_task = asyncio.create_task(_stop_fn(ctrl))
+                        try:
+                            await asyncio.shield(stop_task)
+                        except asyncio.CancelledError:
+                            await stop_task
+                            raise
 
         return (
             timed_movement,
@@ -3439,7 +3461,12 @@ async def async_register_services(hass: HomeAssistant) -> None:
         SERVICE_HOLD_CONTROL,
         handle_hold_control,
         # Each target's controller declares its valid controls.
-        schema=vol.Schema({**hold_fields, vol.Required(ATTR_CONTROL): cv.string}),
+        schema=vol.Schema(
+            {
+                **hold_fields,
+                vol.Required(ATTR_CONTROL): cv.string,
+            }
+        ),
     )
     hass.services.async_register(
         DOMAIN,

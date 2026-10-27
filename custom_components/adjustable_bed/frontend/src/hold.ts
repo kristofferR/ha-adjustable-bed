@@ -8,6 +8,30 @@ import type { HomeAssistant, MotorEntity } from "./types";
 
 export type Direction = "up" | "down";
 
+export function heldButtonMotor(
+  hass: HomeAssistant | undefined,
+  entityId: string,
+): MotorEntity | undefined {
+  const deviceId = hass?.entities[entityId]?.device_id;
+  const attributes = hass?.states[entityId]?.attributes;
+  const control = attributes?.held_control;
+  const startDelayMs = attributes?.hold_start_delay_ms;
+  const releaseDelayMs = attributes?.hold_release_delay_ms;
+  if (
+    !deviceId || typeof control !== "string" ||
+    typeof startDelayMs !== "number" || !Number.isFinite(startDelayMs) ||
+    startDelayMs < 0 || typeof releaseDelayMs !== "number" ||
+    !Number.isFinite(releaseDelayMs) || releaseDelayMs < 0
+  ) return undefined;
+  return {
+    key: entityId,
+    up: entityId,
+    deviceId,
+    holdEntityId: entityId,
+    heldControl: { control, startDelayMs, releaseDelayMs },
+  };
+}
+
 export function movementPulse(
   hass: HomeAssistant | undefined,
   motor: MotorEntity,
@@ -33,10 +57,32 @@ export function movementPulse(
   return entityId ? hass?.callService("button", "press", { entity_id: entityId }) : undefined;
 }
 
+// Controller-declared refresh holds use the shared bounded service. The
+// release entity remains the owner of STOP and side routing.
+export function movementHold(
+  hass: HomeAssistant | undefined,
+  motor: MotorEntity,
+  direction: Direction,
+): Promise<unknown> | undefined {
+  const spec = motor.heldControls?.[direction] ?? motor.heldControl;
+  if (!spec || !motor.deviceId) return undefined;
+  const side = hass?.states[motor.holdEntityId ?? motor.cover ?? ""]?.attributes.bed_side;
+  const serviceData: Record<string, unknown> = {
+    device_id: [motor.deviceId],
+    control: spec.control,
+    duration: 60,
+  };
+  if (side === "left" || side === "right" || side === "both") {
+    serviceData.side = side;
+  }
+  return hass?.callService("adjustable_bed", "hold_control", serviceData);
+}
+
 export interface HoldActions {
   // Runs one finite movement pulse and resolves when the bed has finished it.
   // Resolving is what paces the repeat loop; rejecting stops it.
   pulse: (motor: MotorEntity, dir: Direction) => Promise<unknown> | undefined;
+  holdControl: (motor: MotorEntity, dir: Direction) => Promise<unknown> | undefined;
   // Stops a cover-backed motor, which is the only kind with its own stop. The
   // bed stop identifies the compact target retained when the hold began.
   stopCover: (coverEntityId: string, stopEntityId?: string) => void;
@@ -45,6 +91,31 @@ export interface HoldActions {
   // paired bed is the side's own stop rather than the parent's; omitted falls
   // back to the single bed's stop.
   stopBed: (stopEntityId?: string) => void;
+}
+
+export interface HoldTimers {
+  setTimeout: (callback: () => void, delayMs: number) => ReturnType<typeof setTimeout>;
+  clearTimeout: (timer: ReturnType<typeof setTimeout>) => void;
+}
+
+export interface HoldLifecycleTarget {
+  addEventListener(
+    type: "visibilitychange" | "pagehide",
+    listener: () => void,
+  ): void;
+  removeEventListener(
+    type: "visibilitychange" | "pagehide",
+    listener: () => void,
+  ): void;
+}
+
+interface PendingRelease {
+  id: number;
+  motorKey: string;
+  targetKey: string;
+  cover?: string;
+  stopEntityId?: string;
+  timer?: ReturnType<typeof setTimeout>;
 }
 
 export class MotorHold {
@@ -65,8 +136,19 @@ export class MotorHold {
   // Bumping this is what stops an in-flight repeat loop: the loop's next
   // iteration sees a stale value and exits.
   private _generation = 0;
+  private _startTimer?: ReturnType<typeof setTimeout>;
+  private _started = false;
+  private _heldControl?: MotorEntity["heldControl"];
+  private _releaseId = 0;
+  private readonly _pendingReleases = new Map<number, PendingRelease>();
 
-  constructor(private readonly actions: HoldActions) {}
+  constructor(
+    private readonly actions: HoldActions,
+    private readonly timers: HoldTimers = {
+      setTimeout: (callback, delayMs) => globalThis.setTimeout(callback, delayMs),
+      clearTimeout: (timer) => globalThis.clearTimeout(timer),
+    },
+  ) {}
 
   get heldKey(): string | null {
     return this._key;
@@ -86,7 +168,48 @@ export class MotorHold {
     this._cover = motor.cover ?? null;
     this._stop = stopEntityId ?? null;
     this._pointerId = pointerId;
-    void this._repeat(motor, dir, ++this._generation);
+    const generation = ++this._generation;
+    this._heldControl = motor.heldControls?.[dir] ?? motor.heldControl;
+    this._flushPendingForTarget(this._targetKey());
+    if (this._heldControl) {
+      const delay = this._heldControl.startDelayMs;
+      if (delay <= 0) {
+        this._startHeldControl(motor, dir, generation);
+      } else {
+        this._startTimer = this.timers.setTimeout(
+          () => this._startHeldControl(motor, dir, generation), delay,
+        );
+      }
+      return;
+    }
+    this._started = true;
+    void this._repeat(motor, dir, generation);
+  }
+
+  private _startHeldControl(
+    motor: MotorEntity,
+    dir: Direction,
+    generation: number,
+  ): void {
+    this._startTimer = undefined;
+    if (generation !== this._generation || this._key !== motor.key) return;
+    this._started = true;
+    void this._holdControl(motor, dir, generation);
+  }
+
+  private async _holdControl(
+    motor: MotorEntity,
+    dir: Direction,
+    generation: number,
+  ): Promise<void> {
+    try {
+      const pending = this.actions.holdControl(motor, dir);
+      if (pending) await pending;
+    } catch {
+      // Home Assistant reports service errors; forget the hold so it can retry.
+    } finally {
+      if (generation === this._generation) this._reset();
+    }
   }
 
   // One iteration moves the bed for a single configured pulse and then stops,
@@ -118,6 +241,82 @@ export class MotorHold {
     }
   }
 
+  private _targetKey(
+    stopEntityId = this._stop ?? undefined,
+    cover = this._cover ?? undefined,
+  ): string {
+    return stopEntityId ?? cover ?? this._key ?? "";
+  }
+
+  private _release(target: Pick<PendingRelease, "cover" | "stopEntityId">): void {
+    if (target.cover) this.actions.stopCover(target.cover, target.stopEntityId);
+    else this.actions.stopBed(target.stopEntityId);
+  }
+
+  private _scheduleRelease(): void {
+    const release: PendingRelease = {
+      id: ++this._releaseId,
+      motorKey: this._key ?? "",
+      targetKey: this._targetKey(),
+      cover: this._cover ?? undefined,
+      stopEntityId: this._stop ?? undefined,
+    };
+    this._pendingReleases.set(release.id, release);
+    const delay = this._heldControl?.releaseDelayMs ?? 0;
+    if (delay <= 0) {
+      this._runRelease(release);
+      return;
+    }
+    release.timer = this.timers.setTimeout(() => this._runRelease(release), delay);
+  }
+
+  private _runRelease(release: PendingRelease): void {
+    if (!this._pendingReleases.delete(release.id)) return;
+    if (release.timer !== undefined) this.timers.clearTimeout(release.timer);
+    this._release(release);
+  }
+
+  private _flushPendingForTarget(targetKey: string): Set<string> {
+    const released = new Set<string>();
+    for (const release of [...this._pendingReleases.values()]) {
+      const key = release.targetKey;
+      if (key !== targetKey) continue;
+      this._runRelease(release);
+      released.add(key);
+    }
+    return released;
+  }
+
+  private _flushAllReleases(skipTarget?: string): Set<string> {
+    const released = new Set<string>();
+    for (const release of [...this._pendingReleases.values()]) {
+      const key = release.targetKey;
+      if (key === skipTarget) {
+        this._pendingReleases.delete(release.id);
+        if (release.timer !== undefined) this.timers.clearTimeout(release.timer);
+      } else {
+        this._runRelease(release);
+        released.add(key);
+      }
+    }
+    return released;
+  }
+
+  private _discardReleasesForTarget(targetKey: string): void {
+    for (const release of [...this._pendingReleases.values()]) {
+      if (release.targetKey !== targetKey) continue;
+      this._pendingReleases.delete(release.id);
+      if (release.timer !== undefined) this.timers.clearTimeout(release.timer);
+    }
+  }
+
+  private _discardAllReleases(): void {
+    for (const release of this._pendingReleases.values()) {
+      if (release.timer !== undefined) this.timers.clearTimeout(release.timer);
+    }
+    this._pendingReleases.clear();
+  }
+
   // A pointer-driven release. Only the pointer that started the hold may end
   // it, and a non-primary button release must not.
   endFromPointer(
@@ -134,26 +333,35 @@ export class MotorHold {
   // another control owns: a blur on some other motor's button would otherwise
   // stop the motor that is running.
   end(motor: MotorEntity): void {
-    const stop = this._stop ?? undefined;
-    if (!this.cancel(motor)) return;
-    if (motor.cover) {
-      this.actions.stopCover(motor.cover, stop);
-      return;
-    }
-    // Cancelling the loop does not touch the pulse already in flight, and each
-    // pulse is a second or more, so without this the bed keeps moving well
-    // after the control is released. The stop cancels the running command,
-    // which is also what makes a short tap move the bed briefly rather than
-    // for a full pulse.
-    this.actions.stopBed(stop);
+    if (this._key !== motor.key) return;
+    const started = this._started;
+    const hasMetadata = this._heldControl !== undefined;
+    const releaseTarget = {
+      cover: this._cover ?? undefined,
+      stopEntityId: this._stop ?? undefined,
+    };
+    if (started && hasMetadata) this._scheduleRelease();
+    this._reset();
+    if (!started || hasMetadata) return;
+    this._release(releaseTarget);
   }
 
   // Stop re-issuing pulses for this motor without sending anything to the bed.
   // Returns whether there was a matching hold to cancel.
-  cancel(motor: MotorEntity | null): boolean {
-    if (!motor || this._key !== motor.key) return false;
-    this._reset();
-    return true;
+  cancel(motor: MotorEntity | null, explicitStopFollows = false): boolean {
+    if (!motor) return false;
+    const matchedActive = this._key === motor.key;
+    if (matchedActive) this._reset();
+    let matchedRelease = false;
+    if (explicitStopFollows) {
+      for (const release of [...this._pendingReleases.values()]) {
+        if (release.motorKey !== motor.key) continue;
+        this._pendingReleases.delete(release.id);
+        if (release.timer !== undefined) this.timers.clearTimeout(release.timer);
+        matchedRelease = true;
+      }
+    }
+    return matchedActive || matchedRelease;
   }
 
   // A stop button. Invalidating first matters: otherwise the in-flight pulse
@@ -162,10 +370,36 @@ export class MotorHold {
   // invalidate *any* hold, not just one motor's, because this stop halts
   // whatever is moving. `stopEntityId` is the pressed button's own stop; it
   // wins over the held motor's, which may belong to a different side.
-  stopAll(stopEntityId?: string): void {
-    const stop = stopEntityId ?? this._stop ?? undefined;
+  stopAll(stopEntityId?: string, stopCoversAllTargets = false): void {
+    if (stopEntityId !== undefined) {
+      if (stopCoversAllTargets) {
+        this._discardAllReleases();
+        this._reset();
+      } else {
+        this._discardReleasesForTarget(stopEntityId);
+        if (this._key !== null && this._targetKey() === stopEntityId) this._reset();
+      }
+      this.actions.stopBed(stopEntityId);
+      return;
+    }
+
+    const released = this._flushAllReleases(stopEntityId);
+    const active = this._key === null ? null : {
+      cover: this._cover ?? undefined,
+      stopEntityId: this._stop ?? undefined,
+    };
+    const activeTarget = active
+      ? this._targetKey(active.stopEntityId, active.cover)
+      : undefined;
+    const activeStarted = this._started;
     this._reset();
-    this.actions.stopBed(stop);
+    if (active && activeStarted && activeTarget !== undefined) {
+      this._release(active);
+      released.add(activeTarget);
+    }
+    if (released.size === 0 && (!active || !activeStarted)) {
+      this.actions.stopBed(active?.stopEntityId);
+    }
   }
 
   // The card left the DOM mid-hold, so no pointer release will ever arrive.
@@ -174,20 +408,42 @@ export class MotorHold {
   // motor keeps moving the bed for the rest of its duration, which is a second
   // or more and longer still with customised pulse settings.
   abandon(): void {
-    const cover = this._cover;
-    const stop = this._stop ?? undefined;
-    const wasHolding = this._key !== null;
+    const active = this._key === null ? null : {
+      cover: this._cover ?? undefined,
+      stopEntityId: this._stop ?? undefined,
+    };
+    const activeStarted = this._started;
     this._reset();
-    if (!wasHolding) return;
-    if (cover) this.actions.stopCover(cover, stop);
-    else this.actions.stopBed(stop);
+    if (active && activeStarted) this._release(active);
+    this._flushAllReleases();
   }
 
   private _reset(): void {
+    if (this._startTimer !== undefined) this.timers.clearTimeout(this._startTimer);
+    this._startTimer = undefined;
     this._key = null;
     this._cover = null;
     this._stop = null;
     this._pointerId = null;
+    this._started = false;
+    this._heldControl = undefined;
     this._generation++;
   }
+}
+
+export function attachHoldLifecycle(
+  hold: MotorHold,
+  documentTarget: HoldLifecycleTarget & { visibilityState: string },
+  windowTarget: HoldLifecycleTarget,
+): () => void {
+  const abandon = (): void => hold.abandon();
+  const onVisibilityChange = (): void => {
+    if (documentTarget.visibilityState === "hidden") abandon();
+  };
+  documentTarget.addEventListener("visibilitychange", onVisibilityChange);
+  windowTarget.addEventListener("pagehide", abandon);
+  return () => {
+    documentTarget.removeEventListener("visibilitychange", onVisibilityChange);
+    windowTarget.removeEventListener("pagehide", abandon);
+  };
 }

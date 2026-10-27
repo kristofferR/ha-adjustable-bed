@@ -82,6 +82,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
+    BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
@@ -131,6 +132,7 @@ from .const import (
     CONF_SLEEPTRACKER_RESTRICTED,
     CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
     CONF_SLEEPTRACKER_UNIT,
+    CONF_SLEEPYS_ELITE_SELECTOR,
     CONF_STARCODE_COMMAND_SELECTOR,
     CONF_STARCODE_M5X5_PROFILE,
     CONF_STARCODE_TRANSPORT_SELECTOR,
@@ -1533,6 +1535,23 @@ async def create_controller(
 
         _LOGGER.info("Using BOX25 StarCode dialect (%s)", selection_reason)
         return SleepysBox25Controller(coordinator)
+
+    if bed_type == BED_TYPE_SLEEPYS_ELITE_APP:
+        await coordinator.hass.async_add_import_executor_job(
+            import_module, ".beds.sleepys_app", __package__
+        )
+        from .beds.sleepys_app import SleepysEliteAppController
+
+        entry = getattr(coordinator, "entry", None)
+        entry_data = getattr(entry, "data", {})
+        entry_options = getattr(entry, "options", {})
+        selector = entry_options.get(
+            CONF_SLEEPYS_ELITE_SELECTOR,
+            entry_data.get(CONF_SLEEPYS_ELITE_SELECTOR),
+        )
+        if selector is None:
+            raise ValueError("Sleepy's Elite app profile requires an explicit selector")
+        return SleepysEliteAppController(coordinator, selector)
 
     if bed_type == BED_TYPE_RONDURE:
         await coordinator.hass.async_add_import_executor_job(

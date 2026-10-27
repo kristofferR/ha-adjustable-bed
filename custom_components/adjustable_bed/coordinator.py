@@ -122,6 +122,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
+    BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SOLACE,
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_VIBRADORM,
@@ -185,6 +186,7 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DEVICE_INFO_CHARS,
     DEVICE_INFO_READ_TIMEOUT,
+    DEVICE_INFO_SERVICE_UUID,
     DOMAIN,
     LEGGETT_OKIN_SUPERSEDED_PULSE_DEFAULTS,
     LEGGETT_VARIANT_GEN2,
@@ -2901,6 +2903,68 @@ class AdjustableBedCoordinator:
                     self._address,
                 )
 
+    async def _async_read_sleepys_app_device_info(
+        self,
+        client: BleakClient,
+        session_generation: int,
+    ) -> None:
+        """Read the app's exact optional Device Information fields after notify setup."""
+
+        def session_is_current() -> bool:
+            return (
+                self._client is client
+                and client.is_connected
+                and self._position_connection_generation == session_generation
+            )
+
+        if not session_is_current():
+            return
+
+        if not any(
+            service.uuid.lower() == DEVICE_INFO_SERVICE_UUID for service in (client.services or ())
+        ):
+            _LOGGER.debug("Sleepy's Device Information service is absent on %s", self._address)
+            return
+
+        values: dict[str, str | None] = {
+            "manufacturer_name": None,
+            "software_revision": None,
+        }
+        for field in ("manufacturer_name", "software_revision"):
+            if not session_is_current():
+                return
+            try:
+                raw_value = await asyncio.wait_for(
+                    client.read_gatt_char(DEVICE_INFO_CHARS[field]),
+                    DEVICE_INFO_READ_TIMEOUT,
+                )
+            except Exception as err:
+                _LOGGER.debug(
+                    "Could not read Sleepy's Device Information %s from %s: %s",
+                    field,
+                    self._address,
+                    err,
+                )
+                continue
+
+            if not session_is_current():
+                return
+            try:
+                values[field] = raw_value.decode("utf-8").rstrip("\x00")
+            except UnicodeDecodeError as err:
+                _LOGGER.debug(
+                    "Could not decode Sleepy's Device Information %s from %s: %s",
+                    field,
+                    self._address,
+                    err,
+                )
+
+        if session_is_current():
+            self._store_ble_device_info(
+                values["manufacturer_name"],
+                values["software_revision"],
+            )
+
     def record_command_trace(
         self,
         *,
@@ -4003,6 +4067,7 @@ class AdjustableBedCoordinator:
                     BED_TYPE_SLEEP_NUMBER_MCR,
                     BED_TYPE_SLEEP_NUMBER,
                     BED_TYPE_JENSEN,
+                    BED_TYPE_SLEEPYS_ELITE_APP,
                     BED_TYPE_VIBRADORM_APP,
                 }:
                     await asyncio.sleep(self._post_connect_delay)
@@ -4100,6 +4165,7 @@ class AdjustableBedCoordinator:
                     BED_TYPE_SLEEP_NUMBER_MCR,
                     BED_TYPE_SLEEP_NUMBER,
                     BED_TYPE_JENSEN,
+                    BED_TYPE_SLEEPYS_ELITE_APP,
                 }
 
                 ble_manufacturer: str | None = None
@@ -4300,6 +4366,7 @@ class AdjustableBedCoordinator:
                 # reconnect hydration and seeks can distinguish fresh feedback
                 # from cached values.
                 self._position_connection_generation += 1
+                controller_session_generation = self._position_connection_generation
                 # Remember the resolved persistence so reconnect/idle decisions are
                 # correct even after _on_disconnect clears the controller.
                 self._persistent_connection_resolved = (
@@ -4386,7 +4453,12 @@ class AdjustableBedCoordinator:
                 # Read deferred BLE Device Information now that the
                 # notification channel and protocol handshake are done.
                 if _defer_device_info and self._client is not None and self._client.is_connected:
-                    if self._device_info_read_done:
+                    if self._bed_type == BED_TYPE_SLEEPYS_ELITE_APP:
+                        await self._async_read_sleepys_app_device_info(
+                            self._client,
+                            controller_session_generation,
+                        )
+                    elif self._device_info_read_done:
                         ble_manufacturer = self._ble_manufacturer
                         ble_model = self._ble_model
                         _LOGGER.debug(
