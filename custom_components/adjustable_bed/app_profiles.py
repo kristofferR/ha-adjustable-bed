@@ -119,9 +119,8 @@ _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_SIMMONS: _FIXED_LAYOUT,
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, _FIXED_LAYOUT),
     BED_TYPE_LOGICDATA_AIR_PUMP: _FIXED_LAYOUT,
-    # AHF has app-labelled controls, not a selectable physical motor count or
-    # massage capability. Keep legacy values inert in stored entries.
-    BED_TYPE_TIMOTION_AHF: frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}),
+    # AHF has no massage. Motor count still sizes the legacy covers.
+    BED_TYPE_TIMOTION_AHF: frozenset({CONF_HAS_MASSAGE}),
     # These apps always show their massage page.
     BED_TYPE_ADJUSTABLE_LUMBAR: _FIXED_LAYOUT | _ALWAYS_MASSAGE,
     BED_TYPE_STARCODE_ABM5_4: _FIXED_LAYOUT | _ALWAYS_MASSAGE,

@@ -63,8 +63,28 @@ Controls 1–5, Night and Chair are unavailable when their corresponding lock bi
 set. Bit 7 is ignored. Light has no lock bit. Both the button entities and the
 `hold_control` service use the latest valid mask.
 
-This fixed route does not show generic motor-count or massage choices during
-setup or in options. Values already stored by an older setup remain inert.
+### Covers and light toggle
+
+The motor covers and **Toggle light** button from earlier releases stay, with
+their entity IDs. Removing working controls from existing entries broke
+automations on other beds
+([#615](https://github.com/kristofferR/ha-adjustable-bed/issues/615),
+[#669](https://github.com/kristofferR/ha-adjustable-bed/issues/669),
+[#670](https://github.com/kristofferR/ha-adjustable-bed/issues/670)).
+These entities send the same app actions as the buttons, with the same status
+and lock checks. Their names are legacy labels, not a verified motor map:
+
+| Entity | App action |
+|--------|------------|
+| Back cover | Control 1 |
+| Legs cover | Control 2 |
+| Head cover (3+ motors) | Control 3 |
+| Feet cover (4+ motors) | Control 4 |
+| Pillow cover (4+ motors) | Control 5 |
+| Toggle light button and the disabled-by-default assumed light | Light |
+
+**Motor count** sets how many covers exist. The app-labelled buttons do not depend
+on it. Setup does not offer massage for this route.
 
 ## Status diagnostics
 

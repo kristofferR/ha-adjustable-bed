@@ -2,7 +2,8 @@
 
 The AHF app exposes thirteen held controls over one fixed BLE route. The
 control labels below preserve the app's names without assigning physical
-actuator or posture meanings.
+actuator or posture meanings. Entries created before the app profile keep their
+motor covers and light toggle, which send the same app actions.
 """
 
 from __future__ import annotations
@@ -27,7 +28,6 @@ from .base import (
     BedController,
     ControllerButtonSpec,
     ControllerStateSensorSpec,
-    MotorControlSpec,
 )
 
 if TYPE_CHECKING:
@@ -161,24 +161,18 @@ class TiMOTIONAhfController(BedController):
         return False
 
     @property
-    def supports_motor_control(self) -> bool:
-        """The app labels commands but does not identify physical motor axes."""
-        return False
+    def supports_lights(self) -> bool:
+        return True
+
+    @property
+    def has_pillow_support(self) -> bool:
+        # Earlier releases exposed Control 5 as the pillow cover on 4+ motor setups.
+        return self._coordinator.motor_count >= 4
 
     @property
     def position_number_specs(self) -> tuple[()]:
         """AHF status contains no position values."""
         return ()
-
-    @property
-    def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
-        """Do not infer physical axes from app action indices."""
-        return ()
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove the physical labels exposed by older AHF versions."""
-        return frozenset({"back", "legs", "head", "feet", "pillow"})
 
     @property
     def held_control_options(self) -> tuple[str, ...]:
@@ -637,44 +631,63 @@ class TiMOTIONAhfController(BedController):
             }
         )
 
-    # The shared abstract controller contract requires legacy axis methods, but
-    # their physical meanings are not known for this app. Only neutral STOP is
-    # safe to expose through those compatibility methods.
-    async def move_head_up(self) -> None:
-        raise NotImplementedError("Use the app-labelled TiMOTION AHF controls")
+    async def run_action(self, key: str) -> None:
+        """Send one app action, reporting status and lock refusals to the user."""
+        try:
+            await self._send_action(_CONTROL_ACTION_BY_KEY[key])
+        except ValueError as err:
+            raise HomeAssistantError(str(err)) from err
 
-    async def move_head_down(self) -> None:
-        raise NotImplementedError("Use the app-labelled TiMOTION AHF controls")
-
-    async def move_head_stop(self) -> None:
-        await self._send_stop()
-
+    # Covers created by earlier releases keep their entity IDs (#615, #669,
+    # #670). Their axis names are legacy labels for app Controls 1-5.
     async def move_back_up(self) -> None:
-        raise NotImplementedError("Use the app-labelled TiMOTION AHF controls")
+        await self.run_action("control_1_up")
 
     async def move_back_down(self) -> None:
-        raise NotImplementedError("Use the app-labelled TiMOTION AHF controls")
+        await self.run_action("control_1_down")
 
     async def move_back_stop(self) -> None:
         await self._send_stop()
 
     async def move_legs_up(self) -> None:
-        raise NotImplementedError("Use the app-labelled TiMOTION AHF controls")
+        await self.run_action("control_2_up")
 
     async def move_legs_down(self) -> None:
-        raise NotImplementedError("Use the app-labelled TiMOTION AHF controls")
+        await self.run_action("control_2_down")
 
     async def move_legs_stop(self) -> None:
         await self._send_stop()
 
+    async def move_head_up(self) -> None:
+        await self.run_action("control_3_up")
+
+    async def move_head_down(self) -> None:
+        await self.run_action("control_3_down")
+
+    async def move_head_stop(self) -> None:
+        await self._send_stop()
+
     async def move_feet_up(self) -> None:
-        raise NotImplementedError("Use the app-labelled TiMOTION AHF controls")
+        await self.run_action("control_4_up")
 
     async def move_feet_down(self) -> None:
-        raise NotImplementedError("Use the app-labelled TiMOTION AHF controls")
+        await self.run_action("control_4_down")
 
     async def move_feet_stop(self) -> None:
         await self._send_stop()
+
+    async def move_pillow_up(self) -> None:
+        await self.run_action("control_5_up")
+
+    async def move_pillow_down(self) -> None:
+        await self.run_action("control_5_down")
+
+    async def move_pillow_stop(self) -> None:
+        await self._send_stop()
+
+    async def lights_toggle(self) -> None:
+        """Send the app's Light action for the legacy toggle and assumed light."""
+        await self.run_action("light")
 
     async def stop_all(self) -> None:
         """Send the protocol's neutral frame for cancellation and cleanup."""
@@ -696,10 +709,6 @@ def _press_action(key: str) -> Callable[[BedController], Coroutine[Any, Any, Non
     async def press(controller: BedController) -> None:
         if not isinstance(controller, TiMOTIONAhfController):
             raise HomeAssistantError("The active controller is not TiMOTION AHF")
-        action = _CONTROL_ACTION_BY_KEY[key]
-        try:
-            await controller._send_action(action)
-        except ValueError as err:
-            raise HomeAssistantError(str(err)) from err
+        await controller.run_action(key)
 
     return press

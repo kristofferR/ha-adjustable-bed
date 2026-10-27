@@ -11,6 +11,7 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -69,6 +70,7 @@ class _Coordinator:
     def __init__(self, client: object | None = None) -> None:
         self.client = client
         self.address = "AA:BB:CC:DD:EE:39"
+        self.motor_count = 2
         self.motor_pulse_count = 10
         self.motor_pulse_delay_ms = 100
         self._cancel_command = asyncio.Event()
@@ -227,14 +229,14 @@ def test_controller_declares_app_labels_without_physical_axes() -> None:
         "Chair",
     ]
     assert all(spec.key.startswith("timotion_ahf_") for spec in controller.controller_button_specs)
-    assert controller.motor_control_specs == ()
+    assert [spec.key for spec in controller.motor_control_specs] == ["back", "legs"]
     assert controller.position_number_specs == ()
-    assert not controller.supports_motor_control
+    assert controller.supports_motor_control
     assert not controller.has_pillow_support
     assert not controller.supports_memory_presets
     assert not controller.supports_memory_programming
     assert not controller.supports_massage
-    assert not controller.supports_light_toggle_control
+    assert controller.supports_light_toggle_control
     assert controller.supports_stop_all
     assert not supports_single_address_pairing(BED_TYPE_TIMOTION_AHF)
 
@@ -1038,19 +1040,28 @@ async def test_stop_uses_three_neutral_writes_and_a_fresh_cancel_event(
     assert writes[0][2] is not runtime._cancel_command
 
 
-def test_ahf_generic_setup_fields_are_hidden_but_legacy_values_are_inert() -> None:
-    fields = hidden_generic_fields(BED_TYPE_TIMOTION_AHF, None)
-    assert fields == frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE})
+def test_ahf_setup_hides_massage_and_motor_count_only_sizes_legacy_covers() -> None:
+    assert hidden_generic_fields(BED_TYPE_TIMOTION_AHF, None) == frozenset({CONF_HAS_MASSAGE})
     schema = {vol_marker(CONF_MOTOR_COUNT): object(), vol_marker(CONF_HAS_MASSAGE): object()}
     _show_profile_fields(schema, BED_TYPE_TIMOTION_AHF, None)
-    assert not schema
+    assert [str(key) for key in schema] == [CONF_MOTOR_COUNT]
 
-    low, _ = controller_for(runtime=SimpleNamespace(motor_count=2))
-    high, _ = controller_for(runtime=SimpleNamespace(motor_count=5))
+    low_runtime = _Coordinator()
+    high_runtime = _Coordinator()
+    high_runtime.motor_count = 5
+    low, _ = controller_for(runtime=low_runtime)
+    high, _ = controller_for(runtime=high_runtime)
     assert [(spec.key, spec.name) for spec in low.controller_button_specs] == [
         (spec.key, spec.name) for spec in high.controller_button_specs
     ]
-    assert low.motor_control_specs == high.motor_control_specs == ()
+    assert [spec.key for spec in low.motor_control_specs] == ["back", "legs"]
+    assert [spec.key for spec in high.motor_control_specs] == [
+        "back",
+        "legs",
+        "head",
+        "feet",
+        "pillow",
+    ]
 
 
 def vol_marker(key: str):
@@ -1060,8 +1071,9 @@ def vol_marker(key: str):
     return vol.Optional(key)
 
 
-async def test_legacy_entity_registry_cleanup_removes_guessed_ahf_entities(
+async def test_legacy_ahf_entities_keep_their_ids_and_send_app_actions(
     hass: HomeAssistant,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -1076,14 +1088,14 @@ async def test_legacy_entity_registry_cleanup_removes_guessed_ahf_entities(
     )
     entry.add_to_hass(hass)
     registry = er.async_get(hass)
-    stale_covers = [
+    legacy_covers = [
         registry.async_get_or_create("cover", DOMAIN, f"bed_{key}", config_entry=entry)
         for key in ("back", "legs", "head", "feet", "pillow")
     ]
-    stale_light = registry.async_get_or_create(
+    legacy_light = registry.async_get_or_create(
         "light", DOMAIN, "bed_under_bed_lights_assumed", config_entry=entry
     )
-    stale_toggle = registry.async_get_or_create(
+    legacy_toggle = registry.async_get_or_create(
         "button", DOMAIN, "bed_toggle_light", config_entry=entry
     )
     stale_named_action = registry.async_get_or_create(
@@ -1092,7 +1104,9 @@ async def test_legacy_entity_registry_cleanup_removes_guessed_ahf_entities(
     unrelated_action = registry.async_get_or_create(
         "button", DOMAIN, "bed_other_app_action", config_entry=entry
     )
-    controller, _ = controller_for()
+    controller_runtime = _Coordinator()
+    controller_runtime.motor_count = 5
+    controller, _ = controller_for(runtime=controller_runtime)
     runtime = SimpleNamespace(
         controller=None,
         capability_controller=controller,
@@ -1106,18 +1120,49 @@ async def test_legacy_entity_registry_cleanup_removes_guessed_ahf_entities(
         entity_translation_key=lambda key: key,
     )
 
-    assert _cover_entities_for(hass, runtime) == []
+    covers = _cover_entities_for(hass, runtime)
     assert not _massage_entities_enabled(runtime, controller)
     buttons = _button_entities_for(hass, runtime)
     lights = _light_entities_for(hass, runtime)
     actions = [button for button in buttons if button.unique_id.startswith("bed_timotion_ahf_")]
     stop_button = next(button for button in buttons if button.unique_id == "bed_stop")
+    toggle_button = next(button for button in buttons if button.unique_id == "bed_toggle_light")
 
+    assert [cover.unique_id for cover in covers] == [row.unique_id for row in legacy_covers]
     assert len(actions) == 13
     assert stop_button.available
-    assert lights == []
-    assert all(registry.async_get(row.entity_id) is None for row in stale_covers)
-    assert registry.async_get(stale_light.entity_id) is None
-    assert registry.async_get(stale_toggle.entity_id) is None
+    assert [light.unique_id for light in lights] == [legacy_light.unique_id]
+    assert all(registry.async_get(row.entity_id) is not None for row in legacy_covers)
+    assert registry.async_get(legacy_light.entity_id) is not None
+    assert registry.async_get(legacy_toggle.entity_id) is not None
     assert registry.async_get(stale_named_action.entity_id) is None
     assert registry.async_get(unrelated_action.entity_id) is not None
+
+    writes: list[bytes] = []
+
+    async def write(command: bytes, **_kwargs: object) -> None:
+        writes.append(command)
+
+    stop = AsyncMock()
+    monkeypatch.setattr(controller, "write_command", write)
+    monkeypatch.setattr(controller, "_send_stop", stop)
+
+    # Legacy entities pass the same status gate as the app buttons.
+    with pytest.raises(HomeAssistantError):
+        await toggle_button.entity_description.press_fn(controller)
+    assert writes == []
+
+    controller._status_ready = True
+    controller._feature_mask = 0
+    for cover in covers:
+        await cover.entity_description.open_fn(controller)
+    await toggle_button.entity_description.press_fn(controller)
+    assert writes == [
+        build_timotion_ahf_command(group1=0x01),
+        build_timotion_ahf_command(group1=0x04),
+        build_timotion_ahf_command(group1=0x10),
+        build_timotion_ahf_command(group2=0x01),
+        build_timotion_ahf_command(group2=0x04),
+        build_timotion_ahf_command(group2=0x20),
+    ]
+    assert stop.await_count == 6
