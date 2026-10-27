@@ -4,7 +4,19 @@
 // Every case here is a defect that was found in review while building this, so
 // they are regression tests rather than illustrative examples.
 import { expect, test } from "bun:test";
-import { type Direction, type HoldActions, MotorHold, movementPulse } from "./hold";
+import {
+  attachHoldLifecycle,
+  heldButtonMotor,
+  holdTargetForEntity,
+  type Direction,
+  type HoldActions,
+  type HoldTimers,
+  type HoldLifecycleTarget,
+  MotorHold,
+  movementHold,
+  movementPulse,
+  stopFromCard,
+} from "./hold";
 import type { HomeAssistant, MotorEntity } from "./types";
 
 interface Recorder {
@@ -47,6 +59,7 @@ function recorder(opts: { reject?: boolean; missingEntity?: boolean } = {}): Rec
           resolvePending = resolve;
         });
       },
+      holdControl: () => undefined,
       stopCover: (cover, stopEntityId) => {
         stoppedCovers.push(cover);
         rec.stoppedCoverTargets.push(stopEntityId);
@@ -67,7 +80,103 @@ const coverMotor: MotorEntity = { key: "legs", cover: "cover.legs" };
 // change. Ownership must survive this.
 const rebuiltButtonMotor: MotorEntity = { ...buttonMotor };
 
+class FakeTimers implements HoldTimers {
+  private now = 0;
+  private nextId = 0;
+  private readonly timers = new Map<number, { due: number; callback: () => void }>();
+
+  setTimeout(callback: () => void, delayMs: number): ReturnType<typeof setTimeout> {
+    const id = ++this.nextId;
+    this.timers.set(id, { due: this.now + delayMs, callback });
+    return { id } as unknown as ReturnType<typeof setTimeout>;
+  }
+
+  clearTimeout(timer: ReturnType<typeof setTimeout>): void {
+    const handle = timer as unknown as { id: number };
+    this.timers.delete(handle.id);
+  }
+
+  advance(milliseconds: number): void {
+    const end = this.now + milliseconds;
+    while (true) {
+      const next = [...this.timers.entries()]
+        .filter(([, timer]) => timer.due <= end)
+        .sort((left, right) => left[1].due - right[1].due)[0];
+      if (!next) break;
+      const [id, timer] = next;
+      this.timers.delete(id);
+      this.now = timer.due;
+      timer.callback();
+    }
+    this.now = end;
+  }
+}
+
+class FakeLifecycleTarget implements HoldLifecycleTarget {
+  visibilityState = "visible";
+  private readonly listeners = new Map<string, Set<() => void>>();
+
+  addEventListener(type: "visibilitychange" | "pagehide", listener: () => void): void {
+    const listeners = this.listeners.get(type) ?? new Set();
+    listeners.add(listener);
+    this.listeners.set(type, listeners);
+  }
+
+  removeEventListener(type: "visibilitychange" | "pagehide", listener: () => void): void {
+    this.listeners.get(type)?.delete(listener);
+  }
+
+  dispatch(type: "visibilitychange" | "pagehide"): void {
+    this.listeners.get(type)?.forEach((listener) => listener());
+  }
+}
+
+function heldActions(events: string[]): HoldActions {
+  return {
+    pulse: () => undefined,
+    holdControl: (motor, direction) => {
+      events.push(`start:${motor.key}:${direction}`);
+      return new Promise<void>(() => {});
+    },
+    stopCover: (cover, stop) => events.push(`cover-stop:${cover}:${stop ?? ""}`),
+    stopBed: (stop) => events.push(`stop:${stop ?? ""}`),
+  };
+}
+
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+test("button hold metadata uses the bounded side-scoped service", async () => {
+  const calls: unknown[] = [];
+  const entityId = "button.left_head_up";
+  const hass = {
+    entities: { [entityId]: { device_id: "left-device" } },
+    states: {
+      [entityId]: {
+        attributes: {
+          held_control: "headUp",
+          hold_start_delay_ms: 100,
+          hold_release_delay_ms: 100,
+          bed_side: "left",
+        },
+      },
+    },
+    callService: async (...args: unknown[]) => { calls.push(args); },
+  } as HomeAssistant;
+
+  const motor = heldButtonMotor(hass, entityId);
+  expect(motor?.heldControl).toEqual({
+    control: "headUp",
+    startDelayMs: 100,
+    releaseDelayMs: 100,
+  });
+  await movementHold(hass, motor!, "up");
+
+  expect(calls).toEqual([[
+    "adjustable_bed",
+    "hold_control",
+    { device_id: ["left-device"], control: "headUp", duration: 60, side: "left" },
+  ]]);
+});
 
 test("eligible Both holds use the parent timed action and retain combined Stop", async () => {
   const calls: unknown[] = [];
@@ -376,7 +485,125 @@ test("a side's stop button stops that side, not the held one", async () => {
   hold.stopAll("button.right_stop");
 
   expect(rec.stoppedBeds).toEqual(["button.right_stop"]);
+  expect(hold.heldKey).toBe(buttonMotor.key);
+
+  hold.end(buttonMotor);
+  expect(rec.stoppedBeds).toEqual(["button.right_stop", "button.left_stop"]);
   expect(hold.heldKey).toBeNull();
+});
+
+function pairedStopHass(): HomeAssistant {
+  return {
+    entities: {
+      "button.parent_stop": { device_id: "pair-parent" },
+      "button.left_stop": { device_id: "pair-left" },
+      "button.right_stop": { device_id: "pair-right" },
+      "button.other_stop": { device_id: "other-bed" },
+    },
+    states: {
+      "button.parent_stop": { attributes: { bed_side: "both" } },
+      "button.left_stop": { attributes: { bed_side: "left" } },
+      "button.right_stop": { attributes: { bed_side: "right" } },
+      "button.other_stop": { attributes: {} },
+    },
+    devices: {
+      "pair-parent": { id: "pair-parent" },
+      "pair-left": { id: "pair-left", parent_device_id: "pair-parent" },
+      "pair-right": { id: "pair-right", parent_device_id: "pair-parent" },
+      "other-bed": { id: "other-bed" },
+    },
+  } as HomeAssistant;
+}
+
+test("card Left or Right Stop invalidates an in-flight combined hold", async () => {
+  for (const side of ["left", "right"] as const) {
+    const hass = pairedStopHass();
+    const rec = recorder();
+    const hold = new MotorHold(rec.actions);
+    const motor: MotorEntity = { key: "both-head", up: "button.both_head_up" };
+
+    hold.start(
+      motor,
+      "up",
+      1,
+      "button.parent_stop",
+      holdTargetForEntity(hass, "button.parent_stop"),
+    );
+    await tick();
+    expect(rec.pulses).toHaveLength(1);
+
+    // The card's actual Stop callback resolves the child side from its device
+    // and bed_side metadata while issuing that exact child Stop target.
+    const stopEntityId = `button.${side}_stop`;
+    stopFromCard(hold, hass, stopEntityId);
+    rec.release();
+    await tick();
+    await tick();
+
+    expect(hold.heldKey).toBeNull();
+    expect(rec.pulses).toHaveLength(1);
+    expect(rec.stoppedBeds).toEqual([stopEntityId]);
+  }
+});
+
+test("side Stop leaves an opposite-side or unrelated-bed hold active", async () => {
+  const hass = pairedStopHass();
+  const rec = recorder();
+  const hold = new MotorHold(rec.actions);
+  const right: MotorEntity = { key: "right-head", up: "button.right_head_up" };
+
+  hold.start(
+    right,
+    "up",
+    1,
+    "button.right_stop",
+    holdTargetForEntity(hass, "button.right_stop"),
+  );
+  await tick();
+  stopFromCard(hold, hass, "button.left_stop");
+  expect(hold.heldKey).toBe("right-head");
+  expect(rec.pulses).toHaveLength(1);
+  rec.release();
+  await tick();
+  expect(rec.pulses).toHaveLength(2);
+
+  hold.abandon();
+  rec.release();
+  await tick();
+  const other = { key: "other-head", up: "button.other_head_up" };
+  hold.start(other, "up", 2, "button.other_stop", holdTargetForEntity(hass, "button.other_stop"));
+  await tick();
+  stopFromCard(hold, hass, "button.parent_stop");
+  expect(hold.heldKey).toBe("other-head");
+  rec.release();
+  await tick();
+  expect(rec.pulses).toHaveLength(4);
+  hold.abandon();
+  rec.release();
+  await tick();
+});
+
+test("parent Both Stop invalidates a side hold and owns its release", async () => {
+  const hass = pairedStopHass();
+  const rec = recorder();
+  const hold = new MotorHold(rec.actions);
+  const left: MotorEntity = { key: "left-head", up: "button.left_head_up" };
+
+  hold.start(
+    left,
+    "up",
+    1,
+    "button.left_stop",
+    holdTargetForEntity(hass, "button.left_stop"),
+  );
+  await tick();
+  stopFromCard(hold, hass, "button.parent_stop");
+  rec.release();
+  await tick();
+
+  expect(hold.heldKey).toBeNull();
+  expect(rec.pulses).toHaveLength(1);
+  expect(rec.stoppedBeds).toEqual(["button.parent_stop"]);
 });
 
 test("abandoning mid-hold stops the held side", async () => {
@@ -388,4 +615,188 @@ test("abandoning mid-hold stops the held side", async () => {
   hold.abandon();
 
   expect(rec.stoppedBeds).toEqual(["button.left_stop"]);
+});
+
+test("a tap canceled before the declared start delay never starts movement", () => {
+  const events: string[] = [];
+  const timers = new FakeTimers();
+  const hold = new MotorHold(heldActions(events), timers);
+  const delayed: MotorEntity = {
+    key: "left-head",
+    up: "button.left_head_up",
+    heldControl: { control: "headUp", startDelayMs: 100, releaseDelayMs: 100 },
+  };
+
+  hold.start(delayed, "up", 1, "button.left_stop");
+  timers.advance(99);
+  hold.end(delayed);
+  timers.advance(1_000);
+
+  expect(events).toEqual([]);
+  expect(hold.heldKey).toBeNull();
+});
+
+test("release delay retains its old side when a new side starts", () => {
+  const events: string[] = [];
+  const timers = new FakeTimers();
+  const hold = new MotorHold(heldActions(events), timers);
+  const left: MotorEntity = {
+    key: "left-head",
+    up: "button.left_head_up",
+    heldControl: { control: "headUp", startDelayMs: 0, releaseDelayMs: 100 },
+  };
+  const right: MotorEntity = {
+    key: "right-head",
+    up: "button.right_head_up",
+    heldControl: { control: "headUp", startDelayMs: 0, releaseDelayMs: 100 },
+  };
+
+  hold.start(left, "up", 1, "button.left_stop");
+  hold.end(left);
+  hold.start(right, "up", 2, "button.right_stop");
+  expect(events).toEqual([
+    "start:left-head:up",
+    "start:right-head:up",
+  ]);
+
+  timers.advance(100);
+  expect(events).toEqual([
+    "start:left-head:up",
+    "start:right-head:up",
+    "stop:button.left_stop",
+  ]);
+});
+
+test("a side Stop cancels overlapping delayed Both release but retains the other side", () => {
+  for (const side of ["left", "right"] as const) {
+    const events: string[] = [];
+    const timers = new FakeTimers();
+    const hold = new MotorHold(heldActions(events), timers);
+    const hass = pairedStopHass();
+    const both: MotorEntity = {
+      key: "both-head",
+      up: "button.both_head_up",
+      heldControl: { control: "headUp", startDelayMs: 0, releaseDelayMs: 100 },
+    };
+    const otherSide = side === "left" ? "right" : "left";
+    const other: MotorEntity = {
+      key: `${otherSide}-head`,
+      up: `button.${otherSide}_head_up`,
+      heldControl: { control: "headUp", startDelayMs: 0, releaseDelayMs: 100 },
+    };
+
+    hold.start(
+      both,
+      "up",
+      1,
+      "button.parent_stop",
+      holdTargetForEntity(hass, "button.parent_stop"),
+    );
+    hold.end(both);
+    hold.start(
+      other,
+      "up",
+      2,
+      `button.${otherSide}_stop`,
+      holdTargetForEntity(hass, `button.${otherSide}_stop`),
+    );
+    stopFromCard(hold, hass, `button.${side}_stop`);
+    timers.advance(100);
+
+    expect(hold.heldKey).toBe(`${otherSide}-head`);
+    expect(events).toEqual([
+      "start:both-head:up",
+      `start:${otherSide}-head:up`,
+      `stop:button.${side}_stop`,
+    ]);
+    hold.abandon();
+  }
+});
+
+test("a new start flushes its own pending release before moving again", () => {
+  const events: string[] = [];
+  const timers = new FakeTimers();
+  const hold = new MotorHold(heldActions(events), timers);
+  const left: MotorEntity = {
+    key: "left-head",
+    up: "button.left_head_up",
+    heldControls: {
+      up: { control: "headUp", startDelayMs: 0, releaseDelayMs: 100 },
+      down: { control: "headDown", startDelayMs: 200, releaseDelayMs: 50 },
+    },
+  };
+
+  hold.start(left, "up", 1, "button.left_stop");
+  hold.end(left);
+  hold.start({ ...left }, "up", 2, "button.left_stop");
+
+  expect(events).toEqual([
+    "start:left-head:up",
+    "stop:button.left_stop",
+    "start:left-head:up",
+  ]);
+  hold.abandon();
+  timers.advance(500);
+  expect(events.filter((event) => event === "stop:button.left_stop")).toHaveLength(2);
+});
+
+test("abandon flushes pending release and cancels an active or delayed hold", () => {
+  const events: string[] = [];
+  const timers = new FakeTimers();
+  const hold = new MotorHold(heldActions(events), timers);
+  const delayed: MotorEntity = {
+    key: "left-head",
+    up: "button.left_head_up",
+    heldControl: { control: "headUp", startDelayMs: 100, releaseDelayMs: 100 },
+  };
+
+  hold.start(delayed, "up", 1, "button.left_stop");
+  hold.abandon();
+  timers.advance(100);
+  expect(events).toEqual([]);
+
+  const started = { ...delayed, heldControl: { ...delayed.heldControl!, startDelayMs: 0 } };
+  hold.start(started, "up", 1, "button.left_stop");
+  hold.abandon();
+  expect(events).toEqual([
+    "start:left-head:up",
+    "stop:button.left_stop",
+  ]);
+
+  hold.start(started, "up", 1, "button.left_stop");
+  hold.end(started);
+  hold.abandon();
+  timers.advance(100);
+  expect(events.filter((event) => event === "stop:button.left_stop")).toHaveLength(2);
+});
+
+test("hidden and pagehide abandon holds, then remove their lifecycle listeners", () => {
+  const events: string[] = [];
+  const hold = new MotorHold(heldActions(events), new FakeTimers());
+  const documentTarget = new FakeLifecycleTarget();
+  const windowTarget = new FakeLifecycleTarget();
+  const detach = attachHoldLifecycle(hold, documentTarget, windowTarget);
+  const active: MotorEntity = {
+    key: "left-head",
+    up: "button.left_head_up",
+    heldControl: { control: "headUp", startDelayMs: 0, releaseDelayMs: 100 },
+  };
+
+  hold.start(active, "up", 1, "button.left_stop");
+  documentTarget.visibilityState = "hidden";
+  documentTarget.dispatch("visibilitychange");
+  expect(events).toEqual([
+    "start:left-head:up",
+    "stop:button.left_stop",
+  ]);
+
+  hold.start(active, "up", 2, "button.left_stop");
+  windowTarget.dispatch("pagehide");
+  expect(events.filter((event) => event === "stop:button.left_stop")).toHaveLength(2);
+
+  detach();
+  hold.start(active, "up", 3, "button.left_stop");
+  windowTarget.dispatch("pagehide");
+  expect(hold.heldKey).toBe("left-head");
+  hold.abandon();
 });

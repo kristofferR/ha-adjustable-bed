@@ -183,6 +183,8 @@ async def _create_controller_for_bed_type(bed_type: str) -> BedController:
     client = _make_connected_client()
     if bed_type == const.BED_TYPE_SLEEPTRACKER:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "unknown"
+    if bed_type == const.BED_TYPE_SLEEPYS_ELITE_APP:
+        coordinator.entry.data[const.CONF_SLEEPYS_ELITE_SELECTOR] = "BOX24"
 
     if bed_type == BED_TYPE_RICHMAT:
         return await create_controller(

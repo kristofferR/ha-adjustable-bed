@@ -671,6 +671,16 @@
           "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides."
         }
+      },
+      "sleepys_elite_app": {
+        "title": "Sleepy's Elite app selector",
+        "description": "Choose the exact control box selector used by the app. It is stored per physical bed and is never inferred from its Bluetooth transport or name.",
+        "data": {
+          "sleepys_elite_selector": "Control box selector"
+        },
+        "data_description": {
+          "sleepys_elite_selector": "Choose the selector shown by the Sleepy's Elite app for this physical bed. Select none only when the app shows no named control box."
+        }
       }
     },
     "progress": {
@@ -856,7 +866,8 @@
           "sleeptracker_unit_number": "Processor unit number (wire side)",
           "sleeptracker_snapshot_side": "Status snapshot side ordinal",
           "sleeptracker_restricted": "Restricted app session (no authentication)",
-          "sleeptracker_processor_type": "Processor type (0 if unknown)"
+          "sleeptracker_processor_type": "Processor type (0 if unknown)",
+          "sleepys_elite_selector": "Sleepy's Elite control box selector"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -916,7 +927,8 @@
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
           "sleeptracker_unit_number": "Use the app-recorded integer. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
           "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
-          "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count."
+          "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
+          "sleepys_elite_selector": "Choose the selector saved for this physical bed. Paired sides keep their selector independently."
         }
       },
       "remove_bond": {
@@ -2315,6 +2327,420 @@
       },
       "sleeptracker_identify_local": {
         "name": "Identify local safety light"
+      },
+      "sleepys_app_program": {
+        "name": "Program"
+      },
+      "sleepys_app_program_left": {
+        "name": "Left: Program"
+      },
+      "sleepys_app_program_right": {
+        "name": "Right: Program"
+      },
+      "sleepys_app_reset_memory": {
+        "name": "Reset memory"
+      },
+      "sleepys_app_reset_memory_left": {
+        "name": "Left: Reset memory"
+      },
+      "sleepys_app_reset_memory_right": {
+        "name": "Right: Reset memory"
+      },
+      "sleepys_app_voice_stop": {
+        "name": "Voice stop"
+      },
+      "sleepys_app_voice_stop_left": {
+        "name": "Left: Voice stop"
+      },
+      "sleepys_app_voice_stop_right": {
+        "name": "Right: Voice stop"
+      },
+      "sleepys_app_query_position": {
+        "name": "Refresh position state"
+      },
+      "sleepys_app_query_position_left": {
+        "name": "Left: Refresh position state"
+      },
+      "sleepys_app_query_position_right": {
+        "name": "Right: Refresh position state"
+      },
+      "sleepys_app_memory_1": {
+        "name": "Memory 1"
+      },
+      "sleepys_app_memory_1_left": {
+        "name": "Left: Memory 1"
+      },
+      "sleepys_app_memory_1_right": {
+        "name": "Right: Memory 1"
+      },
+      "sleepys_app_memory_2": {
+        "name": "Memory 2"
+      },
+      "sleepys_app_memory_2_left": {
+        "name": "Left: Memory 2"
+      },
+      "sleepys_app_memory_2_right": {
+        "name": "Right: Memory 2"
+      },
+      "sleepys_app_save_zero_gravity": {
+        "name": "Save zero gravity"
+      },
+      "sleepys_app_save_zero_gravity_left": {
+        "name": "Left: Save zero gravity"
+      },
+      "sleepys_app_save_zero_gravity_right": {
+        "name": "Right: Save zero gravity"
+      },
+      "sleepys_app_save_lounge": {
+        "name": "Save lounge"
+      },
+      "sleepys_app_save_lounge_left": {
+        "name": "Left: Save lounge"
+      },
+      "sleepys_app_save_lounge_right": {
+        "name": "Right: Save lounge"
+      },
+      "sleepys_app_save_tv": {
+        "name": "Save TV"
+      },
+      "sleepys_app_save_tv_left": {
+        "name": "Left: Save TV"
+      },
+      "sleepys_app_save_tv_right": {
+        "name": "Right: Save TV"
+      },
+      "sleepys_app_preset_flat": {
+        "name": "Flat"
+      },
+      "sleepys_app_preset_flat_left": {
+        "name": "Left: Flat"
+      },
+      "sleepys_app_preset_flat_right": {
+        "name": "Right: Flat"
+      },
+      "sleepys_app_preset_snore": {
+        "name": "Anti-snore"
+      },
+      "sleepys_app_preset_snore_left": {
+        "name": "Left: Anti-snore"
+      },
+      "sleepys_app_preset_snore_right": {
+        "name": "Right: Anti-snore"
+      },
+      "sleepys_app_preset_zero_g": {
+        "name": "Zero gravity"
+      },
+      "sleepys_app_preset_zero_g_left": {
+        "name": "Left: Zero gravity"
+      },
+      "sleepys_app_preset_zero_g_right": {
+        "name": "Right: Zero gravity"
+      },
+      "sleepys_app_preset_lounge": {
+        "name": "Lounge"
+      },
+      "sleepys_app_preset_lounge_left": {
+        "name": "Left: Lounge"
+      },
+      "sleepys_app_preset_lounge_right": {
+        "name": "Right: Lounge"
+      },
+      "sleepys_app_preset_tv": {
+        "name": "TV"
+      },
+      "sleepys_app_preset_tv_left": {
+        "name": "Left: TV"
+      },
+      "sleepys_app_preset_tv_right": {
+        "name": "Right: TV"
+      },
+      "sleepys_app_motion_sensor_on": {
+        "name": "Motion sensor on"
+      },
+      "sleepys_app_motion_sensor_on_left": {
+        "name": "Left: Motion sensor on"
+      },
+      "sleepys_app_motion_sensor_on_right": {
+        "name": "Right: Motion sensor on"
+      },
+      "sleepys_app_motion_sensor_off": {
+        "name": "Motion sensor off"
+      },
+      "sleepys_app_motion_sensor_off_left": {
+        "name": "Left: Motion sensor off"
+      },
+      "sleepys_app_motion_sensor_off_right": {
+        "name": "Right: Motion sensor off"
+      },
+      "sleepys_app_light_on": {
+        "name": "Light on"
+      },
+      "sleepys_app_light_on_left": {
+        "name": "Left: Light on"
+      },
+      "sleepys_app_light_on_right": {
+        "name": "Right: Light on"
+      },
+      "sleepys_app_light_off": {
+        "name": "Light off"
+      },
+      "sleepys_app_light_off_left": {
+        "name": "Left: Light off"
+      },
+      "sleepys_app_light_off_right": {
+        "name": "Right: Light off"
+      },
+      "sleepys_app_light_mode": {
+        "name": "Light mode"
+      },
+      "sleepys_app_light_mode_left": {
+        "name": "Left: Light mode"
+      },
+      "sleepys_app_light_mode_right": {
+        "name": "Right: Light mode"
+      },
+      "sleepys_app_light_brightness_down": {
+        "name": "Reduce light"
+      },
+      "sleepys_app_light_brightness_down_left": {
+        "name": "Left: Reduce light"
+      },
+      "sleepys_app_light_brightness_down_right": {
+        "name": "Right: Reduce light"
+      },
+      "sleepys_app_light_brightness_up": {
+        "name": "Increase light"
+      },
+      "sleepys_app_light_brightness_up_left": {
+        "name": "Left: Increase light"
+      },
+      "sleepys_app_light_brightness_up_right": {
+        "name": "Right: Increase light"
+      },
+      "sleepys_app_voice_brightness_down": {
+        "name": "Decrease brightness by one"
+      },
+      "sleepys_app_voice_brightness_down_left": {
+        "name": "Left: Decrease brightness by one"
+      },
+      "sleepys_app_voice_brightness_down_right": {
+        "name": "Right: Decrease brightness by one"
+      },
+      "sleepys_app_voice_brightness_up": {
+        "name": "Increase brightness by one"
+      },
+      "sleepys_app_voice_brightness_up_left": {
+        "name": "Left: Increase brightness by one"
+      },
+      "sleepys_app_voice_brightness_up_right": {
+        "name": "Right: Increase brightness by one"
+      },
+      "sleepys_app_rgb_action": {
+        "name": "RGB action"
+      },
+      "sleepys_app_rgb_action_left": {
+        "name": "Left: RGB action"
+      },
+      "sleepys_app_rgb_action_right": {
+        "name": "Right: RGB action"
+      },
+      "sleepys_app_massage_mode_1": {
+        "name": "Massage mode 1"
+      },
+      "sleepys_app_massage_mode_1_left": {
+        "name": "Left: Massage mode 1"
+      },
+      "sleepys_app_massage_mode_1_right": {
+        "name": "Right: Massage mode 1"
+      },
+      "sleepys_app_massage_mode_2": {
+        "name": "Massage mode 2"
+      },
+      "sleepys_app_massage_mode_2_left": {
+        "name": "Left: Massage mode 2"
+      },
+      "sleepys_app_massage_mode_2_right": {
+        "name": "Right: Massage mode 2"
+      },
+      "sleepys_app_massage_mode_3": {
+        "name": "Massage mode 3"
+      },
+      "sleepys_app_massage_mode_3_left": {
+        "name": "Left: Massage mode 3"
+      },
+      "sleepys_app_massage_mode_3_right": {
+        "name": "Right: Massage mode 3"
+      },
+      "sleepys_app_massage_query": {
+        "name": "Refresh massage state"
+      },
+      "sleepys_app_massage_query_left": {
+        "name": "Left: Refresh massage state"
+      },
+      "sleepys_app_massage_query_right": {
+        "name": "Right: Refresh massage state"
+      },
+      "sleepys_app_massage_timer": {
+        "name": "Massage timer"
+      },
+      "sleepys_app_massage_timer_left": {
+        "name": "Left: Massage timer"
+      },
+      "sleepys_app_massage_timer_right": {
+        "name": "Right: Massage timer"
+      },
+      "sleepys_app_massage_wave_down": {
+        "name": "Previous massage wave"
+      },
+      "sleepys_app_massage_wave_down_left": {
+        "name": "Left: Previous massage wave"
+      },
+      "sleepys_app_massage_wave_down_right": {
+        "name": "Right: Previous massage wave"
+      },
+      "sleepys_app_massage_wave_up": {
+        "name": "Next massage wave"
+      },
+      "sleepys_app_massage_wave_up_left": {
+        "name": "Left: Next massage wave"
+      },
+      "sleepys_app_massage_wave_up_right": {
+        "name": "Right: Next massage wave"
+      },
+      "sleepys_app_massage_foot_down": {
+        "name": "Reduce foot massage"
+      },
+      "sleepys_app_massage_foot_down_left": {
+        "name": "Left: Reduce foot massage"
+      },
+      "sleepys_app_massage_foot_down_right": {
+        "name": "Right: Reduce foot massage"
+      },
+      "sleepys_app_massage_foot_up": {
+        "name": "Increase foot massage"
+      },
+      "sleepys_app_massage_foot_up_left": {
+        "name": "Left: Increase foot massage"
+      },
+      "sleepys_app_massage_foot_up_right": {
+        "name": "Right: Increase foot massage"
+      },
+      "sleepys_app_massage_head_down": {
+        "name": "Reduce head massage"
+      },
+      "sleepys_app_massage_head_down_left": {
+        "name": "Left: Reduce head massage"
+      },
+      "sleepys_app_massage_head_down_right": {
+        "name": "Right: Reduce head massage"
+      },
+      "sleepys_app_massage_head_up": {
+        "name": "Increase head massage"
+      },
+      "sleepys_app_massage_head_up_left": {
+        "name": "Left: Increase head massage"
+      },
+      "sleepys_app_massage_head_up_right": {
+        "name": "Right: Increase head massage"
+      },
+      "sleepys_app_massage_lumbar_down": {
+        "name": "Reduce lumbar massage"
+      },
+      "sleepys_app_massage_lumbar_down_left": {
+        "name": "Left: Reduce lumbar massage"
+      },
+      "sleepys_app_massage_lumbar_down_right": {
+        "name": "Right: Reduce lumbar massage"
+      },
+      "sleepys_app_massage_lumbar_up": {
+        "name": "Increase lumbar massage"
+      },
+      "sleepys_app_massage_lumbar_up_left": {
+        "name": "Left: Increase lumbar massage"
+      },
+      "sleepys_app_massage_lumbar_up_right": {
+        "name": "Right: Increase lumbar massage"
+      },
+      "sleepys_app_massage_toggle": {
+        "name": "Massage mode"
+      },
+      "sleepys_app_massage_toggle_left": {
+        "name": "Left: Massage mode"
+      },
+      "sleepys_app_massage_toggle_right": {
+        "name": "Right: Massage mode"
+      },
+      "sleepys_app_massage_off": {
+        "name": "Massage off"
+      },
+      "sleepys_app_massage_off_left": {
+        "name": "Left: Massage off"
+      },
+      "sleepys_app_massage_off_right": {
+        "name": "Right: Massage off"
+      },
+      "sleepys_app_massage_on": {
+        "name": "Massage on"
+      },
+      "sleepys_app_massage_on_left": {
+        "name": "Left: Massage on"
+      },
+      "sleepys_app_massage_on_right": {
+        "name": "Right: Massage on"
+      },
+      "sleepys_app_voice_axis_0_0": {
+        "name": "Position axis 0 target 0"
+      },
+      "sleepys_app_voice_axis_0_0_left": {
+        "name": "Left: Position axis 0 target 0"
+      },
+      "sleepys_app_voice_axis_0_0_right": {
+        "name": "Right: Position axis 0 target 0"
+      },
+      "sleepys_app_voice_axis_0_100": {
+        "name": "Position axis 0 target 100"
+      },
+      "sleepys_app_voice_axis_0_100_left": {
+        "name": "Left: Position axis 0 target 100"
+      },
+      "sleepys_app_voice_axis_0_100_right": {
+        "name": "Right: Position axis 0 target 100"
+      },
+      "sleepys_app_voice_axis_1_0": {
+        "name": "Position axis 1 target 0"
+      },
+      "sleepys_app_voice_axis_1_0_left": {
+        "name": "Left: Position axis 1 target 0"
+      },
+      "sleepys_app_voice_axis_1_0_right": {
+        "name": "Right: Position axis 1 target 0"
+      },
+      "sleepys_app_voice_axis_1_100": {
+        "name": "Position axis 1 target 100"
+      },
+      "sleepys_app_voice_axis_1_100_left": {
+        "name": "Left: Position axis 1 target 100"
+      },
+      "sleepys_app_voice_axis_1_100_right": {
+        "name": "Right: Position axis 1 target 100"
+      },
+      "sleepys_app_voice_axis_2_0": {
+        "name": "Position axis 2 target 0"
+      },
+      "sleepys_app_voice_axis_2_0_left": {
+        "name": "Left: Position axis 2 target 0"
+      },
+      "sleepys_app_voice_axis_2_0_right": {
+        "name": "Right: Position axis 2 target 0"
+      },
+      "sleepys_app_voice_axis_2_100": {
+        "name": "Position axis 2 target 100"
+      },
+      "sleepys_app_voice_axis_2_100_left": {
+        "name": "Left: Position axis 2 target 100"
+      },
+      "sleepys_app_voice_axis_2_100_right": {
+        "name": "Right: Position axis 2 target 100"
       }
     },
     "cover": {
@@ -3552,6 +3978,57 @@
       },
       "sleeptracker_right_commanded_timer_seconds": {
         "name": "Right ActiveBreeze timer (last command)"
+      },
+      "sleepys_app_position_axis_0": {
+        "name": "App position axis 0"
+      },
+      "sleepys_app_position_axis_1": {
+        "name": "App position axis 1"
+      },
+      "sleepys_app_position_axis_2": {
+        "name": "App position axis 2"
+      },
+      "sleepys_app_field_0x0b": {
+        "name": "App state field 0x0B"
+      },
+      "sleepys_app_field_0x13": {
+        "name": "App state field 0x13"
+      },
+      "sleepys_app_field_0x1b": {
+        "name": "App state field 0x1B"
+      },
+      "sleepys_app_field_0x23": {
+        "name": "App state field 0x23"
+      },
+      "sleepys_app_field_0x43": {
+        "name": "App state field 0x43"
+      },
+      "sleepys_app_field_0x47": {
+        "name": "App state field 0x47"
+      },
+      "sleepys_app_field_0x4b": {
+        "name": "App state field 0x4B"
+      },
+      "sleepys_app_field_0x53": {
+        "name": "App state field 0x53"
+      },
+      "sleepys_app_field_0x5f": {
+        "name": "App state field 0x5F"
+      },
+      "sleepys_app_field_0x67": {
+        "name": "App state field 0x67"
+      },
+      "sleepys_app_field_0x6b": {
+        "name": "App state field 0x6B"
+      },
+      "sleepys_app_field_0x73": {
+        "name": "App state field 0x73"
+      },
+      "sleepys_app_field_0x7b": {
+        "name": "App state field 0x7B"
+      },
+      "sleepys_app_field_0x83": {
+        "name": "App state field 0x83"
       }
     },
     "light": {
@@ -3998,6 +4475,42 @@
       },
       "sleeptracker_right_level": {
         "name": "Right ActiveBreeze level"
+      },
+      "sleepys_app_target_axis_0": {
+        "name": "App target axis 0"
+      },
+      "sleepys_app_target_axis_0_left": {
+        "name": "Left: App target axis 0"
+      },
+      "sleepys_app_target_axis_0_right": {
+        "name": "Right: App target axis 0"
+      },
+      "sleepys_app_target_axis_1": {
+        "name": "App target axis 1"
+      },
+      "sleepys_app_target_axis_1_left": {
+        "name": "Left: App target axis 1"
+      },
+      "sleepys_app_target_axis_1_right": {
+        "name": "Right: App target axis 1"
+      },
+      "sleepys_app_target_axis_2": {
+        "name": "App target axis 2"
+      },
+      "sleepys_app_target_axis_2_left": {
+        "name": "Left: App target axis 2"
+      },
+      "sleepys_app_target_axis_2_right": {
+        "name": "Right: App target axis 2"
+      },
+      "sleepys_app_color_code": {
+        "name": "App color code"
+      },
+      "sleepys_app_color_code_left": {
+        "name": "Left: App color code"
+      },
+      "sleepys_app_color_code_right": {
+        "name": "Right: App color code"
       }
     },
     "select": {
@@ -4391,6 +4904,15 @@
           "constant": "Constant",
           "curve": "Curve"
         }
+      },
+      "sleepys_app_massage_timer_code": {
+        "name": "Massage time code"
+      },
+      "sleepys_app_massage_timer_code_left": {
+        "name": "Left: Massage time code"
+      },
+      "sleepys_app_massage_timer_code_right": {
+        "name": "Right: Massage time code"
       }
     },
     "climate": {

@@ -1,7 +1,7 @@
 /* adjustable-bed-card 4.2.4 — ships with the Adjustable Bed integration. Do not edit; build from frontend/src. */
-var me=Object.defineProperty;var ue=Object.getOwnPropertyDescriptor;var w=(n,s,t,e)=>{for(var i=e>1?void 0:e?ue(s,t):s,o=n.length-1,r;o>=0;o--)(r=n[o])&&(i=(e?r(s,t,i):r(i))||i);return e&&i&&me(s,t,i),i};var R="adjustable_bed";function W(n){for(let s of["left","right","both"]){let t=`_${s}`;if(n.endsWith(t))return{key:n.slice(0,-t.length),side:s}}return{key:n}}var D=["graphic","motors","firmness","presets","memory","lighting","massage","utility","climate","connection"],Nt=["back","legs","back_legs","head","feet","lumbar","pillow","neck","tilt","hip","bed_height","stair"],vt=["preset_flat","preset_zero_g","preset_anti_snore","preset_tv","preset_lounge","preset_swing","preset_incline","preset_both_up","preset_yoga"],_e={back:"back",foot:"feet",pillow:"pillow"},fe=n=>n.split(".",1)[0],yt=n=>n.translation_key??"";function be(){return{motors:[],firmness:[],presets:[],memory:[],presence:[],lights:{},massage:{buttons:[],numbers:[]},climate:{entities:[],selects:[],numbers:[]},utility:[]}}function x(n,s,t){let e=be();if(!s||!n?.entities)return e;let i=()=>e.lights.mood??={selects:[],numbers:[]},o=n.devices?.[s]?.parent_device_id||Object.values(n.devices??{}).some(g=>g.parent_device_id===s),r=Object.values(n.entities).filter(g=>g.device_id===s&&g.platform===R),a=!!t||!!o&&!r.some(g=>g.translation_key==="ble_connection"),c=new Map,u=g=>{let p=c.get(g);return p||(p={key:g},c.set(g,p)),p},_=new Map,f=new Map,b=g=>{let p=f.get(g);return p||(p={slot:g},f.set(g,p)),p};for(let g of r){if(g.hidden)continue;let p=g.entity_id,ge=fe(p),ft=yt(g);if(!ft)continue;let P=W(ft),Lt=n.states[p]?.attributes.bed_side??n.states[p]?.attributes.side??P.side;if(t&&Lt!==t)continue;let l=a&&P.side===Lt?P.key:ft,S;switch(ge){case"cover":u(l).cover=p;break;case"sensor":l.endsWith("_angle")?u(l.slice(0,-6)).angle=p:l==="logicdata_air_pump_pressure"?e.firmness.push(p):l==="innova_massage_timer"&&(e.massage.timer=p);break;case"number":l.endsWith("_position")?u(l.slice(0,-9)).position=p:!t&&P.side&&P.key.endsWith("_position")?u(`${P.key.slice(0,-9)}_${P.side}`).position=p:l.startsWith("massage_")&&l.endsWith("_intensity")?e.massage.numbers.push(p):l==="light_level"||l==="svane_intensity"||l==="starcode_brightness"||l==="vmatbasic_floor_level"||l==="starcode_abm5_4_light_level"?e.lights.level=p:l==="vmatbasic_floor_minutes"?(e.lights.timerMinutes=p,e.lights.timerAppliesImmediately=!0):l==="vibradorm_app_floor_timer_minutes"?e.lights.timerMinutes=p:(S=l.match(/^richmat_mh_(back|foot|pillow)_angle$/))?u(_e[S[1]]).position=p:l==="richmat_mh_light_timer"?e.lights.timer=p:l==="richmat_mh_light_timer_minutes"?(e.lights.timerMinutes=p,e.lights.timerAppliesImmediately=!0):l==="richmat_mh_head_massage_intensity"||l==="richmat_mh_foot_massage_intensity"?e.massage.numbers.push(p):l==="vibradorm_app_mood_speed"||l==="vmatbasic_mood_speed"||l==="vmatbasic_mood_brightness"?i().numbers.push(p):l==="vibradorm_app_massage_speed"||l==="sleeptracker_wave_minutes"?e.massage.numbers.push(p):/^sleeptracker_(left|right)_level$/.test(l)||l==="fan_level"?e.climate.numbers.push(p):l.startsWith("sleep_number_setting")&&e.firmness.push(p);break;case"button":if(vt.includes(l)||l.startsWith("preset_"))(S=l.match(/^preset_memory_(\d+)$/))?b(Number(S[1])).goto=p:_.set(l,p);else if(S=l.match(/^program_memory_(\d+)$/))b(Number(S[1])).save=p;else if(l==="stop"||l==="stop_both")e.stop=p;else if(l==="connect")e.connect=p;else if(l==="disconnect")e.disconnect=p;else if(l==="sleeptracker_light_toggle")e.lights.toggle=p;else if(l==="sleeptracker_light_off")(e.lights.buttons??=[]).push(p);else if(/^sleeptracker_(massage_|wave_start|wind_down_|local_animation)/.test(l))e.massage.buttons.push(p);else if(l.startsWith("sleeptracker_"))e.utility.push(p);else if(l==="toggle_light")e.lights.toggle=p;else if(l==="light_cycle"||l==="starcode_light_cycle")e.lights.cycle=p;else if(l==="vibradorm_app_mood_toggle"||l==="vmatbasic_mood_toggle")i().toggle=p;else if(l==="vmatbasic_mood_nightlight")(i().buttons??=[]).push(p);else if(l==="vmatbasic_floor_toggle"||l==="vmatbasic_floor_hold")e.lights.toggle=p;else if(l.startsWith("vmatbasic_massage_"))e.massage.buttons.push(p);else if(l==="vibradorm_app_floor_timer_toggle")e.lights.timerToggle=p;else if(l==="remacro_led_brightness_save")(e.lights.buttons??=[]).push(p);else if(l==="starcode_abm5_4_light_plus"||l==="starcode_abm5_4_light_minus"||l==="starcode_abm5_4_light_on"||l==="starcode_abm5_4_light_off")(e.lights.buttons??=[]).push(p);else if(l==="starcode_abm5_4_massage_release")e.massage.buttons.push(p);else if(l.startsWith("starcode_abm5_4_"))e.utility.push(p);else if(l==="okin_app_home")_.set(l,p);else if(l.startsWith("simmons_inclined"))_.set(l,p);else if(l==="simmons_sync_clock"||l==="simmons_refresh_alarms")e.utility.push(p);else if(l==="richmat_mh_massage")e.massage.buttons.push(p);else if(l==="richmat_mh_preset")_.set(`${l}:${p}`,p);else if(l.startsWith("richmat_mh_"))e.utility.push(p);else if(l.startsWith("adjustable_lumbar_wave_")||l==="adjustable_lumbar_massage_on")e.massage.buttons.push(p);else if(l.startsWith("adjustable_lumbar_"))e.utility.push(p);else if(l==="logicdata_app_query_massage")e.massage.buttons.push(p);else if(l.startsWith("logicdata_air_pump_"))e.utility.push(p);else if(l==="ore_comfort_massage_start"||l==="innova_massage_level"||l==="innova_massage_timer_hold")e.massage.buttons.push(p);else if(l==="ore_comfort_program_flat"||l==="ore_comfort_program_zero_g")e.utility.push(p);else if(l==="coolbase_head_massage"||l==="coolbase_foot_massage"||l==="coolbase_massage_mode")e.massage.buttons.push(p);else if(l==="restonic_zzz")e.utility.push(p);else if(l.startsWith("coolbase_"))e.utility.push(p);else if(l==="vibradorm_app_massage_automatic"||l==="vibradorm_app_massage_individual")e.massage.buttons.push(p);else if(l==="sync_positions"||l==="child_lock_toggle"||l==="auxiliary_action"||l==="remote_action"||l==="solace_music_toggle"||l==="solace_music_off"||l==="wake_controller"||l==="reset_defaults"||l==="factory_reset"||l==="vibradorm_app_all_up"||l==="vibradorm_app_all_down"||l==="vibradorm_app_sync"||l==="vibradorm_app_refresh_info"||l==="vmatbasic_all_up"||l==="vmatbasic_all_down"||l==="vmatbasic_refresh_info"||l.startsWith("starcode_save_")||l==="starcode_reset"||l==="starcode_query"||l==="starcode_light_mode")e.utility.push(p);else if(l.startsWith("massage_"))e.massage.buttons.push(p);else if(S=l.match(/^(.+)_(up|down)$/)){let Dt=u(S[1]);Dt[S[2]]=p;let bt=n.states[p]?.attributes.paired_hold_motor;(bt==="back"||bt==="legs")&&(Dt.timedMove={deviceId:s,motor:bt})}break;case"switch":l==="under_bed_lights"?e.lights.switch=p:l==="synchro_mode"?e.synchro=p:(l==="linak_automatic_drive"||l==="automatic_light")&&e.utility.push(p);break;case"light":e.lights.light=p;break;case"binary_sensor":l==="ble_connection"?e.connectivity=p:l==="sleeptracker_wind_down_running"?(e.massage.states??=[]).push(p):l==="under_bed_lights"||l==="adjustable_lite_light"||l==="innova_light"||l==="sleeptracker_light_on"?e.lights.state=p:l.startsWith("bed_presence")&&e.presence.push(p);break;case"select":l==="motion_bed_active_module"||l.startsWith("okin_app_")?(e.utilitySelects??=[]).push(p):l==="light_timer"?e.lights.timer=p:l==="remacro_control_side"?e.controlSide=p:l==="starcode_color"||l==="vibradorm_app_mood_palette"||l==="vibradorm_app_mood_effect"||l==="vmatbasic_mood_palette"||l==="vmatbasic_mood_effect"?i().selects.push(p):l==="sleeptracker_wave_frequency"||/^sleeptracker_massage_(head_level|foot_level|pattern_option)$/.test(l)?(e.massage.selects??=[]).push(p):/^sleeptracker_(left|right)_(mode|curve)$/.test(l)?e.climate.selects.push(p):l==="vibradorm_app_massage_wave"?(e.massage.selects??=[]).push(p):l==="richmat_mh_motor_mode"||l==="richmat_mh_snore"?(e.utilitySelects??=[]).push(p):l.startsWith("richmat_mh_waist_")?(e.massage.selects??=[]).push(p):l==="massage_timer"||l==="starcode_abm5_4_massage_timer"||l==="ore_comfort_massage_timer"?e.massage.timer=p:/thermal|footwarming|foundation/.test(l)&&e.climate.selects.push(p);break;case"climate":e.climate.entities.push(p);break}}let v=[...c.keys()],y=[...Nt.filter(g=>c.has(g)),...v.filter(g=>!Nt.includes(g)).sort()];e.motors=y.map(g=>c.get(g)).filter(g=>g.cover||g.up||g.down||g.angle||g.position);let $=[..._.keys()];return e.presets=[...vt.filter(g=>_.has(g)),...$.filter(g=>!vt.includes(g)).sort()].map(g=>_.get(g)),e.memory=[...f.values()].filter(g=>g.goto||g.save).sort((g,p)=>g.slot-p.slot),e}function it(n,s){return!s||!n?.entities?!1:Object.values(n.entities).some(t=>t.device_id===s&&t.platform===R&&(n.states[t.entity_id]?.attributes.bed_side==="both"||W(yt(t)).side==="both"))}function K(n,s){if(!s||!n?.devices)return[];let t=i=>{let o=n.devices[i];return(o?.name_by_user??o?.name??i).toLowerCase()},e=i=>{for(let o of Object.values(n.entities??{})){if(o.device_id!==i||o.platform!=="adjustable_bed")continue;let r=n.states[o.entity_id]?.attributes.bed_side??W(yt(o)).side;if(r==="left")return 0;if(r==="right")return 1}return 2};return Object.values(n.devices).filter(i=>(i.parent_device_id??i.via_device_id)===s).map(i=>i.id).sort((i,o)=>e(i)-e(o)||t(i).localeCompare(t(o)))}function st(n,s){if(!s||!n?.devices)return s;let t=n.devices[s]?.parent_device_id??n.devices[s]?.via_device_id;return t&&n.devices[t]&&K(n,t).length?t:s}function C(n){let s=n.lights;return n.motors.length===0&&!n.synchro&&!n.controlSide&&n.firmness.length===0&&n.presets.length===0&&n.memory.length===0&&!n.stop&&!n.connect&&!n.disconnect&&!n.connectivity&&!N(s)&&!s.state&&n.massage.buttons.length===0&&n.massage.numbers.length===0&&!n.massage.selects?.length&&!n.massage.states?.length&&!n.massage.timer&&n.climate.entities.length===0&&n.climate.selects.length===0&&n.climate.numbers.length===0&&n.utility.length===0&&!n.utilitySelects?.length}function N(n){return!!(n.light||n.switch||n.level||n.toggle||n.buttons?.length||n.cycle||n.timer||n.timerMinutes||n.timerToggle||n.mood?.toggle||n.mood?.selects.length||n.mood?.numbers.length||n.mood?.buttons?.length)}var xt="adjustable-bed-card",Ut={type:xt,name:"Adjustable Bed Card",description:"Native control card for the Adjustable Bed integration.",preview:!0,documentationURL:"https://github.com/kristofferR/ha-adjustable-bed",getEntitySuggestion:(n,s)=>{let t=n.entities[s];return t?.platform!==R||!t.device_id?null:{config:{type:`custom:${xt}`,device_id:t.device_id}}}};function ve(n){let s=n.customCards??=[],t=s.findIndex(e=>e.type===xt);t===-1?s.push(Ut):s[t]=Ut}function ot(n,s,t=window){let e=t.customElements;e.get(n)||e.define(n,s),e.whenDefined("home-assistant").then(()=>{let i=t.customElements;i!==e&&!i.get(n)&&i.define(n,s)})}typeof window<"u"&&ve(window);var nt=globalThis,rt=nt.ShadowRoot&&(nt.ShadyCSS===void 0||nt.ShadyCSS.nativeShadow)&&"adoptedStyleSheets"in Document.prototype&&"replace"in CSSStyleSheet.prototype,$t=Symbol(),Gt=new WeakMap,q=class{constructor(s,t,e){if(this._$cssResult$=!0,e!==$t)throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");this.cssText=s,this.t=t}get styleSheet(){let s=this.o,t=this.t;if(rt&&s===void 0){let e=t!==void 0&&t.length===1;e&&(s=Gt.get(t)),s===void 0&&((this.o=s=new CSSStyleSheet).replaceSync(this.cssText),e&&Gt.set(t,s))}return s}toString(){return this.cssText}},Ft=n=>new q(typeof n=="string"?n:n+"",void 0,$t),V=(n,...s)=>{let t=n.length===1?n[0]:s.reduce((e,i,o)=>e+(r=>{if(r._$cssResult$===!0)return r.cssText;if(typeof r=="number")return r;throw Error("Value passed to 'css' function must be a 'css' function result: "+r+". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.")})(i)+n[o+1],n[0]);return new q(t,n,$t)},It=(n,s)=>{if(rt)n.adoptedStyleSheets=s.map(t=>t instanceof CSSStyleSheet?t:t.styleSheet);else for(let t of s){let e=document.createElement("style"),i=nt.litNonce;i!==void 0&&e.setAttribute("nonce",i),e.textContent=t.cssText,n.appendChild(e)}},wt=rt?n=>n:n=>n instanceof CSSStyleSheet?(s=>{let t="";for(let e of s.cssRules)t+=e.cssText;return Ft(t)})(n):n;var{is:ye,defineProperty:xe,getOwnPropertyDescriptor:$e,getOwnPropertyNames:we,getOwnPropertySymbols:ke,getPrototypeOf:Ee}=Object,at=globalThis,Wt=at.trustedTypes,Se=Wt?Wt.emptyScript:"",Ae=at.reactiveElementPolyfillSupport,Y=(n,s)=>n,J={toAttribute(n,s){switch(s){case Boolean:n=n?Se:null;break;case Object:case Array:n=n==null?n:JSON.stringify(n)}return n},fromAttribute(n,s){let t=n;switch(s){case Boolean:t=n!==null;break;case Number:t=n===null?null:Number(n);break;case Object:case Array:try{t=JSON.parse(n)}catch{t=null}}return t}},ct=(n,s)=>!ye(n,s),Kt={attribute:!0,type:String,converter:J,reflect:!1,useDefault:!1,hasChanged:ct};Symbol.metadata??=Symbol("metadata"),at.litPropertyMetadata??=new WeakMap;var A=class extends HTMLElement{static addInitializer(s){this._$Ei(),(this.l??=[]).push(s)}static get observedAttributes(){return this.finalize(),this._$Eh&&[...this._$Eh.keys()]}static createProperty(s,t=Kt){if(t.state&&(t.attribute=!1),this._$Ei(),this.prototype.hasOwnProperty(s)&&((t=Object.create(t)).wrapped=!0),this.elementProperties.set(s,t),!t.noAccessor){let e=Symbol(),i=this.getPropertyDescriptor(s,e,t);i!==void 0&&xe(this.prototype,s,i)}}static getPropertyDescriptor(s,t,e){let{get:i,set:o}=$e(this.prototype,s)??{get(){return this[t]},set(r){this[t]=r}};return{get:i,set(r){let a=i?.call(this);o?.call(this,r),this.requestUpdate(s,a,e)},configurable:!0,enumerable:!0}}static getPropertyOptions(s){return this.elementProperties.get(s)??Kt}static _$Ei(){if(this.hasOwnProperty(Y("elementProperties")))return;let s=Ee(this);s.finalize(),s.l!==void 0&&(this.l=[...s.l]),this.elementProperties=new Map(s.elementProperties)}static finalize(){if(this.hasOwnProperty(Y("finalized")))return;if(this.finalized=!0,this._$Ei(),this.hasOwnProperty(Y("properties"))){let t=this.properties,e=[...we(t),...ke(t)];for(let i of e)this.createProperty(i,t[i])}let s=this[Symbol.metadata];if(s!==null){let t=litPropertyMetadata.get(s);if(t!==void 0)for(let[e,i]of t)this.elementProperties.set(e,i)}this._$Eh=new Map;for(let[t,e]of this.elementProperties){let i=this._$Eu(t,e);i!==void 0&&this._$Eh.set(i,t)}this.elementStyles=this.finalizeStyles(this.styles)}static finalizeStyles(s){let t=[];if(Array.isArray(s)){let e=new Set(s.flat(1/0).reverse());for(let i of e)t.unshift(wt(i))}else s!==void 0&&t.push(wt(s));return t}static _$Eu(s,t){let e=t.attribute;return e===!1?void 0:typeof e=="string"?e:typeof s=="string"?s.toLowerCase():void 0}constructor(){super(),this._$Ep=void 0,this.isUpdatePending=!1,this.hasUpdated=!1,this._$Em=null,this._$Ev()}_$Ev(){this._$ES=new Promise(s=>this.enableUpdating=s),this._$AL=new Map,this._$E_(),this.requestUpdate(),this.constructor.l?.forEach(s=>s(this))}addController(s){(this._$EO??=new Set).add(s),this.renderRoot!==void 0&&this.isConnected&&s.hostConnected?.()}removeController(s){this._$EO?.delete(s)}_$E_(){let s=new Map,t=this.constructor.elementProperties;for(let e of t.keys())this.hasOwnProperty(e)&&(s.set(e,this[e]),delete this[e]);s.size>0&&(this._$Ep=s)}createRenderRoot(){let s=this.shadowRoot??this.attachShadow(this.constructor.shadowRootOptions);return It(s,this.constructor.elementStyles),s}connectedCallback(){this.renderRoot??=this.createRenderRoot(),this.enableUpdating(!0),this._$EO?.forEach(s=>s.hostConnected?.())}enableUpdating(s){}disconnectedCallback(){this._$EO?.forEach(s=>s.hostDisconnected?.())}attributeChangedCallback(s,t,e){this._$AK(s,e)}_$ET(s,t){let e=this.constructor.elementProperties.get(s),i=this.constructor._$Eu(s,e);if(i!==void 0&&e.reflect===!0){let o=(e.converter?.toAttribute!==void 0?e.converter:J).toAttribute(t,e.type);this._$Em=s,o==null?this.removeAttribute(i):this.setAttribute(i,o),this._$Em=null}}_$AK(s,t){let e=this.constructor,i=e._$Eh.get(s);if(i!==void 0&&this._$Em!==i){let o=e.getPropertyOptions(i),r=typeof o.converter=="function"?{fromAttribute:o.converter}:o.converter?.fromAttribute!==void 0?o.converter:J;this._$Em=i;let a=r.fromAttribute(t,o.type);this[i]=a??this._$Ej?.get(i)??a,this._$Em=null}}requestUpdate(s,t,e,i=!1,o){if(s!==void 0){let r=this.constructor;if(i===!1&&(o=this[s]),e??=r.getPropertyOptions(s),!((e.hasChanged??ct)(o,t)||e.useDefault&&e.reflect&&o===this._$Ej?.get(s)&&!this.hasAttribute(r._$Eu(s,e))))return;this.C(s,t,e)}this.isUpdatePending===!1&&(this._$ES=this._$EP())}C(s,t,{useDefault:e,reflect:i,wrapped:o},r){e&&!(this._$Ej??=new Map).has(s)&&(this._$Ej.set(s,r??t??this[s]),o!==!0||r!==void 0)||(this._$AL.has(s)||(this.hasUpdated||e||(t=void 0),this._$AL.set(s,t)),i===!0&&this._$Em!==s&&(this._$Eq??=new Set).add(s))}async _$EP(){this.isUpdatePending=!0;try{await this._$ES}catch(t){Promise.reject(t)}let s=this.scheduleUpdate();return s!=null&&await s,!this.isUpdatePending}scheduleUpdate(){return this.performUpdate()}performUpdate(){if(!this.isUpdatePending)return;if(!this.hasUpdated){if(this.renderRoot??=this.createRenderRoot(),this._$Ep){for(let[i,o]of this._$Ep)this[i]=o;this._$Ep=void 0}let e=this.constructor.elementProperties;if(e.size>0)for(let[i,o]of e){let{wrapped:r}=o,a=this[i];r!==!0||this._$AL.has(i)||a===void 0||this.C(i,void 0,o,a)}}let s=!1,t=this._$AL;try{s=this.shouldUpdate(t),s?(this.willUpdate(t),this._$EO?.forEach(e=>e.hostUpdate?.()),this.update(t)):this._$EM()}catch(e){throw s=!1,this._$EM(),e}s&&this._$AE(t)}willUpdate(s){}_$AE(s){this._$EO?.forEach(t=>t.hostUpdated?.()),this.hasUpdated||(this.hasUpdated=!0,this.firstUpdated(s)),this.updated(s)}_$EM(){this._$AL=new Map,this.isUpdatePending=!1}get updateComplete(){return this.getUpdateComplete()}getUpdateComplete(){return this._$ES}shouldUpdate(s){return!0}update(s){this._$Eq&&=this._$Eq.forEach(t=>this._$ET(t,this[t])),this._$EM()}updated(s){}firstUpdated(s){}};A.elementStyles=[],A.shadowRootOptions={mode:"open"},A[Y("elementProperties")]=new Map,A[Y("finalized")]=new Map,Ae?.({ReactiveElement:A}),(at.reactiveElementVersions??=[]).push("2.1.2");var Mt=globalThis,qt=n=>n,lt=Mt.trustedTypes,Vt=lt?lt.createPolicy("lit-html",{createHTML:n=>n}):void 0,te="$lit$",T=`lit$${Math.random().toFixed(9).slice(2)}$`,ee="?"+T,Ce=`<${ee}>`,H=document,Z=()=>H.createComment(""),X=n=>n===null||typeof n!="object"&&typeof n!="function",Pt=Array.isArray,Te=n=>Pt(n)||typeof n?.[Symbol.iterator]=="function",kt=`[ \t
-\f\r]`,Q=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,Yt=/-->/g,Jt=/>/g,B=RegExp(`>|${kt}(?:([^\\s"'>=/]+)(${kt}*=${kt}*(?:[^ \t
-\f\r"'\`<>=]|("|')|))|$)`,"g"),Qt=/'/g,Zt=/"/g,ie=/^(?:script|style|textarea|title)$/i,Rt=n=>(s,...t)=>({_$litType$:n,strings:s,values:t}),h=Rt(1),dt=Rt(2),Qe=Rt(3),O=Symbol.for("lit-noChange"),d=Symbol.for("lit-nothing"),Xt=new WeakMap,z=H.createTreeWalker(H,129);function se(n,s){if(!Pt(n)||!n.hasOwnProperty("raw"))throw Error("invalid template strings array");return Vt!==void 0?Vt.createHTML(s):s}var Me=(n,s)=>{let t=n.length-1,e=[],i,o=s===2?"<svg>":s===3?"<math>":"",r=Q;for(let a=0;a<t;a++){let c=n[a],u,_,f=-1,b=0;for(;b<c.length&&(r.lastIndex=b,_=r.exec(c),_!==null);)b=r.lastIndex,r===Q?_[1]==="!--"?r=Yt:_[1]!==void 0?r=Jt:_[2]!==void 0?(ie.test(_[2])&&(i=RegExp("</"+_[2],"g")),r=B):_[3]!==void 0&&(r=B):r===B?_[0]===">"?(r=i??Q,f=-1):_[1]===void 0?f=-2:(f=r.lastIndex-_[2].length,u=_[1],r=_[3]===void 0?B:_[3]==='"'?Zt:Qt):r===Zt||r===Qt?r=B:r===Yt||r===Jt?r=Q:(r=B,i=void 0);let v=r===B&&n[a+1].startsWith("/>")?" ":"";o+=r===Q?c+Ce:f>=0?(e.push(u),c.slice(0,f)+te+c.slice(f)+T+v):c+T+(f===-2?a:v)}return[se(n,o+(n[t]||"<?>")+(s===2?"</svg>":s===3?"</math>":"")),e]},tt=class n{constructor({strings:s,_$litType$:t},e){let i;this.parts=[];let o=0,r=0,a=s.length-1,c=this.parts,[u,_]=Me(s,t);if(this.el=n.createElement(u,e),z.currentNode=this.el.content,t===2||t===3){let f=this.el.content.firstChild;f.replaceWith(...f.childNodes)}for(;(i=z.nextNode())!==null&&c.length<a;){if(i.nodeType===1){if(i.hasAttributes())for(let f of i.getAttributeNames())if(f.endsWith(te)){let b=_[r++],v=i.getAttribute(f).split(T),y=/([.?@])?(.*)/.exec(b);c.push({type:1,index:o,name:y[2],strings:v,ctor:y[1]==="."?St:y[1]==="?"?At:y[1]==="@"?Ct:G}),i.removeAttribute(f)}else f.startsWith(T)&&(c.push({type:6,index:o}),i.removeAttribute(f));if(ie.test(i.tagName)){let f=i.textContent.split(T),b=f.length-1;if(b>0){i.textContent=lt?lt.emptyScript:"";for(let v=0;v<b;v++)i.append(f[v],Z()),z.nextNode(),c.push({type:2,index:++o});i.append(f[b],Z())}}}else if(i.nodeType===8)if(i.data===ee)c.push({type:2,index:o});else{let f=-1;for(;(f=i.data.indexOf(T,f+1))!==-1;)c.push({type:7,index:o}),f+=T.length-1}o++}}static createElement(s,t){let e=H.createElement("template");return e.innerHTML=s,e}};function U(n,s,t=n,e){if(s===O)return s;let i=e!==void 0?t._$Co?.[e]:t._$Cl,o=X(s)?void 0:s._$litDirective$;return i?.constructor!==o&&(i?._$AO?.(!1),o===void 0?i=void 0:(i=new o(n),i._$AT(n,t,e)),e!==void 0?(t._$Co??=[])[e]=i:t._$Cl=i),i!==void 0&&(s=U(n,i._$AS(n,s.values),i,e)),s}var Et=class{constructor(s,t){this._$AV=[],this._$AN=void 0,this._$AD=s,this._$AM=t}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(s){let{el:{content:t},parts:e}=this._$AD,i=(s?.creationScope??H).importNode(t,!0);z.currentNode=i;let o=z.nextNode(),r=0,a=0,c=e[0];for(;c!==void 0;){if(r===c.index){let u;c.type===2?u=new et(o,o.nextSibling,this,s):c.type===1?u=new c.ctor(o,c.name,c.strings,this,s):c.type===6&&(u=new Tt(o,this,s)),this._$AV.push(u),c=e[++a]}r!==c?.index&&(o=z.nextNode(),r++)}return z.currentNode=H,i}p(s){let t=0;for(let e of this._$AV)e!==void 0&&(e.strings!==void 0?(e._$AI(s,e,t),t+=e.strings.length-2):e._$AI(s[t])),t++}},et=class n{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(s,t,e,i){this.type=2,this._$AH=d,this._$AN=void 0,this._$AA=s,this._$AB=t,this._$AM=e,this.options=i,this._$Cv=i?.isConnected??!0}get parentNode(){let s=this._$AA.parentNode,t=this._$AM;return t!==void 0&&s?.nodeType===11&&(s=t.parentNode),s}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(s,t=this){s=U(this,s,t),X(s)?s===d||s==null||s===""?(this._$AH!==d&&this._$AR(),this._$AH=d):s!==this._$AH&&s!==O&&this._(s):s._$litType$!==void 0?this.$(s):s.nodeType!==void 0?this.T(s):Te(s)?this.k(s):this._(s)}O(s){return this._$AA.parentNode.insertBefore(s,this._$AB)}T(s){this._$AH!==s&&(this._$AR(),this._$AH=this.O(s))}_(s){this._$AH!==d&&X(this._$AH)?this._$AA.nextSibling.data=s:this.T(H.createTextNode(s)),this._$AH=s}$(s){let{values:t,_$litType$:e}=s,i=typeof e=="number"?this._$AC(s):(e.el===void 0&&(e.el=tt.createElement(se(e.h,e.h[0]),this.options)),e);if(this._$AH?._$AD===i)this._$AH.p(t);else{let o=new Et(i,this),r=o.u(this.options);o.p(t),this.T(r),this._$AH=o}}_$AC(s){let t=Xt.get(s.strings);return t===void 0&&Xt.set(s.strings,t=new tt(s)),t}k(s){Pt(this._$AH)||(this._$AH=[],this._$AR());let t=this._$AH,e,i=0;for(let o of s)i===t.length?t.push(e=new n(this.O(Z()),this.O(Z()),this,this.options)):e=t[i],e._$AI(o),i++;i<t.length&&(this._$AR(e&&e._$AB.nextSibling,i),t.length=i)}_$AR(s=this._$AA.nextSibling,t){for(this._$AP?.(!1,!0,t);s!==this._$AB;){let e=qt(s).nextSibling;qt(s).remove(),s=e}}setConnected(s){this._$AM===void 0&&(this._$Cv=s,this._$AP?.(s))}},G=class{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(s,t,e,i,o){this.type=1,this._$AH=d,this._$AN=void 0,this.element=s,this.name=t,this._$AM=i,this.options=o,e.length>2||e[0]!==""||e[1]!==""?(this._$AH=Array(e.length-1).fill(new String),this.strings=e):this._$AH=d}_$AI(s,t=this,e,i){let o=this.strings,r=!1;if(o===void 0)s=U(this,s,t,0),r=!X(s)||s!==this._$AH&&s!==O,r&&(this._$AH=s);else{let a=s,c,u;for(s=o[0],c=0;c<o.length-1;c++)u=U(this,a[e+c],t,c),u===O&&(u=this._$AH[c]),r||=!X(u)||u!==this._$AH[c],u===d?s=d:s!==d&&(s+=(u??"")+o[c+1]),this._$AH[c]=u}r&&!i&&this.j(s)}j(s){s===d?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,s??"")}},St=class extends G{constructor(){super(...arguments),this.type=3}j(s){this.element[this.name]=s===d?void 0:s}},At=class extends G{constructor(){super(...arguments),this.type=4}j(s){this.element.toggleAttribute(this.name,!!s&&s!==d)}},Ct=class extends G{constructor(s,t,e,i,o){super(s,t,e,i,o),this.type=5}_$AI(s,t=this){if((s=U(this,s,t,0)??d)===O)return;let e=this._$AH,i=s===d&&e!==d||s.capture!==e.capture||s.once!==e.once||s.passive!==e.passive,o=s!==d&&(e===d||i);i&&this.element.removeEventListener(this.name,this,e),o&&this.element.addEventListener(this.name,this,s),this._$AH=s}handleEvent(s){typeof this._$AH=="function"?this._$AH.call(this.options?.host??this.element,s):this._$AH.handleEvent(s)}},Tt=class{constructor(s,t,e){this.element=s,this.type=6,this._$AN=void 0,this._$AM=t,this.options=e}get _$AU(){return this._$AM._$AU}_$AI(s){U(this,s)}};var Pe=Mt.litHtmlPolyfillSupport;Pe?.(tt,et),(Mt.litHtmlVersions??=[]).push("3.3.3");var oe=(n,s,t)=>{let e=t?.renderBefore??s,i=e._$litPart$;if(i===void 0){let o=t?.renderBefore??null;e._$litPart$=i=new et(s.insertBefore(Z(),o),o,void 0,t??{})}return i._$AI(n),i};var Bt=globalThis,k=class extends A{constructor(){super(...arguments),this.renderOptions={host:this},this._$Do=void 0}createRenderRoot(){let s=super.createRenderRoot();return this.renderOptions.renderBefore??=s.firstChild,s}update(s){let t=this.render();this.hasUpdated||(this.renderOptions.isConnected=this.isConnected),super.update(s),this._$Do=oe(t,this.renderRoot,this.renderOptions)}connectedCallback(){super.connectedCallback(),this._$Do?.setConnected(!0)}disconnectedCallback(){super.disconnectedCallback(),this._$Do?.setConnected(!1)}render(){return O}};k._$litElement$=!0,k.finalized=!0,Bt.litElementHydrateSupport?.({LitElement:k});var Re=Bt.litElementPolyfillSupport;Re?.({LitElement:k});(Bt.litElementVersions??=[]).push("4.2.2");var Be={attribute:!0,type:String,converter:J,reflect:!1,hasChanged:ct},ze=(n=Be,s,t)=>{let{kind:e,metadata:i}=t,o=globalThis.litPropertyMetadata.get(i);if(o===void 0&&globalThis.litPropertyMetadata.set(i,o=new Map),e==="setter"&&((n=Object.create(n)).wrapped=!0),o.set(t.name,n),e==="accessor"){let{name:r}=t;return{set(a){let c=s.get.call(this);s.set.call(this,a),this.requestUpdate(r,c,n,!0,a)},init(a){return a!==void 0&&this.C(r,void 0,n,a),a}}}if(e==="setter"){let{name:r}=t;return function(a){let c=this[r];s.call(this,a),this.requestUpdate(r,c,n,!0,a)}}throw Error("Unsupported decorator location: "+e)};function F(n){return(s,t)=>typeof t=="object"?ze(n,s,t):((e,i,o)=>{let r=i.hasOwnProperty(o);return i.constructor.createProperty(o,e),r?Object.getOwnPropertyDescriptor(i,o):void 0})(n,s,t)}function M(n){return F({...n,state:!0,attribute:!1})}var j=n=>Math.max(0,Math.min(75,n));function zt(n,s="theme"){let t=j(n.upper.angle??0),e=j(n.lower.angle??0),i=`rotate(${t} 150 70)`,o=`rotate(${-e} 150 70)`,r=a=>a.angle===void 0?"":`${a.label?`${a.label} `:""}${Math.round(j(a.angle))}\xB0`;return dt`
+var wt=Object.defineProperty;var kt=Object.getOwnPropertyDescriptor;var S=(n,s,e,t)=>{for(var i=t>1?void 0:t?kt(s,e):s,o=n.length-1,r;o>=0;o--)(r=n[o])&&(i=(t?r(s,e,i):r(i))||i);return t&&i&&wt(s,e,i),i};var B="adjustable_bed";function Q(n){for(let s of["left","right","both"]){let e=`_${s}`;if(n.endsWith(e))return{key:n.slice(0,-e.length),side:s}}return{key:n}}var K=["graphic","motors","firmness","presets","memory","lighting","massage","utility","climate","connection"],qe=["back","legs","back_legs","head","feet","lumbar","pillow","neck","tilt","hip","bed_height","stair"],Ee=["preset_flat","preset_zero_g","preset_anti_snore","preset_tv","preset_lounge","preset_swing","preset_incline","preset_both_up","preset_yoga"],Et={back:"back",foot:"feet",pillow:"pillow"},St=n=>n.split(".",1)[0],Se=n=>n.translation_key??"";function Tt(){return{motors:[],firmness:[],presets:[],memory:[],presence:[],lights:{},massage:{buttons:[],numbers:[]},climate:{entities:[],selects:[],numbers:[]},utility:[],utilityStates:[]}}function k(n,s,e){let t=Tt();if(!s||!n?.entities)return t;let i=()=>t.lights.mood??={selects:[],numbers:[]},o=n.devices?.[s]?.parent_device_id||Object.values(n.devices??{}).some(m=>m.parent_device_id===s),r=Object.values(n.entities).filter(m=>m.device_id===s&&m.platform===B),a=!!e||!!o&&!r.some(m=>m.translation_key==="ble_connection"),c=new Map,g=m=>{let h=c.get(m);return h||(h={key:m},c.set(m,h)),h},v=(m,h,le,I)=>{let x=g(h);x[le]=m;let Y=n.states[m]?.attributes,J=Y?.held_control,l=Y?.hold_start_delay_ms,w=Y?.hold_release_delay_ms;typeof J=="string"&&typeof l=="number"&&typeof w=="number"&&I&&(x.deviceId=I,x.holdEntityId=m,x.heldControls={...x.heldControls,[le]:{control:J,startDelayMs:l,releaseDelayMs:w}});let R=Y?.paired_hold_motor;(R==="back"||R==="legs")&&(x.timedMove={deviceId:s,motor:R})},_=new Map,b=new Map,y=m=>{let h=b.get(m);return h||(h={slot:m},b.set(m,h)),h};for(let m of r){if(m.hidden)continue;let h=m.entity_id,le=St(h),I=Se(m);if(!I)continue;let x=Q(I),J=n.states[h]?.attributes.bed_side??n.states[h]?.attributes.side??x.side;if(e&&J!==e)continue;let l=a&&x.side===J?x.key:I,w;switch(le){case"cover":{let R=g(l);R.cover=h;let F=n.states[h]?.attributes,Ge=F?.held_control_up,We=F?.held_control_down;typeof Ge=="string"&&typeof We=="string"&&(m.device_id&&(R.deviceId=m.device_id),R.holdEntityId=h,R.heldControls={up:{control:Ge,startDelayMs:Number(F?.hold_start_delay_ms??0),releaseDelayMs:Number(F?.hold_release_delay_ms??0)},down:{control:We,startDelayMs:Number(F?.hold_start_delay_ms??0),releaseDelayMs:Number(F?.hold_release_delay_ms??0)}})}break;case"sensor":l.endsWith("_angle")?g(l.slice(0,-6)).angle=h:l.startsWith("sleepys_app_position_")||l.startsWith("sleepys_app_field_")?t.utilityStates?.push(h):l==="logicdata_air_pump_pressure"?t.firmness.push(h):l==="innova_massage_timer"&&(t.massage.timer=h);break;case"number":l.endsWith("_position")?g(l.slice(0,-9)).position=h:!e&&x.side&&x.key.endsWith("_position")?g(`${x.key.slice(0,-9)}_${x.side}`).position=h:l.startsWith("massage_")&&l.endsWith("_intensity")?t.massage.numbers.push(h):l==="light_level"||l==="svane_intensity"||l==="starcode_brightness"||l==="vmatbasic_floor_level"||l==="starcode_abm5_4_light_level"?t.lights.level=h:l==="vmatbasic_floor_minutes"?(t.lights.timerMinutes=h,t.lights.timerAppliesImmediately=!0):l==="vibradorm_app_floor_timer_minutes"?t.lights.timerMinutes=h:(w=l.match(/^richmat_mh_(back|foot|pillow)_angle$/))?g(Et[w[1]]).position=h:l==="richmat_mh_light_timer"?t.lights.timer=h:l==="richmat_mh_light_timer_minutes"?(t.lights.timerMinutes=h,t.lights.timerAppliesImmediately=!0):l==="richmat_mh_head_massage_intensity"||l==="richmat_mh_foot_massage_intensity"?t.massage.numbers.push(h):l==="vibradorm_app_mood_speed"||l==="vmatbasic_mood_speed"||l==="vmatbasic_mood_brightness"?i().numbers.push(h):l==="vibradorm_app_massage_speed"||l==="sleeptracker_wave_minutes"?t.massage.numbers.push(h):l==="sleepys_app_color_code"?(t.lights.numbers??=[]).push(h):l.startsWith("sleepys_app_target_axis_")?(t.utilityNumbers??=[]).push(h):/^sleeptracker_(left|right)_level$/.test(l)||l==="fan_level"?t.climate.numbers.push(h):l.startsWith("sleep_number_setting")&&t.firmness.push(h);break;case"button":Ee.includes(l)||l.startsWith("preset_")||l.startsWith("sleepys_app_preset_")?(w=l.match(/^preset_memory_(\d+)$/))?y(Number(w[1])).goto=h:_.set(l,h):(w=l.match(/^program_memory_(\d+)$/))?y(Number(w[1])).save=h:(w=l.match(/^sleepys_app_memory_(\d+)$/))?y(Number(w[1])).goto=h:l==="stop"||l==="stop_both"?t.stop=h:l==="connect"?t.connect=h:l==="disconnect"?t.disconnect=h:l==="sleeptracker_light_toggle"?t.lights.toggle=h:l==="sleeptracker_light_off"?(t.lights.buttons??=[]).push(h):/^sleeptracker_(massage_|wave_start|wind_down_|local_animation)/.test(l)?t.massage.buttons.push(h):l.startsWith("sleeptracker_")?t.utility.push(h):l.startsWith("sleepys_app_light_")||l.startsWith("sleepys_app_voice_brightness_")||l==="sleepys_app_rgb_action"?(t.lights.buttons??=[]).push(h):l.startsWith("sleepys_app_massage_")?t.massage.buttons.push(h):l==="toggle_light"?t.lights.toggle=h:l==="light_cycle"||l==="starcode_light_cycle"?t.lights.cycle=h:l==="vibradorm_app_mood_toggle"||l==="vmatbasic_mood_toggle"?i().toggle=h:l==="vmatbasic_mood_nightlight"?(i().buttons??=[]).push(h):l==="vmatbasic_floor_toggle"||l==="vmatbasic_floor_hold"?t.lights.toggle=h:l.startsWith("vmatbasic_massage_")?t.massage.buttons.push(h):l==="vibradorm_app_floor_timer_toggle"?t.lights.timerToggle=h:l==="remacro_led_brightness_save"?(t.lights.buttons??=[]).push(h):l==="starcode_abm5_4_light_plus"||l==="starcode_abm5_4_light_minus"||l==="starcode_abm5_4_light_on"||l==="starcode_abm5_4_light_off"?(t.lights.buttons??=[]).push(h):l==="starcode_abm5_4_massage_release"?t.massage.buttons.push(h):l.startsWith("starcode_abm5_4_")?t.utility.push(h):l==="okin_app_home"||l.startsWith("simmons_inclined")?_.set(l,h):l==="simmons_sync_clock"||l==="simmons_refresh_alarms"?t.utility.push(h):l==="richmat_mh_massage"?t.massage.buttons.push(h):l==="richmat_mh_preset"?_.set(`${l}:${h}`,h):l.startsWith("richmat_mh_")?t.utility.push(h):l.startsWith("adjustable_lumbar_wave_")||l==="adjustable_lumbar_massage_on"?t.massage.buttons.push(h):l.startsWith("adjustable_lumbar_")?t.utility.push(h):l==="logicdata_app_query_massage"?t.massage.buttons.push(h):l.startsWith("logicdata_air_pump_")?t.utility.push(h):l==="ore_comfort_massage_start"||l==="innova_massage_level"||l==="innova_massage_timer_hold"?t.massage.buttons.push(h):l==="ore_comfort_program_flat"||l==="ore_comfort_program_zero_g"?t.utility.push(h):l==="coolbase_head_massage"||l==="coolbase_foot_massage"||l==="coolbase_massage_mode"?t.massage.buttons.push(h):l==="restonic_zzz"||l.startsWith("coolbase_")?t.utility.push(h):l==="vibradorm_app_massage_automatic"||l==="vibradorm_app_massage_individual"?t.massage.buttons.push(h):l==="sync_positions"||l==="child_lock_toggle"||l==="auxiliary_action"||l==="remote_action"||l==="solace_music_toggle"||l==="solace_music_off"||l==="wake_controller"||l==="reset_defaults"||l==="factory_reset"||l==="vibradorm_app_all_up"||l==="vibradorm_app_all_down"||l==="vibradorm_app_sync"||l==="vibradorm_app_refresh_info"||l==="vmatbasic_all_up"||l==="vmatbasic_all_down"||l==="vmatbasic_refresh_info"||l.startsWith("starcode_save_")||l==="starcode_reset"||l==="starcode_query"||l==="starcode_light_mode"?t.utility.push(h):l.startsWith("massage_")?t.massage.buttons.push(h):l.startsWith("sleepys_app_")?t.utility.push(h):(w=l.match(/^(.+)_(up|down)$/))&&v(h,w[1],w[2],m.device_id);break;case"switch":l==="under_bed_lights"?t.lights.switch=h:l==="synchro_mode"?t.synchro=h:(l==="linak_automatic_drive"||l==="automatic_light")&&t.utility.push(h);break;case"light":t.lights.light=h;break;case"binary_sensor":l==="ble_connection"?t.connectivity=h:l==="sleeptracker_wind_down_running"?(t.massage.states??=[]).push(h):l==="under_bed_lights"||l==="adjustable_lite_light"||l==="innova_light"||l==="sleeptracker_light_on"?t.lights.state=h:l.startsWith("bed_presence")&&t.presence.push(h);break;case"select":l==="motion_bed_active_module"||l.startsWith("okin_app_")?(t.utilitySelects??=[]).push(h):l==="sleepys_app_massage_timer_code"?(t.massage.selects??=[]).push(h):l==="light_timer"?t.lights.timer=h:l==="remacro_control_side"?t.controlSide=h:l==="starcode_color"||l==="vibradorm_app_mood_palette"||l==="vibradorm_app_mood_effect"||l==="vmatbasic_mood_palette"||l==="vmatbasic_mood_effect"?i().selects.push(h):l==="sleeptracker_wave_frequency"||/^sleeptracker_massage_(head_level|foot_level|pattern_option)$/.test(l)?(t.massage.selects??=[]).push(h):/^sleeptracker_(left|right)_(mode|curve)$/.test(l)?t.climate.selects.push(h):l==="vibradorm_app_massage_wave"?(t.massage.selects??=[]).push(h):l==="richmat_mh_motor_mode"||l==="richmat_mh_snore"?(t.utilitySelects??=[]).push(h):l.startsWith("richmat_mh_waist_")?(t.massage.selects??=[]).push(h):l==="massage_timer"||l==="starcode_abm5_4_massage_timer"||l==="ore_comfort_massage_timer"?t.massage.timer=h:/thermal|footwarming|foundation/.test(l)&&t.climate.selects.push(h);break;case"climate":t.climate.entities.push(h);break}}let $=[...c.keys()],E=[...qe.filter(m=>c.has(m)),...$.filter(m=>!qe.includes(m)).sort()];t.motors=E.map(m=>c.get(m)).filter(m=>m.cover||m.up||m.down||m.angle||m.position);let f=[..._.keys()];return t.presets=[...Ee.filter(m=>_.has(m)),...f.filter(m=>!Ee.includes(m)).sort()].map(m=>_.get(m)),t.memory=[...b.values()].filter(m=>m.goto||m.save).sort((m,h)=>m.slot-h.slot),t}function ce(n,s){return!s||!n?.entities?!1:Object.values(n.entities).some(e=>e.device_id===s&&e.platform===B&&(n.states[e.entity_id]?.attributes.bed_side==="both"||Q(Se(e)).side==="both"))}function Z(n,s){if(!s||!n?.devices)return[];let e=i=>{let o=n.devices[i];return(o?.name_by_user??o?.name??i).toLowerCase()},t=i=>{for(let o of Object.values(n.entities??{})){if(o.device_id!==i||o.platform!=="adjustable_bed")continue;let r=n.states[o.entity_id]?.attributes.bed_side??Q(Se(o)).side;if(r==="left")return 0;if(r==="right")return 1}return 2};return Object.values(n.devices).filter(i=>(i.parent_device_id??i.via_device_id)===s).map(i=>i.id).sort((i,o)=>t(i)-t(o)||e(i).localeCompare(e(o)))}function de(n,s){if(!s||!n?.devices)return s;let e=n.devices[s]?.parent_device_id??n.devices[s]?.via_device_id;return e&&n.devices[e]&&Z(n,e).length?e:s}function M(n){let s=n.lights;return n.motors.length===0&&!n.synchro&&!n.controlSide&&n.firmness.length===0&&n.presets.length===0&&n.memory.length===0&&!n.stop&&!n.connect&&!n.disconnect&&!n.connectivity&&!U(s)&&!s.state&&n.massage.buttons.length===0&&n.massage.numbers.length===0&&!n.massage.selects?.length&&!n.massage.states?.length&&!n.massage.timer&&n.climate.entities.length===0&&n.climate.selects.length===0&&n.climate.numbers.length===0&&n.utility.length===0&&!n.utilityNumbers?.length&&!n.utilitySelects?.length&&!n.utilityStates?.length}function U(n){return!!(n.light||n.switch||n.level||n.toggle||n.numbers?.length||n.buttons?.length||n.cycle||n.timer||n.timerMinutes||n.timerToggle||n.mood?.toggle||n.mood?.selects.length||n.mood?.numbers.length||n.mood?.buttons?.length)}var Te="adjustable-bed-card",Ve={type:Te,name:"Adjustable Bed Card",description:"Native control card for the Adjustable Bed integration.",preview:!0,documentationURL:"https://github.com/kristofferR/ha-adjustable-bed",getEntitySuggestion:(n,s)=>{let e=n.entities[s];return e?.platform!==B||!e.device_id?null:{config:{type:`custom:${Te}`,device_id:e.device_id}}}};function Ct(n){let s=n.customCards??=[],e=s.findIndex(t=>t.type===Te);e===-1?s.push(Ve):s[e]=Ve}function he(n,s,e=window){let t=e.customElements;t.get(n)||t.define(n,s),t.whenDefined("home-assistant").then(()=>{let i=e.customElements;i!==t&&!i.get(n)&&i.define(n,s)})}typeof window<"u"&&Ct(window);var pe=globalThis,ue=pe.ShadowRoot&&(pe.ShadyCSS===void 0||pe.ShadyCSS.nativeShadow)&&"adoptedStyleSheets"in Document.prototype&&"replace"in CSSStyleSheet.prototype,Ce=Symbol(),Ye=new WeakMap,X=class{constructor(s,e,t){if(this._$cssResult$=!0,t!==Ce)throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");this.cssText=s,this.t=e}get styleSheet(){let s=this.o,e=this.t;if(ue&&s===void 0){let t=e!==void 0&&e.length===1;t&&(s=Ye.get(e)),s===void 0&&((this.o=s=new CSSStyleSheet).replaceSync(this.cssText),t&&Ye.set(e,s))}return s}toString(){return this.cssText}},Je=n=>new X(typeof n=="string"?n:n+"",void 0,Ce),ee=(n,...s)=>{let e=n.length===1?n[0]:s.reduce((t,i,o)=>t+(r=>{if(r._$cssResult$===!0)return r.cssText;if(typeof r=="number")return r;throw Error("Value passed to 'css' function must be a 'css' function result: "+r+". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.")})(i)+n[o+1],n[0]);return new X(e,n,Ce)},Qe=(n,s)=>{if(ue)n.adoptedStyleSheets=s.map(e=>e instanceof CSSStyleSheet?e:e.styleSheet);else for(let e of s){let t=document.createElement("style"),i=pe.litNonce;i!==void 0&&t.setAttribute("nonce",i),t.textContent=e.cssText,n.appendChild(t)}},Ae=ue?n=>n:n=>n instanceof CSSStyleSheet?(s=>{let e="";for(let t of s.cssRules)e+=t.cssText;return Je(e)})(n):n;var{is:At,defineProperty:Rt,getOwnPropertyDescriptor:Mt,getOwnPropertyNames:Pt,getOwnPropertySymbols:Ht,getPrototypeOf:Bt}=Object,ge=globalThis,Ze=ge.trustedTypes,zt=Ze?Ze.emptyScript:"",Ot=ge.reactiveElementPolyfillSupport,te=(n,s)=>n,ie={toAttribute(n,s){switch(s){case Boolean:n=n?zt:null;break;case Object:case Array:n=n==null?n:JSON.stringify(n)}return n},fromAttribute(n,s){let e=n;switch(s){case Boolean:e=n!==null;break;case Number:e=n===null?null:Number(n);break;case Object:case Array:try{e=JSON.parse(n)}catch{e=null}}return e}},me=(n,s)=>!At(n,s),Xe={attribute:!0,type:String,converter:ie,reflect:!1,useDefault:!1,hasChanged:me};Symbol.metadata??=Symbol("metadata"),ge.litPropertyMetadata??=new WeakMap;var A=class extends HTMLElement{static addInitializer(s){this._$Ei(),(this.l??=[]).push(s)}static get observedAttributes(){return this.finalize(),this._$Eh&&[...this._$Eh.keys()]}static createProperty(s,e=Xe){if(e.state&&(e.attribute=!1),this._$Ei(),this.prototype.hasOwnProperty(s)&&((e=Object.create(e)).wrapped=!0),this.elementProperties.set(s,e),!e.noAccessor){let t=Symbol(),i=this.getPropertyDescriptor(s,t,e);i!==void 0&&Rt(this.prototype,s,i)}}static getPropertyDescriptor(s,e,t){let{get:i,set:o}=Mt(this.prototype,s)??{get(){return this[e]},set(r){this[e]=r}};return{get:i,set(r){let a=i?.call(this);o?.call(this,r),this.requestUpdate(s,a,t)},configurable:!0,enumerable:!0}}static getPropertyOptions(s){return this.elementProperties.get(s)??Xe}static _$Ei(){if(this.hasOwnProperty(te("elementProperties")))return;let s=Bt(this);s.finalize(),s.l!==void 0&&(this.l=[...s.l]),this.elementProperties=new Map(s.elementProperties)}static finalize(){if(this.hasOwnProperty(te("finalized")))return;if(this.finalized=!0,this._$Ei(),this.hasOwnProperty(te("properties"))){let e=this.properties,t=[...Pt(e),...Ht(e)];for(let i of t)this.createProperty(i,e[i])}let s=this[Symbol.metadata];if(s!==null){let e=litPropertyMetadata.get(s);if(e!==void 0)for(let[t,i]of e)this.elementProperties.set(t,i)}this._$Eh=new Map;for(let[e,t]of this.elementProperties){let i=this._$Eu(e,t);i!==void 0&&this._$Eh.set(i,e)}this.elementStyles=this.finalizeStyles(this.styles)}static finalizeStyles(s){let e=[];if(Array.isArray(s)){let t=new Set(s.flat(1/0).reverse());for(let i of t)e.unshift(Ae(i))}else s!==void 0&&e.push(Ae(s));return e}static _$Eu(s,e){let t=e.attribute;return t===!1?void 0:typeof t=="string"?t:typeof s=="string"?s.toLowerCase():void 0}constructor(){super(),this._$Ep=void 0,this.isUpdatePending=!1,this.hasUpdated=!1,this._$Em=null,this._$Ev()}_$Ev(){this._$ES=new Promise(s=>this.enableUpdating=s),this._$AL=new Map,this._$E_(),this.requestUpdate(),this.constructor.l?.forEach(s=>s(this))}addController(s){(this._$EO??=new Set).add(s),this.renderRoot!==void 0&&this.isConnected&&s.hostConnected?.()}removeController(s){this._$EO?.delete(s)}_$E_(){let s=new Map,e=this.constructor.elementProperties;for(let t of e.keys())this.hasOwnProperty(t)&&(s.set(t,this[t]),delete this[t]);s.size>0&&(this._$Ep=s)}createRenderRoot(){let s=this.shadowRoot??this.attachShadow(this.constructor.shadowRootOptions);return Qe(s,this.constructor.elementStyles),s}connectedCallback(){this.renderRoot??=this.createRenderRoot(),this.enableUpdating(!0),this._$EO?.forEach(s=>s.hostConnected?.())}enableUpdating(s){}disconnectedCallback(){this._$EO?.forEach(s=>s.hostDisconnected?.())}attributeChangedCallback(s,e,t){this._$AK(s,t)}_$ET(s,e){let t=this.constructor.elementProperties.get(s),i=this.constructor._$Eu(s,t);if(i!==void 0&&t.reflect===!0){let o=(t.converter?.toAttribute!==void 0?t.converter:ie).toAttribute(e,t.type);this._$Em=s,o==null?this.removeAttribute(i):this.setAttribute(i,o),this._$Em=null}}_$AK(s,e){let t=this.constructor,i=t._$Eh.get(s);if(i!==void 0&&this._$Em!==i){let o=t.getPropertyOptions(i),r=typeof o.converter=="function"?{fromAttribute:o.converter}:o.converter?.fromAttribute!==void 0?o.converter:ie;this._$Em=i;let a=r.fromAttribute(e,o.type);this[i]=a??this._$Ej?.get(i)??a,this._$Em=null}}requestUpdate(s,e,t,i=!1,o){if(s!==void 0){let r=this.constructor;if(i===!1&&(o=this[s]),t??=r.getPropertyOptions(s),!((t.hasChanged??me)(o,e)||t.useDefault&&t.reflect&&o===this._$Ej?.get(s)&&!this.hasAttribute(r._$Eu(s,t))))return;this.C(s,e,t)}this.isUpdatePending===!1&&(this._$ES=this._$EP())}C(s,e,{useDefault:t,reflect:i,wrapped:o},r){t&&!(this._$Ej??=new Map).has(s)&&(this._$Ej.set(s,r??e??this[s]),o!==!0||r!==void 0)||(this._$AL.has(s)||(this.hasUpdated||t||(e=void 0),this._$AL.set(s,e)),i===!0&&this._$Em!==s&&(this._$Eq??=new Set).add(s))}async _$EP(){this.isUpdatePending=!0;try{await this._$ES}catch(e){Promise.reject(e)}let s=this.scheduleUpdate();return s!=null&&await s,!this.isUpdatePending}scheduleUpdate(){return this.performUpdate()}performUpdate(){if(!this.isUpdatePending)return;if(!this.hasUpdated){if(this.renderRoot??=this.createRenderRoot(),this._$Ep){for(let[i,o]of this._$Ep)this[i]=o;this._$Ep=void 0}let t=this.constructor.elementProperties;if(t.size>0)for(let[i,o]of t){let{wrapped:r}=o,a=this[i];r!==!0||this._$AL.has(i)||a===void 0||this.C(i,void 0,o,a)}}let s=!1,e=this._$AL;try{s=this.shouldUpdate(e),s?(this.willUpdate(e),this._$EO?.forEach(t=>t.hostUpdate?.()),this.update(e)):this._$EM()}catch(t){throw s=!1,this._$EM(),t}s&&this._$AE(e)}willUpdate(s){}_$AE(s){this._$EO?.forEach(e=>e.hostUpdated?.()),this.hasUpdated||(this.hasUpdated=!0,this.firstUpdated(s)),this.updated(s)}_$EM(){this._$AL=new Map,this.isUpdatePending=!1}get updateComplete(){return this.getUpdateComplete()}getUpdateComplete(){return this._$ES}shouldUpdate(s){return!0}update(s){this._$Eq&&=this._$Eq.forEach(e=>this._$ET(e,this[e])),this._$EM()}updated(s){}firstUpdated(s){}};A.elementStyles=[],A.shadowRootOptions={mode:"open"},A[te("elementProperties")]=new Map,A[te("finalized")]=new Map,Ot?.({ReactiveElement:A}),(ge.reactiveElementVersions??=[]).push("2.1.2");var Oe=globalThis,et=n=>n,_e=Oe.trustedTypes,tt=_e?_e.createPolicy("lit-html",{createHTML:n=>n}):void 0,at="$lit$",P=`lit$${Math.random().toFixed(9).slice(2)}$`,lt="?"+P,jt=`<${lt}>`,j=document,oe=()=>j.createComment(""),ne=n=>n===null||typeof n!="object"&&typeof n!="function",je=Array.isArray,Lt=n=>je(n)||typeof n?.[Symbol.iterator]=="function",Re=`[ \t
+\f\r]`,se=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,it=/-->/g,st=/>/g,z=RegExp(`>|${Re}(?:([^\\s"'>=/]+)(${Re}*=${Re}*(?:[^ \t
+\f\r"'\`<>=]|("|')|))|$)`,"g"),ot=/'/g,nt=/"/g,ct=/^(?:script|style|textarea|title)$/i,Le=n=>(s,...e)=>({_$litType$:n,strings:s,values:e}),p=Le(1),fe=Le(2),ni=Le(3),L=Symbol.for("lit-noChange"),d=Symbol.for("lit-nothing"),rt=new WeakMap,O=j.createTreeWalker(j,129);function dt(n,s){if(!je(n)||!n.hasOwnProperty("raw"))throw Error("invalid template strings array");return tt!==void 0?tt.createHTML(s):s}var Dt=(n,s)=>{let e=n.length-1,t=[],i,o=s===2?"<svg>":s===3?"<math>":"",r=se;for(let a=0;a<e;a++){let c=n[a],g,v,_=-1,b=0;for(;b<c.length&&(r.lastIndex=b,v=r.exec(c),v!==null);)b=r.lastIndex,r===se?v[1]==="!--"?r=it:v[1]!==void 0?r=st:v[2]!==void 0?(ct.test(v[2])&&(i=RegExp("</"+v[2],"g")),r=z):v[3]!==void 0&&(r=z):r===z?v[0]===">"?(r=i??se,_=-1):v[1]===void 0?_=-2:(_=r.lastIndex-v[2].length,g=v[1],r=v[3]===void 0?z:v[3]==='"'?nt:ot):r===nt||r===ot?r=z:r===it||r===st?r=se:(r=z,i=void 0);let y=r===z&&n[a+1].startsWith("/>")?" ":"";o+=r===se?c+jt:_>=0?(t.push(g),c.slice(0,_)+at+c.slice(_)+P+y):c+P+(_===-2?a:y)}return[dt(n,o+(n[e]||"<?>")+(s===2?"</svg>":s===3?"</math>":"")),t]},re=class n{constructor({strings:s,_$litType$:e},t){let i;this.parts=[];let o=0,r=0,a=s.length-1,c=this.parts,[g,v]=Dt(s,e);if(this.el=n.createElement(g,t),O.currentNode=this.el.content,e===2||e===3){let _=this.el.content.firstChild;_.replaceWith(..._.childNodes)}for(;(i=O.nextNode())!==null&&c.length<a;){if(i.nodeType===1){if(i.hasAttributes())for(let _ of i.getAttributeNames())if(_.endsWith(at)){let b=v[r++],y=i.getAttribute(_).split(P),$=/([.?@])?(.*)/.exec(b);c.push({type:1,index:o,name:$[2],strings:y,ctor:$[1]==="."?Pe:$[1]==="?"?He:$[1]==="@"?Be:W}),i.removeAttribute(_)}else _.startsWith(P)&&(c.push({type:6,index:o}),i.removeAttribute(_));if(ct.test(i.tagName)){let _=i.textContent.split(P),b=_.length-1;if(b>0){i.textContent=_e?_e.emptyScript:"";for(let y=0;y<b;y++)i.append(_[y],oe()),O.nextNode(),c.push({type:2,index:++o});i.append(_[b],oe())}}}else if(i.nodeType===8)if(i.data===lt)c.push({type:2,index:o});else{let _=-1;for(;(_=i.data.indexOf(P,_+1))!==-1;)c.push({type:7,index:o}),_+=P.length-1}o++}}static createElement(s,e){let t=j.createElement("template");return t.innerHTML=s,t}};function G(n,s,e=n,t){if(s===L)return s;let i=t!==void 0?e._$Co?.[t]:e._$Cl,o=ne(s)?void 0:s._$litDirective$;return i?.constructor!==o&&(i?._$AO?.(!1),o===void 0?i=void 0:(i=new o(n),i._$AT(n,e,t)),t!==void 0?(e._$Co??=[])[t]=i:e._$Cl=i),i!==void 0&&(s=G(n,i._$AS(n,s.values),i,t)),s}var Me=class{constructor(s,e){this._$AV=[],this._$AN=void 0,this._$AD=s,this._$AM=e}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(s){let{el:{content:e},parts:t}=this._$AD,i=(s?.creationScope??j).importNode(e,!0);O.currentNode=i;let o=O.nextNode(),r=0,a=0,c=t[0];for(;c!==void 0;){if(r===c.index){let g;c.type===2?g=new ae(o,o.nextSibling,this,s):c.type===1?g=new c.ctor(o,c.name,c.strings,this,s):c.type===6&&(g=new ze(o,this,s)),this._$AV.push(g),c=t[++a]}r!==c?.index&&(o=O.nextNode(),r++)}return O.currentNode=j,i}p(s){let e=0;for(let t of this._$AV)t!==void 0&&(t.strings!==void 0?(t._$AI(s,t,e),e+=t.strings.length-2):t._$AI(s[e])),e++}},ae=class n{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(s,e,t,i){this.type=2,this._$AH=d,this._$AN=void 0,this._$AA=s,this._$AB=e,this._$AM=t,this.options=i,this._$Cv=i?.isConnected??!0}get parentNode(){let s=this._$AA.parentNode,e=this._$AM;return e!==void 0&&s?.nodeType===11&&(s=e.parentNode),s}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(s,e=this){s=G(this,s,e),ne(s)?s===d||s==null||s===""?(this._$AH!==d&&this._$AR(),this._$AH=d):s!==this._$AH&&s!==L&&this._(s):s._$litType$!==void 0?this.$(s):s.nodeType!==void 0?this.T(s):Lt(s)?this.k(s):this._(s)}O(s){return this._$AA.parentNode.insertBefore(s,this._$AB)}T(s){this._$AH!==s&&(this._$AR(),this._$AH=this.O(s))}_(s){this._$AH!==d&&ne(this._$AH)?this._$AA.nextSibling.data=s:this.T(j.createTextNode(s)),this._$AH=s}$(s){let{values:e,_$litType$:t}=s,i=typeof t=="number"?this._$AC(s):(t.el===void 0&&(t.el=re.createElement(dt(t.h,t.h[0]),this.options)),t);if(this._$AH?._$AD===i)this._$AH.p(e);else{let o=new Me(i,this),r=o.u(this.options);o.p(e),this.T(r),this._$AH=o}}_$AC(s){let e=rt.get(s.strings);return e===void 0&&rt.set(s.strings,e=new re(s)),e}k(s){je(this._$AH)||(this._$AH=[],this._$AR());let e=this._$AH,t,i=0;for(let o of s)i===e.length?e.push(t=new n(this.O(oe()),this.O(oe()),this,this.options)):t=e[i],t._$AI(o),i++;i<e.length&&(this._$AR(t&&t._$AB.nextSibling,i),e.length=i)}_$AR(s=this._$AA.nextSibling,e){for(this._$AP?.(!1,!0,e);s!==this._$AB;){let t=et(s).nextSibling;et(s).remove(),s=t}}setConnected(s){this._$AM===void 0&&(this._$Cv=s,this._$AP?.(s))}},W=class{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(s,e,t,i,o){this.type=1,this._$AH=d,this._$AN=void 0,this.element=s,this.name=e,this._$AM=i,this.options=o,t.length>2||t[0]!==""||t[1]!==""?(this._$AH=Array(t.length-1).fill(new String),this.strings=t):this._$AH=d}_$AI(s,e=this,t,i){let o=this.strings,r=!1;if(o===void 0)s=G(this,s,e,0),r=!ne(s)||s!==this._$AH&&s!==L,r&&(this._$AH=s);else{let a=s,c,g;for(s=o[0],c=0;c<o.length-1;c++)g=G(this,a[t+c],e,c),g===L&&(g=this._$AH[c]),r||=!ne(g)||g!==this._$AH[c],g===d?s=d:s!==d&&(s+=(g??"")+o[c+1]),this._$AH[c]=g}r&&!i&&this.j(s)}j(s){s===d?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,s??"")}},Pe=class extends W{constructor(){super(...arguments),this.type=3}j(s){this.element[this.name]=s===d?void 0:s}},He=class extends W{constructor(){super(...arguments),this.type=4}j(s){this.element.toggleAttribute(this.name,!!s&&s!==d)}},Be=class extends W{constructor(s,e,t,i,o){super(s,e,t,i,o),this.type=5}_$AI(s,e=this){if((s=G(this,s,e,0)??d)===L)return;let t=this._$AH,i=s===d&&t!==d||s.capture!==t.capture||s.once!==t.once||s.passive!==t.passive,o=s!==d&&(t===d||i);i&&this.element.removeEventListener(this.name,this,t),o&&this.element.addEventListener(this.name,this,s),this._$AH=s}handleEvent(s){typeof this._$AH=="function"?this._$AH.call(this.options?.host??this.element,s):this._$AH.handleEvent(s)}},ze=class{constructor(s,e,t){this.element=s,this.type=6,this._$AN=void 0,this._$AM=e,this.options=t}get _$AU(){return this._$AM._$AU}_$AI(s){G(this,s)}};var Nt=Oe.litHtmlPolyfillSupport;Nt?.(re,ae),(Oe.litHtmlVersions??=[]).push("3.3.3");var ht=(n,s,e)=>{let t=e?.renderBefore??s,i=t._$litPart$;if(i===void 0){let o=e?.renderBefore??null;t._$litPart$=i=new ae(s.insertBefore(oe(),o),o,void 0,e??{})}return i._$AI(n),i};var De=globalThis,T=class extends A{constructor(){super(...arguments),this.renderOptions={host:this},this._$Do=void 0}createRenderRoot(){let s=super.createRenderRoot();return this.renderOptions.renderBefore??=s.firstChild,s}update(s){let e=this.render();this.hasUpdated||(this.renderOptions.isConnected=this.isConnected),super.update(s),this._$Do=ht(e,this.renderRoot,this.renderOptions)}connectedCallback(){super.connectedCallback(),this._$Do?.setConnected(!0)}disconnectedCallback(){super.disconnectedCallback(),this._$Do?.setConnected(!1)}render(){return L}};T._$litElement$=!0,T.finalized=!0,De.litElementHydrateSupport?.({LitElement:T});var It=De.litElementPolyfillSupport;It?.({LitElement:T});(De.litElementVersions??=[]).push("4.2.2");var Ft={attribute:!0,type:String,converter:ie,reflect:!1,hasChanged:me},Kt=(n=Ft,s,e)=>{let{kind:t,metadata:i}=e,o=globalThis.litPropertyMetadata.get(i);if(o===void 0&&globalThis.litPropertyMetadata.set(i,o=new Map),t==="setter"&&((n=Object.create(n)).wrapped=!0),o.set(e.name,n),t==="accessor"){let{name:r}=e;return{set(a){let c=s.get.call(this);s.set.call(this,a),this.requestUpdate(r,c,n,!0,a)},init(a){return a!==void 0&&this.C(r,void 0,n,a),a}}}if(t==="setter"){let{name:r}=e;return function(a){let c=this[r];s.call(this,a),this.requestUpdate(r,c,n,!0,a)}}throw Error("Unsupported decorator location: "+t)};function q(n){return(s,e)=>typeof e=="object"?Kt(n,s,e):((t,i,o)=>{let r=i.hasOwnProperty(o);return i.constructor.createProperty(o,t),r?Object.getOwnPropertyDescriptor(i,o):void 0})(n,s,e)}function H(n){return q({...n,state:!0,attribute:!1})}var D=n=>Math.max(0,Math.min(75,n));function Ne(n,s="theme"){let e=D(n.upper.angle??0),t=D(n.lower.angle??0),i=`rotate(${e} 150 70)`,o=`rotate(${-t} 150 70)`,r=a=>a.angle===void 0?"":`${a.label?`${a.label} `:""}${Math.round(D(a.angle))}\xB0`;return fe`
     <svg
       class="bed-graphic bed-graphic-${s} ${n.moving?"is-moving":""}"
       viewBox="0 -44 300 180"
@@ -40,9 +40,9 @@ var me=Object.defineProperty;var ue=Object.getOwnPropertyDescriptor;var w=(n,s,t
       <text x="86" y="128" text-anchor="middle" class="bed-graphic-label">${r(n.upper)}</text>
       <text x="214" y="128" text-anchor="middle" class="bed-graphic-label">${r(n.lower)}</text>
     </svg>
-  `}function Ht(n){let s=j(n.left.upper.angle??0),t=j(n.left.lower.angle??0),e=j(n.right.upper.angle??0),i=j(n.right.lower.angle??0),o=(r,a,c,u)=>dt`
+  `}function Ie(n){let s=D(n.left.upper.angle??0),e=D(n.left.lower.angle??0),t=D(n.right.upper.angle??0),i=D(n.right.lower.angle??0),o=(r,a,c,g)=>fe`
     <g
-      class="dual-bed-side dual-bed-side-${r} ${u?"is-moving":""}"
+      class="dual-bed-side dual-bed-side-${r} ${g?"is-moving":""}"
       fill=${`url(#abDual${r==="left"?"Left":"Right"})`}
     >
       <g
@@ -59,7 +59,7 @@ var me=Object.defineProperty;var ue=Object.getOwnPropertyDescriptor;var w=(n,s,t
         <rect class="dual-bed-surface dual-bed-pillow" x="50" y="49" width="40" height="11" rx="5" />
       </g>
     </g>
-  `;return dt`
+  `;return fe`
     <svg
       class="bed-graphic dual-bed-graphic ${n.left.moving||n.right.moving?"is-moving":""}"
       viewBox="0 -44 300 160"
@@ -83,35 +83,35 @@ var me=Object.defineProperty;var ue=Object.getOwnPropertyDescriptor;var w=(n,s,t
       <rect class="dual-bed-frame" x="30" y="78" width="240" height="8" rx="4" fill="url(#abDualFrame)" />
       <rect class="dual-bed-frame" x="34" y="83" width="6" height="24" rx="3" fill="url(#abDualFrame)" />
       <rect class="dual-bed-frame" x="260" y="83" width="6" height="24" rx="3" fill="url(#abDualFrame)" />
-      ${o("right",e,i,n.right.moving)}
-      ${o("left",s,t,n.left.moving)}
+      ${o("right",t,i,n.right.moving)}
+      ${o("left",s,e,n.left.moving)}
     </svg>
-  `}function Ot(n){let s=n.find(e=>e.key==="back"||e.key==="head"),t=n.find(e=>e.key==="legs"||e.key==="feet");return s&&t?{upper:s,lower:t}:void 0}function ne(n,s){let t=n.motors.filter(e=>{let i=e.angle??e.position;return s.states[i??""]?.attributes.unit_of_measurement==="\xB0"});return Ot(t)!==void 0}function re(n,s,t){if(s.timedMove)return n?.callService("adjustable_bed","timed_move",{device_id:s.timedMove.deviceId,side:"both",motor:s.timedMove.motor,direction:t,duration_ms:1e3});if(s.cover)return n?.callService("cover",t==="up"?"open_cover":"close_cover",{entity_id:s.cover});let e=t==="up"?s.up:s.down;return e?n?.callService("button","press",{entity_id:e}):void 0}var ht=class{constructor(s){this.actions=s;this._key=null;this._cover=null;this._stop=null;this._pointerId=null;this._generation=0}get heldKey(){return this._key}start(s,t,e,i){this._key===null&&(this._key=s.key,this._cover=s.cover??null,this._stop=i??null,this._pointerId=e,this._repeat(s,t,++this._generation))}async _repeat(s,t,e){for(;e===this._generation;)try{let i=this.actions.pulse(s,t);if(!i)return;await i}catch{return}}endFromPointer(s,t,e){this._pointerId!==null&&t!==this._pointerId||e&&this.end(s)}end(s){let t=this._stop??void 0;if(this.cancel(s)){if(s.cover){this.actions.stopCover(s.cover,t);return}this.actions.stopBed(t)}}cancel(s){return!s||this._key!==s.key?!1:(this._reset(),!0)}stopAll(s){let t=s??this._stop??void 0;this._reset(),this.actions.stopBed(t)}abandon(){let s=this._cover,t=this._stop??void 0,e=this._key!==null;this._reset(),e&&(s?this.actions.stopCover(s,t):this.actions.stopBed(t))}_reset(){this._key=null,this._cover=null,this._stop=null,this._pointerId=null,this._generation++}};var ae={"section.position":"Position","section.firmness":"Firmness","section.presets":"Presets","section.memory":"Memory","section.lighting":"Lighting","lighting.floor":"Floor light","lighting.mood":"Mood light","lighting.timer_pending":"Timer changes apply with the next floor-light command.","section.massage":"Massage","section.utility":"Utility","section.climate":"Climate","section.connection":"Connection","section.bluetooth":"Bluetooth","action.up":"Up","action.stop":"Stop","action.stop_all":"Stop all","action.down":"Down","motor.back":"Back","motor.legs":"Legs","motor.head":"Head","motor.feet":"Feet","motor.lumbar":"Lumbar","motor.pillow":"Pillow","motor.neck":"Neck","motor.tilt":"Tilt","motor.hip":"Hip","motor.bed_height":"Bed height","motor.stair":"Stair","status.connected":"Connected","status.connecting":"Connecting","status.idle":"Idle \u2014 reconnects on demand","status.disconnected":"Disconnected","memory.set":"Save\u2026","memory.cancel":"Cancel","memory.set_hint":"Tap a position to store the bed's current position there.","card.default_name":"Adjustable Bed","card.no_device":"Select a bed device in the card settings.","card.no_entities":"This device exposes no bed controls yet. Connect the bed and try again.","editor.device":"Bed device","editor.device_id":"Bed device","editor.name":"Card title (optional)","editor.appearance":"Sections","editor.sections":"Sections","editor.memory_group":"Memory options","editor.show_graphic":"Bed angle graphic","editor.show_motors":"Position controls","editor.show_firmness":"Firmness","editor.show_presets":"Presets","editor.move_up":"Move up","editor.move_down":"Move down","editor.show_memory":"Memory","editor.memory_save":"Allow saving positions","editor.memory_slots":"Memory positions shown","editor.show_lighting":"Lighting","editor.show_massage":"Massage","editor.show_climate":"Climate","editor.show_connection":"Connection controls","card.both_sides":"Both sides","card.left_side":"Left","card.right_side":"Right","combined.lights":"Both under-bed lights","combined.on":"On","combined.off":"Off","combined.mixed":"One side on","sync.label":"Match both to","sync.incomplete":"Some positions could not be synchronized.","compact.open":"Open full bed view","compact.target":"Actions","compact.target_missing":"Choose an available action target in the card settings.","compact.no_position":"Position feedback unavailable","editor.layout":"Layout","editor.layout_full":"Full card","editor.layout_compact":"Compact card","editor.recipe_hint":"Apply a compact starting point, then customize the options below.","editor.recipe_glance":"A \xB7 Glance only","editor.recipe_quick":"B \xB7 Quick actions","editor.recipe_controls":"C \xB7 Compact controls","editor.compact_appearance":"Compact appearance","editor.compact_controls":"Compact controls","editor.compact_actions":"Quick actions and order","editor.compact_actions_hint":"Choose presets or memory recalls. Only actions supported by the selected side appear. Stop is added automatically.","editor.compact_stop_hint":"Stop remains available with movement controls and stops movement started by this card, including after changing sides.","editor.actions_auto":"Automatic favourites","editor.compact_labels":"Side readouts","editor.labels_angles":"Names and positions","editor.labels_names":"Names only","editor.labels_none":"None","editor.show_header":"Title","editor.show_side_selector":"Side selector","editor.default_target":"Default / fixed target","editor.animate":"Animate position changes","editor.navigation_path":"Full view path (optional)","editor.show_utility":"Utility","editor.compact_connection":"Connection status","card.both":"Both"};var ce={"section.position":"Posisjon","section.firmness":"Fasthet","section.presets":"Forh\xE5ndsvalg","section.memory":"Minne","section.lighting":"Belysning","lighting.floor":"Gulvbelysning","lighting.mood":"Stemningslys","lighting.timer_pending":"Timerendringer brukes ved neste kommando for gulvbelysningen.","section.massage":"Massasje","section.utility":"Verkt\xF8y","section.climate":"Klima","section.connection":"Tilkobling","section.bluetooth":"Bluetooth","action.up":"Opp","action.stop":"Stopp","action.stop_all":"Stopp alt","action.down":"Ned","motor.back":"Rygg","motor.legs":"Ben","motor.head":"Hode","motor.feet":"F\xF8tter","motor.lumbar":"Korsrygg","motor.pillow":"Pute","motor.neck":"Nakke","motor.tilt":"Vipp","motor.hip":"Hofte","motor.bed_height":"Sengeh\xF8yde","motor.stair":"Trinn","status.connected":"Tilkoblet","status.connecting":"Kobler til","status.idle":"Hvilemodus \u2013 kobler til ved behov","status.disconnected":"Frakoblet","memory.set":"Lagre\u2026","memory.cancel":"Avbryt","memory.set_hint":"Trykk p\xE5 en posisjon for \xE5 lagre sengens n\xE5v\xE6rende posisjon der.","card.default_name":"Justerbar seng","card.no_device":"Velg en sengenhet i kortinnstillingene.","card.no_entities":"Denne enheten har ingen sengekontroller enn\xE5. Koble til sengen og pr\xF8v igjen.","editor.device":"Sengenhet","editor.device_id":"Sengenhet","editor.name":"Korttittel (valgfritt)","editor.appearance":"Seksjoner","editor.sections":"Seksjoner","editor.memory_group":"Minnevalg","editor.show_graphic":"Vinkelgrafikk","editor.show_motors":"Posisjonskontroller","editor.show_firmness":"Fasthet","editor.show_presets":"Forh\xE5ndsvalg","editor.move_up":"Flytt opp","editor.move_down":"Flytt ned","editor.show_memory":"Minne","editor.memory_save":"Tillat lagring av posisjoner","editor.memory_slots":"Minneposisjoner som vises","editor.show_lighting":"Belysning","editor.show_massage":"Massasje","editor.show_climate":"Klima","editor.show_connection":"Tilkoblingskontroller","card.both_sides":"Begge sider","card.left_side":"Venstre","card.right_side":"H\xF8yre","combined.lights":"Begge sengelys","combined.on":"P\xE5","combined.off":"Av","combined.mixed":"\xC9n side p\xE5","sync.label":"Synkroniser begge til","sync.incomplete":"Noen posisjoner kunne ikke synkroniseres.","compact.open":"\xC5pne full sengevisning","compact.target":"Handlinger","compact.target_missing":"Velg et tilgjengelig m\xE5l for handlinger i kortinnstillingene.","compact.no_position":"Posisjonsdata er utilgjengelige","editor.layout":"Utforming","editor.layout_full":"Fullt kort","editor.layout_compact":"Kompakt kort","editor.recipe_hint":"Velg et kompakt utgangspunkt, og tilpass valgene nedenfor.","editor.recipe_glance":"A \xB7 Kun oversikt","editor.recipe_quick":"B \xB7 Hurtighandlinger","editor.recipe_controls":"C \xB7 Kompakte kontroller","editor.compact_appearance":"Kompakt utseende","editor.compact_controls":"Kompakte kontroller","editor.compact_actions":"Hurtighandlinger og rekkef\xF8lge","editor.compact_actions_hint":"Velg forh\xE5ndsinnstillinger eller minneposisjoner. Bare handlinger for den valgte siden vises. Stopp legges til automatisk.","editor.compact_stop_hint":"Stopp vises sammen med bevegelseskontroller og stopper bevegelser startet fra dette kortet, ogs\xE5 etter sidebytte.","editor.actions_auto":"Automatiske favoritter","editor.compact_labels":"Sideinformasjon","editor.labels_angles":"Navn og posisjoner","editor.labels_names":"Bare navn","editor.labels_none":"Ingen","editor.show_header":"Tittel","editor.show_side_selector":"Sidevelger","editor.default_target":"Standard / fast m\xE5l","editor.animate":"Animer posisjonsendringer","editor.navigation_path":"Sti til full visning (valgfritt)","editor.show_utility":"Verkt\xF8y","editor.compact_connection":"Tilkoblingsstatus","card.both":"Begge"};var L={en:ae,nb:ce};function je(n){let s=(n?.locale?.language||n?.language||"en").toLowerCase(),t=s.split("-")[0];return L[s]?L[s]:L[t]?L[t]:t==="nn"||t==="no"?L.nb:L.en}function m(n,s,t){let i=je(n)[s]??L.en[s]??s;if(t)for(let[o,r]of Object.entries(t))i=i.replace(`{${o}}`,r);return i}var le=["glance","quick","controls"];function de(n,s){let t={...n,layout:"compact",show_header:!0,show_graphic:!0,compact_labels:s==="glance"?"names":"angles",show_side_selector:!0,show_motors:s==="controls",show_lighting:!1,show_connection:!1,animate:!0};return s==="glance"?t.compact_actions=[]:delete t.compact_actions,t}function jt(n,s){return[...s.presets,...s.memory.flatMap(t=>t.goto?[t.goto]:[])].flatMap(t=>{let e=n.entities[t]?.translation_key;return e?[{key:W(e).key,entityId:t}]:[]})}function gt(n,s,t){let e=jt(n,s);if(t){let r=new Map(e.map(a=>[a.key,a]));return[...new Set(t)].flatMap(a=>{let c=r.get(a);return c?[c]:[]})}let i=e.find(r=>r.key==="preset_flat"),o=e.find(r=>r.key.startsWith("preset_memory_"))??e.find(r=>r!==i);return[i,o].filter(r=>r!==void 0)}function mt(n){return n.stop?[n.stop]:n.motors.flatMap(s=>s.cover?[s.cover]:[])}function ut(n){if(!(!n||!n.startsWith("/")||/^\/[/\\]/.test(n)||/[\\\s]/.test(n)))return n}function _t(n,s){let t=st(n,s),e=K(n,t);return t&&e.length?[{key:"both",label:m(n,"card.both_sides"),bed:x(n,t)},...e.map(i=>({key:i,label:n.devices[i]?.name_by_user??n.devices[i]?.name??i,bed:x(n,i)}))]:it(n,s)?["both","left","right"].map(i=>({key:i,label:m(n,`card.${i==="both"?"both_sides":`${i}_side`}`),bed:x(n,s,i)})):[{key:"both",label:m(n,"card.both_sides"),bed:x(n,s)}]}var pe="4.2.4";function he(n,s){return{graphic:ne(n,s),motors:n.motors.some(t=>t.cover||t.up||t.down)||!!n.stop||!!n.synchro,firmness:n.firmness.length>0,presets:n.presets.length>0,memory:n.memory.length>0,lighting:N(n.lights)||!!n.lights.state,massage:n.massage.buttons.length>0||n.massage.numbers.length>0||!!n.massage.states?.length||!!n.massage.selects?.length||!!n.massage.timer,utility:n.utility.length>0,climate:n.climate.entities.length>0||n.climate.selects.length>0||n.climate.numbers.length>0,connection:!!(n.connect||n.disconnect)}}var Le="M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z",De="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z",Ne=(n,s)=>n.length===s.length&&n.every((t,e)=>t===s[e]),I=class extends k{constructor(){super(...arguments);this._computeLabel=t=>m(this.hass,`editor.${t.name}`)}setConfig(t){this._config=t}_bed(){let t=this._config?.device_id;if(!this.hass||!t)return;let e=_t(this.hass,t).map(r=>r.bed),i=e[0];if(!i)return;let o=new Map;for(let r of e)for(let a of r.memory){let c=o.get(a.slot);o.set(a.slot,{slot:a.slot,goto:c?.goto??a.goto,save:c?.save??a.save})}return{...i,memory:[...o.values()].sort((r,a)=>r.slot-a.slot)}}_presentKeys(t){let e=this.hass?_t(this.hass,this._config?.device_id).map(i=>i.bed):[t];return D.filter(i=>e.some(o=>he(o,this.hass)[i]))}_orderedKeys(t){let e=this._presentKeys(t),o=(this._config?.section_order??[]).filter(a=>e.includes(a)),r=e.filter(a=>!o.includes(a));return[...o,...r]}_memorySlots(t){return t?t.memory.map(e=>e.slot):[]}_slotLabel(t){let e=t.goto??t.save,i=e&&this.hass?.states[e]?.attributes.friendly_name||`Memory ${t.slot}`,o=e&&this.hass?.entities[e]?.device_id,r=o?this.hass?.devices[o]:void 0,a=r?.name_by_user||r?.name;return a&&i.startsWith(`${a} `)?i.slice(a.length+1):i}_emit(t){t.type=t.type??"custom:adjustable-bed-card",t.name||delete t.name,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:t},bubbles:!0,composed:!0}))}get _cfg(){return{...this._config??{}}}_deviceSchema(){return[{name:"device_id",required:!0,selector:{device:{integration:"adjustable_bed"}}},{name:"name",selector:{text:{}}}]}_deviceChanged(t){t.stopPropagation();let e=t.detail.value,i=this._cfg;i.device_id!==e.device_id&&delete i.default_target,i.device_id=e.device_id||void 0,e.name?i.name=e.name:delete i.name,this._emit(i)}_toggleSection(t,e){let i=this._cfg;e?delete i[`show_${t}`]:i[`show_${t}`]=!1,this._emit(i)}_moveSection(t,e,i){let o=this._orderedKeys(t),r=o.indexOf(e),a=r+i;if(r<0||a<0||a>=o.length)return;[o[r],o[a]]=[o[a],o[r]];let c=this._cfg;Ne(o,this._presentKeys(t))?delete c.section_order:c.section_order=o,this._emit(c)}_setMemorySave(t){let e=this._cfg;t?delete e.memory_save:e.memory_save=!1,this._emit(e)}_slotChecked(t){let e=this._config?.memory_slots;return!e||!e.length||e.map(Number).includes(t)}_toggleSlot(t,e,i){let o=this._memorySlots(t),r=this._config?.memory_slots,a=r&&r.length?r.map(Number):[...o];i?a.includes(e)||a.push(e):a=a.filter(u=>u!==e),a.sort((u,_)=>u-_);let c=this._cfg;a.length===o.length?delete c.memory_slots:c.memory_slots=a,this._emit(c)}_sectionsGroup(t){let e=this._orderedKeys(t);return e.length?h`
+  `}function Fe(n){let s=n.find(t=>t.key==="back"||t.key==="head"),e=n.find(t=>t.key==="legs"||t.key==="feet");return s&&e?{upper:s,lower:e}:void 0}function pt(n,s){let e=n.motors.filter(t=>{let i=t.angle??t.position;return s.states[i??""]?.attributes.unit_of_measurement==="\xB0"});return Fe(e)!==void 0}function ut(n,s){let e=n?.entities[s]?.device_id,t=n?.states[s]?.attributes,i=t?.held_control,o=t?.hold_start_delay_ms,r=t?.hold_release_delay_ms;if(!(!e||typeof i!="string"||typeof o!="number"||!Number.isFinite(o)||o<0||typeof r!="number"||!Number.isFinite(r)||r<0))return{key:s,up:s,deviceId:e,holdEntityId:s,heldControl:{control:i,startDelayMs:o,releaseDelayMs:r}}}function gt(n,s,e){if(s.timedMove)return n?.callService("adjustable_bed","timed_move",{device_id:s.timedMove.deviceId,side:"both",motor:s.timedMove.motor,direction:e,duration_ms:1e3});if(s.cover)return n?.callService("cover",e==="up"?"open_cover":"close_cover",{entity_id:s.cover});let t=e==="up"?s.up:s.down;return t?n?.callService("button","press",{entity_id:t}):void 0}function mt(n,s,e){let t=s.heldControls?.[e]??s.heldControl;if(!t||!s.deviceId)return;let i=n?.states[s.holdEntityId??s.cover??""]?.attributes.bed_side,o={device_id:[s.deviceId],control:t.control,duration:60};return(i==="left"||i==="right"||i==="both")&&(o.side=i),n?.callService("adjustable_bed","hold_control",o)}function ye(n,s){if(!n||!s)return;let e=n.entities[s]?.device_id;if(!e)return;let t=n.devices??{},i=t[e],o=n.states[s]?.attributes.bed_side??n.states[s]?.attributes.side,r=o==="left"||o==="right"||o==="both"?o:Object.values(t).some(a=>a.parent_device_id===e)?"both":void 0;return{deviceId:i?.parent_device_id??e,side:r}}function Ke(n,s,e){let t=ye(s,e),i=t?.side!=="left"&&t?.side!=="right";n.stopAll(e,i,t)}var be=class{constructor(s,e={setTimeout:(t,i)=>globalThis.setTimeout(t,i),clearTimeout:t=>globalThis.clearTimeout(t)}){this.actions=s;this.timers=e;this._key=null;this._cover=null;this._stop=null;this._pointerId=null;this._generation=0;this._repeatBlocked=!1;this._started=!1;this._releaseId=0;this._pendingReleases=new Map}get heldKey(){return this._key}start(s,e,t,i,o){if(this._key!==null)return;this._key=s.key,this._cover=s.cover??null,this._stop=i??null,this._target=o,this._pointerId=t;let r=++this._generation;if(this._heldControl=s.heldControls?.[e]??s.heldControl,this._flushPendingForTarget(this._targetKey()),this._heldControl){let a=this._heldControl.startDelayMs;a<=0?this._startHeldControl(s,e,r):this._startTimer=this.timers.setTimeout(()=>this._startHeldControl(s,e,r),a);return}this._started=!0,this._repeat(s,e,r)}_startHeldControl(s,e,t){this._startTimer=void 0,!(t!==this._generation||this._key!==s.key)&&(this._started=!0,this._holdControl(s,e,t))}async _holdControl(s,e,t){try{let i=this.actions.holdControl(s,e);i&&await i}catch{}finally{t===this._generation&&this._reset()}}async _repeat(s,e,t){for(;t===this._generation&&!this._repeatBlocked;)try{let i=this.actions.pulse(s,e);if(!i)return;await i}catch{return}}_targetKey(s=this._stop??void 0,e=this._cover??void 0){return s??e??this._key??""}_release(s){s.cover?this.actions.stopCover(s.cover,s.stopEntityId):this.actions.stopBed(s.stopEntityId)}_scheduleRelease(){let s={id:++this._releaseId,motorKey:this._key??"",targetKey:this._targetKey(),target:this._target,cover:this._cover??void 0,stopEntityId:this._stop??void 0};this._pendingReleases.set(s.id,s);let e=this._heldControl?.releaseDelayMs??0;if(e<=0){this._runRelease(s);return}s.timer=this.timers.setTimeout(()=>this._runRelease(s),e)}_runRelease(s){this._pendingReleases.delete(s.id)&&(s.timer!==void 0&&this.timers.clearTimeout(s.timer),this._release(s))}_flushPendingForTarget(s){let e=new Set;for(let t of[...this._pendingReleases.values()]){let i=t.targetKey;i===s&&(this._runRelease(t),e.add(i))}return e}_flushAllReleases(s){let e=new Set;for(let t of[...this._pendingReleases.values()]){let i=t.targetKey;i===s?(this._pendingReleases.delete(t.id),t.timer!==void 0&&this.timers.clearTimeout(t.timer)):(this._runRelease(t),e.add(i))}return e}_targetsOverlap(s,e,t,i){return t!==void 0&&s===t?!0:!e||!i||e.deviceId!==i.deviceId?!1:!e.side||!i.side||e.side==="both"||i.side==="both"||e.side===i.side}_discardReleasesOverlapping(s,e){for(let t of[...this._pendingReleases.values()])this._targetsOverlap(t.targetKey,t.target,s,e)&&(this._pendingReleases.delete(t.id),t.timer!==void 0&&this.timers.clearTimeout(t.timer))}_discardAllReleases(){for(let s of this._pendingReleases.values())s.timer!==void 0&&this.timers.clearTimeout(s.timer);this._pendingReleases.clear()}endFromPointer(s,e,t){this._pointerId!==null&&e!==this._pointerId||t&&this.end(s)}end(s){if(this._key!==s.key)return;let e=this._started,t=this._heldControl!==void 0,i={cover:this._cover??void 0,stopEntityId:this._stop??void 0};e&&t&&this._scheduleRelease(),this._reset(),!(!e||t)&&this._release(i)}cancel(s,e=!1){if(!s)return!1;let t=this._key===s.key;t&&this._reset();let i=!1;if(e)for(let o of[...this._pendingReleases.values()])o.motorKey===s.key&&(this._pendingReleases.delete(o.id),o.timer!==void 0&&this.timers.clearTimeout(o.timer),i=!0);return t||i}stopCover(s,e,t){let i=s.cover;if(i){this._key!==null&&(t==="side"||this._key===s.key)&&this._targetsOverlap(this._targetKey(),this._target,i,e)&&(this._target?.side==="both"&&this._target.deviceId===e?.deviceId&&(e?.side==="left"||e?.side==="right")&&!this._heldControl?this._repeatBlocked=!0:this._reset());for(let o of[...this._pendingReleases.values()]){let r=o.target?.side==="both"&&o.target.deviceId===e?.deviceId&&(e?.side==="left"||e?.side==="right");t!=="side"&&r||t!=="side"&&o.motorKey!==s.key||!this._targetsOverlap(o.targetKey,o.target,i,e)||(this._pendingReleases.delete(o.id),o.timer!==void 0&&this.timers.clearTimeout(o.timer))}}}stopAll(s,e=!1,t){if(s!==void 0){e&&!t?(this._discardAllReleases(),this._reset()):(this._discardReleasesOverlapping(s,t),this._key!==null&&this._targetsOverlap(this._targetKey(),this._target,s,t)&&this._reset()),this.actions.stopBed(s);return}let i=this._flushAllReleases(s),o=this._key===null?null:{cover:this._cover??void 0,stopEntityId:this._stop??void 0},r=o?this._targetKey(o.stopEntityId,o.cover):void 0,a=this._started;this._reset(),o&&a&&r!==void 0&&(this._release(o),i.add(r)),i.size===0&&(!o||!a)&&this.actions.stopBed(o?.stopEntityId)}abandon(){let s=this._key===null?null:{cover:this._cover??void 0,stopEntityId:this._stop??void 0},e=this._started;this._reset(),s&&e&&this._release(s),this._flushAllReleases()}_reset(){this._startTimer!==void 0&&this.timers.clearTimeout(this._startTimer),this._startTimer=void 0,this._key=null,this._cover=null,this._stop=null,this._target=void 0,this._pointerId=null,this._repeatBlocked=!1,this._started=!1,this._heldControl=void 0,this._generation++}};function _t(n,s,e){let t=()=>n.abandon(),i=()=>{s.visibilityState==="hidden"&&t()};return s.addEventListener("visibilitychange",i),e.addEventListener("pagehide",t),()=>{s.removeEventListener("visibilitychange",i),e.removeEventListener("pagehide",t)}}var ft={"section.position":"Position","section.firmness":"Firmness","section.presets":"Presets","section.memory":"Memory","section.lighting":"Lighting","lighting.floor":"Floor light","lighting.mood":"Mood light","lighting.timer_pending":"Timer changes apply with the next floor-light command.","section.massage":"Massage","section.utility":"Utility","section.climate":"Climate","section.connection":"Connection","section.bluetooth":"Bluetooth","action.up":"Up","action.stop":"Stop","action.stop_all":"Stop all","action.down":"Down","motor.back":"Back","motor.legs":"Legs","motor.head":"Head","motor.feet":"Feet","motor.lumbar":"Lumbar","motor.pillow":"Pillow","motor.neck":"Neck","motor.tilt":"Tilt","motor.hip":"Hip","motor.bed_height":"Bed height","motor.stair":"Stair","status.connected":"Connected","status.connecting":"Connecting","status.idle":"Idle \u2014 reconnects on demand","status.disconnected":"Disconnected","memory.set":"Save\u2026","memory.cancel":"Cancel","memory.set_hint":"Tap a position to store the bed's current position there.","card.default_name":"Adjustable Bed","card.no_device":"Select a bed device in the card settings.","card.no_entities":"This device exposes no bed controls yet. Connect the bed and try again.","editor.device":"Bed device","editor.device_id":"Bed device","editor.name":"Card title (optional)","editor.appearance":"Sections","editor.sections":"Sections","editor.memory_group":"Memory options","editor.show_graphic":"Bed angle graphic","editor.show_motors":"Position controls","editor.show_firmness":"Firmness","editor.show_presets":"Presets","editor.move_up":"Move up","editor.move_down":"Move down","editor.show_memory":"Memory","editor.memory_save":"Allow saving positions","editor.memory_slots":"Memory positions shown","editor.show_lighting":"Lighting","editor.show_massage":"Massage","editor.show_climate":"Climate","editor.show_connection":"Connection controls","card.both_sides":"Both sides","card.left_side":"Left","card.right_side":"Right","combined.lights":"Both under-bed lights","combined.on":"On","combined.off":"Off","combined.mixed":"One side on","sync.label":"Match both to","sync.incomplete":"Some positions could not be synchronized.","compact.open":"Open full bed view","compact.target":"Actions","compact.target_missing":"Choose an available action target in the card settings.","compact.no_position":"Position feedback unavailable","editor.layout":"Layout","editor.layout_full":"Full card","editor.layout_compact":"Compact card","editor.recipe_hint":"Apply a compact starting point, then customize the options below.","editor.recipe_glance":"A \xB7 Glance only","editor.recipe_quick":"B \xB7 Quick actions","editor.recipe_controls":"C \xB7 Compact controls","editor.compact_appearance":"Compact appearance","editor.compact_controls":"Compact controls","editor.compact_actions":"Quick actions and order","editor.compact_actions_hint":"Choose presets or memory recalls. Only actions supported by the selected side appear. Stop is added automatically.","editor.compact_stop_hint":"Stop remains available with movement controls and stops movement started by this card, including after changing sides.","editor.actions_auto":"Automatic favourites","editor.compact_labels":"Side readouts","editor.labels_angles":"Names and positions","editor.labels_names":"Names only","editor.labels_none":"None","editor.show_header":"Title","editor.show_side_selector":"Side selector","editor.default_target":"Default / fixed target","editor.animate":"Animate position changes","editor.navigation_path":"Full view path (optional)","editor.show_utility":"Utility","editor.compact_connection":"Connection status","card.both":"Both"};var vt={"section.position":"Posisjon","section.firmness":"Fasthet","section.presets":"Forh\xE5ndsvalg","section.memory":"Minne","section.lighting":"Belysning","lighting.floor":"Gulvbelysning","lighting.mood":"Stemningslys","lighting.timer_pending":"Timerendringer brukes ved neste kommando for gulvbelysningen.","section.massage":"Massasje","section.utility":"Verkt\xF8y","section.climate":"Klima","section.connection":"Tilkobling","section.bluetooth":"Bluetooth","action.up":"Opp","action.stop":"Stopp","action.stop_all":"Stopp alt","action.down":"Ned","motor.back":"Rygg","motor.legs":"Ben","motor.head":"Hode","motor.feet":"F\xF8tter","motor.lumbar":"Korsrygg","motor.pillow":"Pute","motor.neck":"Nakke","motor.tilt":"Vipp","motor.hip":"Hofte","motor.bed_height":"Sengeh\xF8yde","motor.stair":"Trinn","status.connected":"Tilkoblet","status.connecting":"Kobler til","status.idle":"Hvilemodus \u2013 kobler til ved behov","status.disconnected":"Frakoblet","memory.set":"Lagre\u2026","memory.cancel":"Avbryt","memory.set_hint":"Trykk p\xE5 en posisjon for \xE5 lagre sengens n\xE5v\xE6rende posisjon der.","card.default_name":"Justerbar seng","card.no_device":"Velg en sengenhet i kortinnstillingene.","card.no_entities":"Denne enheten har ingen sengekontroller enn\xE5. Koble til sengen og pr\xF8v igjen.","editor.device":"Sengenhet","editor.device_id":"Sengenhet","editor.name":"Korttittel (valgfritt)","editor.appearance":"Seksjoner","editor.sections":"Seksjoner","editor.memory_group":"Minnevalg","editor.show_graphic":"Vinkelgrafikk","editor.show_motors":"Posisjonskontroller","editor.show_firmness":"Fasthet","editor.show_presets":"Forh\xE5ndsvalg","editor.move_up":"Flytt opp","editor.move_down":"Flytt ned","editor.show_memory":"Minne","editor.memory_save":"Tillat lagring av posisjoner","editor.memory_slots":"Minneposisjoner som vises","editor.show_lighting":"Belysning","editor.show_massage":"Massasje","editor.show_climate":"Klima","editor.show_connection":"Tilkoblingskontroller","card.both_sides":"Begge sider","card.left_side":"Venstre","card.right_side":"H\xF8yre","combined.lights":"Begge sengelys","combined.on":"P\xE5","combined.off":"Av","combined.mixed":"\xC9n side p\xE5","sync.label":"Synkroniser begge til","sync.incomplete":"Noen posisjoner kunne ikke synkroniseres.","compact.open":"\xC5pne full sengevisning","compact.target":"Handlinger","compact.target_missing":"Velg et tilgjengelig m\xE5l for handlinger i kortinnstillingene.","compact.no_position":"Posisjonsdata er utilgjengelige","editor.layout":"Utforming","editor.layout_full":"Fullt kort","editor.layout_compact":"Kompakt kort","editor.recipe_hint":"Velg et kompakt utgangspunkt, og tilpass valgene nedenfor.","editor.recipe_glance":"A \xB7 Kun oversikt","editor.recipe_quick":"B \xB7 Hurtighandlinger","editor.recipe_controls":"C \xB7 Kompakte kontroller","editor.compact_appearance":"Kompakt utseende","editor.compact_controls":"Kompakte kontroller","editor.compact_actions":"Hurtighandlinger og rekkef\xF8lge","editor.compact_actions_hint":"Velg forh\xE5ndsinnstillinger eller minneposisjoner. Bare handlinger for den valgte siden vises. Stopp legges til automatisk.","editor.compact_stop_hint":"Stopp vises sammen med bevegelseskontroller og stopper bevegelser startet fra dette kortet, ogs\xE5 etter sidebytte.","editor.actions_auto":"Automatiske favoritter","editor.compact_labels":"Sideinformasjon","editor.labels_angles":"Navn og posisjoner","editor.labels_names":"Bare navn","editor.labels_none":"Ingen","editor.show_header":"Tittel","editor.show_side_selector":"Sidevelger","editor.default_target":"Standard / fast m\xE5l","editor.animate":"Animer posisjonsendringer","editor.navigation_path":"Sti til full visning (valgfritt)","editor.show_utility":"Verkt\xF8y","editor.compact_connection":"Tilkoblingsstatus","card.both":"Begge"};var N={en:ft,nb:vt};function Wt(n){let s=(n?.locale?.language||n?.language||"en").toLowerCase(),e=s.split("-")[0];return N[s]?N[s]:N[e]?N[e]:e==="nn"||e==="no"?N.nb:N.en}function u(n,s,e){let i=Wt(n)[s]??N.en[s]??s;if(e)for(let[o,r]of Object.entries(e))i=i.replace(`{${o}}`,r);return i}var bt=["glance","quick","controls"];function yt(n,s){let e={...n,layout:"compact",show_header:!0,show_graphic:!0,compact_labels:s==="glance"?"names":"angles",show_side_selector:!0,show_motors:s==="controls",show_lighting:!1,show_connection:!1,animate:!0};return s==="glance"?e.compact_actions=[]:delete e.compact_actions,e}function Ue(n,s){return[...s.presets,...s.memory.flatMap(e=>e.goto?[e.goto]:[])].flatMap(e=>{let t=n.entities[e]?.translation_key;return t?[{key:Q(t).key,entityId:e}]:[]})}function $e(n,s,e){let t=Ue(n,s);if(e){let r=new Map(t.map(a=>[a.key,a]));return[...new Set(e)].flatMap(a=>{let c=r.get(a);return c?[c]:[]})}let i=t.find(r=>r.key==="preset_flat"),o=t.find(r=>r.key.startsWith("preset_memory_"))??t.find(r=>r!==i);return[i,o].filter(r=>r!==void 0)}function xe(n){return n.stop?[n.stop]:n.motors.flatMap(s=>s.cover?[s.cover]:[])}function we(n){if(!(!n||!n.startsWith("/")||/^\/[/\\]/.test(n)||/[\\\s]/.test(n)))return n}function ke(n,s){let e=de(n,s),t=Z(n,e);return e&&t.length?[{key:"both",label:u(n,"card.both_sides"),bed:k(n,e)},...t.map(i=>({key:i,label:n.devices[i]?.name_by_user??n.devices[i]?.name??i,bed:k(n,i)}))]:ce(n,s)?["both","left","right"].map(i=>({key:i,label:u(n,`card.${i==="both"?"both_sides":`${i}_side`}`),bed:k(n,s,i)})):[{key:"both",label:u(n,"card.both_sides"),bed:k(n,s)}]}var $t="4.2.4";function xt(n,s){return{graphic:pt(n,s),motors:n.motors.some(e=>e.cover||e.up||e.down)||!!n.stop||!!n.synchro,firmness:n.firmness.length>0,presets:n.presets.length>0,memory:n.memory.length>0,lighting:U(n.lights)||!!n.lights.state,massage:n.massage.buttons.length>0||n.massage.numbers.length>0||!!n.massage.states?.length||!!n.massage.selects?.length||!!n.massage.timer,utility:n.utility.length>0,climate:n.climate.entities.length>0||n.climate.selects.length>0||n.climate.numbers.length>0,connection:!!(n.connect||n.disconnect)}}var qt="M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z",Vt="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z",Yt=(n,s)=>n.length===s.length&&n.every((e,t)=>e===s[t]),V=class extends T{constructor(){super(...arguments);this._computeLabel=e=>u(this.hass,`editor.${e.name}`)}setConfig(e){this._config=e}_bed(){let e=this._config?.device_id;if(!this.hass||!e)return;let t=ke(this.hass,e).map(r=>r.bed),i=t[0];if(!i)return;let o=new Map;for(let r of t)for(let a of r.memory){let c=o.get(a.slot);o.set(a.slot,{slot:a.slot,goto:c?.goto??a.goto,save:c?.save??a.save})}return{...i,memory:[...o.values()].sort((r,a)=>r.slot-a.slot)}}_presentKeys(e){let t=this.hass?ke(this.hass,this._config?.device_id).map(i=>i.bed):[e];return K.filter(i=>t.some(o=>xt(o,this.hass)[i]))}_orderedKeys(e){let t=this._presentKeys(e),o=(this._config?.section_order??[]).filter(a=>t.includes(a)),r=t.filter(a=>!o.includes(a));return[...o,...r]}_memorySlots(e){return e?e.memory.map(t=>t.slot):[]}_slotLabel(e){let t=e.goto??e.save,i=t&&this.hass?.states[t]?.attributes.friendly_name||`Memory ${e.slot}`,o=t&&this.hass?.entities[t]?.device_id,r=o?this.hass?.devices[o]:void 0,a=r?.name_by_user||r?.name;return a&&i.startsWith(`${a} `)?i.slice(a.length+1):i}_emit(e){e.type=e.type??"custom:adjustable-bed-card",e.name||delete e.name,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0}))}get _cfg(){return{...this._config??{}}}_deviceSchema(){return[{name:"device_id",required:!0,selector:{device:{integration:"adjustable_bed"}}},{name:"name",selector:{text:{}}}]}_deviceChanged(e){e.stopPropagation();let t=e.detail.value,i=this._cfg;i.device_id!==t.device_id&&delete i.default_target,i.device_id=t.device_id||void 0,t.name?i.name=t.name:delete i.name,this._emit(i)}_toggleSection(e,t){let i=this._cfg;t?delete i[`show_${e}`]:i[`show_${e}`]=!1,this._emit(i)}_moveSection(e,t,i){let o=this._orderedKeys(e),r=o.indexOf(t),a=r+i;if(r<0||a<0||a>=o.length)return;[o[r],o[a]]=[o[a],o[r]];let c=this._cfg;Yt(o,this._presentKeys(e))?delete c.section_order:c.section_order=o,this._emit(c)}_setMemorySave(e){let t=this._cfg;e?delete t.memory_save:t.memory_save=!1,this._emit(t)}_slotChecked(e){let t=this._config?.memory_slots;return!t||!t.length||t.map(Number).includes(e)}_toggleSlot(e,t,i){let o=this._memorySlots(e),r=this._config?.memory_slots,a=r&&r.length?r.map(Number):[...o];i?a.includes(t)||a.push(t):a=a.filter(g=>g!==t),a.sort((g,v)=>g-v);let c=this._cfg;a.length===o.length?delete c.memory_slots:c.memory_slots=a,this._emit(c)}_sectionsGroup(e){let t=this._orderedKeys(e);return t.length?p`
       <div class="group">
-        <div class="group-title">${m(this.hass,"editor.sections")}</div>
-        ${e.map((i,o)=>{let r=this._config?.[`show_${i}`]!==!1;return h`
+        <div class="group-title">${u(this.hass,"editor.sections")}</div>
+        ${t.map((i,o)=>{let r=this._config?.[`show_${i}`]!==!1;return p`
             <div class="row">
               <div class="reorder">
                 <button
                   class="icon-btn"
                   ?disabled=${o===0}
-                  @click=${()=>this._moveSection(t,i,-1)}
-                  title=${m(this.hass,"editor.move_up")}
-                  aria-label=${m(this.hass,"editor.move_up")}
+                  @click=${()=>this._moveSection(e,i,-1)}
+                  title=${u(this.hass,"editor.move_up")}
+                  aria-label=${u(this.hass,"editor.move_up")}
                 >
-                  <svg viewBox="0 0 24 24"><path d=${Le}></path></svg>
+                  <svg viewBox="0 0 24 24"><path d=${qt}></path></svg>
                 </button>
                 <button
                   class="icon-btn"
-                  ?disabled=${o===e.length-1}
-                  @click=${()=>this._moveSection(t,i,1)}
-                  title=${m(this.hass,"editor.move_down")}
-                  aria-label=${m(this.hass,"editor.move_down")}
+                  ?disabled=${o===t.length-1}
+                  @click=${()=>this._moveSection(e,i,1)}
+                  title=${u(this.hass,"editor.move_down")}
+                  aria-label=${u(this.hass,"editor.move_down")}
                 >
-                  <svg viewBox="0 0 24 24"><path d=${De}></path></svg>
+                  <svg viewBox="0 0 24 24"><path d=${Vt}></path></svg>
                 </button>
               </div>
-              <span class="label">${m(this.hass,`editor.show_${i}`)}</span>
+              <span class="label">${u(this.hass,`editor.show_${i}`)}</span>
               <ha-switch
                 .checked=${r}
                 @change=${a=>this._toggleSection(i,a.target.checked)}
@@ -119,99 +119,99 @@ var me=Object.defineProperty;var ue=Object.getOwnPropertyDescriptor;var w=(n,s,t
             </div>
           `})}
       </div>
-    `:d}_memoryGroup(t){if(!(t.memory.length>0&&this._config?.show_memory!==!1))return d;let i=t.memory.some(r=>r.save),o=t.memory.length>1;return!i&&!o?d:h`
+    `:d}_memoryGroup(e){if(!(e.memory.length>0&&this._config?.show_memory!==!1))return d;let i=e.memory.some(r=>r.save),o=e.memory.length>1;return!i&&!o?d:p`
       <div class="group">
         <div class="group-title">
-          ${m(this.hass,"editor.memory_group")}
+          ${u(this.hass,"editor.memory_group")}
         </div>
-        ${i?h`<div class="row">
-                <span class="label">${m(this.hass,"editor.memory_save")}</span>
+        ${i?p`<div class="row">
+                <span class="label">${u(this.hass,"editor.memory_save")}</span>
                 <ha-switch
                   .checked=${this._config?.memory_save!==!1}
                   @change=${r=>this._setMemorySave(r.target.checked)}
                 ></ha-switch>
               </div>`:d}
-        ${o?h`<div class="sub">
+        ${o?p`<div class="sub">
                 <div class="sub-label">
-                  ${m(this.hass,"editor.memory_slots")}
+                  ${u(this.hass,"editor.memory_slots")}
                 </div>
-                ${t.memory.map(r=>h`
+                ${e.memory.map(r=>p`
                     <label class="check-row">
                       <ha-checkbox
                         .checked=${this._slotChecked(r.slot)}
-                        @change=${a=>this._toggleSlot(t,r.slot,a.target.checked)}
+                        @change=${a=>this._toggleSlot(e,r.slot,a.target.checked)}
                       ></ha-checkbox>
                       <span>${this._slotLabel(r)}</span>
                     </label>
                   `)}
               </div>`:d}
       </div>
-    `}_setOption(t,e){this._emit({...this._cfg,[t]:e})}_compactToggle(t,e){return h`<div class="row"><span class="label">${m(this.hass,t==="show_connection"?"editor.compact_connection":`editor.${t}`)}</span>
-      <ha-switch .checked=${this._config?.[t]??e}
-        @change=${i=>this._setOption(t,i.target.checked)}></ha-switch>
-    </div>`}_compactGroup(){let t=this._config,e=_t(this.hass,t.device_id),i=e.find(c=>c.key===(t.default_target??"both")),o=e.flatMap(c=>jt(this.hass,c.bed)).filter((c,u,_)=>_.findIndex(f=>f.key===c.key)===u),r=t.compact_actions??(i?gt(this.hass,i.bed).map(c=>c.key):[]),a=[...r.filter(c=>o.some(u=>u.key===c)),...o.map(c=>c.key).filter(c=>!r.includes(c))];return h`
+    `}_setOption(e,t){this._emit({...this._cfg,[e]:t})}_compactToggle(e,t){return p`<div class="row"><span class="label">${u(this.hass,e==="show_connection"?"editor.compact_connection":`editor.${e}`)}</span>
+      <ha-switch .checked=${this._config?.[e]??t}
+        @change=${i=>this._setOption(e,i.target.checked)}></ha-switch>
+    </div>`}_compactGroup(){let e=this._config,t=ke(this.hass,e.device_id),i=t.find(c=>c.key===(e.default_target??"both")),o=t.flatMap(c=>Ue(this.hass,c.bed)).filter((c,g,v)=>v.findIndex(_=>_.key===c.key)===g),r=e.compact_actions??(i?$e(this.hass,i.bed).map(c=>c.key):[]),a=[...r.filter(c=>o.some(g=>g.key===c)),...o.map(c=>c.key).filter(c=>!r.includes(c))];return p`
       <div class="group">
-        <div class="group-title">${m(this.hass,"editor.compact_appearance")}</div>
+        <div class="group-title">${u(this.hass,"editor.compact_appearance")}</div>
         ${this._compactToggle("show_header",!0)}
         ${this._compactToggle("show_graphic",!0)}
-        <label class="row"><span class="label">${m(this.hass,"editor.compact_labels")}</span>
-          <select .value=${t.compact_labels??"angles"}
+        <label class="row"><span class="label">${u(this.hass,"editor.compact_labels")}</span>
+          <select .value=${e.compact_labels??"angles"}
             @change=${c=>this._setOption("compact_labels",c.target.value)}>
-            ${["angles","names","none"].map(c=>h`
-              <option value=${c}>${m(this.hass,`editor.labels_${c}`)}</option>`)}
+            ${["angles","names","none"].map(c=>p`
+              <option value=${c}>${u(this.hass,`editor.labels_${c}`)}</option>`)}
           </select>
         </label>
         ${this._compactToggle("animate",!0)}
-        <label class="row path-row"><span class="label">${m(this.hass,"editor.navigation_path")}</span>
-          <input type="text" .value=${t.navigation_path??""} placeholder="/dashboard/bed"
+        <label class="row path-row"><span class="label">${u(this.hass,"editor.navigation_path")}</span>
+          <input type="text" .value=${e.navigation_path??""} placeholder="/dashboard/bed"
             @change=${c=>this._setOption("navigation_path",c.target.value||void 0)}>
         </label>
       </div>
       <div class="group">
-        <div class="group-title">${m(this.hass,"editor.compact_controls")}</div>
-        ${e.length>1||!i?h`
+        <div class="group-title">${u(this.hass,"editor.compact_controls")}</div>
+        ${t.length>1||!i?p`
           ${this._compactToggle("show_side_selector",!0)}
-          <label class="row"><span class="label">${m(this.hass,"editor.default_target")}</span>
-            <select .value=${t.default_target??"both"}
+          <label class="row"><span class="label">${u(this.hass,"editor.default_target")}</span>
+            <select .value=${e.default_target??"both"}
               @change=${c=>this._setOption("default_target",c.target.value)}>
-              ${i?d:h`<option value=${t.default_target}>${m(this.hass,"compact.target_missing")}</option>`}
-              ${e.map(c=>h`<option value=${c.key}>${c.label}</option>`)}
+              ${i?d:p`<option value=${e.default_target}>${u(this.hass,"compact.target_missing")}</option>`}
+              ${t.map(c=>p`<option value=${c.key}>${c.label}</option>`)}
             </select>
           </label>`:d}
         ${this._compactToggle("show_motors",!1)}
         ${this._compactToggle("show_lighting",!1)}
         ${this._compactToggle("show_connection",!1)}
-        <p class="hint">${m(this.hass,"editor.compact_stop_hint")}</p>
+        <p class="hint">${u(this.hass,"editor.compact_stop_hint")}</p>
       </div>
       <div class="group">
-        <div class="group-title">${m(this.hass,"editor.compact_actions")}</div>
-        <p class="hint">${m(this.hass,"editor.compact_actions_hint")}</p>
+        <div class="group-title">${u(this.hass,"editor.compact_actions")}</div>
+        <p class="hint">${u(this.hass,"editor.compact_actions_hint")}</p>
         <div class="recipes">
-          <button @click=${()=>this._setOption("compact_actions",void 0)}>${m(this.hass,"editor.actions_auto")}</button>
-          <button @click=${()=>this._setOption("compact_actions",[])}>${m(this.hass,"editor.labels_none")}</button>
+          <button @click=${()=>this._setOption("compact_actions",void 0)}>${u(this.hass,"editor.actions_auto")}</button>
+          <button @click=${()=>this._setOption("compact_actions",[])}>${u(this.hass,"editor.labels_none")}</button>
         </div>
-        ${a.map(c=>{let u=o.find(y=>y.key===c),_=r.includes(c),f=r.indexOf(c),b=y=>{let $=[...r];[$[f],$[f+y]]=[$[f+y],$[f]],this._setOption("compact_actions",$)},v=this.hass.states[u.entityId];return h`<div class="row">
-            <ha-checkbox .checked=${_} @change=${y=>this._setOption("compact_actions",y.target.checked?[...r,c]:r.filter($=>$!==c))}></ha-checkbox>
-            <span class="label">${v?.attributes.friendly_name??c}</span>
-            <button class="icon-btn" ?disabled=${!_||f===0}
-              aria-label=${m(this.hass,"editor.move_up")} @click=${()=>b(-1)}>↑</button>
-            <button class="icon-btn" ?disabled=${!_||f===r.length-1}
-              aria-label=${m(this.hass,"editor.move_down")} @click=${()=>b(1)}>↓</button>
+        ${a.map(c=>{let g=o.find($=>$.key===c),v=r.includes(c),_=r.indexOf(c),b=$=>{let E=[...r];[E[_],E[_+$]]=[E[_+$],E[_]],this._setOption("compact_actions",E)},y=this.hass.states[g.entityId];return p`<div class="row">
+            <ha-checkbox .checked=${v} @change=${$=>this._setOption("compact_actions",$.target.checked?[...r,c]:r.filter(E=>E!==c))}></ha-checkbox>
+            <span class="label">${y?.attributes.friendly_name??c}</span>
+            <button class="icon-btn" ?disabled=${!v||_===0}
+              aria-label=${u(this.hass,"editor.move_up")} @click=${()=>b(-1)}>↑</button>
+            <button class="icon-btn" ?disabled=${!v||_===r.length-1}
+              aria-label=${u(this.hass,"editor.move_down")} @click=${()=>b(1)}>↓</button>
           </div>`})}
-      </div>`}_layoutGroup(){return h`<div class="group">
-      <label class="row"><span class="label">${m(this.hass,"editor.layout")}</span>
+      </div>`}_layoutGroup(){return p`<div class="group">
+      <label class="row"><span class="label">${u(this.hass,"editor.layout")}</span>
         <select .value=${this._config?.layout??"full"}
-          @change=${t=>this._setOption("layout",t.target.value)}>
-          <option value="full">${m(this.hass,"editor.layout_full")}</option>
-          <option value="compact">${m(this.hass,"editor.layout_compact")}</option>
+          @change=${e=>this._setOption("layout",e.target.value)}>
+          <option value="full">${u(this.hass,"editor.layout_full")}</option>
+          <option value="compact">${u(this.hass,"editor.layout_compact")}</option>
         </select>
       </label>
-      <p class="hint">${m(this.hass,"editor.recipe_hint")}</p>
-      <div class="recipes">${le.map(t=>h`
-        <button @click=${()=>this._emit({...de(this._config,t)})}>
-          ${m(this.hass,`editor.recipe_${t}`)}
+      <p class="hint">${u(this.hass,"editor.recipe_hint")}</p>
+      <div class="recipes">${bt.map(e=>p`
+        <button @click=${()=>this._emit({...yt(this._config,e)})}>
+          ${u(this.hass,`editor.recipe_${e}`)}
         </button>`)}</div>
-    </div>`}render(){if(!this.hass||!this._config)return d;let t=this._bed();return h`
+    </div>`}render(){if(!this.hass||!this._config)return d;let e=this._bed();return p`
       <ha-form
         .hass=${this.hass}
         .data=${{device_id:this._config.device_id,name:this._config.name}}
@@ -220,11 +220,11 @@ var me=Object.defineProperty;var ue=Object.getOwnPropertyDescriptor;var w=(n,s,t
         @value-changed=${this._deviceChanged}
       ></ha-form>
       ${this._layoutGroup()}
-      ${this._config.layout==="compact"?this._compactGroup():h`
-        ${t?this._sectionsGroup(t):d}
-        ${t?this._memoryGroup(t):d}
+      ${this._config.layout==="compact"?this._compactGroup():p`
+        ${e?this._sectionsGroup(e):d}
+        ${e?this._memoryGroup(e):d}
       `}
-    `}};I.styles=V`
+    `}};V.styles=ee`
     select, input { min-width: 0; max-width: 60%; box-sizing: border-box;
       background: var(--card-background-color); color: var(--primary-text-color);
       border: 1px solid var(--divider-color); border-radius: 6px; padding: 8px; font: inherit; }
@@ -306,28 +306,28 @@ var me=Object.defineProperty;var ue=Object.getOwnPropertyDescriptor;var w=(n,s,t
       gap: 4px;
       cursor: pointer;
     }
-  `,w([F({attribute:!1})],I.prototype,"hass",2),w([M()],I.prototype,"_config",2);ot("adjustable-bed-card-editor",I);var Ue=new Set(["back","legs","head","feet"]),E=class extends k{constructor(){super(...arguments);this._activePairedPane="both";this._synchronizationFailed=!1;this._watched=[];this._compactStopTargets=new Map;this._hold=new ht({pulse:(t,e)=>re(this.hass,t,e),stopCover:(t,e)=>this._stopCompactTarget(t,e??t),stopBed:t=>{t&&this._stopCompactTarget(t)}});this._navigate=()=>{let t=ut(this._config?.navigation_path);t&&(this._hold.abandon(),history.pushState(null,"",t),window.dispatchEvent(new CustomEvent("location-changed",{detail:{replace:!1}})))}}static async getConfigElement(){return document.createElement("adjustable-bed-card-editor")}static getStubConfig(t){return{type:"custom:adjustable-bed-card",device_id:t?Object.values(t.entities).find(i=>i.platform===R)?.device_id:void 0}}setConfig(t){if(!t)throw new Error("Invalid configuration");this._config&&(this._hold.abandon(),this._stopCompact()),(t.device_id!==this._config?.device_id||t.default_target!==this._config?.default_target)&&(this._activePairedPane=t.default_target??"both"),this._config=t}getCardSize(){if(this._config?.layout!=="compact")return 8;let t=this._config;return Math.ceil((24+(t.show_header!==!1?36:0)+(t.show_graphic!==!1?150:0)+(t.compact_labels!=="none"?40:0)+(t.compact_actions?.length===0?0:110)+(t.show_motors===!0?180:0)+(t.show_lighting===!0?70:0)+(t.show_connection===!0?50:0))/50)}getGridOptions(){return{columns:this._config?.layout==="compact"?6:12,min_columns:6,rows:"auto"}}disconnectedCallback(){super.disconnectedCallback(),this._hold.abandon()}shouldUpdate(t){if(t.has("_config")||t.has("_saveModeFor")||t.has("_activePairedPane")||t.has("_synchronizingTo")||t.has("_synchronizationFailed")||!t.has("hass")||!this.hass)return!0;let e=t.get("hass");if(!e||e.entities!==this.hass.entities||e.devices!==this.hass.devices)return!0;for(let i of this._watched)if(e.states[i]!==this.hass.states[i])return!0;return!1}render(){if(!this.hass||!this._config)return d;if(!this._config.device_id)return this._notice("card.no_device");let t=st(this.hass,this._config.device_id),e=K(this.hass,t);if(t&&e.length)return this._renderPaired(t,e);if(this._config.device_id&&it(this.hass,this._config.device_id))return this._renderSingleAddressPaired(this._config.device_id);let i=x(this.hass,this._config.device_id);return this._watched=this._collectWatched(i),C(i)?this._notice("card.no_entities"):this._config.layout==="compact"?this._renderCompact(this._config.device_id,[{key:"both",label:this._title(),bed:i}],!1):h`
+  `,S([q({attribute:!1})],V.prototype,"hass",2),S([H()],V.prototype,"_config",2);he("adjustable-bed-card-editor",V);var Jt=new Set(["back","legs","head","feet"]),C=class extends T{constructor(){super(...arguments);this._activePairedPane="both";this._synchronizationFailed=!1;this._watched=[];this._compactStopTargets=new Map;this._hold=new be({pulse:(e,t)=>gt(this.hass,e,t),holdControl:(e,t)=>mt(this.hass,e,t),stopCover:(e,t)=>this._stopCompactTarget(e,t??e),stopBed:e=>{e&&this._stopCompactTarget(e)}});this._navigate=()=>{let e=we(this._config?.navigation_path);e&&(this._hold.abandon(),history.pushState(null,"",e),window.dispatchEvent(new CustomEvent("location-changed",{detail:{replace:!1}})))}}static async getConfigElement(){return document.createElement("adjustable-bed-card-editor")}static getStubConfig(e){return{type:"custom:adjustable-bed-card",device_id:e?Object.values(e.entities).find(i=>i.platform===B)?.device_id:void 0}}setConfig(e){if(!e)throw new Error("Invalid configuration");this._config&&(this._hold.abandon(),this._stopCompact()),(e.device_id!==this._config?.device_id||e.default_target!==this._config?.default_target)&&(this._activePairedPane=e.default_target??"both"),this._config=e}getCardSize(){if(this._config?.layout!=="compact")return 8;let e=this._config;return Math.ceil((24+(e.show_header!==!1?36:0)+(e.show_graphic!==!1?150:0)+(e.compact_labels!=="none"?40:0)+(e.compact_actions?.length===0?0:110)+(e.show_motors===!0?180:0)+(e.show_lighting===!0?70:0)+(e.show_connection===!0?50:0))/50)}getGridOptions(){return{columns:this._config?.layout==="compact"?6:12,min_columns:6,rows:"auto"}}connectedCallback(){super.connectedCallback(),this._removeHoldLifecycle=_t(this._hold,document,window)}disconnectedCallback(){this._removeHoldLifecycle?.(),this._removeHoldLifecycle=void 0,super.disconnectedCallback(),this._hold.abandon()}shouldUpdate(e){if(e.has("_config")||e.has("_saveModeFor")||e.has("_activePairedPane")||e.has("_synchronizingTo")||e.has("_synchronizationFailed")||!e.has("hass")||!this.hass)return!0;let t=e.get("hass");if(!t||t.entities!==this.hass.entities||t.devices!==this.hass.devices)return!0;for(let i of this._watched)if(t.states[i]!==this.hass.states[i])return!0;return!1}render(){if(!this.hass||!this._config)return d;if(!this._config.device_id)return this._notice("card.no_device");let e=de(this.hass,this._config.device_id),t=Z(this.hass,e);if(e&&t.length)return this._renderPaired(e,t);if(this._config.device_id&&ce(this.hass,this._config.device_id))return this._renderSingleAddressPaired(this._config.device_id);let i=k(this.hass,this._config.device_id);return this._watched=this._collectWatched(i),M(i)?this._notice("card.no_entities"):this._config.layout==="compact"?this._renderCompact(this._config.device_id,[{key:"both",label:this._title(),bed:i}],!1):p`
       <ha-card>
         ${this._header(i)}
         ${this._renderSections(i)}
       </ha-card>
-    `}_renderSections(t,e="theme",i){let o=this._config,r={graphic:()=>o.show_graphic!==!1?i??this._graphic(t,e):d,motors:()=>o.show_motors!==!1?this._motors(t):d,firmness:()=>o.show_firmness!==!1?this._firmness(t):d,presets:()=>o.show_presets!==!1?this._presets(t):d,memory:()=>o.show_memory!==!1?this._memory(t):d,lighting:()=>o.show_lighting!==!1?this._lighting(t):d,massage:()=>o.show_massage!==!1?this._massage(t):d,utility:()=>o.show_utility!==!1?this._utility(t):d,climate:()=>o.show_climate!==!1?this._climate(t):d,connection:()=>o.show_connection!==!1?this._connection(t):d};return this._orderedSections().map(a=>r[a]?.()??d)}_renderPaired(t,e){let i=this.hass,o=x(i,t),r=e.map((a,c)=>({key:a,label:this._deviceLabel(a),bed:x(i,a),graphicTone:c===0?"left":"right",synchronizationTarget:{deviceId:a}}));return this._watched=[o,...r.map(a=>a.bed)].flatMap(a=>this._collectWatched(a)),C(o)&&r.every(a=>C(a.bed))?this._notice("card.no_entities"):this._renderPairedCard(t,[{key:"both",label:m(i,"card.both_sides"),bed:o},...r])}_renderSingleAddressPaired(t){let e=this.hass,i={both:x(e,t,"both"),left:x(e,t,"left"),right:x(e,t,"right")};return this._watched=Object.values(i).flatMap(o=>this._collectWatched(o)),Object.values(i).every(o=>C(o))?this._notice("card.no_entities"):this._renderPairedCard(t,[{key:"both",label:m(e,"card.both_sides"),bed:i.both},{key:"left",label:m(e,"card.left_side"),bed:i.left,graphicTone:"left",synchronizationTarget:{deviceId:t,side:"left"}},{key:"right",label:m(e,"card.right_side"),bed:i.right,graphicTone:"right",synchronizationTarget:{deviceId:t,side:"right"}}])}_renderPairedCard(t,e){if(this._config?.layout==="compact")return this._renderCompact(t,e,!0);let i=e.filter(c=>!C(c.bed)),o=i.find(c=>c.key===this._activePairedPane)??i[0],r=i.filter(c=>c.key!=="both"),a=o.key==="both";return h`
+    `}_renderSections(e,t="theme",i){let o=this._config,r={graphic:()=>o.show_graphic!==!1?i??this._graphic(e,t):d,motors:()=>o.show_motors!==!1?this._motors(e):d,firmness:()=>o.show_firmness!==!1?this._firmness(e):d,presets:()=>o.show_presets!==!1?this._presets(e):d,memory:()=>o.show_memory!==!1?this._memory(e):d,lighting:()=>o.show_lighting!==!1?this._lighting(e):d,massage:()=>o.show_massage!==!1?this._massage(e):d,utility:()=>o.show_utility!==!1?this._utility(e):d,climate:()=>o.show_climate!==!1?this._climate(e):d,connection:()=>o.show_connection!==!1?this._connection(e):d};return this._orderedSections().map(a=>r[a]?.()??d)}_renderPaired(e,t){let i=this.hass,o=k(i,e),r=t.map((a,c)=>({key:a,label:this._deviceLabel(a),bed:k(i,a),graphicTone:c===0?"left":"right",synchronizationTarget:{deviceId:a}}));return this._watched=[o,...r.map(a=>a.bed)].flatMap(a=>this._collectWatched(a)),M(o)&&r.every(a=>M(a.bed))?this._notice("card.no_entities"):this._renderPairedCard(e,[{key:"both",label:u(i,"card.both_sides"),bed:o},...r])}_renderSingleAddressPaired(e){let t=this.hass,i={both:k(t,e,"both"),left:k(t,e,"left"),right:k(t,e,"right")};return this._watched=Object.values(i).flatMap(o=>this._collectWatched(o)),Object.values(i).every(o=>M(o))?this._notice("card.no_entities"):this._renderPairedCard(e,[{key:"both",label:u(t,"card.both_sides"),bed:i.both},{key:"left",label:u(t,"card.left_side"),bed:i.left,graphicTone:"left",synchronizationTarget:{deviceId:e,side:"left"}},{key:"right",label:u(t,"card.right_side"),bed:i.right,graphicTone:"right",synchronizationTarget:{deviceId:e,side:"right"}}])}_renderPairedCard(e,t){if(this._config?.layout==="compact")return this._renderCompact(e,t,!0);let i=t.filter(c=>!M(c.bed)),o=i.find(c=>c.key===this._activePairedPane)??i[0],r=i.filter(c=>c.key!=="both"),a=o.key==="both";return p`
       <ha-card class="paired-card">
-        ${this._header(o.bed,t)}
+        ${this._header(o.bed,e)}
         <div
           class="pane-tabs"
           role="tablist"
           style=${`--pane-count:${i.length}`}
         >
-          ${i.map(c=>h`
+          ${i.map(c=>p`
               <button
                 class="pane-tab side-${c.graphicTone??"theme"} ${c.key===o.key?"active":""}"
                 role="tab"
                 aria-selected=${c.key===o.key?"true":"false"}
                 @click=${()=>this._selectPairedPane(c.key)}
               >
-                ${c.graphicTone?h`<span class="dual-swatch" aria-hidden="true"></span>`:d}
-                <span>${c.key==="both"?m(this.hass,"card.both"):c.label}</span>
+                ${c.graphicTone?p`<span class="dual-swatch" aria-hidden="true"></span>`:d}
+                <span>${c.key==="both"?u(this.hass,"card.both"):c.label}</span>
               </button>
             `)}
         </div>
@@ -337,82 +337,82 @@ var me=Object.defineProperty;var ue=Object.getOwnPropertyDescriptor;var w=(n,s,t
           ${a&&this._config?.show_connection!==!1?this._combinedBluetooth(r):d}
         </div>
       </ha-card>
-    `}_renderCompact(t,e,i){let o=this._config,r=e.find(g=>g.key===this._activePairedPane),a=r?.bed,c=a?gt(this.hass,a,o.compact_actions):[],u=o.show_motors===!0&&a?a.motors.filter(g=>g.cover||g.up||g.down||g.position):[],_=c.length>0||u.length>0||o.show_lighting===!0,f=o.compact_actions?.length!==0||o.show_motors===!0||o.show_lighting===!0,b=i?e.filter(g=>g.key!=="both"):e,v=!!a&&mt(a).length>0,y=c.length>0||u.length>0,$=ut(o.navigation_path);return h`
-      <ha-card class="compact-card ${f?"":"compact-glance"} ${o.animate===!1?"no-animation":""}">
-        ${o.show_header!==!1?h`
+    `}_renderCompact(e,t,i){let o=this._config,r=t.find(f=>f.key===this._activePairedPane),a=r?.bed,c=a?$e(this.hass,a,o.compact_actions):[],g=o.show_motors===!0&&a?a.motors.filter(f=>f.cover||f.up||f.down||f.position):[],v=c.length>0||g.length>0||o.show_lighting===!0,_=o.compact_actions?.length!==0||o.show_motors===!0||o.show_lighting===!0,b=i?t.filter(f=>f.key!=="both"):t,y=!!a&&xe(a).length>0,$=c.length>0||g.length>0,E=we(o.navigation_path);return p`
+      <ha-card class="compact-card ${_?"":"compact-glance"} ${o.animate===!1?"no-animation":""}">
+        ${o.show_header!==!1?p`
           <div class="compact-header">
-            <span class="title">${this._title(t)}</span>
-            ${$?h`<button class="compact-open" @click=${this._navigate}
-              aria-label=${m(this.hass,"compact.open")}>
+            <span class="title">${this._title(e)}</span>
+            ${E?p`<button class="compact-open" @click=${this._navigate}
+              aria-label=${u(this.hass,"compact.open")}>
               <ha-icon icon="mdi:open-in-new"></ha-icon>
             </button>`:d}
           </div>`:d}
-        ${i&&f?o.show_side_selector!==!1?h`
+        ${i&&_?o.show_side_selector!==!1?p`
           <div class="pane-tabs compact-tabs" role="group"
-            style=${`--pane-count:${e.filter(g=>!C(g.bed)).length}`}
-            aria-label=${m(this.hass,"compact.target")}>
-            ${e.filter(g=>!C(g.bed)).map(g=>h`
-              <button class="pane-tab side-${g.graphicTone??"theme"} ${g.key===r?.key?"active":""}"
-                aria-pressed=${g.key===r?.key?"true":"false"}
-                title=${g.label}
-                @click=${()=>this._selectPairedPane(g.key)}>
-                ${g.graphicTone?h`<span class="dual-swatch" aria-hidden="true"></span>`:d}
-                <span class="compact-tab-label">${g.key==="both"?m(this.hass,"card.both"):g.label}</span>
+            style=${`--pane-count:${t.filter(f=>!M(f.bed)).length}`}
+            aria-label=${u(this.hass,"compact.target")}>
+            ${t.filter(f=>!M(f.bed)).map(f=>p`
+              <button class="pane-tab side-${f.graphicTone??"theme"} ${f.key===r?.key?"active":""}"
+                aria-pressed=${f.key===r?.key?"true":"false"}
+                title=${f.label}
+                @click=${()=>this._selectPairedPane(f.key)}>
+                ${f.graphicTone?p`<span class="dual-swatch" aria-hidden="true"></span>`:d}
+                <span class="compact-tab-label">${f.key==="both"?u(this.hass,"card.both"):f.label}</span>
               </button>`)}
-          </div>`:h`<div class="compact-target">
-            ${m(this.hass,"compact.target")}: ${r?.label??m(this.hass,"compact.target_missing")}
+          </div>`:p`<div class="compact-target">
+            ${u(this.hass,"compact.target")}: ${r?.label??u(this.hass,"compact.target_missing")}
           </div>`:d}
         ${o.show_graphic!==!1?this._compactGraphic(b):d}
         ${this._compactReadouts(b)}
-        ${!r&&f?h`<div class="hint" role="status">
-          ${m(this.hass,"compact.target_missing")}</div>`:d}
-        ${u.length?h`<div class="rows compact-motors">
-          ${u.map(g=>g.cover||g.up||g.down?this._motorRow(g,a?.stop,!0):this._moreInfoRow(g.position))}
+        ${!r&&_?p`<div class="hint" role="status">
+          ${u(this.hass,"compact.target_missing")}</div>`:d}
+        ${g.length?p`<div class="rows compact-motors">
+          ${g.map(f=>f.cover||f.up||f.down?this._motorRow(f,a?.stop,!0):this._moreInfoRow(f.position))}
         </div>`:d}
-        ${c.length||y||this._compactStopTargets.size?h`
+        ${c.length||$||this._compactStopTargets.size?p`
           <div class="tiles compact-actions">
-            ${c.map(({entityId:g})=>h`<button class="tile"
-              ?disabled=${!v||!this._available(g)}
-              @click=${()=>this._compactRecall(g,a)}>
-              ${this._icon(g)}<span class="tile-label">${this._name(g)}</span>
+            ${c.map(({entityId:f})=>p`<button class="tile"
+              ?disabled=${!y||!this._available(f)}
+              @click=${()=>this._compactRecall(f,a)}>
+              ${this._icon(f)}<span class="tile-label">${this._name(f)}</span>
             </button>`)}
             <button class="tile compact-stop"
-              ?disabled=${!v&&this._compactStopTargets.size===0}
+              ?disabled=${!y&&this._compactStopTargets.size===0}
               @click=${()=>this._stopCompact(a)}>
               <ha-icon icon="mdi:stop"></ha-icon>
-              <span class="tile-label">${m(this.hass,"action.stop")}</span>
+              <span class="tile-label">${u(this.hass,"action.stop")}</span>
             </button>
           </div>`:d}
-        ${o.show_lighting===!0&&a?h`
+        ${o.show_lighting===!0&&a?p`
           ${this._lighting(a)}
           ${i&&r?.key==="both"?this._combinedLighting(a,b):d}
         `:d}
-        ${o.show_connection===!0?i&&r?.key==="both"?this._combinedBluetooth(b):h`<div class="compact-connections">
-          ${b.map(g=>{let p=this._connectionStatus(g.bed);return p?h`<span>${this._connectionDot(g.bed)}
-              ${g.label}: ${m(this.hass,`status.${p}`)}</span>`:d})}
+        ${o.show_connection===!0?i&&r?.key==="both"?this._combinedBluetooth(b):p`<div class="compact-connections">
+          ${b.map(f=>{let m=this._connectionStatus(f.bed);return m?p`<span>${this._connectionDot(f.bed)}
+              ${f.label}: ${u(this.hass,`status.${m}`)}</span>`:d})}
         </div>`:d}
-        ${!_&&o.show_graphic===!1&&o.compact_labels==="none"&&o.show_header===!1&&o.show_connection!==!0?h`<div class="hint">${this._title(t)}</div>`:d}
-      </ha-card>`}_compactGraphic(t){let e=t.map(u=>this._graphicState(u.bed)),i=e[0],o=e[1],r=e.length>0&&e.every(u=>u!==void 0),a=t.map((u,_)=>`${u.label}: ${e[_]?this._positionSummary(e[_]):m(this.hass,"compact.no_position")}`).join(". "),c=r&&i?o?Ht({left:i,right:o}):zt({...i,upper:{angle:i.upper.angle},lower:{angle:i.lower.angle}}):h`<div class="compact-no-position"><ha-icon icon="mdi:bed-outline"></ha-icon>
-          <span>${m(this.hass,"compact.no_position")}</span></div>`;return ut(this._config?.navigation_path)?h`<button class="compact-graphic" @click=${this._navigate}
-          aria-label="${m(this.hass,"compact.open")}. ${a}">${c}</button>`:h`<div class="compact-graphic" role="img" aria-label=${a}>${c}</div>`}_compactReadouts(t){let e=this._config?.compact_labels??"angles";return e==="none"?d:h`<div class="compact-readouts ${e==="names"?"compact-names":""}">
-      ${t.map(i=>h`<div class="side-${i.graphicTone??"theme"}">
+        ${!v&&o.show_graphic===!1&&o.compact_labels==="none"&&o.show_header===!1&&o.show_connection!==!0?p`<div class="hint">${this._title(e)}</div>`:d}
+      </ha-card>`}_compactGraphic(e){let t=e.map(g=>this._graphicState(g.bed)),i=t[0],o=t[1],r=t.length>0&&t.every(g=>g!==void 0),a=e.map((g,v)=>`${g.label}: ${t[v]?this._positionSummary(t[v]):u(this.hass,"compact.no_position")}`).join(". "),c=r&&i?o?Ie({left:i,right:o}):Ne({...i,upper:{angle:i.upper.angle},lower:{angle:i.lower.angle}}):p`<div class="compact-no-position"><ha-icon icon="mdi:bed-outline"></ha-icon>
+          <span>${u(this.hass,"compact.no_position")}</span></div>`;return we(this._config?.navigation_path)?p`<button class="compact-graphic" @click=${this._navigate}
+          aria-label="${u(this.hass,"compact.open")}. ${a}">${c}</button>`:p`<div class="compact-graphic" role="img" aria-label=${a}>${c}</div>`}_compactReadouts(e){let t=this._config?.compact_labels??"angles";return t==="none"?d:p`<div class="compact-readouts ${t==="names"?"compact-names":""}">
+      ${e.map(i=>p`<div class="side-${i.graphicTone??"theme"}">
         <span class="compact-side-name" title=${i.label}>
           <span class="dual-swatch" aria-hidden="true"></span>
-          <span aria-label=${i.label}>${e==="angles"&&t.length>1?[...i.label][0]:i.label}</span>
+          <span aria-label=${i.label}>${t==="angles"&&e.length>1?[...i.label][0]:i.label}</span>
         </span>
-        ${e==="angles"?h`<span class="compact-position"
+        ${t==="angles"?p`<span class="compact-position"
           title=${i.bed.motors.map(o=>`${this._motorName(o)} ${this._readout(o)??"?"}`).join(" \xB7 ")}
-        >${i.bed.motors.filter(o=>o.angle||o.position||o.cover).map(o=>this._readout(o)??"?").join(" / ")||m(this.hass,"compact.no_position")}</span>`:d}
+        >${i.bed.motors.filter(o=>o.angle||o.position||o.cover).map(o=>this._readout(o)??"?").join(" / ")||u(this.hass,"compact.no_position")}</span>`:d}
       </div>`)}
-    </div>`}_available(t){let e=this._state(t)?.state;return e!==void 0&&e!=="unavailable"}_compactRecall(t,e){this._hold.abandon(),mt(e).forEach(i=>this._compactStopTargets.set(i,Symbol())),this._press(t),this.requestUpdate()}_stopCompact(t){this._hold.abandon();for(let e of t?mt(t):[])this._compactStopTargets.has(e)||this._compactStopTargets.set(e,Symbol());for(let e of this._compactStopTargets.keys())this._stopCompactTarget(e);this._compactStopTargets.size&&this.requestUpdate()}_stopCompactTarget(t,e=t){let i=this._compactStopTargets.get(e),o=t.startsWith("cover.");this.hass?.callService(o?"cover":"button",o?"stop_cover":"press",{entity_id:t}).then(()=>{i!==void 0&&this._compactStopTargets.get(e)===i&&(this._compactStopTargets.delete(e),this.requestUpdate())}).catch(()=>{})}_selectPairedPane(t){this._activePairedPane!==t&&(this._hold.abandon(),this._activePairedPane=t,this._saveModeFor=void 0,this._synchronizationFailed=!1)}_connectionStatus(t){if(!t.connectivity)return;let e=this._state(t.connectivity);return e?.attributes?.state_detail==="connecting"?"connecting":e?.state==="on"?"connected":e?.attributes?.state_detail==="idle"?"idle":"disconnected"}_connectionDot(t){let e=this._connectionStatus(t);return e?h`<span
-      class="connection-dot ${e}"
-      title=${m(this.hass,`status.${e}`)}
-    ></span>`:d}_pairedOverview(t){let e=t.map(r=>({pane:r,graphic:this._graphicState(r.bed)})).filter(r=>r.graphic!==void 0);if(e.length<2)return d;let[i,o]=e;return h`
+    </div>`}_available(e){let t=this._state(e)?.state;return t!==void 0&&t!=="unavailable"}_compactRecall(e,t){this._hold.abandon(),xe(t).forEach(i=>this._compactStopTargets.set(i,Symbol())),this._press(e),this.requestUpdate()}_stopCompact(e){this._hold.abandon();for(let t of e?xe(e):[])this._compactStopTargets.has(t)||this._compactStopTargets.set(t,Symbol());for(let t of this._compactStopTargets.keys())this._stopCompactTarget(t);this._compactStopTargets.size&&this.requestUpdate()}_stopCompactTarget(e,t=e){let i=this._compactStopTargets.get(t),o=e.startsWith("cover.");this.hass?.callService(o?"cover":"button",o?"stop_cover":"press",{entity_id:e}).then(()=>{i!==void 0&&this._compactStopTargets.get(t)===i&&(this._compactStopTargets.delete(t),this.requestUpdate())}).catch(()=>{})}_selectPairedPane(e){this._activePairedPane!==e&&(this._hold.abandon(),this._activePairedPane=e,this._saveModeFor=void 0,this._synchronizationFailed=!1)}_connectionStatus(e){if(!e.connectivity)return;let t=this._state(e.connectivity);return t?.attributes?.state_detail==="connecting"?"connecting":t?.state==="on"?"connected":t?.attributes?.state_detail==="idle"?"idle":"disconnected"}_connectionDot(e){let t=this._connectionStatus(e);return t?p`<span
+      class="connection-dot ${t}"
+      title=${u(this.hass,`status.${t}`)}
+    ></span>`:d}_pairedOverview(e){let t=e.map(r=>({pane:r,graphic:this._graphicState(r.bed)})).filter(r=>r.graphic!==void 0);if(t.length<2)return d;let[i,o]=t;return p`
       <div class="graphic dual-graphic">
-        ${Ht({left:i.graphic,right:o.graphic})}
+        ${Ie({left:i.graphic,right:o.graphic})}
       </div>
       <div class="dual-readouts">
-        ${[i,o].map(({pane:r,graphic:a},c)=>h`
+        ${[i,o].map(({pane:r,graphic:a},c)=>p`
             <div class="dual-readout side-${c===0?"left":"right"}">
               <span class="dual-side-name">
                 <span class="dual-swatch"></span>${r.label}
@@ -424,38 +424,38 @@ var me=Object.defineProperty;var ue=Object.getOwnPropertyDescriptor;var w=(n,s,t
           `)}
       </div>
       ${this._synchronizeSelector(i.pane,o.pane)}
-    `}_synchronizeSelector(t,e){if(!t.synchronizationTarget||!e.synchronizationTarget)return d;let i=this._synchronizationPlan(t.bed,e.bed),o=this._synchronizationPlan(e.bed,t.bed);if(i.length===0&&o.length===0)return d;let r=this._synchronizingTo!==void 0;return h`
+    `}_synchronizeSelector(e,t){if(!e.synchronizationTarget||!t.synchronizationTarget)return d;let i=this._synchronizationPlan(e.bed,t.bed),o=this._synchronizationPlan(t.bed,e.bed);if(i.length===0&&o.length===0)return d;let r=this._synchronizingTo!==void 0;return p`
       <div class="dual-sync-row">
         <ha-icon icon="mdi:sync"></ha-icon>
-        <span class="dual-sync-label">${m(this.hass,"sync.label")}</span>
+        <span class="dual-sync-label">${u(this.hass,"sync.label")}</span>
         <div class="dual-sync-actions">
           <button
             class="dual-sync-btn side-left ${this._synchronizingTo==="left"?"is-active":""}"
-            aria-label="${m(this.hass,"sync.label")} ${t.label}"
+            aria-label="${u(this.hass,"sync.label")} ${e.label}"
             aria-busy=${this._synchronizingTo==="left"?"true":"false"}
             ?disabled=${r||i.length===0}
-            @click=${()=>void this._synchronizePositions(t,e,"left")}
+            @click=${()=>void this._synchronizePositions(e,t,"left")}
           >
-            ${this._synchronizingTo==="left"?h`<ha-icon class="dual-sync-spinner" icon="mdi:loading"></ha-icon>`:h`<span class="dual-swatch"></span>`}
-            <span>${t.label}</span>
+            ${this._synchronizingTo==="left"?p`<ha-icon class="dual-sync-spinner" icon="mdi:loading"></ha-icon>`:p`<span class="dual-swatch"></span>`}
+            <span>${e.label}</span>
           </button>
           <button
             class="dual-sync-btn side-right ${this._synchronizingTo==="right"?"is-active":""}"
-            aria-label="${m(this.hass,"sync.label")} ${e.label}"
+            aria-label="${u(this.hass,"sync.label")} ${t.label}"
             aria-busy=${this._synchronizingTo==="right"?"true":"false"}
             ?disabled=${r||o.length===0}
-            @click=${()=>void this._synchronizePositions(t,e,"right")}
+            @click=${()=>void this._synchronizePositions(e,t,"right")}
           >
-            ${this._synchronizingTo==="right"?h`<ha-icon class="dual-sync-spinner" icon="mdi:loading"></ha-icon>`:h`<span class="dual-swatch"></span>`}
-            <span>${e.label}</span>
+            ${this._synchronizingTo==="right"?p`<ha-icon class="dual-sync-spinner" icon="mdi:loading"></ha-icon>`:p`<span class="dual-swatch"></span>`}
+            <span>${t.label}</span>
           </button>
         </div>
       </div>
-      ${this._synchronizationFailed?h`<div class="dual-sync-error" role="status">
+      ${this._synchronizationFailed?p`<div class="dual-sync-error" role="status">
             <ha-icon icon="mdi:alert-circle-outline"></ha-icon>
-            <span>${m(this.hass,"sync.incomplete")}</span>
+            <span>${u(this.hass,"sync.incomplete")}</span>
           </div>`:d}
-    `}_synchronizationPlan(t,e){let i=new Map(e.motors.map(a=>[a.key,a])),o=t.motors.filter(a=>Ue.has(a.key)&&i.has(a.key)&&this._hasPositionFeedback(a)&&this._hasPositionFeedback(i.get(a.key)));if(o.length===0)return[];let r=o.map(a=>({motor:a.key,position:this._angle(a)}));return r.some(a=>a.position===void 0)||o.some(a=>this._angle(i.get(a.key))===void 0)?[]:r}_hasPositionFeedback(t){return t.angle!==void 0||t.position!==void 0}async _synchronizePositions(t,e,i){if(this._synchronizingTo||!this.hass)return;let o=i==="left"?t:e,r=i==="left"?e:t,a=r.synchronizationTarget;if(!a)return;let c=this._synchronizationPlan(o.bed,r.bed);if(c.length!==0){this._synchronizingTo=i,this._synchronizationFailed=!1;try{await this.hass.callService(R,"set_positions",{device_id:[a.deviceId],positions:c,...a.side?{side:a.side}:{}})}catch{this._synchronizationFailed=!0}finally{this._synchronizingTo=void 0}}}_positionSummary(t){return(t.upperMotor===t.lowerMotor?[t.upperMotor]:[t.upperMotor,t.lowerMotor]).map(i=>{let o=this._readout(i);return o?`${this._motorName(i)} ${o}`:this._motorName(i)}).join(" \xB7 ")}_combinedLighting(t,e){if(this._hasLighting(t))return d;let i=e.map(_=>this._mainLight(_.bed)).filter(_=>_!==void 0);if(i.length===0)return d;let o=i.filter(_=>this._state(_)?.state==="on").length,r=o===i.length,a=o>0,c=r?"combined.on":a?"combined.mixed":"combined.off",u=m(this.hass,"combined.lights");return h`
+    `}_synchronizationPlan(e,t){let i=new Map(t.motors.map(a=>[a.key,a])),o=e.motors.filter(a=>Jt.has(a.key)&&i.has(a.key)&&this._hasPositionFeedback(a)&&this._hasPositionFeedback(i.get(a.key)));if(o.length===0)return[];let r=o.map(a=>({motor:a.key,position:this._angle(a)}));return r.some(a=>a.position===void 0)||o.some(a=>this._angle(i.get(a.key))===void 0)?[]:r}_hasPositionFeedback(e){return e.angle!==void 0||e.position!==void 0}async _synchronizePositions(e,t,i){if(this._synchronizingTo||!this.hass)return;let o=i==="left"?e:t,r=i==="left"?t:e,a=r.synchronizationTarget;if(!a)return;let c=this._synchronizationPlan(o.bed,r.bed);if(c.length!==0){this._synchronizingTo=i,this._synchronizationFailed=!1;try{await this.hass.callService(B,"set_positions",{device_id:[a.deviceId],positions:c,...a.side?{side:a.side}:{}})}catch{this._synchronizationFailed=!0}finally{this._synchronizingTo=void 0}}}_positionSummary(e){return(e.upperMotor===e.lowerMotor?[e.upperMotor]:[e.upperMotor,e.lowerMotor]).map(i=>{let o=this._readout(i);return o?`${this._motorName(i)} ${o}`:this._motorName(i)}).join(" \xB7 ")}_combinedLighting(e,t){if(this._hasLighting(e))return d;let i=t.map(v=>this._mainLight(v.bed)).filter(v=>v!==void 0);if(i.length===0)return d;let o=i.filter(v=>this._state(v)?.state==="on").length,r=o===i.length,a=o>0,c=r?"combined.on":a?"combined.mixed":"combined.off",g=u(this.hass,"combined.lights");return p`
       ${this._heading("section.lighting")}
       <div class="entity-row combined-entity-row">
         <ha-icon
@@ -463,23 +463,23 @@ var me=Object.defineProperty;var ue=Object.getOwnPropertyDescriptor;var w=(n,s,t
           icon="mdi:lightbulb-group-outline"
         ></ha-icon>
         <div class="entity-row-text">
-          <span>${u}</span>
-          <span class="secondary">${m(this.hass,c)}</span>
+          <span>${g}</span>
+          <span class="secondary">${u(this.hass,c)}</span>
         </div>
         <button
           class="toggle ${a?"on":""} ${a&&!r?"mixed":""}"
           role="switch"
-          aria-label=${u}
+          aria-label=${g}
           aria-checked=${r?"true":"false"}
           @click=${()=>this._setEntities(i,!r)}
         >
           <span class="knob"></span>
         </button>
       </div>
-    `}_combinedBluetooth(t){let e=t.filter(i=>i.bed.connectivity).map(i=>({pane:i,entityId:i.bed.connectivity}));return e.length===0?d:h`
+    `}_combinedBluetooth(e){let t=e.filter(i=>i.bed.connectivity).map(i=>({pane:i,entityId:i.bed.connectivity}));return t.length===0?d:p`
       ${this._heading("section.bluetooth")}
       <div class="bluetooth-grid">
-        ${e.map(({pane:i,entityId:o})=>{let r=this._connectionStatus(i.bed),c=this._state(o)?.attributes.rssi;return h`
+        ${t.map(({pane:i,entityId:o})=>{let r=this._connectionStatus(i.bed),c=this._state(o)?.attributes.rssi;return p`
             <div class="bluetooth-receiver" role="group" aria-label=${i.label}>
             <button
               class="bluetooth-status ${r}"
@@ -491,7 +491,7 @@ var me=Object.defineProperty;var ue=Object.getOwnPropertyDescriptor;var w=(n,s,t
               <span class="bluetooth-copy">
                 <span>${i.label}</span>
                 <span class="bluetooth-detail">
-                  ${m(this.hass,`status.${r}`)}${typeof c=="number"?` \xB7 ${c} dBm`:""}
+                  ${u(this.hass,`status.${r}`)}${typeof c=="number"?` \xB7 ${c} dBm`:""}
                 </span>
               </span>
             </button>
@@ -502,211 +502,226 @@ var me=Object.defineProperty;var ue=Object.getOwnPropertyDescriptor;var w=(n,s,t
             </div>
           `})}
       </div>
-    `}_mainLight(t){return t.lights.light??t.lights.switch}_hasLighting(t){return N(t.lights)}_deviceLabel(t){let e=this.hass?.devices[t];return e?.name_by_user??e?.name??t}_orderedSections(){let t=this._config?.section_order;if(!t?.length)return[...D];let e=new Set(D),i=t.filter(r=>e.has(r)),o=D.filter(r=>!i.includes(r));return[...i,...o]}_header(t,e){let i=this._connectionStatus(t),o={connected:{cls:"ok",icon:"mdi:bluetooth-connect",key:"status.connected"},connecting:{cls:"connecting",icon:"mdi:bluetooth-transfer",key:"status.connecting"},idle:{cls:"idle",icon:"mdi:bluetooth",key:"status.idle"},disconnected:{cls:"off",icon:"mdi:bluetooth-off",key:"status.disconnected"}};return h`
+    `}_mainLight(e){return e.lights.light??e.lights.switch}_hasLighting(e){return U(e.lights)}_deviceLabel(e){let t=this.hass?.devices[e];return t?.name_by_user??t?.name??e}_orderedSections(){let e=this._config?.section_order;if(!e?.length)return[...K];let t=new Set(K),i=e.filter(r=>t.has(r)),o=K.filter(r=>!i.includes(r));return[...i,...o]}_header(e,t){let i=this._connectionStatus(e),o={connected:{cls:"ok",icon:"mdi:bluetooth-connect",key:"status.connected"},connecting:{cls:"connecting",icon:"mdi:bluetooth-transfer",key:"status.connecting"},idle:{cls:"idle",icon:"mdi:bluetooth",key:"status.idle"},disconnected:{cls:"off",icon:"mdi:bluetooth-off",key:"status.disconnected"}};return p`
       <div class="header">
         <ha-icon class="header-icon" icon="mdi:bed-king-outline"></ha-icon>
-        <span class="title">${this._title(e)}</span>
-        ${i===void 0?d:h`
+        <span class="title">${this._title(t)}</span>
+        ${i===void 0?d:p`
                 <button
                   class="conn ${o[i].cls}"
-                  @click=${()=>this._moreInfo(t.connectivity)}
-                  title=${m(this.hass,o[i].key)}
+                  @click=${()=>this._moreInfo(e.connectivity)}
+                  title=${u(this.hass,o[i].key)}
                 >
                   <ha-icon icon=${o[i].icon}></ha-icon>
                 </button>
               `}
       </div>
-    `}_graphic(t,e="theme"){let i=this._graphicState(t);return i?h`
+    `}_graphic(e,t="theme"){let i=this._graphicState(e);return i?p`
       <div class="graphic">
-        ${zt(i,e)}
+        ${Ne(i,t)}
       </div>
-    `:d}_graphicState(t){let e=t.motors.filter(c=>{let u=c.angle??c.position;return u!==void 0&&this._state(u)?.attributes.unit_of_measurement==="\xB0"});if(e.length===0||e.some(c=>this._angle(c)===void 0))return;let i=Ot(e);if(!i)return;let{upper:o,lower:r}=i,a=t.motors.some(c=>{let u=c.cover?this._state(c.cover)?.state:void 0;return u==="opening"||u==="closing"});return{upperMotor:o,lowerMotor:r,upper:{label:this._motorName(o),angle:this._angle(o)},lower:{label:this._motorName(r),angle:this._angle(r)},moving:a}}_motors(t){let e=t.motors.filter(r=>r.cover||r.up||r.down),i=t.motors.filter(r=>r.position&&!r.cover&&!r.up&&!r.down);if(e.length===0&&i.length===0&&!t.synchro&&!t.controlSide&&!t.stop)return d;let o=e.length>0||i.length>0||!!t.synchro||!!t.controlSide;return h`
+    `:d}_graphicState(e){let t=e.motors.filter(c=>{let g=c.angle??c.position;return g!==void 0&&this._state(g)?.attributes.unit_of_measurement==="\xB0"});if(t.length===0||t.some(c=>this._angle(c)===void 0))return;let i=Fe(t);if(!i)return;let{upper:o,lower:r}=i,a=e.motors.some(c=>{let g=c.cover?this._state(c.cover)?.state:void 0;return g==="opening"||g==="closing"});return{upperMotor:o,lowerMotor:r,upper:{label:this._motorName(o),angle:this._angle(o)},lower:{label:this._motorName(r),angle:this._angle(r)},moving:a}}_motors(e){let t=e.motors.filter(r=>r.cover||r.up||r.down),i=e.motors.filter(r=>r.position&&!r.cover&&!r.up&&!r.down);if(t.length===0&&i.length===0&&!e.synchro&&!e.controlSide&&!e.stop)return d;let o=t.length>0||i.length>0||!!e.synchro||!!e.controlSide;return p`
       ${o?this._heading("section.position"):d}
-      ${t.controlSide?this._moreInfoRow(t.controlSide):d}
-      ${t.synchro?this._toggleRow(t.synchro):d}
-      ${e.length?h`<div class="rows">
-              ${e.map(r=>this._motorRow(r,t.stop))}
+      ${e.controlSide?this._moreInfoRow(e.controlSide):d}
+      ${e.synchro?this._toggleRow(e.synchro):d}
+      ${t.length?p`<div class="rows">
+              ${t.map(r=>this._motorRow(r,e.stop))}
             </div>`:d}
-      ${i.length?h`<div class="rows">
+      ${i.length?p`<div class="rows">
               ${i.map(r=>this._moreInfoRow(r.position))}
             </div>`:d}
-      ${t.stop?h`<button class="stop-all" @click=${()=>this._hold.stopAll(t.stop)}>
+      ${e.stop?p`<button class="stop-all" @click=${()=>Ke(this._hold,this.hass,e.stop)}>
               <ha-icon icon="mdi:stop"></ha-icon>
-              <span>${m(this.hass,"action.stop_all")}</span>
+              <span>${u(this.hass,"action.stop_all")}</span>
             </button>`:d}
-    `}_firmness(t){return t.firmness.length===0?d:h`
+    `}_firmness(e){return e.firmness.length===0?d:p`
       ${this._heading("section.firmness")}
-      <div class="rows">${t.firmness.map(e=>this._moreInfoRow(e))}</div>
-    `}_motorRow(t,e,i=!1){let o=this._readout(t),r=!!t.cover||!!e,a=h`
-      <span>${this._motorName(t)}</span>
-      ${o&&!i?h`<span class="readout">${o}</span>`:d}
-    `;return h`
+      <div class="rows">${e.firmness.map(t=>this._moreInfoRow(t))}</div>
+    `}_motorRow(e,t,i=!1){let o=this._readout(e),r=!!e.cover||!!t,a=p`
+      <span>${this._motorName(e)}</span>
+      ${o&&!i?p`<span class="readout">${o}</span>`:d}
+    `;return p`
       <div class="row">
-        ${t.position?h`<button
+        ${e.position?p`<button
               class="row-label position-label"
-              aria-label=${this._name(t.position)}
-              @click=${()=>this._moreInfo(t.position)}
-            >${a}</button>`:h`<div class="row-label">${a}</div>`}
+              aria-label=${this._name(e.position)}
+              @click=${()=>this._moreInfo(e.position)}
+            >${a}</button>`:p`<div class="row-label">${a}</div>`}
         <div class="control-group">
-          ${i?this._motorDirection(t,"down",e):d}
-          ${this._motorDirection(t,"up",e)}
-          ${i?d:h`<button
+          ${i?this._motorDirection(e,"down",t):d}
+          ${this._motorDirection(e,"up",t)}
+          ${i?d:p`<button
             class="cg-btn"
-            aria-label=${m(this.hass,"action.stop")}
-            @click=${()=>this._motorStop(t,e)}
+            aria-label=${u(this.hass,"action.stop")}
+            @click=${()=>this._motorStop(e,t)}
             ?disabled=${!r}
           >
             <ha-icon icon="mdi:stop"></ha-icon>
           </button>`}
-          ${i?d:this._motorDirection(t,"down",e)}
+          ${i?d:this._motorDirection(e,"down",t)}
         </div>
       </div>
-    `}_motorDirection(t,e,i){let o=t.cover??t[e],r=!!t.cover||!!i;return h`
+    `}_motorDirection(e,t,i){let o=e.cover??e[t],r=!!e.cover||!!i;return p`
       <button class="cg-btn"
-        aria-label=${m(this.hass,`action.${e}`)}
-        @pointerdown=${a=>this._startHold(a,t,e,i)}
-        @pointerup=${a=>this._endPointerHold(a,t)}
-        @pointercancel=${a=>this._endPointerHold(a,t)}
-        @keydown=${a=>this._startHold(a,t,e,i)}
-        @keyup=${a=>this._endKeyHold(a,t)}
-        @blur=${()=>this._endHold(t)}
-        @click=${a=>this._activateWithoutPointer(a,t,e,i)}
+        aria-label=${u(this.hass,`action.${t}`)}
+        @pointerdown=${a=>this._startHold(a,e,t,i)}
+        @pointerup=${a=>this._endPointerHold(a,e)}
+        @pointercancel=${a=>this._endPointerHold(a,e)}
+        @keydown=${a=>this._startHold(a,e,t,i)}
+        @keyup=${a=>this._endKeyHold(a,e)}
+        @blur=${()=>this._endHold(e)}
+        @click=${a=>this._activateWithoutPointer(a,e,t,i)}
         ?disabled=${!o||this._config?.layout==="compact"&&(!r||!this._available(o))}
-      ><ha-icon icon=${`mdi:chevron-${e}`}></ha-icon></button>`}_presets(t){return t.presets.length===0?d:h`
+      ><ha-icon icon=${`mdi:chevron-${t}`}></ha-icon></button>`}_presets(e){return e.presets.length===0?d:p`
       ${this._heading("section.presets")}
       <div class="tiles">
-        ${t.presets.map(e=>this._tile(e,()=>this._press(e)))}
+        ${e.presets.map(t=>this._actionTile(t,e.stop))}
       </div>
-    `}_utility(t){return t.utility.length===0&&!t.utilitySelects?.length?d:h`
+    `}_utility(e){return e.utility.length===0&&!e.utilityNumbers?.length&&!e.utilitySelects?.length&&!e.utilityStates?.length?d:p`
       ${this._heading("section.utility")}
       <div class="tiles">
-        ${t.utility.map(e=>this._tile(e,()=>e.startsWith("switch.")?this._call("switch","toggle",e):this._press(e)))}
+        ${e.utility.map(t=>this._actionTile(t,e.stop,()=>t.startsWith("switch.")?this._call("switch","toggle",t):this._press(t)))}
       </div>
-      ${t.utilitySelects?.map(e=>this._moreInfoRow(e))}
-    `}_memory(t){let e=t.memory,i=this._config?.memory_slots;if(i&&i.length){let c=new Set(i.map(Number));e=e.filter(u=>c.has(u.slot))}if(e.length===0)return d;let o=this._config?.memory_save!==!1&&e.some(c=>c.save),r=e.map(c=>c.save??c.goto??String(c.slot)).join("|"),a=this._saveModeFor===r;return h`
+      ${e.utilitySelects?.map(t=>this._moreInfoRow(t))}
+      ${e.utilityNumbers?.map(t=>this._moreInfoRow(t))}
+      ${e.utilityStates?.map(t=>this._moreInfoRow(t))}
+    `}_actionTile(e,t,i=()=>this._press(e)){let o=ut(this.hass,e);return o?this._heldActionTile(e,o,t):this._tile(e,i)}_heldActionTile(e,t,i){return p`<button class="tile"
+      aria-label=${this._name(e)}
+      @pointerdown=${o=>this._startHold(o,t,"up",i)}
+      @pointerup=${o=>this._endPointerHold(o,t)}
+      @pointercancel=${o=>this._endPointerHold(o,t)}
+      @keydown=${o=>this._startHold(o,t,"up",i)}
+      @keyup=${o=>this._endKeyHold(o,t)}
+      @blur=${()=>this._endHold(t)}
+      @click=${o=>this._activateWithoutPointer(o,t,"up",i)}
+      ?disabled=${!i||!this._available(e)}>
+      ${this._icon(e)}
+      <span class="tile-label">${this._name(e)}</span>
+    </button>`}_memory(e){let t=e.memory,i=this._config?.memory_slots;if(i&&i.length){let c=new Set(i.map(Number));t=t.filter(g=>c.has(g.slot))}if(t.length===0)return d;let o=this._config?.memory_save!==!1&&t.some(c=>c.save),r=t.map(c=>c.save??c.goto??String(c.slot)).join("|"),a=this._saveModeFor===r;return p`
       <div class="section-heading heading-row">
-        <span>${m(this.hass,"section.memory")}</span>
-        ${o?h`<button
+        <span>${u(this.hass,"section.memory")}</span>
+        ${o?p`<button
                 class="set-btn ${a?"active":""}"
                 @click=${()=>this._toggleSaveMode(r)}
               >
                 <ha-icon
                   icon=${a?"mdi:close":"mdi:content-save-edit-outline"}
                 ></ha-icon>
-                <span>${m(this.hass,a?"memory.cancel":"memory.set")}</span>
+                <span>${u(this.hass,a?"memory.cancel":"memory.set")}</span>
               </button>`:d}
       </div>
-      ${a?h`<div class="hint">${m(this.hass,"memory.set_hint")}</div>`:d}
-      <div class="tiles">${e.map(c=>this._memoryTile(c,a))}</div>
-    `}_memoryTile(t,e){let i=t.goto??t.save;if(e){let r=!!t.save;return h`
+      ${a?p`<div class="hint">${u(this.hass,"memory.set_hint")}</div>`:d}
+      <div class="tiles">${t.map(c=>this._memoryTile(c,a,e.stop))}</div>
+    `}_memoryTile(e,t,i){let o=e.goto??e.save;if(t){let a=!!e.save;return p`
         <button
-          class="tile ${r?"save-mode":"is-disabled"}"
-          ?disabled=${!r}
-          @click=${()=>r&&this._saveMemory(t)}
+          class="tile ${a?"save-mode":"is-disabled"}"
+          ?disabled=${!a}
+          @click=${()=>a&&this._saveMemory(e)}
         >
           <ha-icon class="icon" icon="mdi:content-save"></ha-icon>
-          <span class="tile-label">${this._name(i)}</span>
+          <span class="tile-label">${this._name(o)}</span>
         </button>
-      `}let o=!!t.goto;return h`
+      `}let r=!!e.goto;return r?this._actionTile(e.goto,i):p`
       <button
-        class="tile ${o?"":"is-disabled"}"
-        ?disabled=${!o}
-        @click=${()=>t.goto&&this._press(t.goto)}
+        class="tile ${r?"":"is-disabled"}"
+        ?disabled=${!r}
+        @click=${()=>e.goto&&this._press(e.goto)}
       >
-        ${this._icon(i)}
-        <span class="tile-label">${this._name(i)}</span>
+        ${this._icon(o)}
+        <span class="tile-label">${this._name(o)}</span>
       </button>
-    `}_lighting(t){let e=t.lights,i=e.light??e.switch;if(!N(e)&&!e.state)return d;let o=i||e.state||e.level||e.timer||e.toggle||e.cycle||e.timerMinutes||e.timerToggle||e.buttons?.length;return h`
+    `}_lighting(e){let t=e.lights,i=t.light??t.switch;if(!U(t)&&!t.state)return d;let o=i||t.state||t.level||t.numbers?.length||t.timer||t.toggle||t.cycle||t.timerMinutes||t.timerToggle||t.buttons?.length;return p`
       ${this._heading("section.lighting")}
-      ${e.mood&&o?this._subheading("lighting.floor"):d}
+      ${t.mood&&o?this._subheading("lighting.floor"):d}
       ${i?this._toggleRow(i):d}
-      ${e.state?this._moreInfoRow(e.state):d}
-      ${e.level?this._moreInfoRow(e.level):d}
-      ${e.timer?this._moreInfoRow(e.timer):d}
-      ${e.timerMinutes?this._moreInfoRow(e.timerMinutes):d}
-      ${!e.timerAppliesImmediately&&(e.timerMinutes||e.timerToggle)?h`<div class="hint">${m(this.hass,"lighting.timer_pending")}</div>`:d}
-      ${e.toggle||e.cycle||e.timerToggle||e.buttons?.length?h`<div class="tiles">
-              ${e.toggle?this._tile(e.toggle,()=>this._press(e.toggle)):d}
-              ${e.cycle?this._tile(e.cycle,()=>this._press(e.cycle)):d}
-              ${e.timerToggle?this._tile(e.timerToggle,()=>this._press(e.timerToggle)):d}
-              ${e.buttons?.map(r=>this._tile(r,()=>this._press(r)))}
+      ${t.state?this._moreInfoRow(t.state):d}
+      ${t.level?this._moreInfoRow(t.level):d}
+      ${t.numbers?.map(r=>this._moreInfoRow(r))}
+      ${t.timer?this._moreInfoRow(t.timer):d}
+      ${t.timerMinutes?this._moreInfoRow(t.timerMinutes):d}
+      ${!t.timerAppliesImmediately&&(t.timerMinutes||t.timerToggle)?p`<div class="hint">${u(this.hass,"lighting.timer_pending")}</div>`:d}
+      ${t.toggle||t.cycle||t.timerToggle||t.buttons?.length?p`<div class="tiles">
+              ${t.toggle?this._tile(t.toggle,()=>this._press(t.toggle)):d}
+              ${t.cycle?this._tile(t.cycle,()=>this._press(t.cycle)):d}
+              ${t.timerToggle?this._tile(t.timerToggle,()=>this._press(t.timerToggle)):d}
+              ${t.buttons?.map(r=>this._actionTile(r,e.stop))}
             </div>`:d}
-      ${e.mood?h`
+      ${t.mood?p`
         ${this._subheading("lighting.mood")}
-        ${e.mood.selects.map(r=>this._moreInfoRow(r))}
-        ${e.mood.numbers.map(r=>this._moreInfoRow(r))}
-        ${e.mood.toggle||e.mood.buttons?.length?h`<div class="tiles">
-          ${e.mood.toggle?this._tile(e.mood.toggle,()=>this._press(e.mood.toggle)):d}
-          ${e.mood.buttons?.map(r=>this._tile(r,()=>this._press(r)))}
+        ${t.mood.selects.map(r=>this._moreInfoRow(r))}
+        ${t.mood.numbers.map(r=>this._moreInfoRow(r))}
+        ${t.mood.toggle||t.mood.buttons?.length?p`<div class="tiles">
+          ${t.mood.toggle?this._tile(t.mood.toggle,()=>this._press(t.mood.toggle)):d}
+          ${t.mood.buttons?.map(r=>this._tile(r,()=>this._press(r)))}
         </div>`:d}
       `:d}
-    `}_massage(t){let e=t.massage;return e.buttons.length===0&&e.numbers.length===0&&!e.selects?.length&&!e.states?.length&&!e.timer?d:h`
+    `}_massage(e){let t=e.massage;return t.buttons.length===0&&t.numbers.length===0&&!t.selects?.length&&!t.states?.length&&!t.timer?d:p`
       ${this._heading("section.massage")}
-      ${e.buttons.length?h`<div class="tiles">
-              ${e.buttons.map(i=>this._tile(i,()=>this._press(i)))}
+      ${t.buttons.length?p`<div class="tiles">
+              ${t.buttons.map(i=>this._actionTile(i,e.stop))}
             </div>`:d}
-      ${e.numbers.map(i=>this._moreInfoRow(i))}
-      ${e.selects?.map(i=>this._moreInfoRow(i))}
-      ${e.states?.map(i=>this._moreInfoRow(i))}
-      ${e.timer?this._moreInfoRow(e.timer):d}
-    `}_climate(t){let e=[...t.climate.entities,...t.climate.selects,...t.climate.numbers];return e.length===0?d:h`
+      ${t.numbers.map(i=>this._moreInfoRow(i))}
+      ${t.selects?.map(i=>this._moreInfoRow(i))}
+      ${t.states?.map(i=>this._moreInfoRow(i))}
+      ${t.timer?this._moreInfoRow(t.timer):d}
+    `}_climate(e){let t=[...e.climate.entities,...e.climate.selects,...e.climate.numbers];return t.length===0?d:p`
       ${this._heading("section.climate")}
-      ${e.map(i=>this._moreInfoRow(i))}
-    `}_connection(t){return!t.connect&&!t.disconnect?d:h`
+      ${t.map(i=>this._moreInfoRow(i))}
+    `}_connection(e){return!e.connect&&!e.disconnect?d:p`
       ${this._heading("section.connection")}
       <div class="tiles">
-        ${t.connect?this._tile(t.connect,()=>this._press(t.connect),{icon:"mdi:bluetooth-connect",cls:"success"}):d}
-        ${t.disconnect?this._tile(t.disconnect,()=>this._press(t.disconnect),{icon:"mdi:bluetooth-off"}):d}
+        ${e.connect?this._tile(e.connect,()=>this._press(e.connect),{icon:"mdi:bluetooth-connect",cls:"success"}):d}
+        ${e.disconnect?this._tile(e.disconnect,()=>this._press(e.disconnect),{icon:"mdi:bluetooth-off"}):d}
       </div>
-    `}_heading(t){return h`<div class="section-heading">${m(this.hass,t)}</div>`}_subheading(t){return h`<div class="lighting-heading">${m(this.hass,t)}</div>`}_tile(t,e,i={}){return h`
-      <button class="tile ${i.cls??""}" @click=${e}>
-        ${this._icon(t,i.icon)}
-        <span class="tile-label">${this._name(t)}</span>
+    `}_heading(e){return p`<div class="section-heading">${u(this.hass,e)}</div>`}_subheading(e){return p`<div class="lighting-heading">${u(this.hass,e)}</div>`}_tile(e,t,i={}){return p`
+      <button class="tile ${i.cls??""}" @click=${t}>
+        ${this._icon(e,i.icon)}
+        <span class="tile-label">${this._name(e)}</span>
       </button>
-    `}_onRowKey(t,e){t.target===t.currentTarget&&(t.key==="Enter"||t.key===" ")&&(t.preventDefault(),e())}_toggleRow(t){let i=this._state(t)?.state==="on",o=this._name(t);return h`
+    `}_onRowKey(e,t){e.target===e.currentTarget&&(e.key==="Enter"||e.key===" ")&&(e.preventDefault(),t())}_toggleRow(e){let i=this._state(e)?.state==="on",o=this._name(e);return p`
       <div
         class="entity-row"
         role="button"
         tabindex="0"
         aria-label=${o}
-        @click=${()=>this._moreInfo(t)}
-        @keydown=${r=>this._onRowKey(r,()=>this._moreInfo(t))}
+        @click=${()=>this._moreInfo(e)}
+        @keydown=${r=>this._onRowKey(r,()=>this._moreInfo(e))}
       >
-        ${this._icon(t)}
+        ${this._icon(e)}
         <div class="entity-row-text">
           <span>${o}</span>
-          <span class="secondary">${this._stateText(t)}</span>
+          <span class="secondary">${this._stateText(e)}</span>
         </div>
         <button
           class="toggle ${i?"on":""}"
           role="switch"
           aria-label=${o}
           aria-checked=${i?"true":"false"}
-          @click=${r=>{r.stopPropagation(),this._toggle(t)}}
+          @click=${r=>{r.stopPropagation(),this._toggle(e)}}
         >
           <span class="knob"></span>
         </button>
       </div>
-    `}_moreInfoRow(t){let e=this._name(t);return h`
+    `}_moreInfoRow(e){let t=this._name(e);return p`
       <div
         class="entity-row"
         role="button"
         tabindex="0"
-        aria-label=${e}
-        @click=${()=>this._moreInfo(t)}
-        @keydown=${i=>this._onRowKey(i,()=>this._moreInfo(t))}
+        aria-label=${t}
+        @click=${()=>this._moreInfo(e)}
+        @keydown=${i=>this._onRowKey(i,()=>this._moreInfo(e))}
       >
-        ${this._icon(t)}
+        ${this._icon(e)}
         <div class="entity-row-text">
-          <span>${e}</span>
+          <span>${t}</span>
         </div>
-        <span class="secondary value">${this._stateText(t)}</span>
+        <span class="secondary value">${this._stateText(e)}</span>
       </div>
-    `}_icon(t,e){let i=this._state(t);return i?h`<ha-state-icon
+    `}_icon(e,t){let i=this._state(e);return i?p`<ha-state-icon
         class="icon"
         .hass=${this.hass}
         .stateObj=${i}
-      ></ha-state-icon>`:h`<ha-icon class="icon" icon=${e??"mdi:bed"}></ha-icon>`}_notice(t){return h`<ha-card><div class="notice">${m(this.hass,t)}</div></ha-card>`}_state(t){return this.hass?.states[t]}_title(t){return this._config?.name?this._config.name:this._deviceName(t)??m(this.hass,"card.default_name")}_deviceName(t=this._config?.device_id){let e=t?this.hass?.devices[t]:void 0;return e?.name_by_user||e?.name||void 0}_name(t){let e=this._state(t)?.attributes.friendly_name??this.hass?.entities[t]?.name??t,i=this.hass?.entities[t]?.device_id,o=this._deviceName(i);return o&&e.startsWith(o+" ")?e.slice(o.length+1):e}_motorName(t){let e=`motor.${t.key}`,i=m(this.hass,e);return i!==e?i:t.key.split("_").map(o=>o.charAt(0).toUpperCase()+o.slice(1)).join(" ")}_angle(t){let e=t.angle??t.position;if(!e)return;let i=Number.parseFloat(this._state(e)?.state??"");return Number.isFinite(i)?i:void 0}_readout(t){let e=t.angle??t.position;if(e){let i=this._angle(t);if(i===void 0)return;let o=this._state(e)?.attributes.unit_of_measurement,r=t.angle?"\xB0":"%";return`${Math.round(i)}${typeof o=="string"?o:r}`}if(t.cover){let i=this._state(t.cover)?.attributes.current_position;return typeof i=="number"?`${Math.round(i)}%`:void 0}}_stateText(t){let e=this._state(t);if(!e)return"";let i=this.hass?.formatEntityState;return typeof i=="function"?i(e):e.state}_collectWatched(t){let e=new Set;for(let i of t.motors)[i.cover,i.up,i.down,i.angle,i.position].forEach(o=>o&&e.add(o));t.presets.forEach(i=>e.add(i));for(let i of t.memory)[i.goto,i.save].forEach(o=>o&&e.add(o));return[t.stop,t.synchro,t.controlSide,t.connect,t.disconnect,t.connectivity,t.lights.light,t.lights.switch,t.lights.state,t.lights.level,t.lights.toggle,t.lights.cycle,t.lights.timer,t.lights.timerMinutes,t.lights.timerToggle,t.lights.mood?.toggle,t.massage.timer].forEach(i=>i&&e.add(i)),t.firmness.forEach(i=>e.add(i)),t.massage.buttons.forEach(i=>e.add(i)),t.lights.buttons?.forEach(i=>e.add(i)),t.massage.numbers.forEach(i=>e.add(i)),t.massage.selects?.forEach(i=>e.add(i)),t.massage.states?.forEach(i=>e.add(i)),t.lights.mood?.selects.forEach(i=>e.add(i)),t.lights.mood?.numbers.forEach(i=>e.add(i)),t.lights.mood?.buttons?.forEach(i=>e.add(i)),t.utility.forEach(i=>e.add(i)),t.utilitySelects?.forEach(i=>e.add(i)),t.climate.entities.forEach(i=>e.add(i)),t.climate.selects.forEach(i=>e.add(i)),t.climate.numbers.forEach(i=>e.add(i)),[...e]}_startHold(t,e,i,o){let r=null;if(t instanceof KeyboardEvent){if(t.repeat||t.key!=="Enter"&&t.key!==" ")return;t.preventDefault()}else{if(t.button!==0||!t.isPrimary)return;t.currentTarget.setPointerCapture?.(t.pointerId),t.preventDefault(),r=t.pointerId}this._config?.layout==="compact"&&(o?this._compactStopTargets.set(o,Symbol()):e.cover&&this._compactStopTargets.set(e.cover,Symbol()),this.requestUpdate()),this._hold.start(e,i,r,o)}_activateWithoutPointer(t,e,i,o){if(t.detail!==0||this._hold.heldKey!==null)return;if(this._config?.layout==="compact"&&(o?this._compactStopTargets.set(o,Symbol()):e.cover&&this._compactStopTargets.set(e.cover,Symbol()),this.requestUpdate()),e.cover){this._cover(e.cover,i==="up"?"open_cover":"close_cover");return}let r=i==="up"?e.up:e.down;r&&this._press(r)}_endPointerHold(t,e){this._hold.endFromPointer(e,t.pointerId,t.type!=="pointerup"||t.button===0)}_endKeyHold(t,e){t.key!=="Enter"&&t.key!==" "||this._hold.end(e)}_endHold(t){this._hold.end(t)}_motorStop(t,e){if(t.cover){this._hold.cancel(t),this._cover(t.cover,"stop_cover");return}this._hold.stopAll(e)}_toggleSaveMode(t){this._saveModeFor=this._saveModeFor===t?void 0:t}_saveMemory(t){t.save&&this._press(t.save),this._saveModeFor=void 0}_call(t,e,i){this.hass?.callService(t,e,{entity_id:i})?.catch(()=>{})}_press(t){this._call("button","press",t)}_cover(t,e){this._call("cover",e,t)}_toggle(t){this._call("homeassistant","toggle",t)}_setEntities(t,e){this.hass?.callService("homeassistant",e?"turn_on":"turn_off",{entity_id:t})?.catch(()=>{})}_moreInfo(t){this.dispatchEvent(new CustomEvent("hass-more-info",{detail:{entityId:t},bubbles:!0,composed:!0}))}};E.styles=V`
+      ></ha-state-icon>`:p`<ha-icon class="icon" icon=${t??"mdi:bed"}></ha-icon>`}_notice(e){return p`<ha-card><div class="notice">${u(this.hass,e)}</div></ha-card>`}_state(e){return this.hass?.states[e]}_title(e){return this._config?.name?this._config.name:this._deviceName(e)??u(this.hass,"card.default_name")}_deviceName(e=this._config?.device_id){let t=e?this.hass?.devices[e]:void 0;return t?.name_by_user||t?.name||void 0}_name(e){let t=this._state(e)?.attributes.friendly_name??this.hass?.entities[e]?.name??e,i=this.hass?.entities[e]?.device_id,o=this._deviceName(i);return o&&t.startsWith(o+" ")?t.slice(o.length+1):t}_motorName(e){let t=`motor.${e.key}`,i=u(this.hass,t);return i!==t?i:e.key.split("_").map(o=>o.charAt(0).toUpperCase()+o.slice(1)).join(" ")}_angle(e){let t=e.angle??e.position;if(!t)return;let i=Number.parseFloat(this._state(t)?.state??"");return Number.isFinite(i)?i:void 0}_readout(e){let t=e.angle??e.position;if(t){let i=this._angle(e);if(i===void 0)return;let o=this._state(t)?.attributes.unit_of_measurement,r=e.angle?"\xB0":"%";return`${Math.round(i)}${typeof o=="string"?o:r}`}if(e.cover){let i=this._state(e.cover)?.attributes.current_position;return typeof i=="number"?`${Math.round(i)}%`:void 0}}_stateText(e){let t=this._state(e);if(!t)return"";let i=this.hass?.formatEntityState;return typeof i=="function"?i(t):t.state}_collectWatched(e){let t=new Set;for(let i of e.motors)[i.cover,i.up,i.down,i.angle,i.position].forEach(o=>o&&t.add(o));e.presets.forEach(i=>t.add(i));for(let i of e.memory)[i.goto,i.save].forEach(o=>o&&t.add(o));return[e.stop,e.synchro,e.controlSide,e.connect,e.disconnect,e.connectivity,e.lights.light,e.lights.switch,e.lights.state,e.lights.level,e.lights.toggle,e.lights.cycle,e.lights.timer,e.lights.timerMinutes,e.lights.timerToggle,e.lights.mood?.toggle,e.massage.timer].forEach(i=>i&&t.add(i)),e.firmness.forEach(i=>t.add(i)),e.massage.buttons.forEach(i=>t.add(i)),e.lights.buttons?.forEach(i=>t.add(i)),e.lights.numbers?.forEach(i=>t.add(i)),e.massage.numbers.forEach(i=>t.add(i)),e.massage.selects?.forEach(i=>t.add(i)),e.massage.states?.forEach(i=>t.add(i)),e.lights.mood?.selects.forEach(i=>t.add(i)),e.lights.mood?.numbers.forEach(i=>t.add(i)),e.lights.mood?.buttons?.forEach(i=>t.add(i)),e.utility.forEach(i=>t.add(i)),e.utilityNumbers?.forEach(i=>t.add(i)),e.utilitySelects?.forEach(i=>t.add(i)),e.utilityStates?.forEach(i=>t.add(i)),e.climate.entities.forEach(i=>t.add(i)),e.climate.selects.forEach(i=>t.add(i)),e.climate.numbers.forEach(i=>t.add(i)),[...t]}_startHold(e,t,i,o){let r=null;if(e instanceof KeyboardEvent){if(e.repeat||e.key!=="Enter"&&e.key!==" ")return;e.preventDefault()}else{if(e.button!==0||!e.isPrimary)return;e.currentTarget.setPointerCapture?.(e.pointerId),e.preventDefault(),r=e.pointerId}this._config?.layout==="compact"&&(o?this._compactStopTargets.set(o,Symbol()):t.cover&&this._compactStopTargets.set(t.cover,Symbol()),this.requestUpdate());let a=o??t.holdEntityId??t.cover??t[i];this._hold.start(t,i,r,o,ye(this.hass,a))}_activateWithoutPointer(e,t,i,o){if(e.detail!==0||this._hold.heldKey!==null)return;if(this._config?.layout==="compact"&&(o?this._compactStopTargets.set(o,Symbol()):t.cover&&this._compactStopTargets.set(t.cover,Symbol()),this.requestUpdate()),t.cover){this._cover(t.cover,i==="up"?"open_cover":"close_cover");return}let r=i==="up"?t.up:t.down;r&&this._press(r)}_endPointerHold(e,t){this._hold.endFromPointer(t,e.pointerId,e.type!=="pointerup"||e.button===0)}_endKeyHold(e,t){e.key!=="Enter"&&e.key!==" "||this._hold.end(t)}_endHold(e){this._hold.end(e)}_motorStop(e,t){if(e.cover){let i=e.heldControls?"side":"motor";this._hold.stopCover(e,ye(this.hass,e.cover),i),this._cover(e.cover,"stop_cover");return}Ke(this._hold,this.hass,t)}_toggleSaveMode(e){this._saveModeFor=this._saveModeFor===e?void 0:e}_saveMemory(e){e.save&&this._press(e.save),this._saveModeFor=void 0}_call(e,t,i){this.hass?.callService(e,t,{entity_id:i})?.catch(()=>{})}_press(e){this._call("button","press",e)}_cover(e,t){this._call("cover",t,e)}_toggle(e){this._call("homeassistant","toggle",e)}_setEntities(e,t){this.hass?.callService("homeassistant",t?"turn_on":"turn_off",{entity_id:e})?.catch(()=>{})}_moreInfo(e){this.dispatchEvent(new CustomEvent("hass-more-info",{detail:{entityId:e},bubbles:!0,composed:!0}))}};C.styles=ee`
     .compact-card { padding: 13px; }
     .compact-header { display: grid; grid-template-columns: minmax(0, 1fr) 24px;
       align-items: center; gap: 8px; min-height: 22px; padding: 0 2px 9px; }
@@ -1444,4 +1459,4 @@ var me=Object.defineProperty;var ue=Object.getOwnPropertyDescriptor;var w=(n,s,t
       text-align: center;
       color: var(--secondary-text-color);
     }
-  `,w([F({attribute:!1})],E.prototype,"hass",2),w([M()],E.prototype,"_config",2),w([M()],E.prototype,"_saveModeFor",2),w([M()],E.prototype,"_activePairedPane",2),w([M()],E.prototype,"_synchronizingTo",2),w([M()],E.prototype,"_synchronizationFailed",2);ot("adjustable-bed-card",E);console.info(`%c adjustable-bed-card %c ${pe} `,"color:white;background:#3f51b5;border-radius:3px 0 0 3px;padding:2px","color:#3f51b5;background:#e8eaf6;border-radius:0 3px 3px 0;padding:2px");export{E as AdjustableBedCard};
+  `,S([q({attribute:!1})],C.prototype,"hass",2),S([H()],C.prototype,"_config",2),S([H()],C.prototype,"_saveModeFor",2),S([H()],C.prototype,"_activePairedPane",2),S([H()],C.prototype,"_synchronizingTo",2),S([H()],C.prototype,"_synchronizationFailed",2);he("adjustable-bed-card",C);console.info(`%c adjustable-bed-card %c ${$t} `,"color:white;background:#3f51b5;border-radius:3px 0 0 3px;padding:2px","color:#3f51b5;background:#e8eaf6;border-radius:0 3px 3px 0;padding:2px");export{C as AdjustableBedCard};

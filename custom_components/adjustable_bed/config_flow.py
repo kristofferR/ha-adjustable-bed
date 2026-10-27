@@ -129,6 +129,7 @@ from .const import (
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPTRACKER,
+    BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
@@ -207,6 +208,7 @@ from .const import (
     CONF_SLEEPTRACKER_RESTRICTED,
     CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
     CONF_SLEEPTRACKER_UNIT,
+    CONF_SLEEPYS_ELITE_SELECTOR,
     CONF_STARCODE_COMMAND_SELECTOR,
     CONF_STARCODE_LIFT_ENTRIES,
     CONF_STARCODE_M5X5_PROFILE,
@@ -284,6 +286,7 @@ from .const import (
     SIDE_LEFT,
     SIDE_RIGHT,
     SLEEPTRACKER_CONFIG_KEYS,
+    SLEEPYS_ELITE_SELECTORS,
     SOLACE_VARIANT_WOOSA,
     STARCODE_APP_CONFIG_KEYS,
     STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
@@ -850,6 +853,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
     BED_TYPE_VMATBASIC: "vibradorm",
     BED_TYPE_MALOUF_APP: "malouf_app",
     BED_TYPE_LEGGETT_LP_LEGACY: "lp_legacy",
+    BED_TYPE_SLEEPYS_ELITE_APP: "sleepys_elite_app",
 }
 
 
@@ -1233,12 +1237,42 @@ def _add_motion_bed_schema_fields(
     default_name = data.get(CONF_BLE_DEVICE_NAME, observed_name or data.get(CONF_NAME, ""))
     schema[vol.Required(CONF_BLE_DEVICE_NAME, default=default_name)] = str
     schema[vol.Optional(CONF_MOTION_BED_RESTORED, default=data.get(CONF_MOTION_BED_RESTORED, False))] = bool
-    schema[vol.Optional(CONF_MOTION_BED_PRESET, default=data.get(CONF_MOTION_BED_PRESET, "auto"))] = vol.In(("auto", *PRESET_VARIANTS))
-    schema[vol.Optional(CONF_MOTION_BED_MOVEMENT, default=data.get(CONF_MOTION_BED_MOVEMENT, "auto"))] = vol.In(("auto", *MOVEMENT_LAYOUTS))
+    schema[
+        vol.Optional(CONF_MOTION_BED_PRESET, default=data.get(CONF_MOTION_BED_PRESET, "auto"))
+    ] = vol.In(("auto", *PRESET_VARIANTS))
+    schema[
+        vol.Optional(CONF_MOTION_BED_MOVEMENT, default=data.get(CONF_MOTION_BED_MOVEMENT, "auto"))
+    ] = vol.In(("auto", *MOVEMENT_LAYOUTS))
+
+
+def _sleepys_selector_default(data: Mapping[str, Any]) -> str:
+    """Retain the explicit selector or use the app's neutral selector."""
+    configured = data.get(CONF_SLEEPYS_ELITE_SELECTOR)
+    if configured in SLEEPYS_ELITE_SELECTORS:
+        return configured
+    return "none"
+
+
+def _add_sleepys_elite_schema_field(schema: dict[vol.Marker, Any], data: Mapping[str, Any]) -> None:
+    """Add the one per-physical-entry Sleepy's app selector."""
+    schema[
+        vol.Required(
+            CONF_SLEEPYS_ELITE_SELECTOR,
+            default=_sleepys_selector_default(data),
+        )
+    ] = SelectSelector(
+        SelectSelectorConfig(
+            options=[
+                {"value": selector, "label": selector} for selector in SLEEPYS_ELITE_SELECTORS
+            ],
+            mode=SelectSelectorMode.DROPDOWN,
+        )
+    )
 
 
 def _motion_bed_errors(data: Mapping[str, Any]) -> dict[str, str]:
     from .motion_bed_models import select_motion_bed
+
     try:
         select_motion_bed(data.get(CONF_BLE_DEVICE_NAME, ""), restored=data.get(CONF_MOTION_BED_RESTORED, False),
                          preset_override=None if data.get(CONF_MOTION_BED_PRESET, "auto") == "auto" else data[CONF_MOTION_BED_PRESET],
@@ -1846,6 +1880,7 @@ _OPTIONS_APP_FIELDS: Final[
     BED_TYPE_VIBRADORM_APP: _add_vibradorm_app_schema_fields,
     BED_TYPE_VMATBASIC: _add_vmatbasic_schema_fields,
     BED_TYPE_LIMOSS_REMOTE: _add_limoss_remote_schema_fields,
+    BED_TYPE_SLEEPYS_ELITE_APP: _add_sleepys_elite_schema_field,
 }
 # Bed types whose own app settings only a setup step or Configure can collect.
 APP_SETTINGS_BED_TYPES: Final = frozenset(_APP_SETUP_STEPS) | frozenset(_OPTIONS_APP_FIELDS)
@@ -2462,6 +2497,35 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return self.async_show_form(
             step_id="sleeptracker",
             data_schema=cast("probatio.Schema", vol.Schema(schema)),
+            errors=errors,
+        )
+
+    async def async_step_sleepys_elite_app(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Choose the app's selector explicitly for this physical bed entry."""
+        assert self._manual_data is not None
+        data = {**self._manual_data, **(user_input or {})}
+        selector = data.get(CONF_SLEEPYS_ELITE_SELECTOR)
+        errors = (
+            {CONF_SLEEPYS_ELITE_SELECTOR: "sleepys_elite_invalid_selector"}
+            if user_input is not None and selector not in SLEEPYS_ELITE_SELECTORS
+            else {}
+        )
+        if user_input is not None and not errors:
+            data[CONF_HAS_MASSAGE] = selector in {"BOX25", "BOX25_STAR"}
+            data[CONF_DISABLE_ANGLE_SENSING] = selector not in {"BOX25", "BOX25_STAR"}
+            data[CONF_MOTOR_PULSE_USER_SET] = False
+            self._manual_data = data
+            return await self._finish_with_verify(
+                data,
+                data.get(CONF_NAME, "Sleepy's Elite"),
+            )
+        schema: dict[vol.Marker, Any] = {}
+        _add_sleepys_elite_schema_field(schema, data)
+        return self.async_show_form(
+            step_id="sleepys_elite_app",
+            data_schema=vol.Schema(schema),
             errors=errors,
         )
 

@@ -94,6 +94,7 @@ function emptyBed(): BedEntities {
     massage: { buttons: [], numbers: [] },
     climate: { entities: [], selects: [], numbers: [] },
     utility: [],
+    utilityStates: [],
   };
 }
 
@@ -124,6 +125,36 @@ export function bedEntitiesForDevice(
       motorMap.set(key, m);
     }
     return m;
+  };
+  const motorButton = (
+    id: string,
+    key: string,
+    direction: "up" | "down",
+    ownerDeviceId: string | undefined,
+  ): void => {
+    const item = motor(key);
+    item[direction] = id;
+    const attributes = hass.states[id]?.attributes;
+    const control = attributes?.held_control;
+    const startDelayMs = attributes?.hold_start_delay_ms;
+    const releaseDelayMs = attributes?.hold_release_delay_ms;
+    if (
+      typeof control === "string" &&
+      typeof startDelayMs === "number" &&
+      typeof releaseDelayMs === "number" &&
+      ownerDeviceId
+    ) {
+      item.deviceId = ownerDeviceId;
+      item.holdEntityId = id;
+      item.heldControls = {
+        ...item.heldControls,
+        [direction]: { control, startDelayMs, releaseDelayMs },
+      };
+    }
+    const heldMotor = attributes?.paired_hold_motor;
+    if (heldMotor === "back" || heldMotor === "legs") {
+      item.timedMove = { deviceId, motor: heldMotor };
+    }
   };
   const presetMap = new Map<string, string>();
   const memoryMap = new Map<number, MemorySlot>();
@@ -159,11 +190,35 @@ export function bedEntitiesForDevice(
 
     switch (domain) {
       case "cover":
-        motor(key).cover = id;
+        {
+          const item = motor(key);
+          item.cover = id;
+          const attributes = hass.states[id]?.attributes;
+          const up = attributes?.held_control_up;
+          const down = attributes?.held_control_down;
+          if (typeof up === "string" && typeof down === "string") {
+            if (entry.device_id) item.deviceId = entry.device_id;
+            item.holdEntityId = id;
+            item.heldControls = {
+              up: {
+                control: up,
+                startDelayMs: Number(attributes?.hold_start_delay_ms ?? 0),
+                releaseDelayMs: Number(attributes?.hold_release_delay_ms ?? 0),
+              },
+              down: {
+                control: down,
+                startDelayMs: Number(attributes?.hold_start_delay_ms ?? 0),
+                releaseDelayMs: Number(attributes?.hold_release_delay_ms ?? 0),
+              },
+            };
+          }
+        }
         break;
 
       case "sensor":
         if (key.endsWith("_angle")) motor(key.slice(0, -6)).angle = id;
+        else if (key.startsWith("sleepys_app_position_") || key.startsWith("sleepys_app_field_"))
+          bed.utilityStates?.push(id);
         // The Sleep Smart pump's pressure reading sits with firmness controls.
         else if (key === "logicdata_air_pump_pressure") bed.firmness.push(id);
         // INNOVA reports its massage timer indicator; the app has no timer select.
@@ -197,18 +252,22 @@ export function bedEntitiesForDevice(
         else if (key === "vmatbasic_mood_speed" || key === "vmatbasic_mood_brightness") mood().numbers.push(id);
         else if (key === "vibradorm_app_massage_speed") bed.massage.numbers.push(id);
         else if (key === "sleeptracker_wave_minutes") bed.massage.numbers.push(id);
+        else if (key === "sleepys_app_color_code") (bed.lights.numbers ??= []).push(id);
+        else if (key.startsWith("sleepys_app_target_axis_")) (bed.utilityNumbers ??= []).push(id);
         else if (/^sleeptracker_(left|right)_level$/.test(key)) bed.climate.numbers.push(id);
         else if (key === "fan_level") bed.climate.numbers.push(id);
         else if (key.startsWith("sleep_number_setting")) bed.firmness.push(id);
         break;
 
       case "button":
-        if (PRESET_ORDER.includes(key) || key.startsWith("preset_")) {
+        if (PRESET_ORDER.includes(key) || key.startsWith("preset_") || key.startsWith("sleepys_app_preset_")) {
           if ((match = key.match(/^preset_memory_(\d+)$/)))
             memory(Number(match[1])).goto = id;
           else presetMap.set(key, id);
         } else if ((match = key.match(/^program_memory_(\d+)$/))) {
           memory(Number(match[1])).save = id;
+        } else if ((match = key.match(/^sleepys_app_memory_(\d+)$/))) {
+          memory(Number(match[1])).goto = id;
         } else if (key === "stop" || key === "stop_both") {
           // stop_both is the paired parent device's combined STOP.
           bed.stop = id;
@@ -224,6 +283,14 @@ export function bedEntitiesForDevice(
           bed.massage.buttons.push(id);
         } else if (key.startsWith("sleeptracker_")) {
           bed.utility.push(id);
+        } else if (
+          key.startsWith("sleepys_app_light_") ||
+          key.startsWith("sleepys_app_voice_brightness_") ||
+          key === "sleepys_app_rgb_action"
+        ) {
+          (bed.lights.buttons ??= []).push(id);
+        } else if (key.startsWith("sleepys_app_massage_")) {
+          bed.massage.buttons.push(id);
         } else if (key === "toggle_light") {
           bed.lights.toggle = id;
         } else if (key === "light_cycle" || key === "starcode_light_cycle") {
@@ -318,13 +385,10 @@ export function bedEntitiesForDevice(
           bed.utility.push(id);
         } else if (key.startsWith("massage_")) {
           bed.massage.buttons.push(id);
+        } else if (key.startsWith("sleepys_app_")) {
+          bed.utility.push(id);
         } else if ((match = key.match(/^(.+)_(up|down)$/))) {
-          const m = motor(match[1]);
-          m[match[2] as "up" | "down"] = id;
-          const heldMotor = hass.states[id]?.attributes.paired_hold_motor;
-          if (heldMotor === "back" || heldMotor === "legs") {
-            m.timedMove = { deviceId, motor: heldMotor };
-          }
+          motorButton(id, match[1], match[2] as "up" | "down", entry.device_id);
         }
         break;
 
@@ -349,6 +413,8 @@ export function bedEntitiesForDevice(
       case "select":
         if (key === "motion_bed_active_module" || key.startsWith("okin_app_"))
           (bed.utilitySelects ??= []).push(id);
+        else if (key === "sleepys_app_massage_timer_code")
+          (bed.massage.selects ??= []).push(id);
         else if (key === "light_timer") bed.lights.timer = id;
         // A split bed's local left/right selector routes the motor controls.
         else if (key === "remacro_control_side") bed.controlSide = id;
@@ -491,14 +557,16 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     bed.climate.selects.length === 0 &&
     bed.climate.numbers.length === 0 &&
     bed.utility.length === 0 &&
-    !bed.utilitySelects?.length
+    !bed.utilityNumbers?.length &&
+    !bed.utilitySelects?.length &&
+    !bed.utilityStates?.length
   );
 }
 
 export function hasLightingControls(lights: LightEntities): boolean {
   return !!(
     lights.light || lights.switch || lights.level || lights.toggle ||
-    lights.buttons?.length || lights.cycle || lights.timer || lights.timerMinutes || lights.timerToggle ||
+    lights.numbers?.length || lights.buttons?.length || lights.cycle || lights.timer || lights.timerMinutes || lights.timerToggle ||
     lights.mood?.toggle || lights.mood?.selects.length || lights.mood?.numbers.length || lights.mood?.buttons?.length
   );
 }

@@ -122,6 +122,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
+    BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SOLACE,
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_VIBRADORM,
@@ -185,6 +186,7 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DEVICE_INFO_CHARS,
     DEVICE_INFO_READ_TIMEOUT,
+    DEVICE_INFO_SERVICE_UUID,
     DOMAIN,
     LEGGETT_OKIN_SUPERSEDED_PULSE_DEFAULTS,
     LEGGETT_VARIANT_GEN2,
@@ -2901,6 +2903,68 @@ class AdjustableBedCoordinator:
                     self._address,
                 )
 
+    async def _async_read_sleepys_app_device_info(
+        self,
+        client: BleakClient,
+        session_generation: int,
+    ) -> None:
+        """Read the app's exact optional Device Information fields after notify setup."""
+
+        def session_is_current() -> bool:
+            return (
+                self._client is client
+                and client.is_connected
+                and self._position_connection_generation == session_generation
+            )
+
+        if not session_is_current():
+            return
+
+        if not any(
+            service.uuid.lower() == DEVICE_INFO_SERVICE_UUID for service in (client.services or ())
+        ):
+            _LOGGER.debug("Sleepy's Device Information service is absent on %s", self._address)
+            return
+
+        values: dict[str, str | None] = {
+            "manufacturer_name": None,
+            "software_revision": None,
+        }
+        for field in ("manufacturer_name", "software_revision"):
+            if not session_is_current():
+                return
+            try:
+                raw_value = await asyncio.wait_for(
+                    client.read_gatt_char(DEVICE_INFO_CHARS[field]),
+                    DEVICE_INFO_READ_TIMEOUT,
+                )
+            except Exception as err:
+                _LOGGER.debug(
+                    "Could not read Sleepy's Device Information %s from %s: %s",
+                    field,
+                    self._address,
+                    err,
+                )
+                continue
+
+            if not session_is_current():
+                return
+            try:
+                values[field] = raw_value.decode("utf-8").rstrip("\x00")
+            except UnicodeDecodeError as err:
+                _LOGGER.debug(
+                    "Could not decode Sleepy's Device Information %s from %s: %s",
+                    field,
+                    self._address,
+                    err,
+                )
+
+        if session_is_current():
+            self._store_ble_device_info(
+                values["manufacturer_name"],
+                values["software_revision"],
+            )
+
     def record_command_trace(
         self,
         *,
@@ -4003,6 +4067,7 @@ class AdjustableBedCoordinator:
                     BED_TYPE_SLEEP_NUMBER_MCR,
                     BED_TYPE_SLEEP_NUMBER,
                     BED_TYPE_JENSEN,
+                    BED_TYPE_SLEEPYS_ELITE_APP,
                     BED_TYPE_VIBRADORM_APP,
                 }:
                     await asyncio.sleep(self._post_connect_delay)
@@ -4100,6 +4165,7 @@ class AdjustableBedCoordinator:
                     BED_TYPE_SLEEP_NUMBER_MCR,
                     BED_TYPE_SLEEP_NUMBER,
                     BED_TYPE_JENSEN,
+                    BED_TYPE_SLEEPYS_ELITE_APP,
                 }
 
                 ble_manufacturer: str | None = None
@@ -4300,6 +4366,7 @@ class AdjustableBedCoordinator:
                 # reconnect hydration and seeks can distinguish fresh feedback
                 # from cached values.
                 self._position_connection_generation += 1
+                controller_session_generation = self._position_connection_generation
                 # Remember the resolved persistence so reconnect/idle decisions are
                 # correct even after _on_disconnect clears the controller.
                 self._persistent_connection_resolved = (
@@ -4386,7 +4453,12 @@ class AdjustableBedCoordinator:
                 # Read deferred BLE Device Information now that the
                 # notification channel and protocol handshake are done.
                 if _defer_device_info and self._client is not None and self._client.is_connected:
-                    if self._device_info_read_done:
+                    if self._bed_type == BED_TYPE_SLEEPYS_ELITE_APP:
+                        await self._async_read_sleepys_app_device_info(
+                            self._client,
+                            controller_session_generation,
+                        )
+                    elif self._device_info_read_done:
                         ble_manufacturer = self._ble_manufacturer
                         ble_model = self._ble_model
                         _LOGGER.debug(
@@ -6058,6 +6130,7 @@ class AdjustableBedCoordinator:
         group_id: str | None = None,
         kind: CommandKind = CommandKind.COMMAND,
         read_positions_after_operation: bool = True,
+        expected_stop_epoch: int | None = None,
     ) -> None:
         """Execute an opaque controller command through the device scheduler."""
 
@@ -6083,6 +6156,7 @@ class AdjustableBedCoordinator:
             pulse_delay_ms=pulse_delay_ms,
             group_id=group_id,
             controller_command=command_fn,
+            expected_stop_epoch=expected_stop_epoch,
         )
 
     async def _async_schedule_command_operation(
@@ -6097,8 +6171,14 @@ class AdjustableBedCoordinator:
         pulse_delay_ms: int | None = None,
         group_id: str | None = None,
         controller_command: Callable[[BedController], Awaitable[None]] | None = None,
+        expected_stop_epoch: int | None = None,
     ) -> None:
         """Schedule an operation, or run inline inside this scheduler's reservation."""
+        if (
+            expected_stop_epoch is not None
+            and self._command_scheduler.stop_epoch != expected_stop_epoch
+        ):
+            return
         context = current_command_context()
         if context is not None and context.scheduler_token is self._command_scheduler.token:
             previous_pulse_count = context.pulse_count
@@ -6119,6 +6199,12 @@ class AdjustableBedCoordinator:
 
             await prepare_individual_command(self, controller_command)
 
+        if (
+            expected_stop_epoch is not None
+            and self._command_scheduler.stop_epoch != expected_stop_epoch
+        ):
+            return
+
         intent = self._build_command_intent(
             operation,
             resource=resource,
@@ -6128,8 +6214,9 @@ class AdjustableBedCoordinator:
             pulse_count=pulse_count,
             pulse_delay_ms=pulse_delay_ms,
             group_id=group_id,
+            expected_stop_epoch=expected_stop_epoch,
         )
-        await self._command_scheduler.execute(intent)
+        await self._command_scheduler.execute(intent, expected_stop_epoch=expected_stop_epoch)
 
     def _build_command_intent(
         self,
@@ -6142,6 +6229,7 @@ class AdjustableBedCoordinator:
         pulse_count: int | None = None,
         pulse_delay_ms: int | None = None,
         group_id: str | None = None,
+        expected_stop_epoch: int | None = None,
     ) -> CommandIntent:
         """Build one device intent while preserving legacy cancellation signals."""
         if resource is not None and resources is not None:
@@ -6151,7 +6239,9 @@ class AdjustableBedCoordinator:
             if resources is not None
             else command_resources(resource or "*")
         )
-        if cancel_running:
+        if cancel_running and (
+            expected_stop_epoch is None or self._command_scheduler.stop_epoch == expected_stop_epoch
+        ):
             # Keep preemptible non-scheduler work (queries and legacy direct
             # writes) responsive. Scheduler-owned operations use their private
             # ticket event and are replaced only when resources overlap.
@@ -6181,6 +6271,7 @@ class AdjustableBedCoordinator:
         kind: CommandKind = CommandKind.GROUP,
         cancel_running: bool = True,
         group_id: str,
+        expected_stop_epoch: int | None = None,
     ) -> CommandHandle:
         """Queue a linked operation without allowing controller execution yet."""
         intent = self._build_command_intent(
@@ -6190,8 +6281,13 @@ class AdjustableBedCoordinator:
             kind=kind,
             cancel_running=cancel_running,
             group_id=group_id,
+            expected_stop_epoch=expected_stop_epoch,
         )
-        return await self._command_scheduler.enqueue(intent, prepared=True)
+        return await self._command_scheduler.enqueue(
+            intent,
+            prepared=True,
+            expected_stop_epoch=expected_stop_epoch,
+        )
 
     async def async_validate_linked_command_readiness(self) -> None:
         """Prepare actual GATT without starting a reserved linked command."""

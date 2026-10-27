@@ -287,7 +287,7 @@ def _sensor_entities_for(
 
     if controller is not None:
         # Retire this runtime's app telemetry after a protocol/profile change.
-        for namespace in ("motion_bed_", "sleeptracker_"):
+        for namespace in ("motion_bed_", "sleeptracker_", "sleepys_app_"):
             prefix, suffix = coordinator.entity_unique_id(namespace).split(namespace, 1)
             prefix += namespace
             desired = {coordinator.entity_unique_id(spec.key) for spec in controller.controller_state_sensor_specs}
