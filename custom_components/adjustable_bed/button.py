@@ -1627,7 +1627,10 @@ class PairedBedCombinedMotorButton(ButtonEntity):
         ):
             attributes["paired_hold_motor"] = self._motor_key
         hold = self._hold
-        if hold is not None:
+        if hold is not None and (
+            isinstance(self._coordinator, SingleAddressPairedCoordinator)
+            or self._coordinator.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
+        ):
             attributes.update(
                 {
                     "held_control": (

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import math
 from collections.abc import Callable
@@ -344,6 +345,8 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         self._last_octo_controls_available: bool | None = (
             octo.normal_controls_available if octo is not None else None
         )
+        self._auto_off_timer: asyncio.TimerHandle | None = None
+        self._auto_off_seconds: int | None = None
 
     @property
     def available(self) -> bool:
@@ -388,11 +391,37 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
 
     async def async_will_remove_from_hass(self) -> None:
         """Unsubscribe from live light-state updates."""
+        self._cancel_auto_off_timer()
         unregister = getattr(self, "_unregister_light_state", None)
         if unregister is not None:
             unregister()
             self._unregister_light_state = None
         await super().async_will_remove_from_hass()
+
+    def _cancel_auto_off_timer(self) -> None:
+        """Cancel the estimated hardware light timeout."""
+        if self._auto_off_timer is not None:
+            self._auto_off_timer.cancel()
+            self._auto_off_timer = None
+
+    def _schedule_auto_off_timer(self) -> None:
+        """Reflect hardware auto-off without sending another light command."""
+        self._cancel_auto_off_timer()
+        controller = self._coordinator.controller
+        self._auto_off_seconds = (
+            controller.light_auto_off_seconds if controller is not None else None
+        )
+        if (seconds := self._auto_off_seconds) is None:
+            return
+
+        def auto_off_callback() -> None:
+            self._auto_off_timer = None
+            self._attr_is_on = False
+            if controller is not None:
+                controller.on_light_auto_off()
+            self.async_write_ha_state()
+
+        self._auto_off_timer = self.hass.loop.call_later(seconds, auto_off_callback)
 
     @callback
     def _handle_light_state(self, state: dict[str, Any]) -> None:
@@ -450,6 +479,14 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             if is_on != self._attr_is_on:
                 self._attr_is_on = is_on
                 changed = True
+        if self._attr_is_on:
+            if controller is not None and (
+                self._auto_off_timer is None
+                or controller.light_auto_off_seconds != self._auto_off_seconds
+            ):
+                self._schedule_auto_off_timer()
+        else:
+            self._cancel_auto_off_timer()
         octo_modes = active_modes if octo is not None else {ColorMode.RGB, ColorMode.RGBW}
         rgb = _normalize_rgb_color(state.get("under_bed_lights_rgb"))
         if (
@@ -516,6 +553,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
 
             await self._coordinator.async_execute_controller_command(_turn_on, cancel_running=False)
             self._attr_is_on = True
+            self._schedule_auto_off_timer()
             self.async_write_ha_state()
         else:
             raise ValueError("This light has no active color mode")
@@ -561,6 +599,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         self._attr_rgb_color = target_rgb
         if level is not None and self._light_level_max is not None:
             self._attr_brightness = _level_to_brightness(level, self._light_level_max)
+        self._schedule_auto_off_timer()
         self.async_write_ha_state()
 
     async def _turn_on_rgbw(self, **kwargs: Any) -> None:
@@ -582,6 +621,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         self._attr_rgbw_color = target_rgbw
         if intensity is not None:
             self._attr_brightness = intensity
+        self._schedule_auto_off_timer()
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
@@ -606,6 +646,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
 
         await self._coordinator.async_execute_controller_command(_turn_off, cancel_running=False)
         self._attr_is_on = False
+        self._cancel_auto_off_timer()
         self.async_write_ha_state()
 
 

@@ -3462,6 +3462,38 @@ class TestPairedReceiverSettings:
         coord.connection_mode = "sequential"
         assert entity.extra_state_attributes == {}
 
+    @pytest.mark.parametrize("mode", ["concurrent", "sequential"])
+    @pytest.mark.parametrize("direction", ["up", "down"])
+    def test_long_hold_metadata_requires_concurrent_pair(self, mode, direction):
+        from unittest.mock import MagicMock
+
+        from custom_components.adjustable_bed.beds.base import (
+            ControllerMotorHoldSpec,
+            MotorControlSpec,
+        )
+        from custom_components.adjustable_bed.button import PairedBedCombinedMotorButton
+
+        coord = MagicMock(pair_id="pair_x", device_info={}, connection_mode=mode)
+        coord.children = {}
+        spec = MotorControlSpec(
+            key="back",
+            translation_key="back",
+            open_fn=AsyncMock(),
+            close_fn=AsyncMock(),
+            stop_fn=AsyncMock(),
+            hold=ControllerMotorHoldSpec("back_up", "back_down", 100, 200),
+        )
+        entity = PairedBedCombinedMotorButton(coord, spec, direction)
+        assert entity.extra_state_attributes == (
+            {
+                "held_control": f"back_{direction}",
+                "hold_start_delay_ms": 100,
+                "hold_release_delay_ms": 200,
+            }
+            if mode == "concurrent"
+            else {}
+        )
+
     @pytest.mark.parametrize("side", [SIDE_LEFT, SIDE_RIGHT])
     async def test_receiver_edit_preserves_other_side_and_survives_split(
         self, hass, enable_custom_integrations, side
@@ -4371,6 +4403,45 @@ class TestOctoOfflineSnapshot:
         await left.async_prime_offline_controller()
         # No snapshot -> Octo is not offline-mintable (keeps today's behaviour).
         assert left.capability_controller is None
+
+    async def test_legacy_snapshot_preserves_registry_until_fresh_discovery(self, hass):
+        from custom_components.adjustable_bed.beds.octo import OctoController
+        from custom_components.adjustable_bed.light import _light_entities_for
+        from custom_components.adjustable_bed.switch import _switch_entities_for
+
+        left = self._octo_children(
+            hass,
+            left_snapshot={"has_lights": True, "has_rgbwi": True, "has_synchro": True},
+        )[SIDE_LEFT]
+        await left.async_prime_offline_controller()
+        controller = left.capability_controller
+        assert isinstance(controller, OctoController)
+        assert not controller.controller_entity_discovery_complete
+        snapshot = controller.capability_snapshot()
+        assert snapshot is not None
+        assert "capability_records" not in snapshot
+        registry = er.async_get(hass)
+        rows = [
+            registry.async_get_or_create(
+                domain,
+                DOMAIN,
+                left.entity_unique_id(key),
+                config_entry=hass.config_entries.async_get_entry(left.entry.entry_id),
+                original_name="Customized bed control",
+            )
+            for domain, key in (("light", "under_bed_lights"), ("switch", "synchro_mode"))
+        ]
+
+        assert len(_light_entities_for(hass, left)) == 1
+        assert _switch_entities_for(hass, left) == []
+        assert all(registry.async_get(row.entity_id) == row for row in rows)
+
+        # A complete empty discovery can authoritatively retire the same rows.
+        controller._handle_feature_response([0xFF, 0xFF, 0xFF, 0, 0, 0])
+        assert controller.controller_entity_discovery_complete
+        assert _light_entities_for(hass, left) == []
+        assert _switch_entities_for(hass, left) == []
+        assert all(registry.async_get(row.entity_id) is None for row in rows)
 
     async def test_octo_star2_side_mints_offline_without_snapshot(self, hass: HomeAssistant):
         """Star2 has FIXED caps and no snapshot, but is statically offline-mintable

@@ -2528,6 +2528,110 @@ class TestOctoCapabilityControls:
             == 0
         )
 
+    @pytest.mark.parametrize("finish", ["expire", "off", "remove", "failed_off"])
+    async def test_onoff_light_tracks_hardware_timeout(self, hass, finish):
+        coordinator = MagicMock(motor_count=2)
+        coordinator.entry.data = {}
+        controller = OctoController(coordinator)
+        coordinator.controller = coordinator.capability_controller = controller
+        _activate_capabilities(
+            controller,
+            _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00"),
+            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05"),
+        )
+        controller.lights_on = AsyncMock()
+        controller.lights_off = AsyncMock()
+
+        async def execute(command, **_kwargs):
+            await command(controller)
+
+        coordinator.async_execute_controller_command = AsyncMock(side_effect=execute)
+        light = AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)
+        light.hass = hass
+        timer = MagicMock()
+        with (
+            patch.object(hass.loop, "call_later", return_value=timer) as schedule,
+            patch.object(light, "async_write_ha_state"),
+            patch.object(controller, "on_light_auto_off") as expired,
+        ):
+            await light.async_turn_on()
+            assert light.is_on is True
+            assert schedule.call_args.args[0] == 300
+            expire = schedule.call_args.args[1]
+            if finish == "off":
+                await light.async_turn_off()
+                assert light.is_on is False
+                timer.cancel.assert_called_once()
+                expired.assert_not_called()
+            elif finish == "remove":
+                await light.async_will_remove_from_hass()
+                timer.cancel.assert_called_once()
+                expired.assert_not_called()
+            else:
+                if finish == "failed_off":
+                    controller.lights_off.side_effect = RuntimeError("disconnected")
+                    with pytest.raises(RuntimeError, match="disconnected"):
+                        await light.async_turn_off()
+                    assert light.is_on is True
+                    timer.cancel.assert_not_called()
+                expire()
+                assert light.is_on is False
+                expired.assert_called_once()
+            assert light._auto_off_timer is None
+
+    @pytest.mark.parametrize("minutes", [0, 2])
+    async def test_light_timeout_follows_duration_and_keeps_cached_state_off(
+        self, hass, mock_octo_config_entry, mock_octo_ready_transport, minutes
+    ):
+        coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
+        await coordinator.async_connect()
+        controller = cast(OctoController, coordinator.controller)
+        _activate_capabilities(
+            controller,
+            _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00"),
+            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05"),
+        )
+        controller.write_command = AsyncMock()
+
+        async def execute(command, **_kwargs):
+            await command(controller)
+
+        coordinator.async_execute_controller_command = AsyncMock(side_effect=execute)
+        light = AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)
+        light.hass = hass
+        with patch.object(light, "async_write_ha_state"):
+            await light.async_added_to_hass()
+            try:
+                with patch.object(hass.loop, "call_later", return_value=MagicMock()) as schedule:
+                    await light.async_turn_on()
+                    timer = light._auto_off_timer
+                    assert timer is not None
+                    schedule.reset_mock()
+                    timer.cancel.reset_mock()
+                    controller._publish_capability_state()
+                    schedule.assert_not_called()
+
+                    await controller.set_light_duration(minutes)
+
+                    timer.cancel.assert_called_once()
+                    assert light.is_on is True
+                    if minutes == 0:
+                        assert light._auto_off_timer is None
+                        schedule.assert_not_called()
+                    else:
+                        assert schedule.call_count == 1
+                        assert schedule.call_args.args[0] == 120
+                        writes = controller.write_command.await_count
+                        schedule.call_args.args[1]()
+                        assert light.is_on is False
+                        assert controller._capability_records[OCTO_FEATURE_LIGHT].value == b"\x00"
+                        controller._publish_capability_state()
+                        assert light.is_on is False
+                        assert coordinator.controller_state["under_bed_lights_on"] is False
+                        assert controller.write_command.await_count == writes
+            finally:
+                await light.async_will_remove_from_hass()
+
     async def test_remote_lock_switch_ignores_light_auto_off_timer(
         self,
         hass: HomeAssistant,
