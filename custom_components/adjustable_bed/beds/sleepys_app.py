@@ -585,10 +585,18 @@ class SleepysEliteAppController(BedController):
             for key, value in updates.items():
                 if not isinstance(value, (int, bool, float)):
                     continue
+                timer_code = value if type(value) is int else None
                 self._app_fields[key] = value
                 if isinstance(value, bool):
                     value = int(value)
                 state_updates[f"sleepys_app_{key}"] = value
+                if (
+                    key == "field_0x0b"
+                    and self.supports_massage
+                    and timer_code is not None
+                    and 1 <= timer_code <= 3
+                ):
+                    state_updates["sleepys_app_massage_timer_code"] = str(timer_code)
             self.forward_controller_state_updates(state_updates)
 
     def _parse_notification(self, raw: bytes) -> dict[str, _ParsedValue] | None:

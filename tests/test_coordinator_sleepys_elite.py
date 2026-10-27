@@ -1114,3 +1114,45 @@ async def test_disconnect_during_first_dis_read_stops_stale_session_reads(
     assert sleepys_coordinator._ble_model is None
     generic_dis.assert_not_awaited()
     await sleepys_coordinator.async_shutdown()
+
+
+async def test_remote_timer_notifications_update_the_declared_select(
+    sleepys_runtime: SleepysRuntime,
+) -> None:
+    _hass, coordinator, controller, client = sleepys_runtime
+    characteristic = _FakeGattCharacteristic("6E400003-B5A3-F393-E0A9-E50E24DCCA9E")
+    controller._notify_characteristic = characteristic
+    select = AdjustableBedControllerSelect(
+        coordinator, controller.controller_select_specs[0]
+    )
+
+    def status(seconds: int) -> bytearray:
+        packet = bytearray(16)
+        packet[:2] = b"\xa5\x0b"
+        packet[4:6] = seconds.to_bytes(2, "big")
+        packet[14] = 1
+        return packet
+
+    controller._handle_notification(characteristic, status(600))
+    assert coordinator.controller_state["sleepys_app_field_0x0b"] == 1
+    assert coordinator.controller_state["sleepys_app_massage_timer_code"] == "1"
+    assert select.current_option == "1"
+
+    controller._handle_notification(characteristic, status(1200))
+    assert coordinator.controller_state["sleepys_app_field_0x0b"] == 2
+    assert coordinator.controller_state["sleepys_app_massage_timer_code"] == "2"
+    assert select.current_option == "2"
+
+    stale_characteristic = _FakeGattCharacteristic(
+        "6E400003-B5A3-F393-E0A9-E50E24DCCA9F"
+    )
+    before_stale = dict(coordinator.controller_state)
+    controller._handle_notification(stale_characteristic, status(1800))
+    controller._handle_notification(characteristic, bytearray.fromhex("A5 0B 00"))
+    assert coordinator.controller_state == before_stale
+    assert select.current_option == "2"
+
+    with _ready_command_lane(coordinator):
+        await select.async_select_option("2")
+    client.write_gatt_char.assert_not_awaited()
+    await coordinator.async_shutdown()

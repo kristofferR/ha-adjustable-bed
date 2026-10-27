@@ -700,6 +700,42 @@ def test_parser_faults_and_stale_notifications_leave_state_unchanged() -> None:
 
 
 @pytest.mark.parametrize(
+    ("selector", "frame"),
+    [
+        ("BOX15", bytes((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0))),
+        ("BOX1220", bytes.fromhex("A5 0B 0E 00 02 58 03 04 05")),
+    ],
+)
+def test_non_timer_layouts_keep_field_0b_out_of_the_timer_select(
+    selector: str, frame: bytes
+) -> None:
+    controller = _controller(selector, connected=True)
+    characteristic = SimpleNamespace(uuid="accepted-notify")
+    controller._notify_characteristic = characteristic
+
+    controller._handle_notification(characteristic, bytearray(frame))
+
+    updates = controller._coordinator.handle_controller_state_updates.call_args.args[0]
+    assert "sleepys_app_field_0x0b" in updates
+    assert "sleepys_app_massage_timer_code" not in updates
+
+
+def test_unknown_timer_code_does_not_enter_the_declared_select_domain() -> None:
+    controller = _controller("BOX25", connected=True)
+    characteristic = SimpleNamespace(uuid="accepted-notify")
+    controller._notify_characteristic = characteristic
+    raw = bytearray(16)
+    raw[:2] = b"\xa5\x0b"
+    raw[14] = 1
+
+    controller._handle_notification(characteristic, raw)
+
+    updates = controller._coordinator.handle_controller_state_updates.call_args.args[0]
+    assert updates["sleepys_app_field_0x0b"] == 0
+    assert "sleepys_app_massage_timer_code" not in updates
+
+
+@pytest.mark.parametrize(
     "row",
     [
         row

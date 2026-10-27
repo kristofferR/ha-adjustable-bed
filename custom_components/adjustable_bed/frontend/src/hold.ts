@@ -113,9 +113,57 @@ interface PendingRelease {
   id: number;
   motorKey: string;
   targetKey: string;
+  target?: HoldTarget;
   cover?: string;
   stopEntityId?: string;
   timer?: ReturnType<typeof setTimeout>;
+}
+
+export type HoldTargetSide = "left" | "right" | "both";
+
+export interface HoldTarget {
+  deviceId: string;
+  side?: HoldTargetSide;
+}
+
+export type CoverStopScope = "motor" | "side";
+
+export function holdTargetForEntity(
+  hass: HomeAssistant | undefined,
+  entityId?: string,
+): HoldTarget | undefined {
+  if (!hass || !entityId) return undefined;
+  const deviceId = hass.entities[entityId]?.device_id;
+  if (!deviceId) return undefined;
+
+  const devices = hass.devices ?? {};
+  const device = devices[deviceId];
+  const declaredSide = hass.states[entityId]?.attributes.bed_side ??
+    hass.states[entityId]?.attributes.side;
+  const side: HoldTargetSide | undefined =
+    declaredSide === "left" || declaredSide === "right" || declaredSide === "both"
+      ? declaredSide
+      : Object.values(devices).some((candidate) => candidate.parent_device_id === deviceId)
+        ? "both"
+        : undefined;
+
+  return {
+    deviceId: device?.parent_device_id ?? deviceId,
+    side,
+  };
+}
+
+// This is the callback used by both Stop buttons rendered by the card. Keep
+// target resolution here so the state-machine tests exercise the same path as
+// the DOM handlers without needing a browser runtime.
+export function stopFromCard(
+  hold: MotorHold,
+  hass: HomeAssistant | undefined,
+  stopEntityId?: string,
+): void {
+  const target = holdTargetForEntity(hass, stopEntityId);
+  const coversAllTargets = target?.side !== "left" && target?.side !== "right";
+  hold.stopAll(stopEntityId, coversAllTargets, target);
 }
 
 export class MotorHold {
@@ -129,6 +177,7 @@ export class MotorHold {
   // paired bed renders one section per side, each with its own stop, so there
   // is no single bed-wide stop to fall back on.
   private _stop: string | null = null;
+  private _target?: HoldTarget;
   // The pointer that owns the hold. Pointer-end events from any other pointer
   // must be ignored: a second touch on the same control would otherwise cancel
   // the primary hold and stop the motor early.
@@ -136,6 +185,7 @@ export class MotorHold {
   // Bumping this is what stops an in-flight repeat loop: the loop's next
   // iteration sees a stale value and exits.
   private _generation = 0;
+  private _repeatBlocked = false;
   private _startTimer?: ReturnType<typeof setTimeout>;
   private _started = false;
   private _heldControl?: MotorEntity["heldControl"];
@@ -162,11 +212,13 @@ export class MotorHold {
     dir: Direction,
     pointerId: number | null,
     stopEntityId?: string,
+    target?: HoldTarget,
   ): void {
     if (this._key !== null) return;
     this._key = motor.key;
     this._cover = motor.cover ?? null;
     this._stop = stopEntityId ?? null;
+    this._target = target;
     this._pointerId = pointerId;
     const generation = ++this._generation;
     this._heldControl = motor.heldControls?.[dir] ?? motor.heldControl;
@@ -228,7 +280,7 @@ export class MotorHold {
     // train of pulses with a short stop between them. Making it continuous
     // needs a hold-until-released primitive in the integration, which does not
     // exist yet: see issue #483.
-    while (generation === this._generation) {
+    while (generation === this._generation && !this._repeatBlocked) {
       try {
         const pending = this.actions.pulse(motor, dir);
         if (!pending) return;
@@ -258,6 +310,7 @@ export class MotorHold {
       id: ++this._releaseId,
       motorKey: this._key ?? "",
       targetKey: this._targetKey(),
+      target: this._target,
       cover: this._cover ?? undefined,
       stopEntityId: this._stop ?? undefined,
     };
@@ -302,9 +355,30 @@ export class MotorHold {
     return released;
   }
 
-  private _discardReleasesForTarget(targetKey: string): void {
+  private _targetsOverlap(
+    targetKey: string,
+    target: HoldTarget | undefined,
+    stopEntityId: string | undefined,
+    stopTarget: HoldTarget | undefined,
+  ): boolean {
+    if (stopEntityId !== undefined && targetKey === stopEntityId) return true;
+    if (!target || !stopTarget || target.deviceId !== stopTarget.deviceId) return false;
+    return !target.side || !stopTarget.side ||
+      target.side === "both" || stopTarget.side === "both" ||
+      target.side === stopTarget.side;
+  }
+
+  private _discardReleasesOverlapping(
+    stopEntityId: string,
+    stopTarget: HoldTarget | undefined,
+  ): void {
     for (const release of [...this._pendingReleases.values()]) {
-      if (release.targetKey !== targetKey) continue;
+      if (!this._targetsOverlap(
+        release.targetKey,
+        release.target,
+        stopEntityId,
+        stopTarget,
+      )) continue;
       this._pendingReleases.delete(release.id);
       if (release.timer !== undefined) this.timers.clearTimeout(release.timer);
     }
@@ -364,20 +438,71 @@ export class MotorHold {
     return matchedActive || matchedRelease;
   }
 
+  // Cover stop behavior is supplied per motor by the backend. Keep ordinary
+  // motor-specific stops on their motor key; a caller with an explicit
+  // side-wide stop contract may invalidate any overlapping operation on that
+  // physical side. The clicked cover service call remains the card's job.
+  stopCover(
+    motor: MotorEntity,
+    target: HoldTarget | undefined,
+    scope: CoverStopScope,
+  ): void {
+    const coverId = motor.cover;
+    if (!coverId) return;
+    if (
+      this._key !== null &&
+      (scope === "side" || this._key === motor.key) &&
+      this._targetsOverlap(this._targetKey(), this._target, coverId, target)
+    ) {
+      const sideOnlyStopOfBoth =
+        this._target?.side === "both" &&
+        this._target.deviceId === target?.deviceId &&
+        (target?.side === "left" || target?.side === "right");
+      if (sideOnlyStopOfBoth && !this._heldControl) {
+        // A finite combined button can have work left on its other child. Stop
+        // reissuing Both commands, but keep its original release owner alive.
+        this._repeatBlocked = true;
+      } else {
+        this._reset();
+      }
+    }
+
+    for (const release of [...this._pendingReleases.values()]) {
+      const partialBothRelease =
+        release.target?.side === "both" &&
+        release.target.deviceId === target?.deviceId &&
+        (target?.side === "left" || target?.side === "right");
+      if (
+        (scope !== "side" && partialBothRelease) ||
+        (scope !== "side" && release.motorKey !== motor.key) ||
+        !this._targetsOverlap(release.targetKey, release.target, coverId, target)
+      ) continue;
+      this._pendingReleases.delete(release.id);
+      if (release.timer !== undefined) this.timers.clearTimeout(release.timer);
+    }
+  }
+
   // A stop button. Invalidating first matters: otherwise the in-flight pulse
   // resolves after the stop lands and the loop issues another pulse, so the bed
   // starts moving again right after the user asked it to stop. It also has to
   // invalidate *any* hold, not just one motor's, because this stop halts
   // whatever is moving. `stopEntityId` is the pressed button's own stop; it
   // wins over the held motor's, which may belong to a different side.
-  stopAll(stopEntityId?: string, stopCoversAllTargets = false): void {
+  stopAll(
+    stopEntityId?: string,
+    stopCoversAllTargets = false,
+    stopTarget?: HoldTarget,
+  ): void {
     if (stopEntityId !== undefined) {
-      if (stopCoversAllTargets) {
+      if (stopCoversAllTargets && !stopTarget) {
         this._discardAllReleases();
         this._reset();
       } else {
-        this._discardReleasesForTarget(stopEntityId);
-        if (this._key !== null && this._targetKey() === stopEntityId) this._reset();
+        this._discardReleasesOverlapping(stopEntityId, stopTarget);
+        if (
+          this._key !== null &&
+          this._targetsOverlap(this._targetKey(), this._target, stopEntityId, stopTarget)
+        ) this._reset();
       }
       this.actions.stopBed(stopEntityId);
       return;
@@ -424,7 +549,9 @@ export class MotorHold {
     this._key = null;
     this._cover = null;
     this._stop = null;
+    this._target = undefined;
     this._pointerId = null;
+    this._repeatBlocked = false;
     this._started = false;
     this._heldControl = undefined;
     this._generation++;

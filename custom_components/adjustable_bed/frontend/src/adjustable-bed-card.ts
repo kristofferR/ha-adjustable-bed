@@ -31,10 +31,13 @@ import {
 } from "./discovery";
 import {
   attachHoldLifecycle,
+  type CoverStopScope,
   heldButtonMotor,
   MotorHold,
+  holdTargetForEntity,
   movementHold,
   movementPulse,
+  stopFromCard,
 } from "./hold";
 import { cardNavigationPath, compactActions, compactStopEntities } from "./compact";
 import { localize } from "./localize";
@@ -979,7 +982,7 @@ export class AdjustableBedCard extends LitElement {
       ${
         bed.stop
           ? html`<button class="stop-all" @click=${() =>
-              this._hold.stopAll(bed.stop, this._stopCoversAllTargets(bed.stop))
+              stopFromCard(this._hold, this.hass, bed.stop)
             }>
               <ha-icon icon="mdi:stop"></ha-icon>
               <span>${localize(this.hass, "action.stop_all")}</span>
@@ -1528,7 +1531,14 @@ export class AdjustableBedCard extends LitElement {
       else if (m.cover) this._compactStopTargets.set(m.cover, Symbol());
       this.requestUpdate();
     }
-    this._hold.start(m, dir, ownerPointerId, stopId);
+    const targetEntityId = stopId ?? m.holdEntityId ?? m.cover ?? m[dir];
+    this._hold.start(
+      m,
+      dir,
+      ownerPointerId,
+      stopId,
+      holdTargetForEntity(this.hass, targetEntityId),
+    );
   }
 
   // Screen readers, voice control and switch devices activate a native button
@@ -1578,18 +1588,19 @@ export class AdjustableBedCard extends LitElement {
 
   private _motorStop(m: MotorEntity, stopId?: string): void {
     if (m.cover) {
-      this._hold.cancel(m, true);
+      // This typed hold metadata currently comes only from Sleepy's explicit
+      // MotorControlSpec, whose stop_fn is stop_all. Plain covers stay scoped
+      // to their motor key.
+      const scope: CoverStopScope = m.heldControls ? "side" : "motor";
+      this._hold.stopCover(
+        m,
+        holdTargetForEntity(this.hass, m.cover),
+        scope,
+      );
       this._cover(m.cover, "stop_cover");
       return;
     }
-    this._hold.stopAll(stopId, this._stopCoversAllTargets(stopId));
-  }
-
-  private _stopCoversAllTargets(stopId?: string): boolean {
-    const side = stopId
-      ? this.hass?.states[stopId]?.attributes.bed_side
-      : undefined;
-    return side !== "left" && side !== "right";
+    stopFromCard(this._hold, this.hass, stopId);
   }
 
   // Toggle save mode for ONE section: entering it on a section cancels any other

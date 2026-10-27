@@ -7,6 +7,7 @@ import { expect, test } from "bun:test";
 import {
   attachHoldLifecycle,
   heldButtonMotor,
+  holdTargetForEntity,
   type Direction,
   type HoldActions,
   type HoldTimers,
@@ -14,6 +15,7 @@ import {
   MotorHold,
   movementHold,
   movementPulse,
+  stopFromCard,
 } from "./hold";
 import type { HomeAssistant, MotorEntity } from "./types";
 
@@ -490,6 +492,120 @@ test("a side's stop button stops that side, not the held one", async () => {
   expect(hold.heldKey).toBeNull();
 });
 
+function pairedStopHass(): HomeAssistant {
+  return {
+    entities: {
+      "button.parent_stop": { device_id: "pair-parent" },
+      "button.left_stop": { device_id: "pair-left" },
+      "button.right_stop": { device_id: "pair-right" },
+      "button.other_stop": { device_id: "other-bed" },
+    },
+    states: {
+      "button.parent_stop": { attributes: { bed_side: "both" } },
+      "button.left_stop": { attributes: { bed_side: "left" } },
+      "button.right_stop": { attributes: { bed_side: "right" } },
+      "button.other_stop": { attributes: {} },
+    },
+    devices: {
+      "pair-parent": { id: "pair-parent" },
+      "pair-left": { id: "pair-left", parent_device_id: "pair-parent" },
+      "pair-right": { id: "pair-right", parent_device_id: "pair-parent" },
+      "other-bed": { id: "other-bed" },
+    },
+  } as HomeAssistant;
+}
+
+test("card Left or Right Stop invalidates an in-flight combined hold", async () => {
+  for (const side of ["left", "right"] as const) {
+    const hass = pairedStopHass();
+    const rec = recorder();
+    const hold = new MotorHold(rec.actions);
+    const motor: MotorEntity = { key: "both-head", up: "button.both_head_up" };
+
+    hold.start(
+      motor,
+      "up",
+      1,
+      "button.parent_stop",
+      holdTargetForEntity(hass, "button.parent_stop"),
+    );
+    await tick();
+    expect(rec.pulses).toHaveLength(1);
+
+    // The card's actual Stop callback resolves the child side from its device
+    // and bed_side metadata while issuing that exact child Stop target.
+    const stopEntityId = `button.${side}_stop`;
+    stopFromCard(hold, hass, stopEntityId);
+    rec.release();
+    await tick();
+    await tick();
+
+    expect(hold.heldKey).toBeNull();
+    expect(rec.pulses).toHaveLength(1);
+    expect(rec.stoppedBeds).toEqual([stopEntityId]);
+  }
+});
+
+test("side Stop leaves an opposite-side or unrelated-bed hold active", async () => {
+  const hass = pairedStopHass();
+  const rec = recorder();
+  const hold = new MotorHold(rec.actions);
+  const right: MotorEntity = { key: "right-head", up: "button.right_head_up" };
+
+  hold.start(
+    right,
+    "up",
+    1,
+    "button.right_stop",
+    holdTargetForEntity(hass, "button.right_stop"),
+  );
+  await tick();
+  stopFromCard(hold, hass, "button.left_stop");
+  expect(hold.heldKey).toBe("right-head");
+  expect(rec.pulses).toHaveLength(1);
+  rec.release();
+  await tick();
+  expect(rec.pulses).toHaveLength(2);
+
+  hold.abandon();
+  rec.release();
+  await tick();
+  const other = { key: "other-head", up: "button.other_head_up" };
+  hold.start(other, "up", 2, "button.other_stop", holdTargetForEntity(hass, "button.other_stop"));
+  await tick();
+  stopFromCard(hold, hass, "button.parent_stop");
+  expect(hold.heldKey).toBe("other-head");
+  rec.release();
+  await tick();
+  expect(rec.pulses).toHaveLength(4);
+  hold.abandon();
+  rec.release();
+  await tick();
+});
+
+test("parent Both Stop invalidates a side hold and owns its release", async () => {
+  const hass = pairedStopHass();
+  const rec = recorder();
+  const hold = new MotorHold(rec.actions);
+  const left: MotorEntity = { key: "left-head", up: "button.left_head_up" };
+
+  hold.start(
+    left,
+    "up",
+    1,
+    "button.left_stop",
+    holdTargetForEntity(hass, "button.left_stop"),
+  );
+  await tick();
+  stopFromCard(hold, hass, "button.parent_stop");
+  rec.release();
+  await tick();
+
+  expect(hold.heldKey).toBeNull();
+  expect(rec.pulses).toHaveLength(1);
+  expect(rec.stoppedBeds).toEqual(["button.parent_stop"]);
+});
+
 test("abandoning mid-hold stops the held side", async () => {
   const rec = recorder();
   const hold = new MotorHold(rec.actions);
@@ -549,6 +665,52 @@ test("release delay retains its old side when a new side starts", () => {
     "start:right-head:up",
     "stop:button.left_stop",
   ]);
+});
+
+test("a side Stop cancels overlapping delayed Both release but retains the other side", () => {
+  for (const side of ["left", "right"] as const) {
+    const events: string[] = [];
+    const timers = new FakeTimers();
+    const hold = new MotorHold(heldActions(events), timers);
+    const hass = pairedStopHass();
+    const both: MotorEntity = {
+      key: "both-head",
+      up: "button.both_head_up",
+      heldControl: { control: "headUp", startDelayMs: 0, releaseDelayMs: 100 },
+    };
+    const otherSide = side === "left" ? "right" : "left";
+    const other: MotorEntity = {
+      key: `${otherSide}-head`,
+      up: `button.${otherSide}_head_up`,
+      heldControl: { control: "headUp", startDelayMs: 0, releaseDelayMs: 100 },
+    };
+
+    hold.start(
+      both,
+      "up",
+      1,
+      "button.parent_stop",
+      holdTargetForEntity(hass, "button.parent_stop"),
+    );
+    hold.end(both);
+    hold.start(
+      other,
+      "up",
+      2,
+      `button.${otherSide}_stop`,
+      holdTargetForEntity(hass, `button.${otherSide}_stop`),
+    );
+    stopFromCard(hold, hass, `button.${side}_stop`);
+    timers.advance(100);
+
+    expect(hold.heldKey).toBe(`${otherSide}-head`);
+    expect(events).toEqual([
+      "start:both-head:up",
+      `start:${otherSide}-head:up`,
+      `stop:button.${side}_stop`,
+    ]);
+    hold.abandon();
+  }
 });
 
 test("a new start flushes its own pending release before moving again", () => {
