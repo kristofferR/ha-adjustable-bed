@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -35,6 +36,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
+from custom_components.adjustable_bed.paired_devices import child_device_info
 from custom_components.adjustable_bed.pairing_candidates import (
     CONF_PAIR_SELECTION,
     encode_pair_selection,
@@ -515,3 +517,511 @@ async def test_m1x12_elevate_hold_skips_sender_ticks_elapsed_during_slow_write(
     )
     await controller.hold_control("both_up", 1000)
     assert starts == pytest.approx([0.1, 0.4, 0.5])
+
+
+async def _disconnected_m1x12_target(
+    hass: HomeAssistant, *, explicit_elevate: bool = False
+) -> tuple[Any, Any, _GattClient]:
+    client = _GattClient()
+    if explicit_elevate:
+        coordinator, _entry = _controller_target(
+            hass,
+            bed_type=BED_TYPE_STAR_ELEVATE,
+            name="ELEVATE-M1X12",
+            variant=STAR_ELEVATE_VARIANT_M1X12,
+            client=client,
+        )
+        controller = await create_controller(
+            coordinator,
+            BED_TYPE_STAR_ELEVATE,
+            STAR_ELEVATE_VARIANT_M1X12,
+            client,
+        )
+        assert isinstance(controller, StarElevateM1X12Controller)
+        controller._initialized = True
+    else:
+        coordinator, controller = await _create_controller(hass, client=client)
+        controller._ready = True
+    coordinator._ready = True
+    coordinator._client = None
+    coordinator._controller = None
+    coordinator._offline_controller = None
+    coordinator.entry.mock_state(hass, ConfigEntryState.LOADED)
+    return coordinator, controller, client
+
+
+@pytest.mark.parametrize(
+    ("explicit_elevate", "control"),
+    ((False, "part_1_up"), (True, "actuator_1_up")),
+)
+async def test_stop_during_hold_preflight_cannot_cancel_a_newer_hold(
+    hass: HomeAssistant,
+    monkeypatch: pytest.MonkeyPatch,
+    explicit_elevate: bool,
+    control: str,
+) -> None:
+    """A released disconnected hold cannot replace a newer post-STOP request."""
+    coordinator, controller, client = await _disconnected_m1x12_target(
+        hass, explicit_elevate=explicit_elevate
+    )
+    preflight_started = asyncio.Event()
+    resume_preflight = asyncio.Event()
+    new_hold_started = asyncio.Event()
+    finish_new_hold = asyncio.Event()
+    ensure_calls = 0
+
+    async def ensure_connected(*, reset_timer: bool = True) -> bool:
+        nonlocal ensure_calls
+        del reset_timer
+        ensure_calls += 1
+        if ensure_calls == 1:
+            preflight_started.set()
+            await resume_preflight.wait()
+        coordinator._client = client
+        coordinator._controller = controller
+        return True
+
+    monkeypatch.setattr(coordinator, "async_ensure_connected", ensure_connected)
+    held: list[tuple[str, int]] = []
+
+    async def hold_control(control: str, duration_ms: int) -> None:
+        held.append((control, duration_ms))
+        new_hold_started.set()
+        await finish_new_hold.wait()
+
+    monkeypatch.setattr(controller, "hold_control", hold_control)
+    device = dr.async_get(hass).async_get_or_create(
+        config_entry_id=coordinator.entry.entry_id, **coordinator.device_info
+    )
+    await async_register_services(hass)
+    released_hold = asyncio.create_task(
+        hass.services.async_call(
+            DOMAIN,
+            "hold_control",
+            {"device_id": [device.id], "control": control, "duration": 60},
+            blocking=True,
+        )
+    )
+    await preflight_started.wait()
+
+    await hass.services.async_call(DOMAIN, "stop_all", {"device_id": [device.id]}, blocking=True)
+    assert coordinator._command_scheduler.stop_epoch == 1
+    assert any(event[0] == "write" for event in client.events)
+
+    newer_hold = asyncio.create_task(
+        hass.services.async_call(
+            DOMAIN,
+            "hold_control",
+            {"device_id": [device.id], "control": control, "duration": 0.1},
+            blocking=True,
+        )
+    )
+    await new_hold_started.wait()
+    resume_preflight.set()
+    await released_hold
+
+    assert held == [(control, 100)]
+    assert not newer_hold.done()
+    assert coordinator._command_scheduler.diagnostics["active_kind"] == "command"
+
+    finish_new_hold.set()
+    await newer_hold
+    assert held == [(control, 100)]
+
+
+async def test_stop_invalidates_hold_waiting_for_scheduler_admission(
+    hass: HomeAssistant,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The scheduler closes the check/enqueue race before replacement logic."""
+    coordinator, controller, _client = await _disconnected_m1x12_target(hass)
+    coordinator._client = _client
+    coordinator._controller = controller
+    scheduler = coordinator._command_scheduler
+    old_handle_created = asyncio.Event()
+    new_handle_created = asyncio.Event()
+    handles = 0
+    original_new_handle = scheduler._new_handle
+
+    def track_command_handle(intent: Any, *args: Any, **kwargs: Any) -> Any:
+        nonlocal handles
+        handle = original_new_handle(intent, *args, **kwargs)
+        if intent.kind.value == "command":
+            handles += 1
+            if handles == 1:
+                old_handle_created.set()
+            elif handles == 2:
+                new_handle_created.set()
+        return handle
+
+    monkeypatch.setattr(scheduler, "_new_handle", track_command_handle)
+    held: list[str] = []
+    hold_started = asyncio.Event()
+    finish_hold = asyncio.Event()
+
+    async def hold_control(control: str, _duration_ms: int) -> None:
+        held.append(control)
+        hold_started.set()
+        await finish_hold.wait()
+
+    monkeypatch.setattr(controller, "hold_control", hold_control)
+    device = dr.async_get(hass).async_get_or_create(
+        config_entry_id=coordinator.entry.entry_id, **coordinator.device_info
+    )
+    await async_register_services(hass)
+
+    await scheduler._lock.acquire()
+    old_hold = asyncio.create_task(
+        hass.services.async_call(
+            DOMAIN,
+            "hold_control",
+            {"device_id": [device.id], "control": "part_1_up", "duration": 60},
+            blocking=True,
+        )
+    )
+    await old_handle_created.wait()
+
+    await hass.services.async_call(DOMAIN, "stop_all", {"device_id": [device.id]}, blocking=True)
+    new_hold = asyncio.create_task(
+        hass.services.async_call(
+            DOMAIN,
+            "hold_control",
+            {"device_id": [device.id], "control": "part_1_up", "duration": 0.1},
+            blocking=True,
+        )
+    )
+    await new_handle_created.wait()
+    scheduler._lock.release()
+
+    await old_hold
+    await hold_started.wait()
+    assert held == ["part_1_up"]
+    assert not new_hold.done()
+
+    finish_hold.set()
+    await new_hold
+
+
+@pytest.mark.parametrize("cancel_caller", (False, True))
+async def test_hold_preflight_failure_or_cancellation_never_admits(
+    hass: HomeAssistant,
+    monkeypatch: pytest.MonkeyPatch,
+    cancel_caller: bool,
+) -> None:
+    coordinator, controller, _client = await _disconnected_m1x12_target(hass)
+    preflight_started = asyncio.Event()
+    resume_preflight = asyncio.Event()
+
+    async def ensure_connected(*, reset_timer: bool = True) -> bool:
+        del reset_timer
+        preflight_started.set()
+        if cancel_caller:
+            await resume_preflight.wait()
+            return True
+        return False
+
+    monkeypatch.setattr(coordinator, "async_ensure_connected", ensure_connected)
+    held: list[str] = []
+
+    async def hold_control(control: str, _duration_ms: int) -> None:
+        held.append(control)
+
+    monkeypatch.setattr(controller, "hold_control", hold_control)
+    device = dr.async_get(hass).async_get_or_create(
+        config_entry_id=coordinator.entry.entry_id, **coordinator.device_info
+    )
+    await async_register_services(hass)
+    service = asyncio.create_task(
+        hass.services.async_call(
+            DOMAIN,
+            "hold_control",
+            {"device_id": [device.id], "control": "part_1_up", "duration": 60},
+            blocking=True,
+        )
+    )
+    await preflight_started.wait()
+
+    if cancel_caller:
+        service.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await service
+        resume_preflight.set()
+    else:
+        with pytest.raises(ServiceValidationError, match="unable to connect"):
+            await service
+
+    assert held == []
+    assert not coordinator._command_scheduler.has_pending
+
+
+@pytest.mark.parametrize("released_side", ("left", "right"))
+async def test_paired_side_stop_during_hold_preflight_drops_only_stale_side(
+    hass: HomeAssistant,
+    monkeypatch: pytest.MonkeyPatch,
+    released_side: str,
+) -> None:
+    """The paired STOP generation gates only the requested physical side."""
+    left, left_controller, left_client = await _disconnected_m1x12_target(hass)
+    right, right_controller, _right_client = await _disconnected_m1x12_target(hass)
+    children = {"left": left, "right": right}
+    controllers = {"left": left_controller, "right": right_controller}
+    clients = {"left": left_client, "right": _right_client}
+    preflight_started = asyncio.Event()
+    resume_preflight = asyncio.Event()
+    ensure_calls = 0
+
+    async def ensure_connected(*, reset_timer: bool = True) -> bool:
+        nonlocal ensure_calls
+        del reset_timer
+        ensure_calls += 1
+        if ensure_calls == 1:
+            preflight_started.set()
+            await resume_preflight.wait()
+        child = children[released_side]
+        child._client = clients[released_side]
+        child._controller = controllers[released_side]
+        return True
+
+    monkeypatch.setattr(children[released_side], "async_ensure_connected", ensure_connected)
+    held: list[str] = []
+
+    async def hold_control(control: str, _duration_ms: int) -> None:
+        held.append(control)
+
+    for controller in controllers.values():
+        monkeypatch.setattr(controller, "hold_control", hold_control)
+
+    pair_entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_PAIR_ID: f"pending-admission-{released_side}"},
+    )
+    pair_entry.add_to_hass(hass)
+    pair_entry.mock_state(hass, ConfigEntryState.LOADED)
+    pair = PairedBedCoordinator(hass, pair_entry, children)
+    await async_register_services(hass)
+    monkeypatch.setattr(
+        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        lambda *_args: ([(pair, released_side)], []),
+    )
+    call = {"device_id": ["paired-bed"], "control": "part_1_up", "duration": 60}
+    pending = asyncio.create_task(
+        hass.services.async_call(DOMAIN, "hold_control", call, blocking=True)
+    )
+    await preflight_started.wait()
+
+    await hass.services.async_call(
+        DOMAIN,
+        "stop_all",
+        {"device_id": ["paired-bed"], "side": released_side},
+        blocking=True,
+    )
+    resume_preflight.set()
+    await pending
+
+    assert held == []
+    assert any(event[0] == "write" for event in clients[released_side].events)
+    assert pair._pair_cancel_counter[released_side] == 1
+    other_side = "right" if released_side == "left" else "left"
+    assert not any(event[0] == "write" for event in clients[other_side].events)
+    assert pair._pair_cancel_counter[other_side] == 0
+
+
+async def _connected_m1x12_pair(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> tuple[Any, Any, dict[str, Any], dict[str, tuple[Any, Any, Any]]]:
+    triples: dict[str, tuple[Any, Any, Any]] = {}
+    for side in ("left", "right"):
+        child, controller, client = await _disconnected_m1x12_target(hass)
+        child._client, child._controller = client, controller
+        monkeypatch.setattr(controller, "stop_all", AsyncMock())
+        triples[side] = (child, controller, client)
+
+    pair_entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_PAIR_ID: "paired-hold-admission"},
+    )
+    pair_entry.add_to_hass(hass)
+    pair_entry.mock_state(hass, ConfigEntryState.LOADED)
+    pair = PairedBedCoordinator(
+        hass, pair_entry, {side: triple[0] for side, triple in triples.items()}
+    )
+    hass.data[DOMAIN][pair_entry.entry_id] = pair
+
+    registry = dr.async_get(hass)
+    parent = registry.async_get_or_create(config_entry_id=pair_entry.entry_id, **pair.device_info)
+    children = {
+        side: registry.async_get_or_create_child(
+            config_entry_id=pair_entry.entry_id,
+            **child_device_info(pair, side),
+        )
+        for side in triples
+    }
+    await async_register_services(hass)
+    return pair, parent, children, triples
+
+
+@pytest.mark.parametrize(
+    ("release_target", "newer_work"),
+    (("both", False), ("left", False), ("both", True)),
+)
+async def test_parent_hold_stop_during_pair_lane_wait_drops_old_admission(
+    hass: HomeAssistant,
+    monkeypatch: pytest.MonkeyPatch,
+    release_target: str,
+    newer_work: bool,
+) -> None:
+    pair, parent, children, triples = await _connected_m1x12_pair(hass, monkeypatch)
+    held: list[tuple[str, str, int]] = []
+    new_started, finish_new = asyncio.Event(), asyncio.Event()
+    new_cancelled: list[str] = []
+
+    for side, (_child, controller, _client) in triples.items():
+
+        async def hold(control: str, duration: int, side: str = side) -> None:
+            held.append((side, control, duration))
+            if duration == 100:
+                new_started.set()
+                try:
+                    await finish_new.wait()
+                except asyncio.CancelledError:
+                    new_cancelled.append(side)
+                    raise
+
+        monkeypatch.setattr(controller, "hold_control", hold)
+
+    entered = asyncio.Event()
+    run_both = pair._run_both_concurrent
+
+    async def observe_both(*args: Any, **kwargs: Any) -> None:
+        entered.set()
+        await run_both(*args, **kwargs)
+
+    monkeypatch.setattr(pair, "_run_both_concurrent", observe_both)
+    await pair._pair_side_locks["left"].acquire()
+    old = asyncio.create_task(
+        hass.services.async_call(
+            DOMAIN,
+            "hold_control",
+            {"device_id": [parent.id], "control": "part_1_up", "duration": 60},
+            blocking=True,
+        )
+    )
+    newer = None
+    try:
+        await asyncio.wait_for(entered.wait(), 2)
+        assert pair._pair_side_locks["left"]._waiters
+        target = parent if release_target == "both" else children[release_target]
+        await hass.services.async_call(
+            DOMAIN, "stop_all", {"device_id": [target.id]}, blocking=True
+        )
+        if newer_work:
+            newer = asyncio.create_task(
+                hass.services.async_call(
+                    DOMAIN,
+                    "hold_control",
+                    {
+                        "device_id": [children["right"].id],
+                        "control": "part_1_up",
+                        "duration": 0.1,
+                    },
+                    blocking=True,
+                )
+            )
+            await asyncio.wait_for(new_started.wait(), 2)
+    finally:
+        pair._pair_side_locks["left"].release()
+
+    try:
+        await asyncio.wait_for(old, 2)
+        assert not [item for item in held if item[2] == 60000]
+        assert new_cancelled == []
+    finally:
+        finish_new.set()
+        if newer is not None:
+            await asyncio.wait_for(newer, 2)
+
+
+@pytest.mark.parametrize("release_target", ("both", "left"))
+async def test_parent_hold_stop_while_child_scheduler_lock_waits(
+    hass: HomeAssistant,
+    monkeypatch: pytest.MonkeyPatch,
+    release_target: str,
+) -> None:
+    pair, parent, children, triples = await _connected_m1x12_pair(hass, monkeypatch)
+    held: list[tuple[str, int]] = []
+    new_started, finish_new = asyncio.Event(), asyncio.Event()
+    newer_waiting = asyncio.Event()
+
+    for _side, (_child, controller, _client) in triples.items():
+
+        async def hold(control: str, duration: int) -> None:
+            held.append((control, duration))
+            if duration == 100:
+                new_started.set()
+                await finish_new.wait()
+
+        monkeypatch.setattr(controller, "hold_control", hold)
+
+    child, _controller, _client = triples["left"]
+    scheduler = child._command_scheduler
+    handle_created = asyncio.Event()
+    new_handle = scheduler._new_handle
+
+    def observe_handle(intent: Any, **kwargs: Any) -> Any:
+        handle = new_handle(intent, **kwargs)
+        if intent.kind.value == "group":
+            handle_created.set()
+        return handle
+
+    monkeypatch.setattr(scheduler, "_new_handle", observe_handle)
+    run_single = pair._run_single_concurrent
+
+    async def observe_single(action: str, side: str, *args: Any, **kwargs: Any) -> None:
+        if side == "right":
+            newer_waiting.set()
+        await run_single(action, side, *args, **kwargs)
+
+    monkeypatch.setattr(pair, "_run_single_concurrent", observe_single)
+    await scheduler._lock.acquire()
+    old = asyncio.create_task(
+        hass.services.async_call(
+            DOMAIN,
+            "hold_control",
+            {"device_id": [parent.id], "control": "part_1_up", "duration": 60},
+            blocking=True,
+        )
+    )
+    newer = None
+    try:
+        await asyncio.wait_for(handle_created.wait(), 2)
+        assert scheduler._lock._waiters
+        target = parent if release_target == "both" else children[release_target]
+        await hass.services.async_call(
+            DOMAIN, "stop_all", {"device_id": [target.id]}, blocking=True
+        )
+        newer = asyncio.create_task(
+            hass.services.async_call(
+                DOMAIN,
+                "hold_control",
+                {
+                    "device_id": [children["right"].id],
+                    "control": "part_1_up",
+                    "duration": 0.1,
+                },
+                blocking=True,
+            )
+        )
+        await asyncio.wait_for(newer_waiting.wait(), 2)
+    finally:
+        scheduler._lock.release()
+
+    try:
+        await asyncio.wait_for(old, 2)
+        await asyncio.wait_for(new_started.wait(), 2)
+        assert ("part_1_up", 60000) not in held
+        assert held.count(("part_1_up", 100)) == 1
+        assert newer is not None and not newer.done()
+    finally:
+        finish_new.set()
+        if newer is not None:
+            await asyncio.wait_for(newer, 2)
