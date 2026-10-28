@@ -994,3 +994,41 @@ test("a Sleeptracker reported-state-only registry surface is not empty", () => {
   expect(bedIsEmpty(bed)).toBe(false);
   expect(bedIsEmpty(bedEntitiesForDevice(hassWith([]), "dev1"))).toBe(true);
 });
+
+test("explicit app timer state and opaque MX Memory 1 keep their own card buckets", () => {
+  const hass = hassWith([
+    entry("sensor.app_timer", "app_timer_status"),
+    entry("button.mx_memory1", "remote_action"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.massage.timer).toBe("sensor.app_timer");
+  expect(bed.utility).toContain("button.mx_memory1");
+  expect(bed.presets).toEqual([]);
+});
+
+test("flat cover and combined-button holds project native ownership and direction-specific fallback", () => {
+  const hass = hassWith([
+    entry("cover.left_back", "back", "left-child"),
+    entry("button.pair_up", "back_up", "pair"),
+    entry("button.pair_down", "back_down", "pair"),
+  ]);
+  hass.states["cover.left_back"] = {
+    entity_id: "cover.left_back", state: "open", last_changed: "", last_updated: "",
+    attributes: { held_control_up: "head_up", held_control_down: "head_down", hold_start_delay_ms: 0, hold_release_delay_ms: 300 },
+  };
+  hass.states["button.pair_down"] = {
+    entity_id: "button.pair_down", state: "unknown", last_changed: "", last_updated: "",
+    attributes: { held_control: "head_down", hold_start_delay_ms: 0, hold_release_delay_ms: 0 },
+  };
+  const left = bedEntitiesForDevice(hass, "left-child").motors[0];
+  expect(left.deviceId).toBe("left-child");
+  expect(left.heldControls).toEqual({
+    up: { control: "head_up", startDelayMs: 0, releaseDelayMs: 300 },
+    down: { control: "head_down", startDelayMs: 0, releaseDelayMs: 300 },
+  });
+  const both = bedEntitiesForDevice(hass, "pair").motors[0];
+  expect(both.up).toBe("button.pair_up");
+  expect(both.heldControls?.up).toBeUndefined();
+  expect(both.heldControls?.down?.control).toBe("head_down");
+  expect(both.deviceId).toBe("pair");
+});

@@ -1,0 +1,5263 @@
+{
+  "provenance": "Accepted report action/model records; independent source extraction. App attempts only, hardware unverified. Three 100ms hold iterations. Ergomotion retains down-scheduled zero offsets300/400/500 after ordinary release. These receipts are not additional accepted APK audit vectors.",
+  "receipts": [
+    {
+      "id": "tempur_curve/standard/head_up",
+      "app": "tempur_curve",
+      "layout": "standard",
+      "key": "head_up",
+      "label": "Head Up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_curve/standard/head_down",
+      "app": "tempur_curve",
+      "layout": "standard",
+      "key": "head_down",
+      "label": "Head Down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_curve/standard/foot_up",
+      "app": "tempur_curve",
+      "layout": "standard",
+      "key": "foot_up",
+      "label": "Foot Up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_curve/standard/foot_down",
+      "app": "tempur_curve",
+      "layout": "standard",
+      "key": "foot_down",
+      "label": "Foot Down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_curve/standard/massage_timer",
+      "app": "tempur_curve",
+      "layout": "standard",
+      "key": "massage_timer",
+      "label": "Massage Timer",
+      "mask": "0x200",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160002000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_curve/standard/massage_foot_add",
+      "app": "tempur_curve",
+      "layout": "standard",
+      "key": "massage_foot_add",
+      "label": "Massage Foot Add",
+      "mask": "0x400",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_curve/standard/massage_head_add",
+      "app": "tempur_curve",
+      "layout": "standard",
+      "key": "massage_head_add",
+      "label": "Massage Head Add",
+      "mask": "0x800",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_curve/standard/zero_g",
+      "app": "tempur_curve",
+      "layout": "standard",
+      "key": "zero_g",
+      "label": "Zero G",
+      "mask": "0x1000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6"
+      ]
+    },
+    {
+      "id": "tempur_curve/standard/tv_III",
+      "app": "tempur_curve",
+      "layout": "standard",
+      "key": "tv_III",
+      "label": "Tv Iii",
+      "mask": "0x4000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_curve/standard/anti_snore_I",
+      "app": "tempur_curve",
+      "layout": "standard",
+      "key": "anti_snore_I",
+      "label": "Anti Snore I",
+      "mask": "0x8000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160080000086",
+        "e5fe160080000086",
+        "e5fe160080000086",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_curve/standard/light",
+      "app": "tempur_curve",
+      "layout": "standard",
+      "key": "light",
+      "label": "Light",
+      "mask": "0x20000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000020004"
+      ]
+    },
+    {
+      "id": "tempur_curve/standard/flat",
+      "app": "tempur_curve",
+      "layout": "standard",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe"
+      ]
+    },
+    {
+      "id": "tempur_curve/standard/reset",
+      "app": "tempur_curve",
+      "layout": "standard",
+      "key": "reset",
+      "label": "Reset",
+      "mask": "0x8001000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_curve/standard/lounge_II",
+      "app": "tempur_curve",
+      "layout": "standard",
+      "key": "lounge_II",
+      "label": "Lounge Ii",
+      "mask": "0x2000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "omazz_adjusto_iii/RemoteB/head_up",
+      "app": "omazz_adjusto_iii",
+      "layout": "RemoteB",
+      "key": "head_up",
+      "label": "Head Up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "omazz_adjusto_iii/RemoteB/head_down",
+      "app": "omazz_adjusto_iii",
+      "layout": "RemoteB",
+      "key": "head_down",
+      "label": "Head Down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "omazz_adjusto_iii/RemoteB/foot_up",
+      "app": "omazz_adjusto_iii",
+      "layout": "RemoteB",
+      "key": "foot_up",
+      "label": "Foot Up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "omazz_adjusto_iii/RemoteB/foot_down",
+      "app": "omazz_adjusto_iii",
+      "layout": "RemoteB",
+      "key": "foot_down",
+      "label": "Foot Down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "omazz_adjusto_iii/RemoteB/lounge",
+      "app": "omazz_adjusto_iii",
+      "layout": "RemoteB",
+      "key": "lounge",
+      "label": "Lounge",
+      "mask": "0x2000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "omazz_adjusto_iii/RemoteB/demonstration",
+      "app": "omazz_adjusto_iii",
+      "layout": "RemoteB",
+      "key": "demonstration",
+      "label": "Demonstration",
+      "mask": "0x40000000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000040c6",
+        "e5fe1600000040c6",
+        "e5fe1600000040c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "omazz_adjusto_iii/RemoteB/TV",
+      "app": "omazz_adjusto_iii",
+      "layout": "RemoteB",
+      "key": "TV",
+      "label": "Tv",
+      "mask": "0x4000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "omazz_adjusto_iii/RemoteB/music",
+      "app": "omazz_adjusto_iii",
+      "layout": "RemoteB",
+      "key": "music",
+      "label": "Music",
+      "mask": "0x10000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000010005",
+        "e5fe160000010005",
+        "e5fe160000010005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "omazz_adjusto_iii/RemoteB/flat",
+      "app": "omazz_adjusto_iii",
+      "layout": "RemoteB",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe"
+      ]
+    },
+    {
+      "id": "omazz_adjusto_iii/RemoteB/zg",
+      "app": "omazz_adjusto_iii",
+      "layout": "RemoteB",
+      "key": "zg",
+      "label": "Zg",
+      "mask": "0x1000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6"
+      ]
+    },
+    {
+      "id": "omazz_adjusto_iii/RemoteB/ubb",
+      "app": "omazz_adjusto_iii",
+      "layout": "RemoteB",
+      "key": "ubb",
+      "label": "Ubb",
+      "mask": "0x20000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000020004"
+      ]
+    },
+    {
+      "id": "omazz_adjusto_iii/RemoteB/massage_head",
+      "app": "omazz_adjusto_iii",
+      "layout": "RemoteB",
+      "key": "massage_head",
+      "label": "Massage Head",
+      "mask": "0x800",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "omazz_adjusto_iii/RemoteB/massage_timer",
+      "app": "omazz_adjusto_iii",
+      "layout": "RemoteB",
+      "key": "massage_timer",
+      "label": "Massage Timer",
+      "mask": "0x200",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160002000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "omazz_adjusto_iii/RemoteB/massage_foot",
+      "app": "omazz_adjusto_iii",
+      "layout": "RemoteB",
+      "key": "massage_foot",
+      "label": "Massage Foot",
+      "mask": "0x400",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "omazz_adjusto_iii/RemoteB/massage_all",
+      "app": "omazz_adjusto_iii",
+      "layout": "RemoteB",
+      "key": "massage_all",
+      "label": "Massage All",
+      "mask": "0x100",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160001000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B1/head_up",
+      "app": "ergomotion_app",
+      "layout": "B1",
+      "key": "head_up",
+      "label": "HeadUp",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B2/head_up",
+      "app": "ergomotion_app",
+      "layout": "B2",
+      "key": "head_up",
+      "label": "HeadUp",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/C1/head_up",
+      "app": "ergomotion_app",
+      "layout": "C1",
+      "key": "head_up",
+      "label": "HeadUp",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/D1/head_up",
+      "app": "ergomotion_app",
+      "layout": "D1",
+      "key": "head_up",
+      "label": "HeadUp",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B1/head_down",
+      "app": "ergomotion_app",
+      "layout": "B1",
+      "key": "head_down",
+      "label": "HeadDown",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B2/head_down",
+      "app": "ergomotion_app",
+      "layout": "B2",
+      "key": "head_down",
+      "label": "HeadDown",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/C1/head_down",
+      "app": "ergomotion_app",
+      "layout": "C1",
+      "key": "head_down",
+      "label": "HeadDown",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/D1/head_down",
+      "app": "ergomotion_app",
+      "layout": "D1",
+      "key": "head_down",
+      "label": "HeadDown",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B1/foot_up",
+      "app": "ergomotion_app",
+      "layout": "B1",
+      "key": "foot_up",
+      "label": "FootUp",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B2/foot_up",
+      "app": "ergomotion_app",
+      "layout": "B2",
+      "key": "foot_up",
+      "label": "FootUp",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/C1/foot_up",
+      "app": "ergomotion_app",
+      "layout": "C1",
+      "key": "foot_up",
+      "label": "FootUp",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/D1/foot_up",
+      "app": "ergomotion_app",
+      "layout": "D1",
+      "key": "foot_up",
+      "label": "FootUp",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B1/foot_down",
+      "app": "ergomotion_app",
+      "layout": "B1",
+      "key": "foot_down",
+      "label": "FootDown",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B2/foot_down",
+      "app": "ergomotion_app",
+      "layout": "B2",
+      "key": "foot_down",
+      "label": "FootDown",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/C1/foot_down",
+      "app": "ergomotion_app",
+      "layout": "C1",
+      "key": "foot_down",
+      "label": "FootDown",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/D1/foot_down",
+      "app": "ergomotion_app",
+      "layout": "D1",
+      "key": "foot_down",
+      "label": "FootDown",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B1/flat",
+      "app": "ergomotion_app",
+      "layout": "B1",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B2/flat",
+      "app": "ergomotion_app",
+      "layout": "B2",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/C1/flat",
+      "app": "ergomotion_app",
+      "layout": "C1",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/D1/flat",
+      "app": "ergomotion_app",
+      "layout": "D1",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B1/timer",
+      "app": "ergomotion_app",
+      "layout": "B1",
+      "key": "timer",
+      "label": "Timer",
+      "mask": "0x200",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160002000004",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B2/timer",
+      "app": "ergomotion_app",
+      "layout": "B2",
+      "key": "timer",
+      "label": "Timer",
+      "mask": "0x200",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160002000004",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/C1/timer",
+      "app": "ergomotion_app",
+      "layout": "C1",
+      "key": "timer",
+      "label": "Timer",
+      "mask": "0x200",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160002000004",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/D1/timer",
+      "app": "ergomotion_app",
+      "layout": "D1",
+      "key": "timer",
+      "label": "Timer",
+      "mask": "0x200",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160002000004",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B1/zg",
+      "app": "ergomotion_app",
+      "layout": "B1",
+      "key": "zg",
+      "label": "Zg",
+      "mask": "0x1000",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B2/zg",
+      "app": "ergomotion_app",
+      "layout": "B2",
+      "key": "zg",
+      "label": "Zg",
+      "mask": "0x1000",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/C1/zg",
+      "app": "ergomotion_app",
+      "layout": "C1",
+      "key": "zg",
+      "label": "Zg",
+      "mask": "0x1000",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/D1/zg",
+      "app": "ergomotion_app",
+      "layout": "D1",
+      "key": "zg",
+      "label": "Zg",
+      "mask": "0x1000",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B1/masheadadd",
+      "app": "ergomotion_app",
+      "layout": "B1",
+      "key": "masheadadd",
+      "label": "MasHeadAdd",
+      "mask": "0x800",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B2/masheadadd",
+      "app": "ergomotion_app",
+      "layout": "B2",
+      "key": "masheadadd",
+      "label": "MasHeadAdd",
+      "mask": "0x800",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/C1/masheadadd",
+      "app": "ergomotion_app",
+      "layout": "C1",
+      "key": "masheadadd",
+      "label": "MasHeadAdd",
+      "mask": "0x800",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/D1/masheadadd",
+      "app": "ergomotion_app",
+      "layout": "D1",
+      "key": "masheadadd",
+      "label": "MasHeadAdd",
+      "mask": "0x800",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B1/masfootadd",
+      "app": "ergomotion_app",
+      "layout": "B1",
+      "key": "masfootadd",
+      "label": "MasFootAdd",
+      "mask": "0x400",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B2/masfootadd",
+      "app": "ergomotion_app",
+      "layout": "B2",
+      "key": "masfootadd",
+      "label": "MasFootAdd",
+      "mask": "0x400",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/C1/masfootadd",
+      "app": "ergomotion_app",
+      "layout": "C1",
+      "key": "masfootadd",
+      "label": "MasFootAdd",
+      "mask": "0x400",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/D1/masfootadd",
+      "app": "ergomotion_app",
+      "layout": "D1",
+      "key": "masfootadd",
+      "label": "MasFootAdd",
+      "mask": "0x400",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B1/reset",
+      "app": "ergomotion_app",
+      "layout": "B1",
+      "key": "reset",
+      "label": "Reset",
+      "mask": "0x8001000",
+      "mode": "held_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B2/reset",
+      "app": "ergomotion_app",
+      "layout": "B2",
+      "key": "reset",
+      "label": "Reset",
+      "mask": "0x8001000",
+      "mode": "held_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/C1/reset",
+      "app": "ergomotion_app",
+      "layout": "C1",
+      "key": "reset",
+      "label": "Reset",
+      "mask": "0x8001000",
+      "mode": "held_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/D1/reset",
+      "app": "ergomotion_app",
+      "layout": "D1",
+      "key": "reset",
+      "label": "Reset",
+      "mask": "0x8001000",
+      "mode": "held_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B1/level",
+      "app": "ergomotion_app",
+      "layout": "B1",
+      "key": "level",
+      "label": "Level",
+      "mask": "0x100",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160001000005",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/C1/level",
+      "app": "ergomotion_app",
+      "layout": "C1",
+      "key": "level",
+      "label": "Level",
+      "mask": "0x100",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160001000005",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/D1/level",
+      "app": "ergomotion_app",
+      "layout": "D1",
+      "key": "level",
+      "label": "Level",
+      "mask": "0x100",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160001000005",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B2/level1",
+      "app": "ergomotion_app",
+      "layout": "B2",
+      "key": "level1",
+      "label": "Level1",
+      "mask": "0x80000",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000800fe",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B2/level2",
+      "app": "ergomotion_app",
+      "layout": "B2",
+      "key": "level2",
+      "label": "Level2",
+      "mask": "0x100000",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600001000f6",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B2/level3",
+      "app": "ergomotion_app",
+      "layout": "B2",
+      "key": "level3",
+      "label": "Level3",
+      "mask": "0x200000",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600002000e6",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B1/lounge",
+      "app": "ergomotion_app",
+      "layout": "B1",
+      "key": "lounge",
+      "label": "Lounge",
+      "mask": "0x2000",
+      "mode": "held_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/C1/lounge",
+      "app": "ergomotion_app",
+      "layout": "C1",
+      "key": "lounge",
+      "label": "Lounge",
+      "mask": "0x2000",
+      "mode": "held_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/D1/lounge",
+      "app": "ergomotion_app",
+      "layout": "D1",
+      "key": "lounge",
+      "label": "Lounge",
+      "mask": "0x2000",
+      "mode": "held_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/B1/tv",
+      "app": "ergomotion_app",
+      "layout": "B1",
+      "key": "tv",
+      "label": "Tv",
+      "mask": "0x4000",
+      "mode": "held_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/C1/tv",
+      "app": "ergomotion_app",
+      "layout": "C1",
+      "key": "tv",
+      "label": "Tv",
+      "mask": "0x4000",
+      "mode": "held_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/D1/tv",
+      "app": "ergomotion_app",
+      "layout": "D1",
+      "key": "tv",
+      "label": "Tv",
+      "mask": "0x4000",
+      "mode": "held_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/C1/light",
+      "app": "ergomotion_app",
+      "layout": "C1",
+      "key": "light",
+      "label": "Light",
+      "mask": "0x20000",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000020004",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/D1/light",
+      "app": "ergomotion_app",
+      "layout": "D1",
+      "key": "light",
+      "label": "Light",
+      "mask": "0x20000",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000020004",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/C1/masfootmin",
+      "app": "ergomotion_app",
+      "layout": "C1",
+      "key": "masfootmin",
+      "label": "MasFootMin",
+      "mask": "0x1000000",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000000105",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/D1/masfootmin",
+      "app": "ergomotion_app",
+      "layout": "D1",
+      "key": "masfootmin",
+      "label": "MasFootMin",
+      "mask": "0x1000000",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000000105",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/C1/masheadmin",
+      "app": "ergomotion_app",
+      "layout": "C1",
+      "key": "masheadmin",
+      "label": "MasHeadMin",
+      "mask": "0x800000",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000800086",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/D1/masheadmin",
+      "app": "ergomotion_app",
+      "layout": "D1",
+      "key": "masheadmin",
+      "label": "MasHeadMin",
+      "mask": "0x800000",
+      "mode": "tap_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000800086",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/D1/tiltup",
+      "app": "ergomotion_app",
+      "layout": "D1",
+      "key": "tiltup",
+      "label": "TiltUp",
+      "mask": "0x10",
+      "mode": "held_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1610000000f6",
+        "e5fe1610000000f6",
+        "e5fe1610000000f6",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/D1/tiltdown",
+      "app": "ergomotion_app",
+      "layout": "D1",
+      "key": "tiltdown",
+      "label": "TiltDown",
+      "mask": "0x20",
+      "mode": "held_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1620000000e6",
+        "e5fe1620000000e6",
+        "e5fe1620000000e6",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/D1/lumbarup",
+      "app": "ergomotion_app",
+      "layout": "D1",
+      "key": "lumbarup",
+      "label": "LumbarUp",
+      "mask": "0x40",
+      "mode": "held_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1640000000c6",
+        "e5fe1640000000c6",
+        "e5fe1640000000c6",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergomotion_app/D1/lumbardown",
+      "app": "ergomotion_app",
+      "layout": "D1",
+      "key": "lumbardown",
+      "label": "LumbarDown",
+      "mask": "0x80",
+      "mode": "held_zeros",
+      "attempted_frames_300ms_adapter": [
+        "e5fe168000000086",
+        "e5fe168000000086",
+        "e5fe168000000086",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/A/reset",
+      "app": "ergo_slim",
+      "layout": "A",
+      "key": "reset",
+      "label": "Reset",
+      "mask": "0x8001000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/A/head_up",
+      "app": "ergo_slim",
+      "layout": "A",
+      "key": "head_up",
+      "label": "Head Up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/A/head_down",
+      "app": "ergo_slim",
+      "layout": "A",
+      "key": "head_down",
+      "label": "Head Down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/A/foot_up",
+      "app": "ergo_slim",
+      "layout": "A",
+      "key": "foot_up",
+      "label": "Foot Up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/A/foot_down",
+      "app": "ergo_slim",
+      "layout": "A",
+      "key": "foot_down",
+      "label": "Foot Down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/A/massage_head_min",
+      "app": "ergo_slim",
+      "layout": "A",
+      "key": "massage_head_min",
+      "label": "Massage Head Min",
+      "mask": "0x800000",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000800086",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/A/massage_foot_min",
+      "app": "ergo_slim",
+      "layout": "A",
+      "key": "massage_foot_min",
+      "label": "Massage Foot Min",
+      "mask": "0x1000000",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000000105",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/A/level",
+      "app": "ergo_slim",
+      "layout": "A",
+      "key": "level",
+      "label": "Level",
+      "mask": "0x2000000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000000204"
+      ]
+    },
+    {
+      "id": "ergo_slim/A/zero_gravity",
+      "app": "ergo_slim",
+      "layout": "A",
+      "key": "zero_gravity",
+      "label": "Zero Gravity",
+      "mask": "0x1000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6"
+      ]
+    },
+    {
+      "id": "ergo_slim/A/flat",
+      "app": "ergo_slim",
+      "layout": "A",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/A/tv",
+      "app": "ergo_slim",
+      "layout": "A",
+      "key": "tv",
+      "label": "Tv",
+      "mask": "0x4000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/A/lounge",
+      "app": "ergo_slim",
+      "layout": "A",
+      "key": "lounge",
+      "label": "Lounge",
+      "mask": "0x2000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/A/light",
+      "app": "ergo_slim",
+      "layout": "A",
+      "key": "light",
+      "label": "Light",
+      "mask": "0x20000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000020004"
+      ]
+    },
+    {
+      "id": "ergo_slim/B/massage_head",
+      "app": "ergo_slim",
+      "layout": "B",
+      "key": "massage_head",
+      "label": "Massage Head",
+      "mask": "0x800",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/B/massage_timer",
+      "app": "ergo_slim",
+      "layout": "B",
+      "key": "massage_timer",
+      "label": "Massage Timer",
+      "mask": "0x200",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160002000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/B/massage_foot",
+      "app": "ergo_slim",
+      "layout": "B",
+      "key": "massage_foot",
+      "label": "Massage Foot",
+      "mask": "0x400",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/B/ubb",
+      "app": "ergo_slim",
+      "layout": "B",
+      "key": "ubb",
+      "label": "Ubb",
+      "mask": "0x20000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000020004"
+      ]
+    },
+    {
+      "id": "ergo_slim/B/massage_all",
+      "app": "ergo_slim",
+      "layout": "B",
+      "key": "massage_all",
+      "label": "Massage All",
+      "mask": "0x100",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160001000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/B/music",
+      "app": "ergo_slim",
+      "layout": "B",
+      "key": "music",
+      "label": "Music",
+      "mask": "0x10000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000010005",
+        "e5fe160000010005",
+        "e5fe160000010005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/B/head_up",
+      "app": "ergo_slim",
+      "layout": "B",
+      "key": "head_up",
+      "label": "Head Up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/B/head_down",
+      "app": "ergo_slim",
+      "layout": "B",
+      "key": "head_down",
+      "label": "Head Down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/B/foot_up",
+      "app": "ergo_slim",
+      "layout": "B",
+      "key": "foot_up",
+      "label": "Foot Up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/B/foot_down",
+      "app": "ergo_slim",
+      "layout": "B",
+      "key": "foot_down",
+      "label": "Foot Down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/B/flat",
+      "app": "ergo_slim",
+      "layout": "B",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/B/anti_snore",
+      "app": "ergo_slim",
+      "layout": "B",
+      "key": "anti_snore",
+      "label": "Anti Snore",
+      "mask": "0x8000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160080000086",
+        "e5fe160080000086",
+        "e5fe160080000086",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/B/lounge",
+      "app": "ergo_slim",
+      "layout": "B",
+      "key": "lounge",
+      "label": "Lounge",
+      "mask": "0x2000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/B/tv",
+      "app": "ergo_slim",
+      "layout": "B",
+      "key": "tv",
+      "label": "Tv",
+      "mask": "0x4000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/B/zero_gravity",
+      "app": "ergo_slim",
+      "layout": "B",
+      "key": "zero_gravity",
+      "label": "Zero Gravity",
+      "mask": "0x1000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6"
+      ]
+    },
+    {
+      "id": "ergo_slim/C/massage_head",
+      "app": "ergo_slim",
+      "layout": "C",
+      "key": "massage_head",
+      "label": "Massage Head",
+      "mask": "0x800",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/C/massage_timer",
+      "app": "ergo_slim",
+      "layout": "C",
+      "key": "massage_timer",
+      "label": "Massage Timer",
+      "mask": "0x200",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160002000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/C/massage_foot",
+      "app": "ergo_slim",
+      "layout": "C",
+      "key": "massage_foot",
+      "label": "Massage Foot",
+      "mask": "0x400",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/C/m3_out",
+      "app": "ergo_slim",
+      "layout": "C",
+      "key": "m3_out",
+      "label": "M3 Out",
+      "mask": "0x10",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1610000000f6",
+        "e5fe1610000000f6",
+        "e5fe1610000000f6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/C/ubb",
+      "app": "ergo_slim",
+      "layout": "C",
+      "key": "ubb",
+      "label": "Ubb",
+      "mask": "0x20000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000020004"
+      ]
+    },
+    {
+      "id": "ergo_slim/C/m3_in",
+      "app": "ergo_slim",
+      "layout": "C",
+      "key": "m3_in",
+      "label": "M3 In",
+      "mask": "0x20",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1620000000e6",
+        "e5fe1620000000e6",
+        "e5fe1620000000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/C/head_up",
+      "app": "ergo_slim",
+      "layout": "C",
+      "key": "head_up",
+      "label": "Head Up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/C/head_down",
+      "app": "ergo_slim",
+      "layout": "C",
+      "key": "head_down",
+      "label": "Head Down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/C/foot_up",
+      "app": "ergo_slim",
+      "layout": "C",
+      "key": "foot_up",
+      "label": "Foot Up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/C/foot_down",
+      "app": "ergo_slim",
+      "layout": "C",
+      "key": "foot_down",
+      "label": "Foot Down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/C/zero_gravity",
+      "app": "ergo_slim",
+      "layout": "C",
+      "key": "zero_gravity",
+      "label": "Zero Gravity",
+      "mask": "0x1000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6"
+      ]
+    },
+    {
+      "id": "ergo_slim/C/memory_4",
+      "app": "ergo_slim",
+      "layout": "C",
+      "key": "memory_4",
+      "label": "Memory 4",
+      "mask": "0x8000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160080000086",
+        "e5fe160080000086",
+        "e5fe160080000086",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/C/memory_2",
+      "app": "ergo_slim",
+      "layout": "C",
+      "key": "memory_2",
+      "label": "Memory 2",
+      "mask": "0x2000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/C/memory_3",
+      "app": "ergo_slim",
+      "layout": "C",
+      "key": "memory_3",
+      "label": "Memory 3",
+      "mask": "0x4000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "ergo_slim/C/flat",
+      "app": "ergo_slim",
+      "layout": "C",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/B1/head_up",
+      "app": "tempur_au",
+      "layout": "B1",
+      "key": "head_up",
+      "label": "Head Up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/B2/head_up",
+      "app": "tempur_au",
+      "layout": "B2",
+      "key": "head_up",
+      "label": "Head Up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/C1/head_up",
+      "app": "tempur_au",
+      "layout": "C1",
+      "key": "head_up",
+      "label": "Head Up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/D1/head_up",
+      "app": "tempur_au",
+      "layout": "D1",
+      "key": "head_up",
+      "label": "Head Up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/E1/head_up",
+      "app": "tempur_au",
+      "layout": "E1",
+      "key": "head_up",
+      "label": "Head Up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/B1/head_down",
+      "app": "tempur_au",
+      "layout": "B1",
+      "key": "head_down",
+      "label": "Head Down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/B2/head_down",
+      "app": "tempur_au",
+      "layout": "B2",
+      "key": "head_down",
+      "label": "Head Down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/C1/head_down",
+      "app": "tempur_au",
+      "layout": "C1",
+      "key": "head_down",
+      "label": "Head Down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/D1/head_down",
+      "app": "tempur_au",
+      "layout": "D1",
+      "key": "head_down",
+      "label": "Head Down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/E1/head_down",
+      "app": "tempur_au",
+      "layout": "E1",
+      "key": "head_down",
+      "label": "Head Down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/B1/foot_up",
+      "app": "tempur_au",
+      "layout": "B1",
+      "key": "foot_up",
+      "label": "Foot Up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/B2/foot_up",
+      "app": "tempur_au",
+      "layout": "B2",
+      "key": "foot_up",
+      "label": "Foot Up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/C1/foot_up",
+      "app": "tempur_au",
+      "layout": "C1",
+      "key": "foot_up",
+      "label": "Foot Up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/D1/foot_up",
+      "app": "tempur_au",
+      "layout": "D1",
+      "key": "foot_up",
+      "label": "Foot Up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/E1/foot_up",
+      "app": "tempur_au",
+      "layout": "E1",
+      "key": "foot_up",
+      "label": "Foot Up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/B1/foot_down",
+      "app": "tempur_au",
+      "layout": "B1",
+      "key": "foot_down",
+      "label": "Foot Down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/B2/foot_down",
+      "app": "tempur_au",
+      "layout": "B2",
+      "key": "foot_down",
+      "label": "Foot Down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/C1/foot_down",
+      "app": "tempur_au",
+      "layout": "C1",
+      "key": "foot_down",
+      "label": "Foot Down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/D1/foot_down",
+      "app": "tempur_au",
+      "layout": "D1",
+      "key": "foot_down",
+      "label": "Foot Down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/E1/foot_down",
+      "app": "tempur_au",
+      "layout": "E1",
+      "key": "foot_down",
+      "label": "Foot Down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/D1/tilt_up",
+      "app": "tempur_au",
+      "layout": "D1",
+      "key": "tilt_up",
+      "label": "Tilt Up",
+      "mask": "0x10",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1610000000f6",
+        "e5fe1610000000f6",
+        "e5fe1610000000f6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/D1/tilt_down",
+      "app": "tempur_au",
+      "layout": "D1",
+      "key": "tilt_down",
+      "label": "Tilt Down",
+      "mask": "0x20",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1620000000e6",
+        "e5fe1620000000e6",
+        "e5fe1620000000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/D1/lumbar_up",
+      "app": "tempur_au",
+      "layout": "D1",
+      "key": "lumbar_up",
+      "label": "Lumbar Up",
+      "mask": "0x40",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1640000000c6",
+        "e5fe1640000000c6",
+        "e5fe1640000000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/E1/lumbar_up",
+      "app": "tempur_au",
+      "layout": "E1",
+      "key": "lumbar_up",
+      "label": "Lumbar Up",
+      "mask": "0x40",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1640000000c6",
+        "e5fe1640000000c6",
+        "e5fe1640000000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/D1/lumbar_down",
+      "app": "tempur_au",
+      "layout": "D1",
+      "key": "lumbar_down",
+      "label": "Lumbar Down",
+      "mask": "0x80",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe168000000086",
+        "e5fe168000000086",
+        "e5fe168000000086",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/E1/lumbar_down",
+      "app": "tempur_au",
+      "layout": "E1",
+      "key": "lumbar_down",
+      "label": "Lumbar Down",
+      "mask": "0x80",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe168000000086",
+        "e5fe168000000086",
+        "e5fe168000000086",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/B1/level",
+      "app": "tempur_au",
+      "layout": "B1",
+      "key": "level",
+      "label": "Level",
+      "mask": "0x100",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160001000005"
+      ]
+    },
+    {
+      "id": "tempur_au/C1/level",
+      "app": "tempur_au",
+      "layout": "C1",
+      "key": "level",
+      "label": "Level",
+      "mask": "0x100",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160001000005"
+      ]
+    },
+    {
+      "id": "tempur_au/D1/level",
+      "app": "tempur_au",
+      "layout": "D1",
+      "key": "level",
+      "label": "Level",
+      "mask": "0x100",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160001000005"
+      ]
+    },
+    {
+      "id": "tempur_au/B1/timer",
+      "app": "tempur_au",
+      "layout": "B1",
+      "key": "timer",
+      "label": "Timer",
+      "mask": "0x200",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160002000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/B2/timer",
+      "app": "tempur_au",
+      "layout": "B2",
+      "key": "timer",
+      "label": "Timer",
+      "mask": "0x200",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160002000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/C1/timer",
+      "app": "tempur_au",
+      "layout": "C1",
+      "key": "timer",
+      "label": "Timer",
+      "mask": "0x200",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160002000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/D1/timer",
+      "app": "tempur_au",
+      "layout": "D1",
+      "key": "timer",
+      "label": "Timer",
+      "mask": "0x200",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160002000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/E1/timer",
+      "app": "tempur_au",
+      "layout": "E1",
+      "key": "timer",
+      "label": "Timer",
+      "mask": "0x200",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160002000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/B1/massage_foot_add",
+      "app": "tempur_au",
+      "layout": "B1",
+      "key": "massage_foot_add",
+      "label": "Massage Foot Add",
+      "mask": "0x400",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/B2/massage_foot_add",
+      "app": "tempur_au",
+      "layout": "B2",
+      "key": "massage_foot_add",
+      "label": "Massage Foot Add",
+      "mask": "0x400",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/C1/massage_foot_add",
+      "app": "tempur_au",
+      "layout": "C1",
+      "key": "massage_foot_add",
+      "label": "Massage Foot Add",
+      "mask": "0x400",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/D1/massage_foot_add",
+      "app": "tempur_au",
+      "layout": "D1",
+      "key": "massage_foot_add",
+      "label": "Massage Foot Add",
+      "mask": "0x400",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/E1/massage_foot_add",
+      "app": "tempur_au",
+      "layout": "E1",
+      "key": "massage_foot_add",
+      "label": "Massage Foot Add",
+      "mask": "0x400",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/B1/massage_head_add",
+      "app": "tempur_au",
+      "layout": "B1",
+      "key": "massage_head_add",
+      "label": "Massage Head Add",
+      "mask": "0x800",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/B2/massage_head_add",
+      "app": "tempur_au",
+      "layout": "B2",
+      "key": "massage_head_add",
+      "label": "Massage Head Add",
+      "mask": "0x800",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/C1/massage_head_add",
+      "app": "tempur_au",
+      "layout": "C1",
+      "key": "massage_head_add",
+      "label": "Massage Head Add",
+      "mask": "0x800",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/D1/massage_head_add",
+      "app": "tempur_au",
+      "layout": "D1",
+      "key": "massage_head_add",
+      "label": "Massage Head Add",
+      "mask": "0x800",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/E1/massage_head_add",
+      "app": "tempur_au",
+      "layout": "E1",
+      "key": "massage_head_add",
+      "label": "Massage Head Add",
+      "mask": "0x800",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/B1/zero_g",
+      "app": "tempur_au",
+      "layout": "B1",
+      "key": "zero_g",
+      "label": "Zero G",
+      "mask": "0x1000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6"
+      ]
+    },
+    {
+      "id": "tempur_au/B2/zero_g",
+      "app": "tempur_au",
+      "layout": "B2",
+      "key": "zero_g",
+      "label": "Zero G",
+      "mask": "0x1000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6"
+      ]
+    },
+    {
+      "id": "tempur_au/C1/zero_g",
+      "app": "tempur_au",
+      "layout": "C1",
+      "key": "zero_g",
+      "label": "Zero G",
+      "mask": "0x1000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6"
+      ]
+    },
+    {
+      "id": "tempur_au/D1/zero_g",
+      "app": "tempur_au",
+      "layout": "D1",
+      "key": "zero_g",
+      "label": "Zero G",
+      "mask": "0x1000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6"
+      ]
+    },
+    {
+      "id": "tempur_au/E1/zero_g",
+      "app": "tempur_au",
+      "layout": "E1",
+      "key": "zero_g",
+      "label": "Zero G",
+      "mask": "0x1000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6"
+      ]
+    },
+    {
+      "id": "tempur_au/B1/lounge",
+      "app": "tempur_au",
+      "layout": "B1",
+      "key": "lounge",
+      "label": "Lounge",
+      "mask": "0x2000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/C1/lounge",
+      "app": "tempur_au",
+      "layout": "C1",
+      "key": "lounge",
+      "label": "Lounge",
+      "mask": "0x2000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/D1/lounge",
+      "app": "tempur_au",
+      "layout": "D1",
+      "key": "lounge",
+      "label": "Lounge",
+      "mask": "0x2000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/E1/lounge",
+      "app": "tempur_au",
+      "layout": "E1",
+      "key": "lounge",
+      "label": "Lounge",
+      "mask": "0x2000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/B1/tv",
+      "app": "tempur_au",
+      "layout": "B1",
+      "key": "tv",
+      "label": "Tv",
+      "mask": "0x4000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/C1/tv",
+      "app": "tempur_au",
+      "layout": "C1",
+      "key": "tv",
+      "label": "Tv",
+      "mask": "0x4000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/D1/tv",
+      "app": "tempur_au",
+      "layout": "D1",
+      "key": "tv",
+      "label": "Tv",
+      "mask": "0x4000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/E1/tv",
+      "app": "tempur_au",
+      "layout": "E1",
+      "key": "tv",
+      "label": "Tv",
+      "mask": "0x4000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/E1/anti_snooze",
+      "app": "tempur_au",
+      "layout": "E1",
+      "key": "anti_snooze",
+      "label": "Anti Snooze",
+      "mask": "0x8000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160080000086"
+      ]
+    },
+    {
+      "id": "tempur_au/E1/music",
+      "app": "tempur_au",
+      "layout": "E1",
+      "key": "music",
+      "label": "Music",
+      "mask": "0x10000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000010005"
+      ]
+    },
+    {
+      "id": "tempur_au/C1/light",
+      "app": "tempur_au",
+      "layout": "C1",
+      "key": "light",
+      "label": "Light",
+      "mask": "0x20000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000020004"
+      ]
+    },
+    {
+      "id": "tempur_au/D1/light",
+      "app": "tempur_au",
+      "layout": "D1",
+      "key": "light",
+      "label": "Light",
+      "mask": "0x20000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000020004"
+      ]
+    },
+    {
+      "id": "tempur_au/E1/light",
+      "app": "tempur_au",
+      "layout": "E1",
+      "key": "light",
+      "label": "Light",
+      "mask": "0x20000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000020004"
+      ]
+    },
+    {
+      "id": "tempur_au/B2/memory_level_1",
+      "app": "tempur_au",
+      "layout": "B2",
+      "key": "memory_level_1",
+      "label": "Memory Level 1",
+      "mask": "0x80000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000800fe"
+      ]
+    },
+    {
+      "id": "tempur_au/B2/memory_level_2",
+      "app": "tempur_au",
+      "layout": "B2",
+      "key": "memory_level_2",
+      "label": "Memory Level 2",
+      "mask": "0x100000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600001000f6"
+      ]
+    },
+    {
+      "id": "tempur_au/B2/memory_level_3",
+      "app": "tempur_au",
+      "layout": "B2",
+      "key": "memory_level_3",
+      "label": "Memory Level 3",
+      "mask": "0x200000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600002000e6"
+      ]
+    },
+    {
+      "id": "tempur_au/C1/massage_head_decrease",
+      "app": "tempur_au",
+      "layout": "C1",
+      "key": "massage_head_decrease",
+      "label": "Massage Head Decrease",
+      "mask": "0x800000",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000800086",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/D1/massage_head_decrease",
+      "app": "tempur_au",
+      "layout": "D1",
+      "key": "massage_head_decrease",
+      "label": "Massage Head Decrease",
+      "mask": "0x800000",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000800086",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/C1/massage_foot_decrease",
+      "app": "tempur_au",
+      "layout": "C1",
+      "key": "massage_foot_decrease",
+      "label": "Massage Foot Decrease",
+      "mask": "0x1000000",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000000105",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/D1/massage_foot_decrease",
+      "app": "tempur_au",
+      "layout": "D1",
+      "key": "massage_foot_decrease",
+      "label": "Massage Foot Decrease",
+      "mask": "0x1000000",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000000105",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/B1/flat",
+      "app": "tempur_au",
+      "layout": "B1",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe"
+      ]
+    },
+    {
+      "id": "tempur_au/B2/flat",
+      "app": "tempur_au",
+      "layout": "B2",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe"
+      ]
+    },
+    {
+      "id": "tempur_au/C1/flat",
+      "app": "tempur_au",
+      "layout": "C1",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe"
+      ]
+    },
+    {
+      "id": "tempur_au/D1/flat",
+      "app": "tempur_au",
+      "layout": "D1",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe"
+      ]
+    },
+    {
+      "id": "tempur_au/E1/flat",
+      "app": "tempur_au",
+      "layout": "E1",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe"
+      ]
+    },
+    {
+      "id": "tempur_au/B1/reset",
+      "app": "tempur_au",
+      "layout": "B1",
+      "key": "reset",
+      "label": "Reset",
+      "mask": "0x8001000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/B2/reset",
+      "app": "tempur_au",
+      "layout": "B2",
+      "key": "reset",
+      "label": "Reset",
+      "mask": "0x8001000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/C1/reset",
+      "app": "tempur_au",
+      "layout": "C1",
+      "key": "reset",
+      "label": "Reset",
+      "mask": "0x8001000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/D1/reset",
+      "app": "tempur_au",
+      "layout": "D1",
+      "key": "reset",
+      "label": "Reset",
+      "mask": "0x8001000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "tempur_au/E1/reset",
+      "app": "tempur_au",
+      "layout": "E1",
+      "key": "reset",
+      "label": "Reset",
+      "mask": "0x8001000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Elevate/head_up",
+      "app": "row_control",
+      "layout": "Elevate",
+      "key": "head_up",
+      "label": "Head Up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Elevate/head_down",
+      "app": "row_control",
+      "layout": "Elevate",
+      "key": "head_down",
+      "label": "Head Down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Elevate/foot_up",
+      "app": "row_control",
+      "layout": "Elevate",
+      "key": "foot_up",
+      "label": "Foot Up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Elevate/foot_down",
+      "app": "row_control",
+      "layout": "Elevate",
+      "key": "foot_down",
+      "label": "Foot Down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Elevate/anti_snore",
+      "app": "row_control",
+      "layout": "Elevate",
+      "key": "anti_snore",
+      "label": "Anti Snore",
+      "mask": "0x8000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160080000086",
+        "e5fe160080000086",
+        "e5fe160080000086",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Elevate/tv",
+      "app": "row_control",
+      "layout": "Elevate",
+      "key": "tv",
+      "label": "Tv",
+      "mask": "0x4000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Elevate/lounge",
+      "app": "row_control",
+      "layout": "Elevate",
+      "key": "lounge",
+      "label": "Lounge",
+      "mask": "0x2000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Elevate/flat",
+      "app": "row_control",
+      "layout": "Elevate",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe"
+      ]
+    },
+    {
+      "id": "row_control/Elevate/zero_g",
+      "app": "row_control",
+      "layout": "Elevate",
+      "key": "zero_g",
+      "label": "Zero G",
+      "mask": "0x1000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6"
+      ]
+    },
+    {
+      "id": "row_control/Elevate/timer",
+      "app": "row_control",
+      "layout": "Elevate",
+      "key": "timer",
+      "label": "Timer",
+      "mask": "0x200",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160002000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Elevate/massage_head",
+      "app": "row_control",
+      "layout": "Elevate",
+      "key": "massage_head",
+      "label": "Massage Head",
+      "mask": "0x800",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Elevate/massage_foot",
+      "app": "row_control",
+      "layout": "Elevate",
+      "key": "massage_foot",
+      "label": "Massage Foot",
+      "mask": "0x400",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle/head_up",
+      "app": "row_control",
+      "layout": "Lifestyle",
+      "key": "head_up",
+      "label": "Head Up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle/head_down",
+      "app": "row_control",
+      "layout": "Lifestyle",
+      "key": "head_down",
+      "label": "Head Down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle/foot_up",
+      "app": "row_control",
+      "layout": "Lifestyle",
+      "key": "foot_up",
+      "label": "Foot Up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle/foot_down",
+      "app": "row_control",
+      "layout": "Lifestyle",
+      "key": "foot_down",
+      "label": "Foot Down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle/anti_snore",
+      "app": "row_control",
+      "layout": "Lifestyle",
+      "key": "anti_snore",
+      "label": "Anti Snore",
+      "mask": "0x8000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160080000086",
+        "e5fe160080000086",
+        "e5fe160080000086",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle/tv",
+      "app": "row_control",
+      "layout": "Lifestyle",
+      "key": "tv",
+      "label": "Tv",
+      "mask": "0x4000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle/lounge",
+      "app": "row_control",
+      "layout": "Lifestyle",
+      "key": "lounge",
+      "label": "Lounge",
+      "mask": "0x2000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle/flat",
+      "app": "row_control",
+      "layout": "Lifestyle",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle/zero_g",
+      "app": "row_control",
+      "layout": "Lifestyle",
+      "key": "zero_g",
+      "label": "Zero G",
+      "mask": "0x1000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle/timer",
+      "app": "row_control",
+      "layout": "Lifestyle",
+      "key": "timer",
+      "label": "Timer",
+      "mask": "0x200",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160002000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle/massage_head",
+      "app": "row_control",
+      "layout": "Lifestyle",
+      "key": "massage_head",
+      "label": "Massage Head",
+      "mask": "0x800",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle/massage_foot",
+      "app": "row_control",
+      "layout": "Lifestyle",
+      "key": "massage_foot",
+      "label": "Massage Foot",
+      "mask": "0x400",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Curve/head_up",
+      "app": "row_control",
+      "layout": "Curve",
+      "key": "head_up",
+      "label": "Head Up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Curve/head_down",
+      "app": "row_control",
+      "layout": "Curve",
+      "key": "head_down",
+      "label": "Head Down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Curve/foot_up",
+      "app": "row_control",
+      "layout": "Curve",
+      "key": "foot_up",
+      "label": "Foot Up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Curve/foot_down",
+      "app": "row_control",
+      "layout": "Curve",
+      "key": "foot_down",
+      "label": "Foot Down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Curve/anti_snore",
+      "app": "row_control",
+      "layout": "Curve",
+      "key": "anti_snore",
+      "label": "Anti Snore",
+      "mask": "0x8000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160080000086",
+        "e5fe160080000086",
+        "e5fe160080000086",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Curve/tv",
+      "app": "row_control",
+      "layout": "Curve",
+      "key": "tv",
+      "label": "Tv",
+      "mask": "0x4000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Curve/lounge",
+      "app": "row_control",
+      "layout": "Curve",
+      "key": "lounge",
+      "label": "Lounge",
+      "mask": "0x2000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Curve/flat",
+      "app": "row_control",
+      "layout": "Curve",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe"
+      ]
+    },
+    {
+      "id": "row_control/Curve/zero_g",
+      "app": "row_control",
+      "layout": "Curve",
+      "key": "zero_g",
+      "label": "Zero G",
+      "mask": "0x1000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6"
+      ]
+    },
+    {
+      "id": "row_control/Curve/light",
+      "app": "row_control",
+      "layout": "Curve",
+      "key": "light",
+      "label": "Light",
+      "mask": "0x20000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000020004"
+      ]
+    },
+    {
+      "id": "row_control/Curve/timer",
+      "app": "row_control",
+      "layout": "Curve",
+      "key": "timer",
+      "label": "Timer",
+      "mask": "0x200",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160002000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Curve/massage_head",
+      "app": "row_control",
+      "layout": "Curve",
+      "key": "massage_head",
+      "label": "Massage Head",
+      "mask": "0x800",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Curve/massage_foot",
+      "app": "row_control",
+      "layout": "Curve",
+      "key": "massage_foot",
+      "label": "Massage Foot",
+      "mask": "0x400",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle Plus/head_up",
+      "app": "row_control",
+      "layout": "Lifestyle Plus",
+      "key": "head_up",
+      "label": "Head Up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle Plus/head_down",
+      "app": "row_control",
+      "layout": "Lifestyle Plus",
+      "key": "head_down",
+      "label": "Head Down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle Plus/foot_up",
+      "app": "row_control",
+      "layout": "Lifestyle Plus",
+      "key": "foot_up",
+      "label": "Foot Up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle Plus/foot_down",
+      "app": "row_control",
+      "layout": "Lifestyle Plus",
+      "key": "foot_down",
+      "label": "Foot Down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle Plus/anti_snore",
+      "app": "row_control",
+      "layout": "Lifestyle Plus",
+      "key": "anti_snore",
+      "label": "Anti Snore",
+      "mask": "0x8000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160080000086",
+        "e5fe160080000086",
+        "e5fe160080000086",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle Plus/tv",
+      "app": "row_control",
+      "layout": "Lifestyle Plus",
+      "key": "tv",
+      "label": "Tv",
+      "mask": "0x4000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle Plus/lounge",
+      "app": "row_control",
+      "layout": "Lifestyle Plus",
+      "key": "lounge",
+      "label": "Lounge",
+      "mask": "0x2000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle Plus/flat",
+      "app": "row_control",
+      "layout": "Lifestyle Plus",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle Plus/zero_g",
+      "app": "row_control",
+      "layout": "Lifestyle Plus",
+      "key": "zero_g",
+      "label": "Zero G",
+      "mask": "0x1000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle Plus/light",
+      "app": "row_control",
+      "layout": "Lifestyle Plus",
+      "key": "light",
+      "label": "Light",
+      "mask": "0x20000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000020004"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle Plus/timer",
+      "app": "row_control",
+      "layout": "Lifestyle Plus",
+      "key": "timer",
+      "label": "Timer",
+      "mask": "0x200",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160002000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle Plus/massage_head",
+      "app": "row_control",
+      "layout": "Lifestyle Plus",
+      "key": "massage_head",
+      "label": "Massage Head",
+      "mask": "0x800",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Lifestyle Plus/massage_foot",
+      "app": "row_control",
+      "layout": "Lifestyle Plus",
+      "key": "massage_foot",
+      "label": "Massage Foot",
+      "mask": "0x400",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Zero-G Box/head_up",
+      "app": "row_control",
+      "layout": "Zero-G Box",
+      "key": "head_up",
+      "label": "Head Up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Zero-G Box/head_down",
+      "app": "row_control",
+      "layout": "Zero-G Box",
+      "key": "head_down",
+      "label": "Head Down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Zero-G Box/foot_up",
+      "app": "row_control",
+      "layout": "Zero-G Box",
+      "key": "foot_up",
+      "label": "Foot Up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Zero-G Box/foot_down",
+      "app": "row_control",
+      "layout": "Zero-G Box",
+      "key": "foot_down",
+      "label": "Foot Down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Zero-G Box/anti_snore",
+      "app": "row_control",
+      "layout": "Zero-G Box",
+      "key": "anti_snore",
+      "label": "Anti Snore",
+      "mask": "0x8000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160080000086",
+        "e5fe160080000086",
+        "e5fe160080000086",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Zero-G Box/tv",
+      "app": "row_control",
+      "layout": "Zero-G Box",
+      "key": "tv",
+      "label": "Tv",
+      "mask": "0x4000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Zero-G Box/lounge",
+      "app": "row_control",
+      "layout": "Zero-G Box",
+      "key": "lounge",
+      "label": "Lounge",
+      "mask": "0x10000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000010005",
+        "e5fe160000010005",
+        "e5fe160000010005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Zero-G Box/flat",
+      "app": "row_control",
+      "layout": "Zero-G Box",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe"
+      ]
+    },
+    {
+      "id": "row_control/Zero-G Box/zero_g",
+      "app": "row_control",
+      "layout": "Zero-G Box",
+      "key": "zero_g",
+      "label": "Zero G",
+      "mask": "0x1000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6"
+      ]
+    },
+    {
+      "id": "row_control/Zero-G Box/light",
+      "app": "row_control",
+      "layout": "Zero-G Box",
+      "key": "light",
+      "label": "Light",
+      "mask": "0x20000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000020004"
+      ]
+    },
+    {
+      "id": "row_control/Zero-G Box/timer",
+      "app": "row_control",
+      "layout": "Zero-G Box",
+      "key": "timer",
+      "label": "Timer",
+      "mask": "0x200",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160002000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Zero-G Box/massage_head",
+      "app": "row_control",
+      "layout": "Zero-G Box",
+      "key": "massage_head",
+      "label": "Massage Head",
+      "mask": "0x50",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1650000000b6",
+        "e5fe1650000000b6",
+        "e5fe1650000000b6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "row_control/Zero-G Box/massage_foot",
+      "app": "row_control",
+      "layout": "Zero-G Box",
+      "key": "massage_foot",
+      "label": "Massage Foot",
+      "mask": "0xa0",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe16a000000066",
+        "e5fe16a000000066",
+        "e5fe16a000000066",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/H/head_up",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "head_up",
+      "label": "Head Up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/H/head_down",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "head_down",
+      "label": "Head Down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/H/foot_up",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "foot_up",
+      "label": "Foot Up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/H/foot_down",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "foot_down",
+      "label": "Foot Down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/H/tilt_up",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "tilt_up",
+      "label": "Tilt Up",
+      "mask": "0x10",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1610000000f6",
+        "e5fe1610000000f6",
+        "e5fe1610000000f6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/H/tilt_down",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "tilt_down",
+      "label": "Tilt Down",
+      "mask": "0x20",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1620000000e6",
+        "e5fe1620000000e6",
+        "e5fe1620000000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/H/lumbar_up",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "lumbar_up",
+      "label": "Lumbar Up",
+      "mask": "0x40",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1640000000c6",
+        "e5fe1640000000c6",
+        "e5fe1640000000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/H/lumbar_down",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "lumbar_down",
+      "label": "Lumbar Down",
+      "mask": "0x80",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe168000000086",
+        "e5fe168000000086",
+        "e5fe168000000086",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/H/level",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "level",
+      "label": "Level",
+      "mask": "0x100",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160001000005"
+      ]
+    },
+    {
+      "id": "qplus_app/H/zero_g",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "zero_g",
+      "label": "Zero_G",
+      "mask": "0x1000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6"
+      ]
+    },
+    {
+      "id": "qplus_app/H/read",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "read",
+      "label": "Read",
+      "mask": "0x2000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/H/flat",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe"
+      ]
+    },
+    {
+      "id": "qplus_app/H/reset",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "reset",
+      "label": "Reset",
+      "mask": "0x8001000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/H/massage_head",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "massage_head",
+      "label": "Massage Head",
+      "mask": "0x800",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe"
+      ]
+    },
+    {
+      "id": "qplus_app/H/massage_foot",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "massage_foot",
+      "label": "Massage Foot",
+      "mask": "0x400",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002"
+      ]
+    },
+    {
+      "id": "qplus_app/H/music",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "music",
+      "label": "Music",
+      "mask": "0x4000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/H/tv",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "tv",
+      "label": "TV",
+      "mask": "0x8000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160080000086",
+        "e5fe160080000086",
+        "e5fe160080000086",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/H/light",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "light",
+      "label": "Light",
+      "mask": "0x20000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000020004"
+      ]
+    },
+    {
+      "id": "qplus_app/H/lumbar_massage",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "lumbar_massage",
+      "label": "Lumbar Massage",
+      "mask": "0x400000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600004000c6"
+      ]
+    },
+    {
+      "id": "qplus_app/H/massage_mode_3",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "massage_mode_3",
+      "label": "Massage Mode 3",
+      "mask": "0x80000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000800fe"
+      ]
+    },
+    {
+      "id": "qplus_app/H/massage_mode_1",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "massage_mode_1",
+      "label": "Massage Mode 1",
+      "mask": "0x100000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600001000f6"
+      ]
+    },
+    {
+      "id": "qplus_app/H/massage_mode_2",
+      "app": "qplus_app",
+      "layout": "H",
+      "key": "massage_mode_2",
+      "label": "Massage Mode 2",
+      "mask": "0x200000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600002000e6"
+      ]
+    },
+    {
+      "id": "qplus_app/M1/head_up",
+      "app": "qplus_app",
+      "layout": "M1",
+      "key": "head_up",
+      "label": "Head Up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M1/head_down",
+      "app": "qplus_app",
+      "layout": "M1",
+      "key": "head_down",
+      "label": "Head Down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M1/foot_up",
+      "app": "qplus_app",
+      "layout": "M1",
+      "key": "foot_up",
+      "label": "Foot Up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M1/foot_down",
+      "app": "qplus_app",
+      "layout": "M1",
+      "key": "foot_down",
+      "label": "Foot Down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M1/level",
+      "app": "qplus_app",
+      "layout": "M1",
+      "key": "level",
+      "label": "Level",
+      "mask": "0x100",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160001000005"
+      ]
+    },
+    {
+      "id": "qplus_app/M1/zero_g",
+      "app": "qplus_app",
+      "layout": "M1",
+      "key": "zero_g",
+      "label": "Zero_G",
+      "mask": "0x1000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6"
+      ]
+    },
+    {
+      "id": "qplus_app/M1/read",
+      "app": "qplus_app",
+      "layout": "M1",
+      "key": "read",
+      "label": "Read",
+      "mask": "0x2000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M1/flat",
+      "app": "qplus_app",
+      "layout": "M1",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe"
+      ]
+    },
+    {
+      "id": "qplus_app/M1/reset",
+      "app": "qplus_app",
+      "layout": "M1",
+      "key": "reset",
+      "label": "Reset",
+      "mask": "0x8001000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M1/massage_head",
+      "app": "qplus_app",
+      "layout": "M1",
+      "key": "massage_head",
+      "label": "Massage Head",
+      "mask": "0x800",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe"
+      ]
+    },
+    {
+      "id": "qplus_app/M1/massage_foot",
+      "app": "qplus_app",
+      "layout": "M1",
+      "key": "massage_foot",
+      "label": "Massage Foot",
+      "mask": "0x400",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002"
+      ]
+    },
+    {
+      "id": "qplus_app/M1/music",
+      "app": "qplus_app",
+      "layout": "M1",
+      "key": "music",
+      "label": "Music",
+      "mask": "0x4000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M1/tv",
+      "app": "qplus_app",
+      "layout": "M1",
+      "key": "tv",
+      "label": "TV",
+      "mask": "0x8000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160080000086",
+        "e5fe160080000086",
+        "e5fe160080000086",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M1/light",
+      "app": "qplus_app",
+      "layout": "M1",
+      "key": "light",
+      "label": "Light",
+      "mask": "0x20000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000020004"
+      ]
+    },
+    {
+      "id": "qplus_app/M1/lumbar_massage",
+      "app": "qplus_app",
+      "layout": "M1",
+      "key": "lumbar_massage",
+      "label": "Lumbar Massage",
+      "mask": "0x400000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600004000c6"
+      ]
+    },
+    {
+      "id": "qplus_app/M2/head_up",
+      "app": "qplus_app",
+      "layout": "M2",
+      "key": "head_up",
+      "label": "Head Up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M2/head_down",
+      "app": "qplus_app",
+      "layout": "M2",
+      "key": "head_down",
+      "label": "Head Down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M2/foot_up",
+      "app": "qplus_app",
+      "layout": "M2",
+      "key": "foot_up",
+      "label": "Foot Up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M2/foot_down",
+      "app": "qplus_app",
+      "layout": "M2",
+      "key": "foot_down",
+      "label": "Foot Down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M2/tilt_up",
+      "app": "qplus_app",
+      "layout": "M2",
+      "key": "tilt_up",
+      "label": "Tilt Up",
+      "mask": "0x10",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1610000000f6",
+        "e5fe1610000000f6",
+        "e5fe1610000000f6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M2/tilt_down",
+      "app": "qplus_app",
+      "layout": "M2",
+      "key": "tilt_down",
+      "label": "Tilt Down",
+      "mask": "0x20",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1620000000e6",
+        "e5fe1620000000e6",
+        "e5fe1620000000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M2/level",
+      "app": "qplus_app",
+      "layout": "M2",
+      "key": "level",
+      "label": "Level",
+      "mask": "0x100",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160001000005"
+      ]
+    },
+    {
+      "id": "qplus_app/M2/zero_g",
+      "app": "qplus_app",
+      "layout": "M2",
+      "key": "zero_g",
+      "label": "Zero_G",
+      "mask": "0x1000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6"
+      ]
+    },
+    {
+      "id": "qplus_app/M2/read",
+      "app": "qplus_app",
+      "layout": "M2",
+      "key": "read",
+      "label": "Read",
+      "mask": "0x2000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M2/flat",
+      "app": "qplus_app",
+      "layout": "M2",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe"
+      ]
+    },
+    {
+      "id": "qplus_app/M2/reset",
+      "app": "qplus_app",
+      "layout": "M2",
+      "key": "reset",
+      "label": "Reset",
+      "mask": "0x8001000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M2/massage_head",
+      "app": "qplus_app",
+      "layout": "M2",
+      "key": "massage_head",
+      "label": "Massage Head",
+      "mask": "0x800",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe"
+      ]
+    },
+    {
+      "id": "qplus_app/M2/massage_foot",
+      "app": "qplus_app",
+      "layout": "M2",
+      "key": "massage_foot",
+      "label": "Massage Foot",
+      "mask": "0x400",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002"
+      ]
+    },
+    {
+      "id": "qplus_app/M2/tv",
+      "app": "qplus_app",
+      "layout": "M2",
+      "key": "tv",
+      "label": "TV",
+      "mask": "0x4000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M2/anti_snore",
+      "app": "qplus_app",
+      "layout": "M2",
+      "key": "anti_snore",
+      "label": "Anti-snore",
+      "mask": "0x8000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160080000086"
+      ]
+    },
+    {
+      "id": "qplus_app/M3/head_up",
+      "app": "qplus_app",
+      "layout": "M3",
+      "key": "head_up",
+      "label": "Head Up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M3/head_down",
+      "app": "qplus_app",
+      "layout": "M3",
+      "key": "head_down",
+      "label": "Head Down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M3/foot_up",
+      "app": "qplus_app",
+      "layout": "M3",
+      "key": "foot_up",
+      "label": "Foot Up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M3/foot_down",
+      "app": "qplus_app",
+      "layout": "M3",
+      "key": "foot_down",
+      "label": "Foot Down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M3/level",
+      "app": "qplus_app",
+      "layout": "M3",
+      "key": "level",
+      "label": "Level",
+      "mask": "0x100",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160001000005"
+      ]
+    },
+    {
+      "id": "qplus_app/M3/zero_g",
+      "app": "qplus_app",
+      "layout": "M3",
+      "key": "zero_g",
+      "label": "Zero_G",
+      "mask": "0x1000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6"
+      ]
+    },
+    {
+      "id": "qplus_app/M3/read",
+      "app": "qplus_app",
+      "layout": "M3",
+      "key": "read",
+      "label": "Read",
+      "mask": "0x2000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/M3/flat",
+      "app": "qplus_app",
+      "layout": "M3",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe"
+      ]
+    },
+    {
+      "id": "qplus_app/M3/reset",
+      "app": "qplus_app",
+      "layout": "M3",
+      "key": "reset",
+      "label": "Reset",
+      "mask": "0x8001000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "qplus_app/MX/head_up",
+      "app": "qplus_app",
+      "layout": "MX",
+      "key": "head_up",
+      "label": "Head Up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "040200000001",
+        "040200000001",
+        "040200000001",
+        "00b0",
+        "00b0",
+        "00b0"
+      ]
+    },
+    {
+      "id": "qplus_app/MX/head_down",
+      "app": "qplus_app",
+      "layout": "MX",
+      "key": "head_down",
+      "label": "Head Down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "040200000002",
+        "040200000002",
+        "040200000002",
+        "00b0",
+        "00b0",
+        "00b0"
+      ]
+    },
+    {
+      "id": "qplus_app/MX/foot_up",
+      "app": "qplus_app",
+      "layout": "MX",
+      "key": "foot_up",
+      "label": "Foot Up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "040200000004",
+        "040200000004",
+        "040200000004",
+        "00b0",
+        "00b0",
+        "00b0"
+      ]
+    },
+    {
+      "id": "qplus_app/MX/foot_down",
+      "app": "qplus_app",
+      "layout": "MX",
+      "key": "foot_down",
+      "label": "Foot Down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "040200000008",
+        "040200000008",
+        "040200000008",
+        "00b0",
+        "00b0",
+        "00b0"
+      ]
+    },
+    {
+      "id": "qplus_app/MX/tilt_up",
+      "app": "qplus_app",
+      "layout": "MX",
+      "key": "tilt_up",
+      "label": "Tilt Up",
+      "mask": "0x10",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "040200000010",
+        "040200000010",
+        "040200000010",
+        "00b0",
+        "00b0",
+        "00b0"
+      ]
+    },
+    {
+      "id": "qplus_app/MX/tilt_down",
+      "app": "qplus_app",
+      "layout": "MX",
+      "key": "tilt_down",
+      "label": "Tilt Down",
+      "mask": "0x20",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "040200000020",
+        "040200000020",
+        "040200000020",
+        "00b0",
+        "00b0",
+        "00b0"
+      ]
+    },
+    {
+      "id": "qplus_app/MX/anti_snore",
+      "app": "qplus_app",
+      "layout": "MX",
+      "key": "anti_snore",
+      "label": "Anti-snore",
+      "mask": "0x8000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "040200008000",
+        "040200008000",
+        "040200008000",
+        "00b0",
+        "00b0",
+        "00b0"
+      ]
+    },
+    {
+      "id": "qplus_app/MX/mx_memory1",
+      "app": "qplus_app",
+      "layout": "MX",
+      "key": "mx_memory1",
+      "label": "MX Memory 1",
+      "mask": "0x10000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "040200010000",
+        "040200010000",
+        "040200010000",
+        "00b0",
+        "00b0",
+        "00b0"
+      ]
+    },
+    {
+      "id": "qplus_app/MX/flat",
+      "app": "qplus_app",
+      "layout": "MX",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "040208000000",
+        "00b0",
+        "00b0"
+      ]
+    },
+    {
+      "id": "qplus_app/MX/light",
+      "app": "qplus_app",
+      "layout": "MX",
+      "key": "light",
+      "label": "Light",
+      "mask": "0x4000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "040200004000",
+        "00b0",
+        "00b0"
+      ]
+    },
+    {
+      "id": "qplus_app/MX/massage_head",
+      "app": "qplus_app",
+      "layout": "MX",
+      "key": "massage_head",
+      "label": "Massage head",
+      "mask": "0x800",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "040200000800",
+        "00b0",
+        "00b0",
+        "00b0"
+      ]
+    },
+    {
+      "id": "qplus_app/MX/massage_foot",
+      "app": "qplus_app",
+      "layout": "MX",
+      "key": "massage_foot",
+      "label": "Massage foot",
+      "mask": "0x400",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "040200000400",
+        "00b0",
+        "00b0",
+        "00b0"
+      ]
+    },
+    {
+      "id": "qplus_app/MX/massage_timer",
+      "app": "qplus_app",
+      "layout": "MX",
+      "key": "massage_timer",
+      "label": "Massage timer",
+      "mask": "0x200",
+      "mode": "pulse",
+      "attempted_frames_300ms_adapter": [
+        "040200000200",
+        "00b0",
+        "00b0",
+        "00b0"
+      ]
+    },
+    {
+      "id": "serta_mp_remote/standard/flat",
+      "app": "serta_mp_remote",
+      "layout": "standard",
+      "key": "flat",
+      "label": "Flat",
+      "mask": "0x8000000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600000008fe"
+      ]
+    },
+    {
+      "id": "serta_mp_remote/standard/foot_down",
+      "app": "serta_mp_remote",
+      "layout": "standard",
+      "key": "foot_down",
+      "label": "Foot down",
+      "mask": "0x8",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe1608000000fe",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "serta_mp_remote/standard/foot_up",
+      "app": "serta_mp_remote",
+      "layout": "standard",
+      "key": "foot_up",
+      "label": "Foot up",
+      "mask": "0x4",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160400000002",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "serta_mp_remote/standard/head_down",
+      "app": "serta_mp_remote",
+      "layout": "standard",
+      "key": "head_down",
+      "label": "Head down",
+      "mask": "0x2",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160200000004",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "serta_mp_remote/standard/head_up",
+      "app": "serta_mp_remote",
+      "layout": "standard",
+      "key": "head_up",
+      "label": "Head up",
+      "mask": "0x1",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160100000005",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "serta_mp_remote/standard/level",
+      "app": "serta_mp_remote",
+      "layout": "standard",
+      "key": "level",
+      "label": "Massage pattern icon (btnLevel)",
+      "mask": "0x100",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160001000005"
+      ]
+    },
+    {
+      "id": "serta_mp_remote/standard/lounge",
+      "app": "serta_mp_remote",
+      "layout": "standard",
+      "key": "lounge",
+      "label": "Lounge preset icon",
+      "mask": "0x2000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe1600200000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "serta_mp_remote/standard/lumbardown",
+      "app": "serta_mp_remote",
+      "layout": "standard",
+      "key": "lumbardown",
+      "label": "Lumbar down (unlabeled touch area)",
+      "mask": "0x80",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe168000000086",
+        "e5fe168000000086",
+        "e5fe168000000086",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "serta_mp_remote/standard/lumbarup",
+      "app": "serta_mp_remote",
+      "layout": "standard",
+      "key": "lumbarup",
+      "label": "Lumbar up (unlabeled touch area)",
+      "mask": "0x40",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1640000000c6",
+        "e5fe1640000000c6",
+        "e5fe1640000000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "serta_mp_remote/standard/m4",
+      "app": "serta_mp_remote",
+      "layout": "standard",
+      "key": "m4",
+      "label": "Preset M4 icon (distinct from local memory slot 4)",
+      "mask": "0x8000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160080000086"
+      ]
+    },
+    {
+      "id": "serta_mp_remote/standard/masfootadd",
+      "app": "serta_mp_remote",
+      "layout": "standard",
+      "key": "masfootadd",
+      "label": "Foot massage increase",
+      "mask": "0x400",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160004000002"
+      ]
+    },
+    {
+      "id": "serta_mp_remote/standard/masfootmin",
+      "app": "serta_mp_remote",
+      "layout": "standard",
+      "key": "masfootmin",
+      "label": "Foot massage decrease",
+      "mask": "0x1000000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000000105"
+      ]
+    },
+    {
+      "id": "serta_mp_remote/standard/masheadadd",
+      "app": "serta_mp_remote",
+      "layout": "standard",
+      "key": "masheadadd",
+      "label": "Head massage increase",
+      "mask": "0x800",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600080000fe"
+      ]
+    },
+    {
+      "id": "serta_mp_remote/standard/masheadmin",
+      "app": "serta_mp_remote",
+      "layout": "standard",
+      "key": "masheadmin",
+      "label": "Head massage decrease",
+      "mask": "0x800000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160000800086"
+      ]
+    },
+    {
+      "id": "serta_mp_remote/standard/reset",
+      "app": "serta_mp_remote",
+      "layout": "standard",
+      "key": "reset",
+      "label": "RESET-labeled remote action",
+      "mask": "0x8001000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe1600100008ee",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "serta_mp_remote/standard/tiltdown",
+      "app": "serta_mp_remote",
+      "layout": "standard",
+      "key": "tiltdown",
+      "label": "Tilt down (unlabeled touch area)",
+      "mask": "0x20",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1620000000e6",
+        "e5fe1620000000e6",
+        "e5fe1620000000e6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "serta_mp_remote/standard/tiltup",
+      "app": "serta_mp_remote",
+      "layout": "standard",
+      "key": "tiltup",
+      "label": "Tilt up (unlabeled touch area)",
+      "mask": "0x10",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1610000000f6",
+        "e5fe1610000000f6",
+        "e5fe1610000000f6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "serta_mp_remote/standard/timer",
+      "app": "serta_mp_remote",
+      "layout": "standard",
+      "key": "timer",
+      "label": "Massage TIMER / ALL OFF",
+      "mask": "0x200",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe160002000004"
+      ]
+    },
+    {
+      "id": "serta_mp_remote/standard/tv",
+      "app": "serta_mp_remote",
+      "layout": "standard",
+      "key": "tv",
+      "label": "TV preset icon",
+      "mask": "0x4000",
+      "mode": "held",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe1600400000c6",
+        "e5fe160000000006"
+      ]
+    },
+    {
+      "id": "serta_mp_remote/standard/zg",
+      "app": "serta_mp_remote",
+      "layout": "standard",
+      "key": "zg",
+      "label": "ZERO-G preset",
+      "mask": "0x1000",
+      "mode": "single",
+      "attempted_frames_300ms_adapter": [
+        "e5fe1600100000f6"
+      ]
+    }
+  ]
+}

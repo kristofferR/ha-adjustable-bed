@@ -204,6 +204,12 @@ before any of them is written.
 
 ### `hold_control`
 
+Card release events apply to the press that started the movement. Releasing an
+older direction after STOP does not stop a newer press. Compact card cleanup
+retains only targets whose movement service was dispatched; cancelling before
+a declared start delay expires does not send an extra cleanup STOP. An explicit
+Stop button still stops its selected target immediately.
+
 Hold one control declared by the bed's app profile for `duration` seconds
 (0.1–60, whole milliseconds), then send that profile's release sequence. A
 control the bed does not declare is rejected with the list of controls the bed
@@ -390,3 +396,55 @@ data:
 ```
 
 Main controls also expose Ascent/TV, Zero Gravity, Anti-Snore, Lounge, two memory slots, three named-save buttons and reset. Programming sends 55 attempts and reports transport completion, not proof that firmware retained the setting. RGB palette indices and brightness use controller-declared select/number entities. Alarm, sound/EQ, sonic and kneading feedback are read-only.
+
+### `configure_alarm_schedule`
+
+Writes whole weekly and one-time tables for the explicit Tempur Curve, Q-Plus
+Adjustable Remote, Omazz Adjusto III, Ergomotion, ROW Control, Ergo Slim and
+TEMPUR AU app profiles. Serta MP Remote has no accepted table writer and is
+unavailable for this action. `supports_alarm` alone never grants this contract.
+
+```yaml
+action: adjustable_bed.configure_alarm_schedule
+data:
+  device_id: YOUR_DEVICE_ID
+  weekly:
+    - enabled: true
+      wake: true
+      hour: 7
+      minute: 30
+      weekdays: [0, 1, 2, 3, 4]
+  one_time: []
+  dispatch: weekly
+```
+
+Both lists are required and may be empty. `dispatch` is required and is `both`,
+`weekly`, or `one_time`. Records default to `enabled: false`, `wake: false`,
+`hour: 0`, `minute: 0`. Hours are0..23 and minutes0..59. Weekly days are unique
+integers, Monday0 through Sunday6; an enabled weekly record requires a day.
+Each table permits at most three enabled records. Disabled rows consume no
+slots; an enabled `wake: false` row does consume a slot.
+
+An enabled one-time record must be later today in Home Assistant's local
+timezone. The action captures one reference time and reuses it for every
+physical target and serialization. Equal/past times, nonexistent DST times and
+ambiguous DST times are rejected before any write. There is no next-day
+rollover. Absolute target/reference timestamps first use Java Date millisecond
+precision. Their positive millisecond difference then uses integer division
+for relative hour/minute/second fields; zero bytes do not establish firmware clearing.
+
+Both complete tables, including the unselected table, and every physical
+target must pass validation before checksums or writes. Fourth rows, source
+partial-overflow corruption and negative deltas are rejected. `both` sends
+weekly first, waits500 ms, then sends one-time; single-table dispatch retains
+500 ms post-write pacing. Configuration uses the existing command lock and
+scheduler with `cancel_running: false`. Native child targets and optional
+`side` retain their existing routing and conflict checks.
+
+Empty tables attempt empty-table writes; clearing firmware is unverified. A
+transport failure may leave one table sent and the other unsent. There is no
+wire rollback. Phone alarm schedulers, local audio, permissions and snooze UI
+storage are outside this BLE action. Normalize any automation's hour/minute
+arithmetic first, reject cross-date results, and preserve its intended weekly
+or one-time dispatch. See each [app guide](CONFIGURATION.md#curve-q-plus-serta-mp-and-sfd-app-profiles)
+for exact weekday-marker, wake-byte, notification and release differences.

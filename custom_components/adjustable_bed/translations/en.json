@@ -671,6 +671,22 @@
           "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides."
         }
+      },
+      "cluster033_app": {
+        "title": "App controls",
+        "description": "Choose the layout shown by your bed app. Layouts do not identify physical motor count. Q-Plus A/B/Both selects app wire addressing, independently from paired Left/Right sides.",
+        "data": {
+          "product_type": "App layout",
+          "protocol_variant": "Q-Plus bed selection",
+          "serta_mp_memory_1_head": "Local memory 1, head angle",
+          "serta_mp_memory_1_foot": "Local memory 1, foot angle",
+          "serta_mp_memory_2_head": "Local memory 2, head angle",
+          "serta_mp_memory_2_foot": "Local memory 2, foot angle",
+          "serta_mp_memory_3_head": "Local memory 3, head angle",
+          "serta_mp_memory_3_foot": "Local memory 3, foot angle",
+          "serta_mp_memory_4_head": "Local memory 4, head angle",
+          "serta_mp_memory_4_foot": "Local memory 4, foot angle"
+        }
       }
     },
     "progress": {
@@ -761,7 +777,8 @@
       "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant.",
       "vibradorm_verification_required": "The selected app could not be verified or its connection could not be released. Retry, or keep your current setup.",
       "sleeptracker_profile": "Select a supported Sleeptracker layout and numeric processor selectors.",
-      "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0."
+      "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0.",
+      "cluster033_layout": "Choose a layout belonging to the selected app."
     }
   },
   "options": {
@@ -3552,6 +3569,12 @@
       },
       "sleeptracker_right_commanded_timer_seconds": {
         "name": "Right ActiveBreeze timer (last command)"
+      },
+      "app_timer_status": {
+        "name": "App timer status"
+      },
+      "app_memory_request": {
+        "name": "App memory request"
       }
     },
     "light": {
@@ -5874,6 +5897,29 @@
         },
         "action": {
           "name": "Action"
+        }
+      }
+    },
+    "configure_alarm_schedule": {
+      "name": "Configure alarm schedule",
+      "description": "Write weekly and one-time tables to supported app profiles. Both tables must fit before either is sent. Enabled one-time times must be later today in Home Assistant local time. Empty tables attempt writes; firmware clearing is unverified.",
+      "fields": {
+        "device_id": {
+          "name": "Beds"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "weekly": {
+          "name": "Weekly records",
+          "description": "List of enabled, wake, hour, minute and unique weekdays (Monday 0 to Sunday 6). At most three enabled rows."
+        },
+        "one_time": {
+          "name": "One-time records",
+          "description": "List of enabled, wake, hour and minute. At most three enabled rows, each later today."
+        },
+        "dispatch": {
+          "name": "Tables to send"
         }
       }
     }

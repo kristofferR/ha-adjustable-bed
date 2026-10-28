@@ -34,7 +34,12 @@ from .paired_coordinator import (
 from .remacro_discovery import remacro_side_lacks_global_stop
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, ControllerButtonSpec, MotorControlSpec
+    from .beds.base import (
+        BedController,
+        ControllerButtonSpec,
+        ControllerMotorHoldSpec,
+        MotorControlSpec,
+    )
     from .coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -943,8 +948,9 @@ def _combined_motor_buttons_for(
 
     Built from each side's own ``MotorControlSpec`` (not generic
     ``COVER_DESCRIPTIONS``) so a 3/4-motor Octo — whose ``head``/``feet`` map to the
-    extra ``_move_motor3/4`` functions — drives the RIGHT motor on both sides. All
-    eligible sides are the same bed type, so any side's specs match.
+    extra ``_move_motor3/4`` functions — drives the RIGHT motor on both sides. Hold
+    metadata is intersected separately by direction because variants of one bed
+    type can expose different held-control capabilities.
     """
     specs_by_key: dict[str, MotorControlSpec] = {}
     common: set[str] | None = None
@@ -969,9 +975,33 @@ def _combined_motor_buttons_for(
         spec = specs_by_key.get(key)
         if spec is None:
             continue
-        entities.append(PairedBedCombinedMotorButton(coordinator, spec, "up"))
-        entities.append(PairedBedCombinedMotorButton(coordinator, spec, "down"))
+        for direction in ("up", "down"):
+            entities.append(
+                PairedBedCombinedMotorButton(
+                    coordinator,
+                    spec,
+                    direction,
+                    hold_sources=eligible,
+                )
+            )
     return entities
+
+
+def _combined_motor_hold_is_compatible(specs: Sequence[MotorControlSpec], direction: str) -> bool:
+    """Whether every target side declares this motor direction identically."""
+    holds = [getattr(spec, "hold", None) for spec in specs]
+    if not holds or any(hold is None for hold in holds):
+        return False
+    first = holds[0]
+    assert first is not None
+    first_control = first.up_control if direction == "up" else first.down_control
+    return all(
+        hold is not None
+        and (hold.up_control if direction == "up" else hold.down_control) == first_control
+        and hold.start_delay_ms == first.start_delay_ms
+        and hold.release_delay_ms == first.release_delay_ms
+        for hold in holds[1:]
+    )
 
 
 def _async_migrate_massage_intensity_button_unique_ids(
@@ -1299,6 +1329,21 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
             self._spec.press_fn, cancel_running=self._spec.cancel_movement
         )
 
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose bounded hold metadata for the native card when declared."""
+        attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        hold = getattr(self._spec, "hold", None)
+        if hold is not None:
+            attributes.update(
+                {
+                    "held_control": hold.control,
+                    "hold_start_delay_ms": hold.start_delay_ms,
+                    "hold_release_delay_ms": hold.release_delay_ms,
+                }
+            )
+        return attributes
+
 
 def _paired_entity_unique_id(coordinator: PairedBedCoordinator, key: str) -> str:
     """Keep legacy mock/duck coordinators compatible with the parent namespace."""
@@ -1412,6 +1457,8 @@ class PairedBedCombinedMotorButton(ButtonEntity):
         coordinator: PairedBedCoordinator,
         spec: MotorControlSpec,
         direction: str,
+        *,
+        hold_sources: Sequence[EntityRuntime] = (),
     ) -> None:
         """Initialize the combined motor button (``direction`` is up/down).
 
@@ -1422,6 +1469,7 @@ class PairedBedCombinedMotorButton(ButtonEntity):
         self._coordinator = coordinator
         self._direction = direction
         self._motor_key = spec.key
+        self._hold_sources = tuple(hold_sources)
         self._move_fn = spec.open_fn if direction == "up" else spec.close_fn
         self._resource = spec.scheduler_resource or f"motor:{spec.position_key or spec.key}"
         # Translation key from spec.translation_key (preserves controller-specific
@@ -1448,9 +1496,49 @@ class PairedBedCombinedMotorButton(ButtonEntity):
         )
 
     @property
+    def _current_hold_spec(self) -> ControllerMotorHoldSpec | None:
+        """Intersect current physical capabilities, including after mode fallback."""
+        if self._coordinator.connection_mode != PAIR_CONNECTION_MODE_CONCURRENT:
+            return None
+        sources = (
+            tuple(self._coordinator.children.values())
+            if isinstance(self._coordinator, PairedBedCoordinator)
+            else self._hold_sources
+        )
+        specs: list[MotorControlSpec] = []
+        for source in sources:
+            controller = source.capability_controller
+            if (
+                controller is None
+                or not controller.supports_motor_control
+                or controller.has_discrete_motor_control
+            ):
+                return None
+            spec = next((s for s in controller.motor_control_specs if s.key == self._motor_key), None)
+            if spec is None:
+                return None
+            specs.append(spec)
+        if not _combined_motor_hold_is_compatible(specs, self._direction):
+            return None
+        return getattr(specs[0], "hold", None)
+
+    @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Advertise the existing timed action for held OCTO pair movement."""
+        """Advertise controller-declared hold metadata and eligible OCTO moves."""
         attributes = dict(self._attr_extra_state_attributes or {})
+        hold = self._current_hold_spec
+        if hold is not None:
+            attributes.update(
+                {
+                    "held_control": (
+                        hold.up_control
+                        if self._direction == "up"
+                        else hold.down_control
+                    ),
+                    "hold_start_delay_ms": hold.start_delay_ms,
+                    "hold_release_delay_ms": hold.release_delay_ms,
+                }
+            )
         if (
             not isinstance(self._coordinator, SingleAddressPairedCoordinator)
             and len(self._coordinator.children) == 2

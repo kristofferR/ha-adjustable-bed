@@ -13,7 +13,8 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
-from collections.abc import AsyncIterator, Callable, Collection, Coroutine
+from collections.abc import AsyncIterator, Callable, Collection, Coroutine, Mapping
+from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from typing import TYPE_CHECKING, Any, cast
 
@@ -25,8 +26,11 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.service import async_get_device_and_config_entry
+from homeassistant.util import dt as dt_util
 
+from .alarm_table import AlarmTableSchedule, OneTimeAlarmRecord, WeeklyAlarmRecord
 from .beds.linak_protocol import LinakAlarmAction, LinakAlarmStep
+from .command_scheduler import ALL_COMMAND_RESOURCES
 from .const import (
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
@@ -42,6 +46,7 @@ from .const import (
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
+    BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
@@ -96,6 +101,7 @@ SERVICE_LEGGETT_ALARM_TIMER = "leggett_alarm_timer"
 SERVICE_HOLD_CONTROL = "hold_control"
 SERVICE_RENAME = "rename"
 SERVICE_SYNC_CLOCK = "sync_clock"
+SERVICE_CONFIGURE_ALARM_SCHEDULE = "configure_alarm_schedule"
 # Released per-app names that now alias the generic actions above (linak_rename
 # sits with the other Linak actions).
 SERVICE_LEGGETT_HOLD_CONTROL = "leggett_hold_control"
@@ -495,6 +501,9 @@ async def _execute_sided(
     skip_disconnect: bool = False,
     resource: str | None = None,
     resources: Collection[str] | None = None,
+    expected_stop_epoch: int | None = None,
+    expected_pair_generations: Mapping[str, tuple[int, ...]] | None = None,
+    expected_stop_epochs: Mapping[str, int] | None = None,
 ) -> None:
     """Run a command on the targeted side(s).
 
@@ -509,15 +518,27 @@ async def _execute_sided(
             skip_disconnect=skip_disconnect,
             resource=resource,
             resources=resources,
+            expected_pair_generations=expected_pair_generations,
+            expected_stop_epochs=expected_stop_epochs,
         )
     else:
-        await coordinator.async_execute_controller_command(
-            command_fn,
-            cancel_running=cancel_running,
-            skip_disconnect=skip_disconnect,
-            resource=resource,
-            resources=resources,
-        )
+        if expected_stop_epoch is None:
+            await coordinator.async_execute_controller_command(
+                command_fn,
+                cancel_running=cancel_running,
+                skip_disconnect=skip_disconnect,
+                resource=resource,
+                resources=resources,
+            )
+        else:
+            await coordinator.async_execute_controller_command(
+                command_fn,
+                cancel_running=cancel_running,
+                skip_disconnect=skip_disconnect,
+                resource=resource,
+                resources=resources,
+                expected_stop_epoch=expected_stop_epoch,
+            )
 
 
 async def _release_preflighted(preflighted: PreflightedSides) -> None:
@@ -802,7 +823,9 @@ async def _set_position_plan(
             BED_TYPE_SLEEP_NUMBER_MCR,
         ) or (bed_type == BED_TYPE_KAIDI and supports_direct_position_control)
 
-        if bed_type == BED_TYPE_SLEEP_NUMBER_MCR:
+        if bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE):
+            # These direct setters own native bounds independently of generic
+            # angle overrides. Validate every axis/target before scheduling.
             motor_configs = {
                 spec.position_key: {
                     "position_key": spec.position_key,
@@ -1734,6 +1757,43 @@ async def handle_hold_control(call: ServiceCall) -> None:
         await _hold_targets(targets, control, duration_ms)
 
 
+@dataclass(frozen=True, slots=True)
+class _HoldAdmission:
+    """Cancellation state captured before hold capability preflight awaits."""
+
+    stop_epoch: int | None = None
+    pair_generations: Mapping[str, tuple[int, ...]] | None = None
+    stop_epochs: Mapping[str, int] | None = None
+
+
+def _target_stop_epoch(target: BedChild) -> int | None:
+    """Read the owning physical scheduler's STOP epoch for one service target."""
+    owner = getattr(target, "_single_inner", target)
+    scheduler = getattr(owner, "_command_scheduler", None)
+    epoch = getattr(scheduler, "stop_epoch", None)
+    return epoch if isinstance(epoch, int) else None
+
+
+def _hold_admission(coordinator: BedTarget, side: str) -> _HoldAdmission:
+    """Snapshot STOP ownership before a hold's possibly blocking preflight."""
+    if not isinstance(coordinator, PairedBedCoordinator):
+        return _HoldAdmission(stop_epoch=_target_stop_epoch(coordinator))
+
+    pair_generations: dict[str, tuple[int, ...]] = {}
+    stop_epochs: dict[str, int] = {}
+    for target_side, target in coordinator._targets_for(side):
+        pair_generations[target_side] = coordinator._pair_cancel_generation(
+            target_side, ALL_COMMAND_RESOURCES
+        )
+        stop_epoch = _target_stop_epoch(target)
+        if stop_epoch is not None:
+            stop_epochs[target_side] = stop_epoch
+    return _HoldAdmission(
+        pair_generations=pair_generations,
+        stop_epochs=stop_epochs or None,
+    )
+
+
 def _require_held_control(
     target: BedChild, controller: BedController | SideBoundController, control: str
 ) -> None:
@@ -1769,17 +1829,30 @@ async def _hold_targets(
         _require_held_control(target, controller, control)
         controller.validate_hold_control(control, duration_ms)
 
+    admissions = [_hold_admission(coordinator, side) for coordinator, side in targets]
     preflighted = await _preflight_each(targets, check)
 
     async def hold(controller: BedController | SideBoundController) -> None:
         await controller.hold_control(control, duration_ms)
 
     try:
-        for coordinator, side in targets:
-            await _execute_sided(coordinator, side, hold, cancel_running=True)
+        for (coordinator, side), admission in zip(targets, admissions, strict=True):
+            await _execute_sided(
+                coordinator,
+                side,
+                hold,
+                cancel_running=True,
+                expected_stop_epoch=admission.stop_epoch,
+                expected_pair_generations=admission.pair_generations,
+                expected_stop_epochs=admission.stop_epochs,
+            )
     except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
         raise
+    else:
+        # A stale scheduler admission is a normal no-op after STOP, so restore
+        # the idle deadline on links opened during preflight on either path.
+        await _release_preflighted(preflighted)
 
 
 CUSTOMATIC_MEMORY_ACTIONS = ("flat", "zg", "anti", "program", "incline")
@@ -2688,6 +2761,43 @@ async def handle_malouf_set_alarm(call: ServiceCall) -> None:
                 coordinator, side, program, cancel_running=False, resource="configuration"
             )
     except Exception:
+        await _release_preflighted(preflighted)
+        raise
+
+
+async def handle_configure_alarm_schedule(call: ServiceCall) -> None:
+    """Preflight both tables on all physical targets before encoding or writing."""
+    schedule = AlarmTableSchedule(
+        weekly=tuple(WeeklyAlarmRecord(**{**row, "weekdays": tuple(row["weekdays"])}) for row in call.data["weekly"]),
+        one_time=tuple(OneTimeAlarmRecord(**row) for row in call.data["one_time"]),
+        dispatch=call.data["dispatch"],
+        reference_time=dt_util.now(),
+    )
+    targets = _call_targets(call)
+    # A table call cannot connect merely to discover whether it is valid:
+    # initialization can write clock/zero/query frames. These static profiles
+    # are offline-mintable, and all other controllers lack this contract.
+    for coordinator, side in targets:
+        for target in _command_targets(coordinator, side):
+            controller = target.capability_controller
+            if controller is None or controller.alarm_table_schedule_spec is None:
+                raise ServiceValidationError(f"Device '{target.name}' has no available alarm-table contract")
+
+    def check(target: BedChild, controller: BedController | SideBoundController) -> None:
+        spec = controller.alarm_table_schedule_spec
+        if spec is None:
+            raise ServiceValidationError(f"Device '{target.name}' has no alarm-table contract")
+        spec.validate(schedule)
+
+    preflighted = await _preflight_each(targets, check)
+
+    async def configure(controller: BedController) -> None:
+        await controller.configure_alarm_table_schedule(schedule)
+
+    try:
+        for coordinator, side in targets:
+            await _execute_sided(coordinator, side, configure, cancel_running=False, resource="configuration")
+    except BaseException:
         await _release_preflighted(preflighted)
         raise
 
@@ -3677,6 +3787,24 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 **SIDE_FIELD,
             }
         ),
+    )
+    alarm_fields = {
+        vol.Optional("enabled", default=False): cv.boolean,
+        vol.Optional("wake", default=False): cv.boolean,
+        vol.Optional("hour", default=0): vol.All(int, vol.Range(min=0, max=23)),
+        vol.Optional("minute", default=0): vol.All(int, vol.Range(min=0, max=59)),
+    }
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_CONFIGURE_ALARM_SCHEDULE,
+        handle_configure_alarm_schedule,
+        schema=vol.Schema({
+            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+            vol.Required("weekly"): [vol.Schema({**alarm_fields, vol.Optional("weekdays", default=[]): [vol.All(int, vol.Range(min=0, max=6))]})],
+            vol.Required("one_time"): [vol.Schema(alarm_fields)],
+            vol.Required("dispatch"): vol.In(("both", "weekly", "one_time")),
+            **SIDE_FIELD,
+        }),
     )
     for service in (SERVICE_SYNC_CLOCK, SERVICE_MALOUF_SYNC_CLOCK):
         hass.services.async_register(

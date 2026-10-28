@@ -95,6 +95,7 @@ from .const import (
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
     CB1322_MANUFACTURER_MARKERS,
+    CLUSTER033_BED_TYPES,
     CONF_BLE_DEVICE_NAME,
     CONF_FSM_RELAX_MEMORY_NAMES,
     CONF_FURNIMOVE_REMOTE,
@@ -1571,6 +1572,31 @@ async def create_controller(
             dewert_okin_profile,
         )
         return CoolBaseController(coordinator, dewert_okin_profile=dewert_okin_profile)
+
+    if bed_type in CLUSTER033_BED_TYPES:
+        module_name, class_name = {
+            'tempur_curve': ('tempur_curve', 'TempurCurveController'),
+            'qplus_app': ('sbi', 'QPlusAppController'),
+            'serta_mp_remote': ('serta_mp_remote', 'SertaMPRemoteController'),
+            'omazz_adjusto_iii': ('omazz_adjusto_iii', 'OmazzAdjustoIIIController'),
+            'ergomotion_app': ('ergomotion_app', 'ErgomotionAppController'),
+            'row_control': ('row_control', 'RowControlController'),
+            'ergo_slim': ('ergo_slim', 'ErgoSlimController'),
+            'tempur_au': ('tempur_au', 'TempurAUController'),
+        }[bed_type]
+        module = await coordinator.hass.async_add_import_executor_job(
+            import_module, f".beds.{module_name}", __package__
+        )
+        data = coordinator.entry.data
+        kwargs = {"layout": data.get(CONF_PRODUCT_TYPE)}
+        if bed_type == "qplus_app":
+            kwargs["side"] = protocol_variant if protocol_variant in ("both", "side_a", "side_b") else "both"
+        if bed_type == "serta_mp_remote":
+            kwargs["memories"] = tuple(
+                (data.get(f"serta_mp_memory_{slot}_head", 15), data.get(f"serta_mp_memory_{slot}_foot", 0 if slot == 4 else 35))
+                for slot in range(1, 5)
+            )
+        return getattr(module, class_name)(coordinator, **kwargs)
 
     if bed_type == BED_TYPE_SBI:
         await coordinator.hass.async_add_import_executor_job(

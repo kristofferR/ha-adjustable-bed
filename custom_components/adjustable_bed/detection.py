@@ -548,6 +548,15 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # are NOT included here - they're only kept for backward compatibility with
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    'tempur_curve': 'Tempur Curve',
+    'qplus_app': 'Q-Plus Adjustable Remote',
+    'serta_mp_remote': 'Serta MP Remote',
+    'omazz_adjusto_iii': 'Omazz Adjusto III',
+    'ergomotion_app': 'Ergomotion (app)',
+    'row_control': 'ROW Control',
+    'ergo_slim': 'Ergo Slim',
+    'tempur_au': 'TEMPUR AU',
+
 
     BED_TYPE_FSM_RELAX: "FSM Relax app (explicit chair/bed profile)",
 

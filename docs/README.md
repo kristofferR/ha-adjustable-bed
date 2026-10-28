@@ -35,6 +35,12 @@ The [S02 Sleeptracker disposition ledger](apk-analysis/dispositions/S02-sleeptra
 maps the accepted 3.6.2 audit to the separate [processor integration](beds/sleeptracker.md),
 including direct BLE controls, explicit exclusions and hardware validation status.
 
+The [cluster033 durable disposition ledger](beds/cluster033-dispositions.json) maps all
+562 accepted discoveries to implementation symbols, focused tests, narrowly
+credited baseline behavior or exact evidence-backed exclusions. The eight app
+profiles and their hardware-unverified status remain indexed by the Supported
+Beds table.
+
 ## Development and Validation
 
 Work from `main` for v4 changes. Development uses Python **3.14.2+** with

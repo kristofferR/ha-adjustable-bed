@@ -98,9 +98,21 @@ export interface LovelaceCardEditor extends HTMLElement {
 }
 
 // One controllable motor and its related feedback entities.
+export interface HeldControl {
+  control: string;
+  startDelayMs: number;
+  releaseDelayMs: number;
+}
+
 export interface MotorEntity {
   key: string;
   cover?: string;
+  deviceId?: string;
+  heldControls?: Partial<Record<"up" | "down", HeldControl>>;
+  heldControl?: HeldControl;
+  // Entity carrying button hold metadata when this MotorEntity adapts a held
+  // app action. Cover-backed holds use `cover` for the same state lookup.
+  holdEntityId?: string;
   // Discrete up/down buttons, used by beds that expose buttons instead of covers.
   up?: string;
   down?: string;

@@ -856,3 +856,39 @@ the other side automatically if one side fails.
 - **Having connection issues?** See [Troubleshooting](TROUBLESHOOTING.md)
 - **Want to learn about your bed's protocol?** See [Supported Actuators](SUPPORTED_ACTUATORS.md)
 - **Setting up Bluetooth?** See [Connection Guide](CONNECTION_GUIDE.md)
+
+### Curve, Q-Plus, Serta MP and SFD app profiles
+
+Choose the exact app in the bed-type picker: [Tempur Curve](beds/tempur-curve.md),
+[Q-Plus Adjustable Remote](beds/q-plus-adjustable-remote.md),
+[Serta MP Remote](beds/serta-mp-remote.md), [Omazz Adjusto III](beds/omazz-adjusto-iii.md),
+[Ergomotion](beds/ergomotion.md), [ROW Control](beds/row-control.md),
+[Ergo Slim](beds/ergo-slim.md), or [TEMPUR AU](beds/tempur-au.md).
+Shared Bluetooth names, UUIDs and manufacturer data do not identify these apps.
+Select the bed address manually when automatic discovery cannot disambiguate it.
+
+**App controls** asks for the layout shown by the app. Q-Plus defaults to M2;
+Ergomotion and TEMPUR AU default to B2; Omazz uses its reachable RemoteB layout.
+The layout fixes the available actions and source timing. It does not prove
+physical motor count. The pulse count bounds a normal held-action button press;
+it does not change the source100 ms refresh interval. Serta's local angle-edit
+controls instead change one degree every200 ms and send only on release.
+
+Q-Plus's **Both/Side A/Side B** setting controls its P1 packet selector. It is
+independent of a Home Assistant paired Left/Right target. MX Memory1 is an
+opaque app-labelled action, with no invented physical save/recall meaning.
+Serta MP's four configurable local head/foot memory targets are likewise
+separate from the remote M4 key and from physical memory programming.
+
+Each physical side owns its app layout and Serta local memory targets. Configure
+a two-address pair's sides independently. Saving ordinary or shared settings retains
+each declared app layout, Q-Plus A/B/Both wire selector and Serta local targets
+through reload; unrelated settings from a previous protocol are removed.
+Shared options do not overwrite side-owned settings. Native child-device
+targeting and side conflicts follow the existing
+paired rules. No unproven single-address physical side mapping is added.
+
+All eight profiles require both current-session write and notification roles.
+The seven profiles without position feedback keep angle sensing disabled and
+still subscribe for their proven timer state. Serta MP exposes calibrated angle
+feedback and direct pulse targets. Hardware behavior remains unverified.
