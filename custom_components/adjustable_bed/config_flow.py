@@ -93,6 +93,7 @@ from .bond_verification import (
     bond_owner_from_entry,
     build_bond_context,
 )
+from .cluster033_profiles import APP_LAYOUTS, APP_NAMES, DEFAULT_LAYOUTS
 from .const import (
     ADAPTER_AUTO,
     ALL_PROTOCOL_VARIANTS,
@@ -144,6 +145,7 @@ from .const import (
     CB24_BED_SELECTION_B,
     CB24_BED_SELECTION_DEFAULT,
     CHAIR_AND_BED_APP_BED_TYPES,
+    CLUSTER033_BED_TYPES,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ATTEMPTED_SOURCE,
@@ -837,6 +839,7 @@ def _vibradorm_selection_label(data: Mapping[str, Any]) -> str:
 
 
 _APP_SETUP_STEPS: Final[dict[str, str]] = {
+    **dict.fromkeys(CLUSTER033_BED_TYPES, "cluster033_app"),
     BED_TYPE_VIBRADORM: "vibradorm",
     BED_TYPE_LOGICDATA_APP: "logicdata_app",
     BED_TYPE_JIECANG_APP: "jiecang_app",
@@ -1832,10 +1835,36 @@ _OCTO_PIN_MESSAGES: Final[dict[OctoPinStatus, str]] = {
 _PROBE_ADVERTISEMENT_WAIT_SECONDS = 10.0
 
 
+def _add_cluster033_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[str, Any]) -> None:
+    bed_type = data[CONF_BED_TYPE]
+    schema[vol.Required(CONF_PRODUCT_TYPE, default=data.get(CONF_PRODUCT_TYPE, DEFAULT_LAYOUTS[bed_type]))] = vol.In(APP_LAYOUTS[bed_type])
+    if bed_type == "qplus_app":
+        schema[vol.Required(CONF_PROTOCOL_VARIANT, default=data.get(CONF_PROTOCOL_VARIANT, "both"))] = vol.In(("both", "side_a", "side_b"))
+    if bed_type == "serta_mp_remote":
+        for slot in range(1, 5):
+            for axis, maximum in (("head", 60), ("foot", 45)):
+                key = f"serta_mp_memory_{slot}_{axis}"
+                default = 15 if axis == "head" else 0 if slot == 4 else 35
+                schema[vol.Required(key, default=data.get(key, default))] = vol.All(int, vol.Range(min=0, max=maximum))
+
+
+def _normalize_cluster033_data(data: dict[str, Any]) -> None:
+    bed_type = data[CONF_BED_TYPE]
+    layout = data.get(CONF_PRODUCT_TYPE, DEFAULT_LAYOUTS[bed_type])
+    if layout not in APP_LAYOUTS[bed_type]:
+        raise ValueError("Choose the selected app's layout")
+    data[CONF_PRODUCT_TYPE] = layout
+    data[CONF_MOTOR_COUNT] = 2
+    data[CONF_HAS_MASSAGE] = False  # Exact app-labelled controls own their entities.
+    data[CONF_DISABLE_ANGLE_SENSING] = bed_type != "serta_mp_remote"
+    data[CONF_MOTOR_PULSE_USER_SET] = False
+
+
 # Options fields of app profiles whose adder needs only the current data.
 _OPTIONS_APP_FIELDS: Final[
     dict[str, Callable[[dict[vol.Marker, Any], dict[str, Any]], None]]
 ] = {
+    **dict.fromkeys(CLUSTER033_BED_TYPES, _add_cluster033_schema_fields),
     BED_TYPE_FURNIMOVE: _add_furnimove_schema_field,
     BED_TYPE_LOGICDATA_APP: _add_logicdata_app_schema_fields,
     BED_TYPE_JIECANG_APP: _add_jiecang_app_schema_fields,
@@ -2377,6 +2406,23 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         schema: dict[vol.Marker, Any] = {}
         _add_limoss_remote_schema_fields(schema, data)
         return self.async_show_form(step_id="limoss_remote", data_schema=vol.Schema(schema), errors=errors)
+
+    async def async_step_cluster033_app(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Choose a source-owned app layout without guessing from shared adverts."""
+        assert self._manual_data is not None
+        data = {**self._manual_data, **(user_input or {})}
+        errors = {}
+        if user_input is not None:
+            try:
+                _normalize_cluster033_data(data)
+            except ValueError:
+                errors["base"] = "cluster033_layout"
+            else:
+                self._manual_data = data
+                return await self._finish_with_verify(data, data.get(CONF_NAME, APP_NAMES[data[CONF_BED_TYPE]]))
+        schema: dict[vol.Marker, Any] = {}
+        _add_cluster033_schema_fields(schema, data)
+        return self.async_show_form(step_id="cluster033_app", data_schema=vol.Schema(schema), errors=errors)
 
     async def async_step_fsm_relax(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Select an app profile explicitly, without inferring physical axes."""
@@ -6959,7 +7005,10 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         if bed_type not in CHAIR_AND_BED_APP_BED_TYPES:
             for key in CONF_REVERSE_MOTORS:
                 data.pop(key, None)
-            if bed_type != BED_TYPE_SLEEPTRACKER:
+            profile = per_side_profile(bed_type, data.get(CONF_PROTOCOL_VARIANT))
+            if bed_type != BED_TYPE_SLEEPTRACKER and not (
+                profile is not None and CONF_PRODUCT_TYPE in profile.keys
+            ):
                 data.pop(CONF_PRODUCT_TYPE, None)
 
         if bed_type != BED_TYPE_STARCODE_M5X5:
@@ -7974,6 +8023,13 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     )
                     if key in app_data
                 })
+            if bed_type in CLUSTER033_BED_TYPES and not separate_address_pair:
+                app_data = {**current_data, **user_input}
+                try:
+                    _normalize_cluster033_data(app_data)
+                except ValueError:
+                    return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors={"base": "cluster033_layout"})
+                user_input.update({key: app_data[key] for key in (CONF_PRODUCT_TYPE, CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_USER_SET)})
             if bed_type == BED_TYPE_MOTION_BED and not separate_address_pair:
                 app_data = {**current_data, **user_input}
                 app_errors = _motion_bed_errors(app_data)

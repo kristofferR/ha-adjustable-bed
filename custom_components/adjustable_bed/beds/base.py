@@ -28,6 +28,16 @@ if TYPE_CHECKING:
     from ..motion_bed_requests import MotionBedWrite
     from ..sleeptracker_protocol import Request as SleeptrackerRequest
 
+from ..alarm_table import (
+    AlarmTableSchedule,
+    AlarmTableScheduleSpec,
+)
+from ..alarm_table import (
+    OneTimeAlarmRecord as OneTimeAlarmRecord,
+)
+from ..alarm_table import (
+    WeeklyAlarmRecord as WeeklyAlarmRecord,
+)
 from ..const import (
     POSITION_CHECK_INTERVAL,
     POSITION_STALL_COUNT,
@@ -40,6 +50,25 @@ from ..position_seek import PositionSeekPolicy
 _LOGGER = logging.getLogger(__name__)
 
 MotorCommandCallable = Callable[["BedController"], Coroutine[Any, Any, None]]
+
+
+@dataclass(frozen=True, slots=True)
+class ControllerHoldSpec:
+    """Finite hold metadata for a controller button action."""
+
+    control: str
+    start_delay_ms: int
+    release_delay_ms: int
+
+
+@dataclass(frozen=True, slots=True)
+class ControllerMotorHoldSpec:
+    """Finite hold metadata for a motor's up and down controls."""
+
+    up_control: str
+    down_control: str
+    start_delay_ms: int
+    release_delay_ms: int
 
 
 class SideBoundController:
@@ -101,6 +130,7 @@ class ControllerButtonSpec:
     translation_key: str | None = None
     cancel_movement: bool = field(default=True, kw_only=True)
     scheduler_resource: str | None = field(default=None, kw_only=True)
+    hold: ControllerHoldSpec | None = field(default=None, kw_only=True)
     # Fills a translated name template, e.g. ``{action}``, with an app label.
     translation_placeholders: Mapping[str, str] | None = field(default=None, kw_only=True)
 
@@ -163,6 +193,7 @@ class MotorControlSpec:
     position_key: str | None = None
     max_angle: float = 68
     scheduler_resource: str | None = None
+    hold: ControllerMotorHoldSpec | None = None
 
 
 # Units a position slider can be scaled in.
@@ -1685,6 +1716,15 @@ class BedController(ABC):
     def supports_clock_alarm(self) -> bool:
         """Return whether a weekly clock alarm can be configured."""
         return False
+
+    @property
+    def alarm_table_schedule_spec(self) -> AlarmTableScheduleSpec | None:
+        """Return the exact whole-table contract, when this profile has one."""
+        return None
+
+    async def configure_alarm_table_schedule(self, schedule: AlarmTableSchedule) -> None:
+        """Write validated weekly/one-time tables through the command queue."""
+        raise NotImplementedError("Alarm tables are unavailable on this profile")
 
     @property
     def supports_clock_sync(self) -> bool:

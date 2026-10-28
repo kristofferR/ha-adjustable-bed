@@ -125,6 +125,36 @@ export function bedEntitiesForDevice(
     }
     return m;
   };
+  const motorButton = (
+    id: string,
+    key: string,
+    direction: "up" | "down",
+    ownerDeviceId: string | undefined,
+  ): void => {
+    const item = motor(key);
+    item[direction] = id;
+    const attributes = hass.states[id]?.attributes;
+    const heldControl = attributes?.held_control;
+    const startDelayMs = attributes?.hold_start_delay_ms;
+    const releaseDelayMs = attributes?.hold_release_delay_ms;
+    if (
+      typeof heldControl === "string" &&
+      typeof startDelayMs === "number" &&
+      typeof releaseDelayMs === "number" &&
+      ownerDeviceId
+    ) {
+      item.deviceId = ownerDeviceId;
+      item.holdEntityId = id;
+      item.heldControls = {
+        ...item.heldControls,
+        [direction]: { control: heldControl, startDelayMs, releaseDelayMs },
+      };
+    }
+    const heldMotor = attributes?.paired_hold_motor;
+    if (heldMotor === "back" || heldMotor === "legs") {
+      item.timedMove = { deviceId, motor: heldMotor };
+    }
+  };
   const presetMap = new Map<string, string>();
   const memoryMap = new Map<number, MemorySlot>();
   const memory = (slot: number): MemorySlot => {
@@ -159,7 +189,22 @@ export function bedEntitiesForDevice(
 
     switch (domain) {
       case "cover":
-        motor(key).cover = id;
+        {
+          const item = motor(key);
+          item.cover = id;
+          const attributes = hass.states[id]?.attributes;
+          const up = attributes?.held_control_up;
+          const down = attributes?.held_control_down;
+          if (typeof up === "string" && typeof down === "string") {
+            if (entry.device_id) item.deviceId = entry.device_id;
+            const startDelayMs = Number(attributes?.hold_start_delay_ms ?? 0);
+            const releaseDelayMs = Number(attributes?.hold_release_delay_ms ?? 0);
+            item.heldControls = {
+              up: { control: up, startDelayMs, releaseDelayMs },
+              down: { control: down, startDelayMs, releaseDelayMs },
+            };
+          }
+        }
         break;
 
       case "sensor":
@@ -167,7 +212,7 @@ export function bedEntitiesForDevice(
         // The Sleep Smart pump's pressure reading sits with firmness controls.
         else if (key === "logicdata_air_pump_pressure") bed.firmness.push(id);
         // INNOVA reports its massage timer indicator; the app has no timer select.
-        else if (key === "innova_massage_timer") bed.massage.timer = id;
+        else if (key === "innova_massage_timer" || key === "app_timer_status") bed.massage.timer = id;
         break;
 
       case "number":
@@ -319,12 +364,7 @@ export function bedEntitiesForDevice(
         } else if (key.startsWith("massage_")) {
           bed.massage.buttons.push(id);
         } else if ((match = key.match(/^(.+)_(up|down)$/))) {
-          const m = motor(match[1]);
-          m[match[2] as "up" | "down"] = id;
-          const heldMotor = hass.states[id]?.attributes.paired_hold_motor;
-          if (heldMotor === "back" || heldMotor === "legs") {
-            m.timedMove = { deviceId, motor: heldMotor };
-          }
+          motorButton(id, match[1], match[2] as "up" | "down", entry.device_id);
         }
         break;
 

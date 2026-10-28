@@ -129,6 +129,14 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | ✅ [Cool Base](docs/beds/coolbase.md) | Cool Base (Keeson with fan) |
 | ✅ [Scott Living](docs/beds/scott-living.md) | Scott Living |
 | ✅ [SBI/Q-Plus](docs/beds/sbi.md) | Q-Plus (Costco) |
+| 🧪 [Tempur Curve app](docs/beds/tempur-curve.md) | Explicit com.ore.tempur app profile; static artifact proven, hardware unverified |
+| 🧪 [Q-Plus Adjustable Remote app](docs/beds/q-plus-adjustable-remote.md) | H/M1/M2/M3/MX app layouts, separate from generic SBI; hardware unverified |
+| 🧪 [Serta MP Remote app](docs/beds/serta-mp-remote.md) | Calibrated angle targets and local memories, separate from Motion Perfect; hardware unverified |
+| 🧪 [Omazz Adjusto III app](docs/beds/omazz-adjusto-iii.md) | Reachable RemoteB controls and alarm tables; hardware unverified |
+| 🧪 [Ergomotion app](docs/beds/ergomotion.md) | Explicit B1/B2/C1/D1 app layouts; hardware unverified |
+| 🧪 [ROW Control app](docs/beds/row-control.md) | Elevate, Lifestyle, Curve, Lifestyle Plus and Zero-G Box; hardware unverified |
+| 🧪 [Ergo Slim app](docs/beds/ergo-slim.md) | Explicit A/B/C app layouts; hardware unverified |
+| 🧪 [TEMPUR AU app](docs/beds/tempur-au.md) | Explicit B1/B2/C1/D1/E1 app layouts; hardware unverified |
 | ✅ [LOGICDATA](docs/beds/logicdata.md) | SILVERmotion, SimplicityFrame; [MOTIONrelax](docs/beds/logicdata-app.md), [Sleep Smart](docs/beds/logicdata-sleep-smart.md) Vienna / Toronto / Middle Rail and air mattress pump |
 | ✅ [Okin CB35](docs/beds/okin-cb35.md) | Sealy Posturematic |
 | ✅ [DewertOkin ELEVATE](docs/beds/star-elevate.md) | ELEVATE two-actuator lift accessory, also an AdjustableM5X5 lift |

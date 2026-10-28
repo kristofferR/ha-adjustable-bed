@@ -28,7 +28,12 @@ from .logicdata_app_protocol import LAYOUTS, layout_axes
 from .paired_coordinator import entity_runtimes
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, MotorControlSpec, SideBoundController
+    from .beds.base import (
+        BedController,
+        ControllerMotorHoldSpec,
+        MotorControlSpec,
+        SideBoundController,
+    )
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,6 +51,7 @@ class AdjustableBedCoverEntityDescription(CoverEntityDescription):
     # Maximum angle for percentage calculation (default 68 degrees)
     max_angle: float = 68
     scheduler_resource: str | None = None
+    hold: ControllerMotorHoldSpec | None = None
 
 
 # Note: For Linak beds:
@@ -259,6 +265,7 @@ def _build_cover_description(
         position_key=spec.position_key,
         max_angle=spec.max_angle,
         scheduler_resource=spec.scheduler_resource,
+        hold=getattr(spec, "hold", None),
     )
 
 
@@ -326,6 +333,22 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         self._is_moving = False
         self._move_direction: str | None = None
         self._movement_generation: int = 0  # Track active movement to handle cancellation
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Expose only controller-declared hold metadata to the shared card."""
+        attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        spec = getattr(self.entity_description, "hold", None)
+        if spec is not None:
+            attributes.update(
+                {
+                    "held_control_up": spec.up_control,
+                    "held_control_down": spec.down_control,
+                    "hold_start_delay_ms": spec.start_delay_ms,
+                    "hold_release_delay_ms": spec.release_delay_ms,
+                }
+            )
+        return attributes or None
 
     @property
     def _position_key(self) -> str:

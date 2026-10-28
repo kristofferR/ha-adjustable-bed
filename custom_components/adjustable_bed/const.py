@@ -550,7 +550,18 @@ HAS_LIGHT_DEFAULTS: Final[dict[str, bool]] = {
 CHAIR_AND_BED_APP_BED_TYPES: Final = frozenset({BED_TYPE_FSM_RELAX, BED_TYPE_LIMOSS_REMOTE})
 
 # All supported bed types (includes both protocol-based and legacy names)
+BED_TYPE_TEMPUR_CURVE: Final = 'tempur_curve'
+BED_TYPE_QPLUS_APP: Final = 'qplus_app'
+BED_TYPE_SERTA_MP_REMOTE: Final = 'serta_mp_remote'
+BED_TYPE_OMAZZ_ADJUSTO_III: Final = 'omazz_adjusto_iii'
+BED_TYPE_ERGOMOTION_APP: Final = 'ergomotion_app'
+BED_TYPE_ROW_CONTROL: Final = 'row_control'
+BED_TYPE_ERGO_SLIM: Final = 'ergo_slim'
+BED_TYPE_TEMPUR_AU: Final = 'tempur_au'
+CLUSTER033_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_QPLUS_APP, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_OMAZZ_ADJUSTO_III, BED_TYPE_ERGOMOTION_APP, BED_TYPE_ROW_CONTROL, BED_TYPE_ERGO_SLIM, BED_TYPE_TEMPUR_AU})
+
 SUPPORTED_BED_TYPES: Final = [
+    *sorted(CLUSTER033_BED_TYPES),
     # Protocol-based types (new naming)
     BED_TYPE_FURNIMOVE,
     BED_TYPE_OKIN_HANDLE,
@@ -688,6 +699,7 @@ SUPPORTED_BED_TYPES: Final = [
 # every member, so adding a post-connect mutation later fails loudly.
 OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
     {
+        *CLUSTER033_BED_TYPES,
         BED_TYPE_FURNIMOVE,
         BED_TYPE_OKIN_HANDLE,
         BED_TYPE_DEWERTOKIN,
@@ -2715,6 +2727,7 @@ BEDS_WITH_ANGLE_SENSING: Final = frozenset(
 # corresponding actuator exists; its controller supplies the per-side specs.
 BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
     {
+        BED_TYPE_SERTA_MP_REMOTE,
         BED_TYPE_STARCODE_M5X5,
         BED_TYPE_LINAK,
         BED_TYPE_OKIMAT,
@@ -2757,6 +2770,7 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
 # not remain "unknown" forever (#322, #344, #501).
 BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
     {
+        *(CLUSTER033_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}),
         BED_TYPE_LIMOSS_REMOTE,
         BED_TYPE_FURNIMOVE,
         BED_TYPE_FSM_RELAX,
